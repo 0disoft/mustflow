@@ -15,7 +15,9 @@ Los archivos siempre son la fuente de verdad.
 - `.mustflow/docs/*.md`
 - `.mustflow/skills/*/SKILL.md`
 
-SQLite sirve como índice secundario para habilitar búsquedas y análisis más rápidos. Debe poder eliminarse y reconstruirse con seguridad.
+SQLite sirve como índice local secundario para habilitar búsquedas y análisis más rápidos. Debe poder eliminarse y reconstruirse con seguridad.
+
+La base de datos SQLite local es una caché reconstruible. No debe tratarse como fuente de verdad, almacenamiento de memoria, registro de auditoría ni almacenamiento de transcripciones.
 
 ## Ubicación esperada
 
@@ -23,10 +25,10 @@ SQLite sirve como índice secundario para habilitar búsquedas y análisis más 
 .mustflow/cache/mustflow.sqlite
 ```
 
-`mf init` no crea este archivo inmediatamente. El índice se crea cuando se ejecuta `mf index`.
+`mf init` no crea este archivo de inmediato. El índice se crea cuando se ejecuta `mf index`.
 `mf search` lee este archivo sin modificar documentos fuente. Futuras funciones como `mf map` y `mf dashboard` pueden reutilizarlo.
 
-La plantilla predeterminada define este estado así:
+La plantilla predeterminada declara este estado así:
 
 ```toml
 [capabilities]
@@ -35,18 +37,19 @@ local_index = "generated_optional"
 
 Esto significa que el índice es dato generado opcional, no un documento fuente.
 
-## Datos que puede almacenar el índice
+## Datos que el índice puede almacenar
 
 - Rutas de documentos
-- Títulos y secciones
+- Títulos y encabezados de sección
 - Metadatos de frontmatter
-- Revisiones de documentos
-- Intenciones de comando
+- Revisiones y hashes de documentos
+- Fragmentos breves de contenido
+- Metadatos de intenciones de comando
 - Referencias de skills
 
-El comando actual `mf index` indexa documentos mustflow, archivos de contexto, archivos de configuración, documentos de skill e intenciones de comando. `mf search` consulta únicamente los datos indexados del flujo de trabajo mustflow.
-El índice también almacena hashes de contenido. Antes de buscar, `mf search` compara esos hashes con los archivos actuales y devuelve un error si la caché está obsoleta.
-Los últimos resultados de verificación y el análisis de ejecuciones quedan reservados para funciones futuras.
+El comando actual `mf index` usa el modo `metadata_and_snippets`. Almacena como máximo 2048 bytes de fragmento por documento, no almacena cuerpos completos de documentos de forma predeterminada y guarda nombres y descripciones de intenciones de comando como términos derivados para que `mf search` aún pueda encontrar el archivo de configuración relevante.
+
+Antes de buscar, `mf search` compara los hashes almacenados con los archivos actuales y devuelve un error si la caché está obsoleta. Los últimos resultados de verificación y el análisis de ejecuciones quedan reservados para funciones futuras.
 
 ## Reglas de escritura
 
@@ -54,4 +57,4 @@ Cuando un LLM o un panel edita documentos, el destino final de escritura sigue s
 
 SQLite proporciona datos auxiliares para acelerar búsqueda, visualización y validación.
 
-Los registros sin procesar, la salida completa de terminal y las transcripciones completas de chat no se consideran documentos fuente para el índice ni para una futura capa de conocimiento. mustflow mantiene recibos de ejecución pequeños y documentos de resumen en el proyecto, y no almacena registros sin procesar de forma predeterminada. Esto se aplica mediante la política `[retention]` en `.mustflow/config/mustflow.toml` y las comprobaciones de almacenamiento de `mf check --strict`.
+Los registros sin procesar, la salida completa de terminal, las transcripciones completas de chat, el razonamiento oculto, los secretos, los valores de entorno y el contenido de repositorios privados no son documentos fuente para el índice ni para una futura capa de conocimiento. mustflow mantiene recibos de ejecución pequeños en el proyecto y no almacena registros sin procesar de forma predeterminada. Esto se aplica mediante la política `[retention]` en `.mustflow/config/mustflow.toml` y las comprobaciones de almacenamiento de `mf check --strict`.

@@ -60,7 +60,7 @@ test('prints matching documents skills and command intents from the local index'
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '2');
+		assert.equal(output.schema_version, '3');
 		assert.equal(output.command, 'search');
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, true);

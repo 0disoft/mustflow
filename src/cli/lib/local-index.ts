@@ -6,8 +6,11 @@ import path from 'node:path';
 import { isRecord, readCommandContract, readString } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 
-const LOCAL_INDEX_SCHEMA_VERSION = '2';
+const LOCAL_INDEX_SCHEMA_VERSION = '3';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
+const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
+const LOCAL_INDEX_STORE_FULL_CONTENT = false;
+const MAX_SNIPPET_BYTES_PER_DOCUMENT = 2048;
 
 type SqlValue = number | string | Uint8Array | null;
 
@@ -40,7 +43,7 @@ interface IndexDocument {
 	readonly locale: string | null;
 	readonly revision: number | null;
 	readonly contentHash: string;
-	readonly content: string;
+	readonly contentSnippet: string;
 	readonly sections: readonly string[];
 }
 
@@ -69,6 +72,9 @@ export interface LocalIndexResult {
 	readonly document_count: number;
 	readonly skill_count: number;
 	readonly command_intent_count: number;
+	readonly content_mode: typeof LOCAL_INDEX_CONTENT_MODE;
+	readonly store_full_content: typeof LOCAL_INDEX_STORE_FULL_CONTENT;
+	readonly max_snippet_bytes_per_document: typeof MAX_SNIPPET_BYTES_PER_DOCUMENT;
 	readonly indexed_paths: readonly string[];
 }
 
@@ -222,6 +228,16 @@ function getSections(content: string): string[] {
 	return [...content.matchAll(/^##\s+(.+)$/gmu)].map((match) => match[1]?.trim()).filter((value): value is string => Boolean(value));
 }
 
+function truncateUtf8(value: string, maxBytes: number): string {
+	const buffer = Buffer.from(value, 'utf8');
+
+	if (buffer.byteLength <= maxBytes) {
+		return value;
+	}
+
+	return buffer.subarray(0, maxBytes).toString('utf8').replace(/\uFFFD$/u, '');
+}
+
 function collectDocuments(projectRoot: string): IndexDocument[] {
 	return getExistingIndexablePaths(projectRoot).map((relativePath) => {
 		const content = readText(projectRoot, relativePath);
@@ -235,7 +251,7 @@ function collectDocuments(projectRoot: string): IndexDocument[] {
 			locale: frontmatter.locale ?? null,
 			revision: Number.isInteger(revision) ? revision : null,
 			contentHash: sha256Text(content),
-			content,
+			contentSnippet: truncateUtf8(content, MAX_SNIPPET_BYTES_PER_DOCUMENT),
 			sections: getSections(content),
 		};
 	});
@@ -310,8 +326,8 @@ function toSearchString(value: SqlValue | undefined): string {
 	return String(value);
 }
 
-function queryRows(database: SqlJsDatabase, sql: string): Record<string, SqlValue>[] {
-	const [result] = database.exec(sql);
+function queryRows(database: SqlJsDatabase, sql: string, params: SqlValue[] = []): Record<string, SqlValue>[] {
+	const [result] = database.exec(sql, params);
 
 	if (!result) {
 		return [];
@@ -383,7 +399,7 @@ CREATE TABLE documents (
   locale TEXT,
 	revision INTEGER,
   content_hash TEXT NOT NULL,
-  content TEXT NOT NULL
+  content_snippet TEXT NOT NULL
 );
 
 CREATE TABLE sections (
@@ -391,6 +407,13 @@ CREATE TABLE sections (
   ordinal INTEGER NOT NULL,
   heading TEXT NOT NULL,
   PRIMARY KEY (document_path, ordinal)
+);
+
+CREATE TABLE document_terms (
+  document_path TEXT NOT NULL,
+  term TEXT NOT NULL,
+  source TEXT NOT NULL,
+  PRIMARY KEY (document_path, term, source)
 );
 
 CREATE TABLE skills (
@@ -409,6 +432,20 @@ CREATE TABLE command_intents (
 `);
 }
 
+function insertDocumentTerm(database: SqlJsDatabase, documentPath: string, term: string | null, source: string): void {
+	const normalized = normalizeSearchText(term ?? '');
+
+	if (normalized.length === 0) {
+		return;
+	}
+
+	database.run('INSERT OR IGNORE INTO document_terms (document_path, term, source) VALUES (?, ?, ?)', [
+		documentPath,
+		normalized,
+		source,
+	]);
+}
+
 function populateDatabase(
 	database: SqlJsDatabase,
 	documents: readonly IndexDocument[],
@@ -416,11 +453,28 @@ function populateDatabase(
 	commandIntents: readonly IndexCommandIntent[],
 ): void {
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['schema_version', LOCAL_INDEX_SCHEMA_VERSION]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['content_mode', LOCAL_INDEX_CONTENT_MODE]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
+		'store_full_content',
+		String(LOCAL_INDEX_STORE_FULL_CONTENT),
+	]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
+		'max_snippet_bytes_per_document',
+		String(MAX_SNIPPET_BYTES_PER_DOCUMENT),
+	]);
 
 	for (const document of documents) {
 		database.run(
-			'INSERT INTO documents (path, type, title, locale, revision, content_hash, content) VALUES (?, ?, ?, ?, ?, ?, ?)',
-			[document.path, document.type, document.title, document.locale, document.revision, document.contentHash, document.content],
+			'INSERT INTO documents (path, type, title, locale, revision, content_hash, content_snippet) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[
+				document.path,
+				document.type,
+				document.title,
+				document.locale,
+				document.revision,
+				document.contentHash,
+				document.contentSnippet,
+			],
 		);
 
 		document.sections.forEach((heading, index) => {
@@ -441,6 +495,12 @@ function populateDatabase(
 			'INSERT INTO command_intents (name, status, lifecycle, run_policy, description) VALUES (?, ?, ?, ?, ?)',
 			[intent.name, intent.status, intent.lifecycle, intent.runPolicy, intent.description],
 		);
+
+		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.name, 'command_intent');
+		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.status, 'command_status');
+		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.lifecycle, 'command_lifecycle');
+		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.runPolicy, 'command_run_policy');
+		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.description, 'command_description');
 	}
 }
 
@@ -473,6 +533,9 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		document_count: documents.length,
 		skill_count: skills.length,
 		command_intent_count: commandIntents.length,
+		content_mode: LOCAL_INDEX_CONTENT_MODE,
+		store_full_content: LOCAL_INDEX_STORE_FULL_CONTENT,
+		max_snippet_bytes_per_document: MAX_SNIPPET_BYTES_PER_DOCUMENT,
 		indexed_paths: documents.map((document) => document.path),
 	};
 }
@@ -509,6 +572,18 @@ function getStalePaths(projectRoot: string, database: SqlJsDatabase): string[] {
 	return Array.from(stalePaths).sort((left, right) => left.localeCompare(right));
 }
 
+function getSectionHeadings(database: SqlJsDatabase, documentPath: string): string[] {
+	return queryRows(database, 'SELECT heading FROM sections WHERE document_path = ? ORDER BY ordinal', [documentPath]).map((row) =>
+		toSearchString(row.heading),
+	);
+}
+
+function getDocumentTerms(database: SqlJsDatabase, documentPath: string): string[] {
+	return queryRows(database, 'SELECT term FROM document_terms WHERE document_path = ? ORDER BY term', [documentPath]).map((row) =>
+		toSearchString(row.term),
+	);
+}
+
 export async function searchLocalIndex(projectRoot: string, query: string, options: LocalSearchOptions = {}): Promise<LocalSearchResult> {
 	const normalizedQuery = normalizeSearchText(query);
 	const limit = Math.max(1, Math.min(options.limit ?? 10, 50));
@@ -533,13 +608,15 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 			throw new Error(`Local mustflow index is stale: ${stalePaths.join(', ')}. Run \`mf index\` before searching.`);
 		}
 
-		for (const row of queryRows(database, 'SELECT path, type, title, content FROM documents')) {
+		for (const row of queryRows(database, 'SELECT path, type, title, content_snippet FROM documents')) {
 			const pathValue = toSearchString(row.path);
 			const typeValue = toSearchString(row.type);
 			const title = toSearchString(row.title);
-			const content = toSearchString(row.content);
+			const contentSnippet = toSearchString(row.content_snippet);
+			const sectionHeadings = getSectionHeadings(database, pathValue);
+			const documentTerms = getDocumentTerms(database, pathValue);
 			const primaryFields = [pathValue, title];
-			const secondaryFields = [typeValue, content];
+			const secondaryFields = [typeValue, contentSnippet, ...sectionHeadings, ...documentTerms];
 
 			if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
 				continue;
