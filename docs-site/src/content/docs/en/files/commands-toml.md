@@ -44,8 +44,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.missing_behavior`: What agents do when an intent is missing.
 - `defaults.allow_inferred_commands`: Whether agents may infer commands. The default should be `false`.
 - `defaults.default_cwd`: Default working directory when an intent does not specify one.
-- `defaults.default_timeout_seconds`: Default timeout when an intent does not specify one.
-- `defaults.stdin`: Default standard input behavior. Agent-run commands should use `closed`.
+- `defaults.default_timeout_seconds`: Scaffolding and validation default for new intent declarations. `mf run` still requires each runnable oneshot intent to declare `timeout_seconds` explicitly.
+- `defaults.stdin`: Scaffolding and validation default for new intent declarations. Agent-runnable intents must still declare `stdin = "closed"` explicitly.
 - `defaults.require_lifecycle`: Whether executable intents must declare a command lifecycle.
 - `defaults.require_timeout_for_oneshot`: Specifies whether oneshot commands are required to declare a timeout.
 - `defaults.deny_unmanaged_long_running`: Whether unmanaged long-running commands are blocked.
@@ -58,10 +58,10 @@ required_after = ["code_change", "behavior_change"]
 - `configured`: An executable command is declared.
 - `unknown`: No command contract exists yet.
 - `not_applicable`: This repository does not need this validation.
-- `manual_only`: Requires human intervention to decide upon and execute the command.
+- `manual_only`: Requires human intervention to decide upon and execute the command. Use this as the status for new human-run command declarations.
 - `disabled`: The command is known but must not be run now.
 
-Agents may only run intents with `status = "configured"`.
+Agents may only run intents with `status = "configured"`, and status alone is not enough. `mf run` also requires a oneshot lifecycle, `run_policy = "agent_allowed"`, closed standard input, an explicit timeout, a declared command, and a working directory inside the current root.
 
 ## Intent Fields
 
@@ -71,7 +71,7 @@ Agents may only run intents with `status = "configured"`.
 - `required_after`: Change types after which this intent should be considered.
 - `kind`: Classification such as mustflow builtin or repository command.
 - `lifecycle`: Specifies whether the command is oneshot or long-running.
-- `run_policy`: Whether agents may run the intent or explicit approval is required.
+- `run_policy`: Whether agents may run the intent or explicit approval is required. New configurations should use `agent_allowed` or `requires_explicit_user_request`; `run_policy = "manual_only"` is accepted only for older config compatibility.
 - `argv`: Command and arguments executed without shell interpretation.
 - `mode`: Set to `shell` only when shell syntax is required.
 - `cmd`: Shell command string used when `mode = "shell"`.
@@ -142,7 +142,7 @@ Agents should use these intent names when maintaining tests, but must still reso
 
 Agents may run only `oneshot` intents by default. `server`, `watch`, `interactive`, `browser`, and `background` must not use `run_policy = "agent_allowed"`.
 
-`mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, and `stdin = "closed"`.
+`mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` is a positive integer, a command is declared through `argv` or `mode = "shell"` plus `cmd`, and `cwd` stays inside the current mustflow root.
 Upon completion, it logs the latest run record to `.mustflow/state/runs/latest.json`; when run with `--json`, it also outputs the same record to standard output.
 
 ## Built-In Intents
@@ -156,6 +156,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "doctor", "--json"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = []
 ```
@@ -169,6 +171,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "map", "--write"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
@@ -185,6 +189,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "status", "--short"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false
@@ -195,6 +201,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "diff", "--stat"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false

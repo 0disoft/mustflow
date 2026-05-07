@@ -44,8 +44,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.missing_behavior`: comportement des agents lorsqu’une intention manque.
 - `defaults.allow_inferred_commands`: indique si les agents peuvent déduire des commandes. La valeur par défaut doit être `false`.
 - `defaults.default_cwd`: répertoire de travail par défaut lorsqu’une intention n’en précise pas.
-- `defaults.default_timeout_seconds`: délai d’expiration par défaut lorsqu’une intention n’en précise pas.
-- `defaults.stdin`: comportement par défaut de l’entrée standard. Les commandes exécutées par des agents doivent utiliser `closed`.
+- `defaults.default_timeout_seconds`: valeur par défaut de scaffolding et de validation pour les nouvelles déclarations d’intention. `mf run` exige toujours que chaque intention `oneshot` exécutable déclare explicitement `timeout_seconds`.
+- `defaults.stdin`: valeur par défaut de scaffolding et de validation pour les nouvelles déclarations d’intention. Les intentions exécutables par agent doivent toujours déclarer explicitement `stdin = "closed"`.
 - `defaults.require_lifecycle`: indique si les intentions exécutables doivent déclarer un cycle de vie de commande.
 - `defaults.require_timeout_for_oneshot`: indique si les commandes finies doivent déclarer un délai d’expiration.
 - `defaults.deny_unmanaged_long_running`: indique si les commandes longue durée non gérées sont bloquées.
@@ -58,7 +58,7 @@ required_after = ["code_change", "behavior_change"]
 - `configured`: une commande exécutable est déclarée.
 - `unknown`: aucun contrat de commande n’existe encore.
 - `not_applicable`: ce dépôt n’a pas besoin de cette validation.
-- `manual_only`: une personne doit décider s’il faut l’exécuter et comment.
+- `manual_only`: une personne doit décider s’il faut l’exécuter et comment. Utilisez ce statut pour les nouvelles déclarations de commandes exécutées par des humains.
 - `disabled`: la commande est connue mais ne doit pas être exécutée maintenant.
 
 Les agents ne peuvent exécuter que les intentions avec `status = "configured"`.
@@ -71,7 +71,7 @@ Les agents ne peuvent exécuter que les intentions avec `status = "configured"`.
 - `required_after`: types de changements après lesquels cette intention doit être envisagée.
 - `kind`: classification, par exemple commande intégrée mustflow ou commande du dépôt.
 - `lifecycle`: indique si la commande est finie ou longue durée.
-- `run_policy`: indique si les agents peuvent exécuter l’intention ou si une approbation explicite est requise.
+- `run_policy`: indique si les agents peuvent exécuter l’intention ou si une approbation explicite est requise. Les nouvelles configurations doivent utiliser `agent_allowed` ou `requires_explicit_user_request`; `run_policy = "manual_only"` est accepté uniquement pour compatibilité avec les anciennes configurations.
 - `argv`: commande et arguments exécutés sans interprétation shell.
 - `mode`: définir à `shell` uniquement lorsque la syntaxe shell est requise.
 - `cmd`: chaîne de commande shell utilisée lorsque `mode = "shell"`.
@@ -141,7 +141,7 @@ Les agents doivent utiliser ces noms d’intentions lors de la maintenance des t
 
 Par défaut, les agents ne peuvent exécuter que les intentions `oneshot`. `server`, `watch`, `interactive`, `browser` et `background` ne doivent pas utiliser `run_policy = "agent_allowed"`.
 
-`mf run <intent>` exécute uniquement les intentions avec `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"` et `stdin = "closed"`.
+`mf run <intent>` exécute uniquement les intentions où `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` est un entier positif, une commande est déclarée via `argv` ou `mode = "shell"` plus `cmd`, et `cwd` reste dans la racine mustflow actuelle.
 Après exécution, il écrit le dernier reçu d’exécution dans `.mustflow/state/runs/latest.json`; avec `--json`, il imprime aussi le même reçu sur la sortie standard.
 
 ## Intentions intégrées
@@ -155,6 +155,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "doctor", "--json"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = []
 ```
@@ -168,6 +170,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "map", "--write"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
@@ -184,6 +188,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "status", "--short"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false
@@ -194,6 +200,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "diff", "--stat"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false

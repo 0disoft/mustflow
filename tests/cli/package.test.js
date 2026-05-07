@@ -67,7 +67,11 @@ test('default template i18n metadata stays in sync with localized template files
 });
 
 test('default template source metadata uses English text', () => {
-	const metadataPaths = ['templates/default/manifest.toml', 'templates/default/i18n.toml'];
+	const metadataPaths = [
+		'templates/default/manifest.toml',
+		'templates/default/i18n.toml',
+		'templates/default/common/.mustflow/config/commands.toml',
+	];
 
 	for (const relativePath of metadataPaths) {
 		const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');

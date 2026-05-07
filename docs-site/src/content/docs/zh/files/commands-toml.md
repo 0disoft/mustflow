@@ -44,8 +44,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.missing_behavior`: 意图缺失时 agent 应采取的行为。
 - `defaults.allow_inferred_commands`: agent 是否可以推断命令。默认应为 `false`。
 - `defaults.default_cwd`: 意图未指定工作目录时使用的默认工作目录。
-- `defaults.default_timeout_seconds`: 意图未指定超时时间时使用的默认超时时间。
-- `defaults.stdin`: 默认标准输入行为。由 agent 运行的命令应使用 `closed`。
+- `defaults.default_timeout_seconds`: 用于新意图声明的脚手架和验证默认值。`mf run` 仍要求每个可运行的 `oneshot` 意图显式声明 `timeout_seconds`。
+- `defaults.stdin`: 用于新意图声明的脚手架和验证默认值。agent 可运行的意图仍必须显式声明 `stdin = "closed"`。
 - `defaults.require_lifecycle`: 可执行意图是否必须声明命令生命周期。
 - `defaults.require_timeout_for_oneshot`: 有限命令是否必须声明超时时间。
 - `defaults.deny_unmanaged_long_running`: 是否阻止未受管理的长时间运行命令。
@@ -58,10 +58,10 @@ required_after = ["code_change", "behavior_change"]
 - `configured`: 已声明可执行命令。
 - `unknown`: 尚不存在命令合同。
 - `not_applicable`: 该仓库不需要这种验证。
-- `manual_only`: 必须由人工决定是否运行以及如何运行。
+- `manual_only`: 必须由人工决定是否运行以及如何运行。新的人工作业命令声明应将它用作 status。
 - `disabled`: 命令已知，但当前不得运行。
 
-agent 只能运行 `status = "configured"` 的意图。
+agent 只能运行 `status = "configured"` 的意图，但仅有 status 还不够。`mf run` 还要求 `oneshot` 生命周期、`run_policy = "agent_allowed"`、关闭的标准输入、显式超时、已声明命令，以及位于当前根目录内的工作目录。
 
 ## 意图字段
 
@@ -71,7 +71,7 @@ agent 只能运行 `status = "configured"` 的意图。
 - `required_after`: 哪些变更类型之后应考虑该意图。
 - `kind`: 分类，例如 mustflow 内置命令或仓库命令。
 - `lifecycle`: 命令是有限命令还是长时间运行命令。
-- `run_policy`: agent 是否可以运行该意图，或是否需要明确批准。
+- `run_policy`: agent 是否可以运行该意图，或是否需要明确批准。新配置应使用 `agent_allowed` 或 `requires_explicit_user_request`；`run_policy = "manual_only"` 仅为兼容旧配置而接受。
 - `argv`: 不经过 shell 解释而执行的命令和参数。
 - `mode`: 仅在需要 shell 语法时设置为 `shell`。
 - `cmd`: 当 `mode = "shell"` 时使用的 shell 命令字符串。
@@ -141,7 +141,7 @@ agent 维护测试时应使用这些意图名称，但仍必须通过 `commands.
 
 默认情况下，agent 只能运行 `oneshot` 意图。`server`、`watch`、`interactive`、`browser` 和 `background` 不得使用 `run_policy = "agent_allowed"`。
 
-`mf run <intent>` 只执行同时满足 `status = "configured"`、`lifecycle = "oneshot"`、`run_policy = "agent_allowed"` 和 `stdin = "closed"` 的意图。
+`mf run <intent>` 只执行同时满足 `status = "configured"`、`lifecycle = "oneshot"`、`run_policy = "agent_allowed"`、`stdin = "closed"`、正整数 `timeout_seconds`、通过 `argv` 或 `mode = "shell"` 加 `cmd` 声明的命令，以及 `cwd` 位于当前 mustflow 根目录内的意图。
 执行后，它会把最新运行 receipt 写入 `.mustflow/state/runs/latest.json`；使用 `--json` 时，也会把同一份 receipt 打印到标准输出。
 
 ## 内置意图
@@ -155,6 +155,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "doctor", "--json"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = []
 ```
@@ -168,6 +170,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "map", "--write"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
@@ -184,6 +188,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "status", "--short"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false
@@ -194,6 +200,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "diff", "--stat"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false

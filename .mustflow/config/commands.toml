@@ -1,7 +1,8 @@
 schema_version = "1"
 
-# 이 파일은 에이전트가 실행 명령을 추측하지 않도록 만드는 명령 의도 계약입니다.
-# 에이전트는 status = "configured", lifecycle = "oneshot", run_policy = "agent_allowed"인 의도만 실행할 수 있습니다.
+# This file is the command-intent contract that prevents agents from guessing commands.
+# mf run executes only configured + oneshot + agent_allowed + closed stdin + explicit timeout + declared command intents.
+# cwd must stay inside the current mustflow root.
 
 [defaults]
 missing_behavior = "do_not_guess"
@@ -18,57 +19,57 @@ kill_after_seconds = 5
 
 [intents.test]
 status = "unknown"
-description = "테스트를 실행합니다."
-reason = "이 저장소의 테스트 명령이 아직 선언되지 않았습니다."
+description = "Run the test suite."
+reason = "This repository has not declared its test command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "behavior_change"]
 
 [intents.test_related]
 status = "unknown"
-description = "변경 파일과 직접 관련된 테스트를 실행합니다."
-reason = "이 저장소의 관련 테스트 명령이 아직 선언되지 않았습니다."
+description = "Run tests directly related to changed files."
+reason = "This repository has not declared its related-test command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "behavior_change", "test_change"]
 
 [intents.test_coverage]
 status = "manual_only"
-description = "테스트 범위나 커버리지 정보를 확인합니다."
-reason = "커버리지 실행은 오래 걸리거나 저장소별 해석이 필요할 수 있습니다."
+description = "Inspect test coverage information."
+reason = "Coverage runs may be slow or require repository-specific interpretation."
 agent_action = "do_not_run_report_manual"
 required_after = ["test_policy_change", "coverage_request"]
 
 [intents.test_audit]
 status = "unknown"
-description = "낡았거나 중복된 테스트 후보를 점검합니다."
-reason = "이 저장소의 테스트 감사 명령이 아직 선언되지 않았습니다."
+description = "Inspect stale or redundant test candidates."
+reason = "This repository has not declared its test-audit command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["test_change", "behavior_removed", "public_api_change"]
 
 [intents.snapshot_update]
 status = "manual_only"
-description = "스냅샷 테스트 기준 출력을 갱신합니다."
-reason = "스냅샷 갱신은 의도하지 않은 출력 변경을 숨길 수 있어 명시적인 검토가 필요합니다."
+description = "Update snapshot test baselines."
+reason = "Snapshot updates can hide unintended output changes and require explicit review."
 agent_action = "do_not_update_snapshots_without_approval"
 required_after = ["snapshot_change", "user_approved_snapshot_update"]
 
 [intents.lint]
 status = "unknown"
-description = "규칙 검사와 정적 분석을 실행합니다."
-reason = "이 저장소의 규칙 검사 명령이 아직 선언되지 않았습니다."
+description = "Run linting or static analysis."
+reason = "This repository has not declared its lint command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "style_change"]
 
 [intents.build]
 status = "unknown"
-description = "빌드 또는 타입 검사를 실행합니다."
-reason = "이 저장소의 빌드 명령이 아직 선언되지 않았습니다."
+description = "Run build or type checks."
+reason = "This repository has not declared its build command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["build_config_change", "public_api_change"]
 
 [intents.docs_validate]
 status = "unknown"
-description = "문서 링크, 예시, 생성 문서를 확인합니다."
-reason = "이 저장소의 문서 검증 명령이 아직 선언되지 않았습니다."
+description = "Validate documentation links, examples, and generated docs."
+reason = "This repository has not declared its documentation validation command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["docs_change", "command_change"]
 
@@ -77,7 +78,7 @@ status = "configured"
 kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "mustflow 루트 상태, 검사 결과, 다음 단계를 읽기 전용으로 진단합니다."
+description = "Diagnose the mustflow root state, check result, and next steps read-only."
 argv = ["mf", "doctor", "--json"]
 cwd = "."
 timeout_seconds = 300
@@ -93,7 +94,7 @@ status = "configured"
 kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "mustflow 문서 흐름과 설정 파일을 엄격 검사합니다."
+description = "Strictly validate the mustflow document flow and configuration files."
 argv = ["mf", "check", "--strict"]
 cwd = "."
 timeout_seconds = 300
@@ -109,7 +110,7 @@ status = "configured"
 kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "REPO_MAP.md 저장소 탐색 지도를 생성하거나 갱신합니다."
+description = "Create or refresh the REPO_MAP.md repository navigation map."
 argv = ["mf", "map", "--write"]
 cwd = "."
 timeout_seconds = 300
@@ -124,7 +125,7 @@ required_after = ["structure_change", "directory_change"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Git 작업 트리 변경 파일을 읽기 전용으로 확인합니다."
+description = "Inspect changed files in the Git working tree read-only."
 argv = ["git", "status", "--short"]
 cwd = "."
 timeout_seconds = 120
@@ -139,7 +140,7 @@ required_after = ["before_final_report", "commit_message_suggestion"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Git 변경 요약을 읽기 전용으로 확인합니다."
+description = "Inspect a read-only summary of Git changes."
 argv = ["git", "diff", "--stat"]
 cwd = "."
 timeout_seconds = 120
@@ -152,6 +153,6 @@ required_after = ["before_final_report", "commit_message_suggestion"]
 
 [intents.git_commit]
 status = "manual_only"
-description = "Git 커밋을 생성합니다."
-reason = "커밋 생성은 명시적인 사용자 승인이 필요합니다."
+description = "Create a Git commit."
+reason = "Creating a commit requires explicit user approval."
 agent_action = "do_not_commit_report_suggestion_only"

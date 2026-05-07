@@ -44,8 +44,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.missing_behavior`: 명령 의도가 없을 때 에이전트가 어떻게 행동해야 하는지 정합니다.
 - `defaults.allow_inferred_commands`: 에이전트가 명령을 추측해도 되는지 정합니다. 기본값은 `false`입니다.
 - `defaults.default_cwd`: 의도별 작업 디렉터리가 없을 때 사용할 기본 작업 디렉터리입니다.
-- `defaults.default_timeout_seconds`: 의도별 제한 시간이 없을 때 사용할 기본 제한 시간입니다.
-- `defaults.stdin`: 기본 표준 입력 처리 방식입니다. 에이전트 실행은 `closed`를 기본으로 둡니다.
+- `defaults.default_timeout_seconds`: 새 명령 의도 선언을 만들거나 검증할 때 참고하는 기본값입니다. `mf run`은 실행 가능한 모든 `oneshot` 의도에 명시적인 `timeout_seconds` 선언을 요구합니다.
+- `defaults.stdin`: 새 명령 의도 선언을 만들거나 검증할 때 참고하는 기본값입니다. 에이전트가 실행할 수 있는 의도는 여전히 `stdin = "closed"`를 명시해야 합니다.
 - `defaults.require_lifecycle`: 실행 의도에 명령 생명주기를 요구할지 정합니다.
 - `defaults.require_timeout_for_oneshot`: 단발성 명령에 제한 시간을 요구할지 정합니다.
 - `defaults.deny_unmanaged_long_running`: 관리되지 않는 장기 실행 명령을 차단할지 정합니다.
@@ -58,10 +58,10 @@ required_after = ["code_change", "behavior_change"]
 - `configured`: 실행 가능한 명령이 선언되어 있습니다.
 - `unknown`: 아직 명령 계약이 없습니다.
 - `not_applicable`: 이 저장소에는 해당 검증이 필요하지 않습니다.
-- `manual_only`: 사람이 직접 판단해서 실행해야 합니다.
+- `manual_only`: 사람이 직접 판단해서 실행해야 합니다. 새 설정에서 사람이 실행해야 하는 명령은 이 값을 `status`로 사용합니다.
 - `disabled`: 명령은 알려져 있지만 현재 실행하면 안 됩니다.
 
-에이전트는 `status = "configured"`인 의도만 실행합니다.
+에이전트는 `status = "configured"`인 의도만 실행할 수 있지만, 상태만으로는 충분하지 않습니다. `mf run`은 `oneshot` 생명주기, `run_policy = "agent_allowed"`, 닫힌 표준 입력, 명시적인 제한 시간, 선언된 명령, 현재 루트 안의 작업 디렉터리도 요구합니다.
 
 ## 의도 필드
 
@@ -71,7 +71,7 @@ required_after = ["code_change", "behavior_change"]
 - `required_after`: 어떤 변경 뒤에 이 의도를 확인해야 하는지 나타냅니다.
 - `kind`: mustflow 내장 의도인지, 저장소 명령인지 같은 분류입니다.
 - `lifecycle`: 명령이 단발성 명령인지, 서버나 감시 모드처럼 계속 떠 있는 명령인지 나타냅니다.
-- `run_policy`: 에이전트가 실행할 수 있는지, 명시 요청이 필요한지 나타냅니다.
+- `run_policy`: 에이전트가 실행할 수 있는지, 명시 요청이 필요한지 나타냅니다. 새 설정은 `agent_allowed` 또는 `requires_explicit_user_request`를 사용해야 하며, `run_policy = "manual_only"`는 기존 설정 호환용으로만 허용됩니다.
 - `argv`: 셸 해석 없이 실행할 명령과 인자 배열입니다.
 - `mode`: `argv`가 아니라 셸 문법을 써야 할 때 `shell`로 둡니다.
 - `cmd`: `mode = "shell"`일 때 실행할 셸 명령 문자열입니다.
@@ -143,7 +143,7 @@ agent_action = "do_not_update_snapshots_without_approval"
 
 에이전트가 기본으로 실행할 수 있는 생명주기는 `oneshot`뿐입니다. `server`, `watch`, `interactive`, `browser`, `background`는 `run_policy = "agent_allowed"`로 열면 안 됩니다.
 
-`mf run <intent>`는 `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`인 의도만 실행합니다.
+`mf run <intent>`는 `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, 양의 정수 `timeout_seconds`, `argv` 또는 `mode = "shell"`과 `cmd`로 선언된 명령, 현재 mustflow 루트 안의 `cwd`를 모두 만족하는 의도만 실행합니다.
 실행 뒤에는 `.mustflow/state/runs/latest.json`에 마지막 실행 기록을 남기고, `--json`을 쓰면 같은 내용을 표준 출력으로 내보냅니다.
 
 ## mustflow 내장 의도
@@ -158,6 +158,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "doctor", "--json"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = []
 ```
@@ -171,6 +173,8 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["mf", "map", "--write"]
+cwd = "."
+timeout_seconds = 300
 stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
@@ -187,6 +191,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "status", "--short"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false
@@ -197,6 +203,8 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 argv = ["git", "diff", "--stat"]
+cwd = "."
+timeout_seconds = 120
 stdin = "closed"
 writes = []
 network = false
