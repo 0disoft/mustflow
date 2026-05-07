@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readTomlFile } from '../lib/toml.js';
@@ -30,11 +30,7 @@ function readTomlIfExists(projectRoot: string, relativePath: string): TomlTable 
 }
 
 function renderMissing(relativePath: string, lang: CliLang): string {
-	if (lang === 'ko') {
-		return `현재 디렉터리에서 ${relativePath} 파일을 찾지 못했습니다. 먼저 mf init을 실행하거나 mustflow 루트로 이동하세요.`;
-	}
-
-	return `No ${relativePath} found in the current directory. Run mf init first or switch to a mustflow root.`;
+	return t(lang, 'help.missingFile', { path: relativePath });
 }
 
 function renderWorkflowHelp(projectRoot: string, lang: CliLang): string {
@@ -53,15 +49,10 @@ function renderCommandsHelp(projectRoot: string, lang: CliLang): string {
 	}
 
 	if (!isRecord(commands.intents)) {
-		return lang === 'ko'
-			? '명령어\n\n.mustflow/config/commands.toml에서 [intents] 테이블을 찾지 못했습니다.'
-			: 'Commands\n\nNo [intents] table was found in .mustflow/config/commands.toml.';
+		return t(lang, 'help.commands.noIntents');
 	}
 
-	const lines =
-		lang === 'ko'
-			? ['명령어', '', '.mustflow/config/commands.toml에 설정된 명령 의도:', '']
-			: ['Commands', '', 'Configured command intents in .mustflow/config/commands.toml:', ''];
+	const lines = [t(lang, 'help.commands.title'), '', t(lang, 'help.commands.configuredIntents'), ''];
 
 	for (const [name, intent] of Object.entries(commands.intents).sort(([left], [right]) => left.localeCompare(right))) {
 		if (!isRecord(intent)) {
@@ -80,13 +71,10 @@ function renderPreferencesHelp(projectRoot: string, lang: CliLang): string {
 	const preferences = readTomlIfExists(projectRoot, '.mustflow/config/preferences.toml');
 
 	if (!preferences) {
-		return `${lang === 'ko' ? '선호값' : 'Preferences'}\n\n${renderMissing('.mustflow/config/preferences.toml', lang)}`;
+		return `${t(lang, 'help.preferences.title')}\n\n${renderMissing('.mustflow/config/preferences.toml', lang)}`;
 	}
 
-	const lines =
-		lang === 'ko'
-			? ['선호값', '', '.mustflow/config/preferences.toml의 저장소별 에이전트 선호값:', '']
-			: ['Preferences', '', 'Repository-level agent preferences in .mustflow/config/preferences.toml:', ''];
+	const lines = [t(lang, 'help.preferences.title'), '', t(lang, 'help.preferences.intro'), ''];
 
 	for (const [sectionName, section] of Object.entries(preferences)) {
 		if (!isRecord(section)) {
@@ -130,41 +118,32 @@ export function getHelpHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf help [topic]',
-			summary:
-				lang === 'ko'
-					? '설치된 mustflow 작업 흐름에서 도움말을 보여줍니다.'
-					: 'Show help from the installed mustflow workflow.',
+			summary: t(lang, 'help.help.summary'),
 			topics: [
 				{
 					label: 'workflow',
-					description: lang === 'ko' ? '.mustflow/docs/agent-workflow.md를 출력합니다' : 'Print .mustflow/docs/agent-workflow.md',
+					description: t(lang, 'help.topic.workflow'),
 				},
-				{ label: 'skills', description: lang === 'ko' ? '.mustflow/skills/INDEX.md를 출력합니다' : 'Print .mustflow/skills/INDEX.md' },
+				{ label: 'skills', description: t(lang, 'help.topic.skills') },
 				{
 					label: 'commands',
-					description:
-						lang === 'ko' ? '.mustflow/config/commands.toml을 요약합니다' : 'Summarize .mustflow/config/commands.toml',
+					description: t(lang, 'help.topic.commands'),
 				},
 				{
 					label: 'preferences',
-					description:
-						lang === 'ko' ? '.mustflow/config/preferences.toml을 요약합니다' : 'Summarize .mustflow/config/preferences.toml',
+					description: t(lang, 'help.topic.preferences'),
 				},
 			],
-			options: [{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' }],
+			options: [{ label: '-h, --help', description: t(lang, 'cli.option.help') }],
 			examples: ['mf help workflow', 'mf help skills', 'mf help preferences'],
 			exitCodes: [
 				{
 					label: '0',
-					description:
-						lang === 'ko'
-							? '도움말 주제를 출력했거나 설치된 주제가 없었습니다'
-							: 'Help topic was printed or no installed topic was available',
+					description: t(lang, 'help.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description:
-						lang === 'ko' ? '알 수 없는 주제나 선택지가 있었습니다' : 'The command received an unknown topic or option',
+					description: t(lang, 'help.help.exit.fail'),
 				},
 			],
 		},
@@ -181,7 +160,7 @@ export function runHelp(args: string[], reporter: Reporter, lang: CliLang = 'en'
 	}
 
 	if (rest.length > 0) {
-		printUsageError(reporter, `Unknown option: ${rest[0]}`, 'mf help --help', getHelpHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: rest[0] }), 'mf help --help', getHelpHelp(lang), lang);
 		return 1;
 	}
 
@@ -207,7 +186,7 @@ export function runHelp(args: string[], reporter: Reporter, lang: CliLang = 'en'
 		return 0;
 	}
 
-	reporter.stderr(renderCliError(`Unknown help topic: ${topic}`, 'mf help --help', lang));
+	reporter.stderr(renderCliError(t(lang, 'help.error.unknownTopic', { topic }), 'mf help --help', lang));
 	reporter.stdout(getHelpHelp(lang));
 	return 1;
 }

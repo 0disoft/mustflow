@@ -1,5 +1,5 @@
 import type { Reporter } from './reporter.js';
-import { HELP_HEADINGS, type CliLang } from './i18n.js';
+import { t, type CliLang } from './i18n.js';
 
 export interface HelpEntry {
 	readonly label: string;
@@ -30,37 +30,32 @@ function pushEntrySection(lines: string[], title: string, entries: readonly Help
 	lines.push(`${title}:`, renderEntries(entries), '');
 }
 
-function pushExamples(lines: string[], examples: readonly string[] | undefined): void {
+function pushExamples(lines: string[], title: string, examples: readonly string[] | undefined): void {
 	if (!examples || examples.length === 0) {
 		return;
 	}
 
-	lines.push('Examples:', ...examples.map((example) => `  ${example}`), '');
+	lines.push(`${title}:`, ...examples.map((example) => `  ${example}`), '');
 }
 
 export function renderHelp(spec: HelpSpec, lang: CliLang = 'en'): string {
-	const headings = HELP_HEADINGS[lang];
-	const lines = [`${headings.usage}: ${spec.usage}`, ''];
+	const lines = [`${t(lang, 'cli.heading.usage')}: ${spec.usage}`, ''];
 
 	if (spec.summary) {
 		lines.push(spec.summary, '');
 	}
 
-	pushEntrySection(lines, headings.commands, spec.commands);
-	pushEntrySection(lines, headings.topics, spec.topics);
-	pushEntrySection(lines, headings.options, spec.options);
-	pushExamples(lines, spec.examples);
-	pushEntrySection(lines, headings.exitCodes, spec.exitCodes);
+	pushEntrySection(lines, t(lang, 'cli.heading.commands'), spec.commands);
+	pushEntrySection(lines, t(lang, 'cli.heading.topics'), spec.topics);
+	pushEntrySection(lines, t(lang, 'cli.heading.options'), spec.options);
+	pushExamples(lines, t(lang, 'cli.heading.examples'), spec.examples);
+	pushEntrySection(lines, t(lang, 'cli.heading.exitCodes'), spec.exitCodes);
 
 	return `${lines.join('\n').trimEnd()}\n`;
 }
 
 export function renderCliError(message: string, helpCommand: string, lang: CliLang = 'en'): string {
-	if (lang === 'ko') {
-		return `오류: ${message}\n사용법은 \`${helpCommand}\` 명령으로 확인하세요.`;
-	}
-
-	return `Error: ${message}\nRun \`${helpCommand}\` for usage.`;
+	return t(lang, 'cli.error.withUsage', { message, helpCommand });
 }
 
 export function printUsageError(

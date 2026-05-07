@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { getAgentContext } from '../lib/agent-context.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { getLocalIndexDatabasePath } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -63,36 +63,27 @@ export function getDoctorHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf doctor [options]',
-			summary:
-				lang === 'ko'
-					? '파일을 수정하지 않고 mustflow 루트 상태와 다음 작업 단서를 점검합니다.'
-					: 'Inspect the mustflow root health and next work hints without modifying files.',
+			summary: t(lang, 'doctor.help.summary'),
 			options: [
 				{
 					label: '--json',
-					description:
-						lang === 'ko' ? '기계가 읽기 쉬운 JSON 진단 결과를 출력합니다' : 'Print machine-readable diagnostic JSON',
+					description: t(lang, 'doctor.help.option.json'),
 				},
 				{
 					label: '--strict',
-					description:
-						lang === 'ko'
-							? '에이전트 안전성에 대한 추가 엄격 검사를 포함합니다'
-							: 'Include additional strict checks for agent safety',
+					description: t(lang, 'doctor.help.option.strict'),
 				},
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf doctor', 'mf doctor --json', 'mf doctor --strict --json'],
 			exitCodes: [
 				{
 					label: '0',
-					description:
-						lang === 'ko' ? 'mustflow 상태를 확인했고 문제가 없습니다' : 'mustflow state was inspected and no issues were found',
+					description: t(lang, 'doctor.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description:
-						lang === 'ko' ? '검증 문제 또는 잘못된 입력이 있었습니다' : 'Validation issues were found or input was invalid',
+					description: t(lang, 'doctor.help.exit.fail'),
 				},
 			],
 		},
@@ -243,79 +234,58 @@ function createDoctorOutput(strict: boolean): DoctorOutput {
 }
 
 function getDiagnosticLabel(id: DoctorDiagnostic['id'], lang: CliLang): string {
-	if (lang === 'ko') {
-		switch (id) {
-			case 'install':
-				return '설치';
-			case 'validation':
-				return '검증';
-			case 'commands':
-				return '명령 계약';
-			case 'read_order':
-				return '읽기 순서';
-			case 'optional_read_order':
-				return '선택 읽기 순서';
-			case 'repo_map':
-				return 'REPO_MAP.md';
-			case 'local_index':
-				return '로컬 색인';
-			case 'latest_run':
-				return '최근 실행';
-		}
-	}
-
 	switch (id) {
 		case 'install':
-			return 'Install';
+			return t(lang, 'doctor.diagnostic.install');
 		case 'validation':
-			return 'Validation';
+			return t(lang, 'doctor.diagnostic.validation');
 		case 'commands':
-			return 'Command contract';
+			return t(lang, 'doctor.diagnostic.commands');
 		case 'read_order':
-			return 'Read order';
+			return t(lang, 'doctor.diagnostic.readOrder');
 		case 'optional_read_order':
-			return 'Optional read order';
+			return t(lang, 'doctor.diagnostic.optionalReadOrder');
 		case 'repo_map':
-			return 'REPO_MAP.md';
+			return t(lang, 'doctor.diagnostic.repoMap');
 		case 'local_index':
-			return 'Local index';
+			return t(lang, 'doctor.diagnostic.localIndex');
 		case 'latest_run':
-			return 'Latest run';
+			return t(lang, 'doctor.diagnostic.latestRun');
 	}
 }
 
 function renderDoctorOutput(output: DoctorOutput, lang: CliLang): string {
 	const lines: string[] = [];
 
-	lines.push(lang === 'ko' ? 'mustflow 진단' : 'mustflow doctor');
-	lines.push(`${lang === 'ko' ? 'mustflow 루트' : 'mustflow root'}: ${output.mustflow_root}`);
-	lines.push(`${lang === 'ko' ? '설치됨' : 'Installed'}: ${output.installed ? 'yes' : 'no'}`);
-	lines.push(`${lang === 'ko' ? '엄격 검사' : 'Strict'}: ${output.strict ? 'yes' : 'no'}`);
-	lines.push(`${lang === 'ko' ? '검사' : 'Check'}: ${output.check.ok ? 'passed' : 'failed'}`);
-	lines.push(`${lang === 'ko' ? '문제' : 'Issues'}: ${output.check.issue_count}`);
-	lines.push(`${lang === 'ko' ? '명령 계약' : 'Command contract'}: ${output.context.command_contract_exists ? 'present' : 'missing'}`);
-	lines.push(`${lang === 'ko' ? '실행 가능한 의도' : 'Runnable intents'}: ${output.context.runnable_intents.length}`);
+	lines.push(t(lang, 'doctor.title'));
+	lines.push(`${t(lang, 'label.mustflowRoot')}: ${output.mustflow_root}`);
+	lines.push(`${t(lang, 'label.installed')}: ${output.installed ? 'yes' : 'no'}`);
+	lines.push(`${t(lang, 'doctor.label.strict')}: ${output.strict ? 'yes' : 'no'}`);
+	lines.push(`${t(lang, 'doctor.label.check')}: ${output.check.ok ? 'passed' : 'failed'}`);
+	lines.push(`${t(lang, 'doctor.label.issues')}: ${output.check.issue_count}`);
+	lines.push(`${t(lang, 'label.commandContract')}: ${output.context.command_contract_exists ? 'present' : 'missing'}`);
+	lines.push(`${t(lang, 'label.runnableIntents')}: ${output.context.runnable_intents.length}`);
 
-	lines.push('', lang === 'ko' ? '상태 점검:' : 'Health:');
+	lines.push('', t(lang, 'doctor.section.health'));
 	for (const diagnostic of output.diagnostics) {
 		const action =
-			diagnostic.action && diagnostic.status !== 'ok' ? ` (${lang === 'ko' ? '명령' : 'run'}: ${diagnostic.action})` : '';
+			diagnostic.action && diagnostic.status !== 'ok' ? ` (${t(lang, 'doctor.actionLabel')}: ${diagnostic.action})` : '';
 		lines.push(`- [${diagnostic.status}] ${getDiagnosticLabel(diagnostic.id, lang)}: ${diagnostic.summary}${action}`);
 	}
 
 	if (output.check.issues.length > 0) {
-		lines.push('', lang === 'ko' ? '문제 목록:' : 'Issue list:');
+		lines.push('', t(lang, 'doctor.section.issueList'));
 		for (const issue of output.check.issues) {
 			lines.push(`- ${issue}`);
 		}
 	}
 
-	lines.push('', lang === 'ko' ? '추천 명령:' : 'Suggested commands:');
+	lines.push('', t(lang, 'doctor.section.suggestedCommands'));
 	for (const step of output.next_steps) {
 		lines.push(`- ${step}`);
 	}
 
-	lines.push('', lang === 'ko' ? '파일을 쓰지 않았습니다.' : 'No files were written.');
+	lines.push('', t(lang, 'update.plan.noFilesWritten'));
 
 	return lines.join('\n');
 }
@@ -330,7 +300,7 @@ export function runDoctor(args: string[], reporter: Reporter, lang: CliLang = 'e
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
-		printUsageError(reporter, `Unknown option: ${unsupported[0]}`, 'mf doctor --help', getDoctorHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf doctor --help', getDoctorHelp(lang), lang);
 		return 1;
 	}
 

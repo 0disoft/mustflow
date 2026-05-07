@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import type { Reporter } from '../lib/reporter.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { inspectManifestLock } from '../lib/manifest-lock.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 
@@ -22,18 +22,15 @@ export function getStatusHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf status [options]',
-			summary:
-				lang === 'ko'
-					? '파일을 수정하지 않고 로컬 mustflow 설치 상태를 보여줍니다.'
-					: 'Show the local mustflow install status without modifying files.',
+			summary: t(lang, 'status.help.summary'),
 			options: [
-				{ label: '--json', description: lang === 'ko' ? '기계가 읽기 쉬운 JSON을 출력합니다' : 'Print machine-readable JSON' },
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
+				{ label: '--json', description: t(lang, 'cli.option.json') },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf status', 'mf status --json'],
 			exitCodes: [
-				{ label: '0', description: lang === 'ko' ? '상태를 확인하고 출력했습니다' : 'Status was inspected and printed' },
-				{ label: '1', description: lang === 'ko' ? '잘못된 입력이 있었습니다' : 'The command received invalid input' },
+				{ label: '0', description: t(lang, 'status.help.exit.ok') },
+				{ label: '1', description: t(lang, 'cli.common.invalidInput') },
 			],
 		},
 		lang,
@@ -69,7 +66,7 @@ export function runStatus(args: string[], reporter: Reporter, lang: CliLang = 'e
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
-		printUsageError(reporter, `Unknown option: ${unsupported[0]}`, 'mf status --help', getStatusHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf status --help', getStatusHelp(lang), lang);
 		return 1;
 	}
 
@@ -81,12 +78,12 @@ export function runStatus(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 0;
 	}
 
-	reporter.stdout(lang === 'ko' ? 'mustflow 상태' : 'mustflow status');
-	reporter.stdout(`${lang === 'ko' ? '설치됨' : 'Installed'}: ${status.installed ? 'yes' : 'no'}`);
-	reporter.stdout(`${lang === 'ko' ? '잠금 파일' : 'Manifest lock'}: ${status.manifestLock}`);
-	reporter.stdout(`${lang === 'ko' ? '추적 파일' : 'Tracked files'}: ${status.trackedFiles}`);
-	reporter.stdout(`${lang === 'ko' ? '변경 파일' : 'Changed files'}: ${status.changedFiles.length}`);
-	reporter.stdout(`${lang === 'ko' ? '누락 파일' : 'Missing files'}: ${status.missingFiles.length}`);
+	reporter.stdout(t(lang, 'status.title'));
+	reporter.stdout(`${t(lang, 'label.installed')}: ${status.installed ? 'yes' : 'no'}`);
+	reporter.stdout(`${t(lang, 'label.manifestLock')}: ${status.manifestLock}`);
+	reporter.stdout(`${t(lang, 'label.trackedFiles')}: ${status.trackedFiles}`);
+	reporter.stdout(`${t(lang, 'label.changedFiles')}: ${status.changedFiles.length}`);
+	reporter.stdout(`${t(lang, 'label.missingFiles')}: ${status.missingFiles.length}`);
 
 	for (const issue of status.issues) {
 		reporter.stdout(`- ${issue.replace(/^Lock hash mismatch: /, '').replace(/^Locked file missing: /, '')}`);

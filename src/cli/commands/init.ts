@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { ensureInside } from '../lib/filesystem.js';
-import type { CliLang } from '../lib/i18n.js';
+import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
@@ -32,82 +32,50 @@ interface InitOptions {
 const MUSTFLOW_BLOCK_START = '<!-- mustflow:start schema=1 -->';
 const MUSTFLOW_BLOCK_END = '<!-- mustflow:end -->';
 const LOCALE_TAG_PATTERN = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/u;
-const MUSTFLOW_ROUTER_BLOCK_KO = `${MUSTFLOW_BLOCK_START}
-이 저장소는 mustflow 에이전트 작업 흐름 구조를 따릅니다.
-
-작업 전 다음 파일을 읽습니다.
-- \`.mustflow/docs/agent-workflow.md\`
-- \`.mustflow/config/mustflow.toml\`
-- \`.mustflow/config/commands.toml\`
-- \`.mustflow/config/preferences.toml\`이 있으면 읽기
-- \`.mustflow/skills/INDEX.md\`
-${MUSTFLOW_BLOCK_END}`;
-const MUSTFLOW_ROUTER_BLOCK_EN = `${MUSTFLOW_BLOCK_START}
-This repository follows the mustflow agent workflow structure.
-
-Read these files before working:
-- \`.mustflow/docs/agent-workflow.md\`
-- \`.mustflow/config/mustflow.toml\`
-- \`.mustflow/config/commands.toml\`
-- \`.mustflow/config/preferences.toml\` if present
-- \`.mustflow/skills/INDEX.md\`
-${MUSTFLOW_BLOCK_END}`;
 
 function getMustflowRouterBlock(locale: string): string {
-	return locale === 'ko' ? MUSTFLOW_ROUTER_BLOCK_KO : MUSTFLOW_ROUTER_BLOCK_EN;
+	return localeMessage(locale, 'init.routerBlock');
 }
 
 export function getInitHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf init [options]',
-			summary:
-				lang === 'ko'
-					? '현재 저장소에 기본 mustflow 에이전트 작업 흐름을 복사합니다.'
-					: 'Copy the default mustflow agent workflow into the current repository.',
+			summary: t(lang, 'init.help.summary'),
 			options: [
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
-				{ label: '--yes', description: lang === 'ko' ? '안전한 기본값을 사용합니다' : 'Use safe defaults for prompts' },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
+				{ label: '--yes', description: t(lang, 'init.help.option.yes') },
 				{
 					label: '--dry-run',
-					description: lang === 'ko' ? '파일을 쓰지 않고 설치 계획만 출력합니다' : 'Print the install plan without writing files',
+					description: t(lang, 'init.help.option.dryRun'),
 				},
 				{
 					label: '--merge',
-					description:
-						lang === 'ko'
-							? '기존 AGENTS.md에 mustflow 관리 블록만 병합합니다'
-							: 'Merge a mustflow router block into an existing AGENTS.md',
+					description: t(lang, 'init.help.option.merge'),
 				},
 				{
 					label: '--force',
-					description:
-						lang === 'ko' ? '충돌 파일을 백업한 뒤 덮어씁니다' : 'Back up conflicting files and overwrite them',
+					description: t(lang, 'init.help.option.force'),
 				},
 				{
 					label: '--profile <name>',
-					description:
-						lang === 'ko'
-							? '프로젝트 성격을 설정합니다: minimal, oss, team, product, library'
-							: 'Set project profile: minimal, oss, team, product, or library',
+					description: t(lang, 'init.help.option.profile'),
 				},
 				{
 					label: '--locale <locale>',
-					description: lang === 'ko' ? '설치할 mustflow 문서 언어를 설정합니다' : 'Set installed mustflow document locale',
+					description: t(lang, 'init.help.option.locale'),
 				},
 				{
 					label: '--agent-lang <locale>',
-					description: lang === 'ko' ? '에이전트 보고 언어를 설정합니다' : 'Set the preferred agent response language',
+					description: t(lang, 'init.help.option.agentLang'),
 				},
 				{
 					label: '--product-source-locale <locale>',
-					description:
-						lang === 'ko' ? '제품 사용자 문구의 기준 언어를 설정합니다' : 'Set source locale for user-facing product text',
+					description: t(lang, 'init.help.option.productSourceLocale'),
 				},
 				{
 					label: '--product-locale <locale>',
-					description:
-						lang === 'ko' ? '제품 사용자 대상 로케일을 추가합니다. 반복할 수 있습니다' : 'Add a user-facing product locale; can be repeated',
+					description: t(lang, 'init.help.option.productLocale'),
 				},
 			],
 			examples: [
@@ -116,11 +84,10 @@ export function getInitHelp(lang: CliLang = 'en'): string {
 				'mf init --profile product --product-source-locale en --product-locale ko-KR',
 			],
 			exitCodes: [
-				{ label: '0', description: lang === 'ko' ? '설치 완료, 변경 없음, 또는 계획 출력' : 'Install completed, no-op completed, or plan printed' },
+				{ label: '0', description: t(lang, 'init.help.exit.ok') },
 				{
 					label: '1',
-					description:
-						lang === 'ko' ? '잘못된 선택지 또는 파일 충돌로 쓰기를 중단했습니다' : 'Invalid options or file conflicts prevented writing',
+					description: t(lang, 'init.help.exit.fail'),
 				},
 			],
 		},
@@ -150,7 +117,7 @@ function readRequiredOptionValue(
 ): string | undefined {
 	if (parsed.value !== undefined) {
 		if (parsed.value.trim().length === 0) {
-			printUsageError(reporter, `Missing value for ${parsed.name}`, 'mf init --help', getInitHelp(lang), lang);
+			printUsageError(reporter, t(lang, 'cli.error.missingValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
 			return undefined;
 		}
 
@@ -160,7 +127,7 @@ function readRequiredOptionValue(
 	const next = args[index + 1];
 
 	if (!next || next.startsWith('-')) {
-		printUsageError(reporter, `Missing value for ${parsed.name}`, 'mf init --help', getInitHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.missingValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
 		return undefined;
 	}
 
@@ -191,7 +158,7 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 		const parsed = splitLongOption(arg);
 
 		if (['--yes', '--dry-run', '--merge', '--force'].includes(parsed.name) && parsed.value !== undefined) {
-			printUsageError(reporter, `Unexpected value for ${parsed.name}`, 'mf init --help', getInitHelp(lang), lang);
+			printUsageError(reporter, t(lang, 'cli.error.unexpectedValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
 			return undefined;
 		}
 
@@ -240,12 +207,12 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 			continue;
 		}
 
-		printUsageError(reporter, `Unknown option: ${arg}`, 'mf init --help', getInitHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: arg }), 'mf init --help', getInitHelp(lang), lang);
 		return undefined;
 	}
 
 	if (merge && force) {
-		printUsageError(reporter, 'Cannot combine --merge and --force', 'mf init --help', getInitHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'init.error.cannotCombineMergeForce'), 'mf init --help', getInitHelp(lang), lang);
 		return undefined;
 	}
 
@@ -305,21 +272,21 @@ function renderPlanVerb(status: PlannedStatus): string {
 	return 'conflict';
 }
 
-function printDryRunPlan(plannedFiles: readonly PlannedFile[], reporter: Reporter): void {
+function printDryRunPlan(plannedFiles: readonly PlannedFile[], reporter: Reporter, lang: CliLang): void {
 	for (const file of plannedFiles) {
-		reporter.stdout(`Would ${renderPlanVerb(file.status)} ${file.relativePath}`);
+		reporter.stdout(t(lang, 'init.plan.would', { action: renderPlanVerb(file.status), path: file.relativePath }));
 	}
 
-	reporter.stdout('No files were written.');
+	reporter.stdout(t(lang, 'init.plan.noFilesWritten'));
 }
 
-function printConflictReport(conflicts: readonly PlannedFile[], reporter: Reporter): void {
+function printConflictReport(conflicts: readonly PlannedFile[], reporter: Reporter, lang: CliLang): void {
 	for (const conflict of conflicts) {
-		reporter.stderr(`Conflict: ${conflict.relativePath} already exists and differs from the mustflow template.`);
+		reporter.stderr(t(lang, 'init.conflict', { path: conflict.relativePath }));
 	}
 
-	reporter.stderr('No files were written.');
-	reporter.stderr('Use --dry-run to preview, --merge to add a mustflow block to AGENTS.md, or --force to back up and overwrite.');
+	reporter.stderr(t(lang, 'init.plan.noFilesWritten'));
+	reporter.stderr(t(lang, 'init.conflictGuidance'));
 }
 
 function mergeAgentsContent(existingContent: string, locale: string): string {
@@ -368,16 +335,17 @@ function validateInitSelection(
 	template: ReturnType<typeof getDefaultTemplate>,
 	options: InitOptions,
 	reporter: Reporter,
+	lang: CliLang,
 ): boolean {
 	if (options.profile && !template.manifest.profiles.includes(options.profile)) {
-		reporter.stderr(`Unsupported profile: ${options.profile}`);
-		reporter.stderr(`Supported profiles: ${template.manifest.profiles.join(', ')}`);
+		reporter.stderr(t(lang, 'init.error.unsupportedProfile', { profile: options.profile }));
+		reporter.stderr(t(lang, 'init.error.supportedProfiles', { profiles: template.manifest.profiles.join(', ') }));
 		return false;
 	}
 
 	if (options.locale && !template.manifest.locales.includes(options.locale)) {
-		reporter.stderr(`Unsupported locale: ${options.locale}`);
-		reporter.stderr(`Supported template locales for this package: ${template.manifest.locales.join(', ')}`);
+		reporter.stderr(t(lang, 'init.error.unsupportedLocale', { locale: options.locale }));
+		reporter.stderr(t(lang, 'init.error.supportedLocales', { locales: template.manifest.locales.join(', ') }));
 		return false;
 	}
 
@@ -386,14 +354,14 @@ function validateInitSelection(
 		['--product-source-locale', options.productSourceLocale],
 	] as const) {
 		if (value && !isLocaleTag(value)) {
-			reporter.stderr(`Invalid locale tag for ${label}: ${value}`);
+			reporter.stderr(t(lang, 'init.error.invalidLocaleTag', { label, value }));
 			return false;
 		}
 	}
 
 	for (const productLocale of options.productLocales) {
 		if (!isLocaleTag(productLocale)) {
-			reporter.stderr(`Invalid locale tag for --product-locale: ${productLocale}`);
+			reporter.stderr(t(lang, 'init.error.invalidLocaleTag', { label: '--product-locale', value: productLocale }));
 			return false;
 		}
 	}
@@ -464,17 +432,26 @@ function applyInitPreferences(
 	return true;
 }
 
-function printInitSelection(template: ReturnType<typeof getDefaultTemplate>, options: InitOptions, reporter: Reporter): void {
-	reporter.stdout(`Template profile: ${options.profile ?? template.manifest.defaultProfile}`);
-	reporter.stdout(`Template locale: ${options.locale ?? template.manifest.defaultLocale}`);
+function printInitSelection(
+	template: ReturnType<typeof getDefaultTemplate>,
+	options: InitOptions,
+	reporter: Reporter,
+	lang: CliLang,
+): void {
+	reporter.stdout(t(lang, 'init.selection.profile', { profile: options.profile ?? template.manifest.defaultProfile }));
+	reporter.stdout(t(lang, 'init.selection.locale', { locale: options.locale ?? template.manifest.defaultLocale }));
 
 	if (options.agentLang) {
-		reporter.stdout(`Agent response language: ${options.agentLang}`);
+		reporter.stdout(t(lang, 'init.selection.agentLang', { locale: options.agentLang }));
 	}
 
 	if (options.productSourceLocale || options.productLocales.length > 0) {
-		reporter.stdout(`Product source locale: ${options.productSourceLocale ?? options.locale ?? template.manifest.defaultLocale}`);
-		reporter.stdout(`Product locales: ${options.productLocales.length > 0 ? options.productLocales.join(', ') : '(source locale only)'}`);
+		reporter.stdout(t(lang, 'init.selection.productSourceLocale', { locale: options.productSourceLocale ?? options.locale ?? template.manifest.defaultLocale }));
+		reporter.stdout(
+			t(lang, 'init.selection.productLocales', {
+				locales: options.productLocales.length > 0 ? options.productLocales.join(', ') : t(lang, 'init.selection.sourceLocaleOnly'),
+			}),
+		);
 	}
 }
 
@@ -577,7 +554,7 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 	const template = getDefaultTemplate();
 	const selectedLocale = options.locale ?? template.manifest.defaultLocale;
 
-	if (!validateInitSelection(template, options, reporter)) {
+	if (!validateInitSelection(template, options, reporter, lang)) {
 		return 1;
 	}
 
@@ -603,20 +580,26 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 	const forceConflicts = plannedFiles.filter((file) => file.status === 'overwrite');
 
 	if (options.dryRun) {
-		printInitSelection(template, options, reporter);
-		printDryRunPlan(plannedFiles, reporter);
+		printInitSelection(template, options, reporter, lang);
+		printDryRunPlan(plannedFiles, reporter, lang);
 		return 0;
 	}
 
 	if (conflicts.length > 0) {
-		printConflictReport(conflicts, reporter);
+		printConflictReport(conflicts, reporter, lang);
 		return 1;
 	}
 
 	const backupRoot = options.force ? backupConflictingFiles(targetRoot, forceConflicts) : undefined;
 
 	if (backupRoot) {
-		reporter.stdout(`Backed up ${forceConflicts.length} conflicting file${forceConflicts.length === 1 ? '' : 's'} to ${backupRoot}`);
+		reporter.stdout(
+			t(lang, 'init.backup.conflicts', {
+				count: forceConflicts.length,
+				fileWord: t(lang, forceConflicts.length === 1 ? 'init.fileWord.singular' : 'init.fileWord.plural'),
+				path: backupRoot,
+			}),
+		);
 	}
 
 	for (const file of plannedFiles) {
@@ -624,20 +607,20 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 			mkdirSync(path.dirname(file.targetPath), { recursive: true });
 			copyFileSync(file.sourcePath, file.targetPath);
 			created += 1;
-			reporter.stdout(`Created ${file.relativePath}`);
+			reporter.stdout(t(lang, 'init.action.created', { path: file.relativePath }));
 			continue;
 		}
 
 		if (file.status === 'unchanged') {
 			unchanged += 1;
-			reporter.stdout(`Unchanged ${file.relativePath}`);
+			reporter.stdout(t(lang, 'init.action.unchanged', { path: file.relativePath }));
 			continue;
 		}
 
 		if (file.status === 'merge') {
 			writeFileSync(file.targetPath, mergeAgentsContent(readFileSync(file.targetPath, 'utf8'), selectedLocale));
 			merged += 1;
-			reporter.stdout(`Merged ${file.relativePath}`);
+			reporter.stdout(t(lang, 'init.action.merged', { path: file.relativePath }));
 			continue;
 		}
 
@@ -645,7 +628,7 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 			mkdirSync(path.dirname(file.targetPath), { recursive: true });
 			copyFileSync(file.sourcePath, file.targetPath);
 			overwritten += 1;
-			reporter.stdout(`Overwrote ${file.relativePath}`);
+			reporter.stdout(t(lang, 'init.action.overwrote', { path: file.relativePath }));
 		}
 	}
 
@@ -653,14 +636,14 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 	const preferencesPath = path.join(targetRoot, '.mustflow', 'config', 'preferences.toml');
 	if (applyInitPreferences(preferencesPath, template, options)) {
 		customizedFiles.add('.mustflow/config/preferences.toml');
-		reporter.stdout('Customized .mustflow/config/preferences.toml');
+		reporter.stdout(t(lang, 'init.action.customizedPreferences'));
 	}
 
 	writeManifestLock(targetRoot, template, plannedFiles, options, customizedFiles);
-	reporter.stdout(`Wrote ${MANIFEST_LOCK_RELATIVE_PATH}`);
+	reporter.stdout(t(lang, 'init.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
 
 	reporter.stdout(
-		`mustflow init complete: ${created} created, ${merged} merged, ${overwritten} overwritten, ${unchanged} unchanged.`,
+		t(lang, 'init.complete', { created, merged, overwritten, unchanged }),
 	);
 	return 0;
 }

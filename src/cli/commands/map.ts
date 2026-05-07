@@ -1,6 +1,6 @@
 import type { Reporter } from '../lib/reporter.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import { generateRepoMap, writeRepoMap } from '../lib/repo-map.js';
 
@@ -8,36 +8,28 @@ export function getMapHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf map [options]',
-			summary:
-				lang === 'ko'
-					? '저장소 앵커 파일을 기준으로 에이전트 탐색 지도를 생성합니다.'
-					: 'Generate an agent navigation map from repository anchor files.',
+			summary: t(lang, 'map.help.summary'),
 			options: [
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
-				{ label: '--stdout', description: lang === 'ko' ? '생성한 지도를 출력합니다' : 'Print the generated map' },
-				{ label: '--write', description: lang === 'ko' ? 'REPO_MAP.md를 씁니다' : 'Write REPO_MAP.md' },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
+				{ label: '--stdout', description: t(lang, 'map.help.option.stdout') },
+				{ label: '--write', description: t(lang, 'map.help.option.write') },
 				{
 					label: '--depth <level>',
-					description:
-						lang === 'ko' ? '우선순위가 낮은 앵커 디렉터리 깊이를 제한합니다' : 'Limit non-priority anchor directory depth',
+					description: t(lang, 'map.help.option.depth'),
 				},
 				{
 					label: '--include-nested',
-					description:
-						lang === 'ko'
-							? '설정된 작업대 루트의 하위 저장소를 포함합니다'
-							: 'Include nested repositories from configured workspace roots',
+					description: t(lang, 'map.help.option.includeNested'),
 				},
 				{
 					label: '--root-only',
-					description:
-						lang === 'ko' ? '설정이 있어도 하위 저장소를 무시합니다' : 'Ignore nested repositories even when configured',
+					description: t(lang, 'map.help.option.rootOnly'),
 				},
 			],
 			examples: ['mf map --stdout', 'mf map --write', 'mf map --write --include-nested'],
 			exitCodes: [
-				{ label: '0', description: lang === 'ko' ? '지도를 생성하고 선택적으로 썼습니다' : 'Map was generated and optionally written' },
-				{ label: '1', description: lang === 'ko' ? '잘못된 입력이 있었습니다' : 'The command received invalid input' },
+				{ label: '0', description: t(lang, 'map.help.exit.ok') },
+				{ label: '1', description: t(lang, 'cli.common.invalidInput') },
 			],
 		},
 		lang,
@@ -70,7 +62,7 @@ export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 		if (arg === '--include-nested') {
 			if (includeNested === false) {
-				printUsageError(reporter, 'Cannot combine --include-nested and --root-only', 'mf map --help', getMapHelp(lang), lang);
+				printUsageError(reporter, t(lang, 'map.error.nestedConflict'), 'mf map --help', getMapHelp(lang), lang);
 				return 1;
 			}
 
@@ -80,7 +72,7 @@ export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 		if (arg === '--root-only') {
 			if (includeNested === true) {
-				printUsageError(reporter, 'Cannot combine --include-nested and --root-only', 'mf map --help', getMapHelp(lang), lang);
+				printUsageError(reporter, t(lang, 'map.error.nestedConflict'), 'mf map --help', getMapHelp(lang), lang);
 				return 1;
 			}
 
@@ -93,7 +85,7 @@ export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en')
 			const parsedDepth = Number.parseInt(rawDepth ?? '', 10);
 
 			if (!Number.isInteger(parsedDepth) || parsedDepth < 1) {
-				printUsageError(reporter, 'Invalid value for --depth', 'mf map --help', getMapHelp(lang), lang);
+				printUsageError(reporter, t(lang, 'map.error.invalidDepth'), 'mf map --help', getMapHelp(lang), lang);
 				return 1;
 			}
 
@@ -102,7 +94,7 @@ export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en')
 			continue;
 		}
 
-		printUsageError(reporter, `Unknown option: ${arg}`, 'mf map --help', getMapHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: arg }), 'mf map --help', getMapHelp(lang), lang);
 		return 1;
 	}
 
@@ -115,7 +107,7 @@ export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 	if (shouldWrite) {
 		writeRepoMap(projectRoot, content);
-		reporter.stdout(lang === 'ko' ? 'REPO_MAP.md를 썼습니다' : 'Wrote REPO_MAP.md');
+		reporter.stdout(t(lang, 'map.wrote'));
 	}
 
 	if (shouldPrint) {

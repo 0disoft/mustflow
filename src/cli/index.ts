@@ -18,7 +18,7 @@ import { runStatus } from './commands/status.js';
 import { runUpdate } from './commands/update.js';
 import { COMMAND_DEFINITIONS } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
-import { DEFAULT_CLI_LANG, isCliLang, text, type CliLang } from './lib/i18n.js';
+import { DEFAULT_CLI_LANG, SUPPORTED_CLI_LANGS, isCliLang, t, type CliLang } from './lib/i18n.js';
 import { consoleReporter, type Reporter } from './lib/reporter.js';
 
 interface ParsedGlobalOptions {
@@ -33,18 +33,15 @@ function getTopLevelHelp(lang: CliLang): string {
 			usage: 'mf [--lang <lang>] <command> [options]',
 			commands: COMMAND_DEFINITIONS.map((command) => ({
 				label: command.usage,
-				description: text(command.summary, lang),
+				description: t(lang, command.summaryKey),
 			})),
 			options: [
 				{
 					label: '--lang <lang>',
-					description:
-						lang === 'ko'
-							? 'CLI 출력 언어를 선택합니다. 지원값: en, ko'
-							: 'Select CLI output language. Supported values: en, ko',
+					description: t(lang, 'top.help.option.lang', { languages: SUPPORTED_CLI_LANGS.join(', ') }),
 				},
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
-				{ label: '-v, --version', description: lang === 'ko' ? '패키지 버전을 보여줍니다' : 'Show package version' },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
+				{ label: '-v, --version', description: t(lang, 'top.help.option.version') },
 			],
 			examples: [
 				'mf --lang ko help',
@@ -58,17 +55,11 @@ function getTopLevelHelp(lang: CliLang): string {
 			exitCodes: [
 				{
 					label: '0',
-					description:
-						lang === 'ko'
-							? '명령이 완료되었거나 요청한 정보를 출력했습니다'
-							: 'Command completed or printed requested information',
+					description: t(lang, 'top.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description:
-						lang === 'ko'
-							? '명령이 실패했거나 검증 문제 또는 잘못된 입력이 있었습니다'
-							: 'Command failed, found validation issues, or received invalid input',
+					description: t(lang, 'top.help.exit.fail'),
 				},
 			],
 		},
@@ -103,11 +94,11 @@ function parseGlobalOptions(argv: string[]): ParsedGlobalOptions {
 			const value = argv[index + 1];
 
 			if (!value || value.startsWith('-')) {
-				return { lang, args, error: 'Missing value for --lang' };
+				return { lang, args, error: t(lang, 'cli.error.missingLangValue') };
 			}
 
 			if (!isCliLang(value)) {
-				return { lang, args, error: `Unsupported CLI language: ${value}` };
+				return { lang, args, error: t(lang, 'cli.error.unsupportedLanguage', { language: value }) };
 			}
 
 			lang = value;
@@ -119,7 +110,7 @@ function parseGlobalOptions(argv: string[]): ParsedGlobalOptions {
 			const value = arg.slice('--lang='.length);
 
 			if (!isCliLang(value)) {
-				return { lang, args, error: `Unsupported CLI language: ${value}` };
+				return { lang, args, error: t(lang, 'cli.error.unsupportedLanguage', { language: value }) };
 			}
 
 			lang = value;
@@ -200,7 +191,7 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 		return runHelp(args, reporter, parsed.lang);
 	}
 
-	reporter.stderr(renderCliError(`Unknown command: ${command}`, 'mf --help', parsed.lang));
+	reporter.stderr(renderCliError(t(parsed.lang, 'cli.error.unknownCommand', { command }), 'mf --help', parsed.lang));
 	reporter.stdout(getTopLevelHelp(parsed.lang));
 	return 1;
 }

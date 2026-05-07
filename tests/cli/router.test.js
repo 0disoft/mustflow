@@ -84,7 +84,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 	const result = runCli(['--lang', 'ko', 'unknown']);
 
 	assert.equal(result.status, 1);
-	assert.match(result.stderr, /오류: Unknown command: unknown/);
+	assert.match(result.stderr, /오류: 알 수 없는 명령: unknown/);
 	assert.match(result.stderr, /사용법은 `mf --help` 명령으로 확인하세요\./);
 	assert.match(result.stdout, /사용법:/);
 });

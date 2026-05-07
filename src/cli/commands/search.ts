@@ -1,5 +1,5 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang, type MessageKey, type MessageParams } from '../lib/i18n.js';
 import { searchLocalIndex, type LocalSearchResult } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -8,35 +8,31 @@ interface ParsedSearchOptions {
 	readonly query: string;
 	readonly limit: number;
 	readonly json: boolean;
-	readonly error?: string;
+	readonly error?: { readonly key: MessageKey; readonly params?: MessageParams };
 }
 
 export function getSearchHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf search <query> [options]',
-			summary:
-				lang === 'ko'
-					? '로컬 SQLite 색인에서 mustflow 문서 흐름을 검색합니다.'
-					: 'Search the local SQLite index for the mustflow document flow.',
+			summary: t(lang, 'search.help.summary'),
 			options: [
 				{
 					label: '--limit <number>',
-					description:
-						lang === 'ko' ? '출력할 검색 결과 수를 설정합니다. 기본값: 10, 최대: 50' : 'Set the number of results to print. Default: 10, max: 50',
+					description: t(lang, 'search.help.option.limit'),
 				},
-				{ label: '--json', description: lang === 'ko' ? '기계가 읽기 쉬운 JSON을 출력합니다' : 'Print machine-readable JSON' },
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
+				{ label: '--json', description: t(lang, 'cli.option.json') },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf index', 'mf search mustflow_check', 'mf search "code review" --json', 'mf search test --limit 5'],
 			exitCodes: [
 				{
 					label: '0',
-					description: lang === 'ko' ? '검색을 완료했습니다' : 'Search completed',
+					description: t(lang, 'search.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description: lang === 'ko' ? '잘못된 입력이 있거나 로컬 색인이 없습니다' : 'Invalid input or missing local index',
+					description: t(lang, 'search.help.exit.fail'),
 				},
 			],
 		},
@@ -65,13 +61,13 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 			const rawLimit = args[index + 1];
 
 			if (!rawLimit || rawLimit.startsWith('-')) {
-				return { query: '', limit, json, error: 'Missing value for --limit' };
+				return { query: '', limit, json, error: { key: 'search.error.missingLimit' } };
 			}
 
 			const parsedLimit = Number.parseInt(rawLimit, 10);
 
 			if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-				return { query: '', limit, json, error: '--limit must be an integer between 1 and 50' };
+				return { query: '', limit, json, error: { key: 'search.error.invalidLimit' } };
 			}
 
 			limit = parsedLimit;
@@ -84,7 +80,7 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 			const parsedLimit = Number.parseInt(rawLimit, 10);
 
 			if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-				return { query: '', limit, json, error: '--limit must be an integer between 1 and 50' };
+				return { query: '', limit, json, error: { key: 'search.error.invalidLimit' } };
 			}
 
 			limit = parsedLimit;
@@ -92,7 +88,7 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 		}
 
 		if (arg.startsWith('-')) {
-			return { query: '', limit, json, error: `Unknown option: ${arg}` };
+			return { query: '', limit, json, error: { key: 'cli.error.unknownOption', params: { option: arg } } };
 		}
 
 		queryParts.push(arg);
@@ -101,7 +97,7 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 	const query = queryParts.join(' ').trim();
 
 	if (query.length === 0) {
-		return { query, limit, json, error: 'Search query is required' };
+		return { query, limit, json, error: { key: 'search.error.missingQuery' } };
 	}
 
 	return { query, limit, json };
@@ -109,9 +105,9 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 
 function renderSearchSummary(result: LocalSearchResult, lang: CliLang): string {
 	const lines = [
-		lang === 'ko' ? 'mustflow 검색' : 'mustflow search',
-		`${lang === 'ko' ? '검색어' : 'Query'}: ${result.query}`,
-		`${lang === 'ko' ? '결과' : 'Results'}: ${result.result_count}`,
+		t(lang, 'search.title'),
+		`${t(lang, 'label.query')}: ${result.query}`,
+		`${t(lang, 'label.results')}: ${result.result_count}`,
 	];
 
 	for (const item of result.results) {
@@ -122,7 +118,7 @@ function renderSearchSummary(result: LocalSearchResult, lang: CliLang): string {
 	}
 
 	if (result.result_count === 0) {
-		lines.push(lang === 'ko' ? '일치하는 항목이 없습니다.' : 'No matching entries.');
+		lines.push(t(lang, 'search.noMatches'));
 	}
 
 	return lines.join('\n');
@@ -137,7 +133,7 @@ export async function runSearch(args: string[], reporter: Reporter, lang: CliLan
 	const options = parseSearchOptions(args);
 
 	if (options.error) {
-		printUsageError(reporter, options.error, 'mf search --help', getSearchHelp(lang), lang);
+		printUsageError(reporter, t(lang, options.error.key, options.error.params), 'mf search --help', getSearchHelp(lang), lang);
 		return 1;
 	}
 
@@ -153,7 +149,7 @@ export async function runSearch(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		reporter.stderr(lang === 'ko' ? `오류: ${message}` : `Error: ${message}`);
+		reporter.stderr(t(lang, 'cli.error.prefix', { message }));
 		return 1;
 	}
 }

@@ -1,5 +1,5 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { checkMustflowProject } from '../lib/validation.js';
@@ -8,32 +8,24 @@ export function getCheckHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf check [options]',
-			summary:
-				lang === 'ko'
-					? '현재 저장소의 mustflow 파일을 검사합니다.'
-					: 'Validate the mustflow files in the current repository.',
+			summary: t(lang, 'check.help.summary'),
 			options: [
-				{ label: '--json', description: lang === 'ko' ? '기계가 읽기 쉬운 JSON을 출력합니다' : 'Print machine-readable JSON' },
+				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{
 					label: '--strict',
-					description:
-						lang === 'ko'
-							? '에이전트 안전성에 대한 추가 엄격 검사를 실행합니다'
-							: 'Run additional strict checks for agent safety',
+					description: t(lang, 'check.help.option.strict'),
 				},
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf check', 'mf check --strict', 'mf check --strict --json'],
 			exitCodes: [
 				{
 					label: '0',
-					description:
-						lang === 'ko' ? '필수 mustflow 파일과 설정이 모두 유효합니다' : 'All required mustflow files and settings are valid',
+					description: t(lang, 'check.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description:
-						lang === 'ko' ? '검증 실패 또는 잘못된 입력이 있었습니다' : 'Validation failed or the command received invalid input',
+					description: t(lang, 'check.help.exit.fail'),
 				},
 			],
 		},
@@ -51,7 +43,7 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
-		printUsageError(reporter, `Unknown option: ${unsupported[0]}`, 'mf check --help', getCheckHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf check --help', getCheckHelp(lang), lang);
 		return 1;
 	}
 
@@ -77,11 +69,11 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 
 	if (ok) {
 		if (strict) {
-			reporter.stdout(lang === 'ko' ? 'mustflow 엄격 검사 통과' : 'mustflow strict check passed');
+			reporter.stdout(t(lang, 'check.result.strictPassed'));
 			return 0;
 		}
 
-		reporter.stdout(lang === 'ko' ? 'mustflow 검사 통과' : 'mustflow check passed');
+		reporter.stdout(t(lang, 'check.result.passed'));
 		return 0;
 	}
 

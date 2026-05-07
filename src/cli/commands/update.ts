@@ -4,7 +4,7 @@ import path from 'node:path';
 import { ensureInside } from '../lib/filesystem.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File, type LockedFile } from '../lib/manifest-lock.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
@@ -74,37 +74,25 @@ export function getUpdateHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf update (--dry-run|--apply) [options]',
-			summary:
-				lang === 'ko'
-					? '설치된 mustflow 작업 흐름의 갱신을 미리 보거나 적용합니다.'
-					: 'Preview or apply updates for the installed mustflow workflow.',
+			summary: t(lang, 'update.help.summary'),
 			options: [
-				{ label: '--dry-run', description: lang === 'ko' ? '파일을 쓰지 않고 갱신 계획만 출력합니다' : 'Print the update plan without writing files' },
+				{ label: '--dry-run', description: t(lang, 'update.help.option.dryRun') },
 				{
 					label: '--apply',
-					description:
-						lang === 'ko'
-							? '차단된 로컬 변경이 없을 때 안전한 템플릿 갱신을 적용합니다'
-							: 'Apply safe template updates when no local changes are blocked',
+					description: t(lang, 'update.help.option.apply'),
 				},
-				{ label: '--json', description: lang === 'ko' ? '기계가 읽기 쉬운 JSON을 출력합니다' : 'Print machine-readable JSON' },
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
+				{ label: '--json', description: t(lang, 'cli.option.json') },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf update --dry-run', 'mf update --dry-run --json', 'mf update --apply'],
 			exitCodes: [
 				{
 					label: '0',
-					description:
-						lang === 'ko'
-							? '계획을 출력했거나 안전한 갱신을 적용했습니다'
-							: 'Plan was printed or safe updates were applied',
+					description: t(lang, 'update.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description:
-						lang === 'ko'
-							? '차단된 작업, 누락된 상태, 또는 잘못된 입력이 있습니다'
-							: 'Plan found blocked work, missing state, or invalid input',
+					description: t(lang, 'update.help.exit.fail'),
 				},
 			],
 		},
@@ -253,7 +241,7 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 	copyFileSync(source.sourcePath, targetPath);
 }
 
-function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter): void {
+function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
 	const updateItems = items.filter((item) => item.action === 'update');
 
 	if (updateItems.length === 0) {
@@ -273,7 +261,13 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 		copyFileSync(sourcePath, backupPath);
 	}
 
-	reporter.stdout(`Backed up ${updateItems.length} file${updateItems.length === 1 ? '' : 's'} to ${backupRoot}`);
+	reporter.stdout(
+		t(lang, 'update.backup.files', {
+			count: updateItems.length,
+			fileWord: t(lang, updateItems.length === 1 ? 'init.fileWord.singular' : 'init.fileWord.plural'),
+			path: backupRoot,
+		}),
+	);
 }
 
 function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly UpdatePlanItem[]): void {
@@ -319,12 +313,12 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	writeFileSync(lockPath, stringifyToml(parsed));
 }
 
-function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter): ApplyResult {
+function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): ApplyResult {
 	let created = 0;
 	let updated = 0;
 	const appliedItems: UpdatePlanItem[] = [];
 
-	backupUpdateFiles(projectRoot, items, reporter);
+	backupUpdateFiles(projectRoot, items, reporter, lang);
 
 	for (const item of items) {
 		if (item.action !== 'create' && item.action !== 'update') {
@@ -336,17 +330,17 @@ function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], repo
 
 		if (item.action === 'create') {
 			created += 1;
-			reporter.stdout(`Created ${item.relativePath}`);
+			reporter.stdout(t(lang, 'update.action.created', { path: item.relativePath }));
 		} else {
 			updated += 1;
-			reporter.stdout(`Updated ${item.relativePath}`);
+			reporter.stdout(t(lang, 'update.action.updated', { path: item.relativePath }));
 		}
 	}
 
 	updateManifestLockAfterApply(projectRoot, appliedItems);
 
 	if (appliedItems.length > 0) {
-		reporter.stdout(`Wrote ${MANIFEST_LOCK_RELATIVE_PATH}`);
+		reporter.stdout(t(lang, 'update.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
 	}
 
 	return {
@@ -392,11 +386,11 @@ function getRequestedMode(wantsDryRun: boolean, wantsApply: boolean): UpdateMode
 }
 
 function printPolicy(reporter: Reporter, lang: CliLang): void {
-	reporter.stdout(lang === 'ko' ? '정책:' : 'Policy:');
-	reporter.stdout(`- ${lang === 'ko' ? '기준선' : 'Baseline'}: ${UPDATE_POLICY.baseline}`);
-	reporter.stdout(`- ${lang === 'ko' ? '적용 가능 상태' : 'Apply actions'}: ${UPDATE_POLICY.allowed_apply_actions.join(', ')}`);
-	reporter.stdout(`- ${lang === 'ko' ? '차단 상태' : 'Blocking actions'}: ${UPDATE_POLICY.blocking_actions.join(', ')}`);
-	reporter.stdout(`- ${lang === 'ko' ? '백업 위치' : 'Backup path'}: ${UPDATE_POLICY.backup_path_pattern}`);
+	reporter.stdout(t(lang, 'update.policy.title'));
+	reporter.stdout(`- ${t(lang, 'update.policy.baseline')}: ${UPDATE_POLICY.baseline}`);
+	reporter.stdout(`- ${t(lang, 'update.policy.applyActions')}: ${UPDATE_POLICY.allowed_apply_actions.join(', ')}`);
+	reporter.stdout(`- ${t(lang, 'update.policy.blockingActions')}: ${UPDATE_POLICY.blocking_actions.join(', ')}`);
+	reporter.stdout(`- ${t(lang, 'update.policy.backupPath')}: ${UPDATE_POLICY.backup_path_pattern}`);
 }
 
 function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang): void {
@@ -405,15 +399,15 @@ function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang):
 	const updates = output.items.filter((item) => item.action === 'update');
 	const creates = output.items.filter((item) => item.action === 'create');
 
-	reporter.stdout(lang === 'ko' ? 'mustflow 갱신 계획' : 'mustflow update plan');
+	reporter.stdout(t(lang, 'update.plan.title'));
 	printPolicy(reporter, lang);
-	printItems(lang === 'ko' ? '차단된 로컬 변경' : 'Blocked local changes', blocked, reporter);
-	printItems(lang === 'ko' ? '수동 검토' : 'Manual review', manualReview, reporter);
-	printItems(lang === 'ko' ? '갱신 예정' : 'Would update', updates, reporter);
-	printItems(lang === 'ko' ? '생성 예정' : 'Would create', creates, reporter);
+	printItems(t(lang, 'update.plan.blocked'), blocked, reporter);
+	printItems(t(lang, 'update.plan.manualReview'), manualReview, reporter);
+	printItems(t(lang, 'update.plan.wouldUpdate'), updates, reporter);
+	printItems(t(lang, 'update.plan.wouldCreate'), creates, reporter);
 
 	if (blocked.length === 0 && manualReview.length === 0 && updates.length === 0 && creates.length === 0) {
-		reporter.stdout(lang === 'ko' ? '필요한 템플릿 갱신이 없습니다.' : 'No template updates needed.');
+		reporter.stdout(t(lang, 'update.plan.noUpdates'));
 	}
 }
 
@@ -431,12 +425,12 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 	const requestedMode = getRequestedMode(wantsDryRun, wantsApply);
 
 	if (unsupported.length > 0) {
-		printUsageError(reporter, `Unknown option: ${unsupported[0]}`, 'mf update --help', getUpdateHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf update --help', getUpdateHelp(lang), lang);
 		return 1;
 	}
 
 	if (wantsDryRun && wantsApply) {
-		const error = 'Cannot combine --dry-run and --apply.';
+		const error = t(lang, 'update.error.cannotCombineModes');
 
 		if (wantsJson) {
 			reporter.stdout(JSON.stringify(withMode(planOutput([], error, false), requestedMode), null, 2));
@@ -448,7 +442,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 	}
 
 	if (!wantsDryRun && !wantsApply) {
-		const error = 'Specify --dry-run or --apply.';
+		const error = t(lang, 'update.error.missingMode');
 
 		if (wantsJson) {
 			reporter.stdout(JSON.stringify(withMode(planOutput([], error, false), requestedMode), null, 2));
@@ -481,7 +475,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		printPlan(dryRunOutput, reporter, lang);
-		reporter.stdout(lang === 'ko' ? '파일을 쓰지 않았습니다.' : 'No files were written.');
+		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
 		return dryRunOutput.ok ? 0 : 1;
 	}
 
@@ -492,7 +486,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		printPlan(dryRunOutput, reporter, lang);
-		reporter.stdout(lang === 'ko' ? '파일을 쓰지 않았습니다.' : 'No files were written.');
+		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
 		return 1;
 	}
 
@@ -501,21 +495,21 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		const applyResult = applyUpdate(projectRoot, applicableItems, {
 			stdout: () => undefined,
 			stderr: (message) => reporter.stderr(message),
-		});
+		}, lang);
 		reporter.stdout(JSON.stringify(withMode(planOutput(plan.items, undefined, applyResult.wroteFiles), 'apply'), null, 2));
 		return 0;
 	}
 
-	const applyResult = applyUpdate(projectRoot, plan.items, reporter);
+	const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang);
 
 	if (!applyResult.wroteFiles) {
-		reporter.stdout(lang === 'ko' ? '필요한 템플릿 갱신이 없습니다.' : 'No template updates needed.');
-		reporter.stdout(lang === 'ko' ? '파일을 쓰지 않았습니다.' : 'No files were written.');
+		reporter.stdout(t(lang, 'update.plan.noUpdates'));
+		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
 		return 0;
 	}
 
 	reporter.stdout(
-		`mustflow update complete: ${applyResult.updated} updated, ${applyResult.created} created.`,
+		t(lang, 'update.complete', { updated: applyResult.updated, created: applyResult.created }),
 	);
 	return 0;
 }

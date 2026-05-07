@@ -11,7 +11,7 @@ import {
 	readStringArray,
 	type TomlTable,
 } from '../lib/command-contract.js';
-import type { CliLang } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../lib/run-receipt.js';
@@ -143,29 +143,20 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf run <intent> [options]',
-			summary:
-				lang === 'ko'
-					? '.mustflow/config/commands.toml에 설정된 끝나는 명령 의도를 실행합니다.'
-					: 'Run a configured finite command intent from .mustflow/config/commands.toml.',
+			summary: t(lang, 'run.help.summary'),
 			options: [
-				{ label: '--json', description: lang === 'ko' ? '실행 결과 영수증을 JSON으로 출력합니다' : 'Print the run receipt as JSON' },
-				{ label: '-h, --help', description: lang === 'ko' ? '이 도움말을 보여줍니다' : 'Show this help message' },
+				{ label: '--json', description: t(lang, 'run.help.option.json') },
+				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf run test', 'mf run lint --json', 'mf run mustflow_check'],
 			exitCodes: [
 				{
 					label: '0',
-					description:
-						lang === 'ko'
-							? '명령 의도가 허용된 종료 코드로 끝났습니다'
-							: 'The command intent completed with an allowed exit code',
+					description: t(lang, 'run.help.exit.ok'),
 				},
 				{
 					label: '1',
-					description:
-						lang === 'ko'
-							? '의도가 잘못되었거나, 거부되었거나, 제한 시간을 넘겼거나, 실패했습니다'
-							: 'The intent was invalid, refused, timed out, or failed',
+					description: t(lang, 'run.help.exit.fail'),
 				},
 			],
 		},
@@ -183,7 +174,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	const unsupported = args.filter((arg) => arg.startsWith('-') && !supportedOptions.has(arg));
 
 	if (unsupported.length > 0) {
-		printUsageError(reporter, `Unknown option: ${unsupported[0]}`, 'mf run --help', getRunHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
 
@@ -192,12 +183,12 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	const [intentName, ...extra] = positional;
 
 	if (!intentName) {
-		printUsageError(reporter, 'Missing command intent name', 'mf run --help', getRunHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'run.error.missingIntent'), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
 
 	if (extra.length > 0) {
-		printUsageError(reporter, `Unexpected argument: ${extra[0]}`, 'mf run --help', getRunHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: extra[0] }), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
 
@@ -206,14 +197,14 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	const intent = contract.intents[intentName];
 
 	if (!isRecord(intent)) {
-		reporter.stderr(renderCliError(`Unknown command intent: ${intentName}`, 'mf help commands', lang));
+		reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: intentName }), 'mf help commands', lang));
 		return 1;
 	}
 
 	const intentStatus = readString(intent, 'status') ?? 'unknown';
 	if (intentStatus !== 'configured') {
 		reporter.stderr(
-			renderCliError(`Intent "${intentName}" is ${intentStatus}; only configured intents can be run`, 'mf help commands', lang),
+			renderCliError(t(lang, 'run.error.statusNotConfigured', { intent: intentName, status: intentStatus }), 'mf help commands', lang),
 		);
 		return 1;
 	}
@@ -222,7 +213,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	if (lifecycle !== 'oneshot') {
 		reporter.stderr(
 			renderCliError(
-				`Refused: intent "${intentName}" has lifecycle = "${lifecycle ?? 'unknown'}"; mf run only executes oneshot intents`,
+				t(lang, 'run.error.lifecycleNotOneshot', { intent: intentName, lifecycle: lifecycle ?? 'unknown' }),
 				'mf help commands',
 				lang,
 			),
@@ -233,19 +224,19 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	const runPolicy = readString(intent, 'run_policy');
 	if (runPolicy !== 'agent_allowed') {
 		reporter.stderr(
-			renderCliError(`Intent "${intentName}" requires run_policy = "agent_allowed" for mf run`, 'mf help commands', lang),
+			renderCliError(t(lang, 'run.error.runPolicy', { intent: intentName }), 'mf help commands', lang),
 		);
 		return 1;
 	}
 
 	if (intent.stdin !== 'closed') {
-		reporter.stderr(renderCliError(`Intent "${intentName}" must set stdin = "closed"`, 'mf help commands', lang));
+		reporter.stderr(renderCliError(t(lang, 'run.error.stdin', { intent: intentName }), 'mf help commands', lang));
 		return 1;
 	}
 
 	const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds');
 	if (!timeoutSeconds) {
-		reporter.stderr(renderCliError(`Intent "${intentName}" must define timeout_seconds`, 'mf help commands', lang));
+		reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: intentName }), 'mf help commands', lang));
 		return 1;
 	}
 
@@ -260,7 +251,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 	if (!commandArgv && !shellCommand) {
 		reporter.stderr(
-			renderCliError(`Intent "${intentName}" must define argv or mode = "shell" with cmd`, 'mf help commands', lang),
+			renderCliError(t(lang, 'run.error.commandSource', { intent: intentName }), 'mf help commands', lang),
 		);
 		return 1;
 	}
@@ -339,11 +330,11 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	if (result.error) {
 		const errorWithCode = result.error as NodeJS.ErrnoException;
 		if (errorWithCode.code === 'ETIMEDOUT') {
-			reporter.stderr(`Intent "${intentName}" timed out after ${timeoutSeconds} seconds`);
+			reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: timeoutSeconds }));
 			return 1;
 		}
 
-		reporter.stderr(`Intent "${intentName}" failed to start: ${result.error.message}`);
+		reporter.stderr(t(lang, 'run.error.startFailed', { intent: intentName, message: result.error.message }));
 		return 1;
 	}
 
