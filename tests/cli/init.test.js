@@ -63,7 +63,9 @@ test('copies the default agent workflow into an empty project', () => {
 		const gitignore = readText(path.join(projectPath, '.gitignore'));
 		assert.match(gitignore, /# mustflow:start schema=1/);
 		assert.match(gitignore, /\.mustflow\/cache\//);
-		assert.match(gitignore, /repos\//);
+		assert.match(gitignore, /\.mustflow\/state\//);
+		assert.match(gitignore, /\.mustflow\/backups\//);
+		assert.doesNotMatch(gitignore, /^repos\//m);
 		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
 		assert.match(preferences, /\[project\]/);
 		assert.match(preferences, /convention_mode = "bootstrap"/);
@@ -96,18 +98,24 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(mustflowConfig, /policy = "behavior_contract"/);
 		assert.match(mustflowConfig, /stale_test_action = "update_remove_or_report"/);
 		assert.match(mustflowConfig, /turn_threshold = 8/);
-		assert.match(mustflowConfig, /tool_call_threshold = 20/);
-		assert.match(mustflowConfig, /output_bytes_threshold = 131072/);
-		assert.match(mustflowConfig, /keep_turns = 20/);
-		assert.match(mustflowConfig, /max_total_bytes = 200000/);
-		assert.match(mustflowConfig, /store_raw = false/);
+		assert.match(mustflowConfig, /tool_call_threshold = 16/);
+		assert.match(mustflowConfig, /output_bytes_threshold = 100000/);
+		assert.match(mustflowConfig, /\[refresh\.levels\.edit\]/);
+		assert.match(mustflowConfig, /\[refresh\.levels\.report\]/);
+		assert.doesNotMatch(mustflowConfig, /\[compaction\.recent\]/);
+		assert.doesNotMatch(mustflowConfig, /\[compaction\.mid\]/);
+		assert.doesNotMatch(mustflowConfig, /\[compaction\.long\]/);
 		assert.doesNotMatch(mustflowConfig, /\[compaction\.raw_retention\]/);
-		assert.match(mustflowConfig, /max_iterations = 8/);
+		assert.match(mustflowConfig, /max_iterations = 6/);
 		assert.match(mustflowConfig, /max_wall_clock_minutes = 60/);
-		assert.match(mustflowConfig, /max_command_runs = 25/);
+		assert.match(mustflowConfig, /max_command_runs = 20/);
 		assert.match(mustflowConfig, /max_total_output_mb = 8/);
 		assert.match(mustflowConfig, /max_failures_per_intent = 2/);
 		assert.match(mustflowConfig, /on_limit = "stop_and_report"/);
+		assert.match(mustflowConfig, /\[retention\.run_receipts\]\nstore = "repo_local_ignored"/);
+		assert.match(mustflowConfig, /\[retention\.knowledge\]\nenabled = false\nstore = "repo_local_ignored"/);
+		assert.match(mustflowConfig, /\[retention\.handoffs\]\nstore = "repo_local_ignored"/);
+		assert.doesNotMatch(mustflowConfig, /store = "project"/);
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
 		assert.match(lock, /schema_version = "1"/);
 		assert.match(lock, /\[template\]/);
@@ -220,7 +228,15 @@ test('applies safe preference overrides from repeated set options', () => {
 			'--yes',
 			'--set',
 			'git.auto_commit=true',
+			'--set',
+			'git.auto_push=false',
 			'--set=git.commit_message.language=ko',
+			'--set',
+			'git.commit_message.max_suggestions=4',
+			'--set',
+			'git.commit_message.include_body=always',
+			'--set',
+			'git.commit_message.split_when_multiple_concerns=false',
 			'--set',
 			'reporting.commit_suggestion.enabled=false',
 			'--set',
@@ -233,7 +249,11 @@ test('applies safe preference overrides from repeated set options', () => {
 		const preferences = readText(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'));
 
 		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_commit = true/);
+		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_push = false/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "ko"/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?max_suggestions = 4/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?include_body = "always"/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?split_when_multiple_concerns = false/);
 		assert.match(preferences, /\[reporting\.commit_suggestion\]\n(?:.*\n)*?enabled = false/);
 		assert.match(preferences, /\[language\.memory\]\n(?:.*\n)*?summary = "docs"/);
 
@@ -246,14 +266,62 @@ test('applies safe preference overrides from repeated set options', () => {
 });
 
 test('rejects unsupported init preference overrides', () => {
+	const invalidOverrides = [
+		['git.auto_push=true', /Invalid value for git\.auto_push: true/],
+		['git.commit_message.max_suggestions=6', /Invalid value for git\.commit_message\.max_suggestions: 6/],
+		['git.commit_message.include_body=sometimes', /Invalid value for git\.commit_message\.include_body: sometimes/],
+	];
+
+	for (const [override, expectedError] of invalidOverrides) {
+		const projectPath = createTempProject();
+
+		try {
+			const result = runInit(projectPath, ['--yes', '--set', override]);
+
+			assert.equal(result.status, 1);
+			assert.match(result.stderr, expectedError);
+			assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+		} finally {
+			removeTempProject(projectPath);
+		}
+	}
+});
+
+test('rejects unsafe init preference override keys', () => {
+	const unsafeOverrides = [
+		['logging.include_sensitive_data=true', /Unsupported init preference setting: logging\.include_sensitive_data/],
+		['git.commit_message.avoid_sensitive_details=false', /Unsupported init preference setting: git\.commit_message\.avoid_sensitive_details/],
+	];
+
+	for (const [override, expectedError] of unsafeOverrides) {
+		const projectPath = createTempProject();
+
+		try {
+			const result = runInit(projectPath, ['--yes', '--set', override]);
+
+			assert.equal(result.status, 1);
+			assert.match(result.stderr, expectedError);
+			assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+		} finally {
+			removeTempProject(projectPath);
+		}
+	}
+});
+
+test('git auto commit preference does not create git commits during init', () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--yes', '--set', 'git.auto_push=true']);
+		const gitInit = spawnSync('git', ['init'], { cwd: projectPath, encoding: 'utf8' });
+		assert.equal(gitInit.status, 0);
 
-		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Unsupported init preference setting: git\.auto_push/);
-		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+		const result = runInit(projectPath, ['--yes', '--set', 'git.auto_commit=true']);
+
+		assert.equal(result.status, 0);
+
+		const log = spawnSync('git', ['log', '--oneline'], { cwd: projectPath, encoding: 'utf8' });
+		assert.notEqual(log.status, 0);
+		assert.match(log.stderr, /does not have any commits yet|your current branch .* does not have any commits yet/i);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -447,7 +515,9 @@ test('merges mustflow ignore rules into an existing .gitignore without overwriti
 		assert.match(mergedGitignore, /^\.env$/m);
 		assert.match(mergedGitignore, /# mustflow:start schema=1/);
 		assert.match(mergedGitignore, /\.mustflow\/cache\//);
-		assert.match(mergedGitignore, /repos\//);
+		assert.match(mergedGitignore, /\.mustflow\/state\//);
+		assert.match(mergedGitignore, /\.mustflow\/backups\//);
+		assert.doesNotMatch(mergedGitignore, /^repos\//m);
 
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
 		assert.doesNotMatch(lock, /\[files\."\.gitignore"\]/);
@@ -483,6 +553,9 @@ test('updates only the mustflow ignore block when .gitignore already has one', (
 		assert.match(mergedGitignore, /^local-only\//m);
 		assert.doesNotMatch(mergedGitignore, /\.mustflow\/old-cache\//);
 		assert.match(mergedGitignore, /\.mustflow\/cache\//);
+		assert.match(mergedGitignore, /\.mustflow\/state\//);
+		assert.match(mergedGitignore, /\.mustflow\/backups\//);
+		assert.doesNotMatch(mergedGitignore, /^repos\//m);
 		assert.equal((mergedGitignore.match(/# mustflow:start schema=1/g) ?? []).length, 1);
 	} finally {
 		removeTempProject(projectPath);

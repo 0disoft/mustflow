@@ -249,8 +249,8 @@ required_at = [
   "before_final_report",
 ]
 turn_threshold = 8
-tool_call_threshold = 20
-output_bytes_threshold = 131072
+tool_call_threshold = 16
+output_bytes_threshold = 100000
 state_store = "cache"
 
 [refresh.levels.light]
@@ -263,6 +263,20 @@ read = [
 read = [
   "AGENTS.md",
   ".mustflow/config/commands.toml",
+]
+
+[refresh.levels.edit]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.report]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
 ]
 
 [refresh.levels.skill]
@@ -288,7 +302,7 @@ read = [
 
 `state_store = "cache"` का अर्थ है कि turn counts और session activity project files में नहीं रहतीं। Host application उन्हें local cache में track कर सकता है, लेकिन mustflow documents stable और commit-safe रहने चाहिए।
 
-`refresh.levels` हर refresh level को उन files से map करता है जिन्हें फिर से पढ़ना चाहिए। default levels `light`, `command`, `skill`, और `full` हैं।
+`refresh.levels` हर refresh level को उन files से map करता है जिन्हें फिर से पढ़ना चाहिए। default levels `light`, `command`, `edit`, `report`, `skill`, और `full` हैं।
 
 `mf check` refresh mode, checkpoint names, thresholds, state store, और refresh file paths validate करता है।
 
@@ -300,33 +314,6 @@ enabled = false
 strategy = "tiered"
 state_store = "cache"
 
-[compaction.recent]
-keep_turns = 20
-max_total_bytes = 200000
-store_raw = false
-
-[compaction.mid]
-trigger_turns = 20
-target_items = 10
-target_max_words_per_item = 40
-include_categories = [
-  "decisions",
-  "constraints",
-  "open_questions",
-  "files_discussed",
-  "commands_discussed",
-  "risks",
-  "next_steps",
-  "rejected_options",
-]
-
-[compaction.long]
-promote_after_mid_items = 50
-target_items = 10
-max_items = 100
-on_limit = "recompact_oldest"
-
-
 [compaction.rules]
 require_source_refs = true
 summaries_are_derived = true
@@ -336,7 +323,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` declare करता है कि long session context को derived recent context, mid-level summaries, और long-term summaries में कैसे अलग कर सकती है। यह default रूप से disabled है, `store_raw = false` उपयोग करता है, और इसका अर्थ यह नहीं कि mustflow full chat transcripts या raw command logs collect करता है।
+Default template `compaction` को disabled रखता है और केवल host safety rules declare करता है। यह recent, mid, long, या raw-retention settings को default रूप से install नहीं करता, और इसका अर्थ यह नहीं कि mustflow full chat transcripts, hidden reasoning, full terminal output, या raw command logs store करता है।
 
 `state_store = "cache"` का अर्थ है कि compaction state local cache या host-managed state में रहनी चाहिए, versioned project documents में नहीं। Shared project knowledge को केवल source-linked decisions, investigations, या handoff summaries के रूप में promote करना चाहिए।
 
@@ -381,9 +368,9 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 8
+max_iterations = 6
 max_wall_clock_minutes = 60
-max_command_runs = 25
+max_command_runs = 20
 max_total_output_mb = 8
 max_failures_per_intent = 2
 on_limit = "stop_and_report"
@@ -431,7 +418,7 @@ max_age_days = 14
 on_limit = "report"
 
 [retention.run_receipts]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_items = 1
 max_total_mb = 1
@@ -440,7 +427,7 @@ keep_stderr_tail_bytes = 65536
 
 [retention.knowledge]
 enabled = false
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_total_mb = 10
 require_source_refs = true
@@ -450,7 +437,7 @@ require_review_status = true
 max_file_kb = 8
 
 [retention.handoffs]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 64
 max_total_mb = 5
 require_source_refs = true
@@ -461,6 +448,8 @@ fail_if_larger = true
 ```
 
 `retention` mustflow को project के भीतर full chat transcripts, full terminal output, या raw JSONL event streams जमा करने से रोकता है।
+
+`repo_local_ignored` का अर्थ है कि generated state repository workspace के अंदर, लेकिन `.mustflow/state/**` या `.mustflow/cache/**` जैसे ignored local paths में रहती है। ये files delete या rebuild की जा सकती हैं और current files, current user instructions, तथा command contracts से कम authority रखती हैं।
 
 `raw_events.store = "none"` का अर्थ है कि default template raw event logs store नहीं करता। यदि cache storage बाद में जोड़ा जाए, तो वह commit हो सकने वाले project documents से अलग रहना चाहिए।
 

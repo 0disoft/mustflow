@@ -110,7 +110,7 @@ const ALLOWED_REFRESH_CHECKPOINTS = new Set([
 	'after_compaction',
 	'before_final_report',
 ]);
-const ALLOWED_RETENTION_STORES = new Set(['none', 'cache', 'project']);
+const ALLOWED_RETENTION_STORES = new Set(['none', 'cache', 'repo_local_ignored']);
 const ALLOWED_RETENTION_ON_LIMIT = new Set(['report', 'compact_then_archive']);
 const ALLOWED_TRANSLATION_POLICIES = new Set([
 	'source_only',

@@ -114,6 +114,8 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 
 `git.auto_stage`, `git.auto_commit`, `git.auto_push`는 기본적으로 모두 `false`입니다.
 
+이 값들은 저장소 선호값이지 권한이 아닙니다. 사용자 직접 지시, `commands.toml`의 명령 계약, `mustflow.toml`의 승인 정책보다 우선하지 않습니다. `git.auto_commit = true`는 푸시 권한을 뜻하지 않으며, `mf init --set`은 `git.auto_push=false`만 설정할 수 있고 `git.auto_push=true`는 켤 수 없습니다.
+
 커밋 메시지 추천은 Git 실행 권한이 아니라 최종 보고의 일부입니다. 파일이 바뀌었고 `reporting.commit_suggestion.enabled = true`라면 에이전트는 권장 커밋 메시지를 제안할 수 있습니다. 실제 커밋을 만들었다고 표현하거나 사용자 요청 없이 커밋하면 안 됩니다.
 
 여러 논리 변경이 섞였으면 하나의 커밋 메시지로 뭉개지 않고 `max_suggestions` 안에서 분할 제안을 할 수 있습니다.

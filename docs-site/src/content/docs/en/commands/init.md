@@ -57,8 +57,8 @@ templates/default/
 
 `common/` contains language-neutral TOML configuration and the managed `.gitignore`
 fragment. `locales/<locale>/` contains Markdown documents and skill files
-selected by `--locale`. The `zh`, `es`, `fr`, and `hi` folders currently contain
-English placeholders until translations are provided.
+selected by `--locale`. Each supported locale folder is installable and can be
+updated independently as translations evolve.
 
 ## Rules
 
@@ -67,6 +67,7 @@ English placeholders until translations are provided.
 - By default, existing file conflicts will cause the process to abort before any files are written.
 - If `AGENTS.md` already exists, `--merge` can be used to insert only the mustflow-managed block.
 - `mf init` creates `.gitignore` when it is missing. If it already exists, mustflow updates only its managed block and preserves user rules.
+- The managed `.gitignore` block ignores only mustflow-generated local artifacts: `.mustflow/cache/`, `.mustflow/state/`, and `.mustflow/backups/`. Project-level outputs such as `repos/`, `node_modules/`, `dist/`, or `.env` remain the user’s responsibility.
 - `--force` backs up conflicting files under `.mustflow/backups/` before overwriting them.
 - `REPO_MAP.md` is generated from the repository structure rather than being copied from a static template.
 - `manifest.lock.toml` records installed workflow-file hashes, the template identifier, and the action taken for each tracked file. The `.gitignore` support block is not tracked by the lock file.
@@ -100,14 +101,25 @@ defaults. `--yes` installs the default English settings without prompts.
 
 - `git.auto_stage`
 - `git.auto_commit`
+- `git.auto_push=false`
 - `git.commit_message.language`
+- `git.commit_message.max_suggestions`
+- `git.commit_message.include_body`
+- `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
 - `language.memory.summary`
 
-`git.auto_push` is intentionally not available through `mf init`; set it
-manually after installation if a repository really needs it.
+`mf init` allows only `git.auto_push=false`, which can reset a repository to the safe default. It cannot enable `git.auto_push=true`; if a repository truly needs that behavior, edit the file manually after installation.
 
+## Configuration Boundaries
 
+`mf init` does not initialize a buildable application. It installs only the workflow rules LLM coding agents need to read repository instructions, avoid command guessing, and verify their work.
+
+| Timing | Configuration |
+| --- | --- |
+| Interactive prompts | Document language, project profile, agent final report language, and optional advanced Git/reporting preferences. |
+| CLI-only during init | Product source locale, product target locales, and allowlisted `--set` preference overrides. |
+| Edit after install | Test, lint, build, and long-running command contracts; approval and isolation policy; project context; custom skills; CI; README; and application settings. |
 
 ## Profiles and Languages
 
@@ -121,7 +133,7 @@ Supported built-in profiles are:
 - `product`
 - `library`
 
-`--locale` specifies the language of the installed mustflow documents. The current default template provides `en`, `ko`, `zh`, `es`, `fr`, and `hi`, defaulting to `en`. The `zh`, `es`, `fr`, and `hi` documents currently contain English placeholders until translations are available.
+`--locale` specifies the language of the installed mustflow documents. The current default template provides `en`, `ko`, `zh`, `es`, `fr`, and `hi`, defaulting to `en`.
 
 `--agent-lang` is the default language for agent final reports. It may differ from the mustflow document locale.
 

@@ -249,8 +249,8 @@ required_at = [
   "before_final_report",
 ]
 turn_threshold = 8
-tool_call_threshold = 20
-output_bytes_threshold = 131072
+tool_call_threshold = 16
+output_bytes_threshold = 100000
 state_store = "cache"
 
 [refresh.levels.light]
@@ -263,6 +263,20 @@ read = [
 read = [
   "AGENTS.md",
   ".mustflow/config/commands.toml",
+]
+
+[refresh.levels.edit]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.report]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
 ]
 
 [refresh.levels.skill]
@@ -288,7 +302,7 @@ read = [
 
 `state_store = "cache"` significa que los recuentos de turnos y la actividad de sesión no pertenecen a los archivos del proyecto. Una aplicación anfitriona puede seguirlos en caché local, pero los documentos mustflow deben permanecer estables y seguros para commits.
 
-`refresh.levels` relaciona cada nivel de refresco con los archivos que se deben releer. Los niveles predeterminados son `light`, `command`, `skill` y `full`.
+`refresh.levels` relaciona cada nivel de refresco con los archivos que se deben releer. Los niveles predeterminados son `light`, `command`, `edit`, `report`, `skill` y `full`.
 
 `mf check` valida el modo de refresco, nombres de puntos de control, umbrales, almacén de estado y rutas de archivos de refresco.
 
@@ -300,33 +314,6 @@ enabled = false
 strategy = "tiered"
 state_store = "cache"
 
-[compaction.recent]
-keep_turns = 20
-max_total_bytes = 200000
-store_raw = false
-
-[compaction.mid]
-trigger_turns = 20
-target_items = 10
-target_max_words_per_item = 40
-include_categories = [
-  "decisions",
-  "constraints",
-  "open_questions",
-  "files_discussed",
-  "commands_discussed",
-  "risks",
-  "next_steps",
-  "rejected_options",
-]
-
-[compaction.long]
-promote_after_mid_items = 50
-target_items = 10
-max_items = 100
-on_limit = "recompact_oldest"
-
-
 [compaction.rules]
 require_source_refs = true
 summaries_are_derived = true
@@ -336,7 +323,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` declara cómo una sesión larga puede separar el contexto en contexto reciente derivado, resúmenes intermedios y resúmenes de largo plazo. Está desactivada de forma predeterminada, usa `store_raw = false` y no significa que mustflow recopile transcripciones completas de chat ni registros brutos de comandos.
+La plantilla predeterminada mantiene `compaction` desactivada y solo declara reglas de seguridad para el host. No instala ajustes de contexto reciente, resúmenes intermedios, resúmenes de largo plazo ni retención de datos brutos, y no significa que mustflow almacene transcripciones completas, razonamiento oculto, salida completa de terminal ni registros brutos de comandos.
 
 `state_store = "cache"` significa que el estado de compactación debe vivir en caché local o en estado gestionado por el anfitrión, no en documentos versionados del proyecto. El conocimiento compartido del proyecto solo debe promoverse como decisiones, investigaciones o resúmenes de traspaso vinculados a fuentes.
 
@@ -381,9 +368,9 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 8
+max_iterations = 6
 max_wall_clock_minutes = 60
-max_command_runs = 25
+max_command_runs = 20
 max_total_output_mb = 8
 max_failures_per_intent = 2
 on_limit = "stop_and_report"
@@ -431,7 +418,7 @@ max_age_days = 14
 on_limit = "report"
 
 [retention.run_receipts]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_items = 1
 max_total_mb = 1
@@ -440,7 +427,7 @@ keep_stderr_tail_bytes = 65536
 
 [retention.knowledge]
 enabled = false
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_total_mb = 10
 require_source_refs = true
@@ -450,7 +437,7 @@ require_review_status = true
 max_file_kb = 8
 
 [retention.handoffs]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 64
 max_total_mb = 5
 require_source_refs = true
@@ -461,6 +448,8 @@ fail_if_larger = true
 ```
 
 `retention` evita que mustflow acumule transcripciones completas de chat, salida completa de terminal o flujos de eventos JSONL sin procesar dentro del proyecto.
+
+`repo_local_ignored` significa que el estado generado se guarda dentro del workspace del repositorio, pero en rutas locales ignoradas como `.mustflow/state/**` o `.mustflow/cache/**`. Estos archivos se pueden borrar o reconstruir y tienen menor autoridad que los archivos actuales, las instrucciones actuales del usuario y los contratos de comando.
 
 `raw_events.store = "none"` significa que la plantilla predeterminada no almacena registros de eventos sin procesar. Si más adelante se agrega almacenamiento en caché, debe permanecer separado de los documentos del proyecto que puedan confirmarse.
 

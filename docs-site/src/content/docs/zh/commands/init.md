@@ -66,6 +66,7 @@ templates/default/
 - 默认情况下，已有文件冲突会在写入任何文件前中止流程。
 - 如果 `AGENTS.md` 已存在，`--merge` 可以只插入 mustflow-managed block。
 - 如果 `.gitignore` 不存在，`mf init` 会创建它。若已存在，mustflow 只更新自己的受管理块，并保留用户规则。
+- 受管理的 `.gitignore` 块只忽略 mustflow 生成的本地产物：`.mustflow/cache/`、`.mustflow/state/` 和 `.mustflow/backups/`。`repos/`、`node_modules/`、`dist/`、`.env` 等项目级产物仍由用户自行管理。
 - `--force` 会先将冲突文件备份到 `.mustflow/backups/`，然后再覆盖。
 - `REPO_MAP.md` 从仓库结构生成，而不是从静态模板复制。
 - `manifest.lock.toml` 记录已安装工作流文件的 hash、模板标识符以及每个被跟踪文件采取的动作。`.gitignore` 支持块不会写入 lock file 追踪。
@@ -97,13 +98,27 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 
 - `git.auto_stage`
 - `git.auto_commit`
+- `git.auto_push=false`
 - `git.commit_message.language`
+- `git.commit_message.max_suggestions`
+- `git.commit_message.include_body`
+- `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
 - `language.memory.summary`
 
-`git.auto_push` 有意不通过 `mf init` 提供；如果某个仓库确实需要，请在安装后手动配置。
+`mf init` 只允许 `git.auto_push=false`，用于把仓库恢复到安全默认值。它不能启用 `git.auto_push=true`；如果某个仓库确实需要该行为，请在安装后手动编辑文件。
 
 `--yes` 会显式采用安全默认值。它不会自动覆盖冲突文件。
+
+## 配置边界
+
+`mf init` 不会把仓库初始化成可构建的应用。它只安装 LLM 编码代理读取仓库指令、避免猜测命令并验证工作的工作流规则。
+
+| 时机 | 配置 |
+| --- | --- |
+| 交互式问题 | 文档语言、项目类型、代理最终报告语言，以及可选的高级 Git/报告偏好。 |
+| init 期间仅通过 CLI 设置 | 产品源语言、产品目标语言，以及允许的 `--set` 偏好覆盖项。 |
+| 安装后编辑文件 | 测试、lint、构建和长时间运行命令契约；审批和隔离策略；项目上下文；自定义 skills；CI；README；以及应用设置。 |
 
 ## Profiles 与语言
 

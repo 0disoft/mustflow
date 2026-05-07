@@ -57,7 +57,7 @@ templates/default/
    └─ hi/
 ```
 
-`common/`에는 언어와 무관한 설정과 `.gitignore` 관리 블록 조각이 들어 있고, `locales/<locale>/`에는 선택한 언어의 문서와 스킬 파일이 들어 있습니다. `zh`, `es`, `fr`, `hi` 폴더는 번역이 준비되기 전까지 영어 문구를 기본으로 사용합니다.
+`common/`에는 언어와 무관한 설정과 `.gitignore` 관리 블록 조각이 들어 있고, `locales/<locale>/`에는 선택한 언어의 문서와 스킬 파일이 들어 있습니다. 지원되는 각 언어 폴더는 설치 가능하며, 번역 상태에 맞춰 독립적으로 갱신할 수 있습니다.
 
 ## 작동 원칙 및 규칙
 
@@ -66,6 +66,7 @@ templates/default/
 - 파일 충돌 발생 시 데이터 보호를 위해 작업을 중단하는 것이 기본 동작입니다.
 - 기존 `AGENTS.md`가 있으면 `--merge` 옵션으로 mustflow 관리 블록만 안전하게 넣을 수 있습니다.
 - `.gitignore`가 없으면 새로 만들고, 이미 있으면 사용자 규칙은 보존한 채 mustflow 관리 블록만 추가하거나 갱신합니다.
+- `.gitignore` 관리 블록은 mustflow가 생성하는 로컬 산출물인 `.mustflow/cache/`, `.mustflow/state/`, `.mustflow/backups/`만 무시합니다. `repos/`, `node_modules/`, `dist/`, `.env` 같은 프로젝트별 산출물은 사용자가 직접 관리합니다.
 - `--force` 옵션은 기존 파일을 `.mustflow/backups/` 경로에 백업한 후 덮어씁니다.
 - `REPO_MAP.md`는 고정 템플릿이 아니라 현재 저장소 구조를 분석해 생성합니다.
 - `manifest.lock.toml`은 설치된 워크플로우 파일의 해시값, 템플릿 식별자 및 처리 결과를 기록합니다. `.gitignore` 지원 블록은 락 파일에서 추적하지 않습니다.
@@ -98,14 +99,27 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 
 - `git.auto_stage`
 - `git.auto_commit`
+- `git.auto_push=false`
 - `git.commit_message.language`
+- `git.commit_message.max_suggestions`
+- `git.commit_message.include_body`
+- `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
 - `language.memory.summary`
 
-`git.auto_push`는 `mf init`에서 바로 켤 수 없게 했습니다. 정말 필요한 저장소라면
-설치 후 명시적으로 파일을 수정하세요.
+`mf init`은 `git.auto_push=false`만 허용해 저장소를 안전한 기본값으로 되돌릴 수 있게 합니다. `git.auto_push=true`는 켤 수 없으며, 정말 필요한 저장소라면 설치 후 파일을 직접 수정해야 합니다.
 
 `--yes`는 안전한 기본값 사용을 명시적으로 승인하는 옵션입니다. 단, 충돌 파일을 자동으로 덮어쓰지는 않습니다.
+
+## 설정 경계
+
+`mf init`은 저장소를 빌드 가능한 애플리케이션으로 초기화하지 않습니다. LLM 코딩 에이전트가 저장소 지침을 읽고, 명령을 추측하지 않으며, 작업을 검증하는 데 필요한 워크플로우 규칙만 설치합니다.
+
+| 시점 | 설정 대상 |
+| --- | --- |
+| 대화형 질문 | 문서 언어, 프로젝트 성격, 에이전트 최종 보고 언어, 선택적 고급 Git/보고 선호도 |
+| 설치 중 CLI 옵션 | 제품 원문 언어, 제품 대상 언어, 허용된 `--set` 선호도 |
+| 설치 후 파일 수정 | 테스트, 린트, 빌드, 장기 실행 명령 계약, 승인 및 격리 정책, 프로젝트 맥락, 커스텀 스킬, CI, README, 애플리케이션 설정 |
 
 ## 프로필 및 로케일 설정
 
@@ -119,7 +133,7 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 - `product`
 - `library`
 
-`--locale`은 저장소에 설치할 mustflow 문서 언어를 정합니다. 현재 기본 템플릿은 `en`, `ko`, `zh`, `es`, `fr`, `hi`를 지원하며 기본값은 `en`입니다. 번역이 완료되지 않은 언어는 영어 문구를 사용합니다.
+`--locale`은 저장소에 설치할 mustflow 문서 언어를 정합니다. 현재 기본 템플릿은 `en`, `ko`, `zh`, `es`, `fr`, `hi`를 지원하며 기본값은 `en`입니다.
 
 `--agent-lang`은 에이전트 최종 보고 언어를 정합니다. 설치한 mustflow 문서 언어와 다르게 설정할 수 있습니다.
 

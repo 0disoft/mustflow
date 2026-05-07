@@ -3,7 +3,9 @@ title: Refresco de instrucciones
 description: Por qué mustflow usa puntos de refresco en lugar de contadores de sesión en archivos del proyecto.
 ---
 
-Las sesiones de agente de larga duración pueden alejarse de las instrucciones cargadas al inicio. La salida de herramientas, diffs grandes, compactación de contexto y cambios en repositorios anidados pueden hacer que el `AGENTS.md` inicial quede menos visible.
+Las sesiones largas de agentes pueden perder alineación con las instrucciones cargadas al inicio. La
+salida de herramientas, los diffs grandes, la compactación de contexto y los cambios en repositorios
+anidados pueden hacer que el `AGENTS.md` inicial sea menos visible.
 
 mustflow maneja esto con puntos de refresco.
 
@@ -16,19 +18,23 @@ mustflow maneja esto con puntos de refresco.
 
 ## Qué evita
 
-mustflow no escribe contadores de turnos, recuentos de mensajes ni actividad de sesión en archivos del proyecto.
+mustflow no escribe contadores de turnos, número de mensajes ni actividad de sesión en archivos del proyecto.
 
-Ese seguimiento de estado introduciría ruido innecesario en Git, chocaría entre varios agentes y expondría metadatos de actividad. Si una aplicación host rastrea la antigüedad de la sesión, debe guardar ese estado en una caché local o almacenamiento administrado por el host.
+Ese seguimiento de estado introduciría ruido innecesario en Git, chocaría entre varios agentes y expondría metadatos de actividad. Si una aplicación host rastrea la edad de la sesión, debe guardar ese estado en una caché local o en almacenamiento gestionado por el host.
 
 ## Niveles de refresco
 
 - `light`: releer `AGENTS.md` y `agent-workflow.md`.
 - `command`: releer `AGENTS.md` y `commands.toml`.
+- `edit`: releer `AGENTS.md`, `mustflow.toml` y `agent-workflow.md` antes de ediciones sensibles.
+- `report`: releer `AGENTS.md`, `mustflow.toml` y `preferences.toml` antes del informe final.
 - `skill`: releer `AGENTS.md` y `skills/INDEX.md`.
 - `full`: releer el orden completo de lectura de mustflow.
 
-La fuente de verdad es `[refresh]` en `.mustflow/config/mustflow.toml`.
+`before_command_run` significa refrescar el contrato de comandos cuando sea necesario antes de ejecutar un comando. No significa releer todo el conjunto de documentos mustflow antes de cada comando.
 
-## Dirección de la CLI
+Los umbrales predeterminados son 8 turnos, 16 llamadas a herramientas o 100000 bytes de salida acumulada. La fuente de verdad es `.mustflow/config/mustflow.toml` `[refresh]`.
 
-Comandos futuros como `mf orient` y `mf refresh` pueden exponer esta política como un plan legible por máquinas. La plantilla actual comienza con la política y la documentación para que los hosts puedan adoptarla sin asumir que todas las herramientas comparten los mismos hooks de ciclo de vida.
+## Dirección de CLI
+
+Futuros comandos como `mf orient` y `mf refresh` pueden exponer esta política como un plan legible por máquina. La plantilla actual comienza con la política y la documentación para que los hosts puedan adoptarla sin asumir que todas las herramientas comparten los mismos hooks de ciclo de vida.

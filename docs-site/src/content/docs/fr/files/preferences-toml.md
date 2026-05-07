@@ -114,6 +114,8 @@ Le modèle par défaut utilise des replis en anglais pour les commentaires de co
 
 `git.auto_stage`, `git.auto_commit` et `git.auto_push` valent tous `false` par défaut.
 
+Ces valeurs sont des préférences de dépôt, pas des autorisations. Elles ne remplacent pas les instructions directes de l’utilisateur, les contrats de commande dans `commands.toml` ni la politique d’approbation dans `mustflow.toml`. `git.auto_commit = true` n’accorde pas l’autorisation de push, et `mf init --set` peut seulement définir `git.auto_push=false`; il ne peut pas activer `git.auto_push=true`.
+
 La suggestion de message de commit fait partie du rapport final, pas d’une permission d’exécuter Git. Si des fichiers ont changé et que `reporting.commit_suggestion.enabled = true`, l’agent peut suggérer un message de commit. Il ne doit pas laisser entendre qu’un commit a été créé, et ne doit pas créer de commit sans demande explicite de l’utilisateur.
 
 Lorsque plusieurs changements logiques sont mélangés, l’agent peut suggérer de les séparer en commits jusqu’à `max_suggestions` au lieu de tout forcer dans un seul message.

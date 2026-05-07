@@ -151,7 +151,7 @@ Read these files before working:
   "init.help.option.locale": "Set installed mustflow document locale",
   "init.help.option.agentLang": "Set the preferred agent response language",
   "init.help.option.set":
-    "Set an allowed preference value such as git.auto_commit=true",
+    "Set a safe preference value such as git.auto_commit=true or git.auto_push=false",
   "init.help.option.productSourceLocale":
     "Set source locale for user-facing product text",
   "init.help.option.productLocale":

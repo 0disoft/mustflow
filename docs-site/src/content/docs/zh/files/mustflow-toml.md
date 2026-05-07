@@ -249,8 +249,8 @@ required_at = [
   "before_final_report",
 ]
 turn_threshold = 8
-tool_call_threshold = 20
-output_bytes_threshold = 131072
+tool_call_threshold = 16
+output_bytes_threshold = 100000
 state_store = "cache"
 
 [refresh.levels.light]
@@ -263,6 +263,20 @@ read = [
 read = [
   "AGENTS.md",
   ".mustflow/config/commands.toml",
+]
+
+[refresh.levels.edit]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.report]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
 ]
 
 [refresh.levels.skill]
@@ -288,7 +302,7 @@ read = [
 
 `state_store = "cache"` 表示轮次计数和会话活动不属于项目文件。宿主应用可以在本地缓存中跟踪它们，但 mustflow 文档应保持稳定，并适合提交到版本控制。
 
-`refresh.levels` 将每个刷新级别映射到应重新读取的文件。默认级别是 `light`、`command`、`skill` 和 `full`。
+`refresh.levels` 将每个刷新级别映射到应重新读取的文件。默认级别是 `light`、`command`、`edit`、`report`、`skill` 和 `full`。
 
 `mf check` 会验证刷新模式、检查点名称、阈值、状态存储和刷新文件路径。
 
@@ -300,33 +314,6 @@ enabled = false
 strategy = "tiered"
 state_store = "cache"
 
-[compaction.recent]
-keep_turns = 20
-max_total_bytes = 200000
-store_raw = false
-
-[compaction.mid]
-trigger_turns = 20
-target_items = 10
-target_max_words_per_item = 40
-include_categories = [
-  "decisions",
-  "constraints",
-  "open_questions",
-  "files_discussed",
-  "commands_discussed",
-  "risks",
-  "next_steps",
-  "rejected_options",
-]
-
-[compaction.long]
-promote_after_mid_items = 50
-target_items = 10
-max_items = 100
-on_limit = "recompact_oldest"
-
-
 [compaction.rules]
 require_source_refs = true
 summaries_are_derived = true
@@ -336,7 +323,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` 声明长会话如何把上下文拆分为近期派生上下文、中层摘要和长期摘要。它默认禁用，使用 `store_raw = false`，并不表示 mustflow 会收集完整聊天记录或原始命令日志。
+默认模板保持 `compaction` 禁用，只声明宿主应遵守的安全规则。它不会默认安装近期、中层、长期摘要或原始保留设置，也不表示 mustflow 会存储完整聊天记录、隐藏推理、完整终端输出或原始命令日志。
 
 `state_store = "cache"` 表示压缩状态应存放在本地缓存或宿主管理状态中，而不是版本化项目文档中。共享项目知识只应以带来源的决策、调查记录或交接摘要形式沉淀。
 
@@ -381,9 +368,9 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 8
+max_iterations = 6
 max_wall_clock_minutes = 60
-max_command_runs = 25
+max_command_runs = 20
 max_total_output_mb = 8
 max_failures_per_intent = 2
 on_limit = "stop_and_report"
@@ -431,7 +418,7 @@ max_age_days = 14
 on_limit = "report"
 
 [retention.run_receipts]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_items = 1
 max_total_mb = 1
@@ -440,7 +427,7 @@ keep_stderr_tail_bytes = 65536
 
 [retention.knowledge]
 enabled = false
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_total_mb = 10
 require_source_refs = true
@@ -450,7 +437,7 @@ require_review_status = true
 max_file_kb = 8
 
 [retention.handoffs]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 64
 max_total_mb = 5
 require_source_refs = true
@@ -461,6 +448,8 @@ fail_if_larger = true
 ```
 
 `retention` 防止 mustflow 在项目内累积完整聊天记录、完整终端输出或原始 JSONL 事件流。
+
+`repo_local_ignored` 表示生成状态存放在仓库工作区内，但位于 `.mustflow/state/**` 或 `.mustflow/cache/**` 这类默认忽略的本地路径下。这些文件可以删除或重建，权威性低于当前文件、当前用户指令和命令合同。
 
 `raw_events.store = "none"` 表示默认模板不存储原始事件日志。如果以后添加缓存存储，它应与可能提交到版本控制的项目文档分开。
 

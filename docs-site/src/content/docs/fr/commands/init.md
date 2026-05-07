@@ -66,6 +66,7 @@ templates/default/
 - Par défaut, les conflits avec des fichiers existants font échouer le processus avant toute écriture.
 - Si `AGENTS.md` existe déjà, `--merge` peut insérer uniquement le bloc géré par mustflow.
 - `mf init` crée `.gitignore` s’il manque. S’il existe déjà, mustflow met à jour uniquement son bloc géré et conserve les règles utilisateur.
+- Le bloc `.gitignore` géré ignore uniquement les artefacts locaux générés par mustflow: `.mustflow/cache/`, `.mustflow/state/` et `.mustflow/backups/`. Les sorties propres au projet comme `repos/`, `node_modules/`, `dist/` ou `.env` restent sous la responsabilité de l’utilisateur.
 - `--force` sauvegarde les fichiers en conflit sous `.mustflow/backups/` avant de les écraser.
 - `REPO_MAP.md` est généré depuis la structure du dépôt au lieu d’être copié depuis un modèle statique.
 - `manifest.lock.toml` enregistre les hashes des fichiers de workflow installés, l’identifiant du modèle et l’action effectuée pour chaque fichier suivi. Le bloc de support `.gitignore` n’est pas suivi dans le fichier lock.
@@ -101,14 +102,27 @@ l’installation:
 
 - `git.auto_stage`
 - `git.auto_commit`
+- `git.auto_push=false`
 - `git.commit_message.language`
+- `git.commit_message.max_suggestions`
+- `git.commit_message.include_body`
+- `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
 - `language.memory.summary`
 
-`git.auto_push` n’est volontairement pas disponible via `mf init`; configurez-le
-manuellement après l’installation si un dépôt en a réellement besoin.
+`mf init` autorise seulement `git.auto_push=false`, ce qui peut ramener un dépôt à la valeur sûre par défaut. Il ne peut pas activer `git.auto_push=true`; si un dépôt a réellement besoin de ce comportement, modifiez le fichier manuellement après l’installation.
 
 `--yes` rend explicites les valeurs sûres par défaut. Il n’écrase pas automatiquement les fichiers en conflit.
+
+## Limites de configuration
+
+`mf init` n’initialise pas une application prête à compiler. Il installe uniquement les règles de workflow dont les agents de code LLM ont besoin pour lire les instructions du dépôt, éviter de deviner les commandes et vérifier leur travail.
+
+| Moment | Configuration |
+| --- | --- |
+| Questions interactives | Langue des documents, profil du projet, langue du rapport final de l’agent et préférences avancées optionnelles pour Git et les rapports. |
+| Uniquement par CLI pendant init | Locale source du produit, locales cibles du produit et préférences autorisées via `--set`. |
+| Modification après installation | Contrats de commandes de test, lint, build et exécution longue; politiques d’approbation et d’isolation; contexte du projet; skills personnalisées; CI; README; et paramètres de l’application. |
 
 ## Profils et langues
 

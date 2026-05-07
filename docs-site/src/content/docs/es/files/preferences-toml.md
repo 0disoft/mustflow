@@ -114,6 +114,8 @@ La plantilla predeterminada usa reservas en inglés para comentarios de código,
 
 `git.auto_stage`, `git.auto_commit` y `git.auto_push` son `false` de forma predeterminada.
 
+Estos valores son preferencias del repositorio, no permisos. No anulan instrucciones directas del usuario, contratos de comando en `commands.toml` ni la política de aprobación en `mustflow.toml`. `git.auto_commit = true` no concede permiso para push, y `mf init --set` solo puede establecer `git.auto_push=false`; no puede habilitar `git.auto_push=true`.
+
 La sugerencia de mensaje de commit forma parte del informe final, no del permiso para ejecutar Git. Si cambiaron archivos y `reporting.commit_suggestion.enabled = true`, el agente puede sugerir un mensaje de commit. No debe insinuar que se creó un commit, y no debe crear uno sin una solicitud explícita del usuario.
 
 Cuando se mezclan varios cambios lógicos, el agente puede sugerir commits separados hasta `max_suggestions` en lugar de forzar todo en un único mensaje.

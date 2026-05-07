@@ -252,8 +252,8 @@ required_at = [
   "before_final_report",
 ]
 turn_threshold = 8
-tool_call_threshold = 20
-output_bytes_threshold = 131072
+tool_call_threshold = 16
+output_bytes_threshold = 100000
 state_store = "cache"
 
 [refresh.levels.light]
@@ -266,6 +266,20 @@ read = [
 read = [
   "AGENTS.md",
   ".mustflow/config/commands.toml",
+]
+
+[refresh.levels.edit]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.report]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
 ]
 
 [refresh.levels.skill]
@@ -291,7 +305,7 @@ read = [
 
 `state_store = "cache"` means turn counts and session activity do not belong in project files. A host application may track them in local cache, but mustflow documents should remain stable and commit-safe.
 
-`refresh.levels` maps each refresh level to the files that should be reread. The default levels are `light`, `command`, `skill`, and `full`.
+`refresh.levels` maps each refresh level to the files that should be reread. The default levels are `light`, `command`, `edit`, `report`, `skill`, and `full`.
 
 `mf check` validates the refresh mode, checkpoint names, thresholds, state store, and refresh file paths.
 
@@ -303,33 +317,6 @@ enabled = false
 strategy = "tiered"
 state_store = "cache"
 
-[compaction.recent]
-keep_turns = 20
-max_total_bytes = 200000
-store_raw = false
-
-[compaction.mid]
-trigger_turns = 20
-target_items = 10
-target_max_words_per_item = 40
-include_categories = [
-  "decisions",
-  "constraints",
-  "open_questions",
-  "files_discussed",
-  "commands_discussed",
-  "risks",
-  "next_steps",
-  "rejected_options",
-]
-
-[compaction.long]
-promote_after_mid_items = 50
-target_items = 10
-max_items = 100
-on_limit = "recompact_oldest"
-
-
 [compaction.rules]
 require_source_refs = true
 summaries_are_derived = true
@@ -339,9 +326,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` declares how a long session may separate context into derived recent context, mid-level
-summaries, and long-term summaries. It is disabled by default, uses `store_raw = false`, and does not
-mean mustflow collects full chat transcripts or raw command logs.
+The default template keeps `compaction` disabled and declares only host safety rules. It does not install recent, mid, long, or raw-retention settings, and it does not mean mustflow stores full chat transcripts, hidden reasoning, full terminal output, or raw command logs.
 
 `state_store = "cache"` means compaction state should live in local cache or host-managed state, not
 versioned project documents. Shared project knowledge should be promoted only as source-linked
@@ -393,9 +378,9 @@ reported, not automatically deleted.
 ```toml
 [budget]
 enabled = true
-max_iterations = 8
+max_iterations = 6
 max_wall_clock_minutes = 60
-max_command_runs = 25
+max_command_runs = 20
 max_total_output_mb = 8
 max_failures_per_intent = 2
 on_limit = "stop_and_report"
@@ -447,7 +432,7 @@ max_age_days = 14
 on_limit = "report"
 
 [retention.run_receipts]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_items = 1
 max_total_mb = 1
@@ -456,7 +441,7 @@ keep_stderr_tail_bytes = 65536
 
 [retention.knowledge]
 enabled = false
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_total_mb = 10
 require_source_refs = true
@@ -466,7 +451,7 @@ require_review_status = true
 max_file_kb = 8
 
 [retention.handoffs]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 64
 max_total_mb = 5
 require_source_refs = true
@@ -478,6 +463,8 @@ fail_if_larger = true
 
 `retention` prevents mustflow from accumulating full chat transcripts, full terminal output,
 or raw JSONL event streams inside the project.
+
+`repo_local_ignored` means generated state stored inside the repository workspace but under ignored local paths such as `.mustflow/state/**` or `.mustflow/cache/**`. These files are safe to delete or rebuild and are lower-authority than current files, current user instructions, and command contracts.
 
 `raw_events.store = "none"` means the default template does not store raw event logs. If cache
 storage is added later, it should stay separate from project documents that may be committed.

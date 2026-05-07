@@ -64,6 +64,7 @@ templates/default/
 - De forma predeterminada, los conflictos con archivos existentes hacen que el proceso se interrumpa antes de escribir archivos.
 - Si `AGENTS.md` ya existe, puede usarse `--merge` para insertar solo el bloque administrado por mustflow.
 - `mf init` crea `.gitignore` si falta. Si ya existe, mustflow actualiza solo su bloque administrado y conserva las reglas del usuario.
+- El bloque administrado de `.gitignore` ignora solo artefactos locales generados por mustflow: `.mustflow/cache/`, `.mustflow/state/` y `.mustflow/backups/`. Salidas del proyecto como `repos/`, `node_modules/`, `dist/` o `.env` siguen siendo responsabilidad del usuario.
 - `--force` crea copias de seguridad de los archivos en conflicto bajo `.mustflow/backups/` antes de sobrescribirlos.
 - `REPO_MAP.md` se genera a partir de la estructura del repositorio en lugar de copiarse desde una plantilla estática.
 - `manifest.lock.toml` registra hashes de archivos de workflow instalados, el identificador de plantilla y la acción aplicada a cada archivo rastreado. El bloque de soporte de `.gitignore` no se rastrea en el lock file.
@@ -99,12 +100,25 @@ instalación:
 
 - `git.auto_stage`
 - `git.auto_commit`
+- `git.auto_push=false`
 - `git.commit_message.language`
+- `git.commit_message.max_suggestions`
+- `git.commit_message.include_body`
+- `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
 - `language.memory.summary`
 
-`git.auto_push` no está disponible intencionalmente mediante `mf init`; configúralo
-manualmente después de la instalación si un repositorio realmente lo necesita.
+`mf init` solo permite `git.auto_push=false`, lo que puede devolver un repositorio al valor seguro predeterminado. No puede habilitar `git.auto_push=true`; si un repositorio realmente necesita ese comportamiento, edita el archivo manualmente después de la instalación.
+
+## Límites de configuración
+
+`mf init` no inicializa una aplicación lista para compilar. Solo instala las reglas de workflow que los agentes de código LLM necesitan para leer las instrucciones del repositorio, evitar adivinar comandos y verificar su trabajo.
+
+| Momento | Configuración |
+| --- | --- |
+| Preguntas interactivas | Idioma de los documentos, perfil del proyecto, idioma del informe final del agente y preferencias avanzadas opcionales de Git/reportes. |
+| Solo por CLI durante init | Idioma fuente del producto, idiomas objetivo del producto y overrides de preferencias permitidos con `--set`. |
+| Editar después de instalar | Contratos de comandos de test, lint, build y ejecución larga; políticas de aprobación y aislamiento; contexto del proyecto; skills personalizadas; CI; README; y ajustes de la aplicación. |
 
 ## Perfiles e idiomas
 

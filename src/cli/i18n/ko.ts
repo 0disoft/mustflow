@@ -151,7 +151,7 @@ export const koMessages = {
   "init.help.option.locale": "설치할 mustflow 문서 언어를 설정합니다",
   "init.help.option.agentLang": "에이전트 보고 언어를 설정합니다",
   "init.help.option.set":
-    "git.auto_commit=true 같은 허용된 설정 값을 지정합니다",
+    "git.auto_commit=true 또는 git.auto_push=false 같은 안전한 설정 값을 지정합니다",
   "init.help.option.productSourceLocale":
     "제품 문자열의 기준 언어를 설정합니다",
   "init.help.option.productLocale":

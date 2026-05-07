@@ -28,10 +28,16 @@ local cache or host-managed storage.
 
 - `light`: reread `AGENTS.md` and `agent-workflow.md`.
 - `command`: reread `AGENTS.md` and `commands.toml`.
+- `edit`: reread `AGENTS.md`, `mustflow.toml`, and `agent-workflow.md` before sensitive edits.
+- `report`: reread `AGENTS.md`, `mustflow.toml`, and `preferences.toml` before the final report.
 - `skill`: reread `AGENTS.md` and `skills/INDEX.md`.
 - `full`: reread the full mustflow reading order.
 
-The source of truth is `.mustflow/config/mustflow.toml` `[refresh]`.
+`before_command_run` means refresh the command contract when needed before command execution. It does
+not mean rereading the entire mustflow document set before every command.
+
+The default thresholds are 8 turns, 16 tool calls, or 100000 bytes of accumulated output. The source
+of truth is `.mustflow/config/mustflow.toml` `[refresh]`.
 
 ## CLI Direction
 

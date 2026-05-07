@@ -35,6 +35,3 @@ Desktop.ini
 .mustflow/cache/
 .mustflow/state/
 .mustflow/backups/
-
-# Local repository clone workspace
-repos/

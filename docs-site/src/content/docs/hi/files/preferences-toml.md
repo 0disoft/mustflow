@@ -114,6 +114,8 @@ default template code comments, logs, और commit messages के लिए En
 
 `git.auto_stage`, `git.auto_commit`, और `git.auto_push` डिफ़ॉल्ट रूप से `false` हैं।
 
+ये values repository preferences हैं, permissions नहीं। ये direct user instructions, `commands.toml` के command contracts, या `mustflow.toml` की approval policy से ऊपर नहीं हैं। `git.auto_commit = true` push permission नहीं देता, और `mf init --set` केवल `git.auto_push=false` set कर सकता है; यह `git.auto_push=true` enable नहीं कर सकता।
+
 Commit message suggestion final report का हिस्सा है, Git चलाने की permission नहीं। यदि files बदली हैं और `reporting.commit_suggestion.enabled = true` है, तो agent commit message suggest कर सकता है। उसे यह imply नहीं करना चाहिए कि commit बनाया गया है, और explicit user request के बिना commit नहीं करना चाहिए।
 
 जब कई logical changes मिले हुए हों, तो agent सब कुछ एक message में force करने के बजाय `max_suggestions` तक split commits suggest कर सकता है।

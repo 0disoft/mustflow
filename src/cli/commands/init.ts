@@ -193,6 +193,16 @@ function parseBoolean(value: string): boolean | undefined {
 	return undefined;
 }
 
+function parsePositiveInteger(value: string): number | undefined {
+	const parsed = Number.parseInt(value, 10);
+
+	if (String(parsed) !== value || parsed <= 0) {
+		return undefined;
+	}
+
+	return parsed;
+}
+
 function isSupportedLanguagePreference(value: string): boolean {
 	return value === 'preserve_existing' || isLocaleTag(value);
 }
@@ -218,6 +228,20 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 		};
 	}
 
+	if (key === 'git.auto_push') {
+		if (value !== 'false') {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git',
+			field: 'auto_push',
+			renderedValue: 'false',
+		};
+	}
+
 	if (key === 'git.commit_message.language') {
 		if (!isSupportedLanguagePreference(value)) {
 			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
@@ -229,6 +253,52 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 			section: 'git.commit_message',
 			field: 'language',
 			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'git.commit_message.max_suggestions') {
+		const parsed = parsePositiveInteger(value);
+
+		if (parsed === undefined || parsed > 5) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message',
+			field: 'max_suggestions',
+			renderedValue: String(parsed),
+		};
+	}
+
+	if (key === 'git.commit_message.include_body') {
+		if (!['when_non_trivial', 'never', 'always'].includes(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message',
+			field: 'include_body',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'git.commit_message.split_when_multiple_concerns') {
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message',
+			field: 'split_when_multiple_concerns',
+			renderedValue: String(parsed),
 		};
 	}
 

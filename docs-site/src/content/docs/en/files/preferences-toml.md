@@ -114,6 +114,8 @@ The default template uses English fallbacks for code comments, logs, and commit 
 
 The `git.auto_stage`, `git.auto_commit`, and `git.auto_push` settings are all `false` by default.
 
+These values are repository preferences, not permissions. They do not override direct user instructions, command contracts in `commands.toml`, or approval policy in `mustflow.toml`. `git.auto_commit = true` does not grant push permission, and `mf init --set` can only set `git.auto_push=false`; it cannot enable `git.auto_push=true`.
+
 Commit message suggestions are intended for the final report and do not constitute permission to execute Git operations. If files are modified and `reporting.commit_suggestion.enabled` is `true`, the agent may suggest a commit message. It must not imply that a commit has been created, nor should it perform a commit without an explicit user request.
 
 When multiple logical changes are bundled, the agent may suggest split commits—up to the value of `max_suggestions`—rather than forcing all changes into a single message.

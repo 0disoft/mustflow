@@ -252,8 +252,8 @@ required_at = [
   "before_final_report",
 ]
 turn_threshold = 8
-tool_call_threshold = 20
-output_bytes_threshold = 131072
+tool_call_threshold = 16
+output_bytes_threshold = 100000
 state_store = "cache"
 
 [refresh.levels.light]
@@ -266,6 +266,20 @@ read = [
 read = [
   "AGENTS.md",
   ".mustflow/config/commands.toml",
+]
+
+[refresh.levels.edit]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.report]
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
 ]
 
 [refresh.levels.skill]
@@ -291,7 +305,7 @@ read = [
 
 `state_store = "cache"`는 대화 횟수나 세션 활동 상태를 프로젝트 파일에 저장하지 않는다는 뜻입니다. 호스트 애플리케이션이 필요하다면 로컬 캐시에 기록할 수 있지만, mustflow 문서는 안정적이고 커밋해도 안전한 상태로 남아야 합니다.
 
-`refresh.levels`는 새로고침 수준별로 다시 읽을 파일을 정합니다. 기본 수준은 `light`, `command`, `skill`, `full`입니다.
+`refresh.levels`는 새로고침 수준별로 다시 읽을 파일을 정합니다. 기본 수준은 `light`, `command`, `edit`, `report`, `skill`, `full`입니다.
 
 `mf check`는 새로고침 방식, 지점 이름, 임계값, 상태 저장 위치, 다시 읽을 파일 경로를 확인합니다.
 
@@ -303,33 +317,6 @@ enabled = false
 strategy = "tiered"
 state_store = "cache"
 
-[compaction.recent]
-keep_turns = 20
-max_total_bytes = 200000
-store_raw = false
-
-[compaction.mid]
-trigger_turns = 20
-target_items = 10
-target_max_words_per_item = 40
-include_categories = [
-  "decisions",
-  "constraints",
-  "open_questions",
-  "files_discussed",
-  "commands_discussed",
-  "risks",
-  "next_steps",
-  "rejected_options",
-]
-
-[compaction.long]
-promote_after_mid_items = 50
-target_items = 10
-max_items = 100
-on_limit = "recompact_oldest"
-
-
 [compaction.rules]
 require_source_refs = true
 summaries_are_derived = true
@@ -339,9 +326,9 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction`은 긴 세션의 맥락을 최신 파생 맥락, 중간 요약, 장기 요약으로 나누는 정책입니다.
-기본값은 꺼져 있고 `store_raw = false`이며, mustflow가 전체 대화 원문이나 원본 명령 로그를
-수집한다는 뜻이 아닙니다.
+기본 템플릿은 `compaction`을 꺼 둔 상태에서 호스트가 지켜야 할 안전 규칙만 선언합니다.
+최신/중간/장기 요약이나 원본 보존 설정을 기본으로 설치하지 않으며, mustflow가 전체 대화
+전문, 숨은 추론 과정, 전체 터미널 출력, 원본 명령 로그를 저장한다는 뜻도 아닙니다.
 
 `state_store = "cache"`는 압축 상태를 프로젝트 문서가 아니라 로컬 캐시나 호스트 상태로
 다뤄야 한다는 뜻입니다. 팀과 공유할 지식은 원문 로그가 아니라 출처를 가진 결정, 조사,
@@ -393,9 +380,9 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 8
+max_iterations = 6
 max_wall_clock_minutes = 60
-max_command_runs = 25
+max_command_runs = 20
 max_total_output_mb = 8
 max_failures_per_intent = 2
 on_limit = "stop_and_report"
@@ -447,7 +434,7 @@ max_age_days = 14
 on_limit = "report"
 
 [retention.run_receipts]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_items = 1
 max_total_mb = 1
@@ -456,7 +443,7 @@ keep_stderr_tail_bytes = 65536
 
 [retention.knowledge]
 enabled = false
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 128
 max_total_mb = 10
 require_source_refs = true
@@ -466,7 +453,7 @@ require_review_status = true
 max_file_kb = 8
 
 [retention.handoffs]
-store = "project"
+store = "repo_local_ignored"
 max_file_kb = 64
 max_total_mb = 5
 require_source_refs = true
@@ -478,6 +465,8 @@ fail_if_larger = true
 
 `retention`은 mustflow가 전체 대화 원문, 전체 터미널 출력, 원시 JSONL 이벤트 로그를
 프로젝트 안에 무한히 쌓지 않도록 막는 정책입니다.
+
+`repo_local_ignored`는 `.mustflow/state/**`나 `.mustflow/cache/**`처럼 저장소 작업 공간 안에 있지만 기본적으로 버전 관리에서 제외되는 로컬 생성 경로에 상태를 둔다는 뜻입니다. 이 파일들은 삭제하거나 다시 만들 수 있으며, 현재 파일, 현재 사용자 지시, 명령 계약보다 낮은 권위의 참고 자료입니다.
 
 `raw_events.store = "none"`은 기본 템플릿이 원시 이벤트 로그를 저장하지 않는다는 뜻입니다.
 나중에 캐시 저장을 열더라도 프로젝트에 커밋될 수 있는 문서와 분리해야 합니다.
