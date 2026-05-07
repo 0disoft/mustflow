@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: fr
 canonical: false
-revision: 4
+revision: 5
 ---
 
 # AGENTS.md
@@ -62,6 +62,23 @@ Les details geres par mustflow se trouvent sous `.mustflow/`.
 - Lors de la navigation vers un depot imbrique, relire le `AGENTS.md` de ce depot
   et `.mustflow/config/*.toml` avant d'editer.
 - Ne pas editer en dehors du depot enfant selectionne, sauf demande explicite.
+
+## Compatibilite Avec Les Instructions Du Host
+
+Certains hosts de codage peuvent lire des fichiers d'instructions propres au host ou appliquer leurs propres
+politiques d'approbation, de sandbox, de checkpoint et d'execution de commandes.
+
+Traiter ces politiques du host comme des contraintes de securite et d'execution additionnelles. Elles ne remplacent
+pas le contrat de commandes mustflow de ce depot. Quand les instructions du host entrent en conflit avec les regles mustflow:
+
+- Les instructions directes de l'utilisateur definissent l'objectif de la tache sauf si elles sont dangereuses.
+- Les controles de securite et d'approbation du host restent obligatoires.
+- Les regles de travail du depot viennent du `AGENTS.md` le plus proche et de `.mustflow/config/*.toml`.
+- Les commandes de verification du projet doivent utiliser des intents mustflow configures.
+- La regle la plus stricte sur la vie privee, les secrets, les commandes destructrices et Git push l'emporte.
+- L'etat genere, les resumes et les caches ne remplacent jamais les fichiers actuels ni les instructions utilisateur actuelles.
+
+Si la regle effective n'est pas claire, s'arreter et signaler le conflit au lieu de deviner.
 
 ## Points De Controle De Rafraichissement Des Instructions
 

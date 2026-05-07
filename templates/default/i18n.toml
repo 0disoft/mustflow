@@ -10,12 +10,12 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 4
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 4, status = "current" }
-translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 4, status = "needs_review" }
-translations.es = { path = "locales/es/AGENTS.md", source_revision = 4, status = "needs_review" }
-translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 4, status = "needs_review" }
-translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 4, status = "needs_review" }
+revision = 5
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 5, status = "current" }
+translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 5, status = "needs_review" }
+translations.es = { path = "locales/es/AGENTS.md", source_revision = 5, status = "needs_review" }
+translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 5, status = "needs_review" }
+translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 5, status = "needs_review" }
 
 [documents."context.index"]
 source = "locales/en/.mustflow/context/INDEX.md"
@@ -40,12 +40,12 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 6
-translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "current" }
-translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
+revision = 7
+translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 7, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 7, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 7, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 7, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/docs/agent-workflow.md", source_revision = 7, status = "needs_review" }
 
 [documents."config.preferences"]
 source = "common/.mustflow/config/preferences.toml"

@@ -16,6 +16,7 @@ This command never writes files. Use it when an agent or human requires an initi
 - `manifest.lock.toml` state.
 - Template identifier and version from the lock file when present.
 - Whether `.mustflow/config/commands.toml` exists and exposes runnable oneshot intents.
+- Effective policy for command execution, Git automation, local state, and blocked action classes.
 - Missing required and optional read-order paths from `mustflow.toml`.
 - Whether `REPO_MAP.md` has been generated.
 - Whether the local `.mustflow/cache/mustflow.sqlite` index exists.
@@ -77,6 +78,9 @@ Machine-readable output uses these fields:
 - `ok` (`boolean`): Whether the install exists and validation passed.
 - `check` (`object`): Validation result using the `mf check` rules.
 - `context` (`object`): Main context state an agent needs before starting.
+- `effective_policy` (`object`): Applied repository policy for command execution, Git automation, and state authority.
+- `state_policy` (`object`): Local cache and state storage policy.
+- `blocked_actions` (`string[]`): Action classes blocked by the repository contract.
 - `diagnostics` (`object[]`): Per-area diagnostics for install, validation, command contract, read order, repository map, local index, and latest run.
 - `next_steps` (`string[]`): Commands an agent can run next without guessing.
 
@@ -92,6 +96,14 @@ Nested fields use these shapes:
 - `context.missing_read_order` (`string[]`): Required read-order files that are missing.
 - `context.missing_optional_read_order` (`string[]`): Optional read-order files that are missing.
 - `context.latest_run_exists` (`boolean`): Whether the latest run receipt exists.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): Whether project verification commands should use `mf run`.
+- `effective_policy.allow_inferred_commands` (`boolean`): Whether agents may infer commands outside `commands.toml`.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): Git automation preferences.
+- `state_policy.cache_path` (`string`): Local cache path.
+- `state_policy.state_path` (`string`): Local state path.
+- `state_policy.versioned` (`boolean`): Whether mustflow local state should be versioned.
+- `state_policy.safe_to_delete` (`boolean`): Whether local cache and state can be rebuilt or regenerated.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): Raw storage boundaries.
 - `diagnostics[].id` (`string`): Diagnostic area name.
 - `diagnostics[].status` (`string`): Diagnostic state. One of `ok`, `warn`, `fail`, or `info`.
 - `diagnostics[].summary` (`string`): Short human-readable state.

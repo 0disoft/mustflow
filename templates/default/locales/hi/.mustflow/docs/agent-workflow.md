@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: hi
 canonical: false
-revision: 6
+revision: 7
 ---
 
 # एजेंट कार्यप्रवाह
@@ -41,6 +41,22 @@ revision: 6
 
 जब generated file stale लगे, तो हाथ से संपादित करने के बजाय संबंधित `mf` command से refresh करें।
 
+## प्रभावी नियम मार्ग
+
+सभी निर्देशों को एक priority list में न मिलाएं। conflict को rule type के आधार पर resolve करें:
+
+- User goal: current direct user instructions task तय करते हैं, जब तक वे unsafe न हों।
+- Host safety: host approval, sandbox, और execution gates अधिक सख्त हों तो बाध्यकारी रहते हैं।
+- Repository work rules: सबसे निकट का `AGENTS.md` और `.mustflow/config/*.toml` उपयोग करें।
+- Command execution: `.mustflow/config/commands.toml` project command contract है।
+- Verification evidence: `mf run` receipts और current files direct host shell output से अधिक भरोसेमंद हैं।
+- Context और preferences: `.mustflow/context/*`, `preferences.toml`, और generated maps lower-authority defaults हैं।
+- Session और cache state: host summaries, `.mustflow/cache/**`, और `.mustflow/state/**` current files या current user instructions से ऊपर नहीं होते।
+
+Allowed action sets intersection से छोटे होते हैं। denied actions, approval requirements, privacy rules,
+और destructive-command rules जुड़ते जाते हैं। अगर effective rule स्पष्ट न हो, तो अनुमान लगाने के बजाय
+रुकें और conflict report करें।
+
 ## निर्देश पुनर्पाठ
 
 लंबे सत्रों में निर्देशों से भटकाव हो सकता है। निर्देश refresh को project-file counter नहीं, अनिवार्य checkpoint मानें।
@@ -70,15 +86,9 @@ repository में turn counters, message counts, या session activity न 
 
 ## संदर्भ संपीड़न
 
-mustflow tiered context compaction नीति का समर्थन करता है, लेकिन डिफॉल्ट रूप से पूर्ण chat transcripts एकत्र नहीं करता।
+`compaction` default data collection feature नहीं है। यह future harnesses या hosts के लिए safety policy है। Default template इसे disabled रखता है और केवल safety rules declare करता है।
 
-`.mustflow/config/mustflow.toml` में `[compaction]` का उपयोग करके घोषित करें कि host agent कैसे अलग करेगा:
-
-- local cache में रखा गया हाल का derived context
-- source references वाले मध्यम-स्तरीय summaries
-- long-term summaries जो निर्णय, constraints, risks, और next steps संरक्षित रखें
-
-परियोजना में hidden chain of thought, secrets, unbounded raw transcripts, या raw command logs संग्रहीत न करें। default policy `store_raw = false` उपयोग करती है। compacted summary source-linked होना चाहिए और current files तथा current user instructions से कम प्रामाणिक रहना चाहिए।
+Project में hidden reasoning, secrets, full chat transcripts, full terminal output, raw events, या raw command logs store न करें। अगर future में कोई host summaries बनाता है, तो वे source-linked होनी चाहिए और current files तथा current user instructions से कम authority रखनी चाहिए।
 
 ## हार्नेस अनुबंध सीमा
 
@@ -102,6 +112,16 @@ worker folders, persona systems, fleet orchestration, raw event logs, या aut
 
 Judge चरण worker की completion claim को पर्याप्त न माने। इसमें task goal, changed files, command contract, और run receipts उपयोग होने चाहिए।
 
+## Git व्यवहार नीति
+
+Git operations जो state या history बदलते हैं, default रूप से denied हैं।
+
+- `git.auto_stage = false`: user request के बिना stage न करें।
+- `git.auto_commit = false`: user request के बिना commit न करें।
+- `git.auto_push = false`: user request के बिना push न करें।
+
+ये values repository preferences हैं, permissions नहीं। ये direct user instructions, `.mustflow/config/commands.toml`, या `.mustflow/config/mustflow.toml` की approval policy से ऊपर नहीं हैं। खास तौर पर, `git.auto_commit = true` push permission नहीं देता, और `git.auto_push = true` को `mf init` से enable नहीं किया जा सकता।
+
 ## कमांड निष्पादन नीति
 
 `package.json`, `Makefile`, `justfile`, `Taskfile.yml`, या source files से command अनुमान न लगाएं।
@@ -113,9 +133,17 @@ command intent तभी agent उपयोग के लिए पात्र 
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
-- defined timeout कॉन्फ़िगर हो
+- `timeout_seconds` positive integer हो
+- command `argv` से घोषित हो, या `mode = "shell"` और `cmd` से घोषित हो
+- `cwd` current mustflow root के अंदर रहे
+
+`manual_only` नई configurations में status है। पुराने configs के लिए `run_policy = "manual_only"` पढ़ा जा सकता है, लेकिन नई templates को `status = "manual_only"` उपयोग करना चाहिए।
 
 `mf run <intent>` को प्राथमिकता दें ताकि परियोजना को `.mustflow/state/runs/latest.json` में concise run record मिले।
+
+Host shells commands चला सकते हैं, लेकिन direct project commands अपने आप mustflow verification नहीं बनते।
+यदि कोई command `mf run` को bypass करती है, तो उसकी output को lower-confidence context मानें, सिवाय इसके
+कि user ने manual override स्पष्ट रूप से approve किया हो और final report में बताया गया हो कि mustflow run receipt नहीं बना।
 
 development servers, watchers, browser launches, interactive prompts, या background processes सीधे न चलाएं। इसके बजाय skipped intent और कारण रिपोर्ट करें।
 

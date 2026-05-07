@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 4
+revision: 5
 ---
 
 # AGENTS.md
@@ -62,6 +62,23 @@ mustflow-managed details are under `.mustflow/`.
 - When navigating to a nested repository, reread that repository's `AGENTS.md` and
   `.mustflow/config/*.toml` before editing.
 - Do not edit outside the selected child repository unless explicitly requested.
+
+## Host-Specific Instruction Compatibility
+
+Some coding hosts may read additional host-specific instruction files or enforce their own
+approval, sandbox, checkpoint, and command execution policies.
+
+Treat those host policies as additive safety and execution constraints. They do not replace this
+repository's mustflow command contract. When host instructions conflict with mustflow rules:
+
+- Direct user instructions define the task goal unless unsafe.
+- Host safety and approval gates remain binding.
+- Repository work rules come from the nearest `AGENTS.md` and `.mustflow/config/*.toml`.
+- Project verification commands must use configured mustflow intents.
+- Stricter privacy, secret, destructive-command, and Git push rules win.
+- Generated state, summaries, and caches never override current files or current user instructions.
+
+When the effective rule is unclear, stop and report the conflict instead of guessing.
 
 ## Instruction Refresh Checkpoints
 

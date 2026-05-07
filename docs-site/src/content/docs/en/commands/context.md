@@ -19,6 +19,9 @@ This command does not modify files. It does not replace the need to read the doc
 - Context index and project context paths through the authority and optional reading fields.
 - Command intent status summary from `commands.toml`.
 - Runnable oneshot command intent names.
+- Effective policy summary for command execution, Git automation, and state authority.
+- Local cache and state policy.
+- Actions that are blocked by the default repository contract.
 - Summary of the latest `mf run` receipt.
 - Issues reported from the manifest lock.
 
@@ -49,6 +52,9 @@ Machine-readable output uses these fields:
 - `read_order` (`object[]`): Required reading files and existence flags.
 - `optional_read_order` (`object[]`): Optional reading files and existence flags.
 - `command_contract` (`object`): Command intent summary and runnable intent names.
+- `effective_policy` (`object`): Applied repository policy for command execution, Git automation, and state authority.
+- `state_policy` (`object`): Local cache and state storage policy.
+- `blocked_actions` (`string[]`): Action classes blocked by the repository contract.
 - `latest_run` (`object`): Summary of the latest run receipt.
 - `issues` (`string[]`): Issues reported from the manifest lock.
 
@@ -61,6 +67,14 @@ Repeated and nested fields use these shapes:
 - `command_contract.intents[].lifecycle` (`string | null`): Whether the command is oneshot or long-running.
 - `command_contract.intents[].run_policy` (`string | null`): Agent execution policy.
 - `command_contract.runnable_intents` (`string[]`): Intent names an agent may run with `mf run <intent>`.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): Whether project verification commands should use `mf run`.
+- `effective_policy.allow_inferred_commands` (`boolean`): Whether agents may infer commands outside `commands.toml`.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): Git automation preferences.
+- `state_policy.cache_path` (`string`): Local cache path.
+- `state_policy.state_path` (`string`): Local state path.
+- `state_policy.versioned` (`boolean`): Whether mustflow local state should be versioned.
+- `state_policy.safe_to_delete` (`boolean`): Whether local cache and state can be rebuilt or regenerated.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): Raw storage boundaries.
 - `latest_run.path` (`string`): Latest run receipt path.
 - `latest_run.exists` (`boolean`): Whether the latest run receipt exists.
 - `latest_run.valid` (`boolean | null`): Whether the receipt parsed as a JSON object.

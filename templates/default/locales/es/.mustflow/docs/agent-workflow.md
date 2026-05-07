@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: es
 canonical: false
-revision: 6
+revision: 7
 ---
 
 # Flujo De Trabajo Del Agente
@@ -41,6 +41,22 @@ Evita mezclar estas fuentes.
 
 Cuando un archivo generado parezca desactualizado, actualizalo mediante el comando `mf` correspondiente en lugar de editarlo manualmente.
 
+## Carriles De Reglas Efectivas
+
+No reduzcas todas las instrucciones a una sola lista de prioridades. Resuelve conflictos segun el tipo de regla:
+
+- Objetivo del usuario: las instrucciones directas actuales del usuario definen la tarea salvo que sean inseguras.
+- Seguridad del host: las puertas de aprobacion, sandbox y ejecucion del host siguen vigentes cuando son mas estrictas.
+- Reglas de trabajo del repositorio: usa el `AGENTS.md` mas cercano y `.mustflow/config/*.toml`.
+- Ejecucion de comandos: `.mustflow/config/commands.toml` es el contrato de comandos del proyecto.
+- Evidencia de verificacion: los recibos de `mf run` y los archivos actuales tienen mas peso que la salida directa del shell del host.
+- Contexto y preferencias: `.mustflow/context/*`, `preferences.toml` y los mapas generados son valores predeterminados de menor autoridad.
+- Estado de sesion y cache: los resumenes del host, `.mustflow/cache/**` y `.mustflow/state/**` nunca sustituyen los archivos actuales ni las instrucciones actuales del usuario.
+
+Los conjuntos permitidos se reducen por interseccion. Las acciones denegadas, requisitos de aprobacion,
+reglas de privacidad y reglas de comandos destructivos se acumulan. Si la regla efectiva no esta clara,
+detente y reporta el conflicto en lugar de adivinar.
+
 ## Actualizacion De Instrucciones
 
 Las sesiones largas pueden causar desviacion de instrucciones. Trata la actualizacion de instrucciones como un punto de control obligatorio, no como un contador en archivos del proyecto.
@@ -61,6 +77,8 @@ Usa `[refresh]` en `.mustflow/config/mustflow.toml` para decidir el nivel de act
 
 - `light`: releer `AGENTS.md` y `.mustflow/docs/agent-workflow.md`
 - `command`: releer `AGENTS.md` y `.mustflow/config/commands.toml`
+- `edit`: releer `AGENTS.md`, `.mustflow/config/mustflow.toml` y `.mustflow/docs/agent-workflow.md` antes de ediciones sensibles
+- `report`: releer `AGENTS.md`, `.mustflow/config/mustflow.toml` y `.mustflow/config/preferences.toml` antes del informe final
 - `skill`: releer `AGENTS.md` y `.mustflow/skills/INDEX.md`
 - `full`: releer la secuencia completa de lectura de mustflow
 
@@ -70,15 +88,9 @@ No escribas contadores de turnos, conteos de mensajes ni actividad de sesion en 
 
 ## Compactacion De Contexto
 
-mustflow admite una politica de compactacion de contexto por niveles, pero no recopila transcripciones completas del chat por defecto.
+`compaction` no es una funcion predeterminada de recoleccion de datos. Es una politica de seguridad para futuros harnesses o hosts. La plantilla predeterminada la mantiene desactivada y solo declara reglas de seguridad.
 
-Usa `[compaction]` en `.mustflow/config/mustflow.toml` para declarar como un agente host puede separar:
-
-- contexto reciente derivado conservado en cache local
-- resumenes intermedios con referencias de origen
-- resumenes de largo plazo que preserven decisiones, restricciones, riesgos y siguientes pasos
-
-No almacenes razonamiento oculto, secretos, transcripciones brutas sin limite ni registros brutos de comandos en el proyecto. La politica predeterminada usa `store_raw = false`. Un resumen compactado debe estar vinculado a su fuente y debe mantener menor autoridad que los archivos actuales y las instrucciones actuales del usuario.
+No almacenes razonamiento oculto, secretos, transcripciones completas, salida completa de terminal, eventos brutos ni registros brutos de comandos dentro del proyecto. Si un host crea resumenes en el futuro, deben estar vinculados a fuentes y mantener menor autoridad que los archivos actuales y las instrucciones actuales del usuario.
 
 ## Limite Del Contrato De Harness
 
@@ -102,6 +114,16 @@ Para tareas de larga duracion o reanudadas, separa estas fases:
 
 La fase de evaluacion no debe considerar suficiente la afirmacion de finalizacion del worker. Debe usar el objetivo de la tarea, los archivos cambiados, el contrato de comandos y los recibos de ejecucion.
 
+## Politica De Comportamiento De Git
+
+Las operaciones de Git que modifican estado o historial estan denegadas por defecto.
+
+- `git.auto_stage = false`: no hacer stage sin una solicitud del usuario.
+- `git.auto_commit = false`: no crear commits sin una solicitud del usuario.
+- `git.auto_push = false`: no hacer push sin una solicitud del usuario.
+
+Estos valores son preferencias del repositorio, no permisos. No anulan instrucciones directas del usuario, `.mustflow/config/commands.toml` ni la politica de aprobacion en `.mustflow/config/mustflow.toml`. En particular, `git.auto_commit = true` no concede permiso para push, y `git.auto_push = true` no puede habilitarse mediante `mf init`.
+
 ## Politica De Ejecucion De Comandos
 
 No infieras comandos a partir de `package.json`, `Makefile`, `justfile`, `Taskfile.yml` ni archivos fuente.
@@ -113,9 +135,18 @@ Un command intent es apto para uso del agente solo cuando se cumplen todas estas
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
-- Hay un timeout definido
+- `timeout_seconds` es un entero positivo
+- El comando esta declarado con `argv`, o con `mode = "shell"` y `cmd`
+- `cwd` permanece dentro de la raiz mustflow actual
+
+`manual_only` es un estado para configuraciones nuevas. `run_policy = "manual_only"` puede leerse por compatibilidad con configuraciones antiguas, pero las plantillas nuevas deben usar `status = "manual_only"`.
 
 Prefiere `mf run <intent>` para que el proyecto reciba un registro de ejecucion conciso en `.mustflow/state/runs/latest.json`.
+
+Los shells del host pueden ejecutar comandos, pero los comandos directos del proyecto no cuentan
+automaticamente como verificacion mustflow. Si un comando evita `mf run`, trata su salida como contexto
+de menor confianza salvo que el usuario haya aprobado explicitamente una excepcion manual y el informe
+final indique que no se produjo recibo de ejecucion mustflow.
 
 No ejecutes directamente servidores de desarrollo, watchers, aperturas de navegador, prompts interactivos ni procesos en segundo plano. En su lugar, reporta el intent omitido y el motivo.
 

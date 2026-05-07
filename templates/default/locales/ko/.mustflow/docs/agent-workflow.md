@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 14
+revision: 15
 ---
 
 # Agent Workflow
@@ -150,6 +150,21 @@ revision: 14
 mustflow는 LLM 제공자의 입력 캐시 적중을 보장하지 않습니다. 대신 같은 작업
 규칙이 안정적으로 반복 입력될 수 있도록 문서 책임과 읽기 순서를 분리합니다.
 
+## 유효 규칙 구분
+
+모든 지침을 하나의 우선순위 목록으로 합치지 않습니다. 규칙 종류별로 충돌을 판단합니다.
+
+- 사용자 목표: 현재 사용자 직접 지시는 안전하지 않은 경우가 아니라면 작업 목표를 정합니다.
+- 호스트 안전: 호스트의 승인, 샌드박스, 실행 제한이 더 엄격하면 계속 유효합니다.
+- 저장소 작업 규칙: 가장 가까운 `AGENTS.md`와 `.mustflow/config/*.toml`을 따릅니다.
+- 명령 실행: `.mustflow/config/commands.toml`이 프로젝트 명령 계약입니다.
+- 검증 근거: `mf run` 실행 영수증과 현재 파일은 호스트 셸 직접 실행 출력보다 높은 신뢰를 가집니다.
+- 문맥과 선호값: `.mustflow/context/*`, `preferences.toml`, 생성 지도는 낮은 권위의 기본값입니다.
+- 세션과 캐시 상태: 호스트 요약, `.mustflow/cache/**`, `.mustflow/state/**`는 현재 파일이나 현재 사용자 지시보다 우선하지 않습니다.
+
+허용 목록은 더 좁은 교집합으로 줄이고, 금지 행동, 승인 요구, 개인정보 규칙, 파괴적 명령
+규칙은 누적합니다. 유효 규칙이 불명확하면 추측하지 말고 멈춘 뒤 충돌을 보고합니다.
+
 ## 지침 새로고침 정책
 
 긴 세션에서는 작업 시작 때 읽은 지침이 뒤쪽 대화, 도구 출력, 맥락 압축에 밀릴 수
@@ -173,6 +188,8 @@ mustflow 지침은 다음 지점에서 다시 확인합니다.
 
 - `light`: `AGENTS.md`와 `.mustflow/docs/agent-workflow.md`를 다시 읽습니다.
 - `command`: `AGENTS.md`와 `.mustflow/config/commands.toml`을 다시 읽습니다.
+- `edit`: 민감한 수정 전에 `AGENTS.md`, `.mustflow/config/mustflow.toml`, `.mustflow/docs/agent-workflow.md`를 다시 읽습니다.
+- `report`: 최종 보고 전에 `AGENTS.md`, `.mustflow/config/mustflow.toml`, `.mustflow/config/preferences.toml`을 다시 읽습니다.
 - `skill`: `AGENTS.md`와 `.mustflow/skills/INDEX.md`를 다시 읽습니다.
 - `full`: mustflow 필수 읽기 순서 전체를 다시 읽습니다.
 
@@ -186,19 +203,9 @@ mustflow 지침은 다음 지점에서 다시 확인합니다.
 
 ## 문맥 압축 정책
 
-mustflow는 계층형 문맥 압축 정책을 선언할 수 있지만, 전체 대화 원문을 기본으로 수집하지
-않습니다.
+`compaction`은 기본 데이터 수집 기능이 아니라 향후 하네스나 호스트가 지켜야 할 안전 정책입니다. 기본 템플릿은 이 기능을 꺼 둔 상태에서 안전 규칙만 선언합니다.
 
-`.mustflow/config/mustflow.toml`의 `[compaction]`은 호스트 에이전트가 다음 자료를 어떻게
-분리해야 하는지 설명합니다.
-
-- 로컬 캐시에만 둘 수 있는 최신 파생 맥락
-- 출처를 가진 중간 요약
-- 결정, 제약, 위험, 다음 작업을 보존하는 장기 요약
-
-프로젝트 안에 숨겨진 내부 추론, 비밀정보, 끝없이 커지는 전체 대화 원문, 원본 명령 로그를
-저장하지 않습니다. 기본 정책은 `store_raw = false`입니다. 압축 요약은 반드시 출처를 가져야
-하며, 현재 파일과 현재 사용자 지시보다 낮은 권위를 가집니다.
+프로젝트 안에 숨겨진 내부 추론, 비밀정보, 전체 대화 전문, 전체 터미널 출력, 원본 이벤트 로그, 원본 명령 로그를 저장하지 않습니다. 향후 호스트가 요약을 만들더라도 요약은 출처가 있어야 하며, 현재 파일과 현재 사용자 지시보다 낮은 권위를 가집니다.
 
 ## 하네스 계약 경계
 
@@ -264,6 +271,8 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
 - `git.auto_commit = false`: 사용자 요청 없이 커밋하지 않습니다.
 - `git.auto_push = false`: 사용자 요청 없이 푸시하지 않습니다.
 
+이 값들은 저장소 선호값이지 권한이 아닙니다. 사용자 직접 지시, `.mustflow/config/commands.toml`, `.mustflow/config/mustflow.toml`의 승인 정책보다 우선하지 않습니다. 특히 `git.auto_commit = true`는 푸시 권한을 뜻하지 않으며, `git.auto_push = true`는 `mf init`으로 설정할 수 없습니다.
+
 스테이징, 커밋, amend, rebase, reset, push처럼 Git 상태나 기록을 바꾸는 작업은
 사용자가 명시적으로 요청한 경우에만 수행합니다.
 
@@ -291,8 +300,12 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
 - `status = "configured"`
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
-- `timeout_seconds`가 양의 정수
 - `stdin = "closed"`
+- `timeout_seconds`가 양의 정수
+- `argv` 또는 `mode = "shell"`과 `cmd`로 실행 명령이 선언됨
+- `cwd`가 현재 mustflow 루트 안에 있음
+
+새 설정에서는 `manual_only`를 명령 의도의 `status` 값으로 사용합니다. `run_policy = "manual_only"`는 기존 설정 호환을 위해 읽을 수 있지만, 새 템플릿에서는 만들지 않습니다.
 
 명령 의도가 없거나 `unknown`, `not_applicable`, `manual_only`, `disabled`이면 대체
 명령을 추측하지 않고 건너뛴 이유를 보고합니다.
@@ -353,6 +366,11 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
 남깁니다. 자동화가 결과를 읽어야 하거나 최종 보고의 근거가 필요하면 `mf run <intent>
 --json`을 사용합니다. 실행 결과 기록에는 의도 이름, 실제 실행 방식, 작업 디렉터리, 제한
 시간, 종료 코드, 시간 초과 여부, 표준 출력/오류의 끝부분이 들어갑니다.
+
+호스트 셸은 명령을 실행할 수 있지만, 프로젝트 명령을 직접 실행한 결과가 곧 mustflow 검증
+근거가 되지는 않습니다. `mf run`을 우회한 명령 출력은 사용자가 명시적으로 수동 우회를
+승인했고 최종 보고에 mustflow 실행 영수증이 없음을 밝힌 경우가 아니라면 낮은 신뢰도의
+참고 정보로만 봅니다.
 
 실행 결과 기록은 검증 증거이지만 기준 원본은 아닙니다. 명령이 무엇이어야 하는지는
 `.mustflow/config/commands.toml`을 따르고, 실행 결과 기록은 특정 시점에 무엇이 실행되었고

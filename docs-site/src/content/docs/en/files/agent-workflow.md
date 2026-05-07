@@ -37,9 +37,11 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 
 The source of truth for executable commands is `.mustflow/config/commands.toml`.
 
-Agents may only run command intents with `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, and `stdin = "closed"`. If an intent is missing, `unknown`, `not_applicable`, `manual_only`, or `disabled`, agents must not infer a replacement command and must report the reason for skipping.
+Agents may only run command intents that satisfy every execution gate: `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, a positive `timeout_seconds`, a declared command through `argv` or `mode = "shell"` plus `cmd`, and a `cwd` inside the current mustflow root. If an intent is missing, `unknown`, `not_applicable`, `manual_only`, or `disabled`, agents must not infer a replacement command and must report the reason for skipping.
 
 Configured intents should use an `argv` array whenever possible. Use `mode = "shell"` and `cmd` only when shell syntax is required.
+
+For new configurations, use `manual_only` as an intent `status`. `run_policy = "manual_only"` may be accepted for older configs, but new templates do not generate it.
 
 Do not directly execute commands with `server`, `watch`, `interactive`, `browser`, or `background` lifecycles. Development servers, watch modes, browser UIs, and background processes are not valid oneshot validation commands.
 
@@ -48,6 +50,9 @@ When `mf run <intent>` is available, it should be prioritized for oneshot comman
 `mf run` writes the latest execution result to `.mustflow/state/runs/latest.json` as a run record.
 Use `mf run <intent> --json` when automation or final reports require structured evidence.
 The record serves as evidence for a specific execution; the definition source of truth remains `commands.toml`.
+
+Host shells can run commands, but direct project commands do not automatically count as mustflow verification.
+If a command bypasses `mf run`, treat its output as lower-confidence context unless the user explicitly approved a manual override and the final report states that no mustflow run record was produced.
 
 `mf context --json` is a read-only index that provides a concise overview of the reading order, command intents, capabilities, and the latest run record summary. It does not replace the need to read actual documents and configuration files.
 
@@ -70,6 +75,20 @@ Maintain the repository navigation map in the generated `REPO_MAP.md` rather tha
 Avoid placing volatile values—such as generation timestamps, hashes, file counts, or logs—near the top of this file.
 
 Do not store full chat transcripts, terminal output, or raw JSONL event logs under `.mustflow/`. Maintain execution results as concise run records and knowledge files as summaries with source references.
+
+## Effective Rule Lanes
+
+Do not collapse every instruction into one priority list. Resolve conflicts by the kind of rule:
+
+- User goal: current direct user instructions define the task unless unsafe.
+- Host safety: host approval, sandbox, checkpoint, and shell execution gates remain binding.
+- Repository work rules: the nearest `AGENTS.md` and `.mustflow/config/*.toml` define the repository contract.
+- Command execution: `.mustflow/config/commands.toml` defines the project command contract.
+- Verification evidence: `mf run` records and current files are stronger evidence than direct host shell output.
+- Context and preferences: `.mustflow/context/*`, `preferences.toml`, and generated maps are lower-authority defaults.
+- Session and cache state: host summaries, `.mustflow/cache/**`, and `.mustflow/state/**` never override current files or current user instructions.
+
+Allowed action sets narrow by intersection. Denied actions, approval requirements, privacy rules, and destructive-command rules accumulate. When the effective rule is unclear, stop and report the conflict instead of guessing.
 
 ## Instruction Refresh
 
@@ -136,6 +155,8 @@ The user's interaction language must not automatically dictate the language used
 ## Git Behavior Policy
 
 `git.auto_stage`, `git.auto_commit`, and `git.auto_push` are all `false` by default.
+
+These values are repository preferences, not permissions. They do not override direct user instructions, `.mustflow/config/commands.toml`, or approval policy in `.mustflow/config/mustflow.toml`. In particular, `git.auto_commit = true` does not grant push permission, and `git.auto_push = true` cannot be enabled through `mf init`.
 
 Absent an explicit user request, agents must not perform Git operations that modify the state or history (e.g., stage, commit, rebase, push).
 

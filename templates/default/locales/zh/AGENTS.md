@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: zh
 canonical: false
-revision: 4
+revision: 5
 ---
 
 # AGENTS.md
@@ -60,6 +60,22 @@ revision: 4
 - 进入嵌套仓库时，编辑前重新阅读该仓库的 `AGENTS.md` 与
   `.mustflow/config/*.toml`。
 - 未经明确请求，不要编辑所选子仓库之外的内容。
+
+## 宿主专用指令兼容性
+
+某些编码宿主可能会读取额外的宿主专用指令文件，或执行自己的审批、沙箱、检查点和命令执行策略。
+
+应将这些宿主策略视为额外的安全和执行约束。它们不会替代本仓库的 mustflow 命令契约。
+当宿主指令与 mustflow 规则冲突时：
+
+- 用户当前的直接指令决定任务目标，除非该指令不安全。
+- 宿主的安全和审批门禁仍然有效。
+- 仓库工作规则来自最近的 `AGENTS.md` 和 `.mustflow/config/*.toml`。
+- 项目验证命令必须使用已配置的 mustflow intent。
+- 隐私、secret、破坏性命令和 Git push 规则以更严格的一方为准。
+- 生成状态、摘要和缓存永远不能覆盖当前文件或当前用户指令。
+
+如果有效规则不清楚，应停止并报告冲突，而不是猜测。
 
 ## 指令刷新检查点
 

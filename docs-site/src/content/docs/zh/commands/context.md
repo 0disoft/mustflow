@@ -19,6 +19,9 @@ description: 为当前 mustflow 根目录打印 JSON 代理工作上下文。
 - 通过 authority 与 optional reading 字段暴露的上下文索引和项目上下文路径。
 - `commands.toml` 中的 command intent 状态摘要。
 - 可运行的有限 command intent 名称。
+- 命令执行、Git 自动化和状态权威的有效策略摘要。
+- 本地缓存和本地状态策略。
+- 默认仓库契约阻止的动作。
 - 最新 `mf run` 回执摘要。
 - manifest lock 报告的问题。
 
@@ -49,6 +52,9 @@ npx mf context --json
 - `read_order` (`object[]`)：必读文件与存在标记。
 - `optional_read_order` (`object[]`)：可选阅读文件与存在标记。
 - `command_contract` (`object`)：command intent 摘要与可运行 intent 名称。
+- `effective_policy` (`object`)：命令执行、Git 自动化和状态权威的实际仓库策略。
+- `state_policy` (`object`)：本地缓存和本地状态存储策略。
+- `blocked_actions` (`string[]`)：仓库契约阻止的动作类别。
 - `latest_run` (`object`)：最新运行回执摘要。
 - `issues` (`string[]`)：manifest lock 报告的问题。
 
@@ -61,6 +67,14 @@ npx mf context --json
 - `command_contract.intents[].lifecycle` (`string | null`)：命令是有限命令还是长时运行命令。
 - `command_contract.intents[].run_policy` (`string | null`)：代理执行策略。
 - `command_contract.runnable_intents` (`string[]`)：代理可通过 `mf run <intent>` 运行的 intent 名称。
+- `effective_policy.project_commands_require_mf_run` (`boolean`)：项目验证命令是否应使用 `mf run`。
+- `effective_policy.allow_inferred_commands` (`boolean`)：是否允许代理推断 `commands.toml` 之外的命令。
+- `effective_policy.auto_stage`、`effective_policy.auto_commit`、`effective_policy.auto_push` (`boolean`)：Git 自动化偏好。
+- `state_policy.cache_path` (`string`)：本地缓存路径。
+- `state_policy.state_path` (`string`)：本地状态路径。
+- `state_policy.versioned` (`boolean`)：mustflow 本地状态是否应纳入版本管理。
+- `state_policy.safe_to_delete` (`boolean`)：本地缓存和状态是否可重新生成。
+- `state_policy.stores_raw_conversation`、`state_policy.stores_full_terminal_output`、`state_policy.stores_hidden_chain_of_thought` (`boolean`)：原始数据存储边界。
 - `latest_run.path` (`string`)：最新运行回执路径。
 - `latest_run.exists` (`boolean`)：最新运行回执是否存在。
 - `latest_run.valid` (`boolean | null`)：回执是否能解析为 JSON object。

@@ -37,7 +37,9 @@ Les agents le lisent après `AGENTS.md` pour comprendre l’exécution des comma
 
 La source de vérité des commandes exécutables est `.mustflow/config/commands.toml`.
 
-Les agents ne peuvent exécuter que les intentions de commande avec `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"` et `stdin = "closed"`. Si une intention manque, vaut `unknown`, `not_applicable`, `manual_only` ou `disabled`, les agents ne doivent pas déduire une commande de remplacement et doivent signaler la raison de l’omission.
+Les agents ne peuvent exécuter que les intentions de commande qui satisfont toutes les portes d’exécution: `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, un `timeout_seconds` positif, une commande déclarée via `argv` ou `mode = "shell"` plus `cmd`, et un `cwd` dans la racine mustflow actuelle. Si une intention manque, vaut `unknown`, `not_applicable`, `manual_only` ou `disabled`, les agents ne doivent pas déduire une commande de remplacement et doivent signaler la raison de l’omission.
+
+Dans les nouvelles configurations, utilisez `manual_only` comme `status` d’intention. `run_policy = "manual_only"` peut être accepté pour les anciennes configurations, mais les nouveaux modèles ne le génèrent pas.
 
 Les intentions configurées doivent utiliser un tableau `argv` lorsque c’est possible. Utilisez `mode = "shell"` et `cmd` uniquement lorsque la syntaxe shell est réellement nécessaire.
 
@@ -48,6 +50,9 @@ Lorsque `mf run <intent>` est disponible, préférez-le pour les commandes finie
 `mf run` écrit le dernier résultat d’exécution dans `.mustflow/state/runs/latest.json` comme reçu d’exécution.
 Utilisez `mf run <intent> --json` lorsqu’une automatisation ou un rapport final a besoin d’une preuve structurée.
 Le reçu documente une seule exécution; la source de vérité de la définition de commande reste `commands.toml`.
+
+Les shells du host peuvent exécuter des commandes, mais les commandes de projet lancées directement ne comptent pas automatiquement comme vérification mustflow.
+Si une commande contourne `mf run`, traitez sa sortie comme un contexte de moindre confiance, sauf si l’utilisateur a explicitement approuvé une exception manuelle et si le rapport final indique qu’aucun reçu `mf run` n’a été produit.
 
 `mf context --json` est un index en lecture seule qui affiche rapidement l’ordre de lecture, les intentions de commande, les capacités et le dernier résumé d’exécution pour la racine actuelle. Il ne remplace pas la lecture des vrais documents et fichiers de configuration, et les commandes de test ou de construction du projet suivent toujours le contrat d’intention dans `commands.toml`.
 
@@ -70,6 +75,20 @@ Gardez la carte de navigation du dépôt dans le `REPO_MAP.md` généré au lieu
 Ne placez pas de valeurs volatiles comme des heures générées, des hashes, des nombres de fichiers, des résumés de changements récents ou de longs journaux près du haut de ce fichier.
 
 N’ajoutez pas continuellement des transcriptions complètes de discussion, des sorties complètes du terminal ou des journaux d’événements JSONL bruts sous `.mustflow/`. Gardez les résultats d’exécution sous forme de petits reçus d’exécution, et gardez les fichiers de connaissances sous forme de résumés avec sources plutôt que de journaux bruts.
+
+## Couloirs de règles effectives
+
+Ne réduisez pas toutes les instructions à une seule liste de priorité. Résolvez les conflits selon le type de règle:
+
+- Objectif utilisateur: les instructions directes actuelles de l’utilisateur définissent la tâche sauf si elles sont dangereuses.
+- Sécurité du host: les portes d’approbation, de sandbox, de checkpoint et d’exécution shell du host restent contraignantes.
+- Règles de travail du dépôt: le `AGENTS.md` le plus proche et `.mustflow/config/*.toml` définissent le contrat du dépôt.
+- Exécution des commandes: `.mustflow/config/commands.toml` définit le contrat de commandes du projet.
+- Preuve de vérification: les reçus `mf run` et les fichiers actuels ont plus de poids que la sortie shell directe du host.
+- Contexte et préférences: `.mustflow/context/*`, `preferences.toml` et les cartes générées sont des valeurs par défaut de moindre autorité.
+- État de session et cache: les résumés du host, `.mustflow/cache/**` et `.mustflow/state/**` ne remplacent jamais les fichiers actuels ni les instructions actuelles de l’utilisateur.
+
+Les ensembles d’actions autorisées se réduisent par intersection. Les actions refusées, exigences d’approbation, règles de confidentialité et règles de commandes destructives s’accumulent. Si la règle effective n’est pas claire, arrêtez-vous et signalez le conflit au lieu de deviner.
 
 ## Actualisation des instructions
 
@@ -123,6 +142,8 @@ La langue de discussion de l’utilisateur ne doit pas déterminer automatiqueme
 ## Politique de comportement Git
 
 `git.auto_stage`, `git.auto_commit` et `git.auto_push` valent tous `false` par défaut.
+
+Ces valeurs sont des préférences de dépôt, pas des autorisations. Elles ne remplacent pas les instructions directes de l’utilisateur, `.mustflow/config/commands.toml` ni la politique d’approbation dans `.mustflow/config/mustflow.toml`. En particulier, `git.auto_commit = true` n’accorde pas l’autorisation de push, et `git.auto_push = true` ne peut pas être activé via `mf init`.
 
 Sans demande explicite de l’utilisateur, les agents ne doivent pas ajouter à l’index Git, créer de commit, modifier un commit, rebaser, réinitialiser, pousser ou changer autrement l’état ou l’historique Git.
 

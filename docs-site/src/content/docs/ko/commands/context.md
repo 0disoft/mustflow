@@ -19,6 +19,9 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 - 맥락 색인(Context Index) 및 프로젝트 맥락 경로
 - `commands.toml` 내 명령 의도별 상태 요약
 - 에이전트가 실행 가능한 단발성(Oneshot) 명령 의도 목록
+- 명령 실행, Git 자동화, 상태 권위에 대한 유효 정책 요약
+- 로컬 캐시와 로컬 상태 저장 정책
+- 기본 저장소 계약에서 차단되는 행동 목록
 - 마지막 `mf run` 실행 결과 기록 요약
 - 매니페스트 잠금 파일 기준 이슈 목록
 
@@ -49,6 +52,9 @@ npx mf context --json
 - `read_order` (`object[]`): 필수 읽기 파일 목록 및 존재 여부입니다.
 - `optional_read_order` (`object[]`): 선택적 읽기 파일 목록 및 존재 여부입니다.
 - `command_contract` (`object`): 명령 의도 요약 및 실행 가능한 의도 목록입니다.
+- `effective_policy` (`object`): 명령 실행, Git 자동화, 상태 권위에 대해 실제로 적용되는 저장소 정책입니다.
+- `state_policy` (`object`): 로컬 캐시와 로컬 상태 저장 정책입니다.
+- `blocked_actions` (`string[]`): 저장소 계약에서 차단되는 행동 종류입니다.
 - `latest_run` (`object`): 마지막 실행 결과 요약입니다.
 - `issues` (`string[]`): 잠금 파일 기준 이슈 목록입니다.
 
@@ -61,6 +67,14 @@ npx mf context --json
 - `command_contract.intents[].lifecycle` (`string | null`): 명령 생명주기(단발성 또는 장기 실행)입니다.
 - `command_contract.intents[].run_policy` (`string | null`): 에이전트 실행 정책입니다.
 - `command_contract.runnable_intents` (`string[]`): 에이전트가 즉시 실행 가능한 의도 목록입니다.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): 프로젝트 검증 명령에 `mf run`을 요구하는지 여부입니다.
+- `effective_policy.allow_inferred_commands` (`boolean`): `commands.toml` 밖의 명령 추측을 허용하는지 여부입니다.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): Git 자동화 선호값입니다.
+- `state_policy.cache_path` (`string`): 로컬 캐시 경로입니다.
+- `state_policy.state_path` (`string`): 로컬 상태 경로입니다.
+- `state_policy.versioned` (`boolean`): mustflow 로컬 상태를 버전 관리 대상으로 볼지 여부입니다.
+- `state_policy.safe_to_delete` (`boolean`): 로컬 캐시와 상태를 다시 만들 수 있는지 여부입니다.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): 원본 대화, 전체 터미널 출력, 숨은 추론 저장 여부입니다.
 - `latest_run.path` (`string`): 실행 결과 기록 파일 경로입니다.
 - `latest_run.exists` (`boolean`): 실행 결과 기록 파일 존재 여부입니다.
 - `latest_run.valid` (`boolean | null`): 실행 기록 파일의 JSON 유효성 여부입니다.

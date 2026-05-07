@@ -19,6 +19,9 @@ Este comando no modifica archivos. No reemplaza la lectura de los documentos rea
 - Índice de contexto y rutas de contexto del proyecto mediante campos de autoridad y lectura opcional.
 - Resumen del estado de las intenciones de comando de `commands.toml`.
 - Nombres de intenciones `oneshot` ejecutables.
+- Resumen de politica efectiva para ejecucion de comandos, automatizacion Git y autoridad del estado.
+- Politica de cache local y estado local.
+- Acciones bloqueadas por el contrato predeterminado del repositorio.
 - Resumen del último recibo de `mf run`.
 - Problemas informados desde el archivo de bloqueo del manifiesto.
 
@@ -49,6 +52,9 @@ La salida legible por máquinas usa estos campos:
 - `read_order` (`object[]`): archivos requeridos e indicadores de existencia.
 - `optional_read_order` (`object[]`): archivos opcionales e indicadores de existencia.
 - `command_contract` (`object`): resumen de intenciones de comando y nombres de intenciones ejecutables.
+- `effective_policy` (`object`): politica aplicada del repositorio para ejecucion de comandos, automatizacion Git y autoridad del estado.
+- `state_policy` (`object`): politica de cache local y almacenamiento de estado local.
+- `blocked_actions` (`string[]`): clases de acciones bloqueadas por el contrato del repositorio.
 - `latest_run` (`object`): resumen del último recibo de ejecución.
 - `issues` (`string[]`): problemas informados desde el archivo de bloqueo del manifiesto.
 
@@ -61,6 +67,14 @@ Los campos repetidos y anidados usan estas formas:
 - `command_contract.intents[].lifecycle` (`string | null`): si el comando es de una sola ejecución o de larga duración.
 - `command_contract.intents[].run_policy` (`string | null`): política de ejecución para agentes.
 - `command_contract.runnable_intents` (`string[]`): nombres de intenciones que un agente puede ejecutar con `mf run <intent>`.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): si los comandos de verificacion del proyecto deben usar `mf run`.
+- `effective_policy.allow_inferred_commands` (`boolean`): si los agentes pueden inferir comandos fuera de `commands.toml`.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): preferencias de automatizacion Git.
+- `state_policy.cache_path` (`string`): ruta de cache local.
+- `state_policy.state_path` (`string`): ruta de estado local.
+- `state_policy.versioned` (`boolean`): si el estado local de mustflow debe versionarse.
+- `state_policy.safe_to_delete` (`boolean`): si la cache y el estado local pueden regenerarse.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): limites de almacenamiento bruto.
 - `latest_run.path` (`string`): ruta del último recibo de ejecución.
 - `latest_run.exists` (`boolean`): si existe el último recibo de ejecución.
 - `latest_run.valid` (`boolean | null`): si el recibo se analiza como objeto JSON.

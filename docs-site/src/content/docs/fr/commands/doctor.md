@@ -16,6 +16,7 @@ Cette commande n’écrit jamais de fichiers. Utilise-la lorsqu’un agent ou un
 - État de `manifest.lock.toml`.
 - Identifiant et version du modèle depuis le fichier de verrouillage lorsqu’il est présent.
 - Existence de `.mustflow/config/commands.toml` et exposition d’intentions finies exécutables.
+- Politique effective pour l’exécution des commandes, l’automatisation Git, l’état local et les actions bloquées.
 - Chemins requis et facultatifs de l’ordre de lecture qui manquent dans `mustflow.toml`.
 - Génération éventuelle de `REPO_MAP.md`.
 - Existence de l’index local `.mustflow/cache/mustflow.sqlite`.
@@ -77,6 +78,9 @@ La sortie lisible par machine utilise ces champs:
 - `ok` (`boolean`): indique si l’installation existe et si la validation a réussi.
 - `check` (`object`): résultat de validation utilisant les règles de `mf check`.
 - `context` (`object`): état de contexte principal dont un agent a besoin avant de commencer.
+- `effective_policy` (`object`): politique appliquée du dépôt pour l’exécution des commandes, l’automatisation Git et l’autorité de l’état.
+- `state_policy` (`object`): politique de cache local et de stockage d’état local.
+- `blocked_actions` (`string[]`): classes d’actions bloquées par le contrat du dépôt.
 - `diagnostics` (`object[]`): diagnostics par zone pour l’installation, la validation, le contrat de commande, l’ordre de lecture, le plan de dépôt, l’index local et la dernière exécution.
 - `next_steps` (`string[]`): commandes qu’un agent peut exécuter ensuite sans deviner.
 
@@ -92,6 +96,14 @@ Les champs imbriqués utilisent ces formes:
 - `context.missing_read_order` (`string[]`): fichiers requis de l’ordre de lecture qui manquent.
 - `context.missing_optional_read_order` (`string[]`): fichiers facultatifs de l’ordre de lecture qui manquent.
 - `context.latest_run_exists` (`boolean`): indique si le dernier reçu d’exécution existe.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): indique si les commandes de vérification du projet doivent utiliser `mf run`.
+- `effective_policy.allow_inferred_commands` (`boolean`): indique si les agents peuvent déduire des commandes hors de `commands.toml`.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): préférences d’automatisation Git.
+- `state_policy.cache_path` (`string`): chemin du cache local.
+- `state_policy.state_path` (`string`): chemin de l’état local.
+- `state_policy.versioned` (`boolean`): indique si l’état local mustflow doit être versionné.
+- `state_policy.safe_to_delete` (`boolean`): indique si le cache et l’état local peuvent être régénérés.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): limites de stockage brut.
 - `diagnostics[].id` (`string`): nom de la zone de diagnostic.
 - `diagnostics[].status` (`string`): état du diagnostic. L’un de `ok`, `warn`, `fail` ou `info`.
 - `diagnostics[].summary` (`string`): état court lisible par une personne.

@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 6
+revision: 7
 ---
 
 # Agent Workflow
@@ -46,6 +46,22 @@ Avoid conflating these sources.
 When a generated file appears stale, refresh it through the matching `mf` command instead of editing
 it by hand.
 
+## Effective Rule Lanes
+
+Do not collapse every instruction into one priority list. Resolve conflicts by the kind of rule:
+
+- User goal: current direct user instructions define the task unless unsafe.
+- Host safety: host approval, sandbox, and execution gates remain binding when they are stricter.
+- Repository work rules: use the nearest `AGENTS.md` plus `.mustflow/config/*.toml`.
+- Command execution: `.mustflow/config/commands.toml` is the project command contract.
+- Verification evidence: `mf run` receipts and current files outrank direct host shell output.
+- Context and preferences: `.mustflow/context/*`, `preferences.toml`, and generated maps are lower-authority defaults.
+- Session and cache state: host summaries, `.mustflow/cache/**`, and `.mustflow/state/**` never override current files or current user instructions.
+
+Allowed action sets narrow by intersection. Denied actions, approval requirements, privacy rules, and
+destructive-command rules accumulate. When the effective rule is unclear, stop and report the
+conflict instead of guessing.
+
 ## Instruction Refresh
 
 Long sessions may lead to instruction drift. Treat instruction refresh as a mandatory checkpoint, not as a project-file counter.
@@ -66,6 +82,8 @@ Use `.mustflow/config/mustflow.toml` `[refresh]` to decide the refresh level:
 
 - `light`: reread `AGENTS.md` and `.mustflow/docs/agent-workflow.md`
 - `command`: reread `AGENTS.md` and `.mustflow/config/commands.toml`
+- `edit`: reread `AGENTS.md`, `.mustflow/config/mustflow.toml`, and `.mustflow/docs/agent-workflow.md` before sensitive edits
+- `report`: reread `AGENTS.md`, `.mustflow/config/mustflow.toml`, and `.mustflow/config/preferences.toml` before the final report
 - `skill`: reread `AGENTS.md` and `.mustflow/skills/INDEX.md`
 - `full`: reread the full mustflow read sequence
 
@@ -78,18 +96,9 @@ documents. Skills may describe refresh behavior, but they are not reliable lifec
 
 ## Context Compaction
 
-mustflow supports a policy for tiered context compaction, but it does not collect full chat
-transcripts by default.
+`compaction` is a future or host policy, not a default data collection feature. The default template keeps it disabled and declares only safety rules.
 
-Use `.mustflow/config/mustflow.toml` `[compaction]` to declare how a host agent may separate:
-
-- recent derived context kept in local cache
-- mid-level summaries with source references
-- long-term summaries that preserve decisions, constraints, risks, and next steps
-
-Do not store hidden chain of thought, secrets, unbounded raw transcripts, or raw command logs in the
-project. The default policy uses `store_raw = false`. A compacted summary must be source-linked and
-must stay lower authority than current files and current user instructions.
+Do not store hidden reasoning, secrets, full chat transcripts, full terminal output, raw event logs, or raw command logs in the project. If a host creates compacted summaries in the future, they must be source-linked and must stay lower authority than current files and current user instructions.
 
 ## Harness Contract Boundary
 
@@ -116,6 +125,16 @@ For long-running or resumed tasks, separate these phases:
 The judge phase must not treat the worker's completion claim as sufficient. It uses the task goal,
 changed files, command contract, and run receipts.
 
+## Git Behavior Policy
+
+Git operations that modify state or history are denied by default.
+
+- `git.auto_stage = false`: do not stage without a user request.
+- `git.auto_commit = false`: do not commit without a user request.
+- `git.auto_push = false`: do not push without a user request.
+
+These values are repository preferences, not permissions. They do not override direct user instructions, `.mustflow/config/commands.toml`, or approval policy in `.mustflow/config/mustflow.toml`. In particular, `git.auto_commit = true` does not grant push permission, and `git.auto_push = true` cannot be enabled through `mf init`.
+
 ## Command Execution Policy
 
 Do not infer commands from `package.json`, `Makefile`, `justfile`, `Taskfile.yml`, or source files.
@@ -127,10 +146,19 @@ A command intent is eligible for agent use only when all of these are true:
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
-- A defined timeout is configured
+- `timeout_seconds` is a positive integer
+- A command is declared with `argv`, or with `mode = "shell"` and `cmd`
+- `cwd` remains inside the current mustflow root
+
+`manual_only` is a status for new configurations. `run_policy = "manual_only"` may be read for older configs, but new templates should use `status = "manual_only"` instead.
 
 Prefer `mf run <intent>` so the project receives a concise run record in
 `.mustflow/state/runs/latest.json`.
+
+Host shells can run commands, but direct project commands do not automatically count as mustflow
+verification. If a command bypasses `mf run`, treat its output as lower-confidence context unless the
+user explicitly approved a manual override and the final report states that no mustflow run receipt
+was produced.
 
 Do not directly run development servers, watchers, browser launches, interactive prompts,
 or background processes. Report the skipped intent and reason instead.

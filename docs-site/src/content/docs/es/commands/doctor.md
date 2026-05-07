@@ -16,6 +16,7 @@ Este comando nunca escribe archivos. Úsalo cuando un agente o una persona neces
 - Estado de `manifest.lock.toml`.
 - Identificador y versión de plantilla del archivo de bloqueo, cuando existan.
 - Si `.mustflow/config/commands.toml` existe y expone intenciones `oneshot` ejecutables.
+- Politica efectiva para ejecucion de comandos, automatizacion Git, estado local y acciones bloqueadas.
 - Rutas obligatorias y opcionales del orden de lectura de `mustflow.toml` que faltan.
 - Si se generó `REPO_MAP.md`.
 - Si existe el índice local `.mustflow/cache/mustflow.sqlite`.
@@ -77,6 +78,9 @@ La salida legible por máquinas usa estos campos:
 - `ok` (`boolean`): si la instalación existe y la validación pasó.
 - `check` (`object`): resultado de validación según las reglas de `mf check`.
 - `context` (`object`): estado principal que un agente necesita antes de empezar.
+- `effective_policy` (`object`): politica aplicada del repositorio para ejecucion de comandos, automatizacion Git y autoridad del estado.
+- `state_policy` (`object`): politica de cache local y almacenamiento de estado local.
+- `blocked_actions` (`string[]`): clases de acciones bloqueadas por el contrato del repositorio.
 - `diagnostics` (`object[]`): diagnóstico por área para instalación, validación, contrato de comando, orden de lectura, mapa del repositorio, índice local y ejecución más reciente.
 - `next_steps` (`string[]`): comandos que un agente puede ejecutar después sin adivinar.
 
@@ -92,6 +96,14 @@ Los campos anidados usan estas formas:
 - `context.missing_read_order` (`string[]`): archivos requeridos del orden de lectura que faltan.
 - `context.missing_optional_read_order` (`string[]`): archivos opcionales del orden de lectura que faltan.
 - `context.latest_run_exists` (`boolean`): si existe el último recibo de ejecución.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): si los comandos de verificacion del proyecto deben usar `mf run`.
+- `effective_policy.allow_inferred_commands` (`boolean`): si los agentes pueden inferir comandos fuera de `commands.toml`.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): preferencias de automatizacion Git.
+- `state_policy.cache_path` (`string`): ruta de cache local.
+- `state_policy.state_path` (`string`): ruta de estado local.
+- `state_policy.versioned` (`boolean`): si el estado local de mustflow debe versionarse.
+- `state_policy.safe_to_delete` (`boolean`): si la cache y el estado local pueden regenerarse.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): limites de almacenamiento bruto.
 - `diagnostics[].id` (`string`): nombre del área de diagnóstico.
 - `diagnostics[].status` (`string`): estado del diagnóstico. Uno de `ok`, `warn`, `fail` o `info`.
 - `diagnostics[].summary` (`string`): estado breve legible para personas.

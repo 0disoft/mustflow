@@ -19,6 +19,9 @@ Cette commande ne modifie pas les fichiers. Elle ne remplace pas la lecture des 
 - Index de contexte et chemins de contexte de projet via les champs d’autorité et de lecture facultative.
 - Résumé de l’état des intentions de commande depuis `commands.toml`.
 - Noms des intentions de commande finies et exécutables.
+- Résumé de politique effective pour l’exécution des commandes, l’automatisation Git et l’autorité de l’état.
+- Politique de cache local et d’état local.
+- Actions bloquées par le contrat par défaut du dépôt.
 - Résumé du dernier reçu `mf run`.
 - Problèmes signalés depuis le verrou de manifeste.
 
@@ -49,6 +52,9 @@ La sortie lisible par machine utilise ces champs:
 - `read_order` (`object[]`): fichiers de lecture requis et indicateurs d’existence.
 - `optional_read_order` (`object[]`): fichiers de lecture facultatifs et indicateurs d’existence.
 - `command_contract` (`object`): résumé des intentions de commande et noms d’intentions exécutables.
+- `effective_policy` (`object`): politique appliquée du dépôt pour l’exécution des commandes, l’automatisation Git et l’autorité de l’état.
+- `state_policy` (`object`): politique de cache local et de stockage d’état local.
+- `blocked_actions` (`string[]`): classes d’actions bloquées par le contrat du dépôt.
 - `latest_run` (`object`): résumé du dernier reçu d’exécution.
 - `issues` (`string[]`): problèmes signalés depuis le verrou de manifeste.
 
@@ -61,6 +67,14 @@ Les champs répétés et imbriqués utilisent ces formes:
 - `command_contract.intents[].lifecycle` (`string | null`): indique si la commande est finie ou de longue durée.
 - `command_contract.intents[].run_policy` (`string | null`): politique d’exécution pour l’agent.
 - `command_contract.runnable_intents` (`string[]`): noms d’intentions qu’un agent peut exécuter avec `mf run <intent>`.
+- `effective_policy.project_commands_require_mf_run` (`boolean`): indique si les commandes de vérification du projet doivent utiliser `mf run`.
+- `effective_policy.allow_inferred_commands` (`boolean`): indique si les agents peuvent déduire des commandes hors de `commands.toml`.
+- `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): préférences d’automatisation Git.
+- `state_policy.cache_path` (`string`): chemin du cache local.
+- `state_policy.state_path` (`string`): chemin de l’état local.
+- `state_policy.versioned` (`boolean`): indique si l’état local mustflow doit être versionné.
+- `state_policy.safe_to_delete` (`boolean`): indique si le cache et l’état local peuvent être régénérés.
+- `state_policy.stores_raw_conversation`, `state_policy.stores_full_terminal_output`, `state_policy.stores_hidden_chain_of_thought` (`boolean`): limites de stockage brut.
 - `latest_run.path` (`string`): chemin du dernier reçu d’exécution.
 - `latest_run.exists` (`boolean`): indique si le dernier reçu d’exécution existe.
 - `latest_run.valid` (`boolean | null`): indique si le reçu a été analysé comme objet JSON.

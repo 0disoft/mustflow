@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { getAgentContext } from '../lib/agent-context.js';
+import {
+	getAgentContext,
+	type EffectivePolicyContext,
+	type StatePolicyContext,
+} from '../lib/agent-context.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { getLocalIndexDatabasePath } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
@@ -53,6 +57,9 @@ interface DoctorOutput {
 	readonly ok: boolean;
 	readonly check: DoctorCheckSummary;
 	readonly context: DoctorContextSummary;
+	readonly effective_policy: EffectivePolicyContext;
+	readonly state_policy: StatePolicyContext;
+	readonly blocked_actions: readonly string[];
 	readonly diagnostics: readonly DoctorDiagnostic[];
 	readonly next_steps: readonly string[];
 }
@@ -223,6 +230,9 @@ function createDoctorOutput(strict: boolean): DoctorOutput {
 			missing_optional_read_order: context.optional_read_order.filter((entry) => !entry.exists).map((entry) => entry.path),
 			latest_run_exists: context.latest_run.exists,
 		},
+		effective_policy: context.effective_policy,
+		state_policy: context.state_policy,
+		blocked_actions: context.blocked_actions,
 	};
 	const diagnostics = createDiagnostics(baseOutput);
 

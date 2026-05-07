@@ -16,6 +16,7 @@ description: 面向当前 mustflow 根目录的只读诊断命令。
 - `manifest.lock.toml` 状态。
 - 当锁文件存在时，其中的模板标识符与版本。
 - `.mustflow/config/commands.toml` 是否存在，并是否暴露可运行的有限 intents。
+- 命令执行、Git 自动化、本地状态和阻止动作的有效策略。
 - `mustflow.toml` 中缺失的必读与可选阅读路径。
 - `REPO_MAP.md` 是否已生成。
 - 本地 `.mustflow/cache/mustflow.sqlite` 索引是否存在。
@@ -77,6 +78,9 @@ npx mf doctor --json
 - `ok` (`boolean`)：安装是否存在且验证是否通过。
 - `check` (`object`)：使用 `mf check` 规则得到的验证结果。
 - `context` (`object`)：代理开始前需要的主要上下文状态。
+- `effective_policy` (`object`)：命令执行、Git 自动化和状态权威的实际仓库策略。
+- `state_policy` (`object`)：本地缓存和本地状态存储策略。
+- `blocked_actions` (`string[]`)：仓库契约阻止的动作类别。
 - `diagnostics` (`object[]`)：安装、验证、命令合同、阅读顺序、仓库地图、本地索引和最新运行的逐项诊断。
 - `next_steps` (`string[]`)：代理无需猜测即可继续运行的命令。
 
@@ -92,6 +96,14 @@ npx mf doctor --json
 - `context.missing_read_order` (`string[]`)：缺失的必读顺序文件。
 - `context.missing_optional_read_order` (`string[]`)：缺失的可选阅读顺序文件。
 - `context.latest_run_exists` (`boolean`)：最新运行回执是否存在。
+- `effective_policy.project_commands_require_mf_run` (`boolean`)：项目验证命令是否应使用 `mf run`。
+- `effective_policy.allow_inferred_commands` (`boolean`)：是否允许代理推断 `commands.toml` 之外的命令。
+- `effective_policy.auto_stage`、`effective_policy.auto_commit`、`effective_policy.auto_push` (`boolean`)：Git 自动化偏好。
+- `state_policy.cache_path` (`string`)：本地缓存路径。
+- `state_policy.state_path` (`string`)：本地状态路径。
+- `state_policy.versioned` (`boolean`)：mustflow 本地状态是否应纳入版本管理。
+- `state_policy.safe_to_delete` (`boolean`)：本地缓存和状态是否可重新生成。
+- `state_policy.stores_raw_conversation`、`state_policy.stores_full_terminal_output`、`state_policy.stores_hidden_chain_of_thought` (`boolean`)：原始数据存储边界。
 - `diagnostics[].id` (`string`)：诊断区域名称。
 - `diagnostics[].status` (`string`)：诊断状态，取值为 `ok`、`warn`、`fail` 或 `info`。
 - `diagnostics[].summary` (`string`)：简短的人类可读状态。

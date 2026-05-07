@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: fr
 canonical: false
-revision: 6
+revision: 7
 ---
 
 # Flux De Travail Agent
@@ -41,6 +41,22 @@ Eviter de confondre ces sources.
 
 Quand un fichier genere parait obsolete, rafraichis-le via la commande `mf` correspondante au lieu de l'editer manuellement.
 
+## Voies De Regles Effectives
+
+Ne reduis pas toutes les instructions a une seule liste de priorites. Resous les conflits selon le type de regle:
+
+- Objectif utilisateur: les instructions directes actuelles de l'utilisateur definissent la tache sauf si elles sont dangereuses.
+- Securite du host: les portes d'approbation, sandbox et execution du host restent valables quand elles sont plus strictes.
+- Regles de travail du depot: utiliser le `AGENTS.md` le plus proche et `.mustflow/config/*.toml`.
+- Execution de commandes: `.mustflow/config/commands.toml` est le contrat de commandes du projet.
+- Preuves de verification: les recus `mf run` et les fichiers actuels ont plus de poids que la sortie directe du shell du host.
+- Contexte et preferences: `.mustflow/context/*`, `preferences.toml` et les cartes generees sont des valeurs par defaut de moindre autorite.
+- Etat de session et cache: les resumes du host, `.mustflow/cache/**` et `.mustflow/state/**` ne remplacent jamais les fichiers actuels ni les instructions utilisateur actuelles.
+
+Les ensembles autorises se reduisent par intersection. Les actions interdites, exigences d'approbation,
+regles de confidentialite et regles de commandes destructrices s'accumulent. Si la regle effective n'est
+pas claire, arrete-toi et signale le conflit au lieu de deviner.
+
 ## Rafraichissement Des Instructions
 
 Les longues sessions peuvent provoquer une derive des instructions. Traite le rafraichissement des instructions comme un point de controle obligatoire, pas comme un compteur dans les fichiers du projet.
@@ -61,6 +77,8 @@ Utilise `[refresh]` dans `.mustflow/config/mustflow.toml` pour choisir le niveau
 
 - `light`: relire `AGENTS.md` et `.mustflow/docs/agent-workflow.md`
 - `command`: relire `AGENTS.md` et `.mustflow/config/commands.toml`
+- `edit`: relire `AGENTS.md`, `.mustflow/config/mustflow.toml` et `.mustflow/docs/agent-workflow.md` avant les modifications sensibles
+- `report`: relire `AGENTS.md`, `.mustflow/config/mustflow.toml` et `.mustflow/config/preferences.toml` avant le rapport final
 - `skill`: relire `AGENTS.md` et `.mustflow/skills/INDEX.md`
 - `full`: relire la sequence complete de lecture mustflow
 
@@ -70,15 +88,9 @@ Ne pas ecrire de compteurs de tours, de compteurs de messages ni d'activite de s
 
 ## Compaction Du Contexte
 
-mustflow prend en charge une politique de compaction de contexte par niveaux, mais ne collecte pas de transcriptions completes du chat par defaut.
+`compaction` n'est pas une fonction de collecte de donnees activee par defaut. C'est une politique de securite pour de futurs harnesses ou hosts. Le modele par defaut la garde desactivee et ne declare que des regles de securite.
 
-Utilise `[compaction]` dans `.mustflow/config/mustflow.toml` pour declarer comment un agent hote peut separer:
-
-- contexte recent derive conserve en cache local
-- resumes de niveau intermediaire avec references de source
-- resumes long terme qui preservent decisions, contraintes, risques et prochaines etapes
-
-Ne stocke pas de raisonnement cache, de secrets, de transcriptions brutes non bornees ni de journaux bruts de commandes dans le projet. La politique par defaut utilise `store_raw = false`. Un resume compacte doit etre relie a sa source et doit rester moins autoritaire que les fichiers actuels et les instructions utilisateur actuelles.
+Ne stocke pas de raisonnement cache, de secrets, de transcriptions completes, de sortie complete du terminal, d'evenements bruts ni de journaux bruts de commandes dans le projet. Si un host cree des resumes a l'avenir, ils doivent etre relies a leurs sources et rester moins autoritaires que les fichiers actuels et les instructions utilisateur actuelles.
 
 ## Limite Du Contrat De Harness
 
@@ -102,6 +114,16 @@ Pour les taches longue duree ou reprises, separe ces phases:
 
 La phase d'evaluation ne doit pas considerer la declaration de completion du worker comme suffisante. Elle utilise l'objectif de la tache, les fichiers modifies, le contrat de commandes et les recus d'execution.
 
+## Politique De Comportement Git
+
+Les operations Git qui modifient l'etat ou l'historique sont refusees par defaut.
+
+- `git.auto_stage = false`: ne pas preparer de fichiers sans demande utilisateur.
+- `git.auto_commit = false`: ne pas creer de commit sans demande utilisateur.
+- `git.auto_push = false`: ne pas pousser sans demande utilisateur.
+
+Ces valeurs sont des preferences de depot, pas des autorisations. Elles ne remplacent pas les instructions directes de l'utilisateur, `.mustflow/config/commands.toml` ni la politique d'approbation dans `.mustflow/config/mustflow.toml`. En particulier, `git.auto_commit = true` n'accorde pas l'autorisation de push, et `git.auto_push = true` ne peut pas etre active via `mf init`.
+
 ## Politique D'Execution Des Commandes
 
 Ne pas deduire les commandes a partir de `package.json`, `Makefile`, `justfile`, `Taskfile.yml` ou des fichiers source.
@@ -113,9 +135,18 @@ Un command intent est eligible a l'usage agent uniquement quand toutes ces condi
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
-- Un timeout defini est configure
+- `timeout_seconds` est un entier positif
+- La commande est declaree avec `argv`, ou avec `mode = "shell"` et `cmd`
+- `cwd` reste dans la racine mustflow actuelle
+
+`manual_only` est un statut pour les nouvelles configurations. `run_policy = "manual_only"` peut etre lu pour compatibilite avec les anciennes configurations, mais les nouveaux modeles doivent utiliser `status = "manual_only"`.
 
 Preferer `mf run <intent>` pour que le projet recoive un enregistrement d'execution concis dans `.mustflow/state/runs/latest.json`.
+
+Les shells du host peuvent executer des commandes, mais les commandes projet executees directement ne
+comptent pas automatiquement comme verification mustflow. Si une commande contourne `mf run`, traite sa
+sortie comme un contexte de confiance plus faible, sauf si l'utilisateur a approuve explicitement une
+exception manuelle et si le rapport final indique qu'aucun recu d'execution mustflow n'a ete produit.
 
 Ne pas executer directement des serveurs de developpement, watchers, lancements de navigateur, invites interactives ou processus en arriere-plan. Signaler plutot l'intent omis et sa raison.
 

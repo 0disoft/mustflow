@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: es
 canonical: false
-revision: 4
+revision: 5
 ---
 
 # AGENTS.md
@@ -62,6 +62,24 @@ Los detalles gestionados por mustflow estan en `.mustflow/`.
 - Al entrar en un repositorio anidado, vuelve a leer su `AGENTS.md` y
   `.mustflow/config/*.toml` antes de editar.
 - No edites fuera del repositorio hijo seleccionado salvo solicitud explicita.
+
+## Compatibilidad Con Instrucciones Del Host
+
+Algunos hosts de codificacion pueden leer archivos de instrucciones propios o aplicar sus propias
+politicas de aprobacion, sandbox, checkpoint y ejecucion de comandos.
+
+Trata esas politicas del host como restricciones adicionales de seguridad y ejecucion. No sustituyen
+el contrato de comandos de mustflow de este repositorio. Cuando las instrucciones del host entren en
+conflicto con las reglas de mustflow:
+
+- Las instrucciones directas del usuario definen el objetivo de la tarea salvo que sean inseguras.
+- Las puertas de seguridad y aprobacion del host siguen siendo obligatorias.
+- Las reglas de trabajo del repositorio vienen del `AGENTS.md` mas cercano y de `.mustflow/config/*.toml`.
+- Los comandos de verificacion del proyecto deben usar intents configurados de mustflow.
+- Vence la regla mas estricta sobre privacidad, secretos, comandos destructivos y Git push.
+- El estado generado, los resumenes y las caches nunca sustituyen archivos actuales ni instrucciones actuales del usuario.
+
+Si la regla efectiva no esta clara, detente e informa el conflicto en lugar de adivinar.
 
 ## Puntos De Control Para Refrescar Instrucciones
 

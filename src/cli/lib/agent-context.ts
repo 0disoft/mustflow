@@ -15,7 +15,16 @@ import { readTomlFile } from './toml.js';
 const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const MUSTFLOW_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
+const PREFERENCES_RELATIVE_PATH = '.mustflow/config/preferences.toml';
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
+const CACHE_RELATIVE_PATH = '.mustflow/cache/';
+const STATE_RELATIVE_PATH = '.mustflow/state/';
+const BLOCKED_ACTIONS = [
+	'unconfigured_project_command',
+	'unmanaged_long_running_process',
+	'auto_push',
+	'raw_transcript_storage',
+] as const;
 
 type JsonScalar = string | number | boolean | null;
 type JsonObject = Record<string, JsonScalar | JsonScalar[]>;
@@ -38,6 +47,29 @@ export interface CommandContractContext {
 	readonly exists: boolean;
 	readonly intents: readonly IntentContext[];
 	readonly runnable_intents: readonly string[];
+}
+
+export interface EffectivePolicyContext {
+	readonly entrypoint: string;
+	readonly nearest_agents: string;
+	readonly command_contract: string;
+	readonly project_commands_require_mf_run: boolean;
+	readonly allow_inferred_commands: boolean;
+	readonly auto_stage: boolean;
+	readonly auto_commit: boolean;
+	readonly auto_push: boolean;
+	readonly state_is_versioned: boolean;
+	readonly raw_logs_allowed: boolean;
+}
+
+export interface StatePolicyContext {
+	readonly cache_path: string;
+	readonly state_path: string;
+	readonly versioned: boolean;
+	readonly safe_to_delete: boolean;
+	readonly stores_raw_conversation: boolean;
+	readonly stores_full_terminal_output: boolean;
+	readonly stores_hidden_chain_of_thought: boolean;
 }
 
 export type LatestRunContext =
@@ -75,6 +107,9 @@ export interface AgentContext {
 	readonly read_order: readonly PathContext[];
 	readonly optional_read_order: readonly PathContext[];
 	readonly command_contract: CommandContractContext;
+	readonly effective_policy: EffectivePolicyContext;
+	readonly state_policy: StatePolicyContext;
+	readonly blocked_actions: readonly string[];
 	readonly latest_run: LatestRunContext;
 	readonly issues: readonly string[];
 }
@@ -100,6 +135,24 @@ function readTomlTableIfExists(projectRoot: string, relativePath: string): TomlT
 
 	const parsed = readTomlFile(filePath);
 	return isRecord(parsed) ? parsed : undefined;
+}
+
+function readNestedTable(table: TomlTable | undefined, key: string): TomlTable | undefined {
+	if (!table || !isRecord(table[key])) {
+		return undefined;
+	}
+
+	return table[key];
+}
+
+function readBoolean(table: TomlTable | undefined, key: string, fallback: boolean): boolean {
+	const value = table?.[key];
+	return typeof value === 'boolean' ? value : fallback;
+}
+
+function readRetentionStore(retention: TomlTable | undefined, tableName: string): string | undefined {
+	const table = readNestedTable(retention, tableName);
+	return table ? readString(table, 'store') : undefined;
 }
 
 function readPathContext(projectRoot: string, paths: readonly string[]): readonly PathContext[] {
@@ -185,6 +238,43 @@ function readCommandContractContext(projectRoot: string): CommandContractContext
 	};
 }
 
+function readEffectivePolicyContext(
+	mustflow: TomlTable | undefined,
+	preferences: TomlTable | undefined,
+): EffectivePolicyContext {
+	const verification = readNestedTable(mustflow, 'verification');
+	const retention = readNestedTable(mustflow, 'retention');
+	const git = readNestedTable(preferences, 'git');
+	const allowInferredCommands = readBoolean(verification, 'allow_inferred_commands', false);
+	const requireConfiguredIntents = readBoolean(verification, 'require_configured_intents', true);
+	const rawEventsStore = readRetentionStore(retention, 'raw_events') ?? 'none';
+
+	return {
+		entrypoint: 'AGENTS.md',
+		nearest_agents: 'AGENTS.md',
+		command_contract: COMMANDS_RELATIVE_PATH,
+		project_commands_require_mf_run: requireConfiguredIntents && !allowInferredCommands,
+		allow_inferred_commands: allowInferredCommands,
+		auto_stage: readBoolean(git, 'auto_stage', false),
+		auto_commit: readBoolean(git, 'auto_commit', false),
+		auto_push: readBoolean(git, 'auto_push', false),
+		state_is_versioned: false,
+		raw_logs_allowed: rawEventsStore !== 'none',
+	};
+}
+
+function readStatePolicyContext(): StatePolicyContext {
+	return {
+		cache_path: CACHE_RELATIVE_PATH,
+		state_path: STATE_RELATIVE_PATH,
+		versioned: false,
+		safe_to_delete: true,
+		stores_raw_conversation: false,
+		stores_full_terminal_output: false,
+		stores_hidden_chain_of_thought: false,
+	};
+}
+
 function readLatestRunContext(projectRoot: string): LatestRunContext {
 	const latestPath = path.join(projectRoot, ...LATEST_RUN_RELATIVE_PATH.split('/'));
 
@@ -225,6 +315,7 @@ function readLatestRunContext(projectRoot: string): LatestRunContext {
 
 export function getAgentContext(projectRoot: string): AgentContext {
 	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
+	const preferences = readTomlTableIfExists(projectRoot, PREFERENCES_RELATIVE_PATH);
 	const authority = isRecord(mustflow?.authority) ? mustflow.authority : undefined;
 	const capabilities = isRecord(mustflow?.capabilities) ? mustflow.capabilities : undefined;
 	const readOrder = mustflow ? readStringArray(mustflow, 'read_order') ?? [] : [];
@@ -244,6 +335,9 @@ export function getAgentContext(projectRoot: string): AgentContext {
 		read_order: readPathContext(projectRoot, readOrder),
 		optional_read_order: readPathContext(projectRoot, optionalReadOrder),
 		command_contract: readCommandContractContext(projectRoot),
+		effective_policy: readEffectivePolicyContext(mustflow, preferences),
+		state_policy: readStatePolicyContext(),
+		blocked_actions: BLOCKED_ACTIONS,
 		latest_run: readLatestRunContext(projectRoot),
 		issues: lockInspection.issues,
 	};

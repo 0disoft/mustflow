@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 4
+revision: 5
 ---
 
 # AGENTS.md
@@ -60,6 +60,23 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - nested रिपॉजिटरी में जाने पर संपादन से पहले उसका `AGENTS.md` और
   `.mustflow/config/*.toml` फिर से पढ़ें।
 - स्पष्ट अनुरोध के बिना चुनी हुई child रिपॉजिटरी के बाहर संपादन न करें।
+
+## होस्ट-विशिष्ट निर्देश अनुकूलता
+
+कुछ कोडिंग होस्ट अपने अलग निर्देश फाइल पढ़ सकते हैं या अपनी approval, sandbox, checkpoint,
+और command execution नीतियां लागू कर सकते हैं।
+
+इन host नीतियों को अतिरिक्त सुरक्षा और execution constraints मानें। ये इस रिपॉजिटरी के
+mustflow command contract को प्रतिस्थापित नहीं करतीं। जब host निर्देश mustflow नियमों से टकराएं:
+
+- सीधे उपयोगकर्ता निर्देश task goal तय करते हैं, जब तक वे असुरक्षित न हों।
+- host safety और approval gates बाध्यकारी रहते हैं।
+- repository work rules सबसे निकट के `AGENTS.md` और `.mustflow/config/*.toml` से आते हैं।
+- project verification commands को configured mustflow intents का उपयोग करना चाहिए।
+- privacy, secrets, destructive commands, और Git push पर अधिक सख्त नियम लागू होता है।
+- generated state, summaries, और caches कभी भी current files या current user instructions से ऊपर नहीं होते।
+
+यदि effective rule स्पष्ट न हो, तो अनुमान लगाने के बजाय रुकें और conflict रिपोर्ट करें।
 
 ## निर्देश पुनर्पाठ जाँच बिंदु
 
