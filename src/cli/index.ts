@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -203,7 +203,19 @@ function isDirectRun(): boolean {
 		return false;
 	}
 
-	return path.resolve(entrypoint) === fileURLToPath(import.meta.url);
+	const currentFile = fileURLToPath(import.meta.url);
+	const resolvedEntrypoint = path.resolve(entrypoint);
+	const resolvedCurrentFile = path.resolve(currentFile);
+
+	if (resolvedEntrypoint === resolvedCurrentFile) {
+		return true;
+	}
+
+	try {
+		return realpathSync.native(resolvedEntrypoint) === realpathSync.native(resolvedCurrentFile);
+	} catch {
+		return false;
+	}
 }
 
 async function main(): Promise<void> {
