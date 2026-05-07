@@ -65,9 +65,10 @@ Los detalles gestionados por mustflow estan en `.mustflow/`.
 
 ## Puntos De Control Para Refrescar Instrucciones
 
-- En sesiones largas, vuelve a leer las instrucciones de mustflow antes de la primera edicion, antes de ejecutar comandos,
-  despues de la compactacion de contexto, despues de cambiar `AGENTS.md` o `.mustflow/**`, despues de cambiar
-  de raiz de proyecto y antes de escribir el informe final.
+- En sesiones largas, vuelve a leer las instrucciones de mustflow antes de la primera edicion,
+  antes de ejecutar comandos cuando la intencion de comando actual no tenga ya un refresco reciente,
+  despues de la compactacion de contexto, despues de cambiar `AGENTS.md` o `.mustflow/**`,
+  despues de cambiar de raiz de proyecto y antes de escribir el informe final.
 - Usa la politica `[refresh]` en `.mustflow/config/mustflow.toml` para decidir si hace falta un refresco ligero,
   de comandos, de skills o completo.
 - No guardes contadores de turnos de conversacion ni actividad de sesion en archivos del proyecto.

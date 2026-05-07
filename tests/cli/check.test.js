@@ -578,9 +578,9 @@ test('fails when instruction refresh configuration fields are invalid', () => {
 			.replace('[refresh]\nenabled = true', '[refresh]\nenabled = "yes"')
 			.replace('mode = "checkpoint"', 'mode = "always"')
 			.replace('"before_command_run",', '"before_every_message",')
-			.replace('turn_threshold = 10', 'turn_threshold = 0')
-			.replace('tool_call_threshold = 25', 'tool_call_threshold = -1')
-			.replace('output_bytes_threshold = 200000', 'output_bytes_threshold = "large"')
+			.replace('turn_threshold = 8', 'turn_threshold = 0')
+			.replace('tool_call_threshold = 20', 'tool_call_threshold = -1')
+			.replace('output_bytes_threshold = 131072', 'output_bytes_threshold = "large"')
 			.replace('state_store = "cache"', 'state_store = "project"')
 			.replace('[refresh.levels.light]\nread = [', '[refresh.levels.light]\nread = [\n  "../AGENTS.md",');
 		writeFileSync(configPath, config);
@@ -627,7 +627,7 @@ test('fails when long-running harness policy fields are invalid', () => {
 				].join('\n'),
 			)
 			.replace(
-				/\[budget\]\nenabled = true\nmax_iterations = 10\nmax_wall_clock_minutes = 120\nmax_command_runs = 50\nmax_total_output_mb = 20\nmax_failures_per_intent = 3\non_limit = "stop_and_handoff"/u,
+				/\[budget\]\nenabled = true\nmax_iterations = 8\nmax_wall_clock_minutes = 60\nmax_command_runs = 25\nmax_total_output_mb = 8\nmax_failures_per_intent = 2\non_limit = "stop_and_report"/u,
 				[
 					'[budget]',
 					'enabled = "yes"',
@@ -685,17 +685,17 @@ test('fails when compaction memory policy fields are invalid', () => {
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
 		const config = readText(configPath)
 			.replace('[compaction]\nenabled = false\nstrategy = "tiered"\nstate_store = "cache"', '[compaction]\nenabled = "no"\nstrategy = "flat"\nstate_store = "project"')
-			.replace('keep_turns = 30', 'keep_turns = 0')
-			.replace('max_total_bytes = 500000', 'max_total_bytes = "large"')
-			.replace('store_raw = true', 'store_raw = "yes"')
-			.replace('trigger_turns = 30', 'trigger_turns = -1')
+			.replace('keep_turns = 20', 'keep_turns = 0')
+			.replace('max_total_bytes = 200000', 'max_total_bytes = "large"')
+			.replace('store_raw = false', 'store_raw = "yes"')
+			.replace('trigger_turns = 20', 'trigger_turns = -1')
 			.replace('target_items = 10', 'target_items = 0')
 			.replace('target_max_words_per_item = 40', 'target_max_words_per_item = "short"')
 			.replace('"decisions",', '"dreams",')
 			.replace('promote_after_mid_items = 50', 'promote_after_mid_items = 0')
 			.replace('max_items = 100', 'max_items = -1')
 			.replace('on_limit = "recompact_oldest"', 'on_limit = "append_forever"')
-			.replace('[compaction.raw_retention]\nmax_age_days = 14\nmax_total_mb = 250\non_limit = "prune_after_compaction"', '[compaction.raw_retention]\nmax_age_days = 0\nmax_total_mb = "huge"\non_limit = "keep_forever"')
+			.replace('[compaction.rules]', '[compaction.raw_retention]\nmax_age_days = 0\nmax_total_mb = "huge"\non_limit = "keep_forever"\n\n[compaction.rules]')
 			.replace('require_source_refs = true', 'require_source_refs = "yes"')
 			.replace('summaries_are_derived = true', 'summaries_are_derived = "yes"')
 			.replace('current_files_override_summaries = true', 'current_files_override_summaries = "yes"')

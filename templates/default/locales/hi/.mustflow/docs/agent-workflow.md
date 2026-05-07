@@ -50,7 +50,7 @@ mustflow निर्देशों को इन बिंदुओं पर 
 - session start
 - new task start
 - first edit से पहले
-- command execution से पहले
+- command execution से पहले, जब current task और command intent के पास पहले से fresh command refresh न हो
 - `AGENTS.md` या `.mustflow/**` संपादित करने के बाद
 - root बदलने या nested repository में जाने के बाद
 - context compaction या summarization के बाद
@@ -64,6 +64,8 @@ refresh स्तर तय करने के लिए `.mustflow/config/must
 - `skill`: `AGENTS.md` और `.mustflow/skills/INDEX.md` दोबारा पढ़ें
 - `full`: mustflow की पूरी reading sequence दोबारा पढ़ें
 
+`before_command_run` current command intent के लिए freshness checkpoint है। अगर command contract नहीं बदला, तो हर repeated command से पहले सभी files दोबारा पढ़ना जरूरी नहीं है।
+
 repository में turn counters, message counts, या session activity न लिखें। यदि agent host refresh state ट्रैक करता है, तो उसे versioned project documents के बाहर local cache या host-managed state में रखें। skills refresh behavior बता सकती हैं, लेकिन वे भरोसेमंद lifecycle hooks नहीं हैं।
 
 ## संदर्भ संपीड़न
@@ -72,12 +74,11 @@ mustflow tiered context compaction नीति का समर्थन कर
 
 `.mustflow/config/mustflow.toml` में `[compaction]` का उपयोग करके घोषित करें कि host agent कैसे अलग करेगा:
 
-- local cache में रखा गया हाल का raw context
+- local cache में रखा गया हाल का derived context
 - source references वाले मध्यम-स्तरीय summaries
 - long-term summaries जो निर्णय, constraints, risks, और next steps संरक्षित रखें
-- host-managed session archive के लिए raw retention limits
 
-परियोजना में hidden chain of thought, secrets, या unbounded raw transcripts संग्रहीत न करें। compacted summary source-linked होना चाहिए और current files तथा current user instructions से कम प्रामाणिक रहना चाहिए।
+परियोजना में hidden chain of thought, secrets, unbounded raw transcripts, या raw command logs संग्रहीत न करें। default policy `store_raw = false` उपयोग करती है। compacted summary source-linked होना चाहिए और current files तथा current user instructions से कम प्रामाणिक रहना चाहिए।
 
 ## हार्नेस अनुबंध सीमा
 
@@ -182,7 +183,7 @@ tests व्यवहार अनुबंध हैं, स्थायी art
 - `[approval]` उन actions की सूची देता है जिनके लिए आगे बढ़ने से पहले मानव अनुमोदन चाहिए।
 - `[isolation]` लंबी अवधि tasks के लिए पसंदीदा worktree या sandbox boundary बताता है।
 
-जब budget limit या approval gate पहुंचे, तो रुकें और रिपोर्ट करें या handoff करें। looping जारी न रखें।
+जब budget limit या approval gate पहुंचे, तो रुकें और report करें। handoff केवल तब उपयोग करें जब यह repository handoff workflow स्पष्ट रूप से enable करे। looping जारी न रखें।
 यदि isolation policy अलग worktree या sandbox मांगती है, तो dirty primary worktree में लंबी अवधि autonomous work न चलाएं।
 
 ## विफलता प्रबंधन

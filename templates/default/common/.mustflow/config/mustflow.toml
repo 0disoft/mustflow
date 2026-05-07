@@ -121,9 +121,9 @@ required_at = [
   "after_compaction",
   "before_final_report",
 ]
-turn_threshold = 10
-tool_call_threshold = 25
-output_bytes_threshold = 200000
+turn_threshold = 8
+tool_call_threshold = 20
+output_bytes_threshold = 131072
 state_store = "cache"
 
 [refresh.levels.light]
@@ -160,12 +160,12 @@ strategy = "tiered"
 state_store = "cache"
 
 [compaction.recent]
-keep_turns = 30
-max_total_bytes = 500000
-store_raw = true
+keep_turns = 20
+max_total_bytes = 200000
+store_raw = false
 
 [compaction.mid]
-trigger_turns = 30
+trigger_turns = 20
 target_items = 10
 target_max_words_per_item = 40
 include_categories = [
@@ -184,11 +184,6 @@ promote_after_mid_items = 50
 target_items = 10
 max_items = 100
 on_limit = "recompact_oldest"
-
-[compaction.raw_retention]
-max_age_days = 14
-max_total_mb = 250
-on_limit = "prune_after_compaction"
 
 [compaction.rules]
 require_source_refs = true
@@ -232,12 +227,12 @@ mode = "report_only"
 
 [budget]
 enabled = true
-max_iterations = 10
-max_wall_clock_minutes = 120
-max_command_runs = 50
-max_total_output_mb = 20
-max_failures_per_intent = 3
-on_limit = "stop_and_handoff"
+max_iterations = 8
+max_wall_clock_minutes = 60
+max_command_runs = 25
+max_total_output_mb = 8
+max_failures_per_intent = 2
+on_limit = "stop_and_report"
 
 [approval]
 required_for = [

@@ -63,8 +63,8 @@ revision: 4
 
 ## 指令刷新检查点
 
-- 在长会话中，应在首次编辑前、执行命令前、上下文压缩后、
-  修改 `AGENTS.md` 或 `.mustflow/**` 后、切换项目根目录后，
+- 在长会话中，应在首次编辑前、当前命令意图还没有新鲜命令级刷新时的命令执行前、
+  上下文压缩后、修改 `AGENTS.md` 或 `.mustflow/**` 后、切换项目根目录后，
   以及输出最终报告前，重新阅读 mustflow 指令。
 - 使用 `.mustflow/config/mustflow.toml` 中的 `[refresh]` 策略决定需要
   light、command、skill 或 full refresh。

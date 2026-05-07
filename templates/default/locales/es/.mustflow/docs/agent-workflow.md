@@ -50,7 +50,7 @@ Actualiza las instrucciones de mustflow en estos puntos:
 - inicio de sesion
 - inicio de nueva tarea
 - antes de la primera edicion
-- antes de ejecutar comandos
+- antes de ejecutar comandos cuando la tarea y la intencion de comando actuales no tengan ya un refresco de comando reciente
 - despues de editar `AGENTS.md` o `.mustflow/**`
 - despues de cambiar de raiz o entrar en un repositorio anidado
 - despues de compactacion o resumen de contexto
@@ -64,6 +64,8 @@ Usa `[refresh]` en `.mustflow/config/mustflow.toml` para decidir el nivel de act
 - `skill`: releer `AGENTS.md` y `.mustflow/skills/INDEX.md`
 - `full`: releer la secuencia completa de lectura de mustflow
 
+`before_command_run` es un punto de control de frescura para la intencion de comando actual, no una obligacion de releer todos los archivos antes de cada comando repetido cuando el contrato de comandos no ha cambiado.
+
 No escribas contadores de turnos, conteos de mensajes ni actividad de sesion en el repositorio. Si un host de agentes rastrea estado de actualizacion, debe usar cache local o estado gestionado por el host fuera de documentos versionados del proyecto. Las skills pueden describir comportamiento de actualizacion, pero no son hooks de ciclo de vida confiables.
 
 ## Compactacion De Contexto
@@ -72,12 +74,11 @@ mustflow admite una politica de compactacion de contexto por niveles, pero no re
 
 Usa `[compaction]` en `.mustflow/config/mustflow.toml` para declarar como un agente host puede separar:
 
-- contexto bruto reciente conservado en cache local
+- contexto reciente derivado conservado en cache local
 - resumenes intermedios con referencias de origen
 - resumenes de largo plazo que preserven decisiones, restricciones, riesgos y siguientes pasos
-- limites de retencion de datos brutos para cualquier archivo de sesion gestionado por el host
 
-No almacenes razonamiento oculto, secretos ni transcripciones brutas sin limite en el proyecto. Un resumen compactado debe estar vinculado a su fuente y debe mantener menor autoridad que los archivos actuales y las instrucciones actuales del usuario.
+No almacenes razonamiento oculto, secretos, transcripciones brutas sin limite ni registros brutos de comandos en el proyecto. La politica predeterminada usa `store_raw = false`. Un resumen compactado debe estar vinculado a su fuente y debe mantener menor autoridad que los archivos actuales y las instrucciones actuales del usuario.
 
 ## Limite Del Contrato De Harness
 
@@ -182,7 +183,7 @@ Usa `.mustflow/config/mustflow.toml` para la politica de seguridad de ejecucione
 - `[approval]` enumera acciones que requieren aprobacion humana antes de continuar.
 - `[isolation]` describe el limite preferido de worktree o sandbox para tareas de larga duracion.
 
-Cuando se alcance un limite de presupuesto o una puerta de aprobacion, detente y reporta o realiza handoff. No sigas en bucle.
+Cuando se alcance un limite de presupuesto o una puerta de aprobacion, detente y reporta. Usa handoff solo cuando este repositorio habilite explicitamente un flujo de handoff. No sigas en bucle.
 No ejecutes trabajo autonomo de larga duracion en un worktree principal con cambios sucios cuando la politica de aislamiento requiera un worktree o sandbox separado.
 
 ## Manejo De Fallos

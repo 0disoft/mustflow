@@ -55,7 +55,7 @@ Refresh mustflow instructions at these points:
 - session start
 - new task start
 - before the first edit
-- before command execution
+- before command execution when the current task and command intent do not already have a fresh command refresh
 - after editing `AGENTS.md` or `.mustflow/**`
 - after switching roots or entering a nested repository
 - after context compaction or summarization
@@ -69,6 +69,9 @@ Use `.mustflow/config/mustflow.toml` `[refresh]` to decide the refresh level:
 - `skill`: reread `AGENTS.md` and `.mustflow/skills/INDEX.md`
 - `full`: reread the full mustflow read sequence
 
+`before_command_run` is a freshness checkpoint for the current command intent, not a requirement to
+reread every file before every repeated command when the command contract has not changed.
+
 Do not write turn counters, message counts, or session activity into the repository. If an agent
 host tracks refresh state, it should use local cache or host-managed state outside versioned project
 documents. Skills may describe refresh behavior, but they are not reliable lifecycle hooks.
@@ -80,14 +83,13 @@ transcripts by default.
 
 Use `.mustflow/config/mustflow.toml` `[compaction]` to declare how a host agent may separate:
 
-- recent raw context kept in local cache
+- recent derived context kept in local cache
 - mid-level summaries with source references
 - long-term summaries that preserve decisions, constraints, risks, and next steps
-- raw retention limits for any host-managed session archive
 
-Do not store hidden chain of thought, secrets, or unbounded raw transcripts in the project. A compacted
-summary must be source-linked and must stay lower authority than current files and current user
-instructions.
+Do not store hidden chain of thought, secrets, unbounded raw transcripts, or raw command logs in the
+project. The default policy uses `store_raw = false`. A compacted summary must be source-linked and
+must stay lower authority than current files and current user instructions.
 
 ## Harness Contract Boundary
 
@@ -202,7 +204,8 @@ Use `.mustflow/config/mustflow.toml` for long-running safety policy.
 - `[approval]` lists actions that require human approval before proceeding.
 - `[isolation]` describes the preferred worktree or sandbox boundary for long-running tasks.
 
-When a budget limit or approval gate is reached, stop and report or hand off. Do not keep looping.
+When a budget limit or approval gate is reached, stop and report. Use handoff only when this
+repository explicitly enables a handoff workflow. Do not keep looping.
 Do not run long-running autonomous work in a dirty primary worktree when the isolation policy requires
 a separate worktree or sandbox.
 

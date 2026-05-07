@@ -50,7 +50,7 @@ Rafraichis les instructions mustflow a ces moments:
 - debut de session
 - debut d'une nouvelle tache
 - avant la premiere edition
-- avant l'execution de commandes
+- avant l'execution de commandes lorsque la tache et l'intention de commande actuelles n'ont pas deja un rafraichissement de commande recent
 - apres edition de `AGENTS.md` ou `.mustflow/**`
 - apres changement de racine ou entree dans un depot imbrique
 - apres compaction ou resume du contexte
@@ -64,6 +64,8 @@ Utilise `[refresh]` dans `.mustflow/config/mustflow.toml` pour choisir le niveau
 - `skill`: relire `AGENTS.md` et `.mustflow/skills/INDEX.md`
 - `full`: relire la sequence complete de lecture mustflow
 
+`before_command_run` est un point de controle de fraicheur pour l'intention de commande actuelle, pas une obligation de relire tous les fichiers avant chaque commande repetee lorsque le contrat de commande n'a pas change.
+
 Ne pas ecrire de compteurs de tours, de compteurs de messages ni d'activite de session dans le depot. Si un hote d'agent suit l'etat de rafraichissement, il doit utiliser un cache local ou un etat gere par l'hote hors des documents versionnes du projet. Les skills peuvent decrire le comportement de rafraichissement, mais ne sont pas des hooks fiables de cycle de vie.
 
 ## Compaction Du Contexte
@@ -72,12 +74,11 @@ mustflow prend en charge une politique de compaction de contexte par niveaux, ma
 
 Utilise `[compaction]` dans `.mustflow/config/mustflow.toml` pour declarer comment un agent hote peut separer:
 
-- contexte brut recent conserve en cache local
+- contexte recent derive conserve en cache local
 - resumes de niveau intermediaire avec references de source
 - resumes long terme qui preservent decisions, contraintes, risques et prochaines etapes
-- limites de retention brute pour toute archive de session geree par l'hote
 
-Ne stocke pas de raisonnement cache, de secrets ni de transcriptions brutes non bornees dans le projet. Un resume compacte doit etre relie a sa source et doit rester moins autoritaire que les fichiers actuels et les instructions utilisateur actuelles.
+Ne stocke pas de raisonnement cache, de secrets, de transcriptions brutes non bornees ni de journaux bruts de commandes dans le projet. La politique par defaut utilise `store_raw = false`. Un resume compacte doit etre relie a sa source et doit rester moins autoritaire que les fichiers actuels et les instructions utilisateur actuelles.
 
 ## Limite Du Contrat De Harness
 
@@ -182,7 +183,7 @@ Utiliser `.mustflow/config/mustflow.toml` pour la politique de securite des long
 - `[approval]` liste les actions qui exigent une approbation humaine avant de continuer.
 - `[isolation]` decrit la limite preferee de worktree ou de sandbox pour les taches longue duree.
 
-Quand une limite de budget ou une porte d'approbation est atteinte, arrete-toi et signale ou fais un handoff. Ne pas continuer en boucle.
+Quand une limite de budget ou une porte d'approbation est atteinte, arrete-toi et signale. Utilise un handoff seulement lorsque ce depot active explicitement un flux de handoff. Ne pas continuer en boucle.
 Ne pas executer un travail autonome longue duree dans un worktree principal avec des changements sales quand la politique d'isolation exige un worktree ou une sandbox separee.
 
 ## Gestion Des Echecs

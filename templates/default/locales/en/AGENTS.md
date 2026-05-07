@@ -65,9 +65,10 @@ mustflow-managed details are under `.mustflow/`.
 
 ## Instruction Refresh Checkpoints
 
-- In long sessions, reread mustflow instructions before the first edit, before command execution,
-  after context compaction, after changing `AGENTS.md` or `.mustflow/**`, after switching project
-  roots, and before writing the final report.
+- In long sessions, reread mustflow instructions before the first edit, before command execution
+  when the current command intent does not already have a fresh command refresh, after context
+  compaction, after changing `AGENTS.md` or `.mustflow/**`, after switching project roots, and
+  before writing the final report.
 - Use the `[refresh]` policy in `.mustflow/config/mustflow.toml` to decide whether a light, a
   command, a skill, or a full refresh is needed.
 - Do not store conversation turn counts or session activity in project files. Session refresh state

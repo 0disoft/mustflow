@@ -65,9 +65,10 @@ Les details geres par mustflow se trouvent sous `.mustflow/`.
 
 ## Points De Controle De Rafraichissement Des Instructions
 
-- Dans les longues sessions, relire les instructions mustflow avant la premiere edition, avant l'execution de commandes,
-  apres la compaction de contexte, apres modification de `AGENTS.md` ou `.mustflow/**`, apres changement de racine
-  de projet, et avant d'ecrire le rapport final.
+- Dans les longues sessions, relire les instructions mustflow avant la premiere edition,
+  avant l'execution de commandes lorsque l'intention de commande actuelle n'a pas deja un
+  rafraichissement recent, apres la compaction de contexte, apres modification de `AGENTS.md`
+  ou `.mustflow/**`, apres changement de racine de projet, et avant d'ecrire le rapport final.
 - Utiliser la politique `[refresh]` dans `.mustflow/config/mustflow.toml` pour decider si un rafraichissement leger,
   commande, skill ou complet est necessaire.
 - Ne pas stocker le nombre de tours de conversation ni l'activite de session dans les fichiers du projet.
