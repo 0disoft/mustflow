@@ -31,6 +31,10 @@ function runInit(cwd, args = ['--yes']) {
 	});
 }
 
+function readText(filePath) {
+	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+}
+
 test('copies the default agent workflow into an empty project', () => {
 	const projectPath = createTempProject();
 
@@ -76,7 +80,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(commands, /\[intents\.snapshot_update\]/);
 		assert.match(commands, /\[intents\.git_commit\]/);
 		assert.match(commands, /status = "manual_only"/);
-		const mustflowConfig = readFileSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'), 'utf8');
+		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));
 		assert.match(mustflowConfig, /optional_read_order = \[\n  "\.mustflow\/context\/INDEX\.md",/);
 		assert.match(mustflowConfig, /\[context\]/);
 		assert.match(mustflowConfig, /root = "\.mustflow\/context"/);

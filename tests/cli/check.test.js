@@ -32,6 +32,10 @@ function runCli(cwd, args) {
 	});
 }
 
+function readText(filePath) {
+	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+}
+
 function initProject(projectPath) {
 	const result = runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0);
@@ -240,7 +244,7 @@ test('strict check fails missing output limits and invalid latest run receipts',
 	try {
 		initProject(projectPath);
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
-		const commands = readFileSync(commandsPath, 'utf8').replace('max_output_bytes = 1048576\n', '');
+		const commands = readText(commandsPath).replace('max_output_bytes = 1048576\n', '');
 		writeFileSync(commandsPath, commands);
 		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
 		mkdirSync(runsDir, { recursive: true });
@@ -264,7 +268,7 @@ test('strict check fails missing retention policy', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8').replace(/\n\[retention\][\s\S]*?(?=\n\[document_roots\])/u, '\n');
+		const config = readText(configPath).replace(/\n\[retention\][\s\S]*?(?=\n\[document_roots\])/u, '\n');
 		writeFileSync(configPath, config);
 
 		const result = runCli(projectPath, ['check', '--strict', '--json']);
@@ -283,7 +287,7 @@ test('strict check fails oversized generated files and raw JSONL logs under must
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace('[retention.repo_map]\nmax_file_kb = 128', '[retention.repo_map]\nmax_file_kb = 1')
 			.replace('[retention.run_receipts]\nstore = "project"\nmax_file_kb = 128', '[retention.run_receipts]\nstore = "project"\nmax_file_kb = 1');
 		writeFileSync(configPath, config);
@@ -327,7 +331,7 @@ test('strict check fails unsafe context documents', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		let config = readFileSync(configPath, 'utf8');
+		let config = readText(configPath);
 
 		if (config.includes('[retention.context]')) {
 			config = config.replace(
@@ -466,7 +470,7 @@ test('fails when map and workspace configuration fields are invalid', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace('output = "REPO_MAP.md"', 'output = ""')
 			.replace('mode = "anchors_only"', 'mode = "full_tree"')
 			.replace('privacy = "minimal"', 'privacy = "verbose"')
@@ -504,7 +508,7 @@ test('fails when context configuration fields are invalid', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace('[context]\nenabled = true', '[context]\nenabled = "yes"')
 			.replace('root = ".mustflow/context"', 'root = ""')
 			.replace('\nindex = ".mustflow/context/INDEX.md"', '\nindex = "../INDEX.md"')
@@ -535,7 +539,7 @@ test('fails when agent control surface configuration fields are invalid', () => 
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace('workflow = true', 'workflow = "yes"')
 			.replace('repo_map = "generated_optional"', 'repo_map = "verbose"')
 			.replace('local_index = "generated_optional"', 'local_index = "sqlite"')
@@ -570,7 +574,7 @@ test('fails when instruction refresh configuration fields are invalid', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace('[refresh]\nenabled = true', '[refresh]\nenabled = "yes"')
 			.replace('mode = "checkpoint"', 'mode = "always"')
 			.replace('"before_command_run",', '"before_every_message",')
@@ -603,7 +607,7 @@ test('fails when long-running harness policy fields are invalid', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace(
 				/\[harness\]\nmode = "single_session"\nfresh_context_preferred = true/u,
 				'[harness]\nmode = "agent_runtime"\nfresh_context_preferred = "yes"',
@@ -679,7 +683,7 @@ test('fails when compaction memory policy fields are invalid', () => {
 	try {
 		initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
-		const config = readFileSync(configPath, 'utf8')
+		const config = readText(configPath)
 			.replace('[compaction]\nenabled = false\nstrategy = "tiered"\nstate_store = "cache"', '[compaction]\nenabled = "no"\nstrategy = "flat"\nstate_store = "project"')
 			.replace('keep_turns = 30', 'keep_turns = 0')
 			.replace('max_total_bytes = 500000', 'max_total_bytes = "large"')
@@ -748,7 +752,7 @@ forbid_test_deletion_when = [
 ]
 stale_test_action = "delete"
 `;
-		const config = readFileSync(configPath, 'utf8').replace(/\n\[testing\][\s\S]*?(?=\n\[handoff\])/u, `\n${invalidTestingPolicy}`);
+		const config = readText(configPath).replace(/\n\[testing\][\s\S]*?(?=\n\[handoff\])/u, `\n${invalidTestingPolicy}`);
 		writeFileSync(configPath, config);
 
 		const result = runCli(projectPath, ['check']);

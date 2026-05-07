@@ -10,7 +10,7 @@ const workflowPath = path.join(projectRoot, '.github', 'workflows', 'docs-site.y
 test('docs site deploy workflow builds docs-site and deploys the Pages artifact', () => {
 	assert.equal(existsSync(workflowPath), true);
 
-	const workflow = readFileSync(workflowPath, 'utf8');
+	const workflow = readFileSync(workflowPath, 'utf8').replace(/\r\n/g, '\n');
 
 	assert.match(workflow, /branches:\n\s+- main/);
 	assert.match(workflow, /paths:\n\s+- 'docs-site\/\*\*'/);

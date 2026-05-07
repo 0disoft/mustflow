@@ -107,18 +107,20 @@ function validateExistingTemplatePath(templateRoot: string, relativePath: unknow
 function parseMarkdownFrontmatter(filePath: string): Record<string, string> | undefined {
 	const content = readFileSync(filePath, 'utf8');
 
-	if (!content.startsWith('---\n')) {
+	if (!content.startsWith('---\n') && !content.startsWith('---\r\n')) {
 		return undefined;
 	}
 
-	const endIndex = content.indexOf('\n---', 4);
+	const frontmatterStart = content.startsWith('---\r\n') ? 5 : 4;
+	const endMatch = /\r?\n---(?:\r?\n|$)/u.exec(content.slice(frontmatterStart));
 
-	if (endIndex === -1) {
+	if (!endMatch || endMatch.index === undefined) {
 		return undefined;
 	}
 
 	const frontmatter: Record<string, string> = {};
-	const lines = content.slice(4, endIndex).split(/\r?\n/u);
+	const endIndex = frontmatterStart + endMatch.index;
+	const lines = content.slice(frontmatterStart, endIndex).split(/\r?\n/u);
 
 	for (const line of lines) {
 		const match = /^([A-Za-z0-9_.-]+):\s*(.*?)\s*$/u.exec(line);
