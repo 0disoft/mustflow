@@ -10,7 +10,7 @@ locale = "en"
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:cbfb4c847d7ddaa703238d6b4487a106993a740218295b23e6def1d9d7cee1a2"
+content_hash = "sha256:5af7a89f4e8c1adffeaa1f84492cb988be68b5cb0e62bafc2668f208a5b0eef9"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
@@ -50,17 +50,17 @@ content_hash = "sha256:7789ab2e3374d9c8257bed3dbf2e8ad2af75f91713438706656345a68
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:285d5572ed531ed58e38a383897d73e51f74596d3aa2eb9bd1c5b97afe019e55"
+content_hash = "sha256:f1a876f732fbdc2d560ce30bc06f33454f0674101ee3d13f4e01f6dc5efbcf4a"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
 last_action = "updated"
-content_hash = "sha256:9f2c8d93661adee9573fa30869c03d5cf4f7a160593fd745c85d09ef1b773820"
+content_hash = "sha256:a7046af5739aae82caac55480dad24e31f65abb1028d28391464ab73e20cef02"
 
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "created"
-content_hash = "sha256:51efa07cc36933c0467c7bd716d95aed82246f5b3b7377ffe0889bbf888f9f99"
+content_hash = "sha256:7332ba6c8bf179617162fb82e3c8ed1d3eaf96abf27f719029b9255fdd0aafa5"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"
