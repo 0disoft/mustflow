@@ -18,7 +18,7 @@ Il n’est pas copié depuis le modèle. Il enregistre quels fichiers ont été 
 ## Rôle
 
 - Enregistre l’identifiant et la version du modèle utilisés pour l’installation.
-- Enregistre le hash de contenu actuel de chaque fichier installé.
+- Enregistre le hash de ligne de base de chaque fichier installé.
 - Enregistre l’action effectuée pour chaque fichier.
 - Donne aux commandes comme `mf check`, `mf status` et `mf update --dry-run` une ligne de base stable de l’état d’installation.
 
@@ -53,15 +53,18 @@ content_hash = "sha256:..."
 - `files."<path>"`: enregistrement d’installation par fichier.
 - `source`: origine du contenu du fichier. Utilise `template_locale`, `template_common` ou `managed_block`.
 - `last_action`: action appliquée lors de la dernière installation. Une des valeurs `created`, `unchanged`, `merged`, `overwritten` ou `customized`.
-- `content_hash`: hash SHA-256 du contenu actuel du fichier.
+- `content_hash`: hash SHA-256 de ligne de base du contenu que mustflow a enregistré comme installé ou mis à jour de manière sûre.
 
 ## Ligne de base des hashes
 
 Actuellement, `content_hash` est la ligne de base au moment de l’installation.
+Ce n’est pas un hash vivant du fichier actuel.
 
 `mf check`, `mf status` et `mf update --dry-run` calculent le hash actuel du fichier à l’exécution et le comparent à cette ligne de base. Les hashes de modèle ne sont pas non plus stockés dans le fichier de verrouillage; ils sont calculés depuis le modèle groupé avec le paquet mustflow installé.
 
 Cela garde le fichier de verrouillage comme ligne de base d’installation plutôt que comme instantané vivant de l’état actuel.
+
+Si mustflow met plus tard à jour uniquement un bloc géré à l’intérieur d’un fichier, le schéma du verrou doit d’abord ajouter une ligne de base au niveau du bloc. Le `content_hash` de fichier complet en v1 ne suffit pas à prouver que le bloc géré lui-même est inchangé.
 
 ## Règles de modification
 

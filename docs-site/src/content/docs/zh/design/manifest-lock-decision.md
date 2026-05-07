@@ -43,6 +43,7 @@ current file hash == bundled template hash
 如果 mustflow 以后需要这些能力，将提升 schema 版本并添加字段：
 
 - 跨多个模板源比较。
+- 使用块级基线安全更新 `AGENTS.md` 或 `.gitignore` 等受管理块。
 - 离线验证每个模板来源 hash。
 - 在未安装 mustflow 包的情况下生成可复现更新计划。
 - 签名模板或供应链验证。

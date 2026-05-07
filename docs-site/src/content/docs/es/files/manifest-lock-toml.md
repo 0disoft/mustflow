@@ -18,7 +18,7 @@ No se copia desde la plantilla. Registra qué archivos fueron creados, fusionado
 ## Función
 
 - Registra el identificador y la versión de plantilla usados para la instalación.
-- Registra el hash de contenido actual de cada archivo instalado.
+- Registra el hash de línea base de cada archivo instalado.
 - Registra la acción realizada para cada archivo.
 - Da a comandos como `mf check`, `mf status` y `mf update --dry-run` una línea base estable del estado de instalación.
 
@@ -53,15 +53,18 @@ content_hash = "sha256:..."
 - `files."<path>"`: registro de instalación por archivo.
 - `source`: origen del contenido del archivo. Usa `template_locale`, `template_common` o `managed_block`.
 - `last_action`: acción aplicada durante la última instalación. Una de `created`, `unchanged`, `merged`, `overwritten` o `customized`.
-- `content_hash`: hash SHA-256 del contenido actual del archivo.
+- `content_hash`: hash SHA-256 de línea base del contenido que mustflow registró como instalado o actualizado de forma segura.
 
 ## Línea base de hash
 
 Actualmente, `content_hash` es la línea base del momento de instalación.
+No es un hash vivo del archivo actual.
 
 `mf check`, `mf status` y `mf update --dry-run` calculan el hash actual del archivo en tiempo de ejecución y lo comparan con esta línea base. Los hashes de plantilla tampoco se almacenan en el archivo de bloqueo; se calculan desde la plantilla incluida en el paquete mustflow instalado.
 
 Esto mantiene el archivo de bloqueo como línea base de instalación, no como instantánea activa del estado actual.
+
+Si mustflow más adelante actualiza solo un bloque administrado dentro de un archivo, el esquema del lock debe agregar primero una línea base a nivel de bloque. El `content_hash` de archivo completo de v1 no basta para demostrar que el bloque administrado no cambió.
 
 ## Reglas de edición
 

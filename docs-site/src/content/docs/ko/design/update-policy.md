@@ -56,7 +56,11 @@ writes_only_template_manifest_paths: true
 
 `AGENTS.md`는 루트 진입점이므로 일반 파일보다 신중하게 다룹니다.
 
-기존 `AGENTS.md`에 mustflow 관리 블록만 병합한 경우에는 파일 전체를 템플릿으로 덮어쓰면 안 됩니다. 이 경우는 `manual-review`로 두거나, 관리 블록만 안전하게 교체하는 전용 병합 로직이 필요합니다.
+`mf update`는 `AGENTS.md` 전체 파일을 자동 병합하지 않습니다.
+
+기존 `AGENTS.md`에 mustflow 관리 블록만 병합한 경우, mustflow는 그 블록 바깥의 사용자 규칙을 소유하지 않습니다. 관리 블록은 잠금 파일에 블록 단위 기준선이 있고, 현재 블록이 그 기준선과 여전히 같을 때에만 자동 갱신 후보가 될 수 있습니다.
+
+스키마 v1은 블록 단위 기준선을 저장하지 않습니다. 따라서 v1에서는 병합된 `AGENTS.md`를 `managed-block-update`로 처리하지 않고 `manual-review`로 남깁니다.
 
 ## 백업 위치
 

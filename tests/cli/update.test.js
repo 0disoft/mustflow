@@ -130,6 +130,33 @@ test('detects bundled template changes without local file changes', () => {
 	}
 });
 
+test('keeps merged AGENTS.md under manual review until a block baseline exists', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const existingAgents = '# Existing Agent Rules\n\nKeep this project rule.\n';
+		writeFileSync(path.join(projectPath, 'AGENTS.md'), existingAgents);
+		assert.equal(runCli(projectPath, ['init', '--merge', '--yes']).status, 0);
+
+		const mergedAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
+		const result = runCli(projectPath, ['update', '--dry-run', '--json']);
+		const plan = JSON.parse(result.stdout);
+		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(plan.ok, false);
+		assert.deepEqual(plan.policy.allowed_apply_actions, ['update', 'create']);
+		assert.equal(plan.summary.manualReview, 1);
+		assert.equal(agentsItem.action, 'manual-review');
+		assert.equal(agentsItem.reason, 'managed block requires a block-level manifest baseline');
+		assert.equal(readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8'), mergedAgents);
+		assert.match(mergedAgents, /Keep this project rule/);
+		assert.match(mergedAgents, /mustflow:start/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('applies safe template updates and refreshes the manifest lock', () => {
 	const projectPath = createTempProject();
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));

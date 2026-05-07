@@ -55,7 +55,11 @@ writes_only_template_manifest_paths: true
 
 `AGENTS.md` es el punto de entrada raíz y requiere cuidado adicional.
 
-Cuando un `AGENTS.md` existente está registrado como bloque administrado por mustflow, el archivo completo no debe sobrescribirse con la plantilla. Ese caso debe permanecer en `manual-review`, o usar lógica dedicada que reemplace de forma segura solo el bloque administrado.
+`mf update` no fusiona automáticamente el archivo `AGENTS.md` completo.
+
+Cuando un `AGENTS.md` existente está registrado como bloque administrado por mustflow, mustflow no es propietario del texto fuera de ese bloque. El bloque solo puede ser candidato a actualización automática cuando el archivo lock registra una línea base a nivel de bloque y el bloque actual todavía coincide con ella.
+
+El esquema v1 no almacena esa línea base a nivel de bloque. En v1, los archivos `AGENTS.md` fusionados permanecen en `manual-review` en lugar de recibir un `managed-block-update`.
 
 ## Ubicación de copias de seguridad
 

@@ -18,7 +18,7 @@ description: mf init द्वारा लिखी जाने वाली i
 ## भूमिका
 
 - installation के लिए उपयोग हुए template identifier और version को दर्ज करती है।
-- हर installed file का current content hash दर्ज करती है।
+- हर installed file का baseline hash दर्ज करती है।
 - हर file पर की गई action दर्ज करती है।
 - `mf check`, `mf status`, और `mf update --dry-run` जैसी commands को stable install-state baseline देती है।
 
@@ -53,15 +53,18 @@ content_hash = "sha256:..."
 - `files."<path>"`: per-file install record।
 - `source`: file content कहां से आया। `template_locale`, `template_common`, या `managed_block` उपयोग करता है।
 - `last_action`: अंतिम install के दौरान लागू action। `created`, `unchanged`, `merged`, `overwritten`, या `customized` में से एक।
-- `content_hash`: current file content का SHA-256 hash।
+- `content_hash`: उस file content का SHA-256 baseline hash जिसे mustflow ने अंतिम बार सुरक्षित install या update के रूप में दर्ज किया।
 
 ## Hash baseline
 
 फिलहाल `content_hash` install-time baseline है।
+यह current file का live hash नहीं है।
 
 `mf check`, `mf status`, और `mf update --dry-run` runtime पर current file hash निकालते हैं और इसकी तुलना इस baseline से करते हैं। Template hashes भी lock file में store नहीं होते; वे installed mustflow package के साथ bundled template से compute होते हैं।
 
 इससे lock file live current-state snapshot के बजाय install baseline बनी रहती है।
+
+यदि mustflow आगे चलकर किसी file के भीतर केवल managed block update करता है, तो lock schema को पहले block-level baseline जोड़ना होगा। v1 का file-level `content_hash` यह सिद्ध करने के लिए पर्याप्त नहीं है कि managed block स्वयं unchanged है।
 
 ## संपादन नियम
 

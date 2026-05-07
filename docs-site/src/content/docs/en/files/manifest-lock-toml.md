@@ -57,10 +57,13 @@ content_hash = "sha256:..."
 ## Hash Baseline
 
 The `content_hash` serves as the authoritative baseline from the time of installation.
+It is not a live hash of the current file.
 
 Commands such as `mf check`, `mf status`, and `mf update --dry-run` calculate current file hashes during execution and compare them against this baseline. Note that template-side hashes are not stored in the lock file; they are derived from the template bundled with the currently installed mustflow package.
 
 This design ensures the lock file remains a historical record of the installation rather than a live snapshot of the current state.
+
+If mustflow later updates only a managed block inside a file, the lock schema must first add a block-level baseline. The v1 file-level `content_hash` is not enough to prove that the managed block itself is unchanged.
 
 ## Maintenance Guidelines
 

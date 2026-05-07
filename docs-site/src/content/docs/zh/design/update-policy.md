@@ -56,7 +56,11 @@ writes_only_template_manifest_paths: true
 
 `AGENTS.md` 是 root 入口点，需要额外谨慎。
 
-当已有 `AGENTS.md` 被跟踪为 mustflow-managed block 时，不得用模板覆盖整个文件。该情况应保持 `manual-review`，或使用专用逻辑只安全替换 managed block。
+`mf update` 不会自动合并整个 `AGENTS.md` 文件。
+
+当已有 `AGENTS.md` 被跟踪为 mustflow-managed block 时，mustflow 不拥有该块之外的用户文本。只有当锁文件记录了块级基线，并且当前块仍然匹配该基线时，这个块才可以成为自动更新候选。
+
+schema v1 不存储该块级基线。因此在 v1 中，合并过的 `AGENTS.md` 会保持为 `manual-review`，不会进入 `managed-block-update`。
 
 ## 备份位置
 

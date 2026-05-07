@@ -18,7 +18,7 @@ description: 由 mf init 写入的生成安装状态文件。
 ## 作用
 
 - 记录安装使用的模板标识符和版本。
-- 记录每个已安装文件的当前内容哈希。
+- 记录每个已安装文件的基线哈希。
 - 记录对每个文件执行的操作。
 - 为 `mf check`、`mf status` 和 `mf update --dry-run` 等命令提供稳定的安装状态基线。
 
@@ -53,15 +53,18 @@ content_hash = "sha256:..."
 - `files."<path>"`: 每个文件的安装记录。
 - `source`: 文件内容来源。使用 `template_locale`、`template_common` 或 `managed_block`。
 - `last_action`: 上次安装期间执行的操作。值为 `created`、`unchanged`、`merged`、`overwritten` 或 `customized` 之一。
-- `content_hash`: 当前文件内容的 SHA-256 哈希。
+- `content_hash`: mustflow 上次安全安装或更新时记录的文件内容 SHA-256 基线哈希。
 
 ## 哈希基线
 
 目前，`content_hash` 是安装时基线。
+它不是当前文件的实时哈希。
 
 `mf check`、`mf status` 和 `mf update --dry-run` 会在运行时计算当前文件哈希，并将其与该基线比较。模板哈希也不会存储在锁文件中；它们会从已安装 mustflow 包内附带的模板中计算。
 
 这样可以让锁文件保持为安装基线，而不是实时当前状态快照。
+
+如果 mustflow 将来只更新文件内部的受管理块，锁文件结构必须先加入块级基线。v1 的文件级 `content_hash` 不足以证明受管理块本身没有变化。
 
 ## 编辑规则
 

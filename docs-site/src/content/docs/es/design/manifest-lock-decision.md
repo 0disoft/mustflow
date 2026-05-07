@@ -43,6 +43,7 @@ current file hash == bundled template hash
 La versión del esquema se incrementará y se añadirán campos si mustflow necesita:
 
 - Comparación entre varias fuentes de plantilla.
+- Actualizaciones seguras de bloques administrados como `AGENTS.md` o `.gitignore` usando líneas base a nivel de bloque.
 - Verificación sin conexión de hashes por fuente de plantilla.
 - Planificación reproducible de actualizaciones sin el paquete mustflow instalado.
 - Plantillas firmadas o verificación de cadena de suministro.

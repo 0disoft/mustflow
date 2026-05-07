@@ -166,7 +166,7 @@ function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanI
 				relativePath: source.relativePath,
 				sourceKind: source.sourceKind,
 				action: 'manual-review',
-				reason: 'managed AGENTS.md block cannot be safely rewritten yet',
+				reason: 'managed block requires a block-level manifest baseline',
 			});
 			continue;
 		}

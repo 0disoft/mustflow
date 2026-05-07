@@ -43,6 +43,7 @@ current file hash == bundled template hash
 यदि mustflow को आवश्यकता हुई, तो schema version बढ़ाया जाएगा और बाद में fields जोड़े जाएंगे:
 
 - कई template sources के बीच तुलना।
+- `AGENTS.md` या `.gitignore` जैसे managed blocks को block-level baselines के साथ सुरक्षित रूप से update करना।
 - प्रत्येक template source hash का offline verification।
 - mustflow package installed न होने पर भी पुनरुत्पादित update planning।
 - Signed templates या supply-chain verification।

@@ -56,7 +56,11 @@ writes_only_template_manifest_paths: true
 
 `AGENTS.md` est le point d’entrée racine et demande une attention particulière.
 
-Lorsqu’un `AGENTS.md` existant est suivi comme bloc géré par mustflow, le fichier entier ne doit pas être écrasé par le modèle. Ce cas doit rester en `manual-review`, ou utiliser une logique dédiée qui remplace uniquement le bloc géré de façon sûre.
+`mf update` ne fusionne pas automatiquement le fichier `AGENTS.md` entier.
+
+Lorsqu’un `AGENTS.md` existant est suivi comme bloc géré par mustflow, mustflow ne possède pas le texte situé en dehors de ce bloc. Le bloc ne peut devenir éligible à une mise à jour automatique que si le fichier de verrouillage enregistre une ligne de base au niveau du bloc et si le bloc actuel y correspond encore.
+
+Le schéma v1 ne stocke pas cette ligne de base au niveau du bloc. En v1, les fichiers `AGENTS.md` fusionnés restent en `manual-review` au lieu de recevoir un `managed-block-update`.
 
 ## Emplacement des sauvegardes
 

@@ -43,6 +43,7 @@ current file hash == bundled template hash
 La version du schéma sera augmentée et des champs seront ajoutés plus tard si mustflow a besoin de:
 
 - Comparer plusieurs sources de modèles.
+- Mettre à jour de façon sûre des blocs gérés comme `AGENTS.md` ou `.gitignore` avec des lignes de base au niveau du bloc.
 - Vérifier hors ligne les hashes de source propres à chaque modèle.
 - Planifier des mises à jour reproductibles sans que le paquet mustflow soit installé.
 - Utiliser des modèles signés ou une vérification de la chaîne d’approvisionnement.

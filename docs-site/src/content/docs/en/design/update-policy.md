@@ -56,7 +56,11 @@ writes_only_template_manifest_paths: true
 
 `AGENTS.md` is the root entry point and requires extra care.
 
-When an existing `AGENTS.md` is tracked as a mustflow-managed block, the whole file must not be overwritten with the template. That case should remain under `manual-review`, or use dedicated logic that safely replaces only the managed block.
+`mf update` does not automatically merge the whole `AGENTS.md` file.
+
+When an existing `AGENTS.md` is tracked as a mustflow-managed block, mustflow does not own the text outside that block. The block can become eligible for automatic update only when the lock file records a block-level baseline and the current block still matches it.
+
+Schema v1 does not store that block-level baseline. In v1, merged `AGENTS.md` files remain under `manual-review` instead of receiving a `managed-block-update`.
 
 ## Backup Location
 
