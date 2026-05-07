@@ -1,10 +1,15 @@
 # mustflow docs site
 
-mustflow.github.io에 배포할 소비자용 문서 사이트입니다.
+Languages: [English](README.md) · [한국어](docs/i18n/ko/README.md) · [中文](docs/i18n/zh/README.md) · [Español](docs/i18n/es/README.md) · [Français](docs/i18n/fr/README.md) · [हिन्दी](docs/i18n/hi/README.md)
 
-이 사이트는 `mf init`으로 사용자 저장소에 복사되는 문서가 아닙니다. mustflow가 만드는 파일과 설정의 의미를 설명하는 참고 문서입니다.
+This is the documentation site deployed to `mustflow.github.io`.
 
-## 명령어
+The documentation site is not installed into user repositories via `mf init`.
+It provides detailed guidance on the files and configurations created by mustflow.
+
+Site content is localized within `src/content/docs/<locale>/`.
+
+## Commands
 
 ```sh
 bun run dev
@@ -13,7 +18,7 @@ bun run build
 bun run preview
 ```
 
-루트에서는 다음 명령을 사용할 수 있습니다.
+From the repository root, use these wrapper commands:
 
 ```sh
 bun run docs:dev

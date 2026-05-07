@@ -1,16 +1,20 @@
 # docs-site styles
 
-전역 CSS는 역할별로 나눕니다.
+Languages: [English](README.md) · [한국어](../../docs/i18n/ko/src/styles/README.md) · [中文](../../docs/i18n/zh/src/styles/README.md) · [Español](../../docs/i18n/es/src/styles/README.md) · [Français](../../docs/i18n/fr/src/styles/README.md) · [हिन्दी](../../docs/i18n/hi/src/styles/README.md)
 
-- `tokens.css`: 사이트 전체에서 공유하는 크기와 간격 값입니다.
-- `layout.css`: Starlight 레이아웃 영역의 너비와 주요 구조입니다.
-- `markdown.css`: 본문 마크다운 요소입니다.
-- `header-controls.css`: 상단 언어와 테마 선택 컨트롤입니다.
-- `page-navigation.css`: 이전/다음 페이지 링크입니다.
-- `interaction.css`: 로고, 사이드바, 버튼, 선택 상자처럼 조작용 UI의 텍스트 선택을 막습니다.
-- `accessibility.css`: 포커스, 고대비 모드, 모션 감소, 방향 격리 같은 접근성 보강입니다.
+Global CSS is split by responsibility.
 
-적용 순서는 `../config/styles.mjs`를 기준으로 합니다.
+- `tokens.css`: Shared sizing and spacing values.
+- `layout.css`: Width and structure for Starlight layout areas.
+- `markdown.css`: Body markdown elements.
+- `header-controls.css`: Header language and theme controls.
+- `page-navigation.css`: Previous and next page links.
+- `interaction.css`: Text-selection behavior for interactive UI such as logos,
+  sidebars, buttons, and select boxes.
+- `accessibility.css`: Accessibility improvements for focus, high contrast,
+  reduced motion, and direction isolation.
 
-키보드 동작처럼 CSS가 아닌 브라우저 동작 보강은 `../../public/keyboard-navigation.js`와
-`../config/head.mjs`에서 관리합니다.
+The load order is defined in `../config/styles.mjs`.
+
+Browser behavior that is not CSS, such as keyboard navigation, is managed in
+`../../public/keyboard-navigation.js` and `../config/head.mjs`.
