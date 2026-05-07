@@ -1,0 +1,1731 @@
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import path from 'node:path';
+
+import {
+	COMMAND_LIFECYCLES,
+	COMMAND_RUN_POLICIES,
+	LONG_RUNNING_LIFECYCLES,
+	isRecord,
+	type TomlTable,
+} from './command-contract.js';
+import { listFilesRecursive, toPosixPath } from './filesystem.js';
+import { inspectManifestLock } from './manifest-lock.js';
+import { readTomlFile } from './toml.js';
+
+const REQUIRED_SKILL_SECTION_SETS = [
+	[
+		'## 목적',
+		'## 사용 조건',
+		'## 사용하지 않는 경우',
+		'## 필요한 입력',
+		'## 절차',
+		'## 검증',
+		'## 실패 대응',
+		'## 출력 형식',
+	],
+	[
+		'## Purpose',
+		'## Use When',
+		'## Do Not Use When',
+		'## Required Inputs',
+		'## Procedure',
+		'## Verification',
+		'## Failure Handling',
+		'## Output Format',
+	],
+] as const;
+
+const REQUIRED_FILES = [
+	'AGENTS.md',
+	'.mustflow/config/mustflow.toml',
+	'.mustflow/config/commands.toml',
+	'.mustflow/skills/INDEX.md',
+];
+const ALLOWED_MAP_MODES = new Set(['anchors_only']);
+const ALLOWED_MAP_PRIVACY_LEVELS = new Set(['minimal']);
+const ALLOWED_CONTEXT_READ_POLICIES = new Set(['task_relevant_only']);
+const ALLOWED_CONTEXT_AUTHORITIES = new Set(['contextual']);
+const ALLOWED_CONTEXT_DOCUMENT_AUTHORITIES = new Set(['contextual', 'derived', 'external']);
+const CAPABILITY_STATE_FIELDS = ['repo_map', 'preferences', 'context', 'local_index', 'work_items', 'services'] as const;
+const CAPABILITY_BOOLEAN_FIELDS = ['workflow', 'command_contract', 'skills'] as const;
+const ALLOWED_CAPABILITY_STATES = new Set(['disabled', 'optional', 'required', 'generated_optional']);
+const REQUIRED_AGENT_LOOP_PHASES = ['orient', 'plan', 'act', 'verify', 'report', 'handoff'] as const;
+const ALLOWED_HANDOFF_MODES = new Set(['report_only', 'work_item_optional']);
+const ALLOWED_PROJECT_PROFILES = new Set(['minimal', 'oss', 'team', 'product', 'library']);
+const ALLOWED_TESTING_POLICIES = new Set(['behavior_contract']);
+const ALLOWED_TEST_DELETION_REASONS = new Set([
+	'behavior_removed',
+	'public_contract_changed',
+	'duplicate_coverage',
+	'implementation_detail_removed',
+	'obsolete_snapshot',
+]);
+const FORBIDDEN_TEST_DELETION_REASONS = new Set([
+	'only_to_make_tests_pass',
+	'without_behavior_rationale',
+	'without_reporting',
+	'without_running_relevant_validation',
+]);
+const ALLOWED_STALE_TEST_ACTIONS = new Set(['update_remove_or_report']);
+const ALLOWED_HARNESS_MODES = new Set(['single_session', 'long_running_optional']);
+const ALLOWED_HARNESS_PHASES = new Set(['plan', 'work', 'verify', 'judge', 'handoff']);
+const ALLOWED_BUDGET_LIMIT_ACTIONS = new Set(['stop_and_handoff', 'stop_and_report']);
+const ALLOWED_APPROVAL_GATES = new Set([
+	'git_commit',
+	'git_push',
+	'dependency_install',
+	'dependency_upgrade',
+	'network_access',
+	'database_migration',
+	'destructive_command',
+	'secret_access',
+	'release',
+	'cross_repository_change',
+]);
+const ALLOWED_APPROVAL_ACTIONS = new Set(['stop_and_request_approval']);
+const ALLOWED_ISOLATION_PREFERENCES = new Set(['none', 'git_worktree', 'sandbox']);
+const ALLOWED_REFRESH_MODES = new Set(['checkpoint']);
+const ALLOWED_REFRESH_STATE_STORES = new Set(['none', 'cache']);
+const ALLOWED_COMPACTION_STRATEGIES = new Set(['tiered']);
+const ALLOWED_COMPACTION_STATE_STORES = new Set(['none', 'cache']);
+const ALLOWED_COMPACTION_CATEGORIES = new Set([
+	'decisions',
+	'constraints',
+	'open_questions',
+	'files_discussed',
+	'commands_discussed',
+	'risks',
+	'next_steps',
+	'rejected_options',
+]);
+const ALLOWED_COMPACTION_LONG_LIMIT_ACTIONS = new Set(['recompact_oldest', 'delete_oldest', 'archive_oldest']);
+const ALLOWED_COMPACTION_RAW_LIMIT_ACTIONS = new Set(['prune_after_compaction', 'report']);
+const ALLOWED_REFRESH_CHECKPOINTS = new Set([
+	'session_start',
+	'task_start',
+	'before_first_edit',
+	'before_command_run',
+	'after_instruction_file_change',
+	'root_change',
+	'after_compaction',
+	'before_final_report',
+]);
+const ALLOWED_RETENTION_STORES = new Set(['none', 'cache', 'project']);
+const ALLOWED_RETENTION_ON_LIMIT = new Set(['report', 'compact_then_archive']);
+const ALLOWED_TRANSLATION_POLICIES = new Set([
+	'source_only',
+	'update_source_mark_targets_stale',
+	'machine_translate_requires_review',
+]);
+const DEFAULT_RETENTION_LIMITS = {
+	repoMapMaxFileKb: 128,
+	repoMapFailIfLarger: true,
+	runReceiptMaxFileKb: 128,
+	contextMaxFileKb: 8,
+	knowledgeMaxFileKb: 128,
+} as const;
+const BACKGROUND_SHELL_PATTERNS = [
+	/\s&\s*$/u,
+	/\bnohup\b/iu,
+	/\bdisown\b/iu,
+	/\bStart-Process\b/iu,
+	/\bstart\s+/iu,
+	/\bxdg-open\b/iu,
+	/\bopen\s+/iu,
+	/\bchrome(?:\.exe)?\b/iu,
+	/\bchromium(?:\.exe)?\b/iu,
+];
+const RAW_COMMAND_FENCE_PATTERN = /```(?:sh|bash|shell|zsh|powershell|ps1|cmd)\s+[\s\S]*?```/giu;
+const SKILL_RESOURCE_MANIFEST = 'resources.toml';
+const SKILL_RESOURCE_ROOTS = new Set(['references', 'assets', 'scripts']);
+const ALLOWED_SKILL_RESOURCE_TYPES = new Set(['reference', 'asset', 'script']);
+const SKILL_RESOURCE_TYPE_BY_ROOT: Record<string, string> = {
+	references: 'reference',
+	assets: 'asset',
+	scripts: 'script',
+};
+const REQUIRED_SKILL_SCRIPT_RUN_POLICY = 'requires_command_contract';
+const VOLATILE_REPO_MAP_PATTERNS = [
+	/\bGenerated\s+(?:at|on):/iu,
+	/\bLast\s+updated:/iu,
+	/\bUpdated\s+at:/iu,
+	/\bgenerated_at\b/iu,
+	/\btimestamp\b/iu,
+	/\bfile\s+count\b/iu,
+	/\bchanged\s+files\b/iu,
+];
+const REPO_MAP_REMOTE_OR_BRANCH_PATTERNS = [
+	/https?:\/\//iu,
+	/\bgit@/iu,
+	/^\s*(?:Remote|Branch):/imu,
+];
+const LOCAL_ABSOLUTE_PATH_PATTERNS = [
+	/\b[A-Za-z]:\\(?:Users|Documents and Settings)\\/iu,
+	/(?:^|[\s"'(])\/(?:Users|home)\/[A-Za-z0-9._-]+\/[^\s)"']*/imu,
+];
+const SECRET_LIKE_CONTEXT_PATTERNS = [
+	/\b(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=:-]{8,}/iu,
+	/\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/u,
+];
+const DESIGN_TOKEN_DEFINITION_PATTERNS = [
+	/^\s*(?:colors?|palette|spacing|radius|radii|typography|fonts?|shadows?|breakpoints?)\s*[:=]\s*(?:\{|\[|["']?#|\d)/imu,
+	/^\s*(?:primary|secondary|accent|background|foreground|surface|brand|text|muted)\s*[:=]\s*["']?#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/imu,
+	/^\s*--[a-z0-9-]+:\s*[^;]+;/imu,
+	/^\s*(?:border[_-]?radius|font[_-]?(?:family|size)|line[_-]?height|space[-_]\d+)\s*[:=]\s*/imu,
+];
+
+interface CheckIssue {
+	readonly message: string;
+}
+
+export interface CheckOptions {
+	readonly strict?: boolean;
+}
+
+interface ParsedConfigFiles {
+	readonly mustflowToml?: TomlTable;
+	readonly commandsToml?: TomlTable;
+	readonly preferencesToml?: TomlTable;
+}
+
+interface RetentionLimits {
+	readonly repoMapMaxFileKb: number;
+	readonly repoMapFailIfLarger: boolean;
+	readonly runReceiptMaxFileKb: number;
+	readonly contextMaxFileKb: number;
+	readonly knowledgeMaxFileKb: number;
+}
+
+function hasOwn(table: TomlTable, key: string): boolean {
+	return Object.prototype.hasOwnProperty.call(table, key);
+}
+
+function isPositiveInteger(value: unknown): boolean {
+	return Number.isInteger(value) && Number(value) > 0;
+}
+
+function isSafeRelativePath(value: unknown): value is string {
+	if (typeof value !== 'string' || value.trim().length === 0) {
+		return false;
+	}
+
+	const normalized = value.replace(/\\/g, '/');
+	const segments = normalized.split('/').filter(Boolean);
+
+	if (path.posix.isAbsolute(normalized) || path.win32.isAbsolute(value)) {
+		return false;
+	}
+
+	return segments.length > 0 && segments.every((segment) => segment !== '.' && segment !== '..');
+}
+
+function hasExecutableCommand(intent: TomlTable): boolean {
+	if (Array.isArray(intent.argv) && intent.argv.every((entry) => typeof entry === 'string')) {
+		return intent.argv.length > 0;
+	}
+
+	return intent.mode === 'shell' && typeof intent.cmd === 'string' && intent.cmd.trim().length > 0;
+}
+
+function validateRequiredFiles(projectRoot: string, issues: CheckIssue[]): void {
+	for (const relativePath of REQUIRED_FILES) {
+		if (!existsSync(path.join(projectRoot, relativePath))) {
+			issues.push({ message: `Missing ${relativePath}` });
+		}
+	}
+}
+
+function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedConfigFiles {
+	const parsedFiles: { mustflowToml?: TomlTable; commandsToml?: TomlTable; preferencesToml?: TomlTable } = {};
+
+	for (const relativePath of [
+		'.mustflow/config/mustflow.toml',
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/preferences.toml',
+	]) {
+		const filePath = path.join(projectRoot, relativePath);
+
+		if (!existsSync(filePath)) {
+			continue;
+		}
+
+		try {
+			const parsed = readTomlFile(filePath);
+
+			if (!isRecord(parsed)) {
+				issues.push({ message: `${relativePath} must contain a TOML table` });
+				continue;
+			}
+
+			if (relativePath.endsWith('mustflow.toml')) {
+				parsedFiles.mustflowToml = parsed;
+			}
+
+			if (relativePath.endsWith('commands.toml')) {
+				parsedFiles.commandsToml = parsed;
+			}
+
+			if (relativePath.endsWith('preferences.toml')) {
+				parsedFiles.preferencesToml = parsed;
+			}
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			issues.push({ message: `Invalid TOML in ${relativePath}: ${message}` });
+		}
+	}
+
+	return parsedFiles;
+}
+
+function validateTable(config: TomlTable, tableName: string, issues: CheckIssue[]): TomlTable | undefined {
+	if (!hasOwn(config, tableName)) {
+		return undefined;
+	}
+
+	const table = config[tableName];
+
+	if (!isRecord(table)) {
+		issues.push({ message: `[${tableName}] must be a TOML table` });
+		return undefined;
+	}
+
+	return table;
+}
+
+function validateBooleanField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (hasOwn(table, key) && typeof table[key] !== 'boolean') {
+		issues.push({ message: `${label} must be a boolean` });
+	}
+}
+
+function validateStringField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (hasOwn(table, key) && (typeof table[key] !== 'string' || table[key].trim().length === 0)) {
+		issues.push({ message: `${label} must be a string` });
+	}
+}
+
+function validateStringArrayField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	const value = table[key];
+
+	if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+		issues.push({ message: `${label} must be a string array` });
+	}
+}
+
+function validateStringArrayMembers(
+	table: TomlTable,
+	key: string,
+	label: string,
+	allowedValues: ReadonlySet<string>,
+	unsupportedLabel: string,
+	issues: CheckIssue[],
+): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	const value = table[key];
+
+	if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+		issues.push({ message: `${label} must be a string array` });
+		return;
+	}
+
+	for (const entry of value) {
+		if (!allowedValues.has(entry)) {
+			issues.push({ message: `${label} contains unsupported ${unsupportedLabel} "${entry}"` });
+		}
+	}
+}
+
+function validateExactStringArrayField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	expectedValues: readonly string[],
+	issues: CheckIssue[],
+): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	const value = table[key];
+
+	if (!Array.isArray(value) || value.length !== expectedValues.length) {
+		issues.push({ message: `${label} must be ${expectedValues.map((entry) => `"${entry}"`).join(', ')}` });
+		return;
+	}
+
+	const hasExpectedValues = expectedValues.every((entry, index) => value[index] === entry);
+
+	if (!hasExpectedValues) {
+		issues.push({ message: `${label} must be ${expectedValues.map((entry) => `"${entry}"`).join(', ')}` });
+	}
+}
+
+function validatePositiveIntegerField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (hasOwn(table, key) && !isPositiveInteger(table[key])) {
+		issues.push({ message: `${label} must be a positive integer` });
+	}
+}
+
+function validateNestedTable(table: TomlTable, key: string, label: string, issues: CheckIssue[]): TomlTable | undefined {
+	if (!hasOwn(table, key)) {
+		return undefined;
+	}
+
+	const value = table[key];
+
+	if (!isRecord(value)) {
+		issues.push({ message: `${label} must be a TOML table` });
+		return undefined;
+	}
+
+	return value;
+}
+
+function validateAllowedStringField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	allowedValues: ReadonlySet<string>,
+	issues: CheckIssue[],
+): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	if (typeof table[key] !== 'string' || !allowedValues.has(table[key])) {
+		issues.push({ message: `${label} must be ${Array.from(allowedValues).map((value) => `"${value}"`).join(' or ')}` });
+	}
+}
+
+function validatePathField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (hasOwn(table, key) && !isSafeRelativePath(table[key])) {
+		issues.push({ message: `${label} must be a non-empty relative path` });
+	}
+}
+
+function validatePathArrayField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): string[] | undefined {
+	if (!hasOwn(table, key)) {
+		return undefined;
+	}
+
+	const value = table[key];
+
+	if (!Array.isArray(value) || value.length === 0 || !value.every(isSafeRelativePath)) {
+		issues.push({ message: `${label} entries must be non-empty relative paths` });
+		return undefined;
+	}
+
+	return value;
+}
+
+function validateWorkspaceRoots(table: TomlTable, issues: CheckIssue[]): string[] | undefined {
+	if (!hasOwn(table, 'roots')) {
+		return undefined;
+	}
+
+	const value = table.roots;
+
+	if (!Array.isArray(value) || !value.every(isSafeRelativePath)) {
+		issues.push({ message: '[workspace].roots entries must be relative paths inside the current root' });
+		return undefined;
+	}
+
+	return value;
+}
+
+function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!mustflowToml) {
+		return;
+	}
+
+	const map = validateTable(mustflowToml, 'map', issues);
+
+	if (map) {
+		validatePathField(map, 'output', '[map].output', issues);
+		validateAllowedStringField(map, 'mode', '[map].mode', ALLOWED_MAP_MODES, issues);
+		validateAllowedStringField(map, 'privacy', '[map].privacy', ALLOWED_MAP_PRIVACY_LEVELS, issues);
+		validateBooleanField(map, 'include_nested', '[map].include_nested', issues);
+		validatePathArrayField(map, 'anchor_files', '[map].anchor_files', issues);
+	}
+
+	const context = validateTable(mustflowToml, 'context', issues);
+
+	if (context) {
+		validateBooleanField(context, 'enabled', '[context].enabled', issues);
+		validatePathField(context, 'root', '[context].root', issues);
+		validatePathField(context, 'index', '[context].index', issues);
+		validatePathArrayField(context, 'default_files', '[context].default_files', issues);
+		validateAllowedStringField(context, 'read_policy', '[context].read_policy', ALLOWED_CONTEXT_READ_POLICIES, issues);
+		validateAllowedStringField(context, 'authority', '[context].authority', ALLOWED_CONTEXT_AUTHORITIES, issues);
+		validatePathArrayField(context, 'external_anchors', '[context].external_anchors', issues);
+	}
+
+	const workspace = validateTable(mustflowToml, 'workspace', issues);
+
+	if (workspace) {
+		validateBooleanField(workspace, 'enabled', '[workspace].enabled', issues);
+		const roots = validateWorkspaceRoots(workspace, issues);
+		validatePositiveIntegerField(workspace, 'max_depth', '[workspace].max_depth', issues);
+		validatePositiveIntegerField(workspace, 'max_repositories', '[workspace].max_repositories', issues);
+		validateBooleanField(workspace, 'follow_symlinks', '[workspace].follow_symlinks', issues);
+		validateBooleanField(workspace, 'stop_at_repository_root', '[workspace].stop_at_repository_root', issues);
+
+		if (workspace.enabled === true && roots?.length === 0) {
+			issues.push({ message: '[workspace].enabled requires at least one [workspace].roots entry' });
+		}
+	}
+
+	const capabilities = validateTable(mustflowToml, 'capabilities', issues);
+
+	if (capabilities) {
+		for (const field of CAPABILITY_BOOLEAN_FIELDS) {
+			validateBooleanField(capabilities, field, `[capabilities].${field}`, issues);
+		}
+
+		for (const field of CAPABILITY_STATE_FIELDS) {
+			validateAllowedStringField(capabilities, field, `[capabilities].${field}`, ALLOWED_CAPABILITY_STATES, issues);
+		}
+
+		validateStringArrayField(capabilities, 'adapters', '[capabilities].adapters', issues);
+	}
+
+	const agentLoop = validateTable(mustflowToml, 'agent_loop', issues);
+
+	if (agentLoop) {
+		validateExactStringArrayField(agentLoop, 'phases', '[agent_loop].phases', REQUIRED_AGENT_LOOP_PHASES, issues);
+	}
+
+	const harness = validateTable(mustflowToml, 'harness', issues);
+
+	if (harness) {
+		validateAllowedStringField(harness, 'mode', '[harness].mode', ALLOWED_HARNESS_MODES, issues);
+		validateBooleanField(harness, 'fresh_context_preferred', '[harness].fresh_context_preferred', issues);
+
+		const phases = validateNestedTable(harness, 'phases', '[harness.phases]', issues);
+		if (phases) {
+			validateStringArrayMembers(
+				phases,
+				'enabled',
+				'[harness.phases].enabled',
+				ALLOWED_HARNESS_PHASES,
+				'phase',
+				issues,
+			);
+		}
+	}
+
+	const refresh = validateTable(mustflowToml, 'refresh', issues);
+
+	if (refresh) {
+		validateBooleanField(refresh, 'enabled', '[refresh].enabled', issues);
+		validateAllowedStringField(refresh, 'mode', '[refresh].mode', ALLOWED_REFRESH_MODES, issues);
+		validateStringArrayMembers(
+			refresh,
+			'required_at',
+			'[refresh].required_at',
+			ALLOWED_REFRESH_CHECKPOINTS,
+			'checkpoint',
+			issues,
+		);
+		validatePositiveIntegerField(refresh, 'turn_threshold', '[refresh].turn_threshold', issues);
+		validatePositiveIntegerField(refresh, 'tool_call_threshold', '[refresh].tool_call_threshold', issues);
+		validatePositiveIntegerField(refresh, 'output_bytes_threshold', '[refresh].output_bytes_threshold', issues);
+		validateAllowedStringField(refresh, 'state_store', '[refresh].state_store', ALLOWED_REFRESH_STATE_STORES, issues);
+
+		const levels = validateNestedTable(refresh, 'levels', '[refresh.levels]', issues);
+		if (levels) {
+			for (const [levelName, level] of Object.entries(levels)) {
+				if (!isRecord(level)) {
+					issues.push({ message: `[refresh.levels.${levelName}] must be a TOML table` });
+					continue;
+				}
+
+				validatePathArrayField(level, 'read', `[refresh.levels.${levelName}].read`, issues);
+			}
+		}
+	}
+
+	const compaction = validateTable(mustflowToml, 'compaction', issues);
+
+	if (compaction) {
+		validateBooleanField(compaction, 'enabled', '[compaction].enabled', issues);
+		validateAllowedStringField(compaction, 'strategy', '[compaction].strategy', ALLOWED_COMPACTION_STRATEGIES, issues);
+		validateAllowedStringField(compaction, 'state_store', '[compaction].state_store', ALLOWED_COMPACTION_STATE_STORES, issues);
+
+		const recent = validateNestedTable(compaction, 'recent', '[compaction.recent]', issues);
+		if (recent) {
+			validatePositiveIntegerField(recent, 'keep_turns', '[compaction.recent].keep_turns', issues);
+			validatePositiveIntegerField(recent, 'max_total_bytes', '[compaction.recent].max_total_bytes', issues);
+			validateBooleanField(recent, 'store_raw', '[compaction.recent].store_raw', issues);
+		}
+
+		const mid = validateNestedTable(compaction, 'mid', '[compaction.mid]', issues);
+		if (mid) {
+			validatePositiveIntegerField(mid, 'trigger_turns', '[compaction.mid].trigger_turns', issues);
+			validatePositiveIntegerField(mid, 'target_items', '[compaction.mid].target_items', issues);
+			validatePositiveIntegerField(
+				mid,
+				'target_max_words_per_item',
+				'[compaction.mid].target_max_words_per_item',
+				issues,
+			);
+			validateStringArrayMembers(
+				mid,
+				'include_categories',
+				'[compaction.mid].include_categories',
+				ALLOWED_COMPACTION_CATEGORIES,
+				'category',
+				issues,
+			);
+		}
+
+		const long = validateNestedTable(compaction, 'long', '[compaction.long]', issues);
+		if (long) {
+			validatePositiveIntegerField(long, 'promote_after_mid_items', '[compaction.long].promote_after_mid_items', issues);
+			validatePositiveIntegerField(long, 'target_items', '[compaction.long].target_items', issues);
+			validatePositiveIntegerField(long, 'max_items', '[compaction.long].max_items', issues);
+			validateAllowedStringField(long, 'on_limit', '[compaction.long].on_limit', ALLOWED_COMPACTION_LONG_LIMIT_ACTIONS, issues);
+		}
+
+		const rawRetention = validateNestedTable(compaction, 'raw_retention', '[compaction.raw_retention]', issues);
+		if (rawRetention) {
+			validatePositiveIntegerField(rawRetention, 'max_age_days', '[compaction.raw_retention].max_age_days', issues);
+			validatePositiveIntegerField(rawRetention, 'max_total_mb', '[compaction.raw_retention].max_total_mb', issues);
+			validateAllowedStringField(
+				rawRetention,
+				'on_limit',
+				'[compaction.raw_retention].on_limit',
+				ALLOWED_COMPACTION_RAW_LIMIT_ACTIONS,
+				issues,
+			);
+		}
+
+		const rules = validateNestedTable(compaction, 'rules', '[compaction.rules]', issues);
+		if (rules) {
+			validateBooleanField(rules, 'require_source_refs', '[compaction.rules].require_source_refs', issues);
+			validateBooleanField(rules, 'summaries_are_derived', '[compaction.rules].summaries_are_derived', issues);
+			validateBooleanField(
+				rules,
+				'current_files_override_summaries',
+				'[compaction.rules].current_files_override_summaries',
+				issues,
+			);
+			validateBooleanField(rules, 'never_store_secrets', '[compaction.rules].never_store_secrets', issues);
+			validateBooleanField(rules, 'scrub_absolute_user_paths', '[compaction.rules].scrub_absolute_user_paths', issues);
+			validateBooleanField(
+				rules,
+				'do_not_store_hidden_chain_of_thought',
+				'[compaction.rules].do_not_store_hidden_chain_of_thought',
+				issues,
+			);
+		}
+	}
+
+	const verification = validateTable(mustflowToml, 'verification', issues);
+
+	if (verification) {
+		validatePathField(verification, 'command_source', '[verification].command_source', issues);
+		validateBooleanField(verification, 'require_configured_intents', '[verification].require_configured_intents', issues);
+		validateBooleanField(verification, 'allow_inferred_commands', '[verification].allow_inferred_commands', issues);
+		validateBooleanField(verification, 'require_command_lifecycle', '[verification].require_command_lifecycle', issues);
+		validateBooleanField(verification, 'require_timeout_for_oneshot', '[verification].require_timeout_for_oneshot', issues);
+	}
+
+	const testing = validateTable(mustflowToml, 'testing', issues);
+
+	if (testing) {
+		validateAllowedStringField(testing, 'policy', '[testing].policy', ALLOWED_TESTING_POLICIES, issues);
+		validateBooleanField(
+			testing,
+			'prefer_update_existing_tests',
+			'[testing].prefer_update_existing_tests',
+			issues,
+		);
+		validateBooleanField(
+			testing,
+			'require_existing_test_search',
+			'[testing].require_existing_test_search',
+			issues,
+		);
+		validateBooleanField(
+			testing,
+			'require_test_change_report',
+			'[testing].require_test_change_report',
+			issues,
+		);
+		validateBooleanField(testing, 'forbid_validation_weakening', '[testing].forbid_validation_weakening', issues);
+		validateStringArrayMembers(
+			testing,
+			'allow_test_deletion_when',
+			'[testing].allow_test_deletion_when',
+			ALLOWED_TEST_DELETION_REASONS,
+			'reason',
+			issues,
+		);
+		validateStringArrayMembers(
+			testing,
+			'forbid_test_deletion_when',
+			'[testing].forbid_test_deletion_when',
+			FORBIDDEN_TEST_DELETION_REASONS,
+			'reason',
+			issues,
+		);
+		validateAllowedStringField(testing, 'stale_test_action', '[testing].stale_test_action', ALLOWED_STALE_TEST_ACTIONS, issues);
+	}
+
+	const handoff = validateTable(mustflowToml, 'handoff', issues);
+
+	if (handoff) {
+		validateBooleanField(handoff, 'enabled', '[handoff].enabled', issues);
+		validateAllowedStringField(handoff, 'mode', '[handoff].mode', ALLOWED_HANDOFF_MODES, issues);
+	}
+
+	const budget = validateTable(mustflowToml, 'budget', issues);
+
+	if (budget) {
+		validateBooleanField(budget, 'enabled', '[budget].enabled', issues);
+		validatePositiveIntegerField(budget, 'max_iterations', '[budget].max_iterations', issues);
+		validatePositiveIntegerField(budget, 'max_wall_clock_minutes', '[budget].max_wall_clock_minutes', issues);
+		validatePositiveIntegerField(budget, 'max_command_runs', '[budget].max_command_runs', issues);
+		validatePositiveIntegerField(budget, 'max_total_output_mb', '[budget].max_total_output_mb', issues);
+		validatePositiveIntegerField(budget, 'max_failures_per_intent', '[budget].max_failures_per_intent', issues);
+		validateAllowedStringField(budget, 'on_limit', '[budget].on_limit', ALLOWED_BUDGET_LIMIT_ACTIONS, issues);
+	}
+
+	const approval = validateTable(mustflowToml, 'approval', issues);
+
+	if (approval) {
+		validateStringArrayMembers(
+			approval,
+			'required_for',
+			'[approval].required_for',
+			ALLOWED_APPROVAL_GATES,
+			'approval gate',
+			issues,
+		);
+		validateAllowedStringField(approval, 'on_required', '[approval].on_required', ALLOWED_APPROVAL_ACTIONS, issues);
+	}
+
+	const isolation = validateTable(mustflowToml, 'isolation', issues);
+
+	if (isolation) {
+		validateAllowedStringField(isolation, 'preferred', '[isolation].preferred', ALLOWED_ISOLATION_PREFERENCES, issues);
+		validateBooleanField(isolation, 'required_for_long_running', '[isolation].required_for_long_running', issues);
+		validateBooleanField(isolation, 'allow_dirty_main_worktree', '[isolation].allow_dirty_main_worktree', issues);
+	}
+
+	const retention = validateTable(mustflowToml, 'retention', issues);
+
+	if (retention) {
+		validateBooleanField(retention, 'enabled', '[retention].enabled', issues);
+
+		const rawEvents = validateNestedTable(retention, 'raw_events', '[retention.raw_events]', issues);
+		if (rawEvents) {
+			validateAllowedStringField(rawEvents, 'store', '[retention.raw_events].store', ALLOWED_RETENTION_STORES, issues);
+			validatePositiveIntegerField(rawEvents, 'max_file_mb', '[retention.raw_events].max_file_mb', issues);
+			validatePositiveIntegerField(rawEvents, 'max_total_mb', '[retention.raw_events].max_total_mb', issues);
+			validatePositiveIntegerField(rawEvents, 'max_age_days', '[retention.raw_events].max_age_days', issues);
+			validateAllowedStringField(
+				rawEvents,
+				'on_limit',
+				'[retention.raw_events].on_limit',
+				ALLOWED_RETENTION_ON_LIMIT,
+				issues,
+			);
+		}
+
+		const runReceipts = validateNestedTable(retention, 'run_receipts', '[retention.run_receipts]', issues);
+		if (runReceipts) {
+			validateAllowedStringField(runReceipts, 'store', '[retention.run_receipts].store', ALLOWED_RETENTION_STORES, issues);
+			validatePositiveIntegerField(runReceipts, 'max_file_kb', '[retention.run_receipts].max_file_kb', issues);
+			validatePositiveIntegerField(runReceipts, 'max_items', '[retention.run_receipts].max_items', issues);
+			validatePositiveIntegerField(runReceipts, 'max_total_mb', '[retention.run_receipts].max_total_mb', issues);
+			validatePositiveIntegerField(
+				runReceipts,
+				'keep_stdout_tail_bytes',
+				'[retention.run_receipts].keep_stdout_tail_bytes',
+				issues,
+			);
+			validatePositiveIntegerField(
+				runReceipts,
+				'keep_stderr_tail_bytes',
+				'[retention.run_receipts].keep_stderr_tail_bytes',
+				issues,
+			);
+		}
+
+		const knowledge = validateNestedTable(retention, 'knowledge', '[retention.knowledge]', issues);
+		if (knowledge) {
+			validateBooleanField(knowledge, 'enabled', '[retention.knowledge].enabled', issues);
+			validateAllowedStringField(knowledge, 'store', '[retention.knowledge].store', ALLOWED_RETENTION_STORES, issues);
+			validatePositiveIntegerField(knowledge, 'max_file_kb', '[retention.knowledge].max_file_kb', issues);
+			validatePositiveIntegerField(knowledge, 'max_total_mb', '[retention.knowledge].max_total_mb', issues);
+			validateBooleanField(knowledge, 'require_source_refs', '[retention.knowledge].require_source_refs', issues);
+			validateBooleanField(knowledge, 'require_review_status', '[retention.knowledge].require_review_status', issues);
+		}
+
+		const context = validateNestedTable(retention, 'context', '[retention.context]', issues);
+		if (context) {
+			validatePositiveIntegerField(context, 'max_file_kb', '[retention.context].max_file_kb', issues);
+		}
+
+		const handoffs = validateNestedTable(retention, 'handoffs', '[retention.handoffs]', issues);
+		if (handoffs) {
+			validateAllowedStringField(handoffs, 'store', '[retention.handoffs].store', ALLOWED_RETENTION_STORES, issues);
+			validatePositiveIntegerField(handoffs, 'max_file_kb', '[retention.handoffs].max_file_kb', issues);
+			validatePositiveIntegerField(handoffs, 'max_total_mb', '[retention.handoffs].max_total_mb', issues);
+			validateBooleanField(handoffs, 'require_source_refs', '[retention.handoffs].require_source_refs', issues);
+		}
+
+		const repoMap = validateNestedTable(retention, 'repo_map', '[retention.repo_map]', issues);
+		if (repoMap) {
+			validatePositiveIntegerField(repoMap, 'max_file_kb', '[retention.repo_map].max_file_kb', issues);
+			validateBooleanField(repoMap, 'fail_if_larger', '[retention.repo_map].fail_if_larger', issues);
+		}
+	}
+}
+
+function validatePreferencesStringFields(
+	table: TomlTable,
+	tableName: string,
+	keys: readonly string[],
+	issues: CheckIssue[],
+): void {
+	for (const key of keys) {
+		validateStringField(table, key, `[preferences.${tableName}].${key}`, issues);
+	}
+}
+
+function validatePreferenceModeFallback(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CheckIssue[],
+): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	const value = table[key];
+
+	if (typeof value === 'string' && value.trim().length > 0) {
+		return;
+	}
+
+	if (!isRecord(value)) {
+		issues.push({ message: `${label} must be a string or TOML table` });
+		return;
+	}
+
+	validateStringField(value, 'mode', `${label}.mode`, issues);
+	validateStringField(value, 'fallback', `${label}.fallback`, issues);
+	validateStringField(value, 'rule', `${label}.rule`, issues);
+}
+
+function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!preferencesToml) {
+		return;
+	}
+
+	validateStringField(preferencesToml, 'schema_version', '[preferences].schema_version', issues);
+
+	const project = validateTable(preferencesToml, 'project', issues);
+	if (project) {
+		validatePreferencesStringFields(project, 'project', ['convention_mode'], issues);
+		validateAllowedStringField(project, 'profile', '[preferences.project].profile', ALLOWED_PROJECT_PROFILES, issues);
+	}
+
+	const language = validateTable(preferencesToml, 'language', issues);
+	if (language) {
+		validatePreferencesStringFields(language, 'language', ['agent_response', 'docs'], issues);
+		for (const key of ['code_comments', 'logs', 'user_facing_text', 'commit_messages']) {
+			validatePreferenceModeFallback(language, key, `[preferences.language.${key}]`, issues);
+		}
+
+		const memory = validateNestedTable(language, 'memory', '[preferences.language.memory]', issues);
+		if (memory) {
+			validateStringField(memory, 'summary', '[preferences.language.memory].summary', issues);
+			validateStringField(memory, 'fallback', '[preferences.language.memory].fallback', issues);
+			validateBooleanField(memory, 'preserve_code', '[preferences.language.memory].preserve_code', issues);
+			validateBooleanField(memory, 'preserve_paths', '[preferences.language.memory].preserve_paths', issues);
+			validateBooleanField(
+				memory,
+				'preserve_error_output',
+				'[preferences.language.memory].preserve_error_output',
+				issues,
+			);
+		}
+	}
+
+	const formatting = validateTable(preferencesToml, 'formatting', issues);
+	if (formatting) {
+		validatePreferencesStringFields(
+			formatting,
+			'formatting',
+			[
+				'indentation',
+				'indentation_when_missing',
+				'line_endings',
+				'line_endings_when_missing',
+				'quote_style',
+				'trailing_whitespace',
+			],
+			issues,
+		);
+	}
+
+	const codeStyle = validateTable(preferencesToml, 'code_style', issues);
+	if (codeStyle) {
+		validatePreferencesStringFields(codeStyle, 'code_style', ['naming', 'comments', 'public_api_docs'], issues);
+		validateBooleanField(
+			codeStyle,
+			'avoid_drive_by_refactors',
+			'[preferences.code_style].avoid_drive_by_refactors',
+			issues,
+		);
+	}
+
+	const git = validateTable(preferencesToml, 'git', issues);
+	if (git) {
+		validatePreferencesStringFields(git, 'git', ['commit_message_style', 'commit_message_language'], issues);
+		validateBooleanField(git, 'auto_stage', '[preferences.git].auto_stage', issues);
+		validateBooleanField(git, 'auto_commit', '[preferences.git].auto_commit', issues);
+		validateBooleanField(git, 'auto_push', '[preferences.git].auto_push', issues);
+
+		const commitMessage = validateNestedTable(git, 'commit_message', '[preferences.git.commit_message]', issues);
+		if (commitMessage) {
+			validatePreferencesStringFields(
+				commitMessage,
+				'git.commit_message',
+				['suggest', 'style', 'language', 'language_when_missing', 'scope', 'include_body'],
+				issues,
+			);
+			validatePositiveIntegerField(
+				commitMessage,
+				'max_suggestions',
+				'[preferences.git.commit_message].max_suggestions',
+				issues,
+			);
+			validateBooleanField(
+				commitMessage,
+				'split_when_multiple_concerns',
+				'[preferences.git.commit_message].split_when_multiple_concerns',
+				issues,
+			);
+			validateBooleanField(
+				commitMessage,
+				'avoid_sensitive_details',
+				'[preferences.git.commit_message].avoid_sensitive_details',
+				issues,
+			);
+		}
+	}
+
+	const reporting = validateTable(preferencesToml, 'reporting', issues);
+	if (reporting) {
+		const commitSuggestion = validateNestedTable(
+			reporting,
+			'commit_suggestion',
+			'[preferences.reporting.commit_suggestion]',
+			issues,
+		);
+		if (commitSuggestion) {
+			validateBooleanField(
+				commitSuggestion,
+				'enabled',
+				'[preferences.reporting.commit_suggestion].enabled',
+				issues,
+			);
+			validatePreferencesStringFields(
+				commitSuggestion,
+				'reporting.commit_suggestion',
+				['when', 'source'],
+				issues,
+			);
+		}
+	}
+
+	const docs = validateTable(preferencesToml, 'docs', issues);
+	if (docs) {
+		validateStringArrayField(docs, 'update_when', '[preferences.docs].update_when', issues);
+		validateStringField(docs, 'tone', '[preferences.docs].tone', issues);
+	}
+
+	const logging = validateTable(preferencesToml, 'logging', issues);
+	if (logging) {
+		validateStringField(logging, 'style', '[preferences.logging].style', issues);
+		validateBooleanField(logging, 'include_sensitive_data', '[preferences.logging].include_sensitive_data', issues);
+		validateStringField(logging, 'language', '[preferences.logging].language', issues);
+	}
+
+	const productI18n = validateTable(preferencesToml, 'product_i18n', issues);
+	if (productI18n) {
+		validateBooleanField(productI18n, 'enabled', '[preferences.product_i18n].enabled', issues);
+		validateStringField(productI18n, 'source_locale', '[preferences.product_i18n].source_locale', issues);
+		validateStringField(productI18n, 'fallback_locale', '[preferences.product_i18n].fallback_locale', issues);
+		validateStringField(productI18n, 'locale_tag_format', '[preferences.product_i18n].locale_tag_format', issues);
+		validateStringField(
+			productI18n,
+			'user_facing_text_policy',
+			'[preferences.product_i18n].user_facing_text_policy',
+			issues,
+		);
+		validateStringField(
+			productI18n,
+			'hardcoded_user_facing_strings',
+			'[preferences.product_i18n].hardcoded_user_facing_strings',
+			issues,
+		);
+		validateAllowedStringField(
+			productI18n,
+			'translation_policy',
+			'[preferences.product_i18n].translation_policy',
+			ALLOWED_TRANSLATION_POLICIES,
+			issues,
+		);
+		validateStringArrayField(productI18n, 'target_locales', '[preferences.product_i18n].target_locales', issues);
+		validateStringArrayField(productI18n, 'do_not_translate', '[preferences.product_i18n].do_not_translate', issues);
+	}
+}
+
+function validateCommandIntents(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!commandsToml) {
+		return;
+	}
+
+	validateStringField(commandsToml, 'schema_version', '[commands].schema_version', issues);
+
+	const defaults = validateTable(commandsToml, 'defaults', issues);
+	if (defaults) {
+		validateStringField(defaults, 'missing_behavior', '[commands.defaults].missing_behavior', issues);
+		validateBooleanField(defaults, 'allow_inferred_commands', '[commands.defaults].allow_inferred_commands', issues);
+		validateBooleanField(defaults, 'require_lifecycle', '[commands.defaults].require_lifecycle', issues);
+		validateBooleanField(
+			defaults,
+			'require_timeout_for_oneshot',
+			'[commands.defaults].require_timeout_for_oneshot',
+			issues,
+		);
+		validateBooleanField(
+			defaults,
+			'deny_unmanaged_long_running',
+			'[commands.defaults].deny_unmanaged_long_running',
+			issues,
+		);
+		validateStringField(defaults, 'default_cwd', '[commands.defaults].default_cwd', issues);
+		validateStringField(defaults, 'stdin', '[commands.defaults].stdin', issues);
+		validateStringField(defaults, 'on_timeout', '[commands.defaults].on_timeout', issues);
+		validatePositiveIntegerField(
+			defaults,
+			'default_timeout_seconds',
+			'[commands.defaults].default_timeout_seconds',
+			issues,
+		);
+		validatePositiveIntegerField(defaults, 'max_output_bytes', '[commands.defaults].max_output_bytes', issues);
+		validatePositiveIntegerField(defaults, 'kill_after_seconds', '[commands.defaults].kill_after_seconds', issues);
+	}
+
+	if (!isRecord(commandsToml.intents)) {
+		issues.push({ message: 'Missing [intents] table in .mustflow/config/commands.toml' });
+		return;
+	}
+
+	for (const [intentName, intent] of Object.entries(commandsToml.intents)) {
+		if (!isRecord(intent)) {
+			issues.push({ message: `Intent ${intentName} must be a TOML table` });
+			continue;
+		}
+
+		validateStringField(intent, 'status', `[commands.intents.${intentName}].status`, issues);
+		validateAllowedStringField(
+			intent,
+			'lifecycle',
+			`[commands.intents.${intentName}].lifecycle`,
+			COMMAND_LIFECYCLES,
+			issues,
+		);
+		validateAllowedStringField(
+			intent,
+			'run_policy',
+			`[commands.intents.${intentName}].run_policy`,
+			COMMAND_RUN_POLICIES,
+			issues,
+		);
+
+		if (intent.status !== 'configured') {
+			continue;
+		}
+
+		const lifecycle = typeof intent.lifecycle === 'string' ? intent.lifecycle : undefined;
+		const runPolicy = typeof intent.run_policy === 'string' ? intent.run_policy : undefined;
+
+		if (!lifecycle) {
+			issues.push({ message: `Configured intent ${intentName} must define lifecycle` });
+		}
+
+		if (!runPolicy) {
+			issues.push({ message: `Configured intent ${intentName} must define run_policy` });
+		}
+
+		if (lifecycle === 'oneshot') {
+			validatePositiveIntegerField(
+				intent,
+				'timeout_seconds',
+				`[commands.intents.${intentName}].timeout_seconds`,
+				issues,
+			);
+
+			if (!hasOwn(intent, 'timeout_seconds')) {
+				issues.push({ message: `Oneshot intent ${intentName} must define timeout_seconds` });
+			}
+
+			if (intent.stdin !== 'closed') {
+				issues.push({ message: `Oneshot intent ${intentName} must set stdin = "closed"` });
+			}
+		}
+
+		if (lifecycle && LONG_RUNNING_LIFECYCLES.has(lifecycle) && runPolicy === 'agent_allowed') {
+			issues.push({
+				message: `Long-running intent ${intentName} must not use run_policy = "agent_allowed"`,
+			});
+		}
+
+		if (!hasExecutableCommand(intent)) {
+			issues.push({
+				message: `Configured intent ${intentName} must define argv or mode = "shell" with cmd`,
+			});
+		}
+
+		if (intent.mode === 'shell' && typeof intent.cmd === 'string') {
+			for (const pattern of BACKGROUND_SHELL_PATTERNS) {
+				if (pattern.test(intent.cmd)) {
+					issues.push({ message: `Shell intent ${intentName} contains a blocked long-running or background pattern` });
+					break;
+				}
+			}
+		}
+
+		if (hasOwn(intent, 'success_exit_codes')) {
+			const value = intent.success_exit_codes;
+			if (!Array.isArray(value) || value.length === 0 || value.some((entry) => !Number.isInteger(entry))) {
+				issues.push({ message: `[commands.intents.${intentName}].success_exit_codes must be an integer array` });
+			}
+		}
+	}
+}
+
+function validateSkills(projectRoot: string, issues: CheckIssue[]): void {
+	const skillsRoot = path.join(projectRoot, '.mustflow', 'skills');
+	const skillFiles = listFilesRecursive(skillsRoot).filter((relativePath) => relativePath.endsWith('/SKILL.md'));
+
+	for (const relativePath of skillFiles) {
+		const absolutePath = path.join(skillsRoot, relativePath);
+		const content = readFileSync(absolutePath, 'utf8');
+		const matchingSectionSet = REQUIRED_SKILL_SECTION_SETS.find((sectionSet) =>
+			sectionSet.every((section) => content.includes(section)),
+		);
+
+		if (!matchingSectionSet) {
+			issues.push({
+				message: `Missing required skill section set in .mustflow/skills/${toPosixPath(relativePath)}; expected Korean or English mustflow skill headings`,
+			});
+		}
+	}
+}
+
+function parseSimpleFrontmatter(content: string): Record<string, string> {
+	if (!content.startsWith('---')) {
+		return {};
+	}
+
+	const end = content.indexOf('\n---', 3);
+	if (end === -1) {
+		return {};
+	}
+
+	const frontmatter: Record<string, string> = {};
+
+	for (const line of content.slice(3, end).split(/\r?\n/)) {
+		const separatorIndex = line.indexOf(':');
+		if (separatorIndex === -1) {
+			continue;
+		}
+
+		const key = line.slice(0, separatorIndex).trim();
+		const value = line.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, '');
+
+		if (key.length > 0 && value.length > 0) {
+			frontmatter[key] = value;
+		}
+	}
+
+	return frontmatter;
+}
+
+function validateContextDocuments(projectRoot: string, issues: CheckIssue[]): void {
+	const contextRoot = path.join(projectRoot, '.mustflow', 'context');
+	const contextFiles = listFilesRecursive(contextRoot).filter((relativePath) => relativePath.endsWith('.md'));
+
+	for (const relativePath of contextFiles) {
+		const normalizedPath = `.mustflow/context/${toPosixPath(relativePath)}`;
+		const content = readFileSync(path.join(contextRoot, relativePath), 'utf8');
+		const frontmatter = parseSimpleFrontmatter(content);
+
+		if (frontmatter.kind !== 'mustflow-context') {
+			issues.push({ message: `${normalizedPath} frontmatter kind must be "mustflow-context"` });
+		}
+
+		if (!frontmatter.name) {
+			issues.push({ message: `${normalizedPath} frontmatter name is required` });
+		}
+
+		if (!frontmatter.authority || !ALLOWED_CONTEXT_DOCUMENT_AUTHORITIES.has(frontmatter.authority)) {
+			issues.push({
+				message: `${normalizedPath} frontmatter authority must be "contextual", "derived", or "external"`,
+			});
+		}
+	}
+}
+
+function validateManifestLock(projectRoot: string, issues: CheckIssue[]): void {
+	for (const issue of inspectManifestLock(projectRoot).issues) {
+		issues.push({ message: issue });
+	}
+}
+
+function pushStrictIssue(issues: CheckIssue[], message: string): void {
+	issues.push({ message: `Strict: ${message}` });
+}
+
+function validateStrictCommandDefaults(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!commandsToml || !isRecord(commandsToml.defaults)) {
+		return;
+	}
+
+	if (!hasOwn(commandsToml.defaults, 'max_output_bytes')) {
+		pushStrictIssue(issues, '[commands.defaults].max_output_bytes is required');
+	}
+
+	if (!hasOwn(commandsToml.defaults, 'on_timeout')) {
+		pushStrictIssue(issues, '[commands.defaults].on_timeout is required');
+	}
+}
+
+function readPositiveIntegerWithDefault(table: TomlTable | undefined, key: string, fallback: number): number {
+	if (!table || !isPositiveInteger(table[key])) {
+		return fallback;
+	}
+
+	return Number(table[key]);
+}
+
+function readBooleanWithDefault(table: TomlTable | undefined, key: string, fallback: boolean): boolean {
+	if (!table || typeof table[key] !== 'boolean') {
+		return fallback;
+	}
+
+	return table[key];
+}
+
+function getNestedRetentionTable(retention: TomlTable | undefined, key: string): TomlTable | undefined {
+	if (!retention || !isRecord(retention[key])) {
+		return undefined;
+	}
+
+	return retention[key];
+}
+
+function getRetentionLimits(mustflowToml: TomlTable | undefined): RetentionLimits {
+	const retention = mustflowToml && isRecord(mustflowToml.retention) ? mustflowToml.retention : undefined;
+	const repoMap = getNestedRetentionTable(retention, 'repo_map');
+	const runReceipts = getNestedRetentionTable(retention, 'run_receipts');
+	const context = getNestedRetentionTable(retention, 'context');
+	const knowledge = getNestedRetentionTable(retention, 'knowledge');
+
+	return {
+		repoMapMaxFileKb: readPositiveIntegerWithDefault(
+			repoMap,
+			'max_file_kb',
+			DEFAULT_RETENTION_LIMITS.repoMapMaxFileKb,
+		),
+		repoMapFailIfLarger: readBooleanWithDefault(
+			repoMap,
+			'fail_if_larger',
+			DEFAULT_RETENTION_LIMITS.repoMapFailIfLarger,
+		),
+		runReceiptMaxFileKb: readPositiveIntegerWithDefault(
+			runReceipts,
+			'max_file_kb',
+			DEFAULT_RETENTION_LIMITS.runReceiptMaxFileKb,
+		),
+		contextMaxFileKb: readPositiveIntegerWithDefault(
+			context,
+			'max_file_kb',
+			DEFAULT_RETENTION_LIMITS.contextMaxFileKb,
+		),
+		knowledgeMaxFileKb: readPositiveIntegerWithDefault(
+			knowledge,
+			'max_file_kb',
+			DEFAULT_RETENTION_LIMITS.knowledgeMaxFileKb,
+		),
+	};
+}
+
+function validateStrictRetentionPolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): RetentionLimits {
+	if (!mustflowToml || !isRecord(mustflowToml.retention)) {
+		pushStrictIssue(issues, '[retention] table is required');
+		return DEFAULT_RETENTION_LIMITS;
+	}
+
+	const retention = mustflowToml.retention;
+
+	for (const tableName of ['raw_events', 'run_receipts', 'knowledge', 'context', 'repo_map']) {
+		if (!isRecord(retention[tableName])) {
+			pushStrictIssue(issues, `[retention.${tableName}] table is required`);
+		}
+	}
+
+	return getRetentionLimits(mustflowToml);
+}
+
+function validateStrictRefreshPolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!mustflowToml || !isRecord(mustflowToml.refresh)) {
+		pushStrictIssue(issues, '[refresh] table is required');
+		return;
+	}
+
+	const refresh = mustflowToml.refresh;
+
+	if (!Array.isArray(refresh.required_at) || !refresh.required_at.includes('before_command_run')) {
+		pushStrictIssue(issues, '[refresh].required_at should include "before_command_run"');
+	}
+
+	if (!isRecord(refresh.levels)) {
+		pushStrictIssue(issues, '[refresh.levels] table is required');
+		return;
+	}
+
+	for (const levelName of ['light', 'command', 'skill', 'full']) {
+		if (!isRecord(refresh.levels[levelName])) {
+			pushStrictIssue(issues, `[refresh.levels.${levelName}] table is required`);
+			continue;
+		}
+
+		const read = refresh.levels[levelName].read;
+		if (!Array.isArray(read) || read.length === 0) {
+			pushStrictIssue(issues, `[refresh.levels.${levelName}].read is required`);
+		}
+	}
+}
+
+function validateStrictHarnessPolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	for (const tableName of ['harness', 'budget', 'approval', 'isolation', 'compaction']) {
+		if (!mustflowToml || !isRecord(mustflowToml[tableName])) {
+			pushStrictIssue(issues, `[${tableName}] table is required`);
+		}
+	}
+}
+
+function fileSizeBytes(filePath: string): number {
+	return statSync(filePath).size;
+}
+
+function exceedsKiBLimit(filePath: string, maxFileKb: number): boolean {
+	return fileSizeBytes(filePath) > maxFileKb * 1024;
+}
+
+function formatStorageLimitMessage(relativePath: string, field: string, filePath: string, maxFileKb: number): string {
+	const actualKiB = Math.ceil(fileSizeBytes(filePath) / 1024);
+	return `${relativePath} exceeds ${field} (${actualKiB} KiB > ${maxFileKb} KiB)`;
+}
+
+function normalizeResourcePath(relativePath: string): string {
+	return relativePath.replace(/\\/g, '/');
+}
+
+function listSkillDirectories(skillsRoot: string): string[] {
+	const skillNames = new Set<string>();
+
+	for (const relativePath of listFilesRecursive(skillsRoot)) {
+		const normalizedPath = normalizeResourcePath(relativePath);
+		const [skillName] = normalizedPath.split('/');
+
+		if (!skillName || !normalizedPath.includes('/')) {
+			continue;
+		}
+
+		skillNames.add(skillName);
+	}
+
+	return [...skillNames].sort();
+}
+
+function readSkillResourceManifest(manifestPath: string, manifestLabel: string, issues: CheckIssue[]): TomlTable | undefined {
+	try {
+		const parsed = readTomlFile(manifestPath);
+
+		if (!isRecord(parsed)) {
+			pushStrictIssue(issues, `${manifestLabel} must contain a TOML table`);
+			return undefined;
+		}
+
+		return parsed;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		pushStrictIssue(issues, `${manifestLabel} is not valid TOML: ${message}`);
+		return undefined;
+	}
+}
+
+function isDeclaredCommandIntent(commandsToml: TomlTable | undefined, intentName: string): boolean {
+	return Boolean(commandsToml && isRecord(commandsToml.intents) && isRecord(commandsToml.intents[intentName]));
+}
+
+function isConfiguredCommandIntent(commandsToml: TomlTable | undefined, intentName: string): boolean {
+	if (!commandsToml || !isRecord(commandsToml.intents)) {
+		return false;
+	}
+
+	const intent = commandsToml.intents[intentName];
+	return isRecord(intent) && intent.status === 'configured';
+}
+
+function validateSkillScriptResource(
+	resource: TomlTable,
+	manifestLabel: string,
+	resourcePath: string,
+	commandsToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): void {
+	if (resource.run_policy !== REQUIRED_SKILL_SCRIPT_RUN_POLICY) {
+		pushStrictIssue(
+			issues,
+			`${manifestLabel} script ${resourcePath} must use run_policy = "${REQUIRED_SKILL_SCRIPT_RUN_POLICY}"`,
+		);
+	}
+
+	if (typeof resource.command_intent !== 'string' || resource.command_intent.trim().length === 0) {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} must define command_intent`);
+	} else if (!isDeclaredCommandIntent(commandsToml, resource.command_intent)) {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} references unknown command intent "${resource.command_intent}"`);
+	} else if (!isConfiguredCommandIntent(commandsToml, resource.command_intent)) {
+		pushStrictIssue(
+			issues,
+			`${manifestLabel} script ${resourcePath} references command intent "${resource.command_intent}" that is not configured`,
+		);
+	}
+
+	if (hasOwn(resource, 'network') && typeof resource.network !== 'boolean') {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} network must be a boolean`);
+	} else if (resource.network === true) {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} cannot set network = true`);
+	}
+
+	if (hasOwn(resource, 'destructive') && typeof resource.destructive !== 'boolean') {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} destructive must be a boolean`);
+	} else if (resource.destructive === true) {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} cannot set destructive = true`);
+	}
+
+	if (!hasOwn(resource, 'writes')) {
+		return;
+	}
+
+	const writes = resource.writes;
+	if (!Array.isArray(writes) || writes.some((entry) => typeof entry !== 'string')) {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} writes must be a string array`);
+		return;
+	}
+
+	if (writes.some((entry) => !isSafeRelativePath(entry))) {
+		pushStrictIssue(issues, `${manifestLabel} script ${resourcePath} writes entries must stay inside the skill folder`);
+	}
+}
+
+function validateSkillResourceTable(
+	skillDir: string,
+	manifestLabel: string,
+	resourcePath: string,
+	resource: unknown,
+	commandsToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): string | undefined {
+	if (!isSafeRelativePath(resourcePath)) {
+		pushStrictIssue(issues, `${manifestLabel} resource path "${resourcePath}" must be a safe relative path`);
+		return undefined;
+	}
+
+	const normalizedPath = normalizeResourcePath(resourcePath);
+	const [rootName] = normalizedPath.split('/');
+
+	if (!rootName || !SKILL_RESOURCE_ROOTS.has(rootName)) {
+		pushStrictIssue(issues, `${manifestLabel} resource ${normalizedPath} must live under references/, assets/, or scripts/`);
+		return undefined;
+	}
+
+	if (!existsSync(path.join(skillDir, normalizedPath))) {
+		pushStrictIssue(issues, `${manifestLabel} references missing resource ${normalizedPath}`);
+	}
+
+	if (!isRecord(resource)) {
+		pushStrictIssue(issues, `${manifestLabel} resource ${normalizedPath} must be a TOML table`);
+		return normalizedPath;
+	}
+
+	if (typeof resource.type !== 'string' || !ALLOWED_SKILL_RESOURCE_TYPES.has(resource.type)) {
+		pushStrictIssue(issues, `${manifestLabel} resource ${normalizedPath} must set type to "reference", "asset", or "script"`);
+	} else if (resource.type !== SKILL_RESOURCE_TYPE_BY_ROOT[rootName]) {
+		pushStrictIssue(issues, `${manifestLabel} resource ${normalizedPath} type must match its folder`);
+	}
+
+	if (typeof resource.purpose !== 'string' || resource.purpose.trim().length === 0) {
+		pushStrictIssue(issues, `${manifestLabel} resource ${normalizedPath} must define purpose`);
+	}
+
+	if (rootName === 'scripts' || resource.type === 'script') {
+		validateSkillScriptResource(resource, manifestLabel, normalizedPath, commandsToml, issues);
+	}
+
+	return normalizedPath;
+}
+
+function validateSkillResourceManifest(
+	skillDir: string,
+	manifestLabel: string,
+	commandsToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): Set<string> {
+	const declaredResources = new Set<string>();
+	const manifestPath = path.join(skillDir, SKILL_RESOURCE_MANIFEST);
+
+	if (!existsSync(manifestPath)) {
+		return declaredResources;
+	}
+
+	const manifest = readSkillResourceManifest(manifestPath, manifestLabel, issues);
+	if (!manifest) {
+		return declaredResources;
+	}
+
+	if (manifest.schema_version !== '1') {
+		pushStrictIssue(issues, `${manifestLabel} schema_version must be "1"`);
+	}
+
+	if (!isRecord(manifest.resources)) {
+		pushStrictIssue(issues, `${manifestLabel} must define a [resources] table`);
+		return declaredResources;
+	}
+
+	for (const [resourcePath, resource] of Object.entries(manifest.resources)) {
+		const normalizedPath = validateSkillResourceTable(skillDir, manifestLabel, resourcePath, resource, commandsToml, issues);
+
+		if (normalizedPath) {
+			declaredResources.add(normalizedPath);
+		}
+	}
+
+	return declaredResources;
+}
+
+function validateDeclaredSkillScripts(skillDir: string, skillName: string, declaredResources: ReadonlySet<string>, issues: CheckIssue[]): void {
+	const scriptsDir = path.join(skillDir, 'scripts');
+
+	for (const relativePath of listFilesRecursive(scriptsDir)) {
+		const scriptPath = `scripts/${normalizeResourcePath(relativePath)}`;
+
+		if (!declaredResources.has(scriptPath)) {
+			pushStrictIssue(issues, `.mustflow/skills/${skillName}/${scriptPath} is not declared in ${SKILL_RESOURCE_MANIFEST}`);
+		}
+	}
+}
+
+function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	const skillsRoot = path.join(projectRoot, '.mustflow', 'skills');
+	const skillFiles = listFilesRecursive(skillsRoot).filter((relativePath) => relativePath.endsWith('/SKILL.md'));
+	const skillDirectories = listSkillDirectories(skillsRoot);
+
+	for (const skillName of skillDirectories) {
+		const skillDir = path.join(skillsRoot, skillName);
+
+		if (!existsSync(path.join(skillDir, 'SKILL.md'))) {
+			pushStrictIssue(issues, `.mustflow/skills/${skillName} is a skill folder without SKILL.md`);
+		}
+
+		const manifestLabel = `.mustflow/skills/${skillName}/${SKILL_RESOURCE_MANIFEST}`;
+		const declaredResources = validateSkillResourceManifest(skillDir, manifestLabel, commandsToml, issues);
+		validateDeclaredSkillScripts(skillDir, skillName, declaredResources, issues);
+	}
+
+	for (const relativePath of skillFiles) {
+		const absolutePath = path.join(skillsRoot, relativePath);
+		const content = readFileSync(absolutePath, 'utf8');
+
+		if (RAW_COMMAND_FENCE_PATTERN.test(content)) {
+			pushStrictIssue(
+				issues,
+				`.mustflow/skills/${toPosixPath(relativePath)} contains a raw shell command block; reference command intents instead`,
+			);
+		}
+
+		RAW_COMMAND_FENCE_PATTERN.lastIndex = 0;
+	}
+}
+
+function validateStrictRepoMap(projectRoot: string, issues: CheckIssue[]): void {
+	const repoMapPath = path.join(projectRoot, 'REPO_MAP.md');
+
+	if (!existsSync(repoMapPath)) {
+		return;
+	}
+
+	const content = readFileSync(repoMapPath, 'utf8');
+
+	if (VOLATILE_REPO_MAP_PATTERNS.some((pattern) => pattern.test(content))) {
+		pushStrictIssue(issues, 'REPO_MAP.md contains volatile generated metadata');
+	}
+
+	if (REPO_MAP_REMOTE_OR_BRANCH_PATTERNS.some((pattern) => pattern.test(content))) {
+		pushStrictIssue(issues, 'REPO_MAP.md contains remote URL or branch metadata');
+	}
+}
+
+function validateStrictContextDocuments(projectRoot: string, limits: RetentionLimits, issues: CheckIssue[]): void {
+	const contextRoot = path.join(projectRoot, '.mustflow', 'context');
+	const contextFiles = listFilesRecursive(contextRoot).filter((relativePath) => relativePath.endsWith('.md'));
+	const hasDesignAnchor = existsSync(path.join(projectRoot, 'DESIGN.md'));
+
+	for (const relativePath of contextFiles) {
+		const normalizedPath = `.mustflow/context/${toPosixPath(relativePath)}`;
+		const absolutePath = path.join(contextRoot, relativePath);
+		const content = readFileSync(absolutePath, 'utf8');
+
+		if (exceedsKiBLimit(absolutePath, limits.contextMaxFileKb)) {
+			pushStrictIssue(
+				issues,
+				formatStorageLimitMessage(normalizedPath, '[retention.context].max_file_kb', absolutePath, limits.contextMaxFileKb),
+			);
+		}
+
+		if (LOCAL_ABSOLUTE_PATH_PATTERNS.some((pattern) => pattern.test(content))) {
+			pushStrictIssue(issues, `${normalizedPath} contains a local absolute path; keep machine-local paths out of context files`);
+		}
+
+		if (SECRET_LIKE_CONTEXT_PATTERNS.some((pattern) => pattern.test(content))) {
+			pushStrictIssue(issues, `${normalizedPath} contains secret-like key/value text; keep secrets out of context files`);
+		}
+
+		if (hasDesignAnchor && DESIGN_TOKEN_DEFINITION_PATTERNS.some((pattern) => pattern.test(content))) {
+			pushStrictIssue(issues, `${normalizedPath} duplicates design-token definitions while DESIGN.md exists`);
+		}
+	}
+}
+
+function validateStrictRunReceipt(projectRoot: string, issues: CheckIssue[]): void {
+	const latestRunPath = path.join(projectRoot, '.mustflow', 'state', 'runs', 'latest.json');
+
+	if (!existsSync(latestRunPath)) {
+		return;
+	}
+
+	try {
+		const parsed = JSON.parse(readFileSync(latestRunPath, 'utf8')) as unknown;
+
+		if (!isRecord(parsed)) {
+			pushStrictIssue(issues, '.mustflow/state/runs/latest.json must contain a JSON object');
+		}
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		pushStrictIssue(issues, `.mustflow/state/runs/latest.json is not valid JSON: ${message}`);
+	}
+}
+
+function validateStrictStorage(projectRoot: string, limits: RetentionLimits, issues: CheckIssue[]): void {
+	const repoMapPath = path.join(projectRoot, 'REPO_MAP.md');
+
+	if (existsSync(repoMapPath) && limits.repoMapFailIfLarger && exceedsKiBLimit(repoMapPath, limits.repoMapMaxFileKb)) {
+		pushStrictIssue(
+			issues,
+			formatStorageLimitMessage('REPO_MAP.md', '[retention.repo_map].max_file_kb', repoMapPath, limits.repoMapMaxFileKb),
+		);
+	}
+
+	const latestRunPath = path.join(projectRoot, '.mustflow', 'state', 'runs', 'latest.json');
+
+	if (existsSync(latestRunPath) && exceedsKiBLimit(latestRunPath, limits.runReceiptMaxFileKb)) {
+		pushStrictIssue(
+			issues,
+			formatStorageLimitMessage(
+				'.mustflow/state/runs/latest.json',
+				'[retention.run_receipts].max_file_kb',
+				latestRunPath,
+				limits.runReceiptMaxFileKb,
+			),
+		);
+	}
+
+	const knowledgeRoot = path.join(projectRoot, '.mustflow', 'knowledge');
+	const knowledgeFiles = listFilesRecursive(knowledgeRoot);
+
+	for (const relativePath of knowledgeFiles) {
+		const absolutePath = path.join(knowledgeRoot, relativePath);
+
+		if (exceedsKiBLimit(absolutePath, limits.knowledgeMaxFileKb)) {
+			pushStrictIssue(
+				issues,
+				formatStorageLimitMessage(
+					`.mustflow/knowledge/${toPosixPath(relativePath)}`,
+					'[retention.knowledge].max_file_kb',
+					absolutePath,
+					limits.knowledgeMaxFileKb,
+				),
+			);
+		}
+	}
+
+	const mustflowRoot = path.join(projectRoot, '.mustflow');
+	const mustflowFiles = listFilesRecursive(mustflowRoot);
+
+	for (const relativePath of mustflowFiles) {
+		if (relativePath.toLowerCase().endsWith('.jsonl')) {
+			pushStrictIssue(issues, `.mustflow/${toPosixPath(relativePath)} is a raw JSONL file under .mustflow`);
+		}
+	}
+}
+
+function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[]): void {
+	const retentionLimits = validateStrictRetentionPolicy(parsed.mustflowToml, issues);
+	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
+	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
+	validateStrictCommandDefaults(parsed.commandsToml, issues);
+	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
+	validateStrictRepoMap(projectRoot, issues);
+	validateStrictContextDocuments(projectRoot, retentionLimits, issues);
+	validateStrictRunReceipt(projectRoot, issues);
+	validateStrictStorage(projectRoot, retentionLimits, issues);
+}
+
+export function checkMustflowProject(projectRoot: string, options: CheckOptions = {}): string[] {
+	const issues: CheckIssue[] = [];
+
+	validateRequiredFiles(projectRoot, issues);
+	const parsed = validateToml(projectRoot, issues);
+	validateMustflowConfig(parsed.mustflowToml, issues);
+	validatePreferencesConfig(parsed.preferencesToml, issues);
+	validateCommandIntents(parsed.commandsToml, issues);
+	validateSkills(projectRoot, issues);
+	validateContextDocuments(projectRoot, issues);
+	validateManifestLock(projectRoot, issues);
+
+	if (options.strict) {
+		validateStrict(projectRoot, parsed, issues);
+	}
+
+	return issues.map((issue) => issue.message);
+}

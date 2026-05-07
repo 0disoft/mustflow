@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { test } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+
+test('package metadata is ready for public npm publishing', () => {
+	assert.equal(packageJson.version, '0.1.0');
+	assert.equal(packageJson.license, 'MIT-0');
+	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
+	assert.deepEqual(packageJson.repository, {
+		type: 'git',
+		url: 'git+https://github.com/0disoft/mustflow.git',
+	});
+	assert.deepEqual(packageJson.bugs, {
+		url: 'https://github.com/0disoft/mustflow/issues',
+	});
+	assert.deepEqual(packageJson.publishConfig, {
+		access: 'public',
+	});
+	assert.match(packageJson.description, /agent workflow/i);
+	assert.ok(packageJson.keywords.includes('agent-workflow'));
+	assert.ok(packageJson.keywords.includes('agents-md'));
+	assert.equal(packageJson.packageManager, 'bun@1.3.13');
+});
+
+test('package exposes a real install verification script', () => {
+	assert.equal(packageJson.scripts.prepack, 'npm run build');
+	assert.match(packageJson.scripts.test, /--test-concurrency=1/);
+	assert.equal(packageJson.scripts['check:pack'], 'npm pack --dry-run --json');
+	assert.equal(packageJson.scripts['check:install'], 'npm run check:pack && node --test tests/integration/*.test.js');
+	assert.equal(packageJson.scripts['release:check'], 'npm run check && npm run docs:check && npm run check:install');
+	assert.equal(packageJson.scripts.prepublishOnly, 'npm run release:check');
+});
+
+test('default template i18n metadata stays in sync with localized template files', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const i18nModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'template-i18n.js')).href);
+
+	const issues = i18nModule.validateTemplateI18n(templatesModule.getDefaultTemplate());
+
+	assert.deepEqual(issues, []);
+});
+
+test('template i18n validation reports invalid translation metadata', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const i18nModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'template-i18n.js')).href);
+	const templateRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-template-i18n-'));
+
+	try {
+		cpSync(path.join(projectRoot, 'templates', 'default'), templateRoot, { recursive: true });
+		const i18nPath = path.join(templateRoot, 'i18n.toml');
+		const brokenI18n = readFileSync(i18nPath, 'utf8').replace(
+			/translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = \d+, status = "current" \}/u,
+			'translations.ko = { path = "locales/ko/MISSING.md", source_revision = 0, status = "done" }',
+		);
+		writeFileSync(i18nPath, brokenI18n);
+
+		const baseTemplate = templatesModule.getDefaultTemplate();
+		const issues = i18nModule.validateTemplateI18n({
+			manifestPath: path.join(templateRoot, 'manifest.toml'),
+			templateRoot,
+			manifest: baseTemplate.manifest,
+		});
+
+		assert.ok(issues.some((issue) => issue.includes('[documents.agents.root.translations.ko].status')));
+		assert.ok(issues.some((issue) => issue.includes('[documents.agents.root.translations.ko].source_revision')));
+		assert.ok(issues.some((issue) => issue.includes('locales/ko/MISSING.md')));
+	} finally {
+		rmSync(templateRoot, { recursive: true, force: true });
+	}
+});
+
+test('template i18n validation reports localized frontmatter drift', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const i18nModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'template-i18n.js')).href);
+	const templateRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-template-frontmatter-'));
+
+	try {
+		cpSync(path.join(projectRoot, 'templates', 'default'), templateRoot, { recursive: true });
+		const translatedAgentsPath = path.join(templateRoot, 'locales', 'ko', 'AGENTS.md');
+		const brokenAgents = readFileSync(translatedAgentsPath, 'utf8').replace('locale: ko', 'locale: ja');
+		writeFileSync(translatedAgentsPath, brokenAgents);
+
+		const baseTemplate = templatesModule.getDefaultTemplate();
+		const issues = i18nModule.validateTemplateI18n({
+			manifestPath: path.join(templateRoot, 'manifest.toml'),
+			templateRoot,
+			manifest: baseTemplate.manifest,
+		});
+
+		assert.ok(issues.some((issue) => issue.includes('[documents.agents.root.translations.ko].frontmatter.locale')));
+	} finally {
+		rmSync(templateRoot, { recursive: true, force: true });
+	}
+});
+
+test('npm package includes compiled cli and default template sources', () => {
+	const result = spawnSync('npm pack --dry-run --json', {
+		cwd: projectRoot,
+		encoding: 'utf8',
+		shell: true,
+	});
+
+	assert.equal(result.status, 0);
+	const [pack] = JSON.parse(result.stdout);
+	const files = new Set(pack.files.map((file) => file.path));
+
+	assert.ok(files.has('dist/cli/index.js'));
+	assert.ok(files.has('dist/cli/commands/init.js'));
+	assert.ok(files.has('dist/cli/commands/index.js'));
+	assert.ok(files.has('dist/cli/commands/search.js'));
+	assert.ok(files.has('dist/cli/commands/dashboard.js'));
+	assert.ok(files.has('dist/cli/commands/update.js'));
+	assert.ok(files.has('templates/default/manifest.toml'));
+	assert.ok(files.has('templates/default/i18n.toml'));
+	assert.ok(files.has('dist/cli/lib/template-i18n.js'));
+	assert.ok(files.has('templates/default/common/.mustflow/config/commands.toml'));
+	assert.ok(files.has('templates/default/common/.mustflow/config/preferences.toml'));
+	assert.ok(files.has('templates/default/locales/en/AGENTS.md'));
+	assert.ok(files.has('templates/default/locales/ko/AGENTS.md'));
+	assert.equal(files.has('templates/default/files/AGENTS.md'), false);
+	assert.equal(files.has('dist/cli/lib/package-manager.js'), false);
+	assert.equal(files.has('docs-site/package.json'), false);
+	assert.equal(files.has('tests/cli/init.test.js'), false);
+});

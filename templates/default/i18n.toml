@@ -1,0 +1,68 @@
+version = 1
+
+# 현재 템플릿 문서의 기준 언어입니다.
+source_locale = "en"
+
+# 파일 수정 시각으로 최신 여부를 판단하지 않습니다.
+# 기준 문서의 revision과 번역본의 source_revision을 비교해서 판단합니다.
+status_values = ["current", "stale", "needs_review", "missing"]
+
+[documents."agents.root"]
+source = "locales/en/AGENTS.md"
+source_locale = "en"
+revision = 4
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 4, status = "current" }
+
+[documents."context.index"]
+source = "locales/en/.mustflow/context/INDEX.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/context/INDEX.md", source_revision = 1, status = "current" }
+
+[documents."context.project"]
+source = "locales/en/.mustflow/context/PROJECT.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/context/PROJECT.md", source_revision = 1, status = "current" }
+
+[documents."docs.agent-workflow"]
+source = "locales/en/.mustflow/docs/agent-workflow.md"
+source_locale = "en"
+revision = 6
+translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "current" }
+
+[documents."config.preferences"]
+source = "common/.mustflow/config/preferences.toml"
+source_locale = "en"
+revision = 3
+translations = {}
+
+[documents."skills.index"]
+source = "locales/en/.mustflow/skills/INDEX.md"
+source_locale = "en"
+revision = 2
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 2, status = "current" }
+
+[documents."skill.code-review"]
+source = "locales/en/.mustflow/skills/code-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations.ko = { path = "locales/ko/.mustflow/skills/code-review/SKILL.md", source_revision = 2, status = "current" }
+
+[documents."skill.docs-update"]
+source = "locales/en/.mustflow/skills/docs-update/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/docs-update/SKILL.md", source_revision = 1, status = "current" }
+
+[documents."skill.failure-triage"]
+source = "locales/en/.mustflow/skills/failure-triage/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/failure-triage/SKILL.md", source_revision = 1, status = "current" }
+
+[documents."skill.test-maintenance"]
+source = "locales/en/.mustflow/skills/test-maintenance/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/test-maintenance/SKILL.md", source_revision = 1, status = "current" }

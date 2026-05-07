@@ -1,0 +1,86 @@
+schema_version = "1"
+
+# This file stores repository-level defaults.
+# Direct user instructions, parent instructions, child AGENTS.md files, and existing file style take priority.
+
+[project]
+convention_mode = "bootstrap"
+profile = "minimal"
+
+[language]
+# agent_response는 에이전트 최종 보고 언어이고, docs는 설치된 mustflow 문서 언어입니다.
+# 제품 사용자 문구 언어는 필요할 때 [product_i18n]에서 별도로 선언합니다.
+agent_response = "en"
+docs = "en"
+
+[language.code_comments]
+mode = "preserve_existing"
+fallback = "en"
+rule = "Add comments only when they clarify non-obvious intent."
+
+[language.logs]
+mode = "preserve_existing"
+fallback = "en"
+rule = "Do not translate existing log keys, error codes, or externally consumed messages without a project rule."
+
+[language.user_facing_text]
+mode = "preserve_existing"
+fallback = "en"
+rule = "Follow the product language policy when one exists."
+
+[language.memory]
+# summary controls derived memory such as compaction summaries and handoff summaries.
+# Use "agent_response", "docs", "preserve_existing", or a language tag such as "en" or "ko".
+summary = "agent_response"
+fallback = "en"
+preserve_code = true
+preserve_paths = true
+preserve_error_output = true
+
+[formatting]
+indentation = "preserve_existing"
+indentation_when_missing = "editorconfig_or_formatter"
+line_endings = "preserve_existing"
+line_endings_when_missing = "lf"
+quote_style = "preserve_existing"
+trailing_whitespace = "avoid"
+
+[code_style]
+naming = "preserve_existing"
+comments = "only_when_helpful"
+public_api_docs = "when_new_or_changed"
+avoid_drive_by_refactors = true
+
+[git]
+auto_stage = false
+auto_commit = false
+auto_push = false
+
+[git.commit_message]
+suggest = "when_changes_made"
+style = "conventional"
+language = "preserve_existing"
+language_when_missing = "en"
+scope = "infer_from_changed_paths"
+max_suggestions = 2
+include_body = "when_non_trivial"
+split_when_multiple_concerns = true
+avoid_sensitive_details = true
+
+[reporting.commit_suggestion]
+enabled = true
+when = "files_changed"
+source = "git.commit_message"
+
+[docs]
+update_when = [
+  "public_api_change",
+  "user_visible_behavior_change",
+  "command_contract_change",
+  "agent_workflow_change",
+]
+tone = "clear_and_direct"
+
+[logging]
+style = "preserve_existing"
+include_sensitive_data = false

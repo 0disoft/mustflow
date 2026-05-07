@@ -1,0 +1,68 @@
+{
+  "name": "mustflow",
+  "version": "0.1.0",
+  "description": "Agent workflow documents and CLI for mustflow repository roots.",
+  "type": "module",
+  "license": "MIT-0",
+  "homepage": "https://mustflow.github.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0disoft/mustflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0disoft/mustflow/issues"
+  },
+  "packageManager": "bun@1.3.13",
+  "bin": {
+    "mf": "./dist/cli/index.js",
+    "mustflow": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "test": "bun run build && node --test --test-concurrency=1 tests/cli/*.test.js",
+    "check": "bun run check:package && bun run test",
+    "check:package": "node -e \"const fs=require('fs'); JSON.parse(fs.readFileSync('package.json','utf8')); console.log('package.json ok')\"",
+    "prepack": "npm run build",
+    "check:pack": "npm pack --dry-run --json",
+    "check:install": "npm run check:pack && node --test tests/integration/*.test.js",
+    "release:check": "npm run check && npm run docs:check && npm run check:install",
+    "prepublishOnly": "npm run release:check",
+    "docs:dev": "bun run --cwd docs-site dev",
+    "docs:build": "bun run --cwd docs-site build",
+    "docs:check": "bun run --cwd docs-site check",
+    "docs:preview": "bun run --cwd docs-site preview"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "agents",
+    "agents-md",
+    "agent-workflow",
+    "llm",
+    "codex",
+    "mustflow",
+    "repo-map",
+    "repository-template",
+    "toml",
+    "workflow"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/sql.js": "^1.4.11",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "smol-toml": "^1.6.1",
+    "sql.js": "^1.14.1"
+  }
+}

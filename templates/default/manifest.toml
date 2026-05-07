@@ -1,0 +1,98 @@
+id = "default"
+name = "default"
+version = "0.1.0"
+description = "LLM 에이전트가 저장소에서 읽고, 수정하고, 검증할 때 참고할 최소 문서 흐름입니다."
+common_root = "common"
+locales_root = "locales"
+
+creates = [
+  "AGENTS.md",
+  ".mustflow/context/INDEX.md",
+  ".mustflow/context/PROJECT.md",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/code-review/SKILL.md",
+  ".mustflow/skills/test-maintenance/SKILL.md",
+  ".mustflow/skills/failure-triage/SKILL.md",
+  ".mustflow/skills/docs-update/SKILL.md",
+  ".mustflow/docs/agent-workflow.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/preferences.toml",
+]
+
+runtime_requirements = []
+
+after_install = [
+  "AGENTS.md에서 저장소별 작업 규칙을 확인합니다.",
+  "수정 전 상태를 빠르게 보려면 mf doctor를 실행합니다.",
+  "저장소 지도가 필요하면 mf map으로 REPO_MAP.md를 생성합니다.",
+  ".mustflow/config/commands.toml에 실제 테스트, 규칙 검사, 빌드 명령을 채웁니다.",
+  ".mustflow/config/preferences.toml에서 저장소별 언어와 스타일 기본값을 확인합니다.",
+  ".mustflow/context/PROJECT.md에 프로젝트 목표와 비목표가 제공되어 있는지 확인합니다.",
+  ".mustflow/skills/INDEX.md에서 현재 저장소에 필요한 스킬만 유지합니다.",
+  ".mustflow/docs/agent-workflow.md에 저장소별 문서 흐름 차이를 짧게 기록합니다.",
+]
+
+[profiles]
+default = "minimal"
+available = [
+  "minimal",
+  "oss",
+  "team",
+  "product",
+  "library",
+]
+
+[locales]
+default = "en"
+available = [
+  "en",
+  "ko",
+]
+source = "en"
+
+[install_policy]
+scope = "llm_only"
+copied_targets = [
+  "AGENTS.md",
+  ".mustflow/**",
+]
+generated_targets = [
+  "REPO_MAP.md",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/state/**",
+]
+forbidden_targets = [
+  "README.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "CODE_OF_CONDUCT.md",
+  ".github/**",
+  "docs/**",
+  "skills/**",
+  "config/**",
+  "src/**",
+  "package.json",
+  "pyproject.toml",
+  "go.mod",
+]
+
+[i18n]
+metadata = "i18n.toml"
+source_locale = "en"
+
+[conflict_policy]
+default = "abort"
+
+[conflict_policy.files]
+"AGENTS.md" = "merge_with_managed_block"
+".mustflow/config/commands.toml" = "abort"
+".mustflow/config/mustflow.toml" = "abort"
+".mustflow/config/preferences.toml" = "abort"
+".mustflow/context/INDEX.md" = "abort"
+".mustflow/context/PROJECT.md" = "abort"
+
+[conflict_policy.generated]
+"REPO_MAP.md" = "prompt"
+".mustflow/config/manifest.lock.toml" = "regenerate"
+".mustflow/state/**" = "keep"

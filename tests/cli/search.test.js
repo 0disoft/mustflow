@@ -1,0 +1,111 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+
+function createTempProject() {
+	return mkdtempSync(path.join(tmpdir(), 'mustflow-search-'));
+}
+
+function removeTempProject(projectPath) {
+	rmSync(projectPath, { recursive: true, force: true });
+}
+
+function runCli(cwd, args) {
+	return spawnSync(process.execPath, [cliPath, ...args], {
+		cwd,
+		encoding: 'utf8',
+	});
+}
+
+function initProject(projectPath) {
+	const result = runCli(projectPath, ['init', '--yes']);
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function indexProject(projectPath) {
+	const result = runCli(projectPath, ['index', '--json']);
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+test('fails clearly when local index is missing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Local mustflow index not found/);
+		assert.match(result.stderr, /Run `mf index` before searching\./);
+		assert.equal(result.stdout, '');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints matching documents skills and command intents from the local index', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.schema_version, '2');
+		assert.equal(output.command, 'search');
+		assert.equal(output.ok, true);
+		assert.equal(output.index_fresh, true);
+		assert.deepEqual(output.stale_paths, []);
+		assert.equal(output.query, 'mustflow_check');
+		assert.ok(output.result_count > 0);
+		assert.ok(output.results.some((item) => item.kind === 'command_intent' && item.name === 'mustflow_check'));
+		assert.ok(output.results.some((item) => item.kind === 'document' && item.path === '.mustflow/config/commands.toml'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails when indexed mustflow files changed after indexing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		appendFileSync(path.join(projectPath, 'AGENTS.md'), '\n추가 규칙\n');
+
+		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Local mustflow index is stale/);
+		assert.match(result.stderr, /AGENTS\.md/);
+		assert.match(result.stderr, /Run `mf index` before searching\./);
+		assert.equal(result.stdout, '');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints human readable search results with a configurable limit', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		const result = runCli(projectPath, ['search', 'code-review', '--limit', '2']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /mustflow search/);
+		assert.match(result.stdout, /\.mustflow\/skills\/code-review\/SKILL\.md/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
