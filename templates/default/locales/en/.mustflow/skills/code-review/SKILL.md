@@ -4,7 +4,7 @@ locale: en
 canonical: true
 revision: 2
 name: code-review
-description: Use when reviewing code changes, scope, risks, or missing verification.
+description: Apply this skill when reviewing code changes, scope, risks, or verification gaps.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -19,40 +19,40 @@ metadata:
 
 ## Purpose
 
-Check whether a change matches the request and whether behavior risks or missing verification remain.
+Verify that a change aligns with the request and ensure that no behavioral risks or verification gaps persist.
 
 ## Use When
 
-- Code changes, diffs, pull requests, or regression risks need review.
-- The main work is judging risk rather than implementing new behavior.
+- Code changes, diffs, pull requests, or potential regression risks require review.
+- The primary objective is risk assessment rather than implementing new behavior.
 
 ## Do Not Use When
 
-- The task is only wording, translation, or formatting.
-- There are no changed files or diffs to review.
+- The task involves only wording, translation, or formatting changes.
+- No changed files or diffs are available for review.
 
 ## Required Inputs
 
-- Changed files or diff
-- User's review criteria
+- Modified files or diffs
+- User-specified review criteria
 - `AGENTS.md`
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
 ## Procedure
 
-1. Inspect the changed file list.
-2. Check for unrelated edits.
-3. Check behavior, configuration, command, and documentation impact.
+1. Review the list of modified files.
+2. Identify any unrelated or extraneous edits.
+3. Assess the impact on behavior, configuration, commands, and documentation.
 4. Review test relevance:
-   - missing tests for new behavior
-   - obsolete tests for removed behavior
-   - duplicate tests that do not cover new risk
-   - weakened assertions
-   - snapshot updates without rationale
-   - tests that force reintroduction of removed behavior
-5. Confirm whether relevant command intents exist.
-6. Record findings by severity.
+   - missing tests for new functionality
+   - obsolete tests for removed functionality
+   - redundant tests that fail to address new risks
+   - weakened or insufficient assertions
+   - snapshot updates lacking a clear rationale
+   - tests that inadvertently reintroduce removed behavior
+5. Verify the existence of relevant command intents.
+6. Document findings categorized by severity.
 
 ## Verification
 
@@ -65,20 +65,20 @@ Related command intents:
 - `test_audit`
 - `lint`
 
-Do not invent raw shell commands in the skill document.
+Avoid introducing raw shell commands; reference the command intent names defined in `.mustflow/config/commands.toml`.
 
 ## Failure Handling
 
-- If a command intent is missing, manual only, disabled, or unknown, report that instead of guessing.
-- Report skipped verification and remaining risk.
-- Stop and report if secret or destructive-command risk appears.
+- If a command intent is missing, restricted to manual execution, disabled, or unknown, report the status rather than guessing.
+- Document any skipped verifications and the associated remaining risks.
+- Immediately halt and report if sensitive data or destructive command risks are identified.
 
 ## Output Format
 
 - Summary
-- Findings by severity
-- Files reviewed
-- Command intents run
-- Command intents skipped with reasons
-- Test relevance notes
-- Remaining risk
+- Findings categorized by severity
+- List of reviewed files
+- Command intents executed
+- Skipped command intents and justifications
+- Notes on test relevance
+- Identified remaining risks

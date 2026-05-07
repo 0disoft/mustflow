@@ -12,27 +12,27 @@ review_status: needs_human_review
 
 # Context Index
 
-Use this file to decide which project context files are worth reading for the current task.
-Do not read every context file by default.
+Consult this file to determine which project context files are relevant to the current task.
+Avoid reading all context files by default to minimize noise.
 
 ## Available Context
 
 | Context | Use when | Path |
 | --- | --- | --- |
-| project | The task may affect project direction, scope, public behavior, non-goals, or repository-wide promises. | `.mustflow/context/PROJECT.md` |
+| project | The task potentially impacts project direction, scope, public behavior, non-goals, or repository-wide conventions. | `.mustflow/context/PROJECT.md` |
 
-## Optional External Anchors
+## Optional External References
 
 | Anchor | Use when | Path |
 | --- | --- | --- |
-| human overview | You need the public project overview or installation story. Use it as context, not policy. | `README.md` |
-| visual design | The task changes UI, visual identity, design tokens, layout, or accessibility. | `DESIGN.md` |
+| human overview | A public project overview or installation guide is required. Treat it as general context rather than a mandatory policy. | `README.md` |
+| visual design | The task involves changes to UI, visual identity, design tokens, layout, or accessibility. | `DESIGN.md` |
 
 ## Reading Rules
 
-- Read only the context files that match the task.
-- Treat context files as guidance unless a file says it is backed by a more authoritative source.
-- If context conflicts with code, tests, command contracts, or explicit user instructions, report the conflict and follow the higher-authority source.
-- Do not invent missing project goals, non-goals, design tokens, API promises, or data rules.
+- Consult only the context files relevant to the current task.
+- Treat context files as guidance unless explicitly stated as being backed by a more authoritative source.
+- If context conflicts with code, tests, command specifications, or explicit user instructions, report the conflict and defer to the higher-authority source.
+- Do not assume or fabricate missing project goals, non-goals, design tokens, API contracts, or data rules.
 - Do not duplicate design tokens from `DESIGN.md` into `.mustflow/context/`.
 

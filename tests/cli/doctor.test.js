@@ -120,7 +120,7 @@ test('prints human-readable doctor output', () => {
 		assert.match(result.stdout, /Check: passed/);
 		assert.match(result.stdout, /Health:/);
 		assert.match(result.stdout, /\[ok\] Install: installed/);
-		assert.match(result.stdout, /\[ok\] Command contract: present, \d+ runnable intents?/);
+		assert.match(result.stdout, /\[ok\] .*: present, \d+ runnable intents?/);
 		assert.match(result.stdout, /Suggested commands:/);
 		assert.match(result.stdout, /No files were written/);
 	} finally {

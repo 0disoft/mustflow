@@ -36,16 +36,23 @@ test('CLI message catalogs keep every locale aligned with the source catalog', a
 	assert.deepEqual(report.extra, {});
 });
 
+test('CLI untranslated locale catalogs are seeded from English', async () => {
+	const { MESSAGE_CATALOGS, SUPPORTED_CLI_LANGS } = await import(i18nModuleUrl);
+	const seededLocales = ['zh', 'es', 'fr', 'hi'];
+
+	for (const locale of seededLocales) {
+		assert.ok(SUPPORTED_CLI_LANGS.includes(locale), `${locale} should be a supported CLI language`);
+		assert.deepEqual(MESSAGE_CATALOGS[locale], MESSAGE_CATALOGS.en);
+	}
+});
+
 test('CLI source does not branch on concrete language codes outside i18n catalogs', () => {
-	const allowedFiles = new Set([
-		path.join(cliSourceRoot, 'lib', 'i18n.ts'),
-		path.join(cliSourceRoot, 'i18n', 'en.ts'),
-		path.join(cliSourceRoot, 'i18n', 'ko.ts'),
-	]);
+	const i18nCatalogRoot = path.join(cliSourceRoot, 'i18n');
+	const i18nLibFile = path.join(cliSourceRoot, 'lib', 'i18n.ts');
 	const offenders = [];
 
 	for (const filePath of collectTypeScriptFiles(cliSourceRoot)) {
-		if (allowedFiles.has(filePath)) {
+		if (filePath === i18nLibFile || filePath.startsWith(`${i18nCatalogRoot}${path.sep}`)) {
 			continue;
 		}
 

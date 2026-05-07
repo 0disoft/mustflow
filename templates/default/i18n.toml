@@ -1,10 +1,10 @@
 version = 1
 
-# 현재 템플릿 문서의 기준 언어입니다.
+# Source locale for the current template documents.
 source_locale = "en"
 
-# 파일 수정 시각으로 최신 여부를 판단하지 않습니다.
-# 기준 문서의 revision과 번역본의 source_revision을 비교해서 판단합니다.
+# Translation freshness is not based on file modification time.
+# Compare the source document revision with each translation's source_revision.
 status_values = ["current", "stale", "needs_review", "missing"]
 
 [documents."agents.root"]
@@ -12,24 +12,40 @@ source = "locales/en/AGENTS.md"
 source_locale = "en"
 revision = 4
 translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 4, status = "current" }
+translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 4, status = "needs_review" }
+translations.es = { path = "locales/es/AGENTS.md", source_revision = 4, status = "needs_review" }
+translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 4, status = "needs_review" }
+translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 4, status = "needs_review" }
 
 [documents."context.index"]
 source = "locales/en/.mustflow/context/INDEX.md"
 source_locale = "en"
 revision = 1
 translations.ko = { path = "locales/ko/.mustflow/context/INDEX.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/context/INDEX.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/context/INDEX.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/context/INDEX.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/context/INDEX.md", source_revision = 1, status = "needs_review" }
 
 [documents."context.project"]
 source = "locales/en/.mustflow/context/PROJECT.md"
 source_locale = "en"
 revision = 1
 translations.ko = { path = "locales/ko/.mustflow/context/PROJECT.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
 
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
 revision = 6
 translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/docs/agent-workflow.md", source_revision = 6, status = "needs_review" }
 
 [documents."config.preferences"]
 source = "common/.mustflow/config/preferences.toml"
@@ -42,27 +58,47 @@ source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
 revision = 2
 translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 2, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 2, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 2, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 2, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 2, status = "needs_review" }
 
 [documents."skill.code-review"]
 source = "locales/en/.mustflow/skills/code-review/SKILL.md"
 source_locale = "en"
 revision = 2
 translations.ko = { path = "locales/ko/.mustflow/skills/code-review/SKILL.md", source_revision = 2, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/code-review/SKILL.md", source_revision = 2, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/code-review/SKILL.md", source_revision = 2, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/code-review/SKILL.md", source_revision = 2, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/code-review/SKILL.md", source_revision = 2, status = "needs_review" }
 
 [documents."skill.docs-update"]
 source = "locales/en/.mustflow/skills/docs-update/SKILL.md"
 source_locale = "en"
 revision = 1
 translations.ko = { path = "locales/ko/.mustflow/skills/docs-update/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/docs-update/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/docs-update/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/docs-update/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/docs-update/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.failure-triage"]
 source = "locales/en/.mustflow/skills/failure-triage/SKILL.md"
 source_locale = "en"
 revision = 1
 translations.ko = { path = "locales/ko/.mustflow/skills/failure-triage/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/failure-triage/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/failure-triage/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/failure-triage/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/failure-triage/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.test-maintenance"]
 source = "locales/en/.mustflow/skills/test-maintenance/SKILL.md"
 source_locale = "en"
 revision = 1
 translations.ko = { path = "locales/ko/.mustflow/skills/test-maintenance/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/test-maintenance/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/test-maintenance/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/test-maintenance/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/test-maintenance/SKILL.md", source_revision = 1, status = "needs_review" }

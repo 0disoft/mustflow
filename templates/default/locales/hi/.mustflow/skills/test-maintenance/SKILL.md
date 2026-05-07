@@ -1,0 +1,91 @@
+---
+mustflow_doc: skill.test-maintenance
+locale: hi
+canonical: false
+revision: 1
+name: test-maintenance
+description: व्यवहार, APIs, snapshots, compatibility, या bug fix बदलावों के अनुसार परीक्षण जोड़ने, अपडेट करने, हटाने, या ऑडिट करने के समय इस स्किल का उपयोग करें।
+metadata:
+  mustflow_schema: "1"
+  mustflow_kind: procedure
+  command_intents:
+    - test
+    - test_related
+    - test_audit
+    - snapshot_update
+    - lint
+    - build
+---
+
+# परीक्षण रखरखाव
+
+## उद्देश्य
+
+परीक्षणों को वर्तमान व्यवहार अनुबंध के अनुरूप बनाए रखना।
+
+## कब उपयोग करें
+
+- व्यवहार जोड़ा, बदला, हटाया, या deprecated हुआ हो।
+- bug fix के लिए regression test चाहिए।
+- मौजूदा परीक्षण stale, duplicate, बहुत व्यापक, या हटे हुए implementation details से जुड़े हो सकते हों।
+- snapshot output बदल गई हो।
+
+## कब उपयोग न करें
+
+- कार्य केवल गद्य या टिप्पणियां बदलता हो।
+- रिपॉजिटरी में configured test intent न हो और उपयोगकर्ता ने परीक्षण न जोड़ने को कहा हो।
+
+## आवश्यक इनपुट
+
+- उपयोगकर्ता अनुरोध
+- वर्तमान व्यवहार अनुबंध
+- बदला या हटाया गया कोड पथ
+- मौजूदा परीक्षण शैली
+- `.mustflow/config/commands.toml`
+- `.mustflow/config/mustflow.toml` का `[testing]`
+
+## प्रक्रिया
+
+1. अपेक्षित वर्तमान व्यवहार परिभाषित करें।
+2. नए परीक्षण जोड़ने से पहले मौजूदा परीक्षण खोजें।
+3. प्रभावित परीक्षण वर्गीकृत करें:
+   - `active`: अभी भी वर्तमान व्यवहार सत्यापित करता है
+   - `update_needed`: व्यवहार बदला है
+   - `obsolete_candidate`: संभवतः हटे हुए या अप्रासंगिक व्यवहार को सत्यापित करता है
+   - `legacy_contract`: पुराना व्यवहार जानबूझकर संरक्षित है
+   - `flaky_or_environmental`: विफलता environment पर निर्भर हो सकती है
+4. वर्गीकरण के अनुसार परीक्षण जोड़ें, अपडेट करें, हटाएं, या रिपोर्ट करें।
+5. केवल इसलिए हटे व्यवहार को वापस न लाएं कि पुराने परीक्षण उसे अपेक्षित करते हैं।
+6. snapshot updates को manual मानें, जब तक `snapshot_update` स्पष्ट रूप से approved और configured न हो।
+7. परीक्षणों को deterministic और व्यवहार अनुबंध के निकट रखें।
+
+## सत्यापन
+
+जहां उपलब्ध हों, configured oneshot command intents उपयोग करें:
+
+- `test`
+- `test_related`
+- `test_audit`
+- `snapshot_update` केवल स्पष्ट अनुमोदन के साथ
+- `lint`
+- `build`
+
+गायब परीक्षण कमांड का अनुमान न लगाएं।
+
+## विफलता प्रबंधन
+
+- परीक्षण विफल होने पर पहला प्रासंगिक विफलता कारण देखें।
+- validation pass कराने के लिए परीक्षण हटाएं या कमजोर न करें।
+- यदि यह स्पष्ट न हो कि परीक्षण stale है, तो हटाने के बजाय रिपोर्ट करें।
+- यदि test command उपलब्ध न हो, तो missing intent रिपोर्ट करें।
+
+## आउटपुट प्रारूप
+
+- परीक्षणित व्यवहार अनुबंध
+- जोड़े गए परीक्षण
+- अपडेट किए गए परीक्षण
+- हटाए गए परीक्षण, कारण सहित
+- stale test candidates
+- चलाए गए command intents
+- छोड़े गए command intents और कारण
+- शेष परीक्षण जोखिम

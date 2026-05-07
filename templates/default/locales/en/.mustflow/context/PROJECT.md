@@ -16,8 +16,8 @@ source_refs:
 
 # Project Context
 
-This file records project-specific context for coding agents.
-If a field is unknown, leave it unset and do not invent details.
+This file documents project-specific context for coding agents.
+If a field is unknown, leave it unset; do not assume or fabricate details.
 
 ## Current Goal
 
@@ -25,14 +25,14 @@ Unset. Replace this with the current project goal when the project owner provide
 
 ## Non-Goals
 
-Unset. List things the agent should not expand into during unrelated tasks.
+Unset. List areas or objectives the agent should not pursue in unrelated tasks.
 
 ## Core Promises
 
 - Follow `AGENTS.md` for mandatory operating rules.
-- Treat `.mustflow/config/commands.toml` as the command source of truth.
-- Treat `.mustflow/config/mustflow.toml` as the workflow and document-boundary source of truth.
-- Use `REPO_MAP.md` as a shallow navigation map when broader repository orientation is needed.
+- Treat `.mustflow/config/commands.toml` as the source of truth for commands.
+- Treat `.mustflow/config/mustflow.toml` as the source of truth for workflow and document boundaries.
+- Use `REPO_MAP.md` as a shallow navigation map when a broader repository overview is needed.
 
 ## Domain Terms
 
@@ -40,7 +40,7 @@ Unset. Add only terms that affect implementation decisions.
 
 ## Extra Care Areas
 
-Unset. Add paths, public APIs, generated files, migrations, secrets, or compatibility surfaces that need extra care.
+Unset. List paths, public APIs, generated files, migrations, secrets, or compatibility surfaces that require special attention.
 
 ## Read Next
 
@@ -52,6 +52,6 @@ Unset. Add paths, public APIs, generated files, migrations, secrets, or compatib
 
 ## Staleness Check
 
-- If this file conflicts with current code, tests, command contracts, or user instructions, treat this file as stale and report the conflict.
+- If this file conflicts with current code, tests, command contracts, or user instructions, treat it as stale and report the conflict.
 - Update this file only when the project direction, non-goals, or repository-wide promises actually change.
 

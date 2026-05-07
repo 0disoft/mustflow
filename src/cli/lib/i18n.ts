@@ -1,5 +1,9 @@
 import { enMessages, type MessageKey } from '../i18n/en.js';
+import { esMessages } from '../i18n/es.js';
+import { frMessages } from '../i18n/fr.js';
+import { hiMessages } from '../i18n/hi.js';
 import { koMessages } from '../i18n/ko.js';
+import { zhMessages } from '../i18n/zh.js';
 
 export type { MessageKey } from '../i18n/en.js';
 
@@ -9,6 +13,10 @@ type MessageCatalog = Record<MessageKey, string>;
 export const MESSAGE_CATALOGS = {
 	en: enMessages,
 	ko: koMessages,
+	zh: zhMessages,
+	es: esMessages,
+	fr: frMessages,
+	hi: hiMessages,
 } satisfies Record<string, MessageCatalog>;
 
 export type CliLang = keyof typeof MESSAGE_CATALOGS;

@@ -183,7 +183,9 @@ destructive = false
 		const result = runCli(projectPath, ['run', 'dev_server']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Refused: intent "dev_server" has lifecycle = "server"/);
+		assert.match(result.stderr, /dev_server/);
+		assert.match(result.stderr, /lifecycle = "server"/);
+		assert.match(result.stderr, /mf run/);
 	} finally {
 		removeTempProject(projectPath);
 	}

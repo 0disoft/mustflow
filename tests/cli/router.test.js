@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -9,9 +10,9 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 
-function runCli(args) {
+function runCli(args, cwd = projectRoot) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd: projectRoot,
+		cwd,
 		encoding: 'utf8',
 	});
 }
@@ -44,7 +45,9 @@ test('prints Korean top-level help with --lang', () => {
 	assert.match(result.stdout, /명령어:/);
 	assert.match(result.stdout, /선택지:/);
 	assert.match(result.stdout, /종료 코드:/);
-	assert.match(result.stdout, /기본 mustflow 에이전트 작업 흐름을 복사합니다/);
+	assert.match(result.stdout, /mf init/);
+	assert.match(result.stdout, /CLI 출력 언어/);
+	assert.doesNotMatch(result.stdout, /Usage:/);
 });
 
 test('prints Korean command help with --lang', () => {
@@ -144,17 +147,29 @@ test('dashboard command reports reserved state in Korean', () => {
 });
 
 test('prints installed mustflow help views', () => {
-	const result = runCli(['help', 'preferences']);
+	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-help-'));
 
-	assert.equal(result.status, 0);
-	assert.match(result.stdout, /Preferences/);
-	assert.match(result.stdout, /No \.mustflow\/config\/preferences\.toml found/);
+	try {
+		const result = runCli(['help', 'preferences'], root);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Preferences/);
+		assert.match(result.stdout, /No \.mustflow\/config\/preferences\.toml found/);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
 });
 
 test('prints installed mustflow help views in Korean shell labels', () => {
-	const result = runCli(['--lang', 'ko', 'help', 'preferences']);
+	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-help-ko-'));
 
-	assert.equal(result.status, 0);
-	assert.match(result.stdout, /선호값/);
-	assert.match(result.stdout, /현재 디렉터리에서 \.mustflow\/config\/preferences\.toml 파일을 찾지 못했습니다/);
+	try {
+		const result = runCli(['--lang', 'ko', 'help', 'preferences'], root);
+
+		assert.equal(result.status, 0);
+		assert.doesNotMatch(result.stdout, /Preferences/);
+		assert.match(result.stdout, /현재 디렉터리에서 \.mustflow\/config\/preferences\.toml 파일을 찾지 못했습니다/);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
 });

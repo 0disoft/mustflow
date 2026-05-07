@@ -1,7 +1,7 @@
 id = "default"
 name = "default"
 version = "0.1.0"
-description = "LLM 에이전트가 저장소에서 읽고, 수정하고, 검증할 때 참고할 최소 문서 흐름입니다."
+description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
 
@@ -23,45 +23,29 @@ creates = [
 runtime_requirements = []
 
 after_install = [
-  "AGENTS.md에서 저장소별 작업 규칙을 확인합니다.",
-  "수정 전 상태를 빠르게 보려면 mf doctor를 실행합니다.",
-  "저장소 지도가 필요하면 mf map으로 REPO_MAP.md를 생성합니다.",
-  ".mustflow/config/commands.toml에 실제 테스트, 규칙 검사, 빌드 명령을 채웁니다.",
-  ".mustflow/config/preferences.toml에서 저장소별 언어와 스타일 기본값을 확인합니다.",
-  ".mustflow/context/PROJECT.md에 프로젝트 목표와 비목표가 제공되어 있는지 확인합니다.",
-  ".mustflow/skills/INDEX.md에서 현재 저장소에 필요한 스킬만 유지합니다.",
-  ".mustflow/docs/agent-workflow.md에 저장소별 문서 흐름 차이를 짧게 기록합니다.",
+  "Read AGENTS.md for repository-specific working rules.",
+  "Run mf doctor to inspect the current state before editing.",
+  "Generate REPO_MAP.md with mf map when a repository map is needed.",
+  "Add your test, lint, and build commands to .mustflow/config/commands.toml.",
+  "Review repository-specific language and style defaults in .mustflow/config/preferences.toml.",
+  "Confirm that .mustflow/context/PROJECT.md describes the project goals and non-goals.",
+  "Keep only the skills needed for this repository in .mustflow/skills/INDEX.md.",
+  "Record any repository-specific workflow differences in .mustflow/docs/agent-workflow.md.",
 ]
 
 [profiles]
 default = "minimal"
-available = [
-  "minimal",
-  "oss",
-  "team",
-  "product",
-  "library",
-]
+available = ["minimal", "oss", "team", "product", "library"]
 
 [locales]
 default = "en"
-available = [
-  "en",
-  "ko",
-]
+available = ["en", "ko", "zh", "es", "fr", "hi"]
 source = "en"
 
 [install_policy]
 scope = "llm_only"
-copied_targets = [
-  "AGENTS.md",
-  ".mustflow/**",
-]
-generated_targets = [
-  "REPO_MAP.md",
-  ".mustflow/config/manifest.lock.toml",
-  ".mustflow/state/**",
-]
+copied_targets = ["AGENTS.md", ".mustflow/**"]
+generated_targets = ["REPO_MAP.md", ".mustflow/config/manifest.lock.toml", ".mustflow/state/**"]
 forbidden_targets = [
   "README.md",
   "CONTRIBUTING.md",

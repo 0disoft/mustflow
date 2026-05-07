@@ -4,7 +4,7 @@ locale: en
 canonical: true
 revision: 1
 name: test-maintenance
-description: Use when adding, updating, removing, or auditing tests after behavior, bug, API, snapshot, or compatibility changes.
+description: Apply this skill when adding, updating, removing, or auditing tests in response to changes to behavior, APIs, snapshots, compatibility, or bug fixes.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -28,12 +28,12 @@ Keep tests aligned with the current behavior contract.
 - Behavior is added, changed, removed, or deprecated.
 - A bug fix needs a regression test.
 - Existing tests may be stale, duplicated, too broad, or tied to removed implementation details.
-- Snapshot output changed.
+- Snapshot output has changed.
 
 ## Do Not Use When
 
 - The task only changes prose or comments.
-- The repository has no configured test intent and the user asked not to add tests.
+- The repository lacks a configured test intent and the user has requested not to add tests.
 
 ## Required Inputs
 
@@ -46,8 +46,8 @@ Keep tests aligned with the current behavior contract.
 
 ## Procedure
 
-1. Identify the behavior that should exist now.
-2. Search existing tests before adding new ones.
+1. Define the expected current behavior.
+2. Search for existing tests before introducing new ones.
 3. Classify affected tests:
    - `active`: still validates current behavior
    - `update_needed`: behavior changed
@@ -55,13 +55,13 @@ Keep tests aligned with the current behavior contract.
    - `legacy_contract`: old behavior is intentionally preserved
    - `flaky_or_environmental`: failure may depend on environment
 4. Add, update, remove, or report tests according to the classification.
-5. Do not reintroduce removed behavior only because old tests expect it.
+5. Do not reintroduce removed behavior solely because old tests expect it.
 6. Treat snapshot updates as manual unless `snapshot_update` is explicitly approved and configured.
 7. Keep tests deterministic and close to the behavior contract.
 
 ## Verification
 
-Use configured finite command intents when available:
+Use configured oneshot command intents when available:
 
 - `test`
 - `test_related`
@@ -75,8 +75,8 @@ Do not infer missing test commands.
 ## Failure Handling
 
 - If tests fail, inspect the first relevant failure.
-- Do not delete or weaken tests only to make validation pass.
-- If a stale test candidate is uncertain, report it instead of deleting it.
+- Do not delete or weaken tests merely to make validation pass.
+- If it is uncertain whether a test is stale, report it instead of deleting it.
 - If the test command is unavailable, report the missing intent.
 
 ## Output Format

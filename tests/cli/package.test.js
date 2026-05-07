@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -8,6 +8,25 @@ import path from 'node:path';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
+
+function collectRelativeFiles(directory) {
+	const files = [];
+
+	for (const entry of readdirSync(directory)) {
+		const fullPath = path.join(directory, entry);
+		const stat = statSync(fullPath);
+
+		if (stat.isDirectory()) {
+			files.push(...collectRelativeFiles(fullPath).map((file) => path.join(entry, file)));
+			continue;
+		}
+
+		files.push(entry);
+	}
+
+	return files.sort((left, right) => left.localeCompare(right));
+}
 
 test('package metadata is ready for public npm publishing', () => {
 	assert.equal(packageJson.version, '0.1.0');
@@ -45,6 +64,30 @@ test('default template i18n metadata stays in sync with localized template files
 	const issues = i18nModule.validateTemplateI18n(templatesModule.getDefaultTemplate());
 
 	assert.deepEqual(issues, []);
+});
+
+test('default template source metadata uses English text', () => {
+	const metadataPaths = ['templates/default/manifest.toml', 'templates/default/i18n.toml'];
+
+	for (const relativePath of metadataPaths) {
+		const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
+		assert.equal(/[가-힣]/u.test(content), false, `${relativePath} should not contain Korean text`);
+	}
+});
+
+test('default template includes complete folders for every supported document locale', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const template = templatesModule.getDefaultTemplate();
+	const localesRoot = path.join(projectRoot, 'templates', 'default', 'locales');
+	const sourceRoot = path.join(localesRoot, 'en');
+	const sourceFiles = collectRelativeFiles(sourceRoot);
+
+	assert.deepEqual(template.manifest.locales, supportedTemplateLocales);
+
+	for (const locale of supportedTemplateLocales) {
+		const localeRoot = path.join(localesRoot, locale);
+		assert.deepEqual(collectRelativeFiles(localeRoot), sourceFiles, `${locale} should mirror English template files`);
+	}
 });
 
 test('template i18n validation reports invalid translation metadata', async () => {
@@ -122,8 +165,9 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/lib/template-i18n.js'));
 	assert.ok(files.has('templates/default/common/.mustflow/config/commands.toml'));
 	assert.ok(files.has('templates/default/common/.mustflow/config/preferences.toml'));
-	assert.ok(files.has('templates/default/locales/en/AGENTS.md'));
-	assert.ok(files.has('templates/default/locales/ko/AGENTS.md'));
+	for (const locale of supportedTemplateLocales) {
+		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
+	}
 	assert.equal(files.has('templates/default/files/AGENTS.md'), false);
 	assert.equal(files.has('dist/cli/lib/package-manager.js'), false);
 	assert.equal(files.has('docs-site/package.json'), false);
