@@ -1,0 +1,33 @@
+:where(
+		.site-title,
+		.site-title *,
+		#starlight__sidebar,
+		#starlight__sidebar *,
+		site-search button,
+		site-search button *,
+		starlight-lang-select,
+		starlight-lang-select *,
+		starlight-theme-select,
+		starlight-theme-select *,
+		button,
+		button *,
+		summary,
+		summary *,
+		select,
+		option,
+		optgroup,
+		[role='button'],
+		[role='button'] *,
+		[role='listbox'],
+		[role='listbox'] *,
+		[role='option'],
+		[role='option'] *
+	) {
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+:where(input, textarea)::placeholder {
+	-webkit-user-select: none;
+	user-select: none;
+}

@@ -1,0 +1,4 @@
+.sl-markdown-content :not(pre) > code {
+	border-radius: 0.1875rem;
+	padding: 0.25rem;
+}

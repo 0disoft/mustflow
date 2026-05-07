@@ -1,0 +1,54 @@
+.sl-markdown-content :where(pre, code) {
+	direction: ltr;
+	unicode-bidi: isolate;
+}
+
+main :where(h1, h2, h3, h4, h5, h6):not(:where(.not-content *)),
+.sl-markdown-content :where(h1, h2, h3, h4, h5, h6):not(:where(.not-content *)) {
+	overflow-wrap: anywhere !important;
+}
+
+starlight-lang-select select,
+starlight-theme-select select {
+	min-block-size: 2.75rem;
+}
+
+:where(
+		starlight-lang-select select,
+		starlight-theme-select select,
+		#starlight__sidebar a,
+		.right-sidebar-panel a,
+		.pagination-links a
+	):focus-visible {
+	outline: 2px solid var(--sl-color-text-accent);
+	outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+	}
+}
+
+@media (forced-colors: active) {
+	:where(
+			starlight-lang-select select,
+			starlight-theme-select select,
+			#starlight__sidebar a,
+			.right-sidebar-panel a,
+			.pagination-links a
+		):focus-visible {
+		outline-color: Highlight;
+	}
+
+	.sl-markdown-content :not(pre) > code {
+		border: 1px solid CanvasText;
+		background: Canvas;
+		color: CanvasText;
+	}
+}

@@ -1,0 +1,45 @@
+starlight-lang-select {
+	order: 1;
+}
+
+starlight-theme-select {
+	order: 2;
+}
+
+starlight-lang-select label {
+	--sl-select-width: 7.5rem !important;
+}
+
+starlight-theme-select label {
+	--sl-select-width: 8.5rem !important;
+}
+
+starlight-lang-select label,
+starlight-theme-select label {
+	--sl-label-icon-size: calc(0.875rem + 0.0833rem);
+	--sl-caret-size: calc(1.25rem + 0.0833rem);
+}
+
+starlight-lang-select select,
+starlight-lang-select option,
+starlight-theme-select select,
+starlight-theme-select option {
+	font-size: calc(var(--sl-text-sm) + 0.0833rem) !important;
+}
+
+starlight-lang-select select,
+starlight-theme-select select {
+	padding-inline-start: calc(
+		var(--sl-label-icon-size) + var(--sl-inline-padding) + var(--mustflow-select-icon-gap)
+	) !important;
+}
+
+starlight-lang-select .label-icon,
+starlight-theme-select .label-icon {
+	font-size: var(--sl-label-icon-size) !important;
+}
+
+starlight-lang-select .caret,
+starlight-theme-select .caret {
+	font-size: var(--sl-caret-size) !important;
+}

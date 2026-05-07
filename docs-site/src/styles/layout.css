@@ -1,0 +1,20 @@
+@media (min-width: 50rem) {
+	#starlight__sidebar a:not(.large) {
+		font-size: var(--sl-text-base);
+	}
+}
+
+@media (min-width: 72rem) {
+	.right-sidebar-container {
+		width: 11.5rem;
+	}
+
+	.right-sidebar-panel .sl-container {
+		width: 9.5rem;
+		max-width: 9.5rem;
+	}
+
+	.right-sidebar-panel :where(a) {
+		font-size: calc(var(--sl-text-sm) + 0.0833rem);
+	}
+}

@@ -1,0 +1,162 @@
+---
+import config from 'virtual:starlight/user-config';
+import { Icon } from '@astrojs/starlight/components';
+import { languagePreference, languageSelectorOptions } from '../config/locales.mjs';
+
+const routeLocaleKeys = new Set(Object.keys(config.locales ?? {}).filter((locale) => locale !== 'root'));
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const pathnameWithoutBase = (pathname) => {
+	if (!basePath || !pathname.startsWith(basePath)) return pathname;
+	return pathname.slice(basePath.length) || '/';
+};
+
+const withBasePath = (pathname) => {
+	if (!basePath) return pathname;
+	return pathname === '/' ? `${basePath}/` : `${basePath}${pathname}`;
+};
+
+const localizedPathname = (locale) => {
+	const segments = pathnameWithoutBase(Astro.url.pathname).split('/').filter(Boolean);
+
+	if (routeLocaleKeys.has(segments[0])) {
+		segments.shift();
+	}
+
+	if (locale !== 'root') {
+		segments.unshift(locale);
+	}
+
+	const pathname = `/${segments.join('/')}`;
+	const normalizedPathname = pathname === '/' ? pathname : `${pathname}/`;
+
+	return withBasePath(normalizedPathname);
+};
+
+const currentLocaleCode = Astro.locals.starlightRoute.locale === 'en' ? 'en' : 'ko';
+
+const languageOptions = languageSelectorOptions.map((option) => ({
+	...option,
+	value: localizedPathname(option.starlightLocale),
+	selected: option.code === currentLocaleCode,
+}));
+---
+
+{
+	config.isMultilingual && (
+		<starlight-lang-select data-storage-key={languagePreference.storageKey}>
+			<label style="--sl-select-width: 7em">
+				<span class="sr-only">{Astro.locals.t('languageSelect.accessibleLabel')}</span>
+				<Icon name="translate" class="icon label-icon" />
+				<select autocomplete="off">
+					{
+						languageOptions.map(({ code, value, selected, label }) => (
+							<option value={value} selected={selected} data-locale={code}>
+								{label}
+							</option>
+						))
+					}
+				</select>
+				<Icon name="down-caret" class="icon caret" />
+			</label>
+		</starlight-lang-select>
+	)
+}
+
+<script>
+	class StarlightLanguageSelect extends HTMLElement {
+		constructor() {
+			super();
+			const select = this.querySelector('select');
+			if (select) {
+				select.addEventListener('change', (event) => {
+					if (event.currentTarget instanceof HTMLSelectElement) {
+						window.location.pathname = event.currentTarget.value;
+					}
+				});
+				window.addEventListener('pageshow', (event) => {
+					if (!event.persisted) return;
+
+					const storageKey = this.dataset.storageKey;
+					const storedLocale = storageKey ? localStorage.getItem(storageKey) : undefined;
+					const storedOption = storedLocale
+						? select.querySelector(`option[data-locale="${storedLocale}"]`)
+						: undefined;
+					const fallbackOption = select.querySelector('option[selected]');
+					const selectedIndex = storedOption?.index ?? fallbackOption?.index ?? 0;
+
+					if (selectedIndex !== select.selectedIndex) {
+						select.selectedIndex = selectedIndex;
+					}
+				});
+			}
+		}
+	}
+
+	if (!customElements.get('starlight-lang-select')) {
+		customElements.define('starlight-lang-select', StarlightLanguageSelect);
+	}
+</script>
+
+<style>
+	@layer starlight.core {
+		label {
+			--sl-label-icon-size: 0.875rem;
+			--sl-caret-size: 1.25rem;
+			--sl-inline-padding: 0.5rem;
+			position: relative;
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+			color: var(--sl-color-gray-2);
+		}
+
+		label:hover {
+			color: var(--sl-color-white);
+		}
+
+		.icon {
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			pointer-events: none;
+		}
+
+		select {
+			border: 0;
+			padding-block: 0.625rem;
+			padding-inline: calc(var(--sl-label-icon-size) + var(--sl-inline-padding) + 0.25rem)
+				calc(var(--sl-caret-size) + var(--sl-inline-padding) + 0.25rem);
+			margin-inline: calc(var(--sl-inline-padding) * -1);
+			width: calc(var(--sl-select-width) + var(--sl-inline-padding) * 2);
+			background-color: transparent;
+			text-overflow: ellipsis;
+			color: inherit;
+			cursor: pointer;
+			appearance: none;
+		}
+
+		option {
+			background-color: var(--sl-color-bg-nav);
+			color: var(--sl-color-gray-1);
+		}
+
+		@media (min-width: 50rem) {
+			select {
+				font-size: var(--sl-text-sm);
+			}
+		}
+	}
+
+	@layer starlight.components {
+		.label-icon {
+			font-size: var(--sl-label-icon-size);
+			inset-inline-start: 0;
+		}
+
+		.caret {
+			font-size: var(--sl-caret-size);
+			inset-inline-end: 0;
+		}
+	}
+</style>

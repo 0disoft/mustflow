@@ -1,0 +1,25 @@
+:root {
+	--sl-sidebar-width: 23rem;
+	--sl-content-width: 56rem;
+	--sl-text-body: var(--sl-text-lg);
+	--sl-text-body-sm: var(--sl-text-sm);
+	--sl-text-code: var(--sl-text-base);
+	--sl-text-code-sm: var(--sl-text-sm);
+	--mustflow-select-icon-gap: 0.55rem;
+	--mustflow-selection-background: #fff2a8;
+	--mustflow-selection-text: #111827;
+}
+
+:root[data-theme='light'] {
+	--mustflow-selection-background: #fff2a8;
+}
+
+body {
+	font-size: var(--sl-text-body);
+}
+
+::selection {
+	background-color: var(--mustflow-selection-background);
+	color: var(--mustflow-selection-text);
+	text-shadow: none;
+}
