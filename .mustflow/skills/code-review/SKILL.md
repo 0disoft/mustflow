@@ -1,0 +1,84 @@
+---
+mustflow_doc: skill.code-review
+locale: en
+canonical: true
+revision: 2
+name: code-review
+description: Apply this skill when reviewing code changes, scope, risks, or verification gaps.
+metadata:
+  mustflow_schema: "1"
+  mustflow_kind: procedure
+  command_intents:
+    - test
+    - test_related
+    - test_audit
+    - lint
+---
+
+# Code Review
+
+## Purpose
+
+Verify that a change aligns with the request and ensure that no behavioral risks or verification gaps persist.
+
+## Use When
+
+- Code changes, diffs, pull requests, or potential regression risks require review.
+- The primary objective is risk assessment rather than implementing new behavior.
+
+## Do Not Use When
+
+- The task involves only wording, translation, or formatting changes.
+- No changed files or diffs are available for review.
+
+## Required Inputs
+
+- Modified files or diffs
+- User-specified review criteria
+- `AGENTS.md`
+- `.mustflow/docs/agent-workflow.md`
+- `.mustflow/config/commands.toml`
+
+## Procedure
+
+1. Review the list of modified files.
+2. Identify any unrelated or extraneous edits.
+3. Assess the impact on behavior, configuration, commands, and documentation.
+4. Review test relevance:
+   - missing tests for new functionality
+   - obsolete tests for removed functionality
+   - redundant tests that fail to address new risks
+   - weakened or insufficient assertions
+   - snapshot updates lacking a clear rationale
+   - tests that inadvertently reintroduce removed behavior
+5. Verify the existence of relevant command intents.
+6. Document findings categorized by severity.
+
+## Verification
+
+Follow `.mustflow/docs/agent-workflow.md#command-execution-policy`.
+
+Related command intents:
+
+- `test`
+- `test_related`
+- `test_audit`
+- `lint`
+
+Avoid introducing raw shell commands; reference the command intent names defined in `.mustflow/config/commands.toml`.
+
+## Failure Handling
+
+- If a command intent is missing, restricted to manual execution, disabled, or unknown, report the status rather than guessing.
+- Document any skipped verifications and the associated remaining risks.
+- Immediately halt and report if sensitive data or destructive command risks are identified.
+
+## Output Format
+
+- Summary
+- Findings categorized by severity
+- List of reviewed files
+- Command intents executed
+- Skipped command intents and justifications
+- Notes on test relevance
+- Identified remaining risks

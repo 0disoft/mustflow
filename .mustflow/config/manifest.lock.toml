@@ -1,0 +1,68 @@
+schema_version = "1"
+generated_by = "mustflow"
+
+[template]
+id = "default"
+version = "0.1.0"
+profile = "oss"
+locale = "en"
+
+[files."AGENTS.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:590d8bcbfd01b4ca222b8b28a679f07b39bc3c5ae50e0aa338a2788ba4af0494"
+
+[files.".mustflow/context/INDEX.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:81dc842e048dba221e901e81c941de4c288321f848251915ae23e52d94b4a194"
+
+[files.".mustflow/context/PROJECT.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:d2ef6692a0551b18bc24996c976890e190b2f385b54404486cd0478f11da7904"
+
+[files.".mustflow/skills/INDEX.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:3a63e00c2048b9f81145b52d29e498b1bf14bf384d5424d1bda1feba3b29d507"
+
+[files.".mustflow/skills/code-review/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:9deb575506d4d6e1ca2e7df411b40023ed27ad7daae0b74e4d93cbf35f8bd665"
+
+[files.".mustflow/skills/test-maintenance/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:a458198012c2d9ba892e3b54f57a2403af665b92c8b3c7430c1861b3db685f70"
+
+[files.".mustflow/skills/failure-triage/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:417b38e2da2917af946bcb409eb72de03922ade6238ec19460dfd85894137fb8"
+
+[files.".mustflow/skills/docs-update/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:7789ab2e3374d9c8257bed3dbf2e8ad2af75f91713438706656345a6813de59b"
+
+[files.".mustflow/docs/agent-workflow.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:2e8bf58604cc2d82956331bc294fcd5f23e4c902479299ea9364c77a4cfc3ef9"
+
+[files.".mustflow/config/mustflow.toml"]
+source = "template_common"
+last_action = "created"
+content_hash = "sha256:fa46d3011894402f8b208bec2d911b4f63686a659d48e565f83dbcfed6042b3c"
+
+[files.".mustflow/config/commands.toml"]
+source = "template_common"
+last_action = "created"
+content_hash = "sha256:51efa07cc36933c0467c7bd716d95aed82246f5b3b7377ffe0889bbf888f9f99"
+
+[files.".mustflow/config/preferences.toml"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:2b5ce94bbaf786f2c0eafdc19c56e7db73b2edbf1cd93619991e9bb5e9c9a929"
