@@ -1,26 +1,25 @@
 ---
 title: .mustflow/config/manifest.lock.toml
-description: Generated install-state file written by mf init.
+description: A generated installation state file managed by mf init.
 ---
 
-`.mustflow/config/manifest.lock.toml` is generated or updated after a successful `mf init`.
+`.mustflow/config/manifest.lock.toml` is generated or updated upon the successful execution of `mf init`.
 
-It is not copied from the template. It records which files were created, merged, left unchanged, or overwritten in the target repository.
+It is not copied from a template; rather, it documents which files were created, merged, preserved, or overwritten within the target repository.
 
-## When It Is Written
+## Generation Triggers
 
-- Written after a successful `mf init`.
-- Written when `--merge` inserts a managed block into an existing `AGENTS.md`.
-- Written when `--force` backs up conflicting files and overwrites them.
-- Not written when installation aborts on conflicts.
-- Not written when `--dry-run` only prints the install plan.
+- Successful execution of `mf init`.
+- Usage of `--merge` to insert a managed block into an existing `AGENTS.md`.
+- Usage of `--force` to back up conflicting files and overwrite them.
+- **Note**: This file is not generated if the installation aborts due to conflicts or if run with the `--dry-run` flag.
 
-## Role
+## Purpose and Role
 
-- Records the template identifier and version used for installation.
-- Records the current content hash of each installed file.
-- Records the action taken for each file.
-- Gives commands such as `mf check`, `mf status`, and `mf update --dry-run` a stable install-state baseline.
+- **Installation Records**: Stores the template identifier and version used during the installation process.
+- **Integrity Verification**: Records the content hash of each installed file to detect subsequent modifications.
+- **Action Tracking**: Logs the specific action taken for each file (e.g., created, merged).
+- **Baseline for Commands**: Provides a stable installation baseline for commands such as `mf check`, `mf status`, and `mf update --dry-run`.
 
 ## Shape
 
@@ -42,32 +41,32 @@ content_hash = "sha256:..."
 
 ## Fields
 
-- `schema_version`: Lock-file schema version.
-- `generated_by`: Tool that generated the file.
-- `template.id`: Template identifier used during installation.
-- `template.version`: Template version used during installation.
-- `template.profile`: Project profile selected during installation.
-- `template.locale`: mustflow document locale selected during installation.
-- `template.agent_lang`: Agent report language when selected.
-- `product_i18n`: Optional section written when product text locales are selected.
-- `files."<path>"`: Per-file install record.
-- `source`: Where the file content came from. Uses `template_locale`, `template_common`, or `managed_block`.
-- `last_action`: Action applied during the last install. One of `created`, `unchanged`, `merged`, `overwritten`, or `customized`.
-- `content_hash`: SHA-256 hash of the current file content.
+- `schema_version`: The version of the lock file schema.
+- `generated_by`: The tool that generated this file.
+- `template.id`: The identifier of the template used during installation.
+- `template.version`: The version of the template used during installation.
+- `template.profile`: The project profile selected during installation.
+- `template.locale`: The mustflow document locale selected during installation.
+- `template.agent_lang`: The preferred agent report language.
+- `product_i18n`: An optional section included when product-facing locales are configured.
+- `files."<path>"`: An individual installation record for a specific file path.
+- `source`: The origin of the file content (e.g., `template_locale`, `template_common`, or `managed_block`).
+- `last_action`: The most recent action applied to the file (e.g., `created`, `unchanged`, `merged`, `overwritten`, or `customized`).
+- `content_hash`: The SHA-256 hash of the file content at the time of installation.
 
 ## Hash Baseline
 
-Currently, `content_hash` is the install-time baseline.
+The `content_hash` serves as the authoritative baseline from the time of installation.
 
-`mf check`, `mf status`, and `mf update --dry-run` compute the current file hash at runtime and compare it with this baseline. Template hashes are also not stored in the lock file; they are computed from the template bundled with the installed mustflow package.
+Commands such as `mf check`, `mf status`, and `mf update --dry-run` calculate current file hashes during execution and compare them against this baseline. Note that template-side hashes are not stored in the lock file; they are derived from the template bundled with the currently installed mustflow package.
 
-This keeps the lock file as an install baseline rather than a live current-state snapshot.
+This design ensures the lock file remains a historical record of the installation rather than a live snapshot of the current state.
 
-## Editing Rules
+## Maintenance Guidelines
 
-This file is not a hand-authored source document.
+This file is automatically generated and should not be modified manually.
 
-Regenerate it with `mf init` or a future dedicated update command when the install state needs to be refreshed. Manual edits can make the recorded hashes disagree with the actual file contents.
+Refresh this file using `mf init` or a dedicated update command if the installation state needs to be synchronized. Manual edits may result in discrepancies between the recorded hashes and the actual file contents.
 
 `mf update --dry-run` uses `content_hash` as the install-time baseline. If the current file hash differs from that baseline, the file is treated as a local change and automatic update is blocked.
 

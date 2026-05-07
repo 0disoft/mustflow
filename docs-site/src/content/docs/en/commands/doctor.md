@@ -3,10 +3,10 @@ title: mf doctor
 description: Read-only diagnostic command for the current mustflow root.
 ---
 
-`mf doctor` gives a quick health summary for the current mustflow root.
-It combines the most useful parts of `mf check` and `mf context`, then prints safe next steps an agent can follow.
+`mf doctor` provides a concise health summary for the current mustflow root.
+It aggregates the most critical aspects of `mf check` and `mf context`, then suggests the next steps an agent should follow.
 
-This command never writes files. Use it when an agent or human needs a first orientation before changing anything.
+This command never writes files. Use it when an agent or human requires an initial orientation before modifying the repository.
 
 ## What It Inspects
 
@@ -15,7 +15,7 @@ This command never writes files. Use it when an agent or human needs a first ori
 - Result of `mf check`.
 - `manifest.lock.toml` state.
 - Template identifier and version from the lock file when present.
-- Whether `.mustflow/config/commands.toml` exists and exposes runnable finite intents.
+- Whether `.mustflow/config/commands.toml` exists and exposes runnable oneshot intents.
 - Missing required and optional read-order paths from `mustflow.toml`.
 - Whether `REPO_MAP.md` has been generated.
 - Whether the local `.mustflow/cache/mustflow.sqlite` index exists.
@@ -88,7 +88,7 @@ Nested fields use these shapes:
 - `context.manifest_lock` (`string`): Lock-file state. One of `present`, `missing`, or `invalid`.
 - `context.template` (`object | null`): Template identifier and version when known.
 - `context.command_contract_exists` (`boolean`): Whether `commands.toml` exists.
-- `context.runnable_intents` (`string[]`): Names of configured finite intents that agents may run.
+- `context.runnable_intents` (`string[]`): Names of configured oneshot intents that agents may run.
 - `context.missing_read_order` (`string[]`): Required read-order files that are missing.
 - `context.missing_optional_read_order` (`string[]`): Optional read-order files that are missing.
 - `context.latest_run_exists` (`boolean`): Whether the latest run receipt exists.

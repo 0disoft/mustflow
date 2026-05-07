@@ -5,13 +5,13 @@ description: 기준 문서와 번역 문서의 판 번호를 추적하는 템플
 
 `i18n.toml`은 mustflow 템플릿 문서의 기준 언어와 번역 상태를 관리합니다.
 
-이 파일은 `mf init`으로 사용자 저장소에 복사되는 파일이 아닙니다. mustflow 패키지 안에서 템플릿 문서의 판 번호와 번역 상태를 추적하는 관리 파일입니다.
+이 파일은 `mf init`으로 사용자 저장소에 복사되지 않습니다. mustflow 패키지 내부에서 템플릿 문서의 판 번호와 번역 상태를 추적하는 관리 파일입니다.
 
 ## 왜 필요한가
 
-문서가 이슈나 풀 리퀘스트에서 자주 수정되면 파일 수정 시각만으로 어떤 언어가 최신인지 판단하기 어렵습니다.
+문서가 이슈나 풀 리퀘스트에서 자주 바뀌면, 파일 수정 시각만으로 어떤 언어가 최신인지 판단하기 어렵습니다.
 
-mustflow는 기준 문서의 `revision`과 번역 문서의 `source_revision`을 비교해 최신 여부를 판단하는 방향을 사용합니다.
+mustflow는 기준 문서의 `revision`과 번역 문서의 `source_revision`을 비교해 최신 여부를 판단합니다.
 
 ## 기본 형태
 
@@ -47,7 +47,7 @@ translations.ko = { path = "locales/ko/.mustflow/skills/code-review/SKILL.md", s
 - `source`: 기준 문서의 템플릿 내부 경로입니다.
 - `source_locale`: 해당 문서의 기준 언어입니다.
 - `revision`: 기준 문서의 판 번호입니다.
-- `translations`: 번역 문서의 경로, 기준 판 번호, 상태를 연결할 자리입니다.
+- `translations`: 번역 문서의 경로, 기준 판 번호, 상태를 연결하는 영역입니다.
 
 ## 상태값
 
@@ -56,7 +56,7 @@ translations.ko = { path = "locales/ko/.mustflow/skills/code-review/SKILL.md", s
 - `needs_review`: 번역은 되었지만 검토가 필요합니다.
 - `missing`: 번역 문서가 없습니다.
 
-문서 최신 여부는 파일 수정 시각이 아니라 `revision`과 번역본의 `source_revision`을 비교해서 판단합니다.
+문서 최신 여부는 파일 수정 시각이 아니라 `revision`과 번역본의 `source_revision` 비교로 판단합니다.
 
 ## 검증
 

@@ -5,18 +5,18 @@ description: Builds the local SQLite index for mustflow documents.
 
 `mf index` builds a regenerable SQLite index from the mustflow document flow in the current root.
 
-The source of truth remains the files on disk. The index is a cache that helps `mf search` and future map or dashboard features read mustflow documents quickly.
+The source of truth remains the files on disk; the index serves as a cache that enables `mf search` and future map or dashboard features to retrieve mustflow documents efficiently.
 
 ## Indexed Inputs
 
 - `AGENTS.md`
 - `.mustflow/docs/*.md`
 - `.mustflow/skills/INDEX.md`
-- `.mustflow/skills/*/SKILL.md`
+- `.//mustflow/skills/*/SKILL.md`
 - `.mustflow/config/*.toml`
 - Command intents from `.mustflow/config/commands.toml`
 
-The command does not index arbitrary project source files. It is scoped to mustflow workflow files.
+The command does not index arbitrary project source files; it is scoped exclusively to mustflow workflow files.
 
 ## Output File
 
@@ -24,8 +24,8 @@ The command does not index arbitrary project source files. It is scoped to mustf
 .mustflow/cache/mustflow.sqlite
 ```
 
-This file is generated. It may be deleted and rebuilt.
-The index stores content hashes for indexed files so `mf search` can detect stale cache data.
+This file is generated and can be deleted and rebuilt at any time.
+The index stores content hashes for indexed files, allowing `mf search` to detect stale cache data.
 
 ## Dry Run
 
@@ -33,7 +33,7 @@ The index stores content hashes for indexed files so `mf search` can detect stal
 npx mf index --dry-run --json
 ```
 
-Dry run calculates the index targets and prints counts without writing the SQLite file.
+A dry run calculates the index targets and prints counts without writing the SQLite file.
 
 ## JSON Fields
 
@@ -41,7 +41,7 @@ Dry run calculates the index targets and prints counts without writing the SQLit
 npx mf index --json
 ```
 
-Machine-readable output uses these fields:
+The machine-readable output uses the following fields:
 
 - `schema_version` (`number`): Output format version.
 - `command` (`string`): Always `index`.

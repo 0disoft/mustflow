@@ -1,36 +1,36 @@
 ---
 title: .mustflow/context/INDEX.md
-description: Routes agents to task-specific project context files.
+description: Directs agents to task-specific project context files.
 ---
 
-`.mustflow/context/INDEX.md` tells agents which project context files are relevant to the current task.
+`.mustflow/context/INDEX.md` identifies project context files relevant to the current task.
 
-## Where It Is Used
+## Usage
 
-- Helps agents avoid reading every context file by default.
-- Separates project direction from the short `AGENTS.md` router.
-- Points to optional external anchors such as `README.md` and `DESIGN.md` without making them mustflow-owned files.
+- Minimizes noise by helping agents avoid reading irrelevant context files.
+- Decouples project-specific direction from the primary `AGENTS.md` router.
+- Provides references to optional external anchors, such as `README.md` and `DESIGN.md`, without requiring them to be managed by mustflow.
 
 ## Fields
 
-The frontmatter identifies the file as a mustflow context document:
+The frontmatter identifies this as a mustflow context document:
 
 - `kind: mustflow-context`
 - `name: context-index`
 - `authority: contextual`
-- `stability`: how stable the content is expected to be.
-- `review_status`: whether a human has reviewed the context.
+- `stability`: The expected stability of the document content.
+- `review_status`: Indicates whether the context has been reviewed by a human.
 
-## Table
+## Context Table
 
-The main table maps each context name to a use condition and a path.
+The primary table maps each context identifier to its application scenarios and file path.
 
-The default template lists only `.mustflow/context/PROJECT.md`.
-Domain-specific files such as frontend, backend, API, data, security, or operations context are not created by default.
+The default template includes only `.mustflow/context/PROJECT.md`.
+Domain-specific files—such as those for frontend, backend, API, data, security, or operations—are optional and not included in the default template.
 
 ## External Anchors
 
-`README.md` is a human-facing overview. Agents may use it as context, not policy.
+`README.md` provides a high-level project overview. Agents should treat it as general context rather than mandatory policy.
 
-`DESIGN.md` is not created by mustflow. If it exists, agents may read it for UI, visual design, layout, design-token, or accessibility work.
+`DESIGN.md` is not part of the default mustflow template. If present, agents consult it for tasks involving UI/UX, visual design, layout, design tokens, or accessibility.
 

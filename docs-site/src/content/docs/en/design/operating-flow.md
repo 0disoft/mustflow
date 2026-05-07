@@ -3,17 +3,19 @@ title: Operating Flow
 description: Recommended mf command sequence after installing mustflow.
 ---
 
-The default mustflow flow is about checking whether the current root is ready for agents to read, not about creating many files.
+The default mustflow operating flow verifies whether the current root is ready for agents to read
+without creating unnecessary files.
 
 ## Preview Before Writing
 
-Start by previewing the install plan.
+Start by previewing the installation plan.
 
 ```sh
 npx mf init --dry-run
 ```
 
-Existing `AGENTS.md` or `.mustflow/` files may conflict, so check what would be written before making changes.
+Existing `AGENTS.md` files or `.mustflow/` directories can cause conflicts, so review the planned
+writes before applying changes.
 
 ## Initialize
 
@@ -23,7 +25,8 @@ If the plan is correct, initialize the workflow.
 npx mf init --yes
 ```
 
-If `AGENTS.md` already exists and only needs the mustflow managed block, use `--merge`. Use `--force` only when existing files should be backed up and overwritten.
+If `AGENTS.md` already exists and only requires the mustflow-managed block, use `--merge`. Use
+`--force` only when existing files should be backed up and overwritten.
 
 ## Validate
 
@@ -34,11 +37,12 @@ npx mf check
 npx mf check --json
 ```
 
-Use human output when reading directly. Use JSON output when an agent or automation needs to decide what to do next.
+Use the default human-readable output for manual review. Use JSON output when an agent or automation
+needs to determine the next action.
 
 ## Inspect Status
 
-Use status to see whether installed files changed after initialization.
+Use the status command to check whether installed files have changed since initialization.
 
 ```sh
 npx mf status
@@ -49,7 +53,7 @@ The command compares current files against the install-time baseline recorded in
 
 ## Preview Updates
 
-Template updates should be previewed before any write.
+Preview template updates before writing any changes.
 
 ```sh
 npx mf update --dry-run
@@ -67,13 +71,15 @@ Locally edited files and new-file collisions are reported as blocked items.
 
 ## Generate Navigation Map
 
-Generate the navigation map when agents need a fast view of the current root's important files.
+Generate a navigation map when agents need a quick overview of the important files in the current
+root.
 
 ```sh
 npx mf map --write
 ```
 
-Only use nested repository mapping when workspace roots are configured and you need entrypoints for those child repositories.
+Only use nested repository mapping when workspace roots are configured and you need entry points for
+those child repositories.
 
 ```sh
 npx mf map --write --include-nested

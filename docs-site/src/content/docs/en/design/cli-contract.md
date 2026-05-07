@@ -42,10 +42,16 @@ For example, when a user runs `mf check --strict` from `src/feature/deep`, the c
 ## CLI Output Language
 
 `--lang` is a global option that selects the language for fixed CLI text.
+Current values are `en`, `ko`, `zh`, `es`, `fr`, and `hi`. The `zh`, `es`, `fr`,
+and `hi` catalogs use English text until translated.
 
 ```sh
-mf --lang ko help
 mf --lang en help
+mf --lang ko help
+mf --lang zh help
+mf --lang es help
+mf --lang fr help
+mf --lang hi help
 ```
 
 `--lang` is different from `mf init --locale`. `--lang` controls terminal help and error guidance; `--locale` controls the installed mustflow document language.

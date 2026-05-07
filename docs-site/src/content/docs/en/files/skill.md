@@ -1,15 +1,15 @@
 ---
 title: .mustflow/skills/*/SKILL.md
-description: A procedure document for repeatable agent tasks.
+description: A procedural document defining repeatable tasks for agents.
 ---
 
-`.mustflow/skills/*/SKILL.md` helps agents perform repeatable tasks without guessing.
+`.mustflow/skills/*/SKILL.md` defines specific procedures to help agents execute repeatable tasks without inference or guesswork.
 
-## Where It Is Used
+## Usage
 
-Agents choose a relevant skill from `.mustflow/skills/INDEX.md`, then read that skill before doing repeatable work.
+Agents identify the appropriate skill from `.mustflow/skills/INDEX.md` and consult its documentation before performing repeatable tasks.
 
-Skill documents cover procedures such as code review, test maintenance, failure triage, and documentation updates. They reference `.mustflow/docs/agent-workflow.md` instead of copying shared policy.
+Skill documents encompass procedures such as code review, test maintenance, failure triage, and documentation updates. They reference the global policies defined in `.mustflow/docs/agent-workflow.md` rather than duplicating them.
 
 ## Frontmatter
 
@@ -19,7 +19,7 @@ locale: en
 canonical: true
 revision: 1
 name: code-review
-description: Use when reviewing code changes, scope, risks, or missing verification.
+description: Apply this skill when reviewing code changes, scope, risks, or verification gaps.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -28,38 +28,38 @@ metadata:
     - lint
 ```
 
-- `mustflow_doc`: Stable skill identifier inside mustflow.
-- `locale`: Document language.
-- `canonical`: Whether this document is the canonical source.
-- `revision`: Canonical document revision.
-- `name`: Skill name. It should match the folder name.
-- `description`: When an agent should read this skill.
-- `metadata.mustflow_schema`: Version of the skill metadata shape.
-- `metadata.mustflow_kind`: Document kind. Default skills use `procedure`.
-- `metadata.command_intents`: Command intent names this skill may reference.
+- `mustflow_doc`: A unique, stable identifier for the skill within mustflow.
+- `locale`: The language code of the document.
+- `canonical`: Indicates if the document serves as the authoritative source.
+- `revision`: The revision number of the authoritative document.
+- `name`: The skill name, which should align with its containing directory.
+- `description`: A brief summary of when the agent should apply this skill.
+- `metadata.mustflow_schema`: The version of the skill metadata schema.
+- `metadata.mustflow_kind`: The category of the document (e.g., `procedure`).
+- `metadata.command_intents`: A list of command intent names referenced by this skill.
 
-The English skill template is the canonical source. Localized skill templates use their own locale and set `canonical: false`.
+The English version of the skill template serves as the authoritative source. Localized versions specify their own locales and set `canonical: false`.
 
-## Standard Sections
+## Document Structure
 
-Each skill document should include:
+Each skill document should include the following sections:
 
-- `Purpose`: The task this skill addresses.
-- `Use when`: Situations that should trigger this skill.
-- `Do not use when`: Exclusions that prevent overuse.
-- `Required inputs`: Information agents must gather before acting.
-- `Procedure`: The work sequence.
-- `Validation`: Relevant command intents and checks.
-- `Failure handling`: What to do when commands fail or information is missing.
-- `Output contract`: Items to include in the final report.
+- `Purpose`: Defines the specific task or objective this skill addresses.
+- `Use When`: Describes scenarios that should trigger the application of this skill.
+- `Do Not Use When`: Specifies exclusions to prevent unnecessary application.
+- `Required Inputs`: Context and information the agent must collect prior to execution.
+- `Procedure`: The step-by-step sequence of operations.
+- `Validation`: Relevant command intents and verification steps.
+- `Failure Handling`: Protocols for managing command failures or missing information.
+- `Output Contract`: Required components to be included in the final report.
 
-## Authoring rules
+## Authoring Guidelines
 
-Each skill should cover one task type.
+Each skill should be scoped to a single task type.
 
-Do not write raw shell commands in skill documents. In the validation section, reference `.mustflow/docs/agent-workflow.md#command-execution-policy` and list only the relevant command intent names.
+Avoid including raw shell commands within skill documents. In the validation section, reference the `.mustflow/docs/agent-workflow.md#command-execution-policy` and list only the relevant command intent names.
 
-Resolve each intent through `.mustflow/config/commands.toml`. If `status = "configured"` is not present, do not run it; report the status and skipped reason.
+Each intent must be resolved via `.mustflow/config/commands.toml`. If an intent is not marked as `status = "configured"`, it must not be executed; instead, report its status and the reason for skipping.
 
 Example:
 
@@ -74,10 +74,10 @@ Relevant command intents:
 Resolve each intent through `.mustflow/config/commands.toml`.
 ```
 
-## Supporting Resources
+## Resource Management
 
-A default skill starts with only `SKILL.md`. Do not create empty `references/`, `assets/`, or `scripts/` folders in advance.
+A default skill begins with only a `SKILL.md` file. Do not create empty `references/`, `assets/`, or `scripts/` directories in advance.
 
-When a skill becomes long or needs separate supporting material, add an optional `resources.toml` and register references, templates, or scripts there. Scripts should not be invoked through guessed paths; connect them to command intents in `.mustflow/config/commands.toml`.
+If a skill requires extensive supporting material, an optional `resources.toml` file can be added to register references, assets, or scripts. Scripts should never be invoked via inferred paths; they must be mapped to specific command intents in `.mustflow/config/commands.toml`.
 
-Follow [Skill Resources](/design/skill-resources/) for the detailed rules.
+Refer to [Skill Resources](/design/skill-resources/) for detailed policies and guidelines.

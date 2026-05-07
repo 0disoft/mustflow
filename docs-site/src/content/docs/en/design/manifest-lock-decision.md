@@ -3,31 +3,35 @@ title: manifest.lock.toml Structure Decision
 description: Why mustflow does not split manifest.lock.toml hash fields yet.
 ---
 
-mustflow currently keeps a single `content_hash` field in `manifest.lock.toml`.
+mustflow currently maintains a single `content_hash` field in `manifest.lock.toml`.
 
-This value is not the live current hash. It is the file content hash recorded at the last install or update. The name is simple, but its meaning is the install baseline.
+This value is not the current hash of the live file. It is the file content hash recorded during
+the last install or update. The name is simple, but it serves as the installation baseline.
 
 ## Decision
 
-Do not split the lock file into `installed_hash`, `template_hash`, and `current_hash` yet.
+Do not split the lock file into `installed_hash`, `template_hash`, and `current_hash` at this time.
 
-Instead, use these rules:
+Instead, apply these rules:
 
-- `content_hash`: Install baseline stored in the lock file.
-- Current file hash: Computed from the file system when a command runs.
-- Bundled template hash: Computed from the template inside the installed package when a command runs.
+- `content_hash`: The installation baseline stored in the lock file.
+- Current file hash: Computed from the file system at runtime.
+- Bundled template hash: Computed from the template inside the installed package at runtime.
 
 ## Rationale
 
-The lock file should record reproducible install state only.
+The lock file should record only a reproducible installation state.
 
-`current_hash` changes whenever the user edits a file. Storing it in the lock file would require rewriting the lock after ordinary edits, which would weaken the baseline.
+`current_hash` changes whenever the user edits a file. Storing it in the lock file would require
+rewriting the lock after ordinary edits, which would undermine the purpose of the baseline.
 
-`template_hash` can be computed from the currently installed mustflow package. When the package changes, the bundled template hash changes too. Keeping an old template hash in the lock file can create competing sources of truth.
+`template_hash` can be computed from the currently installed mustflow package. When the package
+changes, the bundled template hash changes too. Keeping an outdated template hash in the lock file
+could create conflicting sources of truth.
 
 ## Update Comparison
 
-`mf update --dry-run` only needs these comparisons:
+`mf update --dry-run` relies on these comparisons:
 
 ```text
 current file hash == lock content_hash
@@ -40,11 +44,11 @@ current file hash == bundled template hash
 
 ## Future Expansion
 
-Raise the schema version and add fields later if mustflow needs:
+The schema version will be raised and fields added later if mustflow needs:
 
-- comparison across multiple template sources
-- offline verification of per-template source hashes
-- reproducible update planning without the mustflow package installed
-- signed templates or supply-chain verification
+- Comparison across multiple template sources.
+- Offline verification of per-template source hashes.
+- Reproducible update planning without the mustflow package installed.
+- Signed templates or supply-chain verification.
 
-Until then, a single `content_hash` as the install baseline is simpler and safer.
+Until then, a single `content_hash` as the installation baseline is simpler and more robust.

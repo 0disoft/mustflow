@@ -17,7 +17,7 @@ The intent must satisfy all of these conditions:
 
 If any condition is not satisfied, the command is not run and the reason is reported.
 
-## What It Refuses
+## Excluded Lifecycles
 
 `mf run` does not execute intents with these lifecycles:
 
@@ -42,7 +42,7 @@ npx mf run test --json
 
 Each execution writes the latest run receipt to `.mustflow/state/runs/latest.json`.
 
-With `--json`, the same receipt is printed to standard output. Automation and agents should parse this structured output instead of scraping human help text.
+With `--json`, the same receipt is printed to standard output. Automation and agents should parse this structured output instead of parsing human-readable output.
 
 Machine-readable output uses these fields:
 
@@ -80,7 +80,7 @@ Output summary objects use these fields:
 - `stderr.truncated` (`boolean`): Whether output was trimmed to the retention limit.
 - `stderr.tail` (`string`): Tail of standard error.
 
-The receipt is evidence for one execution. The source of truth for command contracts remains `.mustflow/config/commands.toml`.
+The receipt serves as a record of a single execution. The source of truth for command contracts remains `.mustflow/config/commands.toml`.
 
 ## Exit Codes
 

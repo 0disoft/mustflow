@@ -3,19 +3,19 @@ title: mf update Policy
 description: Explains how mf update separates planning from safe application.
 ---
 
-`mf update` updates the installed mustflow agent document flow against a newer template.
+`mf update` updates the installed mustflow agent document flow to match a newer template.
 
-These files contain repository-specific agent rules, so automatic updates must be conservative.
+Because these files contain repository-specific agent rules, automatic updates must be conservative.
 `mf update --dry-run` previews the plan first, and `mf update --apply` writes only when no blocking items are present.
 
 ## Baseline
 
-The update baseline is `content_hash` in `.mustflow/config/manifest.lock.toml`.
+The update baseline is the `content_hash` found in `.mustflow/config/manifest.lock.toml`.
 
 `content_hash` is the file content hash last recorded by `mf init` or `mf update --apply`. If the current file hash differs from this value, mustflow treats the file as locally edited.
 
 This policy is also included in the `policy` object from `mf update --json`.
-The docs, human output, and automation output should not describe different rules.
+Documentation, human-readable output, and automation output must remain consistent.
 
 Current policy values:
 
@@ -31,13 +31,13 @@ writes_only_template_manifest_paths: true
 
 ## States
 
-`mf update --dry-run` classifies files into these states:
+`mf update --dry-run` classifies files into the following states:
 
-- `unchanged`: Current file matches both the lock baseline and the bundled template.
-- `update`: Current file matches the lock baseline but differs from the bundled template.
-- `create`: File exists in the template but is missing from the user repository.
-- `blocked-local-change`: Current file differs from the lock baseline.
-- `manual-review`: File needs human review instead of automatic update.
+- `unchanged`: The current file matches both the lock baseline and the bundled template.
+- `update`: The current file matches the lock baseline but differs from the bundled template.
+- `create`: The file exists in the template but is missing from the user repository.
+- `blocked-local-change`: The current file differs from the lock baseline.
+- `manual-review`: The file requires human review instead of an automatic update.
 
 ## Apply Rules
 
@@ -45,18 +45,18 @@ writes_only_template_manifest_paths: true
 
 - Do not modify `blocked-local-change` files automatically.
 - Do not modify `manual-review` files automatically.
-- `update` files are replaced with template content after backup.
-- `create` files are written after creating parent directories.
-- If a new template file collides with an existing file that is not in the lock, treat it as a local change and refuse to overwrite it.
+- `update` files are replaced with template content after a backup is created.
+- `create` files are written after creating the necessary parent directories.
+- If a new template file conflicts with an existing file not present in the lock, it is treated as a local change and will not be overwritten.
 - Refresh affected `manifest.lock.toml` entries after a successful update.
-- `mf update` writes only mustflow files declared by the template manifest plus the lock file.
-- If any write fails, report already written files and backup paths.
+- `mf update` writes only mustflow files declared by the template manifest and the lock file.
+- If any write fails, report the files already written and the backup paths.
 
 ## AGENTS.md Handling
 
-`AGENTS.md` is the root entrypoint, so it needs extra care.
+`AGENTS.md` is the root entry point and requires extra care.
 
-When an existing `AGENTS.md` received only a mustflow managed block, the whole file must not be overwritten with the template. That case should stay under `manual-review`, or use dedicated logic that replaces only the managed block safely.
+When an existing `AGENTS.md` is tracked as a mustflow-managed block, the whole file must not be overwritten with the template. That case should remain under `manual-review`, or use dedicated logic that safely replaces only the managed block.
 
 ## Backup Location
 
@@ -66,11 +66,11 @@ Before an `update` item changes an existing file, backups are written under:
 .mustflow/backups/<timestamp>/
 ```
 
-Backups are a final protection layer. Their presence does not make it acceptable to overwrite `blocked-local-change` files automatically.
+Backups serve as a final layer of protection. Their presence does not justify automatically overwriting `blocked-local-change` files.
 
 ## Exit Codes
 
-- Exit `0` when the plan has no blocking items.
-- Exit `1` when `blocked-local-change` or `manual-review` items are present, including during `--apply`.
-- Exit `1` when the lock file is missing or invalid.
-- Exit `1` when `mf update` is run without choosing `--dry-run` or `--apply`.
+- Exit `0`: The plan has no blocking items.
+- Exit `1`: `blocked-local-change` or `manual-review` items are present, including during `--apply`.
+- Exit `1`: The lock file is missing or invalid.
+- Exit `1`: `mf update` is run without choosing `--dry-run` or `--apply`.

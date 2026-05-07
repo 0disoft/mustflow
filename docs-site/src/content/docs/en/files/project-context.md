@@ -1,33 +1,33 @@
 ---
 title: .mustflow/context/PROJECT.md
-description: Records project goals, non-goals, terms, and repository-wide promises for agents.
+description: Documents project goals, non-goals, terminology, and repository-wide conventions for agents.
 ---
 
-`.mustflow/context/PROJECT.md` is the default project context file installed by `mf init`.
+`.mustflow/context/PROJECT.md` is the default project context file provided by `mf init`.
 
-It should stay short. It is not a full architecture document, roadmap, API reference, meeting log, or generated summary archive.
+It is intended to remain concise. It does not serve as a comprehensive architecture document, roadmap, API reference, meeting log, or archive for generated summaries.
 
-## Where It Is Used
+## Usage
 
-- Gives agents project direction when a task could affect scope, behavior, or repository-wide promises.
-- Records non-goals so agents do not expand unrelated work.
-- Lists domain terms and extra-care areas that change implementation decisions.
+- **Project Direction**: Provides agents with project-level context when a task might impact scope, behavior, or established conventions.
+- **Scope Control**: Defines non-goals to prevent agents from pursuing out-of-scope or unrelated work.
+- **Decision Support**: Specifies domain terminology and sensitive areas that influence implementation decisions.
 
 ## Authority
 
-The default authority is `contextual`.
+The default authority level is `contextual`.
 
-That means the file helps orient the agent, but it is lower authority than direct user instructions, current code, tests, command contracts, and configured policies.
+This indicates that while the file assists in orienting the agent, it remains secondary to direct user instructions, current code, tests, command contracts, and configured policies.
 
-If it conflicts with current files, agents should report the conflict and treat this context as stale.
+In the event of a conflict with the current repository state, agents should report the discrepancy and treat the context as stale.
 
 ## Sections
 
-- `Current Goal`: The current project goal. Leave unset rather than inventing one.
-- `Non-Goals`: Things agents should not expand into during unrelated tasks.
-- `Core Promises`: Repository-wide promises agents should preserve.
-- `Domain Terms`: Terms that affect implementation decisions.
-- `Extra Care Areas`: Paths, APIs, generated files, migrations, secrets, or compatibility surfaces that require caution.
-- `Read Next`: Files to read after this context.
-- `Staleness Check`: How to detect when the file is outdated.
+- `Current Goal`: The primary project objective. Leave as "Unset" rather than assuming or fabricating a goal.
+- `Non-Goals`: Objectives or areas that agents should avoid pursuing during unrelated tasks.
+- `Core Promises`: Repository-wide conventions or guarantees that agents must uphold.
+- `Domain Terms`: Terminology that informs technical and implementation decisions.
+- `Extra Care Areas`: Specific paths, APIs, generated files, or secrets that require special attention or caution.
+- `Read Next`: References to documents that should be processed after this context file.
+- `Staleness Check`: Guidelines for identifying when this document is outdated.
 

@@ -24,29 +24,29 @@ export const languageSelectorOptions = [
 		code: 'zh',
 		label: '中文',
 		lang: 'zh-CN',
-		starlightLocale: 'en',
-		hasContent: false,
+		starlightLocale: 'zh',
+		hasContent: true,
 	},
 	{
 		code: 'es',
 		label: 'Español',
 		lang: 'es',
-		starlightLocale: 'en',
-		hasContent: false,
+		starlightLocale: 'es',
+		hasContent: true,
 	},
 	{
 		code: 'fr',
 		label: 'Français',
 		lang: 'fr',
-		starlightLocale: 'en',
-		hasContent: false,
+		starlightLocale: 'fr',
+		hasContent: true,
 	},
 	{
 		code: 'hi',
 		label: 'हिन्दी',
 		lang: 'hi',
-		starlightLocale: 'en',
-		hasContent: false,
+		starlightLocale: 'hi',
+		hasContent: true,
 	},
 ];
 
@@ -66,5 +66,21 @@ export const locales = {
 	ko: {
 		label: '한국어',
 		lang: 'ko',
+	},
+	zh: {
+		label: '中文',
+		lang: 'zh-CN',
+	},
+	es: {
+		label: 'Español',
+		lang: 'es',
+	},
+	fr: {
+		label: 'Français',
+		lang: 'fr',
+	},
+	hi: {
+		label: 'हिन्दी',
+		lang: 'hi',
 	},
 };

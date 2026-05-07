@@ -3,26 +3,26 @@ title: AGENTS.md
 description: The short root work-rule entrypoint that agents read first.
 ---
 
-`AGENTS.md` is the root entry point LLM agents read first when entering a repository.
+`AGENTS.md` is the primary entry point that LLM agents consult when first entering a repository.
 
-## Where It Is Used
+## Usage
 
-`mf init` creates this file at the target repository root because agents should find it immediately when entering a repository.
+`mf init` installs this file at the target repository root to ensure immediate discovery by agents.
 
-It is the entry point into the mustflow document flow. Detailed policy belongs in `.mustflow/docs/agent-workflow.md`, executable commands belong in `.mustflow/config/commands.toml`, repository-level preferences belong in `.mustflow/config/preferences.toml`, task-specific project context belongs in `.mustflow/context/`, and repeatable procedures belong in `.mustflow/skills/`.
+It serves as the gateway to the mustflow document flow. Detailed policies reside in `.mustflow/docs/agent-workflow.md`, executable commands are defined in `.mustflow/config/commands.toml`, repository-level preferences are managed in `.mustflow/config/preferences.toml`, task-specific project context lives in `.mustflow/context/`, and repeatable procedures are documented in `.mustflow/skills/`.
 
-## Role
+## Role and Responsibilities
 
-- Starts the mustflow document flow.
-- Defines the first reading order.
-- Keeps only absolute rules such as no command guessing, preserving existing changes, and secret handling.
-- Points detailed work flow to `.mustflow/docs/agent-workflow.md`.
-- Makes executability depend on command intent status in `.mustflow/config/commands.toml`.
-- States that `mf doctor` is a read-only diagnostic command to run before edits when needed.
-- States that `mf context --json` is a read-only context index, not a replacement for reading the actual documents.
-- Points long-running or sensitive tasks to `[budget]`, `[approval]`, and `[isolation]` in `mustflow.toml`.
+- **Initiates the sequence**: Acts as the starting point for the mustflow document flow.
+- **Establishes the read sequence**: Defines the mandatory order in which agents must process instructions.
+- **Enforces core rules**: Maintains absolute constraints, such as prohibiting command guessing, preserving user modifications, and ensuring sensitive data protection.
+- **Delegates detail**: Defers complex workflow policies to `.mustflow/docs/agent-workflow.md`.
+- **Governs execution**: Restricts command execution to valid intents defined in `.mustflow/config/commands.toml`.
+- **Diagnostic orientation**: Specifies `mf doctor` as the recommended read-only diagnostic tool before initiating edits.
+- **Contextual indexing**: Defines `mf context --json` as a machine-readable index rather than a replacement for full document review.
+- **Safety boundaries**: Directs long-running or sensitive tasks to the `[budget]`, `[approval]`, and `[isolation]` policies in `mustflow.toml`.
 
-## Reading Order
+## Read Sequence
 
 ```text
 AGENTS.md
@@ -46,21 +46,19 @@ canonical: true
 revision: 4
 ```
 
-- `mustflow_doc`: Stable document identifier inside mustflow.
-- `locale`: Document language.
-- `canonical`: Whether this document is the canonical source.
-- `revision`: Canonical document revision.
+- `mustflow_doc`: A stable, internal identifier for the document.
+- `locale`: The language code of the document.
+- `canonical`: Indicates if the document serves as the authoritative source.
+- `revision`: The revision number of the authoritative document.
 
-The English template `AGENTS.md` is the canonical source. Localized template files use their own locale and set `canonical: false`.
+The English `AGENTS.md` template is the authoritative source. Localized versions specify their respective locales and set `canonical: false`.
 
-## Authoring Rules
+## Authoring Guidelines
 
-`AGENTS.md` stays at the repository root so agents can discover it quickly.
+`AGENTS.md` must remain at the repository root to ensure immediate agent visibility.
 
-Do not hard-code actual test or build commands, repository trees, recent changes, or generated timestamps in `AGENTS.md`. Those details reduce input stability and belong in `commands.toml`, `REPO_MAP.md`, or relevant source files.
+Do not hard-code specific test or build commands, file trees, recent modifications, or generation timestamps within `AGENTS.md`. Such details compromise input stability and should reside in `commands.toml`, `REPO_MAP.md`, or the relevant source files.
 
-Defaults for language, comments, commit messages, documentation, logs, and formatting belong in `.mustflow/config/preferences.toml`, not as long prose in `AGENTS.md`.
+Preferences for language, code comments, commit messages, documentation, and logging should be defined in `.mustflow/config/preferences.toml` rather than being described as prose in `AGENTS.md`.
 
-Autonomous loops, worker fleets, persona systems, and long-running harnesses should not be started
-from `AGENTS.md`. If a repository wants those surfaces, it should declare them explicitly in mustflow
-configuration and supporting documents.
+Autonomous loops, worker fleets, persona systems, and long-running harnesses must not be initiated from `AGENTS.md`. If a repository requires these capabilities, they should be explicitly defined in the mustflow configuration and supporting documentation.

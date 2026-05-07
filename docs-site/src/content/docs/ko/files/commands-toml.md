@@ -8,7 +8,7 @@ description: 테스트, 규칙 검사, 빌드, 문서 검증 명령을 의도별
 ## 어디에 쓰이나
 
 - `AGENTS.md`는 이 파일을 기준으로 명령 추측 금지 규칙을 적용합니다.
-- `agent-workflow.md`는 명령 실행 정책을 설명할 때 이 파일을 기준 원본으로 둡니다.
+- `agent-workflow.md`는 명령 실행 정책을 설명할 때 이 파일을 기준 자료로 둡니다.
 - 각 `SKILL.md`는 실제 명령 대신 `test`, `lint`, `build` 같은 명령 의도 이름만 참조합니다.
 - `mf check` 같은 검증 도구는 이 파일을 읽어 실행 가능 여부와 누락된 필드를 확인할 수 있습니다.
 
@@ -47,7 +47,7 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.default_timeout_seconds`: 의도별 제한 시간이 없을 때 사용할 기본 제한 시간입니다.
 - `defaults.stdin`: 기본 표준 입력 처리 방식입니다. 에이전트 실행은 `closed`를 기본으로 둡니다.
 - `defaults.require_lifecycle`: 실행 의도에 명령 생명주기를 요구할지 정합니다.
-- `defaults.require_timeout_for_oneshot`: 끝나는 명령에 제한 시간을 요구할지 정합니다.
+- `defaults.require_timeout_for_oneshot`: 단발성 명령에 제한 시간을 요구할지 정합니다.
 - `defaults.deny_unmanaged_long_running`: 관리되지 않는 장기 실행 명령을 차단할지 정합니다.
 - `defaults.max_output_bytes`: 실행기가 받을 수 있는 출력의 기본 상한입니다.
 - `defaults.on_timeout`: 제한 시간을 넘겼을 때의 처리 방식입니다.
@@ -70,7 +70,7 @@ required_after = ["code_change", "behavior_change"]
 - `agent_action`: 실행할 수 없을 때 에이전트가 취할 행동입니다.
 - `required_after`: 어떤 변경 뒤에 이 의도를 확인해야 하는지 나타냅니다.
 - `kind`: mustflow 내장 의도인지, 저장소 명령인지 같은 분류입니다.
-- `lifecycle`: 명령이 끝나는 명령인지, 서버나 감시 모드처럼 계속 떠 있는 명령인지 나타냅니다.
+- `lifecycle`: 명령이 단발성 명령인지, 서버나 감시 모드처럼 계속 떠 있는 명령인지 나타냅니다.
 - `run_policy`: 에이전트가 실행할 수 있는지, 명시 요청이 필요한지 나타냅니다.
 - `argv`: 셸 해석 없이 실행할 명령과 인자 배열입니다.
 - `mode`: `argv`가 아니라 셸 문법을 써야 할 때 `shell`로 둡니다.
@@ -144,7 +144,7 @@ agent_action = "do_not_update_snapshots_without_approval"
 에이전트가 기본으로 실행할 수 있는 생명주기는 `oneshot`뿐입니다. `server`, `watch`, `interactive`, `browser`, `background`는 `run_policy = "agent_allowed"`로 열면 안 됩니다.
 
 `mf run <intent>`는 `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`인 의도만 실행합니다.
-실행 뒤에는 `.mustflow/state/runs/latest.json`에 마지막 실행 영수증을 남기고, `--json`을 쓰면 같은 내용을 표준 출력으로 내보냅니다.
+실행 뒤에는 `.mustflow/state/runs/latest.json`에 마지막 실행 기록을 남기고, `--json`을 쓰면 같은 내용을 표준 출력으로 내보냅니다.
 
 ## mustflow 내장 의도
 

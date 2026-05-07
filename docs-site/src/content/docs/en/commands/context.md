@@ -1,11 +1,11 @@
 ---
 title: mf context
-description: Prints JSON agent work context for the current mustflow root.
+description: Prints the agent work context for the current mustflow root in JSON format.
 ---
 
-`mf context --json` prints structured context an agent can inspect before starting work in the current root.
+`mf context --json` prints structured context that an agent can inspect before initiating work in the current root.
 
-This command does not modify files. It does not replace reading the documents themselves; it is a thin index that points to the files and command intents an agent should inspect first.
+This command does not modify files. It does not replace the need to read the documents themselves; rather, it serves as a concise index that points to the files and command intents an agent should prioritize.
 
 ## Included Data
 
@@ -18,7 +18,7 @@ This command does not modify files. It does not replace reading the documents th
 - Optional reading order and file existence.
 - Context index and project context paths through the authority and optional reading fields.
 - Command intent status summary from `commands.toml`.
-- Runnable finite command intent names.
+- Runnable oneshot command intent names.
 - Summary of the latest `mf run` receipt.
 - Issues reported from the manifest lock.
 
@@ -58,7 +58,7 @@ Repeated and nested fields use these shapes:
 - `read_order[].exists` (`boolean`): Whether the file exists in the current root.
 - `command_contract.intents[].name` (`string`): Command intent name.
 - `command_contract.intents[].status` (`string`): Command intent configuration status.
-- `command_contract.intents[].lifecycle` (`string | null`): Whether the command is finite or long-running.
+- `command_contract.intents[].lifecycle` (`string | null`): Whether the command is oneshot or long-running.
 - `command_contract.intents[].run_policy` (`string | null`): Agent execution policy.
 - `command_contract.runnable_intents` (`string[]`): Intent names an agent may run with `mf run <intent>`.
 - `latest_run.path` (`string`): Latest run receipt path.

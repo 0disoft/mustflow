@@ -1,0 +1,214 @@
+---
+title: .mustflow/config/commands.toml
+description: 测试、代码检查、构建和文档检查的命令意图合同。
+---
+
+`.mustflow/config/commands.toml` 是命令意图合同，用于防止 agent 猜测项目命令。
+
+## 使用位置
+
+- `AGENTS.md` 使用这个文件执行“不要猜测命令”规则。
+- `agent-workflow.md` 将这个文件视为命令执行策略的事实来源。
+- 每个 `SKILL.md` 引用 `test`、`lint`、`build` 等意图名称，而不是原始命令。
+- `mf check` 等工具可以读取这个文件，验证可执行性和缺失字段。
+
+## 结构
+
+```toml
+schema_version = "1"
+
+[defaults]
+missing_behavior = "do_not_guess"
+allow_inferred_commands = false
+default_cwd = "."
+default_timeout_seconds = 600
+stdin = "closed"
+require_lifecycle = true
+require_timeout_for_oneshot = true
+deny_unmanaged_long_running = true
+max_output_bytes = 1048576
+on_timeout = "terminate_process_tree"
+kill_after_seconds = 5
+
+[intents.test]
+status = "unknown"
+description = "Run tests."
+reason = "No test command has been declared for this repository."
+agent_action = "do_not_guess_report_missing"
+required_after = ["code_change", "behavior_change"]
+```
+
+## 默认字段
+
+- `schema_version`: 该文件格式版本。
+- `defaults.missing_behavior`: 意图缺失时 agent 应采取的行为。
+- `defaults.allow_inferred_commands`: agent 是否可以推断命令。默认应为 `false`。
+- `defaults.default_cwd`: 意图未指定工作目录时使用的默认工作目录。
+- `defaults.default_timeout_seconds`: 意图未指定超时时间时使用的默认超时时间。
+- `defaults.stdin`: 默认标准输入行为。由 agent 运行的命令应使用 `closed`。
+- `defaults.require_lifecycle`: 可执行意图是否必须声明命令生命周期。
+- `defaults.require_timeout_for_oneshot`: 有限命令是否必须声明超时时间。
+- `defaults.deny_unmanaged_long_running`: 是否阻止未受管理的长时间运行命令。
+- `defaults.max_output_bytes`: 运行器接受的默认输出限制。
+- `defaults.on_timeout`: 超时处理策略。
+- `defaults.kill_after_seconds`: 进程清理可使用的额外等待时间。
+
+## 意图状态
+
+- `configured`: 已声明可执行命令。
+- `unknown`: 尚不存在命令合同。
+- `not_applicable`: 该仓库不需要这种验证。
+- `manual_only`: 必须由人工决定是否运行以及如何运行。
+- `disabled`: 命令已知，但当前不得运行。
+
+agent 只能运行 `status = "configured"` 的意图。
+
+## 意图字段
+
+- `description`: 命令意图的目的。
+- `reason`: 意图不可执行或尚未声明的原因。
+- `agent_action`: agent 无法运行该意图时应采取的行动。
+- `required_after`: 哪些变更类型之后应考虑该意图。
+- `kind`: 分类，例如 mustflow 内置命令或仓库命令。
+- `lifecycle`: 命令是有限命令还是长时间运行命令。
+- `run_policy`: agent 是否可以运行该意图，或是否需要明确批准。
+- `argv`: 不经过 shell 解释而执行的命令和参数。
+- `mode`: 仅在需要 shell 语法时设置为 `shell`。
+- `cmd`: 当 `mode = "shell"` 时使用的 shell 命令字符串。
+- `cwd`: 命令工作目录。
+- `timeout_seconds`: 命令超时时间。
+- `stdin`: 标准输入行为。agent 可运行的意图必须使用 `closed`。
+- `success_exit_codes`: 被视为成功的退出码。
+- `writes`: 命令可能修改的路径。
+- `network`: 命令是否使用网络。
+- `destructive`: 命令是否可能具有破坏性。
+
+## 可执行意图
+
+已配置意图应尽可能使用 `argv` 数组。
+
+```toml
+[intents.test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run tests."
+argv = ["pnpm", "test"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+```
+
+如果需要 shell，请设置 `mode = "shell"` 和 `cmd`，然后声明命令影响和写入路径。
+
+对于 `unknown`、`not_applicable`、`manual_only` 和 `disabled`，agent 不得推断替代命令。
+
+## 测试相关意图
+
+默认模板会区分完整测试、相关测试、审计检查、覆盖率和快照更新。
+
+```toml
+[intents.test_related]
+status = "unknown"
+reason = "No related-test command has been declared for this repository."
+agent_action = "do_not_guess_report_missing"
+
+[intents.test_audit]
+status = "unknown"
+reason = "No stale-test audit command has been declared."
+agent_action = "do_not_guess_report_missing"
+
+[intents.snapshot_update]
+status = "manual_only"
+reason = "Snapshot updates can hide unintended output changes."
+agent_action = "do_not_update_snapshots_without_approval"
+```
+
+agent 维护测试时应使用这些意图名称，但仍必须通过 `commands.toml` 解析每一个意图。缺失的相关测试或审计命令应被报告，而不是被猜测。
+
+## 命令生命周期
+
+- `oneshot`: 必须退出的有限命令。
+- `server`: 长时间运行的本地服务器。
+- `watch`: 不会自行退出的文件监听命令。
+- `interactive`: 等待用户输入的命令。
+- `browser`: 浏览器或界面进程。
+- `background`: 预期留在后台运行的进程。
+
+默认情况下，agent 只能运行 `oneshot` 意图。`server`、`watch`、`interactive`、`browser` 和 `background` 不得使用 `run_policy = "agent_allowed"`。
+
+`mf run <intent>` 只执行同时满足 `status = "configured"`、`lifecycle = "oneshot"`、`run_policy = "agent_allowed"` 和 `stdin = "closed"` 的意图。
+执行后，它会把最新运行 receipt 写入 `.mustflow/state/runs/latest.json`；使用 `--json` 时，也会把同一份 receipt 打印到标准输出。
+
+## 内置意图
+
+`mustflow_doctor` 会在不写入文件的情况下检查当前 mustflow 根目录安装状态、检查结果、可运行命令意图和下一步。
+
+```toml
+[intents.mustflow_doctor]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["mf", "doctor", "--json"]
+stdin = "closed"
+writes = []
+```
+
+`repo_map` 生成或更新 `REPO_MAP.md`。
+
+```toml
+[intents.repo_map]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["mf", "map", "--write"]
+stdin = "closed"
+writes = ["REPO_MAP.md"]
+```
+
+根目录 `config/` 可能属于用户项目，因此 mustflow 不使用它。
+
+## Git 相关意图
+
+默认模板包含只读 Git 意图，用于最终报告和提交消息建议。
+
+```toml
+[intents.changes_status]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["git", "status", "--short"]
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+
+[intents.changes_diff_summary]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["git", "diff", "--stat"]
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+```
+
+这些意图会检查已变更文件和变更摘要，而不会修改 Git 状态。
+
+实际提交默认只允许人工执行。
+
+```toml
+[intents.git_commit]
+status = "manual_only"
+reason = "Commits require explicit user approval."
+agent_action = "do_not_commit_report_suggestion_only"
+```
+
+agent 可以建议提交消息，但没有用户明确请求时，不得暂存、提交或推送。

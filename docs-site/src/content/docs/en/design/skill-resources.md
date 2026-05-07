@@ -1,6 +1,6 @@
 ---
 title: Skill Resources
-description: Explains how to add references, assets, scripts, and resources.toml when a skill outgrows SKILL.md.
+description: Explains how to add references, assets, scripts, and resources.toml when a skill's scope exceeds SKILL.md.
 ---
 
 A mustflow skill starts with a single `.mustflow/skills/<name>/SKILL.md` file.
@@ -9,14 +9,14 @@ Do not create empty `references/`, `assets/`, or `scripts/` folders in advance. 
 
 ## Base Principles
 
-- `SKILL.md` is the skill entrypoint.
+- `SKILL.md` is the skill entry point.
 - `resources.toml` exists only when supporting resources exist.
 - `references/` stores read-only long-form material such as rubrics, examples, and background notes.
 - `assets/` stores reusable files such as templates, sample inputs, and schemas.
-- `scripts/` exists only when the skill needs a dedicated helper.
+- `scripts/` exists only when the skill requires a dedicated helper.
 - Scripts are not invoked directly from `SKILL.md`; they are resolved through `.mustflow/config/commands.toml`.
 
-## Optional Shape
+## Optional Structure
 
 ```text
 .mustflow/skills/<name>/
@@ -27,13 +27,14 @@ Do not create empty `references/`, `assets/`, or `scripts/` folders in advance. 
 └─ scripts/              # optional: helpers connected to command intents
 ```
 
-This is not mandatory scaffolding for every skill. The default template provides `SKILL.md`; the other files and folders appear only when the skill actually needs them.
+This is not mandatory scaffolding for every skill. The default template provides `SKILL.md`; other
+files and folders should be added only when the skill actually needs them.
 
 ## resources.toml
 
 `resources.toml` is an optional index for supporting resources. It does not replace the skill body. It helps agents decide which material can be read or executed, and under which conditions.
 
-Expected shape:
+Expected structure:
 
 ```toml
 schema_version = "1"
@@ -64,9 +65,9 @@ dependencies = ["python>=3.10"]
 
 ## references/
 
-Use `references/` for long material that agents read only when needed.
+Use `references/` for long-form material that agents read only when needed.
 
-Good examples include:
+Examples include:
 
 - Decision rubrics
 - Failure cases and fixes
@@ -79,7 +80,7 @@ Do not store secrets, raw execution logs, generated caches, or large files here.
 
 Use `assets/` for static files that support the skill.
 
-Good examples include:
+Examples include:
 
 - Report templates
 - Sample input files
@@ -110,15 +111,21 @@ Supporting resources are indexed by the skill-local `resources.toml` file.
 
 ## Community Skill Registry Direction
 
-mustflow core should not keep growing its default skill set. The default template should stay small, while additional skills can later come from a separate community skill repository.
+The mustflow core should not indefinitely expand its default skill set. The default template should
+stay small, while additional skills can later come from a separate community skill repository.
 
-Good repository names should stay tied to the mustflow convention, such as `mustflow-skills` or `mustflow-community-skills`. Avoid names that are too broad or easy to confuse with other skill ecosystems.
+Repository names should follow the mustflow naming convention, such as `mustflow-skills` or
+`mustflow-community-skills`. Avoid names that are too broad or easy to confuse with other skill
+ecosystems.
 
 If a community skill repository is introduced, each skill should provide both `SKILL.md` and a mustflow-specific `skill.toml`. The `skill.toml` file should declare the skill identifier, version, compatible mustflow range, license, included scripts, network usage, write scope, and risk level.
 
-Groups of skills should be called `pack` or `bundle`, not automation skills. A pack installs skills; it must not run commands or edit `.mustflow/config/commands.toml` automatically. Required or recommended command intents should be reported, then declared by the user for the current project.
+Groups of skills should be referred to as a `pack` or `bundle`, not automation skills. A pack
+installs skills; it must not run commands or edit `.mustflow/config/commands.toml` automatically.
+Required or recommended command intents should be reported, then declared by the user for the
+current project.
 
-Future `mf skill add` or `mf pack add` commands need these safety rules first:
+Future `mf skill add` or `mf pack add` commands must implement these safety rules:
 
 - Preview changed files, included scripts, permissions, and risk level before installation.
 - Never run scripts during installation.
@@ -131,12 +138,14 @@ Future `mf skill add` or `mf pack add` commands need these safety rules first:
 `mf check --strict` verifies:
 
 - Registered files exist.
-- Registered files live under `references/`, `assets/`, or `scripts/`.
+- Registered files are located under `references/`, `assets/`, or `scripts/`.
 - `scripts/` does not contain unregistered helpers.
 - Scripts use `run_policy = "requires_command_contract"` and link to a configured command intent in `commands.toml`.
 - Scripts do not enable network access or destructive behavior by default.
-- Script `writes` declarations stay inside the skill folder through relative paths.
-- Every skill folder has a `SKILL.md`.
+- Script `writes` declarations are restricted to the skill folder through relative paths.
+- Every skill folder contains a `SKILL.md`.
 
-The current default template does not include a real `resources.toml` yet. The format and rules are documented first; real resource indexes should be added only when a skill becomes complex enough to need them.
+The current default template does not include a `resources.toml` yet. The format and rules are
+documented first; real resource indexes should be added only when a skill becomes complex enough to
+require them.
 Large-file, secret, and cache checks can be expanded as separate repository safety checks, similar to retention and context-file validation.

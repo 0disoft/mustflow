@@ -1,33 +1,33 @@
 ---
 title: .mustflow/skills/INDEX.md
-description: An index that tells agents which skill document to read for a task.
+description: An index that directs agents to the appropriate skill document for a given task.
 ---
 
-`.mustflow/skills/INDEX.md` helps agents choose the right skill document before starting repeatable work.
+`.mustflow/skills/INDEX.md` assists agents in selecting the correct skill document before initiating repeatable tasks.
 
-## Where It Is Used
+## Usage
 
-After reading shared rules and the command contract, agents use this index when the current task matches a repeatable procedure.
+After consulting the shared rules and command contract, agents refer to this index when a task corresponds to a predefined procedure.
 
-This file should not copy long skill bodies. It connects situations, skill paths, and relevant command intents.
+This file should not contain full procedure details; instead, it maps specific scenarios to skill paths and their associated command intents.
 
-## Role
+## Role and Responsibilities
 
-- Lists skill names and when to use them.
-- Links recurring tasks such as code review, documentation updates, failure triage, and test maintenance.
-- Lists the command intent names each skill may need.
-- Allows unused repository-specific skills to be removed or marked inactive.
+- **Categorization**: Lists available skills and defines their application scenarios.
+- **Task Mapping**: Provides access to procedures for recurring tasks such as code review, documentation updates, failure triage, and test maintenance.
+- **Intent Association**: Specifies the command intents required by each skill.
+- **Maintenance**: Facilitates the removal or deactivation of unused, repository-specific skills.
 
-## Authoring rules
+## Authoring Guidelines
 
-Keep the index short and scannable.
+The index must remain concise and scannable.
 
-Put long procedures in each `SKILL.md`. The index should contain only the name, purpose, trigger condition, and relevant command intents for each skill.
+Procedure details must reside within individual `SKILL.md` files. The index should only include the name, purpose, application scenario, and relevant command intents for each skill.
 
-## Table Columns
+## Table Structure
 
-- `Situation`: Task condition that should trigger the skill.
-- `Document`: Path to the `SKILL.md` containing the procedure.
-- `Command intents`: Intent names from `commands.toml` that the skill may check.
+- **Scenario**: The task condition that warrants the application of the skill.
+- **Skill Document**: The file path to the corresponding `SKILL.md`.
+- **Command Intents**: Intent names from `commands.toml` that may be executed during the skill application.
 
-When adding a skill, link it here and keep command intent names aligned with the skill frontmatter.
+When introducing a new skill, add its link here and ensure that the command intent names are synchronized with the skill frontmatter.

@@ -1,9 +1,9 @@
 ---
 title: .mustflow/config/commands.toml
-description: Command-intent contracts for tests, linting, builds, and documentation checks.
+description: Command intent contracts for tests, linting, builds, and documentation checks.
 ---
 
-`.mustflow/config/commands.toml` is the command-intent contract that prevents agents from guessing project commands.
+`.mustflow/config/commands.toml` serves as the authoritative command intent contract, ensuring that agents do not infer or "guess" project-specific commands.
 
 ## Where It Is Used
 
@@ -47,7 +47,7 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.default_timeout_seconds`: Default timeout when an intent does not specify one.
 - `defaults.stdin`: Default standard input behavior. Agent-run commands should use `closed`.
 - `defaults.require_lifecycle`: Whether executable intents must declare a command lifecycle.
-- `defaults.require_timeout_for_oneshot`: Whether finite commands must declare a timeout.
+- `defaults.require_timeout_for_oneshot`: Specifies whether oneshot commands are required to declare a timeout.
 - `defaults.deny_unmanaged_long_running`: Whether unmanaged long-running commands are blocked.
 - `defaults.max_output_bytes`: Default output limit accepted by the runner.
 - `defaults.on_timeout`: Timeout handling policy.
@@ -58,7 +58,7 @@ required_after = ["code_change", "behavior_change"]
 - `configured`: An executable command is declared.
 - `unknown`: No command contract exists yet.
 - `not_applicable`: This repository does not need this validation.
-- `manual_only`: A human must decide whether and how to run it.
+- `manual_only`: Requires human intervention to decide upon and execute the command.
 - `disabled`: The command is known but must not be run now.
 
 Agents may only run intents with `status = "configured"`.
@@ -70,7 +70,7 @@ Agents may only run intents with `status = "configured"`.
 - `agent_action`: What the agent should do when it cannot run the intent.
 - `required_after`: Change types after which this intent should be considered.
 - `kind`: Classification such as mustflow builtin or repository command.
-- `lifecycle`: Whether the command is finite or long-running.
+- `lifecycle`: Specifies whether the command is oneshot or long-running.
 - `run_policy`: Whether agents may run the intent or explicit approval is required.
 - `argv`: Command and arguments executed without shell interpretation.
 - `mode`: Set to `shell` only when shell syntax is required.
@@ -133,21 +133,21 @@ Agents should use these intent names when maintaining tests, but must still reso
 
 ## Command Lifecycle
 
-- `oneshot`: A finite command that must exit.
+- `oneshot`: A command that is expected to exit upon completion.
 - `server`: A long-running local server.
 - `watch`: A file-watching command that does not exit on its own.
-- `interactive`: A command waiting for user input.
+- `interactive`: A command that requires user interaction.
 - `browser`: A browser or UI process.
 - `background`: A process intended to remain in the background.
 
 Agents may run only `oneshot` intents by default. `server`, `watch`, `interactive`, `browser`, and `background` must not use `run_policy = "agent_allowed"`.
 
-`mf run <intent>` executes only intents with `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, and `stdin = "closed"`.
-After execution, it writes the latest run receipt to `.mustflow/state/runs/latest.json`; with `--json`, it also prints the same receipt to standard output.
+`mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, and `stdin = "closed"`.
+Upon completion, it logs the latest run record to `.mustflow/state/runs/latest.json`; when run with `--json`, it also outputs the same record to standard output.
 
 ## Built-In Intents
 
-`mustflow_doctor` inspects the current mustflow root install state, check result, runnable command intents, and next steps without writing files.
+`mustflow_doctor` performs a read-only inspection of the current mustflow root, including installation state, validation results, runnable command intents, and suggested next steps.
 
 ```toml
 [intents.mustflow_doctor]
@@ -201,7 +201,7 @@ network = false
 destructive = false
 ```
 
-These intents inspect changed files and a change summary without modifying Git state.
+These intents are used to inspect modified files and provide a summary of changes without altering the Git state.
 
 Actual commits are manual-only by default.
 

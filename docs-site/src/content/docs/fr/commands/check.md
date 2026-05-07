@@ -1,0 +1,130 @@
+---
+title: mf check
+description: Valide le flux de documents mustflow dans un dépôt utilisateur.
+---
+
+`mf check` vérifie que les fichiers mustflow installés sont lisibles et utilisables par les agents.
+Après avoir modifié le flux de documents lui-même, utilise `--strict` pour des contrôles de sécurité supplémentaires.
+Utilise `--json` lorsqu’une automatisation ou un agent doit analyser le résultat.
+
+## Ce qui est vérifié
+
+- `AGENTS.md` existe à la racine du dépôt.
+- `.mustflow/config/mustflow.toml` peut être analysé.
+- `.mustflow/config/commands.toml` peut être analysé.
+- `.mustflow/config/preferences.toml` peut être analysé lorsqu’il est présent.
+- Les champs `[map]`, `[workspace]` et `[context]` dans `.mustflow/config/mustflow.toml` utilisent des types valides et des chemins relatifs sûrs.
+- `.mustflow/config/preferences.toml` utilise des types de base valides pour les préférences de langue, formatage, style de code, Git, documentation et journalisation lorsqu’il est présent.
+- `.mustflow/config/manifest.lock.toml` est comparé au contenu actuel des fichiers lorsqu’il est présent.
+- `.mustflow/skills/INDEX.md` existe.
+- Les fichiers `.mustflow/skills/*/SKILL.md` contiennent les sections standard.
+- Les fichiers `.mustflow/context/*.md`, lorsqu’ils existent, s’identifient comme documents de contexte mustflow.
+- Les intentions de `commands.toml` avec `status = "configured"` incluent les informations de commande, le cycle de vie, la politique d’exécution et le délai d’expiration.
+- Les cycles de vie de longue durée ne sont pas exposés avec `run_policy = "agent_allowed"`.
+
+## Contrôles stricts
+
+```sh
+npx mf check --strict
+```
+
+`--strict` ajoute des contrôles plus proches de la stabilité de l’entrée des agents et de la sécurité des commandes.
+
+- Les documents de skill ne doivent pas contenir de blocs shell bruts comme `sh`, `bash` ou `powershell`.
+- Les dossiers de skill sous `.mustflow/skills/<name>/` ne doivent pas contenir de fichiers de support sans `SKILL.md`.
+- Lorsqu’une skill possède `resources.toml`, les ressources enregistrées doivent exister et se trouver sous `references/`, `assets/` ou `scripts/`.
+- `.mustflow/skills/<name>/scripts/` ne doit pas contenir de fichiers d’aide non enregistrés.
+- Les ressources de script doivent déclarer `run_policy = "requires_command_contract"` et `command_intent`, et cette intention doit être configurée dans `commands.toml`.
+- Les ressources de script ne doivent pas activer par défaut l’accès réseau, un comportement destructeur ni l’écriture en dehors du dossier de skill.
+- `REPO_MAP.md` ne doit pas contenir de métadonnées volatiles comme des dates de génération, dates de mise à jour, nombres de fichiers ou nombres de fichiers modifiés.
+- `REPO_MAP.md` ne doit pas contenir d’URL distantes ni de métadonnées de branche pouvant divulguer du contexte ou induire les agents en erreur hors de la racine actuelle.
+- `commands.toml` doit définir `[defaults].max_output_bytes` et `[defaults].on_timeout`.
+- `mustflow.toml` doit définir une politique `[retention]`.
+- `REPO_MAP.md` et `.mustflow/state/runs/latest.json` doivent rester dans les limites de taille de rétention.
+- Les fichiers `.mustflow/context/*.md` doivent rester dans `[retention.context].max_file_kb`.
+- Les fichiers `.mustflow/context/*.md` ne doivent pas contenir de chemins absolus locaux, de texte clé/valeur ressemblant à un secret ni de définitions de variables de design dupliquées depuis `DESIGN.md`.
+- `.mustflow/knowledge/**`, lorsqu’il existe, doit rester dans la limite de taille de rétention.
+- Les journaux JSONL bruts ne doivent pas apparaître sous `.mustflow/**`.
+- `.mustflow/state/runs/latest.json`, lorsqu’il existe, doit pouvoir être analysé comme objet JSON.
+
+Le mode strict est facultatif pour que le flux normal reste léger. Il est recommandé après une modification de documents mustflow, de skills, de contrats de commande ou de règles de génération du plan de dépôt.
+
+## Règles de configuration
+
+`mf check` traite `[map]`, `[workspace]` et `[context]` comme une configuration flexible avec valeurs par défaut, mais échoue sur les valeurs dangereuses ou difficiles à interpréter.
+Pour les anciennes installations, l’absence de `manifest.lock.toml` ne fait pas échouer la vérification. Lorsque le fichier de verrouillage existe, les fichiers verrouillés manquants ou les différences de hash de contenu sont signalés comme des échecs.
+
+- `map.output`: doit être un chemin relatif non vide.
+- `map.mode`: actuellement, seul `anchors_only` est autorisé.
+- `map.privacy`: actuellement, seul `minimal` est autorisé.
+- `map.include_nested`: doit être un booléen.
+- `map.anchor_files`: doit être un tableau de chemins relatifs non vides.
+- `workspace.roots`: doivent être des chemins relatifs dans la racine actuelle.
+- `workspace.max_depth`, `workspace.max_repositories`: doivent être des entiers positifs.
+- `workspace.follow_symlinks`, `workspace.stop_at_repository_root`: doivent être des booléens.
+- `context.root`, `context.index`, `context.default_files` et `context.external_anchors`: doivent utiliser des chemins relatifs non vides.
+- `context.read_policy`: actuellement, seul `task_relevant_only` est autorisé.
+- `context.authority`: actuellement, seul `contextual` est autorisé.
+- Les valeurs principales dans `preferences.toml` doivent être des chaînes.
+- Les paramètres de commit automatique, de données sensibles et de refactorisation opportuniste dans `preferences.toml` doivent être des booléens.
+- `docs.update_when` dans `preferences.toml` doit être un tableau de chaînes.
+- Les intentions exécutables dans `commands.toml` doivent déclarer `lifecycle`, `run_policy`, `timeout_seconds` et `stdin`.
+- Les intentions avec `lifecycle = "oneshot"` exigent `timeout_seconds` et `stdin = "closed"`.
+- Les intentions `server`, `watch`, `interactive`, `browser` et `background` ne doivent pas être exposées comme commandes exécutables par défaut par les agents.
+
+## Sections standard de skill
+
+Les documents de skill doivent inclure ces sections.
+
+```text
+## Objectif
+## Conditions d’utilisation
+## Ne pas utiliser quand
+## Entrées requises
+## Procédure
+## Validation
+## Gestion des échecs
+## Format de sortie
+```
+
+## Exemple
+
+```sh
+npx mf check
+```
+
+En cas de succès, la commande affiche:
+
+```text
+mustflow check passed
+```
+
+En cas d’échec, elle imprime les fichiers ou sections manquants dans l’erreur standard et quitte avec le code `1`.
+
+## Champs JSON
+
+```sh
+npx mf check --json
+```
+
+La sortie lisible par machine utilise ces champs:
+
+- `ok` (`boolean`): indique si toutes les vérifications ont réussi.
+- `strict` (`boolean`): indique si les contrôles `--strict` étaient activés.
+- `issueCount` (`number`): nombre de problèmes trouvés.
+- `issues` (`string[]`): messages de problème lisibles par une personne.
+
+Lorsque des problèmes sont trouvés, la forme JSON quitte aussi avec le code `1`.
+
+## Aide et codes de sortie
+
+```sh
+npx mf check --help
+```
+
+La sortie d’aide est organisée en `Usage`, `Options`, `Examples` et `Exit codes`.
+
+- Code de sortie `0`: tous les fichiers et paramètres requis sont valides.
+- Code de sortie `1`: la validation a trouvé des problèmes, ou la commande a reçu une option inconnue.
+
+Les agents et automatisations doivent lire `ok` et `issues` depuis la sortie `--json` au lieu d’analyser le texte de succès ou d’échec destiné aux personnes.

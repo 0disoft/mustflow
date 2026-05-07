@@ -3,32 +3,31 @@ title: mf update
 description: Previews or safely applies updates for an installed mustflow document flow.
 ---
 
-`mf update` compares the installed mustflow document flow with the current bundled template.
+`mf update` compares the installed mustflow document flow against the current bundled template.
 
-`mf update --dry-run` reads `manifest.lock.toml`, checks whether current files still match their install-time hashes, and prints an update plan.
-`mf update --apply` applies only `update` and `create` items when there are no blocked local changes or manual-review items.
-Use `--json` as well when automation or an agent needs to parse the plan.
+`mf update --dry-run` reads `manifest.lock.toml`, verifies if the current files still match their installation hashes, and generates an update plan.
+`mf update --apply` executes updates and creations only when no local changes are blocked and no items require manual review.
+Include the `--json` flag when automation or an agent needs to parse the plan.
 
-The human output and JSON output follow the same policy. The baseline is the lock-file `content_hash`,
-and the only applyable states are `update` and `create`.
+Both human-readable and JSON outputs adhere to the same policy. The comparison baseline is the `content_hash` recorded in the lock file; updates and creations are the only actionable states.
 
 ## Why Dry-Run Comes First
 
-mustflow files contain agent rules and procedures. Automatically overwriting user-edited files could erase repository-specific rules.
+Mustflow files define agent rules and procedures; therefore, automatically overwriting user-edited files could inadvertently erase repository-specific logic.
 
-The update command therefore needs to separate:
+The update command distinguishes between the following scenarios:
 
-- whether the current file still matches the install-time hash
-- whether the current file differs from the bundled template
-- whether local user changes block automatic updates
-- whether manual review is required
+- **Hash matching**: Whether the current file matches its initial installation hash.
+- **Template divergence**: Whether the current file differs from the bundled template.
+- **Blocking changes**: Whether local user changes prevent an automatic update.
+- **Manual review**: Whether the file requires manual intervention.
 
 ## Output Buckets
 
-- `Blocked local changes`: Current file hash differs from the install-time hash, so automatic update is blocked.
-- `Manual review`: File needs review instead of automatic update, such as a managed block.
-- `Would update`: File can be updated by `mf update --apply`.
-- `Would create`: File exists in the template but is missing from the current root.
+- `Blocked local changes`: The current file hash differs from the installation hash, preventing an automatic update.
+- `Manual review`: The file requires manual inspection rather than an automatic update (e.g., a managed block).
+- `Would update`: The file is eligible for an update via `mf update --apply`.
+- `Would create`: The file exists in the template but is not yet present in the current root.
 
 ## Example
 
@@ -53,7 +52,7 @@ No template updates needed.
 No files were written.
 ```
 
-When local changes are found, the command exits with code `1`. The user should inspect those changes before any future mutating update is attempted.
+If local changes are detected, the command exits with code `1`. You should inspect these changes before attempting any future updates that modify files.
 
 ## Applying Updates
 
@@ -61,16 +60,16 @@ When local changes are found, the command exits with code `1`. The user should i
 npx mf update --apply
 ```
 
-`--apply` writes files only when all of these are true:
+`--apply` performs file writes only when the following conditions are met:
 
 - `Blocked local changes` is `0`.
 - `Manual review` is `0`.
-- The target item is in `Would update` or `Would create`.
+- The target item is categorized as `Would update` or `Would create`.
 
-Before updating an existing file, mustflow writes a backup under `.mustflow/backups/<timestamp>/`.
-After applying changes, it refreshes the affected entries in `.mustflow/config/manifest.lock.toml` with the new hash and `last_action`.
+Mustflow creates a backup in `.mustflow/backups/<timestamp>/` before modifying any existing files.
+Once changes are applied, it updates the corresponding entries in `.mustflow/config/manifest.lock.toml` with new hashes and the `last_action` state.
 
-If a newly added template file already exists in the user repository but is not recorded in the lock file and has different content, mustflow treats it as a local change and refuses to overwrite it.
+If a template file being newly introduced already exists in the repository but is not tracked in the lock file, mustflow treats it as a local change and will refuse to overwrite it if the content differs.
 
 ## JSON Fields
 
@@ -79,36 +78,36 @@ npx mf update --dry-run --json
 npx mf update --apply --json
 ```
 
-Machine-readable output uses these fields:
+The machine-readable output includes the following fields:
 
 - `schema_version` (`number`): Output format version.
 - `command` (`string`): Always `update`.
-- `mode` (`string`): Execution mode. One of `dry-run`, `apply`, or `unspecified`.
+- `mode` (`string`): Execution mode (`dry-run`, `apply`, or `unspecified`).
 - `policy` (`object`): Update safety policy.
-- `ok` (`boolean`): Whether the plan has no blocking items.
-- `wroteFiles` (`boolean`): Whether files were actually written. It is always `false` for `--dry-run`.
-- `summary` (`object`): Update plan counts by state.
+- `ok` (`boolean`): Whether the plan contains no blocking items.
+- `wroteFiles` (`boolean`): Whether files were actually written. This is always `false` for `--dry-run`.
+- `summary` (`object`): Update plan counts categorized by state.
 - `items` (`object[]`): Per-file plan entries.
-- `error` (`string`): Failure reason. It may appear only on failed output.
+- `error` (`string`): Failure reason; only present in failed output.
 
-Nested fields use these shapes:
+Nested fields use the following structures:
 
-- `policy.baseline` (`string`): Update decision baseline. Currently `manifest_lock_content_hash`.
-- `policy.allowed_apply_actions` (`string[]`): States that `--apply` may write. Currently `update` and `create`.
-- `policy.blocking_actions` (`string[]`): States that prevent `--apply` from writing any files.
+- `policy.baseline` (`string`): The update decision baseline (currently `manifest_lock_content_hash`).
+- `policy.allowed_apply_actions` (`string[]`): States that `--apply` is permitted to write.
+- `policy.blocking_actions` (`string[]`): States that prevent `--apply` from performing any writes.
 - `policy.dry_run_writes_files` (`boolean`): Whether `--dry-run` writes files. Always `false`.
-- `policy.backup_path_pattern` (`string`): Backup path pattern before replacing existing files.
-- `policy.never_overwrite_local_changes` (`boolean`): Declares that local changes are never overwritten automatically.
-- `policy.writes_only_template_manifest_paths` (`boolean`): Declares that update writes only mustflow files listed by the template manifest.
+- `policy.backup_path_pattern` (`string`): The path pattern for backups created before replacing files.
+- `policy.never_overwrite_local_changes` (`boolean`): Indicates that local changes are never overwritten automatically.
+- `policy.writes_only_template_manifest_paths` (`boolean`): Indicates that the update only writes files defined in the template manifest.
 - `summary.blockedLocalChanges` (`number`): Number of files blocked by local changes.
 - `summary.manualReview` (`number`): Number of files requiring manual review.
-- `summary.wouldUpdate` (`number`): Number of files a future mutating update could change.
-- `summary.wouldCreate` (`number`): Number of files a future mutating update could create.
+- `summary.wouldUpdate` (`number`): Number of files eligible for an update.
+- `summary.wouldCreate` (`number`): Number of files eligible for creation.
 - `summary.unchanged` (`number`): Number of files already matching the current template.
 - `items[].relativePath` (`string`): Target path for the plan entry.
-- `items[].sourceKind` (`string`): How the item came from the template source.
-- `items[].action` (`string`): Planned action state.
-- `items[].reason` (`string`): Reason the item was placed in that state.
+- `items[].sourceKind` (`string`): The origin of the item from the template source.
+- `items[].action` (`string`): The planned action state.
+- `items[].reason` (`string`): The justification for the planned action.
 
 When the bundled template changed but the user did not edit the installed file, the file appears under `Would update` or `summary.wouldUpdate`.
 
@@ -120,7 +119,7 @@ npx mf update --help
 
 Help output is ordered as `Usage`, `Options`, `Examples`, and `Exit codes`.
 
-- Exit code `0`: A `--dry-run` plan has no blocking items, or `--apply` completed without blocking items.
-- Exit code `1`: Local changes, manual-review items, a missing lock file, invalid options, or a missing explicit mode prevented success.
+- Exit code `0`: The `--dry-run` plan has no blocking items, or `--apply` completed successfully.
+- Exit code `1`: Local changes, manual-review items, a missing lock file, invalid options, or the absence of an explicit mode prevented success.
 
-Running `mf update` by itself fails without changing files. Review with `mf update --dry-run` first, then use `mf update --apply` only when the plan is safe.
+Executing `mf update` without arguments will fail without making any changes. It is recommended to review the plan using `mf update --dry-run` before executing `mf update --apply`.

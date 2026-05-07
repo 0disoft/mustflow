@@ -77,13 +77,14 @@ available = ["minimal", "oss", "team", "product", "library"]
 
 [locales]
 default = "en"
-available = ["en", "ko"]
+available = ["en", "ko", "zh", "es", "fr", "hi"]
 source = "en"
 ```
 
 `common_root` provides TOML configuration shared by every locale. `locales_root` provides localized
 Markdown documents and skill files. `locales.available` includes only document languages that can
-actually be installed. `locales.source` is the canonical source locale used for translation tracking.
+actually be installed. `zh`, `es`, `fr`, and `hi` currently use English text until translated.
+`locales.source` is the canonical source locale used for translation tracking.
 
 ## Authoring rules
 

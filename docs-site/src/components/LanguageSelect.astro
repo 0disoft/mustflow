@@ -33,7 +33,7 @@ const localizedPathname = (locale) => {
 	return withBasePath(normalizedPathname);
 };
 
-const currentLocaleCode = Astro.locals.starlightRoute.locale === 'en' ? 'en' : 'ko';
+const currentLocaleCode = Astro.locals.starlightRoute.locale ?? languagePreference.defaultLocale;
 
 const languageOptions = languageSelectorOptions.map((option) => ({
 	...option,

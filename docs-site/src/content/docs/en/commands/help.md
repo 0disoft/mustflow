@@ -3,7 +3,7 @@ title: mf help
 description: Shows help by reading the installed mustflow documents and configuration.
 ---
 
-`mf help` is not a separate long manual. It reads the installed mustflow files from the current root and shows the relevant view.
+`mf help` does not serve as a separate, static manual. Instead, it reads the installed mustflow files from the current root and displays the relevant view.
 
 ## Topics
 
@@ -12,8 +12,12 @@ npx mf help workflow
 npx mf help skills
 npx mf help commands
 npx mf help preferences
-npx mf --lang ko help
 npx mf --lang en help
+npx mf --lang ko help
+npx mf --lang zh help
+npx mf --lang es help
+npx mf --lang fr help
+npx mf --lang hi help
 ```
 
 - `workflow`: Prints `.mustflow/docs/agent-workflow.md`.
@@ -23,20 +27,25 @@ npx mf --lang en help
 
 ## Principle
 
-Help output does not introduce another source of truth. Each topic is backed by an installed mustflow file.
+Help output does not introduce a separate source of truth. Each topic is derived from an installed mustflow file.
 
-This reduces drift between documentation, configuration, and CLI help.
+
 
 ## CLI Output Language
 
-`--lang` selects the language for fixed CLI text such as help headings and error guidance.
+`--lang` selects the language for fixed CLI text, such as help headings and error guidance.
+Current values are `en`, `ko`, `zh`, `es`, `fr`, and `hi`. The `zh`, `es`, `fr`, and `hi` catalogs currently use English text until translations are provided.
 
 ```sh
-npx mf --lang ko help
 npx mf --lang en help
+npx mf --lang ko help
+npx mf --lang zh help
+npx mf --lang es help
+npx mf --lang fr help
+npx mf --lang hi help
 ```
 
-This is different from `mf init --locale`. `--lang` controls terminal output; `--locale` controls the installed mustflow document language.
+This differs from `mf init --locale`. While `--lang` controls the terminal output, `--locale` determines the language of the installed mustflow documents.
 
 When `mf help commands` or `mf help preferences` reads descriptions from installed project files, those values are not machine-translated. Only the surrounding CLI labels use the selected CLI language.
 
@@ -44,7 +53,7 @@ When `mf help commands` or `mf help preferences` reads descriptions from install
 
 `mf help` does not currently provide a JSON output format.
 
-Agents and automation that need structured command information should use `mf context --json` for runnable intent names, then read `.mustflow/config/commands.toml` when they need the full contract.
+Agents and automation requiring structured command information should use `mf context --json` to retrieve runnable intent names, then refer to `.mustflow/config/commands.toml` for the full contract.
 
 ## Help and Exit Codes
 

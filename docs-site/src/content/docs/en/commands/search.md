@@ -6,8 +6,8 @@ description: Searches the local SQLite index for mustflow documents.
 `mf search` reads the SQLite index created by `mf index`.
 
 It does not create or modify files. If the index is missing, run `mf index` first.
-If any indexed mustflow file changed after indexing, the command stops and asks you to rebuild the
-index. This prevents stale search results from silently guiding an agent.
+If any indexed mustflow file has changed since indexing, the command stops and asks you to rebuild the
+index. This prevents stale search results from misleading an agent.
 
 ## Search Scope
 
@@ -30,7 +30,7 @@ npx mf search test --limit 5
 
 ## Options
 
-- `--json`: Prints machine-readable JSON.
+- `--json`: Outputs results in machine-readable JSON format.
 - `--limit <number>`: Sets the number of returned results. Default is `10`; maximum is `50`.
 
 ## JSON Fields
@@ -49,7 +49,7 @@ Machine-readable output uses these fields:
 - `query` (`string`): Normalized search query.
 - `limit` (`number`): Result limit.
 - `index_fresh` (`boolean`): Whether the index matches current file contents.
-- `stale_paths` (`string[]`): Paths changed after indexing. Empty on successful output.
+- `stale_paths` (`string[]`): Paths changed after indexing. Empty if the index is up to date.
 - `result_count` (`number`): Number of returned results.
 - `results` (`object[]`): Matching documents, skills, and command intents.
 

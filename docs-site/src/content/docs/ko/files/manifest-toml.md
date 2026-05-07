@@ -5,7 +5,7 @@ description: mf init이 어떤 파일을 복사하고 충돌을 어떻게 처리
 
 `templates/default/manifest.toml`은 `mf init`이 템플릿을 설치할 때 참고하는 메타데이터입니다.
 
-이 파일은 사용자 저장소에 복사되지 않습니다. mustflow 패키지가 템플릿을 어떻게 설치해야 하는지 판단하는 기준 원본입니다.
+이 파일은 사용자 저장소에 복사되지 않습니다. mustflow 패키지가 템플릿을 어떻게 설치해야 하는지 판단하는 기준 자료입니다.
 
 ## 역할
 
@@ -62,9 +62,9 @@ generated_targets = [
 - `forbidden_targets`: 기본 템플릿에 넣으면 안 되는 경로입니다.
 
 기본 템플릿은 `README.md`, `.github/`, 일반 `docs/`, 일반 `skills/`, 소스 코드, 패키지 관리자 설정을 만들지 않습니다.
-`.mustflow/context/**`는 일반 프로젝트 문서가 아니라 LLM 에이전트 작업 문맥이므로 기본 템플릿에 포함될 수 있습니다.
+`.mustflow/context/**`는 일반 프로젝트 문서가 아니라 LLM 에이전트 작업 맥락이므로 기본 템플릿에 포함될 수 있습니다.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml`, `.mustflow/state/**`는 복사물이 아니라 생성물입니다.
-`.mustflow/state/**`에는 `mf run` 실행 영수증처럼 사용 중 만들어지는 로컬 상태가 들어갑니다.
+`.mustflow/state/**`에는 `mf run` 실행 기록처럼 사용 중 만들어지는 로컬 상태가 들어갑니다.
 
 ## 프로필과 언어
 
@@ -77,13 +77,14 @@ available = ["minimal", "oss", "team", "product", "library"]
 
 [locales]
 default = "en"
-available = ["en", "ko"]
+available = ["en", "ko", "zh", "es", "fr", "hi"]
 source = "en"
 ```
 
 `common_root`는 모든 언어가 공유하는 TOML 설정을 제공합니다. `locales_root`는 언어별
 Markdown 문서와 스킬 파일을 제공합니다. `locales.available`은 실제로 설치할 수 있는
-문서 언어만 포함합니다. `locales.source`는 번역 추적에 사용하는 기준 원문 언어입니다.
+문서 언어만 포함합니다. `zh`, `es`, `fr`, `hi`는 번역 전까지 영어 문구를 사용합니다.
+`locales.source`는 번역 추적에 사용하는 기준 원문 언어입니다.
 
 ## 작성 기준
 

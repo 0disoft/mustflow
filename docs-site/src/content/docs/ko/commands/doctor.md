@@ -3,24 +3,24 @@ title: mf doctor
 description: 현재 mustflow 루트를 읽기 전용으로 진단하는 명령입니다.
 ---
 
-`mf doctor`는 현재 mustflow 루트의 상태를 빠르게 요약합니다.
-`mf check`와 `mf context`에서 에이전트에게 특히 필요한 부분을 모아 보여주고, 이어서 실행할 수 있는 안전한 다음 단계를 제안합니다.
+`mf doctor`는 현재 mustflow 루트의 상태를 신속하게 진단하고 요약합니다.
+`mf check`, `mf context` 결과 중 에이전트가 바로 판단하는 데 필요한 항목만 뽑아 보여주고, 이어서 안전하게 실행할 다음 단계를 제안합니다.
 
-이 명령은 파일을 쓰지 않습니다. 에이전트나 사람이 무언가를 수정하기 전에 첫 방향을 잡아야 할 때 사용합니다.
+이 명령은 파일을 수정하지 않는 읽기 전용 진단 도구입니다. 에이전트나 사용자가 본격적으로 수정에 들어가기 전에, 저장소 상태를 빠르게 파악하고 방향을 정할 때 사용합니다.
 
-## 확인하는 것
+## 진단 항목
 
-- 현재 mustflow 루트입니다.
-- `AGENTS.md`와 `.mustflow/` 존재 여부입니다.
-- `mf check` 기준 검사 결과입니다.
-- `manifest.lock.toml` 상태입니다.
-- 잠금 파일에 기록된 템플릿 식별자와 판 번호입니다.
-- `.mustflow/config/commands.toml`이 있고 실행 가능한 끝나는 명령 의도를 제공하는지 여부입니다.
-- `mustflow.toml`의 필수 읽기 순서와 선택 읽기 순서 중 빠진 경로입니다.
-- `REPO_MAP.md` 생성 여부입니다.
-- `.mustflow/cache/mustflow.sqlite` 로컬 색인 생성 여부입니다.
-- 마지막 `mf run` 실행 영수증 존재 여부입니다.
-- 상태 점검 항목과 이어서 실행하기 좋은 명령 목록입니다.
+- 현재 mustflow 루트 경로
+- `AGENTS.md` 및 `.mustflow/` 폴더의 존재 여부
+- `mf check` 기준의 검사 결과
+- `manifest.lock.toml` 유효성 상태
+- 매니페스트 잠금 파일에 기록된 템플릿 식별자 및 버전 정보
+- `commands.toml` 존재 여부 및 실행 가능한 단발성(Oneshot) 명령 의도 제공 여부
+- `mustflow.toml`에 정의된 필수/선택적 읽기 순서 중 누락된 경로
+- `REPO_MAP.md` 생성 여부
+- `.mustflow/cache/mustflow.sqlite` 로컬 색인 생성 여부
+- 가장 최근의 `mf run` 실행 결과 기록 존재 여부
+- 주요 진단 체크리스트 및 추천 명령 목록
 
 ## 예시
 
@@ -67,35 +67,35 @@ No files were written.
 npx mf doctor --json
 ```
 
-기계가 읽는 출력은 다음 필드를 사용합니다.
+기계가 읽기 위한 출력 형식은 다음 필드들을 포함합니다.
 
-- `schema_version` (`number`): 출력 형식 판 번호입니다.
-- `command` (`string`): 항상 `doctor`입니다.
-- `mustflow_root` (`string`): 현재 mustflow 루트입니다.
-- `installed` (`boolean`): `AGENTS.md`와 `.mustflow/`가 있는지 나타냅니다.
-- `strict` (`boolean`): `--strict` 검사를 함께 실행했는지 나타냅니다.
-- `ok` (`boolean`): 설치가 있고 검사가 통과했는지 나타냅니다.
-- `check` (`object`): `mf check` 기준 검증 결과입니다.
-- `context` (`object`): 에이전트 시작에 필요한 주요 문맥 상태입니다.
-- `diagnostics` (`object[]`): 설치, 검증, 명령 계약, 읽기 순서, 저장소 지도, 로컬 색인, 최근 실행을 항목별로 판정한 목록입니다.
-- `next_steps` (`string[]`): 에이전트가 추측 없이 이어서 실행할 수 있는 명령입니다.
+- `schema_version` (`number`): 출력 형식의 스키마 버전입니다.
+- `command` (`string`): 항상 `doctor` 값입니다.
+- `mustflow_root` (`string`): 현재 mustflow 루트 경로입니다.
+- `installed` (`boolean`): mustflow 설치 여부입니다.
+- `strict` (`boolean`): `--strict` 검사 실행 여부입니다.
+- `ok` (`boolean`): 설치 상태 및 검증 통과 여부입니다.
+- `check` (`object`): `mf check` 기준의 상세 검증 결과입니다.
+- `context` (`object`): 에이전트가 작업을 시작할 때 필요한 핵심 맥락 정보입니다.
+- `diagnostics` (`object[]`): 항목별 진단 결과(설치, 검증, 명령 계약, 읽기 순서 등) 목록입니다.
+- `next_steps` (`string[]`): 에이전트가 추측 없이 실행 가능한 추천 명령 목록입니다.
 
-중첩 객체는 다음 필드를 가집니다.
+중첩 객체의 세부 필드는 다음과 같습니다.
 
 - `check.ok` (`boolean`): 검증 통과 여부입니다.
-- `check.issue_count` (`number`): 검증 문제 수입니다.
-- `check.issues` (`string[]`): 검증 문제 설명 목록입니다.
-- `context.manifest_lock` (`string`): 잠금 파일 상태입니다. `present`, `missing`, `invalid` 중 하나입니다.
-- `context.template` (`object | null`): 알 수 있는 경우 템플릿 식별자와 판 번호입니다.
-- `context.command_contract_exists` (`boolean`): `commands.toml`이 있는지 나타냅니다.
-- `context.runnable_intents` (`string[]`): 에이전트가 실행할 수 있는 설정된 끝나는 명령 의도 이름입니다.
-- `context.missing_read_order` (`string[]`): 필수 읽기 순서 중 빠진 파일입니다.
-- `context.missing_optional_read_order` (`string[]`): 선택 읽기 순서 중 빠진 파일입니다.
-- `context.latest_run_exists` (`boolean`): 마지막 실행 영수증이 있는지 나타냅니다.
-- `diagnostics[].id` (`string`): 진단 항목 이름입니다.
-- `diagnostics[].status` (`string`): 진단 상태입니다. `ok`, `warn`, `fail`, `info` 중 하나입니다.
-- `diagnostics[].summary` (`string`): 사람이 읽을 수 있는 짧은 상태 설명입니다.
-- `diagnostics[].action` (`string | null`): 이어서 실행할 수 있는 명령입니다.
+- `check.issue_count` (`number`): 발견된 검증 이슈 수입니다.
+- `check.issues` (`string[]`): 상세 이슈 메시지 목록입니다.
+- `context.manifest_lock` (`string`): 잠금 파일 상태 (`present`, `missing`, `invalid`).
+- `context.template` (`object | null`): 사용된 템플릿의 식별자 및 버전 정보입니다.
+- `context.command_contract_exists` (`boolean`): `commands.toml` 파일 존재 여부입니다.
+- `context.runnable_intents` (`string[]`): 실행 가능한 단발성 명령 의도 이름 목록입니다.
+- `context.missing_read_order` (`string[]`): 필수 읽기 순서 중 누락된 파일 목록입니다.
+- `context.missing_optional_read_order` (`string[]`): 선택적 읽기 순서 중 누락된 파일 목록입니다.
+- `context.latest_run_exists` (`boolean`): 마지막 실행 결과 기록의 존재 여부입니다.
+- `diagnostics[].id` (`string`): 진단 항목 식별자입니다.
+- `diagnostics[].status` (`string`): 진단 상태 (`ok`, `warn`, `fail`, `info`).
+- `diagnostics[].summary` (`string`): 사용자 가독성을 위한 요약 상태 메시지입니다.
+- `diagnostics[].action` (`string | null`): 해당 항목을 해결하거나 다음 단계를 위해 추천되는 명령입니다.
 
 ## 엄격 모드
 
@@ -103,12 +103,12 @@ npx mf doctor --json
 npx mf doctor --strict --json
 ```
 
-엄격 모드는 `mf check --strict`와 같은 추가 검사를 사용합니다.
-mustflow 문서, 스킬, 명령 계약, 보존 설정, 저장소 지도 생성 방식을 바꾼 뒤에 사용합니다.
+엄격 모드는 `mf check --strict`와 같은 수준의 추가 검증을 수행합니다.
+mustflow 설정, 스킬 정의, 명령 계약, 보존 정책 등을 바꾼 뒤 저장소 안정성을 확인할 때 사용하세요.
 
-## 종료 코드
+## 도움말 및 종료 코드
 
-- `0`: 루트를 확인했고 문제가 없습니다.
-- `1`: 검증 문제가 있거나, 설치가 없거나, 알 수 없는 선택지를 받은 상태입니다.
+- `0`: 진단이 완료되었고 저장소 상태가 정상이며 이슈가 없습니다.
+- `1`: 설치가 되어 있지 않거나, 검증 이슈가 발견되었거나, 유효하지 않은 옵션이 제공되었습니다.
 
-에이전트나 자동화는 사람용 요약 문장을 파싱하지 말고 `--json` 출력의 `ok`, `check.issues`, `diagnostics`, `next_steps`를 읽어야 합니다.
+에이전트나 자동화 도구는 텍스트 요약을 파싱하기보다 `--json` 출력의 `ok`, `issues`, `diagnostics`, `next_steps` 필드를 활용하세요.

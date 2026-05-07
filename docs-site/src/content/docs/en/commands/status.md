@@ -1,12 +1,12 @@
 ---
 title: mf status
-description: Read-only command that shows local mustflow install status.
+description: Read-only command to view the local mustflow installation status.
 ---
 
-`mf status` checks whether the current root has the mustflow document flow installed and reports changed or missing files using the manifest lock.
+`mf status` verifies the installation of the mustflow document flow in the current root and reports any modified or missing files based on the manifest lock.
 
-It does not modify files. Use `mf check` for automation gates, and use `mf status` when a human wants a quick local summary.
-Use `--json` when an automation or agent needs to read the result.
+This command does not modify files. While `mf check` is recommended for automation gates, `mf status` is ideal for obtaining a quick local summary.
+Use the `--json` flag when automation or an agent requires structured output.
 
 ## Output
 
@@ -33,7 +33,7 @@ Changed files: 0
 Missing files: 0
 ```
 
-When files changed or disappeared, their paths are printed below the summary.
+If files have been modified or are missing, their paths are listed below the summary.
 
 ## JSON Fields
 
@@ -59,7 +59,7 @@ npx mf status --help
 
 Help output is ordered as `Usage`, `Options`, `Examples`, and `Exit codes`.
 
-- Exit code `0`: Status was inspected and printed. Changed files do not make status inspection fail.
+- Exit code `0`: Status was successfully inspected and printed. Note that modified files do not cause the status check to fail.
 - Exit code `1`: The command received an unknown option.
 
-If automation needs changed files to fail a workflow, read `mf status --json` and decide from the fields, or use `mf check`.
+If automation requires modified files to trigger a workflow failure, parse the `mf status --json` output or use `mf check`.

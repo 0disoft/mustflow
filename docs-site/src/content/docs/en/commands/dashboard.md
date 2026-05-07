@@ -3,9 +3,9 @@ title: mf dashboard
 description: Reserved command for the local mustflow dashboard.
 ---
 
-`mf dashboard` is reserved for a future local dashboard that can inspect and edit the mustflow document flow visually.
+`mf dashboard` is reserved for a future local dashboard that will enable visual inspection and editing of the mustflow document flow.
 
-The feature is not implemented yet. Running the command only prints a not-implemented message and exits with code `1`.
+The feature is not yet implemented. Executing the command prints a not-implemented message and exits with code `1`.
 
 ## Current Behavior
 

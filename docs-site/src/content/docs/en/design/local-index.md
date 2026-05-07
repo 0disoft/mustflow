@@ -1,5 +1,5 @@
 ---
-title: Local index
+title: Local Index
 description: Explains how mustflow uses SQLite as its local index.
 ---
 
@@ -15,7 +15,8 @@ Files are always the source of truth.
 - `.mustflow/docs/*.md`
 - `.mustflow/skills/*/SKILL.md`
 
-SQLite is a supporting index for faster search and analysis. It must be safe to delete and rebuild.
+SQLite serves as a secondary local index to enable faster search and analysis. It must be safe to
+delete and rebuild.
 
 ## Expected location
 
@@ -27,7 +28,7 @@ SQLite is a supporting index for faster search and analysis. It must be safe to 
 `mf search` reads this file without modifying source documents. Future `mf map` and `mf dashboard`
 features may reuse it.
 
-The default template declares that state as:
+The default template defines this state as:
 
 ```toml
 [capabilities]
@@ -45,17 +46,17 @@ This means the index is optional generated data, not a source document.
 - Command intents
 - Skill references
 
-The current `mf index` command indexes mustflow documents, context files, config files, skill documents, and command intents.
-`mf search` searches only that indexed mustflow workflow data.
+The current `mf index` command indexes mustflow documents, context files, config files, skill
+documents, and command intents. `mf search` queries only that indexed mustflow workflow data.
 The index also stores content hashes. Before searching, `mf search` compares those hashes with the
-current files and fails if the cache is stale.
-Last verification results and run analysis are left for later features.
+current files and returns an error if the cache is stale.
+Last verification results and run analysis are reserved for future features.
 
 ## Write rules
 
 When an LLM or dashboard edits documents, the final write target is still Markdown or TOML.
 
-SQLite is supporting data for faster search, display, and validation.
+SQLite provides auxiliary data to accelerate search, display, and validation.
 
 Raw logs, full terminal output, and full chat transcripts are not source documents for the index
 or future knowledge layer. mustflow keeps small run receipts and summary documents in the project

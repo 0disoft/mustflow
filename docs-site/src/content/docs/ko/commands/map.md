@@ -1,19 +1,19 @@
 ---
 title: mf map
-description: 에이전트가 참고할 현재 mustflow 루트의 앵커 파일 기반 지도인 REPO_MAP.md를 생성하는 명령입니다.
+description: 에이전트 탐색을 위한 저장소 지도(REPO_MAP.md)를 생성하는 명령입니다.
 ---
 
-`mf map`은 현재 mustflow 루트의 구조를 읽어 에이전트용 앵커 파일 기반 탐색 지도를 만듭니다.
+`mf map`은 현재 mustflow 루트의 구조를 분석하여 에이전트가 참고할 앵커 파일 기반의 탐색 지도를 생성합니다.
 
-이 명령은 전체 파일 목록을 만들지 않습니다. 전체 목록은 `git ls-files`나 편집기 파일 탐색기가 더 적합합니다. `mf map`은 `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, 문맥 파일, 주요 설정 파일처럼 저장소 탐색에 도움이 되는 앵커만 골라서 보여줍니다.
+이 명령은 전체 파일 목록을 만들지 않습니다. 자세한 파일 목록이 필요하면 `git ls-files`나 편집기 파일 탐색기를 사용하세요. `mf map`은 `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, 맥락 문서, 핵심 설정 파일처럼 저장소 파악에 중요한 앵커 파일만 골라 보여줍니다.
 
-## 옵션
+## 주요 옵션
 
-- `--stdout`: 생성한 지도를 터미널에 출력합니다.
-- `--write`: 생성한 지도를 `REPO_MAP.md`에 씁니다.
-- `--depth <number>`: 우선 앵커가 아닌 앵커 파일을 몇 단계 깊이까지 찾을지 지정합니다. 기본값은 `3`입니다.
-- `--include-nested`: 설정된 작업대 루트 아래의 하위 독립 저장소를 `Nested Repositories` 섹션에 포함합니다.
-- `--root-only`: 설정에서 중첩 저장소 탐색이 켜져 있어도 현재 루트만 대상으로 지도를 만듭니다.
+- `--stdout`: 생성된 지도를 터미널 표준 출력으로 보여줍니다.
+- `--write`: 생성된 지도를 `REPO_MAP.md` 파일로 저장합니다.
+- `--depth <number>`: 일반 앵커 파일을 검색할 최대 디렉터리 깊이를 지정합니다 (기본값: `3`).
+- `--include-nested`: 설정된 작업 공간 루트 아래 독립 저장소를 `Nested Repositories` 섹션에 포함합니다.
+- `--root-only`: 설정에서 중첩 저장소 탐색이 켜져 있어도 현재 루트만 대상으로 지도를 생성합니다.
 
 ## 포함 대상
 
@@ -70,35 +70,35 @@ npx mf map --write --include-nested
 npx mf map --write --root-only
 ```
 
-`--write`를 사용하면 루트에 `REPO_MAP.md`를 생성하거나 갱신합니다.
+`--write`를 사용하면 루트에 `REPO_MAP.md`를 만들거나 갱신합니다.
 
 생성 결과 상단에는 생성 시각, 해시, 파일 수처럼 자주 바뀌는 값을 넣지 않습니다.
 
-## 중첩 저장소
+## 중첩 저장소 처리
 
-`.mustflow/config/mustflow.toml`에서 `map.include_nested = true`와 `workspace.enabled = true`를 함께 설정하면, `mf map`은 설정된 `workspace.roots` 아래의 독립 저장소를 찾아 `Nested Repositories` 섹션에 표시합니다.
+`.mustflow/config/mustflow.toml`에서 `map.include_nested = true`, `workspace.enabled = true`를 설정하면 `mf map`은 `workspace.roots` 아래에서 독립 저장소를 찾아 `Nested Repositories` 섹션에 표시합니다.
 
-`--include-nested`는 설정의 `map.include_nested` 값이 `false`여도 이번 실행에서만 중첩 저장소 섹션을 켭니다. 이때도 아무 경로나 재귀 탐색하지 않고, `workspace.roots`에 선언된 경로만 확인합니다.
+`--include-nested`는 설정 파일의 `map.include_nested`가 `false`여도 현재 실행에 한해서만 중첩 저장소 탐색을 켭니다. 이 경우에도 임의 경로를 재귀 탐색하지 않고 `workspace.roots`에 정의된 경로만 확인합니다.
 
-`--root-only`는 설정에서 중첩 저장소 탐색이 켜져 있어도 이번 실행에서만 현재 루트만 보도록 강제합니다. 두 옵션은 서로 반대 의미이므로 함께 사용할 수 없습니다.
+`--root-only`는 설정에서 중첩 저장소 탐색이 켜져 있더라도, 현재 실행은 루트 저장소만 보도록 강제합니다. 이 옵션은 `--include-nested`와 함께 쓸 수 없습니다.
 
-이 섹션은 하위 저장소의 내부 파일을 나열하지 않습니다. `AGENTS.md`, `REPO_MAP.md`, `.mustflow/config/commands.toml`, `.mustflow/context/INDEX.md`, `DESIGN.md`, 주요 매니페스트 파일처럼 하위 저장소로 들어가기 위한 진입점만 표시합니다.
+중첩 저장소 섹션은 하위 저장소의 내부 파일을 상세히 나열하지 않습니다. 대신 `AGENTS.md`, `REPO_MAP.md`, 명령 계약 파일처럼 작업 시작에 필요한 최소 진입점(Entry points)만 표시합니다.
 
 ## 구조화된 출력
 
-`mf map`은 현재 JSON 출력 형식을 제공하지 않습니다.
+`mf map`은 현재 JSON 출력을 지원하지 않습니다.
 
-에이전트는 생성된 Markdown의 전체 파일 목록을 색인처럼 파싱하지 말고, `Root Anchors`와 `Nested Repositories` 섹션의 진입점 경로를 우선 읽는 방식으로 사용해야 합니다.
+에이전트는 생성된 마크다운 전체를 색인처럼 파싱하기보다 `Root Anchors`, `Nested Repositories` 섹션의 진입점 경로를 우선 읽는 방식으로 사용해야 합니다.
 
-## 도움말과 종료 코드
+## 도움말 및 종료 코드
 
 ```sh
 npx mf map --help
 ```
 
-도움말은 `Usage`, `Options`, `Examples`, `Exit codes` 순서로 출력됩니다.
+도움말 출력은 `Usage`, `Options`, `Examples`, `Exit codes` 순서를 따릅니다.
 
-- 종료 코드 `0`: 지도를 생성했고, 요청한 경우 `REPO_MAP.md`에 썼습니다.
-- 종료 코드 `1`: 알 수 없는 선택지, 잘못된 `--depth` 값, 또는 함께 쓸 수 없는 중첩 저장소 선택지를 받은 상태입니다.
+- 종료 코드 `0`: 지도가 성공적으로 생성되었으며, 요청에 따라 파일 작성이 완료되었습니다.
+- 종료 코드 `1`: 유효하지 않은 옵션, 잘못된 `--depth` 값, 또는 상호 호환되지 않는 옵션이 제공되었습니다.
 
-`--stdout`과 `--write`를 모두 생략하면 기본적으로 터미널에 지도를 출력합니다.
+`--stdout`과 `--write` 옵션을 모두 생략할 경우, 기본적으로 생성된 지도를 터미널에 출력합니다.

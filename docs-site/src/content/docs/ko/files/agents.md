@@ -9,7 +9,7 @@ description: 에이전트가 저장소에서 가장 먼저 읽는 짧은 작업 
 
 `mf init`은 이 파일을 사용자 저장소 루트에 만듭니다. 루트에 두는 이유는 에이전트가 저장소에 처음 들어왔을 때 가장 쉽게 발견할 수 있어야 하기 때문입니다.
 
-이 파일은 mustflow 문서 흐름으로 들어가는 입구입니다. 세부 정책은 `.mustflow/docs/agent-workflow.md`, 실행 명령은 `.mustflow/config/commands.toml`, 저장소별 기본 선호값은 `.mustflow/config/preferences.toml`, 작업별 프로젝트 문맥은 `.mustflow/context/`, 반복 절차는 `.mustflow/skills/`로 분리합니다.
+이 파일은 mustflow 문서 흐름으로 들어가는 입구입니다. 세부 정책은 `.mustflow/docs/agent-workflow.md`, 실행 명령은 `.mustflow/config/commands.toml`, 저장소별 기본 선호값은 `.mustflow/config/preferences.toml`, 작업별 프로젝트 맥락은 `.mustflow/context/`, 반복 절차는 `.mustflow/skills/`로 분리합니다.
 
 ## 역할
 
@@ -31,8 +31,8 @@ AGENTS.md
 .mustflow/config/commands.toml
 .mustflow/config/preferences.toml  # 있으면 읽기
 .mustflow/skills/INDEX.md
-.mustflow/context/INDEX.md  # 작업별 문맥이 필요할 때만
-.mustflow/context/<name>.md  # 문맥 색인이 고른 파일만
+.mustflow/context/INDEX.md  # 작업별 맥락이 필요할 때만
+.mustflow/context/<name>.md  # 맥락 색인이 고른 파일만
 .mustflow/skills/<name>/SKILL.md
 REPO_MAP.md  # 넓은 탐색이 필요할 때만
 ```

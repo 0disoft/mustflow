@@ -3,15 +3,15 @@ title: i18n.toml
 description: Template metadata for tracking canonical documents and translations.
 ---
 
-`i18n.toml` tracks the canonical language and translation status for mustflow template documents.
+`i18n.toml` defines the canonical language and tracks the translation status for mustflow template documents.
 
-This file is not copied into user repositories by `mf init`. It is package-side metadata for tracking template document revisions and translation status.
+This file is not installed into user repositories via `mf init`. It serves as internal package metadata for managing template document revisions and their respective translations.
 
 ## Why It Exists
 
-When documents change often through issues and pull requests, file modification time is not enough to know which language is current.
+As documents frequently change via issues and pull requests, file modification timestamps are insufficient for determining whether a translation is up to date.
 
-mustflow compares a canonical document `revision` with each translation's `source_revision`.
+Mustflow determines freshness by comparing the canonical document `revision` against the `source_revision` recorded for each translation.
 
 ## Shape
 
@@ -40,30 +40,30 @@ translations.ko = { path = "locales/ko/.mustflow/skills/code-review/SKILL.md", s
 
 ## Fields
 
-- `version`: Version of this metadata format.
-- `source_locale`: Canonical language for the current template documents.
-- `status_values`: Allowed translation status values.
-- `documents.<id>`: Stable identifier for a tracked document.
-- `source`: Template-internal path of the canonical document.
-- `source_locale`: Canonical language for that document.
-- `revision`: Canonical document revision.
-- `translations`: Place to map translated documents to source revisions and status.
+- `version`: The version of this metadata schema.
+- `source_locale`: The primary language for the current template documents.
+- `status_values`: The set of valid translation status values.
+- `documents.<id>`: A stable, unique identifier for a tracked document.
+- `source`: The internal template path to the canonical document.
+- `source_locale`: The primary language for a specific document.
+- `revision`: The revision number of the canonical document.
+- `translations`: Maps translated documents to their respective source revisions and statuses.
 
 ## Status Values
 
-- `current`: Translation matches the current canonical revision.
-- `stale`: The canonical document changed and the translation has not been updated.
-- `needs_review`: Translation exists but needs review.
+- `current`: The translation is aligned with the current canonical revision.
+- `stale`: The canonical document has been updated, but the translation has not.
+- `needs_review`: The translation exists but requires verification.
 - `missing`: Translation does not exist.
 
 Freshness is determined by comparing `revision` and each translation's `source_revision`, not by file modification time.
 
 ## Validation
 
-The package test suite validates this metadata before publishing:
+The package test suite validates this metadata prior to publication:
 
-- `source_locale` must match `manifest.toml`.
-- Source and translation paths must point to real template files.
-- `current` translations must use the same `source_revision` as the source document `revision`.
-- Markdown frontmatter must match the tracked document ID and locale.
-- Canonical Markdown files must use `canonical: true`; translated Markdown files must use `canonical: false`.
+- `source_locale` must be consistent with `manifest.toml`.
+- Source and translation paths must resolve to existing template files.
+- `current` translations must specify a `source_revision` that matches the canonical document `revision`.
+- Markdown frontmatter must align with the tracked document ID and locale.
+- Canonical Markdown files must specify `canonical: true`, while translated files must specify `canonical: false`.

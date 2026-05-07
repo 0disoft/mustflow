@@ -1,56 +1,56 @@
 ---
 title: REPO_MAP.md
-description: An anchor-file-based map for agents navigating the current mustflow root.
+description: An anchor-based map for agents navigating the current mustflow root.
 ---
 
-`REPO_MAP.md` is an optional generated file at the current mustflow root.
+`REPO_MAP.md` is a generated file that provides a high-level overview of the current mustflow root.
 
-It is not a full file listing. It finds important anchor files such as `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md`, and language-specific configuration files so agents know where to look first inside the current root.
+It is not intended as an exhaustive file listing. Instead, it identifies critical anchor files—such as `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, and configuration files—to orient agents within the repository.
 
-The root does not have to mean exactly one Git repository. If the current mustflow root is a workspace that contains independent nested repositories, the same `REPO_MAP.md` can include limited entrypoints for those repositories.
+A mustflow root may encompass multiple repositories. If the current root is a workspace containing nested independent repositories, `REPO_MAP.md` provides entry points for those repositories without detailing their internal structures.
 
-## Where It Is Used
+## Usage
 
-Agents read it only when they need broad navigation for the current mustflow root. It is not required for every small change.
+Agents consult this document when high-level navigation of the mustflow root is required. It is not necessary for every minor modification.
 
-Root navigation belongs in this generated file so `AGENTS.md` and `.mustflow/docs/agent-workflow.md` can stay short.
+Delegating repository navigation to this generated file ensures that `AGENTS.md` and `.mustflow/docs/agent-workflow.md` remain concise.
 
-## Role
+## Role and Responsibilities
 
-- Summarizes why major files and directories in the current root exist.
-- Reduces the first places an agent needs to inspect.
-- Helps agents choose a safe change scope.
-- Keeps `AGENTS.md` short.
-- Separates repository navigation from complete file listing. Use `git ls-files` or an editor when you need every file.
-- If the current root is a workspace, lists only entrypoints for nested independent repositories instead of describing their internals.
+- **Repository Orientation**: Briefly explains the purpose of significant files and directories within the root.
+- **Initial Search Space Reduction**: Limits the number of initial locations an agent needs to inspect.
+- **Scope Definition**: Assists agents in determining an appropriate and safe scope for changes.
+- **Conciseness**: Maintains the brevity of mandatory entry-point documents.
+- **Separation of Concerns**: Distinguishes high-level navigation from exhaustive file lists (for which tools like `git ls-files` should be used).
+- **Workspace Support**: Lists only the entry points for nested repositories in workspace environments.
 
-## Components
+## Document Structure
 
-- Opening sentence: States that this is an anchor-file-based navigation map, not a full file listing.
-- How to use: Points agents to `git ls-files` when they need the complete list.
-- Priority anchors: Shows first-read files such as `AGENTS.md`, `.mustflow/config/*.toml`, `.mustflow/context/INDEX.md`, and `.mustflow/skills/INDEX.md`.
-- Directory anchors: Groups important files such as `README.md`, `AGENTS.md`, `package.json`, `SKILL.md`, and tool configuration files by directory.
-- Nested repositories: Shows only entrypoints such as `AGENTS.md`, `REPO_MAP.md`, context index files, and command-contract files for independent repositories discovered under workspace roots.
-- Generated files: States that `REPO_MAP.md` is generated and should not be hand-edited.
-- Exclusion rules: Leaves out dependencies, build outputs, caches, and large files.
+- **Opening Statement**: Clarifies that the file is an anchor-based navigation map rather than a complete directory tree.
+- **Usage Guidelines**: Directs agents to use `git ls-files` when an exhaustive list is needed.
+- **Primary Anchors**: Lists essential first-read files, including `AGENTS.md` and mustflow configuration/index files.
+- **Directory-Level Anchors**: Groups significant files (e.g., `package.json`, `SKILL.md`) by their respective directories.
+- **Nested Repositories**: Provides entry points for independent repositories discovered within a workspace.
+- **Maintenance Notice**: States that the file is automatically generated and should not be modified manually.
+- **Exclusion Criteria**: Specifies that dependencies, build artifacts, caches, and large files are excluded.
 
-## Generation Rules
+## Generation Policy
 
-- Generate it with the `repo_map` command intent or a command such as `mf map`.
-- Use both `git ls-files` and file-system anchor discovery when possible.
-- The default depth is 3. This does not mean a full tree depth; it limits how deep non-priority anchor files are discovered.
-- Exclude `node_modules`, `dist`, `build`, `.git`, caches, and large outputs.
-- Do not summarize file contents.
-- Do not put volatile values such as generated time, hashes, or file counts at the top.
-- Do not list every source file. Include only anchor files that help repository navigation.
-- Include configuration files needed for agent behavior interpretation, such as `.mustflow/config/preferences.toml`, as priority anchors.
-- Include `.mustflow/context/INDEX.md` and `.mustflow/context/PROJECT.md` when present, but do not expand every future domain context file by default.
-- Include `DESIGN.md` when present as an optional external visual-design anchor. Do not create it as part of `mf map`.
-- Even when nested repositories are listed, do not include remote URLs, branch names, recent change state, command lists, or automatic summaries by default.
+- **Command Authority**: Generate the map via the `repo_map` intent or the `mf map` command.
+- **Discovery Logic**: Utilize both `git ls-files` and filesystem-based anchor discovery where possible.
+- **Discovery Depth**: The default discovery depth is set to 3. This limit applies to the identification of non-priority anchor files, not the absolute tree depth.
+- **Exclusion List**: Automatically exclude `node_modules`, `dist`, `build`, `.git`, caches, and large binary outputs.
+- **Content Policy**: Do not include summaries of individual file contents.
+- **Input Stability**: Avoid placing volatile data—such as generation timestamps, hashes, or file counts—at the beginning of the file.
+- **Selective Listing**: Include only anchor files that facilitate navigation rather than listing every source file.
+- **Behavioral Context**: Prioritize configuration files required for agent behavior interpretation (e.g., `preferences.toml`).
+- **Context Awareness**: Include `.mustflow/context/INDEX.md` and `PROJECT.md` by default, but avoid automatically expanding domain-specific context files.
+- **External Anchors**: Include `DESIGN.md` if present as an optional visual anchor; however, the generation tool must not create it.
+- **Metadata Protection**: Even for nested repositories, do not include remote URLs, branch names, or automatic summaries.
 
-## Authoring Rules
+## Authoring Guidelines
 
-The first line should state that this is a navigation map for the current mustflow root, not a complete tree.
+The first line must explicitly state that the document is a navigation map, not a complete file tree.
 
 ```md
 # REPO_MAP.md
@@ -58,4 +58,4 @@ The first line should state that this is a navigation map for the current mustfl
 This file is an anchor-file-based navigation map for the current mustflow root, not a full file listing.
 ```
 
-When structure changes, regenerate it instead of maintaining it as a long hand-written document.
+If the repository structure changes, regenerate the file rather than attempting to maintain it manually.

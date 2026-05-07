@@ -1,23 +1,23 @@
 ---
 title: preferences.toml
-description: Declares repository-level defaults for agent language, style, Git reporting, and documentation.
+description: Defines repository-level defaults for agent language, style, Git reporting, and documentation.
 ---
 
-`.mustflow/config/preferences.toml` declares repository-level defaults for agent work.
+`.mustflow/config/preferences.toml` defines repository-level defaults for agent tasks.
 
-This file is not the highest authority. Direct user instructions, higher-level instructions, scoped `AGENTS.md` files, existing local style, and the command contract take precedence.
+This file does not represent the highest authority. Direct user instructions, higher-level directives, scoped `AGENTS.md` files, existing local conventions, and the command contract all take precedence.
 
-## Where It Is Used
+## Usage
 
 - Defines defaults for response language, documentation language, code comments, logs, and user-facing text.
-- Defines defaults for derived memory such as compaction summaries and handoff summaries.
-- Separates project `profile`, mustflow document locale, and agent report language.
-- Records product localization behavior in `[product_i18n]` only when needed.
-- Declares fallback values for new repositories where no existing convention is visible.
-- Keeps automatic staging, committing, and pushing disabled by default.
-- Separates commit message suggestions from permission to actually commit.
-- Gives `mf check` a machine-checkable preference file to validate.
-- Gives `mf help preferences` the source file to summarize.
+- Specifies defaults for derived memory, such as context compression and handoff summaries.
+- Decouples project `profile`, mustflow document locale, and agent report language.
+- Manages product localization behavior via the `[product_i18n]` section.
+- Provides fallback values for new repositories where established conventions are not yet visible.
+- Ensures that automatic staging, committing, and pushing remain disabled by default.
+- Distinguishes commit message suggestions from the authority to execute actual commits.
+- Enables `mf check` to validate preference configurations.
+- Serves as the source for `mf help preferences` summaries.
 
 ## Basic Shape
 
@@ -67,7 +67,7 @@ source = "git.commit_message"
 
 ## Profile and Locale
 
-`project.profile` is the project type, not a country or language. The default is `minimal`, and built-in profiles are `minimal`, `oss`, `team`, `product`, and `library`.
+The `project.profile` field specifies the project type rather than a country or language. The default is `minimal`; built-in profiles include `minimal`, `oss`, `team`, `product`, and `library`.
 
 `language.agent_response` is the default language for agent final reports.
 
@@ -92,35 +92,35 @@ Agents must not infer product text language from the user's chat language. When 
 
 ## Memory Summary Language
 
-`language.memory.summary` controls the language for derived memory such as compaction summaries, handoff summaries, and long-term memory candidates.
+The `language.memory.summary` field governs the language used for derived memory, including context compression, handoff summaries, and long-term memory candidates.
 
 The default is `agent_response`, which follows the agent final report language. Projects may also use `docs`, `preserve_existing`, or an explicit language tag such as `ko`, `en-US`, or `zh-Hans`.
 
-`fallback` is the backup language when `summary` points to another preference or existing convention but no concrete language can be resolved.
+`fallback` serves as the backup language when `summary` refers to another preference or convention that cannot be concretely resolved.
 
-`preserve_code`, `preserve_paths`, and `preserve_error_output` keep code, paths, and error output in their original form regardless of the summary language. A Korean summary should not arbitrarily translate function names, file paths, or error codes.
+`preserve_code`, `preserve_paths`, and `preserve_error_output` ensure that code, file paths, and error output remain in their original form regardless of the summary language. For example, a Korean summary must not arbitrarily translate function names or file paths.
 
 Direct user instructions and the current scoped `AGENTS.md` take precedence over this preference.
 
 ## Mode and Fallback
 
-`preserve_existing` means the agent should inspect existing files and preserve the local convention.
+`preserve_existing` instructs the agent to inspect existing files and adhere to the established local conventions.
 
-When no existing convention is visible, such as in a new repository, the agent uses each field's `fallback` value. The user's chat language must not automatically decide code comment, log, error message, or commit message language.
+When no existing convention is detected (e.g., in a new repository), the agent uses the defined `fallback` value for each field. The language of the user's chat must not automatically dictate the language used for code comments, logs, error messages, or commit messages.
 
 The default template uses English fallbacks for code comments, logs, and commit messages. This favors public collaboration, search, operations tooling, and external contributors.
 
 ## Git and Commit Messages
 
-`git.auto_stage`, `git.auto_commit`, and `git.auto_push` are all `false` by default.
+The `git.auto_stage`, `git.auto_commit`, and `git.auto_push` settings are all `false` by default.
 
-Commit message suggestion is part of the final report, not permission to run Git. If files changed and `reporting.commit_suggestion.enabled = true`, the agent may suggest a commit message. It must not imply that a commit was created, and it must not commit without an explicit user request.
+Commit message suggestions are intended for the final report and do not constitute permission to execute Git operations. If files are modified and `reporting.commit_suggestion.enabled` is `true`, the agent may suggest a commit message. It must not imply that a commit has been created, nor should it perform a commit without an explicit user request.
 
-When several logical changes are mixed, the agent may suggest split commits up to `max_suggestions` instead of forcing everything into one message.
+When multiple logical changes are bundled, the agent may suggest split commits—up to the value of `max_suggestions`—rather than forcing all changes into a single message.
 
 ## Validation Rules
 
-When this file exists, `mf check` verifies that:
+If this file is present, `mf check` verifies the following:
 
 - Main preference values are strings.
 - `mode`, `fallback`, and `rule` values are strings.
@@ -130,4 +130,4 @@ When this file exists, `mf check` verifies that:
 - `reporting.commit_suggestion.enabled` is a boolean.
 - `docs.update_when` is a string array.
 - `project.profile` is one of the built-in profile values.
-- When `[product_i18n]` exists, locale fields, translation policy, and do-not-translate lists use valid basic shapes.
+- When the `[product_i18n]` section is present, the locale fields, translation policy, and exclusion lists must use valid structures.
