@@ -88,9 +88,13 @@ Node.js 20 या नया संस्करण आवश्यक है। m
 ```sh
 npm install -D mustflow
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf check --strict
 ```
+
+interactive terminal में `mf init` दस्तावेज़ भाषा, project profile और agent
+report language चुनने देता है। scripts में बिना प्रश्नों के English defaults
+install करने के लिए `mf init --yes` का उपयोग करें।
 
 pnpm और Bun भी उसी npm पैकेज का उपयोग कर सकते हैं।
 
@@ -112,6 +116,7 @@ Deno के `npm:` निष्पादन को अलग से सत्य
 ```text
 your-project/
 ├─ AGENTS.md
+├─ .gitignore
 └─ .mustflow/
    ├─ config/
    │  ├─ commands.toml
@@ -139,6 +144,10 @@ your-project/
 सामान्य `docs/` या सामान्य `skills/` नहीं बनाता। उपयोगकर्ता प्रोजेक्ट पहले से
 इन नामों को अपनी फ़ाइलों के लिए उपयोग कर सकते हैं।
 
+यदि `.gitignore` मौजूद नहीं है, तो `mf init` उसे बनाता है। यदि वह पहले से
+मौजूद है, तो mustflow केवल अपना managed block अपडेट करता है और user rules
+सुरक्षित रखता है।
+
 `REPO_MAP.md` टेम्पलेट से कॉपी नहीं होता। आवश्यकता होने पर इसे
 `mf map --write` से जनरेट करें। `.mustflow/cache/mustflow.sqlite` भी
 `mf index` द्वारा बनाया गया फिर से बनाया जा सकने वाला स्थानीय सूचकांक है।
@@ -147,7 +156,7 @@ your-project/
 
 ```sh
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf doctor
 npx mf check --strict
 npx mf map --write
@@ -222,6 +231,7 @@ npx mf update --apply
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --product-source-locale en --product-locale ko-KR
+npx mf init --set git.auto_commit=true
 ```
 
 - `--profile`: प्रोजेक्ट प्रोफ़ाइल। डिफ़ॉल्ट `minimal` है।
@@ -229,6 +239,11 @@ npx mf init --product-source-locale en --product-locale ko-KR
   अभी `en`, `ko`, `zh`, `es`, `fr` और `hi` प्रदान करता है। डिफ़ॉल्ट टेम्पलेट
   सूचीबद्ध सभी भाषाओं के लिए स्थानीयकृत दस्तावेज़ शामिल करता है।
 - `--agent-lang`: एजेंट की अंतिम रिपोर्टों की डिफ़ॉल्ट भाषा।
+- `--interactive`: prompts के माध्यम से init settings चुनता है।
+- `--yes`: prompts के बिना default English init settings उपयोग करता है।
+- `--set`: installation के दौरान allowed preference set करता है। supported
+  keys हैं `git.auto_stage`, `git.auto_commit`, `git.commit_message.language`,
+  `reporting.commit_suggestion.enabled` और `language.memory.summary`।
 - `--product-source-locale`, `--product-locale`: उपयोगकर्ता-सामना करने वाली
   उत्पाद स्ट्रिंग के लिए स्रोत और लक्ष्य लोकेल।
 - `--lang`: CLI आउटपुट भाषा। वर्तमान मान `en`, `ko`, `zh`, `es`, `fr` और

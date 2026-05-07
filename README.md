@@ -82,9 +82,13 @@ the CLI name is `mf`.
 ```sh
 npm install -D mustflow
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf check --strict
 ```
+
+In an interactive terminal, `mf init` asks you to choose the document language,
+project profile, and agent report language. Use `mf init --yes` when scripts
+should install the English defaults without prompts.
 
 pnpm and Bun can use the same npm package.
 
@@ -106,6 +110,7 @@ verified.
 ```text
 your-project/
 ├─ AGENTS.md
+├─ .gitignore
 └─ .mustflow/
    ├─ config/
    │  ├─ commands.toml
@@ -133,6 +138,9 @@ The default template does not create `README.md`, contribution guides, security
 policies, CI configuration, general `docs/`, or general `skills/`. User projects
 may already use those names for their own files.
 
+`mf init` creates `.gitignore` when it is missing. If it already exists,
+mustflow updates only its managed block and preserves user rules.
+
 `REPO_MAP.md` is not copied from the template. Generate it when needed with
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` is also a regenerable local
 index created by `mf index`.
@@ -141,7 +149,7 @@ index created by `mf index`.
 
 ```sh
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf doctor
 npx mf check --strict
 npx mf map --write
@@ -216,6 +224,7 @@ are separate settings.
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --product-source-locale en --product-locale ko-KR
+npx mf init --set git.auto_commit=true
 ```
 
 - `--profile`: Project profile. The default is `minimal`.
@@ -223,6 +232,11 @@ npx mf init --product-source-locale en --product-locale ko-KR
   currently provides `en`, `ko`, `zh`, `es`, `fr`, and `hi`. The default
   template includes localized documents for all listed locales.
 - `--agent-lang`: Default language for final agent reports.
+- `--interactive`: Choose init settings from prompts.
+- `--yes`: Use the default English init settings without prompts.
+- `--set`: Set an allowed preference during installation. Supported keys are
+  `git.auto_stage`, `git.auto_commit`, `git.commit_message.language`,
+  `reporting.commit_suggestion.enabled`, and `language.memory.summary`.
 - `--product-source-locale`, `--product-locale`: Source and target locales for
   user-facing product strings.
 - `--lang`: CLI output language. Current values are `en`, `ko`, `zh`, `es`,

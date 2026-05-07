@@ -76,9 +76,12 @@ mustflow 不是自动项目编辑器，也不绑定到某个代理产品。
 ```sh
 npm install -D mustflow
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf check --strict
 ```
+
+在交互式终端中，`mf init` 会让你选择文档语言、项目配置档案和代理报告语言。
+脚本需要无提示安装英文默认值时，请使用 `mf init --yes`。
 
 pnpm 和 Bun 可以使用同一个 npm 包。
 
@@ -99,6 +102,7 @@ Deno 的 `npm:` 执行在单独验证前应视为实验性功能。
 ```text
 your-project/
 ├─ AGENTS.md
+├─ .gitignore
 └─ .mustflow/
    ├─ config/
    │  ├─ commands.toml
@@ -125,6 +129,9 @@ your-project/
 默认模板不会创建 `README.md`、贡献指南、安全策略、CI 配置、通用
 `docs/` 或通用 `skills/`。用户项目可能已经把这些名称用于自己的文件。
 
+如果 `.gitignore` 不存在，`mf init` 会创建它。若已存在，mustflow 只更新自己的
+受管理块，并保留用户规则。
+
 `REPO_MAP.md` 不会从模板复制。需要时请使用 `mf map --write` 生成。
 `.mustflow/cache/mustflow.sqlite` 也是由 `mf index` 创建、可重新生成的本地
 索引。
@@ -133,7 +140,7 @@ your-project/
 
 ```sh
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf doctor
 npx mf check --strict
 npx mf map --write
@@ -205,12 +212,18 @@ npx mf update --apply
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --product-source-locale en --product-locale ko-KR
+npx mf init --set git.auto_commit=true
 ```
 
 - `--profile`：项目配置档案。默认值是 `minimal`。
 - `--locale`：已安装 mustflow 文档语言。默认模板当前提供 `en`、`ko`、
   `zh`、`es`、`fr` 和 `hi`。默认模板为所有列出的语言包含本地化文档。
 - `--agent-lang`：代理最终报告的默认语言。
+- `--interactive`：通过提问选择初始化设置。
+- `--yes`：无提示使用英文默认初始化设置。
+- `--set`：在安装过程中设置允许的偏好项。支持的键包括
+  `git.auto_stage`、`git.auto_commit`、`git.commit_message.language`、
+  `reporting.commit_suggestion.enabled` 和 `language.memory.summary`。
 - `--product-source-locale`、`--product-locale`：面向用户的产品字符串的
   源区域设置和目标区域设置。
 - `--lang`：CLI 输出语言。当前值为 `en`、`ko`、`zh`、`es`、`fr` 和

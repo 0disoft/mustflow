@@ -74,9 +74,13 @@ Node.js 20 이상이 필요합니다. npm 패키지로 배포되며, CLI 실행 
 ```sh
 npm install -D mustflow
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf check --strict
 ```
+
+대화형 터미널에서 `mf init`을 실행하면 문서 언어, 프로젝트 성격, 에이전트 보고
+언어를 선택할 수 있습니다. 스크립트에서 질문 없이 영어 기본값으로 설치하려면
+`mf init --yes`를 사용하세요.
 
 pnpm과 Bun도 npm 패키지를 설치하는 방식으로 사용할 수 있습니다.
 
@@ -97,6 +101,7 @@ Deno의 `npm:` 실행은 별도 검증까지는 실험적 기능으로 간주합
 ```text
 your-project/
 ├─ AGENTS.md
+├─ .gitignore
 └─ .mustflow/
    ├─ config/
    │  ├─ commands.toml
@@ -123,6 +128,9 @@ your-project/
 `README.md`, 기여 안내, 보안 정책, CI 설정, 일반 `docs/`, 일반 `skills/`는 기본 생성하지
 않습니다. 사용자 프로젝트에 이미 같은 이름의 폴더가 있을 수 있기 때문입니다.
 
+`.gitignore`가 없으면 `mf init`이 새로 만들고, 이미 있으면 사용자 규칙은 보존한 채
+mustflow 관리 블록만 추가하거나 갱신합니다.
+
 `REPO_MAP.md`는 템플릿에서 복사하지 않습니다. 필요할 때 `mf map --write`로 생성합니다.
 `.mustflow/cache/mustflow.sqlite`도 `mf index`로 만드는 재생성 가능한 로컬 색인입니다.
 
@@ -130,7 +138,7 @@ your-project/
 
 ```sh
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf doctor
 npx mf check --strict
 npx mf map --write
@@ -204,6 +212,7 @@ npx mf update --apply
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --product-source-locale en --product-locale ko-KR
+npx mf init --set git.auto_commit=true
 ```
 
 - `--profile`: 프로젝트 성격입니다. 기본값은 `minimal`입니다.
@@ -211,6 +220,11 @@ npx mf init --product-source-locale en --product-locale ko-KR
   있는 언어는 `en`, `ko`, `zh`, `es`, `fr`, `hi`이며, 기본 템플릿에는 각 언어별
   문서가 포함되어 있습니다.
 - `--agent-lang`: 에이전트 최종 보고 언어 기본값입니다.
+- `--interactive`: 질문에 답하며 초기 설정을 선택합니다.
+- `--yes`: 질문 없이 영어 기본 초기 설정을 사용합니다.
+- `--set`: 설치 중 허용된 설정을 바꿉니다. 지원하는 키는
+  `git.auto_stage`, `git.auto_commit`, `git.commit_message.language`,
+  `reporting.commit_suggestion.enabled`, `language.memory.summary`입니다.
 - `--product-source-locale`, `--product-locale`: 제품 문자열의 기준 언어와 대상 로케일입니다.
 - `--lang`: CLI 출력 언어입니다. 현재 `en`, `ko`, `zh`, `es`, `fr`, `hi`를
   지원합니다.

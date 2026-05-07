@@ -11,6 +11,7 @@ description: 在用户仓库中初始化 mustflow 文档。
 
 ```text
 AGENTS.md
+.gitignore
 .mustflow/
 ├─ config/
 │  ├─ commands.toml
@@ -41,6 +42,7 @@ mustflow 不会创建 `DESIGN.md`。如果项目中已经存在该文件，`mf m
 ```text
 templates/default/
 ├─ common/
+│  ├─ gitignore.mustflow
 │  └─ .mustflow/config/
 └─ locales/
    ├─ en/
@@ -55,7 +57,7 @@ templates/default/
    └─ hi/
 ```
 
-`common/` 包含与语言无关的 TOML 配置。`locales/<locale>/` 包含由 `--locale` 选择的 Markdown 文档与 skill 文件。
+`common/` 包含与语言无关的 TOML 配置和受管理的 `.gitignore` 片段。`locales/<locale>/` 包含由 `--locale` 选择的 Markdown 文档与 skill 文件。
 
 ## 规则
 
@@ -63,9 +65,10 @@ templates/default/
 - 仅安装包本身不会修改用户文件。
 - 默认情况下，已有文件冲突会在写入任何文件前中止流程。
 - 如果 `AGENTS.md` 已存在，`--merge` 可以只插入 mustflow-managed block。
+- 如果 `.gitignore` 不存在，`mf init` 会创建它。若已存在，mustflow 只更新自己的受管理块，并保留用户规则。
 - `--force` 会先将冲突文件备份到 `.mustflow/backups/`，然后再覆盖。
 - `REPO_MAP.md` 从仓库结构生成，而不是从静态模板复制。
-- `manifest.lock.toml` 记录已安装文件 hash、模板标识符以及每个文件采取的动作。
+- `manifest.lock.toml` 记录已安装工作流文件的 hash、模板标识符以及每个被跟踪文件采取的动作。`.gitignore` 支持块不会写入 lock file 追踪。
 - `.mustflow/context/` 包含面向代理的项目上下文，不是通用文档归档。
 - `README.md`、`.github/` 以及已有的 `config/`、`docs/` 和 `skills/` 目录不会被修改。
 - 不会创建源代码、包管理器配置或 CI 配置。
@@ -78,11 +81,27 @@ templates/default/
 npx mf init
 npx mf init --yes
 npx mf init --dry-run
+npx mf init --interactive
+npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --profile product --product-source-locale en --product-locale ko-KR
 ```
+
+在交互式终端中，`mf init` 会询问文档语言、项目配置档案和代理报告语言。
+`--interactive` 会强制启用这个提问流程。启用高级偏好设置后，提示流程还可以设置
+自动暂存、自动提交、提交消息语言和提交消息建议默认值。`--yes` 会无提示安装英文默认值。
+
+`--set` 可以在安装期间设置一小组允许的偏好项：
+
+- `git.auto_stage`
+- `git.auto_commit`
+- `git.commit_message.language`
+- `reporting.commit_suggestion.enabled`
+- `language.memory.summary`
+
+`git.auto_push` 有意不通过 `mf init` 提供；如果某个仓库确实需要，请在安装后手动配置。
 
 `--yes` 会显式采用安全默认值。它不会自动覆盖冲突文件。
 

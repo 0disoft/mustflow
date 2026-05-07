@@ -92,9 +92,14 @@ el nombre de la CLI es `mf`.
 ```sh
 npm install -D mustflow
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf check --strict
 ```
+
+En una terminal interactiva, `mf init` permite elegir el idioma de los
+documentos, el perfil del proyecto y el idioma de los informes del agente. Usa
+`mf init --yes` cuando un script deba instalar los valores predeterminados en
+inglés sin preguntas.
 
 pnpm y Bun pueden usar el mismo paquete npm.
 
@@ -117,6 +122,7 @@ actual.
 ```text
 your-project/
 ├─ AGENTS.md
+├─ .gitignore
 └─ .mustflow/
    ├─ config/
    │  ├─ commands.toml
@@ -145,6 +151,9 @@ políticas de seguridad, configuración de CI, `docs/` general ni `skills/`
 general. Los proyectos de usuario ya pueden usar esos nombres para sus propios
 archivos.
 
+`mf init` crea `.gitignore` si falta. Si ya existe, mustflow actualiza solo su
+bloque administrado y conserva las reglas del usuario.
+
 `REPO_MAP.md` no se copia desde la plantilla. Genéralo cuando sea necesario con
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` también es un índice local
 regenerable creado por `mf index`.
@@ -153,7 +162,7 @@ regenerable creado por `mf index`.
 
 ```sh
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf doctor
 npx mf check --strict
 npx mf map --write
@@ -230,6 +239,7 @@ configuración regional orientada al producto son ajustes separados.
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --product-source-locale en --product-locale ko-KR
+npx mf init --set git.auto_commit=true
 ```
 
 - `--profile`: Perfil del proyecto. El valor predeterminado es `minimal`.
@@ -238,6 +248,12 @@ npx mf init --product-source-locale en --product-locale ko-KR
   La plantilla predeterminada incluye documentos localizados para todos los
   idiomas enumerados.
 - `--agent-lang`: Idioma predeterminado para los informes finales del agente.
+- `--interactive`: Permite elegir los ajustes iniciales mediante preguntas.
+- `--yes`: Usa los ajustes iniciales predeterminados en inglés sin preguntas.
+- `--set`: Define una preferencia permitida durante la instalación. Las claves
+  admitidas son `git.auto_stage`, `git.auto_commit`,
+  `git.commit_message.language`, `reporting.commit_suggestion.enabled` y
+  `language.memory.summary`.
 - `--product-source-locale`, `--product-locale`: Configuraciones regionales de
   origen y destino para cadenas de producto orientadas al usuario.
 - `--lang`: Idioma de salida de la CLI. Los valores actuales son `en`, `ko`,

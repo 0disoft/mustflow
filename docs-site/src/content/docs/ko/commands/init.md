@@ -11,6 +11,7 @@ description: 사용자 저장소에 mustflow 워크플로우를 설치하고 초
 
 ```text
 AGENTS.md
+.gitignore
 .mustflow/
 ├─ config/
 │  ├─ commands.toml
@@ -41,6 +42,7 @@ AGENTS.md
 ```text
 templates/default/
 ├─ common/
+│  ├─ gitignore.mustflow
 │  └─ .mustflow/config/
 └─ locales/
    ├─ en/
@@ -55,7 +57,7 @@ templates/default/
    └─ hi/
 ```
 
-`common/`에는 언어와 무관한 설정이 들어 있고, `locales/<locale>/`에는 선택한 언어의 문서와 스킬 파일이 들어 있습니다. `zh`, `es`, `fr`, `hi` 폴더는 번역이 준비되기 전까지 영어 문구를 기본으로 사용합니다.
+`common/`에는 언어와 무관한 설정과 `.gitignore` 관리 블록 조각이 들어 있고, `locales/<locale>/`에는 선택한 언어의 문서와 스킬 파일이 들어 있습니다. `zh`, `es`, `fr`, `hi` 폴더는 번역이 준비되기 전까지 영어 문구를 기본으로 사용합니다.
 
 ## 작동 원칙 및 규칙
 
@@ -63,9 +65,10 @@ templates/default/
 - 패키지를 설치하는 행위 자체로는 사용자 파일을 바꾸지 않습니다.
 - 파일 충돌 발생 시 데이터 보호를 위해 작업을 중단하는 것이 기본 동작입니다.
 - 기존 `AGENTS.md`가 있으면 `--merge` 옵션으로 mustflow 관리 블록만 안전하게 넣을 수 있습니다.
+- `.gitignore`가 없으면 새로 만들고, 이미 있으면 사용자 규칙은 보존한 채 mustflow 관리 블록만 추가하거나 갱신합니다.
 - `--force` 옵션은 기존 파일을 `.mustflow/backups/` 경로에 백업한 후 덮어씁니다.
 - `REPO_MAP.md`는 고정 템플릿이 아니라 현재 저장소 구조를 분석해 생성합니다.
-- `manifest.lock.toml`은 설치된 파일의 해시값, 템플릿 식별자 및 처리 결과를 기록합니다.
+- `manifest.lock.toml`은 설치된 워크플로우 파일의 해시값, 템플릿 식별자 및 처리 결과를 기록합니다. `.gitignore` 지원 블록은 락 파일에서 추적하지 않습니다.
 - `.mustflow/context/`는 에이전트용 프로젝트 맥락 정보용이며, 일반 문서 보관소가 아닙니다.
 - `README.md`, `.github/` 폴더 및 기존 프로젝트의 `config/`, `docs/`, `skills/` 디렉터리는 수정하지 않습니다.
 - 애플리케이션 소스 코드나 패키지 관리자, CI/CD 설정 등은 생성하지 않습니다.
@@ -78,11 +81,29 @@ templates/default/
 npx mf init
 npx mf init --yes
 npx mf init --dry-run
+npx mf init --interactive
+npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --profile product --product-source-locale en --product-locale ko-KR
 ```
+
+대화형 터미널에서 `mf init`을 실행하면 문서 언어, 프로젝트 성격, 에이전트 보고
+언어를 선택할 수 있습니다. `--interactive`는 이 선택 흐름을 강제로 켜고,
+고급 설정을 켜면 자동 스테이징, 자동 커밋, 커밋 메시지 언어, 커밋 메시지 제안
+여부도 선택할 수 있습니다. `--yes`는 질문 없이 영어 기본값으로 설치합니다.
+
+`--set`은 설치 중 일부 허용된 설정만 바꿀 수 있습니다.
+
+- `git.auto_stage`
+- `git.auto_commit`
+- `git.commit_message.language`
+- `reporting.commit_suggestion.enabled`
+- `language.memory.summary`
+
+`git.auto_push`는 `mf init`에서 바로 켤 수 없게 했습니다. 정말 필요한 저장소라면
+설치 후 명시적으로 파일을 수정하세요.
 
 `--yes`는 안전한 기본값 사용을 명시적으로 승인하는 옵션입니다. 단, 충돌 파일을 자동으로 덮어쓰지는 않습니다.
 

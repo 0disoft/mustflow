@@ -9,6 +9,7 @@ It creates `AGENTS.md` at the root and stores mustflow-managed documents and set
 
 ```text
 AGENTS.md
+.gitignore
 .mustflow/
 ├─ config/
 │  ├─ commands.toml
@@ -39,6 +40,7 @@ The installation target paths remain consistent, but the package-side template i
 ```text
 templates/default/
 ├─ common/
+│  ├─ gitignore.mustflow
 │  └─ .mustflow/config/
 └─ locales/
    ├─ en/
@@ -53,9 +55,10 @@ templates/default/
    └─ hi/
 ```
 
-`common/` contains language-neutral TOML configuration. `locales/<locale>/` contains Markdown
-documents and skill files selected by `--locale`. The `zh`, `es`, `fr`, and `hi`
-folders currently contain English placeholders until translations are provided.
+`common/` contains language-neutral TOML configuration and the managed `.gitignore`
+fragment. `locales/<locale>/` contains Markdown documents and skill files
+selected by `--locale`. The `zh`, `es`, `fr`, and `hi` folders currently contain
+English placeholders until translations are provided.
 
 ## Rules
 
@@ -63,9 +66,10 @@ folders currently contain English placeholders until translations are provided.
 - Installing the package alone does not modify user files.
 - By default, existing file conflicts will cause the process to abort before any files are written.
 - If `AGENTS.md` already exists, `--merge` can be used to insert only the mustflow-managed block.
+- `mf init` creates `.gitignore` when it is missing. If it already exists, mustflow updates only its managed block and preserves user rules.
 - `--force` backs up conflicting files under `.mustflow/backups/` before overwriting them.
 - `REPO_MAP.md` is generated from the repository structure rather than being copied from a static template.
-- `manifest.lock.toml` records installed-file hashes, the template identifier, and the action taken for each file.
+- `manifest.lock.toml` records installed workflow-file hashes, the template identifier, and the action taken for each tracked file. The `.gitignore` support block is not tracked by the lock file.
 - `.mustflow/context/` contains agent-facing project context, not a general documentation archive.
 - `README.md`, `.github/`, and existing `config/`, `docs/`, and `skills/` directories are not modified.
 - Source code, package-manager configurations, and CI configurations are not created.
@@ -78,11 +82,30 @@ folders currently contain English placeholders until translations are provided.
 npx mf init
 npx mf init --yes
 npx mf init --dry-run
+npx mf init --interactive
+npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --profile product --product-source-locale en --product-locale ko-KR
 ```
+
+In an interactive terminal, `mf init` asks for the document language, project
+profile, and agent report language. `--interactive` forces that prompt flow.
+When advanced preferences are enabled, the prompt can also set automatic
+staging, automatic commits, commit message language, and commit suggestion
+defaults. `--yes` installs the default English settings without prompts.
+
+`--set` can set a small allowlist of preferences during installation:
+
+- `git.auto_stage`
+- `git.auto_commit`
+- `git.commit_message.language`
+- `reporting.commit_suggestion.enabled`
+- `language.memory.summary`
+
+`git.auto_push` is intentionally not available through `mf init`; set it
+manually after installation if a repository really needs it.
 
 
 

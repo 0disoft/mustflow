@@ -94,9 +94,14 @@ et le nom de la CLI est `mf`.
 ```sh
 npm install -D mustflow
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf check --strict
 ```
+
+Dans un terminal interactif, `mf init` permet de choisir la langue des
+documents, le profil du projet et la langue des rapports de l'agent. Utilisez
+`mf init --yes` lorsqu'un script doit installer les valeurs par défaut en
+anglais sans poser de questions.
 
 pnpm et Bun peuvent utiliser le même paquet npm.
 
@@ -119,6 +124,7 @@ courant.
 ```text
 your-project/
 ├─ AGENTS.md
+├─ .gitignore
 └─ .mustflow/
    ├─ config/
    │  ├─ commands.toml
@@ -147,6 +153,9 @@ politique de sécurité, de configuration CI, de dossier `docs/` général ni de
 dossier `skills/` général. Les projets utilisateur peuvent déjà utiliser ces
 noms pour leurs propres fichiers.
 
+`mf init` crée `.gitignore` s'il manque. S'il existe déjà, mustflow met à jour
+uniquement son bloc géré et conserve les règles utilisateur.
+
 `REPO_MAP.md` n'est pas copié depuis le modèle. Générez-le au besoin avec
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` est également un index local
 régénérable créé par `mf index`.
@@ -155,7 +164,7 @@ régénérable créé par `mf index`.
 
 ```sh
 npx mf init --dry-run
-npx mf init --yes
+npx mf init
 npx mf doctor
 npx mf check --strict
 npx mf map --write
@@ -233,6 +242,7 @@ locale destinée au produit sont des réglages séparés.
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
 npx mf init --product-source-locale en --product-locale ko-KR
+npx mf init --set git.auto_commit=true
 ```
 
 - `--profile` : profil du projet. La valeur par défaut est `minimal`.
@@ -240,6 +250,12 @@ npx mf init --product-source-locale en --product-locale ko-KR
   fournit actuellement `en`, `ko`, `zh`, `es`, `fr` et `hi`. Le modèle par
   défaut inclut des documents localisés pour toutes les langues listées.
 - `--agent-lang` : langue par défaut des rapports finaux de l'agent.
+- `--interactive` : choisit les paramètres initiaux via des questions.
+- `--yes` : utilise les paramètres initiaux anglais par défaut sans questions.
+- `--set` : définit une préférence autorisée pendant l'installation. Les clés
+  prises en charge sont `git.auto_stage`, `git.auto_commit`,
+  `git.commit_message.language`, `reporting.commit_suggestion.enabled` et
+  `language.memory.summary`.
 - `--product-source-locale`, `--product-locale` : locales source et cible pour
   les chaînes de produit destinées aux utilisateurs.
 - `--lang` : langue de sortie de la CLI. Les valeurs actuelles sont `en`, `ko`,
