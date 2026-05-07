@@ -19,7 +19,7 @@ Agents इसे `AGENTS.md` के बाद पढ़ते हैं ता�
 - `Pre-work checks`: agents को changes, protected paths, command intents, और relevant skills inspect करने को कहता है।
 - `Input stability policy`: volatile data को required reading files के ऊपर वाले हिस्से से दूर रखता है।
 - `Instruction refresh policy`: लंबी sessions में mustflow instructions कब फिर से पढ़ने हैं, परिभाषित करता है।
-- `Context compaction policy`: recent raw context, mid summaries, और long summaries के boundaries और authority order समझाता है।
+- `Context compaction policy`: derived recent context, mid summaries, और long summaries के boundaries और authority order समझाता है।
 - `Harness contract boundary`: repository contracts को agent runtimes से अलग करता है।
 - `Long-running task phases`: plan, work, verify, judge, और handoff परिभाषित करता है।
 - `Verification ratchet`: agents को complete दिखने के लिए checks कमजोर करने से रोकता है।
@@ -75,7 +75,7 @@ Generated times, hashes, file counts, recent-change summaries, या long logs 
 
 Long sessions task start पर loaded instructions को कमजोर कर सकती हैं। `agent-workflow.md` इसे checkpoint problem मानता है, repository में turn counters लिखने का कारण नहीं।
 
-Agents को first edit से पहले, command execution से पहले, context compaction के बाद, `AGENTS.md` या `.mustflow/**` edit करने के बाद, roots switch करने के बाद, और final report से पहले mustflow instructions refresh करनी चाहिए।
+Agents को first edit से पहले, command execution से पहले जब current command intent के पास fresh command refresh न हो, context compaction के बाद, `AGENTS.md` या `.mustflow/**` edit करने के बाद, roots switch करने के बाद, और final report से पहले mustflow instructions refresh करनी चाहिए।
 
 सटीक file set `.mustflow/config/mustflow.toml` के `[refresh.levels]` से आता है।
 

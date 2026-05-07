@@ -27,7 +27,7 @@ description: Declara el orden de lectura de los agentes y las rutas protegidas.
 - `agent_loop`: bucle estándar que los agentes deben seguir en cada tarea.
 - `harness`: límite de contrato local del repositorio para sistemas de ejecución de agentes.
 - `refresh`: puntos de control para releer instrucciones de mustflow durante sesiones largas.
-- `compaction`: política para separar contexto reciente sin procesar, resúmenes intermedios, resúmenes largos y retención sin procesar.
+- `compaction`: política para separar contexto reciente derivado, resúmenes intermedios y resúmenes largos sin almacenar transcripciones brutas por defecto.
 - `verification`: de dónde vienen los comandos de validación y qué inferencia está prohibida.
 - `testing`: política para mantener las pruebas alineadas con el contrato de comportamiento actual.
 - `handoff`: cómo traspasar de forma segura trabajo inacabado.
@@ -248,9 +248,9 @@ required_at = [
   "after_compaction",
   "before_final_report",
 ]
-turn_threshold = 10
-tool_call_threshold = 25
-output_bytes_threshold = 200000
+turn_threshold = 8
+tool_call_threshold = 20
+output_bytes_threshold = 131072
 state_store = "cache"
 
 [refresh.levels.light]
@@ -284,6 +284,8 @@ read = [
 
 `refresh` declara cuándo un agente debe releer las instrucciones de mustflow porque la sesión se volvió larga, cambió la raíz, está por ejecutarse un comando o cambiaron archivos de instrucciones.
 
+`before_command_run` significa que la tarea actual y la intención de comando actual deben contar con un refresco reciente de nivel de comando. No exige releer todos los archivos antes de cada comando repetido cuando el contrato de comandos no cambió y los umbrales siguen vigentes.
+
 `state_store = "cache"` significa que los recuentos de turnos y la actividad de sesión no pertenecen a los archivos del proyecto. Una aplicación anfitriona puede seguirlos en caché local, pero los documentos mustflow deben permanecer estables y seguros para commits.
 
 `refresh.levels` relaciona cada nivel de refresco con los archivos que se deben releer. Los niveles predeterminados son `light`, `command`, `skill` y `full`.
@@ -299,12 +301,12 @@ strategy = "tiered"
 state_store = "cache"
 
 [compaction.recent]
-keep_turns = 30
-max_total_bytes = 500000
-store_raw = true
+keep_turns = 20
+max_total_bytes = 200000
+store_raw = false
 
 [compaction.mid]
-trigger_turns = 30
+trigger_turns = 20
 target_items = 10
 target_max_words_per_item = 40
 include_categories = [
@@ -324,10 +326,6 @@ target_items = 10
 max_items = 100
 on_limit = "recompact_oldest"
 
-[compaction.raw_retention]
-max_age_days = 14
-max_total_mb = 250
-on_limit = "prune_after_compaction"
 
 [compaction.rules]
 require_source_refs = true
@@ -338,7 +336,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` declara cómo una sesión larga puede separar el contexto en entrada reciente sin procesar, resúmenes intermedios y resúmenes de largo plazo. Está desactivada de forma predeterminada y no significa que mustflow recopile transcripciones completas de chat.
+`compaction` declara cómo una sesión larga puede separar el contexto en contexto reciente derivado, resúmenes intermedios y resúmenes de largo plazo. Está desactivada de forma predeterminada, usa `store_raw = false` y no significa que mustflow recopile transcripciones completas de chat ni registros brutos de comandos.
 
 `state_store = "cache"` significa que el estado de compactación debe vivir en caché local o en estado gestionado por el anfitrión, no en documentos versionados del proyecto. El conocimiento compartido del proyecto solo debe promoverse como decisiones, investigaciones o resúmenes de traspaso vinculados a fuentes.
 
@@ -383,12 +381,12 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 10
-max_wall_clock_minutes = 120
-max_command_runs = 50
-max_total_output_mb = 20
-max_failures_per_intent = 3
-on_limit = "stop_and_handoff"
+max_iterations = 8
+max_wall_clock_minutes = 60
+max_command_runs = 25
+max_total_output_mb = 8
+max_failures_per_intent = 2
+on_limit = "stop_and_report"
 
 [approval]
 required_for = [
@@ -411,7 +409,7 @@ required_for_long_running = true
 allow_dirty_main_worktree = false
 ```
 
-`budget` evita bucles ilimitados al limitar iteraciones, tiempo transcurrido, ejecuciones de comandos, volumen de salida y fallos repetidos. Cuando se alcanza el límite, los agentes se detienen e informan o traspasan el trabajo.
+`budget` evita bucles ilimitados al limitar iteraciones, tiempo transcurrido, ejecuciones de comandos, volumen de salida y fallos repetidos. Cuando se alcanza el límite, los agentes se detienen e informan. Los proyectos que habiliten explícitamente un flujo de traspaso pueden elegir `stop_and_handoff`.
 
 `approval` enumera acciones que necesitan aprobación humana explícita antes de ejecutarse. No concede permiso por sí mismo.
 

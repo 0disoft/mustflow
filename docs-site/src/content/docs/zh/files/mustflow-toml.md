@@ -27,7 +27,7 @@ description: 声明 agent 读取顺序和受保护路径。
 - `agent_loop`: agent 针对每个任务应遵循的标准循环。
 - `harness`: agent harness 的仓库本地合同边界。
 - `refresh`: 长会话期间重新读取 mustflow 指令的检查点。
-- `compaction`: 区分近期原始上下文、中层摘要、长期摘要和原始内容保留的策略。
+- `compaction`: 默认不存储原始转录，并区分近期派生上下文、中层摘要和长期摘要的策略。
 - `verification`: 验证命令的来源，以及禁止哪些推断。
 - `testing`: 让测试与当前行为合同保持一致的策略。
 - `handoff`: 如何安全交接未完成工作。
@@ -248,9 +248,9 @@ required_at = [
   "after_compaction",
   "before_final_report",
 ]
-turn_threshold = 10
-tool_call_threshold = 25
-output_bytes_threshold = 200000
+turn_threshold = 8
+tool_call_threshold = 20
+output_bytes_threshold = 131072
 state_store = "cache"
 
 [refresh.levels.light]
@@ -284,6 +284,8 @@ read = [
 
 `refresh` 声明 agent 何时应重新读取 mustflow 指令，例如会话变长、根目录变化、即将执行命令或指令文件发生变化时。
 
+`before_command_run` 表示当前任务和当前命令意图必须已有新鲜的命令级刷新。如果命令合同没有变化且阈值仍然有效，并不要求每次重复执行命令前都重读所有文件。
+
 `state_store = "cache"` 表示轮次计数和会话活动不属于项目文件。宿主应用可以在本地缓存中跟踪它们，但 mustflow 文档应保持稳定，并适合提交到版本控制。
 
 `refresh.levels` 将每个刷新级别映射到应重新读取的文件。默认级别是 `light`、`command`、`skill` 和 `full`。
@@ -299,12 +301,12 @@ strategy = "tiered"
 state_store = "cache"
 
 [compaction.recent]
-keep_turns = 30
-max_total_bytes = 500000
-store_raw = true
+keep_turns = 20
+max_total_bytes = 200000
+store_raw = false
 
 [compaction.mid]
-trigger_turns = 30
+trigger_turns = 20
 target_items = 10
 target_max_words_per_item = 40
 include_categories = [
@@ -324,10 +326,6 @@ target_items = 10
 max_items = 100
 on_limit = "recompact_oldest"
 
-[compaction.raw_retention]
-max_age_days = 14
-max_total_mb = 250
-on_limit = "prune_after_compaction"
 
 [compaction.rules]
 require_source_refs = true
@@ -338,7 +336,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` 声明长会话如何把上下文拆分为近期原始输入、中层摘要和长期摘要。它默认禁用，并不表示 mustflow 会收集完整聊天记录。
+`compaction` 声明长会话如何把上下文拆分为近期派生上下文、中层摘要和长期摘要。它默认禁用，使用 `store_raw = false`，并不表示 mustflow 会收集完整聊天记录或原始命令日志。
 
 `state_store = "cache"` 表示压缩状态应存放在本地缓存或宿主管理状态中，而不是版本化项目文档中。共享项目知识只应以带来源的决策、调查记录或交接摘要形式沉淀。
 
@@ -383,12 +381,12 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 10
-max_wall_clock_minutes = 120
-max_command_runs = 50
-max_total_output_mb = 20
-max_failures_per_intent = 3
-on_limit = "stop_and_handoff"
+max_iterations = 8
+max_wall_clock_minutes = 60
+max_command_runs = 25
+max_total_output_mb = 8
+max_failures_per_intent = 2
+on_limit = "stop_and_report"
 
 [approval]
 required_for = [
@@ -411,7 +409,7 @@ required_for_long_running = true
 allow_dirty_main_worktree = false
 ```
 
-`budget` 通过限制迭代次数、经过时间、命令运行次数、输出量和重复失败来防止无边界循环。达到限制时，agent 应停止并报告或交接。
+`budget` 通过限制迭代次数、经过时间、命令运行次数、输出量和重复失败来防止无边界循环。达到限制时，agent 应停止并报告。只有明确启用交接流程的项目才应选择 `stop_and_handoff`。
 
 `approval` 列出执行前需要人工明确批准的操作。它本身不会授予权限。
 

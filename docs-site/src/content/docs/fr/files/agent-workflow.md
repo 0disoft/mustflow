@@ -19,7 +19,7 @@ Les agents le lisent après `AGENTS.md` pour comprendre l’exécution des comma
 - `Pre-work checks`: demande aux agents d’inspecter les changements, chemins protégés, intentions de commande et skills pertinents.
 - `Input stability policy`: garde les données volatiles loin du haut des fichiers de lecture obligatoire.
 - `Instruction refresh policy`: définit quand les longues sessions doivent relire les instructions mustflow.
-- `Context compaction policy`: explique les limites et l’ordre d’autorité entre contexte brut récent, résumés intermédiaires et longs résumés.
+- `Context compaction policy`: explique les limites et l’ordre d’autorité entre contexte récent dérivé, résumés intermédiaires et longs résumés.
 - `Harness contract boundary`: sépare les contrats du dépôt des environnements d’exécution des agents.
 - `Long-running task phases`: définit planification, travail, vérification, jugement et passage de relais.
 - `Verification ratchet`: empêche les agents d’affaiblir les contrôles pour paraître terminés.
@@ -75,7 +75,7 @@ N’ajoutez pas continuellement des transcriptions complètes de discussion, des
 
 Les longues sessions peuvent diluer les instructions chargées au début de la tâche. `agent-workflow.md` traite cela comme un problème de point de contrôle, pas comme une raison d’écrire des compteurs de tours dans le dépôt.
 
-Les agents doivent actualiser les instructions mustflow avant la première modification, avant l’exécution de commandes, après la compaction du contexte, après modification de `AGENTS.md` ou `.mustflow/**`, après changement de racine et avant le rapport final.
+Les agents doivent actualiser les instructions mustflow avant la première modification, avant l’exécution de commandes lorsque l’intention de commande actuelle n’a pas déjà un rafraîchissement récent, après la compaction du contexte, après modification de `AGENTS.md` ou `.mustflow/**`, après changement de racine et avant le rapport final.
 
 L’ensemble exact de fichiers vient de `[refresh.levels]` dans `.mustflow/config/mustflow.toml`.
 

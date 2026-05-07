@@ -19,7 +19,7 @@ Los agentes lo leen después de `AGENTS.md` para entender ejecución de comandos
 - `Comprobaciones previas`: indica a los agentes que inspeccionen cambios, rutas protegidas, intenciones de comando y skills relevantes.
 - `Política de estabilidad de entrada`: mantiene los datos volátiles lejos de la parte superior de los archivos de lectura obligatoria.
 - `Política de refresco de instrucciones`: define cuándo las sesiones largas deben releer instrucciones de mustflow.
-- `Política de compactación de contexto`: explica límites y orden de autoridad para contexto reciente sin procesar, resúmenes intermedios y resúmenes largos.
+- `Política de compactación de contexto`: explica límites y orden de autoridad para contexto reciente derivado, resúmenes intermedios y resúmenes largos.
 - `Límite del contrato de ejecución de agentes`: separa los contratos del repositorio de los entornos de ejecución de agentes.
 - `Fases de tareas largas`: define planificar, trabajar, verificar, evaluar y traspasar.
 - `Trinquete de verificación`: impide que los agentes debiliten comprobaciones para aparentar que terminaron.
@@ -75,7 +75,7 @@ No sigas agregando transcripciones completas de chat, salida completa de termina
 
 Las sesiones largas pueden diluir las instrucciones cargadas al inicio de la tarea. `agent-workflow.md` trata esto como un problema de puntos de control, no como una razón para escribir contadores de turnos en el repositorio.
 
-Los agentes deben refrescar las instrucciones de mustflow antes de la primera edición, antes de ejecutar comandos, después de compactar contexto, después de editar `AGENTS.md` o `.mustflow/**`, después de cambiar de raíz y antes del informe final.
+Los agentes deben refrescar las instrucciones de mustflow antes de la primera edición, antes de ejecutar comandos cuando la intención de comando actual no tenga ya un refresco reciente, después de compactar contexto, después de editar `AGENTS.md` o `.mustflow/**`, después de cambiar de raíz y antes del informe final.
 
 El conjunto exacto de archivos viene de `[refresh.levels]` en `.mustflow/config/mustflow.toml`.
 

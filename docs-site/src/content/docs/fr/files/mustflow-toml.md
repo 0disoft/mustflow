@@ -27,7 +27,7 @@ description: Déclare l’ordre de lecture des agents et les chemins protégés.
 - `agent_loop`: boucle standard que les agents doivent suivre pour chaque tâche.
 - `harness`: frontière du contrat local au dépôt pour les cadres d’exécution d’agents.
 - `refresh`: points de contrôle pour relire les instructions mustflow pendant les longues sessions.
-- `compaction`: politique de séparation entre contexte brut récent, résumés intermédiaires, longs résumés et rétention brute.
+- `compaction`: politique de séparation entre contexte récent dérivé, résumés intermédiaires et longs résumés sans stocker de transcriptions brutes par défaut.
 - `verification`: origine des commandes de validation et inférences interdites.
 - `testing`: politique pour garder les tests alignés avec le contrat de comportement actuel.
 - `handoff`: manière de transmettre en sécurité le travail inachevé.
@@ -248,9 +248,9 @@ required_at = [
   "after_compaction",
   "before_final_report",
 ]
-turn_threshold = 10
-tool_call_threshold = 25
-output_bytes_threshold = 200000
+turn_threshold = 8
+tool_call_threshold = 20
+output_bytes_threshold = 131072
 state_store = "cache"
 
 [refresh.levels.light]
@@ -284,6 +284,8 @@ read = [
 
 `refresh` déclare quand un agent doit relire les instructions mustflow parce que la session est devenue longue, que la racine a changé, qu’une exécution de commande est imminente ou que des fichiers d’instructions ont changé.
 
+`before_command_run` signifie que la tâche actuelle et l’intention de commande actuelle doivent disposer d’un rafraîchissement récent de niveau commande. Cela n’exige pas de relire tous les fichiers avant chaque commande répétée lorsque le contrat de commande n’a pas changé et que les seuils restent valides.
+
 `state_store = "cache"` signifie que les nombres de tours et l’activité de session n’appartiennent pas aux fichiers du projet. Une application hôte peut les suivre dans un cache local, mais les documents mustflow doivent rester stables et sûrs à valider.
 
 `refresh.levels` associe chaque niveau d’actualisation aux fichiers qui doivent être relus. Les niveaux par défaut sont `light`, `command`, `skill` et `full`.
@@ -299,12 +301,12 @@ strategy = "tiered"
 state_store = "cache"
 
 [compaction.recent]
-keep_turns = 30
-max_total_bytes = 500000
-store_raw = true
+keep_turns = 20
+max_total_bytes = 200000
+store_raw = false
 
 [compaction.mid]
-trigger_turns = 30
+trigger_turns = 20
 target_items = 10
 target_max_words_per_item = 40
 include_categories = [
@@ -324,10 +326,6 @@ target_items = 10
 max_items = 100
 on_limit = "recompact_oldest"
 
-[compaction.raw_retention]
-max_age_days = 14
-max_total_mb = 250
-on_limit = "prune_after_compaction"
 
 [compaction.rules]
 require_source_refs = true
@@ -338,7 +336,7 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` déclare comment une longue session peut séparer le contexte en entrée brute récente, résumés intermédiaires et résumés longue durée. Elle est désactivée par défaut et ne signifie pas que mustflow collecte des transcriptions complètes de discussion.
+`compaction` déclare comment une longue session peut séparer le contexte en contexte récent dérivé, résumés intermédiaires et résumés longue durée. Elle est désactivée par défaut, utilise `store_raw = false` et ne signifie pas que mustflow collecte des transcriptions complètes de discussion ni des journaux bruts de commandes.
 
 `state_store = "cache"` signifie que l’état de compaction doit vivre dans un cache local ou un état géré par l’hôte, pas dans des documents de projet versionnés. Les connaissances partagées du projet ne doivent être promues que sous forme de décisions, d’investigations ou de résumés de passage de relais liés aux sources.
 
@@ -383,12 +381,12 @@ stale_test_action = "update_remove_or_report"
 ```toml
 [budget]
 enabled = true
-max_iterations = 10
-max_wall_clock_minutes = 120
-max_command_runs = 50
-max_total_output_mb = 20
-max_failures_per_intent = 3
-on_limit = "stop_and_handoff"
+max_iterations = 8
+max_wall_clock_minutes = 60
+max_command_runs = 25
+max_total_output_mb = 8
+max_failures_per_intent = 2
+on_limit = "stop_and_report"
 
 [approval]
 required_for = [
@@ -411,7 +409,7 @@ required_for_long_running = true
 allow_dirty_main_worktree = false
 ```
 
-`budget` empêche les boucles sans limite en limitant les itérations, le temps écoulé, les exécutions de commandes, le volume de sortie et les échecs répétés. Lorsque la limite est atteinte, les agents s’arrêtent et signalent ou transmettent le travail.
+`budget` empêche les boucles sans limite en limitant les itérations, le temps écoulé, les exécutions de commandes, le volume de sortie et les échecs répétés. Lorsque la limite est atteinte, les agents s’arrêtent et signalent. Les projets qui activent explicitement un flux de passage de relais peuvent choisir `stop_and_handoff`.
 
 `approval` liste les actions qui exigent une approbation humaine explicite avant exécution. Il n’accorde pas de permission par lui-même.
 

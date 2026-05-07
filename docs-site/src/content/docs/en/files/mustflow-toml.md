@@ -27,7 +27,7 @@ description: Declares the agent reading order and protected paths.
 - `agent_loop`: Standard loop agents should follow for each task.
 - `harness`: Repository-local contract boundary for agent harnesses.
 - `refresh`: Checkpoints for rereading mustflow instructions during long sessions.
-- `compaction`: Policy for separating recent raw context, mid summaries, long summaries, and raw retention.
+- `compaction`: Policy for separating derived recent context, mid summaries, and long summaries without storing raw transcripts by default.
 - `verification`: Where validation commands come from and which inference is forbidden.
 - `testing`: Policy for keeping tests aligned with the current behavior contract.
 - `handoff`: How unfinished work should be handed off safely.
@@ -251,9 +251,9 @@ required_at = [
   "after_compaction",
   "before_final_report",
 ]
-turn_threshold = 10
-tool_call_threshold = 25
-output_bytes_threshold = 200000
+turn_threshold = 8
+tool_call_threshold = 20
+output_bytes_threshold = 131072
 state_store = "cache"
 
 [refresh.levels.light]
@@ -287,6 +287,8 @@ read = [
 
 `refresh` declares when an agent should reread mustflow instructions because the session has become long, the root changed, command execution is about to happen, or instruction files changed.
 
+`before_command_run` means the current task and command intent must have a fresh command-level refresh. It does not require rereading every file before every repeated command when the command contract has not changed and thresholds remain current.
+
 `state_store = "cache"` means turn counts and session activity do not belong in project files. A host application may track them in local cache, but mustflow documents should remain stable and commit-safe.
 
 `refresh.levels` maps each refresh level to the files that should be reread. The default levels are `light`, `command`, `skill`, and `full`.
@@ -302,12 +304,12 @@ strategy = "tiered"
 state_store = "cache"
 
 [compaction.recent]
-keep_turns = 30
-max_total_bytes = 500000
-store_raw = true
+keep_turns = 20
+max_total_bytes = 200000
+store_raw = false
 
 [compaction.mid]
-trigger_turns = 30
+trigger_turns = 20
 target_items = 10
 target_max_words_per_item = 40
 include_categories = [
@@ -327,10 +329,6 @@ target_items = 10
 max_items = 100
 on_limit = "recompact_oldest"
 
-[compaction.raw_retention]
-max_age_days = 14
-max_total_mb = 250
-on_limit = "prune_after_compaction"
 
 [compaction.rules]
 require_source_refs = true
@@ -341,9 +339,9 @@ scrub_absolute_user_paths = true
 do_not_store_hidden_chain_of_thought = true
 ```
 
-`compaction` declares how a long session may separate context into recent raw input, mid-level
-summaries, and long-term summaries. It is disabled by default and does not mean mustflow collects full
-chat transcripts.
+`compaction` declares how a long session may separate context into derived recent context, mid-level
+summaries, and long-term summaries. It is disabled by default, uses `store_raw = false`, and does not
+mean mustflow collects full chat transcripts or raw command logs.
 
 `state_store = "cache"` means compaction state should live in local cache or host-managed state, not
 versioned project documents. Shared project knowledge should be promoted only as source-linked
@@ -395,12 +393,12 @@ reported, not automatically deleted.
 ```toml
 [budget]
 enabled = true
-max_iterations = 10
-max_wall_clock_minutes = 120
-max_command_runs = 50
-max_total_output_mb = 20
-max_failures_per_intent = 3
-on_limit = "stop_and_handoff"
+max_iterations = 8
+max_wall_clock_minutes = 60
+max_command_runs = 25
+max_total_output_mb = 8
+max_failures_per_intent = 2
+on_limit = "stop_and_report"
 
 [approval]
 required_for = [
@@ -424,7 +422,8 @@ allow_dirty_main_worktree = false
 ```
 
 `budget` prevents unbounded loops by limiting iterations, elapsed time, command runs, output volume,
-and repeated failures. When the limit is reached, agents stop and report or hand off.
+and repeated failures. When the limit is reached, agents stop and report. Projects that explicitly
+enable a handoff workflow can choose `stop_and_handoff`.
 
 `approval` lists actions that need explicit human approval before execution. It does not grant
 permission by itself.

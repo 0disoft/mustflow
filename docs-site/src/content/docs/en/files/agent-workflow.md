@@ -19,7 +19,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Pre-work Checks`: Instructs agents to verify modifications, protected paths, command intents, and relevant skills before initiating work.
 - `Input Stability Policy`: Ensures that volatile data is separated from required reading files.
 - `Instruction Refresh Policy`: Determines the checkpoints at which agents should reread instructions during extended sessions.
-- `Context Compaction Policy`: Outlines the hierarchy and authority of raw context, mid-level summaries, and long-term summaries.
+- `Context Compaction Policy`: Outlines the hierarchy and authority of derived recent context, mid-level summaries, and long-term summaries.
 - `Harness Contract Boundary`: Distinguishes repository-local contracts from external agent execution environments.
 - `Long-running task phases`: Defines plan, work, verify, judge, and handoff.
 - `Verification ratchet`: Prevents agents from weakening checks to look complete.
@@ -76,9 +76,9 @@ Do not store full chat transcripts, terminal output, or raw JSONL event logs und
 Long sessions can dilute the instructions loaded at task start. `agent-workflow.md` treats this as
 a checkpoint problem, not as a reason to write turn counters into the repository.
 
-Agents should refresh mustflow instructions before the first edit, before command execution, after
-context compaction, after editing `AGENTS.md` or `.mustflow/**`, after switching roots, and before
-the final report.
+Agents should refresh mustflow instructions before the first edit, before command execution when the
+current command intent does not already have a fresh command refresh, after context compaction, after
+editing `AGENTS.md` or `.mustflow/**`, after switching roots, and before the final report.
 
 The exact file set comes from `[refresh.levels]` in `.mustflow/config/mustflow.toml`.
 
