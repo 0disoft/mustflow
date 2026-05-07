@@ -143,12 +143,15 @@ export const koMessages = {
     "현재 저장소에 기본 mustflow 에이전트 워크플로우을 복사합니다.",
   "init.help.option.yes": "안전한 기본값을 사용합니다",
   "init.help.option.dryRun": "파일을 쓰지 않고 설치 계획만 출력합니다",
+  "init.help.option.interactive": "질문에 답하며 초기 설정을 선택합니다",
   "init.help.option.merge": "기존 AGENTS.md에 mustflow 관리 블록만 병합합니다",
   "init.help.option.force": "충돌 파일을 백업한 뒤 덮어씁니다",
   "init.help.option.profile":
     "프로젝트 성격을 설정합니다: minimal, oss, team, product, library",
   "init.help.option.locale": "설치할 mustflow 문서 언어를 설정합니다",
   "init.help.option.agentLang": "에이전트 보고 언어를 설정합니다",
+  "init.help.option.set":
+    "git.auto_commit=true 같은 허용된 설정 값을 지정합니다",
   "init.help.option.productSourceLocale":
     "제품 문자열의 기준 언어를 설정합니다",
   "init.help.option.productLocale":
@@ -158,12 +161,31 @@ export const koMessages = {
   "init.help.exit.fail": "잘못된 선택지 또는 파일 충돌로 쓰기를 중단했습니다",
   "init.error.cannotCombineMergeForce":
     "--merge와 --force는 함께 사용할 수 없습니다",
+  "init.error.cannotCombineInteractiveYes":
+    "--interactive와 --yes는 함께 사용할 수 없습니다",
   "init.error.unsupportedProfile": "지원하지 않는 프로젝트 성격: {profile}",
   "init.error.supportedProfiles": "지원하는 프로젝트 성격: {profiles}",
   "init.error.unsupportedLocale": "지원하지 않는 문서 언어: {locale}",
   "init.error.supportedLocales": "이 패키지가 지원하는 템플릿 언어: {locales}",
   "init.error.invalidLocaleTag":
     "{label}의 언어 태그가 올바르지 않습니다: {value}",
+  "init.error.invalidPreference": "초기 설정 값 형식이 올바르지 않습니다: {value}",
+  "init.error.invalidPreferenceValue": "{key}에 사용할 수 없는 값입니다: {value}",
+  "init.error.unsupportedPreference": "지원하지 않는 초기 설정 항목입니다: {key}",
+  "init.prompt.locale": "mustflow 문서는 어떤 언어로 설치할까요?",
+  "init.prompt.profile": "이 저장소에는 어떤 프로젝트 성격을 사용할까요?",
+  "init.prompt.agentLang": "에이전트 최종 보고는 어떤 언어로 받을까요?",
+  "init.prompt.advanced": "고급 설정도 바꿀까요?",
+  "init.prompt.autoStage": "에이전트가 파일을 자동으로 스테이징해도 될까요?",
+  "init.prompt.autoCommit": "에이전트가 커밋을 자동으로 만들어도 될까요?",
+  "init.prompt.commitMessageLanguage": "커밋 메시지 기본 언어를 무엇으로 할까요?",
+  "init.prompt.commitSuggestions": "커밋 메시지 제안을 켤까요?",
+  "init.prompt.preserveExisting": "기존 설정 유지",
+  "init.prompt.sameAsAgentReports": "에이전트 보고 언어와 동일",
+  "init.prompt.sameAsDocuments": "문서 언어와 동일",
+  "init.prompt.select": "선택 [{defaultChoice}]: ",
+  "init.prompt.invalidChoice": "1부터 {count} 사이의 번호를 입력하세요.",
+  "init.prompt.invalidBoolean": "yes 또는 no로 입력하세요.",
   "init.plan.would": "{path}: {action} 예정",
   "init.plan.noFilesWritten": "파일을 쓰지 않았습니다.",
   "init.conflict": "충돌: {path} 파일이 이미 있고 mustflow 템플릿과 다릅니다.",

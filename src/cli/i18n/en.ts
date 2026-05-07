@@ -142,6 +142,7 @@ Read these files before working:
     "Copy the default mustflow agent workflow into the current repository.",
   "init.help.option.yes": "Use safe defaults for prompts",
   "init.help.option.dryRun": "Print the install plan without writing files",
+  "init.help.option.interactive": "Choose init settings from prompts",
   "init.help.option.merge":
     "Merge a mustflow managed block into an existing AGENTS.md",
   "init.help.option.force": "Back up conflicting files and overwrite them",
@@ -149,6 +150,8 @@ Read these files before working:
     "Set project profile: minimal, oss, team, product, or library",
   "init.help.option.locale": "Set installed mustflow document locale",
   "init.help.option.agentLang": "Set the preferred agent response language",
+  "init.help.option.set":
+    "Set an allowed preference value such as git.auto_commit=true",
   "init.help.option.productSourceLocale":
     "Set source locale for user-facing product text",
   "init.help.option.productLocale":
@@ -156,12 +159,40 @@ Read these files before working:
   "init.help.exit.ok": "Install completed, skipped, or plan printed",
   "init.help.exit.fail": "Invalid options or file conflicts prevented writing",
   "init.error.cannotCombineMergeForce": "Cannot combine --merge and --force",
+  "init.error.cannotCombineInteractiveYes":
+    "Cannot combine --interactive and --yes",
   "init.error.unsupportedProfile": "Unsupported profile: {profile}",
   "init.error.supportedProfiles": "Supported profiles: {profiles}",
   "init.error.unsupportedLocale": "Unsupported locale: {locale}",
   "init.error.supportedLocales":
     "Supported template locales for this package: {locales}",
   "init.error.invalidLocaleTag": "Invalid locale tag for {label}: {value}",
+  "init.error.invalidPreference":
+    "Invalid init preference override: {value}",
+  "init.error.invalidPreferenceValue":
+    "Invalid value for {key}: {value}",
+  "init.error.unsupportedPreference":
+    "Unsupported init preference setting: {key}",
+  "init.prompt.locale": "Which language should mustflow documents use?",
+  "init.prompt.profile": "Which project profile should mustflow use?",
+  "init.prompt.agentLang":
+    "Which language should agents use for final reports?",
+  "init.prompt.advanced": "Customize advanced preferences?",
+  "init.prompt.autoStage":
+    "Allow agents to stage files automatically?",
+  "init.prompt.autoCommit":
+    "Allow agents to create commits automatically?",
+  "init.prompt.commitMessageLanguage":
+    "Preferred commit message language?",
+  "init.prompt.commitSuggestions":
+    "Enable commit message suggestions?",
+  "init.prompt.preserveExisting": "Preserve existing",
+  "init.prompt.sameAsAgentReports": "Same as agent reports",
+  "init.prompt.sameAsDocuments": "Same as documents",
+  "init.prompt.select": "Select [{defaultChoice}]: ",
+  "init.prompt.invalidChoice":
+    "Enter a number between 1 and {count}.",
+  "init.prompt.invalidBoolean": "Enter yes or no.",
   "init.plan.would": "Would {action} {path}",
   "init.plan.noFilesWritten": "No files were written.",
   "init.conflict":

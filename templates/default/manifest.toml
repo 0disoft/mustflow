@@ -45,6 +45,7 @@ source = "en"
 [install_policy]
 scope = "llm_only"
 copied_targets = ["AGENTS.md", ".mustflow/**"]
+managed_targets = [".gitignore"]
 generated_targets = ["REPO_MAP.md", ".mustflow/config/manifest.lock.toml", ".mustflow/state/**"]
 forbidden_targets = [
   "README.md",

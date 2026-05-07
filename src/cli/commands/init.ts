@@ -1,5 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { stdin as processStdin, stdout as processStdout } from 'node:process';
+import { createInterface } from 'node:readline/promises';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { ensureInside } from '../lib/filesystem.js';
@@ -16,22 +18,53 @@ interface PlannedFile {
 	readonly sourceKind: TemplateFileSource['sourceKind'];
 	readonly targetPath: string;
 	readonly status: PlannedStatus;
+	readonly lock: boolean;
 }
 
 interface InitOptions {
+	readonly yes: boolean;
 	readonly dryRun: boolean;
 	readonly merge: boolean;
 	readonly force: boolean;
+	readonly interactive: boolean;
 	readonly profile?: string;
 	readonly locale?: string;
 	readonly agentLang?: string;
 	readonly productSourceLocale?: string;
 	readonly productLocales: readonly string[];
+	readonly preferenceOverrides: readonly PreferenceOverride[];
 }
 
 const MUSTFLOW_BLOCK_START = '<!-- mustflow:start schema=1 -->';
 const MUSTFLOW_BLOCK_END = '<!-- mustflow:end -->';
+const GITIGNORE_RELATIVE_PATH = '.gitignore';
+const GITIGNORE_FRAGMENT_RELATIVE_PATH = 'gitignore.mustflow';
 const LOCALE_TAG_PATTERN = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/u;
+const LOCALE_LABELS: Record<string, string> = {
+	en: 'English',
+	ko: 'Korean',
+	zh: 'Chinese',
+	es: 'Spanish',
+	fr: 'French',
+	hi: 'Hindi',
+};
+
+interface PromptChoice {
+	readonly value: string;
+	readonly label: string;
+}
+
+interface PromptReader {
+	question(prompt: string): Promise<string>;
+	close(): void;
+}
+
+interface PreferenceOverride {
+	readonly key: string;
+	readonly section: string;
+	readonly field: string;
+	readonly renderedValue: string;
+}
 
 function getMustflowRouterBlock(locale: string): string {
 	return localeMessage(locale, 'init.routerBlock');
@@ -48,6 +81,10 @@ export function getInitHelp(lang: CliLang = 'en'): string {
 				{
 					label: '--dry-run',
 					description: t(lang, 'init.help.option.dryRun'),
+				},
+				{
+					label: '--interactive',
+					description: t(lang, 'init.help.option.interactive'),
 				},
 				{
 					label: '--merge',
@@ -70,6 +107,10 @@ export function getInitHelp(lang: CliLang = 'en'): string {
 					description: t(lang, 'init.help.option.agentLang'),
 				},
 				{
+					label: '--set <key=value>',
+					description: t(lang, 'init.help.option.set'),
+				},
+				{
 					label: '--product-source-locale <locale>',
 					description: t(lang, 'init.help.option.productSourceLocale'),
 				},
@@ -80,6 +121,8 @@ export function getInitHelp(lang: CliLang = 'en'): string {
 			],
 			examples: [
 				'mf init --dry-run',
+				'mf init --interactive',
+				'mf init --set git.auto_commit=true',
 				'mf init --profile oss --locale ko',
 				'mf init --profile product --product-source-locale en --product-locale ko-KR',
 			],
@@ -138,15 +181,114 @@ function isLocaleTag(value: string): boolean {
 	return LOCALE_TAG_PATTERN.test(value);
 }
 
+function parseBoolean(value: string): boolean | undefined {
+	if (value === 'true') {
+		return true;
+	}
+
+	if (value === 'false') {
+		return false;
+	}
+
+	return undefined;
+}
+
+function isSupportedLanguagePreference(value: string): boolean {
+	return value === 'preserve_existing' || isLocaleTag(value);
+}
+
+function isSupportedMemorySummaryPreference(value: string): boolean {
+	return ['agent_response', 'docs', 'preserve_existing'].includes(value) || isLocaleTag(value);
+}
+
+function createPreferenceOverride(key: string, value: string, reporter: Reporter, lang: CliLang): PreferenceOverride | undefined {
+	if (key === 'git.auto_stage' || key === 'git.auto_commit') {
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git',
+			field: key.slice('git.'.length),
+			renderedValue: String(parsed),
+		};
+	}
+
+	if (key === 'git.commit_message.language') {
+		if (!isSupportedLanguagePreference(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message',
+			field: 'language',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'reporting.commit_suggestion.enabled') {
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'reporting.commit_suggestion',
+			field: 'enabled',
+			renderedValue: String(parsed),
+		};
+	}
+
+	if (key === 'language.memory.summary') {
+		if (!isSupportedMemorySummaryPreference(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'language.memory',
+			field: 'summary',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	reporter.stderr(t(lang, 'init.error.unsupportedPreference', { key }));
+	return undefined;
+}
+
+function parsePreferenceOverride(raw: string, reporter: Reporter, lang: CliLang): PreferenceOverride | undefined {
+	const equalsIndex = raw.indexOf('=');
+
+	if (equalsIndex <= 0 || equalsIndex === raw.length - 1) {
+		reporter.stderr(t(lang, 'init.error.invalidPreference', { value: raw }));
+		return undefined;
+	}
+
+	return createPreferenceOverride(raw.slice(0, equalsIndex), raw.slice(equalsIndex + 1), reporter, lang);
+}
+
 function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOptions | undefined {
+	let yes = false;
 	let dryRun = false;
 	let merge = false;
 	let force = false;
+	let interactive = false;
 	let profile: string | undefined;
 	let locale: string | undefined;
 	let agentLang: string | undefined;
 	let productSourceLocale: string | undefined;
 	const productLocales: string[] = [];
+	const preferenceOverrides: PreferenceOverride[] = [];
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -157,12 +299,13 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 
 		const parsed = splitLongOption(arg);
 
-		if (['--yes', '--dry-run', '--merge', '--force'].includes(parsed.name) && parsed.value !== undefined) {
+		if (['--yes', '--dry-run', '--merge', '--force', '--interactive'].includes(parsed.name) && parsed.value !== undefined) {
 			printUsageError(reporter, t(lang, 'cli.error.unexpectedValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
 			return undefined;
 		}
 
 		if (parsed.name === '--yes') {
+			yes = true;
 			continue;
 		}
 
@@ -178,6 +321,32 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 
 		if (parsed.name === '--force') {
 			force = true;
+			continue;
+		}
+
+		if (parsed.name === '--interactive') {
+			interactive = true;
+			continue;
+		}
+
+		if (parsed.name === '--set') {
+			const value = readRequiredOptionValue(args, index, parsed, reporter, lang);
+
+			if (value === undefined) {
+				return undefined;
+			}
+
+			if (parsed.value === undefined) {
+				index += 1;
+			}
+
+			const override = parsePreferenceOverride(value, reporter, lang);
+
+			if (!override) {
+				return undefined;
+			}
+
+			preferenceOverrides.push(override);
 			continue;
 		}
 
@@ -216,20 +385,280 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 		return undefined;
 	}
 
+	if (interactive && yes) {
+		printUsageError(reporter, t(lang, 'init.error.cannotCombineInteractiveYes'), 'mf init --help', getInitHelp(lang), lang);
+		return undefined;
+	}
+
 	return {
+		yes,
 		dryRun,
 		merge,
 		force,
+		interactive,
 		profile,
 		locale,
 		agentLang,
 		productSourceLocale,
 		productLocales,
+		preferenceOverrides,
 	};
 }
 
 function sameFileContent(sourcePath: string, targetPath: string): boolean {
 	return readFileSync(sourcePath, 'utf8') === readFileSync(targetPath, 'utf8');
+}
+
+function formatLocaleChoice(locale: string): string {
+	const label = LOCALE_LABELS[locale] ?? locale;
+
+	return `${label} (${locale})`;
+}
+
+function createPromptReader(reporter: Reporter): PromptReader {
+	if (!processStdin.isTTY) {
+		const lines = readFileSync(0, 'utf8').split(/\r?\n/u);
+
+		return {
+			async question(prompt: string): Promise<string> {
+				reporter.stdout(prompt.trimEnd());
+				return lines.shift() ?? '';
+			},
+			close() {
+				// No resources are held when stdin is pre-read from a pipe.
+			},
+		};
+	}
+
+	const readline = createInterface({
+		input: processStdin,
+		output: processStdout,
+	});
+
+	return {
+		question(prompt: string): Promise<string> {
+			return readline.question(prompt);
+		},
+		close() {
+			readline.close();
+		},
+	};
+}
+
+function shouldPromptForInit(args: readonly string[], options: InitOptions): boolean {
+	if (options.interactive) {
+		return true;
+	}
+
+	if (options.yes || args.length > 0) {
+		return false;
+	}
+
+	return Boolean(processStdin.isTTY && processStdout.isTTY);
+}
+
+async function promptChoice(
+	reader: PromptReader,
+	reporter: Reporter,
+	lang: CliLang,
+	question: string,
+	choices: readonly PromptChoice[],
+	defaultValue: string,
+): Promise<string> {
+	const defaultIndex = Math.max(
+		0,
+		choices.findIndex((choice) => choice.value === defaultValue),
+	);
+
+	reporter.stdout('');
+	reporter.stdout(question);
+
+	for (const [index, choice] of choices.entries()) {
+		reporter.stdout(`  ${index + 1}. ${choice.label}`);
+	}
+
+	for (;;) {
+		const answer = (await reader.question(t(lang, 'init.prompt.select', { defaultChoice: defaultIndex + 1 }))).trim();
+
+		if (answer.length === 0) {
+			return choices[defaultIndex]?.value ?? defaultValue;
+		}
+
+		const selectedIndex = Number.parseInt(answer, 10);
+
+		if (String(selectedIndex) === answer && selectedIndex >= 1 && selectedIndex <= choices.length) {
+			return choices[selectedIndex - 1]?.value ?? defaultValue;
+		}
+
+		reporter.stderr(t(lang, 'init.prompt.invalidChoice', { count: choices.length }));
+	}
+}
+
+async function promptBoolean(
+	reader: PromptReader,
+	reporter: Reporter,
+	lang: CliLang,
+	question: string,
+	defaultValue: boolean,
+): Promise<boolean> {
+	const defaultLabel = defaultValue ? 'Y/n' : 'y/N';
+
+	for (;;) {
+		const answer = (await reader.question(`${question} [${defaultLabel}]: `)).trim().toLowerCase();
+
+		if (answer.length === 0) {
+			return defaultValue;
+		}
+
+		if (answer === 'y' || answer === 'yes' || answer === 'true') {
+			return true;
+		}
+
+		if (answer === 'n' || answer === 'no' || answer === 'false') {
+			return false;
+		}
+
+		reporter.stderr(t(lang, 'init.prompt.invalidBoolean'));
+	}
+}
+
+function hasPreferenceOverride(overrides: readonly PreferenceOverride[], key: string): boolean {
+	return overrides.some((override) => override.key === key);
+}
+
+function addPromptedPreferenceOverride(
+	overrides: PreferenceOverride[],
+	key: string,
+	value: string,
+	reporter: Reporter,
+	lang: CliLang,
+): void {
+	const override = createPreferenceOverride(key, value, reporter, lang);
+
+	if (override) {
+		overrides.push(override);
+	}
+}
+
+async function promptInitOptions(
+	template: ReturnType<typeof getDefaultTemplate>,
+	options: InitOptions,
+	reporter: Reporter,
+	lang: CliLang,
+): Promise<InitOptions> {
+	const reader = createPromptReader(reporter);
+
+	try {
+		const preferenceOverrides = [...options.preferenceOverrides];
+		const localeChoices = template.manifest.locales.map((locale) => ({
+			value: locale,
+			label: formatLocaleChoice(locale),
+		}));
+		const profileChoices = template.manifest.profiles.map((profile) => ({
+			value: profile,
+			label: profile,
+		}));
+		const locale = options.locale ?? (await promptChoice(
+			reader,
+			reporter,
+			lang,
+			t(lang, 'init.prompt.locale'),
+			localeChoices,
+			template.manifest.defaultLocale,
+		));
+		const profile = options.profile ?? (await promptChoice(
+			reader,
+			reporter,
+			lang,
+			t(lang, 'init.prompt.profile'),
+			profileChoices,
+			template.manifest.defaultProfile,
+		));
+		const agentLanguageChoices = [
+			{ value: 'same-as-docs', label: t(lang, 'init.prompt.sameAsDocuments') },
+			...localeChoices,
+		];
+		const selectedAgentLang = options.agentLang ?? (await promptChoice(
+			reader,
+			reporter,
+			lang,
+			t(lang, 'init.prompt.agentLang'),
+			agentLanguageChoices,
+			'same-as-docs',
+		));
+		const agentLang = selectedAgentLang === 'same-as-docs' ? locale : selectedAgentLang;
+		const customizeAdvanced = await promptBoolean(reader, reporter, lang, t(lang, 'init.prompt.advanced'), false);
+
+		if (customizeAdvanced) {
+			if (!hasPreferenceOverride(preferenceOverrides, 'git.auto_stage')) {
+				addPromptedPreferenceOverride(
+					preferenceOverrides,
+					'git.auto_stage',
+					String(await promptBoolean(reader, reporter, lang, t(lang, 'init.prompt.autoStage'), false)),
+					reporter,
+					lang,
+				);
+			}
+
+			if (!hasPreferenceOverride(preferenceOverrides, 'git.auto_commit')) {
+				addPromptedPreferenceOverride(
+					preferenceOverrides,
+					'git.auto_commit',
+					String(await promptBoolean(reader, reporter, lang, t(lang, 'init.prompt.autoCommit'), false)),
+					reporter,
+					lang,
+				);
+			}
+
+			if (!hasPreferenceOverride(preferenceOverrides, 'git.commit_message.language')) {
+				const commitLanguageChoices = [
+					{ value: 'preserve_existing', label: t(lang, 'init.prompt.preserveExisting') },
+					{ value: 'same-as-agent', label: t(lang, 'init.prompt.sameAsAgentReports') },
+					...localeChoices,
+				];
+				const commitLanguage = await promptChoice(
+					reader,
+					reporter,
+					lang,
+					t(lang, 'init.prompt.commitMessageLanguage'),
+					commitLanguageChoices,
+					'preserve_existing',
+				);
+
+				addPromptedPreferenceOverride(
+					preferenceOverrides,
+					'git.commit_message.language',
+					commitLanguage === 'same-as-agent' ? agentLang : commitLanguage,
+					reporter,
+					lang,
+				);
+			}
+
+			if (!hasPreferenceOverride(preferenceOverrides, 'reporting.commit_suggestion.enabled')) {
+				addPromptedPreferenceOverride(
+					preferenceOverrides,
+					'reporting.commit_suggestion.enabled',
+					String(await promptBoolean(reader, reporter, lang, t(lang, 'init.prompt.commitSuggestions'), true)),
+					reporter,
+					lang,
+				);
+			}
+		}
+
+		return {
+			...options,
+			profile,
+			locale,
+			agentLang,
+			preferenceOverrides,
+		};
+	} finally {
+		reader.close();
+	}
+}
+
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function planStatus(relativePath: string, sourcePath: string, targetPath: string, options: InitOptions): PlannedStatus {
@@ -250,6 +679,35 @@ function planStatus(relativePath: string, sourcePath: string, targetPath: string
 	}
 
 	return 'conflict';
+}
+
+function gitignoreFragmentPath(template: ReturnType<typeof getDefaultTemplate>): string {
+	return path.join(template.templateRoot, template.manifest.commonRoot, GITIGNORE_FRAGMENT_RELATIVE_PATH);
+}
+
+function mergeGitignoreContent(existingContent: string, fragmentContent: string): string {
+	const normalizedFragment = fragmentContent.trim();
+	const blockPattern = new RegExp(`${escapeRegExp('# mustflow:start schema=1')}[\\s\\S]*?${escapeRegExp('# mustflow:end')}`, 'u');
+
+	if (blockPattern.test(existingContent)) {
+		return `${existingContent.replace(blockPattern, normalizedFragment).trimEnd()}\n`;
+	}
+
+	if (existingContent.trim().length === 0) {
+		return `${normalizedFragment}\n`;
+	}
+
+	return `${existingContent.trimEnd()}\n\n${normalizedFragment}\n`;
+}
+
+function planGitignoreStatus(sourcePath: string, targetPath: string): PlannedStatus {
+	if (!existsSync(targetPath)) {
+		return 'create';
+	}
+
+	const mergedContent = mergeGitignoreContent(readFileSync(targetPath, 'utf8'), readFileSync(sourcePath, 'utf8'));
+
+	return mergedContent === readFileSync(targetPath, 'utf8') ? 'unchanged' : 'merge';
 }
 
 function renderPlanVerb(status: PlannedStatus): string {
@@ -292,10 +750,7 @@ function printConflictReport(conflicts: readonly PlannedFile[], reporter: Report
 function mergeAgentsContent(existingContent: string, locale: string): string {
 	const routerBlock = getMustflowRouterBlock(locale);
 	const blockPattern = new RegExp(
-		`${MUSTFLOW_BLOCK_START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${MUSTFLOW_BLOCK_END.replace(
-			/[.*+?^${}()|[\]\\]/g,
-			'\\$&',
-		)}`,
+		`${escapeRegExp(MUSTFLOW_BLOCK_START)}[\\s\\S]*?${escapeRegExp(MUSTFLOW_BLOCK_END)}`,
 	);
 
 	if (blockPattern.test(existingContent)) {
@@ -303,6 +758,45 @@ function mergeAgentsContent(existingContent: string, locale: string): string {
 	}
 
 	return `${routerBlock}\n\n${existingContent}`;
+}
+
+function buildPlannedFiles(
+	template: ReturnType<typeof getDefaultTemplate>,
+	selectedLocale: string,
+	targetRoot: string,
+	options: InitOptions,
+): PlannedFile[] {
+	const plannedFiles = getTemplateFiles(template, selectedLocale).map((source): PlannedFile => {
+		const targetPath = path.join(targetRoot, source.relativePath);
+
+		ensureInside(template.templateRoot, source.sourcePath);
+		ensureInside(targetRoot, targetPath);
+
+		return {
+			relativePath: source.relativePath,
+			sourcePath: source.sourcePath,
+			sourceKind: source.sourceKind,
+			targetPath,
+			status: planStatus(source.relativePath, source.sourcePath, targetPath, options),
+			lock: true,
+		};
+	});
+	const sourcePath = gitignoreFragmentPath(template);
+	const targetPath = path.join(targetRoot, GITIGNORE_RELATIVE_PATH);
+
+	ensureInside(template.templateRoot, sourcePath);
+	ensureInside(targetRoot, targetPath);
+
+	plannedFiles.push({
+		relativePath: GITIGNORE_RELATIVE_PATH,
+		sourcePath,
+		sourceKind: 'common',
+		targetPath,
+		status: planGitignoreStatus(sourcePath, targetPath),
+		lock: false,
+	});
+
+	return plannedFiles;
 }
 
 function backupConflictingFiles(projectRoot: string, conflicts: readonly PlannedFile[]): string | undefined {
@@ -373,6 +867,24 @@ function replaceLine(content: string, pattern: RegExp, replacement: string): str
 	return pattern.test(content) ? content.replace(pattern, replacement) : `${content.trimEnd()}\n${replacement}\n`;
 }
 
+function replaceTomlSetting(content: string, section: string, field: string, renderedValue: string): string {
+	const sectionPattern = new RegExp(`(^\\[${escapeRegExp(section)}\\]\\n)([\\s\\S]*?)(?=^\\[[^\\]]+\\]\\n|\\s*$)`, 'mu');
+	const replacement = `${field} = ${renderedValue}`;
+
+	if (!sectionPattern.test(content)) {
+		return `${content.trimEnd()}\n\n[${section}]\n${replacement}\n`;
+	}
+
+	return content.replace(sectionPattern, (_match, header: string, body: string) => {
+		const fieldPattern = new RegExp(`^${escapeRegExp(field)}\\s*=.*$`, 'mu');
+		const nextBody = fieldPattern.test(body)
+			? body.replace(fieldPattern, replacement)
+			: `${body.trimEnd()}\n${replacement}\n`;
+
+		return `${header}${nextBody}`;
+	});
+}
+
 function removeProductI18nBlock(content: string): string {
 	return content.replace(/\n\[product_i18n\]\n[\s\S]*?(?=\n\[[^\]]+\]\n|$)/u, '').trimEnd();
 }
@@ -422,6 +934,10 @@ function applyInitPreferences(
 		const targetLocales = options.productLocales.length > 0 ? options.productLocales : [sourceLocale];
 
 		next = `${removeProductI18nBlock(next)}\n${renderProductI18nBlock(sourceLocale, targetLocales)}\n`;
+	}
+
+	for (const override of options.preferenceOverrides) {
+		next = replaceTomlSetting(next, override.section, override.field, override.renderedValue);
 	}
 
 	if (next === original) {
@@ -512,7 +1028,7 @@ function renderManifestLock(
 		);
 	}
 
-	for (const file of plannedFiles) {
+	for (const file of plannedFiles.filter((plannedFile) => plannedFile.lock)) {
 		lines.push(
 			'',
 			`[files.${tomlString(file.relativePath)}]`,
@@ -538,20 +1054,21 @@ function writeManifestLock(
 	writeFileSync(lockPath, renderManifestLock(template, plannedFiles, options, customizedFiles));
 }
 
-export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getInitHelp(lang));
 		return 0;
 	}
 
-	const options = parseOptions(args, reporter, lang);
+	const parsedOptions = parseOptions(args, reporter, lang);
 
-	if (!options) {
+	if (!parsedOptions) {
 		return 1;
 	}
 
 	const targetRoot = process.cwd();
 	const template = getDefaultTemplate();
+	const options = shouldPromptForInit(args, parsedOptions) ? await promptInitOptions(template, parsedOptions, reporter, lang) : parsedOptions;
 	const selectedLocale = options.locale ?? template.manifest.defaultLocale;
 
 	if (!validateInitSelection(template, options, reporter, lang)) {
@@ -562,20 +1079,7 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 	let unchanged = 0;
 	let merged = 0;
 	let overwritten = 0;
-	const plannedFiles = getTemplateFiles(template, selectedLocale).map((source): PlannedFile => {
-		const targetPath = path.join(targetRoot, source.relativePath);
-
-		ensureInside(template.templateRoot, source.sourcePath);
-		ensureInside(targetRoot, targetPath);
-
-		return {
-			relativePath: source.relativePath,
-			sourcePath: source.sourcePath,
-			sourceKind: source.sourceKind,
-			targetPath,
-			status: planStatus(source.relativePath, source.sourcePath, targetPath, options),
-		};
-	});
+	const plannedFiles = buildPlannedFiles(template, selectedLocale, targetRoot, options);
 	const conflicts = plannedFiles.filter((file) => file.status === 'conflict');
 	const forceConflicts = plannedFiles.filter((file) => file.status === 'overwrite');
 
@@ -618,7 +1122,12 @@ export function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'
 		}
 
 		if (file.status === 'merge') {
-			writeFileSync(file.targetPath, mergeAgentsContent(readFileSync(file.targetPath, 'utf8'), selectedLocale));
+			const mergedContent =
+				file.relativePath === GITIGNORE_RELATIVE_PATH
+					? mergeGitignoreContent(readFileSync(file.targetPath, 'utf8'), readFileSync(file.sourcePath, 'utf8'))
+					: mergeAgentsContent(readFileSync(file.targetPath, 'utf8'), selectedLocale);
+
+			writeFileSync(file.targetPath, mergedContent);
 			merged += 1;
 			reporter.stdout(t(lang, 'init.action.merged', { path: file.relativePath }));
 			continue;

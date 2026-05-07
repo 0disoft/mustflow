@@ -24,10 +24,11 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runInit(cwd, args = ['--yes']) {
+function runInit(cwd, args = ['--yes'], options = {}) {
 	return spawnSync(process.execPath, [cliPath, 'init', ...args], {
 		cwd,
 		encoding: 'utf8',
+		...options,
 	});
 }
 
@@ -55,9 +56,14 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-authoring', 'SKILL.md')), false);
+		assert.ok(existsSync(path.join(projectPath, '.gitignore')));
 		assert.equal(existsSync(path.join(projectPath, 'README.md')), false);
 		assert.equal(existsSync(path.join(projectPath, 'DESIGN.md')), false);
 		assert.equal(existsSync(path.join(projectPath, 'REPO_MAP.md')), false);
+		const gitignore = readText(path.join(projectPath, '.gitignore'));
+		assert.match(gitignore, /# mustflow:start schema=1/);
+		assert.match(gitignore, /\.mustflow\/cache\//);
+		assert.match(gitignore, /repos\//);
 		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
 		assert.match(preferences, /\[project\]/);
 		assert.match(preferences, /convention_mode = "bootstrap"/);
@@ -98,6 +104,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(lock, /\[files\."AGENTS\.md"\]/);
 		assert.match(lock, /last_action = "created"/);
 		assert.match(lock, /content_hash = "sha256:[a-f0-9]{64}"/);
+		assert.doesNotMatch(lock, /\[files\."\.gitignore"\]/);
 		const agents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 		assert.match(agents, /mf doctor/);
 		assert.match(agents, /locale: en/);
@@ -192,6 +199,67 @@ test('rejects unsupported profile and locale selections', () => {
 	}
 });
 
+test('applies safe preference overrides from repeated set options', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, [
+			'--yes',
+			'--set',
+			'git.auto_commit=true',
+			'--set=git.commit_message.language=ko',
+			'--set',
+			'reporting.commit_suggestion.enabled=false',
+			'--set',
+			'language.memory.summary=docs',
+		]);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Customized \.mustflow\/config\/preferences\.toml/);
+
+		const preferences = readText(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'));
+
+		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_commit = true/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "ko"/);
+		assert.match(preferences, /\[reporting\.commit_suggestion\]\n(?:.*\n)*?enabled = false/);
+		assert.match(preferences, /\[language\.memory\]\n(?:.*\n)*?summary = "docs"/);
+
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+		assert.match(lock, /\[files\."\.mustflow\/config\/preferences\.toml"\]/);
+		assert.match(lock, /last_action = "customized"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects unsupported init preference overrides', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--yes', '--set', 'git.auto_push=true']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unsupported init preference setting: git\.auto_push/);
+		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects conflicting interactive and yes init modes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--interactive', '--yes']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Cannot combine --interactive and --yes/);
+		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('is idempotent when installed files already match the template', () => {
 	const projectPath = createTempProject();
 
@@ -203,6 +271,7 @@ test('is idempotent when installed files already match the template', () => {
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Unchanged AGENTS\.md/);
+		assert.match(result.stdout, /Unchanged \.gitignore/);
 		assert.match(result.stdout, /Unchanged \.mustflow\/config\/commands\.toml/);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml')));
 	} finally {
@@ -237,8 +306,10 @@ test('prints an init plan without writing files in dry-run mode', () => {
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Would create AGENTS\.md/);
+		assert.match(result.stdout, /Would create \.gitignore/);
 		assert.match(result.stdout, /No files were written/);
 		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.gitignore')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml')), false);
 	} finally {
@@ -266,6 +337,140 @@ test('merges a mustflow router block into an existing AGENTS.md', () => {
 		assert.match(lock, /\[files\."AGENTS\.md"\]/);
 		assert.match(lock, /source = "managed_block"/);
 		assert.match(lock, /last_action = "merged"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('interactive init applies selected locale profile and agent report language', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--interactive'], {
+			input: '2\n2\n1\n',
+		});
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Which language should mustflow documents use\?/);
+		assert.match(result.stdout, /Which project profile should mustflow use\?/);
+		assert.match(result.stdout, /Which language should agents use for final reports\?/);
+
+		const agents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
+		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+
+		assert.match(agents, /locale: ko/);
+		assert.match(agents, /## 읽는 순서/);
+		assert.match(preferences, /profile = "oss"/);
+		assert.match(preferences, /docs = "ko"/);
+		assert.match(preferences, /agent_response = "ko"/);
+		assert.match(lock, /profile = "oss"/);
+		assert.match(lock, /locale = "ko"/);
+		assert.match(lock, /agent_lang = "ko"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('interactive init applies selected advanced preferences', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--interactive'], {
+			input: '1\n1\n1\ny\ny\ny\n2\nn\n',
+		});
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Customize advanced preferences\?/);
+		assert.match(result.stdout, /Allow agents to stage files automatically\?/);
+		assert.match(result.stdout, /Allow agents to create commits automatically\?/);
+
+		const preferences = readText(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'));
+
+		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_stage = true/);
+		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_commit = true/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "en"/);
+		assert.match(preferences, /\[reporting\.commit_suggestion\]\n(?:.*\n)*?enabled = false/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('uses defaults without prompts in non-interactive execution', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, []);
+
+		assert.equal(result.status, 0);
+		assert.doesNotMatch(result.stdout, /Which language should mustflow documents use\?/);
+
+		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+
+		assert.match(preferences, /profile = "minimal"/);
+		assert.match(preferences, /docs = "en"/);
+		assert.match(preferences, /agent_response = "en"/);
+		assert.match(lock, /profile = "minimal"/);
+		assert.match(lock, /locale = "en"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('merges mustflow ignore rules into an existing .gitignore without overwriting user rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const existingGitignore = 'node_modules/\n.env\n';
+		writeFileSync(path.join(projectPath, '.gitignore'), existingGitignore);
+
+		const result = runInit(projectPath);
+		const mergedGitignore = readText(path.join(projectPath, '.gitignore'));
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Merged \.gitignore/);
+		assert.match(mergedGitignore, /^node_modules\//m);
+		assert.match(mergedGitignore, /^\.env$/m);
+		assert.match(mergedGitignore, /# mustflow:start schema=1/);
+		assert.match(mergedGitignore, /\.mustflow\/cache\//);
+		assert.match(mergedGitignore, /repos\//);
+
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+		assert.doesNotMatch(lock, /\[files\."\.gitignore"\]/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('updates only the mustflow ignore block when .gitignore already has one', () => {
+	const projectPath = createTempProject();
+
+	try {
+		writeFileSync(
+			path.join(projectPath, '.gitignore'),
+			[
+				'node_modules/',
+				'',
+				'# mustflow:start schema=1',
+				'.mustflow/old-cache/',
+				'# mustflow:end',
+				'',
+				'local-only/',
+				'',
+			].join('\n'),
+		);
+
+		const result = runInit(projectPath);
+		const mergedGitignore = readText(path.join(projectPath, '.gitignore'));
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Merged \.gitignore/);
+		assert.match(mergedGitignore, /^node_modules\//m);
+		assert.match(mergedGitignore, /^local-only\//m);
+		assert.doesNotMatch(mergedGitignore, /\.mustflow\/old-cache\//);
+		assert.match(mergedGitignore, /\.mustflow\/cache\//);
+		assert.equal((mergedGitignore.match(/# mustflow:start schema=1/g) ?? []).length, 1);
 	} finally {
 		removeTempProject(projectPath);
 	}
