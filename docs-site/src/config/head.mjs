@@ -136,6 +136,7 @@ const languagePreferenceScript = `
 })();
 `.trim();
 
+/** @type {import('@astrojs/starlight/types').StarlightUserConfig['head']} */
 export const head = [
 	{
 		tag: 'script',

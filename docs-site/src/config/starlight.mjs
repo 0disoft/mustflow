@@ -4,6 +4,7 @@ import { sidebar } from './sidebar.mjs';
 import { site } from './site.mjs';
 import { customCss } from './styles.mjs';
 
+/** @type {import('@astrojs/starlight/types').StarlightUserConfig} */
 export const starlightOptions = {
 	title: site.title,
 	defaultLocale: fallbackLocale,
