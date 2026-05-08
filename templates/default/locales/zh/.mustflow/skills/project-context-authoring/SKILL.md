@@ -3,6 +3,8 @@ mustflow_doc: skill.project-context-authoring
 locale: zh
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: project-context-authoring
 description: Apply this skill when filling or maintaining `.mustflow/context/PROJECT.md` from repository-supported evidence.
 metadata:

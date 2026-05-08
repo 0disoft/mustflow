@@ -3,6 +3,8 @@ mustflow_doc: skill.code-review
 locale: ko
 canonical: false
 revision: 4
+authority: procedure
+lifecycle: mustflow-owned
 name: code-review
 description: 코드 변경 사항을 검토하거나, 변경 범위 및 검증 누락 여부를 확인해야 할 때 적용합니다.
 metadata:

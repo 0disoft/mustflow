@@ -3,6 +3,8 @@ mustflow_doc: skill.security-regression-tests
 locale: hi
 canonical: false
 revision: 1
+lifecycle: mustflow-owned
+authority: procedure
 name: security-regression-tests
 description: Apply this skill when security-sensitive code or behavior changes need abuse-case regression tests.
 metadata:

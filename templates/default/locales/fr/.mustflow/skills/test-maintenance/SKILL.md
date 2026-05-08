@@ -3,6 +3,8 @@ mustflow_doc: skill.test-maintenance
 locale: fr
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: test-maintenance
 description: Applique cette skill lors de l'ajout, de la mise a jour, de la suppression ou de l'audit de tests en reponse aux changements de comportement, d'API, de snapshots, de compatibilite ou de corrections de bugs.
 metadata:

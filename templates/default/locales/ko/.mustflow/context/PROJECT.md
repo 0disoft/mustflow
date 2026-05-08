@@ -6,6 +6,7 @@ canonical: false
 revision: 1
 name: project
 authority: contextual
+lifecycle: user-editable
 stability: medium
 review_status: needs_human_review
 source_refs:

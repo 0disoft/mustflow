@@ -3,6 +3,8 @@ mustflow_doc: agents.root
 locale: fr
 canonical: false
 revision: 8
+lifecycle: user-editable
+authority: binding
 ---
 
 # AGENTS.md

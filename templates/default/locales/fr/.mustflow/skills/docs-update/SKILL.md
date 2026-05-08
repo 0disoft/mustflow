@@ -3,6 +3,8 @@ mustflow_doc: skill.docs-update
 locale: fr
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: docs-update
 description: Applique cette skill lors de la mise a jour de la documentation mustflow ou projet.
 metadata:

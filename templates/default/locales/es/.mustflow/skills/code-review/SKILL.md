@@ -3,6 +3,8 @@ mustflow_doc: skill.code-review
 locale: es
 canonical: false
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: code-review
 description: Aplica esta skill al revisar cambios de codigo, alcance, riesgos o brechas de verificacion.
 metadata:

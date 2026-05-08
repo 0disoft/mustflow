@@ -46,6 +46,8 @@ mustflow_doc: agents.root
 locale: en
 canonical: true
 revision: 4
+authority: binding
+lifecycle: user-editable
 ```
 
 - `mustflow_doc`: identificador estable del documento dentro de mustflow.

@@ -8,6 +8,7 @@ import {
 	readStringArray,
 	type TomlTable,
 } from './command-contract.js';
+import { readRetentionStore } from '../../core/retention-policy.js';
 import { toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { readTomlFile } from './toml.js';
@@ -148,11 +149,6 @@ function readNestedTable(table: TomlTable | undefined, key: string): TomlTable |
 function readBoolean(table: TomlTable | undefined, key: string, fallback: boolean): boolean {
 	const value = table?.[key];
 	return typeof value === 'boolean' ? value : fallback;
-}
-
-function readRetentionStore(retention: TomlTable | undefined, tableName: string): string | undefined {
-	const table = readNestedTable(retention, tableName);
-	return table ? readString(table, 'store') : undefined;
 }
 
 function readPathContext(projectRoot: string, paths: readonly string[]): readonly PathContext[] {

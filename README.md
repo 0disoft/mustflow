@@ -219,7 +219,7 @@ mf run mustflow_update_apply
 | `mf init --merge` | Merge the mustflow managed block into an existing `AGENTS.md`. |
 | `mf init --force` | Back up conflicting files, then overwrite them. |
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
-| `mf check --strict` | Run additional safety checks for document identity, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
+| `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |

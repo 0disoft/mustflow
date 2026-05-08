@@ -3,6 +3,8 @@ mustflow_doc: skill.web-asset-optimization
 locale: en
 canonical: true
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: web-asset-optimization
 description: Apply this skill when adding, converting, resizing, replacing, or reviewing raster image assets for websites or web applications.
 metadata:

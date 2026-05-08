@@ -8,6 +8,15 @@ import {
 	isRecord,
 	type TomlTable,
 } from './command-contract.js';
+import {
+	ALLOWED_RETENTION_ON_LIMIT,
+	ALLOWED_RETENTION_STORES,
+	DEFAULT_RETENTION_LIMITS,
+	readNestedRetentionTable,
+	readRetentionTable,
+	resolveRetentionLimits,
+	type RetentionLimits,
+} from '../../core/retention-policy.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
@@ -113,7 +122,7 @@ const ALLOWED_MAP_MODES = new Set(['anchors_only']);
 const ALLOWED_MAP_PRIVACY_LEVELS = new Set(['minimal']);
 const ALLOWED_CONTEXT_READ_POLICIES = new Set(['task_relevant_only']);
 const ALLOWED_CONTEXT_AUTHORITIES = new Set(['contextual']);
-const ALLOWED_CONTEXT_DOCUMENT_AUTHORITIES = new Set(['contextual', 'derived', 'external']);
+const ALLOWED_CONTEXT_DOCUMENT_AUTHORITIES = new Set(['contextual', 'derived', 'external', 'router']);
 const CAPABILITY_STATE_FIELDS = ['repo_map', 'preferences', 'context', 'local_index', 'work_items', 'services'] as const;
 const CAPABILITY_BOOLEAN_FIELDS = ['workflow', 'command_contract', 'skills'] as const;
 const ALLOWED_CAPABILITY_STATES = new Set(['disabled', 'optional', 'required', 'generated_optional']);
@@ -201,20 +210,11 @@ const ALLOWED_REFRESH_CHECKPOINTS = new Set([
 	'after_compaction',
 	'before_final_report',
 ]);
-const ALLOWED_RETENTION_STORES = new Set(['none', 'cache', 'repo_local_ignored']);
-const ALLOWED_RETENTION_ON_LIMIT = new Set(['report', 'compact_then_archive']);
 const ALLOWED_TRANSLATION_POLICIES = new Set([
 	'source_only',
 	'update_source_mark_targets_stale',
 	'machine_translate_requires_review',
 ]);
-const DEFAULT_RETENTION_LIMITS = {
-	repoMapMaxFileKb: 128,
-	repoMapFailIfLarger: true,
-	runReceiptMaxFileKb: 128,
-	contextMaxFileKb: 8,
-	knowledgeMaxFileKb: 128,
-} as const;
 const BACKGROUND_SHELL_PATTERNS = [
 	/\s&\s*$/u,
 	/\bnohup\b/iu,
@@ -248,9 +248,23 @@ const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
 	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,
 	/\b(?:must not|do not|never)\s+(?:edit|modify|write|delete)\s+(?:files?\s+)?(?:outside|under|inside|in)\b/iu,
 ] as const;
-const STATIC_MANAGED_MARKDOWN_DOC_IDS: Record<string, string> = {
-	'AGENTS.md': 'agents.root',
-	'.mustflow/skills/INDEX.md': 'skills.index',
+interface ManagedMarkdownExpectation {
+	readonly docId: string;
+	readonly authority: string;
+	readonly lifecycle: string;
+}
+
+const STATIC_MANAGED_MARKDOWN_EXPECTATIONS: Record<string, ManagedMarkdownExpectation> = {
+	'AGENTS.md': {
+		docId: 'agents.root',
+		authority: 'binding',
+		lifecycle: 'user-editable',
+	},
+	'.mustflow/skills/INDEX.md': {
+		docId: 'skills.index',
+		authority: 'router',
+		lifecycle: 'mustflow-owned',
+	},
 };
 const REPO_MAP_DOC_ID = 'repo-map';
 const REPO_MAP_LIFECYCLE = 'generated';
@@ -310,14 +324,6 @@ interface ParsedConfigFiles {
 	readonly commandsToml?: TomlTable;
 	readonly preferencesToml?: TomlTable;
 	readonly versioningToml?: TomlTable;
-}
-
-interface RetentionLimits {
-	readonly repoMapMaxFileKb: number;
-	readonly repoMapFailIfLarger: boolean;
-	readonly runReceiptMaxFileKb: number;
-	readonly contextMaxFileKb: number;
-	readonly knowledgeMaxFileKb: number;
 }
 
 interface SkillIndexRoute {
@@ -1710,27 +1716,49 @@ function validateSkillIndexRoutes(
 	}
 }
 
-function getManagedMarkdownDocId(relativePath: string): string | undefined {
+function getManagedMarkdownExpectation(relativePath: string): ManagedMarkdownExpectation | undefined {
 	const normalizedPath = toPosixPath(relativePath);
-	const staticId = STATIC_MANAGED_MARKDOWN_DOC_IDS[normalizedPath];
+	const staticExpectation = STATIC_MANAGED_MARKDOWN_EXPECTATIONS[normalizedPath];
 
-	if (staticId) {
-		return staticId;
+	if (staticExpectation) {
+		return staticExpectation;
 	}
 
 	const docsMatch = /^\.mustflow\/docs\/([^/]+)\.md$/u.exec(normalizedPath);
 	if (docsMatch) {
-		return `docs.${docsMatch[1]}`;
+		return {
+			docId: `docs.${docsMatch[1]}`,
+			authority: 'workflow-policy',
+			lifecycle: 'mustflow-owned',
+		};
 	}
 
 	const contextMatch = /^\.mustflow\/context\/([^/]+)\.md$/u.exec(normalizedPath);
 	if (contextMatch) {
-		return `context.${contextMatch[1].toLowerCase()}`;
+		const contextName = contextMatch[1].toLowerCase();
+
+		if (contextName === 'index') {
+			return {
+				docId: 'context.index',
+				authority: 'router',
+				lifecycle: 'mustflow-owned',
+			};
+		}
+
+		return {
+			docId: `context.${contextName}`,
+			authority: 'contextual',
+			lifecycle: 'user-editable',
+		};
 	}
 
 	const skillMatch = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(normalizedPath);
 	if (skillMatch) {
-		return `skill.${skillMatch[1]}`;
+		return {
+			docId: `skill.${skillMatch[1]}`,
+			authority: 'procedure',
+			lifecycle: 'mustflow-owned',
+		};
 	}
 
 	return undefined;
@@ -1766,110 +1794,63 @@ function listManagedMarkdownDocuments(projectRoot: string): string[] {
 	return [...new Set(documents)].sort();
 }
 
+function formatManagedMarkdownLabel(relativePath: string, expectation: ManagedMarkdownExpectation): string {
+	return `${expectation.docId} (${toPosixPath(relativePath)})`;
+}
+
 function validateStrictManagedMarkdownIdentities(projectRoot: string, issues: CheckIssue[]): void {
 	for (const relativePath of listManagedMarkdownDocuments(projectRoot)) {
-		const expectedDocId = getManagedMarkdownDocId(relativePath);
+		const expectation = getManagedMarkdownExpectation(relativePath);
 
-		if (!expectedDocId) {
+		if (!expectation) {
 			continue;
 		}
 
 		const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
 		const frontmatter = parseSimpleFrontmatter(content);
+		const documentLabel = formatManagedMarkdownLabel(relativePath, expectation);
 
-		if (frontmatter.mustflow_doc !== expectedDocId) {
-			pushStrictIssue(issues, `${relativePath} frontmatter mustflow_doc must be "${expectedDocId}"`);
+		if (frontmatter.mustflow_doc !== expectation.docId) {
+			pushStrictIssue(issues, `${documentLabel} frontmatter mustflow_doc must be "${expectation.docId}"`);
 		}
 
 		if (!frontmatter.locale) {
-			pushStrictIssue(issues, `${relativePath} frontmatter locale is required`);
+			pushStrictIssue(issues, `${documentLabel} frontmatter locale is required`);
 		}
 
 		if (frontmatter.canonical !== 'true' && frontmatter.canonical !== 'false') {
-			pushStrictIssue(issues, `${relativePath} frontmatter canonical must be true or false`);
+			pushStrictIssue(issues, `${documentLabel} frontmatter canonical must be true or false`);
 		}
 
 		if (!/^[1-9]\d*$/u.test(frontmatter.revision ?? '')) {
-			pushStrictIssue(issues, `${relativePath} frontmatter revision must be a positive integer`);
+			pushStrictIssue(issues, `${documentLabel} frontmatter revision must be a positive integer`);
+		}
+
+		if (frontmatter.authority !== expectation.authority) {
+			pushStrictIssue(issues, `${documentLabel} frontmatter authority must be "${expectation.authority}"`);
+		}
+
+		if (frontmatter.lifecycle !== expectation.lifecycle) {
+			pushStrictIssue(issues, `${documentLabel} frontmatter lifecycle must be "${expectation.lifecycle}"`);
 		}
 	}
 }
 
-function readPositiveIntegerWithDefault(table: TomlTable | undefined, key: string, fallback: number): number {
-	if (!table || !isPositiveInteger(table[key])) {
-		return fallback;
-	}
-
-	return Number(table[key]);
-}
-
-function readBooleanWithDefault(table: TomlTable | undefined, key: string, fallback: boolean): boolean {
-	if (!table || typeof table[key] !== 'boolean') {
-		return fallback;
-	}
-
-	return table[key];
-}
-
-function getNestedRetentionTable(retention: TomlTable | undefined, key: string): TomlTable | undefined {
-	if (!retention || !isRecord(retention[key])) {
-		return undefined;
-	}
-
-	return retention[key];
-}
-
-function getRetentionLimits(mustflowToml: TomlTable | undefined): RetentionLimits {
-	const retention = mustflowToml && isRecord(mustflowToml.retention) ? mustflowToml.retention : undefined;
-	const repoMap = getNestedRetentionTable(retention, 'repo_map');
-	const runReceipts = getNestedRetentionTable(retention, 'run_receipts');
-	const context = getNestedRetentionTable(retention, 'context');
-	const knowledge = getNestedRetentionTable(retention, 'knowledge');
-
-	return {
-		repoMapMaxFileKb: readPositiveIntegerWithDefault(
-			repoMap,
-			'max_file_kb',
-			DEFAULT_RETENTION_LIMITS.repoMapMaxFileKb,
-		),
-		repoMapFailIfLarger: readBooleanWithDefault(
-			repoMap,
-			'fail_if_larger',
-			DEFAULT_RETENTION_LIMITS.repoMapFailIfLarger,
-		),
-		runReceiptMaxFileKb: readPositiveIntegerWithDefault(
-			runReceipts,
-			'max_file_kb',
-			DEFAULT_RETENTION_LIMITS.runReceiptMaxFileKb,
-		),
-		contextMaxFileKb: readPositiveIntegerWithDefault(
-			context,
-			'max_file_kb',
-			DEFAULT_RETENTION_LIMITS.contextMaxFileKb,
-		),
-		knowledgeMaxFileKb: readPositiveIntegerWithDefault(
-			knowledge,
-			'max_file_kb',
-			DEFAULT_RETENTION_LIMITS.knowledgeMaxFileKb,
-		),
-	};
-}
-
 function validateStrictRetentionPolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): RetentionLimits {
-	if (!mustflowToml || !isRecord(mustflowToml.retention)) {
+	const retention = readRetentionTable(mustflowToml);
+
+	if (!retention) {
 		pushStrictIssue(issues, '[retention] table is required');
 		return DEFAULT_RETENTION_LIMITS;
 	}
 
-	const retention = mustflowToml.retention;
-
 	for (const tableName of ['raw_events', 'run_receipts', 'knowledge', 'context', 'repo_map']) {
-		if (!isRecord(retention[tableName])) {
+		if (!readNestedRetentionTable(retention, tableName)) {
 			pushStrictIssue(issues, `[retention.${tableName}] table is required`);
 		}
 	}
 
-	return getRetentionLimits(mustflowToml);
+	return resolveRetentionLimits(mustflowToml);
 }
 
 function validateStrictRefreshPolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {

@@ -5,7 +5,8 @@ locale: en
 canonical: true
 revision: 1
 name: context-index
-authority: contextual
+authority: router
+lifecycle: mustflow-owned
 stability: medium
 review_status: needs_human_review
 ---

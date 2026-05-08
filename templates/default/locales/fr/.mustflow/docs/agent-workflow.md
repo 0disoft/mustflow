@@ -3,6 +3,8 @@ mustflow_doc: docs.agent-workflow
 locale: fr
 canonical: false
 revision: 10
+lifecycle: mustflow-owned
+authority: workflow-policy
 ---
 
 # Flux De Travail Agent

@@ -3,6 +3,8 @@ mustflow_doc: skill.project-context-authoring
 locale: ko
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: project-context-authoring
 description: 저장소 근거를 바탕으로 `.mustflow/context/PROJECT.md`를 작성하거나 유지보수할 때 적용합니다.
 metadata:

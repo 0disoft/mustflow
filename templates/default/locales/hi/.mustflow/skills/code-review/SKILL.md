@@ -3,6 +3,8 @@ mustflow_doc: skill.code-review
 locale: hi
 canonical: false
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: code-review
 description: कोड बदलाव, दायरे, जोखिम, या सत्यापन अंतराल की समीक्षा के समय इस स्किल का उपयोग करें।
 metadata:

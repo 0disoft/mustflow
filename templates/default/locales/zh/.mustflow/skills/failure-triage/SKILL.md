@@ -3,6 +3,8 @@ mustflow_doc: skill.failure-triage
 locale: zh
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: failure-triage
 description: 当已配置 command intent 或验证步骤失败时应用本 skill。
 metadata:

@@ -3,6 +3,8 @@ mustflow_doc: skill.docs-update
 locale: ko
 canonical: false
 revision: 3
+authority: procedure
+lifecycle: mustflow-owned
 name: docs-update
 description: AGENTS.md, mustflow 문서, 설정 문서를 수정하거나 동작 변경 사항을 문서에 반영해야 할 때 적용합니다.
 metadata:

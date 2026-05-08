@@ -31,7 +31,7 @@ npx mf check --strict
 `--strict` ajoute des contrôles plus proches de la stabilité de l’entrée des agents et de la sécurité des commandes.
 
 - Les documents de skill ne doivent pas contenir de blocs shell bruts comme `sh`, `bash` ou `powershell`.
-- Les fichiers Markdown gérés par mustflow doivent conserver le frontmatter `mustflow_doc`, `locale`, `canonical` et `revision` attendu pour leur chemin.
+- Les fichiers Markdown gérés par mustflow doivent conserver le frontmatter `mustflow_doc`, `locale`, `canonical`, `revision`, `authority` et `lifecycle` attendu pour leur chemin. Les messages associes incluent l'identifiant logique du document et le chemin relatif.
 - Les documents de contexte ne doivent pas prétendre remplacer les instructions directes de l’utilisateur, le code actuel, les tests ou les contrats de commande.
 - `.mustflow/skills/INDEX.md` et `.mustflow/context/INDEX.md` doivent rester des index de routage, pas des documents de procédure.
 - Le frontmatter de `SKILL.md` doit utiliser `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure` et un `name` correspondant au dossier `.mustflow/skills/<name>/`.

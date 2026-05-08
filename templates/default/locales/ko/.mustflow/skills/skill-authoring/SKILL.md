@@ -3,6 +3,8 @@ mustflow_doc: skill.skill-authoring
 locale: ko
 canonical: false
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: skill-authoring
 description: `.mustflow/skills/*/SKILL.md` 절차와 `.mustflow/skills/INDEX.md` 경로를 만들거나 유지보수할 때 적용합니다.
 metadata:

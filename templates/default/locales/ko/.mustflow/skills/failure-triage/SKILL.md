@@ -3,6 +3,8 @@ mustflow_doc: skill.failure-triage
 locale: ko
 canonical: false
 revision: 3
+authority: procedure
+lifecycle: mustflow-owned
 name: failure-triage
 description: 테스트, 빌드, 규칙 검사, 문서 검증 명령이 실패했거나 근본 원인을 분석해야 할 때 적용합니다.
 metadata:

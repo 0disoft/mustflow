@@ -4,6 +4,7 @@ kind: mustflow-context
 locale: zh
 canonical: false
 revision: 1
+lifecycle: user-editable
 name: project
 authority: contextual
 stability: medium

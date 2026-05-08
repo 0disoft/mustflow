@@ -31,7 +31,7 @@ npx mf check --strict
 `--strict` ऐसी जांचें जोड़ता है जो एजेंट इनपुट की स्थिरता और कमांड सुरक्षा के अधिक करीब हैं।
 
 - skill दस्तावेज़ों में `sh`, `bash` या `powershell` जैसे कच्चे shell fenced blocks नहीं होने चाहिए।
-- mustflow-managed Markdown files अपने path के लिए अपेक्षित `mustflow_doc`, `locale`, `canonical`, और `revision` frontmatter shape बनाए रखें।
+- mustflow-managed Markdown files अपने path के लिए अपेक्षित `mustflow_doc`, `locale`, `canonical`, `revision`, `authority`, और `lifecycle` frontmatter shape बनाए रखें। संबंधित messages logical document id और relative path दोनों दिखाते हैं।
 - Context documents direct user instructions, current code, tests, या command contracts को override करने का दावा न करें।
 - `.mustflow/skills/INDEX.md` और `.mustflow/context/INDEX.md` routing indexes रहें, procedure documents न बनें।
 - `SKILL.md` frontmatter में `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure`, और `.mustflow/skills/<name>/` folder से match करता `name` होना चाहिए।

@@ -3,6 +3,8 @@ mustflow_doc: skill.test-maintenance
 locale: ko
 canonical: false
 revision: 1
+authority: procedure
+lifecycle: mustflow-owned
 name: test-maintenance
 description: 동작 변경, 버그 수정, API 변경, 스냅샷 갱신 또는 호환성 변경 후 테스트를 추가, 수정, 삭제 또는 점검해야 할 때 적용합니다.
 metadata:

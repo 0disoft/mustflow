@@ -3,6 +3,8 @@ mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
 revision: 21
+lifecycle: mustflow-owned
+authority: workflow-policy
 ---
 
 # Agent Workflow

@@ -3,6 +3,8 @@ mustflow_doc: docs.agent-workflow
 locale: zh
 canonical: false
 revision: 10
+lifecycle: mustflow-owned
+authority: workflow-policy
 ---
 
 # 代理工作流

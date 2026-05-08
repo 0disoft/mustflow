@@ -3,6 +3,8 @@ mustflow_doc: skill.web-asset-optimization
 locale: ko
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: web-asset-optimization
 description: 웹사이트나 웹 앱에 쓰는 래스터 이미지 자산을 추가, 변환, 크기 조정, 교체 또는 검토할 때 적용합니다.
 metadata:

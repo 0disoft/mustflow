@@ -3,6 +3,8 @@ mustflow_doc: skill.test-maintenance
 locale: zh
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: test-maintenance
 description: 当因行为、API、snapshot、兼容性或缺陷修复而需要新增、更新、删除或审计测试时应用本 skill。
 metadata:

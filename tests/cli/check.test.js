@@ -587,13 +587,13 @@ test('strict check fails managed markdown document identity drift', () => {
 		assert.ok(
 			check.issues.some(
 				(issue) =>
-					issue === 'Strict: .mustflow/docs/agent-workflow.md frontmatter mustflow_doc must be "docs.agent-workflow"',
+					issue === 'Strict: docs.agent-workflow (.mustflow/docs/agent-workflow.md) frontmatter mustflow_doc must be "docs.agent-workflow"',
 			),
 		);
 		assert.ok(
 			check.issues.some(
 				(issue) =>
-					issue === 'Strict: .mustflow/skills/code-review/SKILL.md frontmatter mustflow_doc must be "skill.code-review"',
+					issue === 'Strict: skill.code-review (.mustflow/skills/code-review/SKILL.md) frontmatter mustflow_doc must be "skill.code-review"',
 			),
 		);
 	} finally {
@@ -610,8 +610,18 @@ test('strict check fails managed markdown metadata drift', () => {
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
 		const projectContextPath = path.join(projectPath, '.mustflow', 'context', 'PROJECT.md');
 		writeFileSync(agentsPath, readText(agentsPath).replace('canonical: true', 'canonical: maybe'));
-		writeFileSync(skillsIndexPath, readText(skillsIndexPath).replace('locale: en\n', ''));
-		writeFileSync(projectContextPath, readText(projectContextPath).replace('revision: 1', 'revision: latest'));
+		writeFileSync(
+			skillsIndexPath,
+			readText(skillsIndexPath)
+				.replace('locale: en\n', '')
+				.replace('lifecycle: mustflow-owned', 'lifecycle: user-editable'),
+		);
+		writeFileSync(
+			projectContextPath,
+			readText(projectContextPath)
+				.replace('revision: 1', 'revision: latest')
+				.replace('authority: contextual', 'authority: binding'),
+		);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
 		const result = runCli(projectPath, ['check', '--strict', '--json']);
@@ -619,14 +629,24 @@ test('strict check fails managed markdown metadata drift', () => {
 
 		assert.equal(result.status, 1);
 		assert.ok(
-			check.issues.some((issue) => issue === 'Strict: AGENTS.md frontmatter canonical must be true or false'),
+			check.issues.some((issue) => issue === 'Strict: agents.root (AGENTS.md) frontmatter canonical must be true or false'),
 		);
 		assert.ok(
-			check.issues.some((issue) => issue === 'Strict: .mustflow/skills/INDEX.md frontmatter locale is required'),
+			check.issues.some((issue) => issue === 'Strict: skills.index (.mustflow/skills/INDEX.md) frontmatter locale is required'),
 		);
 		assert.ok(
 			check.issues.some(
-				(issue) => issue === 'Strict: .mustflow/context/PROJECT.md frontmatter revision must be a positive integer',
+				(issue) => issue === 'Strict: context.project (.mustflow/context/PROJECT.md) frontmatter revision must be a positive integer',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: context.project (.mustflow/context/PROJECT.md) frontmatter authority must be "contextual"',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: skills.index (.mustflow/skills/INDEX.md) frontmatter lifecycle must be "mustflow-owned"',
 			),
 		);
 	} finally {

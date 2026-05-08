@@ -3,6 +3,8 @@ mustflow_doc: skill.failure-triage
 locale: en
 canonical: true
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: failure-triage
 description: Apply this skill when a configured command intent or verification step fails.
 metadata:

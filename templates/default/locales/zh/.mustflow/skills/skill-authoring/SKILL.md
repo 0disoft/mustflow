@@ -3,6 +3,8 @@ mustflow_doc: skill.skill-authoring
 locale: zh
 canonical: false
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: skill-authoring
 description: Apply this skill when creating or maintaining `.mustflow/skills/*/SKILL.md` procedures and `.mustflow/skills/INDEX.md` routes.
 metadata:

@@ -4,8 +4,9 @@ kind: mustflow-context
 locale: hi
 canonical: false
 revision: 1
+lifecycle: mustflow-owned
 name: context-index
-authority: contextual
+authority: router
 stability: medium
 review_status: needs_human_review
 ---

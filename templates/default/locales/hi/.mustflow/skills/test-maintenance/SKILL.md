@@ -3,6 +3,8 @@ mustflow_doc: skill.test-maintenance
 locale: hi
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: test-maintenance
 description: व्यवहार, APIs, snapshots, compatibility, या bug fix बदलावों के अनुसार परीक्षण जोड़ने, अपडेट करने, हटाने, या ऑडिट करने के समय इस स्किल का उपयोग करें।
 metadata:

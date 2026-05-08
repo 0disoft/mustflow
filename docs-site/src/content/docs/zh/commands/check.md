@@ -31,7 +31,7 @@ npx mf check --strict
 `--strict` 会加入更接近代理输入稳定性和命令安全性的检查。
 
 - Skill 文档不得包含 `sh`、`bash` 或 `powershell` 等原始 shell fenced blocks。
-- mustflow 管理的 Markdown 文件必须保留与路径匹配的 `mustflow_doc`、`locale`、`canonical`、`revision` frontmatter 形态。
+- mustflow 管理的 Markdown 文件必须保留与路径匹配的 `mustflow_doc`、`locale`、`canonical`、`revision`、`authority`、`lifecycle` frontmatter 形态。相关消息会同时显示逻辑文档标识符和相对路径。
 - Context 文档不得声称自己覆盖直接用户指令、当前代码、测试或命令合同。
 - `.mustflow/skills/INDEX.md` 和 `.mustflow/context/INDEX.md` 必须保持路由索引角色，不得变成流程文档。
 - `SKILL.md` frontmatter 必须使用 `metadata.mustflow_schema: "1"`、`metadata.mustflow_kind: procedure`，并且 `name` 必须匹配 `.mustflow/skills/<name>/` 文件夹。

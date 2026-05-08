@@ -3,6 +3,8 @@ mustflow_doc: skill.docs-update
 locale: zh
 canonical: false
 revision: 2
+lifecycle: mustflow-owned
+authority: procedure
 name: docs-update
 description: 当需要更新 mustflow 或项目文档时应用本 skill。
 metadata:

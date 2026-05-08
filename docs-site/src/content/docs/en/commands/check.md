@@ -30,7 +30,7 @@ npx mf check --strict
 
 `--strict` enables additional checks focused on agent input stability and command safety.
 
-- Managed mustflow Markdown files must keep the expected `mustflow_doc`, `locale`, `canonical`, and `revision` frontmatter shape for their path.
+- Managed mustflow Markdown files must keep the expected `mustflow_doc`, `locale`, `canonical`, `revision`, `authority`, and `lifecycle` frontmatter shape for their path. Related issues include both the logical document id and relative path.
 - Context documents must not claim to override direct user instructions, current code, tests, or command contracts.
 - `.mustflow/skills/INDEX.md` and `.mustflow/context/INDEX.md` must remain routing indexes rather than procedure documents.
 - `.mustflow/skills/INDEX.md` routes must point to existing `SKILL.md` files, and every installed skill must be listed.

@@ -30,7 +30,7 @@ npx mf check --strict
 
 `--strict` habilita comprobaciones adicionales centradas en la estabilidad de la entrada del agente y la seguridad de los comandos.
 
-- Los archivos Markdown administrados por mustflow deben conservar el frontmatter `mustflow_doc`, `locale`, `canonical` y `revision` esperado para su ruta.
+- Los archivos Markdown administrados por mustflow deben conservar el frontmatter `mustflow_doc`, `locale`, `canonical`, `revision`, `authority` y `lifecycle` esperado para su ruta. Los mensajes relacionados incluyen el identificador logico del documento y la ruta relativa.
 - Los documentos de contexto no deben afirmar que reemplazan instrucciones directas del usuario, código actual, pruebas o contratos de comando.
 - `.mustflow/skills/INDEX.md` y `.mustflow/context/INDEX.md` deben seguir siendo índices de enrutamiento, no documentos de procedimiento.
 - El frontmatter de `SKILL.md` debe usar `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure` y un `name` que coincida con la carpeta `.mustflow/skills/<name>/`.

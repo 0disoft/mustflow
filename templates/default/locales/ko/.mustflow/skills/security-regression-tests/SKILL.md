@@ -3,6 +3,8 @@ mustflow_doc: skill.security-regression-tests
 locale: ko
 canonical: false
 revision: 1
+lifecycle: mustflow-owned
+authority: procedure
 name: security-regression-tests
 description: 보안에 민감한 코드나 동작 변경에 악용 시나리오 회귀 테스트가 필요할 때 적용합니다.
 metadata:

@@ -3,6 +3,8 @@ mustflow_doc: skill.code-review
 locale: zh
 canonical: false
 revision: 3
+lifecycle: mustflow-owned
+authority: procedure
 name: code-review
 description: 当需要审查代码变更、范围、风险或验证缺口时应用本 skill。
 metadata:
