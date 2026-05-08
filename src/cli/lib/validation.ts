@@ -28,7 +28,10 @@ const REQUIRED_SKILL_SECTION_SETS = [
 		'## 사용 조건',
 		'## 사용하지 않는 경우',
 		'## 필요한 입력',
+		'## 사전 조건',
+		'## 허용 수정 범위',
 		'## 절차',
+		'## 사후 조건',
 		'## 검증',
 		'## 실패 대응',
 		'## 출력 형식',
@@ -38,10 +41,65 @@ const REQUIRED_SKILL_SECTION_SETS = [
 		'## Use When',
 		'## Do Not Use When',
 		'## Required Inputs',
+		'## Preconditions',
+		'## Allowed Edits',
 		'## Procedure',
+		'## Postconditions',
 		'## Verification',
 		'## Failure Handling',
 		'## Output Format',
+	],
+	[
+		'## Proposito',
+		'## Usar Cuando',
+		'## No Usar Cuando',
+		'## Entradas Requeridas',
+		'## Precondiciones',
+		'## Ediciones Permitidas',
+		'## Procedimiento',
+		'## Postcondiciones',
+		'## Verificacion',
+		'## Manejo De Fallos',
+		'## Formato De Salida',
+	],
+	[
+		'## Objectif',
+		'## Utiliser Quand',
+		'## Ne Pas Utiliser Quand',
+		'## Entrees Requises',
+		'## Preconditions',
+		'## Modifications Autorisees',
+		'## Procedure',
+		'## Postconditions',
+		'## Verification',
+		'## Gestion Des Echecs',
+		'## Format De Sortie',
+	],
+	[
+		'## उद्देश्य',
+		'## कब उपयोग करें',
+		'## कब उपयोग न करें',
+		'## आवश्यक इनपुट',
+		'## पूर्व शर्तें',
+		'## अनुमत edits',
+		'## प्रक्रिया',
+		'## पश्च शर्तें',
+		'## सत्यापन',
+		'## विफलता प्रबंधन',
+		'## आउटपुट प्रारूप',
+	],
+	[
+		'## 目标',
+		'## 使用时机',
+		'## 不适用时机',
+		'## 必要输入',
+		'## 前置条件',
+		'## 允许编辑范围',
+		'## 流程',
+		'## 后置条件',
+		'## 验证',
+		'## 失败处理',
+		'## 输出格式',
 	],
 ] as const;
 
@@ -176,10 +234,16 @@ const SKILL_COMMAND_PERMISSION_CLAIM_PATTERNS = [
 	/\bcommand\s+execution\s+(?:is\s+)?(?:authorized|allowed|permitted)\s+by\s+(?:this\s+)?skill\b/iu,
 ];
 const ROUTER_INDEX_PROCEDURE_SECTION_PATTERN =
-	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Procedure|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|절차|검증|실패 대응|출력 형식)\s*$/imu;
+	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Preconditions|Allowed Edits|Procedure|Postconditions|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|사전 조건|허용 수정 범위|절차|사후 조건|검증|실패 대응|출력 형식)\s*$/imu;
 const ROUTER_INDEX_FILES = ['.mustflow/skills/INDEX.md', '.mustflow/context/INDEX.md'] as const;
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
+const SKILL_INDEX_ROUTE_COLUMN_COUNT = 7;
+const SKILL_INDEX_SKILL_PATH_COLUMN_INDEX = 1;
+const SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX = 5;
+const SKILL_INDEX_ROUTE_COLUMNS =
+	'Trigger, Skill Document, Required Input, Edit Scope, Risk, Verification Intents, Expected Output';
 const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
+const SKILL_PACK_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;
 const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
 	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,
 	/\b(?:must not|do not|never)\s+(?:edit|modify|write|delete)\s+(?:files?\s+)?(?:outside|under|inside|in)\b/iu,
@@ -1311,7 +1375,7 @@ function validateSkills(projectRoot: string, issues: CheckIssue[]): void {
 
 		if (!matchingSectionSet) {
 			issues.push({
-				message: `Missing required skill section set in .mustflow/skills/${toPosixPath(relativePath)}; expected Korean or English mustflow skill headings`,
+				message: `Missing required skill section set in .mustflow/skills/${toPosixPath(relativePath)}; expected a supported mustflow skill heading set`,
 			});
 		}
 	}
@@ -1515,6 +1579,12 @@ function readBacktickValues(value: string): string[] {
 	return [...value.matchAll(/`([^`]+)`/gu)].map((match) => match[1].trim()).filter(Boolean);
 }
 
+function findSkillIndexRoutePathColumn(cells: readonly string[]): number {
+	return cells.findIndex((cell) =>
+		readBacktickValues(cell).some((value) => value.startsWith('.mustflow/skills/') && value.endsWith('/SKILL.md')),
+	);
+}
+
 function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
 	const routes: SkillIndexRoute[] = [];
 
@@ -1524,22 +1594,58 @@ function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
 		}
 
 		const cells = splitMarkdownTableRow(line);
-		if (cells.length < 3 || isMarkdownTableSeparator(cells) || cells[0].toLowerCase() === 'scenario') {
+		if (isMarkdownTableSeparator(cells)) {
 			continue;
 		}
 
-		const [skillPath] = readBacktickValues(cells[1]);
+		const skillPathColumn = findSkillIndexRoutePathColumn(cells);
+		if (skillPathColumn < 0) {
+			continue;
+		}
+
+		const [skillPath] = readBacktickValues(cells[skillPathColumn]);
 		if (!skillPath) {
 			continue;
 		}
 
 		routes.push({
 			skillPath,
-			commandIntents: readBacktickValues(cells[2]),
+			commandIntents: readBacktickValues(cells[SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX] ?? ''),
 		});
 	}
 
 	return routes;
+}
+
+function validateSkillIndexRouteShape(content: string, issues: CheckIssue[]): void {
+	for (const line of content.split(/\r?\n/u)) {
+		if (!line.trim().startsWith('|')) {
+			continue;
+		}
+
+		const cells = splitMarkdownTableRow(line);
+		if (isMarkdownTableSeparator(cells)) {
+			continue;
+		}
+
+		const skillPathColumn = findSkillIndexRoutePathColumn(cells);
+		if (skillPathColumn < 0) {
+			continue;
+		}
+
+		const [skillPath] = readBacktickValues(cells[skillPathColumn]);
+		if (cells.length !== SKILL_INDEX_ROUTE_COLUMN_COUNT || skillPathColumn !== SKILL_INDEX_SKILL_PATH_COLUMN_INDEX) {
+			pushStrictIssue(issues, `${SKILL_INDEX_PATH} route table rows must use columns: ${SKILL_INDEX_ROUTE_COLUMNS}`);
+			continue;
+		}
+
+		for (const columnIndex of [0, 2, 3, 4, 5, 6]) {
+			if (!cells[columnIndex]?.trim()) {
+				pushStrictIssue(issues, `${SKILL_INDEX_PATH} route ${skillPath} has an empty route column`);
+				break;
+			}
+		}
+	}
 }
 
 function validateSkillIndexRoutes(
@@ -1554,7 +1660,10 @@ function validateSkillIndexRoutes(
 		return;
 	}
 
-	const skillRoutes = parseSkillIndexRoutes(readFileSync(skillIndexPath, 'utf8'));
+	const skillIndexContent = readFileSync(skillIndexPath, 'utf8');
+	validateSkillIndexRouteShape(skillIndexContent, issues);
+
+	const skillRoutes = parseSkillIndexRoutes(skillIndexContent);
 	const routedSkillPaths = new Set<string>();
 	const expectedSkillPaths = new Set(skillFiles.map((relativePath) => `.mustflow/skills/${relativePath}`));
 	const seenSkillPaths = new Set<string>();
@@ -2040,6 +2149,29 @@ function validateSkillCommandPermissionClaims(skillLabel: string, content: strin
 	}
 }
 
+function validateSkillPackageIdentity(
+	skillLabel: string,
+	skillName: string,
+	frontmatter: Record<string, string>,
+	issues: CheckIssue[],
+): void {
+	const packId = frontmatter.pack_id;
+	const skillId = frontmatter.skill_id;
+
+	if (!packId || !SKILL_PACK_ID_PATTERN.test(packId)) {
+		pushStrictIssue(issues, `${skillLabel} metadata.pack_id must be a dotted package identifier`);
+	}
+
+	if (!skillId) {
+		pushStrictIssue(issues, `${skillLabel} metadata.skill_id is required`);
+		return;
+	}
+
+	if (packId && SKILL_PACK_ID_PATTERN.test(packId) && skillId !== `${packId}.${skillName}`) {
+		pushStrictIssue(issues, `${skillLabel} metadata.skill_id must be "${packId}.${skillName}"`);
+	}
+}
+
 function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	const skillsRoot = path.join(projectRoot, '.mustflow', 'skills');
 	const skillFiles = listFilesRecursive(skillsRoot).filter((relativePath) => relativePath.endsWith('/SKILL.md'));
@@ -2079,6 +2211,7 @@ function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | und
 			pushStrictIssue(issues, `${skillLabel} frontmatter name must match skill folder "${skillName}"`);
 		}
 
+		validateSkillPackageIdentity(skillLabel, skillName, frontmatter, issues);
 		validateSkillCommandIntentReferences(skillLabel, content, commandsToml, issues);
 		validateSkillCommandPermissionClaims(skillLabel, content, issues);
 

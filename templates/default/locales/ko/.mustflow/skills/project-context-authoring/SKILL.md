@@ -2,12 +2,14 @@
 mustflow_doc: skill.project-context-authoring
 locale: ko
 canonical: false
-revision: 1
+revision: 2
 name: project-context-authoring
 description: 저장소 근거를 바탕으로 `.mustflow/context/PROJECT.md`를 작성하거나 유지보수할 때 적용합니다.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.project-context-authoring
   command_intents:
     - mustflow_check
 ---
@@ -39,6 +41,17 @@ metadata:
 - `REPO_MAP.md`, 패키지 매니페스트, 기존 문서, 테스트, CI 파일, 소스 파일. 단, 이들은 근거일 뿐 권한 출처가 아닙니다.
 - 현재 사용자 요청과 명시된 출처 제약.
 
+## 사전 조건
+
+- 작업이 사용 조건에 맞고 사용하지 않는 경우에는 해당하지 않습니다.
+- 필요한 입력을 확보했거나, 빠진 입력을 추측하지 않고 보고할 수 있습니다.
+- 현재 범위에 대해 더 높은 우선순위의 지침과 `.mustflow/config/commands.toml`을 확인했습니다.
+
+## 허용 수정 범위
+
+- 이 스킬, 사용자 요청, `.mustflow/skills/INDEX.md`의 맞는 경로가 설명하는 범위 안에서만 수정합니다.
+- 명령 권한을 넓히거나, 프로젝트 사실을 지어내거나, 관련 없는 워크플로 파일을 변경하지 않습니다.
+
 ## 절차
 
 1. 현재 저장소 근거가 명확히 반박하지 않는 한 기존 사람이 작성한 맥락을 보존합니다.
@@ -49,6 +62,11 @@ metadata:
 6. 아키텍처, 사용자 유형, 릴리스, 코딩 규칙 메모는 저장소가 직접 근거를 제공할 때만 추가합니다.
 7. 검증을 설명할 때는 `.mustflow/config/commands.toml`의 명령 의도 이름을 참조합니다. 패키지 스크립트, CI 작업, 매니페스트 힌트를 에이전트 실행 권한으로 바꾸지 않습니다.
 8. 제품 목표, 로드맵 약속, 도메인 규칙, 구현 세부사항을 추측하지 말고, 알 수 없는 항목은 비워 두거나 명시적으로 미확인으로 표시합니다.
+
+## 사후 조건
+
+- 명확한 근거, 실행한 명령 의도, 건너뛴 확인, 남은 위험을 포함해 예상 출력을 작성할 수 있습니다.
+- 빠진 명령 의도, 알 수 없는 입력, 권한 충돌은 숨기지 않고 보고합니다.
 
 ## 검증
 

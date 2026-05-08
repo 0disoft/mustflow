@@ -2,12 +2,14 @@
 mustflow_doc: skill.web-asset-optimization
 locale: ko
 canonical: false
-revision: 1
+revision: 2
 name: web-asset-optimization
 description: 웹사이트나 웹 앱에 쓰는 래스터 이미지 자산을 추가, 변환, 크기 조정, 교체 또는 검토할 때 적용합니다.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.web-asset-optimization
   command_intents:
     - asset_optimize
     - build
@@ -40,6 +42,17 @@ metadata:
 - 기존 프레임워크 이미지 규칙, 정적 자산 폴더, 가져오기 방식.
 - `.mustflow/config/commands.toml`의 `asset_optimize` 및 `build` 의도.
 
+## 사전 조건
+
+- 작업이 사용 조건에 맞고 사용하지 않는 경우에는 해당하지 않습니다.
+- 필요한 입력을 확보했거나, 빠진 입력을 추측하지 않고 보고할 수 있습니다.
+- 현재 범위에 대해 더 높은 우선순위의 지침과 `.mustflow/config/commands.toml`을 확인했습니다.
+
+## 허용 수정 범위
+
+- 이 스킬, 사용자 요청, `.mustflow/skills/INDEX.md`의 맞는 경로가 설명하는 범위 안에서만 수정합니다.
+- 명령 권한을 넓히거나, 프로젝트 사실을 지어내거나, 관련 없는 워크플로 파일을 변경하지 않습니다.
+
 ## 절차
 
 1. 변경된 이미지 자산과 그 자산을 참조하는 페이지, 컴포넌트, 스타일, 메타데이터, 매니페스트를 모두 확인합니다.
@@ -50,6 +63,11 @@ metadata:
 6. 저장소에 원본과 파생 자산을 분리하는 규칙이 있으면 따릅니다. 그런 규칙이 없다면 이후 편집에 꼭 필요한 경우가 아니면 중복 원본을 추가하지 않습니다.
 7. 지역 스타일에 맞춰 가져오기 구문, 정적 경로, 메타데이터 참조, 치수, 캐시에 민감한 파일 이름을 갱신합니다.
 8. 변경 전후 파일 크기를 비교하고, 품질, 투명도, 애니메이션, 브라우저 지원, 대체 형식 관련 위험을 기록합니다.
+
+## 사후 조건
+
+- 명확한 근거, 실행한 명령 의도, 건너뛴 확인, 남은 위험을 포함해 예상 출력을 작성할 수 있습니다.
+- 빠진 명령 의도, 알 수 없는 입력, 권한 충돌은 숨기지 않고 보고합니다.
 
 ## 검증
 

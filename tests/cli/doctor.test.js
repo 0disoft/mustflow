@@ -110,8 +110,8 @@ test('strict doctor highlights skill index and body drift', () => {
 		initProject(projectPath);
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
 		const skillsIndex = readFileSync(skillsIndexPath, 'utf8').replace(
-			'| Update documentation | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |',
-			'| Update documentation | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `lint` |',
+			'| Documentation changes affect public or workflow docs | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior or field | Relevant docs only | stale public docs | `docs_validate`, `mustflow_check` | Doc changes and skipped checks |',
+			'| Documentation changes affect public or workflow docs | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior or field | Relevant docs only | stale public docs | `docs_validate`, `lint` | Doc changes and skipped checks |',
 		);
 		writeFileSync(skillsIndexPath, skillsIndex);
 

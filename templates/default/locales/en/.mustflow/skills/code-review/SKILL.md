@@ -2,12 +2,14 @@
 mustflow_doc: skill.code-review
 locale: en
 canonical: true
-revision: 2
+revision: 4
 name: code-review
 description: Apply this skill when reviewing code changes, scope, risks, or verification gaps.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - test_related
@@ -39,6 +41,17 @@ Verify that a change aligns with the request and ensure that no behavioral risks
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+## Preconditions
+
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available, or missing inputs can be reported without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+
+## Allowed Edits
+
+- Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
+- Do not broaden command permission, invent project facts, or change unrelated workflow files.
+
 ## Procedure
 
 1. Review the list of modified files.
@@ -53,6 +66,11 @@ Verify that a change aligns with the request and ensure that no behavioral risks
    - tests that inadvertently reintroduce removed behavior
 5. Verify the existence of relevant command intents.
 6. Document findings categorized by severity.
+
+## Postconditions
+
+- The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
+- Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
 ## Verification
 

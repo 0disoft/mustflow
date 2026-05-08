@@ -2,12 +2,14 @@
 mustflow_doc: skill.test-maintenance
 locale: en
 canonical: true
-revision: 1
+revision: 3
 name: test-maintenance
 description: Apply this skill when adding, updating, removing, or auditing tests in response to changes to behavior, APIs, snapshots, compatibility, or bug fixes.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.test-maintenance
   command_intents:
     - test
     - test_related
@@ -44,6 +46,17 @@ Keep tests aligned with the current behavior contract.
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` `[testing]`
 
+## Preconditions
+
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available, or missing inputs can be reported without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+
+## Allowed Edits
+
+- Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
+- Do not broaden command permission, invent project facts, or change unrelated workflow files.
+
 ## Procedure
 
 1. Define the expected current behavior.
@@ -58,6 +71,11 @@ Keep tests aligned with the current behavior contract.
 5. Do not reintroduce removed behavior solely because old tests expect it.
 6. Treat snapshot updates as manual unless `snapshot_update` is explicitly approved and configured.
 7. Keep tests deterministic and close to the behavior contract.
+
+## Postconditions
+
+- The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
+- Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
 ## Verification
 

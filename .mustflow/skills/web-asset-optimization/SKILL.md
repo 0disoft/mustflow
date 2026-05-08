@@ -2,12 +2,14 @@
 mustflow_doc: skill.web-asset-optimization
 locale: en
 canonical: true
-revision: 1
+revision: 3
 name: web-asset-optimization
 description: Apply this skill when adding, converting, resizing, replacing, or reviewing raster image assets for websites or web applications.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.web-asset-optimization
   command_intents:
     - asset_optimize
     - build
@@ -40,6 +42,17 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 - Existing framework image conventions, static asset folders, and import style.
 - `.mustflow/config/commands.toml` entries for `asset_optimize` and `build`.
 
+## Preconditions
+
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available, or missing inputs can be reported without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+
+## Allowed Edits
+
+- Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
+- Do not broaden command permission, invent project facts, or change unrelated workflow files.
+
 ## Procedure
 
 1. Identify every changed image asset and every page, component, style, metadata, or manifest reference that depends on it.
@@ -50,6 +63,11 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 6. Keep source and derived assets separate when the repository already has that convention. Otherwise, avoid adding duplicate originals unless future editing requires them.
 7. Update imports, static paths, metadata references, dimensions, and cache-sensitive filenames according to the local style.
 8. Compare before and after file sizes and note any quality, transparency, animation, browser-support, or fallback tradeoff.
+
+## Postconditions
+
+- The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
+- Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
 ## Verification
 

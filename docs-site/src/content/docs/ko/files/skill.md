@@ -26,6 +26,8 @@ description: Use when reviewing code changes, scope, risks, or missing verificat
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - lint
@@ -39,6 +41,8 @@ metadata:
 - `description`: 에이전트가 이 스킬을 언제 읽어야 하는지 설명합니다.
 - `metadata.mustflow_schema`: 스킬 메타데이터 형식의 판 번호입니다. 현재 지원하는 값은 `"1"`입니다.
 - `metadata.mustflow_kind`: 문서 종류입니다. 기본 스킬은 `procedure`를 사용해야 합니다.
+- `metadata.pack_id`: 스킬을 소유한 패키지나 스킬 묶음의 이름공간입니다. 예: `mustflow.core`.
+- `metadata.skill_id`: 전역 범위의 스킬 식별자입니다. `mustflow.core.code-review`처럼 패키지 식별자와 폴더 이름을 결합해야 합니다.
 - `metadata.command_intents`: 이 스킬이 참조할 수 있는 명령 의도 이름입니다. 각 이름은 `.mustflow/config/commands.toml`에 있어야 합니다.
 
 영어 스킬 템플릿이 기준 원문입니다. 언어별 번역 스킬은 각자의 `locale`을 쓰고 `canonical: false`로 표시합니다.

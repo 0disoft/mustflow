@@ -8,6 +8,8 @@ description: 테스트, 빌드, 규칙 검사, 문서 검증 명령이 실패했
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.failure-triage
   command_intents:
     - test
     - lint
@@ -41,6 +43,17 @@ metadata:
 - `.mustflow/docs/agent-workflow.md`의 실패 대응 정책
 - `.mustflow/config/commands.toml`의 실패한 명령 의도 계약
 
+## 사전 조건
+
+- 작업이 사용 조건에 맞고 사용하지 않는 경우에는 해당하지 않습니다.
+- 필요한 입력을 확보했거나, 빠진 입력을 추측하지 않고 보고할 수 있습니다.
+- 현재 범위에 대해 더 높은 우선순위의 지침과 `.mustflow/config/commands.toml`을 확인했습니다.
+
+## 허용 수정 범위
+
+- 이 스킬, 사용자 요청, `.mustflow/skills/INDEX.md`의 맞는 경로가 설명하는 범위 안에서만 수정합니다.
+- 명령 권한을 넓히거나, 프로젝트 사실을 지어내거나, 관련 없는 워크플로 파일을 변경하지 않습니다.
+
 ## 절차
 
 1. 실패한 명령 의도와 작업 디렉터리를 확인합니다.
@@ -52,6 +65,11 @@ metadata:
 7. 원인을 환경, 설정, 코드, 테스트 문제로 분류합니다.
 8. 가장 작은 단위의 재현 명령이나 관련 파일을 식별합니다.
 9. 최소한의 수정을 적용한 후 실패한 명령 의도를 다시 실행하여 검증합니다.
+
+## 사후 조건
+
+- 명확한 근거, 실행한 명령 의도, 건너뛴 확인, 남은 위험을 포함해 예상 출력을 작성할 수 있습니다.
+- 빠진 명령 의도, 알 수 없는 입력, 권한 충돌은 숨기지 않고 보고합니다.
 
 ## 검증
 

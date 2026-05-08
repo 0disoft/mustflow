@@ -2,12 +2,14 @@
 mustflow_doc: skill.skill-authoring
 locale: ko
 canonical: false
-revision: 1
+revision: 3
 name: skill-authoring
 description: `.mustflow/skills/*/SKILL.md` 절차와 `.mustflow/skills/INDEX.md` 경로를 만들거나 유지보수할 때 적용합니다.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.skill-authoring
   command_intents:
     - mustflow_check
     - docs_validate
@@ -41,16 +43,32 @@ mustflow 스킬을 좁고 반복 가능한 절차로 유지합니다. 스킬이 
 - 해당 작업이 반복 가능하며 기존 스킬로 처리하는 편이 더 낫지 않다는 저장소 근거.
 - 설치 템플릿에 포함되는 스킬이라면 현지화와 템플릿 메타데이터.
 
+## 사전 조건
+
+- 작업이 사용 조건에 맞고 사용하지 않는 경우에는 해당하지 않습니다.
+- 필요한 입력을 확보했거나, 빠진 입력을 추측하지 않고 보고할 수 있습니다.
+- 현재 범위에 대해 더 높은 우선순위의 지침과 `.mustflow/config/commands.toml`을 확인했습니다.
+
+## 허용 수정 범위
+
+- 이 스킬, 사용자 요청, `.mustflow/skills/INDEX.md`의 맞는 경로가 설명하는 범위 안에서만 수정합니다.
+- 명령 권한을 넓히거나, 프로젝트 사실을 지어내거나, 관련 없는 워크플로 파일을 변경하지 않습니다.
+
 ## 절차
 
 1. 스킬이 다룰 가장 작은 반복 작업을 정의합니다. 범위가 너무 넓으면 나누거나, 스킬을 만들지 말고 저장소 지침으로 남깁니다.
 2. 새 스킬을 추가하기 전에 기존 스킬을 검색합니다. 겹치는 절차를 새로 만들기보다 맞는 스킬을 갱신하는 쪽을 우선합니다.
-3. 안정적인 폴더 이름과 일치하는 앞부분 메타데이터 `name`을 사용합니다. `mustflow_doc`은 `skill.<name>`, `metadata.mustflow_schema`는 `"1"`, `metadata.mustflow_kind`는 `procedure`로 설정합니다.
-4. 표준 섹션을 작성합니다: 목적, 사용 조건, 사용하지 않는 경우, 필요한 입력, 절차, 검증, 실패 대응, 출력 형식.
+3. 안정적인 폴더 이름과 일치하는 앞부분 메타데이터 `name`을 사용합니다. `mustflow_doc`은 `skill.<name>`, `metadata.mustflow_schema`는 `"1"`, `metadata.mustflow_kind`는 `procedure`, `metadata.pack_id`는 패키지 이름공간, `metadata.skill_id`는 `<pack_id>.<name>`으로 설정합니다.
+4. 표준 섹션을 작성합니다: 목적, 사용 조건, 사용하지 않는 경우, 필요한 입력, 사전 조건, 허용 수정 범위, 절차, 사후 조건, 검증, 실패 대응, 출력 형식.
 5. 절차를 구체적이고 좁게 유지합니다. 무엇을 읽고, 무엇을 바꾸며, 무엇을 피하고, 어떤 근거를 보고할지 포함합니다.
 6. 명령은 명령 의도 이름으로만 참조합니다. 원시 셸 명령 블록을 넣거나 스킬이 명령 실행을 허가한다고 쓰지 않습니다.
-7. `.mustflow/skills/INDEX.md`에 좁은 시나리오, 스킬 경로, 관련 명령 의도를 갱신합니다.
+7. `.mustflow/skills/INDEX.md`에는 트리거, 필요한 입력, 수정 범위, 위험, 검증 의도, 예상 출력을 포함한 간결한 라우팅 행을 추가하거나 갱신합니다.
 8. 스킬이 템플릿으로 설치된다면 템플릿 매니페스트, 현지화 메타데이터, 설치 문서, 패키지 테스트, 설치 파일 목록을 보여 주는 공개 문서를 함께 갱신합니다.
+
+## 사후 조건
+
+- 명확한 근거, 실행한 명령 의도, 건너뛴 확인, 남은 위험을 포함해 예상 출력을 작성할 수 있습니다.
+- 빠진 명령 의도, 알 수 없는 입력, 권한 충돌은 숨기지 않고 보고합니다.
 
 ## 검증
 

@@ -2,12 +2,14 @@
 mustflow_doc: skill.project-context-authoring
 locale: en
 canonical: true
-revision: 1
+revision: 3
 name: project-context-authoring
 description: Apply this skill when filling or maintaining `.mustflow/context/PROJECT.md` from repository-supported evidence.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.project-context-authoring
   command_intents:
     - mustflow_check
 ---
@@ -39,6 +41,17 @@ Keep `.mustflow/context/PROJECT.md` useful as a compact agent briefing while pre
 - `REPO_MAP.md`, package manifests, existing docs, tests, CI files, and source files only as evidence, not as permission sources.
 - The current user request and any explicit source constraints.
 
+## Preconditions
+
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available, or missing inputs can be reported without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+
+## Allowed Edits
+
+- Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
+- Do not broaden command permission, invent project facts, or change unrelated workflow files.
+
 ## Procedure
 
 1. Preserve existing human-written context unless current repository evidence clearly contradicts it.
@@ -49,6 +62,11 @@ Keep `.mustflow/context/PROJECT.md` useful as a compact agent briefing while pre
 6. Add optional architecture, persona, release, or coding-convention notes only when the repository provides direct evidence.
 7. Reference command intent names from `.mustflow/config/commands.toml` when describing validation. Do not convert package scripts, CI jobs, or manifest hints into runnable agent permission.
 8. Leave unknown fields unset or explicitly marked as unknown instead of inventing product goals, roadmap promises, domain rules, or implementation details.
+
+## Postconditions
+
+- The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
+- Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
 ## Verification
 

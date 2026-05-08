@@ -26,6 +26,8 @@ description: Apply this skill when reviewing code changes, scope, risks, or veri
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - lint
@@ -39,6 +41,8 @@ metadata:
 - `description`: A brief summary of when the agent should apply this skill.
 - `metadata.mustflow_schema`: The version of the skill metadata schema. The current supported value is `"1"`.
 - `metadata.mustflow_kind`: The category of the document. Default skills must use `procedure`.
+- `metadata.pack_id`: The package or pack namespace that owns the skill, such as `mustflow.core`.
+- `metadata.skill_id`: The globally scoped skill identifier. It must combine the pack identifier and folder name, such as `mustflow.core.code-review`.
 - `metadata.command_intents`: A list of command intent names referenced by this skill. Each name must exist in `.mustflow/config/commands.toml`.
 
 The English version of the skill template serves as the authoritative source. Localized versions specify their own locales and set `canonical: false`.
@@ -50,17 +54,20 @@ Each skill document should include the following sections:
 - `Purpose`: Defines the specific task or objective this skill addresses.
 - `Use When`: Describes scenarios that should trigger the application of this skill.
 - `Do Not Use When`: Specifies exclusions to prevent unnecessary application.
-- `Required Inputs`: Context and information the agent must collect prior to execution.
+- `Required Inputs`: Context and information the agent must collect before execution.
+- `Preconditions`: Conditions that must hold before following the procedure.
+- `Allowed Edits`: The files or surfaces the skill may guide, without granting command permission.
 - `Procedure`: The step-by-step sequence of operations.
-- `Validation`: Relevant command intents and verification steps.
+- `Postconditions`: Evidence, outputs, and unresolved risks that must be reportable after the procedure.
+- `Verification`: Relevant command intents and verification steps.
 - `Failure Handling`: Protocols for managing command failures or missing information.
-- `Output Contract`: Required components to be included in the final report.
+- `Output Format`: Required components to include in the final report.
 
 ## Authoring Guidelines
 
 Each skill should be scoped to a single task type.
 
-Avoid including raw shell commands within skill documents. In the validation section, reference the `.mustflow/docs/agent-workflow.md#command-execution-policy` and list only the relevant command intent names.
+Avoid including raw shell commands within skill documents. In the Verification section, reference the `.mustflow/docs/agent-workflow.md#command-execution-policy` and list only the relevant command intent names.
 
 Each intent must be resolved via `.mustflow/config/commands.toml`. If an intent is not marked as `status = "configured"`, it must not be executed; instead, report its status and the reason for skipping.
 
@@ -69,7 +76,7 @@ Do not write that a skill itself grants command execution permission. Skills des
 Example:
 
 ```md
-## Validation
+## Verification
 
 Relevant command intents:
 

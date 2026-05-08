@@ -368,10 +368,10 @@ test('strict check fails skill index route drift', () => {
 		initProject(projectPath);
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
 		const skillsIndex = readText(skillsIndexPath)
-			.replace(/^\| Review code changes \|.*\n/mu, '')
+			.replace(/^\| Code changes need review before report \|.*\n/mu, '')
 			.replace(
-				/(\| Update documentation \| `\.mustflow\/skills\/docs-update\/SKILL\.md` \| `docs_validate`, `mustflow_check` \|)/u,
-				'$1\n| Broken route | `.mustflow/skills/missing/SKILL.md` | `deploy_prod` |\n| Docs drift | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `lint` |',
+				/(\| Documentation changes affect public or workflow docs \| `\.mustflow\/skills\/docs-update\/SKILL\.md` \| Changed behavior or field \| Relevant docs only \| stale public docs \| `docs_validate`, `mustflow_check` \| Doc changes and skipped checks \|)/u,
+				'$1\n| Broken route | `.mustflow/skills/missing/SKILL.md` | Any request | None | high | `deploy_prod` | Failure |\n| Docs drift | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior or field | Relevant docs only | stale public docs | `docs_validate`, `lint` | Doc changes and skipped checks |',
 			);
 		writeFileSync(skillsIndexPath, skillsIndex);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
@@ -397,6 +397,35 @@ test('strict check fails skill index route drift', () => {
 				(issue) =>
 					issue ===
 					'Strict: .mustflow/skills/INDEX.md route .mustflow/skills/docs-update/SKILL.md references command intent "lint" not declared by the skill frontmatter',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill index route table shape drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const skillsIndex = readText(skillsIndexPath).replace(
+			/^\| Code changes need review before report \|.*\n/mu,
+			'| Review code changes | `.mustflow/skills/code-review/SKILL.md` | `test`, `lint` |\n',
+		);
+		writeFileSync(skillsIndexPath, skillsIndex);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/INDEX.md route table rows must use columns: Trigger, Skill Document, Required Input, Edit Scope, Risk, Verification Intents, Expected Output',
 			),
 		);
 	} finally {
@@ -473,6 +502,40 @@ test('strict check fails skill name identity drift', () => {
 				(issue) =>
 					issue ===
 					'Strict: .mustflow/skills/code-review/SKILL.md frontmatter name must match skill folder "code-review"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill package identity drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readText(skillPath)
+			.replace('  pack_id: mustflow.core\n', '')
+			.replace('  skill_id: mustflow.core.code-review\n', '');
+		writeFileSync(skillPath, skill);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/code-review/SKILL.md metadata.pack_id must be a dotted package identifier',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue === 'Strict: .mustflow/skills/code-review/SKILL.md metadata.skill_id is required',
 			),
 		);
 	} finally {
@@ -911,6 +974,25 @@ test('fails when a skill omits a required section', () => {
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
 		writeFileSync(skillPath, skill.replace('## Verification', '## Checks'));
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Missing required skill section set/);
+		assert.match(result.stderr, /code-review\/SKILL\.md/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails when a skill omits an extended contract section', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readFileSync(skillPath, 'utf8');
+		writeFileSync(skillPath, skill.replace('## Preconditions', '## Starting State'));
 
 		const result = runCli(projectPath, ['check']);
 

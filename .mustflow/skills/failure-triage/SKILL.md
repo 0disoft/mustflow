@@ -2,12 +2,14 @@
 mustflow_doc: skill.failure-triage
 locale: en
 canonical: true
-revision: 1
+revision: 3
 name: failure-triage
 description: Apply this skill when a configured command intent or verification step fails.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.failure-triage
   command_intents:
     - mustflow_check
 ---
@@ -37,6 +39,17 @@ Identify the most probable root cause of a failed command or verification step b
 - Recently modified files
 - Relevant command contract entry
 
+## Preconditions
+
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available, or missing inputs can be reported without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+
+## Allowed Edits
+
+- Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
+- Do not broaden command permission, invent project facts, or change unrelated workflow files.
+
 ## Procedure
 
 1. Preserve the original failing intent name.
@@ -44,6 +57,11 @@ Identify the most probable root cause of a failed command or verification step b
 3. Determine if the failure originates from code, tests, configuration, documentation, or the environment.
 4. Examine the most relevant files.
 5. Develop a single hypothesis and verify it using the most targeted configured intent.
+
+## Postconditions
+
+- The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
+- Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
 ## Verification
 
