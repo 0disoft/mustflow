@@ -28,6 +28,7 @@ AGENTS.md
    ├─ failure-triage/SKILL.md
    ├─ project-context-authoring/SKILL.md
    ├─ skill-authoring/SKILL.md
+   ├─ security-regression-tests/SKILL.md
    ├─ test-maintenance/SKILL.md
    └─ web-asset-optimization/SKILL.md
 ```

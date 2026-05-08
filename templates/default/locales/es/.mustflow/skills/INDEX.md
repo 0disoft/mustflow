@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 7
+revision: 8
 ---
 
 # Indice de skills
@@ -23,6 +23,7 @@ usa `AGENTS.md` y `.mustflow/config/commands.toml` para hacer el cambio seguro m
 | --- | --- | --- | --- | --- | --- | --- |
 | Los cambios de codigo necesitan revision antes del informe | `.mustflow/skills/code-review/SKILL.md` | Diff y objetivo de la tarea | Archivos modificados | comportamiento y regresion | `test`, `test_related`, `test_audit`, `lint` | Hallazgos o nota sin problemas |
 | Se agregan, actualizan, eliminan o auditan pruebas | `.mustflow/skills/test-maintenance/SKILL.md` | Comportamiento cambiado o evidencia de prueba obsoleta | Pruebas y fuente relacionada | deriva de contrato | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Razon de pruebas y verificacion |
+| Cambios sensibles de seguridad necesitan pruebas de regresion de escenarios de abuso | `.mustflow/skills/security-regression-tests/SKILL.md` | Limite cambiado, actores y rechazo esperado | Pruebas y fuente del limite de seguridad | falsa confianza y cobertura insegura | `test`, `test_related`, `test_audit`, `lint`, `build` | Limite de seguridad, abuso, pruebas y riesgos restantes |
 | Falla un intento de comando configurado o un paso de verificacion | `.mustflow/skills/failure-triage/SKILL.md` | Intento fallido y cola de salida | Solo causa de la falla | diagnostico erroneo | `mustflow_check`; intento fallido original | Causa, correccion y resultado de repeticion |
 | `.mustflow/context/PROJECT.md` necesita contexto prudente | `.mustflow/skills/project-context-authoring/SKILL.md` | Hechos del proyecto con evidencia | `.mustflow/context/PROJECT.md` | deriva de autoridad | `mustflow_check` | Contexto prudente actualizado |
 | Se crean o mantienen procedimientos o rutas de skills | `.mustflow/skills/skill-authoring/SKILL.md` | Evidencia de tarea repetida | `.mustflow/skills/**` | solapamiento y deriva de comandos | `mustflow_check`, `docs_validate` | Cambios de ruta y procedimiento |

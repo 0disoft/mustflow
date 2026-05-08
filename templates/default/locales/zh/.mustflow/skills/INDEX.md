@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 7
+revision: 8
 ---
 
 # 技能索引
@@ -22,6 +22,7 @@ revision: 7
 | --- | --- | --- | --- | --- | --- | --- |
 | 报告前需要审查代码更改 | `.mustflow/skills/code-review/SKILL.md` | 差异和任务目标 | 已更改文件 | 行为和回归 | `test`, `test_related`, `test_audit`, `lint` | 问题列表或无问题说明 |
 | 添加、更新、删除或审计测试 | `.mustflow/skills/test-maintenance/SKILL.md` | 行为变化或过期测试证据 | 测试文件和相关源码 | 契约漂移 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 测试依据和验证结果 |
+| 安全敏感行为变更需要滥用场景回归测试 | `.mustflow/skills/security-regression-tests/SKILL.md` | 已变更的边界、参与者和预期拒绝行为 | 测试文件和相关安全边界源码 | 虚假安全感和不安全覆盖 | `test`, `test_related`, `test_audit`, `lint`, `build` | 安全边界、滥用场景、测试和剩余风险 |
 | 已配置的命令意图或验证步骤失败 | `.mustflow/skills/failure-triage/SKILL.md` | 失败意图和输出尾部 | 仅失败原因 | 误诊 | `mustflow_check`; 原失败意图 | 根因、修复和重跑结果 |
 | `.mustflow/context/PROJECT.md` 需要谨慎的项目上下文 | `.mustflow/skills/project-context-authoring/SKILL.md` | 有依据的项目事实 | `.mustflow/context/PROJECT.md` | 权限漂移 | `mustflow_check` | 已更新的谨慎上下文 |
 | 创建或维护技能流程或路由 | `.mustflow/skills/skill-authoring/SKILL.md` | 可重复任务证据 | `.mustflow/skills/**` | 重叠和命令漂移 | `mustflow_check`, `docs_validate` | 技能路由和流程更改 |

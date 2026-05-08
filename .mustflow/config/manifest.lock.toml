@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.3.0"
+version = "1.4.0"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:24c3cd4d0abdc869a30b3b09b244ff92ac2bd4d6449539fda27eaa7ff
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:e67ec6e8db79f50ca2ae491fc89f7cf743fbb943871a39eb091c07025fd0d8e3"
+content_hash = "sha256:80703840c28ad686f94d83aeaa82708c8670fcc4f4c0bbf57b591d8f31a7c7d6"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
@@ -51,6 +51,11 @@ content_hash = "sha256:6cb1ff5ec4ce0b078f05f3093fb5377c461e19a8ac3295e4030dc7301
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:a588e1fbe9f6befa8962f7899704334db5f190d92774184366bd23e07756a184"
+
+[files.".mustflow/skills/security-regression-tests/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:324b17cc65c0ccd7d4d37e7467ce1928d79d9a92edd0bc9885de497928eb2759"
 
 [files.".mustflow/skills/skill-authoring/SKILL.md"]
 source = "template_locale"

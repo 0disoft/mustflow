@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 7
+revision: 8
 ---
 
 # Skills Index
@@ -22,6 +22,7 @@ revision: 7
 | --- | --- | --- | --- | --- | --- | --- |
 | Report से पहले code changes की review चाहिए | `.mustflow/skills/code-review/SKILL.md` | Diff और task goal | Changed files | behavior और regression | `test`, `test_related`, `test_audit`, `lint` | Findings या no-issue note |
 | Tests add, update, remove या audit हो रहे हैं | `.mustflow/skills/test-maintenance/SKILL.md` | Changed behavior या stale-test evidence | Test files और related source | contract drift | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Test rationale और verification |
+| Security-sensitive behavior changes को abuse-case regression tests चाहिए | `.mustflow/skills/security-regression-tests/SKILL.md` | Changed boundary, actors और expected deny behavior | Test files और related security boundary source | false confidence और unsafe coverage | `test`, `test_related`, `test_audit`, `lint`, `build` | Security boundary, abuse case, tests और remaining risks |
 | Configured command intent या verification step fail हुआ | `.mustflow/skills/failure-triage/SKILL.md` | Failing intent और output tail | सिर्फ failure cause | misdiagnosis | `mustflow_check`; original failing intent | Root cause, fix, rerun result |
 | `.mustflow/context/PROJECT.md` में cautious project context चाहिए | `.mustflow/skills/project-context-authoring/SKILL.md` | Supported project facts | `.mustflow/context/PROJECT.md` | authority drift | `mustflow_check` | Updated cautious context |
 | Skill procedures या routes create/maintain हो रहे हैं | `.mustflow/skills/skill-authoring/SKILL.md` | Repeated task evidence | `.mustflow/skills/**` | overlap और command drift | `mustflow_check`, `docs_validate` | Skill route और procedure changes |

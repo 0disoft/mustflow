@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "1.3.0"
+version = "1.4.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -15,6 +15,7 @@ creates = [
   ".mustflow/skills/failure-triage/SKILL.md",
   ".mustflow/skills/docs-update/SKILL.md",
   ".mustflow/skills/project-context-authoring/SKILL.md",
+  ".mustflow/skills/security-regression-tests/SKILL.md",
   ".mustflow/skills/skill-authoring/SKILL.md",
   ".mustflow/skills/web-asset-optimization/SKILL.md",
   ".mustflow/docs/agent-workflow.md",

@@ -26,6 +26,7 @@ revision: 8
 | --- | --- | --- | --- | --- | --- | --- |
 | 보고 전 코드 변경 검토가 필요함 | `.mustflow/skills/code-review/SKILL.md` | 변경 diff와 작업 목표 | 변경된 파일 | 동작 회귀 | `test`, `test_related`, `test_audit`, `lint` | 지적 사항 또는 문제 없음 기록 |
 | 테스트 추가, 수정, 삭제, 점검이 필요함 | `.mustflow/skills/test-maintenance/SKILL.md` | 변경된 동작 또는 오래된 테스트 근거 | 테스트 파일과 관련 소스 | 계약 불일치 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 테스트 변경 근거와 검증 결과 |
+| 보안 민감 동작 변경에 악용 시나리오 회귀 테스트가 필요함 | `.mustflow/skills/security-regression-tests/SKILL.md` | 변경된 경계, 행위자, 기대 거부 동작 | 테스트 파일과 관련 보안 경계 소스 | 가짜 안심과 위험한 범위 | `test`, `test_related`, `test_audit`, `lint`, `build` | 보안 경계, 악용 시나리오, 테스트, 남은 위험 |
 | 구성된 명령 의도나 검증 단계가 실패함 | `.mustflow/skills/failure-triage/SKILL.md` | 실패한 의도와 출력 끝부분 | 실패 원인 범위만 | 오진 | `mustflow_check`; 실패한 원래 의도 | 원인, 수정, 재실행 결과 |
 | `.mustflow/context/PROJECT.md`에 신중한 프로젝트 맥락이 필요함 | `.mustflow/skills/project-context-authoring/SKILL.md` | 근거가 있는 프로젝트 사실 | `.mustflow/context/PROJECT.md` | 권한 범위 이탈 | `mustflow_check` | 신중하게 갱신된 맥락 |
 | 스킬 절차나 경로를 만들거나 유지보수함 | `.mustflow/skills/skill-authoring/SKILL.md` | 반복 작업 근거 | `.mustflow/skills/**` | 절차 중복과 명령 불일치 | `mustflow_check`, `docs_validate` | 스킬 경로와 절차 변경 |
