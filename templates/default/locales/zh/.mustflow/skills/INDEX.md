@@ -2,7 +2,9 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 8
+revision: 9
+lifecycle: mustflow-owned
+authority: router
 ---
 
 # 技能索引
@@ -21,6 +23,7 @@ revision: 8
 | 触发条件 | 技能文档 | 所需输入 | 编辑范围 | 风险 | 验证意图 | 预期输出 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 报告前需要审查代码更改 | `.mustflow/skills/code-review/SKILL.md` | 差异和任务目标 | 已更改文件 | 行为和回归 | `test`, `test_related`, `test_audit`, `lint` | 问题列表或无问题说明 |
+| 已更改文件需要风险分类和验证选择 | `.mustflow/skills/diff-risk-review/SKILL.md` | 更改文件列表、差异摘要和任务目标 | 已更改表面和验证报告 | 验证不足或过度验证 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 风险级别、验证选择和回滚说明 |
 | 添加、更新、删除或审计测试 | `.mustflow/skills/test-maintenance/SKILL.md` | 行为变化或过期测试证据 | 测试文件和相关源码 | 契约漂移 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 测试依据和验证结果 |
 | 安全敏感行为变更需要滥用场景回归测试 | `.mustflow/skills/security-regression-tests/SKILL.md` | 已变更的边界、参与者和预期拒绝行为 | 测试文件和相关安全边界源码 | 虚假安全感和不安全覆盖 | `test`, `test_related`, `test_audit`, `lint`, `build` | 安全边界、滥用场景、测试和剩余风险 |
 | 已配置的命令意图或验证步骤失败 | `.mustflow/skills/failure-triage/SKILL.md` | 失败意图和输出尾部 | 仅失败原因 | 误诊 | `mustflow_check`; 原失败意图 | 根因、修复和重跑结果 |

@@ -2,7 +2,9 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 8
+revision: 9
+lifecycle: mustflow-owned
+authority: router
 ---
 
 # Indice de skills
@@ -22,6 +24,7 @@ usa `AGENTS.md` y `.mustflow/config/commands.toml` para hacer el cambio seguro m
 | Disparador | Documento de skill | Entrada requerida | Alcance de edicion | Riesgo | Intentos de verificacion | Salida esperada |
 | --- | --- | --- | --- | --- | --- | --- |
 | Los cambios de codigo necesitan revision antes del informe | `.mustflow/skills/code-review/SKILL.md` | Diff y objetivo de la tarea | Archivos modificados | comportamiento y regresion | `test`, `test_related`, `test_audit`, `lint` | Hallazgos o nota sin problemas |
+| Los archivos modificados necesitan clasificacion de riesgo y seleccion de verificacion | `.mustflow/skills/diff-risk-review/SKILL.md` | Lista de cambios, resumen de diff y objetivo | Superficies cambiadas e informe de verificacion | verificacion insuficiente o excesiva | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | Riesgo, verificacion y notas de rollback |
 | Se agregan, actualizan, eliminan o auditan pruebas | `.mustflow/skills/test-maintenance/SKILL.md` | Comportamiento cambiado o evidencia de prueba obsoleta | Pruebas y fuente relacionada | deriva de contrato | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Razon de pruebas y verificacion |
 | Cambios sensibles de seguridad necesitan pruebas de regresion de escenarios de abuso | `.mustflow/skills/security-regression-tests/SKILL.md` | Limite cambiado, actores y rechazo esperado | Pruebas y fuente del limite de seguridad | falsa confianza y cobertura insegura | `test`, `test_related`, `test_audit`, `lint`, `build` | Limite de seguridad, abuso, pruebas y riesgos restantes |
 | Falla un intento de comando configurado o un paso de verificacion | `.mustflow/skills/failure-triage/SKILL.md` | Intento fallido y cola de salida | Solo causa de la falla | diagnostico erroneo | `mustflow_check`; intento fallido original | Causa, correccion y resultado de repeticion |

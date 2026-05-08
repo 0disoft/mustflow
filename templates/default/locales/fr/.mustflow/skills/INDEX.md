@@ -2,7 +2,9 @@
 mustflow_doc: skills.index
 locale: fr
 canonical: false
-revision: 8
+revision: 9
+lifecycle: mustflow-owned
+authority: router
 ---
 
 # Index des skills
@@ -22,6 +24,7 @@ utilisez `AGENTS.md` et `.mustflow/config/commands.toml` pour faire le plus peti
 | Declencheur | Document de skill | Entree requise | Perimetre de modification | Risque | Intentions de verification | Sortie attendue |
 | --- | --- | --- | --- | --- | --- | --- |
 | Les changements de code doivent etre relus avant le rapport | `.mustflow/skills/code-review/SKILL.md` | Diff et objectif de la tache | Fichiers modifies | comportement et regression | `test`, `test_related`, `test_audit`, `lint` | Constats ou note sans probleme |
+| Les fichiers modifies exigent une classification de risque et un choix de verification | `.mustflow/skills/diff-risk-review/SKILL.md` | Liste des changements, resume du diff et objectif | Surfaces changees et rapport de verification | verification insuffisante ou excessive | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | Risque, verification et notes de retour arriere |
 | Des tests sont ajoutes, modifies, supprimes ou audites | `.mustflow/skills/test-maintenance/SKILL.md` | Comportement change ou preuve de test obsolete | Tests et source liee | derive de contrat | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Justification des tests et verification |
 | Les changements sensibles de securite exigent des tests de regression de cas d'abus | `.mustflow/skills/security-regression-tests/SKILL.md` | Frontiere changee, acteurs et rejet attendu | Tests et source de la frontiere de securite | fausse confiance et couverture risquee | `test`, `test_related`, `test_audit`, `lint`, `build` | Frontiere de securite, cas d'abus, tests et risques restants |
 | Une intention de commande configuree ou une verification echoue | `.mustflow/skills/failure-triage/SKILL.md` | Intention echouee et fin de sortie | Cause de l'echec seulement | mauvais diagnostic | `mustflow_check`; intention echouee d'origine | Cause, correction et resultat de relance |

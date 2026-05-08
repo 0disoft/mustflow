@@ -2,7 +2,9 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 8
+revision: 9
+lifecycle: mustflow-owned
+authority: router
 ---
 
 # 스킬 색인
@@ -25,6 +27,7 @@ revision: 8
 | 트리거 | 스킬 문서 | 필요한 입력 | 수정 범위 | 위험 | 검증 의도 | 예상 출력 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 보고 전 코드 변경 검토가 필요함 | `.mustflow/skills/code-review/SKILL.md` | 변경 diff와 작업 목표 | 변경된 파일 | 동작 회귀 | `test`, `test_related`, `test_audit`, `lint` | 지적 사항 또는 문제 없음 기록 |
+| 변경 파일의 위험도 분류와 검증 선택이 필요함 | `.mustflow/skills/diff-risk-review/SKILL.md` | 변경 파일 목록, 차이 요약, 작업 목표 | 변경 표면과 검증 보고 | 과소 또는 과잉 검증 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 위험도, 검증 선택, 되돌림 메모 |
 | 테스트 추가, 수정, 삭제, 점검이 필요함 | `.mustflow/skills/test-maintenance/SKILL.md` | 변경된 동작 또는 오래된 테스트 근거 | 테스트 파일과 관련 소스 | 계약 불일치 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 테스트 변경 근거와 검증 결과 |
 | 보안 민감 동작 변경에 악용 시나리오 회귀 테스트가 필요함 | `.mustflow/skills/security-regression-tests/SKILL.md` | 변경된 경계, 행위자, 기대 거부 동작 | 테스트 파일과 관련 보안 경계 소스 | 가짜 안심과 위험한 범위 | `test`, `test_related`, `test_audit`, `lint`, `build` | 보안 경계, 악용 시나리오, 테스트, 남은 위험 |
 | 구성된 명령 의도나 검증 단계가 실패함 | `.mustflow/skills/failure-triage/SKILL.md` | 실패한 의도와 출력 끝부분 | 실패 원인 범위만 | 오진 | `mustflow_check`; 실패한 원래 의도 | 원인, 수정, 재실행 결과 |

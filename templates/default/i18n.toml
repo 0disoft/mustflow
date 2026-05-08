@@ -56,12 +56,12 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 8
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 8, status = "current" }
-translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 8, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 8, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 8, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 8, status = "needs_review" }
+revision = 9
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 9, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 9, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 9, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 9, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 9, status = "needs_review" }
 
 [documents."skill.code-review"]
 source = "locales/en/.mustflow/skills/code-review/SKILL.md"
@@ -72,6 +72,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/code-review/SKILL.md", s
 translations.es = { path = "locales/es/.mustflow/skills/code-review/SKILL.md", source_revision = 4, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/code-review/SKILL.md", source_revision = 4, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/code-review/SKILL.md", source_revision = 4, status = "needs_review" }
+
+[documents."skill.diff-risk-review"]
+source = "locales/en/.mustflow/skills/diff-risk-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/diff-risk-review/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/diff-risk-review/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/diff-risk-review/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/diff-risk-review/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/diff-risk-review/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.docs-update"]
 source = "locales/en/.mustflow/skills/docs-update/SKILL.md"

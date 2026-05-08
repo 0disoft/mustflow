@@ -2,7 +2,9 @@
 mustflow_doc: skills.index
 locale: en
 canonical: true
-revision: 8
+revision: 9
+lifecycle: mustflow-owned
+authority: router
 ---
 
 # Skills Index
@@ -27,6 +29,7 @@ refer to `AGENTS.md` and `.mustflow/config/commands.toml` to implement the most 
 | Trigger | Skill Document | Required Input | Edit Scope | Risk | Verification Intents | Expected Output |
 | --- | --- | --- | --- | --- | --- | --- |
 | Code changes need review before report | `.mustflow/skills/code-review/SKILL.md` | Diff and task goal | Changed files | behavior and regression | `test`, `test_related`, `test_audit`, `lint` | Findings or no-issue note |
+| Changed files need risk classification and verification selection | `.mustflow/skills/diff-risk-review/SKILL.md` | Changed-file list, diff summary, and task goal | Changed surfaces and verification report | under- or over-verification | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | Risk level, verification choice, rollback notes |
 | Tests are added, updated, removed, or audited | `.mustflow/skills/test-maintenance/SKILL.md` | Changed behavior or stale-test evidence | Test files and related source | contract drift | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Test rationale and verification |
 | Security-sensitive behavior changes need abuse-case regression tests | `.mustflow/skills/security-regression-tests/SKILL.md` | Changed boundary, actors, and expected deny behavior | Test files and related security boundary source | false confidence and unsafe coverage | `test`, `test_related`, `test_audit`, `lint`, `build` | Security boundary, abuse case, tests, and remaining risks |
 | A configured command intent or verification step fails | `.mustflow/skills/failure-triage/SKILL.md` | Failing intent and output tail | Failure cause only | misdiagnosis | `mustflow_check`; original failing intent | Root cause, fix, rerun result |

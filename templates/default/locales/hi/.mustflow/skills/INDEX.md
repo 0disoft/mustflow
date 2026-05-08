@@ -2,7 +2,9 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 8
+revision: 9
+lifecycle: mustflow-owned
+authority: router
 ---
 
 # Skills Index
@@ -21,6 +23,7 @@ revision: 8
 | Trigger | Skill Document | Required Input | Edit Scope | Risk | Verification Intents | Expected Output |
 | --- | --- | --- | --- | --- | --- | --- |
 | Report से पहले code changes की review चाहिए | `.mustflow/skills/code-review/SKILL.md` | Diff और task goal | Changed files | behavior और regression | `test`, `test_related`, `test_audit`, `lint` | Findings या no-issue note |
+| Changed files को risk classification और verification selection चाहिए | `.mustflow/skills/diff-risk-review/SKILL.md` | Changed-file list, diff summary और task goal | Changed surfaces और verification report | under- या over-verification | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | Risk level, verification choice और rollback notes |
 | Tests add, update, remove या audit हो रहे हैं | `.mustflow/skills/test-maintenance/SKILL.md` | Changed behavior या stale-test evidence | Test files और related source | contract drift | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Test rationale और verification |
 | Security-sensitive behavior changes को abuse-case regression tests चाहिए | `.mustflow/skills/security-regression-tests/SKILL.md` | Changed boundary, actors और expected deny behavior | Test files और related security boundary source | false confidence और unsafe coverage | `test`, `test_related`, `test_audit`, `lint`, `build` | Security boundary, abuse case, tests और remaining risks |
 | Configured command intent या verification step fail हुआ | `.mustflow/skills/failure-triage/SKILL.md` | Failing intent और output tail | सिर्फ failure cause | misdiagnosis | `mustflow_check`; original failing intent | Root cause, fix, rerun result |
