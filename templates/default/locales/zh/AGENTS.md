@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: zh
 canonical: false
-revision: 7
+revision: 8
 ---
 
 # AGENTS.md
@@ -44,8 +44,9 @@ revision: 7
 - `.mustflow/config/preferences.toml` 中的偏好优先级低于用户直接指令和项目既有风格。
 - 当代码、模板、schema、CLI 行为、包元数据、用户可见文档、安装输出或测试发生变化时，
   在最终报告前检查 `.mustflow/config/preferences.toml` 中的 `[release.versioning]`。
-  除非用户明确要求版本升级或 release 准备，否则不要修改版本文件。不要假设版本来源是
-  `package.json`；在建议或编辑版本前，先定位该仓库自己的版本来源。
+  版本文件只能按这些偏好修改：当 `auto_bump = true` 且
+  `require_user_confirmation = false` 时应用自动版本升级；否则按配置建议版本升级或在编辑前请求确认。
+  不要假设版本来源是 `package.json`；在建议或编辑版本前，先定位该仓库自己的版本来源。
 - `.mustflow/context/` 中的上下文文件用于说明项目方向与领域约定。
   应将其视为任务相关上下文，而不是代码、测试、命令或用户指令的替代品。
 - 若存在 `DESIGN.md`，仅在 UI、视觉设计、布局、design token 或可访问性相关工作中阅读它。

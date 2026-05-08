@@ -12,6 +12,13 @@ description: 预览或安全应用已安装 mustflow 文档流的更新。
 人类输出与 JSON 输出遵循同一策略。基线是锁文件中的 `content_hash`，
 唯一可应用状态是 `update` 与 `create`。
 
+## 代理命令意图
+
+已安装的项目可以通过配置好的 `mf run` 意图开放更新操作，而不是让代理直接运行原始 `mf update`。
+
+- `mustflow_update_dry_run`: 运行 `mf update --dry-run --json`，不写入文件。
+- `mustflow_update_apply`: 运行 `mf update --apply --json`；仅在 dry-run 计划没有阻塞项或 manual-review 项，并且任务确实需要应用更新时使用。
+
 ## 为什么先 Dry Run
 
 mustflow 文件包含代理规则与流程。自动覆盖用户编辑过的文件可能会删除仓库特定规则。

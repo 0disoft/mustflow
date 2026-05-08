@@ -112,11 +112,25 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 - `release.versioning.sync_template_version`
 - `release.versioning.sync_docs_examples`
 - `release.versioning.sync_tests`
+- `verification.selection.strategy`
+- `verification.selection.prefer_related_tests`
+- `verification.selection.skip_docs_only_full_test`
+- `verification.selection.skip_low_risk_code_full_test`
+- `verification.selection.skip_translation_only_full_test`
+- `verification.selection.skip_copy_only_full_test`
+- `verification.selection.report_skipped`
+- `testing.authoring.new_test_policy`
+- `testing.authoring.prefer_existing_tests`
+- `testing.authoring.require_new_test_rationale`
 - `language.memory.summary`
 
 `git.commit_message.style` 可以使用 `conventional`、`descriptive` 或 `gitmoji`。`gitmoji` 会建议类似 `✨ feat: add dashboard setting` 的消息，但它仍只是提交消息建议，不代表获得提交权限。
 
 `git.commit_message.language` 可以使用 `preserve_existing`、`agent_response`、`docs`，也可以直接指定 `ja`、`de`、`pt-BR` 等 locale tag。
+
+`verification.selection.strategy` 可以使用 `risk_based`、`targeted` 或 `full`。
+
+`testing.authoring.new_test_policy` 可以使用 `evidence_required`、`manual_approval` 或 `broad`。
 
 `mf init` 只允许 `git.auto_push=false`，用于把仓库恢复到安全默认值。它不能启用 `git.auto_push=true`；如果某个仓库确实需要该行为，请在安装后手动编辑文件。
 

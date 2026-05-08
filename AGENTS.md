@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 8
+revision: 9
 ---
 
 # AGENTS.md
@@ -46,9 +46,11 @@ mustflow-managed details are under `.mustflow/`.
   instructions and existing project style.
 - When code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation
   output, or tests change, check `[release.versioning]` in `.mustflow/config/preferences.toml`
-  before the final report. Do not change version files unless the user explicitly requests a
-  version bump or release preparation. Do not assume the version source is `package.json`;
-  locate the repository-specific version source before suggesting or editing versions.
+  before the final report. Version files may be changed only according to those preferences:
+  apply an automatic bump when `auto_bump = true` and `require_user_confirmation = false`;
+  otherwise suggest the bump or ask before editing as configured. Do not assume the version
+  source is `package.json`; locate the repository-specific version source before suggesting or
+  editing versions.
 - Context files in `.mustflow/context/` explain project direction and domain conventions. Treat
   them as task-specific context, not as a replacement for code, tests, commands, or user instructions.
 - If `DESIGN.md` exists, read it only for UI, visual design, layout, design-token, or accessibility

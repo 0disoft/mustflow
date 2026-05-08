@@ -7,6 +7,8 @@ description: 로컬 mustflow 대시보드를 시작합니다.
 
 첫 대시보드 화면은 `.mustflow/config/preferences.toml`만 다룹니다. 스테이징, 커밋, 푸시, 버전 올림, 명령 의도 실행은 하지 않습니다.
 
+수정 가능한 그룹은 Git 기본값, 커밋 메시지 제안, 보고, 검증 선택, 테스트 작성, 코드 스타일, 버전 영향 선호값입니다.
+
 ## 현재 동작
 
 ```sh
@@ -30,6 +32,8 @@ npx mf dashboard --json
 `--json`을 사용하면 로컬 서버가 계속 실행되는 동안 대시보드 주소, mustflow 루트, 선호 설정 파일 경로를 먼저 출력합니다.
 
 대시보드 API는 세션별 토큰을 사용하며, 화면에 노출된 제한된 선호 설정만 수정합니다. `git.auto_push`는 잠긴 설정으로 표시됩니다.
+
+설정 저장에 성공하면 대시보드는 `.mustflow/config/preferences.toml`을 쓰고, `.mustflow/config/manifest.lock.toml`이 있으면 해당 파일 항목을 `last_action = "customized"`로 갱신합니다. 그래서 `mf check`, `mf status`, `mf update --dry-run`이 사용자가 승인한 로컬 선호 설정 기준선과 맞게 동작합니다.
 
 ## 도움말 및 종료 코드
 

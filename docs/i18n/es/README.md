@@ -81,7 +81,9 @@ de agente concreto.
 - `mf dashboard` inicia una interfaz local de navegador para revisar y editar
   preferencias seguras en `.mustflow/config/preferences.toml`, y la abre en el
   navegador predeterminado. La página permite cambiar entre inglés, coreano,
-  chino, español, francés e hindi.
+  chino, español, francés e hindi. También incluye selección de verificación y
+  preferencias de escritura de tests. Al guardar preferencias, actualiza la
+  entrada del archivo de bloqueo como línea base personalizada si ese archivo existe.
 
 ## Funciones candidatas
 
@@ -205,6 +207,14 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
+Los agentes deben preferir las intenciones de actualización configuradas para
+que el repositorio conserve un recibo de ejecución.
+
+```sh
+mf run mustflow_update_dry_run
+mf run mustflow_update_apply
+```
+
 ## Comandos
 
 | Comando | Propósito |
@@ -214,7 +224,7 @@ npx mf update --apply
 | `mf init --merge` | Fusiona el bloque gestionado por mustflow en un `AGENTS.md` existente. |
 | `mf init --force` | Hace copia de seguridad de los archivos en conflicto y luego los sobrescribe. |
 | `mf check` | Valida los archivos de mustflow, la configuración TOML y la forma de los documentos de habilidades. |
-| `mf check --strict` | Ejecuta comprobaciones de seguridad adicionales para política de retención, límites de salida, registros sin procesar y contexto con apariencia de secreto. |
+| `mf check --strict` | Ejecuta comprobaciones de seguridad adicionales para identidad documental, metadatos de skills, límites de comando, política de retención, límites de salida, registros sin procesar y contexto con apariencia de secreto. |
 | `mf doctor` | Inspecciona la raíz mustflow actual sin escribir archivos. |
 | `mf context --json` | Imprime como JSON el orden de lectura, las reglas de comandos, las capacidades disponibles y el resumen de la ejecución reciente. |
 | `mf map --stdout` | Imprime el mapa de la raíz mustflow actual en la salida estándar. |
@@ -226,7 +236,7 @@ npx mf update --apply
 | `mf update --dry-run` | Calcula un plan de actualización de plantilla sin escribir archivos. |
 | `mf update --apply` | Aplica actualizaciones de plantilla cuando no hay nada bloqueado. |
 | `mf help <topic>` | Muestra la ayuda instalada de mustflow. |
-| `mf dashboard` | Inicia un panel local para preferencias seguras de mustflow y lo abre en el navegador predeterminado. La página puede cambiar entre seis idiomas. |
+| `mf dashboard` | Inicia un panel local para preferencias seguras de mustflow y lo abre en el navegador predeterminado. Al guardar, actualiza la línea base personalizada si existe el archivo de bloqueo. |
 
 Las automatizaciones y los agentes deben usar la salida `--json` en lugar de
 analizar texto orientado a personas. Los JSON Schemas para salidas estables
@@ -272,13 +282,16 @@ npx mf init --set git.auto_commit=true
 - `--interactive`: Permite elegir los ajustes iniciales mediante preguntas.
 - `--yes`: Usa los ajustes iniciales predeterminados en inglés sin preguntas.
 - `--set`: Define una preferencia permitida durante la instalación. Las claves
-  admitidas son `git.auto_stage`, `git.auto_commit`,
-  `git.commit_message.style`, `git.commit_message.language`,
-  `reporting.commit_suggestion.enabled` y `language.memory.summary`.
+  admitidas son `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`,
+  `git.commit_message.*`, `reporting.commit_suggestion.enabled`,
+  `language.memory.summary`, `release.versioning.*`, `verification.selection.*`
+  y `testing.authoring.*`.
   `git.commit_message.style` acepta `conventional`, `descriptive` o
   `gitmoji`; `gitmoji` solo cambia el formato del mensaje sugerido.
   `git.commit_message.language` acepta `preserve_existing`, `agent_response`,
   `docs` o una etiqueta de idioma como `ja`, `de` o `pt-BR`.
+  `testing.authoring.new_test_policy` acepta `evidence_required`,
+  `manual_approval` o `broad`.
 - `--product-source-locale`, `--product-locale`: Configuraciones regionales de
   origen y destino para cadenas de producto orientadas al usuario.
 - `--lang`: Idioma de salida de la CLI. Los valores actuales son `en`, `ko`,

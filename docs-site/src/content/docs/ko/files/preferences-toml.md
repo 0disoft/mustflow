@@ -18,6 +18,7 @@ description: 저장소별 에이전트 언어, 스타일, Git 보고, 문서화 
 - 커밋 메시지 추천을 실제 커밋 실행 권한과 분리합니다.
 - 버전 영향 확인을 기록하되, 실제 배포나 버전 판올림 권한으로 취급하지 않습니다.
 - 낮은 위험 변경에서 전체 검증 묶음을 피할지 정합니다.
+- 필요한 검증을 약화하지 않으면서 새 테스트를 얼마나 적극적으로 작성할지 안내합니다.
 - `mf check`가 선호값 파일의 기본 형식을 검사할 수 있게 합니다.
 - `mf help preferences`가 현재 저장소의 선호값을 요약할 때 기준 자료로 사용합니다.
 
@@ -83,6 +84,11 @@ skip_low_risk_code_full_test = true
 skip_translation_only_full_test = true
 skip_copy_only_full_test = true
 report_skipped = true
+
+[testing.authoring]
+new_test_policy = "evidence_required"
+prefer_existing_tests = true
+require_new_test_rationale = true
 ```
 
 ## profile과 locale
@@ -148,11 +154,11 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 
 `[release.versioning]`은 코드, 템플릿, 스키마, 명령 동작, 패키지 메타데이터, 문서 예시, 설치 출력이 바뀌었을 때 에이전트가 버전 영향을 확인하고 보고할지 정합니다.
 
-이 값들은 선호값이지 릴리스 권한이 아닙니다. `impact_check = true`는 현재 변경이 패키지나 템플릿 버전 변경을 요구하는지 보고하라는 뜻입니다. `suggest_bump = true`는 근거가 분명할 때 패치, 마이너, 메이저 중 어느 판올림이 맞는지 제안할 수 있게 합니다.
+이 값들은 버전 영향 보고와 버전 파일 수정을 안내하는 선호값입니다. `impact_check = true`는 현재 변경이 패키지나 템플릿 버전 변경을 요구하는지 보고하라는 뜻입니다. `suggest_bump = true`는 근거가 분명할 때 패치, 마이너, 메이저 중 어느 판올림이 맞는지 제안할 수 있게 합니다.
 
-`auto_bump = false`이면 사용자가 버전 판올림이나 릴리스 준비를 명시적으로 요청하지 않는 한 패키지와 템플릿 버전 파일을 건드리지 않습니다. `require_user_confirmation = true`는 일반 코드 변경 중에 에이전트가 조용히 버전을 바꾸면 안 된다는 뜻입니다.
+`auto_bump = true`이면 에이전트가 버전 기준 원본을 찾은 뒤 알맞은 패키지나 템플릿 버전 판올림을 적용할 수 있습니다. 단, 사용자 직접 지시, 호스트 안전 규칙, 승인 정책이 막으면 적용하지 않습니다. `auto_bump = false`이면 사용자가 버전 판올림이나 릴리스 준비를 요청하지 않는 한 패키지와 템플릿 버전 파일을 건드리지 않습니다. `require_user_confirmation = true`는 버전을 수정하기 전에 물어보라는 뜻이고, `false`는 자동 판올림이 켜져 있을 때 별도 확인 단계를 없앤다는 뜻입니다.
 
-승인된 버전 변경을 할 때는 `sync_template_version`, `sync_docs_examples`, `sync_tests`에 따라 패키지 메타데이터, 템플릿 매니페스트, 문서 예시, 테스트를 같은 변경 안에서 맞춥니다.
+버전을 바꿀 때는 `sync_template_version`, `sync_docs_examples`, `sync_tests`에 따라 패키지 메타데이터, 템플릿 매니페스트, 문서 예시, 테스트를 같은 변경 안에서 맞춥니다.
 
 이 선호값은 저장소가 버전을 어디에 저장하는지까지 정하지 않습니다. 에이전트는 버전을 제안하거나 수정하기 전에 언어와 프레임워크에 맞는 실제 버전 기준 원본을 찾아야 합니다.
 
@@ -165,6 +171,18 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 `skip_docs_only_full_test`, `skip_translation_only_full_test`, `skip_copy_only_full_test`는 코드가 아닌 변경에 대한 설정입니다. `skip_low_risk_code_full_test`는 공개 동작, 설정, 스키마, 보안, 마이그레이션 같은 높은 위험 표면에 영향이 없는 코드 변경일 때만 적용합니다. 이 값들은 전체 검증 묶음만 생략한다는 뜻이지 모든 검증을 생략한다는 뜻이 아닙니다.
 
 `report_skipped = true`이면 최종 보고에서 어떤 넓은 검증을 왜 생략했는지 알려야 합니다.
+
+## 테스트 작성
+
+`[testing.authoring]`은 에이전트가 새 테스트를 만들지, 기존 테스트를 먼저 다룰지 안내합니다. `[verification.selection]`과는 별개입니다. 검증 선택은 설정된 검사 중 무엇을 검토할지 정하고, 테스트 작성 선호값은 새 테스트 파일이나 사례를 얼마나 쉽게 추가할지 정합니다.
+
+기본값은 `new_test_policy = "evidence_required"`입니다. 공개 동작 변경, 회귀 위험, 설정이나 스키마 영향, 보안 또는 데이터 경로 위험처럼 동작 계약을 검증해야 한다는 근거가 있을 때 새 테스트를 추가하라는 뜻입니다.
+
+`new_test_policy = "manual_approval"`은 사용자가 직접 테스트를 요청하지 않았다면 새 테스트 추가 전에 확인하라는 뜻입니다. `new_test_policy = "broad"`는 중요한 동작을 더 분명히 검증할 수 있을 때 새 테스트 작성을 더 적극적으로 허용합니다.
+
+`prefer_existing_tests = true`이면 새 파일이나 사례를 만들기 전에 가까운 기존 테스트를 먼저 수정합니다. `require_new_test_rationale = true`이면 테스트를 추가했을 때 각 테스트가 왜 필요한지 최종 보고에 설명합니다.
+
+이 선호값은 필요한 검증을 생략하거나, 유효한 테스트를 삭제하거나, 단언을 느슨하게 만들 근거가 아닙니다.
 
 ## 검사 기준
 
@@ -179,6 +197,7 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 - `reporting.commit_suggestion.enabled`는 참/거짓 값이어야 합니다.
 - `[release.versioning]` 필드는 참/거짓 값이어야 합니다.
 - `[verification.selection]`은 허용된 전략 값과 참/거짓 생략·보고 값을 사용해야 합니다.
+- `[testing.authoring]`은 허용된 새 테스트 정책과 참/거짓 작성 선호값을 사용해야 합니다.
 - `docs.update_when`은 문자열 배열이어야 합니다.
 - `project.profile`은 기본 프로필 목록 중 하나여야 합니다.
 - `[product_i18n]`이 있으면 로케일, 번역 정책, 번역 제외 목록의 기본 형식을 검사합니다.

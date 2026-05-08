@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 10
+revision: 12
 ---
 
 # Agent Workflow
@@ -158,7 +158,9 @@ These values are repository preferences, not permissions. They do not override d
 
 ## Version Impact Policy
 
-Version impact settings are preferences, not release permission.
+Version impact settings are repository preferences. They guide version-file edits, but they do
+not override direct user instructions, host safety rules, or approval gates in
+`.mustflow/config/mustflow.toml`.
 
 Use `.mustflow/config/preferences.toml` `[release.versioning]` when code, templates, schemas,
 CLI behavior, package metadata, user-visible docs, installation output, or tests change.
@@ -166,9 +168,12 @@ CLI behavior, package metadata, user-visible docs, installation output, or tests
 - `impact_check = true`: report whether the diff appears to require a package or template
   version change.
 - `suggest_bump = true`: suggest patch, minor, or major when the evidence is clear.
-- `auto_bump = false`: do not edit package or template version files without an explicit user request.
-- `require_user_confirmation = true`: require a user-approved version bump or release-prep request
-  before changing version files.
+- `auto_bump = true`: apply the appropriate package or template version bump when the impact is
+  clear, the version source has been located, and no stricter user, host, or approval rule blocks it.
+- `auto_bump = false`: leave package and template version files unchanged unless the user requests
+  a version bump or release-preparation task.
+- `require_user_confirmation = true`: ask before editing version files.
+- `require_user_confirmation = false`: do not add a separate confirmation step when `auto_bump = true`.
 
 Before suggesting or applying a version change, locate the repository's version source of truth.
 Do not assume that `package.json` is the only version file. Inspect the manifests, release
@@ -187,8 +192,8 @@ Common version-source candidates include:
 - Containers, charts, or apps: `Chart.yaml`, image labels, app manifests, release notes, or deployment metadata when present.
 - mustflow templates: package metadata, template manifests, documentation examples, and tests that assert installed versions.
 
-When a version changes with approval, keep package metadata, template manifest versions, docs
-examples, and tests synchronized according to the `sync_*` preferences.
+When a version changes, keep package metadata, template manifest versions, docs examples, and tests
+synchronized according to the `sync_*` preferences.
 
 ## Command Execution Policy
 
@@ -209,6 +214,13 @@ A command intent is eligible for agent use only when all of these are true:
 
 Prefer `mf run <intent>` so the project receives a concise run record in
 `.mustflow/state/runs/latest.json`.
+
+For installed mustflow workflow updates, use configured update intents instead of
+running raw `mf update` directly. Run `mustflow_update_dry_run` first. Run
+`mustflow_update_apply` only when the dry-run plan has no blocking or
+manual-review items and the task calls for applying template updates. The apply
+intent still relies on `mf update` safety policy: it writes only template
+manifest paths, backups, and manifest-lock entries, and refuses local changes.
 
 Host shells can run commands, but direct project commands do not automatically count as mustflow
 verification. If a command bypasses `mf run`, treat its output as lower-confidence context unless the
@@ -287,6 +299,12 @@ requires new coverage. Explain that change in the final report.
 ## Test Relevance Policy
 
 Tests are behavior contracts, not permanent artifacts.
+
+Use `.mustflow/config/preferences.toml` `[testing.authoring]` to guide how readily agents create
+new tests. The default `new_test_policy = "evidence_required"` means a new test should be backed by
+behavior-contract evidence such as a changed public behavior, regression risk, configuration rule,
+schema contract, or security/data path. This preference guides authoring behavior only; it does not
+weaken required verification or justify deleting valid tests.
 
 Agents must not:
 

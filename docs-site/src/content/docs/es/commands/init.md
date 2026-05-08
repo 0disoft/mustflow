@@ -114,11 +114,25 @@ instalación:
 - `release.versioning.sync_template_version`
 - `release.versioning.sync_docs_examples`
 - `release.versioning.sync_tests`
+- `verification.selection.strategy`
+- `verification.selection.prefer_related_tests`
+- `verification.selection.skip_docs_only_full_test`
+- `verification.selection.skip_low_risk_code_full_test`
+- `verification.selection.skip_translation_only_full_test`
+- `verification.selection.skip_copy_only_full_test`
+- `verification.selection.report_skipped`
+- `testing.authoring.new_test_policy`
+- `testing.authoring.prefer_existing_tests`
+- `testing.authoring.require_new_test_rationale`
 - `language.memory.summary`
 
 `git.commit_message.style` acepta `conventional`, `descriptive` o `gitmoji`. El estilo `gitmoji` sugiere mensajes como `✨ feat: add dashboard setting`, pero sigue siendo una sugerencia de mensaje, no permiso para crear commits.
 
 `git.commit_message.language` acepta `preserve_existing`, `agent_response`, `docs` o una etiqueta de idioma como `ja`, `de` o `pt-BR`.
+
+`verification.selection.strategy` acepta `risk_based`, `targeted` o `full`.
+
+`testing.authoring.new_test_policy` acepta `evidence_required`, `manual_approval` o `broad`.
 
 `mf init` solo permite `git.auto_push=false`, lo que puede devolver un repositorio al valor seguro predeterminado. No puede habilitar `git.auto_push=true`; si un repositorio realmente necesita ese comportamiento, edita el archivo manualmente después de la instalación.
 

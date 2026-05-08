@@ -7,6 +7,8 @@ description: Démarre le tableau de bord local de mustflow.
 
 La première surface du tableau de bord modifie `.mustflow/config/preferences.toml`. Elle ne prépare pas de fichiers, ne crée pas de commit, ne pousse rien, ne modifie pas les versions et n’exécute pas de command intents.
 
+Les groupes modifiables couvrent les valeurs Git, les suggestions de commit, les rapports, la sélection de vérification, l’écriture des tests, le style de code et les préférences d’impact de version.
+
 ## Comportement actuel
 
 ```sh
@@ -30,6 +32,8 @@ npx mf dashboard --json
 Avec `--json`, la commande imprime l’URL du tableau de bord, la racine mustflow et le chemin du fichier de préférences avant de garder le serveur local actif.
 
 L’API du tableau de bord utilise un jeton propre à la session et n’accepte que les mises à jour des champs de préférences limités affichés par la page. `git.auto_push` est affiché comme réglage verrouillé.
+
+Quand l’enregistrement d’une préférence réussit, le tableau de bord écrit `.mustflow/config/preferences.toml` et, si `.mustflow/config/manifest.lock.toml` existe, actualise l’entrée de ce fichier avec `last_action = "customized"`. Ainsi `mf check`, `mf status` et `mf update --dry-run` restent alignés avec la ligne de base locale de préférences acceptée.
 
 ## Aide et codes de sortie
 

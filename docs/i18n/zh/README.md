@@ -63,7 +63,8 @@ mustflow 不是自动项目编辑器，也不绑定到某个代理产品。
 - 它默认不会创建 `justfile`、`Makefile` 或 `Taskfile.yml`。
 - `mf dashboard` 会启动一个本地浏览器界面，用于查看和编辑
   `.mustflow/config/preferences.toml` 中的安全偏好设置，然后在默认浏览器中打开。
-  页面语言可在英语、韩语、中文、西班牙语、法语和印地语之间切换。
+  页面语言可在英语、韩语、中文、西班牙语、法语和印地语之间切换。它也包含验证
+  选择和测试编写偏好。保存设置时，如果锁文件存在，对应条目会刷新为自定义基线。
 
 ## 候选功能
 
@@ -178,6 +179,13 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
+代理应优先使用已配置的更新意图，这样仓库会留下运行记录。
+
+```sh
+mf run mustflow_update_dry_run
+mf run mustflow_update_apply
+```
+
 ## 命令
 
 | 命令 | 作用 |
@@ -187,7 +195,7 @@ npx mf update --apply
 | `mf init --merge` | 将 mustflow 管理块合并到现有 `AGENTS.md`。 |
 | `mf init --force` | 备份冲突文件，然后覆盖它们。 |
 | `mf check` | 验证 mustflow 文件、TOML 配置和技能文档结构。 |
-| `mf check --strict` | 针对保留策略、输出限制、原始日志和类似秘密的上下文运行额外安全检查。 |
+| `mf check --strict` | 针对文档身份、skill 元数据、命令边界、保留策略、输出限制、原始日志和类似秘密的上下文运行额外安全检查。 |
 | `mf doctor` | 以只读方式检查当前 mustflow 根目录。 |
 | `mf context --json` | 以 JSON 输出读取顺序、命令规则、可用能力和最近运行摘要。 |
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |
@@ -199,7 +207,7 @@ npx mf update --apply
 | `mf update --dry-run` | 计算模板更新计划，但不写入文件。 |
 | `mf update --apply` | 在没有阻塞项时应用模板更新。 |
 | `mf help <topic>` | 显示已安装的 mustflow 帮助。 |
-| `mf dashboard` | 启动用于安全 mustflow 偏好设置的本地 dashboard，并在默认浏览器中打开。页面语言可在六种语言之间切换。 |
+| `mf dashboard` | 启动用于安全 mustflow 偏好设置的本地 dashboard，并在默认浏览器中打开。保存设置时，如果锁文件存在，会刷新自定义基线。 |
 
 自动化和代理应使用 `--json` 输出，而不是解析面向人类的文本。稳定输出的
 JSON Schema 位于 `schemas/`。
@@ -239,14 +247,17 @@ npx mf init --set git.auto_commit=true
 - `--interactive`：通过提问选择初始化设置。
 - `--yes`：无提示使用英文默认初始化设置。
 - `--set`：在安装过程中设置允许的偏好项。支持的键包括
-  `git.auto_stage`、`git.auto_commit`、`git.commit_message.style`、
-  `git.commit_message.language`、`reporting.commit_suggestion.enabled` 和
-  `language.memory.summary`。
+  `git.auto_stage`、`git.auto_commit`、`git.auto_push=false`、
+  `git.commit_message.*`、`reporting.commit_suggestion.enabled`、
+  `language.memory.summary`、`release.versioning.*`、`verification.selection.*`
+  和 `testing.authoring.*`。
   `git.commit_message.style` 可以使用 `conventional`、`descriptive` 或
   `gitmoji`；`gitmoji` 只改变建议消息的格式。
   `git.commit_message.language` 可以使用 `preserve_existing`、
   `agent_response`、`docs`，也可以直接指定 `ja`、`de`、`pt-BR` 等
   locale tag。
+  `testing.authoring.new_test_policy` 可以使用 `evidence_required`、
+  `manual_approval` 或 `broad`。
 - `--product-source-locale`、`--product-locale`：面向用户的产品字符串的
   源区域设置和目标区域设置。
 - `--lang`：CLI 输出语言。当前值为 `en`、`ko`、`zh`、`es`、`fr` 和

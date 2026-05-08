@@ -30,6 +30,13 @@ npx mf check --strict
 
 `--strict` habilita comprobaciones adicionales centradas en la estabilidad de la entrada del agente y la seguridad de los comandos.
 
+- Los archivos Markdown administrados por mustflow deben conservar el frontmatter `mustflow_doc`, `locale`, `canonical` y `revision` esperado para su ruta.
+- Los documentos de contexto no deben afirmar que reemplazan instrucciones directas del usuario, código actual, pruebas o contratos de comando.
+- `.mustflow/skills/INDEX.md` y `.mustflow/context/INDEX.md` deben seguir siendo índices de enrutamiento, no documentos de procedimiento.
+- El frontmatter de `SKILL.md` debe usar `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure` y un `name` que coincida con la carpeta `.mustflow/skills/<name>/`.
+- Las entradas `metadata.command_intents` del frontmatter de una skill deben referenciar intenciones declaradas en `.mustflow/config/commands.toml`.
+- El cuerpo de una skill no debe afirmar que concede permiso para ejecutar comandos; esos permisos permanecen en `.mustflow/config/commands.toml`.
+
 El modo estricto es opcional para que el flujo normal siga siendo ligero. Se recomienda después de modificar documentos mustflow, skills, contratos de comando o reglas de generación del mapa del repositorio.
 
 ## Reglas de configuración

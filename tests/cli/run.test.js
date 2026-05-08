@@ -119,6 +119,44 @@ destructive = false
 	}
 });
 
+test('runs default mustflow update intents through mf run', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const dryRunResult = runCli(projectPath, ['run', 'mustflow_update_dry_run', '--json'], {
+			env: createEnvWithoutPathLookup(),
+		});
+		const dryRunReceipt = JSON.parse(dryRunResult.stdout);
+		const dryRunPlan = JSON.parse(dryRunReceipt.stdout.tail);
+
+		assert.equal(dryRunResult.status, 0, dryRunResult.stderr || dryRunResult.stdout);
+		assert.equal(dryRunReceipt.intent, 'mustflow_update_dry_run');
+		assert.equal(dryRunReceipt.status, 'passed');
+		assert.equal(dryRunPlan.command, 'update');
+		assert.equal(dryRunPlan.mode, 'dry-run');
+		assert.equal(dryRunPlan.ok, true);
+		assert.equal(dryRunPlan.wroteFiles, false);
+
+		const applyResult = runCli(projectPath, ['run', 'mustflow_update_apply', '--json'], {
+			env: createEnvWithoutPathLookup(),
+		});
+		const applyReceipt = JSON.parse(applyResult.stdout);
+		const applyPlan = JSON.parse(applyReceipt.stdout.tail);
+
+		assert.equal(applyResult.status, 0, applyResult.stderr || applyResult.stdout);
+		assert.equal(applyReceipt.intent, 'mustflow_update_apply');
+		assert.equal(applyReceipt.status, 'passed');
+		assert.equal(applyPlan.command, 'update');
+		assert.equal(applyPlan.mode, 'apply');
+		assert.equal(applyPlan.ok, true);
+		assert.equal(applyPlan.wroteFiles, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints and writes a JSON run receipt', () => {
 	const projectPath = createTempProject();
 

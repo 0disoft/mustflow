@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import {
 	existsSync,
@@ -34,6 +35,10 @@ function runCli(cwd, args) {
 		cwd,
 		encoding: 'utf8',
 	});
+}
+
+function sha256Text(text) {
+	return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
 
 test('dashboard browser opener uses platform-native commands', async () => {
@@ -230,6 +235,17 @@ test('dashboard serves and updates safe preferences', async () => {
 			html,
 			/dashboard\.setting\.verification\.selection\.skip_low_risk_code_full_test\.description":"공개 동작, 설정, 스키마, 보안, 마이그레이션/,
 		);
+		assert.match(html, /dashboard\.group\.testAuthoring":"Test authoring/);
+		assert.match(html, /dashboard\.group\.testAuthoring":"테스트 작성/);
+		assert.match(html, /dashboard\.setting\.testing\.authoring\.new_test_policy":"New test policy/);
+		assert.match(
+			html,
+			/dashboard\.setting\.testing\.authoring\.new_test_policy\.description\.evidence_required":"Add new tests only when behavior-contract evidence/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.testing\.authoring\.new_test_policy\.description\.evidence_required":"동작 계약을 검증해야 한다는 근거/,
+		);
 		assert.match(html, /dashboard\.setting\.release\.versioning\.impact_check\.description":"Check whether the change should affect a package or template version/);
 		assert.match(html, /dashboard\.setting\.release\.versioning\.impact_check\.description":"변경사항이 패키지나 템플릿 버전에 영향을 주는지 확인합니다/);
 		assert.match(html, /dashboard\.setting\.release\.versioning\.require_user_confirmation\.description":"Ask before applying or accepting a version change/);
@@ -263,6 +279,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.ok(preferences.settings.some((setting) => setting.id === 'git.auto_commit'));
 		assert.ok(preferences.settings.some((setting) => setting.id === 'verification.selection.strategy'));
 		assert.ok(preferences.settings.some((setting) => setting.id === 'verification.selection.skip_low_risk_code_full_test'));
+		assert.ok(preferences.settings.some((setting) => setting.id === 'testing.authoring.new_test_policy'));
+		assert.ok(preferences.settings.some((setting) => setting.id === 'testing.authoring.prefer_existing_tests'));
 		assert.ok(
 			preferences.settings
 				.find((setting) => setting.id === 'git.commit_message.style')
@@ -303,6 +321,16 @@ test('dashboard serves and updates safe preferences', async () => {
 		});
 		assert.equal(invalidVerificationStrategy.status, 400);
 
+		const invalidTestAuthoringPolicy = await fetch(new URL('/api/preferences', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ updates: [{ id: 'testing.authoring.new_test_policy', value: 'always' }] }),
+		});
+		assert.equal(invalidTestAuthoringPolicy.status, 400);
+
 		const saved = await fetch(new URL('/api/preferences', info.url), {
 			method: 'POST',
 			headers: {
@@ -318,6 +346,8 @@ test('dashboard serves and updates safe preferences', async () => {
 					{ id: 'verification.selection.strategy', value: 'targeted' },
 					{ id: 'verification.selection.skip_low_risk_code_full_test', value: false },
 					{ id: 'verification.selection.report_skipped', value: false },
+					{ id: 'testing.authoring.new_test_policy', value: 'manual_approval' },
+					{ id: 'testing.authoring.require_new_test_rationale', value: false },
 				],
 			}),
 		});
@@ -333,6 +363,19 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?strategy = "targeted"/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?skip_low_risk_code_full_test = false/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?report_skipped = false/);
+		assert.match(updatedPreferences, /\[testing\.authoring\]\r?\n(?:.*\r?\n)*?new_test_policy = "manual_approval"/);
+		assert.match(updatedPreferences, /\[testing\.authoring\]\r?\n(?:.*\r?\n)*?require_new_test_rationale = false/);
+
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+		assert.match(
+			lock,
+			new RegExp(
+				`\\[files\\."\\.mustflow/config/preferences\\.toml"\\]\\r?\\nsource = "template_common"\\r?\\nlast_action = "customized"\\r?\\ncontent_hash = "${sha256Text(updatedPreferences)}"`,
+			),
+		);
+
+		const check = runCli(projectPath, ['check', '--strict']);
+		assert.equal(check.status, 0, check.stderr || check.stdout);
 	} finally {
 		if (dashboard) {
 			await stopDashboard(dashboard);

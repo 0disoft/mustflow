@@ -18,6 +18,7 @@ Este archivo no es la autoridad más alta. Tienen prioridad las instrucciones di
 - Separa las sugerencias de mensajes de commit del permiso para crear commits realmente.
 - Registra comprobaciones de impacto de versión sin conceder permiso para publicar ni subir versiones.
 - Controla si los cambios de bajo riesgo pueden evitar la suite completa de verificación.
+- Guía con qué facilidad los agentes escriben tests nuevos sin debilitar la verificación requerida.
 - Da a `mf check` un archivo de preferencias validable por máquina.
 - Da a `mf help preferences` el archivo fuente que debe resumir.
 
@@ -83,6 +84,11 @@ skip_low_risk_code_full_test = true
 skip_translation_only_full_test = true
 skip_copy_only_full_test = true
 report_skipped = true
+
+[testing.authoring]
+new_test_policy = "evidence_required"
+prefer_existing_tests = true
+require_new_test_rationale = true
 ```
 
 ## Perfil e idioma
@@ -148,11 +154,11 @@ Cuando se mezclan varios cambios lógicos, el agente puede sugerir commits separ
 
 `[release.versioning]` controla si el agente debe revisar e informar el impacto de versión cuando cambian código, plantillas, esquemas, comportamiento de comandos, metadatos del paquete, ejemplos de documentación o salida de instalación.
 
-Estos valores son preferencias, no permisos de release. `impact_check = true` pide al agente informar si el diff parece requerir un cambio de versión de paquete o plantilla. `suggest_bump = true` permite sugerir patch, minor o major cuando la evidencia es clara.
+Estos valores son preferencias que guían el informe de impacto de versión y las ediciones de archivos de versión. `impact_check = true` pide al agente informar si el diff parece requerir un cambio de versión de paquete o plantilla. `suggest_bump = true` permite sugerir patch, minor o major cuando la evidencia es clara.
 
-`auto_bump = false` mantiene intactos los archivos de versión de paquete y plantilla salvo que el usuario pida explícitamente un aumento de versión o una tarea de preparación de release. `require_user_confirmation = true` significa que el agente no debe cambiar versiones silenciosamente durante cambios normales de código.
+`auto_bump = true` permite que el agente aplique el aumento de versión de paquete o plantilla apropiado después de localizar la fuente de versión, salvo que una instrucción directa del usuario, una regla de seguridad del host o una política de aprobación lo bloquee. `auto_bump = false` mantiene intactos los archivos de versión de paquete y plantilla salvo que el usuario pida un aumento de versión o una tarea de preparación de release. `require_user_confirmation = true` significa que el agente debe preguntar antes de editar versiones; `false` elimina ese paso adicional cuando el aumento automático está habilitado.
 
-Cuando se aprueba un cambio de versión, `sync_template_version`, `sync_docs_examples` y `sync_tests` indican al agente que mantenga alineados metadatos de paquete, manifiestos de plantilla, ejemplos de documentación y tests en el mismo cambio.
+Cuando cambia una versión, `sync_template_version`, `sync_docs_examples` y `sync_tests` indican al agente que mantenga alineados metadatos de paquete, manifiestos de plantilla, ejemplos de documentación y tests en el mismo cambio.
 
 Estas preferencias no dicen dónde guarda el repositorio su versión. El agente todavía debe descubrir la fuente de versión propia del lenguaje o framework antes de proponer o editar una versión.
 
@@ -165,6 +171,18 @@ Estas preferencias no dicen dónde guarda el repositorio su versión. El agente 
 `skip_docs_only_full_test`, `skip_translation_only_full_test` y `skip_copy_only_full_test` cubren cambios sin código. `skip_low_risk_code_full_test` solo aplica cuando el código no afecta comportamiento público, configuración, esquemas, seguridad, migraciones u otras superficies de alto riesgo. Estas opciones omiten solo la suite completa; no significan que se omita toda verificación.
 
 Cuando `report_skipped = true`, el informe final debe indicar qué comprobaciones amplias se omitieron y por qué.
+
+## Escritura de tests
+
+`[testing.authoring]` guía si un agente debe crear tests nuevos o trabajar primero con cobertura existente. Es independiente de `[verification.selection]`: la selección de verificación decide qué checks configurados considerar, mientras la escritura de tests controla con qué facilidad se agregan nuevos archivos o casos.
+
+`new_test_policy = "evidence_required"` es el valor predeterminado. Significa que los tests nuevos deben estar respaldados por evidencia de contrato de comportamiento, como comportamiento público modificado, riesgo de regresión, impacto en configuración o schema, o riesgo de seguridad/datos.
+
+`new_test_policy = "manual_approval"` pide confirmar antes de agregar tests nuevos salvo que el usuario los haya solicitado directamente. `new_test_policy = "broad"` permite escribir tests de forma más proactiva cuando aclaran comportamiento importante.
+
+`prefer_existing_tests = true` pide actualizar tests cercanos antes de crear archivos o casos nuevos. `require_new_test_rationale = true` pide que el informe final explique por qué cada test nuevo era necesario.
+
+Estas preferencias no justifican omitir verificación requerida, borrar tests válidos ni aflojar aserciones.
 
 ## Reglas de validación
 
@@ -179,6 +197,7 @@ Cuando este archivo existe, `mf check` verifica que:
 - `reporting.commit_suggestion.enabled` sea booleano.
 - Los campos de `[release.versioning]` sean booleanos.
 - `[verification.selection]` use un valor de estrategia permitido y marcas booleanas para omitir o informar.
+- `[testing.authoring]` use una política de tests nuevos permitida y marcas booleanas de autoría.
 - `docs.update_when` sea un arreglo de cadenas.
 - `project.profile` sea uno de los valores de perfil integrados.
 - Cuando exista `[product_i18n]`, los campos de configuración regional, la política de traducción y las listas de no traducir usen formas básicas válidas.

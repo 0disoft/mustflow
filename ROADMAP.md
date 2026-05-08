@@ -31,6 +31,9 @@ Status: current repository checks configured.
   confirming the intended gates.
 - [x] Keep direct shell command output lower authority than `mf run` receipts unless
   a manual override is explicitly reported.
+- [x] Expose `mf update --dry-run` and `mf update --apply` as configured
+  mustflow built-in intents so installed workflow refreshes can leave run
+  receipts instead of requiring raw command execution.
 - [x] Use this milestone to remove friction before building higher-level verification
   commands.
 
@@ -71,6 +74,40 @@ Status: initial published schemas added and covered by CLI tests.
 Goal: keep mustflow documents from drifting into overlapping or self-authorizing
 policy sources before higher-level explanation and verification commands depend
 on them.
+
+Progress:
+
+- [x] Add the first strict authority-drift guard: `mf check --strict` rejects
+  procedure-style sections in `.mustflow/skills/INDEX.md` and
+  `.mustflow/context/INDEX.md`, keeping router indexes as selectors instead of
+  procedure bodies.
+- [x] Add a strict skill command-boundary guard: `SKILL.md`
+  `metadata.command_intents` entries must reference command intents already
+  declared in `.mustflow/config/commands.toml`, so skill documents cannot
+  invent runnable permissions.
+- [x] Add a strict managed-document identity guard: mustflow-owned Markdown
+  paths must keep the expected `mustflow_doc` frontmatter value, so repeated
+  basenames such as `INDEX.md` and `SKILL.md` remain distinguishable by path
+  and document role.
+- [x] Add a strict context authority-drift guard: `.mustflow/context/*.md`
+  files must not declare command policy or file-edit prohibitions, keeping
+  execution rules in `AGENTS.md` and `.mustflow/config/commands.toml`.
+- [x] Add a strict managed-document metadata guard: mustflow-owned Markdown
+  files must carry `locale`, boolean `canonical`, and positive-integer
+  `revision` frontmatter so path-bound identity is paired with stable document
+  metadata.
+- [x] Add a strict skill procedure-kind guard: `SKILL.md`
+  `metadata.mustflow_kind` must be `procedure`, so skill documents remain
+  repeatable procedures rather than independent policy or permission sources.
+- [x] Add a strict skill command-permission claim guard: `SKILL.md` bodies
+  must not claim that skills authorize command execution, keeping runnable
+  permissions in `.mustflow/config/commands.toml`.
+- [x] Add a strict skill schema-version guard: `SKILL.md`
+  `metadata.mustflow_schema` must use the supported schema version, so
+  unsupported skill metadata versions fail before broader skill automation.
+- [x] Add a strict skill name-identity guard: `SKILL.md` frontmatter `name`
+  must match its `.mustflow/skills/<name>/` folder, so skill body identity
+  cannot drift from path and router identity.
 
 - Define the canonical role for each mustflow-owned document:
   `AGENTS.md` as a thin but binding contract, `agent-workflow.md` as detailed
@@ -473,9 +510,14 @@ validations without making agents guess from prose.
 Goal: make version-impact reporting work across languages and frameworks without
 assuming every repository stores versions in the same file.
 
-- Keep `[release.versioning]` as a preference layer, not release permission.
-  Agents may report and suggest version impact, but must not edit version files
-  without an explicit version-bump or release-preparation request.
+- Keep `[release.versioning]` as the preference layer that decides whether
+  agents report, suggest, ask, or apply version-file changes. `auto_bump = true`
+  plus `require_user_confirmation = false` should allow a version bump after
+  the version source is located, unless direct user instructions, host safety,
+  or approval gates block it.
+- [x] Align installed `AGENTS.md` and agent-workflow docs with
+  `[release.versioning]` so `mf init` no longer hardcodes a separate
+  "explicit version-bump request only" rule that contradicts `auto_bump`.
 - Define a candidate `.mustflow/config/versioning.toml` model for repositories
   that want to declare their version source of truth. It should support
   authoritative version files, derived files, lockfile behavior, template
@@ -527,6 +569,9 @@ Status: initial local preferences dashboard implemented.
 - [x] Expose verification-selection preferences so users can choose
   risk-based, targeted, or full verification defaults and decide whether
   docs-only, translation-only, or copy-only changes may skip broad tests.
+- [x] Add testing-authoring preferences so agents can prefer existing tests,
+  require a new-test rationale, or ask before adding new tests without weakening
+  configured verification requirements.
 - [ ] Expand dashboard coverage only after the corresponding command-line
   contract exists. Candidate future panes: effective policy explanation,
   configured command intent status, version source discovery, impacted public

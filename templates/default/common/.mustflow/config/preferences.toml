@@ -95,6 +95,15 @@ skip_translation_only_full_test = true
 skip_copy_only_full_test = true
 report_skipped = true
 
+[testing.authoring]
+# new_test_policy:
+# - "evidence_required": add new tests only when behavior-contract evidence supports them.
+# - "manual_approval": ask before adding new tests unless the user directly requested tests.
+# - "broad": allow proactive new tests when they clarify important behavior.
+new_test_policy = "evidence_required"
+prefer_existing_tests = true
+require_new_test_rationale = true
+
 [docs]
 update_when = [
   "public_api_change",

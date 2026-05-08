@@ -100,6 +100,7 @@ export const esMessages = {
   "dashboard.group.commitMessage": "Mensaje de commit",
   "dashboard.group.reporting": "Informes",
   "dashboard.group.verification": "Verificación",
+  "dashboard.group.testAuthoring": "Autoría de tests",
   "dashboard.group.codeStyle": "Estilo de código",
   "dashboard.group.versioning": "Versionado",
   "dashboard.setting.git.auto_stage": "Stage automático de Git",
@@ -155,6 +156,19 @@ export const esMessages = {
   "dashboard.setting.verification.selection.skip_translation_only_full_test": "Omitir test completo en cambios solo de traducción",
   "dashboard.setting.verification.selection.skip_copy_only_full_test": "Omitir test completo en cambios solo de texto",
   "dashboard.setting.verification.selection.report_skipped": "Informar verificaciones omitidas",
+  "dashboard.setting.testing.authoring.new_test_policy": "Política para tests nuevos",
+  "dashboard.setting.testing.authoring.new_test_policy.description.evidence_required":
+    "Añade tests nuevos solo cuando hay evidencia de contrato de comportamiento.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.manual_approval":
+    "Pregunta antes de añadir tests nuevos salvo que el usuario los haya pedido directamente.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.broad":
+    "Permite tests nuevos proactivos cuando aclaran un comportamiento importante.",
+  "dashboard.setting.testing.authoring.prefer_existing_tests": "Preferir tests existentes",
+  "dashboard.setting.testing.authoring.prefer_existing_tests.description":
+    "Actualiza tests cercanos antes de crear archivos o casos nuevos.",
+  "dashboard.setting.testing.authoring.require_new_test_rationale": "Exigir justificación de tests nuevos",
+  "dashboard.setting.testing.authoring.require_new_test_rationale.description":
+    "Informa por qué cada test nuevo era necesario cuando se añaden tests.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "Evitar refactors ajenos al cambio",
   "dashboard.setting.release.versioning.impact_check": "Comprobar impacto de versión",
   "dashboard.setting.release.versioning.impact_check.description":

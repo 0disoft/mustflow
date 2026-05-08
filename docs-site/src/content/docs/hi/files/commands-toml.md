@@ -176,6 +176,10 @@ stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
 
+default template `mf update` को भी built-in intents के ज़रिए expose करता है, ताकि agents command contract bypass किए बिना run receipts बना सकें।
+`mustflow_update_dry_run` `mf update --dry-run --json` चलाता है और files नहीं लिखता।
+`mustflow_update_apply` केवल clean plan के बाद और task द्वारा template updates apply करने की जरूरत होने पर उपयोग करें।
+
 Root `config/` directory user project की हो सकती है, इसलिए mustflow उसका उपयोग नहीं करता।
 
 ## Git-related intents

@@ -30,6 +30,12 @@ npx mf check --strict
 `--strict`는 기본 검사에 더해, 에이전트 입력 안정성과 실행 안전성에 직접 영향을 주는 항목을 추가로 점검합니다.
 
 - 스킬 문서에 `sh`, `bash`, `powershell` 같은 원시 셸 코드 블록이 있는지 확인합니다.
+- mustflow가 관리하는 Markdown 파일이 경로에 맞는 `mustflow_doc`, `locale`, `canonical`, `revision` 앞부분 메타데이터를 유지하는지 확인합니다.
+- 컨텍스트 문서가 직접 사용자 지시, 현재 코드, 테스트, 명령 계약보다 우선한다고 주장하지 않는지 확인합니다.
+- `.mustflow/skills/INDEX.md`와 `.mustflow/context/INDEX.md`가 절차 문서로 변하지 않고 라우팅 색인 역할만 유지하는지 확인합니다.
+- `SKILL.md` 앞부분 메타데이터의 `metadata.mustflow_schema`는 `"1"`, `metadata.mustflow_kind`는 `procedure`, `name`은 `.mustflow/skills/<name>/` 폴더 이름과 일치해야 합니다.
+- 스킬 앞부분 메타데이터의 `metadata.command_intents`는 `.mustflow/config/commands.toml`에 선언된 명령 의도만 참조해야 합니다.
+- 스킬 본문이 명령 실행 권한을 직접 부여한다고 주장하지 않는지 확인합니다. 실행 권한은 `.mustflow/config/commands.toml`에만 둡니다.
 - `.mustflow/skills/<name>/` 아래에 `SKILL.md` 없이 보조 파일만 있는 폴더가 있는지 점검합니다.
 - `resources.toml`에 등록한 자원이 실제 경로(`references/`, `assets/`, `scripts/`)에 있는지 확인합니다.
 - `.mustflow/skills/<name>/scripts/` 아래에 등록되지 않은 파일이 있는지 확인합니다.

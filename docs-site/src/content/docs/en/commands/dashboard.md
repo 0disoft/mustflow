@@ -7,6 +7,8 @@ description: Start the local mustflow dashboard.
 
 The first dashboard surface edits `.mustflow/config/preferences.toml`. It does not stage, commit, push, bump versions, or run command intents.
 
+Editable groups include Git defaults, commit message suggestions, reporting, verification selection, test authoring, code style, and version-impact preferences.
+
 ## Current Behavior
 
 ```sh
@@ -30,6 +32,8 @@ npx mf dashboard --json
 With `--json`, the command prints the dashboard URL, mustflow root, and preferences path before keeping the local server running.
 
 The dashboard API uses a per-session token and accepts updates only for the limited preference fields exposed by the page. `git.auto_push` is displayed as a locked setting.
+
+When a preference save succeeds, the dashboard writes `.mustflow/config/preferences.toml` and refreshes that file's entry in `.mustflow/config/manifest.lock.toml` as `last_action = "customized"` when the lock file exists. This keeps `mf check`, `mf status`, and `mf update --dry-run` aligned with the accepted local preference baseline.
 
 ## Help and Exit Codes
 

@@ -179,6 +179,11 @@ stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
 
+기본 템플릿은 `mf update`도 내장 의도로 열어 둡니다. 그래서 에이전트가 명령 계약을
+우회하지 않고 실행 영수증을 남길 수 있습니다. `mustflow_update_dry_run`은
+`mf update --dry-run --json`을 실행하며 파일을 쓰지 않습니다.
+`mustflow_update_apply`는 계획이 깨끗하고 작업이 템플릿 갱신 적용을 요구할 때만 사용합니다.
+
 루트의 `config/`는 사용자 프로젝트 설정일 수 있으므로 mustflow가 사용하지 않습니다.
 
 ## Git 관련 의도

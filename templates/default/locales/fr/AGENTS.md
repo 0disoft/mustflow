@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: fr
 canonical: false
-revision: 7
+revision: 8
 ---
 
 # AGENTS.md
@@ -47,10 +47,11 @@ Les details geres par mustflow se trouvent sous `.mustflow/`.
 - Quand le code, les modeles, les schemas, le comportement CLI, les metadonnees du paquet,
   la documentation visible par l'utilisateur, la sortie d'installation ou les tests changent,
   verifier `[release.versioning]` dans `.mustflow/config/preferences.toml` avant le rapport final.
-  Ne pas modifier les fichiers de version sauf si l'utilisateur demande explicitement un changement
-  de version ou une preparation de release. Ne pas supposer que la source de version est
-  `package.json`; localiser la source de version propre au depot avant de suggerer ou d'editer
-  des versions.
+  Les fichiers de version ne peuvent etre modifies que selon ces preferences : appliquer un
+  changement automatique quand `auto_bump = true` et `require_user_confirmation = false`; sinon,
+  suggerer le changement ou demander confirmation avant modification selon la configuration. Ne pas
+  supposer que la source de version est `package.json`; localiser la source de version propre au depot
+  avant de suggerer ou d'editer des versions.
 - Les fichiers de contexte dans `.mustflow/context/` expliquent la direction du projet et les conventions du domaine.
   Les traiter comme un contexte specifique a la tache, pas comme un remplacement du code, des tests, des commandes ou des instructions utilisateur.
 - Si `DESIGN.md` existe, le lire uniquement pour des taches d'interface, de design visuel, de mise en page, de design tokens

@@ -100,6 +100,7 @@ export const frMessages = {
   "dashboard.group.commitMessage": "Message de commit",
   "dashboard.group.reporting": "Rapports",
   "dashboard.group.verification": "Vérification",
+  "dashboard.group.testAuthoring": "Rédaction des tests",
   "dashboard.group.codeStyle": "Style de code",
   "dashboard.group.versioning": "Version",
   "dashboard.setting.git.auto_stage": "Stage Git automatique",
@@ -155,6 +156,19 @@ export const frMessages = {
   "dashboard.setting.verification.selection.skip_translation_only_full_test": "Ignorer le test complet pour les traductions seules",
   "dashboard.setting.verification.selection.skip_copy_only_full_test": "Ignorer le test complet pour les changements de texte seuls",
   "dashboard.setting.verification.selection.report_skipped": "Signaler les vérifications ignorées",
+  "dashboard.setting.testing.authoring.new_test_policy": "Politique de nouveaux tests",
+  "dashboard.setting.testing.authoring.new_test_policy.description.evidence_required":
+    "Ajoute de nouveaux tests seulement quand le contrat de comportement le justifie.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.manual_approval":
+    "Demande confirmation avant d'ajouter de nouveaux tests, sauf demande directe de l'utilisateur.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.broad":
+    "Autorise des tests proactifs quand ils clarifient un comportement important.",
+  "dashboard.setting.testing.authoring.prefer_existing_tests": "Préférer les tests existants",
+  "dashboard.setting.testing.authoring.prefer_existing_tests.description":
+    "Met à jour les tests proches avant de créer de nouveaux fichiers ou cas.",
+  "dashboard.setting.testing.authoring.require_new_test_rationale": "Exiger la justification des nouveaux tests",
+  "dashboard.setting.testing.authoring.require_new_test_rationale.description":
+    "Indique pourquoi chaque nouveau test était nécessaire quand des tests sont ajoutés.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "Éviter les refactorisations hors sujet",
   "dashboard.setting.release.versioning.impact_check": "Vérifier l'impact sur la version",
   "dashboard.setting.release.versioning.impact_check.description":

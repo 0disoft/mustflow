@@ -78,9 +78,16 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(preferences, /\[git\.commit_message\]/);
 		assert.match(preferences, /suggest = "when_changes_made"/);
 		assert.match(preferences, /\[reporting\.commit_suggestion\]/);
+		assert.match(preferences, /\[testing\.authoring\]/);
+		assert.match(preferences, /new_test_policy = "evidence_required"/);
+		assert.match(preferences, /prefer_existing_tests = true/);
 		const commands = readFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), 'utf8');
 		assert.match(commands, /\[intents\.mustflow_doctor\]/);
 		assert.match(commands, /argv = \["mf", "doctor", "--json"\]/);
+		assert.match(commands, /\[intents\.mustflow_update_dry_run\]/);
+		assert.match(commands, /argv = \["mf", "update", "--dry-run", "--json"\]/);
+		assert.match(commands, /\[intents\.mustflow_update_apply\]/);
+		assert.match(commands, /argv = \["mf", "update", "--apply", "--json"\]/);
 		assert.match(commands, /\[intents\.changes_status\]/);
 		assert.match(commands, /argv = \["git", "status", "--short"\]/);
 		assert.match(commands, /\[intents\.changes_diff_summary\]/);
@@ -131,6 +138,9 @@ test('copies the default agent workflow into an empty project', () => {
 		const agents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 		assert.match(agents, /mf doctor/);
 		assert.match(agents, /locale: en/);
+		assert.match(agents, /auto_bump = true/);
+		assert.match(agents, /require_user_confirmation = false/);
+		assert.doesNotMatch(agents, /Do not change version files unless the user explicitly requests/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -151,6 +161,9 @@ test('installs Korean localized documents when requested', () => {
 
 		assert.match(agents, /locale: ko/);
 		assert.match(agents, /## 읽는 순서/);
+		assert.match(agents, /auto_bump = true/);
+		assert.match(agents, /require_user_confirmation = false/);
+		assert.doesNotMatch(agents, /명시적으로 요청하지 않았다면 버전 파일을\s+바꾸지 않습니다/);
 		assert.match(skill, /## 목적/);
 		assert.match(preferences, /docs = "ko"/);
 		assert.match(lock, /locale = "ko"/);
@@ -255,6 +268,12 @@ test('applies safe preference overrides from repeated set options', () => {
 			'--set',
 			'verification.selection.report_skipped=false',
 			'--set',
+			'testing.authoring.new_test_policy=manual_approval',
+			'--set',
+			'testing.authoring.prefer_existing_tests=false',
+			'--set',
+			'testing.authoring.require_new_test_rationale=false',
+			'--set',
 			'language.memory.summary=docs',
 		]);
 
@@ -277,6 +296,9 @@ test('applies safe preference overrides from repeated set options', () => {
 		assert.match(preferences, /\[verification\.selection\]\n(?:.*\n)*?strategy = "targeted"/);
 		assert.match(preferences, /\[verification\.selection\]\n(?:.*\n)*?skip_low_risk_code_full_test = false/);
 		assert.match(preferences, /\[verification\.selection\]\n(?:.*\n)*?report_skipped = false/);
+		assert.match(preferences, /\[testing\.authoring\]\n(?:.*\n)*?new_test_policy = "manual_approval"/);
+		assert.match(preferences, /\[testing\.authoring\]\n(?:.*\n)*?prefer_existing_tests = false/);
+		assert.match(preferences, /\[testing\.authoring\]\n(?:.*\n)*?require_new_test_rationale = false/);
 		assert.match(preferences, /\[language\.memory\]\n(?:.*\n)*?summary = "docs"/);
 
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
@@ -297,6 +319,8 @@ test('rejects unsupported init preference overrides', () => {
 		['verification.selection.strategy=always_full', /Invalid value for verification\.selection\.strategy: always_full/],
 		['verification.selection.skip_low_risk_code_full_test=maybe', /Invalid value for verification\.selection\.skip_low_risk_code_full_test: maybe/],
 		['verification.selection.report_skipped=maybe', /Invalid value for verification\.selection\.report_skipped: maybe/],
+		['testing.authoring.new_test_policy=always', /Invalid value for testing\.authoring\.new_test_policy: always/],
+		['testing.authoring.prefer_existing_tests=maybe', /Invalid value for testing\.authoring\.prefer_existing_tests: maybe/],
 	];
 
 	for (const [override, expectedError] of invalidOverrides) {

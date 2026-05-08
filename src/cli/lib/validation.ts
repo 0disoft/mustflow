@@ -10,7 +10,7 @@ import {
 } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
-import { COMMIT_MESSAGE_STYLES } from './preferences-options.js';
+import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
 import { readTomlFile } from './toml.js';
 
 const REQUIRED_SKILL_SECTION_SETS = [
@@ -72,6 +72,8 @@ const VERIFICATION_SELECTION_BOOLEAN_FIELDS = [
 	'report_skipped',
 ] as const;
 const ALLOWED_VERIFICATION_SELECTION_STRATEGIES = new Set(['risk_based', 'targeted', 'full']);
+const TEST_AUTHORING_BOOLEAN_FIELDS = ['prefer_existing_tests', 'require_new_test_rationale'] as const;
+const ALLOWED_TEST_AUTHORING_POLICIES = new Set(TEST_AUTHORING_POLICIES);
 const ALLOWED_TESTING_POLICIES = new Set(['behavior_contract']);
 const ALLOWED_TEST_DELETION_REASONS = new Set([
 	'behavior_removed',
@@ -156,6 +158,23 @@ const BACKGROUND_SHELL_PATTERNS = [
 	/\bchromium(?:\.exe)?\b/iu,
 ];
 const RAW_COMMAND_FENCE_PATTERN = /```(?:sh|bash|shell|zsh|powershell|ps1|cmd)\s+[\s\S]*?```/giu;
+const SKILL_COMMAND_PERMISSION_CLAIM_PATTERNS = [
+	/\b(?:this\s+skill|skill\s+documents?|skills?)\s+(?:authorizes?|grants?|allows?|permits?)\s+(?:agents?\s+)?(?:to\s+)?(?:run|execute)\b/iu,
+	/\b(?:agents?\s+)?(?:may|can|are\s+allowed\s+to|is\s+allowed\s+to|is\s+permitted\s+to|have\s+permission\s+to)\s+(?:run|execute)\s+(?:raw\s+)?(?:shell\s+)?commands?\b/iu,
+	/\bcommand\s+execution\s+(?:is\s+)?(?:authorized|allowed|permitted)\s+by\s+(?:this\s+)?skill\b/iu,
+];
+const ROUTER_INDEX_PROCEDURE_SECTION_PATTERN =
+	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Procedure|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|절차|검증|실패 대응|출력 형식)\s*$/imu;
+const ROUTER_INDEX_FILES = ['.mustflow/skills/INDEX.md', '.mustflow/context/INDEX.md'] as const;
+const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
+const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
+	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,
+	/\b(?:must not|do not|never)\s+(?:edit|modify|write|delete)\s+(?:files?\s+)?(?:outside|under|inside|in)\b/iu,
+] as const;
+const STATIC_MANAGED_MARKDOWN_DOC_IDS: Record<string, string> = {
+	'AGENTS.md': 'agents.root',
+	'.mustflow/skills/INDEX.md': 'skills.index',
+};
 const SKILL_RESOURCE_MANIFEST = 'resources.toml';
 const SKILL_RESOURCE_ROOTS = new Set(['references', 'assets', 'scripts']);
 const ALLOWED_SKILL_RESOURCE_TYPES = new Set(['reference', 'asset', 'script']);
@@ -1007,6 +1026,24 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 		}
 	}
 
+	const testing = validateTable(preferencesToml, 'testing', issues);
+	if (testing) {
+		const authoring = validateNestedTable(testing, 'authoring', '[preferences.testing.authoring]', issues);
+		if (authoring) {
+			validateAllowedStringField(
+				authoring,
+				'new_test_policy',
+				'[preferences.testing.authoring].new_test_policy',
+				ALLOWED_TEST_AUTHORING_POLICIES,
+				issues,
+			);
+
+			for (const field of TEST_AUTHORING_BOOLEAN_FIELDS) {
+				validateBooleanField(authoring, field, `[preferences.testing.authoring].${field}`, issues);
+			}
+		}
+	}
+
 	const docs = validateTable(preferencesToml, 'docs', issues);
 	if (docs) {
 		validateStringArrayField(docs, 'update_when', '[preferences.docs].update_when', issues);
@@ -1224,6 +1261,62 @@ function parseSimpleFrontmatter(content: string): Record<string, string> {
 	return frontmatter;
 }
 
+function readFrontmatterLines(content: string): string[] {
+	if (!content.startsWith('---')) {
+		return [];
+	}
+
+	const end = content.indexOf('\n---', 3);
+	if (end === -1) {
+		return [];
+	}
+
+	return content.slice(3, end).split(/\r?\n/);
+}
+
+function stripScalarMarkers(value: string): string {
+	return value.trim().replace(/^["'`]|["'`]$/g, '').trim();
+}
+
+function readFrontmatterList(content: string, key: string): string[] {
+	const lines = readFrontmatterLines(content);
+	const values: string[] = [];
+	let keyIndent: number | undefined;
+
+	for (const line of lines) {
+		const keyMatch = line.match(new RegExp(`^(\\s*)${key}:\\s*$`, 'u'));
+
+		if (keyIndent === undefined) {
+			if (keyMatch) {
+				keyIndent = keyMatch[1].length;
+			}
+
+			continue;
+		}
+
+		if (line.trim().length === 0) {
+			continue;
+		}
+
+		const lineIndent = line.match(/^\s*/u)?.[0].length ?? 0;
+		const itemMatch = line.match(/^\s*-\s+(.+)$/u);
+
+		if (lineIndent <= keyIndent && !itemMatch) {
+			break;
+		}
+
+		if (itemMatch) {
+			const value = stripScalarMarkers(itemMatch[1]);
+
+			if (value.length > 0) {
+				values.push(value);
+			}
+		}
+	}
+
+	return values;
+}
+
 function validateContextDocuments(projectRoot: string, issues: CheckIssue[]): void {
 	const contextRoot = path.join(projectRoot, '.mustflow', 'context');
 	const contextFiles = listFilesRecursive(contextRoot).filter((relativePath) => relativePath.endsWith('.md'));
@@ -1270,6 +1363,107 @@ function validateStrictCommandDefaults(commandsToml: TomlTable | undefined, issu
 
 	if (!hasOwn(commandsToml.defaults, 'on_timeout')) {
 		pushStrictIssue(issues, '[commands.defaults].on_timeout is required');
+	}
+}
+
+function validateStrictRouterIndexes(projectRoot: string, issues: CheckIssue[]): void {
+	for (const relativePath of ROUTER_INDEX_FILES) {
+		const filePath = path.join(projectRoot, relativePath);
+
+		if (!existsSync(filePath)) {
+			continue;
+		}
+
+		const content = readFileSync(filePath, 'utf8');
+
+		if (ROUTER_INDEX_PROCEDURE_SECTION_PATTERN.test(content)) {
+			pushStrictIssue(issues, `${relativePath} must stay a routing index and must not embed skill procedure sections`);
+		}
+	}
+}
+
+function getManagedMarkdownDocId(relativePath: string): string | undefined {
+	const normalizedPath = toPosixPath(relativePath);
+	const staticId = STATIC_MANAGED_MARKDOWN_DOC_IDS[normalizedPath];
+
+	if (staticId) {
+		return staticId;
+	}
+
+	const docsMatch = /^\.mustflow\/docs\/([^/]+)\.md$/u.exec(normalizedPath);
+	if (docsMatch) {
+		return `docs.${docsMatch[1]}`;
+	}
+
+	const contextMatch = /^\.mustflow\/context\/([^/]+)\.md$/u.exec(normalizedPath);
+	if (contextMatch) {
+		return `context.${contextMatch[1].toLowerCase()}`;
+	}
+
+	const skillMatch = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(normalizedPath);
+	if (skillMatch) {
+		return `skill.${skillMatch[1]}`;
+	}
+
+	return undefined;
+}
+
+function listManagedMarkdownDocuments(projectRoot: string): string[] {
+	const documents: string[] = [];
+
+	for (const relativePath of ['AGENTS.md', '.mustflow/skills/INDEX.md']) {
+		if (existsSync(path.join(projectRoot, relativePath))) {
+			documents.push(relativePath);
+		}
+	}
+
+	for (const root of ['.mustflow/docs', '.mustflow/context']) {
+		const rootPath = path.join(projectRoot, root);
+
+		for (const relativePath of listFilesRecursive(rootPath)) {
+			if (relativePath.endsWith('.md')) {
+				documents.push(`${root}/${toPosixPath(relativePath)}`);
+			}
+		}
+	}
+
+	const skillsRoot = path.join(projectRoot, '.mustflow', 'skills');
+
+	for (const relativePath of listFilesRecursive(skillsRoot)) {
+		if (relativePath.endsWith('/SKILL.md')) {
+			documents.push(`.mustflow/skills/${toPosixPath(relativePath)}`);
+		}
+	}
+
+	return [...new Set(documents)].sort();
+}
+
+function validateStrictManagedMarkdownIdentities(projectRoot: string, issues: CheckIssue[]): void {
+	for (const relativePath of listManagedMarkdownDocuments(projectRoot)) {
+		const expectedDocId = getManagedMarkdownDocId(relativePath);
+
+		if (!expectedDocId) {
+			continue;
+		}
+
+		const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
+		const frontmatter = parseSimpleFrontmatter(content);
+
+		if (frontmatter.mustflow_doc !== expectedDocId) {
+			pushStrictIssue(issues, `${relativePath} frontmatter mustflow_doc must be "${expectedDocId}"`);
+		}
+
+		if (!frontmatter.locale) {
+			pushStrictIssue(issues, `${relativePath} frontmatter locale is required`);
+		}
+
+		if (frontmatter.canonical !== 'true' && frontmatter.canonical !== 'false') {
+			pushStrictIssue(issues, `${relativePath} frontmatter canonical must be true or false`);
+		}
+
+		if (!/^[1-9]\d*$/u.test(frontmatter.revision ?? '')) {
+			pushStrictIssue(issues, `${relativePath} frontmatter revision must be a positive integer`);
+		}
 	}
 }
 
@@ -1601,6 +1795,32 @@ function validateDeclaredSkillScripts(skillDir: string, skillName: string, decla
 	}
 }
 
+function validateSkillCommandIntentReferences(
+	skillLabel: string,
+	content: string,
+	commandsToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): void {
+	if (!commandsToml || !isRecord(commandsToml.intents)) {
+		return;
+	}
+
+	for (const intentName of readFrontmatterList(content, 'command_intents')) {
+		if (!isDeclaredCommandIntent(commandsToml, intentName)) {
+			pushStrictIssue(issues, `${skillLabel} metadata.command_intents references unknown command intent "${intentName}"`);
+		}
+	}
+}
+
+function validateSkillCommandPermissionClaims(skillLabel: string, content: string, issues: CheckIssue[]): void {
+	if (SKILL_COMMAND_PERMISSION_CLAIM_PATTERNS.some((pattern) => pattern.test(content))) {
+		pushStrictIssue(
+			issues,
+			`${skillLabel} claims command execution permission; keep permissions in .mustflow/config/commands.toml`,
+		);
+	}
+}
+
 function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	const skillsRoot = path.join(projectRoot, '.mustflow', 'skills');
 	const skillFiles = listFilesRecursive(skillsRoot).filter((relativePath) => relativePath.endsWith('/SKILL.md'));
@@ -1621,11 +1841,30 @@ function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | und
 	for (const relativePath of skillFiles) {
 		const absolutePath = path.join(skillsRoot, relativePath);
 		const content = readFileSync(absolutePath, 'utf8');
+		const normalizedRelativePath = toPosixPath(relativePath);
+		const skillName = normalizedRelativePath.split('/')[0] ?? '';
+		const skillLabel = `.mustflow/skills/${normalizedRelativePath}`;
+		const frontmatter = parseSimpleFrontmatter(content);
+
+		if (frontmatter.mustflow_schema !== SUPPORTED_SKILL_SCHEMA_VERSION) {
+			pushStrictIssue(issues, `${skillLabel} metadata.mustflow_schema must be "${SUPPORTED_SKILL_SCHEMA_VERSION}"`);
+		}
+
+		if (frontmatter.mustflow_kind !== 'procedure') {
+			pushStrictIssue(issues, `${skillLabel} metadata.mustflow_kind must be "procedure"`);
+		}
+
+		if (frontmatter.name !== skillName) {
+			pushStrictIssue(issues, `${skillLabel} frontmatter name must match skill folder "${skillName}"`);
+		}
+
+		validateSkillCommandIntentReferences(skillLabel, content, commandsToml, issues);
+		validateSkillCommandPermissionClaims(skillLabel, content, issues);
 
 		if (RAW_COMMAND_FENCE_PATTERN.test(content)) {
 			pushStrictIssue(
 				issues,
-				`.mustflow/skills/${toPosixPath(relativePath)} contains a raw shell command block; reference command intents instead`,
+				`${skillLabel} contains a raw shell command block; reference command intents instead`,
 			);
 		}
 
@@ -1678,6 +1917,13 @@ function validateStrictContextDocuments(projectRoot: string, limits: RetentionLi
 
 		if (hasDesignAnchor && DESIGN_TOKEN_DEFINITION_PATTERNS.some((pattern) => pattern.test(content))) {
 			pushStrictIssue(issues, `${normalizedPath} duplicates design-token definitions while DESIGN.md exists`);
+		}
+
+		if (CONTEXT_AUTHORITY_DRIFT_PATTERNS.some((pattern) => pattern.test(content))) {
+			pushStrictIssue(
+				issues,
+				`${normalizedPath} declares command policy or file-edit prohibitions; keep execution rules in AGENTS.md or .mustflow/config/commands.toml`,
+			);
 		}
 	}
 }
@@ -1759,6 +2005,8 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(parsed.commandsToml, issues);
+	validateStrictManagedMarkdownIdentities(projectRoot, issues);
+	validateStrictRouterIndexes(projectRoot, issues);
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
 	validateStrictRepoMap(projectRoot, issues);
 	validateStrictContextDocuments(projectRoot, retentionLimits, issues);

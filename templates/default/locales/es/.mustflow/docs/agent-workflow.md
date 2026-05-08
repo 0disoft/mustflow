@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: es
 canonical: false
-revision: 9
+revision: 10
 ---
 
 # Flujo De Trabajo Del Agente
@@ -148,7 +148,9 @@ Estos valores son preferencias del repositorio, no permisos. No anulan instrucci
 
 ## Politica De Impacto De Version
 
-La configuracion de impacto de version es una preferencia, no un permiso de release.
+La configuracion de impacto de version es una preferencia del repositorio. Guia las ediciones de
+archivos de version, pero no reemplaza instrucciones directas del usuario, reglas de seguridad del
+host ni puertas de aprobacion en `.mustflow/config/mustflow.toml`.
 
 Usa `[release.versioning]` en `.mustflow/config/preferences.toml` cuando cambien codigo,
 plantillas, esquemas, comportamiento de CLI, metadatos de paquete, documentacion visible
@@ -156,8 +158,14 @@ para usuarios, salida de instalacion o pruebas.
 
 - `impact_check = true`: informa si el diff parece requerir un cambio de version de paquete o plantilla.
 - `suggest_bump = true`: sugiere patch, minor o major cuando la evidencia sea clara.
-- `auto_bump = false`: no edites archivos de version de paquete o plantilla sin solicitud explicita del usuario.
-- `require_user_confirmation = true`: exige una solicitud aprobada por el usuario para cambiar versiones o preparar release.
+- `auto_bump = true`: aplica el aumento de version de paquete o plantilla apropiado cuando el
+  impacto sea claro, la fuente de version este localizada y ninguna regla de usuario, host o
+  aprobacion mas estricta lo bloquee.
+- `auto_bump = false`: deja intactos los archivos de version de paquete y plantilla salvo que el
+  usuario pida un aumento de version o preparacion de release.
+- `require_user_confirmation = true`: pregunta antes de editar archivos de version.
+- `require_user_confirmation = false`: no agregues un paso de confirmacion separado cuando
+  `auto_bump = true`.
 
 Antes de sugerir o aplicar un cambio de version, localiza la fuente de version propia del repositorio.
 No supongas que `package.json` es el unico archivo de version. Revisa los manifests, documentos de
@@ -176,8 +184,8 @@ Candidatos comunes de fuente de version:
 - Contenedores, charts o apps: `Chart.yaml`, labels de imagen, manifests de app, notas de release o metadatos de despliegue.
 - Plantillas mustflow: metadatos de paquete, manifests de plantilla, ejemplos de documentacion y pruebas que validan versiones instaladas.
 
-Cuando un cambio de version se aprueba, manten sincronizados metadatos de paquete, versiones de manifests
-de plantilla, ejemplos de documentacion y pruebas segun las preferencias `sync_*`.
+Cuando cambie una version, manten sincronizados metadatos de paquete, versiones de manifests de
+plantilla, ejemplos de documentacion y pruebas segun las preferencias `sync_*`.
 
 ## Politica De Ejecucion De Comandos
 
@@ -265,6 +273,13 @@ Los agentes pueden actualizar pruebas cuando cambie el comportamiento esperado, 
 ## Politica De Relevancia De Pruebas
 
 Las pruebas son contratos de comportamiento, no artefactos permanentes.
+
+Usa `[testing.authoring]` en `.mustflow/config/preferences.toml` para orientar con que facilidad
+los agentes crean pruebas nuevas. El valor predeterminado `new_test_policy = "evidence_required"`
+significa que una prueba nueva debe estar respaldada por evidencia de contrato de comportamiento,
+como un comportamiento publico cambiado, riesgo de regresion, regla de configuracion, contrato de
+schema o ruta de seguridad/datos. Esta preferencia solo orienta la autoria; no debilita la
+verificacion requerida ni justifica eliminar pruebas validas.
 
 Los agentes no deben:
 

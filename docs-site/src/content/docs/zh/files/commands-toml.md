@@ -176,6 +176,10 @@ stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
 
+默认模板也通过内置意图暴露 `mf update`，这样代理可以留下运行记录，而不是绕过命令契约。
+`mustflow_update_dry_run` 运行 `mf update --dry-run --json`，不写文件。
+`mustflow_update_apply` 只应在计划没有阻塞项，并且任务确实需要应用模板更新时使用。
+
 根目录 `config/` 可能属于用户项目，因此 mustflow 不使用它。
 
 ## Git 相关意图

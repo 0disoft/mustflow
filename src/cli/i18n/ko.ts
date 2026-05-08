@@ -102,6 +102,7 @@ export const koMessages = {
   "dashboard.group.commitMessage": "커밋 메시지",
   "dashboard.group.reporting": "보고",
   "dashboard.group.verification": "검증",
+  "dashboard.group.testAuthoring": "테스트 작성",
   "dashboard.group.codeStyle": "코드 스타일",
   "dashboard.group.versioning": "버전",
   "dashboard.setting.git.auto_stage": "Git 자동 스테이징",
@@ -157,6 +158,19 @@ export const koMessages = {
   "dashboard.setting.verification.selection.skip_translation_only_full_test": "번역만 바뀐 경우 전체 테스트 생략",
   "dashboard.setting.verification.selection.skip_copy_only_full_test": "문구만 바뀐 경우 전체 테스트 생략",
   "dashboard.setting.verification.selection.report_skipped": "생략한 검증 보고",
+  "dashboard.setting.testing.authoring.new_test_policy": "새 테스트 작성 정책",
+  "dashboard.setting.testing.authoring.new_test_policy.description.evidence_required":
+    "동작 계약을 검증해야 한다는 근거가 있을 때만 새 테스트를 추가합니다.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.manual_approval":
+    "사용자가 직접 테스트를 요청하지 않았다면 새 테스트 추가 전에 확인합니다.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.broad":
+    "중요한 동작을 더 분명히 검증할 수 있으면 새 테스트를 적극적으로 허용합니다.",
+  "dashboard.setting.testing.authoring.prefer_existing_tests": "기존 테스트 우선",
+  "dashboard.setting.testing.authoring.prefer_existing_tests.description":
+    "새 테스트 파일이나 사례를 만들기 전에 가까운 기존 테스트를 먼저 수정합니다.",
+  "dashboard.setting.testing.authoring.require_new_test_rationale": "새 테스트 근거 요구",
+  "dashboard.setting.testing.authoring.require_new_test_rationale.description":
+    "테스트를 추가했다면 각 테스트가 왜 필요한지 최종 보고에 남깁니다.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "요청과 무관한 리팩터링 방지",
   "dashboard.setting.release.versioning.impact_check": "버전 영향 확인",
   "dashboard.setting.release.versioning.impact_check.description":

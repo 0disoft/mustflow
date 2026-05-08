@@ -11,6 +11,13 @@ Include the `--json` flag when automation or an agent needs to parse the plan.
 
 Both human-readable and JSON outputs adhere to the same policy. The comparison baseline is the `content_hash` recorded in the lock file; updates and creations are the only actionable states.
 
+## Agent Command Intents
+
+Installed projects can expose update operations through configured `mf run` intents instead of asking agents to run raw `mf update` directly.
+
+- `mustflow_update_dry_run`: runs `mf update --dry-run --json` and writes no files.
+- `mustflow_update_apply`: runs `mf update --apply --json`; use it only after the dry-run plan has no blocking or manual-review items and the task calls for applying updates.
+
 ## Why Dry-Run Comes First
 
 Mustflow files define agent rules and procedures; therefore, automatically overwriting user-edited files could inadvertently erase repository-specific logic.

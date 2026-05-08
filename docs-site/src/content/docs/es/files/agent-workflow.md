@@ -167,12 +167,12 @@ La sugerencia de mensaje de commit forma parte del informe final, no del permiso
 
 ## Política de impacto de versión
 
-`[release.versioning]` en `.mustflow/config/preferences.toml` controla las preferencias de informe de impacto de versión.
+`[release.versioning]` en `.mustflow/config/preferences.toml` controla las preferencias de impacto de versión, incluido si los agentes pueden editar archivos de versión después de localizar la fuente real de versión del repositorio.
 
 Cuando cambian código, plantillas, esquemas, comportamiento de CLI, metadatos del paquete, documentación visible para usuarios, salida de instalación o pruebas, los agentes deben comprobar si el cambio parece requerir actualizar la versión del paquete o de la plantilla.
 
-De forma predeterminada, mustflow puede sugerir un cambio patch, minor o major cuando la evidencia es clara, pero no debe editar archivos de versión salvo que el usuario pida explícitamente un cambio de versión o preparación de release.
+De forma predeterminada, mustflow puede sugerir un cambio patch, minor o major cuando la evidencia es clara. Cuando `auto_bump = true` y `require_user_confirmation = false`, los agentes pueden aplicar el cambio de versión directamente salvo que una instrucción directa del usuario, una regla de seguridad del host o una política de aprobación lo bloquee.
 
 Antes de sugerir o aplicar un cambio de versión, el agente debe encontrar la fuente real de versión del repositorio en vez de asumir que es `package.json`. Los candidatos comunes incluyen `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` junto con tags de release, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, manifiestos de aplicación, notas de release y manifiestos de plantillas mustflow.
 
-Cuando se aprueba un cambio de versión, los metadatos del paquete, las versiones del manifiesto de plantilla, los ejemplos de documentación y las pruebas deben mantenerse sincronizados según las preferencias `sync_*`.
+Cuando cambia una versión, los metadatos del paquete, las versiones del manifiesto de plantilla, los ejemplos de documentación y las pruebas deben mantenerse sincronizados según las preferencias `sync_*`.

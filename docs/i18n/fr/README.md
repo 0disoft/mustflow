@@ -82,7 +82,10 @@ produit d'agent particulier.
 - `mf dashboard` démarre une interface locale dans le navigateur pour consulter
   et modifier les préférences sûres de `.mustflow/config/preferences.toml`, puis
   l'ouvre dans le navigateur par défaut. La page permet de basculer entre
-  l'anglais, le coréen, le chinois, l'espagnol, le français et l'hindi.
+  l'anglais, le coréen, le chinois, l'espagnol, le français et l'hindi. Elle
+  inclut aussi la sélection de vérification et les préférences d'écriture des tests.
+  Lors de l'enregistrement des préférences, l'entrée du fichier de verrouillage
+  devient une ligne de base personnalisée si ce fichier existe.
 
 ## Fonctionnalités candidates
 
@@ -207,6 +210,14 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
+Les agents doivent privilégier les intentions de mise à jour configurées afin
+que le dépôt conserve un reçu d'exécution.
+
+```sh
+mf run mustflow_update_dry_run
+mf run mustflow_update_apply
+```
+
 ## Commandes
 
 | Commande | Rôle |
@@ -216,7 +227,7 @@ npx mf update --apply
 | `mf init --merge` | Fusionne le bloc géré par mustflow dans un `AGENTS.md` existant. |
 | `mf init --force` | Sauvegarde les fichiers en conflit, puis les écrase. |
 | `mf check` | Valide les fichiers mustflow, la configuration TOML et la forme des documents de compétences. |
-| `mf check --strict` | Exécute des contrôles de sécurité supplémentaires pour la politique de rétention, les limites de sortie, les journaux bruts et les traces ressemblant à des secrets. |
+| `mf check --strict` | Exécute des contrôles de sécurité supplémentaires pour l'identité des documents, les métadonnées de skills, les limites de commande, la politique de rétention, les limites de sortie, les journaux bruts et les traces ressemblant à des secrets. |
 | `mf doctor` | Inspecte la racine mustflow courante sans écrire de fichiers. |
 | `mf context --json` | Imprime en JSON l'ordre de lecture, les règles de commandes, les capacités disponibles et le résumé de l'exécution récente. |
 | `mf map --stdout` | Imprime la carte de la racine mustflow courante sur la sortie standard. |
@@ -228,7 +239,7 @@ npx mf update --apply
 | `mf update --dry-run` | Calcule un plan de mise à jour de modèle sans écrire de fichiers. |
 | `mf update --apply` | Applique les mises à jour de modèle lorsque rien n'est bloqué. |
 | `mf help <topic>` | Affiche l'aide mustflow installée. |
-| `mf dashboard` | Démarre un tableau de bord local pour les préférences mustflow sûres et l'ouvre dans le navigateur par défaut. La page peut basculer entre six langues. |
+| `mf dashboard` | Démarre un tableau de bord local pour les préférences mustflow sûres et l'ouvre dans le navigateur par défaut. À l'enregistrement, il actualise la ligne de base personnalisée si le fichier de verrouillage existe. |
 
 Les automatisations et les agents doivent utiliser la sortie `--json` plutôt
 que d'analyser du texte destiné aux humains. Les schémas JSON des sorties
@@ -274,13 +285,16 @@ npx mf init --set git.auto_commit=true
 - `--interactive` : choisit les paramètres initiaux via des questions.
 - `--yes` : utilise les paramètres initiaux anglais par défaut sans questions.
 - `--set` : définit une préférence autorisée pendant l'installation. Les clés
-  prises en charge sont `git.auto_stage`, `git.auto_commit`,
-  `git.commit_message.style`, `git.commit_message.language`,
-  `reporting.commit_suggestion.enabled` et `language.memory.summary`.
+  prises en charge sont `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`,
+  `git.commit_message.*`, `reporting.commit_suggestion.enabled`,
+  `language.memory.summary`, `release.versioning.*`, `verification.selection.*`
+  et `testing.authoring.*`.
   `git.commit_message.style` accepte `conventional`, `descriptive` ou
   `gitmoji`; `gitmoji` change seulement le format du message suggéré.
   `git.commit_message.language` accepte `preserve_existing`, `agent_response`,
   `docs` ou une étiquette de langue comme `ja`, `de` ou `pt-BR`.
+  `testing.authoring.new_test_policy` accepte `evidence_required`,
+  `manual_approval` ou `broad`.
 - `--product-source-locale`, `--product-locale` : locales source et cible pour
   les chaînes de produit destinées aux utilisateurs.
 - `--lang` : langue de sortie de la CLI. Les valeurs actuelles sont `en`, `ko`,

@@ -144,6 +144,261 @@ test('strict check fails raw shell commands in skill documents and unsafe REPO_M
 	}
 });
 
+test('strict check fails procedure sections in router index documents', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const contextIndexPath = path.join(projectPath, '.mustflow', 'context', 'INDEX.md');
+		writeFileSync(skillsIndexPath, `${readText(skillsIndexPath)}\n## Procedure\n\nRun this workflow.\n`);
+		writeFileSync(contextIndexPath, `${readText(contextIndexPath)}\n## 검증\n\n절차 본문.\n`);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/INDEX.md must stay a routing index and must not embed skill procedure sections',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/context/INDEX.md must stay a routing index and must not embed skill procedure sections',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails unknown skill command intent metadata references', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readText(skillPath).replace('    - lint', '    - lint\n    - deploy_prod');
+		writeFileSync(skillPath, skill);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/code-review/SKILL.md metadata.command_intents references unknown command intent "deploy_prod"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails non-procedure skill metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readText(skillPath).replace('  mustflow_kind: procedure', '  mustflow_kind: contract');
+		writeFileSync(skillPath, skill);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue === 'Strict: .mustflow/skills/code-review/SKILL.md metadata.mustflow_kind must be "procedure"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails unsupported skill schema metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readText(skillPath).replace('  mustflow_schema: "1"', '  mustflow_schema: "2"');
+		writeFileSync(skillPath, skill);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue === 'Strict: .mustflow/skills/code-review/SKILL.md metadata.mustflow_schema must be "1"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill name identity drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readText(skillPath).replace('name: code-review', 'name: diff-review');
+		writeFileSync(skillPath, skill);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/code-review/SKILL.md frontmatter name must match skill folder "code-review"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill command permission claims', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = `${readText(skillPath)}\nThis skill authorizes agents to run deployment commands.\n`;
+		writeFileSync(skillPath, skill);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/code-review/SKILL.md claims command execution permission; keep permissions in .mustflow/config/commands.toml',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails managed markdown document identity drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const workflowPath = path.join(projectPath, '.mustflow', 'docs', 'agent-workflow.md');
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		writeFileSync(workflowPath, readText(workflowPath).replace('mustflow_doc: docs.agent-workflow', 'mustflow_doc: docs.workflow'));
+		writeFileSync(skillPath, readText(skillPath).replace('mustflow_doc: skill.code-review\n', ''));
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue === 'Strict: .mustflow/docs/agent-workflow.md frontmatter mustflow_doc must be "docs.agent-workflow"',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue === 'Strict: .mustflow/skills/code-review/SKILL.md frontmatter mustflow_doc must be "skill.code-review"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails managed markdown metadata drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const agentsPath = path.join(projectPath, 'AGENTS.md');
+		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const projectContextPath = path.join(projectPath, '.mustflow', 'context', 'PROJECT.md');
+		writeFileSync(agentsPath, readText(agentsPath).replace('canonical: true', 'canonical: maybe'));
+		writeFileSync(skillsIndexPath, readText(skillsIndexPath).replace('locale: en\n', ''));
+		writeFileSync(projectContextPath, readText(projectContextPath).replace('revision: 1', 'revision: latest'));
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some((issue) => issue === 'Strict: AGENTS.md frontmatter canonical must be true or false'),
+		);
+		assert.ok(
+			check.issues.some((issue) => issue === 'Strict: .mustflow/skills/INDEX.md frontmatter locale is required'),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: .mustflow/context/PROJECT.md frontmatter revision must be a positive integer',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails context authority drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const projectContextPath = path.join(projectPath, '.mustflow', 'context', 'PROJECT.md');
+		writeFileSync(
+			projectContextPath,
+			`${readText(projectContextPath)}\n## Command Policy\n\nAgents must run only approved commands here.\n\n## Protected Paths\n\nDo not edit files outside \`src/\`.\n`,
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/context/PROJECT.md declares command policy or file-edit prohibitions; keep execution rules in AGENTS.md or .mustflow/config/commands.toml',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails unsafe skill resource declarations', () => {
 	const projectPath = createTempProject();
 
@@ -883,6 +1138,11 @@ test('fails when preferences configuration fields are invalid', () => {
 				'skip_copy_only_full_test = "yes"',
 				'report_skipped = "yes"',
 				'',
+				'[testing.authoring]',
+				'new_test_policy = "always"',
+				'prefer_existing_tests = "yes"',
+				'require_new_test_rationale = "yes"',
+				'',
 				'[docs]',
 				'update_when = "always"',
 				'tone = 1',
@@ -935,6 +1195,9 @@ test('fails when preferences configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.skip_translation_only_full_test must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.skip_copy_only_full_test must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.report_skipped must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.testing\.authoring\]\.new_test_policy must be "evidence_required"/);
+		assert.match(result.stderr, /\[preferences\.testing\.authoring\]\.prefer_existing_tests must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.testing\.authoring\]\.require_new_test_rationale must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.docs\]\.update_when must be a string array/);
 		assert.match(result.stderr, /\[preferences\.logging\]\.include_sensitive_data must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.enabled must be a boolean/);

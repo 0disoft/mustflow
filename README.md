@@ -71,7 +71,9 @@ mustflow is not an automatic project editor and is not tied to one agent product
 - `mf dashboard` starts a local browser UI for reviewing and editing safe
   preferences in `.mustflow/config/preferences.toml`, then opens it in the
   default browser. The page can switch between English, Korean, Chinese,
-  Spanish, French, and Hindi.
+  Spanish, French, and Hindi. It includes verification-selection and test
+  authoring preferences. When the dashboard saves preferences, it refreshes the
+  matching manifest-lock entry as a customized baseline if the lock file exists.
 
 ## Candidate features
 
@@ -194,6 +196,14 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
+Agents should prefer the configured update intents so the repository receives a
+run receipt.
+
+```sh
+mf run mustflow_update_dry_run
+mf run mustflow_update_apply
+```
+
 ## Commands
 
 | Command | Purpose |
@@ -203,7 +213,7 @@ npx mf update --apply
 | `mf init --merge` | Merge the mustflow managed block into an existing `AGENTS.md`. |
 | `mf init --force` | Back up conflicting files, then overwrite them. |
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
-| `mf check --strict` | Run additional safety checks for retention policy, output limits, raw logs, and secret-like context. |
+| `mf check --strict` | Run additional safety checks for document identity, skill metadata, command boundaries, retention policy, output limits, raw logs, and secret-like context. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
@@ -215,7 +225,7 @@ npx mf update --apply
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
 | `mf help <topic>` | Show installed mustflow help. |
-| `mf dashboard` | Start a local dashboard for safe mustflow preferences and open it in the default browser. |
+| `mf dashboard` | Start a local dashboard for safe mustflow preferences and refresh the customized lock baseline on save. |
 
 Automation and agents should use `--json` output instead of parsing human-facing
 text. Published JSON Schemas for stable outputs live in `schemas/`.
@@ -264,13 +274,16 @@ npx mf init --set git.auto_commit=true
   `git.commit_message.split_when_multiple_concerns`,
   `reporting.commit_suggestion.enabled`, `language.memory.summary`, and
   boolean `release.versioning.*` fields such as
-  `release.versioning.suggest_bump=false`. Versioning preferences do not assume
-  a fixed version file; agents must locate the repository-specific version
-  source before suggesting or editing versions.
+  `release.versioning.suggest_bump=false`, `verification.selection.*` fields,
+  and `testing.authoring.*` fields. Versioning preferences do not assume a
+  fixed version file; agents must locate the repository-specific version source
+  before suggesting or editing versions.
   `git.commit_message.style` accepts `conventional`, `descriptive`, or
   `gitmoji`; `gitmoji` only changes the suggested message format.
   `git.commit_message.language` accepts `preserve_existing`, `agent_response`,
   `docs`, or a locale tag such as `ja`, `de`, or `pt-BR`.
+  `testing.authoring.new_test_policy` accepts `evidence_required`,
+  `manual_approval`, or `broad`.
 - `--product-source-locale`, `--product-locale`: Source and target locales for
   user-facing product strings.
 - `--lang`: CLI output language. Current values are `en`, `ko`, `zh`, `es`,

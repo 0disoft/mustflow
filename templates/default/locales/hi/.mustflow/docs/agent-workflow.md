@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: hi
 canonical: false
-revision: 9
+revision: 10
 ---
 
 # एजेंट कार्यप्रवाह
@@ -146,7 +146,9 @@ Git operations जो state या history बदलते हैं, default �
 
 ## Version impact नीति
 
-Version impact settings preferences हैं, release permission नहीं।
+Version impact settings repository preferences हैं। वे version-file edits guide करते हैं, लेकिन
+direct user instructions, host safety rules, या `.mustflow/config/mustflow.toml` के approval gates
+को override नहीं करते।
 
 जब code, templates, schemas, CLI behavior, package metadata, user-visible docs,
 installation output, या tests बदलते हैं, तो `.mustflow/config/preferences.toml` में
@@ -154,8 +156,12 @@ installation output, या tests बदलते हैं, तो `.mustflow/c
 
 - `impact_check = true`: diff package या template version change मांगता है या नहीं, report करें।
 - `suggest_bump = true`: evidence clear हो तो patch, minor, या major suggest करें।
-- `auto_bump = false`: explicit user request के बिना package या template version files edit न करें।
-- `require_user_confirmation = true`: version files बदलने से पहले user-approved version bump या release-prep request चाहिए।
+- `auto_bump = true`: impact clear हो, version source मिल चुका हो, और कोई stricter user, host, या
+  approval rule block न करे तो सही package या template version bump apply करें।
+- `auto_bump = false`: user version bump या release-preparation task न मांगे तो package और
+  template version files unchanged रखें।
+- `require_user_confirmation = true`: version files edit करने से पहले पूछें।
+- `require_user_confirmation = false`: `auto_bump = true` होने पर अलग confirmation step न जोड़ें।
 
 Version change suggest या apply करने से पहले repository का version source of truth खोजें।
 यह न मानें कि केवल `package.json` ही version file है। Repository के languages और frameworks से
@@ -174,8 +180,8 @@ Common version-source candidates:
 - Containers, charts, या apps: `Chart.yaml`, image labels, app manifests, release notes, या deployment metadata।
 - mustflow templates: package metadata, template manifests, documentation examples, और installed versions assert करने वाले tests।
 
-Approved version change के समय package metadata, template manifest versions, docs examples,
-और tests को `sync_*` preferences के अनुसार synchronized रखें।
+Version change के समय package metadata, template manifest versions, docs examples, और tests को
+`sync_*` preferences के अनुसार synchronized रखें।
 
 ## कमांड निष्पादन नीति
 
@@ -262,6 +268,13 @@ generated files को tools से refresh करें:
 ## परीक्षण प्रासंगिकता नीति
 
 tests व्यवहार अनुबंध हैं, स्थायी artifacts नहीं।
+
+एजेंट कितनी आसानी से नए tests बनाए, यह तय करने के लिए `.mustflow/config/preferences.toml` के
+`[testing.authoring]` को देखें। Default `new_test_policy = "evidence_required"` का मतलब है
+कि नया test तभी जोड़ा जाए जब behavior contract evidence हो, जैसे बदला public behavior,
+regression risk, configuration rule, schema contract, या security/data path। यह preference केवल
+test authoring behavior guide करती है; यह required verification को कमजोर नहीं करती और valid tests
+हटाने का कारण नहीं बनती।
 
 एजेंट को यह नहीं करना चाहिए:
 

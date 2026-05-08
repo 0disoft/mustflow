@@ -78,7 +78,9 @@ mustflow स्वचालित प्रोजेक्ट संपादक
 - `mf dashboard` `.mustflow/config/preferences.toml` में सुरक्षित preferences
   देखने और बदलने के लिए local browser UI शुरू करता है, फिर उसे default browser
   में खोलता है। Page language English, Korean, Chinese, Spanish, French और
-  Hindi में बदली जा सकती है।
+  Hindi में बदली जा सकती है। इसमें verification selection और test authoring
+  preferences भी शामिल हैं। Preferences save करने पर lock file मौजूद हो तो
+  matching entry customized baseline के रूप में refresh होती है।
 
 ## प्रस्तावित सुविधाएँ
 
@@ -199,6 +201,13 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
+agents को configured update intents प्राथमिकता से उपयोग करनी चाहिए, ताकि repository में run receipt दर्ज हो।
+
+```sh
+mf run mustflow_update_dry_run
+mf run mustflow_update_apply
+```
+
 ## कमांड
 
 | कमांड | उद्देश्य |
@@ -208,7 +217,7 @@ npx mf update --apply
 | `mf init --merge` | मौजूदा `AGENTS.md` में mustflow-प्रबंधित ब्लॉक मिलाता है। |
 | `mf init --force` | टकराती फ़ाइलों का बैकअप लेकर उन्हें ओवरराइट करता है। |
 | `mf check` | mustflow फ़ाइलों, TOML कॉन्फ़िगरेशन और कौशल दस्तावेज़ संरचना को सत्यापित करता है। |
-| `mf check --strict` | रिटेंशन नीति, आउटपुट सीमा, कच्चे लॉग और रहस्य-जैसे संदर्भ के लिए अतिरिक्त सुरक्षा जाँच चलाता है। |
+| `mf check --strict` | document identity, skill metadata, command boundaries, retention policy, output limits, raw logs, और secret-like context के लिए अतिरिक्त safety checks चलाता है। |
 | `mf doctor` | फ़ाइल लिखे बिना वर्तमान mustflow रूट का निरीक्षण करता है। |
 | `mf context --json` | पढ़ने का क्रम, कमांड नियम, उपलब्ध क्षमताएँ और हाल की रन सारांश JSON के रूप में प्रिंट करता है। |
 | `mf map --stdout` | वर्तमान mustflow रूट मानचित्र को मानक आउटपुट पर प्रिंट करता है। |
@@ -220,7 +229,7 @@ npx mf update --apply
 | `mf update --dry-run` | बिना फ़ाइल लिखे टेम्पलेट अपडेट योजना की गणना करता है। |
 | `mf update --apply` | जब कुछ भी अवरुद्ध न हो, तब टेम्पलेट अपडेट लागू करता है। |
 | `mf help <topic>` | इंस्टॉल की गई mustflow सहायता दिखाता है। |
-| `mf dashboard` | सुरक्षित mustflow preferences के लिए local dashboard शुरू करता है और उसे default browser में खोलता है। Page छह भाषाओं में बदला जा सकता है। |
+| `mf dashboard` | सुरक्षित mustflow preferences के लिए local dashboard शुरू करता है और उसे default browser में खोलता है। Save करने पर lock file मौजूद हो तो customized baseline refresh होती है। |
 
 ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json`
 आउटपुट का उपयोग करना चाहिए। स्थिर आउटपुट के JSON Schemas `schemas/` में हैं।
@@ -263,13 +272,16 @@ npx mf init --set git.auto_commit=true
 - `--interactive`: prompts के माध्यम से init settings चुनता है।
 - `--yes`: prompts के बिना default English init settings उपयोग करता है।
 - `--set`: installation के दौरान allowed preference set करता है। supported
-  keys हैं `git.auto_stage`, `git.auto_commit`, `git.commit_message.style`,
-  `git.commit_message.language`, `reporting.commit_suggestion.enabled` और
-  `language.memory.summary`।
+  keys हैं `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`,
+  `git.commit_message.*`, `reporting.commit_suggestion.enabled`,
+  `language.memory.summary`, `release.versioning.*`, `verification.selection.*`,
+  और `testing.authoring.*`।
   `git.commit_message.style` में `conventional`, `descriptive`, या `gitmoji`
   दिया जा सकता है; `gitmoji` सिर्फ suggested message format बदलता है।
   `git.commit_message.language` में `preserve_existing`, `agent_response`,
   `docs`, या `ja`, `de`, `pt-BR` जैसा locale tag दिया जा सकता है।
+  `testing.authoring.new_test_policy` में `evidence_required`,
+  `manual_approval`, या `broad` दिया जा सकता है।
 - `--product-source-locale`, `--product-locale`: उपयोगकर्ता-सामना करने वाली
   उत्पाद स्ट्रिंग के लिए स्रोत और लक्ष्य लोकेल।
 - `--lang`: CLI आउटपुट भाषा। वर्तमान मान `en`, `ko`, `zh`, `es`, `fr` और

@@ -57,6 +57,8 @@ content_hash = "sha256:..."
 
 `last_action = "customized"`는 기록된 해시가 저장소별 맞춤 기준선으로 승인되었다는 뜻입니다. `mf update`는 현재 파일 해시가 `content_hash`와 여전히 같으면 이 파일을 템플릿 내용으로 바꾸지 않습니다.
 
+`mf dashboard`가 `.mustflow/config/preferences.toml`을 저장하면, `manifest.lock.toml`이 있을 때 해당 추적 파일을 `last_action = "customized"`로 갱신합니다. 이는 승인된 로컬 선호 설정 변경만 기준선으로 기록하며, 잠금 파일 전체를 현재 상태 스냅샷처럼 다루지는 않습니다.
+
 ## 해시 기준
 
 현재 `content_hash`는 설치 당시 기준선입니다.

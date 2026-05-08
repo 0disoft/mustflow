@@ -12,6 +12,13 @@ Utilisez aussi `--json` lorsqu’une automatisation ou un agent doit analyser le
 La sortie destinée aux personnes et la sortie JSON suivent la même politique. La ligne de base est le `content_hash` du fichier de verrouillage,
 et les seuls états applicables sont `update` et `create`.
 
+## Intentions de Commande Pour Agents
+
+Les projets installés peuvent exposer les opérations de mise à jour via des intentions `mf run` configurées, au lieu de demander aux agents d’exécuter directement `mf update`.
+
+- `mustflow_update_dry_run`: exécute `mf update --dry-run --json` et n’écrit aucun fichier.
+- `mustflow_update_apply`: exécute `mf update --apply --json`; utilisez-la uniquement après un plan dry-run sans élément bloquant ni élément à examiner manuellement, et lorsque la tâche demande d’appliquer les mises à jour.
+
 ## Pourquoi commencer par une simulation
 
 Les fichiers mustflow contiennent des règles et procédures pour les agents. Écraser automatiquement des fichiers modifiés par l’utilisateur pourrait supprimer des règles propres au dépôt.

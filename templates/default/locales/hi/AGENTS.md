@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 7
+revision: 8
 ---
 
 # AGENTS.md
@@ -44,9 +44,11 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - `.mustflow/config/preferences.toml` की प्राथमिकता सीधे उपयोगकर्ता निर्देशों और मौजूदा परियोजना शैली से कम है।
 - code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation output,
   या tests बदलें तो final report से पहले `.mustflow/config/preferences.toml` में
-  `[release.versioning]` देखें। user ने स्पष्ट रूप से version bump या release preparation न मांगा हो
-  तो version files न बदलें। version source को `package.json` मानकर न चलें; version suggest या edit
-  करने से पहले repository-specific version source खोजें।
+  `[release.versioning]` देखें। version files केवल उन्हीं preferences के अनुसार बदली जा सकती हैं:
+  `auto_bump = true` और `require_user_confirmation = false` होने पर automatic bump लागू करें;
+  वरना configuration के अनुसार bump suggest करें या edit करने से पहले confirmation मांगें।
+  version source को `package.json` मानकर न चलें; version suggest या edit करने से पहले
+  repository-specific version source खोजें।
 - `.mustflow/context/` की संदर्भ फाइलें परियोजना दिशा और डोमेन परंपराएं बताती हैं।
   इन्हें कार्य-विशिष्ट संदर्भ के रूप में लें, न कि कोड, परीक्षण, कमांड या उपयोगकर्ता निर्देशों के स्थान पर।
 - यदि `DESIGN.md` मौजूद हो, तो उसे केवल UI, दृश्य डिज़ाइन, लेआउट, design token, या

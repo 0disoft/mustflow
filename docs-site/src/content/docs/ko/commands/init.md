@@ -113,11 +113,25 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 - `release.versioning.sync_template_version`
 - `release.versioning.sync_docs_examples`
 - `release.versioning.sync_tests`
+- `verification.selection.strategy`
+- `verification.selection.prefer_related_tests`
+- `verification.selection.skip_docs_only_full_test`
+- `verification.selection.skip_low_risk_code_full_test`
+- `verification.selection.skip_translation_only_full_test`
+- `verification.selection.skip_copy_only_full_test`
+- `verification.selection.report_skipped`
+- `testing.authoring.new_test_policy`
+- `testing.authoring.prefer_existing_tests`
+- `testing.authoring.require_new_test_rationale`
 - `language.memory.summary`
 
 `git.commit_message.style`에는 `conventional`, `descriptive`, `gitmoji`를 지정할 수 있습니다. `gitmoji`는 `✨ feat: add dashboard setting`처럼 Gitmoji 이모지를 붙인 메시지를 제안하지만, 여전히 커밋 실행 권한이 아니라 메시지 제안 형식입니다.
 
 `git.commit_message.language`에는 `preserve_existing`, `agent_response`, `docs`를 쓰거나 `ja`, `de`, `pt-BR` 같은 로케일 태그를 직접 지정할 수 있습니다.
+
+`verification.selection.strategy`에는 `risk_based`, `targeted`, `full`을 지정할 수 있습니다.
+
+`testing.authoring.new_test_policy`에는 `evidence_required`, `manual_approval`, `broad`를 지정할 수 있습니다.
 
 `mf init`은 `git.auto_push=false`만 허용해 저장소를 안전한 기본값으로 되돌릴 수 있게 합니다. `git.auto_push=true`는 켤 수 없으며, 정말 필요한 저장소라면 설치 후 파일을 직접 수정해야 합니다.
 

@@ -179,12 +179,12 @@ Commit message suggestions are intended for the final report and do not imply ex
 
 ## Version Impact Policy
 
-`[release.versioning]` in `.mustflow/config/preferences.toml` controls version-impact reporting preferences.
+`[release.versioning]` in `.mustflow/config/preferences.toml` controls version-impact preferences, including whether agents may edit version files after locating the repository's actual version source.
 
 When code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation output, or tests change, agents should check whether the change appears to require a package or template version update.
 
-By default, mustflow may suggest a patch, minor, or major bump when the evidence is clear, but it must not edit version files unless the user explicitly asks for a version bump or release preparation.
+By default, mustflow may suggest a patch, minor, or major bump when the evidence is clear. When `auto_bump = true` and `require_user_confirmation = false`, agents may apply the version bump directly unless a direct user instruction, host safety rule, or approval policy blocks it.
 
 Before suggesting or applying a version change, agents must find the repository's actual version source instead of assuming `package.json`. Common candidates include `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` plus release tags, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, app manifests, release notes, and mustflow template manifests.
 
-When a version change is approved, package metadata, template manifest versions, docs examples, and tests should stay synchronized according to the `sync_*` preferences.
+When a version changes, package metadata, template manifest versions, docs examples, and tests should stay synchronized according to the `sync_*` preferences.

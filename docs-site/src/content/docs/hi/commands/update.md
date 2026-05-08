@@ -11,6 +11,13 @@ description: स्थापित mustflow document flow की updates का 
 
 human output और JSON output एक ही policy follow करते हैं। baseline lock-file `content_hash` है, और केवल applyable states `update` और `create` हैं।
 
+## Agent Command Intents
+
+Installed projects update operations को configured `mf run` intents के ज़रिए expose कर सकते हैं, ताकि agents raw `mf update` सीधे न चलाएँ।
+
+- `mustflow_update_dry_run`: `mf update --dry-run --json` चलाता है और files नहीं लिखता।
+- `mustflow_update_apply`: `mf update --apply --json` चलाता है; इसे तभी उपयोग करें जब dry-run plan में कोई blocking या manual-review item न हो और task updates apply करने को कहे।
+
 ## dry-run पहले क्यों आता है
 
 mustflow files में agent rules और procedures होते हैं। user-edited files को automatically overwrite करने से repository-specific rules मिट सकते हैं।

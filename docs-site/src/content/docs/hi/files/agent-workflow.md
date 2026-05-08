@@ -168,12 +168,12 @@ Commit message suggestion final report का हिस्सा है, Git exe
 
 ## Version impact नीति
 
-`.mustflow/config/preferences.toml` में `[release.versioning]` version-impact reporting preferences नियंत्रित करता है।
+`.mustflow/config/preferences.toml` में `[release.versioning]` version-impact preferences नियंत्रित करता है, जिसमें यह भी शामिल है कि repository का actual version source मिलने के बाद agents version files edit कर सकते हैं या नहीं।
 
 जब code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation output, या tests बदलते हैं, agents को जांचना चाहिए कि change package या template version update मांगता है या नहीं।
 
-Default रूप से, evidence साफ होने पर mustflow patch, minor, या major bump suggest कर सकता है, लेकिन user explicitly version bump या release preparation न मांगे तो version files edit नहीं करनी चाहिए।
+Default रूप से, evidence साफ होने पर mustflow patch, minor, या major bump suggest कर सकता है। जब `auto_bump = true` और `require_user_confirmation = false` हो, agents version bump सीधे apply कर सकते हैं, जब तक direct user instruction, host safety rule, या approval policy उसे block न करे।
 
 Version change suggest या apply करने से पहले agent को repository का actual version source खोजना चाहिए, `package.json` मानकर नहीं चलना चाहिए। Common candidates में `package.json`, `pyproject.toml`, `Cargo.toml`, release tags के साथ `go.mod`, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, app manifests, release notes, और mustflow template manifests शामिल हैं।
 
-Approved version change के समय package metadata, template manifest versions, docs examples, और tests को `sync_*` preferences के अनुसार synchronized रखना चाहिए।
+Version change के समय package metadata, template manifest versions, docs examples, और tests को `sync_*` preferences के अनुसार synchronized रखना चाहिए।

@@ -11,6 +11,13 @@ Incluye la bandera `--json` cuando una automatización o un agente necesite anal
 
 Tanto la salida legible para personas como la salida JSON siguen la misma política. La línea base de comparación es el `content_hash` registrado en el archivo de bloqueo; actualizaciones y creaciones son los únicos estados procesables.
 
+## Intenciones de Comando Para Agentes
+
+Los proyectos instalados pueden exponer las operaciones de actualización mediante intenciones configuradas de `mf run`, en lugar de pedir a los agentes que ejecuten `mf update` directamente.
+
+- `mustflow_update_dry_run`: ejecuta `mf update --dry-run --json` y no escribe archivos.
+- `mustflow_update_apply`: ejecuta `mf update --apply --json`; úsala solo después de que el plan de simulación no tenga elementos bloqueantes ni de revisión manual, y cuando la tarea requiera aplicar actualizaciones.
+
 ## Por qué la simulación va primero
 
 Los archivos mustflow definen reglas y procedimientos para agentes, por lo que sobrescribir automáticamente archivos editados por el usuario podría borrar lógica específica del repositorio.

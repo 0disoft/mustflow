@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: zh
 canonical: false
-revision: 9
+revision: 10
 ---
 
 # 代理工作流
@@ -143,15 +143,19 @@ Judge 阶段不得仅凭 worker 的“完成声明”判定通过。应依据任
 
 ## 版本影响策略
 
-版本影响设置是偏好，不是 release 权限。
+版本影响设置是仓库偏好。它们指导版本文件编辑，但不会覆盖用户直接指令、宿主安全规则，
+也不会覆盖 `.mustflow/config/mustflow.toml` 中的审批关卡。
 
 当代码、模板、schema、CLI 行为、包元数据、用户可见文档、安装输出或测试发生变化时，
 使用 `.mustflow/config/preferences.toml` 中的 `[release.versioning]`。
 
 - `impact_check = true`：报告当前 diff 是否看起来需要包版本或模板版本变更。
 - `suggest_bump = true`：证据明确时，可建议 patch、minor 或 major。
-- `auto_bump = false`：没有用户明确请求时，不编辑包或模板的版本文件。
-- `require_user_confirmation = true`：修改版本文件前，需要用户批准的版本升级或 release 准备请求。
+- `auto_bump = true`：当影响明确、已定位版本来源，并且没有更严格的用户、宿主或审批规则阻止时，
+  应用合适的包版本或模板版本升级。
+- `auto_bump = false`：除非用户请求版本升级或 release 准备任务，否则保持包和模板版本文件不变。
+- `require_user_confirmation = true`：编辑版本文件前先询问用户。
+- `require_user_confirmation = false`：当 `auto_bump = true` 时，不额外增加确认步骤。
 
 在建议或应用版本变更前，先定位该仓库的版本事实来源。
 不要假设 `package.json` 是唯一版本文件。应检查与仓库语言和框架相匹配的 manifest、
@@ -169,7 +173,7 @@ release 文档和既有更新模式，然后报告哪些文件是权威来源，
 - 容器、chart 或应用：`Chart.yaml`、镜像标签、应用 manifest、release notes 或部署元数据。
 - mustflow 模板：包元数据、模板 manifest、文档示例，以及断言安装版本的测试。
 
-当版本变更获得批准时，应根据 `sync_*` 偏好让包元数据、模板 manifest 版本、文档示例和测试保持同步。
+版本发生变更时，应根据 `sync_*` 偏好让包元数据、模板 manifest 版本、文档示例和测试保持同步。
 
 ## 命令执行策略
 
@@ -256,6 +260,11 @@ release 文档和既有更新模式，然后报告哪些文件是权威来源，
 ## 测试相关性策略
 
 测试是行为合同，不是永久工件。
+
+使用 `.mustflow/config/preferences.toml` 中的 `[testing.authoring]` 来指导代理创建新测试的
+积极程度。默认值 `new_test_policy = "evidence_required"` 表示，新测试应有行为合同依据，
+例如公开行为变化、回归风险、配置规则、schema 合同，或安全/数据路径。这项偏好只指导测试
+编写行为；它不会削弱必要验证，也不能作为删除有效测试的理由。
 
 代理不得：
 

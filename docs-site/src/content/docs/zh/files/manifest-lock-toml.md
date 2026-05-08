@@ -57,6 +57,8 @@ content_hash = "sha256:..."
 
 `last_action = "customized"` 表示记录的哈希是已接受的仓库特定基线。只要当前哈希仍匹配 `content_hash`，`mf update` 就会保留该文件。
 
+当 `mf dashboard` 保存 `.mustflow/config/preferences.toml` 时，如果 `manifest.lock.toml` 存在，它会把这个被跟踪文件刷新为 `last_action = "customized"`。这只记录已接受的本地偏好设置改动，不会把整个锁文件当作当前状态的实时快照。
+
 ## 哈希基线
 
 目前，`content_hash` 是安装时基线。

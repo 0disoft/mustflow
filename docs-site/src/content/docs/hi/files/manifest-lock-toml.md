@@ -57,6 +57,8 @@ content_hash = "sha256:..."
 
 `last_action = "customized"` का अर्थ है कि दर्ज hash repository-specific baseline के रूप में accepted है। `mf update` उस file को तब तक preserve करता है जब तक current hash `content_hash` से match करता है।
 
+जब `mf dashboard` `.mustflow/config/preferences.toml` save करता है, तो `manifest.lock.toml` मौजूद होने पर वह tracked file को `last_action = "customized"` के रूप में refresh करता है। यह accepted local preference edit को baseline के रूप में record करता है, लेकिन पूरे lock file को live current-state snapshot नहीं बनाता।
+
 ## Hash baseline
 
 फिलहाल `content_hash` install-time baseline है।

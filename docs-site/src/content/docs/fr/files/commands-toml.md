@@ -176,6 +176,10 @@ stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
 
+Le modèle par défaut expose aussi `mf update` via des intentions intégrées, afin que les agents produisent des reçus d’exécution au lieu de contourner le contrat de commandes.
+`mustflow_update_dry_run` exécute `mf update --dry-run --json` sans écrire de fichiers.
+`mustflow_update_apply` ne doit être utilisée qu’après un plan propre et lorsque la tâche demande d’appliquer les mises à jour du modèle.
+
 Le répertoire racine `config/` peut appartenir au projet utilisateur; mustflow ne l’utilise donc pas.
 
 ## Intentions liées à Git

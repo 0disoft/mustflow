@@ -35,11 +35,11 @@ metadata:
 - `locale`: 文档语言。
 - `canonical`: 该文档是否为权威源文档。
 - `revision`: 权威文档修订号。
-- `name`: skill 名称。它应与文件夹名称一致。
+- `name`: skill 名称。它必须与 `.mustflow/skills/<name>/` 文件夹名称一致。
 - `description`: agent 应何时读取该 skill。
-- `metadata.mustflow_schema`: skill 元数据结构版本。
-- `metadata.mustflow_kind`: 文档类型。默认 skill 使用 `procedure`。
-- `metadata.command_intents`: 该 skill 可能引用的命令意图名称。
+- `metadata.mustflow_schema`: skill 元数据结构版本。当前支持的值是 `"1"`。
+- `metadata.mustflow_kind`: 文档类型。默认 skill 必须使用 `procedure`。
+- `metadata.command_intents`: 该 skill 可能引用的命令意图名称。每个名称都必须存在于 `.mustflow/config/commands.toml`。
 
 英文 skill 模板是权威源。本地化 skill 模板使用自己的语言，并设置 `canonical: false`。
 
@@ -63,6 +63,8 @@ metadata:
 不要在 skill 文档中写原始 shell 命令。在验证章节中引用 `.mustflow/docs/agent-workflow.md#command-execution-policy`，并只列出相关命令意图名称。
 
 每个意图都必须通过 `.mustflow/config/commands.toml` 解析。如果没有 `status = "configured"`，不要运行它；报告状态和跳过原因。
+
+不要写成 skill 自身授予命令执行权限。Skill 只描述流程；`.mustflow/config/commands.toml` 才是可执行命令权限的唯一来源。
 
 示例：
 

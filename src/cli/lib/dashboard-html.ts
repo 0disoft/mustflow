@@ -250,6 +250,7 @@ const groups = [
 	["dashboard.group.commitMessage", "git.commit_message."],
 	["dashboard.group.reporting", "reporting."],
 	["dashboard.group.verification", "verification.selection."],
+	["dashboard.group.testAuthoring", "testing.authoring."],
 	["dashboard.group.codeStyle", "code_style."],
 	["dashboard.group.versioning", "release.versioning."]
 ];

@@ -18,6 +18,7 @@ This file does not represent the highest authority. Direct user instructions, hi
 - Distinguishes commit message suggestions from the authority to execute actual commits.
 - Tracks version-impact checks without granting release or version-bump authority.
 - Controls whether low-risk changes should avoid the full verification suite.
+- Guides how readily agents should author new tests without weakening required verification.
 - Enables `mf check` to validate preference configurations.
 - Serves as the source for `mf help preferences` summaries.
 
@@ -83,6 +84,11 @@ skip_low_risk_code_full_test = true
 skip_translation_only_full_test = true
 skip_copy_only_full_test = true
 report_skipped = true
+
+[testing.authoring]
+new_test_policy = "evidence_required"
+prefer_existing_tests = true
+require_new_test_rationale = true
 ```
 
 ## Profile and Locale
@@ -148,11 +154,11 @@ When multiple logical changes are bundled, the agent may suggest split commitsâ€
 
 `[release.versioning]` controls whether agents should check and report version impact when code, templates, schemas, command behavior, package metadata, documentation examples, or installation output changes.
 
-These values are preferences, not release permissions. `impact_check = true` asks the agent to report whether the diff appears to need a package or template version change. `suggest_bump = true` allows a patch, minor, or major suggestion when the evidence is clear.
+These values are preferences that guide version-impact reporting and version-file edits. `impact_check = true` asks the agent to report whether the diff appears to need a package or template version change. `suggest_bump = true` allows a patch, minor, or major suggestion when the evidence is clear.
 
-`auto_bump = false` keeps package and template version files untouched unless the user explicitly requests a version bump or release-preparation task. `require_user_confirmation = true` means agents must not silently edit versions as part of ordinary code changes.
+`auto_bump = true` lets the agent apply the appropriate package or template version bump after locating the version source, unless a direct user instruction, host safety rule, or approval policy blocks it. `auto_bump = false` keeps package and template version files untouched unless the user requests a version bump or release-preparation task. `require_user_confirmation = true` means agents must ask before editing versions; `false` removes that extra confirmation step when automatic bumping is enabled.
 
-When a version is changed with approval, `sync_template_version`, `sync_docs_examples`, and `sync_tests` tell the agent to keep package metadata, template manifests, documentation examples, and tests aligned in the same change.
+When a version changes, `sync_template_version`, `sync_docs_examples`, and `sync_tests` tell the agent to keep package metadata, template manifests, documentation examples, and tests aligned in the same change.
 
 These preferences do not say where a repository stores its version. Agents still have to discover the language- or framework-specific version source before proposing or editing a version.
 
@@ -165,6 +171,18 @@ These preferences do not say where a repository stores its version. Agents still
 `skip_docs_only_full_test`, `skip_translation_only_full_test`, and `skip_copy_only_full_test` cover non-code changes. `skip_low_risk_code_full_test` covers code changes only when they do not affect public behavior, configuration, schemas, security, migrations, or other high-risk surfaces. These settings skip the full suite only; they do not mean all verification should be skipped.
 
 When `report_skipped = true`, the final report should say which broader checks were skipped and why.
+
+## Test Authoring
+
+`[testing.authoring]` guides whether an agent should create new tests or first work with existing coverage. It is separate from `[verification.selection]`: verification selection decides which configured checks to consider, while test authoring controls how readily new test files or cases should be added.
+
+`new_test_policy = "evidence_required"` is the default. It means new tests should be backed by behavior-contract evidence, such as changed public behavior, a regression risk, configuration or schema impact, or security/data-path risk.
+
+`new_test_policy = "manual_approval"` asks agents to confirm before adding new tests unless the user directly requested tests. `new_test_policy = "broad"` allows more proactive test authoring when the tests clarify important behavior.
+
+`prefer_existing_tests = true` asks agents to update nearby existing tests before creating new files or cases. `require_new_test_rationale = true` asks the final report to explain why each new test was needed.
+
+These preferences do not justify skipping required verification, deleting valid tests, or loosening assertions.
 
 ## Validation Rules
 
@@ -179,6 +197,7 @@ If this file is present, `mf check` verifies the following:
 - `reporting.commit_suggestion.enabled` is a boolean.
 - `[release.versioning]` fields are booleans.
 - `[verification.selection]` uses an allowed strategy and boolean skip/report flags.
+- `[testing.authoring]` uses an allowed new-test policy and boolean authoring flags.
 - `docs.update_when` is a string array.
 - `project.profile` is one of the built-in profile values.
 - When the `[product_i18n]` section is present, the locale fields, translation policy, and exclusion lists must use valid structures.

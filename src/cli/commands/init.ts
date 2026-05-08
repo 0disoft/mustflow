@@ -8,7 +8,7 @@ import { ensureInside } from '../lib/filesystem.js';
 import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { isLocaleTag } from '../lib/locale-tags.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
-import { isCommitMessageStyle } from '../lib/preferences-options.js';
+import { isCommitMessageStyle, isTestAuthoringPolicy } from '../lib/preferences-options.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
 
@@ -227,6 +227,7 @@ const VERIFICATION_SELECTION_BOOLEAN_FIELDS = new Set([
 	'skip_copy_only_full_test',
 	'report_skipped',
 ]);
+const TEST_AUTHORING_BOOLEAN_FIELDS = new Set(['prefer_existing_tests', 'require_new_test_rationale']);
 
 function createPreferenceOverride(key: string, value: string, reporter: Reporter, lang: CliLang): PreferenceOverride | undefined {
 	if (key === 'git.auto_stage' || key === 'git.auto_commit') {
@@ -404,6 +405,43 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 		return {
 			key,
 			section: 'verification.selection',
+			field,
+			renderedValue: String(parsed),
+		};
+	}
+
+	if (key === 'testing.authoring.new_test_policy') {
+		if (!isTestAuthoringPolicy(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'testing.authoring',
+			field: 'new_test_policy',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key.startsWith('testing.authoring.')) {
+		const field = key.slice('testing.authoring.'.length);
+
+		if (!TEST_AUTHORING_BOOLEAN_FIELDS.has(field)) {
+			reporter.stderr(t(lang, 'init.error.unsupportedPreference', { key }));
+			return undefined;
+		}
+
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'testing.authoring',
 			field,
 			renderedValue: String(parsed),
 		};

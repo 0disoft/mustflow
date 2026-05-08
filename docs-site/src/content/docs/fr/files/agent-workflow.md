@@ -168,12 +168,12 @@ La suggestion de message de commit fait partie du rapport final, pas d’une per
 
 ## Politique d’impact de version
 
-`[release.versioning]` dans `.mustflow/config/preferences.toml` contrôle les préférences de rapport d’impact de version.
+`[release.versioning]` dans `.mustflow/config/preferences.toml` contrôle les préférences d’impact de version, y compris si les agents peuvent modifier les fichiers de version après avoir localisé la source de version réelle du dépôt.
 
 Lorsque le code, les modèles, les schémas, le comportement CLI, les métadonnées du paquet, la documentation visible par l’utilisateur, la sortie d’installation ou les tests changent, les agents doivent vérifier si le changement semble exiger une mise à jour de version du paquet ou du modèle.
 
-Par défaut, mustflow peut suggérer une montée patch, minor ou major lorsque les indices sont clairs, mais il ne doit pas modifier les fichiers de version sauf si l’utilisateur demande explicitement une montée de version ou une préparation de release.
+Par défaut, mustflow peut suggérer une montée patch, minor ou major lorsque les indices sont clairs. Lorsque `auto_bump = true` et `require_user_confirmation = false`, les agents peuvent appliquer directement la montée de version sauf si une instruction directe de l’utilisateur, une règle de sécurité de l’hôte ou une politique d’approbation le bloque.
 
 Avant de suggérer ou d’appliquer un changement de version, l’agent doit trouver la source de version réelle du dépôt au lieu de supposer qu’il s’agit de `package.json`. Les candidats courants incluent `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` avec les tags de release, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, les manifestes d’application, les notes de release et les manifestes de modèles mustflow.
 
-Lorsqu’un changement de version est approuvé, les métadonnées du paquet, les versions de manifeste de modèle, les exemples de documentation et les tests doivent rester synchronisés selon les préférences `sync_*`.
+Lorsqu’une version change, les métadonnées du paquet, les versions de manifeste de modèle, les exemples de documentation et les tests doivent rester synchronisés selon les préférences `sync_*`.

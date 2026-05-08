@@ -100,6 +100,7 @@ export const hiMessages = {
   "dashboard.group.commitMessage": "Commit संदेश",
   "dashboard.group.reporting": "रिपोर्टिंग",
   "dashboard.group.verification": "सत्यापन",
+  "dashboard.group.testAuthoring": "Test authoring",
   "dashboard.group.codeStyle": "कोड शैली",
   "dashboard.group.versioning": "वर्जनिंग",
   "dashboard.setting.git.auto_stage": "Git auto stage",
@@ -155,6 +156,19 @@ export const hiMessages = {
   "dashboard.setting.verification.selection.skip_translation_only_full_test": "केवल translation बदलाव पर full test छोड़ें",
   "dashboard.setting.verification.selection.skip_copy_only_full_test": "केवल copy बदलाव पर full test छोड़ें",
   "dashboard.setting.verification.selection.report_skipped": "छोड़े गए सत्यापन रिपोर्ट करें",
+  "dashboard.setting.testing.authoring.new_test_policy": "नए test की नीति",
+  "dashboard.setting.testing.authoring.new_test_policy.description.evidence_required":
+    "नए tests तभी जोड़ें जब behavior contract की evidence हो।",
+  "dashboard.setting.testing.authoring.new_test_policy.description.manual_approval":
+    "यदि user ने सीधे tests नहीं माँगे हैं, तो नए tests जोड़ने से पहले पूछें।",
+  "dashboard.setting.testing.authoring.new_test_policy.description.broad":
+    "महत्वपूर्ण behavior साफ करने पर proactive नए tests की अनुमति दें।",
+  "dashboard.setting.testing.authoring.prefer_existing_tests": "मौजूदा tests को प्राथमिकता दें",
+  "dashboard.setting.testing.authoring.prefer_existing_tests.description":
+    "नए test files या cases बनाने से पहले पास के existing tests update करें।",
+  "dashboard.setting.testing.authoring.require_new_test_rationale": "नए test का कारण माँगें",
+  "dashboard.setting.testing.authoring.require_new_test_rationale.description":
+    "tests जोड़ने पर हर नए test की जरूरत final report में बताएँ।",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "असंबंधित refactor से बचें",
   "dashboard.setting.release.versioning.impact_check": "Version प्रभाव जाँच",
   "dashboard.setting.release.versioning.impact_check.description":

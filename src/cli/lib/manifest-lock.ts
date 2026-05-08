@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { ensureInside } from './filesystem.js';
-import { readTomlFile } from './toml.js';
+import { readTomlFile, stringifyToml } from './toml.js';
 
 export const MANIFEST_LOCK_RELATIVE_PATH = '.mustflow/config/manifest.lock.toml';
 
@@ -92,6 +92,40 @@ function parseManifestLock(raw: unknown): ManifestLock {
 
 export function sha256File(filePath: string): string {
 	return `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+}
+
+export function markManifestLockFileCustomized(projectRoot: string, relativePath: string): boolean {
+	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
+	const filePath = path.join(projectRoot, relativePath);
+	ensureInside(projectRoot, lockPath);
+	ensureInside(projectRoot, filePath);
+
+	if (!existsSync(lockPath)) {
+		return false;
+	}
+
+	if (!existsSync(filePath)) {
+		throw new Error(`Cannot refresh manifest lock for missing file: ${relativePath}`);
+	}
+
+	const parsed = readTomlFile(lockPath);
+	if (!isRecord(parsed)) {
+		throw new Error(`Invalid manifest lock: ${MANIFEST_LOCK_RELATIVE_PATH} must contain a TOML table`);
+	}
+
+	const filesTable = isRecord(parsed.files) ? parsed.files : {};
+	const existing = filesTable[relativePath];
+	const existingTable = isRecord(existing) ? existing : {};
+
+	filesTable[relativePath] = {
+		source: typeof existingTable.source === 'string' ? existingTable.source : 'template_common',
+		last_action: 'customized',
+		content_hash: sha256File(filePath),
+	};
+	parsed.files = filesTable;
+
+	writeFileSync(lockPath, stringifyToml(parsed));
+	return true;
 }
 
 export function readManifestLock(projectRoot: string): ManifestLockReadResult {

@@ -129,6 +129,48 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
+[intents.mustflow_update_dry_run]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Preview installed mustflow workflow template updates without writing files."
+argv = ["mf", "update", "--dry-run", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change", "template_update_check"]
+
+[intents.mustflow_update_apply]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply safe installed mustflow workflow template updates after a clean update plan."
+argv = ["mf", "update", "--apply", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = [
+  "AGENTS.md",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
+  ".mustflow/context/**",
+  ".mustflow/docs/**",
+  ".mustflow/skills/**",
+  ".mustflow/backups/**",
+]
+network = false
+destructive = false
+required_after = ["clean_mustflow_update_plan", "template_update_apply"]
+
 [intents.repo_map]
 status = "configured"
 kind = "mustflow_builtin"

@@ -176,6 +176,10 @@ stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
 
+La plantilla predeterminada también expone `mf update` mediante intenciones integradas, para que los agentes dejen recibos de ejecución en lugar de saltarse el contrato de comandos.
+`mustflow_update_dry_run` ejecuta `mf update --dry-run --json` sin escribir archivos.
+`mustflow_update_apply` debe usarse solo después de un plan limpio y cuando la tarea requiera aplicar actualizaciones de plantilla.
+
 El directorio raíz `config/` puede pertenecer al proyecto del usuario, por lo que mustflow no lo usa.
 
 ## Intenciones relacionadas con Git

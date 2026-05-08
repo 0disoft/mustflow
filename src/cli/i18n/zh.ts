@@ -100,6 +100,7 @@ export const zhMessages = {
   "dashboard.group.commitMessage": "提交消息",
   "dashboard.group.reporting": "报告",
   "dashboard.group.verification": "验证",
+  "dashboard.group.testAuthoring": "测试编写",
   "dashboard.group.codeStyle": "代码风格",
   "dashboard.group.versioning": "版本",
   "dashboard.setting.git.auto_stage": "Git 自动暂存",
@@ -145,6 +146,19 @@ export const zhMessages = {
   "dashboard.setting.verification.selection.skip_translation_only_full_test": "仅翻译变更时跳过完整测试",
   "dashboard.setting.verification.selection.skip_copy_only_full_test": "仅文案变更时跳过完整测试",
   "dashboard.setting.verification.selection.report_skipped": "报告跳过的验证",
+  "dashboard.setting.testing.authoring.new_test_policy": "新测试策略",
+  "dashboard.setting.testing.authoring.new_test_policy.description.evidence_required":
+    "只有存在行为契约依据时才添加新测试。",
+  "dashboard.setting.testing.authoring.new_test_policy.description.manual_approval":
+    "除非用户直接要求测试，否则添加新测试前先询问。",
+  "dashboard.setting.testing.authoring.new_test_policy.description.broad":
+    "当新测试能说明重要行为时，允许主动添加。",
+  "dashboard.setting.testing.authoring.prefer_existing_tests": "优先使用现有测试",
+  "dashboard.setting.testing.authoring.prefer_existing_tests.description":
+    "创建新的测试文件或用例前，先更新附近的现有测试。",
+  "dashboard.setting.testing.authoring.require_new_test_rationale": "要求说明新测试理由",
+  "dashboard.setting.testing.authoring.require_new_test_rationale.description":
+    "添加测试时，在最终报告中说明每个新测试为什么必要。",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "避免无关重构",
   "dashboard.setting.release.versioning.impact_check": "版本影响检查",
   "dashboard.setting.release.versioning.impact_check.description":

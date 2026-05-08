@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { isRecord, type TomlTable } from './command-contract.js';
 import { isLocaleTag } from './locale-tags.js';
-import { COMMIT_MESSAGE_STYLES } from './preferences-options.js';
+import { markManifestLockFileCustomized } from './manifest-lock.js';
+import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
 import { readTomlFile } from './toml.js';
 
 export type DashboardSettingKind = 'boolean' | 'select' | 'number';
@@ -37,6 +38,8 @@ export interface DashboardPreferenceUpdate {
 	readonly id: string;
 	readonly value: unknown;
 }
+
+const PREFERENCES_RELATIVE_PATH = '.mustflow/config/preferences.toml';
 
 export const DASHBOARD_PREFERENCE_SETTINGS: readonly DashboardSettingDefinition[] = [
 	{
@@ -168,6 +171,28 @@ export const DASHBOARD_PREFERENCE_SETTINGS: readonly DashboardSettingDefinition[
 		fallback: true,
 	},
 	{
+		id: 'testing.authoring.new_test_policy',
+		path: ['testing', 'authoring', 'new_test_policy'],
+		label: 'New test policy',
+		kind: 'select',
+		fallback: 'evidence_required',
+		options: TEST_AUTHORING_POLICIES,
+	},
+	{
+		id: 'testing.authoring.prefer_existing_tests',
+		path: ['testing', 'authoring', 'prefer_existing_tests'],
+		label: 'Prefer existing tests',
+		kind: 'boolean',
+		fallback: true,
+	},
+	{
+		id: 'testing.authoring.require_new_test_rationale',
+		path: ['testing', 'authoring', 'require_new_test_rationale'],
+		label: 'Require new test rationale',
+		kind: 'boolean',
+		fallback: true,
+	},
+	{
 		id: 'code_style.avoid_drive_by_refactors',
 		path: ['code_style', 'avoid_drive_by_refactors'],
 		label: 'Avoid drive-by refactors',
@@ -226,7 +251,7 @@ export const DASHBOARD_PREFERENCE_SETTINGS: readonly DashboardSettingDefinition[
 ];
 
 function getPreferencesPath(projectRoot: string): string {
-	return path.join(projectRoot, '.mustflow', 'config', 'preferences.toml');
+	return path.join(projectRoot, PREFERENCES_RELATIVE_PATH);
 }
 
 function getNestedValue(table: TomlTable, settingPath: readonly string[]): unknown {
@@ -418,5 +443,6 @@ export function updateDashboardPreferences(
 	}
 
 	writeFileSync(preferencesPath, content);
+	markManifestLockFileCustomized(projectRoot, PREFERENCES_RELATIVE_PATH);
 	return readDashboardPreferences(projectRoot);
 }

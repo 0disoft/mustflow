@@ -35,11 +35,11 @@ metadata:
 - `locale`: The language code of the document.
 - `canonical`: Indicates if the document serves as the authoritative source.
 - `revision`: The revision number of the authoritative document.
-- `name`: The skill name, which should align with its containing directory.
+- `name`: The skill name. It must match the containing `.mustflow/skills/<name>/` directory.
 - `description`: A brief summary of when the agent should apply this skill.
-- `metadata.mustflow_schema`: The version of the skill metadata schema.
-- `metadata.mustflow_kind`: The category of the document (e.g., `procedure`).
-- `metadata.command_intents`: A list of command intent names referenced by this skill.
+- `metadata.mustflow_schema`: The version of the skill metadata schema. The current supported value is `"1"`.
+- `metadata.mustflow_kind`: The category of the document. Default skills must use `procedure`.
+- `metadata.command_intents`: A list of command intent names referenced by this skill. Each name must exist in `.mustflow/config/commands.toml`.
 
 The English version of the skill template serves as the authoritative source. Localized versions specify their own locales and set `canonical: false`.
 
@@ -63,6 +63,8 @@ Each skill should be scoped to a single task type.
 Avoid including raw shell commands within skill documents. In the validation section, reference the `.mustflow/docs/agent-workflow.md#command-execution-policy` and list only the relevant command intent names.
 
 Each intent must be resolved via `.mustflow/config/commands.toml`. If an intent is not marked as `status = "configured"`, it must not be executed; instead, report its status and the reason for skipping.
+
+Do not write that a skill itself grants command execution permission. Skills describe procedure; `.mustflow/config/commands.toml` remains the only source for runnable command permissions.
 
 Example:
 

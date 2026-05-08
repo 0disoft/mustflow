@@ -35,11 +35,11 @@ metadata:
 - `locale`: 문서 언어입니다.
 - `canonical`: 기준 원문인지 나타냅니다.
 - `revision`: 기준 문서의 판 번호입니다.
-- `name`: 스킬 이름입니다. 폴더 이름과 맞추는 것이 좋습니다.
+- `name`: 스킬 이름입니다. `.mustflow/skills/<name>/` 폴더 이름과 일치해야 합니다.
 - `description`: 에이전트가 이 스킬을 언제 읽어야 하는지 설명합니다.
-- `metadata.mustflow_schema`: 스킬 메타데이터 형식의 판 번호입니다.
-- `metadata.mustflow_kind`: 문서 종류입니다. 기본 스킬은 `procedure`입니다.
-- `metadata.command_intents`: 이 스킬이 참조할 수 있는 명령 의도 이름입니다.
+- `metadata.mustflow_schema`: 스킬 메타데이터 형식의 판 번호입니다. 현재 지원하는 값은 `"1"`입니다.
+- `metadata.mustflow_kind`: 문서 종류입니다. 기본 스킬은 `procedure`를 사용해야 합니다.
+- `metadata.command_intents`: 이 스킬이 참조할 수 있는 명령 의도 이름입니다. 각 이름은 `.mustflow/config/commands.toml`에 있어야 합니다.
 
 영어 스킬 템플릿이 기준 원문입니다. 언어별 번역 스킬은 각자의 `locale`을 쓰고 `canonical: false`로 표시합니다.
 
@@ -63,6 +63,8 @@ metadata:
 스킬 문서에는 실제 셸 명령을 직접 쓰지 않습니다. 검증 섹션에서는 `.mustflow/docs/agent-workflow.md#명령-실행-정책`을 참조하고, 필요한 명령 의도 이름만 적습니다.
 
 각 명령 의도는 `.mustflow/config/commands.toml`에서 확인합니다. `status = "configured"`가 아니면 실행하지 않고, 해당 상태와 건너뛴 이유를 함께 보고합니다.
+
+스킬 자체가 명령 실행 권한을 부여한다고 쓰지 않습니다. 스킬은 절차를 설명하고, 실행 가능한 명령 권한의 기준은 `.mustflow/config/commands.toml` 하나입니다.
 
 예:
 

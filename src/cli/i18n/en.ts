@@ -98,6 +98,7 @@ export const enMessages = {
   "dashboard.group.commitMessage": "Commit message",
   "dashboard.group.reporting": "Reporting",
   "dashboard.group.verification": "Verification",
+  "dashboard.group.testAuthoring": "Test authoring",
   "dashboard.group.codeStyle": "Code style",
   "dashboard.group.versioning": "Versioning",
   "dashboard.setting.git.auto_stage": "Git auto stage",
@@ -153,6 +154,19 @@ export const enMessages = {
   "dashboard.setting.verification.selection.skip_translation_only_full_test": "Skip full test for translation-only changes",
   "dashboard.setting.verification.selection.skip_copy_only_full_test": "Skip full test for copy-only changes",
   "dashboard.setting.verification.selection.report_skipped": "Report skipped verification",
+  "dashboard.setting.testing.authoring.new_test_policy": "New test policy",
+  "dashboard.setting.testing.authoring.new_test_policy.description.evidence_required":
+    "Add new tests only when behavior-contract evidence supports them.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.manual_approval":
+    "Ask before adding new tests unless the user directly requested them.",
+  "dashboard.setting.testing.authoring.new_test_policy.description.broad":
+    "Allow proactive new tests when they clarify important behavior.",
+  "dashboard.setting.testing.authoring.prefer_existing_tests": "Prefer existing tests",
+  "dashboard.setting.testing.authoring.prefer_existing_tests.description":
+    "Update nearby existing tests before creating new test files or cases.",
+  "dashboard.setting.testing.authoring.require_new_test_rationale": "Require new test rationale",
+  "dashboard.setting.testing.authoring.require_new_test_rationale.description":
+    "Report why each new test is needed when tests are added.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "Avoid drive-by refactors",
   "dashboard.setting.release.versioning.impact_check": "Version impact check",
   "dashboard.setting.release.versioning.impact_check.description":

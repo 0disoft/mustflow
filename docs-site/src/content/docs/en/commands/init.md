@@ -115,11 +115,25 @@ defaults. `--yes` installs the default English settings without prompts.
 - `release.versioning.sync_template_version`
 - `release.versioning.sync_docs_examples`
 - `release.versioning.sync_tests`
+- `verification.selection.strategy`
+- `verification.selection.prefer_related_tests`
+- `verification.selection.skip_docs_only_full_test`
+- `verification.selection.skip_low_risk_code_full_test`
+- `verification.selection.skip_translation_only_full_test`
+- `verification.selection.skip_copy_only_full_test`
+- `verification.selection.report_skipped`
+- `testing.authoring.new_test_policy`
+- `testing.authoring.prefer_existing_tests`
+- `testing.authoring.require_new_test_rationale`
 - `language.memory.summary`
 
 `git.commit_message.style` accepts `conventional`, `descriptive`, or `gitmoji`. The `gitmoji` style suggests messages such as `✨ feat: add dashboard setting`, but it still remains a message suggestion rather than permission to commit.
 
 `git.commit_message.language` accepts `preserve_existing`, `agent_response`, `docs`, or a locale tag such as `ja`, `de`, or `pt-BR`.
+
+`verification.selection.strategy` accepts `risk_based`, `targeted`, or `full`.
+
+`testing.authoring.new_test_policy` accepts `evidence_required`, `manual_approval`, or `broad`.
 
 `mf init` allows only `git.auto_push=false`, which can reset a repository to the safe default. It cannot enable `git.auto_push=true`; if a repository truly needs that behavior, edit the file manually after installation.
 

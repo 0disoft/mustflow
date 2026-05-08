@@ -7,6 +7,8 @@ description: Inicia el panel local de mustflow.
 
 La primera superficie del panel edita `.mustflow/config/preferences.toml`. No prepara cambios, no crea commits, no hace push, no cambia versiones y no ejecuta command intents.
 
+Los grupos editables incluyen valores de Git, sugerencias de commit, informes, selección de verificación, escritura de tests, estilo de código y preferencias de impacto de versión.
+
 ## Comportamiento actual
 
 ```sh
@@ -30,6 +32,8 @@ npx mf dashboard --json
 Con `--json`, el comando imprime la URL del panel, la raíz mustflow y la ruta de preferencias antes de mantener activo el servidor local.
 
 La API del panel usa un token por sesión y acepta actualizaciones solo para los campos de preferencias limitados que muestra la página. `git.auto_push` aparece como ajuste bloqueado.
+
+Cuando se guarda una preferencia, el panel escribe `.mustflow/config/preferences.toml` y, si `.mustflow/config/manifest.lock.toml` existe, actualiza la entrada de ese archivo como `last_action = "customized"`. Así `mf check`, `mf status` y `mf update --dry-run` quedan alineados con la línea base local de preferencias aceptada.
 
 ## Ayuda y códigos de salida
 

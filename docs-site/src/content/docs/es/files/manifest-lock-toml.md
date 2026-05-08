@@ -57,6 +57,8 @@ content_hash = "sha256:..."
 
 `last_action = "customized"` significa que el hash registrado es una línea base específica del repositorio. `mf update` conserva ese archivo mientras su hash actual siga coincidiendo con `content_hash`.
 
+Cuando `mf dashboard` guarda `.mustflow/config/preferences.toml`, actualiza ese archivo rastreado como `last_action = "customized"` si `manifest.lock.toml` existe. Esto registra la edición local de preferencias aceptada sin tratar todo el archivo de bloqueo como una instantánea activa del estado actual.
+
 ## Línea base de hash
 
 Actualmente, `content_hash` es la línea base del momento de instalación.

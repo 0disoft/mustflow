@@ -35,11 +35,11 @@ metadata:
 - `locale`: idioma del documento.
 - `canonical`: indica si este documento es la fuente canónica.
 - `revision`: revisión canónica del documento.
-- `name`: nombre de la skill. Debe coincidir con el nombre de la carpeta.
+- `name`: nombre de la skill. Debe coincidir con la carpeta `.mustflow/skills/<name>/`.
 - `description`: cuándo debe leer el agente esta skill.
-- `metadata.mustflow_schema`: versión de la forma de metadatos de la skill.
-- `metadata.mustflow_kind`: tipo de documento. Las skills predeterminadas usan `procedure`.
-- `metadata.command_intents`: nombres de intención de comando que esta skill puede referenciar.
+- `metadata.mustflow_schema`: versión de la forma de metadatos de la skill. El valor admitido actualmente es `"1"`.
+- `metadata.mustflow_kind`: tipo de documento. Las skills predeterminadas deben usar `procedure`.
+- `metadata.command_intents`: nombres de intención de comando que esta skill puede referenciar. Cada nombre debe existir en `.mustflow/config/commands.toml`.
 
 La plantilla inglesa de skill es la fuente canónica. Las plantillas localizadas de skill usan su propia configuración regional y establecen `canonical: false`.
 
@@ -63,6 +63,8 @@ Cada skill debe cubrir un tipo de tarea.
 No escribas comandos de terminal sin procesar en documentos de skill. En la sección de validación, referencia `.mustflow/docs/agent-workflow.md#command-execution-policy` y enumera solo los nombres de intención de comando relevantes.
 
 Resuelve cada intención mediante `.mustflow/config/commands.toml`. Si `status = "configured"` no está presente, no la ejecutes; informa el estado y el motivo de omisión.
+
+No escribas que una skill concede permiso para ejecutar comandos. Las skills describen el procedimiento; `.mustflow/config/commands.toml` sigue siendo la única fuente para los permisos de comandos ejecutables.
 
 Ejemplo:
 
