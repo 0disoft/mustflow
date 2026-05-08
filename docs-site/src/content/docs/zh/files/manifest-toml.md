@@ -61,7 +61,7 @@ generated_targets = [
 - `generated_targets`: 读取仓库结构后生成的路径。
 - `forbidden_targets`: 绝不能添加到默认模板的路径。
 
-默认模板不会创建 `README.md`、`.github/`、根目录 `docs/`、根目录 `skills/`、源代码或包管理器配置。
+默认模板不会创建 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、`GOVERNANCE.md`、`TESTING.md`、`API.md`、`project.contract.json`、`openapi.yaml` 等项目自有根文档或合同文件，也不会创建 `.github/`、根目录 `docs/`、根目录 `skills/`、源代码或包管理器配置。
 它可以创建 `.mustflow/context/**`，因为这些文件是 LLM agent 工作流上下文，不是通用项目文档。
 `REPO_MAP.md`、`.mustflow/config/manifest.lock.toml` 和 `.mustflow/state/**` 是生成的，不是复制的。
 `.mustflow/state/**` 包含使用期间创建的本地状态，例如 `mf run` receipt。

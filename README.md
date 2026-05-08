@@ -47,6 +47,8 @@ mustflow installs and validates an agent workflow for user projects.
 - Indexes and searches mustflow docs, skills, and command rules with SQLite via
   `mf index` and `mf search`.
 - Previews and applies bundled template updates safely with `mf update`.
+- Publishes JSON Schemas for automation-facing reports and command contracts in
+  `schemas/`.
 
 ## What it does not do
 
@@ -134,9 +136,12 @@ your-project/
          └─ SKILL.md
 ```
 
-The default template does not create `README.md`, contribution guides, security
-policies, CI configuration, general `docs/`, or general `skills/`. User projects
-may already use those names for their own files.
+The default template does not create project-owned root documents or contract
+files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`,
+`GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, or
+`openapi.yaml`. It also does not create CI configuration, general `docs/`, or
+general `skills/`. User projects may already use those names for their own
+files.
 
 `mf init` creates `.gitignore` when it is missing. If it already exists,
 mustflow updates only its managed block and preserves user rules.
@@ -144,6 +149,16 @@ mustflow updates only its managed block and preserves user rules.
 `REPO_MAP.md` is not copied from the template. Generate it when needed with
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` is also a regenerable local
 index created by `mf index`.
+
+If a project already has optional root Markdown files such as `README.md`,
+`PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`,
+`DEPLOYMENT.md`, `ARCHITECTURE.md`, or `API.md`, the repository map can use them
+as navigation anchors. It can also discover purpose-specific machine-readable
+contracts such as `project.contract.json`, `project.constants.json`,
+`design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql`, and
+`schema.prisma`. Generic catch-all names such as `SSOT.json` are not default
+anchors. `mf init` still does not create or overwrite those project-owned files
+by default.
 
 ## Basic workflow
 
@@ -195,7 +210,7 @@ npx mf update --apply
 | `mf dashboard` | Reserved. Not implemented yet. |
 
 Automation and agents should use `--json` output instead of parsing human-facing
-text.
+text. Published JSON Schemas for stable outputs live in `schemas/`.
 
 ## Command execution policy
 
@@ -244,16 +259,19 @@ npx mf init --set git.auto_commit=true
 
 ## Repository structure
 
-The mustflow repository contains the CLI, templates, documentation site, and
-repository-level translation docs.
+The mustflow repository contains the CLI, templates, contract specifications,
+documentation site, and repository-level translation docs.
 
 ```text
 mustflow/
 ├─ README.md
+├─ ROADMAP.md
 ├─ LICENSE
 ├─ package.json
+├─ schemas/
 ├─ tsconfig.json
 ├─ docs/
+│  ├─ spec/
 │  └─ i18n/
 ├─ docs-site/
 ├─ src/
@@ -266,6 +284,9 @@ mustflow/
 Files copied into user projects come from `templates/default/common/` and
 `templates/default/locales/<locale>/`.
 
+Versioned contract specifications live in `docs/spec/`. The documentation site
+links them from Design -> Contract specifications.
+
 ## Development
 
 Development commands in this repository use Bun. Users do not need Bun to run
@@ -277,6 +298,20 @@ bun run check
 bun run docs:check
 bun run check:install
 ```
+
+Agents working in this repository should prefer the configured mustflow intents
+for routine verification.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+The Bun scripts remain available for human maintainers and release packaging.
+`test_related`, `lint`, coverage, and test-audit intents are intentionally not
+declared until the repository has narrower gates for those workflows.
 
 `dist/` is a generated build output and is not committed. `npm pack` and
 `npm publish` run `npm run build` through `prepack`, so the npm package contains
@@ -312,6 +347,7 @@ The npm package includes only:
 ```text
 dist/
 templates/
+schemas/
 README.md
 LICENSE
 ```

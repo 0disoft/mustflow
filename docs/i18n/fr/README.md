@@ -56,6 +56,8 @@ utilisateur.
   mustflow avec SQLite via `mf index` et `mf search`.
 - Prévisualise et applique en sécurité les mises à jour de modèles inclus avec
   `mf update`.
+- Publie des schémas JSON pour les rapports destinés aux automatisations et les
+  contrats de commande dans `schemas/`.
 
 ## Ce que mustflow ne fait pas
 
@@ -148,10 +150,12 @@ your-project/
          └─ SKILL.md
 ```
 
-La plantilla par défaut ne crée pas `README.md`, de guides de contribution, de
-politique de sécurité, de configuration CI, de dossier `docs/` général ni de
-dossier `skills/` général. Les projets utilisateur peuvent déjà utiliser ces
-noms pour leurs propres fichiers.
+Le modèle par défaut ne crée pas de documents racine ni de contrats appartenant
+au projet comme `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`,
+`GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json` ou
+`openapi.yaml`. Il ne crée pas non plus de configuration CI, de dossier `docs/`
+général ni de dossier `skills/` général. Les projets utilisateur peuvent déjà
+utiliser ces noms pour leurs propres fichiers.
 
 `mf init` crée `.gitignore` s'il manque. S'il existe déjà, mustflow met à jour
 uniquement son bloc géré et conserve les règles utilisateur.
@@ -159,6 +163,16 @@ uniquement son bloc géré et conserve les règles utilisateur.
 `REPO_MAP.md` n'est pas copié depuis le modèle. Générez-le au besoin avec
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` est également un index local
 régénérable créé par `mf index`.
+
+Si un projet possède déjà des fichiers Markdown racine optionnels comme
+`README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`,
+`TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md` ou `API.md`, la carte du dépôt
+peut les utiliser comme ancres de navigation. Elle peut aussi découvrir des
+contrats lisibles par machine avec un nom précis, comme `project.contract.json`,
+`project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`,
+`schema.graphql` et `schema.prisma`. Les noms génériques comme `SSOT.json` ne
+sont pas des ancres par défaut. `mf init` ne crée ni n'écrase ces fichiers
+appartenant au projet par défaut.
 
 ## Flux de base
 
@@ -211,7 +225,8 @@ npx mf update --apply
 | `mf dashboard` | Réservé. Pas encore implémenté. |
 
 Les automatisations et les agents doivent utiliser la sortie `--json` plutôt
-que d'analyser du texte destiné aux humains.
+que d'analyser du texte destiné aux humains. Les schémas JSON des sorties
+stables se trouvent dans `schemas/`.
 
 ## Politique d'exécution des commandes
 
@@ -263,16 +278,19 @@ npx mf init --set git.auto_commit=true
 
 ## Structure du dépôt
 
-Le dépôt mustflow contient la CLI, les modèles, le site de documentation et les
-documents de traduction au niveau du dépôt.
+Le dépôt mustflow contient la CLI, les modèles, les spécifications de contrat,
+le site de documentation et les documents de traduction au niveau du dépôt.
 
 ```text
 mustflow/
 ├─ README.md
+├─ ROADMAP.md
 ├─ LICENSE
 ├─ package.json
+├─ schemas/
 ├─ tsconfig.json
 ├─ docs/
+│  ├─ spec/
 │  └─ i18n/
 ├─ docs-site/
 ├─ src/
@@ -285,6 +303,9 @@ mustflow/
 Les fichiers copiés dans les projets utilisateur viennent de
 `templates/default/common/` et de `templates/default/locales/<locale>/`.
 
+Les spécifications de contrat versionnées se trouvent dans `docs/spec/`. Le site
+de documentation les référence depuis Design -> Contract specifications.
+
 ## Développement
 
 Les commandes de développement de ce dépôt utilisent Bun. Les utilisateurs
@@ -296,6 +317,21 @@ bun run check
 bun run docs:check
 bun run check:install
 ```
+
+Les agents qui travaillent dans ce dépôt doivent privilégier les intents
+mustflow configurés pour la vérification courante.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+Les scripts Bun restent disponibles pour les mainteneurs humains et le flux
+d'empaquetage des releases. Les intents `test_related`, `lint`, coverage et
+test-audit ne sont pas déclarés tant que le dépôt n'a pas de contrôles plus
+ciblés pour ces flux.
 
 `dist/` est une sortie de build générée et n'est pas commitée. `npm pack` et
 `npm publish` exécutent `npm run build` via `prepack`, afin que le paquet npm
@@ -332,6 +368,7 @@ Le paquet npm inclut uniquement :
 ```text
 dist/
 templates/
+schemas/
 README.md
 LICENSE
 ```

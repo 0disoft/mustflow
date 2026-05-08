@@ -26,6 +26,7 @@ Evita leer todos los archivos de contexto por defecto para minimizar ruido.
 | Ancla | Usar cuando | Ruta |
 | --- | --- | --- |
 | human overview | Se requiere una vista publica del proyecto o una guia de instalacion. Tratalo como contexto general y no como politica obligatoria. | `README.md` |
+| roadmap | Se requiere contexto sobre planificacion, prioridades, hitos o no-objetivos del proyecto. Tratalo como contexto de planificacion, no como politica mustflow instalada. | `ROADMAP.md` |
 | visual design | La tarea implica cambios de interfaz, identidad visual, tokens de diseno, maquetacion o accesibilidad. | `DESIGN.md` |
 
 ## Reglas De Lectura

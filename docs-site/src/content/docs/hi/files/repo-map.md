@@ -5,7 +5,7 @@ description: मौजूदा mustflow root में navigation करने 
 
 `REPO_MAP.md` मौजूदा mustflow root पर optional generated file है।
 
-यह पूरी file listing नहीं है। यह `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md`, और language-specific configuration files जैसी महत्वपूर्ण anchor files खोजता है ताकि agents जान सकें कि मौजूदा root में पहले कहां देखना है।
+यह पूरी file listing नहीं है। यह `AGENTS.md`, root Markdown documents, machine-readable contracts, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md`, और language-specific configuration files जैसी महत्वपूर्ण anchor files खोजता है ताकि agents जान सकें कि मौजूदा root में पहले कहां देखना है।
 
 root का अर्थ हमेशा ठीक एक Git repository नहीं होता। यदि मौजूदा mustflow root ऐसा workspace है जिसमें independent nested repositories हैं, तो वही `REPO_MAP.md` उन repositories के limited entrypoints शामिल कर सकता है।
 
@@ -45,7 +45,8 @@ Root navigation इस generated file में रहता है ताकि
 - हर source file सूचीबद्ध न करें। केवल वे anchor files शामिल करें जो repository navigation में मदद करती हैं।
 - agent behavior interpretation के लिए आवश्यक configuration files, जैसे `.mustflow/config/preferences.toml`, को priority anchors के रूप में शामिल करें।
 - मौजूद होने पर `.mustflow/context/INDEX.md` और `.mustflow/context/PROJECT.md` शामिल करें, लेकिन हर future domain context file को डिफ़ॉल्ट रूप से expand न करें।
-- मौजूद होने पर `DESIGN.md` को optional external visual-design anchor के रूप में शामिल करें। इसे `mf map` के हिस्से के रूप में create न करें।
+- मौजूद होने पर `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, और `API.md` जैसे project-owned root Markdown files को optional anchors के रूप में शामिल करें। इन्हें `mf map` के हिस्से के रूप में create न करें।
+- मौजूद होने पर `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql`, और `schema.prisma` जैसे clear-purpose machine-readable contract files शामिल करें। `SSOT.json` जैसे generic catch-all names default anchors नहीं हैं।
 - nested repositories सूचीबद्ध होने पर भी remote URLs, branch names, recent change state, command lists, या automatic summaries डिफ़ॉल्ट रूप से शामिल न करें।
 
 ## लिखने के नियम

@@ -26,6 +26,7 @@ review_status: needs_human_review
 | 锚点 | 使用时机 | 路径 |
 | --- | --- | --- |
 | human overview | 需要公开项目概览或安装指南时。应将其视为一般上下文，而非强制策略。 | `README.md` |
+| roadmap | 需要项目计划、优先级、里程碑或 non-goals 上下文时。应将其视为计划上下文，而非已安装的 mustflow 策略。 | `ROADMAP.md` |
 | visual design | 任务涉及 UI、视觉识别、design token、布局或可访问性变更。 | `DESIGN.md` |
 
 ## 阅读规则

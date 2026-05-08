@@ -59,6 +59,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.gitignore')));
 		assert.equal(existsSync(path.join(projectPath, 'README.md')), false);
 		assert.equal(existsSync(path.join(projectPath, 'DESIGN.md')), false);
+		assert.equal(existsSync(path.join(projectPath, 'ROADMAP.md')), false);
 		assert.equal(existsSync(path.join(projectPath, 'REPO_MAP.md')), false);
 		const gitignore = readText(path.join(projectPath, '.gitignore'));
 		assert.match(gitignore, /# mustflow:start schema=1/);
@@ -94,6 +95,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(mustflowConfig, /root = "\.mustflow\/context"/);
 		assert.match(mustflowConfig, /read_policy = "task_relevant_only"/);
 		assert.match(mustflowConfig, /authority = "contextual"/);
+		assert.match(mustflowConfig, /"ROADMAP\.md"/);
 		assert.match(mustflowConfig, /\[testing\]/);
 		assert.match(mustflowConfig, /policy = "behavior_contract"/);
 		assert.match(mustflowConfig, /stale_test_action = "update_remove_or_report"/);

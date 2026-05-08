@@ -26,6 +26,7 @@ Evite de lire tous les fichiers de contexte par defaut afin de limiter le bruit.
 | Ancre | Utiliser quand | Chemin |
 | --- | --- | --- |
 | vue humaine | Une vue publique du projet ou un guide d'installation est necessaire. La traiter comme un contexte general plutot qu'une politique obligatoire. | `README.md` |
+| roadmap | Un contexte de planification, de priorites, de jalons ou de non-objectifs du projet est necessaire. La traiter comme un contexte de planification plutot qu'une politique mustflow installee. | `ROADMAP.md` |
 | design visuel | La tache implique des changements d'interface, d'identite visuelle, de design tokens, de mise en page ou d'accessibilite. | `DESIGN.md` |
 
 ## Regles De Lecture

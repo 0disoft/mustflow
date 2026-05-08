@@ -61,7 +61,7 @@ generated_targets = [
 - `generated_targets`: 저장소 구조를 읽은 뒤 생성할 수 있는 경로입니다.
 - `forbidden_targets`: 기본 템플릿에 넣으면 안 되는 경로입니다.
 
-기본 템플릿은 `README.md`, `.github/`, 일반 `docs/`, 일반 `skills/`, 소스 코드, 패키지 관리자 설정을 만들지 않습니다.
+기본 템플릿은 `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, `openapi.yaml` 같은 프로젝트 소유 루트 문서나 계약 파일을 만들지 않습니다. `.github/`, 일반 `docs/`, 일반 `skills/`, 소스 코드, 패키지 관리자 설정도 만들지 않습니다.
 `.mustflow/context/**`는 일반 프로젝트 문서가 아니라 LLM 에이전트 작업 맥락이므로 기본 템플릿에 포함될 수 있습니다.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml`, `.mustflow/state/**`는 복사물이 아니라 생성물입니다.
 `.mustflow/state/**`에는 `mf run` 실행 기록처럼 사용 중 만들어지는 로컬 상태가 들어갑니다.

@@ -26,6 +26,45 @@ const DEFAULT_PRIORITY_PATHS = [
 	'.mustflow/context/INDEX.md',
 	'.mustflow/skills/INDEX.md',
 ];
+const ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES = [
+	'README.md',
+	'PROJECT.md',
+	'ROADMAP.md',
+	'DESIGN.md',
+	'CONTRIBUTING.md',
+	'SECURITY.md',
+	'CHANGELOG.md',
+	'CODE_OF_CONDUCT.md',
+	'SUPPORT.md',
+	'GOVERNANCE.md',
+	'MAINTAINERS.md',
+	'RELEASING.md',
+	'RELEASE.md',
+	'TESTING.md',
+	'DEPLOYMENT.md',
+	'OPERATIONS.md',
+	'RUNBOOK.md',
+	'CONFIGURATION.md',
+	'DATA_MODEL.md',
+	'SCHEMA.md',
+	'PRIVACY.md',
+	'TROUBLESHOOTING.md',
+	'ARCHITECTURE.md',
+	'API.md',
+];
+const MACHINE_CONTRACT_ANCHOR_FILES = [
+	'project.contract.json',
+	'project.constants.json',
+	'design-tokens.json',
+	'openapi.json',
+	'openapi.yaml',
+	'openapi.yml',
+	'asyncapi.json',
+	'asyncapi.yaml',
+	'asyncapi.yml',
+	'schema.graphql',
+	'schema.prisma',
+];
 const DEFAULT_NESTED_ANCHOR_FILES = [
 	'AGENTS.md',
 	'REPO_MAP.md',
@@ -35,8 +74,8 @@ const DEFAULT_NESTED_ANCHOR_FILES = [
 	'.mustflow/context/INDEX.md',
 	'.mustflow/context/PROJECT.md',
 	'.mustflow/skills/INDEX.md',
-	'README.md',
-	'DESIGN.md',
+	...ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES,
+	...MACHINE_CONTRACT_ANCHOR_FILES,
 	'package.json',
 	'pyproject.toml',
 	'go.mod',
@@ -51,10 +90,69 @@ const DEFAULT_NESTED_ANCHOR_FILES = [
 ];
 const MANIFEST_ANCHORS = new Set(['package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'deno.json', 'deno.jsonc']);
 const COMMAND_ADAPTER_ANCHORS = new Set(['justfile', 'Justfile', 'Makefile', 'Taskfile.yml', 'Taskfile.yaml']);
+const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
+	['README.md', 'human overview'],
+	['PROJECT.md', 'project brief'],
+	['ROADMAP.md', 'planning context'],
+	['DESIGN.md', 'visual design'],
+	['CONTRIBUTING.md', 'contribution guide'],
+	['SECURITY.md', 'security policy'],
+	['CHANGELOG.md', 'changelog'],
+	['CODE_OF_CONDUCT.md', 'code of conduct'],
+	['SUPPORT.md', 'support guide'],
+	['GOVERNANCE.md', 'governance'],
+	['MAINTAINERS.md', 'maintainers'],
+	['RELEASING.md', 'release guide'],
+	['RELEASE.md', 'release guide'],
+	['TESTING.md', 'testing guide'],
+	['DEPLOYMENT.md', 'deployment guide'],
+	['OPERATIONS.md', 'operations guide'],
+	['RUNBOOK.md', 'runbook'],
+	['CONFIGURATION.md', 'configuration guide'],
+	['DATA_MODEL.md', 'data model'],
+	['SCHEMA.md', 'schema reference'],
+	['PRIVACY.md', 'privacy policy'],
+	['TROUBLESHOOTING.md', 'troubleshooting guide'],
+	['ARCHITECTURE.md', 'architecture reference'],
+	['API.md', 'API reference'],
+]);
 const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['AGENTS.md', 'Root agent operating rules. Read this before changing files.'],
 	['README.md', 'Human-facing project overview. Use it as context, not as agent policy.'],
+	['PROJECT.md', 'Optional project-owned brief. Use below .mustflow/context/PROJECT.md when both exist.'],
+	['ROADMAP.md', 'Optional project planning, priority, milestone, and non-goal context.'],
 	['DESIGN.md', 'Optional visual identity and design-token reference for UI work.'],
+	['CONTRIBUTING.md', 'Optional contribution workflow and pull request guidance.'],
+	['SECURITY.md', 'Optional security policy, vulnerability reporting, and sensitive-change guidance.'],
+	['CHANGELOG.md', 'Optional release history and user-visible change log.'],
+	['CODE_OF_CONDUCT.md', 'Optional community participation and conduct expectations.'],
+	['SUPPORT.md', 'Optional support channels and maintenance expectations.'],
+	['GOVERNANCE.md', 'Optional governance, decision-making, and maintainer authority reference.'],
+	['MAINTAINERS.md', 'Optional maintainer list, review ownership, and escalation reference.'],
+	['RELEASING.md', 'Optional release procedure and publishing checklist.'],
+	['RELEASE.md', 'Optional release procedure and publishing checklist.'],
+	['TESTING.md', 'Optional testing strategy, required checks, and verification guidance.'],
+	['DEPLOYMENT.md', 'Optional deployment environments, release targets, and rollout guidance.'],
+	['OPERATIONS.md', 'Optional production operations and incident-response guidance.'],
+	['RUNBOOK.md', 'Optional operational runbook for recurring procedures and incidents.'],
+	['CONFIGURATION.md', 'Optional environment, feature flag, and runtime configuration guide.'],
+	['DATA_MODEL.md', 'Optional domain data model and persistence contract reference.'],
+	['SCHEMA.md', 'Optional schema reference for domain, data, or validation models.'],
+	['PRIVACY.md', 'Optional privacy, data handling, and retention guidance.'],
+	['TROUBLESHOOTING.md', 'Optional known-failure and recovery guide.'],
+	['ARCHITECTURE.md', 'Optional system structure, module boundaries, and architectural decisions.'],
+	['API.md', 'Optional API surface and integration contract reference.'],
+	['project.contract.json', 'Machine-readable project contract. Prefer domain-specific names over catch-all files.'],
+	['project.constants.json', 'Machine-readable project constants. Prefer domain-specific names over catch-all files.'],
+	['design-tokens.json', 'Machine-readable design token contract.'],
+	['openapi.json', 'Machine-readable OpenAPI contract.'],
+	['openapi.yaml', 'Machine-readable OpenAPI contract.'],
+	['openapi.yml', 'Machine-readable OpenAPI contract.'],
+	['asyncapi.json', 'Machine-readable AsyncAPI contract.'],
+	['asyncapi.yaml', 'Machine-readable AsyncAPI contract.'],
+	['asyncapi.yml', 'Machine-readable AsyncAPI contract.'],
+	['schema.graphql', 'Machine-readable GraphQL schema contract.'],
+	['schema.prisma', 'Machine-readable Prisma data schema contract.'],
 	['package.json', 'Node.js package manifest, binary entry points, and package scripts.'],
 	['pyproject.toml', 'Python project metadata and tool configuration.'],
 	['go.mod', 'Go module definition and dependency boundary.'],
@@ -116,6 +214,11 @@ interface WorkspaceConfig {
 	readonly stopAtRepositoryRoot: boolean;
 }
 
+interface NestedAnchor {
+	readonly label: string;
+	readonly relativePath: string;
+}
+
 interface NestedRepository {
 	readonly relativePath: string;
 	readonly mustflow: boolean;
@@ -125,8 +228,8 @@ interface NestedRepository {
 	readonly commandContract?: string;
 	readonly contextIndex?: string;
 	readonly skillIndex?: string;
-	readonly designReference?: string;
-	readonly humanOverview?: string;
+	readonly rootDocuments: readonly NestedAnchor[];
+	readonly machineContracts: readonly string[];
 	readonly manifests: readonly string[];
 	readonly commandAdapters: readonly string[];
 }
@@ -381,6 +484,15 @@ function collectNestedRepository(
 	const commandAdapters = anchorFiles
 		.filter((anchorFile) => COMMAND_ADAPTER_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
+	const rootDocuments = anchorFiles
+		.filter((anchorFile) => ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES.includes(anchorFile) && existingAnchors.has(anchorFile))
+		.map((anchorFile) => ({
+			label: NESTED_ROOT_DOC_LABELS.get(anchorFile) ?? 'root document',
+			relativePath: `${relativeRoot}${anchorFile}`,
+		}));
+	const machineContracts = anchorFiles
+		.filter((anchorFile) => MACHINE_CONTRACT_ANCHOR_FILES.includes(anchorFile) && existingAnchors.has(anchorFile))
+		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
 	const mustflowConfig = resolveAnchor('.mustflow/config/mustflow.toml');
 	const commandContract = resolveAnchor('.mustflow/config/commands.toml');
 
@@ -393,8 +505,8 @@ function collectNestedRepository(
 		commandContract,
 		contextIndex: resolveAnchor('.mustflow/context/INDEX.md'),
 		skillIndex: resolveAnchor('.mustflow/skills/INDEX.md'),
-		designReference: resolveAnchor('DESIGN.md'),
-		humanOverview: resolveAnchor('README.md'),
+		rootDocuments,
+		machineContracts,
 		manifests,
 		commandAdapters,
 	};
@@ -517,12 +629,13 @@ function renderNestedRepositories(nestedRepositories: readonly NestedRepository[
 			lines.push(...repository.commandAdapters.map((adapter) => `  - \`${adapter}\``));
 		}
 
-		if (repository.humanOverview) {
-			lines.push(`- human overview: \`${repository.humanOverview}\``);
+		for (const document of repository.rootDocuments) {
+			lines.push(`- ${document.label}: \`${document.relativePath}\``);
 		}
 
-		if (repository.designReference) {
-			lines.push(`- visual design: \`${repository.designReference}\``);
+		if (repository.machineContracts.length > 0) {
+			lines.push('- machine-readable contracts:');
+			lines.push(...repository.machineContracts.map((contract) => `  - \`${contract}\``));
 		}
 
 		lines.push('');

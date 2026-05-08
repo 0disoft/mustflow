@@ -61,7 +61,7 @@ generated_targets = [
 - `generated_targets`: repository structure पढ़ने के बाद generate किए गए paths।
 - `forbidden_targets`: वे paths जिन्हें default template में नहीं जोड़ा जाना चाहिए।
 
-default template `README.md`, `.github/`, root `docs/`, root `skills/`, source code, या package-manager configuration नहीं बनाता।
+default template `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, या `openapi.yaml` जैसे project-owned root documents या contract files नहीं बनाता। यह `.github/`, root `docs/`, root `skills/`, source code, या package-manager configuration भी नहीं बनाता।
 यह `.mustflow/context/**` बना सकता है, क्योंकि वे files LLM-agent workflow context हैं, सामान्य project documentation नहीं।
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml`, और `.mustflow/state/**` generated हैं, copied नहीं।
 `.mustflow/state/**` उपयोग के दौरान बनी local state रखता है, जैसे `mf run` receipts।

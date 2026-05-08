@@ -61,7 +61,7 @@ generated_targets = [
 - `generated_targets`: Paths generated after reading the repository structure.
 - `forbidden_targets`: Paths that must not be added to the default template.
 
-The default template does not create `README.md`, `.github/`, root `docs/`, root `skills/`, source code, or package-manager configuration.
+The default template does not create project-owned root documents or contract files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, or `openapi.yaml`; it also does not create `.github/`, root `docs/`, root `skills/`, source code, or package-manager configuration.
 It may create `.mustflow/context/**` because those files are LLM-agent workflow context, not general project documentation.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml`, and `.mustflow/state/**` are generated, not copied.
 `.mustflow/state/**` contains local state created during use, such as `mf run` receipts.

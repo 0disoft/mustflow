@@ -5,7 +5,7 @@ description: 供 agent 导航当前 mustflow 根目录的锚点文件地图。
 
 `REPO_MAP.md` 是当前 mustflow 根目录下的可选生成文件。
 
-它不是完整文件清单。它会寻找 `AGENTS.md`、`README.md`、`DESIGN.md`、`package.json`、`SKILL.md`、`.mustflow/context/INDEX.md` 以及特定语言配置文件等重要锚点文件，让 agent 知道在当前根目录中应先查看哪里。
+它不是完整文件清单。它会寻找 `AGENTS.md`、根 Markdown 文档、机器可读合同文件、`package.json`、`SKILL.md`、`.mustflow/context/INDEX.md` 以及特定语言配置文件等重要锚点文件，让 agent 知道在当前根目录中应先查看哪里。
 
 这里的根目录不一定只对应一个 Git 仓库。如果当前 mustflow 根目录是包含独立嵌套仓库的工作区，同一个 `REPO_MAP.md` 可以包含这些仓库的有限入口点。
 
@@ -45,7 +45,8 @@ description: 供 agent 导航当前 mustflow 根目录的锚点文件地图。
 - 不要列出每个源文件。只包含有助于仓库导航的锚点文件。
 - 将 `.mustflow/config/preferences.toml` 等解释 agent 行为所需的配置文件作为优先锚点。
 - 如果存在 `.mustflow/context/INDEX.md` 和 `.mustflow/context/PROJECT.md`，则包含它们，但默认不要展开未来所有领域上下文文件。
-- 如果存在 `DESIGN.md`，则把它作为可选外部视觉设计锚点包含进来。不要在 `mf map` 中创建它。
+- 如果存在 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、`GOVERNANCE.md`、`TESTING.md`、`DEPLOYMENT.md`、`ARCHITECTURE.md`、`API.md` 等项目自有根 Markdown 文档，则把它们作为可选锚点包含进来。不要在 `mf map` 中创建它们。
+- 如果存在 `project.contract.json`、`project.constants.json`、`design-tokens.json`、`openapi.yaml`、`asyncapi.yaml`、`schema.graphql`、`schema.prisma` 等用途明确的机器可读合同文件，也可以作为可选锚点。`SSOT.json` 这类泛用名称不是默认锚点。
 - 即使列出嵌套仓库，默认也不要包含远程 URL、分支名、近期变更状态、命令列表或自动摘要。
 
 ## 编写规则

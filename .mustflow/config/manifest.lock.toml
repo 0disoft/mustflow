@@ -15,7 +15,7 @@ content_hash = "sha256:5af7a89f4e8c1adffeaa1f84492cb988be68b5cb0e62bafc2668f208a
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:81dc842e048dba221e901e81c941de4c288321f848251915ae23e52d94b4a194"
+content_hash = "sha256:a9b3319ff6b3fa2bce964fccba586eb55b75fb576c869310ad03b1f14934fe9b"
 
 [files.".mustflow/context/PROJECT.md"]
 source = "template_locale"
@@ -55,12 +55,12 @@ content_hash = "sha256:f1a876f732fbdc2d560ce30bc06f33454f0674101ee3d13f4e01f6dc5
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
 last_action = "updated"
-content_hash = "sha256:a7046af5739aae82caac55480dad24e31f65abb1028d28391464ab73e20cef02"
+content_hash = "sha256:4bc48d56de0afc3d2e885adeefcbe4b9cee3263c32db29e12c78dd1a20be946e"
 
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "created"
-content_hash = "sha256:7332ba6c8bf179617162fb82e3c8ed1d3eaf96abf27f719029b9255fdd0aafa5"
+content_hash = "sha256:4117a3c7af6a96a66c2c7e15a1107cb032b8ac6076c59032cbb585105035d25f"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"

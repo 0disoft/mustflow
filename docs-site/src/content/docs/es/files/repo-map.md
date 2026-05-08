@@ -5,7 +5,7 @@ description: Mapa basado en archivos ancla para agentes que navegan por la raíz
 
 `REPO_MAP.md` es un archivo generado opcional en la raíz mustflow actual.
 
-No es una lista completa de archivos. Encuentra archivos ancla importantes como `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md` y archivos de configuración específicos de lenguaje, para que los agentes sepan dónde mirar primero dentro de la raíz actual.
+No es una lista completa de archivos. Encuentra archivos ancla importantes como `AGENTS.md`, documentos Markdown raíz, contratos legibles por máquina, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md` y archivos de configuración específicos de lenguaje, para que los agentes sepan dónde mirar primero dentro de la raíz actual.
 
 La raíz no tiene por qué significar exactamente un único repositorio Git. Si la raíz mustflow actual es un espacio de trabajo que contiene repositorios independientes anidados, el mismo `REPO_MAP.md` puede incluir puntos de entrada limitados para esos repositorios.
 
@@ -45,7 +45,8 @@ La navegación de la raíz pertenece a este archivo generado para que `AGENTS.md
 - No enumeres todos los archivos fuente. Incluye solo archivos ancla que ayuden a navegar el repositorio.
 - Incluye como anclas prioritarias los archivos de configuración necesarios para interpretar el comportamiento del agente, como `.mustflow/config/preferences.toml`.
 - Incluye `.mustflow/context/INDEX.md` y `.mustflow/context/PROJECT.md` cuando existan, pero no expandas de forma predeterminada todos los futuros archivos de contexto de dominio.
-- Incluye `DESIGN.md` cuando exista como ancla externa opcional de diseño visual. No lo crees como parte de `mf map`.
+- Incluye documentos Markdown raíz propiedad del proyecto como `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md` y `API.md` cuando existan como anclas opcionales. No los crees como parte de `mf map`.
+- Incluye contratos legibles por máquina con propósito claro como `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql` y `schema.prisma` cuando existan. Nombres genéricos como `SSOT.json` no son anclas predeterminadas.
 - Aunque se enumeren repositorios anidados, no incluyas de forma predeterminada URL remotas, nombres de ramas, estado de cambios recientes, listas de comandos ni resúmenes automáticos.
 
 ## Reglas de autoría

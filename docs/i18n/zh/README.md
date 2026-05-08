@@ -45,6 +45,7 @@ mustflow 为用户项目安装并验证代理工作流。
 - 通过 `mf index` 和 `mf search` 使用 SQLite 索引并搜索 mustflow 文档、
   技能和命令规则。
 - 使用 `mf update` 安全地预览并应用内置模板更新。
+- 在 `schemas/` 中发布面向自动化报告和命令合同的 JSON Schema。
 
 ## 它不做什么
 
@@ -126,8 +127,10 @@ your-project/
          └─ SKILL.md
 ```
 
-默认模板不会创建 `README.md`、贡献指南、安全策略、CI 配置、通用
-`docs/` 或通用 `skills/`。用户项目可能已经把这些名称用于自己的文件。
+默认模板不会创建 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、
+`GOVERNANCE.md`、`TESTING.md`、`API.md`、`project.contract.json`、`openapi.yaml`
+等项目自有根文档或合同文件，也不会创建 CI 配置、通用 `docs/` 或通用 `skills/`。
+用户项目可能已经把这些名称用于自己的文件。
 
 如果 `.gitignore` 不存在，`mf init` 会创建它。若已存在，mustflow 只更新自己的
 受管理块，并保留用户规则。
@@ -135,6 +138,14 @@ your-project/
 `REPO_MAP.md` 不会从模板复制。需要时请使用 `mf map --write` 生成。
 `.mustflow/cache/mustflow.sqlite` 也是由 `mf index` 创建、可重新生成的本地
 索引。
+
+如果项目已经有 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、
+`GOVERNANCE.md`、`TESTING.md`、`DEPLOYMENT.md`、`ARCHITECTURE.md`、`API.md`
+等可选根 Markdown 文档，仓库地图可以把它们作为导航锚点。它也可以发现
+`project.contract.json`、`project.constants.json`、`design-tokens.json`、
+`openapi.yaml`、`asyncapi.yaml`、`schema.graphql`、`schema.prisma` 等用途明确的
+机器可读合同文件。`SSOT.json` 这类泛用名称不是默认锚点。`mf init` 仍然不会默认
+创建或覆盖这些项目自有文件。
 
 ## 基本工作流
 
@@ -185,7 +196,8 @@ npx mf update --apply
 | `mf help <topic>` | 显示已安装的 mustflow 帮助。 |
 | `mf dashboard` | 保留命令。尚未实现。 |
 
-自动化和代理应使用 `--json` 输出，而不是解析面向人类的文本。
+自动化和代理应使用 `--json` 输出，而不是解析面向人类的文本。稳定输出的
+JSON Schema 位于 `schemas/`。
 
 ## 命令执行策略
 
@@ -231,15 +243,18 @@ npx mf init --set git.auto_commit=true
 
 ## 仓库结构
 
-mustflow 仓库包含 CLI、模板、文档站点和仓库级翻译文档。
+mustflow 仓库包含 CLI、模板、契约规范、文档站点和仓库级翻译文档。
 
 ```text
 mustflow/
 ├─ README.md
+├─ ROADMAP.md
 ├─ LICENSE
 ├─ package.json
+├─ schemas/
 ├─ tsconfig.json
 ├─ docs/
+│  ├─ spec/
 │  └─ i18n/
 ├─ docs-site/
 ├─ src/
@@ -252,6 +267,9 @@ mustflow/
 复制到用户项目的文件来自 `templates/default/common/` 和
 `templates/default/locales/<locale>/`。
 
+带版本的契约规范位于 `docs/spec/`。文档站点从 Design -> Contract
+specifications 链接到这些规范。
+
 ## 开发
 
 本仓库的开发命令使用 Bun。用户在自己的项目中运行 `mf` 不需要 Bun。
@@ -262,6 +280,18 @@ bun run check
 bun run docs:check
 bun run check:install
 ```
+
+在本仓库中工作的 agent 应优先使用已配置的 mustflow intent 进行日常验证。
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+Bun 脚本仍可供人工维护者和发布打包流程使用。`test_related`、`lint`、
+coverage 和 test-audit intent 会在仓库拥有更细粒度的检查入口后再声明。
 
 `dist/` 是生成的构建输出，不提交到仓库。`npm pack` 和 `npm publish` 会通过
 `prepack` 运行 `npm run build`，因此 npm 包包含构建后的 CLI。
@@ -295,6 +325,7 @@ npm 包只包含：
 ```text
 dist/
 templates/
+schemas/
 README.md
 LICENSE
 ```

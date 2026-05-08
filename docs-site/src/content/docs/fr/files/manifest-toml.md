@@ -61,7 +61,7 @@ generated_targets = [
 - `generated_targets`: chemins générés après lecture de la structure du dépôt.
 - `forbidden_targets`: chemins qui ne doivent pas être ajoutés au modèle par défaut.
 
-Le modèle par défaut ne crée pas `README.md`, `.github/`, `docs/` à la racine, `skills/` à la racine, de code source ni de configuration de gestionnaire de paquets.
+Le modèle par défaut ne crée pas les documents racine ni les contrats appartenant au projet comme `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json` ou `openapi.yaml`; il ne crée pas non plus `.github/`, `docs/` à la racine, `skills/` à la racine, de code source ni de configuration de gestionnaire de paquets.
 Il peut créer `.mustflow/context/**` parce que ces fichiers sont du contexte de flux de travail pour agents LLM, pas de la documentation générale du projet.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml` et `.mustflow/state/**` sont générés, pas copiés.
 `.mustflow/state/**` contient l’état local créé pendant l’utilisation, comme les reçus de `mf run`.

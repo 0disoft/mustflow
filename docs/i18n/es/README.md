@@ -55,6 +55,8 @@ usuario.
   SQLite mediante `mf index` y `mf search`.
 - Previsualiza y aplica de forma segura las actualizaciones de plantillas
   incluidas con `mf update`.
+- Publica JSON Schemas para informes orientados a automatizacion y contratos de
+  comandos en `schemas/`.
 
 ## Qué no hace
 
@@ -146,8 +148,10 @@ your-project/
          └─ SKILL.md
 ```
 
-La plantilla predeterminada no crea `README.md`, guías de contribución,
-políticas de seguridad, configuración de CI, `docs/` general ni `skills/`
+La plantilla predeterminada no crea documentos raíz ni contratos propiedad del
+proyecto como `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`,
+`GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json` u
+`openapi.yaml`. Tampoco crea configuración de CI, `docs/` general ni `skills/`
 general. Los proyectos de usuario ya pueden usar esos nombres para sus propios
 archivos.
 
@@ -157,6 +161,16 @@ bloque administrado y conserva las reglas del usuario.
 `REPO_MAP.md` no se copia desde la plantilla. Genéralo cuando sea necesario con
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` también es un índice local
 regenerable creado por `mf index`.
+
+Si un proyecto ya tiene archivos Markdown raíz opcionales como `README.md`,
+`PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`,
+`DEPLOYMENT.md`, `ARCHITECTURE.md` o `API.md`, el mapa del repositorio puede
+usarlos como anclas de navegación. También puede descubrir contratos legibles
+por máquina con propósito claro como `project.contract.json`,
+`project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`,
+`schema.graphql` y `schema.prisma`. Nombres genéricos como `SSOT.json` no son
+anclas predeterminadas. `mf init` sigue sin crear ni sobrescribir esos archivos
+propiedad del proyecto por defecto.
 
 ## Flujo básico
 
@@ -209,7 +223,8 @@ npx mf update --apply
 | `mf dashboard` | Reservado. Aún no está implementado. |
 
 Las automatizaciones y los agentes deben usar la salida `--json` en lugar de
-analizar texto orientado a personas.
+analizar texto orientado a personas. Los JSON Schemas para salidas estables
+viven en `schemas/`.
 
 ## Política de ejecución de comandos
 
@@ -261,16 +276,20 @@ npx mf init --set git.auto_commit=true
 
 ## Estructura del repositorio
 
-El repositorio mustflow contiene la CLI, las plantillas, el sitio de
-documentación y la documentación de traducción a nivel de repositorio.
+El repositorio mustflow contiene la CLI, las plantillas, las especificaciones de
+contrato, el sitio de documentación y la documentación de traducción a nivel de
+repositorio.
 
 ```text
 mustflow/
 ├─ README.md
+├─ ROADMAP.md
 ├─ LICENSE
 ├─ package.json
+├─ schemas/
 ├─ tsconfig.json
 ├─ docs/
+│  ├─ spec/
 │  └─ i18n/
 ├─ docs-site/
 ├─ src/
@@ -283,6 +302,9 @@ mustflow/
 Los archivos copiados en proyectos de usuario provienen de
 `templates/default/common/` y `templates/default/locales/<locale>/`.
 
+Las especificaciones de contrato versionadas viven en `docs/spec/`. El sitio de
+documentación las enlaza desde Design -> Contract specifications.
+
 ## Desarrollo
 
 Los comandos de desarrollo en este repositorio usan Bun. Los usuarios no
@@ -294,6 +316,21 @@ bun run check
 bun run docs:check
 bun run check:install
 ```
+
+Los agentes que trabajan en este repositorio deben preferir los intents
+configurados de mustflow para la verificacion habitual.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+Los scripts de Bun siguen disponibles para mantenedores humanos y para el flujo
+de empaquetado de releases. Los intents `test_related`, `lint`, coverage y
+test-audit no se declaran hasta que el repositorio tenga comprobaciones mas
+especificas para esos flujos.
 
 `dist/` es una salida de compilación generada y no se confirma en el
 repositorio. `npm pack` y `npm publish` ejecutan `npm run build` mediante
@@ -330,6 +367,7 @@ El paquete npm incluye solo:
 ```text
 dist/
 templates/
+schemas/
 README.md
 LICENSE
 ```

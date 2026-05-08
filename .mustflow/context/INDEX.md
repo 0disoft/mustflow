@@ -26,6 +26,7 @@ Avoid reading all context files by default to minimize noise.
 | Anchor | Use when | Path |
 | --- | --- | --- |
 | human overview | A public project overview or installation guide is required. Treat it as general context rather than a mandatory policy. | `README.md` |
+| roadmap | Project planning, priority, milestone, or non-goal context is required. Treat it as planning context rather than installed mustflow policy. | `ROADMAP.md` |
 | visual design | The task involves changes to UI, visual identity, design tokens, layout, or accessibility. | `DESIGN.md` |
 
 ## Reading Rules

@@ -61,7 +61,7 @@ generated_targets = [
 - `generated_targets`: rutas generadas después de leer la estructura del repositorio.
 - `forbidden_targets`: rutas que no deben agregarse a la plantilla predeterminada.
 
-La plantilla predeterminada no crea `README.md`, `.github/`, `docs/` en la raíz, `skills/` en la raíz, código fuente ni configuración de gestor de paquetes.
+La plantilla predeterminada no crea documentos raíz ni contratos propiedad del proyecto como `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json` u `openapi.yaml`; tampoco crea `.github/`, `docs/` en la raíz, `skills/` en la raíz, código fuente ni configuración de gestor de paquetes.
 Puede crear `.mustflow/context/**` porque esos archivos son contexto de flujo de trabajo para agentes LLM, no documentación general del proyecto.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml` y `.mustflow/state/**` se generan; no se copian.
 `.mustflow/state/**` contiene estado local creado durante el uso, como recibos de `mf run`.

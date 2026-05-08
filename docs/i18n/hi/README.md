@@ -53,6 +53,8 @@ mustflow उपयोगकर्ता प्रोजेक्टों के
   कौशल और कमांड नियमों को इंडेक्स और खोजता है।
 - `mf update` से शामिल टेम्पलेट अपडेट को सुरक्षित रूप से पहले दिखाता और लागू
   करता है।
+- ऑटोमेशन रिपोर्ट और कमांड अनुबंधों के लिए JSON Schemas को `schemas/` में
+  प्रकाशित करता है।
 
 ## यह क्या नहीं करता
 
@@ -140,9 +142,11 @@ your-project/
          └─ SKILL.md
 ```
 
-डिफ़ॉल्ट टेम्पलेट `README.md`, योगदान गाइड, सुरक्षा नीति, CI कॉन्फ़िगरेशन,
-सामान्य `docs/` या सामान्य `skills/` नहीं बनाता। उपयोगकर्ता प्रोजेक्ट पहले से
-इन नामों को अपनी फ़ाइलों के लिए उपयोग कर सकते हैं।
+डिफ़ॉल्ट टेम्पलेट `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`,
+`GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, या
+`openapi.yaml` जैसे project-owned root documents या contract files नहीं बनाता।
+यह CI configuration, सामान्य `docs/` या सामान्य `skills/` भी नहीं बनाता।
+उपयोगकर्ता प्रोजेक्ट पहले से इन नामों को अपनी फ़ाइलों के लिए उपयोग कर सकते हैं।
 
 यदि `.gitignore` मौजूद नहीं है, तो `mf init` उसे बनाता है। यदि वह पहले से
 मौजूद है, तो mustflow केवल अपना managed block अपडेट करता है और user rules
@@ -151,6 +155,16 @@ your-project/
 `REPO_MAP.md` टेम्पलेट से कॉपी नहीं होता। आवश्यकता होने पर इसे
 `mf map --write` से जनरेट करें। `.mustflow/cache/mustflow.sqlite` भी
 `mf index` द्वारा बनाया गया फिर से बनाया जा सकने वाला स्थानीय सूचकांक है।
+
+यदि किसी प्रोजेक्ट में पहले से `README.md`, `PROJECT.md`, `ROADMAP.md`,
+`DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`,
+या `API.md` जैसे optional root Markdown files हैं, तो repository map उन्हें
+navigation anchors के रूप में उपयोग कर सकता है। यह `project.contract.json`,
+`project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`,
+`schema.graphql`, और `schema.prisma` जैसे clear-purpose machine-readable
+contract files भी खोज सकता है। `SSOT.json` जैसे generic catch-all names default
+anchors नहीं हैं। `mf init` फिर भी इन project-owned files को डिफ़ॉल्ट रूप से
+बनाता या overwrite नहीं करता।
 
 ## मूल वर्कफ़्लो
 
@@ -202,7 +216,7 @@ npx mf update --apply
 | `mf dashboard` | आरक्षित। अभी लागू नहीं है। |
 
 ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json`
-आउटपुट का उपयोग करना चाहिए।
+आउटपुट का उपयोग करना चाहिए। स्थिर आउटपुट के JSON Schemas `schemas/` में हैं।
 
 ## कमांड निष्पादन नीति
 
@@ -251,16 +265,19 @@ npx mf init --set git.auto_commit=true
 
 ## रिपॉज़िटरी संरचना
 
-mustflow रिपॉज़िटरी में CLI, टेम्पलेट, दस्तावेज़ साइट और रिपॉज़िटरी-स्तरीय
-अनुवाद दस्तावेज़ शामिल हैं।
+mustflow रिपॉज़िटरी में CLI, टेम्पलेट, अनुबंध विनिर्देश, दस्तावेज़ साइट और
+रिपॉज़िटरी-स्तरीय अनुवाद दस्तावेज़ शामिल हैं।
 
 ```text
 mustflow/
 ├─ README.md
+├─ ROADMAP.md
 ├─ LICENSE
 ├─ package.json
+├─ schemas/
 ├─ tsconfig.json
 ├─ docs/
+│  ├─ spec/
 │  └─ i18n/
 ├─ docs-site/
 ├─ src/
@@ -273,6 +290,9 @@ mustflow/
 उपयोगकर्ता प्रोजेक्टों में कॉपी की गई फ़ाइलें `templates/default/common/` और
 `templates/default/locales/<locale>/` से आती हैं।
 
+संस्करणित अनुबंध विनिर्देश `docs/spec/` में हैं। दस्तावेज़ साइट उन्हें
+Design -> Contract specifications से लिंक करती है।
+
 ## विकास
 
 इस रिपॉज़िटरी के विकास कमांड Bun का उपयोग करते हैं। उपयोगकर्ताओं को अपने
@@ -284,6 +304,20 @@ bun run check
 bun run docs:check
 bun run check:install
 ```
+
+इस रिपॉज़िटरी में काम करने वाले एजेंटों को सामान्य सत्यापन के लिए कॉन्फ़िगर
+किए गए mustflow intents को प्राथमिकता देनी चाहिए।
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+Bun scripts मानव maintainers और release packaging flow के लिए उपलब्ध रहते हैं।
+`test_related`, `lint`, coverage, और test-audit intents तब तक घोषित नहीं किए गए
+हैं जब तक इस रिपॉज़िटरी में उन flows के लिए अधिक संकीर्ण gates न हों।
 
 `dist/` जनरेट किया गया बिल्ड आउटपुट है और इसे कमिट नहीं किया जाता। `npm pack`
 और `npm publish`, `prepack` के माध्यम से `npm run build` चलाते हैं, इसलिए npm
@@ -320,6 +354,7 @@ npm पैकेज में केवल ये शामिल हैं:
 ```text
 dist/
 templates/
+schemas/
 README.md
 LICENSE
 ```

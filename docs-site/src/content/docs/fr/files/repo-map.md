@@ -5,7 +5,7 @@ description: Carte basée sur des fichiers d’ancrage pour les agents qui navig
 
 `REPO_MAP.md` est un fichier généré optionnel à la racine mustflow actuelle.
 
-Ce n’est pas une liste complète de fichiers. Il trouve les fichiers d’ancrage importants comme `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md` et les fichiers de configuration propres aux langages, afin que les agents sachent où regarder d’abord dans la racine actuelle.
+Ce n’est pas une liste complète de fichiers. Il trouve les fichiers d’ancrage importants comme `AGENTS.md`, les documents Markdown racine, les contrats lisibles par machine, `package.json`, `SKILL.md`, `.mustflow/context/INDEX.md` et les fichiers de configuration propres aux langages, afin que les agents sachent où regarder d’abord dans la racine actuelle.
 
 La racine ne signifie pas nécessairement un seul dépôt Git. Si la racine mustflow actuelle est un espace de travail qui contient des dépôts imbriqués indépendants, le même `REPO_MAP.md` peut inclure des points d’entrée limités pour ces dépôts.
 
@@ -45,7 +45,8 @@ La navigation de racine appartient à ce fichier généré afin que `AGENTS.md` 
 - Ne listez pas chaque fichier source. Incluez uniquement les fichiers d’ancrage qui aident à la navigation dans le dépôt.
 - Incluez comme ancres prioritaires les fichiers de configuration nécessaires à l’interprétation du comportement des agents, comme `.mustflow/config/preferences.toml`.
 - Incluez `.mustflow/context/INDEX.md` et `.mustflow/context/PROJECT.md` lorsqu’ils existent, mais n’étendez pas par défaut chaque futur fichier de contexte de domaine.
-- Incluez `DESIGN.md` lorsqu’il existe comme ancre externe optionnelle de design visuel. Ne le créez pas dans le cadre de `mf map`.
+- Incluez les documents Markdown racine appartenant au projet, comme `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md` et `API.md`, lorsqu’ils existent comme ancres optionnelles. Ne les créez pas dans le cadre de `mf map`.
+- Incluez les contrats lisibles par machine avec un nom précis, comme `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql` et `schema.prisma`, lorsqu’ils existent. Les noms génériques comme `SSOT.json` ne sont pas des ancres par défaut.
 - Même lorsque des dépôts imbriqués sont listés, n’incluez pas par défaut les URL distantes, noms de branche, états de changement récents, listes de commandes ni résumés automatiques.
 
 ## Règles de rédaction
