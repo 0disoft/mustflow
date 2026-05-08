@@ -1,0 +1,67 @@
+# Security Policy
+
+This file applies to the mustflow repository itself. It is not installed into
+user projects by `mf init`.
+
+## Supported Versions
+
+Security fixes target the current npm package version and the `main` branch.
+Older versions may receive guidance when the impact is clear, but maintainers
+do not promise backports until a release policy is published.
+
+## Reporting A Vulnerability
+
+Do not include exploit details, secrets, tokens, private repository content, or
+customer data in a public issue.
+
+Use GitHub private vulnerability reporting when it is available for this
+repository:
+
+<https://github.com/0disoft/mustflow/security/advisories/new>
+
+If private reporting is unavailable, open a minimal public issue that says a
+security report exists and describes only the affected area at a high level.
+Ask for a private maintainer contact path before sharing reproduction details.
+
+## Useful Report Details
+
+Include the following when they can be shared safely:
+
+- Affected mustflow version or commit.
+- Affected command, template file, schema, generated output, or workflow file.
+- Expected safe behavior.
+- Actual behavior.
+- Minimal reproduction steps that do not expose secrets or third-party systems.
+- Whether the issue affects only this repository or also projects initialized
+  with `mf init`.
+
+## Scope
+
+Security reports are most useful when they involve one of these boundaries:
+
+- Command execution outside `.mustflow/config/commands.toml`.
+- Incorrect handling of configured command status, lifecycle, timeout, or
+  working directory rules.
+- Template updates that overwrite customized user files unexpectedly.
+- Leaking secrets through generated maps, run receipts, cache files, reports,
+  or documentation.
+- Installed workflow files that authorize unsafe agent behavior.
+- Published schemas or reports that encourage unsafe automation decisions.
+
+General feature requests, documentation gaps, and non-security bugs should use
+regular GitHub issues.
+
+## Safe Research Guidelines
+
+- Test only on repositories and systems you own or have permission to inspect.
+- Do not run destructive commands against third-party projects.
+- Do not include live credentials, private data, or raw logs with sensitive
+  content in reports.
+- Prefer small reproductions that demonstrate the unsafe decision boundary
+  without weaponized payloads.
+
+## Disclosure
+
+Maintainers aim to acknowledge reports, validate impact, prepare a fix, and
+publish release notes with an appropriate level of detail. Exact timelines
+depend on severity, reproduction quality, and maintainer availability.

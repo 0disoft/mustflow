@@ -38,6 +38,9 @@ execution still comes from `.mustflow/config/commands.toml`.
 - Documentation site: <https://mustflow.github.io>
 - Repository: <https://github.com/0disoft/mustflow>
 - Issues: <https://github.com/0disoft/mustflow/issues>
+- Contributing: [CONTRIBUTING.md](https://github.com/0disoft/mustflow/blob/main/CONTRIBUTING.md)
+- Security: [SECURITY.md](https://github.com/0disoft/mustflow/blob/main/SECURITY.md)
+- Changelog: [CHANGELOG.md](https://github.com/0disoft/mustflow/blob/main/CHANGELOG.md)
 
 ## What it does
 

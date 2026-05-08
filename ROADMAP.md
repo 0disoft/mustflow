@@ -164,9 +164,6 @@ examples.
 Goal: make contribution and maintenance expectations explicit for this
 repository without changing what `mf init` installs into user projects.
 
-- Add `CONTRIBUTING.md`.
-- Add `SECURITY.md`.
-- Add `CHANGELOG.md`.
 - Expand `.github/` with CI, issue templates, and a pull request template.
 - Keep the default installed template thin: no generated CI, no generated
   platform-specific files, and no application source files.
