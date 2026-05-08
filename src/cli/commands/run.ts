@@ -1,20 +1,46 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { runCheck } from './check.js';
+import { runContext } from './context.js';
+import { runDoctor } from './doctor.js';
+import { runHelp } from './help.js';
+import { runMap } from './map.js';
+import { runStatus } from './status.js';
+import { runUpdate } from './update.js';
+import { runVersionSources } from './version-sources.js';
+import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import {
 	isRecord,
 	readCommandContract,
+	readMustflowConfigIfExists,
 	readPositiveInteger,
 	readString,
 	readStringArray,
 	type TomlTable,
-} from '../lib/command-contract.js';
+} from '../../core/config-loading.js';
+import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../lib/run-receipt.js';
+import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../../core/run-receipt.js';
+
+interface CommandResult {
+	readonly status: number | null;
+	readonly signal: string | null;
+	readonly error?: Error;
+	readonly stdout: string;
+	readonly stderr: string;
+	readonly pid?: number;
+}
+
+interface BufferedReporter {
+	readonly reporter: Reporter;
+	readonly stdout: () => string;
+	readonly stderr: () => string;
+}
 
 function resolveSafeCwd(projectRoot: string, rawCwd: string | undefined): string {
 	const cwd = rawCwd ?? '.';
@@ -131,8 +157,6 @@ interface ResolvedArgvCommand {
 	readonly shell: boolean;
 }
 
-const MUSTFLOW_BIN_NAMES = new Set(['mf', 'mustflow']);
-
 function isMustflowBuiltinIntent(intent: TomlTable): boolean {
 	return readString(intent, 'kind') === 'mustflow_builtin';
 }
@@ -146,7 +170,7 @@ function resolveCurrentCliEntrypoint(): string | undefined {
 function resolveArgvCommand(projectRoot: string, intent: TomlTable, commandArgv: string[]): ResolvedArgvCommand {
 	const [command = '', ...args] = commandArgv;
 
-	if (isMustflowBuiltinIntent(intent) && MUSTFLOW_BIN_NAMES.has(command.toLowerCase())) {
+	if (isMustflowBuiltinIntent(intent) && isMustflowBinName(command)) {
 		const entrypoint = resolveCurrentCliEntrypoint();
 
 		if (entrypoint) {
@@ -165,6 +189,169 @@ function resolveArgvCommand(projectRoot: string, intent: TomlTable, commandArgv:
 		args,
 		shell: shouldUseShellForArgvExecutable(executable),
 	};
+}
+
+function createBufferedReporter(): BufferedReporter {
+	const stdout: string[] = [];
+	const stderr: string[] = [];
+
+	return {
+		reporter: {
+			stdout(message) {
+				stdout.push(`${message}\n`);
+			},
+			stderr(message) {
+				stderr.push(`${message}\n`);
+			},
+		},
+		stdout() {
+			return stdout.join('');
+		},
+		stderr() {
+			return stderr.join('');
+		},
+	};
+}
+
+function getPackageVersion(): string {
+	const packageUrl = new URL('../../../package.json', import.meta.url);
+	const rawPackageJson = readFileSync(packageUrl, 'utf8');
+	const parsed = JSON.parse(rawPackageJson) as { version?: unknown };
+
+	return typeof parsed.version === 'string' ? parsed.version : '0.0.0';
+}
+
+function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lang: CliLang): number | undefined {
+	const [command, ...commandArgs] = args;
+
+	if (command === '--version' || command === '-v' || command === 'version') {
+		reporter.stdout(getPackageVersion());
+		return 0;
+	}
+
+	if (!canRunMustflowBuiltinInProcess(command)) {
+		return undefined;
+	}
+
+	if (command === 'check') {
+		return runCheck(commandArgs, reporter, lang);
+	}
+
+	if (command === 'context') {
+		return runContext(commandArgs, reporter, lang);
+	}
+
+	if (command === 'doctor') {
+		return runDoctor(commandArgs, reporter, lang);
+	}
+
+	if (command === 'help') {
+		return runHelp(commandArgs, reporter, lang);
+	}
+
+	if (command === 'map') {
+		return runMap(commandArgs, reporter, lang);
+	}
+
+	if (command === 'status') {
+		return runStatus(commandArgs, reporter, lang);
+	}
+
+	if (command === 'update') {
+		return runUpdate(commandArgs, reporter, lang);
+	}
+
+	if (command === 'version-sources') {
+		return runVersionSources(commandArgs, reporter, lang);
+	}
+
+	return undefined;
+}
+
+function withWorkingDirectory<T>(cwd: string, callback: () => T): T {
+	const previousCwd = process.cwd();
+
+	process.chdir(cwd);
+
+	try {
+		return callback();
+	} finally {
+		process.chdir(previousCwd);
+	}
+}
+
+function runBuiltinArgvInProcess(commandArgv: readonly string[], cwd: string, lang: CliLang): CommandResult | undefined {
+	const [command = '', ...builtinArgs] = commandArgv;
+
+	if (!isMustflowBinName(command)) {
+		return undefined;
+	}
+
+	const output = createBufferedReporter();
+
+	try {
+		const status = withWorkingDirectory(cwd, () => runKnownBuiltinCommand(builtinArgs, output.reporter, lang));
+
+		if (status === undefined) {
+			return undefined;
+		}
+
+		return {
+			status,
+			signal: null,
+			stdout: output.stdout(),
+			stderr: output.stderr(),
+		};
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+
+		return {
+			status: 1,
+			signal: null,
+			stdout: output.stdout(),
+			stderr: `${output.stderr()}${message}\n`,
+		};
+	}
+}
+
+function runArgvCommand(
+	command: ResolvedArgvCommand | undefined,
+	cwd: string,
+	maxOutputBytes: number,
+	env: NodeJS.ProcessEnv,
+	timeoutSeconds: number,
+): CommandResult {
+	return spawnSync(command?.executable ?? '', command?.args ?? [], {
+		cwd,
+		encoding: 'utf8',
+		input: '',
+		maxBuffer: maxOutputBytes,
+		env,
+		shell: command?.shell ?? false,
+		stdio: ['ignore', 'pipe', 'pipe'],
+		timeout: timeoutSeconds * 1000,
+		windowsHide: true,
+	});
+}
+
+function runShellCommand(
+	command: string | undefined,
+	cwd: string,
+	maxOutputBytes: number,
+	env: NodeJS.ProcessEnv,
+	timeoutSeconds: number,
+): CommandResult {
+	return spawnSync(command ?? '', {
+		cwd,
+		encoding: 'utf8',
+		input: '',
+		maxBuffer: maxOutputBytes,
+		env,
+		shell: true,
+		stdio: ['ignore', 'pipe', 'pipe'],
+		timeout: timeoutSeconds * 1000,
+		windowsHide: true,
+	});
 }
 
 function getRunStatus(error: Error | undefined, exitCode: number | null, successExitCodes: readonly number[]): RunReceiptStatus {
@@ -236,6 +423,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 	const projectRoot = resolveMustflowRoot();
 	const contract = readCommandContract(projectRoot);
+	const runReceiptPolicy = resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot));
 	const intent = contract.intents[intentName];
 
 	if (!isRecord(intent)) {
@@ -302,29 +490,12 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	const startedAt = new Date();
 	const argvCommand = commandArgv ? resolveArgvCommand(projectRoot, intent, commandArgv) : undefined;
 	const result =
-		commandArgv
-			? spawnSync(argvCommand?.executable ?? '', argvCommand?.args ?? [], {
-					cwd,
-					encoding: 'utf8',
-					input: '',
-					maxBuffer: maxOutputBytes,
-					env,
-					shell: argvCommand?.shell ?? false,
-					stdio: ['ignore', 'pipe', 'pipe'],
-					timeout: timeoutSeconds * 1000,
-					windowsHide: true,
-				})
-			: spawnSync(shellCommand ?? '', {
-					cwd,
-					encoding: 'utf8',
-					input: '',
-					maxBuffer: maxOutputBytes,
-					env,
-					shell: true,
-					stdio: ['ignore', 'pipe', 'pipe'],
-					timeout: timeoutSeconds * 1000,
-					windowsHide: true,
-				});
+		commandArgv && isMustflowBuiltinIntent(intent)
+			? (runBuiltinArgvInProcess(commandArgv, cwd, lang) ??
+				runArgvCommand(argvCommand, cwd, maxOutputBytes, env, timeoutSeconds))
+		: commandArgv
+			? runArgvCommand(argvCommand, cwd, maxOutputBytes, env, timeoutSeconds)
+			: runShellCommand(shellCommand, cwd, maxOutputBytes, env, timeoutSeconds);
 	const finishedAt = new Date();
 	const exitCode = typeof result.status === 'number' ? result.status : null;
 	const runStatus = getRunStatus(result.error, exitCode, successExitCodes);
@@ -357,6 +528,8 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 		killMethod,
 		stdout: result.stdout,
 		stderr: result.stderr,
+		stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
+		stderrTailBytes: runReceiptPolicy.stderrTailBytes,
 	});
 
 	writeRunReceipt(projectRoot, receipt);

@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -119,6 +119,65 @@ destructive = false
 	}
 });
 
+test('runs supported mustflow built-in intents without spawning a nested CLI process', async () => {
+	const projectPath = createTempProject();
+	const previousCwd = process.cwd();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.self_check]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a built-in mustflow status command in-process."
+argv = ["mf", "status", "--json"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const { runRun } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run.js')).href);
+		const stdout = [];
+		const stderr = [];
+
+		process.chdir(projectPath);
+
+		const status = runRun(
+			['self_check', '--json'],
+			{
+				stdout(message) {
+					stdout.push(message);
+				},
+				stderr(message) {
+					stderr.push(message);
+				},
+			},
+			'en',
+		);
+		const receipt = JSON.parse(stdout.join('\n'));
+		const statusOutput = JSON.parse(receipt.stdout.tail);
+
+		assert.equal(status, 0);
+		assert.deepEqual(stderr, []);
+		assert.equal(receipt.intent, 'self_check');
+		assert.equal(receipt.status, 'passed');
+		assert.equal(statusOutput.installed, true);
+		assert.equal(statusOutput.manifestLock, 'present');
+	} finally {
+		process.chdir(previousCwd);
+		removeTempProject(projectPath);
+	}
+});
+
 test('runs default mustflow update intents through mf run', () => {
 	const projectPath = createTempProject();
 
@@ -199,6 +258,47 @@ destructive = false
 		assert.match(receipt.stdout.tail, /hello receipt/);
 		assert.ok(existsSync(latestPath));
 		assert.deepEqual(latest, receipt);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('uses retention policy tail byte limits for JSON run receipts', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readFileSync(configPath, 'utf8').replace('keep_stdout_tail_bytes = 65536', 'keep_stdout_tail_bytes = 12');
+		writeFileSync(configPath, config);
+
+		appendIntent(
+			projectPath,
+			`
+[intents.long_stdout]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print long stdout for receipt tail policy."
+argv = ['${process.execPath}', '-e', 'process.stdout.write("abcdefghijklmnop")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'long_stdout', '--json']);
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0);
+		assert.equal(receipt.stdout.bytes, 16);
+		assert.equal(receipt.stdout.truncated, true);
+		assert.equal(receipt.stdout.tail, 'efghijklmnop');
 	} finally {
 		removeTempProject(projectPath);
 	}
