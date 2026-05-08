@@ -865,6 +865,24 @@ test('fails when preferences configuration fields are invalid', () => {
 				'when = 1',
 				'source = false',
 				'',
+				'[release.versioning]',
+				'impact_check = "yes"',
+				'suggest_bump = "yes"',
+				'auto_bump = "no"',
+				'require_user_confirmation = "yes"',
+				'sync_template_version = "yes"',
+				'sync_docs_examples = "yes"',
+				'sync_tests = "yes"',
+				'',
+				'[verification.selection]',
+				'strategy = "always_full"',
+				'prefer_related_tests = "yes"',
+				'skip_docs_only_full_test = "yes"',
+				'skip_low_risk_code_full_test = "yes"',
+				'skip_translation_only_full_test = "yes"',
+				'skip_copy_only_full_test = "yes"',
+				'report_skipped = "yes"',
+				'',
 				'[docs]',
 				'update_when = "always"',
 				'tone = 1',
@@ -903,12 +921,48 @@ test('fails when preferences configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[preferences\.git\]\.auto_commit must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.git\.commit_message\]\.max_suggestions must be a positive integer/);
 		assert.match(result.stderr, /\[preferences\.reporting\.commit_suggestion\]\.enabled must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.impact_check must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.suggest_bump must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.auto_bump must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.require_user_confirmation must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.sync_template_version must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.sync_docs_examples must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.sync_tests must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.strategy must be "risk_based"/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.prefer_related_tests must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.skip_docs_only_full_test must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.skip_low_risk_code_full_test must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.skip_translation_only_full_test must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.skip_copy_only_full_test must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.verification\.selection\]\.report_skipped must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.docs\]\.update_when must be a string array/);
 		assert.match(result.stderr, /\[preferences\.logging\]\.include_sensitive_data must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.enabled must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.source_locale must be a string/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.target_locales must be a string array/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.translation_policy must be/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails when commit message style is unsupported', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		const preferences = readText(preferencesPath).replace('style = "conventional"', 'style = "emoji"');
+		writeFileSync(preferencesPath, preferences);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(
+			result.stderr,
+			/\[preferences\.git\.commit_message\]\.style must be "conventional" or "descriptive" or "gitmoji"/,
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

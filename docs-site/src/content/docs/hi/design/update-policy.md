@@ -13,6 +13,8 @@ update baseline `.mustflow/config/manifest.lock.toml` में मौजूद 
 
 `content_hash` वह file content hash है जिसे अंतिम बार `mf init` या `mf update --apply` ने दर्ज किया था। यदि current file hash इस मान से अलग है, तो mustflow फ़ाइल को locally edited मानता है।
 
+यदि lock entry में `last_action = "customized"` है, तो mustflow उस hash को repository-specific baseline मानता है। current hash उस customized baseline से match करता रहे तो file को bundled template content से replace नहीं किया जाता।
+
 यह नीति `mf update --json` के `policy` object में भी शामिल होती है। Documentation, human-readable output, और automation output को consistent रहना चाहिए।
 
 मौजूदा policy values:
@@ -31,7 +33,7 @@ writes_only_template_manifest_paths: true
 
 `mf update --dry-run` फ़ाइलों को इन स्थितियों में वर्गीकृत करता है:
 
-- `unchanged`: current file lock baseline और bundled template दोनों से मेल खाती है।
+- `unchanged`: current file lock baseline और bundled template दोनों से मेल खाती है, या file customized mark है और अभी भी customized baseline से match करती है।
 - `update`: current file lock baseline से मेल खाती है लेकिन bundled template से अलग है।
 - `create`: file template में मौजूद है लेकिन user repository में नहीं है।
 - `blocked-local-change`: current file lock baseline से अलग है।
@@ -43,6 +45,7 @@ writes_only_template_manifest_paths: true
 
 - `blocked-local-change` files को अपने आप modify न करें।
 - `manual-review` files को अपने आप modify न करें।
+- customized files को template content से replace न करें जब तक वे customized lock baseline से match करती हैं।
 - `update` files को backup बनने के बाद template content से बदला जाता है।
 - `create` files आवश्यक parent directories बनने के बाद लिखी जाती हैं।
 - यदि कोई new template file lock में मौजूद न होने वाली existing file से conflict करती है, तो उसे local change माना जाता है और overwrite नहीं किया जाता।

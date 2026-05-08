@@ -101,12 +101,24 @@ instalación:
 - `git.auto_stage`
 - `git.auto_commit`
 - `git.auto_push=false`
+- `git.commit_message.style`
 - `git.commit_message.language`
 - `git.commit_message.max_suggestions`
 - `git.commit_message.include_body`
 - `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
+- `release.versioning.impact_check`
+- `release.versioning.suggest_bump`
+- `release.versioning.auto_bump`
+- `release.versioning.require_user_confirmation`
+- `release.versioning.sync_template_version`
+- `release.versioning.sync_docs_examples`
+- `release.versioning.sync_tests`
 - `language.memory.summary`
+
+`git.commit_message.style` acepta `conventional`, `descriptive` o `gitmoji`. El estilo `gitmoji` sugiere mensajes como `✨ feat: add dashboard setting`, pero sigue siendo una sugerencia de mensaje, no permiso para crear commits.
+
+`git.commit_message.language` acepta `preserve_existing`, `agent_response`, `docs` o una etiqueta de idioma como `ja`, `de` o `pt-BR`.
 
 `mf init` solo permite `git.auto_push=false`, lo que puede devolver un repositorio al valor seguro predeterminado. No puede habilitar `git.auto_push=true`; si un repositorio realmente necesita ese comportamiento, edita el archivo manualmente después de la instalación.
 

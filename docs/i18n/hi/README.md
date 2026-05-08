@@ -32,6 +32,11 @@ flowchart TD
 संदर्भ कैसे लोड होगा। `[refresh]` नीति तय करती है कि एजेंट वही निर्देश फिर कब
 पढ़ेंगे।
 
+skills index एक active routing step है: agents task को `.mustflow/skills/INDEX.md` से
+compare करते हैं और उस scope को edit करने से पहले matching `SKILL.md` पढ़ते हैं।
+Skills केवल procedure guide करती हैं; command execution अब भी
+`.mustflow/config/commands.toml` से आती है।
+
 - दस्तावेज़ साइट: <https://mustflow.github.io>
 - रिपॉज़िटरी: <https://github.com/0disoft/mustflow>
 - इश्यू: <https://github.com/0disoft/mustflow/issues>
@@ -70,13 +75,15 @@ mustflow स्वचालित प्रोजेक्ट संपादक
 - यह GitHub, GitLab या समान टूलों की प्लेटफ़ॉर्म-विशेष फ़ाइलों को डिफ़ॉल्ट
   टेम्पलेट में नहीं जोड़ता।
 - यह डिफ़ॉल्ट रूप से `justfile`, `Makefile` या `Taskfile.yml` नहीं बनाता।
-- डैशबोर्ड अभी लागू नहीं है। `mf dashboard` एक आरक्षित कमांड है।
+- `mf dashboard` `.mustflow/config/preferences.toml` में सुरक्षित preferences
+  देखने और बदलने के लिए local browser UI शुरू करता है, फिर उसे default browser
+  में खोलता है। Page language English, Korean, Chinese, Spanish, French और
+  Hindi में बदली जा सकती है।
 
 ## प्रस्तावित सुविधाएँ
 
 ये रोकी हुई अवधारणाएँ हैं, अभी आधिकारिक रूप से समर्थित नहीं हैं।
 
-- `mf dashboard`
 - समुदाय कौशल रजिस्ट्री और कौशल पैक इंस्टॉल
 - वैकल्पिक `.mustflow/work-items/`
 - `mf orient`, `mf refresh`
@@ -213,7 +220,7 @@ npx mf update --apply
 | `mf update --dry-run` | बिना फ़ाइल लिखे टेम्पलेट अपडेट योजना की गणना करता है। |
 | `mf update --apply` | जब कुछ भी अवरुद्ध न हो, तब टेम्पलेट अपडेट लागू करता है। |
 | `mf help <topic>` | इंस्टॉल की गई mustflow सहायता दिखाता है। |
-| `mf dashboard` | आरक्षित। अभी लागू नहीं है। |
+| `mf dashboard` | सुरक्षित mustflow preferences के लिए local dashboard शुरू करता है और उसे default browser में खोलता है। Page छह भाषाओं में बदला जा सकता है। |
 
 ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json`
 आउटपुट का उपयोग करना चाहिए। स्थिर आउटपुट के JSON Schemas `schemas/` में हैं।
@@ -256,8 +263,13 @@ npx mf init --set git.auto_commit=true
 - `--interactive`: prompts के माध्यम से init settings चुनता है।
 - `--yes`: prompts के बिना default English init settings उपयोग करता है।
 - `--set`: installation के दौरान allowed preference set करता है। supported
-  keys हैं `git.auto_stage`, `git.auto_commit`, `git.commit_message.language`,
-  `reporting.commit_suggestion.enabled` और `language.memory.summary`।
+  keys हैं `git.auto_stage`, `git.auto_commit`, `git.commit_message.style`,
+  `git.commit_message.language`, `reporting.commit_suggestion.enabled` और
+  `language.memory.summary`।
+  `git.commit_message.style` में `conventional`, `descriptive`, या `gitmoji`
+  दिया जा सकता है; `gitmoji` सिर्फ suggested message format बदलता है।
+  `git.commit_message.language` में `preserve_existing`, `agent_response`,
+  `docs`, या `ja`, `de`, `pt-BR` जैसा locale tag दिया जा सकता है।
 - `--product-source-locale`, `--product-locale`: उपयोगकर्ता-सामना करने वाली
   उत्पाद स्ट्रिंग के लिए स्रोत और लक्ष्य लोकेल।
 - `--lang`: CLI आउटपुट भाषा। वर्तमान मान `en`, `ko`, `zh`, `es`, `fr` और

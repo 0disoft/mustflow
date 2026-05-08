@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: zh
 canonical: false
-revision: 7
+revision: 9
 ---
 
 # 代理工作流
@@ -27,6 +27,26 @@ revision: 7
 - 不要推断缺失的项目目标、non-goals、API 承诺、数据规则或 design token。
 - 若存在 `DESIGN.md`，在 UI 工作中将其视为可选外部视觉设计锚点。不要把其中 design token 复制到 `.mustflow/context/`。
 - 若上下文与当前文件或命令冲突，需报告冲突并遵循更高权威来源。
+
+## Skill 激活
+
+skill 是任务流程文档，不是自治工具。激活 skill 表示读取对应的
+`.mustflow/skills/<name>/SKILL.md`，并在当前命令契约内遵循其流程。
+
+在任务开始和首次编辑前：
+
+1. 读取 `.mustflow/skills/INDEX.md`。
+2. 将当前任务与其中列出的场景进行匹配。
+3. 在编辑对应范围前，读取所有匹配的 `SKILL.md`。
+4. 如果没有 skill 适用，不要臆造 skill；在 `AGENTS.md` 和
+   `.mustflow/config/commands.toml` 下执行最小安全变更。
+
+如果新的证据改变了任务类型，应在后续激活 skill。例如，已配置命令失败时激活
+failure triage，测试契约变化时激活 test maintenance，文档或工作流变化时激活
+docs update。
+
+当多个 skill 适用时，对每个受影响范围遵循最具体的 skill，并且只合并其声明的
+command intents。skill 永远不会授权原始 shell 命令、长时运行进程或任务范围外写入。
 
 ## 输入稳定性
 
@@ -121,6 +141,36 @@ Judge 阶段不得仅凭 worker 的“完成声明”判定通过。应依据任
 
 这些值是仓库偏好设置，不是权限。它们不会覆盖用户的直接指示、`.mustflow/config/commands.toml`，也不会覆盖 `.mustflow/config/mustflow.toml` 中的审批策略。尤其是，`git.auto_commit = true` 不表示获得推送权限，且不能通过 `mf init` 启用 `git.auto_push = true`。
 
+## 版本影响策略
+
+版本影响设置是偏好，不是 release 权限。
+
+当代码、模板、schema、CLI 行为、包元数据、用户可见文档、安装输出或测试发生变化时，
+使用 `.mustflow/config/preferences.toml` 中的 `[release.versioning]`。
+
+- `impact_check = true`：报告当前 diff 是否看起来需要包版本或模板版本变更。
+- `suggest_bump = true`：证据明确时，可建议 patch、minor 或 major。
+- `auto_bump = false`：没有用户明确请求时，不编辑包或模板的版本文件。
+- `require_user_confirmation = true`：修改版本文件前，需要用户批准的版本升级或 release 准备请求。
+
+在建议或应用版本变更前，先定位该仓库的版本事实来源。
+不要假设 `package.json` 是唯一版本文件。应检查与仓库语言和框架相匹配的 manifest、
+release 文档和既有更新模式，然后报告哪些文件是权威来源，哪些文件是派生文件。
+
+常见版本来源候选包括：
+
+- JavaScript 或 TypeScript：`package.json`，以及会重复包元数据的包管理器 lockfile。
+- Python：`pyproject.toml`、`setup.cfg`、`setup.py` 或包内 `__version__` 文件。
+- Rust：`Cargo.toml`；只有当仓库把 lockfile 变更当作 release 元数据时才一起考虑 `Cargo.lock`。
+- Go：优先检查 release tag 和 release 文档；只有模块路径或工具元数据相关时才检查 `go.mod`。
+- Java 或 Kotlin：`pom.xml`、`build.gradle`、`build.gradle.kts` 或 `gradle.properties`。
+- .NET：`*.csproj`、`Directory.Build.props` 或 `*.nuspec`。
+- Ruby、PHP、Dart 或 Swift：`*.gemspec`、`lib/**/version.rb`、`composer.json`、`pubspec.yaml` 或 `Package.swift`。
+- 容器、chart 或应用：`Chart.yaml`、镜像标签、应用 manifest、release notes 或部署元数据。
+- mustflow 模板：包元数据、模板 manifest、文档示例，以及断言安装版本的测试。
+
+当版本变更获得批准时，应根据 `sync_*` 偏好让包元数据、模板 manifest 版本、文档示例和测试保持同步。
+
 ## 命令执行策略
 
 不要从 `package.json`、`Makefile`、`justfile`、`Taskfile.yml` 或源码文件推断命令。
@@ -171,6 +221,23 @@ Judge 阶段不得仅凭 worker 的“完成声明”判定通过。应依据任
 
 若预期 intent 缺失、禁用、仅手动可用或未配置，不要臆造替代方案。
 需明确报告跳过内容与原因。
+
+## 验证选择策略
+
+使用 `.mustflow/config/preferences.toml` 的 `[verification.selection]` 选择验证范围。
+这些偏好不授予命令执行权限，只用于决定应考虑哪些已配置的 command intents。
+
+- `strategy = "risk_based"`：优先选择覆盖变更行为、公开表面、命令契约和风险区域的最小检查。
+- `strategy = "targeted"`：除非用户、skill 或策略要求更广验证，否则优先选择直接相关检查。
+- `strategy = "full"`：优先使用完整的适用已配置验证集合。
+- `prefer_related_tests = true`：在宽泛测试 intent 前，先寻找更窄且相关的测试 intent。
+- `skip_docs_only_full_test = true`：仅文档变更且文档验证覆盖相关表面时，可跳过宽泛测试。
+- `skip_translation_only_full_test = true`：仅翻译变更且源行为未变时，可跳过宽泛测试。
+- `skip_copy_only_full_test = true`：仅文案变更且行为、schema、模板、命令契约未变时，可跳过宽泛测试。
+- `report_skipped = true`：最终报告必须说明跳过的检查及原因。
+
+如果证据显示行为、安全、数据、命令契约、发布输出或生成模板发生变化，不要用跳过偏好隐藏风险。
+应提升到相关已配置 intent，或报告缺失所需 intent。
 
 ## 验证收紧机制
 

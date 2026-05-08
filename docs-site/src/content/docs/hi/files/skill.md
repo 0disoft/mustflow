@@ -11,6 +11,10 @@ Agents `.mustflow/skills/INDEX.md` से relevant skill चुनते है�
 
 Skill documents code review, test maintenance, failure triage, और documentation updates जैसी procedures cover करते हैं। वे shared policy copy करने के बजाय `.mustflow/docs/agent-workflow.md` को reference करते हैं।
 
+Skill activate करने का अर्थ है skill procedure पढ़ना और उसका पालन करना। इससे
+`.mustflow/config/commands.toml` के बाहर commands चलाने या higher-priority instructions ignore
+करने की अनुमति नहीं मिलती।
+
 ## Frontmatter metadata
 
 ```yaml
@@ -80,4 +84,4 @@ Default skill केवल `SKILL.md` से शुरू होती है।
 
 जब skill लंबी हो जाए या अलग supporting material चाहिए, तो optional `resources.toml` जोड़ें और references, templates, या scripts वहां register करें। Scripts को guessed paths से invoke नहीं करना चाहिए; उन्हें `.mustflow/config/commands.toml` में command intents से connect करें।
 
-विस्तृत नियमों के लिए [Skill संसाधन](/design/skill-resources/) देखें।
+विस्तृत नियमों के लिए [Skill संसाधन](../../design/skill-resources/) देखें।

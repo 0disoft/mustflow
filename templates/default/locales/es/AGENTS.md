@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: es
 canonical: false
-revision: 5
+revision: 7
 ---
 
 # AGENTS.md
@@ -44,11 +44,22 @@ Los detalles gestionados por mustflow estan en `.mustflow/`.
   ni la especificacion de comandos.
 - Las preferencias en `.mustflow/config/preferences.toml` tienen menor prioridad que las
   instrucciones directas del usuario y el estilo existente del proyecto.
+- Cuando cambien codigo, plantillas, esquemas, comportamiento de CLI, metadatos de paquete,
+  documentacion visible para usuarios, salida de instalacion o pruebas, revisa `[release.versioning]`
+  en `.mustflow/config/preferences.toml` antes del informe final. No cambies archivos de version
+  salvo que el usuario pida explicitamente un aumento de version o preparacion de release. No
+  asumas que la fuente de version es `package.json`; localiza la fuente de version propia del
+  repositorio antes de sugerir o editar versiones.
 - Los archivos de contexto en `.mustflow/context/` explican la direccion del proyecto y las convenciones del dominio.
   Tratalos como contexto especifico de la tarea, no como sustituto de codigo, pruebas, comandos o instrucciones del usuario.
 - Si existe `DESIGN.md`, leelo solo para tareas de interfaz, diseno visual, maquetacion, tokens de diseno o accesibilidad.
   No crees un `DESIGN.md` si no existe.
 - Lee el documento de skill correspondiente cuando aplique a la tarea.
+- Antes de editar, usa `.mustflow/skills/INDEX.md` para decidir si una o varias skills aplican.
+- Si una skill se vuelve relevante por nueva evidencia, como un fallo de comando o un cambio de
+  documentacion, lee el `SKILL.md` correspondiente antes de continuar esa parte del trabajo.
+- Los documentos de skill guian el procedimiento. No autorizan comandos fuera de
+  `.mustflow/config/commands.toml` ni reemplazan reglas de usuario, host, repositorio o seguridad.
 - No modifiques archivos generados, dependencias externas ni archivos de secretos salvo solicitud explicita.
 - No trates los directorios raiz `config/`, `docs/` o `skills/` como documentos de mustflow.
 

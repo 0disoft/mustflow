@@ -18,6 +18,7 @@ description: Agent 首先读取的根级简短工作规则入口。
 - 只保留绝对规则，例如不能猜测命令、保留既有改动、处理敏感信息。
 - 将详细工作流程指向 `.mustflow/docs/agent-workflow.md`。
 - 让命令是否可执行取决于 `.mustflow/config/commands.toml` 中的命令意图状态。
+- 要求 agent 检查 `.mustflow/skills/INDEX.md`，并在编辑相关范围前读取匹配的 `SKILL.md`。
 - 说明 `mf doctor` 是只读诊断命令，必要时应在编辑前运行。
 - 说明 `mf context --json` 是只读上下文索引，不能替代实际文档读取。
 - 将长时间运行或敏感任务指向 `mustflow.toml` 中的 `[budget]`、`[approval]` 和 `[isolation]`。
@@ -60,5 +61,8 @@ revision: 4
 不要在 `AGENTS.md` 中硬编码实际测试命令、构建命令、仓库树、近期变更或生成时间戳。这些细节会降低输入稳定性，应放在 `commands.toml`、`REPO_MAP.md` 或相关源文件中。
 
 语言、注释、提交消息、文档、日志和格式化的默认值应放在 `.mustflow/config/preferences.toml`，不要在 `AGENTS.md` 中写成长篇说明。
+
+`AGENTS.md` 只应简短声明 skill 选择义务。详细选择规则应放在
+`.mustflow/skills/INDEX.md` 和 `.mustflow/docs/agent-workflow.md`。
 
 不应从 `AGENTS.md` 启动自主循环、worker 队列、角色系统或长时间运行的 harness。如果仓库需要这些能力，应在 mustflow 配置和配套文档中显式声明。

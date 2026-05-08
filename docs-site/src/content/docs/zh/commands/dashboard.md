@@ -1,11 +1,11 @@
 ---
 title: mf dashboard
-description: 为本地 mustflow dashboard 预留的命令。
+description: 启动本地 mustflow dashboard。
 ---
 
-`mf dashboard` 是为未来本地 dashboard 预留的命令。该 dashboard 可用于可视化检查和编辑 mustflow 文档流。
+`mf dashboard` 会启动一个本地浏览器 dashboard，用于查看和修改安全的 mustflow 偏好设置。
 
-此功能尚未实现。运行该命令只会打印 not-implemented 消息，并以退出码 `1` 退出。
+第一版 dashboard 只编辑 `.mustflow/config/preferences.toml`。它不会暂存文件、创建 commit、push、修改版本号或执行 command intent。
 
 ## 当前行为
 
@@ -13,13 +13,23 @@ description: 为本地 mustflow dashboard 预留的命令。
 npx mf dashboard
 ```
 
-此命令不会启动服务器，也不会修改文件。
+该命令默认在 `127.0.0.1` 启动本地 HTTP 服务器，打印 dashboard URL，并在默认浏览器中打开它。
+
+Dashboard 页面提供语言选择器，可在英语、韩语、中文、西班牙语、法语和印地语之间切换。所选语言会保存在浏览器中。
+
+使用 `--port` 指定端口。使用 `--no-open` 可保持浏览器关闭。其他工具需要读取 URL 时，使用 `--json`；JSON 模式不会打开浏览器。
+
+```sh
+npx mf dashboard --port 4173
+npx mf dashboard --no-open
+npx mf dashboard --json
+```
 
 ## 结构化输出
 
-`mf dashboard` 目前不提供 JSON 输出格式。
+使用 `--json` 时，命令会先打印 dashboard URL、mustflow 根目录和偏好设置文件路径，然后保持本地服务器运行。
 
-自动化和代理不应将此命令视为可用的工作流命令。
+Dashboard API 使用每次会话生成的 token，并且只接受页面上显示的有限偏好设置更新。`git.auto_push` 会显示为锁定设置。
 
 ## 帮助与退出码
 
@@ -27,5 +37,5 @@ npx mf dashboard
 npx mf dashboard --help
 ```
 
-- 退出码 `0`：已打印帮助。
-- 退出码 `1`：Dashboard 尚未实现。
+- 退出码 `0`：dashboard 已启动或已打印帮助。
+- 退出码 `1`：dashboard 无法启动或输入无效。

@@ -11,7 +11,6 @@ description: 尚未实现的 mustflow 提议功能。
 
 | 项目 | 状态 | 当前决定 |
 | --- | --- | --- |
-| `mf dashboard` | 评估中 | 命令名已预留；实现待定。 |
 | 社区 skill 仓库 | 评估中 | 外部 skills 的安装与更新规则尚未定义。 |
 | Skill pack 安装 | 评估中 | 等待默认 skills 与可选 skills 的边界稳定。 |
 | `.mustflow/work-items/` | 评估中 | 不包含在默认模板中；保持可选。 |

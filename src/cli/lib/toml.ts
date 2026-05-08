@@ -7,5 +7,5 @@ export function readTomlFile(filePath: string): unknown {
 }
 
 export function stringifyToml(value: Record<string, unknown>): string {
-	return `${stringify(value)}\n`;
+	return `${stringify(value).trimEnd()}\n`;
 }

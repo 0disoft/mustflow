@@ -36,4 +36,3 @@ Avoid reading all context files by default to minimize noise.
 - If context conflicts with code, tests, command specifications, or explicit user instructions, report the conflict and defer to the higher-authority source.
 - Do not assume or fabricate missing project goals, non-goals, design tokens, API contracts, or data rules.
 - Do not duplicate design tokens from `DESIGN.md` into `.mustflow/context/`.
-

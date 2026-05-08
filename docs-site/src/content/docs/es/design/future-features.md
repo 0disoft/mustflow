@@ -11,7 +11,6 @@ Hasta que se implementen, estas funciones no forman parte de la plantilla predet
 
 | Elemento | Estado | Decisión actual |
 | --- | --- | --- |
-| `mf dashboard` | En consideración | Nombre de comando reservado; implementación pendiente. |
 | Repositorio comunitario de skills | En consideración | Las reglas de instalación y actualización de skills externos aún no están definidas. |
 | Instalación de paquetes de skills | En consideración | Pendiente de estabilizar el límite entre skills predeterminados y opcionales. |
 | `.mustflow/work-items/` | En consideración | Excluido de la plantilla predeterminada; sigue siendo una función opcional. |

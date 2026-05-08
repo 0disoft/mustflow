@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: fr
 canonical: false
-revision: 5
+revision: 7
 ---
 
 # AGENTS.md
@@ -44,11 +44,23 @@ Les details geres par mustflow se trouvent sous `.mustflow/`.
   ni la specification des commandes.
 - Les preferences dans `.mustflow/config/preferences.toml` ont une priorite plus faible que les instructions utilisateur directes
   et que le style existant du projet.
+- Quand le code, les modeles, les schemas, le comportement CLI, les metadonnees du paquet,
+  la documentation visible par l'utilisateur, la sortie d'installation ou les tests changent,
+  verifier `[release.versioning]` dans `.mustflow/config/preferences.toml` avant le rapport final.
+  Ne pas modifier les fichiers de version sauf si l'utilisateur demande explicitement un changement
+  de version ou une preparation de release. Ne pas supposer que la source de version est
+  `package.json`; localiser la source de version propre au depot avant de suggerer ou d'editer
+  des versions.
 - Les fichiers de contexte dans `.mustflow/context/` expliquent la direction du projet et les conventions du domaine.
   Les traiter comme un contexte specifique a la tache, pas comme un remplacement du code, des tests, des commandes ou des instructions utilisateur.
 - Si `DESIGN.md` existe, le lire uniquement pour des taches d'interface, de design visuel, de mise en page, de design tokens
   ou d'accessibilite. Ne pas creer de `DESIGN.md` s'il n'existe pas.
 - Lire le document de skill correspondant quand il s'applique a la tache.
+- Avant d'editer, utiliser `.mustflow/skills/INDEX.md` pour decider si une ou plusieurs skills s'appliquent.
+- Si une skill devient pertinente apres une nouvelle preuve, comme un echec de commande ou un changement de
+  documentation, lire le `SKILL.md` correspondant avant de continuer cette partie du travail.
+- Les documents de skill guident la procedure. Ils n'autorisent pas de commandes hors de
+  `.mustflow/config/commands.toml` et ne remplacent pas les regles utilisateur, host, depot ou securite.
 - Ne pas modifier les fichiers generes, les dependances externes ou les fichiers secrets, sauf demande explicite.
 - Ne pas considerer les repertoires racine `config/`, `docs/` ou `skills/` comme des documents mustflow.
 

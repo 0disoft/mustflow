@@ -11,6 +11,9 @@ Agents identify the appropriate skill from `.mustflow/skills/INDEX.md` and consu
 
 Skill documents encompass procedures such as code review, test maintenance, failure triage, and documentation updates. They reference the global policies defined in `.mustflow/docs/agent-workflow.md` rather than duplicating them.
 
+Activating a skill means reading and following the skill procedure. It does not grant permission to
+run commands outside `.mustflow/config/commands.toml` or to ignore higher-priority instructions.
+
 ## Frontmatter
 
 ```yaml
@@ -80,4 +83,4 @@ A default skill begins with only a `SKILL.md` file. Do not create empty `referen
 
 If a skill requires extensive supporting material, an optional `resources.toml` file can be added to register references, assets, or scripts. Scripts should never be invoked via inferred paths; they must be mapped to specific command intents in `.mustflow/config/commands.toml`.
 
-Refer to [Skill Resources](/design/skill-resources/) for detailed policies and guidelines.
+Refer to [Skill Resources](../../design/skill-resources/) for detailed policies and guidelines.

@@ -30,7 +30,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "0.1.0"
+version = "1.0.1"
 profile = "minimal"
 locale = "ko"
 
@@ -55,6 +55,8 @@ content_hash = "sha256:..."
 - `last_action`: action appliquée lors de la dernière installation. Une des valeurs `created`, `unchanged`, `merged`, `overwritten` ou `customized`.
 - `content_hash`: hash SHA-256 de ligne de base du contenu que mustflow a enregistré comme installé ou mis à jour de manière sûre.
 
+`last_action = "customized"` signifie que le hash enregistré est une ligne de base propre au dépôt. `mf update` conserve ce fichier tant que son hash actuel correspond encore à `content_hash`.
+
 ## Ligne de base des hashes
 
 Actuellement, `content_hash` est la ligne de base au moment de l’installation.
@@ -74,4 +76,4 @@ Régénérez-le avec `mf init` ou une future commande de mise à jour dédiée l
 
 `mf update --dry-run` utilise `content_hash` comme ligne de base au moment de l’installation. Si le hash actuel du fichier diffère de cette ligne de base, le fichier est traité comme un changement local et la mise à jour automatique est bloquée.
 
-Pour le raisonnement, consultez [Décision sur la structure de manifest.lock.toml](/design/manifest-lock-decision/).
+Pour le raisonnement, consultez [Décision sur la structure de manifest.lock.toml](../../design/manifest-lock-decision/).

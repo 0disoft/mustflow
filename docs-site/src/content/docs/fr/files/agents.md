@@ -18,6 +18,8 @@ C’est le point d’entrée du flux de documents mustflow. La politique détail
 - Conserve uniquement les règles absolues, comme ne pas deviner les commandes, préserver les changements existants et gérer les secrets.
 - Renvoie le flux de travail détaillé vers `.mustflow/docs/agent-workflow.md`.
 - Fait dépendre l’exécutabilité de l’état des intentions de commande dans `.mustflow/config/commands.toml`.
+- Demande aux agents de consulter `.mustflow/skills/INDEX.md` et de lire le `SKILL.md`
+  correspondant avant de modifier la portée concernée.
 - Indique que `mf doctor` est une commande de diagnostic en lecture seule à exécuter avant les modifications lorsque c’est nécessaire.
 - Indique que `mf context --json` est un index de contexte en lecture seule, pas un remplacement de la lecture des vrais documents.
 - Oriente les tâches longues ou sensibles vers `[budget]`, `[approval]` et `[isolation]` dans `mustflow.toml`.
@@ -60,5 +62,8 @@ Le modèle anglais `AGENTS.md` est la source canonique. Les fichiers de modèle 
 Ne codez pas en dur dans `AGENTS.md` les vraies commandes de test ou de construction, les arborescences du dépôt, les changements récents ni les horodatages générés. Ces détails réduisent la stabilité des entrées et appartiennent à `commands.toml`, `REPO_MAP.md` ou aux fichiers sources pertinents.
 
 Les valeurs par défaut pour la langue, les commentaires, les messages de commit, la documentation, les journaux et le formatage appartiennent à `.mustflow/config/preferences.toml`, pas à de longues explications dans `AGENTS.md`.
+
+`AGENTS.md` doit seulement déclarer l’obligation de sélectionner les skills. Les règles détaillées de
+sélection appartiennent à `.mustflow/skills/INDEX.md` et `.mustflow/docs/agent-workflow.md`.
 
 Les boucles autonomes, flottes de workers, systèmes de personas et cadres d’exécution longue durée ne doivent pas être démarrés depuis `AGENTS.md`. Si un dépôt veut ces surfaces, il doit les déclarer explicitement dans la configuration mustflow et les documents de support.

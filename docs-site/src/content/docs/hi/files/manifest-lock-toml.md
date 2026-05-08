@@ -30,7 +30,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "0.1.0"
+version = "1.0.1"
 profile = "minimal"
 locale = "ko"
 
@@ -55,6 +55,8 @@ content_hash = "sha256:..."
 - `last_action`: अंतिम install के दौरान लागू action। `created`, `unchanged`, `merged`, `overwritten`, या `customized` में से एक।
 - `content_hash`: उस file content का SHA-256 baseline hash जिसे mustflow ने अंतिम बार सुरक्षित install या update के रूप में दर्ज किया।
 
+`last_action = "customized"` का अर्थ है कि दर्ज hash repository-specific baseline के रूप में accepted है। `mf update` उस file को तब तक preserve करता है जब तक current hash `content_hash` से match करता है।
+
 ## Hash baseline
 
 फिलहाल `content_hash` install-time baseline है।
@@ -74,4 +76,4 @@ content_hash = "sha256:..."
 
 `mf update --dry-run` `content_hash` को install-time baseline के रूप में उपयोग करता है। यदि current file hash उस baseline से अलग है, तो file को local change माना जाता है और automatic update block हो जाता है।
 
-कारण समझने के लिए [manifest.lock.toml संरचना निर्णय](/design/manifest-lock-decision/) देखें।
+कारण समझने के लिए [manifest.lock.toml संरचना निर्णय](../../design/manifest-lock-decision/) देखें।

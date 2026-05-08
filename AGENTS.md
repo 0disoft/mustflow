@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 5
+revision: 8
 ---
 
 # AGENTS.md
@@ -44,11 +44,21 @@ mustflow-managed details are under `.mustflow/`.
   and command specification.
 - Preferences in `.mustflow/config/preferences.toml` have lower priority than direct user
   instructions and existing project style.
+- When code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation
+  output, or tests change, check `[release.versioning]` in `.mustflow/config/preferences.toml`
+  before the final report. Do not change version files unless the user explicitly requests a
+  version bump or release preparation. Do not assume the version source is `package.json`;
+  locate the repository-specific version source before suggesting or editing versions.
 - Context files in `.mustflow/context/` explain project direction and domain conventions. Treat
   them as task-specific context, not as a replacement for code, tests, commands, or user instructions.
 - If `DESIGN.md` exists, read it only for UI, visual design, layout, design-token, or accessibility
   work. Do not create a `DESIGN.md` if one does not exist.
 - Read the matching skill document when one applies to the task.
+- Before editing, use `.mustflow/skills/INDEX.md` to decide whether one or more skills apply.
+- If a skill becomes relevant after new evidence, such as a command failure or a documentation
+  change, read the matching `SKILL.md` before continuing that part of the work.
+- Skill documents guide procedure. They do not authorize commands outside
+  `.mustflow/config/commands.toml` or override user, host, repository, or safety rules.
 - Do not modify generated files, external dependencies, or secrets files unless explicitly requested.
 - Do not treat root `config/`, `docs/`, or `skills/` directories as mustflow documents.
 

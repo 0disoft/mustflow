@@ -29,7 +29,7 @@ export const enMessages = {
   "command.index.summary": "Build the local mustflow SQLite index",
   "command.search.summary": "Search the local mustflow SQLite index",
   "command.dashboard.summary":
-    "Open the local mustflow dashboard (not implemented yet)",
+    "Start the local mustflow dashboard",
   "command.help.summary": "Show installed workflow help",
 
   "top.help.option.lang":
@@ -71,10 +71,110 @@ export const enMessages = {
   "label.results": "Results",
 
   "dashboard.help.summary":
-    "Reserved command for the local mustflow dashboard. This feature is not implemented yet.",
-  "dashboard.help.exit.ok": "Help was printed",
-  "dashboard.help.exit.notImplemented": "Dashboard is not implemented yet",
-  "dashboard.notImplemented": "mf dashboard is not implemented yet",
+    "Start a local dashboard for viewing and editing safe mustflow preferences.",
+  "dashboard.help.option.host": "Bind the dashboard to a local host. Default: 127.0.0.1",
+  "dashboard.help.option.port": "Bind the dashboard to a port. Default: 0 chooses an available port",
+  "dashboard.help.option.noOpen": "Do not open the dashboard in a browser automatically",
+  "dashboard.help.exit.ok": "Dashboard was started or help was printed",
+  "dashboard.help.exit.fail": "Dashboard could not start or input was invalid",
+  "dashboard.error.invalidPort": "Invalid dashboard port: {port}",
+  "dashboard.error.nonLocalHost":
+    "Refused dashboard host {host}. Use localhost, 127.0.0.1, or ::1.",
+  "dashboard.listening": "mf dashboard listening at {url}",
+  "dashboard.ui.title": "mustflow dashboard",
+  "dashboard.ui.language": "Language",
+  "dashboard.ui.noChanges": "No changes",
+  "dashboard.ui.unsavedChanges": "Unsaved changes",
+  "dashboard.ui.reloaded": "Reloaded",
+  "dashboard.ui.saved": "Saved",
+  "dashboard.ui.reload": "Reload",
+  "dashboard.ui.save": "Save",
+  "dashboard.ui.locked": "Locked",
+  "dashboard.ui.customLocale": "Custom language tag",
+  "dashboard.ui.openMustflow": "Open .mustflow folder",
+  "dashboard.ui.openedMustflow": ".mustflow folder opened",
+  "dashboard.locked.git.auto_push": "Remote pushes require an explicit request.",
+  "dashboard.group.git": "Git",
+  "dashboard.group.commitMessage": "Commit message",
+  "dashboard.group.reporting": "Reporting",
+  "dashboard.group.verification": "Verification",
+  "dashboard.group.codeStyle": "Code style",
+  "dashboard.group.versioning": "Versioning",
+  "dashboard.setting.git.auto_stage": "Git auto stage",
+  "dashboard.setting.git.auto_commit": "Git auto commit",
+  "dashboard.setting.git.auto_push": "Git auto push",
+  "dashboard.setting.git.commit_message.style": "Commit message style",
+  "dashboard.setting.git.commit_message.style.description.conventional":
+    "Use type-prefixed messages such as feat: or fix:.",
+  "dashboard.setting.git.commit_message.style.description.descriptive":
+    "Use a short natural-language summary without a required type prefix.",
+  "dashboard.setting.git.commit_message.style.description.gitmoji":
+    "Prefix messages with a Gitmoji emoji while keeping a type prefix such as feat: or fix:.",
+  "dashboard.setting.git.commit_message.language": "Commit message language",
+  "dashboard.setting.git.commit_message.language.description.preserve_existing":
+    "Follow the repository's existing commit message language.",
+  "dashboard.setting.git.commit_message.language.description.agent_response":
+    "Use the same language as the agent response.",
+  "dashboard.setting.git.commit_message.language.description.docs":
+    "Use the same language as the project documents.",
+  "dashboard.setting.git.commit_message.language.description.en": "Suggest commit messages in English.",
+  "dashboard.setting.git.commit_message.language.description.ko": "Suggest commit messages in Korean.",
+  "dashboard.setting.git.commit_message.language.description.zh": "Suggest commit messages in Chinese.",
+  "dashboard.setting.git.commit_message.language.description.es": "Suggest commit messages in Spanish.",
+  "dashboard.setting.git.commit_message.language.description.fr": "Suggest commit messages in French.",
+  "dashboard.setting.git.commit_message.language.description.hi": "Suggest commit messages in Hindi.",
+  "dashboard.setting.git.commit_message.language.description":
+    "Use the selected custom language tag for commit message suggestions.",
+  "dashboard.setting.git.commit_message.max_suggestions": "Commit message suggestion count",
+  "dashboard.setting.git.commit_message.include_body": "Commit body",
+  "dashboard.setting.git.commit_message.include_body.description.never":
+    "Never include a commit message body; suggest a subject line only.",
+  "dashboard.setting.git.commit_message.include_body.description.when_non_trivial":
+    "Include a body only when the change needs more context than the subject line.",
+  "dashboard.setting.git.commit_message.include_body.description.always":
+    "Always include a commit message body in suggestions.",
+  "dashboard.setting.git.commit_message.split_when_multiple_concerns": "Suggest split commits",
+  "dashboard.setting.git.commit_message.avoid_sensitive_details": "Avoid sensitive details",
+  "dashboard.setting.git.commit_message.avoid_sensitive_details.description":
+    "Avoid secrets, credentials, personal data, and private incident details.",
+  "dashboard.setting.reporting.commit_suggestion.enabled": "Commit message suggestions",
+  "dashboard.setting.verification.selection.strategy": "Verification strategy",
+  "dashboard.setting.verification.selection.strategy.description.risk_based":
+    "Balance verification scope against change risk.",
+  "dashboard.setting.verification.selection.strategy.description.targeted":
+    "Run only checks tied to the changed area.",
+  "dashboard.setting.verification.selection.strategy.description.full":
+    "Prefer the complete configured verification set.",
+  "dashboard.setting.verification.selection.prefer_related_tests": "Prefer related tests",
+  "dashboard.setting.verification.selection.skip_docs_only_full_test": "Skip full test for docs-only changes",
+  "dashboard.setting.verification.selection.skip_low_risk_code_full_test": "Skip full test for low-risk code changes",
+  "dashboard.setting.verification.selection.skip_low_risk_code_full_test.description":
+    "Skip only the full suite when code changes do not affect public behavior, config, schemas, security, or migrations.",
+  "dashboard.setting.verification.selection.skip_translation_only_full_test": "Skip full test for translation-only changes",
+  "dashboard.setting.verification.selection.skip_copy_only_full_test": "Skip full test for copy-only changes",
+  "dashboard.setting.verification.selection.report_skipped": "Report skipped verification",
+  "dashboard.setting.code_style.avoid_drive_by_refactors": "Avoid drive-by refactors",
+  "dashboard.setting.release.versioning.impact_check": "Version impact check",
+  "dashboard.setting.release.versioning.impact_check.description":
+    "Check whether the change should affect a package or template version.",
+  "dashboard.setting.release.versioning.suggest_bump": "Suggest version bump",
+  "dashboard.setting.release.versioning.suggest_bump.description":
+    "Suggest the bump level when a version change looks necessary.",
+  "dashboard.setting.release.versioning.auto_bump": "Auto bump versions",
+  "dashboard.setting.release.versioning.auto_bump.description":
+    "Allow direct version file edits without a separate manual step.",
+  "dashboard.setting.release.versioning.require_user_confirmation": "Require version confirmation",
+  "dashboard.setting.release.versioning.require_user_confirmation.description":
+    "Ask before applying or accepting a version change.",
+  "dashboard.setting.release.versioning.sync_template_version": "Sync template version",
+  "dashboard.setting.release.versioning.sync_template_version.description":
+    "Keep package and template manifest versions aligned.",
+  "dashboard.setting.release.versioning.sync_docs_examples": "Sync docs examples",
+  "dashboard.setting.release.versioning.sync_docs_examples.description":
+    "Keep documentation examples aligned with the selected version.",
+  "dashboard.setting.release.versioning.sync_tests": "Sync tests",
+  "dashboard.setting.release.versioning.sync_tests.description":
+    "Keep version-sensitive tests and fixtures aligned.",
 
   "doctor.help.summary":
     "Inspect mustflow root health and get hints for next steps without modifying files.",

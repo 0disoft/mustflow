@@ -11,7 +11,6 @@ Until implemented, these features are not part of the default template, command 
 
 | Item | Status | Current Decision |
 | --- | --- | --- |
-| `mf dashboard` | Under consideration | Command name reserved; implementation pending. |
 | Community skill repository | Under consideration | Installation and update rules for external skills are not yet defined. |
 | Skill pack installation | Under consideration | Pending stabilization of the boundary between default and optional skills. |
 | `.mustflow/work-items/` | Under consideration | Excluded from the default template; remains optional. |

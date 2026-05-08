@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 
 function createTempRoot(prefix) {
 	return mkdtempSync(path.join(tmpdir(), prefix));
@@ -98,11 +99,11 @@ test('packed npm package installs and runs the public mf workflow', () => {
 
 		const mfVersion = run(npxCommand(), ['mf', '--version'], { cwd: projectPath });
 		assert.equal(mfVersion.status, 0, mfVersion.stderr || mfVersion.stdout);
-		assert.equal(mfVersion.stdout.trim(), '0.1.0');
+		assert.equal(mfVersion.stdout.trim(), packageJson.version);
 
 		const mustflowVersion = run(npxCommand(), ['mustflow', '--version'], { cwd: projectPath });
 		assert.equal(mustflowVersion.status, 0, mustflowVersion.stderr || mustflowVersion.stdout);
-		assert.equal(mustflowVersion.stdout.trim(), '0.1.0');
+		assert.equal(mustflowVersion.stdout.trim(), packageJson.version);
 
 		const dryRun = run(
 			npxCommand(),

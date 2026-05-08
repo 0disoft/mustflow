@@ -29,6 +29,8 @@ mustflow files में agent rules और procedures होते हैं।
 - `Would update`: file को `mf update --apply` से update किया जा सकता है।
 - `Would create`: file template में मौजूद है लेकिन current root से missing है।
 
+जिन files के lock entry में `last_action = "customized"` है, वे customized baseline से match करती रहें तो unchanged मानी जाती हैं, भले bundled template अलग हो।
+
 ## उदाहरण
 
 ```sh

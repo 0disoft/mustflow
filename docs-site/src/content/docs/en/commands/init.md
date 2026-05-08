@@ -102,12 +102,24 @@ defaults. `--yes` installs the default English settings without prompts.
 - `git.auto_stage`
 - `git.auto_commit`
 - `git.auto_push=false`
+- `git.commit_message.style`
 - `git.commit_message.language`
 - `git.commit_message.max_suggestions`
 - `git.commit_message.include_body`
 - `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
+- `release.versioning.impact_check`
+- `release.versioning.suggest_bump`
+- `release.versioning.auto_bump`
+- `release.versioning.require_user_confirmation`
+- `release.versioning.sync_template_version`
+- `release.versioning.sync_docs_examples`
+- `release.versioning.sync_tests`
 - `language.memory.summary`
+
+`git.commit_message.style` accepts `conventional`, `descriptive`, or `gitmoji`. The `gitmoji` style suggests messages such as `✨ feat: add dashboard setting`, but it still remains a message suggestion rather than permission to commit.
+
+`git.commit_message.language` accepts `preserve_existing`, `agent_response`, `docs`, or a locale tag such as `ja`, `de`, or `pt-BR`.
 
 `mf init` allows only `git.auto_push=false`, which can reset a repository to the safe default. It cannot enable `git.auto_push=true`; if a repository truly needs that behavior, edit the file manually after installation.
 

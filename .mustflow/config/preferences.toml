@@ -59,11 +59,11 @@ auto_push = false
 [git.commit_message]
 suggest = "when_changes_made"
 style = "conventional"
-language = "preserve_existing"
+language = "en"
 language_when_missing = "en"
 scope = "infer_from_changed_paths"
-max_suggestions = 2
-include_body = "when_non_trivial"
+max_suggestions = 1
+include_body = "never"
 split_when_multiple_concerns = true
 avoid_sensitive_details = true
 
@@ -71,6 +71,28 @@ avoid_sensitive_details = true
 enabled = true
 when = "files_changed"
 source = "git.commit_message"
+
+[release.versioning]
+impact_check = true
+suggest_bump = true
+auto_bump = true
+require_user_confirmation = false
+sync_template_version = true
+sync_docs_examples = true
+sync_tests = true
+
+[verification.selection]
+# strategy:
+# - "risk_based": choose the smallest configured checks that cover changed behavior and risk.
+# - "targeted": prefer directly related checks unless the user or policy asks for broader coverage.
+# - "full": prefer the full applicable configured verification suite.
+strategy = "risk_based"
+prefer_related_tests = true
+skip_docs_only_full_test = true
+skip_low_risk_code_full_test = true
+skip_translation_only_full_test = true
+skip_copy_only_full_test = true
+report_skipped = true
 
 [docs]
 update_when = [

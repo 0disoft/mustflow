@@ -30,7 +30,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "0.1.0"
+version = "1.0.1"
 profile = "minimal"
 locale = "ko"
 
@@ -55,6 +55,8 @@ content_hash = "sha256:..."
 - `last_action`: 마지막 설치 때 적용된 처리입니다. `created`, `unchanged`, `merged`, `overwritten`, `customized` 중 하나입니다.
 - `content_hash`: mustflow가 마지막으로 안전하게 설치하거나 갱신했다고 기록한 파일 내용의 SHA-256 기준선 해시입니다.
 
+`last_action = "customized"`는 기록된 해시가 저장소별 맞춤 기준선으로 승인되었다는 뜻입니다. `mf update`는 현재 파일 해시가 `content_hash`와 여전히 같으면 이 파일을 템플릿 내용으로 바꾸지 않습니다.
+
 ## 해시 기준
 
 현재 `content_hash`는 설치 당시 기준선입니다.
@@ -74,4 +76,4 @@ content_hash = "sha256:..."
 
 `mf update --dry-run`은 이 파일의 `content_hash`를 설치 당시 기준선으로 사용합니다. 현재 파일 해시가 기준선과 다르면 로컬 변경으로 보고 자동 갱신을 차단합니다.
 
-자세한 결정 배경은 [manifest.lock.toml 구조 결정](/design/manifest-lock-decision/)을 봅니다.
+자세한 결정 배경은 [manifest.lock.toml 구조 결정](../../design/manifest-lock-decision/)을 봅니다.

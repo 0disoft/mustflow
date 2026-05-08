@@ -10,22 +10,22 @@ locale = "en"
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:5af7a89f4e8c1adffeaa1f84492cb988be68b5cb0e62bafc2668f208a5b0eef9"
+content_hash = "sha256:b4738b5efb331fdbc4b89c814cc7edb2a99402231c3d3cb42177bb0cf8aa661a"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:a9b3319ff6b3fa2bce964fccba586eb55b75fb576c869310ad03b1f14934fe9b"
+last_action = "updated"
+content_hash = "sha256:a80967447ebf1b1a073070a0e3cf0ad6c58d9b7749ab28b40c675c42da595f28"
 
 [files.".mustflow/context/PROJECT.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:d2ef6692a0551b18bc24996c976890e190b2f385b54404486cd0478f11da7904"
+last_action = "updated"
+content_hash = "sha256:24c3cd4d0abdc869a30b3b09b244ff92ac2bd4d6449539fda27eaa7ffd70b5ce"
 
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:3a63e00c2048b9f81145b52d29e498b1bf14bf384d5424d1bda1feba3b29d507"
+last_action = "updated"
+content_hash = "sha256:30925725302d0a7730fc136ee7fb02f1690182347df83e601d73e297db378acc"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
@@ -50,7 +50,7 @@ content_hash = "sha256:7789ab2e3374d9c8257bed3dbf2e8ad2af75f91713438706656345a68
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:f1a876f732fbdc2d560ce30bc06f33454f0674101ee3d13f4e01f6dc5efbcf4a"
+content_hash = "sha256:540d72638545ff37b9692b0f537bc5d6f0e3b9427952442f97391898963db6bc"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
@@ -59,10 +59,10 @@ content_hash = "sha256:4bc48d56de0afc3d2e885adeefcbe4b9cee3263c32db29e12c78dd1a2
 
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
-last_action = "created"
+last_action = "customized"
 content_hash = "sha256:4117a3c7af6a96a66c2c7e15a1107cb032b8ac6076c59032cbb585105035d25f"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:2b5ce94bbaf786f2c0eafdc19c56e7db73b2edbf1cd93619991e9bb5e9c9a929"
+content_hash = "sha256:6ad63a5c9cf99196229b54b9574ad843d3cd82dc864c0c00313bea1ace5fd316"

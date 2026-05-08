@@ -2,13 +2,25 @@
 mustflow_doc: skills.index
 locale: en
 canonical: true
-revision: 2
+revision: 3
 ---
 
 # Skills Index
 
 Consult only the skill document relevant to the current task. If no specific skill applies,
 refer to `AGENTS.md` and `.mustflow/config/commands.toml` to implement the most minimal safe change.
+
+## Selection Rules
+
+- At task start and before the first edit, compare the user request and expected changed files with
+  the scenarios below.
+- If one or more scenarios match, read each matching `SKILL.md` before editing that scope.
+- If a new condition appears during the task, such as a command failure, test contract change, or
+  documentation change, pause and read the newly matching skill before continuing.
+- If no scenario applies, do not invent a skill. Continue with `AGENTS.md`,
+  `.mustflow/docs/agent-workflow.md`, and `.mustflow/config/commands.toml`.
+- Skill documents guide procedure only. They do not authorize command execution outside the declared
+  command intents.
 
 | Scenario | Skill Document | Related Command Intents |
 | --- | --- | --- |

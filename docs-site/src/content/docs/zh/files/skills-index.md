@@ -11,6 +11,16 @@ description: 告诉 agent 针对任务应读取哪个 skill 文档的索引。
 
 这个文件不应复制冗长的 skill 正文。它只连接使用场景、skill 路径和相关命令意图。
 
+## 选择行为
+
+agent 在任务开始和首次编辑前使用这个索引。它们将用户请求和预期变更文件与列出的场景比较，
+然后在编辑对应范围前读取每个匹配的 `SKILL.md`。
+
+如果任务中出现新条件，例如命令失败、测试契约变化或文档变化，agent 应暂停并读取新匹配的 skill。
+
+如果没有场景适用，agent 不应臆造 skill。它们继续遵循 `AGENTS.md`、
+`.mustflow/docs/agent-workflow.md` 和 `.mustflow/config/commands.toml`。
+
 ## 作用
 
 - 列出 skill 名称和使用时机。

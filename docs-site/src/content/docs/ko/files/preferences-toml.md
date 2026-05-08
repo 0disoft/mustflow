@@ -16,6 +16,8 @@ description: 저장소별 에이전트 언어, 스타일, Git 보고, 문서화 
 - 기존 관습이 보이지 않는 신규 저장소에서 사용할 fallback 값을 선언합니다.
 - 자동 스테이징, 자동 커밋, 자동 푸시를 기본 금지로 둡니다.
 - 커밋 메시지 추천을 실제 커밋 실행 권한과 분리합니다.
+- 버전 영향 확인을 기록하되, 실제 배포나 버전 판올림 권한으로 취급하지 않습니다.
+- 낮은 위험 변경에서 전체 검증 묶음을 피할지 정합니다.
 - `mf check`가 선호값 파일의 기본 형식을 검사할 수 있게 합니다.
 - `mf help preferences`가 현재 저장소의 선호값을 요약할 때 기준 자료로 사용합니다.
 
@@ -63,6 +65,24 @@ max_suggestions = 2
 enabled = true
 when = "files_changed"
 source = "git.commit_message"
+
+[release.versioning]
+impact_check = true
+suggest_bump = true
+auto_bump = false
+require_user_confirmation = true
+sync_template_version = true
+sync_docs_examples = true
+sync_tests = true
+
+[verification.selection]
+strategy = "risk_based"
+prefer_related_tests = true
+skip_docs_only_full_test = true
+skip_low_risk_code_full_test = true
+skip_translation_only_full_test = true
+skip_copy_only_full_test = true
+report_skipped = true
 ```
 
 ## profile과 locale
@@ -118,7 +138,33 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 
 커밋 메시지 추천은 Git 실행 권한이 아니라 최종 보고의 일부입니다. 파일이 바뀌었고 `reporting.commit_suggestion.enabled = true`라면 에이전트는 권장 커밋 메시지를 제안할 수 있습니다. 실제 커밋을 만들었다고 표현하거나 사용자 요청 없이 커밋하면 안 됩니다.
 
+`git.commit_message.style`에는 `conventional`, `descriptive`, `gitmoji`를 지정할 수 있습니다. `gitmoji`는 `✨ feat: add dashboard setting`처럼 이모지를 앞에 붙이되 conventional 형식으로도 읽히는 메시지를 제안합니다.
+
+`git.commit_message.language`에는 `preserve_existing`, `agent_response`, `docs`를 쓰거나 `ja`, `de`, `pt-BR` 같은 로케일 태그를 직접 지정할 수 있습니다.
+
 여러 논리 변경이 섞였으면 하나의 커밋 메시지로 뭉개지 않고 `max_suggestions` 안에서 분할 제안을 할 수 있습니다.
+
+## 릴리스 버전 관리
+
+`[release.versioning]`은 코드, 템플릿, 스키마, 명령 동작, 패키지 메타데이터, 문서 예시, 설치 출력이 바뀌었을 때 에이전트가 버전 영향을 확인하고 보고할지 정합니다.
+
+이 값들은 선호값이지 릴리스 권한이 아닙니다. `impact_check = true`는 현재 변경이 패키지나 템플릿 버전 변경을 요구하는지 보고하라는 뜻입니다. `suggest_bump = true`는 근거가 분명할 때 패치, 마이너, 메이저 중 어느 판올림이 맞는지 제안할 수 있게 합니다.
+
+`auto_bump = false`이면 사용자가 버전 판올림이나 릴리스 준비를 명시적으로 요청하지 않는 한 패키지와 템플릿 버전 파일을 건드리지 않습니다. `require_user_confirmation = true`는 일반 코드 변경 중에 에이전트가 조용히 버전을 바꾸면 안 된다는 뜻입니다.
+
+승인된 버전 변경을 할 때는 `sync_template_version`, `sync_docs_examples`, `sync_tests`에 따라 패키지 메타데이터, 템플릿 매니페스트, 문서 예시, 테스트를 같은 변경 안에서 맞춥니다.
+
+이 선호값은 저장소가 버전을 어디에 저장하는지까지 정하지 않습니다. 에이전트는 버전을 제안하거나 수정하기 전에 언어와 프레임워크에 맞는 실제 버전 기준 원본을 찾아야 합니다.
+
+## 검증 선택
+
+`[verification.selection]`은 에이전트가 설정된 검사 중 무엇을 고를지 안내합니다. 이 값은 명령 실행 권한이 아니며, 실제 명령 실행은 여전히 `.mustflow/config/commands.toml`을 따릅니다.
+
+`strategy = "risk_based"`는 변경 위험에 맞춰 검증 범위를 고르라는 뜻입니다. `prefer_related_tests = true`이면 저장소가 관련 테스트 명령 의도를 제공할 때 직접 관련된 테스트를 우선합니다.
+
+`skip_docs_only_full_test`, `skip_translation_only_full_test`, `skip_copy_only_full_test`는 코드가 아닌 변경에 대한 설정입니다. `skip_low_risk_code_full_test`는 공개 동작, 설정, 스키마, 보안, 마이그레이션 같은 높은 위험 표면에 영향이 없는 코드 변경일 때만 적용합니다. 이 값들은 전체 검증 묶음만 생략한다는 뜻이지 모든 검증을 생략한다는 뜻이 아닙니다.
+
+`report_skipped = true`이면 최종 보고에서 어떤 넓은 검증을 왜 생략했는지 알려야 합니다.
 
 ## 검사 기준
 
@@ -128,8 +174,11 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 - `mode`, `fallback`, `rule`은 문자열이어야 합니다.
 - `[language.memory]`의 `summary`, `fallback`은 문자열이어야 하고, `preserve_code`, `preserve_paths`, `preserve_error_output`은 참/거짓 값이어야 합니다.
 - `auto_stage`, `auto_commit`, `auto_push`, `avoid_drive_by_refactors`, `include_sensitive_data`는 참/거짓 값이어야 합니다.
+- `git.commit_message.style`은 `conventional`, `descriptive`, `gitmoji` 중 하나여야 합니다.
 - `git.commit_message.max_suggestions`는 양의 정수여야 합니다.
 - `reporting.commit_suggestion.enabled`는 참/거짓 값이어야 합니다.
+- `[release.versioning]` 필드는 참/거짓 값이어야 합니다.
+- `[verification.selection]`은 허용된 전략 값과 참/거짓 생략·보고 값을 사용해야 합니다.
 - `docs.update_when`은 문자열 배열이어야 합니다.
 - `project.profile`은 기본 프로필 목록 중 하나여야 합니다.
 - `[product_i18n]`이 있으면 로케일, 번역 정책, 번역 제외 목록의 기본 형식을 검사합니다.

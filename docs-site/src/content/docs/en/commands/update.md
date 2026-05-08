@@ -29,6 +29,8 @@ The update command distinguishes between the following scenarios:
 - `Would update`: The file is eligible for an update via `mf update --apply`.
 - `Would create`: The file exists in the template but is not yet present in the current root.
 
+Files whose lock entry has `last_action = "customized"` are treated as unchanged while they still match their customized lock baseline, even when the bundled template differs.
+
 ## Example
 
 ```sh

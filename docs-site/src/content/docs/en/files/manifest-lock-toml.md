@@ -29,7 +29,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "0.1.0"
+version = "1.0.1"
 profile = "minimal"
 locale = "ko"
 
@@ -54,6 +54,8 @@ content_hash = "sha256:..."
 - `last_action`: The most recent action applied to the file (e.g., `created`, `unchanged`, `merged`, `overwritten`, or `customized`).
 - `content_hash`: The SHA-256 hash of the file content at the time of installation.
 
+`last_action = "customized"` means the recorded hash is an accepted repository-specific baseline. `mf update` preserves that file while its current hash still matches `content_hash`.
+
 ## Hash Baseline
 
 The `content_hash` serves as the authoritative baseline from the time of installation.
@@ -73,4 +75,4 @@ Refresh this file using `mf init` or a dedicated update command if the installat
 
 `mf update --dry-run` uses `content_hash` as the install-time baseline. If the current file hash differs from that baseline, the file is treated as a local change and automatic update is blocked.
 
-For the rationale, see [manifest.lock.toml Structure Decision](/design/manifest-lock-decision/).
+For the rationale, see [manifest.lock.toml Structure Decision](../../design/manifest-lock-decision/).

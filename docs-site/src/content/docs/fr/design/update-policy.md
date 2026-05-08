@@ -14,6 +14,8 @@ La ligne de base de mise à jour est le `content_hash` présent dans `.mustflow/
 
 `content_hash` est le hash de contenu de fichier enregistré en dernier par `mf init` ou `mf update --apply`. Si le hash actuel du fichier diffère de cette valeur, mustflow traite le fichier comme modifié localement.
 
+Si une entrée du verrou a `last_action = "customized"`, mustflow traite ce hash comme une ligne de base propre au dépôt. Le fichier n’est pas remplacé par le contenu du modèle tant que le hash actuel correspond encore à cette ligne de base personnalisée.
+
 Cette politique est aussi incluse dans l’objet `policy` de `mf update --json`.
 La documentation, la sortie lisible par une personne et la sortie destinée à l’automatisation doivent rester cohérentes.
 
@@ -33,7 +35,7 @@ writes_only_template_manifest_paths: true
 
 `mf update --dry-run` classe les fichiers dans les états suivants:
 
-- `unchanged`: le fichier actuel correspond à la fois à la ligne de base du verrou et au modèle groupé.
+- `unchanged`: le fichier actuel correspond à la fois à la ligne de base du verrou et au modèle groupé, ou il est marqué comme personnalisé et correspond encore à cette ligne de base personnalisée.
 - `update`: le fichier actuel correspond à la ligne de base du verrou mais diffère du modèle groupé.
 - `create`: le fichier existe dans le modèle mais manque dans le dépôt utilisateur.
 - `blocked-local-change`: le fichier actuel diffère de la ligne de base du verrou.
@@ -45,6 +47,7 @@ writes_only_template_manifest_paths: true
 
 - Ne pas modifier automatiquement les fichiers `blocked-local-change`.
 - Ne pas modifier automatiquement les fichiers `manual-review`.
+- Ne pas remplacer les fichiers personnalisés par le contenu du modèle tant qu’ils correspondent encore à leur ligne de base personnalisée.
 - Les fichiers `update` sont remplacés par le contenu du modèle après création d’une sauvegarde.
 - Les fichiers `create` sont écrits après création des répertoires parents nécessaires.
 - Si un nouveau fichier de modèle entre en conflit avec un fichier existant absent du verrou, il est traité comme un changement local et n’est pas écrasé.

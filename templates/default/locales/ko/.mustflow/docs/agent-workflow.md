@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 15
+revision: 18
 ---
 
 # Agent Workflow
@@ -87,6 +87,28 @@ revision: 15
 - `DESIGN.md`가 있으면 UI 작업에서 참고하는 선택적 외부 시각 디자인 참조로 봅니다.
   그 안의 디자인 토큰을 `.mustflow/context/`에 중복 기록하지 않습니다.
 - 문맥이 현재 파일이나 명령 계약과 충돌하면 충돌을 보고하고 더 높은 권위의 출처를 따릅니다.
+
+## 스킬 활성화
+
+스킬은 자율 실행 도구가 아니라 작업 절차 문서입니다. 스킬을 활성화한다는 말은
+현재 명령 계약 안에서 해당 `.mustflow/skills/<name>/SKILL.md`를 읽고 그 절차를
+따른다는 뜻입니다.
+
+작업 시작 시점과 첫 수정 전에는 다음 순서를 따릅니다.
+
+1. `.mustflow/skills/INDEX.md`를 읽습니다.
+2. 현재 사용자 요청과 예상 변경 파일을 색인의 시나리오와 비교합니다.
+3. 맞는 시나리오가 하나 이상 있으면 해당 `SKILL.md`를 읽은 뒤 그 범위를 수정합니다.
+4. 맞는 스킬이 없으면 새 스킬을 추측하지 않고 `AGENTS.md`와
+   `.mustflow/config/commands.toml`을 기준으로 가장 작은 안전한 변경을 수행합니다.
+
+작업 중 새 근거가 생겨 작업 유형이 바뀌면 그때 스킬을 다시 선택합니다. 예를 들어
+설정된 명령이 실패하면 실패 원인 추적 스킬을, 테스트 계약이 바뀌면 테스트 유지보수
+스킬을, 문서나 워크플로가 바뀌면 문서 수정 스킬을 읽습니다.
+
+여러 스킬이 동시에 맞으면 변경 범위별로 가장 구체적인 스킬을 따르고, 각 스킬이
+선언한 명령 의도만 합쳐서 검토합니다. 스킬은 원시 셸 명령, 장기 실행 프로세스,
+작업 범위 밖 쓰기를 허용하지 않습니다.
 
 ## 상위/하위 규칙 우선순위
 
@@ -291,6 +313,39 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
   세부 정보는 넣지 않습니다.
 - 검증 결과는 커밋 메시지보다 최종 보고의 검증 항목에 둡니다.
 
+## 버전 영향 정책
+
+버전 영향 설정은 선호값이지 릴리스 권한이 아닙니다.
+
+코드, 템플릿, 스키마, CLI 동작, 패키지 메타데이터, 사용자에게 보이는 문서, 설치 출력,
+테스트가 바뀌면 `.mustflow/config/preferences.toml`의 `[release.versioning]`을 확인합니다.
+
+- `impact_check = true`: 현재 변경이 패키지나 템플릿 버전 변경을 요구하는지 보고합니다.
+- `suggest_bump = true`: 근거가 분명할 때 패치, 마이너, 메이저 중 알맞은 판올림을 제안합니다.
+- `auto_bump = false`: 사용자가 명시적으로 요청하지 않으면 패키지나 템플릿 버전 파일을 수정하지 않습니다.
+- `require_user_confirmation = true`: 버전 파일을 바꾸려면 사용자 승인 버전 판올림이나
+  릴리스 준비 요청이 필요합니다.
+
+버전 변경을 제안하거나 적용하기 전에는 이 저장소의 버전 기준 원본을 먼저 찾습니다.
+`package.json`만 버전 파일이라고 가정하지 않습니다. 저장소 언어와 프레임워크에 맞는
+매니페스트, 릴리스 문서, 기존 판올림 패턴을 확인한 뒤, 어떤 파일이 기준 원본이고 어떤
+파일이 파생 파일인지 보고합니다.
+
+자주 쓰이는 버전 원천 후보는 다음과 같습니다.
+
+- JavaScript 또는 TypeScript: `package.json`, 그리고 패키지 메타데이터를 중복 기록하는 lockfile.
+- Python: `pyproject.toml`, `setup.cfg`, `setup.py`, 패키지의 `__version__` 파일.
+- Rust: `Cargo.toml`. `Cargo.lock`은 저장소가 lockfile 변경을 릴리스 메타데이터로 다룰 때만 함께 봅니다.
+- Go: 릴리스 태그와 릴리스 문서를 먼저 확인합니다. `go.mod`는 모듈 경로나 도구 메타데이터가 관련될 때만 봅니다.
+- Java 또는 Kotlin: `pom.xml`, `build.gradle`, `build.gradle.kts`, `gradle.properties`.
+- .NET: `*.csproj`, `Directory.Build.props`, `*.nuspec`.
+- Ruby, PHP, Dart, Swift: `*.gemspec`, `lib/**/version.rb`, `composer.json`, `pubspec.yaml`, `Package.swift`.
+- 컨테이너, 차트, 애플리케이션: `Chart.yaml`, 이미지 라벨, 앱 매니페스트, 릴리스 노트, 배포 메타데이터.
+- mustflow 템플릿: 패키지 메타데이터, 템플릿 매니페스트, 문서 예시, 설치 버전을 검증하는 테스트.
+
+승인된 버전 변경을 할 때는 `sync_*` 선호값에 따라 패키지 메타데이터, 템플릿 매니페스트
+버전, 문서 예시, 테스트를 같은 변경 안에서 맞춥니다.
+
 ## 명령 실행 정책
 
 `.mustflow/config/commands.toml`은 실행 명령의 기준 원본입니다.
@@ -399,6 +454,24 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
 의도 이름, 상태, 이유를 보고합니다.
 명령 의도가 `configured`라도 `lifecycle = "oneshot"`이 아니면 검증 명령으로 실행하지
 않고, 장기 실행 명령이라서 건너뛰었다고 보고합니다.
+
+## 검증 선택 정책
+
+검증 범위는 `.mustflow/config/preferences.toml`의 `[verification.selection]`을 참고합니다.
+이 값은 명령 실행 권한이 아니라, 어떤 configured 명령 의도를 검토할지 정하는 기본값입니다.
+
+- `strategy = "risk_based"`: 바뀐 동작, 공개 표면, 명령 계약, 위험 영역을 덮는 가장 작은 검증을 우선합니다.
+- `strategy = "targeted"`: 사용자 지시, 스킬, 정책이 더 넓은 검증을 요구하지 않으면 직접 관련된 검증을 우선합니다.
+- `strategy = "full"`: 적용 가능한 configured 검증 묶음을 폭넓게 우선합니다.
+- `prefer_related_tests = true`: 넓은 테스트보다 더 좁고 관련 있는 테스트 의도를 먼저 찾습니다.
+- `skip_docs_only_full_test = true`: 문서만 바뀐 경우 문서 검증이 해당 표면을 덮으면 넓은 테스트를 생략할 수 있습니다.
+- `skip_translation_only_full_test = true`: 원본 동작이 바뀌지 않은 번역 전용 변경은 넓은 테스트를 생략할 수 있습니다.
+- `skip_copy_only_full_test = true`: 동작, 스키마, 템플릿, 명령 계약이 바뀌지 않은 문구 변경은 넓은 테스트를 생략할 수 있습니다.
+- `report_skipped = true`: 최종 보고에 생략한 검증과 이유를 남깁니다.
+
+동작, 보안, 데이터, 명령 계약, 릴리스 산출물, 생성 템플릿이 바뀐 근거가 있으면
+생략 설정으로 위험을 숨기지 않습니다. 관련 configured 의도로 올리거나, 필요한 의도가
+없다고 보고합니다.
 
 `mf check --strict`는 기본 구조 검사에 더해 스킬 문서의 원시 셸 명령 블록,
 `REPO_MAP.md`의 생성 시각, 원격 저장소 주소, 브랜치 같은 변동성 높은 메타데이터,

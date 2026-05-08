@@ -16,6 +16,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Document Role`: Defines the scope and responsibility of this document.
 - `Authoritative Documents and Reading Flow`: Specifies the mandatory reading sequence for agents.
 - `Project Context`: Clarifies the conditions for accessing task-specific context files.
+- `Skill Activation`: Defines when agents should select and read task-specific skill procedures.
 - `Pre-work Checks`: Instructs agents to verify modifications, protected paths, command intents, and relevant skills before initiating work.
 - `Input Stability Policy`: Ensures that volatile data is separated from required reading files.
 - `Instruction Refresh Policy`: Determines the checkpoints at which agents should reread instructions during extended sessions.
@@ -26,6 +27,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Test relevance policy`: Keeps tests aligned with the current behavior contract.
 - `Preference interpretation policy`: Explains how to apply language, formatting, commit, and logging defaults from `preferences.toml`.
 - `Git behavior policy`: Disables automatic staging, committing, and pushing, and treats commit message suggestions as report content.
+- `Version impact policy`: Checks whether a change should suggest a version bump while keeping automatic version edits disabled by default.
 - `Command execution policy`: Restricts execution to oneshot command intents defined in `commands.toml`.
 - `Edit policy`: Keeps changes limited to directly related files.
 - `Verification policy`: Explains which command intents to check after changes.
@@ -59,6 +61,19 @@ If a command bypasses `mf run`, treat its output as lower-confidence context unl
 `mf doctor` or `mf doctor --json` is a read-only diagnostic command that aggregates installation state, check results, runnable command intents, and suggested next steps. Since it does not modify files, agents should use it for initial orientation.
 
 After modifying mustflow documents, skills, command contracts, or repository-map generation rules, execute `mf check --strict`. This adds checks for raw shell command blocks in skill documents, volatile metadata in `REPO_MAP.md`, command output limits, retention policy, generated file sizes, raw JSONL log traces, and the latest run record format.
+
+## Skill Activation
+
+Skills are task procedures, not autonomous tools. Activating a skill means reading the matching
+`.mustflow/skills/<name>/SKILL.md` and following that procedure within the current command contract.
+
+At task start and before the first edit, agents compare the user request and expected changed files
+with `.mustflow/skills/INDEX.md`. If one or more scenarios match, the matching `SKILL.md` files are
+read before editing that scope. If new evidence appears later, such as a command failure, test
+contract change, or documentation change, agents pause and activate the newly relevant skill.
+
+Skills never authorize raw shell commands, long-running processes, or writes outside the task scope.
+They also do not override user, host, repository, or safety rules.
 
 ## Input Stability
 
@@ -161,3 +176,15 @@ These values are repository preferences, not permissions. They do not override d
 Absent an explicit user request, agents must not perform Git operations that modify the state or history (e.g., stage, commit, rebase, push).
 
 Commit message suggestions are intended for the final report and do not imply execution privileges. If enabled, agents may suggest a commit message but must not indicate that a commit has been executed.
+
+## Version Impact Policy
+
+`[release.versioning]` in `.mustflow/config/preferences.toml` controls version-impact reporting preferences.
+
+When code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation output, or tests change, agents should check whether the change appears to require a package or template version update.
+
+By default, mustflow may suggest a patch, minor, or major bump when the evidence is clear, but it must not edit version files unless the user explicitly asks for a version bump or release preparation.
+
+Before suggesting or applying a version change, agents must find the repository's actual version source instead of assuming `package.json`. Common candidates include `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` plus release tags, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, app manifests, release notes, and mustflow template manifests.
+
+When a version change is approved, package metadata, template manifest versions, docs examples, and tests should stay synchronized according to the `sync_*` preferences.

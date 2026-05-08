@@ -13,6 +13,8 @@ La línea base de actualización es el `content_hash` que se encuentra en `.must
 
 `content_hash` es el hash de contenido del archivo registrado por última vez mediante `mf init` o `mf update --apply`. Si el hash del archivo actual difiere de este valor, mustflow trata el archivo como editado localmente.
 
+Si una entrada del lock tiene `last_action = "customized"`, mustflow trata ese hash como una línea base específica del repositorio. El archivo no se reemplaza con contenido de la plantilla mientras el hash actual siga coincidiendo con esa línea base personalizada.
+
 Esta política también se incluye en el objeto `policy` de `mf update --json`.
 La documentación, la salida legible para personas y la salida de automatización deben permanecer coherentes.
 
@@ -32,7 +34,7 @@ writes_only_template_manifest_paths: true
 
 `mf update --dry-run` clasifica los archivos en estos estados:
 
-- `unchanged`: el archivo actual coincide tanto con la línea base del lock como con la plantilla incluida.
+- `unchanged`: el archivo actual coincide tanto con la línea base del lock como con la plantilla incluida, o está marcado como personalizado y todavía coincide con esa línea base personalizada.
 - `update`: el archivo actual coincide con la línea base del lock, pero difiere de la plantilla incluida.
 - `create`: el archivo existe en la plantilla, pero falta en el repositorio del usuario.
 - `blocked-local-change`: el archivo actual difiere de la línea base del lock.
@@ -44,6 +46,7 @@ writes_only_template_manifest_paths: true
 
 - No modificar automáticamente archivos `blocked-local-change`.
 - No modificar automáticamente archivos `manual-review`.
+- No reemplazar archivos personalizados con contenido de plantilla mientras sigan coincidiendo con su línea base personalizada.
 - Los archivos `update` se reemplazan con contenido de plantilla después de crear una copia de seguridad.
 - Los archivos `create` se escriben después de crear los directorios padre necesarios.
 - Si un archivo de plantilla nuevo entra en conflicto con un archivo existente que no está en el lock, se trata como cambio local y no se sobrescribe.

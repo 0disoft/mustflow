@@ -16,6 +16,8 @@ This file does not represent the highest authority. Direct user instructions, hi
 - Provides fallback values for new repositories where established conventions are not yet visible.
 - Ensures that automatic staging, committing, and pushing remain disabled by default.
 - Distinguishes commit message suggestions from the authority to execute actual commits.
+- Tracks version-impact checks without granting release or version-bump authority.
+- Controls whether low-risk changes should avoid the full verification suite.
 - Enables `mf check` to validate preference configurations.
 - Serves as the source for `mf help preferences` summaries.
 
@@ -63,6 +65,24 @@ max_suggestions = 2
 enabled = true
 when = "files_changed"
 source = "git.commit_message"
+
+[release.versioning]
+impact_check = true
+suggest_bump = true
+auto_bump = false
+require_user_confirmation = true
+sync_template_version = true
+sync_docs_examples = true
+sync_tests = true
+
+[verification.selection]
+strategy = "risk_based"
+prefer_related_tests = true
+skip_docs_only_full_test = true
+skip_low_risk_code_full_test = true
+skip_translation_only_full_test = true
+skip_copy_only_full_test = true
+report_skipped = true
 ```
 
 ## Profile and Locale
@@ -118,7 +138,33 @@ These values are repository preferences, not permissions. They do not override d
 
 Commit message suggestions are intended for the final report and do not constitute permission to execute Git operations. If files are modified and `reporting.commit_suggestion.enabled` is `true`, the agent may suggest a commit message. It must not imply that a commit has been created, nor should it perform a commit without an explicit user request.
 
+`git.commit_message.style` accepts `conventional`, `descriptive`, or `gitmoji`. The `gitmoji` style adds an emoji prefix while keeping the message readable as a conventional-style suggestion, such as `✨ feat: add dashboard setting`.
+
+`git.commit_message.language` accepts `preserve_existing`, `agent_response`, `docs`, or a locale tag such as `ja`, `de`, or `pt-BR`.
+
 When multiple logical changes are bundled, the agent may suggest split commits—up to the value of `max_suggestions`—rather than forcing all changes into a single message.
+
+## Release Versioning
+
+`[release.versioning]` controls whether agents should check and report version impact when code, templates, schemas, command behavior, package metadata, documentation examples, or installation output changes.
+
+These values are preferences, not release permissions. `impact_check = true` asks the agent to report whether the diff appears to need a package or template version change. `suggest_bump = true` allows a patch, minor, or major suggestion when the evidence is clear.
+
+`auto_bump = false` keeps package and template version files untouched unless the user explicitly requests a version bump or release-preparation task. `require_user_confirmation = true` means agents must not silently edit versions as part of ordinary code changes.
+
+When a version is changed with approval, `sync_template_version`, `sync_docs_examples`, and `sync_tests` tell the agent to keep package metadata, template manifests, documentation examples, and tests aligned in the same change.
+
+These preferences do not say where a repository stores its version. Agents still have to discover the language- or framework-specific version source before proposing or editing a version.
+
+## Verification Selection
+
+`[verification.selection]` guides how agents choose configured checks. It does not grant permission to run commands; command execution still depends on `.mustflow/config/commands.toml`.
+
+`strategy = "risk_based"` asks the agent to match verification scope to the risk of the change. `prefer_related_tests = true` means directly related tests should be preferred when the repository provides a related-test command intent.
+
+`skip_docs_only_full_test`, `skip_translation_only_full_test`, and `skip_copy_only_full_test` cover non-code changes. `skip_low_risk_code_full_test` covers code changes only when they do not affect public behavior, configuration, schemas, security, migrations, or other high-risk surfaces. These settings skip the full suite only; they do not mean all verification should be skipped.
+
+When `report_skipped = true`, the final report should say which broader checks were skipped and why.
 
 ## Validation Rules
 
@@ -128,8 +174,11 @@ If this file is present, `mf check` verifies the following:
 - `mode`, `fallback`, and `rule` values are strings.
 - `[language.memory]` `summary` and `fallback` are strings, while `preserve_code`, `preserve_paths`, and `preserve_error_output` are booleans.
 - `auto_stage`, `auto_commit`, `auto_push`, `avoid_drive_by_refactors`, and `include_sensitive_data` are booleans.
+- `git.commit_message.style` is one of `conventional`, `descriptive`, or `gitmoji`.
 - `git.commit_message.max_suggestions` is a positive integer.
 - `reporting.commit_suggestion.enabled` is a boolean.
+- `[release.versioning]` fields are booleans.
+- `[verification.selection]` uses an allowed strategy and boolean skip/report flags.
 - `docs.update_when` is a string array.
 - `project.profile` is one of the built-in profile values.
 - When the `[product_i18n]` section is present, the locale fields, translation policy, and exclusion lists must use valid structures.

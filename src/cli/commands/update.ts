@@ -11,6 +11,7 @@ import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '.
 import { readTomlFile, stringifyToml } from '../lib/toml.js';
 
 const UPDATE_SCHEMA_VERSION = '1';
+const CUSTOMIZED_LOCK_ACTION = 'customized';
 
 type UpdateAction = 'unchanged' | 'create' | 'update' | 'blocked-local-change' | 'manual-review';
 type UpdateMode = 'dry-run' | 'apply' | 'unspecified';
@@ -129,6 +130,16 @@ function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanI
 		ensureInside(projectRoot, targetPath);
 
 		if (!existsSync(targetPath)) {
+			if (lockedFile) {
+				items.push({
+					relativePath: source.relativePath,
+					sourceKind: source.sourceKind,
+					action: 'blocked-local-change',
+					reason: 'target file is missing but tracked by the manifest lock',
+				});
+				continue;
+			}
+
 			items.push({
 				relativePath: source.relativePath,
 				sourceKind: source.sourceKind,
@@ -157,6 +168,16 @@ function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanI
 				sourceKind: source.sourceKind,
 				action: 'blocked-local-change',
 				reason: 'current file differs from the manifest lock baseline',
+			});
+			continue;
+		}
+
+		if (lockedFile?.lastAction === CUSTOMIZED_LOCK_ACTION && currentHash !== templateHash) {
+			items.push({
+				relativePath: source.relativePath,
+				sourceKind: source.sourceKind,
+				action: 'unchanged',
+				reason: 'manifest lock marks this file as customized and current file matches that baseline',
 			});
 			continue;
 		}

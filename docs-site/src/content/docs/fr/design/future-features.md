@@ -11,7 +11,6 @@ Tant qu’elles ne sont pas implémentées, ces fonctionnalités ne font pas par
 
 | Élément | État | Décision actuelle |
 | --- | --- | --- |
-| `mf dashboard` | À l’étude | Nom de commande réservé; implémentation en attente. |
 | Dépôt communautaire de skills | À l’étude | Les règles d’installation et de mise à jour des skills externes ne sont pas encore définies. |
 | Installation de packs de skills | À l’étude | En attente de stabilisation de la frontière entre skills par défaut et skills optionnels. |
 | `.mustflow/work-items/` | À l’étude | Exclu du modèle par défaut; reste optionnel. |

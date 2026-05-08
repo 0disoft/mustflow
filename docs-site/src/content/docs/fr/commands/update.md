@@ -30,6 +30,8 @@ La commande de mise à jour doit donc distinguer:
 - `Would update`: le fichier peut être mis à jour par `mf update --apply`.
 - `Would create`: le fichier existe dans le modèle mais manque dans la racine actuelle.
 
+Les fichiers dont le verrou indique `last_action = "customized"` sont traités comme inchangés tant qu’ils correspondent encore à leur ligne de base personnalisée, même si le modèle groupé diffère.
+
 ## Exemple
 
 ```sh

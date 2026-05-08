@@ -31,6 +31,10 @@ flowchart TD
 govern how task-specific context is loaded. The `[refresh]` policy determines when agents reread the
 same instructions.
 
+The skills index is an active routing step: agents compare the task with `.mustflow/skills/INDEX.md`
+and read matching `SKILL.md` files before editing that scope. Skills guide procedure only; command
+execution still comes from `.mustflow/config/commands.toml`.
+
 - Documentation site: <https://mustflow.github.io>
 - Repository: <https://github.com/0disoft/mustflow>
 - Issues: <https://github.com/0disoft/mustflow/issues>
@@ -64,13 +68,15 @@ mustflow is not an automatic project editor and is not tied to one agent product
 - It does not add platform-specific files for GitHub, GitLab, or similar tools
   to the default template.
 - It does not create a `justfile`, `Makefile`, or `Taskfile.yml` by default.
-- The dashboard is not implemented yet. `mf dashboard` is a reserved command.
+- `mf dashboard` starts a local browser UI for reviewing and editing safe
+  preferences in `.mustflow/config/preferences.toml`, then opens it in the
+  default browser. The page can switch between English, Korean, Chinese,
+  Spanish, French, and Hindi.
 
 ## Candidate features
 
 These are parked ideas, not yet officially supported.
 
-- `mf dashboard`
 - Community skill registry and skill pack installs
 - Optional `.mustflow/work-items/`
 - `mf orient`, `mf refresh`
@@ -179,6 +185,8 @@ npx mf search mustflow_check
 ```
 
 Preview template updates before applying them.
+Files marked as customized in `.mustflow/config/manifest.lock.toml` are kept as
+repository-specific baselines while their current content still matches the lock.
 
 ```sh
 npx mf status
@@ -207,7 +215,7 @@ npx mf update --apply
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
 | `mf help <topic>` | Show installed mustflow help. |
-| `mf dashboard` | Reserved. Not implemented yet. |
+| `mf dashboard` | Start a local dashboard for safe mustflow preferences and open it in the default browser. |
 
 Automation and agents should use `--json` output instead of parsing human-facing
 text. Published JSON Schemas for stable outputs live in `schemas/`.
@@ -250,8 +258,19 @@ npx mf init --set git.auto_commit=true
 - `--interactive`: Choose init settings from prompts.
 - `--yes`: Use the default English init settings without prompts.
 - `--set`: Set an allowed preference during installation. Supported keys are
-  `git.auto_stage`, `git.auto_commit`, `git.commit_message.language`,
-  `reporting.commit_suggestion.enabled`, and `language.memory.summary`.
+  `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`,
+  `git.commit_message.style`, `git.commit_message.language`,
+  `git.commit_message.max_suggestions`, `git.commit_message.include_body`,
+  `git.commit_message.split_when_multiple_concerns`,
+  `reporting.commit_suggestion.enabled`, `language.memory.summary`, and
+  boolean `release.versioning.*` fields such as
+  `release.versioning.suggest_bump=false`. Versioning preferences do not assume
+  a fixed version file; agents must locate the repository-specific version
+  source before suggesting or editing versions.
+  `git.commit_message.style` accepts `conventional`, `descriptive`, or
+  `gitmoji`; `gitmoji` only changes the suggested message format.
+  `git.commit_message.language` accepts `preserve_existing`, `agent_response`,
+  `docs`, or a locale tag such as `ja`, `de`, or `pt-BR`.
 - `--product-source-locale`, `--product-locale`: Source and target locales for
   user-facing product strings.
 - `--lang`: CLI output language. Current values are `en`, `ko`, `zh`, `es`,

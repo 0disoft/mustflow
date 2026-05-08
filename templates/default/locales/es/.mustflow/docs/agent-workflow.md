@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: es
 canonical: false
-revision: 7
+revision: 9
 ---
 
 # Flujo De Trabajo Del Agente
@@ -27,6 +27,28 @@ No es un archivo general de documentacion.
 - No infieras objetivos faltantes del proyecto, no-objetivos, promesas de API, reglas de datos ni tokens de diseno.
 - Si existe `DESIGN.md`, tratalo como un ancla visual externa opcional para trabajo de interfaz. No dupliques sus tokens de diseno en `.mustflow/context/`.
 - Si el contexto entra en conflicto con archivos o comandos actuales, reporta el conflicto y prioriza la fuente de mayor autoridad.
+
+## Activacion De Skills
+
+Las skills son procedimientos de tarea, no herramientas autonomas. Activar una skill significa leer
+el `.mustflow/skills/<name>/SKILL.md` correspondiente y seguir su procedimiento dentro del contrato
+de comandos actual.
+
+Al iniciar una tarea y antes de la primera edicion:
+
+1. Lee `.mustflow/skills/INDEX.md`.
+2. Compara la tarea actual con los escenarios listados.
+3. Lee cada `SKILL.md` correspondiente antes de editar esa parte del trabajo.
+4. Si no aplica ninguna skill, realiza el cambio seguro mas pequeno bajo `AGENTS.md` y
+   `.mustflow/config/commands.toml`.
+
+Activa una skill mas tarde si nueva evidencia cambia el tipo de tarea. Por ejemplo, un comando
+configurado que falla activa failure triage, un cambio de contrato de pruebas activa test maintenance,
+y un cambio de documentacion o workflow activa docs update.
+
+Cuando varias skills aplican, sigue la skill mas especifica para cada alcance afectado y combina
+solo sus command intents declarados. Las skills nunca autorizan comandos de shell crudos,
+procesos de larga duracion ni escrituras fuera del alcance de la tarea.
 
 ## Estabilidad De Entradas
 
@@ -124,6 +146,39 @@ Las operaciones de Git que modifican estado o historial estan denegadas por defe
 
 Estos valores son preferencias del repositorio, no permisos. No anulan instrucciones directas del usuario, `.mustflow/config/commands.toml` ni la politica de aprobacion en `.mustflow/config/mustflow.toml`. En particular, `git.auto_commit = true` no concede permiso para push, y `git.auto_push = true` no puede habilitarse mediante `mf init`.
 
+## Politica De Impacto De Version
+
+La configuracion de impacto de version es una preferencia, no un permiso de release.
+
+Usa `[release.versioning]` en `.mustflow/config/preferences.toml` cuando cambien codigo,
+plantillas, esquemas, comportamiento de CLI, metadatos de paquete, documentacion visible
+para usuarios, salida de instalacion o pruebas.
+
+- `impact_check = true`: informa si el diff parece requerir un cambio de version de paquete o plantilla.
+- `suggest_bump = true`: sugiere patch, minor o major cuando la evidencia sea clara.
+- `auto_bump = false`: no edites archivos de version de paquete o plantilla sin solicitud explicita del usuario.
+- `require_user_confirmation = true`: exige una solicitud aprobada por el usuario para cambiar versiones o preparar release.
+
+Antes de sugerir o aplicar un cambio de version, localiza la fuente de version propia del repositorio.
+No supongas que `package.json` es el unico archivo de version. Revisa los manifests, documentos de
+release y patrones existentes que correspondan a los lenguajes y frameworks del repositorio, y reporta
+que archivos son fuente autoritativa y cuales son derivados.
+
+Candidatos comunes de fuente de version:
+
+- JavaScript o TypeScript: `package.json` y lockfiles cuando duplican metadatos del paquete.
+- Python: `pyproject.toml`, `setup.cfg`, `setup.py` o archivos `__version__` del paquete.
+- Rust: `Cargo.toml`; considera `Cargo.lock` solo si el repositorio trata el lockfile como metadato de release.
+- Go: primero tags y documentacion de release; `go.mod` solo si la ruta del modulo o metadatos de herramientas son relevantes.
+- Java o Kotlin: `pom.xml`, `build.gradle`, `build.gradle.kts` o `gradle.properties`.
+- .NET: `*.csproj`, `Directory.Build.props` o `*.nuspec`.
+- Ruby, PHP, Dart o Swift: `*.gemspec`, `lib/**/version.rb`, `composer.json`, `pubspec.yaml` o `Package.swift`.
+- Contenedores, charts o apps: `Chart.yaml`, labels de imagen, manifests de app, notas de release o metadatos de despliegue.
+- Plantillas mustflow: metadatos de paquete, manifests de plantilla, ejemplos de documentacion y pruebas que validan versiones instaladas.
+
+Cuando un cambio de version se aprueba, manten sincronizados metadatos de paquete, versiones de manifests
+de plantilla, ejemplos de documentacion y pruebas segun las preferencias `sync_*`.
+
 ## Politica De Ejecucion De Comandos
 
 No infieras comandos a partir de `package.json`, `Makefile`, `justfile`, `Taskfile.yml` ni archivos fuente.
@@ -175,6 +230,23 @@ Usa command intents configurados para comprobaciones. Nombres tipicos de intent:
 
 Si falta un intent esperado, esta deshabilitado, es solo manual o no esta configurado, no inventes un reemplazo.
 Reporta que se omitio y por que.
+
+## Seleccion De Verificacion
+
+Usa `[verification.selection]` en `.mustflow/config/preferences.toml` para elegir el alcance de verificacion.
+Estas preferencias no conceden permiso para ejecutar comandos. Solo orientan que command intents configurados considerar.
+
+- `strategy = "risk_based"`: prefiere las comprobaciones configuradas mas pequenas que cubran el comportamiento cambiado, la superficie publica, el contrato de comandos y el area de riesgo.
+- `strategy = "targeted"`: prefiere comprobaciones directamente relacionadas salvo que el usuario, una skill o una politica exija cobertura mas amplia.
+- `strategy = "full"`: prefiere toda la suite de verificacion configurada que aplique.
+- `prefer_related_tests = true`: busca un intent de prueba mas estrecho y relevante antes de uno amplio.
+- `skip_docs_only_full_test = true`: los cambios solo de documentacion pueden omitir pruebas amplias cuando la validacion de docs cubre la superficie editada.
+- `skip_translation_only_full_test = true`: los cambios solo de traduccion pueden omitir pruebas amplias cuando el comportamiento fuente no cambio.
+- `skip_copy_only_full_test = true`: los cambios solo de texto pueden omitir pruebas amplias cuando no cambiaron comportamiento, schema, plantilla ni contrato de comandos.
+- `report_skipped = true`: el informe final debe nombrar las comprobaciones omitidas y la razon.
+
+Si hay evidencia de cambios en comportamiento, seguridad, datos, contratos de comandos, salida de release o plantillas generadas,
+no uses una preferencia de omision para ocultar riesgo. Eleva a un intent configurado relevante o reporta que falta el intent necesario.
 
 ## Control Estricto De Verificacion
 

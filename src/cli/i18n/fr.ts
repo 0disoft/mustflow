@@ -1,3 +1,401 @@
-import { enMessages } from './en.js';
+import type { MessageKey } from "./en.js";
 
-export const frMessages = enMessages;
+export const frMessages = {
+  "cli.error.withUsage": "Erreur : {message}\nExécutez `{helpCommand}` pour voir l'utilisation.",
+  "cli.error.prefix": "Erreur : {message}",
+  "cli.error.unknownCommand": "Commande inconnue : {command}",
+  "cli.error.unsupportedLanguage": "Langue de CLI non prise en charge : {language}",
+  "cli.error.missingLangValue": "Valeur manquante pour --lang",
+  "cli.option.help": "Affiche ce message d'aide",
+  "cli.option.json": "Imprime du JSON lisible par machine",
+  "cli.heading.usage": "Utilisation",
+  "cli.heading.commands": "Commandes",
+  "cli.heading.topics": "Sujets",
+  "cli.heading.options": "Options",
+  "cli.heading.examples": "Exemples",
+  "cli.heading.exitCodes": "Codes de sortie",
+  "cli.common.invalidInput": "Entrée non valide fournie",
+  "cli.error.unknownOption": "Option inconnue : {option}",
+  "cli.error.unexpectedArgument": "Argument inattendu : {argument}",
+  "cli.error.unexpectedValue": "Valeur inattendue pour {option}",
+  "cli.error.missingValue": "Valeur manquante pour {option}",
+
+  "command.init.summary": "Copie le flux de travail d'agent mustflow par défaut",
+  "command.check.summary": "Valide les fichiers mustflow",
+  "command.status.summary": "Affiche l'état de l'installation locale de mustflow",
+  "command.update.summary": "Prévisualise ou applique les mises à jour du flux de travail mustflow",
+  "command.map.summary": "Génère REPO_MAP.md",
+  "command.run.summary": "Exécute une commande configurée à exécution unique",
+  "command.context.summary": "Imprime le contexte d'agent lisible par machine",
+  "command.doctor.summary": "Inspecte l'état de mustflow et les prochaines étapes",
+  "command.index.summary": "Construit l'index SQLite local de mustflow",
+  "command.search.summary": "Recherche dans l'index SQLite local de mustflow",
+  "command.dashboard.summary":
+    "Démarre le tableau de bord mustflow local",
+  "command.help.summary": "Affiche l'aide du flux de travail installé",
+
+  "top.help.option.lang":
+    "Sélectionne la langue de sortie de la CLI. Valeurs prises en charge : {languages}",
+  "top.help.option.version": "Affiche la version du paquet",
+  "top.help.exit.ok": "Commande terminée avec succès",
+  "top.help.exit.fail":
+    "La commande a échoué à cause de problèmes de validation ou d'une entrée non valide",
+
+  "check.help.summary":
+    "Valide les fichiers mustflow du dépôt actuel.",
+  "check.help.option.strict": "Exécute des vérifications strictes supplémentaires pour la sécurité des agents",
+  "check.help.exit.ok": "Tous les fichiers et paramètres mustflow requis sont valides",
+  "check.help.exit.fail":
+    "La validation a échoué ou la commande a reçu une entrée non valide",
+  "check.result.passed": "vérification mustflow réussie",
+  "check.result.strictPassed": "vérification stricte mustflow réussie",
+
+  "context.help.summary":
+    "Imprime le contexte d'agent pour la racine mustflow actuelle.",
+  "context.help.option.json": "Imprime le JSON de contexte lisible par machine",
+  "context.help.exit.ok": "Le contexte a été inspecté et imprimé",
+  "context.title": "contexte mustflow",
+  "label.installed": "Installé",
+  "label.mustflowRoot": "racine mustflow",
+  "label.commandContract": "Spécification des commandes",
+  "label.runnableIntents": "Commandes exécutables",
+  "label.latestRun": "Dernière exécution",
+  "label.manifestLock": "Verrou de manifeste",
+  "label.trackedFiles": "Fichiers suivis",
+  "label.changedFiles": "Fichiers modifiés",
+  "label.missingFiles": "Fichiers manquants",
+  "label.database": "Base de données",
+  "label.documents": "Documents",
+  "label.skills": "Compétences",
+  "label.commandIntents": "Définitions de commandes",
+  "label.wroteFiles": "Fichiers écrits",
+  "label.query": "Requête",
+  "label.results": "Résultats",
+
+  "dashboard.help.summary":
+    "Démarre un tableau de bord local pour consulter et modifier les préférences mustflow sûres.",
+  "dashboard.help.option.host": "Lie le tableau de bord à un hôte local. Par défaut : 127.0.0.1",
+  "dashboard.help.option.port": "Lie le tableau de bord à un port. Par défaut : 0 choisit un port disponible",
+  "dashboard.help.option.noOpen": "N'ouvre pas automatiquement le tableau de bord dans un navigateur",
+  "dashboard.help.exit.ok": "Le tableau de bord a démarré ou l'aide a été imprimée",
+  "dashboard.help.exit.fail": "Le tableau de bord n'a pas pu démarrer ou l'entrée était non valide",
+  "dashboard.error.invalidPort": "Port de tableau de bord non valide : {port}",
+  "dashboard.error.nonLocalHost":
+    "Hôte de tableau de bord {host} refusé. Utilisez localhost, 127.0.0.1 ou ::1.",
+  "dashboard.listening": "mf dashboard écoute sur {url}",
+  "dashboard.ui.title": "Tableau de bord mustflow",
+  "dashboard.ui.language": "Langue",
+  "dashboard.ui.noChanges": "Aucun changement",
+  "dashboard.ui.unsavedChanges": "Changements non enregistrés",
+  "dashboard.ui.reloaded": "Rechargé",
+  "dashboard.ui.saved": "Enregistré",
+  "dashboard.ui.reload": "Recharger",
+  "dashboard.ui.save": "Enregistrer",
+  "dashboard.ui.locked": "Verrouillé",
+  "dashboard.ui.customLocale": "Balise de langue personnalisée",
+  "dashboard.ui.openMustflow": "Ouvrir le dossier .mustflow",
+  "dashboard.ui.openedMustflow": "Dossier .mustflow ouvert",
+  "dashboard.locked.git.auto_push": "Les push distants exigent une demande explicite.",
+  "dashboard.group.git": "Git",
+  "dashboard.group.commitMessage": "Message de commit",
+  "dashboard.group.reporting": "Rapports",
+  "dashboard.group.verification": "Vérification",
+  "dashboard.group.codeStyle": "Style de code",
+  "dashboard.group.versioning": "Version",
+  "dashboard.setting.git.auto_stage": "Stage Git automatique",
+  "dashboard.setting.git.auto_commit": "Commit Git automatique",
+  "dashboard.setting.git.auto_push": "Push Git automatique",
+  "dashboard.setting.git.commit_message.style": "Style du message de commit",
+  "dashboard.setting.git.commit_message.style.description.conventional":
+    "Utilise des préfixes de type comme feat: ou fix:.",
+  "dashboard.setting.git.commit_message.style.description.descriptive":
+    "Utilise un court résumé en langage naturel sans préfixe obligatoire.",
+  "dashboard.setting.git.commit_message.style.description.gitmoji":
+    "Ajoute un emoji Gitmoji au début tout en conservant un préfixe de type comme feat: ou fix:.",
+  "dashboard.setting.git.commit_message.language": "Langue du message de commit",
+  "dashboard.setting.git.commit_message.language.description.preserve_existing":
+    "Respecte la langue déjà utilisée dans les messages de commit du dépôt.",
+  "dashboard.setting.git.commit_message.language.description.agent_response":
+    "Utilise la même langue que la réponse de l'agent.",
+  "dashboard.setting.git.commit_message.language.description.docs":
+    "Utilise la même langue que la documentation du projet.",
+  "dashboard.setting.git.commit_message.language.description.en": "Suggère des messages de commit en anglais.",
+  "dashboard.setting.git.commit_message.language.description.ko": "Suggère des messages de commit en coréen.",
+  "dashboard.setting.git.commit_message.language.description.zh": "Suggère des messages de commit en chinois.",
+  "dashboard.setting.git.commit_message.language.description.es": "Suggère des messages de commit en espagnol.",
+  "dashboard.setting.git.commit_message.language.description.fr": "Suggère des messages de commit en français.",
+  "dashboard.setting.git.commit_message.language.description.hi": "Suggère des messages de commit en hindi.",
+  "dashboard.setting.git.commit_message.language.description":
+    "Utilise l'étiquette de langue personnalisée choisie pour suggérer les messages de commit.",
+  "dashboard.setting.git.commit_message.max_suggestions": "Nombre de suggestions de message de commit",
+  "dashboard.setting.git.commit_message.include_body": "Corps du commit",
+  "dashboard.setting.git.commit_message.include_body.description.never":
+    "N'ajoute jamais de corps au message de commit ; suggère seulement le sujet.",
+  "dashboard.setting.git.commit_message.include_body.description.when_non_trivial":
+    "Ajoute un corps seulement quand le changement demande plus de contexte que le sujet.",
+  "dashboard.setting.git.commit_message.include_body.description.always":
+    "Ajoute toujours un corps aux suggestions de message de commit.",
+  "dashboard.setting.git.commit_message.split_when_multiple_concerns": "Suggérer des commits séparés",
+  "dashboard.setting.git.commit_message.avoid_sensitive_details": "Éviter les détails sensibles",
+  "dashboard.setting.git.commit_message.avoid_sensitive_details.description":
+    "Évite les secrets, identifiants, données personnelles et détails d'incident privés.",
+  "dashboard.setting.reporting.commit_suggestion.enabled": "Suggestions de message de commit",
+  "dashboard.setting.verification.selection.strategy": "Stratégie de vérification",
+  "dashboard.setting.verification.selection.strategy.description.risk_based":
+    "Ajuste le périmètre de vérification selon le risque du changement.",
+  "dashboard.setting.verification.selection.strategy.description.targeted":
+    "Priorise seulement les contrôles liés à la zone modifiée.",
+  "dashboard.setting.verification.selection.strategy.description.full":
+    "Priorise l’ensemble complet de vérification configuré.",
+  "dashboard.setting.verification.selection.prefer_related_tests": "Prioriser les tests liés",
+  "dashboard.setting.verification.selection.skip_docs_only_full_test": "Ignorer le test complet pour les changements de docs seuls",
+  "dashboard.setting.verification.selection.skip_low_risk_code_full_test": "Ignorer le test complet pour les changements de code à faible risque",
+  "dashboard.setting.verification.selection.skip_low_risk_code_full_test.description":
+    "Ignore seulement la suite complète quand le code ne touche pas le comportement public, la configuration, les schémas, la sécurité ou les migrations.",
+  "dashboard.setting.verification.selection.skip_translation_only_full_test": "Ignorer le test complet pour les traductions seules",
+  "dashboard.setting.verification.selection.skip_copy_only_full_test": "Ignorer le test complet pour les changements de texte seuls",
+  "dashboard.setting.verification.selection.report_skipped": "Signaler les vérifications ignorées",
+  "dashboard.setting.code_style.avoid_drive_by_refactors": "Éviter les refactorisations hors sujet",
+  "dashboard.setting.release.versioning.impact_check": "Vérifier l'impact sur la version",
+  "dashboard.setting.release.versioning.impact_check.description":
+    "Vérifie si le changement doit affecter une version de paquet ou de modèle.",
+  "dashboard.setting.release.versioning.suggest_bump": "Suggérer un changement de version",
+  "dashboard.setting.release.versioning.suggest_bump.description":
+    "Suggère le niveau de changement quand une nouvelle version semble nécessaire.",
+  "dashboard.setting.release.versioning.auto_bump": "Modifier les versions automatiquement",
+  "dashboard.setting.release.versioning.auto_bump.description":
+    "Autorise la modification directe des fichiers de version sans étape manuelle séparée.",
+  "dashboard.setting.release.versioning.require_user_confirmation": "Exiger une confirmation de version",
+  "dashboard.setting.release.versioning.require_user_confirmation.description":
+    "Demande confirmation avant d’appliquer ou d’accepter un changement de version.",
+  "dashboard.setting.release.versioning.sync_template_version": "Synchroniser la version des modèles",
+  "dashboard.setting.release.versioning.sync_template_version.description":
+    "Garde alignées la version du paquet et celle du manifeste des modèles.",
+  "dashboard.setting.release.versioning.sync_docs_examples": "Synchroniser les exemples de docs",
+  "dashboard.setting.release.versioning.sync_docs_examples.description":
+    "Garde les exemples de documentation alignés avec la version choisie.",
+  "dashboard.setting.release.versioning.sync_tests": "Synchroniser les tests",
+  "dashboard.setting.release.versioning.sync_tests.description":
+    "Garde alignés les tests et fixtures sensibles à la version.",
+
+  "doctor.help.summary":
+    "Inspecte l'état de la racine mustflow et donne des pistes pour les prochaines étapes sans modifier de fichiers.",
+  "doctor.help.option.json": "Imprime le JSON de diagnostic lisible par machine",
+  "doctor.help.option.strict":
+    "Inclut des vérifications strictes supplémentaires pour la sécurité des agents",
+  "doctor.help.exit.ok":
+    "L'état de mustflow a été inspecté et aucun problème n'a été trouvé",
+  "doctor.help.exit.fail": "Des problèmes de validation ont été trouvés ou l'entrée était non valide",
+  "doctor.title": "diagnostic mustflow",
+  "doctor.label.strict": "Strict",
+  "doctor.label.check": "Vérification",
+  "doctor.label.issues": "Problèmes",
+  "doctor.section.health": "État :",
+  "doctor.section.issueList": "Liste des problèmes :",
+  "doctor.section.suggestedCommands": "Commandes suggérées :",
+  "doctor.actionLabel": "exécuter",
+  "doctor.diagnostic.install": "Installation",
+  "doctor.diagnostic.validation": "Validation",
+  "doctor.diagnostic.commands": "Spécification des commandes",
+  "doctor.diagnostic.readOrder": "Ordre de lecture",
+  "doctor.diagnostic.optionalReadOrder": "Ordre de lecture optionnel",
+  "doctor.diagnostic.repoMap": "REPO_MAP.md",
+  "doctor.diagnostic.localIndex": "Index local",
+  "doctor.diagnostic.latestRun": "Dernière exécution",
+
+  "help.missingFile":
+    "Aucun fichier {path} trouvé dans le répertoire actuel. Exécutez d'abord mf init ou passez à une racine mustflow.",
+  "help.commands.title": "Commandes",
+  "help.commands.noIntents":
+    "Commandes\n\nAucune table [intents] n'a été trouvée dans .mustflow/config/commands.toml.",
+  "help.commands.configuredIntents":
+    "Commandes configurées dans .mustflow/config/commands.toml :",
+  "help.preferences.title": "Préférences",
+  "help.preferences.intro":
+    "Préférences d'agent au niveau du dépôt dans .mustflow/config/preferences.toml :",
+  "help.help.summary": "Affiche l'aide du flux de travail mustflow installé.",
+  "help.topic.workflow": "Imprime .mustflow/docs/agent-workflow.md",
+  "help.topic.skills": "Imprime .mustflow/skills/INDEX.md",
+  "help.topic.commands": "Résume .mustflow/config/commands.toml",
+  "help.topic.preferences": "Résume .mustflow/config/preferences.toml",
+  "help.help.exit.ok":
+    "Le sujet d'aide a été imprimé ou aucun sujet installé n'était disponible",
+  "help.help.exit.fail": "La commande a reçu un sujet ou une option inconnus",
+  "help.error.unknownTopic": "Sujet d'aide inconnu : {topic}",
+
+  "index.help.summary":
+    "Construit un index SQLite régénérable pour le flux de travail mustflow.",
+  "index.help.option.dryRun": "Calcule les cibles d'index sans écrire de fichiers",
+  "index.help.exit.ok": "Les cibles d'index ont été calculées et éventuellement écrites",
+  "index.title": "index mustflow",
+  "index.dryRunNoFiles": "Simulation : aucun fichier n'a été écrit.",
+
+  "init.routerBlock": `<!-- mustflow:start schema=1 -->
+Ce dépôt suit le flux de travail d'agent mustflow.
+
+Lisez ces fichiers avant de travailler :
+- \`.mustflow/docs/agent-workflow.md\`
+- \`.mustflow/config/mustflow.toml\`
+- \`.mustflow/config/commands.toml\`
+- \`.mustflow/config/preferences.toml\` si présent
+- \`.mustflow/skills/INDEX.md\`
+<!-- mustflow:end -->`,
+  "init.help.summary":
+    "Copie le flux de travail d'agent mustflow par défaut dans le dépôt actuel.",
+  "init.help.option.yes": "Utilise des valeurs sûres par défaut pour les invites",
+  "init.help.option.dryRun": "Imprime le plan d'installation sans écrire de fichiers",
+  "init.help.option.interactive": "Choisit les paramètres d'initialisation depuis des invites",
+  "init.help.option.merge":
+    "Fusionne un bloc géré par mustflow dans un AGENTS.md existant",
+  "init.help.option.force": "Sauvegarde les fichiers en conflit et les écrase",
+  "init.help.option.profile":
+    "Définit le profil du projet : minimal, oss, team, product ou library",
+  "init.help.option.locale": "Définit la langue des documents mustflow installés",
+  "init.help.option.agentLang": "Définit la langue de réponse préférée de l'agent",
+  "init.help.option.set":
+    "Définit une préférence sûre comme git.auto_commit=true ou git.auto_push=false",
+  "init.help.option.productSourceLocale":
+    "Définit la langue source du texte produit visible par les utilisateurs",
+  "init.help.option.productLocale":
+    "Ajoute une locale produit visible par les utilisateurs ; peut être répétée",
+  "init.help.exit.ok": "Installation terminée, ignorée ou plan imprimé",
+  "init.help.exit.fail": "Des options non valides ou des conflits de fichiers ont empêché l'écriture",
+  "init.error.cannotCombineMergeForce": "Impossible de combiner --merge et --force",
+  "init.error.cannotCombineInteractiveYes":
+    "Impossible de combiner --interactive et --yes",
+  "init.error.unsupportedProfile": "Profil non pris en charge : {profile}",
+  "init.error.supportedProfiles": "Profils pris en charge : {profiles}",
+  "init.error.unsupportedLocale": "Locale non prise en charge : {locale}",
+  "init.error.supportedLocales":
+    "Locales de modèle prises en charge pour ce paquet : {locales}",
+  "init.error.invalidLocaleTag": "Balise de locale non valide pour {label} : {value}",
+  "init.error.invalidPreference":
+    "Remplacement de préférence d'initialisation non valide : {value}",
+  "init.error.invalidPreferenceValue":
+    "Valeur non valide pour {key} : {value}",
+  "init.error.unsupportedPreference":
+    "Paramètre de préférence d'initialisation non pris en charge : {key}",
+  "init.prompt.locale": "Quelle langue les documents mustflow doivent-ils utiliser ?",
+  "init.prompt.profile": "Quel profil de projet mustflow doit-il utiliser ?",
+  "init.prompt.agentLang":
+    "Quelle langue les agents doivent-ils utiliser pour les rapports finaux ?",
+  "init.prompt.advanced": "Personnaliser les préférences avancées ?",
+  "init.prompt.autoStage":
+    "Autoriser les agents à préparer les fichiers automatiquement ?",
+  "init.prompt.autoCommit":
+    "Autoriser les agents à créer des commits automatiquement ?",
+  "init.prompt.commitMessageLanguage":
+    "Langue préférée pour les messages de commit ?",
+  "init.prompt.commitSuggestions":
+    "Activer les suggestions de messages de commit ?",
+  "init.prompt.preserveExisting": "Conserver l'existant",
+  "init.prompt.sameAsAgentReports": "Identique aux rapports d'agent",
+  "init.prompt.sameAsDocuments": "Identique aux documents",
+  "init.prompt.select": "Sélectionner [{defaultChoice}] : ",
+  "init.prompt.invalidChoice":
+    "Entrez un nombre entre 1 et {count}.",
+  "init.prompt.invalidBoolean": "Entrez yes ou no.",
+  "init.plan.would": "{action} {path} prévu",
+  "init.plan.noFilesWritten": "Aucun fichier n'a été écrit.",
+  "init.conflict":
+    "Conflit : {path} existe déjà et diffère du modèle mustflow.",
+  "init.conflictGuidance":
+    "Utilisez --dry-run pour prévisualiser, --merge pour ajouter un bloc mustflow à AGENTS.md, ou --force pour sauvegarder et écraser.",
+  "init.selection.profile": "Profil de modèle : {profile}",
+  "init.selection.locale": "Locale de modèle : {locale}",
+  "init.selection.agentLang": "Langue de réponse de l'agent : {locale}",
+  "init.selection.productSourceLocale": "Locale source du produit : {locale}",
+  "init.selection.productLocales": "Locales du produit : {locales}",
+  "init.selection.sourceLocaleOnly": "(locale source uniquement)",
+  "init.backup.conflicts": "{count} {fileWord} en conflit sauvegardés dans {path}",
+  "init.fileWord.singular": "fichier",
+  "init.fileWord.plural": "fichiers",
+  "init.action.created": "Créé {path}",
+  "init.action.unchanged": "Inchangé {path}",
+  "init.action.merged": "Fusionné {path}",
+  "init.action.overwrote": "Écrasé {path}",
+  "init.action.customizedPreferences":
+    ".mustflow/config/preferences.toml personnalisé",
+  "init.action.wrote": "Écrit {path}",
+  "init.complete":
+    "mustflow init terminé : {created} créés, {merged} fusionnés, {overwritten} écrasés, {unchanged} inchangés.",
+
+  "map.help.summary":
+    "Génère une carte de navigation d'agent à partir des fichiers clés du dépôt.",
+  "map.help.option.stdout": "Imprime la carte générée",
+  "map.help.option.write": "Écrit REPO_MAP.md",
+  "map.help.option.depth": "Limite la profondeur des répertoires non prioritaires",
+  "map.help.option.includeNested":
+    "Inclut les dépôts imbriqués depuis les racines d'espace de travail configurées",
+  "map.help.option.rootOnly": "Ignore les dépôts imbriqués même lorsqu'ils sont configurés",
+  "map.help.exit.ok": "La carte a été générée et éventuellement écrite",
+  "map.error.nestedConflict": "Impossible de combiner --include-nested et --root-only",
+  "map.error.invalidDepth": "Valeur non valide pour --depth",
+  "map.wrote": "REPO_MAP.md écrit",
+
+  "run.help.summary":
+    "Exécute une commande configurée à exécution unique depuis .mustflow/config/commands.toml.",
+  "run.help.option.json": "Imprime l'enregistrement d'exécution en JSON",
+  "run.help.exit.ok": "La commande s'est terminée avec un code de sortie autorisé",
+  "run.help.exit.fail": "La commande était non valide, refusée, expirée ou a échoué",
+  "run.error.missingIntent": "Nom de commande manquant",
+  "run.error.unknownIntent": "Commande inconnue : {intent}",
+  "run.error.statusNotConfigured":
+    'La commande "{intent}" est {status} ; seules les commandes configurées peuvent être exécutées',
+  "run.error.lifecycleNotOneshot":
+    'Refusé : la commande "{intent}" a lifecycle = "{lifecycle}" ; mf run exécute uniquement les commandes oneshot',
+  "run.error.runPolicy":
+    'La commande "{intent}" nécessite run_policy = "agent_allowed" pour mf run',
+  "run.error.stdin": 'La commande "{intent}" doit définir stdin = "closed"',
+  "run.error.timeout": 'La commande "{intent}" doit définir timeout_seconds',
+  "run.error.commandSource":
+    'La commande "{intent}" doit définir argv ou mode = "shell" avec cmd',
+  "run.error.timedOut": 'La commande "{intent}" a expiré après {seconds} secondes',
+  "run.error.startFailed": 'Impossible de démarrer la commande "{intent}" : {message}',
+
+  "search.help.summary":
+    "Recherche dans l'index SQLite local du flux de travail mustflow.",
+  "search.help.option.limit":
+    "Définit le nombre de résultats à imprimer. Par défaut : 10, max : 50",
+  "search.help.exit.ok": "Recherche terminée",
+  "search.help.exit.fail": "Entrée non valide ou index local manquant",
+  "search.error.missingLimit": "Valeur manquante pour --limit",
+  "search.error.invalidLimit": "--limit doit être un entier entre 1 et 50",
+  "search.error.missingQuery": "La requête de recherche est requise",
+  "search.title": "recherche mustflow",
+  "search.noMatches": "Aucune entrée correspondante.",
+
+  "status.help.summary":
+    "Affiche l'état de l'installation locale de mustflow sans modifier de fichiers.",
+  "status.help.exit.ok": "L'état a été inspecté et imprimé",
+  "status.title": "état mustflow",
+
+  "update.help.summary":
+    "Prévisualise ou applique les mises à jour du flux de travail mustflow installé.",
+  "update.help.option.dryRun": "Imprime le plan de mise à jour sans écrire de fichiers",
+  "update.help.option.apply":
+    "Applique les mises à jour sûres du modèle lorsqu'aucun changement local n'est bloqué",
+  "update.help.exit.ok": "Le plan a été imprimé ou des mises à jour sûres ont été appliquées",
+  "update.help.exit.fail":
+    "Le plan a trouvé des changements bloqués, un état manquant ou une entrée non valide",
+  "update.error.cannotCombineModes": "Impossible de combiner --dry-run et --apply.",
+  "update.error.missingMode": "Spécifiez --dry-run ou --apply.",
+  "update.backup.files": "{count} {fileWord} sauvegardés dans {path}",
+  "update.action.created": "Créé {path}",
+  "update.action.updated": "Mis à jour {path}",
+  "update.action.wrote": "Écrit {path}",
+  "update.policy.title": "Politique :",
+  "update.policy.baseline": "Base de référence",
+  "update.policy.applyActions": "Actions à appliquer",
+  "update.policy.blockingActions": "Actions bloquantes",
+  "update.policy.backupPath": "Chemin de sauvegarde",
+  "update.plan.title": "plan de mise à jour mustflow",
+  "update.plan.blocked": "Changements locaux bloqués",
+  "update.plan.manualReview": "Revue manuelle",
+  "update.plan.wouldUpdate": "Mettrait à jour",
+  "update.plan.wouldCreate": "Créerait",
+  "update.plan.noUpdates": "Aucune mise à jour de modèle nécessaire.",
+  "update.plan.noFilesWritten": "Aucun fichier n'a été écrit.",
+  "update.complete":
+    "mustflow update terminé : {updated} mis à jour, {created} créés.",
+} satisfies Record<MessageKey, string>;

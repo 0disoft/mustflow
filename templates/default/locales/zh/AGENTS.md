@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: zh
 canonical: false
-revision: 5
+revision: 7
 ---
 
 # AGENTS.md
@@ -42,11 +42,20 @@ revision: 5
 - 在进行大范围修改前，使用 `mf doctor` 或 `mf doctor --json` 做只读健康检查。
 - `mf context --json` 可提供机器可读的方向信息，但不能替代规则与命令规范。
 - `.mustflow/config/preferences.toml` 中的偏好优先级低于用户直接指令和项目既有风格。
+- 当代码、模板、schema、CLI 行为、包元数据、用户可见文档、安装输出或测试发生变化时，
+  在最终报告前检查 `.mustflow/config/preferences.toml` 中的 `[release.versioning]`。
+  除非用户明确要求版本升级或 release 准备，否则不要修改版本文件。不要假设版本来源是
+  `package.json`；在建议或编辑版本前，先定位该仓库自己的版本来源。
 - `.mustflow/context/` 中的上下文文件用于说明项目方向与领域约定。
   应将其视为任务相关上下文，而不是代码、测试、命令或用户指令的替代品。
 - 若存在 `DESIGN.md`，仅在 UI、视觉设计、布局、design token 或可访问性相关工作中阅读它。
   若不存在 `DESIGN.md`，不要创建。
 - 当某项 skill 适用于任务时，阅读对应 skill 文档。
+- 编辑前，使用 `.mustflow/skills/INDEX.md` 判断是否有一个或多个 skill 适用。
+- 如果新的证据让某项 skill 变得相关，例如命令失败或文档变更，
+  在继续该部分工作前先阅读对应的 `SKILL.md`。
+- skill 文档只指导流程。它们不会授权执行 `.mustflow/config/commands.toml` 之外的命令，
+  也不会覆盖用户、宿主、仓库或安全规则。
 - 未经明确请求，不要修改 generated files、外部依赖或 secrets files。
 - 不要将根目录下的 `config/`、`docs/` 或 `skills/` 目录视为 mustflow 文档。
 

@@ -10,6 +10,7 @@ import {
 } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
+import { COMMIT_MESSAGE_STYLES } from './preferences-options.js';
 import { readTomlFile } from './toml.js';
 
 const REQUIRED_SKILL_SECTION_SETS = [
@@ -52,6 +53,25 @@ const ALLOWED_CAPABILITY_STATES = new Set(['disabled', 'optional', 'required', '
 const REQUIRED_AGENT_LOOP_PHASES = ['orient', 'plan', 'act', 'verify', 'report', 'handoff'] as const;
 const ALLOWED_HANDOFF_MODES = new Set(['report_only', 'work_item_optional']);
 const ALLOWED_PROJECT_PROFILES = new Set(['minimal', 'oss', 'team', 'product', 'library']);
+const RELEASE_VERSIONING_BOOLEAN_FIELDS = [
+	'impact_check',
+	'suggest_bump',
+	'auto_bump',
+	'require_user_confirmation',
+	'sync_template_version',
+	'sync_docs_examples',
+	'sync_tests',
+] as const;
+const ALLOWED_COMMIT_MESSAGE_STYLES = new Set(COMMIT_MESSAGE_STYLES);
+const VERIFICATION_SELECTION_BOOLEAN_FIELDS = [
+	'prefer_related_tests',
+	'skip_docs_only_full_test',
+	'skip_low_risk_code_full_test',
+	'skip_translation_only_full_test',
+	'skip_copy_only_full_test',
+	'report_skipped',
+] as const;
+const ALLOWED_VERIFICATION_SELECTION_STRATEGIES = new Set(['risk_based', 'targeted', 'full']);
 const ALLOWED_TESTING_POLICIES = new Set(['behavior_contract']);
 const ALLOWED_TEST_DELETION_REASONS = new Set([
 	'behavior_removed',
@@ -907,6 +927,13 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 				['suggest', 'style', 'language', 'language_when_missing', 'scope', 'include_body'],
 				issues,
 			);
+			validateAllowedStringField(
+				commitMessage,
+				'style',
+				'[preferences.git.commit_message].style',
+				ALLOWED_COMMIT_MESSAGE_STYLES,
+				issues,
+			);
 			validatePositiveIntegerField(
 				commitMessage,
 				'max_suggestions',
@@ -949,6 +976,34 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 				['when', 'source'],
 				issues,
 			);
+		}
+	}
+
+	const release = validateTable(preferencesToml, 'release', issues);
+	if (release) {
+		const versioning = validateNestedTable(release, 'versioning', '[preferences.release.versioning]', issues);
+		if (versioning) {
+			for (const field of RELEASE_VERSIONING_BOOLEAN_FIELDS) {
+				validateBooleanField(versioning, field, `[preferences.release.versioning].${field}`, issues);
+			}
+		}
+	}
+
+	const verification = validateTable(preferencesToml, 'verification', issues);
+	if (verification) {
+		const selection = validateNestedTable(verification, 'selection', '[preferences.verification.selection]', issues);
+		if (selection) {
+			validateAllowedStringField(
+				selection,
+				'strategy',
+				'[preferences.verification.selection].strategy',
+				ALLOWED_VERIFICATION_SELECTION_STRATEGIES,
+				issues,
+			);
+
+			for (const field of VERIFICATION_SELECTION_BOOLEAN_FIELDS) {
+				validateBooleanField(selection, field, `[preferences.verification.selection].${field}`, issues);
+			}
 		}
 	}
 

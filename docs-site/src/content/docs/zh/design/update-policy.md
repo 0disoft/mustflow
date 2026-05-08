@@ -14,6 +14,8 @@ description: 说明 mf update 如何区分计划与安全应用。
 
 `content_hash` 是最近一次由 `mf init` 或 `mf update --apply` 记录的文件内容 hash。如果当前文件 hash 与该值不同，mustflow 会将该文件视为本地编辑。
 
+如果锁条目有 `last_action = "customized"`，mustflow 会把该 hash 视为仓库特定基线。只要当前 hash 仍匹配这条自定义基线，该文件就不会被打包模板内容替换。
+
 该策略也包含在 `mf update --json` 的 `policy` object 中。
 文档、人类可读输出和自动化输出必须保持一致。
 
@@ -33,7 +35,7 @@ writes_only_template_manifest_paths: true
 
 `mf update --dry-run` 将文件分类为以下状态：
 
-- `unchanged`：当前文件同时匹配锁基线和打包模板。
+- `unchanged`：当前文件同时匹配锁基线和打包模板，或文件标记为自定义且仍匹配该自定义基线。
 - `update`：当前文件匹配锁基线，但不同于打包模板。
 - `create`：文件存在于模板中，但用户仓库中缺失。
 - `blocked-local-change`：当前文件不同于锁基线。
@@ -45,6 +47,7 @@ writes_only_template_manifest_paths: true
 
 - 不自动修改 `blocked-local-change` 文件。
 - 不自动修改 `manual-review` 文件。
+- 当自定义文件仍匹配其锁定的自定义基线时，不用模板内容替换它。
 - 创建备份后，用模板内容替换 `update` 文件。
 - 创建必要父目录后，写入 `create` 文件。
 - 如果新的模板文件与未出现在锁文件中的已有文件冲突，该文件会被视为本地变更且不会被覆盖。

@@ -1,11 +1,11 @@
 ---
 title: mf dashboard
-description: Commande réservée au futur tableau de bord local de mustflow.
+description: Démarre le tableau de bord local de mustflow.
 ---
 
-`mf dashboard` est réservée à un futur tableau de bord local capable d’inspecter et de modifier visuellement le flux de documents mustflow.
+`mf dashboard` démarre un tableau de bord local dans le navigateur pour les préférences mustflow sûres.
 
-La fonctionnalité n’est pas encore implémentée. Exécuter la commande imprime seulement un message indiquant qu’elle n’est pas implémentée et quitte avec le code `1`.
+La première surface du tableau de bord modifie `.mustflow/config/preferences.toml`. Elle ne prépare pas de fichiers, ne crée pas de commit, ne pousse rien, ne modifie pas les versions et n’exécute pas de command intents.
 
 ## Comportement actuel
 
@@ -13,13 +13,23 @@ La fonctionnalité n’est pas encore implémentée. Exécuter la commande impri
 npx mf dashboard
 ```
 
-Cette commande ne démarre pas de serveur et ne modifie pas les fichiers.
+Cette commande démarre un serveur HTTP local lié à `127.0.0.1` par défaut, imprime l’URL du tableau de bord et l’ouvre dans le navigateur par défaut.
+
+La page du tableau de bord inclut un sélecteur de langue pour l’anglais, le coréen, le chinois, l’espagnol, le français et l’hindi. La langue choisie est enregistrée dans le navigateur.
+
+Utilisez `--port` pour demander un port précis. Utilisez `--no-open` pour garder le navigateur fermé. Utilisez `--json` lorsqu’un autre outil doit lire l’URL ; le mode JSON n’ouvre pas le navigateur.
+
+```sh
+npx mf dashboard --port 4173
+npx mf dashboard --no-open
+npx mf dashboard --json
+```
 
 ## Sortie structurée
 
-`mf dashboard` ne fournit actuellement pas de format de sortie JSON.
+Avec `--json`, la commande imprime l’URL du tableau de bord, la racine mustflow et le chemin du fichier de préférences avant de garder le serveur local actif.
 
-Les automatisations et les agents ne doivent pas traiter cette commande comme une commande de flux de travail disponible.
+L’API du tableau de bord utilise un jeton propre à la session et n’accepte que les mises à jour des champs de préférences limités affichés par la page. `git.auto_push` est affiché comme réglage verrouillé.
 
 ## Aide et codes de sortie
 
@@ -27,5 +37,5 @@ Les automatisations et les agents ne doivent pas traiter cette commande comme un
 npx mf dashboard --help
 ```
 
-- Code de sortie `0`: l’aide a été imprimée.
-- Code de sortie `1`: le tableau de bord n’est pas encore implémenté.
+- Code de sortie `0`: le tableau de bord a démarré ou l’aide a été imprimée.
+- Code de sortie `1`: le tableau de bord n’a pas pu démarrer ou l’entrée était invalide.

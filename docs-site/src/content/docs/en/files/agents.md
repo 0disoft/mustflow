@@ -18,6 +18,8 @@ It serves as the gateway to the mustflow document flow. Detailed policies reside
 - **Enforces core rules**: Maintains absolute constraints, such as prohibiting command guessing, preserving user modifications, and ensuring sensitive data protection.
 - **Delegates detail**: Defers complex workflow policies to `.mustflow/docs/agent-workflow.md`.
 - **Governs execution**: Restricts command execution to valid intents defined in `.mustflow/config/commands.toml`.
+- **Activates skills**: Requires agents to check `.mustflow/skills/INDEX.md` and read matching
+  `SKILL.md` files before editing the affected scope.
 - **Diagnostic orientation**: Specifies `mf doctor` as the recommended read-only diagnostic tool before initiating edits.
 - **Contextual indexing**: Defines `mf context --json` as a machine-readable index rather than a replacement for full document review.
 - **Safety boundaries**: Directs long-running or sensitive tasks to the `[budget]`, `[approval]`, and `[isolation]` policies in `mustflow.toml`.
@@ -60,5 +62,8 @@ The English `AGENTS.md` template is the authoritative source. Localized versions
 Do not hard-code specific test or build commands, file trees, recent modifications, or generation timestamps within `AGENTS.md`. Such details compromise input stability and should reside in `commands.toml`, `REPO_MAP.md`, or the relevant source files.
 
 Preferences for language, code comments, commit messages, documentation, and logging should be defined in `.mustflow/config/preferences.toml` rather than being described as prose in `AGENTS.md`.
+
+`AGENTS.md` should require skill selection, but detailed selection rules belong in `.mustflow/skills/INDEX.md`
+and `.mustflow/docs/agent-workflow.md`.
 
 Autonomous loops, worker fleets, persona systems, and long-running harnesses must not be initiated from `AGENTS.md`. If a repository requires these capabilities, they should be explicitly defined in the mustflow configuration and supporting documentation.

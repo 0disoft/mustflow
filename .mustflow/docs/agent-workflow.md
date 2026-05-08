@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 7
+revision: 10
 ---
 
 # Agent Workflow
@@ -30,6 +30,27 @@ It is not a general documentation archive.
 - If `DESIGN.md` exists, treat it as an optional external visual-design anchor for UI work.
   Do not duplicate its design tokens into `.mustflow/context/`.
 - If context conflicts with current files or commands, report the conflict and defer to the higher-authority source.
+
+## Skill Activation
+
+Skills are task procedures, not autonomous tools. Activating a skill means reading the matching
+`.mustflow/skills/<name>/SKILL.md` and following its procedure within the current command contract.
+
+At task start and before the first edit:
+
+1. Read `.mustflow/skills/INDEX.md`.
+2. Match the current task against the listed scenarios.
+3. Read every matching `SKILL.md` before editing that part of the work.
+4. If no skill applies, proceed with the smallest safe change under `AGENTS.md` and
+   `.mustflow/config/commands.toml`.
+
+Activate a skill later if new evidence changes the task type. For example, a failing configured
+command activates failure triage, a test contract change activates test maintenance, and a
+documentation or workflow change activates documentation update.
+
+When multiple skills apply, follow the most specific skill for each affected scope and combine only
+their declared command intents. Skills never authorize raw shell commands, long-running processes,
+or writes outside the task scope.
 
 ## Input Stability
 
@@ -135,6 +156,40 @@ Git operations that modify state or history are denied by default.
 
 These values are repository preferences, not permissions. They do not override direct user instructions, `.mustflow/config/commands.toml`, or approval policy in `.mustflow/config/mustflow.toml`. In particular, `git.auto_commit = true` does not grant push permission, and `git.auto_push = true` cannot be enabled through `mf init`.
 
+## Version Impact Policy
+
+Version impact settings are preferences, not release permission.
+
+Use `.mustflow/config/preferences.toml` `[release.versioning]` when code, templates, schemas,
+CLI behavior, package metadata, user-visible docs, installation output, or tests change.
+
+- `impact_check = true`: report whether the diff appears to require a package or template
+  version change.
+- `suggest_bump = true`: suggest patch, minor, or major when the evidence is clear.
+- `auto_bump = false`: do not edit package or template version files without an explicit user request.
+- `require_user_confirmation = true`: require a user-approved version bump or release-prep request
+  before changing version files.
+
+Before suggesting or applying a version change, locate the repository's version source of truth.
+Do not assume that `package.json` is the only version file. Inspect the manifests, release
+documents, and existing update patterns that match the repository's languages and frameworks, then
+report which files are authoritative and which files are derived.
+
+Common version-source candidates include:
+
+- JavaScript or TypeScript: `package.json` and package-manager lockfiles when they duplicate package metadata.
+- Python: `pyproject.toml`, `setup.cfg`, `setup.py`, or package `__version__` files.
+- Rust: `Cargo.toml`, with `Cargo.lock` considered only when the repository treats lockfile changes as release metadata.
+- Go: release tags and release documentation first; `go.mod` only when module path or tool metadata is relevant.
+- Java or Kotlin: `pom.xml`, `build.gradle`, `build.gradle.kts`, or `gradle.properties`.
+- .NET: `*.csproj`, `Directory.Build.props`, or `*.nuspec`.
+- Ruby, PHP, Dart, or Swift: `*.gemspec`, `lib/**/version.rb`, `composer.json`, `pubspec.yaml`, or `Package.swift`.
+- Containers, charts, or apps: `Chart.yaml`, image labels, app manifests, release notes, or deployment metadata when present.
+- mustflow templates: package metadata, template manifests, documentation examples, and tests that assert installed versions.
+
+When a version changes with approval, keep package metadata, template manifest versions, docs
+examples, and tests synchronized according to the `sync_*` preferences.
+
 ## Command Execution Policy
 
 Do not infer commands from `package.json`, `Makefile`, `justfile`, `Taskfile.yml`, or source files.
@@ -189,6 +244,30 @@ Use configured command intents for checks. Typical intent names are:
 
 If an expected intent is missing, disabled, manual-only, or not configured, do not invent a replacement.
 Report what was skipped and why.
+
+## Verification Selection
+
+Use `.mustflow/config/preferences.toml` `[verification.selection]` to choose verification breadth.
+These preferences do not grant command execution permission. They only guide which configured
+command intents to consider.
+
+- `strategy = "risk_based"`: prefer the smallest configured checks that cover the changed behavior,
+  public surface, command contract, and risk area.
+- `strategy = "targeted"`: prefer directly related checks unless the user, skill, or policy requires
+  broader coverage.
+- `strategy = "full"`: prefer the full applicable configured verification suite.
+- `prefer_related_tests = true`: look for a narrower relevant test intent before a broad test intent.
+- `skip_docs_only_full_test = true`: documentation-only changes may skip broad tests when docs
+  validation covers the edited surface.
+- `skip_translation_only_full_test = true`: translation-only changes may skip broad tests when the
+  source behavior did not change.
+- `skip_copy_only_full_test = true`: copy-only wording changes may skip broad tests when no behavior,
+  schema, template, or command contract changed.
+- `report_skipped = true`: final reports must name skipped checks and the reason.
+
+If evidence shows behavior, security, data, command contracts, release output, or generated templates
+changed, do not use a skip preference to hide risk. Escalate to the relevant configured intent, or
+report that the required intent is missing.
 
 ## Verification Ratchet
 

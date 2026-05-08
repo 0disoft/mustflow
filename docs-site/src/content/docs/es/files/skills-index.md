@@ -11,6 +11,18 @@ Después de leer las reglas compartidas y el contrato de comando, los agentes us
 
 Este archivo no debe copiar cuerpos largos de skills. Conecta situaciones, rutas de skills e intenciones de comando relevantes.
 
+## Comportamiento de selección
+
+Los agentes usan este índice al iniciar una tarea y antes de la primera edición. Comparan la solicitud
+del usuario y los archivos que esperan cambiar con los escenarios listados, y luego leen cada
+`SKILL.md` correspondiente antes de editar ese alcance.
+
+Si aparece una condición nueva durante la tarea, como un fallo de comando, un cambio de contrato de
+pruebas o un cambio de documentación, los agentes deben pausar y leer la skill recién coincidente.
+
+Si no aplica ningún escenario, los agentes no deben inventar una skill. Continúan con `AGENTS.md`,
+`.mustflow/docs/agent-workflow.md` y `.mustflow/config/commands.toml`.
+
 ## Función
 
 - Enumera nombres de skills y cuándo usarlas.

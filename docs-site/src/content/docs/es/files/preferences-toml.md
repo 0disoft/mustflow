@@ -16,6 +16,8 @@ Este archivo no es la autoridad más alta. Tienen prioridad las instrucciones di
 - Declara valores de reserva para repositorios nuevos donde no hay una convención visible.
 - Mantiene desactivados de forma predeterminada la preparación, commit y push automáticos.
 - Separa las sugerencias de mensajes de commit del permiso para crear commits realmente.
+- Registra comprobaciones de impacto de versión sin conceder permiso para publicar ni subir versiones.
+- Controla si los cambios de bajo riesgo pueden evitar la suite completa de verificación.
 - Da a `mf check` un archivo de preferencias validable por máquina.
 - Da a `mf help preferences` el archivo fuente que debe resumir.
 
@@ -63,6 +65,24 @@ max_suggestions = 2
 enabled = true
 when = "files_changed"
 source = "git.commit_message"
+
+[release.versioning]
+impact_check = true
+suggest_bump = true
+auto_bump = false
+require_user_confirmation = true
+sync_template_version = true
+sync_docs_examples = true
+sync_tests = true
+
+[verification.selection]
+strategy = "risk_based"
+prefer_related_tests = true
+skip_docs_only_full_test = true
+skip_low_risk_code_full_test = true
+skip_translation_only_full_test = true
+skip_copy_only_full_test = true
+report_skipped = true
 ```
 
 ## Perfil e idioma
@@ -118,7 +138,33 @@ Estos valores son preferencias del repositorio, no permisos. No anulan instrucci
 
 La sugerencia de mensaje de commit forma parte del informe final, no del permiso para ejecutar Git. Si cambiaron archivos y `reporting.commit_suggestion.enabled = true`, el agente puede sugerir un mensaje de commit. No debe insinuar que se creó un commit, y no debe crear uno sin una solicitud explícita del usuario.
 
+`git.commit_message.style` acepta `conventional`, `descriptive` o `gitmoji`. El estilo `gitmoji` añade un emoji al inicio y mantiene una forma legible de estilo conventional, por ejemplo `✨ feat: add dashboard setting`.
+
+`git.commit_message.language` acepta `preserve_existing`, `agent_response`, `docs` o una etiqueta de idioma como `ja`, `de` o `pt-BR`.
+
 Cuando se mezclan varios cambios lógicos, el agente puede sugerir commits separados hasta `max_suggestions` en lugar de forzar todo en un único mensaje.
+
+## Versionado de release
+
+`[release.versioning]` controla si el agente debe revisar e informar el impacto de versión cuando cambian código, plantillas, esquemas, comportamiento de comandos, metadatos del paquete, ejemplos de documentación o salida de instalación.
+
+Estos valores son preferencias, no permisos de release. `impact_check = true` pide al agente informar si el diff parece requerir un cambio de versión de paquete o plantilla. `suggest_bump = true` permite sugerir patch, minor o major cuando la evidencia es clara.
+
+`auto_bump = false` mantiene intactos los archivos de versión de paquete y plantilla salvo que el usuario pida explícitamente un aumento de versión o una tarea de preparación de release. `require_user_confirmation = true` significa que el agente no debe cambiar versiones silenciosamente durante cambios normales de código.
+
+Cuando se aprueba un cambio de versión, `sync_template_version`, `sync_docs_examples` y `sync_tests` indican al agente que mantenga alineados metadatos de paquete, manifiestos de plantilla, ejemplos de documentación y tests en el mismo cambio.
+
+Estas preferencias no dicen dónde guarda el repositorio su versión. El agente todavía debe descubrir la fuente de versión propia del lenguaje o framework antes de proponer o editar una versión.
+
+## Selección de verificación
+
+`[verification.selection]` guía qué comprobaciones configuradas debe elegir el agente. No concede permiso para ejecutar comandos; la ejecución sigue dependiendo de `.mustflow/config/commands.toml`.
+
+`strategy = "risk_based"` pide ajustar el alcance de verificación al riesgo del cambio. `prefer_related_tests = true` prioriza tests directamente relacionados cuando el repositorio declara un command intent de tests relacionados.
+
+`skip_docs_only_full_test`, `skip_translation_only_full_test` y `skip_copy_only_full_test` cubren cambios sin código. `skip_low_risk_code_full_test` solo aplica cuando el código no afecta comportamiento público, configuración, esquemas, seguridad, migraciones u otras superficies de alto riesgo. Estas opciones omiten solo la suite completa; no significan que se omita toda verificación.
+
+Cuando `report_skipped = true`, el informe final debe indicar qué comprobaciones amplias se omitieron y por qué.
 
 ## Reglas de validación
 
@@ -128,8 +174,11 @@ Cuando este archivo existe, `mf check` verifica que:
 - Los valores `mode`, `fallback` y `rule` sean cadenas.
 - En `[language.memory]`, `summary` y `fallback` sean cadenas, mientras `preserve_code`, `preserve_paths` y `preserve_error_output` sean booleanos.
 - `auto_stage`, `auto_commit`, `auto_push`, `avoid_drive_by_refactors` e `include_sensitive_data` sean booleanos.
+- `git.commit_message.style` sea `conventional`, `descriptive` o `gitmoji`.
 - `git.commit_message.max_suggestions` sea un entero positivo.
 - `reporting.commit_suggestion.enabled` sea booleano.
+- Los campos de `[release.versioning]` sean booleanos.
+- `[verification.selection]` use un valor de estrategia permitido y marcas booleanas para omitir o informar.
 - `docs.update_when` sea un arreglo de cadenas.
 - `project.profile` sea uno de los valores de perfil integrados.
 - Cuando exista `[product_i18n]`, los campos de configuración regional, la política de traducción y las listas de no traducir usen formas básicas válidas.

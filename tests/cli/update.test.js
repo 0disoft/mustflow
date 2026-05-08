@@ -30,6 +30,19 @@ function sha256Text(text) {
 	return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
 
+function markLockedFileCustomized(projectPath, relativePath, content) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	const lock = readFileSync(lockPath, 'utf8');
+	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const entryPattern = new RegExp(
+		`(\\[files\\."${escapedPath}"\\]\\r?\\nsource = "[^"]+"\\r?\\n)last_action = "[^"]+"\\r?\\ncontent_hash = "[^"]+"`,
+	);
+	const updatedLock = lock.replace(entryPattern, `$1last_action = "customized"\ncontent_hash = "${sha256Text(content)}"`);
+
+	assert.notEqual(updatedLock, lock, `${relativePath} lock entry should be updated`);
+	writeFileSync(lockPath, updatedLock);
+}
+
 test('prints an update dry-run plan for an up-to-date project', () => {
 	const projectPath = createTempProject();
 
@@ -71,6 +84,30 @@ test('blocks update dry-run when installed files have local changes', () => {
 	}
 });
 
+test('preserves customized files that still match their customized baseline', () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const customizedCommands = `${readFileSync(commandsPath, 'utf8')}\n# repository-specific command contract\n`;
+		writeFileSync(commandsPath, customizedCommands);
+		markLockedFileCustomized(projectPath, '.mustflow/config/commands.toml', customizedCommands);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--json']);
+		const plan = JSON.parse(result.stdout);
+		const commandsItem = plan.items.find((item) => item.relativePath === '.mustflow/config/commands.toml');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(plan.ok, true);
+		assert.equal(commandsItem.action, 'unchanged');
+		assert.match(commandsItem.reason, /customized/);
+		assert.equal(readFileSync(commandsPath, 'utf8'), customizedCommands);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints an update dry-run plan as json', () => {
 	const projectPath = createTempProject();
 
@@ -96,6 +133,28 @@ test('prints an update dry-run plan as json', () => {
 		assert.equal(plan.items[0].relativePath, 'AGENTS.md');
 		assert.equal(plan.items[0].action, 'blocked-local-change');
 		assert.equal(plan.wroteFiles, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('blocks update when a locked installed file is missing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		const projectContextPath = path.join(projectPath, '.mustflow', 'context', 'PROJECT.md');
+		rmSync(projectContextPath);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--json']);
+		const plan = JSON.parse(result.stdout);
+		const projectContextItem = plan.items.find((item) => item.relativePath === '.mustflow/context/PROJECT.md');
+
+		assert.equal(result.status, 1);
+		assert.equal(plan.ok, false);
+		assert.equal(projectContextItem.action, 'blocked-local-change');
+		assert.equal(projectContextItem.reason, 'target file is missing but tracked by the manifest lock');
+		assert.equal(existsSync(projectContextPath), false);
 	} finally {
 		removeTempProject(projectPath);
 	}

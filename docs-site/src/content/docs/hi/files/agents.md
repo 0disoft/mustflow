@@ -18,6 +18,8 @@ description: एजेंटों द्वारा सबसे पहले 
 - केवल पूर्ण नियम रखता है, जैसे command guessing न करना, मौजूदा बदलाव सुरक्षित रखना, और secrets संभालना।
 - विस्तृत workflow को `.mustflow/docs/agent-workflow.md` की ओर भेजता है।
 - executability को `.mustflow/config/commands.toml` में command intent status पर निर्भर बनाता है।
+- agent को `.mustflow/skills/INDEX.md` जांचने और affected scope edit करने से पहले matching
+  `SKILL.md` पढ़ने के लिए कहता है।
 - बताता है कि `mf doctor` ज़रूरत पड़ने पर edit से पहले चलाया जाने वाला read-only diagnostic command है।
 - बताता है कि `mf context --json` read-only context index है, वास्तविक documents पढ़ने का replacement नहीं।
 - लंबे या संवेदनशील tasks को `mustflow.toml` के `[budget]`, `[approval]`, और `[isolation]` की ओर भेजता है।
@@ -60,5 +62,8 @@ English template `AGENTS.md` canonical source है। Localized template files
 `AGENTS.md` में वास्तविक test या build commands, repository trees, recent changes, या generated timestamps hard-code न करें। ये details input स्थिरता घटाती हैं और `commands.toml`, `REPO_MAP.md`, या संबंधित source files में होनी चाहिए।
 
 भाषा, comments, commit messages, documentation, logs, और formatting के defaults `.mustflow/config/preferences.toml` में रहते हैं, `AGENTS.md` में लंबे prose के रूप में नहीं।
+
+`AGENTS.md` को केवल skill selection obligation बतानी चाहिए। Detailed selection rules
+`.mustflow/skills/INDEX.md` और `.mustflow/docs/agent-workflow.md` में रहती हैं।
 
 Autonomous loops, worker fleets, persona systems, और long-running harnesses को `AGENTS.md` से शुरू नहीं करना चाहिए। यदि कोई repository ऐसी surfaces चाहती है, तो उन्हें mustflow configuration और supporting documents में स्पष्ट रूप से घोषित करना चाहिए।

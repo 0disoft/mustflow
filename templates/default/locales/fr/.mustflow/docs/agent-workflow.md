@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: fr
 canonical: false
-revision: 7
+revision: 9
 ---
 
 # Flux De Travail Agent
@@ -27,6 +27,28 @@ Ce n'est pas une archive generale de documentation.
 - Ne pas deduire des objectifs projet manquants, des non-objectifs, des promesses d'API, des regles de donnees ni des design tokens.
 - Si `DESIGN.md` existe, le traiter comme une ancre externe optionnelle de design visuel pour le travail d'interface. Ne pas dupliquer ses design tokens dans `.mustflow/context/`.
 - Si le contexte entre en conflit avec les fichiers ou commandes actuels, signaler le conflit et se reporter a la source de plus haute autorite.
+
+## Activation Des Skills
+
+Les skills sont des procedures de tache, pas des outils autonomes. Activer une skill signifie lire
+le `.mustflow/skills/<name>/SKILL.md` correspondant et suivre sa procedure dans le contrat de
+commandes actuel.
+
+Au debut d'une tache et avant la premiere edition:
+
+1. Lire `.mustflow/skills/INDEX.md`.
+2. Comparer la tache actuelle aux scenarios listes.
+3. Lire chaque `SKILL.md` correspondant avant de modifier cette partie du travail.
+4. Si aucune skill ne s'applique, faire le plus petit changement prudent sous `AGENTS.md` et
+   `.mustflow/config/commands.toml`.
+
+Activer une skill plus tard si une nouvelle preuve change le type de tache. Par exemple, une
+commande configuree qui echoue active failure triage, un changement de contrat de test active
+test maintenance, et un changement de documentation ou de workflow active docs update.
+
+Quand plusieurs skills s'appliquent, suivre la skill la plus specifique pour chaque portee
+affectee et combiner uniquement leurs command intents declares. Les skills n'autorisent jamais
+des commandes shell brutes, des processus longue duree ni des ecritures hors de la portee de la tache.
 
 ## Stabilite Des Entrees
 
@@ -124,6 +146,39 @@ Les operations Git qui modifient l'etat ou l'historique sont refusees par defaut
 
 Ces valeurs sont des preferences de depot, pas des autorisations. Elles ne remplacent pas les instructions directes de l'utilisateur, `.mustflow/config/commands.toml` ni la politique d'approbation dans `.mustflow/config/mustflow.toml`. En particulier, `git.auto_commit = true` n'accorde pas l'autorisation de push, et `git.auto_push = true` ne peut pas etre active via `mf init`.
 
+## Politique D'Impact De Version
+
+Les reglages d'impact de version sont des preferences, pas des autorisations de release.
+
+Utiliser `[release.versioning]` dans `.mustflow/config/preferences.toml` quand le code, les modeles,
+les schemas, le comportement CLI, les metadonnees du paquet, la documentation visible par l'utilisateur,
+la sortie d'installation ou les tests changent.
+
+- `impact_check = true`: signaler si le diff semble exiger un changement de version du paquet ou du modele.
+- `suggest_bump = true`: suggerer patch, minor ou major lorsque les preuves sont claires.
+- `auto_bump = false`: ne pas editer les fichiers de version de paquet ou de modele sans demande explicite de l'utilisateur.
+- `require_user_confirmation = true`: exiger une demande utilisateur approuvee avant de changer les versions ou preparer une release.
+
+Avant de suggerer ou d'appliquer un changement de version, localiser la source de version propre au depot.
+Ne pas supposer que `package.json` est le seul fichier de version. Examiner les manifests, documents de
+release et schemas de mise a jour existants correspondant aux langages et frameworks du depot, puis
+signaler quels fichiers font autorite et quels fichiers sont derives.
+
+Candidats courants de source de version:
+
+- JavaScript ou TypeScript: `package.json` et lockfiles quand ils dupliquent les metadonnees du paquet.
+- Python: `pyproject.toml`, `setup.cfg`, `setup.py` ou fichiers `__version__` du paquet.
+- Rust: `Cargo.toml`; considerer `Cargo.lock` seulement si le depot traite le lockfile comme metadonnee de release.
+- Go: tags et documentation de release d'abord; `go.mod` seulement si le chemin du module ou les metadonnees d'outils sont pertinents.
+- Java ou Kotlin: `pom.xml`, `build.gradle`, `build.gradle.kts` ou `gradle.properties`.
+- .NET: `*.csproj`, `Directory.Build.props` ou `*.nuspec`.
+- Ruby, PHP, Dart ou Swift: `*.gemspec`, `lib/**/version.rb`, `composer.json`, `pubspec.yaml` ou `Package.swift`.
+- Conteneurs, charts ou apps: `Chart.yaml`, labels d'image, manifests d'application, notes de release ou metadonnees de deploiement.
+- Modeles mustflow: metadonnees du paquet, manifests de modele, exemples de documentation et tests qui verifient les versions installees.
+
+Quand un changement de version est approuve, garder les metadonnees du paquet, les versions de manifests
+de modeles, les exemples de documentation et les tests synchronises selon les preferences `sync_*`.
+
 ## Politique D'Execution Des Commandes
 
 Ne pas deduire les commandes a partir de `package.json`, `Makefile`, `justfile`, `Taskfile.yml` ou des fichiers source.
@@ -175,6 +230,23 @@ Utiliser les command intents configures pour les controles. Noms d'intent typiqu
 
 Si un intent attendu est manquant, desactive, manuel uniquement ou non configure, ne pas inventer de remplacement.
 Signaler ce qui a ete omis et pourquoi.
+
+## Selection De Verification
+
+Utiliser `[verification.selection]` dans `.mustflow/config/preferences.toml` pour choisir l'etendue de verification.
+Ces preferences n'accordent pas l'autorisation d'executer des commandes. Elles indiquent seulement quels command intents configures examiner.
+
+- `strategy = "risk_based"`: preferer les controles configures les plus petits qui couvrent le comportement change, la surface publique, le contrat de commandes et la zone de risque.
+- `strategy = "targeted"`: preferer les controles directement lies sauf si l'utilisateur, une skill ou une politique exige une couverture plus large.
+- `strategy = "full"`: preferer toute la suite de verification configuree applicable.
+- `prefer_related_tests = true`: chercher un intent de test plus etroit et pertinent avant un intent large.
+- `skip_docs_only_full_test = true`: les changements de documentation seuls peuvent eviter les tests larges quand la validation docs couvre la surface modifiee.
+- `skip_translation_only_full_test = true`: les changements de traduction seuls peuvent eviter les tests larges quand le comportement source n'a pas change.
+- `skip_copy_only_full_test = true`: les changements de texte seuls peuvent eviter les tests larges quand aucun comportement, schema, modele ou contrat de commande n'a change.
+- `report_skipped = true`: le rapport final doit nommer les controles omis et la raison.
+
+Si des indices montrent que comportement, securite, donnees, contrats de commandes, sortie de release ou modeles generes ont change,
+ne pas utiliser une preference d'omission pour masquer le risque. Passer a l'intent configure pertinent ou signaler que l'intent requis manque.
 
 ## Verrou De Verification
 

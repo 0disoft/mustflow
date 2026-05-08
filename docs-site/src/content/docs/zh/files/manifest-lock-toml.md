@@ -30,7 +30,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "0.1.0"
+version = "1.0.1"
 profile = "minimal"
 locale = "ko"
 
@@ -55,6 +55,8 @@ content_hash = "sha256:..."
 - `last_action`: 上次安装期间执行的操作。值为 `created`、`unchanged`、`merged`、`overwritten` 或 `customized` 之一。
 - `content_hash`: mustflow 上次安全安装或更新时记录的文件内容 SHA-256 基线哈希。
 
+`last_action = "customized"` 表示记录的哈希是已接受的仓库特定基线。只要当前哈希仍匹配 `content_hash`，`mf update` 就会保留该文件。
+
 ## 哈希基线
 
 目前，`content_hash` 是安装时基线。
@@ -74,4 +76,4 @@ content_hash = "sha256:..."
 
 `mf update --dry-run` 使用 `content_hash` 作为安装时基线。如果当前文件哈希与该基线不同，该文件会被视为本地改动，并阻止自动更新。
 
-设计理由见 [manifest.lock.toml Structure Decision](/design/manifest-lock-decision/)。
+设计理由见 [manifest.lock.toml Structure Decision](../../design/manifest-lock-decision/)。

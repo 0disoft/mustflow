@@ -100,12 +100,24 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 - `git.auto_stage`
 - `git.auto_commit`
 - `git.auto_push=false`
+- `git.commit_message.style`
 - `git.commit_message.language`
 - `git.commit_message.max_suggestions`
 - `git.commit_message.include_body`
 - `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
+- `release.versioning.impact_check`
+- `release.versioning.suggest_bump`
+- `release.versioning.auto_bump`
+- `release.versioning.require_user_confirmation`
+- `release.versioning.sync_template_version`
+- `release.versioning.sync_docs_examples`
+- `release.versioning.sync_tests`
 - `language.memory.summary`
+
+`git.commit_message.style`에는 `conventional`, `descriptive`, `gitmoji`를 지정할 수 있습니다. `gitmoji`는 `✨ feat: add dashboard setting`처럼 Gitmoji 이모지를 붙인 메시지를 제안하지만, 여전히 커밋 실행 권한이 아니라 메시지 제안 형식입니다.
+
+`git.commit_message.language`에는 `preserve_existing`, `agent_response`, `docs`를 쓰거나 `ja`, `de`, `pt-BR` 같은 로케일 태그를 직접 지정할 수 있습니다.
 
 `mf init`은 `git.auto_push=false`만 허용해 저장소를 안전한 기본값으로 되돌릴 수 있게 합니다. `git.auto_push=true`는 켤 수 없으며, 정말 필요한 저장소라면 설치 후 파일을 직접 수정해야 합니다.
 

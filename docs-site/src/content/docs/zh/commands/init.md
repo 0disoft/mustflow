@@ -99,12 +99,24 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 - `git.auto_stage`
 - `git.auto_commit`
 - `git.auto_push=false`
+- `git.commit_message.style`
 - `git.commit_message.language`
 - `git.commit_message.max_suggestions`
 - `git.commit_message.include_body`
 - `git.commit_message.split_when_multiple_concerns`
 - `reporting.commit_suggestion.enabled`
+- `release.versioning.impact_check`
+- `release.versioning.suggest_bump`
+- `release.versioning.auto_bump`
+- `release.versioning.require_user_confirmation`
+- `release.versioning.sync_template_version`
+- `release.versioning.sync_docs_examples`
+- `release.versioning.sync_tests`
 - `language.memory.summary`
+
+`git.commit_message.style` 可以使用 `conventional`、`descriptive` 或 `gitmoji`。`gitmoji` 会建议类似 `✨ feat: add dashboard setting` 的消息，但它仍只是提交消息建议，不代表获得提交权限。
+
+`git.commit_message.language` 可以使用 `preserve_existing`、`agent_response`、`docs`，也可以直接指定 `ja`、`de`、`pt-BR` 等 locale tag。
 
 `mf init` 只允许 `git.auto_push=false`，用于把仓库恢复到安全默认值。它不能启用 `git.auto_push=true`；如果某个仓库确实需要该行为，请在安装后手动编辑文件。
 

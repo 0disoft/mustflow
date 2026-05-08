@@ -2,13 +2,24 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 2
+revision: 3
 ---
 
 # स्किल सूचकांक
 
 वर्तमान कार्य से संबंधित स्किल दस्तावेज़ ही पढ़ें। यदि कोई विशेष स्किल लागू नहीं होती,
 तो सबसे न्यूनतम सुरक्षित बदलाव लागू करने के लिए `AGENTS.md` और `.mustflow/config/commands.toml` देखें।
+
+## चयन नियम
+
+- task start और first edit से पहले user request और expected changed files को नीचे के scenarios से मिलाएं।
+- यदि एक या अधिक scenarios match हों, तो उस scope को edit करने से पहले हर matching `SKILL.md` पढ़ें।
+- यदि task के दौरान command failure, test contract change, या documentation change जैसी नई condition आए,
+  तो रुकें और newly matching skill पढ़कर आगे बढ़ें।
+- यदि कोई scenario लागू नहीं होता, तो skill invent न करें। `AGENTS.md`,
+  `.mustflow/docs/agent-workflow.md`, और `.mustflow/config/commands.toml` के साथ आगे बढ़ें।
+- Skill documents केवल procedure guide करते हैं। वे declared command intents के बाहर command execution
+  authorize नहीं करते।
 
 | परिदृश्य | स्किल दस्तावेज़ | संबंधित Command Intents |
 | --- | --- | --- |

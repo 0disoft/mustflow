@@ -14,6 +14,8 @@ The update baseline is the `content_hash` found in `.mustflow/config/manifest.lo
 
 `content_hash` is the file content hash last recorded by `mf init` or `mf update --apply`. If the current file hash differs from this value, mustflow treats the file as locally edited.
 
+If a lock entry has `last_action = "customized"`, mustflow treats that recorded hash as an intentional repository-specific baseline. The file is not replaced with bundled template content while the current hash still matches that customized baseline.
+
 This policy is also included in the `policy` object from `mf update --json`.
 Documentation, human-readable output, and automation output must remain consistent.
 
@@ -33,7 +35,7 @@ writes_only_template_manifest_paths: true
 
 `mf update --dry-run` classifies files into the following states:
 
-- `unchanged`: The current file matches both the lock baseline and the bundled template.
+- `unchanged`: The current file matches both the lock baseline and the bundled template, or it is marked as customized and still matches that customized baseline.
 - `update`: The current file matches the lock baseline but differs from the bundled template.
 - `create`: The file exists in the template but is missing from the user repository.
 - `blocked-local-change`: The current file differs from the lock baseline.
@@ -45,6 +47,7 @@ writes_only_template_manifest_paths: true
 
 - Do not modify `blocked-local-change` files automatically.
 - Do not modify `manual-review` files automatically.
+- Do not replace customized files with template content while they still match their customized lock baseline.
 - `update` files are replaced with template content after a backup is created.
 - `create` files are written after creating the necessary parent directories.
 - If a new template file conflicts with an existing file not present in the lock, it is treated as a local change and will not be overwritten.

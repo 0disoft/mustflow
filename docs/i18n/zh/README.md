@@ -29,6 +29,10 @@ flowchart TD
 `read_order` 定义必读顺序，而 `optional_read_order` 和 `[context]` 控制
 如何加载任务特定上下文。`[refresh]` 策略决定代理何时重新读取相同指令。
 
+技能索引是主动分流步骤：代理会将任务与 `.mustflow/skills/INDEX.md` 比较，并在编辑
+对应范围前读取匹配的 `SKILL.md`。技能只指导流程；命令执行仍由
+`.mustflow/config/commands.toml` 决定。
+
 - 文档站点：<https://mustflow.github.io>
 - 仓库：<https://github.com/0disoft/mustflow>
 - 问题：<https://github.com/0disoft/mustflow/issues>
@@ -57,13 +61,14 @@ mustflow 不是自动项目编辑器，也不绑定到某个代理产品。
 - 它不会替代构建系统、测试运行器、包管理器或 CI/CD 设置。
 - 它不会把 GitHub、GitLab 或类似平台的特定文件加入默认模板。
 - 它默认不会创建 `justfile`、`Makefile` 或 `Taskfile.yml`。
-- 仪表板尚未实现。`mf dashboard` 是保留命令。
+- `mf dashboard` 会启动一个本地浏览器界面，用于查看和编辑
+  `.mustflow/config/preferences.toml` 中的安全偏好设置，然后在默认浏览器中打开。
+  页面语言可在英语、韩语、中文、西班牙语、法语和印地语之间切换。
 
 ## 候选功能
 
 这些是暂存想法，尚未正式支持。
 
-- `mf dashboard`
 - 社区技能注册表和技能包安装
 - 可选的 `.mustflow/work-items/`
 - `mf orient`、`mf refresh`
@@ -194,7 +199,7 @@ npx mf update --apply
 | `mf update --dry-run` | 计算模板更新计划，但不写入文件。 |
 | `mf update --apply` | 在没有阻塞项时应用模板更新。 |
 | `mf help <topic>` | 显示已安装的 mustflow 帮助。 |
-| `mf dashboard` | 保留命令。尚未实现。 |
+| `mf dashboard` | 启动用于安全 mustflow 偏好设置的本地 dashboard，并在默认浏览器中打开。页面语言可在六种语言之间切换。 |
 
 自动化和代理应使用 `--json` 输出，而不是解析面向人类的文本。稳定输出的
 JSON Schema 位于 `schemas/`。
@@ -234,8 +239,14 @@ npx mf init --set git.auto_commit=true
 - `--interactive`：通过提问选择初始化设置。
 - `--yes`：无提示使用英文默认初始化设置。
 - `--set`：在安装过程中设置允许的偏好项。支持的键包括
-  `git.auto_stage`、`git.auto_commit`、`git.commit_message.language`、
-  `reporting.commit_suggestion.enabled` 和 `language.memory.summary`。
+  `git.auto_stage`、`git.auto_commit`、`git.commit_message.style`、
+  `git.commit_message.language`、`reporting.commit_suggestion.enabled` 和
+  `language.memory.summary`。
+  `git.commit_message.style` 可以使用 `conventional`、`descriptive` 或
+  `gitmoji`；`gitmoji` 只改变建议消息的格式。
+  `git.commit_message.language` 可以使用 `preserve_existing`、
+  `agent_response`、`docs`，也可以直接指定 `ja`、`de`、`pt-BR` 等
+  locale tag。
 - `--product-source-locale`、`--product-locale`：面向用户的产品字符串的
   源区域设置和目标区域设置。
 - `--lang`：CLI 输出语言。当前值为 `en`、`ko`、`zh`、`es`、`fr` 和

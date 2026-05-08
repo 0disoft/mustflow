@@ -6,7 +6,9 @@ import { createInterface } from 'node:readline/promises';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { ensureInside } from '../lib/filesystem.js';
 import { localeMessage, t, type CliLang } from '../lib/i18n.js';
+import { isLocaleTag } from '../lib/locale-tags.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
+import { isCommitMessageStyle } from '../lib/preferences-options.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
 
@@ -39,7 +41,6 @@ const MUSTFLOW_BLOCK_START = '<!-- mustflow:start schema=1 -->';
 const MUSTFLOW_BLOCK_END = '<!-- mustflow:end -->';
 const GITIGNORE_RELATIVE_PATH = '.gitignore';
 const GITIGNORE_FRAGMENT_RELATIVE_PATH = 'gitignore.mustflow';
-const LOCALE_TAG_PATTERN = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/u;
 const LOCALE_LABELS: Record<string, string> = {
 	en: 'English',
 	ko: 'Korean',
@@ -177,10 +178,6 @@ function readRequiredOptionValue(
 	return next;
 }
 
-function isLocaleTag(value: string): boolean {
-	return LOCALE_TAG_PATTERN.test(value);
-}
-
 function parseBoolean(value: string): boolean | undefined {
 	if (value === 'true') {
 		return true;
@@ -204,12 +201,32 @@ function parsePositiveInteger(value: string): number | undefined {
 }
 
 function isSupportedLanguagePreference(value: string): boolean {
-	return value === 'preserve_existing' || isLocaleTag(value);
+	return ['agent_response', 'docs', 'preserve_existing'].includes(value) || isLocaleTag(value);
 }
 
 function isSupportedMemorySummaryPreference(value: string): boolean {
 	return ['agent_response', 'docs', 'preserve_existing'].includes(value) || isLocaleTag(value);
 }
+
+const RELEASE_VERSIONING_PREFERENCE_FIELDS = new Set([
+	'impact_check',
+	'suggest_bump',
+	'auto_bump',
+	'require_user_confirmation',
+	'sync_template_version',
+	'sync_docs_examples',
+	'sync_tests',
+]);
+
+const VERIFICATION_SELECTION_STRATEGIES = new Set(['risk_based', 'targeted', 'full']);
+const VERIFICATION_SELECTION_BOOLEAN_FIELDS = new Set([
+	'prefer_related_tests',
+	'skip_docs_only_full_test',
+	'skip_low_risk_code_full_test',
+	'skip_translation_only_full_test',
+	'skip_copy_only_full_test',
+	'report_skipped',
+]);
 
 function createPreferenceOverride(key: string, value: string, reporter: Reporter, lang: CliLang): PreferenceOverride | undefined {
 	if (key === 'git.auto_stage' || key === 'git.auto_commit') {
@@ -252,6 +269,20 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 			key,
 			section: 'git.commit_message',
 			field: 'language',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'git.commit_message.style') {
+		if (!isCommitMessageStyle(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message',
+			field: 'style',
 			renderedValue: tomlString(value),
 		};
 	}
@@ -314,6 +345,66 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 			key,
 			section: 'reporting.commit_suggestion',
 			field: 'enabled',
+			renderedValue: String(parsed),
+		};
+	}
+
+	if (key.startsWith('release.versioning.')) {
+		const field = key.slice('release.versioning.'.length);
+
+		if (!RELEASE_VERSIONING_PREFERENCE_FIELDS.has(field)) {
+			reporter.stderr(t(lang, 'init.error.unsupportedPreference', { key }));
+			return undefined;
+		}
+
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'release.versioning',
+			field,
+			renderedValue: String(parsed),
+		};
+	}
+
+	if (key === 'verification.selection.strategy') {
+		if (!VERIFICATION_SELECTION_STRATEGIES.has(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'verification.selection',
+			field: 'strategy',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key.startsWith('verification.selection.')) {
+		const field = key.slice('verification.selection.'.length);
+
+		if (!VERIFICATION_SELECTION_BOOLEAN_FIELDS.has(field)) {
+			reporter.stderr(t(lang, 'init.error.unsupportedPreference', { key }));
+			return undefined;
+		}
+
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'verification.selection',
+			field,
 			renderedValue: String(parsed),
 		};
 	}

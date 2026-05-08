@@ -11,6 +11,9 @@ agent 会先从 `.mustflow/skills/INDEX.md` 选择相关 skill，然后在执行
 
 skill 文档覆盖代码审查、测试维护、失败排查和文档更新等流程。它们引用 `.mustflow/docs/agent-workflow.md`，而不是复制共享策略。
 
+激活 skill 表示读取并遵循该 skill 流程。它不会授予执行 `.mustflow/config/commands.toml`
+之外命令的权限，也不会允许忽略更高优先级的指令。
+
 ## 前置元数据
 
 ```yaml
@@ -80,4 +83,4 @@ Resolve each intent through `.mustflow/config/commands.toml`.
 
 当某个 skill 变长或需要独立支持材料时，添加可选的 `resources.toml`，并在其中登记引用、模板或脚本。脚本不应通过猜测路径调用；应把它们连接到 `.mustflow/config/commands.toml` 中的命令意图。
 
-详细规则见 [Skill Resources](/design/skill-resources/)。
+详细规则见 [Skill Resources](../../design/skill-resources/)。

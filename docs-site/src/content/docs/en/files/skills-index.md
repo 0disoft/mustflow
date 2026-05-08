@@ -11,6 +11,18 @@ After consulting the shared rules and command contract, agents refer to this ind
 
 This file should not contain full procedure details; instead, it maps specific scenarios to skill paths and their associated command intents.
 
+## Selection Behavior
+
+Agents use this index at task start and before the first edit. They compare the user request and
+expected changed files with the listed scenarios, then read each matching `SKILL.md` before editing
+that scope.
+
+If a new condition appears during the task, such as a command failure, test contract change, or
+documentation change, agents should pause and read the newly matching skill before continuing.
+
+If no scenario applies, agents should not invent a skill. They continue with `AGENTS.md`,
+`.mustflow/docs/agent-workflow.md`, and `.mustflow/config/commands.toml`.
+
 ## Role and Responsibilities
 
 - **Categorization**: Lists available skills and defines their application scenarios.

@@ -11,6 +11,9 @@ Les agents choisissent un skill pertinent depuis `.mustflow/skills/INDEX.md`, pu
 
 Les documents de skill couvrent des procédures comme la revue de code, la maintenance des tests, le triage des échecs et les mises à jour de documentation. Ils référencent `.mustflow/docs/agent-workflow.md` au lieu de copier la politique partagée.
 
+Activer une skill signifie lire et suivre sa procédure. Cela n’accorde pas le droit d’exécuter des
+commandes hors de `.mustflow/config/commands.toml` ni d’ignorer les instructions de priorité supérieure.
+
 ## Frontmatter
 
 ```yaml
@@ -80,4 +83,4 @@ Un skill par défaut commence uniquement avec `SKILL.md`. Ne créez pas à l’a
 
 Lorsqu’un skill devient long ou a besoin de matériel de support séparé, ajoutez un `resources.toml` optionnel et enregistrez-y les références, modèles ou scripts. Les scripts ne doivent pas être invoqués via des chemins devinés; reliez-les à des intentions de commande dans `.mustflow/config/commands.toml`.
 
-Consultez [Ressources de skill](/design/skill-resources/) pour les règles détaillées.
+Consultez [Ressources de skill](../../design/skill-resources/) pour les règles détaillées.

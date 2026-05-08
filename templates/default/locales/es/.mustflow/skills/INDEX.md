@@ -2,13 +2,25 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 2
+revision: 3
 ---
 
 # Indice De Skills
 
 Consulta solo el documento de skill relevante para la tarea actual. Si no aplica ninguna skill especifica,
 consulta `AGENTS.md` y `.mustflow/config/commands.toml` para implementar el cambio seguro mas minimo.
+
+## Reglas De Seleccion
+
+- Al iniciar una tarea y antes de la primera edicion, compara la solicitud del usuario y los archivos
+  que se espera cambiar con los escenarios siguientes.
+- Si uno o mas escenarios coinciden, lee cada `SKILL.md` correspondiente antes de editar ese alcance.
+- Si aparece una nueva condicion durante la tarea, como un fallo de comando, un cambio de contrato de
+  pruebas o un cambio de documentacion, pausa y lee la skill que ahora coincide antes de continuar.
+- Si ningun escenario aplica, no inventes una skill. Continua con `AGENTS.md`,
+  `.mustflow/docs/agent-workflow.md` y `.mustflow/config/commands.toml`.
+- Los documentos de skill solo guian el procedimiento. No autorizan ejecucion de comandos fuera de
+  los command intents declarados.
 
 | Escenario | Documento De Skill | Command Intents Relacionados |
 | --- | --- | --- |

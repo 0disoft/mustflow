@@ -33,6 +33,11 @@ flowchart TD
 específico de cada tarea. La política `[refresh]` determina cuándo los agentes
 vuelven a leer las mismas instrucciones.
 
+El índice de skills es un paso activo de enrutamiento: los agentes comparan la tarea con
+`.mustflow/skills/INDEX.md` y leen los `SKILL.md` coincidentes antes de editar ese alcance.
+Las skills solo guían el procedimiento; la ejecución de comandos sigue viniendo de
+`.mustflow/config/commands.toml`.
+
 - Sitio de documentación: <https://mustflow.github.io>
 - Repositorio: <https://github.com/0disoft/mustflow>
 - Incidencias: <https://github.com/0disoft/mustflow/issues>
@@ -73,14 +78,15 @@ de agente concreto.
 - No añade archivos específicos de plataformas como GitHub, GitLab o similares
   a la plantilla predeterminada.
 - No crea `justfile`, `Makefile` ni `Taskfile.yml` de forma predeterminada.
-- El panel de control aún no está implementado. `mf dashboard` es un comando
-  reservado.
+- `mf dashboard` inicia una interfaz local de navegador para revisar y editar
+  preferencias seguras en `.mustflow/config/preferences.toml`, y la abre en el
+  navegador predeterminado. La página permite cambiar entre inglés, coreano,
+  chino, español, francés e hindi.
 
 ## Funciones candidatas
 
 Estas son ideas aparcadas; todavía no son funciones admitidas oficialmente.
 
-- `mf dashboard`
 - Registro comunitario de habilidades e instalación de paquetes de habilidades
 - `.mustflow/work-items/` opcional
 - `mf orient`, `mf refresh`
@@ -220,7 +226,7 @@ npx mf update --apply
 | `mf update --dry-run` | Calcula un plan de actualización de plantilla sin escribir archivos. |
 | `mf update --apply` | Aplica actualizaciones de plantilla cuando no hay nada bloqueado. |
 | `mf help <topic>` | Muestra la ayuda instalada de mustflow. |
-| `mf dashboard` | Reservado. Aún no está implementado. |
+| `mf dashboard` | Inicia un panel local para preferencias seguras de mustflow y lo abre en el navegador predeterminado. La página puede cambiar entre seis idiomas. |
 
 Las automatizaciones y los agentes deben usar la salida `--json` en lugar de
 analizar texto orientado a personas. Los JSON Schemas para salidas estables
@@ -267,8 +273,12 @@ npx mf init --set git.auto_commit=true
 - `--yes`: Usa los ajustes iniciales predeterminados en inglés sin preguntas.
 - `--set`: Define una preferencia permitida durante la instalación. Las claves
   admitidas son `git.auto_stage`, `git.auto_commit`,
-  `git.commit_message.language`, `reporting.commit_suggestion.enabled` y
-  `language.memory.summary`.
+  `git.commit_message.style`, `git.commit_message.language`,
+  `reporting.commit_suggestion.enabled` y `language.memory.summary`.
+  `git.commit_message.style` acepta `conventional`, `descriptive` o
+  `gitmoji`; `gitmoji` solo cambia el formato del mensaje sugerido.
+  `git.commit_message.language` acepta `preserve_existing`, `agent_response`,
+  `docs` o una etiqueta de idioma como `ja`, `de` o `pt-BR`.
 - `--product-source-locale`, `--product-locale`: Configuraciones regionales de
   origen y destino para cadenas de producto orientadas al usuario.
 - `--lang`: Idioma de salida de la CLI. Los valores actuales son `en`, `ko`,

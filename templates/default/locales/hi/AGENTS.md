@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 5
+revision: 7
 ---
 
 # AGENTS.md
@@ -42,11 +42,21 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - बड़े बदलावों से पहले read-only स्वास्थ्य जांच के लिए `mf doctor` या `mf doctor --json` चलाएं।
 - `mf context --json` मशीन-पठनीय दिशा दे सकता है, लेकिन यह नियम और कमांड विनिर्देशन का विकल्प नहीं है।
 - `.mustflow/config/preferences.toml` की प्राथमिकता सीधे उपयोगकर्ता निर्देशों और मौजूदा परियोजना शैली से कम है।
+- code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation output,
+  या tests बदलें तो final report से पहले `.mustflow/config/preferences.toml` में
+  `[release.versioning]` देखें। user ने स्पष्ट रूप से version bump या release preparation न मांगा हो
+  तो version files न बदलें। version source को `package.json` मानकर न चलें; version suggest या edit
+  करने से पहले repository-specific version source खोजें।
 - `.mustflow/context/` की संदर्भ फाइलें परियोजना दिशा और डोमेन परंपराएं बताती हैं।
   इन्हें कार्य-विशिष्ट संदर्भ के रूप में लें, न कि कोड, परीक्षण, कमांड या उपयोगकर्ता निर्देशों के स्थान पर।
 - यदि `DESIGN.md` मौजूद हो, तो उसे केवल UI, दृश्य डिज़ाइन, लेआउट, design token, या
   अभिगम्यता कार्य के लिए पढ़ें। यदि `DESIGN.md` नहीं है, तो नई फाइल न बनाएं।
 - जब उपयुक्त skill लागू हो, उसकी संबंधित skill फाइल पढ़ें।
+- संपादन से पहले `.mustflow/skills/INDEX.md` से तय करें कि एक या अधिक skills लागू होती हैं या नहीं।
+- यदि नए प्रमाण, जैसे command failure या documentation change, से कोई skill प्रासंगिक हो जाए,
+  तो उस हिस्से पर आगे बढ़ने से पहले संबंधित `SKILL.md` पढ़ें।
+- skill दस्तावेज़ केवल procedure बताते हैं। वे `.mustflow/config/commands.toml` के बाहर commands
+  चलाने की अनुमति नहीं देते और user, host, repository, या safety rules को override नहीं करते।
 - स्पष्ट अनुरोध के बिना generated files, external dependencies, या secrets files संशोधित न करें।
 - root के `config/`, `docs/`, या `skills/` डायरेक्टरी को mustflow दस्तावेज़ न मानें।
 

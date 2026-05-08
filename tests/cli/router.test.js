@@ -62,7 +62,7 @@ test('prints Korean top-level help with --lang', () => {
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /사용법:/);
 	assert.match(result.stdout, /명령어:/);
-	assert.match(result.stdout, /선택지:/);
+	assert.match(result.stdout, /옵션:/);
 	assert.match(result.stdout, /종료 코드:/);
 	assert.match(result.stdout, /mf init/);
 	assert.match(result.stdout, /CLI 출력 언어/);
@@ -74,8 +74,29 @@ test('prints Korean command help with --lang', () => {
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /사용법: mf init/);
-	assert.match(result.stdout, /프로젝트 성격을 설정합니다/);
+	assert.match(result.stdout, /프로젝트 유형을 설정합니다/);
 	assert.match(result.stdout, /설치할 mustflow 문서 언어를 설정합니다/);
+});
+
+test('prints localized top-level help for all README languages', () => {
+	const cases = [
+		['zh', /用法:/, /选项:/, /未知命令/],
+		['es', /Uso:/, /Opciones:/, /Comando desconocido/],
+		['fr', /Utilisation:/, /Options:/, /Commande inconnue/],
+		['hi', /उपयोग:/, /विकल्प:/, /अज्ञात कमांड/],
+	];
+
+	for (const [lang, usagePattern, optionsPattern, unknownCommandPattern] of cases) {
+		const help = runCli(['--lang', lang, '--help']);
+		assert.equal(help.status, 0);
+		assert.match(help.stdout, usagePattern);
+		assert.match(help.stdout, optionsPattern);
+		assert.doesNotMatch(help.stdout, /Usage:/);
+
+		const unknown = runCli(['--lang', lang, 'unknown']);
+		assert.equal(unknown.status, 1);
+		assert.match(unknown.stderr, unknownCommandPattern);
+	}
 });
 
 test('prints package version', () => {
@@ -149,20 +170,26 @@ test('fails unknown command options with standardized guidance', () => {
 	}
 });
 
-test('dashboard command is reserved but not implemented yet', () => {
-	const result = runCli(['dashboard']);
+test('dashboard help reports the implemented local server command', () => {
+	const result = runCli(['dashboard', '--help']);
 
-	assert.equal(result.status, 1);
-	assert.equal(result.stdout, '');
-	assert.equal(result.stderr.trim(), 'mf dashboard is not implemented yet');
+	assert.equal(result.status, 0);
+	assert.match(result.stdout, /Start a local dashboard/);
+	assert.match(result.stdout, /--host <host>/);
+	assert.match(result.stdout, /--port <port>/);
+	assert.match(result.stdout, /--no-open/);
+	assert.equal(result.stderr, '');
 });
 
-test('dashboard command reports reserved state in Korean', () => {
-	const result = runCli(['--lang', 'ko', 'dashboard']);
+test('dashboard help reports the implemented command in Korean', () => {
+	const result = runCli(['--lang', 'ko', 'dashboard', '--help']);
 
-	assert.equal(result.status, 1);
-	assert.equal(result.stdout, '');
-	assert.equal(result.stderr.trim(), 'mf dashboard는 아직 구현되지 않은 기능입니다');
+	assert.equal(result.status, 0);
+	assert.match(result.stdout, /로컬 대시보드를 시작합니다/);
+	assert.match(result.stdout, /--host <host>/);
+	assert.match(result.stdout, /--port <port>/);
+	assert.match(result.stdout, /--no-open/);
+	assert.equal(result.stderr, '');
 });
 
 test('prints installed mustflow help views', () => {

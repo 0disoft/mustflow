@@ -232,7 +232,8 @@ test('applies safe preference overrides from repeated set options', () => {
 			'git.auto_commit=true',
 			'--set',
 			'git.auto_push=false',
-			'--set=git.commit_message.language=ko',
+			'--set=git.commit_message.language=pt-BR',
+			'--set=git.commit_message.style=gitmoji',
 			'--set',
 			'git.commit_message.max_suggestions=4',
 			'--set',
@@ -241,6 +242,18 @@ test('applies safe preference overrides from repeated set options', () => {
 			'git.commit_message.split_when_multiple_concerns=false',
 			'--set',
 			'reporting.commit_suggestion.enabled=false',
+			'--set',
+			'release.versioning.suggest_bump=false',
+			'--set',
+			'release.versioning.auto_bump=true',
+			'--set',
+			'release.versioning.sync_docs_examples=false',
+			'--set',
+			'verification.selection.strategy=targeted',
+			'--set',
+			'verification.selection.skip_low_risk_code_full_test=false',
+			'--set',
+			'verification.selection.report_skipped=false',
 			'--set',
 			'language.memory.summary=docs',
 		]);
@@ -252,11 +265,18 @@ test('applies safe preference overrides from repeated set options', () => {
 
 		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_commit = true/);
 		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_push = false/);
-		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "ko"/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?style = "gitmoji"/);
+		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "pt-BR"/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?max_suggestions = 4/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?include_body = "always"/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?split_when_multiple_concerns = false/);
 		assert.match(preferences, /\[reporting\.commit_suggestion\]\n(?:.*\n)*?enabled = false/);
+		assert.match(preferences, /\[release\.versioning\]\n(?:.*\n)*?suggest_bump = false/);
+		assert.match(preferences, /\[release\.versioning\]\n(?:.*\n)*?auto_bump = true/);
+		assert.match(preferences, /\[release\.versioning\]\n(?:.*\n)*?sync_docs_examples = false/);
+		assert.match(preferences, /\[verification\.selection\]\n(?:.*\n)*?strategy = "targeted"/);
+		assert.match(preferences, /\[verification\.selection\]\n(?:.*\n)*?skip_low_risk_code_full_test = false/);
+		assert.match(preferences, /\[verification\.selection\]\n(?:.*\n)*?report_skipped = false/);
 		assert.match(preferences, /\[language\.memory\]\n(?:.*\n)*?summary = "docs"/);
 
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
@@ -270,8 +290,13 @@ test('applies safe preference overrides from repeated set options', () => {
 test('rejects unsupported init preference overrides', () => {
 	const invalidOverrides = [
 		['git.auto_push=true', /Invalid value for git\.auto_push: true/],
+		['git.commit_message.style=emoji', /Invalid value for git\.commit_message\.style: emoji/],
 		['git.commit_message.max_suggestions=6', /Invalid value for git\.commit_message\.max_suggestions: 6/],
 		['git.commit_message.include_body=sometimes', /Invalid value for git\.commit_message\.include_body: sometimes/],
+		['release.versioning.auto_bump=maybe', /Invalid value for release\.versioning\.auto_bump: maybe/],
+		['verification.selection.strategy=always_full', /Invalid value for verification\.selection\.strategy: always_full/],
+		['verification.selection.skip_low_risk_code_full_test=maybe', /Invalid value for verification\.selection\.skip_low_risk_code_full_test: maybe/],
+		['verification.selection.report_skipped=maybe', /Invalid value for verification\.selection\.report_skipped: maybe/],
 	];
 
 	for (const [override, expectedError] of invalidOverrides) {

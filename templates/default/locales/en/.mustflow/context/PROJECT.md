@@ -54,4 +54,3 @@ Unset. List paths, public APIs, generated files, migrations, secrets, or compati
 
 - If this file conflicts with current code, tests, command contracts, or user instructions, treat it as stale and report the conflict.
 - Update this file only when the project direction, non-goals, or repository-wide promises actually change.
-

@@ -16,6 +16,7 @@ Les agents le lisent après `AGENTS.md` pour comprendre l’exécution des comma
 - `Document role`: définit ce que ce fichier possède.
 - `Authoritative documents and reading flow`: liste les fichiers que les agents lisent en premier.
 - `Project context`: explique quand lire `.mustflow/context/INDEX.md` et les fichiers de contexte propres à une tâche.
+- `Activation des skills`: définit quand les agents doivent choisir et lire les procédures de skill.
 - `Pre-work checks`: demande aux agents d’inspecter les changements, chemins protégés, intentions de commande et skills pertinents.
 - `Input stability policy`: garde les données volatiles loin du haut des fichiers de lecture obligatoire.
 - `Instruction refresh policy`: définit quand les longues sessions doivent relire les instructions mustflow.
@@ -26,6 +27,7 @@ Les agents le lisent après `AGENTS.md` pour comprendre l’exécution des comma
 - `Test relevance policy`: garde les tests alignés avec le contrat de comportement actuel.
 - `Preference interpretation policy`: explique comment appliquer les valeurs par défaut de langue, formatage, commit et journalisation depuis `preferences.toml`.
 - `Git behavior policy`: désactive l’ajout à l’index Git, les commits et les pushes automatiques, et traite les suggestions de message de commit comme du contenu de rapport.
+- `Politique d’impact de version`: vérifie si un changement doit suggérer une montée de version tout en gardant les modifications automatiques de version désactivées par défaut.
 - `Command execution policy`: autorise uniquement les intentions de commande finies déclarées dans `commands.toml`.
 - `Edit policy`: limite les changements aux fichiers directement liés.
 - `Verification policy`: explique quelles intentions de commande vérifier après les changements.
@@ -59,6 +61,21 @@ Si une commande contourne `mf run`, traitez sa sortie comme un contexte de moind
 `mf doctor` ou `mf doctor --json` est une commande de diagnostic en lecture seule qui combine l’état d’installation, le résultat de vérification, les intentions de commande exécutables et les prochaines étapes avant modification. Elle n’écrit pas de fichiers; les agents peuvent donc l’utiliser pour une première orientation.
 
 Après modification de documents mustflow, de skills, de contrats de commande ou de règles de génération de carte du dépôt, exécutez `mf check --strict` lorsque c’est possible. Cela ajoute des contrôles pour les blocs de commandes shell brutes dans les documents de skill, les métadonnées volatiles dans `REPO_MAP.md`, les limites de sortie de commande, la politique de rétention, les tailles de fichiers générés, les traces de journaux JSONL bruts et le format du dernier reçu d’exécution.
+
+## Activation des skills
+
+Les skills sont des procédures de tâche, pas des outils autonomes. Activer une skill signifie lire
+le `.mustflow/skills/<name>/SKILL.md` correspondant et suivre cette procédure dans le contrat de
+commandes actuel.
+
+Au début d’une tâche et avant la première modification, les agents comparent la demande utilisateur
+et les fichiers qui devraient changer avec `.mustflow/skills/INDEX.md`. Si un ou plusieurs scénarios
+correspondent, ils lisent les `SKILL.md` correspondants avant de modifier cette portée. Si une
+nouvelle preuve apparaît ensuite, comme un échec de commande, un changement de contrat de test ou
+un changement de documentation, ils s’arrêtent et activent la skill devenue pertinente.
+
+Les skills n’autorisent jamais les commandes shell brutes, les processus longue durée ni les écritures
+hors du périmètre de la tâche. Elles ne remplacent pas non plus les règles utilisateur, host, dépôt ou sécurité.
 
 ## Stabilité des entrées
 
@@ -148,3 +165,15 @@ Ces valeurs sont des préférences de dépôt, pas des autorisations. Elles ne r
 Sans demande explicite de l’utilisateur, les agents ne doivent pas ajouter à l’index Git, créer de commit, modifier un commit, rebaser, réinitialiser, pousser ou changer autrement l’état ou l’historique Git.
 
 La suggestion de message de commit fait partie du rapport final, pas d’une permission d’exécution Git. Lorsque des fichiers ont changé et que les suggestions de commit sont activées, les agents peuvent suggérer un message de commit, mais ne doivent pas laisser entendre qu’un commit a été créé.
+
+## Politique d’impact de version
+
+`[release.versioning]` dans `.mustflow/config/preferences.toml` contrôle les préférences de rapport d’impact de version.
+
+Lorsque le code, les modèles, les schémas, le comportement CLI, les métadonnées du paquet, la documentation visible par l’utilisateur, la sortie d’installation ou les tests changent, les agents doivent vérifier si le changement semble exiger une mise à jour de version du paquet ou du modèle.
+
+Par défaut, mustflow peut suggérer une montée patch, minor ou major lorsque les indices sont clairs, mais il ne doit pas modifier les fichiers de version sauf si l’utilisateur demande explicitement une montée de version ou une préparation de release.
+
+Avant de suggérer ou d’appliquer un changement de version, l’agent doit trouver la source de version réelle du dépôt au lieu de supposer qu’il s’agit de `package.json`. Les candidats courants incluent `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` avec les tags de release, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, les manifestes d’application, les notes de release et les manifestes de modèles mustflow.
+
+Lorsqu’un changement de version est approuvé, les métadonnées du paquet, les versions de manifeste de modèle, les exemples de documentation et les tests doivent rester synchronisés selon les préférences `sync_*`.

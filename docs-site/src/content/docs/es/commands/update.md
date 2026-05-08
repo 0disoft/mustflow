@@ -29,6 +29,8 @@ El comando de actualización distingue estos escenarios:
 - `Would update`: el archivo puede actualizarse mediante `mf update --apply`.
 - `Would create`: el archivo existe en la plantilla pero todavía no está presente en la raíz actual.
 
+Los archivos cuyo lock tiene `last_action = "customized"` se tratan como sin cambios mientras sigan coincidiendo con su línea base personalizada, aunque la plantilla incluida sea diferente.
+
 ## Ejemplo
 
 ```sh

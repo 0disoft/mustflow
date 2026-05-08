@@ -36,13 +36,21 @@ test('CLI message catalogs keep every locale aligned with the source catalog', a
 	assert.deepEqual(report.extra, {});
 });
 
-test('CLI untranslated locale catalogs are seeded from English', async () => {
+test('CLI localized catalogs are not English fallbacks', async () => {
 	const { MESSAGE_CATALOGS, SUPPORTED_CLI_LANGS } = await import(i18nModuleUrl);
-	const seededLocales = ['zh', 'es', 'fr', 'hi'];
+	const localizedLocales = ['zh', 'es', 'fr', 'hi'];
+	const expectedOptionsHeading = {
+		zh: '选项',
+		es: 'Opciones',
+		fr: 'Options',
+		hi: 'विकल्प',
+	};
 
-	for (const locale of seededLocales) {
+	for (const locale of localizedLocales) {
 		assert.ok(SUPPORTED_CLI_LANGS.includes(locale), `${locale} should be a supported CLI language`);
-		assert.deepEqual(MESSAGE_CATALOGS[locale], MESSAGE_CATALOGS.en);
+		assert.notStrictEqual(MESSAGE_CATALOGS[locale], MESSAGE_CATALOGS.en);
+		assert.equal(MESSAGE_CATALOGS[locale]['cli.heading.options'], expectedOptionsHeading[locale]);
+		assert.notEqual(MESSAGE_CATALOGS[locale]['command.init.summary'], MESSAGE_CATALOGS.en['command.init.summary']);
 	}
 });
 
