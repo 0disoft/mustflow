@@ -26,11 +26,6 @@ Goal: keep mustflow documents from drifting into overlapping or
 self-authorizing policy sources before higher-level explanation and
 verification commands depend on them.
 
-- Add stable metadata expectations for mustflow-owned Markdown documents,
-  including identity, authority, lifecycle, locale, revision, and generated
-  versus user-editable status.
-- Keep repeated `INDEX.md` basenames, but pair them with path-bound metadata
-  and CLI messages that include logical document kind plus relative path.
 - Add stable section identifiers so localized documents can be validated by
   section identity rather than English heading text.
 - Keep Markdown schema validation inside the mustflow CLI package by default;
@@ -58,12 +53,9 @@ moment they usually become expensive.
 - Keep always-on repository rules in `AGENTS.md` or `agent-workflow.md`; use
   skills only for repeatable task-specific procedures.
 - Prioritize the first defensive pack after skill metadata and validation work:
-  `diff-risk-review`, `pattern-scout`, `repro-first-debug`,
-  `source-freshness-check`, `contract-sync-check`,
-  `artifact-integrity-check`, `dependency-reality-check`, and
-  `date-number-audit`.
-- Make `diff-risk-review` the first candidate, focused on changed-file scope,
-  risk classification, minimum relevant verification, and rollback points.
+  `pattern-scout`, `repro-first-debug`, `source-freshness-check`,
+  `contract-sync-check`, `artifact-integrity-check`,
+  `dependency-reality-check`, and `date-number-audit`.
 - Define report shapes for defensive skills so they do not expand scope, invent
   facts, mark unrun checks as passed, create unnecessary abstractions, or hide
   instruction conflicts.
@@ -157,9 +149,7 @@ conversion tools or leaving oversized production assets in website repositories.
 Goal: move shared decision logic out of command handlers without prematurely
 promising a broad public API.
 
-- Create focused internal modules under `src/core/` for authority resolution,
-  command classification, configuration loading, receipt handling, and
-  retention policy.
+- Create focused internal modules under `src/core/` for authority resolution.
 - Keep CLI commands thin by calling shared core functions.
 - Export only the minimum surface needed internally until API stability is
   intentionally documented.
