@@ -14,13 +14,14 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "explain" },
-    "topic": { "enum": ["authority", "command", "retention", "skills"] },
+    "topic": { "enum": ["authority", "command", "retention", "skill", "skills"] },
     "mustflow_root": { "type": "string" },
     "decision": {
       "oneOf": [
         { "$ref": "#/$defs/authorityDecision" },
         { "$ref": "#/$defs/commandDecision" },
         { "$ref": "#/$defs/retentionDecision" },
+        { "$ref": "#/$defs/skillRouteDecision" },
         { "$ref": "#/$defs/skillRouteAlignmentDecision" }
       ]
     }
@@ -155,6 +156,64 @@
             "knowledge": { "$ref": "#/$defs/knowledgeRetention" },
             "context": { "$ref": "#/$defs/contextRetention" },
             "repoMap": { "$ref": "#/$defs/repoMapRetention" }
+          }
+        }
+      }
+    },
+    "skillRouteDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "inputSkill",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "route"
+      ],
+      "properties": {
+        "kind": { "const": "skill_route" },
+        "inputSkill": { "type": "string" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "route": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": [
+            "skill",
+            "skillPath",
+            "trigger",
+            "requiredInput",
+            "editScope",
+            "risk",
+            "verificationIntents",
+            "expectedOutput",
+            "declaredCommandIntents"
+          ],
+          "properties": {
+            "skill": { "type": "string" },
+            "skillPath": { "type": "string" },
+            "trigger": { "type": "string" },
+            "requiredInput": { "type": "string" },
+            "editScope": { "type": "string" },
+            "risk": { "type": "string" },
+            "verificationIntents": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "expectedOutput": { "type": "string" },
+            "declaredCommandIntents": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
           }
         }
       }

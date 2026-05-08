@@ -18,12 +18,88 @@ export interface SkillRouteAlignmentDecision {
 	readonly alignment: SkillRouteAlignmentSummary;
 }
 
+export interface SkillIndexRoute {
+	readonly trigger: string;
+	readonly skillPath: string;
+	readonly requiredInput: string;
+	readonly editScope: string;
+	readonly risk: string;
+	readonly commandIntents: readonly string[];
+	readonly expectedOutput: string;
+}
+
 const SKILL_ROUTE_SOURCE_FILES = [
 	'.mustflow/skills/INDEX.md',
 	'.mustflow/skills/*/SKILL.md',
 	'.mustflow/config/commands.toml',
 	'.mustflow/docs/agent-workflow.md',
 ] as const;
+const MARKDOWN_TABLE_SEPARATOR_PATTERN = /^:?-{3,}:?$/u;
+export const SKILL_INDEX_ROUTE_COLUMN_COUNT = 7;
+export const SKILL_INDEX_SKILL_PATH_COLUMN_INDEX = 1;
+export const SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX = 5;
+export const SKILL_INDEX_ROUTE_COLUMNS =
+	'Trigger, Skill Document, Required Input, Edit Scope, Risk, Verification Intents, Expected Output';
+
+function splitMarkdownTableRow(line: string): string[] {
+	return line
+		.trim()
+		.replace(/^\|/u, '')
+		.replace(/\|$/u, '')
+		.split('|')
+		.map((cell) => cell.trim());
+}
+
+function isMarkdownTableSeparator(cells: readonly string[]): boolean {
+	return cells.length > 0 && cells.every((cell) => MARKDOWN_TABLE_SEPARATOR_PATTERN.test(cell));
+}
+
+export function readBacktickValues(value: string): string[] {
+	return [...value.matchAll(/`([^`]+)`/gu)].map((match) => match[1].trim()).filter(Boolean);
+}
+
+export function findSkillIndexRoutePathColumn(cells: readonly string[]): number {
+	return cells.findIndex((cell) =>
+		readBacktickValues(cell).some((value) => value.startsWith('.mustflow/skills/') && value.endsWith('/SKILL.md')),
+	);
+}
+
+export function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
+	const routes: SkillIndexRoute[] = [];
+
+	for (const line of content.split(/\r?\n/u)) {
+		if (!line.trim().startsWith('|')) {
+			continue;
+		}
+
+		const cells = splitMarkdownTableRow(line);
+		if (isMarkdownTableSeparator(cells)) {
+			continue;
+		}
+
+		const skillPathColumn = findSkillIndexRoutePathColumn(cells);
+		if (skillPathColumn < 0) {
+			continue;
+		}
+
+		const [skillPath] = readBacktickValues(cells[skillPathColumn]);
+		if (!skillPath) {
+			continue;
+		}
+
+		routes.push({
+			trigger: cells[0] ?? '',
+			skillPath,
+			requiredInput: cells[2] ?? '',
+			editScope: cells[3] ?? '',
+			risk: cells[4] ?? '',
+			commandIntents: readBacktickValues(cells[SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX] ?? ''),
+			expectedOutput: cells[6] ?? '',
+		});
+	}
+
+	return routes;
+}
 
 function pluralize(count: number, singular: string, plural: string): string {
 	return count === 1 ? singular : plural;

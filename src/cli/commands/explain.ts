@@ -9,6 +9,7 @@ import {
 	type AuthorityDecision,
 } from '../../core/authority-resolution.js';
 import { explainRetentionPolicy, type RetentionDecision } from '../../core/retention-explanation.js';
+import { explainSkillRoute, type SkillRouteDecision } from '../../core/skill-route-explanation.js';
 import {
 	explainSkillRouteAlignment,
 	type SkillRouteAlignmentDecision,
@@ -17,8 +18,13 @@ import { checkMustflowProject } from '../lib/validation.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 
-type ExplainTopic = 'authority' | 'command' | 'retention' | 'skills';
-type ExplainDecision = AuthorityDecision | CommandDecision | RetentionDecision | SkillRouteAlignmentDecision;
+type ExplainTopic = 'authority' | 'command' | 'retention' | 'skill' | 'skills';
+type ExplainDecision =
+	| AuthorityDecision
+	| CommandDecision
+	| RetentionDecision
+	| SkillRouteDecision
+	| SkillRouteAlignmentDecision;
 
 interface ExplainOutput {
 	readonly schema_version: string;
@@ -44,6 +50,8 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 				'mf explain command lint --json',
 				'mf explain retention',
 				'mf explain retention --json',
+				'mf explain skill code-review',
+				'mf explain skill mustflow.core.code-review --json',
 				'mf explain skills',
 				'mf explain skills --json',
 				'mf explain authority .mustflow/skills/INDEX.md --json',
@@ -94,6 +102,16 @@ function getSkillsExplainOutput(projectRoot: string): ExplainOutput {
 		topic: 'skills',
 		mustflow_root: projectRoot,
 		decision: explainSkillRouteAlignment(checkMustflowProject(projectRoot, { strict: true })),
+	};
+}
+
+function getSkillExplainOutput(projectRoot: string, skillName: string): ExplainOutput {
+	return {
+		schema_version: EXPLAIN_SCHEMA_VERSION,
+		command: 'explain',
+		topic: 'skill',
+		mustflow_root: projectRoot,
+		decision: explainSkillRoute(projectRoot, skillName),
 	};
 }
 
@@ -187,6 +205,27 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		}
 	}
 
+	if ('route' in output.decision) {
+		const route = output.decision.route;
+		lines.push('', t(lang, 'explain.label.skillRoute'));
+
+		if (!route) {
+			lines.push(`- ${t(lang, 'value.none')}`);
+		} else {
+			lines.push(
+				`- skill: ${route.skill}`,
+				`- path: ${route.skillPath}`,
+				`- trigger: ${route.trigger}`,
+				`- required_input: ${route.requiredInput}`,
+				`- edit_scope: ${route.editScope}`,
+				`- risk: ${route.risk}`,
+				`- verification_intents: ${route.verificationIntents.join(', ') || t(lang, 'value.none')}`,
+				`- declared_command_intents: ${route.declaredCommandIntents.join(', ') || t(lang, 'value.none')}`,
+				`- expected_output: ${route.expectedOutput}`,
+			);
+		}
+	}
+
 	return lines.join('\n');
 }
 
@@ -213,7 +252,7 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 	const positional = args.filter((arg) => arg !== '--json');
 	const [topic, targetArg, ...rest] = positional;
 
-	if (topic !== 'authority' && topic !== 'command' && topic !== 'retention' && topic !== 'skills') {
+	if (topic !== 'authority' && topic !== 'command' && topic !== 'retention' && topic !== 'skill' && topic !== 'skills') {
 		printUsageError(
 			reporter,
 			t(lang, topic ? 'explain.error.unknownTopic' : 'explain.error.missingTopic', { topic: topic ?? '' }),
@@ -228,6 +267,17 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 		printUsageError(
 			reporter,
 			t(lang, 'explain.error.missingCommand'),
+			'mf explain --help',
+			getExplainHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
+	if (topic === 'skill' && !targetArg) {
+		printUsageError(
+			reporter,
+			t(lang, 'explain.error.missingSkill'),
 			'mf explain --help',
 			getExplainHelp(lang),
 			lang,
@@ -276,7 +326,9 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 				? getCommandExplainOutput(projectRoot, targetArg)
 				: topic === 'retention'
 					? getRetentionExplainOutput(projectRoot)
-					: getSkillsExplainOutput(projectRoot);
+					: topic === 'skill'
+						? getSkillExplainOutput(projectRoot, targetArg)
+						: getSkillsExplainOutput(projectRoot);
 
 	if (json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

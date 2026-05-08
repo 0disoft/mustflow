@@ -36,6 +36,7 @@ export const hiMessages = {
   "command.dashboard.summary":
     "स्थानीय mustflow डैशबोर्ड शुरू करें",
   "command.versionSources.summary": "पहचाने गए संस्करण स्रोत दिखाएँ",
+  "command.verify.summary": "किसी reason के लिए required verification चलाएँ",
   "command.explain.summary": "mustflow नीति निर्णय समझाएँ",
   "command.help.summary": "इंस्टॉल किए गए वर्कफ़्लो की सहायता दिखाएँ",
 
@@ -400,6 +401,18 @@ export const hiMessages = {
   "versionSources.value.disabled": "disabled",
   "versionSources.noSources": "कोई version source नहीं मिला",
 
+  "verify.help.summary":
+    "required_after metadata से चुने गए configured verification intents चलाएँ।",
+  "verify.help.option.reason": "Verify करने के लिए required_after reason चुनें",
+  "verify.help.exit.ok": "सभी selected verification intents pass हुए",
+  "verify.help.exit.fail":
+    "Verification fail हुआ, partial रहा, blocked रहा, या input invalid था",
+  "verify.title": "mustflow verify",
+  "verify.label.reason": "Reason",
+  "verify.label.status": "Status",
+  "verify.label.results": "Results",
+  "verify.error.missingReason": "Verification reason missing है",
+
   "explain.help.summary":
     "फ़ाइलें बदले बिना समझाएँ कि mustflow policy decision क्यों लागू होता है।",
   "explain.help.exit.ok": "Policy decision जाँचा और प्रिंट किया गया",
@@ -414,9 +427,11 @@ export const hiMessages = {
   "explain.label.commandIntent": "Command intent",
   "explain.label.commandName": "Command",
   "explain.label.retentionPolicy": "Retention policy",
+  "explain.label.skillRoute": "Skill route",
   "explain.label.skillRoutes": "Skill routes",
   "explain.error.missingTopic": "Explain topic गुम है",
   "explain.error.missingCommand": "Command intent गुम है",
+  "explain.error.missingSkill": "Skill id गुम है",
   "explain.error.unknownTopic": "अज्ञात explain topic: {topic}",
 
   "update.help.summary":

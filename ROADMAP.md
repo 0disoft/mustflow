@@ -65,14 +65,6 @@ moment they usually become expensive.
   `.mustflow/config/commands.toml`, not raw package-manager, build, migration,
   or deployment commands.
 
-### M2.8: Evidence-Based Skill Routing
-
-Goal: make `.mustflow/skills/INDEX.md` a skill-routing contract rather than a
-plain list of available procedures.
-
-- Track later command candidates such as `mf skills suggest --changed`,
-  `mf skills explain <skill_id>`, and `mf explain skill <skill_id>`.
-
 ### M2.9: Change Classification and Public Surface Contracts
 
 Goal: classify changes, map affected public surfaces, and derive required
@@ -146,21 +138,6 @@ promising a broad public API.
 - Export only the minimum surface needed internally until API stability is
   intentionally documented.
 - Preserve existing CLI behavior while reducing duplicated policy logic.
-
-### M5: Verify by Reason
-
-Goal: turn `required_after` metadata in `.mustflow/config/commands.toml` into a
-practical verification workflow.
-
-- Add `mf verify --reason <event>`.
-- Add `mf verify --json --reason <event>`.
-- Resolve matching intents from `required_after`.
-- Honor `[verification.selection]` while still reporting skipped checks and
-  never treating preferences as command permission.
-- Run only configured, one-shot, agent-allowed intents through `mf run`.
-- Report unknown, manual-only, missing, and blocked intents as skipped with
-  reasons.
-- Produce a clear result such as passed, partial, failed, or blocked.
 
 ## Supporting Milestones
 

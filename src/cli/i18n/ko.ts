@@ -37,6 +37,7 @@ export const koMessages = {
   "command.dashboard.summary":
     "로컬 mustflow 대시보드를 시작합니다",
   "command.versionSources.summary": "감지된 버전 기준 원본을 출력합니다",
+  "command.verify.summary": "이유에 맞는 필수 검증을 실행합니다",
   "command.explain.summary": "mustflow 정책 결정을 설명합니다",
   "command.help.summary": "설치된 워크플로우 도움말을 출력합니다",
 
@@ -394,6 +395,18 @@ export const koMessages = {
   "versionSources.value.disabled": "꺼짐",
   "versionSources.noSources": "감지된 버전 기준 원본이 없습니다",
 
+  "verify.help.summary":
+    "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",
+  "verify.help.option.reason": "검증할 required_after 이유를 지정합니다",
+  "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
+  "verify.help.exit.fail":
+    "검증이 실패했거나, 일부만 실행됐거나, 막혔거나, 입력이 올바르지 않습니다",
+  "verify.title": "mustflow verify",
+  "verify.label.reason": "이유",
+  "verify.label.status": "상태",
+  "verify.label.results": "결과",
+  "verify.error.missingReason": "검증 이유가 없습니다",
+
   "explain.help.summary":
     "파일을 수정하지 않고 mustflow 정책 결정이 왜 적용되는지 설명합니다.",
   "explain.help.exit.ok": "정책 결정을 확인하고 출력했습니다",
@@ -408,9 +421,11 @@ export const koMessages = {
   "explain.label.commandIntent": "명령 의도",
   "explain.label.commandName": "명령",
   "explain.label.retentionPolicy": "보존 정책",
+  "explain.label.skillRoute": "스킬 라우트",
   "explain.label.skillRoutes": "스킬 라우팅",
   "explain.error.missingTopic": "설명할 주제가 없습니다",
   "explain.error.missingCommand": "설명할 명령 의도가 없습니다",
+  "explain.error.missingSkill": "설명할 스킬 식별자가 없습니다",
   "explain.error.unknownTopic": "알 수 없는 설명 주제: {topic}",
 
   "update.help.summary":

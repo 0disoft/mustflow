@@ -34,6 +34,7 @@ export const enMessages = {
   "command.dashboard.summary":
     "Start the local mustflow dashboard",
   "command.versionSources.summary": "Show detected version sources",
+  "command.verify.summary": "Run required verification for a reason",
   "command.explain.summary": "Explain mustflow policy decisions",
   "command.help.summary": "Show installed workflow help",
 
@@ -398,6 +399,18 @@ Read these files before working:
   "versionSources.value.disabled": "disabled",
   "versionSources.noSources": "No version sources detected",
 
+  "verify.help.summary":
+    "Run configured verification intents selected by required_after metadata.",
+  "verify.help.option.reason": "Select the required_after reason to verify",
+  "verify.help.exit.ok": "All selected verification intents passed",
+  "verify.help.exit.fail":
+    "Verification failed, was partial, was blocked, or input was invalid",
+  "verify.title": "mustflow verify",
+  "verify.label.reason": "Reason",
+  "verify.label.status": "Status",
+  "verify.label.results": "Results",
+  "verify.error.missingReason": "Missing verification reason",
+
   "explain.help.summary":
     "Explain why a mustflow policy decision applies without modifying files.",
   "explain.help.exit.ok": "The policy decision was inspected and printed",
@@ -412,9 +425,11 @@ Read these files before working:
   "explain.label.commandIntent": "Command intent",
   "explain.label.commandName": "Command",
   "explain.label.retentionPolicy": "Retention policy",
+  "explain.label.skillRoute": "Skill route",
   "explain.label.skillRoutes": "Skill routes",
   "explain.error.missingTopic": "Missing explain topic",
   "explain.error.missingCommand": "Missing command intent",
+  "explain.error.missingSkill": "Missing skill id",
   "explain.error.unknownTopic": "Unknown explain topic: {topic}",
 
   "update.help.summary":

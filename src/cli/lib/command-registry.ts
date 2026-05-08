@@ -68,6 +68,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.versionSources.summary',
 	},
 	{
+		id: 'verify',
+		usage: 'mf verify',
+		summaryKey: 'command.verify.summary',
+	},
+	{
 		id: 'explain',
 		usage: 'mf explain',
 		summaryKey: 'command.explain.summary',

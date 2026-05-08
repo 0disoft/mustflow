@@ -17,6 +17,7 @@ import { runRun } from './commands/run.js';
 import { runSearch } from './commands/search.js';
 import { runStatus } from './commands/status.js';
 import { runUpdate } from './commands/update.js';
+import { runVerify } from './commands/verify.js';
 import { runVersionSources } from './commands/version-sources.js';
 import { COMMAND_DEFINITIONS } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
@@ -54,6 +55,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
+				'mf verify --reason code_change',
 				'mf version-sources --json',
 			],
 			exitCodes: [
@@ -193,6 +195,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'version-sources') {
 		return runVersionSources(args, reporter, parsed.lang);
+	}
+
+	if (command === 'verify') {
+		return runVerify(args, reporter, parsed.lang);
 	}
 
 	if (command === 'explain') {

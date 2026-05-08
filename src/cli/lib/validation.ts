@@ -21,6 +21,15 @@ import {
 	formatManagedMarkdownLabel,
 	getManagedMarkdownExpectation,
 } from '../../core/authority-resolution.js';
+import {
+	SKILL_INDEX_ROUTE_COLUMN_COUNT,
+	SKILL_INDEX_ROUTE_COLUMNS,
+	SKILL_INDEX_SKILL_PATH_COLUMN_INDEX,
+	SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX,
+	findSkillIndexRoutePathColumn,
+	parseSkillIndexRoutes,
+	readBacktickValues,
+} from '../../core/skill-route-alignment.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
@@ -231,7 +240,6 @@ const BACKGROUND_SHELL_PATTERNS = [
 	/\bchromium(?:\.exe)?\b/iu,
 ];
 const RAW_COMMAND_FENCE_PATTERN = /```(?:sh|bash|shell|zsh|powershell|ps1|cmd)\s+[\s\S]*?```/giu;
-const MARKDOWN_TABLE_SEPARATOR_PATTERN = /^:?-{3,}:?$/u;
 const SKILL_COMMAND_PERMISSION_CLAIM_PATTERNS = [
 	/\b(?:this\s+skill|skill\s+documents?|skills?)\s+(?:authorizes?|grants?|allows?|permits?)\s+(?:agents?\s+)?(?:to\s+)?(?:run|execute)\b/iu,
 	/\b(?:agents?\s+)?(?:may|can|are\s+allowed\s+to|is\s+allowed\s+to|is\s+permitted\s+to|have\s+permission\s+to)\s+(?:run|execute)\s+(?:raw\s+)?(?:shell\s+)?commands?\b/iu,
@@ -241,11 +249,6 @@ const ROUTER_INDEX_PROCEDURE_SECTION_PATTERN =
 	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Preconditions|Allowed Edits|Procedure|Postconditions|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|사전 조건|허용 수정 범위|절차|사후 조건|검증|실패 대응|출력 형식)\s*$/imu;
 const ROUTER_INDEX_FILES = ['.mustflow/skills/INDEX.md', '.mustflow/context/INDEX.md'] as const;
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
-const SKILL_INDEX_ROUTE_COLUMN_COUNT = 7;
-const SKILL_INDEX_SKILL_PATH_COLUMN_INDEX = 1;
-const SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX = 5;
-const SKILL_INDEX_ROUTE_COLUMNS =
-	'Trigger, Skill Document, Required Input, Edit Scope, Risk, Verification Intents, Expected Output';
 const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
 const SKILL_PACK_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;
 const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
@@ -377,11 +380,6 @@ interface ParsedConfigFiles {
 	readonly commandsToml?: TomlTable;
 	readonly preferencesToml?: TomlTable;
 	readonly versioningToml?: TomlTable;
-}
-
-interface SkillIndexRoute {
-	readonly skillPath: string;
-	readonly commandIntents: readonly string[];
 }
 
 function hasOwn(table: TomlTable, key: string): boolean {
@@ -1621,69 +1619,19 @@ function validateStrictRouterIndexes(projectRoot: string, issues: CheckIssue[]):
 	}
 }
 
-function splitMarkdownTableRow(line: string): string[] {
-	return line
-		.trim()
-		.replace(/^\|/u, '')
-		.replace(/\|$/u, '')
-		.split('|')
-		.map((cell) => cell.trim());
-}
-
-function isMarkdownTableSeparator(cells: readonly string[]): boolean {
-	return cells.length > 0 && cells.every((cell) => MARKDOWN_TABLE_SEPARATOR_PATTERN.test(cell));
-}
-
-function readBacktickValues(value: string): string[] {
-	return [...value.matchAll(/`([^`]+)`/gu)].map((match) => match[1].trim()).filter(Boolean);
-}
-
-function findSkillIndexRoutePathColumn(cells: readonly string[]): number {
-	return cells.findIndex((cell) =>
-		readBacktickValues(cell).some((value) => value.startsWith('.mustflow/skills/') && value.endsWith('/SKILL.md')),
-	);
-}
-
-function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
-	const routes: SkillIndexRoute[] = [];
-
-	for (const line of content.split(/\r?\n/u)) {
-		if (!line.trim().startsWith('|')) {
-			continue;
-		}
-
-		const cells = splitMarkdownTableRow(line);
-		if (isMarkdownTableSeparator(cells)) {
-			continue;
-		}
-
-		const skillPathColumn = findSkillIndexRoutePathColumn(cells);
-		if (skillPathColumn < 0) {
-			continue;
-		}
-
-		const [skillPath] = readBacktickValues(cells[skillPathColumn]);
-		if (!skillPath) {
-			continue;
-		}
-
-		routes.push({
-			skillPath,
-			commandIntents: readBacktickValues(cells[SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX] ?? ''),
-		});
-	}
-
-	return routes;
-}
-
 function validateSkillIndexRouteShape(content: string, issues: CheckIssue[]): void {
 	for (const line of content.split(/\r?\n/u)) {
 		if (!line.trim().startsWith('|')) {
 			continue;
 		}
 
-		const cells = splitMarkdownTableRow(line);
-		if (isMarkdownTableSeparator(cells)) {
+		const cells = line
+			.trim()
+			.replace(/^\|/u, '')
+			.replace(/\|$/u, '')
+			.split('|')
+			.map((cell) => cell.trim());
+		if (cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/u.test(cell))) {
 			continue;
 		}
 

@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.6.0');
+	assert.equal(packageJson.version, '1.7.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -165,6 +165,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/commands/search.js'));
 	assert.ok(files.has('dist/cli/commands/dashboard.js'));
 	assert.ok(files.has('dist/cli/commands/update.js'));
+	assert.ok(files.has('dist/cli/commands/verify.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
 	assert.ok(files.has('templates/default/i18n.toml'));
 	assert.ok(files.has('dist/cli/lib/template-i18n.js'));
@@ -175,6 +176,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/run-receipt.schema.json'));
 	assert.ok(files.has('schemas/commands.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));
+	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));

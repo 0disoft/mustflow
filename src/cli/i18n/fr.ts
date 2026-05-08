@@ -36,6 +36,7 @@ export const frMessages = {
   "command.dashboard.summary":
     "Démarre le tableau de bord mustflow local",
   "command.versionSources.summary": "Affiche les sources de version détectées",
+  "command.verify.summary": "Exécute la vérification requise pour une raison",
   "command.explain.summary": "Explique les décisions de politique mustflow",
   "command.help.summary": "Affiche l'aide du flux de travail installé",
 
@@ -400,6 +401,18 @@ Lisez ces fichiers avant de travailler :
   "versionSources.value.disabled": "désactivé",
   "versionSources.noSources": "Aucune source de version détectée",
 
+  "verify.help.summary":
+    "Exécute les intentions de vérification configurées sélectionnées par les métadonnées required_after.",
+  "verify.help.option.reason": "Sélectionne la raison required_after à vérifier",
+  "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
+  "verify.help.exit.fail":
+    "La vérification a échoué, est partielle, est bloquée ou l'entrée est invalide",
+  "verify.title": "mustflow verify",
+  "verify.label.reason": "Raison",
+  "verify.label.status": "État",
+  "verify.label.results": "Résultats",
+  "verify.error.missingReason": "Raison de vérification manquante",
+
   "explain.help.summary":
     "Explique pourquoi une décision de politique mustflow s'applique sans modifier de fichiers.",
   "explain.help.exit.ok": "La décision de politique a été inspectée et affichée",
@@ -414,9 +427,11 @@ Lisez ces fichiers avant de travailler :
   "explain.label.commandIntent": "Intention de commande",
   "explain.label.commandName": "Commande",
   "explain.label.retentionPolicy": "Politique de rétention",
+  "explain.label.skillRoute": "Route de skill",
   "explain.label.skillRoutes": "Routage des skills",
   "explain.error.missingTopic": "Sujet d'explication manquant",
   "explain.error.missingCommand": "Intention de commande manquante",
+  "explain.error.missingSkill": "Identifiant de skill manquant",
   "explain.error.unknownTopic": "Sujet d'explication inconnu : {topic}",
 
   "update.help.summary":

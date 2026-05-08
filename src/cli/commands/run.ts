@@ -10,6 +10,7 @@ import { runHelp } from './help.js';
 import { runMap } from './map.js';
 import { runStatus } from './status.js';
 import { runUpdate } from './update.js';
+import { runVerify } from './verify.js';
 import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
@@ -268,6 +269,10 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 
 	if (command === 'version-sources') {
 		return runVersionSources(commandArgs, reporter, lang);
+	}
+
+	if (command === 'verify') {
+		return runVerify(commandArgs, reporter, lang);
 	}
 
 	return undefined;

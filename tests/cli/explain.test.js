@@ -229,6 +229,49 @@ test('explains skill route alignment as text', () => {
 	}
 });
 
+test('explains a single skill route as json', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'skill', 'mustflow.core.code-review', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'skill');
+		assert.equal(report.decision.kind, 'skill_route');
+		assert.equal(report.decision.inputSkill, 'mustflow.core.code-review');
+		assert.equal(report.decision.countsAsMustflowVerification, false);
+		assert.equal(report.decision.route.skill, 'code-review');
+		assert.equal(report.decision.route.skillPath, '.mustflow/skills/code-review/SKILL.md');
+		assert.match(report.decision.route.trigger, /Code changes need review/);
+		assert.deepEqual(report.decision.route.verificationIntents, ['test', 'test_related', 'test_audit', 'lint']);
+		assert.ok(report.decision.route.declaredCommandIntents.includes('test'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reports an undeclared skill route without inventing a route', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'skill', 'missing-skill', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'skill');
+		assert.equal(report.decision.kind, 'skill_route');
+		assert.equal(report.decision.route, null);
+		assert.match(report.decision.reason, /no matching route/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails explain retention when a target argument is provided', () => {
 	const projectPath = createTempProject();
 
@@ -255,6 +298,22 @@ test('fails explain skills when a target argument is provided', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unexpected argument: extra/);
+		assert.match(result.stdout, /Usage:/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails explain skill when the skill id is missing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'skill']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Error: Missing skill id/);
 		assert.match(result.stdout, /Usage:/);
 	} finally {
 		removeTempProject(projectPath);

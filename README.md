@@ -233,7 +233,9 @@ mf run mustflow_update_apply
 | `mf help <topic>` | Show installed mustflow help. |
 | `mf dashboard` | Start a local dashboard for safe mustflow preferences and refresh the customized lock baseline on save. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
+| `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
+| `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, and output contract for one skill route. |
 | `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
 
 Automation and agents should use `--json` output instead of parsing human-facing

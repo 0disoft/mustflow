@@ -36,6 +36,7 @@ export const esMessages = {
   "command.dashboard.summary":
     "Inicia el dashboard local de mustflow",
   "command.versionSources.summary": "Muestra fuentes de versión detectadas",
+  "command.verify.summary": "Ejecuta la verificación requerida para una razón",
   "command.explain.summary": "Explica decisiones de política de mustflow",
   "command.help.summary": "Muestra la ayuda del flujo de trabajo instalado",
 
@@ -400,6 +401,18 @@ Lee estos archivos antes de trabajar:
   "versionSources.value.disabled": "desactivado",
   "versionSources.noSources": "No se detectaron fuentes de versión",
 
+  "verify.help.summary":
+    "Ejecuta intenciones de verificación configuradas seleccionadas por metadatos required_after.",
+  "verify.help.option.reason": "Selecciona la razón required_after que se debe verificar",
+  "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
+  "verify.help.exit.fail":
+    "La verificación falló, fue parcial, quedó bloqueada o la entrada no fue válida",
+  "verify.title": "mustflow verify",
+  "verify.label.reason": "Razón",
+  "verify.label.status": "Estado",
+  "verify.label.results": "Resultados",
+  "verify.error.missingReason": "Falta la razón de verificación",
+
   "explain.help.summary":
     "Explica por qué se aplica una decisión de política de mustflow sin modificar archivos.",
   "explain.help.exit.ok": "La decisión de política se inspeccionó e imprimió",
@@ -414,9 +427,11 @@ Lee estos archivos antes de trabajar:
   "explain.label.commandIntent": "Intención de comando",
   "explain.label.commandName": "Comando",
   "explain.label.retentionPolicy": "Política de retención",
+  "explain.label.skillRoute": "Ruta de skill",
   "explain.label.skillRoutes": "Rutas de skills",
   "explain.error.missingTopic": "Falta el tema de explicación",
   "explain.error.missingCommand": "Falta la intención de comando",
+  "explain.error.missingSkill": "Falta el id de skill",
   "explain.error.unknownTopic": "Tema de explicación desconocido: {topic}",
 
   "update.help.summary":

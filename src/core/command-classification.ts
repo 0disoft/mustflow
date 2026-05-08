@@ -9,6 +9,7 @@ const IN_PROCESS_MUSTFLOW_BUILTIN_COMMANDS = new Set([
 	'status',
 	'update',
 	'version-sources',
+	'verify',
 ]);
 
 export function isMustflowBinName(command: string): boolean {

@@ -337,3 +337,51 @@ test('explain skills json output matches the published schema', () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('explain skill json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['explain', 'skill', 'code-review', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema('explain-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('verify json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_schema]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a verify schema test message."
+argv = ['${process.execPath}', '-e', 'console.log("verify schema")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema('verify-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

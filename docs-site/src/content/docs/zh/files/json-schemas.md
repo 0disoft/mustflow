@@ -27,6 +27,7 @@ JSON Schema 合同。
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
+- `verify-report.schema.json`: `mf verify --reason <event> --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` 和 `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: 已解析的 `.mustflow/config/commands.toml`
 

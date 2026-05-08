@@ -12,6 +12,7 @@ Current schemas:
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `explain-report.schema.json`: `mf explain authority --json`, `mf explain command --json`,
   `mf explain retention --json`, and `mf explain skills --json`
+- `verify-report.schema.json`: `mf verify --reason <event> --json`
 
 These schemas describe stable automation-facing fields. Human-readable command
 output is intentionally not covered.

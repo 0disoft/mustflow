@@ -11,6 +11,8 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 
 `mf explain retention` explica la política de retención efectiva de `.mustflow/config/mustflow.toml`, incluida la forma de guardar eventos sin procesar, los recibos de ejecución acotados y los límites de contexto.
 
+`mf explain skill <skill_id>` explica una ruta de `.mustflow/skills/INDEX.md`, incluidos el disparador, la entrada requerida, el alcance de edición, el riesgo, las intenciones de verificación y la salida esperada. El objetivo puede ser el nombre de carpeta, el `metadata.skill_id` completo, `mustflow_doc` o la ruta del skill.
+
 `mf explain skills` explica el resumen estricto de alineación entre el índice de skills y sus cuerpos que usa `mf doctor --strict`. Informa si cada ruta de `.mustflow/skills/INDEX.md` apunta a un cuerpo de skill y si cada cuerpo está listado en el índice.
 
 ## Salida
@@ -25,6 +27,7 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 - `Expected frontmatter`: valores requeridos de `mustflow_doc`, `authority` y `lifecycle` cuando la ruta se reconoce.
 - `Command intent`: metadatos del contrato de comando cuando se usa el tema `command`.
 - `Retention policy`: ajustes de retención efectivos cuando se usa el tema `retention`.
+- `Skill route`: disparador, alcance, riesgo, verificaciones y salida esperada cuando se usa el tema `skill`.
 - `Skill routes`: estado estricto de alineación entre índice y cuerpo cuando se usa el tema `skills`.
 
 ## Ejemplos
@@ -36,6 +39,8 @@ npx mf explain command test
 npx mf explain command lint --json
 npx mf explain retention
 npx mf explain retention --json
+npx mf explain skill code-review
+npx mf explain skill mustflow.core.code-review --json
 npx mf explain skills
 npx mf explain skills --json
 npx mf explain authority .mustflow/skills/INDEX.md --json
@@ -51,7 +56,7 @@ La salida legible por máquinas usa estos campos:
 
 - `schema_version` (`string`): versión del formato de salida.
 - `command` (`string`): siempre `explain`.
-- `topic` (`string`): `authority`, `command`, `retention` o `skills`.
+- `topic` (`string`): `authority`, `command`, `retention`, `skill` o `skills`.
 - `mustflow_root` (`string`): raíz mustflow actual.
 - `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema.
 

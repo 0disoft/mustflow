@@ -36,6 +36,7 @@ export const zhMessages = {
   "command.dashboard.summary":
     "启动本地 mustflow 仪表板",
   "command.versionSources.summary": "显示检测到的版本来源",
+  "command.verify.summary": "按原因运行必需验证",
   "command.explain.summary": "解释 mustflow 策略决策",
   "command.help.summary": "显示已安装工作流的帮助",
 
@@ -390,6 +391,18 @@ export const zhMessages = {
   "versionSources.value.disabled": "已禁用",
   "versionSources.noSources": "未检测到版本来源",
 
+  "verify.help.summary":
+    "运行由 required_after 元数据选出的已配置验证意图。",
+  "verify.help.option.reason": "选择要验证的 required_after 原因",
+  "verify.help.exit.ok": "选中的所有验证意图均已通过",
+  "verify.help.exit.fail":
+    "验证失败、部分完成、被阻止，或输入无效",
+  "verify.title": "mustflow verify",
+  "verify.label.reason": "原因",
+  "verify.label.status": "状态",
+  "verify.label.results": "结果",
+  "verify.error.missingReason": "缺少验证原因",
+
   "explain.help.summary":
     "在不修改文件的情况下解释 mustflow 策略决策为何适用。",
   "explain.help.exit.ok": "已检查并输出策略决策",
@@ -404,9 +417,11 @@ export const zhMessages = {
   "explain.label.commandIntent": "命令意图",
   "explain.label.commandName": "命令",
   "explain.label.retentionPolicy": "保留策略",
+  "explain.label.skillRoute": "技能路由",
   "explain.label.skillRoutes": "技能路由",
   "explain.error.missingTopic": "缺少 explain 主题",
   "explain.error.missingCommand": "缺少命令意图",
+  "explain.error.missingSkill": "缺少技能标识",
   "explain.error.unknownTopic": "未知 explain 主题：{topic}",
 
   "update.help.summary":

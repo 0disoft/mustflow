@@ -11,6 +11,8 @@ Without a path, the command prints the authority model. With a path, it reports 
 
 `mf explain retention` explains the effective retention policy from `.mustflow/config/mustflow.toml`, including raw event storage, bounded run receipts, and context limits.
 
+`mf explain skill <skill_id>` explains one route from `.mustflow/skills/INDEX.md`, including its trigger, required input, edit scope, risk, verification intents, and expected output. The target may be the skill folder name, full `metadata.skill_id`, `mustflow_doc`, or skill path.
+
 `mf explain skills` explains the strict skill index/body alignment summary used by `mf doctor --strict`. It reports whether every `.mustflow/skills/INDEX.md` route points to a skill body and whether every skill body is listed in the index.
 
 ## Output
@@ -25,6 +27,7 @@ Without a path, the command prints the authority model. With a path, it reports 
 - `Expected frontmatter`: Required `mustflow_doc`, `authority`, and `lifecycle` values when the path is recognized.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
+- `Skill route`: Trigger, scope, risk, checks, and expected output when the `skill` topic is used.
 - `Skill routes`: Strict skill index/body alignment status when the `skills` topic is used.
 
 ## Examples
@@ -36,6 +39,8 @@ npx mf explain command test
 npx mf explain command lint --json
 npx mf explain retention
 npx mf explain retention --json
+npx mf explain skill code-review
+npx mf explain skill mustflow.core.code-review --json
 npx mf explain skills
 npx mf explain skills --json
 npx mf explain authority .mustflow/skills/INDEX.md --json
@@ -51,7 +56,7 @@ Machine-readable output uses these fields:
 
 - `schema_version` (`string`): Output format version.
 - `command` (`string`): Always `explain`.
-- `topic` (`string`): `authority`, `command`, `retention`, or `skills`.
+- `topic` (`string`): `authority`, `command`, `retention`, `skill`, or `skills`.
 - `mustflow_root` (`string`): Current mustflow root.
 - `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details.
 
