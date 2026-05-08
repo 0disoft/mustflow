@@ -33,9 +33,12 @@ npx mf check --strict
 - Managed mustflow Markdown files must keep the expected `mustflow_doc`, `locale`, `canonical`, and `revision` frontmatter shape for their path.
 - Context documents must not claim to override direct user instructions, current code, tests, or command contracts.
 - `.mustflow/skills/INDEX.md` and `.mustflow/context/INDEX.md` must remain routing indexes rather than procedure documents.
+- `.mustflow/skills/INDEX.md` routes must point to existing `SKILL.md` files, and every installed skill must be listed.
 - `SKILL.md` frontmatter must use `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure`, and a `name` matching its `.mustflow/skills/<name>/` folder.
 - `metadata.command_intents` entries in skill frontmatter must reference command intents declared in `.mustflow/config/commands.toml`.
+- Command intents listed in `.mustflow/skills/INDEX.md` must be declared by the referenced skill frontmatter.
 - Skill bodies must not claim permission to run commands directly; command permissions stay in `.mustflow/config/commands.toml`.
+- When version-impact preferences are enabled, a declared version source or detectable package/template version source must exist.
 
 
 Strict mode is optional to ensure the normal workflow remains lightweight. It is recommended after modifying mustflow documents, skills, command contracts, or repository-map generation rules.

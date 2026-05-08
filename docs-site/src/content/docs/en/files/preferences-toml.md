@@ -162,6 +162,8 @@ When a version changes, `sync_template_version`, `sync_docs_examples`, and `sync
 
 These preferences do not say where a repository stores its version. Agents still have to discover the language- or framework-specific version source before proposing or editing a version.
 
+When version-impact preferences are enabled, `mf check --strict` also verifies that a version source can be found. It currently accepts sources declared in `.mustflow/config/versioning.toml`, the installed mustflow template lock version, and root package or template sources such as `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle files, .NET project files, and gemspecs when they contain an actual version value. If none is present, strict mode reports an issue so agents do not assume `package.json` by default.
+
 ## Verification Selection
 
 `[verification.selection]` guides how agents choose configured checks. It does not grant permission to run commands; command execution still depends on `.mustflow/config/commands.toml`.
@@ -196,6 +198,7 @@ If this file is present, `mf check` verifies the following:
 - `git.commit_message.max_suggestions` is a positive integer.
 - `reporting.commit_suggestion.enabled` is a boolean.
 - `[release.versioning]` fields are booleans.
+- When version-impact preferences are enabled, `mf check --strict` verifies that a declared version source or detectable package/template version source exists.
 - `[verification.selection]` uses an allowed strategy and boolean skip/report flags.
 - `[testing.authoring]` uses an allowed new-test policy and boolean authoring flags.
 - `docs.update_when` is a string array.

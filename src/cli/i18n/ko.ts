@@ -33,6 +33,7 @@ export const koMessages = {
   "command.search.summary": "로컬 mustflow SQLite 색인을 검색합니다",
   "command.dashboard.summary":
     "로컬 mustflow 대시보드를 시작합니다",
+  "command.versionSources.summary": "감지된 버전 기준 원본을 출력합니다",
   "command.help.summary": "설치된 워크플로우 도움말을 출력합니다",
 
   "top.help.option.lang": "CLI 출력 언어를 선택합니다. 지원값: {languages}",
@@ -211,6 +212,7 @@ export const koMessages = {
   "doctor.actionLabel": "명령",
   "doctor.diagnostic.install": "설치",
   "doctor.diagnostic.validation": "검증",
+  "doctor.diagnostic.skillRoutes": "스킬 라우팅",
   "doctor.diagnostic.commands": "명령",
   "doctor.diagnostic.readOrder": "읽기 순서",
   "doctor.diagnostic.optionalReadOrder": "선택적 읽기 순서",
@@ -377,6 +379,16 @@ export const koMessages = {
     "파일을 수정하지 않고 로컬 mustflow 설치 상태를 출력합니다.",
   "status.help.exit.ok": "상태를 확인하고 출력했습니다",
   "status.title": "mustflow 상태",
+
+  "versionSources.help.summary":
+    "파일을 수정하지 않고 패키지와 템플릿 버전 기준 원본을 출력합니다.",
+  "versionSources.help.exit.ok": "버전 기준 원본을 확인하고 출력했습니다",
+  "versionSources.title": "mustflow 버전 기준 원본",
+  "versionSources.label.versioning": "버전 관리 선호값",
+  "versionSources.label.sources": "기준 원본",
+  "versionSources.value.enabled": "켜짐",
+  "versionSources.value.disabled": "꺼짐",
+  "versionSources.noSources": "감지된 버전 기준 원본이 없습니다",
 
   "update.help.summary":
     "설치된 mustflow 작업 흐름의 갱신을 미리 보거나 적용합니다.",

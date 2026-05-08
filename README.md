@@ -140,7 +140,13 @@ your-project/
       │  └─ SKILL.md
       ├─ failure-triage/
       │  └─ SKILL.md
-      └─ test-maintenance/
+      ├─ project-context-authoring/
+      │  └─ SKILL.md
+      ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-maintenance/
+      │  └─ SKILL.md
+      └─ web-asset-optimization/
          └─ SKILL.md
 ```
 
@@ -213,7 +219,7 @@ mf run mustflow_update_apply
 | `mf init --merge` | Merge the mustflow managed block into an existing `AGENTS.md`. |
 | `mf init --force` | Back up conflicting files, then overwrite them. |
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
-| `mf check --strict` | Run additional safety checks for document identity, skill metadata, command boundaries, retention policy, output limits, raw logs, and secret-like context. |
+| `mf check --strict` | Run additional safety checks for document identity, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
@@ -226,6 +232,7 @@ mf run mustflow_update_apply
 | `mf update --apply` | Apply template updates when nothing is blocked. |
 | `mf help <topic>` | Show installed mustflow help. |
 | `mf dashboard` | Start a local dashboard for safe mustflow preferences and refresh the customized lock baseline on save. |
+| `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
 
 Automation and agents should use `--json` output instead of parsing human-facing
 text. Published JSON Schemas for stable outputs live in `schemas/`.
@@ -277,7 +284,9 @@ npx mf init --set git.auto_commit=true
   `release.versioning.suggest_bump=false`, `verification.selection.*` fields,
   and `testing.authoring.*` fields. Versioning preferences do not assume a
   fixed version file; agents must locate the repository-specific version source
-  before suggesting or editing versions.
+  before suggesting or editing versions. Repositories that need an explicit
+  version source can add `.mustflow/config/versioning.toml`; `mf init` does not
+  install that optional file by default.
   `git.commit_message.style` accepts `conventional`, `descriptive`, or
   `gitmoji`; `gitmoji` only changes the suggested message format.
   `git.commit_message.language` accepts `preserve_existing`, `agent_response`,

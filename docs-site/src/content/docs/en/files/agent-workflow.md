@@ -60,7 +60,7 @@ If a command bypasses `mf run`, treat its output as lower-confidence context unl
 
 `mf doctor` or `mf doctor --json` is a read-only diagnostic command that aggregates installation state, check results, runnable command intents, and suggested next steps. Since it does not modify files, agents should use it for initial orientation.
 
-After modifying mustflow documents, skills, command contracts, or repository-map generation rules, execute `mf check --strict`. This adds checks for raw shell command blocks in skill documents, volatile metadata in `REPO_MAP.md`, command output limits, retention policy, generated file sizes, raw JSONL log traces, and the latest run record format.
+After modifying mustflow documents, skills, command contracts, or repository-map generation rules, execute `mf check --strict`. This adds checks for skill index and skill body alignment, raw shell command blocks in skill documents, stable `REPO_MAP.md` generated metadata, volatile repository-map values, command output limits, retention policy, generated file sizes, raw JSONL log traces, and the latest run record format.
 
 ## Skill Activation
 
@@ -87,7 +87,7 @@ Context files are secondary to direct user instructions, current code, tests, co
 
 Maintain the repository navigation map in the generated `REPO_MAP.md` rather than expanding this document. `REPO_MAP.md` is a map of anchor files rather than an exhaustive file list; it is not part of the mandatory reading order and should be consulted only when broad navigation is required.
 
-Avoid placing volatile values—such as generation timestamps, hashes, file counts, or logs—near the top of this file.
+Keep only stable generated metadata near the top of this file. Avoid volatile values such as generation timestamps, branch names, remote URLs, change summaries, and logs.
 
 Do not store full chat transcripts, terminal output, or raw JSONL event logs under `.mustflow/`. Maintain execution results as concise run records and knowledge files as summaries with source references.
 

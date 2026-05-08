@@ -51,6 +51,7 @@ ruff.toml
 
 ```text
 .git
+.mustflow/backups
 node_modules
 dist
 build
@@ -72,7 +73,9 @@ npx mf map --write --root-only
 
 `--write`를 사용하면 루트에 `REPO_MAP.md`를 만들거나 갱신합니다.
 
-생성 결과 상단에는 생성 시각, 해시, 파일 수처럼 자주 바뀌는 값을 넣지 않습니다.
+생성 결과 상단에는 `anchor_count`, `source_fingerprint`처럼 다시 생성 여부를 판단하는 데 쓰는 안정적인 생성 메타데이터가 붙습니다.
+생성 시각, 브랜치명, 원격 저장소 주소, 변경 로그처럼 실행할 때마다 쉽게 달라지는 값은 넣지 않습니다.
+`mf check --strict`는 소스 지문이 오래된 경우 `mf map --write`로 다시 생성하라고 알려줍니다.
 
 ## 중첩 저장소 처리
 

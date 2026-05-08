@@ -69,10 +69,71 @@ test('prints a read-only doctor summary as json', () => {
 		assert.ok(output.blocked_actions.includes('raw_transcript_storage'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'install' && item.status === 'ok'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'validation' && item.status === 'ok'));
+		assert.ok(output.diagnostics.some((item) => item.id === 'skill_routes' && item.status === 'info'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'commands' && item.status === 'ok'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'read_order' && item.status === 'ok'));
 		assert.ok(output.next_steps.includes('mf help workflow'));
 		assert.ok(output.next_steps.includes('mf help commands'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict doctor summarizes skill index and body alignment', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['doctor', '--strict', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.strict, true);
+		assert.ok(
+			output.diagnostics.some(
+				(item) =>
+					item.id === 'skill_routes' &&
+					item.status === 'ok' &&
+					item.summary === '0 skill index/body alignment issues',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict doctor highlights skill index and body drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const skillsIndex = readFileSync(skillsIndexPath, 'utf8').replace(
+			'| Update documentation | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |',
+			'| Update documentation | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `lint` |',
+		);
+		writeFileSync(skillsIndexPath, skillsIndex);
+
+		const result = runCli(projectPath, ['doctor', '--strict', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(output.strict, true);
+		assert.match(
+			output.check.issues.join('\n'),
+			/\.mustflow\/skills\/INDEX\.md route \.mustflow\/skills\/docs-update\/SKILL\.md references command intent "lint" not declared by the skill frontmatter/,
+		);
+		assert.ok(
+			output.diagnostics.some(
+				(item) =>
+					item.id === 'skill_routes' &&
+					item.status === 'fail' &&
+					item.summary === '1 skill index/body alignment issue' &&
+					item.action === 'mf check --strict',
+			),
+		);
+		assert.ok(output.next_steps.includes('mf check --strict'));
 	} finally {
 		removeTempProject(projectPath);
 	}

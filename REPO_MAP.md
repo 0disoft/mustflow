@@ -1,3 +1,14 @@
+---
+mustflow_doc: repo-map
+lifecycle: generated
+generated_by: mustflow
+relative_root: "."
+source_policy: anchors_only
+privacy_mode: minimal
+anchor_count: 34
+source_fingerprint: "sha256:dc19672b7eaf904aee0e42ae1487c9f077b3f8815c37a207049e29f273ae1a6e"
+---
+
 # REPO_MAP.md
 
 This file is an agent navigation map for the current mustflow root. It is not a full file listing.
@@ -44,9 +55,21 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/failure-triage/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/project-context-authoring/
+
+- `.mustflow/skills/project-context-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/skill-authoring/
+
+- `.mustflow/skills/skill-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/test-maintenance/
 
 - `.mustflow/skills/test-maintenance/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/web-asset-optimization/
+
+- `.mustflow/skills/web-asset-optimization/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### docs-site/
 

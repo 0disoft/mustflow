@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -6,6 +7,12 @@ import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { readTomlFile } from './toml.js';
 
 const DEFAULT_DEPTH = 3;
+const REPO_MAP_DOC_ID = 'repo-map';
+const REPO_MAP_LIFECYCLE = 'generated';
+const REPO_MAP_GENERATOR = 'mustflow';
+const REPO_MAP_RELATIVE_ROOT = '.';
+const REPO_MAP_SOURCE_POLICY = 'anchors_only';
+const REPO_MAP_PRIVACY_MODE = 'minimal';
 const EXCLUDED_SEGMENTS = new Set([
 	'.astro',
 	'.cache',
@@ -16,6 +23,7 @@ const EXCLUDED_SEGMENTS = new Set([
 	'dist',
 	'node_modules',
 ]);
+const EXCLUDED_PREFIXES = ['.mustflow/backups/'];
 const GENERATED_FILES = new Set(['REPO_MAP.md']);
 const DEFAULT_PRIORITY_PATHS = [
 	'AGENTS.md',
@@ -327,6 +335,10 @@ function getRepositoryFiles(projectRoot: string): string[] {
 
 function shouldIncludePath(relativePath: string): boolean {
 	if (GENERATED_FILES.has(relativePath)) {
+		return false;
+	}
+
+	if (EXCLUDED_PREFIXES.some((prefix) => relativePath.startsWith(prefix))) {
 		return false;
 	}
 
@@ -644,6 +656,70 @@ function renderNestedRepositories(nestedRepositories: readonly NestedRepository[
 	return lines;
 }
 
+function countNestedEntrypoints(repository: NestedRepository): number {
+	return [
+		repository.agentRules,
+		repository.repoMap,
+		repository.mustflowConfig,
+		repository.commandContract,
+		repository.contextIndex,
+		repository.skillIndex,
+		...repository.rootDocuments.map((document) => document.relativePath),
+		...repository.machineContracts,
+		...repository.manifests,
+		...repository.commandAdapters,
+	].filter(Boolean).length;
+}
+
+function getSourceFingerprint(
+	depth: number,
+	includeNested: boolean,
+	configuredPriorityPaths: readonly string[],
+	anchors: readonly AnchorFile[],
+	nestedRepositories: readonly NestedRepository[],
+): string {
+	const payload = {
+		depth,
+		includeNested,
+		priorityPaths: [...configuredPriorityPaths].sort(),
+		anchors: anchors.map((anchor) => anchor.relativePath).sort(),
+		nestedRepositories: nestedRepositories
+			.map((repository) => ({
+				relativePath: repository.relativePath,
+				mustflow: repository.mustflow,
+				agentRules: repository.agentRules,
+				repoMap: repository.repoMap,
+				mustflowConfig: repository.mustflowConfig,
+				commandContract: repository.commandContract,
+				contextIndex: repository.contextIndex,
+				skillIndex: repository.skillIndex,
+				rootDocuments: repository.rootDocuments.map((document) => document.relativePath).sort(),
+				machineContracts: [...repository.machineContracts].sort(),
+				manifests: [...repository.manifests].sort(),
+				commandAdapters: [...repository.commandAdapters].sort(),
+			}))
+			.sort((left, right) => left.relativePath.localeCompare(right.relativePath)),
+	};
+	const digest = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+	return `sha256:${digest}`;
+}
+
+function renderRepoMapFrontmatter(anchorCount: number, sourceFingerprint: string): string[] {
+	return [
+		'---',
+		`mustflow_doc: ${REPO_MAP_DOC_ID}`,
+		`lifecycle: ${REPO_MAP_LIFECYCLE}`,
+		`generated_by: ${REPO_MAP_GENERATOR}`,
+		`relative_root: "${REPO_MAP_RELATIVE_ROOT}"`,
+		`source_policy: ${REPO_MAP_SOURCE_POLICY}`,
+		`privacy_mode: ${REPO_MAP_PRIVACY_MODE}`,
+		`anchor_count: ${anchorCount}`,
+		`source_fingerprint: "${sourceFingerprint}"`,
+		'---',
+		'',
+	];
+}
+
 export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {}): string {
 	const depth = options.depth ?? DEFAULT_DEPTH;
 	const config = getRepoMapConfig(projectRoot);
@@ -660,8 +736,18 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 		.map((relativePath) => anchors.find((anchor) => anchor.relativePath === relativePath))
 		.filter((anchor): anchor is AnchorFile => Boolean(anchor));
 	const otherAnchors = anchors.filter((anchor) => !priorityPathSet.has(anchor.relativePath));
+	const anchorCount =
+		anchors.length + nestedRepositories.reduce((total, repository) => total + countNestedEntrypoints(repository), 0);
+	const sourceFingerprint = getSourceFingerprint(
+		depth,
+		mapConfig.includeNested,
+		configuredPriorityPaths,
+		anchors,
+		nestedRepositories,
+	);
 
 	return [
+		...renderRepoMapFrontmatter(anchorCount, sourceFingerprint),
 		'# REPO_MAP.md',
 		'',
 		'This file is an agent navigation map for the current mustflow root. It is not a full file listing.',

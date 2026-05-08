@@ -32,6 +32,7 @@ export const zhMessages = {
   "command.search.summary": "搜索本地 mustflow SQLite 索引",
   "command.dashboard.summary":
     "启动本地 mustflow 仪表板",
+  "command.versionSources.summary": "显示检测到的版本来源",
   "command.help.summary": "显示已安装工作流的帮助",
 
   "top.help.option.lang":
@@ -200,6 +201,7 @@ export const zhMessages = {
   "doctor.actionLabel": "运行",
   "doctor.diagnostic.install": "安装",
   "doctor.diagnostic.validation": "验证",
+  "doctor.diagnostic.skillRoutes": "技能路由",
   "doctor.diagnostic.commands": "命令规范",
   "doctor.diagnostic.readOrder": "读取顺序",
   "doctor.diagnostic.optionalReadOrder": "可选读取顺序",
@@ -373,6 +375,16 @@ export const zhMessages = {
     "显示本地 mustflow 安装状态，不修改文件。",
   "status.help.exit.ok": "已检查并输出状态",
   "status.title": "mustflow 状态",
+
+  "versionSources.help.summary":
+    "显示检测到的包和模板版本来源，不修改文件。",
+  "versionSources.help.exit.ok": "已检查并输出版本来源",
+  "versionSources.title": "mustflow 版本来源",
+  "versionSources.label.versioning": "版本管理偏好",
+  "versionSources.label.sources": "来源",
+  "versionSources.value.enabled": "已启用",
+  "versionSources.value.disabled": "已禁用",
+  "versionSources.noSources": "未检测到版本来源",
 
   "update.help.summary":
     "预览或应用已安装 mustflow 工作流的更新。",

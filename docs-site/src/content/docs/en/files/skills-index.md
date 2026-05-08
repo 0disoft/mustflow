@@ -10,6 +10,7 @@ description: An index that directs agents to the appropriate skill document for 
 After consulting the shared rules and command contract, agents refer to this index when a task corresponds to a predefined procedure.
 
 This file should not contain full procedure details; instead, it maps specific scenarios to skill paths and their associated command intents.
+`mf check --strict` compares these routes with the referenced `SKILL.md` files so missing skill documents, unlisted skills, unknown command intents, and command-intent drift are visible.
 
 ## Selection Behavior
 

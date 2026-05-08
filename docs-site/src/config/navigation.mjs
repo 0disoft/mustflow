@@ -81,6 +81,7 @@ export const pages = {
 	commandsToml: page({ label: 'commands.toml', link: '/files/commands-toml/' }),
 	mustflowToml: page({ label: 'mustflow.toml', link: '/files/mustflow-toml/' }),
 	preferencesToml: page({ label: 'preferences.toml', link: '/files/preferences-toml/' }),
+	versioningToml: page({ label: 'versioning.toml', link: '/files/versioning-toml/' }),
 	manifestLockToml: page({ label: 'manifest.lock.toml', link: '/files/manifest-lock-toml/' }),
 	jsonSchemas: page({ label: 'schemas/', link: '/files/json-schemas/' }),
 	contextIndex: page({ label: 'INDEX.md', link: '/files/context-index/' }),
@@ -170,7 +171,7 @@ export const sidebarSections = [
 				items: [
 					group({
 						label: 'config/',
-						items: [pages.commandsToml, pages.mustflowToml, pages.preferencesToml, pages.manifestLockToml],
+						items: [pages.commandsToml, pages.mustflowToml, pages.preferencesToml, pages.versioningToml, pages.manifestLockToml],
 					}),
 					group({
 						label: 'docs/',

@@ -27,6 +27,7 @@ instalado o los del repositorio de mustflow.
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
+- `version-sources-report.schema.json`: `mf version-sources --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` y `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: `.mustflow/config/commands.toml` analizado
 

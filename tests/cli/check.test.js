@@ -110,6 +110,122 @@ test('passes strict check for a freshly initialized mustflow project', () => {
 	}
 });
 
+test('strict check fails enabled versioning preferences without a detected version source', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: [release.versioning] is enabled but no version source was detected; add .mustflow/config/versioning.toml or a package/template version source',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check accepts a non-package-json version source', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'pyproject.toml'),
+			['[project]', 'name = "example"', 'version = "0.1.0"', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0);
+		assert.equal(check.ok, true);
+		assert.deepEqual(check.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('check fails invalid declared versioning source config', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'versioning.toml'),
+			[
+				'schema_version = 1',
+				'',
+				'[[sources]]',
+				'path = "../package.json"',
+				'kind = "release_note"',
+				'authority = "primary"',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /\[\.mustflow\/config\/versioning\.toml\]\.schema_version must be a string/);
+		assert.match(result.stderr, /\.mustflow\/config\/versioning\.toml sources\[0\]\.path must be a non-empty relative path/);
+		assert.match(result.stderr, /\.mustflow\/config\/versioning\.toml sources\[0\]\.kind must be/);
+		assert.match(result.stderr, /\.mustflow\/config\/versioning\.toml sources\[0\]\.authority must be/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails declared versioning source that points to a missing file', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'versioning.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[[sources]]',
+				'path = "pyproject.toml"',
+				'kind = "package_manifest"',
+				'authority = "source"',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue === 'Strict: .mustflow/config/versioning.toml source "pyproject.toml" does not exist',
+			),
+		);
+		assert.ok(
+			!check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: [release.versioning] is enabled but no version source was detected; add .mustflow/config/versioning.toml or a package/template version source',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails raw shell commands in skill documents and unsafe REPO_MAP metadata', () => {
 	const projectPath = createTempProject();
 
@@ -137,8 +253,49 @@ test('strict check fails raw shell commands in skill documents and unsafe REPO_M
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Strict: \.mustflow\/skills\/code-review\/SKILL\.md contains a raw shell command block/);
+		assert.match(result.stderr, /Strict: REPO_MAP\.md frontmatter mustflow_doc must be "repo-map"/);
 		assert.match(result.stderr, /Strict: REPO_MAP\.md contains volatile generated metadata/);
 		assert.match(result.stderr, /Strict: REPO_MAP\.md contains remote URL or branch metadata/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails stale REPO_MAP source fingerprint', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'REPO_MAP.md'),
+			[
+				'---',
+				'mustflow_doc: repo-map',
+				'lifecycle: generated',
+				'generated_by: mustflow',
+				'relative_root: "."',
+				'source_policy: anchors_only',
+				'privacy_mode: minimal',
+				'anchor_count: 1',
+				'source_fingerprint: "sha256:0000000000000000000000000000000000000000000000000000000000000000"',
+				'---',
+				'',
+				'# REPO_MAP.md',
+				'',
+				'This file is an agent navigation map for the current mustflow root. It is not a full file listing.',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: REPO_MAP.md source_fingerprint is stale; regenerate with mf map --write',
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -197,6 +354,49 @@ test('strict check fails unknown skill command intent metadata references', () =
 				(issue) =>
 					issue ===
 					'Strict: .mustflow/skills/code-review/SKILL.md metadata.command_intents references unknown command intent "deploy_prod"',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill index route drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const skillsIndex = readText(skillsIndexPath)
+			.replace(/^\| Review code changes \|.*\n/mu, '')
+			.replace(
+				/(\| Update documentation \| `\.mustflow\/skills\/docs-update\/SKILL\.md` \| `docs_validate`, `mustflow_check` \|)/u,
+				'$1\n| Broken route | `.mustflow/skills/missing/SKILL.md` | `deploy_prod` |\n| Docs drift | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `lint` |',
+			);
+		writeFileSync(skillsIndexPath, skillsIndex);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: .mustflow/skills/code-review/SKILL.md is not listed in .mustflow/skills/INDEX.md',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/INDEX.md route .mustflow/skills/missing/SKILL.md points to a missing skill document',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/INDEX.md route .mustflow/skills/docs-update/SKILL.md references command intent "lint" not declared by the skill frontmatter',
 			),
 		);
 	} finally {

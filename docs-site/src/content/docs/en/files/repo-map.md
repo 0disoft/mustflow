@@ -26,6 +26,7 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 
 ## Document Structure
 
+- **Generated Metadata**: Stores stable frontmatter for document identity, lifecycle, anchor count, and source fingerprint.
 - **Opening Statement**: Clarifies that the file is an anchor-based navigation map rather than a complete directory tree.
 - **Usage Guidelines**: Directs agents to use `git ls-files` when an exhaustive list is needed.
 - **Primary Anchors**: Lists essential first-read files, including `AGENTS.md` and mustflow configuration/index files.
@@ -39,9 +40,10 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 - **Command Authority**: Generate the map via the `repo_map` intent or the `mf map` command.
 - **Discovery Logic**: Utilize both `git ls-files` and filesystem-based anchor discovery where possible.
 - **Discovery Depth**: The default discovery depth is set to 3. This limit applies to the identification of non-priority anchor files, not the absolute tree depth.
-- **Exclusion List**: Automatically exclude `node_modules`, `dist`, `build`, `.git`, caches, and large binary outputs.
+- **Exclusion List**: Automatically exclude `node_modules`, `dist`, `build`, `.git`, `.mustflow/backups`, caches, and large binary outputs.
 - **Content Policy**: Do not include summaries of individual file contents.
-- **Input Stability**: Avoid placing volatile data—such as generation timestamps, hashes, or file counts—at the beginning of the file.
+- **Input Stability**: Include only stable generated metadata at the beginning of the file. Avoid generation timestamps, branch names, remote URLs, change summaries, and logs.
+- **Staleness Detection**: Let `mf check --strict` compare `source_fingerprint` with the current anchor set and report when regeneration is needed.
 - **Selective Listing**: Include only anchor files that facilitate navigation rather than listing every source file.
 - **Behavioral Context**: Prioritize configuration files required for agent behavior interpretation (e.g., `preferences.toml`).
 - **Context Awareness**: Include `.mustflow/context/INDEX.md` and `PROJECT.md` by default, but avoid automatically expanding domain-specific context files.
@@ -54,6 +56,17 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 The first line must explicitly state that the document is a navigation map, not a complete file tree.
 
 ```md
+---
+mustflow_doc: repo-map
+lifecycle: generated
+generated_by: mustflow
+relative_root: "."
+source_policy: anchors_only
+privacy_mode: minimal
+anchor_count: 12
+source_fingerprint: "sha256:..."
+---
+
 # REPO_MAP.md
 
 This file is an anchor-file-based navigation map for the current mustflow root, not a full file listing.

@@ -32,6 +32,7 @@ export const frMessages = {
   "command.search.summary": "Recherche dans l'index SQLite local de mustflow",
   "command.dashboard.summary":
     "Démarre le tableau de bord mustflow local",
+  "command.versionSources.summary": "Affiche les sources de version détectées",
   "command.help.summary": "Affiche l'aide du flux de travail installé",
 
   "top.help.option.lang":
@@ -210,6 +211,7 @@ export const frMessages = {
   "doctor.actionLabel": "exécuter",
   "doctor.diagnostic.install": "Installation",
   "doctor.diagnostic.validation": "Validation",
+  "doctor.diagnostic.skillRoutes": "Routage des skills",
   "doctor.diagnostic.commands": "Spécification des commandes",
   "doctor.diagnostic.readOrder": "Ordre de lecture",
   "doctor.diagnostic.optionalReadOrder": "Ordre de lecture optionnel",
@@ -383,6 +385,16 @@ Lisez ces fichiers avant de travailler :
     "Affiche l'état de l'installation locale de mustflow sans modifier de fichiers.",
   "status.help.exit.ok": "L'état a été inspecté et imprimé",
   "status.title": "état mustflow",
+
+  "versionSources.help.summary":
+    "Affiche les sources de version des paquets et modèles sans modifier de fichiers.",
+  "versionSources.help.exit.ok": "Les sources de version ont été inspectées et imprimées",
+  "versionSources.title": "sources de version mustflow",
+  "versionSources.label.versioning": "Préférences de version",
+  "versionSources.label.sources": "Sources",
+  "versionSources.value.enabled": "activé",
+  "versionSources.value.disabled": "désactivé",
+  "versionSources.noSources": "Aucune source de version détectée",
 
   "update.help.summary":
     "Prévisualise ou applique les mises à jour du flux de travail mustflow installé.",

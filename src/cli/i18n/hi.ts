@@ -32,6 +32,7 @@ export const hiMessages = {
   "command.search.summary": "स्थानीय mustflow SQLite इंडेक्स में खोजें",
   "command.dashboard.summary":
     "स्थानीय mustflow डैशबोर्ड शुरू करें",
+  "command.versionSources.summary": "पहचाने गए संस्करण स्रोत दिखाएँ",
   "command.help.summary": "इंस्टॉल किए गए वर्कफ़्लो की सहायता दिखाएँ",
 
   "top.help.option.lang":
@@ -210,6 +211,7 @@ export const hiMessages = {
   "doctor.actionLabel": "चलाएँ",
   "doctor.diagnostic.install": "इंस्टॉल",
   "doctor.diagnostic.validation": "सत्यापन",
+  "doctor.diagnostic.skillRoutes": "स्किल रूट",
   "doctor.diagnostic.commands": "कमांड विनिर्देश",
   "doctor.diagnostic.readOrder": "पढ़ने का क्रम",
   "doctor.diagnostic.optionalReadOrder": "वैकल्पिक पढ़ने का क्रम",
@@ -383,6 +385,16 @@ export const hiMessages = {
     "फ़ाइलों को बदले बिना स्थानीय mustflow इंस्टॉल स्थिति दिखाएँ।",
   "status.help.exit.ok": "स्थिति जाँची और प्रिंट की गई",
   "status.title": "mustflow स्थिति",
+
+  "versionSources.help.summary":
+    "फ़ाइलें बदले बिना पैकेज और template version sources दिखाएँ।",
+  "versionSources.help.exit.ok": "Version sources जाँचे और प्रिंट किए गए",
+  "versionSources.title": "mustflow version sources",
+  "versionSources.label.versioning": "Versioning preferences",
+  "versionSources.label.sources": "Sources",
+  "versionSources.value.enabled": "enabled",
+  "versionSources.value.disabled": "disabled",
+  "versionSources.noSources": "कोई version source नहीं मिला",
 
   "update.help.summary":
     "इंस्टॉल किए गए mustflow वर्कफ़्लो के अपडेट का पूर्वावलोकन करें या लागू करें।",

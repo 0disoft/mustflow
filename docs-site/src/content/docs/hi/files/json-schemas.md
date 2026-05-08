@@ -26,6 +26,7 @@ mustflow repository के schemas का उपयोग करें।
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
+- `version-sources-report.schema.json`: `mf version-sources --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` और `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 

@@ -11,7 +11,16 @@ import {
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
+import { generateRepoMap } from './repo-map.js';
 import { readTomlFile } from './toml.js';
+import {
+	VERSIONING_CONFIG_PATH,
+	VERSION_SOURCE_AUTHORITIES,
+	VERSION_SOURCE_KINDS,
+	detectVersionSourcePaths,
+	readDeclaredVersionSources,
+	releaseVersioningIsEnabled,
+} from './version-sources.js';
 
 const REQUIRED_SKILL_SECTION_SETS = [
 	[
@@ -62,6 +71,8 @@ const RELEASE_VERSIONING_BOOLEAN_FIELDS = [
 	'sync_docs_examples',
 	'sync_tests',
 ] as const;
+const ALLOWED_VERSION_SOURCE_KINDS = new Set(VERSION_SOURCE_KINDS);
+const ALLOWED_VERSION_SOURCE_AUTHORITIES = new Set(VERSION_SOURCE_AUTHORITIES);
 const ALLOWED_COMMIT_MESSAGE_STYLES = new Set(COMMIT_MESSAGE_STYLES);
 const VERIFICATION_SELECTION_BOOLEAN_FIELDS = [
 	'prefer_related_tests',
@@ -158,6 +169,7 @@ const BACKGROUND_SHELL_PATTERNS = [
 	/\bchromium(?:\.exe)?\b/iu,
 ];
 const RAW_COMMAND_FENCE_PATTERN = /```(?:sh|bash|shell|zsh|powershell|ps1|cmd)\s+[\s\S]*?```/giu;
+const MARKDOWN_TABLE_SEPARATOR_PATTERN = /^:?-{3,}:?$/u;
 const SKILL_COMMAND_PERMISSION_CLAIM_PATTERNS = [
 	/\b(?:this\s+skill|skill\s+documents?|skills?)\s+(?:authorizes?|grants?|allows?|permits?)\s+(?:agents?\s+)?(?:to\s+)?(?:run|execute)\b/iu,
 	/\b(?:agents?\s+)?(?:may|can|are\s+allowed\s+to|is\s+allowed\s+to|is\s+permitted\s+to|have\s+permission\s+to)\s+(?:run|execute)\s+(?:raw\s+)?(?:shell\s+)?commands?\b/iu,
@@ -166,6 +178,7 @@ const SKILL_COMMAND_PERMISSION_CLAIM_PATTERNS = [
 const ROUTER_INDEX_PROCEDURE_SECTION_PATTERN =
 	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Procedure|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|절차|검증|실패 대응|출력 형식)\s*$/imu;
 const ROUTER_INDEX_FILES = ['.mustflow/skills/INDEX.md', '.mustflow/context/INDEX.md'] as const;
+const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
 const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
 const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
 	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,
@@ -175,6 +188,13 @@ const STATIC_MANAGED_MARKDOWN_DOC_IDS: Record<string, string> = {
 	'AGENTS.md': 'agents.root',
 	'.mustflow/skills/INDEX.md': 'skills.index',
 };
+const REPO_MAP_DOC_ID = 'repo-map';
+const REPO_MAP_LIFECYCLE = 'generated';
+const REPO_MAP_GENERATOR = 'mustflow';
+const REPO_MAP_RELATIVE_ROOT = '.';
+const REPO_MAP_SOURCE_POLICY = 'anchors_only';
+const REPO_MAP_PRIVACY_MODE = 'minimal';
+const REPO_MAP_SOURCE_FINGERPRINT_PATTERN = /^sha256:[a-f0-9]{64}$/u;
 const SKILL_RESOURCE_MANIFEST = 'resources.toml';
 const SKILL_RESOURCE_ROOTS = new Set(['references', 'assets', 'scripts']);
 const ALLOWED_SKILL_RESOURCE_TYPES = new Set(['reference', 'asset', 'script']);
@@ -225,6 +245,7 @@ interface ParsedConfigFiles {
 	readonly mustflowToml?: TomlTable;
 	readonly commandsToml?: TomlTable;
 	readonly preferencesToml?: TomlTable;
+	readonly versioningToml?: TomlTable;
 }
 
 interface RetentionLimits {
@@ -233,6 +254,11 @@ interface RetentionLimits {
 	readonly runReceiptMaxFileKb: number;
 	readonly contextMaxFileKb: number;
 	readonly knowledgeMaxFileKb: number;
+}
+
+interface SkillIndexRoute {
+	readonly skillPath: string;
+	readonly commandIntents: readonly string[];
 }
 
 function hasOwn(table: TomlTable, key: string): boolean {
@@ -275,12 +301,18 @@ function validateRequiredFiles(projectRoot: string, issues: CheckIssue[]): void 
 }
 
 function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedConfigFiles {
-	const parsedFiles: { mustflowToml?: TomlTable; commandsToml?: TomlTable; preferencesToml?: TomlTable } = {};
+	const parsedFiles: {
+		mustflowToml?: TomlTable;
+		commandsToml?: TomlTable;
+		preferencesToml?: TomlTable;
+		versioningToml?: TomlTable;
+	} = {};
 
 	for (const relativePath of [
 		'.mustflow/config/mustflow.toml',
 		'.mustflow/config/commands.toml',
 		'.mustflow/config/preferences.toml',
+		VERSIONING_CONFIG_PATH,
 	]) {
 		const filePath = path.join(projectRoot, relativePath);
 
@@ -306,6 +338,10 @@ function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedConfigFi
 
 			if (relativePath.endsWith('preferences.toml')) {
 				parsedFiles.preferencesToml = parsed;
+			}
+
+			if (relativePath.endsWith('versioning.toml')) {
+				parsedFiles.versioningToml = parsed;
 			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -341,6 +377,15 @@ function validateStringField(table: TomlTable, key: string, label: string, issue
 	if (hasOwn(table, key) && (typeof table[key] !== 'string' || table[key].trim().length === 0)) {
 		issues.push({ message: `${label} must be a string` });
 	}
+}
+
+function validateRequiredStringField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (!hasOwn(table, key)) {
+		issues.push({ message: `${label} must be a string` });
+		return;
+	}
+
+	validateStringField(table, key, label, issues);
 }
 
 function validateStringArrayField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
@@ -447,6 +492,15 @@ function validatePathField(table: TomlTable, key: string, label: string, issues:
 	if (hasOwn(table, key) && !isSafeRelativePath(table[key])) {
 		issues.push({ message: `${label} must be a non-empty relative path` });
 	}
+}
+
+function validateRequiredPathField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (!hasOwn(table, key)) {
+		issues.push({ message: `${label} must be a non-empty relative path` });
+		return;
+	}
+
+	validatePathField(table, key, label, issues);
 }
 
 function validatePathArrayField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): string[] | undefined {
@@ -1087,6 +1141,37 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 	}
 }
 
+function validateVersioningConfig(versioningToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!versioningToml) {
+		return;
+	}
+
+	validateRequiredStringField(versioningToml, 'schema_version', `[${VERSIONING_CONFIG_PATH}].schema_version`, issues);
+
+	if (!hasOwn(versioningToml, 'sources')) {
+		issues.push({ message: `${VERSIONING_CONFIG_PATH} must define [[sources]]` });
+		return;
+	}
+
+	const sources = versioningToml.sources;
+
+	if (!Array.isArray(sources) || sources.length === 0 || !sources.every(isRecord)) {
+		issues.push({ message: `${VERSIONING_CONFIG_PATH} sources must be a non-empty array of TOML tables` });
+		return;
+	}
+
+	for (const [index, source] of sources.entries()) {
+		const label = `${VERSIONING_CONFIG_PATH} sources[${index}]`;
+
+		validateRequiredPathField(source, 'path', `${label}.path`, issues);
+		validateRequiredStringField(source, 'kind', `${label}.kind`, issues);
+		validateAllowedStringField(source, 'kind', `${label}.kind`, ALLOWED_VERSION_SOURCE_KINDS, issues);
+		validateRequiredStringField(source, 'authority', `${label}.authority`, issues);
+		validateAllowedStringField(source, 'authority', `${label}.authority`, ALLOWED_VERSION_SOURCE_AUTHORITIES, issues);
+		validateStringField(source, 'description', `${label}.description`, issues);
+	}
+}
+
 function validateCommandIntents(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!commandsToml) {
 		return;
@@ -1271,7 +1356,10 @@ function readFrontmatterLines(content: string): string[] {
 		return [];
 	}
 
-	return content.slice(3, end).split(/\r?\n/);
+	return content
+		.slice(3, end)
+		.split(/\n/u)
+		.map((line) => line.replace(/\r$/u, ''));
 }
 
 function stripScalarMarkers(value: string): string {
@@ -1352,6 +1440,34 @@ function pushStrictIssue(issues: CheckIssue[], message: string): void {
 	issues.push({ message: `Strict: ${message}` });
 }
 
+function validateStrictVersionSources(
+	projectRoot: string,
+	preferencesToml: TomlTable | undefined,
+	versioningToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): void {
+	if (versioningToml) {
+		for (const source of readDeclaredVersionSources(projectRoot)) {
+			if (!existsSync(path.join(projectRoot, source.path))) {
+				pushStrictIssue(issues, `${VERSIONING_CONFIG_PATH} source "${source.path}" does not exist`);
+			}
+		}
+	}
+
+	if (!releaseVersioningIsEnabled(preferencesToml)) {
+		return;
+	}
+
+	if (detectVersionSourcePaths(projectRoot).length > 0) {
+		return;
+	}
+
+	pushStrictIssue(
+		issues,
+		'[release.versioning] is enabled but no version source was detected; add .mustflow/config/versioning.toml or a package/template version source',
+	);
+}
+
 function validateStrictCommandDefaults(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!commandsToml || !isRecord(commandsToml.defaults)) {
 		return;
@@ -1378,6 +1494,109 @@ function validateStrictRouterIndexes(projectRoot: string, issues: CheckIssue[]):
 
 		if (ROUTER_INDEX_PROCEDURE_SECTION_PATTERN.test(content)) {
 			pushStrictIssue(issues, `${relativePath} must stay a routing index and must not embed skill procedure sections`);
+		}
+	}
+}
+
+function splitMarkdownTableRow(line: string): string[] {
+	return line
+		.trim()
+		.replace(/^\|/u, '')
+		.replace(/\|$/u, '')
+		.split('|')
+		.map((cell) => cell.trim());
+}
+
+function isMarkdownTableSeparator(cells: readonly string[]): boolean {
+	return cells.length > 0 && cells.every((cell) => MARKDOWN_TABLE_SEPARATOR_PATTERN.test(cell));
+}
+
+function readBacktickValues(value: string): string[] {
+	return [...value.matchAll(/`([^`]+)`/gu)].map((match) => match[1].trim()).filter(Boolean);
+}
+
+function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
+	const routes: SkillIndexRoute[] = [];
+
+	for (const line of content.split(/\r?\n/u)) {
+		if (!line.trim().startsWith('|')) {
+			continue;
+		}
+
+		const cells = splitMarkdownTableRow(line);
+		if (cells.length < 3 || isMarkdownTableSeparator(cells) || cells[0].toLowerCase() === 'scenario') {
+			continue;
+		}
+
+		const [skillPath] = readBacktickValues(cells[1]);
+		if (!skillPath) {
+			continue;
+		}
+
+		routes.push({
+			skillPath,
+			commandIntents: readBacktickValues(cells[2]),
+		});
+	}
+
+	return routes;
+}
+
+function validateSkillIndexRoutes(
+	projectRoot: string,
+	commandsToml: TomlTable | undefined,
+	skillFiles: readonly string[],
+	issues: CheckIssue[],
+): void {
+	const skillIndexPath = path.join(projectRoot, SKILL_INDEX_PATH);
+
+	if (!existsSync(skillIndexPath)) {
+		return;
+	}
+
+	const skillRoutes = parseSkillIndexRoutes(readFileSync(skillIndexPath, 'utf8'));
+	const routedSkillPaths = new Set<string>();
+	const expectedSkillPaths = new Set(skillFiles.map((relativePath) => `.mustflow/skills/${relativePath}`));
+	const seenSkillPaths = new Set<string>();
+
+	for (const route of skillRoutes) {
+		if (!route.skillPath.startsWith('.mustflow/skills/') || !route.skillPath.endsWith('/SKILL.md')) {
+			pushStrictIssue(issues, `${SKILL_INDEX_PATH} route "${route.skillPath}" must point to .mustflow/skills/<name>/SKILL.md`);
+			continue;
+		}
+
+		if (seenSkillPaths.has(route.skillPath)) {
+			pushStrictIssue(issues, `${SKILL_INDEX_PATH} has duplicate route for ${route.skillPath}`);
+		}
+
+		seenSkillPaths.add(route.skillPath);
+		routedSkillPaths.add(route.skillPath);
+
+		const absoluteSkillPath = path.join(projectRoot, ...route.skillPath.split('/'));
+		if (!existsSync(absoluteSkillPath)) {
+			pushStrictIssue(issues, `${SKILL_INDEX_PATH} route ${route.skillPath} points to a missing skill document`);
+			continue;
+		}
+
+		const skillCommandIntents = new Set(readFrontmatterList(readFileSync(absoluteSkillPath, 'utf8'), 'command_intents'));
+
+		for (const intentName of route.commandIntents) {
+			if (!isDeclaredCommandIntent(commandsToml, intentName)) {
+				pushStrictIssue(issues, `${SKILL_INDEX_PATH} route ${route.skillPath} references unknown command intent "${intentName}"`);
+			}
+
+			if (!skillCommandIntents.has(intentName)) {
+				pushStrictIssue(
+					issues,
+					`${SKILL_INDEX_PATH} route ${route.skillPath} references command intent "${intentName}" not declared by the skill frontmatter`,
+				);
+			}
+		}
+	}
+
+	for (const skillPath of expectedSkillPaths) {
+		if (!routedSkillPaths.has(skillPath)) {
+			pushStrictIssue(issues, `${skillPath} is not listed in ${SKILL_INDEX_PATH}`);
 		}
 	}
 }
@@ -1826,6 +2045,8 @@ function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | und
 	const skillFiles = listFilesRecursive(skillsRoot).filter((relativePath) => relativePath.endsWith('/SKILL.md'));
 	const skillDirectories = listSkillDirectories(skillsRoot);
 
+	validateSkillIndexRoutes(projectRoot, commandsToml, skillFiles, issues);
+
 	for (const skillName of skillDirectories) {
 		const skillDir = path.join(skillsRoot, skillName);
 
@@ -1880,6 +2101,46 @@ function validateStrictRepoMap(projectRoot: string, issues: CheckIssue[]): void 
 	}
 
 	const content = readFileSync(repoMapPath, 'utf8');
+	const frontmatter = parseSimpleFrontmatter(content);
+
+	if (frontmatter.mustflow_doc !== REPO_MAP_DOC_ID) {
+		pushStrictIssue(issues, `REPO_MAP.md frontmatter mustflow_doc must be "${REPO_MAP_DOC_ID}"`);
+	}
+
+	if (frontmatter.lifecycle !== REPO_MAP_LIFECYCLE) {
+		pushStrictIssue(issues, `REPO_MAP.md frontmatter lifecycle must be "${REPO_MAP_LIFECYCLE}"`);
+	}
+
+	if (frontmatter.generated_by !== REPO_MAP_GENERATOR) {
+		pushStrictIssue(issues, `REPO_MAP.md frontmatter generated_by must be "${REPO_MAP_GENERATOR}"`);
+	}
+
+	if (frontmatter.relative_root !== REPO_MAP_RELATIVE_ROOT) {
+		pushStrictIssue(issues, `REPO_MAP.md frontmatter relative_root must be "${REPO_MAP_RELATIVE_ROOT}"`);
+	}
+
+	if (frontmatter.source_policy !== REPO_MAP_SOURCE_POLICY) {
+		pushStrictIssue(issues, `REPO_MAP.md frontmatter source_policy must be "${REPO_MAP_SOURCE_POLICY}"`);
+	}
+
+	if (frontmatter.privacy_mode !== REPO_MAP_PRIVACY_MODE) {
+		pushStrictIssue(issues, `REPO_MAP.md frontmatter privacy_mode must be "${REPO_MAP_PRIVACY_MODE}"`);
+	}
+
+	if (!/^[1-9]\d*$/u.test(frontmatter.anchor_count ?? '')) {
+		pushStrictIssue(issues, 'REPO_MAP.md frontmatter anchor_count must be a positive integer');
+	}
+
+	if (!REPO_MAP_SOURCE_FINGERPRINT_PATTERN.test(frontmatter.source_fingerprint ?? '')) {
+		pushStrictIssue(issues, 'REPO_MAP.md frontmatter source_fingerprint must be sha256:<64 lowercase hex characters>');
+	} else {
+		const currentSourceFingerprint = frontmatter.source_fingerprint;
+		const expectedSourceFingerprint = parseSimpleFrontmatter(generateRepoMap(projectRoot)).source_fingerprint;
+
+		if (expectedSourceFingerprint && currentSourceFingerprint !== expectedSourceFingerprint) {
+			pushStrictIssue(issues, 'REPO_MAP.md source_fingerprint is stale; regenerate with mf map --write');
+		}
+	}
 
 	if (VOLATILE_REPO_MAP_PATTERNS.some((pattern) => pattern.test(content))) {
 		pushStrictIssue(issues, 'REPO_MAP.md contains volatile generated metadata');
@@ -2005,6 +2266,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(parsed.commandsToml, issues);
+	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);
 	validateStrictRouterIndexes(projectRoot, issues);
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
@@ -2021,6 +2283,7 @@ export function checkMustflowProject(projectRoot: string, options: CheckOptions 
 	const parsed = validateToml(projectRoot, issues);
 	validateMustflowConfig(parsed.mustflowToml, issues);
 	validatePreferencesConfig(parsed.preferencesToml, issues);
+	validateVersioningConfig(parsed.versioningToml, issues);
 	validateCommandIntents(parsed.commandsToml, issues);
 	validateSkills(projectRoot, issues);
 	validateContextDocuments(projectRoot, issues);

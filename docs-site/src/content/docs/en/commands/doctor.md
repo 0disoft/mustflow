@@ -21,6 +21,8 @@ This command never writes files. Use it when an agent or human requires an initi
 - Whether `REPO_MAP.md` has been generated.
 - Whether the local `.mustflow/cache/mustflow.sqlite` index exists.
 - Whether the latest `mf run` receipt exists.
+- Whether strict mode has evaluated `.mustflow/skills/INDEX.md` routes against
+  the referenced `SKILL.md` frontmatter.
 - Diagnostic checklist items and suggested next commands.
 
 ## Example
@@ -44,6 +46,7 @@ Runnable intents: 3
 Health:
 - [ok] Install: installed
 - [ok] Validation: 0 issues
+- [info] Skill routes: not evaluated; run strict doctor (run: mf doctor --strict --json)
 - [ok] Command contract: present, 3 runnable intents
 - [ok] Read order: all required files present
 - [info] REPO_MAP.md: not generated (run: mf map --write)
@@ -81,7 +84,7 @@ Machine-readable output uses these fields:
 - `effective_policy` (`object`): Applied repository policy for command execution, Git automation, and state authority.
 - `state_policy` (`object`): Local cache and state storage policy.
 - `blocked_actions` (`string[]`): Action classes blocked by the repository contract.
-- `diagnostics` (`object[]`): Per-area diagnostics for install, validation, command contract, read order, repository map, local index, and latest run.
+- `diagnostics` (`object[]`): Per-area diagnostics for install, validation, skill routing, command contract, read order, repository map, local index, and latest run.
 - `next_steps` (`string[]`): Commands an agent can run next without guessing.
 
 Nested fields use these shapes:
@@ -117,6 +120,9 @@ npx mf doctor --strict --json
 
 Strict mode uses the same additional checks as `mf check --strict`.
 Use it after changing mustflow documents, skills, command contracts, retention settings, or repository-map behavior.
+When strict mode runs, the `skill_routes` diagnostic summarizes whether
+`.mustflow/skills/INDEX.md` entries still point to existing skills and whether
+their command intents match the referenced `SKILL.md` frontmatter.
 
 ## Exit Codes
 

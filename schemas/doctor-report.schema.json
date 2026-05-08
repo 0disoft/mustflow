@@ -100,6 +100,7 @@
             "enum": [
               "install",
               "validation",
+              "skill_routes",
               "commands",
               "read_order",
               "optional_read_order",

@@ -30,6 +30,7 @@ export const enMessages = {
   "command.search.summary": "Search the local mustflow SQLite index",
   "command.dashboard.summary":
     "Start the local mustflow dashboard",
+  "command.versionSources.summary": "Show detected version sources",
   "command.help.summary": "Show installed workflow help",
 
   "top.help.option.lang":
@@ -208,6 +209,7 @@ export const enMessages = {
   "doctor.actionLabel": "run",
   "doctor.diagnostic.install": "Install",
   "doctor.diagnostic.validation": "Validation",
+  "doctor.diagnostic.skillRoutes": "Skill routes",
   "doctor.diagnostic.commands": "Command specification",
   "doctor.diagnostic.readOrder": "Read order",
   "doctor.diagnostic.optionalReadOrder": "Optional read order",
@@ -381,6 +383,16 @@ Read these files before working:
     "Show the local mustflow install status without modifying files.",
   "status.help.exit.ok": "Status was inspected and printed",
   "status.title": "mustflow status",
+
+  "versionSources.help.summary":
+    "Show detected package and template version sources without modifying files.",
+  "versionSources.help.exit.ok": "Version sources were inspected and printed",
+  "versionSources.title": "mustflow version sources",
+  "versionSources.label.versioning": "Versioning preferences",
+  "versionSources.label.sources": "Sources",
+  "versionSources.value.enabled": "enabled",
+  "versionSources.value.disabled": "disabled",
+  "versionSources.noSources": "No version sources detected",
 
   "update.help.summary":
     "Preview or apply updates for the installed mustflow workflow.",

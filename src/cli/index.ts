@@ -16,6 +16,7 @@ import { runRun } from './commands/run.js';
 import { runSearch } from './commands/search.js';
 import { runStatus } from './commands/status.js';
 import { runUpdate } from './commands/update.js';
+import { runVersionSources } from './commands/version-sources.js';
 import { COMMAND_DEFINITIONS } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
 import { DEFAULT_CLI_LANG, SUPPORTED_CLI_LANGS, isCliLang, t, type CliLang } from './lib/i18n.js';
@@ -51,6 +52,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf context --json',
 				'mf map --write',
 				'mf search mustflow_check',
+				'mf version-sources --json',
 			],
 			exitCodes: [
 				{
@@ -185,6 +187,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'dashboard') {
 		return runDashboard(args, reporter, parsed.lang);
+	}
+
+	if (command === 'version-sources') {
+		return runVersionSources(args, reporter, parsed.lang);
 	}
 
 	if (command === 'help') {

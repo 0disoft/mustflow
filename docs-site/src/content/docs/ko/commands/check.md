@@ -33,8 +33,10 @@ npx mf check --strict
 - mustflow가 관리하는 Markdown 파일이 경로에 맞는 `mustflow_doc`, `locale`, `canonical`, `revision` 앞부분 메타데이터를 유지하는지 확인합니다.
 - 컨텍스트 문서가 직접 사용자 지시, 현재 코드, 테스트, 명령 계약보다 우선한다고 주장하지 않는지 확인합니다.
 - `.mustflow/skills/INDEX.md`와 `.mustflow/context/INDEX.md`가 절차 문서로 변하지 않고 라우팅 색인 역할만 유지하는지 확인합니다.
+- `.mustflow/skills/INDEX.md`의 경로가 실제 `SKILL.md`를 가리키는지, 설치된 모든 스킬이 색인에 들어 있는지 확인합니다.
 - `SKILL.md` 앞부분 메타데이터의 `metadata.mustflow_schema`는 `"1"`, `metadata.mustflow_kind`는 `procedure`, `name`은 `.mustflow/skills/<name>/` 폴더 이름과 일치해야 합니다.
 - 스킬 앞부분 메타데이터의 `metadata.command_intents`는 `.mustflow/config/commands.toml`에 선언된 명령 의도만 참조해야 합니다.
+- `.mustflow/skills/INDEX.md`에 적은 명령 의도는 해당 스킬 앞부분 메타데이터에도 선언되어 있어야 합니다.
 - 스킬 본문이 명령 실행 권한을 직접 부여한다고 주장하지 않는지 확인합니다. 실행 권한은 `.mustflow/config/commands.toml`에만 둡니다.
 - `.mustflow/skills/<name>/` 아래에 `SKILL.md` 없이 보조 파일만 있는 폴더가 있는지 점검합니다.
 - `resources.toml`에 등록한 자원이 실제 경로(`references/`, `assets/`, `scripts/`)에 있는지 확인합니다.
@@ -45,6 +47,7 @@ npx mf check --strict
 - `REPO_MAP.md`에 원격 저장소 주소, 브랜치 정보 같은 민감 정보가 노출되지 않았는지 확인합니다.
 - `commands.toml`에 `max_output_bytes`, `on_timeout` 설정이 있는지 확인합니다.
 - `mustflow.toml`에 `[retention]` 보존 정책이 정의되어 있는지 확인합니다.
+- 버전 영향 선호값이 켜져 있을 때, 선언된 버전 기준 파일이나 감지 가능한 패키지/템플릿 버전 원본이 있는지 확인합니다.
 - 생성 파일(`REPO_MAP.md`, `latest.json` 등)이 보존 크기 제한을 지키는지 확인합니다.
 - `.mustflow/context/*.md`가 크기 제한을 넘기거나 절대 경로, 민감한 키/값, 중복된 디자인 토큰 등을 담고 있지 않은지 검사합니다.
 - `.mustflow/knowledge/**` 파일이 크기 제한을 지키는지 확인합니다.

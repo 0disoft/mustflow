@@ -51,6 +51,7 @@ These paths are excluded by default.
 
 ```text
 .git
+.mustflow/backups
 node_modules
 dist
 build
@@ -72,7 +73,9 @@ npx mf map --write --root-only
 
 With `--write`, the command creates or updates `REPO_MAP.md` at the repository root.
 
-The generated map does not include volatile values such as generated time, hashes, or file counts at the top.
+The generated map starts with stable generated metadata, including `anchor_count` and `source_fingerprint`.
+It does not include volatile values such as generation time, branch names, remote URLs, or change logs.
+`mf check --strict` reports a stale source fingerprint when the map should be regenerated.
 
 ## Nested Repositories
 

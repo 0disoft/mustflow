@@ -267,3 +267,17 @@ test('command contract toml parse result matches the published schema', () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('version sources json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['version-sources', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema('version-sources-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

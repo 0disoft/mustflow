@@ -46,6 +46,8 @@ function createTempProject() {
 	mkdirSync(path.join(projectPath, '.mustflow', 'context'), { recursive: true });
 	writeFileSync(path.join(projectPath, '.mustflow', 'context', 'INDEX.md'), '# Context index\n');
 	writeFileSync(path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'), '# Project context\n');
+	mkdirSync(path.join(projectPath, '.mustflow', 'backups', '2026-05-08T00-00-00-000Z'), { recursive: true });
+	writeFileSync(path.join(projectPath, '.mustflow', 'backups', '2026-05-08T00-00-00-000Z', 'AGENTS.md'), '# Backup\n');
 	mkdirSync(path.join(projectPath, 'src'), { recursive: true });
 	writeFileSync(path.join(projectPath, 'src', 'index.ts'), 'export {};\n');
 	mkdirSync(path.join(projectPath, 'docs'), { recursive: true });
@@ -137,7 +139,15 @@ test('prints an anchor-based repository map without ignored paths', () => {
 		const result = runMap(projectPath, ['--stdout']);
 
 		assert.equal(result.status, 0);
-		assert.match(result.stdout, /^# REPO_MAP\.md/);
+		assert.match(result.stdout, /^---\nmustflow_doc: repo-map/m);
+		assert.match(result.stdout, /^lifecycle: generated$/m);
+		assert.match(result.stdout, /^generated_by: mustflow$/m);
+		assert.match(result.stdout, /^relative_root: "\."$/m);
+		assert.match(result.stdout, /^source_policy: anchors_only$/m);
+		assert.match(result.stdout, /^privacy_mode: minimal$/m);
+		assert.match(result.stdout, /^anchor_count: [1-9]\d*$/m);
+		assert.match(result.stdout, /^source_fingerprint: "sha256:[a-f0-9]{64}"$/m);
+		assert.match(result.stdout, /^# REPO_MAP\.md$/m);
 		assert.match(result.stdout, /Priority Anchors/);
 		assert.match(result.stdout, /Directory Anchors/);
 		assert.match(result.stdout, /AGENTS\.md/);
@@ -174,6 +184,7 @@ test('prints an anchor-based repository map without ignored paths', () => {
 		assert.doesNotMatch(result.stdout, /node_modules\/pkg/);
 		assert.doesNotMatch(result.stdout, /dist\/index\.js/);
 		assert.doesNotMatch(result.stdout, /\.git\/config/);
+		assert.doesNotMatch(result.stdout, /\.mustflow\/backups/);
 		assert.doesNotMatch(result.stdout, /SSOT\.json/);
 		assert.doesNotMatch(result.stdout, /Generated at/);
 		assert.doesNotMatch(result.stdout, /\d{4}-\d{2}-\d{2}T/);
@@ -242,7 +253,10 @@ test('writes REPO_MAP.md when requested', () => {
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Wrote REPO_MAP\.md/);
 		assert.ok(existsSync(repoMapPath));
-		assert.match(readFileSync(repoMapPath, 'utf8'), /packages\/api\/package\.json/);
+		const repoMap = readFileSync(repoMapPath, 'utf8');
+		assert.match(repoMap, /^---\nmustflow_doc: repo-map/m);
+		assert.match(repoMap, /^source_fingerprint: "sha256:[a-f0-9]{64}"$/m);
+		assert.match(repoMap, /packages\/api\/package\.json/);
 	} finally {
 		removeTempProject(projectPath);
 	}

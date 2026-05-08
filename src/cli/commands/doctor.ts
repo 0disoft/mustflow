@@ -37,6 +37,7 @@ interface DoctorDiagnostic {
 	readonly id:
 		| 'install'
 		| 'validation'
+		| 'skill_routes'
 		| 'commands'
 		| 'read_order'
 		| 'optional_read_order'
@@ -102,12 +103,21 @@ function pluralize(count: number, singular: string, plural: string): string {
 	return count === 1 ? singular : plural;
 }
 
+function isSkillRouteIssue(issue: string): boolean {
+	return (
+		issue.includes('.mustflow/skills/INDEX.md route') ||
+		issue.includes('.mustflow/skills/INDEX.md has duplicate route') ||
+		issue.endsWith(' is not listed in .mustflow/skills/INDEX.md')
+	);
+}
+
 function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[] {
 	const diagnostics: DoctorDiagnostic[] = [];
 	const checkCommand = output.strict ? 'mf check --strict' : 'mf check';
 	const repoMapExists = existsSync(path.join(output.mustflow_root, 'REPO_MAP.md'));
 	const localIndexExists = existsSync(getLocalIndexDatabasePath(output.mustflow_root));
 	const runnableIntentCount = output.context.runnable_intents.length;
+	const skillRouteIssueCount = output.check.issues.filter(isSkillRouteIssue).length;
 
 	diagnostics.push({
 		id: 'install',
@@ -121,6 +131,15 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 		status: output.check.ok ? 'ok' : 'fail',
 		summary: `${output.check.issue_count} ${pluralize(output.check.issue_count, 'issue', 'issues')}`,
 		action: output.check.ok ? null : checkCommand,
+	});
+
+	diagnostics.push({
+		id: 'skill_routes',
+		status: output.strict ? (skillRouteIssueCount === 0 ? 'ok' : 'fail') : 'info',
+		summary: output.strict
+			? `${skillRouteIssueCount} skill index/body alignment ${pluralize(skillRouteIssueCount, 'issue', 'issues')}`
+			: 'not evaluated; run strict doctor',
+		action: output.strict ? (skillRouteIssueCount === 0 ? null : 'mf check --strict') : 'mf doctor --strict --json',
 	});
 
 	diagnostics.push({
@@ -249,6 +268,8 @@ function getDiagnosticLabel(id: DoctorDiagnostic['id'], lang: CliLang): string {
 			return t(lang, 'doctor.diagnostic.install');
 		case 'validation':
 			return t(lang, 'doctor.diagnostic.validation');
+		case 'skill_routes':
+			return t(lang, 'doctor.diagnostic.skillRoutes');
 		case 'commands':
 			return t(lang, 'doctor.diagnostic.commands');
 		case 'read_order':

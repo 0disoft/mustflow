@@ -35,6 +35,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf index/);
 	assert.match(result.stdout, /mf search/);
 	assert.match(result.stdout, /mf dashboard/);
+	assert.match(result.stdout, /mf version-sources/);
 });
 
 test('runs when invoked through a linked package path', () => {
@@ -133,7 +134,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 });
 
 test('routes command-specific help', () => {
-	for (const command of ['init', 'check', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'help']) {
+	for (const command of ['init', 'check', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version-sources', 'help']) {
 		const result = runCli([command, '--help']);
 
 		assert.equal(result.status, 0);
@@ -156,6 +157,7 @@ test('fails unknown command options with standardized guidance', () => {
 		['index', '--bad'],
 		['search', '--bad'],
 		['dashboard', '--bad'],
+		['version-sources', '--bad'],
 		['help', 'workflow', '--bad'],
 	];
 

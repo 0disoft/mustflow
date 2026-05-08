@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/version-sources-report.schema.json",
+  "title": "mustflow version sources report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "versioning_enabled",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "version-sources" },
+    "mustflow_root": { "type": "string" },
+    "versioning_enabled": { "type": "boolean" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "kind"],
+        "properties": {
+          "path": { "type": "string" },
+          "kind": {
+            "enum": [
+              "template_lock",
+              "template_manifest",
+              "package_manifest"
+            ]
+          },
+          "declared": { "type": "boolean" },
+          "authority": {
+            "enum": ["source", "derived"]
+          }
+        }
+      }
+    }
+  }
+}
