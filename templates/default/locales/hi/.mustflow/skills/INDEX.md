@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 3
+revision: 6
 ---
 
 # स्किल सूचकांक
@@ -26,6 +26,9 @@ revision: 3
 | कोड बदलाव की समीक्षा | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
 | परीक्षण जोड़ना, अद्यतन करना, हटाना, या ऑडिट करना | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
 | विफलता की जांच | `.mustflow/skills/failure-triage/SKILL.md` | मूल विफल intent |
+| `.mustflow/context/PROJECT.md` भरना या maintain करना | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
+| `.mustflow/skills/*/SKILL.md` procedures बनाना या maintain करना | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
+| वेब image assets जोड़ना, convert करना, resize करना, या replace करना | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
 | दस्तावेज़ अद्यतन | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
 
 नई स्किल जोड़ते समय उसे यहां लिंक करें और उसके उपयोग के विशिष्ट परिदृश्य परिभाषित करें।

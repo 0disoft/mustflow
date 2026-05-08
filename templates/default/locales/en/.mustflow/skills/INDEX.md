@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: en
 canonical: true
-revision: 3
+revision: 6
 ---
 
 # Skills Index
@@ -27,6 +27,9 @@ refer to `AGENTS.md` and `.mustflow/config/commands.toml` to implement the most 
 | Review code changes | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
 | Add, update, remove, or audit tests | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
 | Investigate a failure | `.mustflow/skills/failure-triage/SKILL.md` | The original failing intent |
+| Fill or maintain `.mustflow/context/PROJECT.md` | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
+| Create or maintain `.mustflow/skills/*/SKILL.md` procedures | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
+| Add, convert, resize, or replace web image assets | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
 | Update documentation | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
 
 When introducing a new skill, link it here and define the specific scenarios for its application.

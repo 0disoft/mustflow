@@ -28,7 +28,10 @@ AGENTS.md
    ├─ code-review/SKILL.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
-   └─ test-maintenance/SKILL.md
+   ├─ project-context-authoring/SKILL.md
+   ├─ skill-authoring/SKILL.md
+   ├─ test-maintenance/SKILL.md
+   └─ web-asset-optimization/SKILL.md
 ```
 
 `REPO_MAP.md` 不会从静态模板复制。它会在用户请求时根据仓库结构生成。

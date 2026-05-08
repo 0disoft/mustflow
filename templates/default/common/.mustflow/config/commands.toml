@@ -52,6 +52,13 @@ reason = "Snapshot updates can hide unintended output changes and require explic
 agent_action = "do_not_update_snapshots_without_approval"
 required_after = ["snapshot_change", "user_approved_snapshot_update"]
 
+[intents.asset_optimize]
+status = "unknown"
+description = "Optimize web image assets with the repository's declared image pipeline."
+reason = "No image optimization command has been declared for this repository."
+agent_action = "do_not_guess_report_missing"
+required_after = ["image_asset_change", "web_asset_change"]
+
 [intents.lint]
 status = "unknown"
 description = "Run linting or static analysis."

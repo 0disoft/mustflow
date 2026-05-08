@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 3
+revision: 6
 ---
 
 # Skills 索引
@@ -24,6 +24,9 @@ revision: 3
 | 审查代码变更 | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
 | 新增、更新、删除或审计测试 | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
 | 调查失败 | `.mustflow/skills/failure-triage/SKILL.md` | 原始失败 intent |
+| 填写或维护 `.mustflow/context/PROJECT.md` | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
+| 创建或维护 `.mustflow/skills/*/SKILL.md` 流程 | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
+| 添加、转换、调整尺寸或替换 Web 图片资源 | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
 | 更新文档 | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
 
 引入新 skill 时，请在此处建立链接并定义其具体适用场景。

@@ -132,6 +132,24 @@ agent_action = "do_not_update_snapshots_without_approval"
 `commands.toml`에서 확인해야 합니다. 관련 테스트나 감사 명령이 없으면 보고하고, 대체 명령을
 추측하지 않습니다.
 
+## 자산 최적화 의도
+
+기본 템플릿은 저장소별 웹 이미지 최적화 파이프라인을 위한 알 수 없음 상태의
+`asset_optimize` 의도를 포함합니다.
+
+```toml
+[intents.asset_optimize]
+status = "unknown"
+description = "Optimize web image assets with the repository's declared image pipeline."
+reason = "No image optimization command has been declared for this repository."
+agent_action = "do_not_guess_report_missing"
+required_after = ["image_asset_change", "web_asset_change"]
+```
+
+이미지 압축, 크기 조정, 형식 변환이 필요한 작업이나 스킬은 이 의도 이름을 사용해야
+합니다. 프로젝트마다 프레임워크 이미지 파이프라인, Sharp, Squoosh, ImageMagick, CDN
+변환, 맞춤 빌드 단계가 다를 수 있으므로 템플릿은 기본 변환기를 설정하지 않습니다.
+
 ## 명령 생명주기
 
 - `oneshot`: 실행 후 종료되어야 하는 명령입니다.

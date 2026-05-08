@@ -28,7 +28,10 @@ AGENTS.md
    ├─ code-review/SKILL.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
-   └─ test-maintenance/SKILL.md
+   ├─ project-context-authoring/SKILL.md
+   ├─ skill-authoring/SKILL.md
+   ├─ test-maintenance/SKILL.md
+   └─ web-asset-optimization/SKILL.md
 ```
 
 `REPO_MAP.md`는 고정 템플릿에서 복사하지 않고, 필요할 때 저장소 구조를 분석해 동적으로 생성합니다.

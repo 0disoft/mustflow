@@ -52,8 +52,8 @@ public_api_docs = "when_new_or_changed"
 avoid_drive_by_refactors = true
 
 [git]
-auto_stage = false
-auto_commit = false
+auto_stage = true
+auto_commit = true
 auto_push = false
 
 [git.commit_message]

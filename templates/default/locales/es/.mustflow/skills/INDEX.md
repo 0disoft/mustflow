@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 3
+revision: 6
 ---
 
 # Indice De Skills
@@ -27,6 +27,9 @@ consulta `AGENTS.md` y `.mustflow/config/commands.toml` para implementar el camb
 | Revisar cambios de codigo | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
 | Agregar, actualizar, eliminar o auditar pruebas | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
 | Investigar un fallo | `.mustflow/skills/failure-triage/SKILL.md` | El intent original que fallo |
+| Completar o mantener `.mustflow/context/PROJECT.md` | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
+| Crear o mantener procedimientos `.mustflow/skills/*/SKILL.md` | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
+| Agregar, convertir, redimensionar o reemplazar imagenes web | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
 | Actualizar documentacion | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
 
 Al introducir una skill nueva, enlazala aqui y define los escenarios especificos de uso.

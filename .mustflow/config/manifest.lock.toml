@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.1.0"
+version = "1.2.0"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:24c3cd4d0abdc869a30b3b09b244ff92ac2bd4d6449539fda27eaa7ff
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:30925725302d0a7730fc136ee7fb02f1690182347df83e601d73e297db378acc"
+content_hash = "sha256:4a6342b97668106b89524ba39a31de90f54cc3fc979f021cde57a35bfa2aaa00"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
@@ -47,6 +47,21 @@ source = "template_locale"
 last_action = "created"
 content_hash = "sha256:7789ab2e3374d9c8257bed3dbf2e8ad2af75f91713438706656345a6813de59b"
 
+[files.".mustflow/skills/project-context-authoring/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:9efa1f1bad35a49cbb8568307b03e6c18b6aec217b4742a2378a93e4ff91e45e"
+
+[files.".mustflow/skills/skill-authoring/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:0d229b043aa6987b963f982dab556c5603ee623234b1b9efd64cacbf141b085b"
+
+[files.".mustflow/skills/web-asset-optimization/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:0c0ca04777b75af554d20de8385de013ff81e458dd93d9ce16ea3cfaf7890e9e"
+
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
@@ -60,9 +75,9 @@ content_hash = "sha256:4bc48d56de0afc3d2e885adeefcbe4b9cee3263c32db29e12c78dd1a2
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:b8d4c05e218f797c7505461ceff4791282c3e57a91d0344eb9584d00933323a3"
+content_hash = "sha256:d5530e5d5c2f18cab7e16b7dd7443ea8b14448344815f318db8dcdae9f9689a9"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:a73264009faf9977729885423a84d3d051d99f0970af0ae8b69833008effcded"
+content_hash = "sha256:880a197363d01a834b571e3c6babc0fab97700cd45bfa99ea1e8f9d39ae01d4e"

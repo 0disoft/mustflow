@@ -55,6 +55,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'project-context-authoring', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'web-asset-optimization', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-authoring', 'SKILL.md')), false);
 		assert.ok(existsSync(path.join(projectPath, '.gitignore')));
 		assert.equal(existsSync(path.join(projectPath, 'README.md')), false);
@@ -94,6 +97,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(commands, /\[intents\.test_related\]/);
 		assert.match(commands, /\[intents\.test_audit\]/);
 		assert.match(commands, /\[intents\.snapshot_update\]/);
+		assert.match(commands, /\[intents\.asset_optimize\]/);
+		assert.match(commands, /required_after = \["image_asset_change", "web_asset_change"\]/);
 		assert.match(commands, /\[intents\.git_commit\]/);
 		assert.match(commands, /status = "manual_only"/);
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));

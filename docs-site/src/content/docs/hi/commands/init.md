@@ -28,7 +28,10 @@ AGENTS.md
    ├─ code-review/SKILL.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
-   └─ test-maintenance/SKILL.md
+   ├─ project-context-authoring/SKILL.md
+   ├─ skill-authoring/SKILL.md
+   ├─ test-maintenance/SKILL.md
+   └─ web-asset-optimization/SKILL.md
 ```
 
 `REPO_MAP.md` static template से copy नहीं होता। उपयोगकर्ता के अनुरोध पर यह repository structure से generate होता है।

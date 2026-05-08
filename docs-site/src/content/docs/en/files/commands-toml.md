@@ -131,6 +131,21 @@ agent_action = "do_not_update_snapshots_without_approval"
 Agents should use these intent names when maintaining tests, but must still resolve each one through
 `commands.toml`. A missing related-test or audit command is reported; it is not guessed.
 
+## Asset Optimization Intent
+
+The default template includes `asset_optimize` as an unknown intent for repository-specific web image optimization pipelines.
+
+```toml
+[intents.asset_optimize]
+status = "unknown"
+description = "Optimize web image assets with the repository's declared image pipeline."
+reason = "No image optimization command has been declared for this repository."
+agent_action = "do_not_guess_report_missing"
+required_after = ["image_asset_change", "web_asset_change"]
+```
+
+Agents should use this intent name when a skill or task needs image compression, resizing, or format conversion. The template does not configure a default converter because projects may use framework image pipelines, Sharp, Squoosh, ImageMagick, CDN transforms, or a custom build step.
+
 ## Command Lifecycle
 
 - `oneshot`: A command that is expected to exit upon completion.

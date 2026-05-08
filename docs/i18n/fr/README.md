@@ -155,7 +155,13 @@ your-project/
       │  └─ SKILL.md
       ├─ failure-triage/
       │  └─ SKILL.md
-      └─ test-maintenance/
+      ├─ project-context-authoring/
+      │  └─ SKILL.md
+      ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-maintenance/
+      │  └─ SKILL.md
+      └─ web-asset-optimization/
          └─ SKILL.md
 ```
 

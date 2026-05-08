@@ -26,7 +26,10 @@ AGENTS.md
    ├─ code-review/SKILL.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
-   └─ test-maintenance/SKILL.md
+   ├─ project-context-authoring/SKILL.md
+   ├─ skill-authoring/SKILL.md
+   ├─ test-maintenance/SKILL.md
+   └─ web-asset-optimization/SKILL.md
 ```
 
 `REPO_MAP.md` no se copia desde una plantilla estática; se genera bajo demanda a partir de la estructura del repositorio.

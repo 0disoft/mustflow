@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 4
+revision: 7
 ---
 
 # 스킬 색인
@@ -25,6 +25,9 @@ revision: 4
 | 코드 변경 검토 | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
 | 테스트 추가, 수정, 삭제, 점검 | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
 | 실패 원인 추적 | `.mustflow/skills/failure-triage/SKILL.md` | 실패한 원래 의도 |
+| `.mustflow/context/PROJECT.md` 작성 또는 유지보수 | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
+| `.mustflow/skills/*/SKILL.md` 절차 작성 또는 유지보수 | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
+| 웹 이미지 자산 추가, 변환, 크기 조정 또는 교체 | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
 | 문서 수정 | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
 
 새 스킬을 추가할 때는 이 표에 링크를 추가하고, 적용 시나리오 중심으로 간결하게 작성하십시오.
