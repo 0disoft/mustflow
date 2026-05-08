@@ -2,12 +2,14 @@
 mustflow_doc: skill.web-asset-optimization
 locale: fr
 canonical: false
-revision: 1
+revision: 2
 name: web-asset-optimization
 description: Apply this skill when adding, converting, resizing, replacing, or reviewing raster image assets for websites or web applications.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.web-asset-optimization
   command_intents:
     - asset_optimize
     - build
@@ -40,6 +42,17 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 - Existing framework image conventions, static asset folders, and import style.
 - `.mustflow/config/commands.toml` entries for `asset_optimize` and `build`.
 
+## Preconditions
+
+- La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
+- Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
+- Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
+
+## Modifications Autorisees
+
+- Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
+- Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
+
 ## Procedure
 
 1. Identify every changed image asset and every page, component, style, metadata, or manifest reference that depends on it.
@@ -50,6 +63,11 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 6. Keep source and derived assets separate when the repository already has that convention. Otherwise, avoid adding duplicate originals unless future editing requires them.
 7. Update imports, static paths, metadata references, dimensions, and cache-sensitive filenames according to the local style.
 8. Compare before and after file sizes and note any quality, transparency, animation, browser-support, or fallback tradeoff.
+
+## Postconditions
+
+- La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
+- Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
 ## Verification
 

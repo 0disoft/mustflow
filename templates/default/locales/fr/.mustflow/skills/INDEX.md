@@ -2,36 +2,32 @@
 mustflow_doc: skills.index
 locale: fr
 canonical: false
-revision: 6
+revision: 7
 ---
 
-# Index Des Skills
+# Index des skills
 
-Consulte uniquement le document de skill pertinent pour la tache en cours. Si aucune skill specifique ne s'applique,
-refere-toi a `AGENTS.md` et `.mustflow/config/commands.toml` pour appliquer le changement sur le plus petit perimetre sur.
+Consultez seulement le document de skill pertinent pour la tache courante. Si aucune skill ne s'applique,
+utilisez `AGENTS.md` et `.mustflow/config/commands.toml` pour faire le plus petit changement sur.
 
-## Regles De Selection
+## Regles de selection
 
-- Au debut d'une tache et avant la premiere edition, comparer la demande utilisateur et les fichiers
-  qui devraient changer avec les scenarios ci-dessous.
-- Si un ou plusieurs scenarios correspondent, lire chaque `SKILL.md` correspondant avant d'editer cette portee.
-- Si une nouvelle condition apparait pendant la tache, comme un echec de commande, un changement de
-  contrat de test ou un changement de documentation, s'arreter et lire la skill nouvellement pertinente.
-- Si aucun scenario ne s'applique, ne pas inventer de skill. Continuer avec `AGENTS.md`,
-  `.mustflow/docs/agent-workflow.md` et `.mustflow/config/commands.toml`.
-- Les documents de skill guident seulement la procedure. Ils n'autorisent pas l'execution de commandes
-  hors des command intents declares.
+- Au debut de la tache et avant la premiere modification, comparez la demande utilisateur et les fichiers prevus avec les declencheurs ci-dessous.
+- Si un ou plusieurs declencheurs correspondent, lisez chaque `SKILL.md` avant de modifier ce perimetre.
+- Si une nouvelle condition apparait pendant la tache, comme un echec de commande, un changement de contrat de test ou une modification documentaire, arretez-vous et lisez la skill correspondante avant de continuer.
+- Si aucun declencheur ne s'applique, n'inventez pas de skill. Continuez avec `AGENTS.md`, `.mustflow/docs/agent-workflow.md` et `.mustflow/config/commands.toml`.
+- Les documents de skill guident seulement la procedure. Ils n'autorisent pas l'execution de commandes hors des intentions declarees.
+- Gardez la table de routage compacte : chaque route indique le declencheur, l'entree requise, le perimetre de modification, le risque, les intentions de verification et la sortie attendue.
 
-| Scenario | Document De Skill | Command Intents Associes |
-| --- | --- | --- |
-| Revoir des changements de code | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
-| Ajouter, mettre a jour, supprimer ou auditer des tests | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
-| Investiguer un echec | `.mustflow/skills/failure-triage/SKILL.md` | L'intent d'echec original |
-| Remplir ou maintenir `.mustflow/context/PROJECT.md` | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
-| Creer ou maintenir des procedures `.mustflow/skills/*/SKILL.md` | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
-| Ajouter, convertir, redimensionner ou remplacer des images web | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
-| Mettre a jour la documentation | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
+| Declencheur | Document de skill | Entree requise | Perimetre de modification | Risque | Intentions de verification | Sortie attendue |
+| --- | --- | --- | --- | --- | --- | --- |
+| Les changements de code doivent etre relus avant le rapport | `.mustflow/skills/code-review/SKILL.md` | Diff et objectif de la tache | Fichiers modifies | comportement et regression | `test`, `test_related`, `test_audit`, `lint` | Constats ou note sans probleme |
+| Des tests sont ajoutes, modifies, supprimes ou audites | `.mustflow/skills/test-maintenance/SKILL.md` | Comportement change ou preuve de test obsolete | Tests et source liee | derive de contrat | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Justification des tests et verification |
+| Une intention de commande configuree ou une verification echoue | `.mustflow/skills/failure-triage/SKILL.md` | Intention echouee et fin de sortie | Cause de l'echec seulement | mauvais diagnostic | `mustflow_check`; intention echouee d'origine | Cause, correction et resultat de relance |
+| `.mustflow/context/PROJECT.md` a besoin d'un contexte prudent | `.mustflow/skills/project-context-authoring/SKILL.md` | Faits projet etayes | `.mustflow/context/PROJECT.md` | derive d'autorite | `mustflow_check` | Contexte prudent mis a jour |
+| Des procedures ou routes de skills sont creees ou maintenues | `.mustflow/skills/skill-authoring/SKILL.md` | Preuve de tache repetee | `.mustflow/skills/**` | chevauchement et derive de commande | `mustflow_check`, `docs_validate` | Changements de route et procedure |
+| Des images web sont ajoutees, converties, redimensionnees ou remplacees | `.mustflow/skills/web-asset-optimization/SKILL.md` | Demande d'image et chemin cible | Images web | qualite et taille du fichier | `asset_optimize`, `build` | Notes d'optimisation |
+| Des changements documentaires touchent les docs publiques ou le workflow | `.mustflow/skills/docs-update/SKILL.md` | Comportement ou champ modifie | Docs pertinentes seulement | docs publiques obsoletes | `docs_validate`, `mustflow_check` | Changements docs et verifications ignorees |
 
-Lors de l'introduction d'une nouvelle skill, ajoute le lien ici et definis les scenarios specifiques d'utilisation.
-Evite d'inclure des commandes shell brutes dans les documents de skill; reference plutot les noms
-de command intent tels qu'ils sont definis dans `.mustflow/config/commands.toml`.
+Lors de l'ajout d'une skill, liez-la ici et definissez le declencheur et les champs de route precis.
+N'ajoutez pas de commandes shell brutes dans les skills ; referencez les noms d'intentions de `.mustflow/config/commands.toml`.

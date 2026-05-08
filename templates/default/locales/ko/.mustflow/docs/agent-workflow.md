@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 20
+revision: 21
 ---
 
 # Agent Workflow
@@ -33,6 +33,24 @@ revision: 20
 이 문서는 실제 테스트, 빌드, 규칙 검사 명령을 직접 나열하지 않습니다. 명령은
 저장소마다 다르므로 `.mustflow/config/commands.toml`의 명령 의도 계약을 기준으로
 판단합니다.
+
+## 기준 문서 역할
+
+mustflow 문서는 각자 좁은 역할을 가집니다. 편하게 고치기 좋다는 이유만으로 낮은
+권위의 파일에 더 강한 규칙을 옮기지 않습니다.
+
+| 문서 | 역할 | 권위 | 생명주기 |
+| --- | --- | --- | --- |
+| `AGENTS.md` | 첫 진입점이며 반드시 지켜야 하는 짧은 저장소 규칙입니다. | 사용자 직접 지시와 호스트 안전 규칙 아래에서 가장 높은 저장소 안쪽 지침입니다. | 사용자 수정 가능 파일이며, 설치 방식에 따라 mustflow 관리 파일 또는 관리 블록입니다. |
+| `.mustflow/docs/agent-workflow.md` | 읽기, 수정, 검증, 보고, 실패 대응의 공통 작업 정책입니다. | `AGENTS.md`를 자세히 풀어 설명하지만 실행 명령은 정의하지 않습니다. | mustflow가 소유하는 Markdown 문서입니다. |
+| `.mustflow/config/mustflow.toml` | 문서 루트, 보호 경로, 예산, 승인, 보존, 새로고침 같은 작업 설정입니다. | mustflow 동작을 정하는 기계 판독 설정입니다. | mustflow가 소유하는 TOML 파일입니다. |
+| `.mustflow/config/commands.toml` | 명령 의도 계약입니다. | 설정된 의도를 통해 프로젝트 명령 실행을 허용하는 유일한 기준입니다. | 명령 계약이 바뀔 때 수정하는 저장소별 TOML 파일입니다. |
+| `.mustflow/config/preferences.toml` | 스타일, 언어, Git 제안, 테스트 작성 성향, 검증 선택, 버전 영향의 기본값입니다. | 권한이 아니라 낮은 권위의 선호값입니다. | 저장소별로 사용자가 조정할 수 있는 TOML 파일입니다. |
+| `.mustflow/context/INDEX.md` | 작업별 문맥 파일을 고르는 라우터입니다. | 선택형 문맥만 고르며 정책 설명서가 아닙니다. | mustflow가 소유하는 Markdown 문서입니다. |
+| `.mustflow/context/PROJECT.md` | 신중한 프로젝트 사실, 모르는 점, 도메인 관습을 기록합니다. | 사용자 지시, 코드, 테스트, 명령 계약, 설정된 정책보다 낮은 문맥 참고 자료입니다. | 사용자가 수정할 수 있는 문맥 문서입니다. |
+| `.mustflow/skills/INDEX.md` | 작업에 맞는 절차 문서를 고르는 라우터입니다. | 선택 계약만 담당하고 자세한 절차는 `SKILL.md`에 둡니다. | mustflow가 소유하는 Markdown 문서입니다. |
+| `.mustflow/skills/<name>/SKILL.md` | 반복 작업의 입력, 허용 범위, 검사, 보고 형식을 담은 절차입니다. | 절차 안내일 뿐이며 명령 실행 권한을 주거나 다른 규칙을 덮어쓸 수 없습니다. | mustflow가 소유하는 Markdown 문서이며, 필요하면 언어별로 설치됩니다. |
+| `REPO_MAP.md` | 넓은 탐색과 하위 저장소 진입점을 위한 생성 앵커 지도입니다. | 현재 파일과 현재 지시보다 낮은 생성 탐색 보조 자료입니다. | 생성 파일이며 설정된 `repo_map` 의도나 `mf map`으로 갱신합니다. |
 
 ## 에이전트 작업 순환
 

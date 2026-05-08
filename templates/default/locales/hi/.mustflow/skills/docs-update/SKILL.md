@@ -2,12 +2,14 @@
 mustflow_doc: skill.docs-update
 locale: hi
 canonical: false
-revision: 1
+revision: 2
 name: docs-update
 description: mustflow या परियोजना दस्तावेज़ अद्यतन करते समय इस स्किल का उपयोग करें।
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.docs-update
   command_intents:
     - docs_validate
     - mustflow_check
@@ -37,6 +39,17 @@ metadata:
 - वर्तमान documentation page या Markdown file
 - `.mustflow/config/commands.toml`
 
+## पूर्व शर्तें
+
+- Task Use When conditions से match करता है और Do Not Use When exclusions से match नहीं करता।
+- Required inputs उपलब्ध हैं, या missing inputs को guess किए बिना report किया जा सकता है।
+- Higher-priority instructions और `.mustflow/config/commands.toml` current scope के लिए check किए गए हैं।
+
+## अनुमत edits
+
+- Edits को इस skill, user request और `.mustflow/skills/INDEX.md` की matching route में बताए scope तक सीमित रखें।
+- Command permission न बढ़ाएं, project facts invent न करें और unrelated workflow files न बदलें।
+
 ## प्रक्रिया
 
 1. उस दस्तावेज़ का पता लगाएं जो संबंधित व्याख्या का उत्तरदायी है।
@@ -44,6 +57,11 @@ metadata:
 3. कमांड नाम और paths की शुद्धता सुनिश्चित करें।
 4. marketing language या tutorial filler जोड़ने से बचें।
 5. generated files को हाथ से संशोधित न करें।
+
+## पश्च शर्तें
+
+- Expected output clear evidence, executed command intents, skipped checks और remaining risks के साथ बनाया जा सकता है।
+- Missing command intent, unknown input या authority conflict को छिपाने के बजाय report किया जाता है।
 
 ## सत्यापन
 

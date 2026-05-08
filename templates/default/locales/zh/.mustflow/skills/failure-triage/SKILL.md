@@ -2,12 +2,14 @@
 mustflow_doc: skill.failure-triage
 locale: zh
 canonical: false
-revision: 1
+revision: 2
 name: failure-triage
 description: 当已配置 command intent 或验证步骤失败时应用本 skill。
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.failure-triage
   command_intents:
     - mustflow_check
 ---
@@ -37,6 +39,17 @@ metadata:
 - 最近修改的文件
 - 相关命令合同条目
 
+## 前置条件
+
+- 任务符合使用时机，且不符合不适用时机中的排除条件。
+- 所需输入已经可用，或可以报告缺失输入而不进行猜测。
+- 已针对当前范围检查更高优先级的指令和 `.mustflow/config/commands.toml`。
+
+## 允许编辑范围
+
+- 编辑必须限制在此技能、用户请求以及 `.mustflow/skills/INDEX.md` 中匹配路由描述的范围内。
+- 不要扩大命令权限、编造项目事实或更改无关的工作流文件。
+
 ## 流程
 
 1. 保留原始失败 intent 名称。
@@ -44,6 +57,11 @@ metadata:
 3. 判断失败源自代码、测试、配置、文档还是环境。
 4. 检查最相关文件。
 5. 提出单一假设，并用最有针对性的已配置 intent 验证。
+
+## 后置条件
+
+- 可以用清晰证据、已执行的命令意图、跳过的检查和剩余风险产出预期输出。
+- 任何缺失的命令意图、未知输入或权限冲突都会被报告，而不是被隐藏。
 
 ## 验证
 

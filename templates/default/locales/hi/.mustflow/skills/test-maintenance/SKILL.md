@@ -2,12 +2,14 @@
 mustflow_doc: skill.test-maintenance
 locale: hi
 canonical: false
-revision: 1
+revision: 2
 name: test-maintenance
 description: व्यवहार, APIs, snapshots, compatibility, या bug fix बदलावों के अनुसार परीक्षण जोड़ने, अपडेट करने, हटाने, या ऑडिट करने के समय इस स्किल का उपयोग करें।
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.test-maintenance
   command_intents:
     - test
     - test_related
@@ -44,6 +46,17 @@ metadata:
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` का `[testing]`
 
+## पूर्व शर्तें
+
+- Task Use When conditions से match करता है और Do Not Use When exclusions से match नहीं करता।
+- Required inputs उपलब्ध हैं, या missing inputs को guess किए बिना report किया जा सकता है।
+- Higher-priority instructions और `.mustflow/config/commands.toml` current scope के लिए check किए गए हैं।
+
+## अनुमत edits
+
+- Edits को इस skill, user request और `.mustflow/skills/INDEX.md` की matching route में बताए scope तक सीमित रखें।
+- Command permission न बढ़ाएं, project facts invent न करें और unrelated workflow files न बदलें।
+
 ## प्रक्रिया
 
 1. अपेक्षित वर्तमान व्यवहार परिभाषित करें।
@@ -58,6 +71,11 @@ metadata:
 5. केवल इसलिए हटे व्यवहार को वापस न लाएं कि पुराने परीक्षण उसे अपेक्षित करते हैं।
 6. snapshot updates को manual मानें, जब तक `snapshot_update` स्पष्ट रूप से approved और configured न हो।
 7. परीक्षणों को deterministic और व्यवहार अनुबंध के निकट रखें।
+
+## पश्च शर्तें
+
+- Expected output clear evidence, executed command intents, skipped checks और remaining risks के साथ बनाया जा सकता है।
+- Missing command intent, unknown input या authority conflict को छिपाने के बजाय report किया जाता है।
 
 ## सत्यापन
 

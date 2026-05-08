@@ -2,12 +2,14 @@
 mustflow_doc: skill.test-maintenance
 locale: fr
 canonical: false
-revision: 1
+revision: 2
 name: test-maintenance
 description: Applique cette skill lors de l'ajout, de la mise a jour, de la suppression ou de l'audit de tests en reponse aux changements de comportement, d'API, de snapshots, de compatibilite ou de corrections de bugs.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.test-maintenance
   command_intents:
     - test
     - test_related
@@ -44,6 +46,17 @@ Maintenir les tests alignes avec le contrat de comportement actuel.
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` `[testing]`
 
+## Preconditions
+
+- La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
+- Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
+- Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
+
+## Modifications Autorisees
+
+- Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
+- Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
+
 ## Procedure
 
 1. Definir le comportement actuel attendu.
@@ -58,6 +71,11 @@ Maintenir les tests alignes avec le contrat de comportement actuel.
 5. Ne pas reintroduire un comportement supprime uniquement parce que d'anciens tests l'attendent.
 6. Traiter les mises a jour de snapshots comme manuelles, sauf si `snapshot_update` est explicitement approuve et configure.
 7. Garder les tests deterministes et proches du contrat de comportement.
+
+## Postconditions
+
+- La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
+- Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
 ## Verification
 

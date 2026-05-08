@@ -2,12 +2,14 @@
 mustflow_doc: skill.code-review
 locale: zh
 canonical: false
-revision: 2
+revision: 3
 name: code-review
 description: 当需要审查代码变更、范围、风险或验证缺口时应用本 skill。
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - test_related
@@ -39,6 +41,17 @@ metadata:
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+## 前置条件
+
+- 任务符合使用时机，且不符合不适用时机中的排除条件。
+- 所需输入已经可用，或可以报告缺失输入而不进行猜测。
+- 已针对当前范围检查更高优先级的指令和 `.mustflow/config/commands.toml`。
+
+## 允许编辑范围
+
+- 编辑必须限制在此技能、用户请求以及 `.mustflow/skills/INDEX.md` 中匹配路由描述的范围内。
+- 不要扩大命令权限、编造项目事实或更改无关的工作流文件。
+
 ## 流程
 
 1. 审查已修改文件列表。
@@ -53,6 +66,11 @@ metadata:
    - 无意中重新引入已移除行为的测试
 5. 验证相关 command intents 是否存在。
 6. 按严重级别记录发现项。
+
+## 后置条件
+
+- 可以用清晰证据、已执行的命令意图、跳过的检查和剩余风险产出预期输出。
+- 任何缺失的命令意图、未知输入或权限冲突都会被报告，而不是被隐藏。
 
 ## 验证
 

@@ -2,12 +2,14 @@
 mustflow_doc: skill.code-review
 locale: fr
 canonical: false
-revision: 2
+revision: 3
 name: code-review
 description: Applique cette skill lors de la revue de changements de code, de perimetre, de risques ou de lacunes de verification.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - test_related
@@ -39,6 +41,17 @@ Verifier qu'un changement est aligne avec la demande et garantir qu'aucun risque
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+## Preconditions
+
+- La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
+- Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
+- Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
+
+## Modifications Autorisees
+
+- Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
+- Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
+
 ## Procedure
 
 1. Revoir la liste des fichiers modifies.
@@ -53,6 +66,11 @@ Verifier qu'un changement est aligne avec la demande et garantir qu'aucun risque
    - tests qui reintroduisent par inadvertance un comportement supprime
 5. Verifier l'existence des command intents pertinents.
 6. Documenter les constats classes par severite.
+
+## Postconditions
+
+- La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
+- Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
 ## Verification
 

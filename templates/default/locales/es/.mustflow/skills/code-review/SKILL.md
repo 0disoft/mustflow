@@ -2,12 +2,14 @@
 mustflow_doc: skill.code-review
 locale: es
 canonical: false
-revision: 2
+revision: 3
 name: code-review
 description: Aplica esta skill al revisar cambios de codigo, alcance, riesgos o brechas de verificacion.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - test_related
@@ -39,6 +41,17 @@ Verificar que un cambio se alinee con la solicitud y asegurar que no queden ries
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+## Precondiciones
+
+- La tarea coincide con las condiciones de uso y no coincide con las exclusiones.
+- Las entradas requeridas estan disponibles, o las entradas faltantes pueden reportarse sin adivinar.
+- Las instrucciones de mayor prioridad y `.mustflow/config/commands.toml` se revisaron para el alcance actual.
+
+## Ediciones Permitidas
+
+- Mantener las ediciones dentro del alcance descrito por esta skill, la solicitud del usuario y la ruta coincidente en `.mustflow/skills/INDEX.md`.
+- No ampliar permisos de comando, inventar hechos del proyecto ni cambiar archivos de workflow no relacionados.
+
 ## Procedimiento
 
 1. Revisa la lista de archivos modificados.
@@ -53,6 +66,11 @@ Verificar que un cambio se alinee con la solicitud y asegurar que no queden ries
    - pruebas que reintroducen comportamiento eliminado de forma inadvertida
 5. Verifica la existencia de command intents relevantes.
 6. Documenta hallazgos categorizados por severidad.
+
+## Postcondiciones
+
+- La salida esperada puede producirse con evidencia clara, intentos de comando ejecutados, verificaciones omitidas y riesgos restantes.
+- Cualquier intento de comando faltante, entrada desconocida o conflicto de autoridad se reporta en lugar de ocultarse.
 
 ## Verificacion
 

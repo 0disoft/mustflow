@@ -2,12 +2,14 @@
 mustflow_doc: skill.code-review
 locale: hi
 canonical: false
-revision: 2
+revision: 3
 name: code-review
 description: कोड बदलाव, दायरे, जोखिम, या सत्यापन अंतराल की समीक्षा के समय इस स्किल का उपयोग करें।
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - test_related
@@ -39,6 +41,17 @@ metadata:
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+## पूर्व शर्तें
+
+- Task Use When conditions से match करता है और Do Not Use When exclusions से match नहीं करता।
+- Required inputs उपलब्ध हैं, या missing inputs को guess किए बिना report किया जा सकता है।
+- Higher-priority instructions और `.mustflow/config/commands.toml` current scope के लिए check किए गए हैं।
+
+## अनुमत edits
+
+- Edits को इस skill, user request और `.mustflow/skills/INDEX.md` की matching route में बताए scope तक सीमित रखें।
+- Command permission न बढ़ाएं, project facts invent न करें और unrelated workflow files न बदलें।
+
 ## प्रक्रिया
 
 1. संशोधित फाइलों की सूची की समीक्षा करें।
@@ -53,6 +66,11 @@ metadata:
    - ऐसे परीक्षण जो अनजाने में हटाया गया व्यवहार वापस लाते हैं
 5. संबंधित command intents की उपलब्धता सत्यापित करें।
 6. गंभीरता के आधार पर निष्कर्ष दस्तावेज़ित करें।
+
+## पश्च शर्तें
+
+- Expected output clear evidence, executed command intents, skipped checks और remaining risks के साथ बनाया जा सकता है।
+- Missing command intent, unknown input या authority conflict को छिपाने के बजाय report किया जाता है।
 
 ## सत्यापन
 

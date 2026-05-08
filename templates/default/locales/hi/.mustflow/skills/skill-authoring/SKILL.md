@@ -2,12 +2,14 @@
 mustflow_doc: skill.skill-authoring
 locale: hi
 canonical: false
-revision: 1
+revision: 3
 name: skill-authoring
 description: Apply this skill when creating or maintaining `.mustflow/skills/*/SKILL.md` procedures and `.mustflow/skills/INDEX.md` routes.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.skill-authoring
   command_intents:
     - mustflow_check
     - docs_validate
@@ -41,16 +43,32 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 - Any repository evidence showing that the task is repeatable and not better handled by an existing skill.
 - Localization and template metadata when the skill is part of an installed template.
 
+## Preconditions
+
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available, or missing inputs can be reported without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+
+## Allowed Edits
+
+- Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
+- Do not broaden command permission, invent project facts, or change unrelated workflow files.
+
 ## Procedure
 
 1. Define the smallest repeatable task the skill should cover. If the task is too broad, split it or leave it as repository guidance instead of creating a skill.
 2. Search existing skills before adding a new one. Prefer updating a matching skill over creating overlapping procedures.
-3. Use a stable folder name and matching frontmatter `name`. Set `mustflow_doc` to `skill.<name>`, `metadata.mustflow_schema` to `"1"`, and `metadata.mustflow_kind` to `procedure`.
-4. Write the standard sections: Purpose, Use When, Do Not Use When, Required Inputs, Procedure, Verification, Failure Handling, and Output Format.
+3. Use a stable folder name and matching frontmatter `name`. Set `mustflow_doc` to `skill.<name>`, `metadata.mustflow_schema` to `"1"`, `metadata.mustflow_kind` to `procedure`, `metadata.pack_id` to the package namespace, and `metadata.skill_id` to `<pack_id>.<name>`.
+4. Standard sections लिखें: उद्देश्य, कब उपयोग करें, कब उपयोग न करें, आवश्यक इनपुट, पूर्व शर्तें, अनुमत edits, प्रक्रिया, पश्च शर्तें, सत्यापन, विफलता प्रबंधन और आउटपुट प्रारूप।
 5. Keep the procedure concrete and bounded. Include what to read, what to change, what to avoid, and what evidence to report.
 6. Reference command intent names only. Do not include raw shell command blocks or claim that the skill authorizes command execution.
-7. Update `.mustflow/skills/INDEX.md` with the narrow scenario, skill path, and related command intents.
+7. `.mustflow/skills/INDEX.md` को compact route के साथ update करें जिसमें trigger, required input, edit scope, risk, verification intents और expected output शामिल हों.
 8. If the skill is installed by a template, update template manifests, localization metadata, installation docs, package tests, and public docs that list installed files.
+
+## Postconditions
+
+- The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
+- Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
 ## Verification
 

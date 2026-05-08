@@ -26,6 +26,8 @@ description: Usar al revisar cambios de código, alcance, riesgos o verificació
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - lint
@@ -39,6 +41,8 @@ metadata:
 - `description`: cuándo debe leer el agente esta skill.
 - `metadata.mustflow_schema`: versión de la forma de metadatos de la skill. El valor admitido actualmente es `"1"`.
 - `metadata.mustflow_kind`: tipo de documento. Las skills predeterminadas deben usar `procedure`.
+- `metadata.pack_id`: espacio de nombres del paquete o pack propietario de la skill, por ejemplo `mustflow.core`.
+- `metadata.skill_id`: identificador global de la skill. Debe combinar el identificador del pack y el nombre de la carpeta, por ejemplo `mustflow.core.code-review`.
 - `metadata.command_intents`: nombres de intención de comando que esta skill puede referenciar. Cada nombre debe existir en `.mustflow/config/commands.toml`.
 
 La plantilla inglesa de skill es la fuente canónica. Las plantillas localizadas de skill usan su propia configuración regional y establecen `canonical: false`.

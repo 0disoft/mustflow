@@ -1,45 +1,46 @@
 ---
 title: .mustflow/skills/INDEX.md
-description: Índice que indica a los agentes qué documento de skill leer para una tarea.
+description: Un indice que dirige a los agentes al documento de skill apropiado para una tarea.
 ---
 
-`.mustflow/skills/INDEX.md` ayuda a los agentes a elegir el documento de skill correcto antes de iniciar trabajo repetible.
+`.mustflow/skills/INDEX.md` ayuda a los agentes a elegir el documento de skill correcto antes de iniciar tareas repetibles.
 
-## Dónde se usa
+## Uso
 
-Después de leer las reglas compartidas y el contrato de comando, los agentes usan este índice cuando la tarea actual coincide con un procedimiento repetible.
+Despues de consultar las reglas compartidas y el contrato de comandos, los agentes usan este indice cuando la tarea coincide con un procedimiento predefinido.
 
-Este archivo no debe copiar cuerpos largos de skills. Conecta situaciones, rutas de skills e intenciones de comando relevantes.
+Este archivo no debe contener los detalles completos del procedimiento. Relaciona campos de ruta compactos con rutas de skill: disparador, entrada requerida, alcance de edicion, riesgo, intentos de verificacion y salida esperada.
+`mf check --strict` compara estas rutas con los `SKILL.md` referenciados para mostrar documentos faltantes, skills no listadas, intentos desconocidos, deriva de intentos y deriva de forma de la tabla.
 
-## Comportamiento de selección
+## Comportamiento de seleccion
 
-Los agentes usan este índice al iniciar una tarea y antes de la primera edición. Comparan la solicitud
-del usuario y los archivos que esperan cambiar con los escenarios listados, y luego leen cada
-`SKILL.md` correspondiente antes de editar ese alcance.
+Los agentes usan este indice al inicio de la tarea y antes de la primera edicion. Comparan la solicitud del usuario y los archivos previstos con los disparadores listados, y leen cada `SKILL.md` coincidente antes de editar ese alcance.
 
-Si aparece una condición nueva durante la tarea, como un fallo de comando, un cambio de contrato de
-pruebas o un cambio de documentación, los agentes deben pausar y leer la skill recién coincidente.
+Si aparece una condicion nueva durante la tarea, como una falla de comando, cambio de contrato de pruebas o cambio documental, deben detenerse y leer la skill recien coincidente antes de continuar.
 
-Si no aplica ningún escenario, los agentes no deben inventar una skill. Continúan con `AGENTS.md`,
-`.mustflow/docs/agent-workflow.md` y `.mustflow/config/commands.toml`.
+Si no aplica ningun disparador, no deben inventar una skill. Continuan con `AGENTS.md`, `.mustflow/docs/agent-workflow.md` y `.mustflow/config/commands.toml`.
 
-## Función
+## Funcion y responsabilidades
 
-- Enumera nombres de skills y cuándo usarlas.
-- Enlaza tareas recurrentes como revisión de código, actualización de documentación, análisis de fallos y mantenimiento de pruebas.
-- Enumera los nombres de intenciones de comando que cada skill puede necesitar.
-- Permite eliminar o marcar como inactivas las skills específicas del repositorio que no se usan.
+- Lista las skills disponibles y define disparadores precisos.
+- Declara entrada requerida, alcance de edicion, riesgo y salida esperada para cada ruta.
+- Especifica los intentos de comando referenciados por cada skill.
+- Mantiene las rutas compactas para que los detalles de procedimiento sigan en cada `SKILL.md`.
 
-## Reglas de autoría
+## Pautas de autoria
 
-Mantén el índice breve y fácil de recorrer.
+El indice debe seguir siendo conciso y facil de revisar.
 
-Coloca los procedimientos largos en cada `SKILL.md`. El índice debe contener solo el nombre, propósito, condición de activación e intenciones de comando relevantes de cada skill.
+Los detalles de procedimiento deben vivir en cada `SKILL.md`. El indice solo debe incluir campos de ruta que ayuden al agente a decidir si leer una skill y que evidencia reportar.
 
-## Columnas de la tabla
+## Estructura de tabla
 
-- `Situation`: condición de tarea que debe activar la skill.
-- `Document`: ruta al `SKILL.md` que contiene el procedimiento.
-- `Command intents`: nombres de intención de `commands.toml` que la skill puede comprobar.
+- **Disparador**: condicion de tarea que justifica leer la skill.
+- **Documento de skill**: ruta al `SKILL.md` correspondiente.
+- **Entrada requerida**: evidencia o datos de solicitud necesarios.
+- **Alcance de edicion**: archivos o superficie que la skill puede guiar.
+- **Riesgo**: modo de falla principal que controla la ruta.
+- **Intentos de verificacion**: nombres de intentos de `commands.toml` que pueden ser relevantes.
+- **Salida esperada**: forma de reporte esperada despues de usar la skill.
 
-Cuando agregues una skill, enlázala aquí y mantén los nombres de intención de comando alineados con el frontmatter de la skill.
+Al introducir una nueva skill, agrega su ruta aqui y manten sincronizados los intentos de verificacion con el frontmatter de la skill.

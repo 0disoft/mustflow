@@ -2,12 +2,14 @@
 mustflow_doc: skill.docs-update
 locale: es
 canonical: false
-revision: 1
+revision: 2
 name: docs-update
 description: Aplica esta skill al actualizar documentacion de mustflow o del proyecto.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.docs-update
   command_intents:
     - docs_validate
     - mustflow_check
@@ -37,6 +39,17 @@ Asegurar que la documentacion refleje con precision el flujo de trabajo actual, 
 - Pagina de documentacion actual o archivo Markdown
 - `.mustflow/config/commands.toml`
 
+## Precondiciones
+
+- La tarea coincide con las condiciones de uso y no coincide con las exclusiones.
+- Las entradas requeridas estan disponibles, o las entradas faltantes pueden reportarse sin adivinar.
+- Las instrucciones de mayor prioridad y `.mustflow/config/commands.toml` se revisaron para el alcance actual.
+
+## Ediciones Permitidas
+
+- Mantener las ediciones dentro del alcance descrito por esta skill, la solicitud del usuario y la ruta coincidente en `.mustflow/skills/INDEX.md`.
+- No ampliar permisos de comando, inventar hechos del proyecto ni cambiar archivos de workflow no relacionados.
+
 ## Procedimiento
 
 1. Localiza el documento responsable de la explicacion.
@@ -44,6 +57,11 @@ Asegurar que la documentacion refleje con precision el flujo de trabajo actual, 
 3. Asegura que nombres de comandos y rutas sean exactos.
 4. Evita agregar lenguaje de marketing o relleno tipo tutorial.
 5. No modifiques manualmente archivos generados.
+
+## Postcondiciones
+
+- La salida esperada puede producirse con evidencia clara, intentos de comando ejecutados, verificaciones omitidas y riesgos restantes.
+- Cualquier intento de comando faltante, entrada desconocida o conflicto de autoridad se reporta en lugar de ocultarse.
 
 ## Verificacion
 

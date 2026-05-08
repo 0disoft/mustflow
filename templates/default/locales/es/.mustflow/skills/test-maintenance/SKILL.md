@@ -2,12 +2,14 @@
 mustflow_doc: skill.test-maintenance
 locale: es
 canonical: false
-revision: 1
+revision: 2
 name: test-maintenance
 description: Aplica esta skill al agregar, actualizar, eliminar o auditar pruebas en respuesta a cambios de comportamiento, API, snapshots, compatibilidad o correcciones de errores.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.test-maintenance
   command_intents:
     - test
     - test_related
@@ -44,6 +46,17 @@ Mantener las pruebas alineadas con el contrato de comportamiento actual.
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` `[testing]`
 
+## Precondiciones
+
+- La tarea coincide con las condiciones de uso y no coincide con las exclusiones.
+- Las entradas requeridas estan disponibles, o las entradas faltantes pueden reportarse sin adivinar.
+- Las instrucciones de mayor prioridad y `.mustflow/config/commands.toml` se revisaron para el alcance actual.
+
+## Ediciones Permitidas
+
+- Mantener las ediciones dentro del alcance descrito por esta skill, la solicitud del usuario y la ruta coincidente en `.mustflow/skills/INDEX.md`.
+- No ampliar permisos de comando, inventar hechos del proyecto ni cambiar archivos de workflow no relacionados.
+
 ## Procedimiento
 
 1. Define el comportamiento actual esperado.
@@ -58,6 +71,11 @@ Mantener las pruebas alineadas con el contrato de comportamiento actual.
 5. No reintroduzcas comportamiento eliminado solo porque pruebas antiguas lo esperan.
 6. Trata las actualizaciones de snapshot como manuales, salvo que `snapshot_update` este aprobado y configurado de forma explicita.
 7. Manten las pruebas deterministas y cercanas al contrato de comportamiento.
+
+## Postcondiciones
+
+- La salida esperada puede producirse con evidencia clara, intentos de comando ejecutados, verificaciones omitidas y riesgos restantes.
+- Cualquier intento de comando faltante, entrada desconocida o conflicto de autoridad se reporta en lugar de ocultarse.
 
 ## Verificacion
 

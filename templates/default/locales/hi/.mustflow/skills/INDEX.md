@@ -2,35 +2,31 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 6
+revision: 7
 ---
 
-# स्किल सूचकांक
+# Skills Index
 
-वर्तमान कार्य से संबंधित स्किल दस्तावेज़ ही पढ़ें। यदि कोई विशेष स्किल लागू नहीं होती,
-तो सबसे न्यूनतम सुरक्षित बदलाव लागू करने के लिए `AGENTS.md` और `.mustflow/config/commands.toml` देखें।
+मौजूदा काम से जुड़ा हुआ skill दस्तावेज ही पढ़ें। अगर कोई skill लागू नहीं होती, तो सबसे छोटा सुरक्षित बदलाव करने के लिए `AGENTS.md` और `.mustflow/config/commands.toml` का पालन करें।
 
 ## चयन नियम
 
-- task start और first edit से पहले user request और expected changed files को नीचे के scenarios से मिलाएं।
-- यदि एक या अधिक scenarios match हों, तो उस scope को edit करने से पहले हर matching `SKILL.md` पढ़ें।
-- यदि task के दौरान command failure, test contract change, या documentation change जैसी नई condition आए,
-  तो रुकें और newly matching skill पढ़कर आगे बढ़ें।
-- यदि कोई scenario लागू नहीं होता, तो skill invent न करें। `AGENTS.md`,
-  `.mustflow/docs/agent-workflow.md`, और `.mustflow/config/commands.toml` के साथ आगे बढ़ें।
-- Skill documents केवल procedure guide करते हैं। वे declared command intents के बाहर command execution
-  authorize नहीं करते।
+- काम शुरू करते समय और पहली edit से पहले, user request और बदले जाने वाले files को नीचे दिए triggers से मिलाएं।
+- अगर एक या अधिक trigger मिलते हैं, तो उस scope में edit करने से पहले हर संबंधित `SKILL.md` पढ़ें।
+- काम के दौरान command failure, test contract change या documentation change जैसी नई condition दिखे, तो रुककर नई matching skill पढ़ें और फिर आगे बढ़ें।
+- अगर कोई trigger लागू नहीं होता, तो skill invent न करें। `AGENTS.md`, `.mustflow/docs/agent-workflow.md` और `.mustflow/config/commands.toml` के साथ आगे बढ़ें।
+- Skill documents केवल procedure बताते हैं। वे declared command intents से बाहर command execution की अनुमति नहीं देते।
+- Route table compact रखें: हर route trigger, required input, edit scope, risk, verification intents और expected output बताता है।
 
-| परिदृश्य | स्किल दस्तावेज़ | संबंधित Command Intents |
-| --- | --- | --- |
-| कोड बदलाव की समीक्षा | `.mustflow/skills/code-review/SKILL.md` | `test`, `test_related`, `test_audit`, `lint` |
-| परीक्षण जोड़ना, अद्यतन करना, हटाना, या ऑडिट करना | `.mustflow/skills/test-maintenance/SKILL.md` | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` |
-| विफलता की जांच | `.mustflow/skills/failure-triage/SKILL.md` | मूल विफल intent |
-| `.mustflow/context/PROJECT.md` भरना या maintain करना | `.mustflow/skills/project-context-authoring/SKILL.md` | `mustflow_check` |
-| `.mustflow/skills/*/SKILL.md` procedures बनाना या maintain करना | `.mustflow/skills/skill-authoring/SKILL.md` | `mustflow_check`, `docs_validate` |
-| वेब image assets जोड़ना, convert करना, resize करना, या replace करना | `.mustflow/skills/web-asset-optimization/SKILL.md` | `asset_optimize`, `build` |
-| दस्तावेज़ अद्यतन | `.mustflow/skills/docs-update/SKILL.md` | `docs_validate`, `mustflow_check` |
+| Trigger | Skill Document | Required Input | Edit Scope | Risk | Verification Intents | Expected Output |
+| --- | --- | --- | --- | --- | --- | --- |
+| Report से पहले code changes की review चाहिए | `.mustflow/skills/code-review/SKILL.md` | Diff और task goal | Changed files | behavior और regression | `test`, `test_related`, `test_audit`, `lint` | Findings या no-issue note |
+| Tests add, update, remove या audit हो रहे हैं | `.mustflow/skills/test-maintenance/SKILL.md` | Changed behavior या stale-test evidence | Test files और related source | contract drift | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | Test rationale और verification |
+| Configured command intent या verification step fail हुआ | `.mustflow/skills/failure-triage/SKILL.md` | Failing intent और output tail | सिर्फ failure cause | misdiagnosis | `mustflow_check`; original failing intent | Root cause, fix, rerun result |
+| `.mustflow/context/PROJECT.md` में cautious project context चाहिए | `.mustflow/skills/project-context-authoring/SKILL.md` | Supported project facts | `.mustflow/context/PROJECT.md` | authority drift | `mustflow_check` | Updated cautious context |
+| Skill procedures या routes create/maintain हो रहे हैं | `.mustflow/skills/skill-authoring/SKILL.md` | Repeated task evidence | `.mustflow/skills/**` | overlap और command drift | `mustflow_check`, `docs_validate` | Skill route और procedure changes |
+| Web image assets add, convert, resize या replace हो रहे हैं | `.mustflow/skills/web-asset-optimization/SKILL.md` | Image asset request और target path | Web image assets | asset quality और size | `asset_optimize`, `build` | Optimized asset notes |
+| Documentation changes public या workflow docs को affect करते हैं | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior या field | Relevant docs only | stale public docs | `docs_validate`, `mustflow_check` | Doc changes और skipped checks |
 
-नई स्किल जोड़ते समय उसे यहां लिंक करें और उसके उपयोग के विशिष्ट परिदृश्य परिभाषित करें।
-skill दस्तावेज़ों में raw shell commands शामिल न करें; इसके बजाय
-`.mustflow/config/commands.toml` में परिभाषित command intent नामों का संदर्भ दें।
+नई skill introduce करते समय उसे यहां link करें और concrete trigger तथा route fields लिखें।
+Skill documents में raw shell commands न डालें; `.mustflow/config/commands.toml` में defined command intent names ही reference करें।

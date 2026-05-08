@@ -26,6 +26,8 @@ description: Use when reviewing code changes, scope, risks, or missing verificat
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - lint
@@ -39,6 +41,8 @@ metadata:
 - `description`: agent 应何时读取该 skill。
 - `metadata.mustflow_schema`: skill 元数据结构版本。当前支持的值是 `"1"`。
 - `metadata.mustflow_kind`: 文档类型。默认 skill 必须使用 `procedure`。
+- `metadata.pack_id`: 拥有该 skill 的包或 skill 包命名空间，例如 `mustflow.core`。
+- `metadata.skill_id`: 全局范围的 skill 标识符。它必须组合 skill 包标识符和文件夹名称，例如 `mustflow.core.code-review`。
 - `metadata.command_intents`: 该 skill 可能引用的命令意图名称。每个名称都必须存在于 `.mustflow/config/commands.toml`。
 
 英文 skill 模板是权威源。本地化 skill 模板使用自己的语言，并设置 `canonical: false`。
@@ -69,7 +73,7 @@ metadata:
 示例：
 
 ```md
-## Validation
+## Verification
 
 Relevant command intents:
 

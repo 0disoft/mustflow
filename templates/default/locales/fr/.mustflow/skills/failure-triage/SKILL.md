@@ -2,12 +2,14 @@
 mustflow_doc: skill.failure-triage
 locale: fr
 canonical: false
-revision: 1
+revision: 2
 name: failure-triage
 description: Applique cette skill quand un command intent configure ou une etape de verification echoue.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.failure-triage
   command_intents:
     - mustflow_check
 ---
@@ -37,6 +39,17 @@ Identifier la cause racine la plus probable d'une commande echouee ou d'une etap
 - Fichiers modifies recemment
 - Entree pertinente du contrat de commande
 
+## Preconditions
+
+- La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
+- Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
+- Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
+
+## Modifications Autorisees
+
+- Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
+- Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
+
 ## Procedure
 
 1. Conserver le nom original de l'intent en echec.
@@ -44,6 +57,11 @@ Identifier la cause racine la plus probable d'une commande echouee ou d'une etap
 3. Determiner si l'echec provient du code, des tests, de la configuration, de la documentation ou de l'environnement.
 4. Examiner les fichiers les plus pertinents.
 5. Formuler une hypothese unique et la verifier avec l'intent configure le plus cible.
+
+## Postconditions
+
+- La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
+- Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
 ## Verification
 

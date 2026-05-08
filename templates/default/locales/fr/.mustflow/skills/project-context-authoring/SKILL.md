@@ -2,12 +2,14 @@
 mustflow_doc: skill.project-context-authoring
 locale: fr
 canonical: false
-revision: 1
+revision: 2
 name: project-context-authoring
 description: Apply this skill when filling or maintaining `.mustflow/context/PROJECT.md` from repository-supported evidence.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.project-context-authoring
   command_intents:
     - mustflow_check
 ---
@@ -39,6 +41,17 @@ Keep `.mustflow/context/PROJECT.md` useful as a compact agent briefing while pre
 - `REPO_MAP.md`, package manifests, existing docs, tests, CI files, and source files only as evidence, not as permission sources.
 - The current user request and any explicit source constraints.
 
+## Preconditions
+
+- La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
+- Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
+- Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
+
+## Modifications Autorisees
+
+- Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
+- Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
+
 ## Procedure
 
 1. Preserve existing human-written context unless current repository evidence clearly contradicts it.
@@ -49,6 +62,11 @@ Keep `.mustflow/context/PROJECT.md` useful as a compact agent briefing while pre
 6. Add optional architecture, persona, release, or coding-convention notes only when the repository provides direct evidence.
 7. Reference command intent names from `.mustflow/config/commands.toml` when describing validation. Do not convert package scripts, CI jobs, or manifest hints into runnable agent permission.
 8. Leave unknown fields unset or explicitly marked as unknown instead of inventing product goals, roadmap promises, domain rules, or implementation details.
+
+## Postconditions
+
+- La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
+- Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
 ## Verification
 

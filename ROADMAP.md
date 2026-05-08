@@ -26,9 +26,6 @@ Goal: keep mustflow documents from drifting into overlapping or
 self-authorizing policy sources before higher-level explanation and
 verification commands depend on them.
 
-- Define canonical document roles for `AGENTS.md`, `agent-workflow.md`,
-  `commands.toml`, context routers, skill routers, `PROJECT.md`, `SKILL.md`,
-  and generated navigation files.
 - Add stable metadata expectations for mustflow-owned Markdown documents,
   including identity, authority, lifecycle, locale, revision, and generated
   versus user-editable status.
@@ -46,13 +43,8 @@ verification commands depend on them.
   prohibitions, or speculative product promises.
 - Extend context and skill routing without turning router indexes into policy
   manuals.
-- Move `skills/INDEX.md` toward structured, compact routes with trigger,
-  required input, edit scope, risk, verification intents, and expected output.
-- Extend the default `SKILL.md` contract with preconditions, allowed edits, and
-  postconditions while keeping optional examples out of low-risk skills.
 - Teach future `mf explain` output to reuse the skill index/body alignment
   summary that `mf doctor --strict` now exposes.
-- Add package-scope identity to skills so optional skill packs can coexist.
 - Keep host compatibility adapters subordinate to the canonical contract.
 - Feed these boundaries into future `mf explain` output.
 

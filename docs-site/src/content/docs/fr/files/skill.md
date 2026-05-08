@@ -26,6 +26,8 @@ description: Use when reviewing code changes, scope, risks, or missing verificat
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - lint
@@ -39,6 +41,8 @@ metadata:
 - `description`: moment où un agent doit lire ce skill.
 - `metadata.mustflow_schema`: version de la structure des métadonnées de skill. La valeur actuellement prise en charge est `"1"`.
 - `metadata.mustflow_kind`: type de document. Les skills par défaut doivent utiliser `procedure`.
+- `metadata.pack_id`: espace de noms du paquet ou pack propriétaire de la skill, par exemple `mustflow.core`.
+- `metadata.skill_id`: identifiant global de la skill. Il doit combiner l'identifiant du pack et le nom du dossier, par exemple `mustflow.core.code-review`.
 - `metadata.command_intents`: noms d’intentions de commande que ce skill peut référencer. Chaque nom doit exister dans `.mustflow/config/commands.toml`.
 
 Le modèle de skill anglais est la source canonique. Les modèles de skill localisés utilisent leur propre locale et définissent `canonical: false`.
@@ -69,7 +73,7 @@ N’écrivez pas qu’une skill accorde elle-même l’autorisation d’exécute
 Exemple:
 
 ```md
-## Validation
+## Verification
 
 Relevant command intents:
 

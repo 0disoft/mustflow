@@ -1,45 +1,46 @@
 ---
 title: .mustflow/skills/INDEX.md
-description: ऐसा index जो agents को बताता है कि किसी task के लिए कौन सा skill document पढ़ना है।
+description: किसी task के लिए agent को सही skill document तक ले जाने वाला index.
 ---
 
-`.mustflow/skills/INDEX.md` agents को repeatable work शुरू करने से पहले सही skill document चुनने में मदद करता है।
+`.mustflow/skills/INDEX.md` agents को repeatable tasks शुरू करने से पहले सही skill document चुनने में मदद करता है।
 
-## इसका उपयोग कहां होता है
+## उपयोग
 
-Shared rules और command contract पढ़ने के बाद, agents इस index का उपयोग तब करते हैं जब मौजूदा task किसी repeatable procedure से मेल खाता है।
+Shared rules और command contract पढ़ने के बाद, agents इस index को तब देखते हैं जब task किसी predefined procedure से match करता है।
 
-इस file को लंबे skill bodies copy नहीं करने चाहिए। यह situations, skill paths, और relevant command intents को जोड़ती है।
+इस file में पूरी procedure details नहीं होनी चाहिए। यह compact route fields को skill paths से जोड़ता है: trigger, required input, edit scope, risk, verification intents और expected output।
+`mf check --strict` इन routes की referenced `SKILL.md` files से तुलना करता है ताकि missing skill documents, unlisted skills, unknown command intents, command-intent drift और route-table shape drift दिख सके।
 
-## चयन व्यवहार
+## Selection behavior
 
-Agents task start और first edit से पहले इस index का उपयोग करते हैं। वे user request और expected
-changed files को listed scenarios से compare करते हैं, फिर उस scope को edit करने से पहले हर
-matching `SKILL.md` पढ़ते हैं।
+Agents इस index को task start और पहली edit से पहले use करते हैं। वे user request और expected changed files को listed triggers से compare करते हैं, फिर matching `SKILL.md` पढ़कर उसी scope में edit करते हैं।
 
-यदि task के दौरान command failure, test contract change, या documentation change जैसी नई
-condition आए, तो agents को रुककर newly matching skill पढ़नी चाहिए।
+अगर task के दौरान command failure, test contract change या documentation change जैसी नई condition आए, तो agents को रुककर नई matching skill पढ़नी चाहिए।
 
-यदि कोई scenario लागू नहीं होता, तो agents को skill invent नहीं करनी चाहिए। वे `AGENTS.md`,
-`.mustflow/docs/agent-workflow.md`, और `.mustflow/config/commands.toml` के साथ आगे बढ़ते हैं।
+अगर कोई trigger लागू नहीं होता, तो agents skill invent नहीं करते। वे `AGENTS.md`, `.mustflow/docs/agent-workflow.md` और `.mustflow/config/commands.toml` के साथ continue करते हैं।
 
-## भूमिका
+## Role and responsibilities
 
-- skill names और उन्हें कब उपयोग करना है, यह सूचीबद्ध करता है।
-- code review, documentation updates, failure triage, और test maintenance जैसे recurring tasks को link करता है।
-- हर skill को जिन command intent names की ज़रूरत हो सकती है, उन्हें सूचीबद्ध करता है।
-- unused repository-specific skills को हटाने या inactive mark करने की अनुमति देता है।
+- Available skills list करता है और precise triggers define करता है।
+- हर route के लिए required input, edit scope, risk और expected output बताता है।
+- हर skill द्वारा referenced command intents बताता है।
+- Routes compact रखता है ताकि procedure details हर `SKILL.md` में रहें।
 
-## लिखने के नियम
+## Authoring guidelines
 
-index को छोटा और जल्दी scan करने योग्य रखें।
+Index concise और scannable रहना चाहिए।
 
-लंबी procedures हर `SKILL.md` में रखें। index में हर skill के लिए केवल name, purpose, trigger condition, और relevant command intents होने चाहिए।
+Procedure details individual `SKILL.md` files में रहनी चाहिए। Index में केवल वे route fields होने चाहिए जो agent को skill पढ़ने और evidence report करने का निर्णय लेने में मदद करें।
 
-## Table columns
+## Table structure
 
-- `Situation`: task condition जो skill trigger करे।
-- `Document`: procedure रखने वाले `SKILL.md` का path।
-- `Command intents`: `commands.toml` से intent names जिन्हें skill check कर सकती है।
+- **Trigger**: task condition जिसके कारण skill पढ़नी चाहिए।
+- **Skill Document**: corresponding `SKILL.md` का path।
+- **Required Input**: skill apply करने से पहले needed evidence या request data।
+- **Edit Scope**: files या surface जिसे skill guide कर सकती है।
+- **Risk**: मुख्य failure mode जिसे route control करता है।
+- **Verification Intents**: `commands.toml` intent names जो relevant हो सकते हैं।
+- **Expected Output**: skill use करने के बाद expected report shape।
 
-Skill जोड़ते समय उसे यहां link करें और command intent names को skill frontmatter के साथ aligned रखें।
+नई skill add करते समय, उसकी route यहां add करें और verification intent names को skill frontmatter के साथ synchronized रखें।

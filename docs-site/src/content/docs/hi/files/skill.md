@@ -27,6 +27,8 @@ description: Use when reviewing code changes, scope, risks, or missing verificat
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.code-review
   command_intents:
     - test
     - lint
@@ -40,6 +42,8 @@ metadata:
 - `description`: agent को यह skill कब पढ़नी चाहिए।
 - `metadata.mustflow_schema`: skill metadata shape का version। अभी supported value `"1"` है।
 - `metadata.mustflow_kind`: document kind। default skills को `procedure` उपयोग करना चाहिए।
+- `metadata.pack_id`: skill owning package या pack namespace, जैसे `mustflow.core`।
+- `metadata.skill_id`: globally scoped skill identifier। इसे pack identifier और folder name जोड़ना चाहिए, जैसे `mustflow.core.code-review`।
 - `metadata.command_intents`: command intent names जिन्हें यह skill reference कर सकती है। हर name `.mustflow/config/commands.toml` में मौजूद होना चाहिए।
 
 English skill template canonical source है। Localized skill templates अपना locale उपयोग करती हैं और `canonical: false` सेट करती हैं।
@@ -61,7 +65,7 @@ English skill template canonical source है। Localized skill templates अ�
 
 हर skill को एक task type cover करना चाहिए।
 
-Skill documents में raw shell commands न लिखें। Validation section में `.mustflow/docs/agent-workflow.md#command-execution-policy` को reference करें और केवल relevant command intent names सूचीबद्ध करें।
+Skill documents में raw shell commands न लिखें। Verification section में `.mustflow/docs/agent-workflow.md#command-execution-policy` को reference करें और केवल relevant command intent names सूचीबद्ध करें।
 
 हर intent को `.mustflow/config/commands.toml` के माध्यम से resolve करें। यदि `status = "configured"` मौजूद नहीं है, तो उसे न चलाएं; status और skipped reason report करें।
 
@@ -70,7 +74,7 @@ Skill documents में raw shell commands न लिखें। Validation s
 उदाहरण:
 
 ```md
-## Validation
+## Verification
 
 Relevant command intents:
 

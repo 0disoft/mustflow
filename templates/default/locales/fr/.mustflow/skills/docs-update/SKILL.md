@@ -2,12 +2,14 @@
 mustflow_doc: skill.docs-update
 locale: fr
 canonical: false
-revision: 1
+revision: 2
 name: docs-update
 description: Applique cette skill lors de la mise a jour de la documentation mustflow ou projet.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.docs-update
   command_intents:
     - docs_validate
     - mustflow_check
@@ -37,6 +39,17 @@ Garantir que la documentation reflete avec precision le flux actuel, les command
 - Page de documentation actuelle ou fichier Markdown
 - `.mustflow/config/commands.toml`
 
+## Preconditions
+
+- La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
+- Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
+- Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
+
+## Modifications Autorisees
+
+- Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
+- Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
+
 ## Procedure
 
 1. Localiser le document responsable de l'explication.
@@ -44,6 +57,11 @@ Garantir que la documentation reflete avec precision le flux actuel, les command
 3. Garantir que les noms de commandes et les chemins sont exacts.
 4. Eviter d'ajouter du langage marketing ou du remplissage de tutoriel.
 5. Ne pas modifier manuellement les fichiers generes.
+
+## Postconditions
+
+- La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
+- Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
 ## Verification
 

@@ -2,12 +2,14 @@
 mustflow_doc: skill.failure-triage
 locale: es
 canonical: false
-revision: 1
+revision: 2
 name: failure-triage
 description: Aplica esta skill cuando falle un command intent configurado o un paso de verificacion.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
+  pack_id: mustflow.core
+  skill_id: mustflow.core.failure-triage
   command_intents:
     - mustflow_check
 ---
@@ -37,6 +39,17 @@ Identificar la causa raiz mas probable de un comando o paso de verificacion fall
 - Archivos modificados recientemente
 - Entrada relevante del contrato de comandos
 
+## Precondiciones
+
+- La tarea coincide con las condiciones de uso y no coincide con las exclusiones.
+- Las entradas requeridas estan disponibles, o las entradas faltantes pueden reportarse sin adivinar.
+- Las instrucciones de mayor prioridad y `.mustflow/config/commands.toml` se revisaron para el alcance actual.
+
+## Ediciones Permitidas
+
+- Mantener las ediciones dentro del alcance descrito por esta skill, la solicitud del usuario y la ruta coincidente en `.mustflow/skills/INDEX.md`.
+- No ampliar permisos de comando, inventar hechos del proyecto ni cambiar archivos de workflow no relacionados.
+
 ## Procedimiento
 
 1. Conserva el nombre original del intent que fallo.
@@ -44,6 +57,11 @@ Identificar la causa raiz mas probable de un comando o paso de verificacion fall
 3. Determina si el fallo proviene de codigo, pruebas, configuracion, documentacion o del entorno.
 4. Examina los archivos mas relevantes.
 5. Formula una sola hipotesis y verificala usando el intent configurado mas dirigido.
+
+## Postcondiciones
+
+- La salida esperada puede producirse con evidencia clara, intentos de comando ejecutados, verificaciones omitidas y riesgos restantes.
+- Cualquier intento de comando faltante, entrada desconocida o conflicto de autoridad se reporta en lugar de ocultarse.
 
 ## Verificacion
 

@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 12
+revision: 13
 ---
 
 # Agent Workflow
@@ -15,6 +15,24 @@ It defines the default operating loop for agents working inside a mustflow root.
 Consult the files listed in `AGENTS.md` before initiating edits. Use `mf doctor` for a quick, read-only health check of the installation state, configured command intents, and suggested next steps.
 
 Use `REPO_MAP.md` exclusively as a generated navigation map for the current mustflow root. It is not a comprehensive file listing and does not replace the need to read files relevant to the task.
+
+## Document Roles
+
+mustflow documents have narrow roles. Do not move a rule into a lower-authority file only because
+it is convenient to edit there.
+
+| Document | Role | Authority | Lifecycle |
+| --- | --- | --- | --- |
+| `AGENTS.md` | First entry point and binding short-form repository rules. | Highest repository-local instruction file, below direct user and host safety instructions. | User-editable, mustflow-managed or managed-block depending on installation mode. |
+| `.mustflow/docs/agent-workflow.md` | Shared workflow policy for reading, editing, verifying, reporting, and failure handling. | Expands `AGENTS.md`; it does not define executable commands. | mustflow-owned Markdown. |
+| `.mustflow/config/mustflow.toml` | Machine-readable workflow configuration, document roots, protection, budget, approval, retention, and refresh settings. | Configuration source for mustflow behavior. | mustflow-owned TOML. |
+| `.mustflow/config/commands.toml` | Command intent contract. | Only source that grants project command execution through configured intents. | Repository-local TOML, edited when command contracts change. |
+| `.mustflow/config/preferences.toml` | Repository-level defaults for style, language, Git suggestions, testing tendency, verification selection, and version-impact handling. | Lower-authority preferences; not permissions. | Repository-local TOML, user-customizable. |
+| `.mustflow/context/INDEX.md` | Router for task-specific context files. | Selects optional context only; it is not a policy manual. | mustflow-owned Markdown. |
+| `.mustflow/context/PROJECT.md` | Cautious project facts, unknowns, and domain conventions. | Contextual reference below user instructions, code, tests, commands, and configured policies. | User-editable context. |
+| `.mustflow/skills/INDEX.md` | Router that decides which procedure document to read for a task. | Selection contract only; procedure detail stays in `SKILL.md`. | mustflow-owned Markdown. |
+| `.mustflow/skills/<name>/SKILL.md` | Repeatable task procedure with inputs, allowed scope, checks, and reporting shape. | Procedure guidance only; it cannot authorize commands or override rules. | mustflow-owned Markdown, optionally localized. |
+| `REPO_MAP.md` | Generated anchor map for broad navigation and nested repository entry points. | Generated navigation aid below current files and current instructions. | Generated; refresh with the configured `repo_map` intent or `mf map`. |
 
 ## Project Context
 

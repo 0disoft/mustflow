@@ -14,6 +14,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 ## Components
 
 - `Document Role`: Defines the scope and responsibility of this document.
+- `Document Roles`: Defines which mustflow file owns each kind of rule, context, procedure, preference, or generated navigation output.
 - `Authoritative Documents and Reading Flow`: Specifies the mandatory reading sequence for agents.
 - `Project Context`: Clarifies the conditions for accessing task-specific context files.
 - `Skill Activation`: Defines when agents should select and read task-specific skill procedures.
@@ -34,6 +35,21 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Failure handling policy`: Records the failed intent, working directory, exit code, and key error.
 - `Security and secret handling policy`: Prevents exposing tokens, private keys, and real environment values.
 - `Document flow maintenance`: Tells maintainers which mustflow file to update when rules, commands, skills, or protected paths change.
+
+## Document Roles
+
+The installed workflow keeps authority narrow:
+
+- `AGENTS.md`: first entry point and binding short-form repository rules.
+- `.mustflow/docs/agent-workflow.md`: shared workflow policy; it expands `AGENTS.md` but does not define executable commands.
+- `.mustflow/config/mustflow.toml`: machine-readable workflow configuration.
+- `.mustflow/config/commands.toml`: the only source that grants project command execution through configured intents.
+- `.mustflow/config/preferences.toml`: lower-authority repository defaults, not permissions.
+- `.mustflow/context/INDEX.md`: router for optional task-specific context.
+- `.mustflow/context/PROJECT.md`: cautious project facts and unknowns below code, tests, commands, and configured policies.
+- `.mustflow/skills/INDEX.md`: router for task-specific procedure documents.
+- `.mustflow/skills/<name>/SKILL.md`: bounded repeatable procedure; it cannot authorize commands.
+- `REPO_MAP.md`: generated anchor map, refreshed by the configured `repo_map` intent or `mf map`.
 
 ## Command Execution Policy
 
