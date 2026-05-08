@@ -38,8 +38,6 @@ verification commands depend on them.
   prohibitions, or speculative product promises.
 - Extend context and skill routing without turning router indexes into policy
   manuals.
-- Teach future `mf explain` output to reuse the skill index/body alignment
-  summary that `mf doctor --strict` now exposes.
 - Keep host compatibility adapters subordinate to the canonical contract.
 - Feed these boundaries into future `mf explain` output.
 
@@ -72,8 +70,6 @@ moment they usually become expensive.
 Goal: make `.mustflow/skills/INDEX.md` a skill-routing contract rather than a
 plain list of available procedures.
 
-- Require concise skill-selection notes when skills are used or intentionally
-  skipped.
 - Track later command candidates such as `mf skills suggest --changed`,
   `mf skills explain <skill_id>`, and `mf explain skill <skill_id>`.
 
@@ -84,9 +80,6 @@ validations without making agents guess from prose.
 
 - Reinforce command authority boundaries across docs, metadata, strict checks,
   and command execution.
-- Add stable command-boundary check IDs for procedure-only skills, raw command
-  avoidance, known intent references, validation references, bounded intent
-  metadata, run records, and denial by default.
 - Move command intent definitions toward structured execution metadata.
 - Keep startup reading small and let compact indexes decide what additional
   context, skills, public surfaces, and validation contracts to load.
@@ -149,25 +142,10 @@ conversion tools or leaving oversized production assets in website repositories.
 Goal: move shared decision logic out of command handlers without prematurely
 promising a broad public API.
 
-- Create focused internal modules under `src/core/` for authority resolution.
 - Keep CLI commands thin by calling shared core functions.
 - Export only the minimum surface needed internally until API stability is
   intentionally documented.
 - Preserve existing CLI behavior while reducing duplicated policy logic.
-
-### M4: Explain Command
-
-Goal: answer why a command, file, or policy decision is allowed, blocked, or
-warned.
-
-- Add `mf explain authority`.
-- Add `mf explain command <command>`.
-- Add `mf explain retention`.
-- Add `mf explain --json`.
-- Include the decision, reason, effective action, source files, and whether the
-  action counts as mustflow verification.
-- Reuse the same core policy modules used by `mf doctor`, `mf context`, and
-  `mf run`.
 
 ### M5: Verify by Reason
 
