@@ -16,6 +16,8 @@ Este archivo no debe contener los detalles completos del procedimiento. Relacion
 
 Los agentes usan este indice al inicio de la tarea y antes de la primera edicion. Comparan la solicitud del usuario y los archivos previstos con los disparadores listados, y leen cada `SKILL.md` coincidente antes de editar ese alcance.
 
+Cuando usen una skill, o cuando omitan intencionalmente una skill plausible, deben dejar una nota breve de seleccion en la siguiente actualizacion al usuario o en el informe final. Esa nota pertenece al informe conversacional, no a un worklog versionado.
+
 Si aparece una condicion nueva durante la tarea, como una falla de comando, cambio de contrato de pruebas o cambio documental, deben detenerse y leer la skill recien coincidente antes de continuar.
 
 Si no aplica ningun disparador, no deben inventar una skill. Continuan con `AGENTS.md`, `.mustflow/docs/agent-workflow.md` y `.mustflow/config/commands.toml`.

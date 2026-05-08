@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: fr
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -51,6 +51,11 @@ test maintenance, et un changement de documentation ou de workflow active docs u
 Quand plusieurs skills s'appliquent, suivre la skill la plus specifique pour chaque portee
 affectee et combiner uniquement leurs command intents declares. Les skills n'autorisent jamais
 des commandes shell brutes, des processus longue duree ni des ecritures hors de la portee de la tache.
+
+Quand une skill est utilisee, ou quand une skill plausible est volontairement ignoree, signalez
+brievement le nom de la skill et la raison de selection dans la prochaine mise a jour utilisateur
+ou dans le rapport final. Ne creez pas de worklog versionne uniquement pour enregistrer la selection
+des skills.
 
 ## Stabilite Des Entrees
 

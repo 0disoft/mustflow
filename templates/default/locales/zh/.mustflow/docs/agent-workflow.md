@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: zh
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -49,6 +49,9 @@ docs update。
 
 当多个 skill 适用时，对每个受影响范围遵循最具体的 skill，并且只合并其声明的
 command intents。skill 永远不会授权原始 shell 命令、长时运行进程或任务范围外写入。
+
+使用技能时，或有意跳过看似适用的技能时，请在下一次面向用户的更新或最终报告中简要说明
+技能名称和选择原因。不要只为了记录技能选择而创建纳入版本管理的工作日志。
 
 ## 输入稳定性
 

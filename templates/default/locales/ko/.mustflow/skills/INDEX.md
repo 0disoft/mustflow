@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -16,6 +16,8 @@ authority: router
 
 - 작업 시작 시점과 첫 수정 전, 사용자 요청과 예상 변경 파일을 아래 트리거와 비교합니다.
 - 맞는 트리거가 하나 이상 있으면 해당 범위를 수정하기 전에 각 `SKILL.md`를 읽습니다.
+- 스킬을 사용했거나 사용할 수 있어 보이는 스킬을 일부러 건너뛰었다면, 다음 사용자
+  업데이트나 최종 보고에 짧은 선택 메모를 남깁니다.
 - 명령 실패, 테스트 계약 변경, 문서 변경처럼 작업 중 새 조건이 생기면 잠시 멈추고
   새로 맞는 스킬을 읽은 뒤 계속합니다.
 - 맞는 트리거가 없으면 스킬을 추측해서 만들거나 적용하지 않습니다. `AGENTS.md`,

@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: es
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -51,6 +51,10 @@ y un cambio de documentacion o workflow activa docs update.
 Cuando varias skills aplican, sigue la skill mas especifica para cada alcance afectado y combina
 solo sus command intents declarados. Las skills nunca autorizan comandos de shell crudos,
 procesos de larga duracion ni escrituras fuera del alcance de la tarea.
+
+Cuando uses una skill, o cuando omitas intencionalmente una skill plausible, reporta brevemente el
+nombre de la skill y la razon de seleccion en la siguiente actualizacion al usuario o en el informe
+final. No crees un worklog versionado solo para registrar la seleccion de skills.
 
 ## Estabilidad De Entradas
 

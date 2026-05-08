@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 13
+revision: 14
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -71,6 +71,10 @@ documentation or workflow change activates documentation update.
 When multiple skills apply, follow the most specific skill for each affected scope and combine only
 their declared command intents. Skills never authorize raw shell commands, long-running processes,
 or writes outside the task scope.
+
+When a skill is used, or when a plausible skill is intentionally skipped, report the skill name and
+the selection reason briefly in the next user-facing update or final report. Do not create a
+versioned worklog only to record skill selection.
 
 ## Input Stability
 

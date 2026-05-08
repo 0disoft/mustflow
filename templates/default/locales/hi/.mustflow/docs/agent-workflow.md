@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: hi
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -51,6 +51,10 @@ command fail हो तो failure triage, test contract बदले तो tes
 जब multiple skills लागू हों, तो हर affected scope के लिए सबसे specific skill का पालन करें और
 केवल declared command intents को मिलाएं। Skills raw shell commands, long-running processes,
 या task scope के बाहर writes को authorize नहीं करतीं।
+
+Skill use हो, या कोई plausible skill जानबूझकर skip की जाए, तो अगले user update या final
+report में skill name और selection reason संक्षेप में बताएं। Skill selection record करने के लिए
+versioned worklog न बनाएं।
 
 ## इनपुट स्थिरता
 

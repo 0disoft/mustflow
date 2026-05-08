@@ -236,6 +236,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | जब कुछ भी अवरुद्ध न हो, तब टेम्पलेट अपडेट लागू करता है। |
 | `mf help <topic>` | इंस्टॉल की गई mustflow सहायता दिखाता है। |
 | `mf dashboard` | सुरक्षित mustflow preferences के लिए local dashboard शुरू करता है और उसे default browser में खोलता है। Save करने पर lock file मौजूद हो तो customized baseline refresh होती है। |
+| `mf version-sources` | फ़ाइलें बदले बिना detected package, template, और declared version sources जाँचता है। |
+| `mf explain authority [path]` | फ़ाइलें बदले बिना managed Markdown authority decisions समझाता है। |
 
 ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json`
 आउटपुट का उपयोग करना चाहिए। स्थिर आउटपुट के JSON Schemas `schemas/` में हैं।

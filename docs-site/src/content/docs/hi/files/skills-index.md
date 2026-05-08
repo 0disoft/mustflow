@@ -16,6 +16,8 @@ Shared rules और command contract पढ़ने के बाद, agents इ�
 
 Agents इस index को task start और पहली edit से पहले use करते हैं। वे user request और expected changed files को listed triggers से compare करते हैं, फिर matching `SKILL.md` पढ़कर उसी scope में edit करते हैं।
 
+Skill use हो, या कोई plausible skill जानबूझकर skip की जाए, तो agents को अगले user update या final report में छोटी selection note देनी चाहिए। यह note conversation report में रहे, versioned worklog file में नहीं।
+
 अगर task के दौरान command failure, test contract change या documentation change जैसी नई condition आए, तो agents को रुककर नई matching skill पढ़नी चाहिए।
 
 अगर कोई trigger लागू नहीं होता, तो agents skill invent नहीं करते। वे `AGENTS.md`, `.mustflow/docs/agent-workflow.md` और `.mustflow/config/commands.toml` के साथ continue करते हैं।

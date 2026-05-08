@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -15,6 +15,8 @@ authority: router
 
 - काम शुरू करते समय और पहली edit से पहले, user request और बदले जाने वाले files को नीचे दिए triggers से मिलाएं।
 - अगर एक या अधिक trigger मिलते हैं, तो उस scope में edit करने से पहले हर संबंधित `SKILL.md` पढ़ें।
+- Skill use हो, या कोई plausible skill जानबूझकर skip की जाए, तो अगले user update या final report
+  में छोटी selection note छोड़ें।
 - काम के दौरान command failure, test contract change या documentation change जैसी नई condition दिखे, तो रुककर नई matching skill पढ़ें और फिर आगे बढ़ें।
 - अगर कोई trigger लागू नहीं होता, तो skill invent न करें। `AGENTS.md`, `.mustflow/docs/agent-workflow.md` और `.mustflow/config/commands.toml` के साथ आगे बढ़ें।
 - Skill documents केवल procedure बताते हैं। वे declared command intents से बाहर command execution की अनुमति नहीं देते।

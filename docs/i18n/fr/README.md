@@ -246,6 +246,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | Applique les mises à jour de modèle lorsque rien n'est bloqué. |
 | `mf help <topic>` | Affiche l'aide mustflow installée. |
 | `mf dashboard` | Démarre un tableau de bord local pour les préférences mustflow sûres et l'ouvre dans le navigateur par défaut. À l'enregistrement, il actualise la ligne de base personnalisée si le fichier de verrouillage existe. |
+| `mf version-sources` | Inspecte les sources de version détectées, de modèle et déclarées sans modifier de fichiers. |
+| `mf explain authority [path]` | Explique les décisions d'autorité des documents Markdown gérés sans modifier de fichiers. |
 
 Les automatisations et les agents doivent utiliser la sortie `--json` plutôt
 que d'analyser du texte destiné aux humains. Les schémas JSON des sorties

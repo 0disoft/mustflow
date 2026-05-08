@@ -18,6 +18,10 @@ Agents use this index at task start and before the first edit. They compare the 
 expected changed files with the listed triggers, then read each matching `SKILL.md` before editing
 that scope.
 
+When a skill is used, or when a plausible skill is intentionally skipped, agents should leave a
+short selection note in the next user-facing update or final report. The note belongs in the
+conversation report, not in a versioned worklog file.
+
 If a new condition appears during the task, such as a command failure, test contract change, or
 documentation change, agents should pause and read the newly matching skill before continuing.
 

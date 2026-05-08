@@ -16,6 +16,8 @@ Ce fichier ne doit pas contenir les details complets de procedure. Il relie des 
 
 Les agents utilisent cet index au debut de la tache et avant la premiere modification. Ils comparent la demande utilisateur et les fichiers prevus aux declencheurs listes, puis lisent chaque `SKILL.md` correspondant avant de modifier ce perimetre.
 
+Quand ils utilisent une skill, ou quand ils ignorent volontairement une skill plausible, ils doivent laisser une courte note de selection dans la prochaine mise a jour utilisateur ou dans le rapport final. Cette note appartient au rapport de conversation, pas a un worklog versionne.
+
 Si une nouvelle condition apparait pendant la tache, comme un echec de commande, un changement de contrat de test ou une modification documentaire, ils doivent s'arreter et lire la skill correspondante avant de continuer.
 
 Si aucun declencheur ne s'applique, ils ne doivent pas inventer de skill. Ils continuent avec `AGENTS.md`, `.mustflow/docs/agent-workflow.md` et `.mustflow/config/commands.toml`.

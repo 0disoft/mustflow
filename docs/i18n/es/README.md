@@ -243,6 +243,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | Aplica actualizaciones de plantilla cuando no hay nada bloqueado. |
 | `mf help <topic>` | Muestra la ayuda instalada de mustflow. |
 | `mf dashboard` | Inicia un panel local para preferencias seguras de mustflow y lo abre en el navegador predeterminado. Al guardar, actualiza la línea base personalizada si existe el archivo de bloqueo. |
+| `mf version-sources` | Inspecciona fuentes de versión detectadas, de plantilla y declaradas sin modificar archivos. |
+| `mf explain authority [path]` | Explica decisiones de autoridad de Markdown administrado sin modificar archivos. |
 
 Las automatizaciones y los agentes deben usar la salida `--json` en lugar de
 analizar texto orientado a personas. Los JSON Schemas para salidas estables

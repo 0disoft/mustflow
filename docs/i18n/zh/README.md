@@ -214,6 +214,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | 在没有阻塞项时应用模板更新。 |
 | `mf help <topic>` | 显示已安装的 mustflow 帮助。 |
 | `mf dashboard` | 启动用于安全 mustflow 偏好设置的本地 dashboard，并在默认浏览器中打开。保存设置时，如果锁文件存在，会刷新自定义基线。 |
+| `mf version-sources` | 在不修改文件的情况下检查检测到的 package、template 和声明的版本来源。 |
+| `mf explain authority [path]` | 在不修改文件的情况下解释受管 Markdown 文档的权威决策。 |
 
 自动化和代理应使用 `--json` 输出，而不是解析面向人类的文本。稳定输出的
 JSON Schema 位于 `schemas/`。

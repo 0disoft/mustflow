@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -15,6 +15,7 @@ authority: router
 
 - 在任务开始和首次编辑前，将用户请求和预计更改的文件与下方触发条件对照。
 - 如果命中一个或多个触发条件，请在编辑该范围前阅读对应的 `SKILL.md`。
+- 使用技能时，或有意跳过看似适用的技能时，请在下一次面向用户的更新或最终报告中留下简短的选择说明。
 - 如果任务中出现新的条件，例如命令失败、测试契约变化或文档变化，请暂停并阅读新匹配的技能后再继续。
 - 如果没有触发条件适用，不要臆造技能。继续依据 `AGENTS.md`、`.mustflow/docs/agent-workflow.md` 和 `.mustflow/config/commands.toml` 工作。
 - 技能文档只提供流程指导，不授权执行声明的命令意图之外的命令。

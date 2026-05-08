@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -16,6 +16,8 @@ usa `AGENTS.md` y `.mustflow/config/commands.toml` para hacer el cambio seguro m
 
 - Al iniciar la tarea y antes de la primera edicion, compara la solicitud del usuario y los archivos previstos con los disparadores siguientes.
 - Si coincide uno o mas disparadores, lee cada `SKILL.md` antes de editar ese alcance.
+- Cuando uses una skill, o cuando omitas intencionalmente una skill plausible, deja una nota
+  breve de seleccion en la siguiente actualizacion al usuario o en el informe final.
 - Si aparece una nueva condicion durante la tarea, como una falla de comando, cambio de contrato de pruebas o cambio documental, detente y lee la skill correspondiente antes de continuar.
 - Si no aplica ningun disparador, no inventes una skill. Continua con `AGENTS.md`, `.mustflow/docs/agent-workflow.md` y `.mustflow/config/commands.toml`.
 - Los documentos de skill solo guian procedimientos. No autorizan ejecutar comandos fuera de los intentos declarados.

@@ -215,6 +215,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | 차단 항목이 없을 때 템플릿 갱신을 적용합니다. |
 | `mf help <topic>` | 설치된 mustflow 도움말을 보여줍니다. |
 | `mf dashboard` | 안전한 mustflow 설정을 위한 로컬 대시보드를 시작하고 기본 브라우저에서 엽니다. 설정 저장 시 잠금 파일이 있으면 맞춤 기준선으로 갱신합니다. |
+| `mf version-sources` | 감지된 패키지, 템플릿, 선언된 버전 기준 원본을 파일 수정 없이 확인합니다. |
+| `mf explain authority [path]` | 관리되는 마크다운 문서의 권한 결정을 파일 수정 없이 설명합니다. |
 
 자동화나 에이전트가 결과를 읽어야 하면 사람이 읽기 위한 형식의 텍스트를 파싱하지 말고 `--json` 출력을
 사용하세요. 안정적인 출력 형식을 설명하는 JSON 스키마는 `schemas/`에 있습니다.

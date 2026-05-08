@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 21
+revision: 22
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -129,6 +129,10 @@ mustflow 문서는 각자 좁은 역할을 가집니다. 편하게 고치기 좋
 여러 스킬이 동시에 맞으면 변경 범위별로 가장 구체적인 스킬을 따르고, 각 스킬이
 선언한 명령 의도만 합쳐서 검토합니다. 스킬은 원시 셸 명령, 장기 실행 프로세스,
 작업 범위 밖 쓰기를 허용하지 않습니다.
+
+스킬을 사용했거나 사용할 수 있어 보이는 스킬을 일부러 건너뛰었다면, 다음 사용자
+업데이트나 최종 보고에서 스킬 이름과 선택 이유를 짧게 밝힙니다. 스킬 선택 기록만을
+위해 버전 관리되는 작업 로그를 만들지 않습니다.
 
 ## 상위/하위 규칙 우선순위
 

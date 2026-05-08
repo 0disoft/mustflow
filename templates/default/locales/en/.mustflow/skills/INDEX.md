@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: en
 canonical: true
-revision: 9
+revision: 10
 authority: router
 lifecycle: mustflow-owned
 ---
@@ -17,6 +17,8 @@ refer to `AGENTS.md` and `.mustflow/config/commands.toml` to implement the most 
 - At task start and before the first edit, compare the user request and expected changed files with
   the triggers below.
 - If one or more triggers match, read each `SKILL.md` before editing that scope.
+- When a skill is used, or when a plausible skill is intentionally skipped, leave a concise
+  selection note in the next user-facing update or final report.
 - If a new condition appears during the task, such as a command failure, test contract change, or
   documentation change, pause and read the newly matching skill before continuing.
 - If no trigger applies, do not invent a skill. Continue with `AGENTS.md`,

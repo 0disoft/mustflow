@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: fr
 canonical: false
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -16,6 +16,8 @@ utilisez `AGENTS.md` et `.mustflow/config/commands.toml` pour faire le plus peti
 
 - Au debut de la tache et avant la premiere modification, comparez la demande utilisateur et les fichiers prevus avec les declencheurs ci-dessous.
 - Si un ou plusieurs declencheurs correspondent, lisez chaque `SKILL.md` avant de modifier ce perimetre.
+- Quand une skill est utilisee, ou quand une skill plausible est volontairement ignoree, laissez
+  une courte note de selection dans la prochaine mise a jour utilisateur ou dans le rapport final.
 - Si une nouvelle condition apparait pendant la tache, comme un echec de commande, un changement de contrat de test ou une modification documentaire, arretez-vous et lisez la skill correspondante avant de continuer.
 - Si aucun declencheur ne s'applique, n'inventez pas de skill. Continuez avec `AGENTS.md`, `.mustflow/docs/agent-workflow.md` et `.mustflow/config/commands.toml`.
 - Les documents de skill guident seulement la procedure. Ils n'autorisent pas l'execution de commandes hors des intentions declarees.
