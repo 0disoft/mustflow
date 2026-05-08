@@ -125,6 +125,48 @@ function shouldUseShellForArgvExecutable(executablePath: string): boolean {
 	return process.platform === 'win32' && executablePath.toLowerCase().endsWith('.cmd');
 }
 
+interface ResolvedArgvCommand {
+	readonly executable: string;
+	readonly args: string[];
+	readonly shell: boolean;
+}
+
+const MUSTFLOW_BIN_NAMES = new Set(['mf', 'mustflow']);
+
+function isMustflowBuiltinIntent(intent: TomlTable): boolean {
+	return readString(intent, 'kind') === 'mustflow_builtin';
+}
+
+function resolveCurrentCliEntrypoint(): string | undefined {
+	const entrypoint = process.argv[1];
+
+	return entrypoint ? path.resolve(entrypoint) : undefined;
+}
+
+function resolveArgvCommand(projectRoot: string, intent: TomlTable, commandArgv: string[]): ResolvedArgvCommand {
+	const [command = '', ...args] = commandArgv;
+
+	if (isMustflowBuiltinIntent(intent) && MUSTFLOW_BIN_NAMES.has(command.toLowerCase())) {
+		const entrypoint = resolveCurrentCliEntrypoint();
+
+		if (entrypoint) {
+			return {
+				executable: process.execPath,
+				args: [entrypoint, ...args],
+				shell: false,
+			};
+		}
+	}
+
+	const executable = resolveCommandExecutable(projectRoot, command);
+
+	return {
+		executable,
+		args,
+		shell: shouldUseShellForArgvExecutable(executable),
+	};
+}
+
 function getRunStatus(error: Error | undefined, exitCode: number | null, successExitCodes: readonly number[]): RunReceiptStatus {
 	const errorWithCode = error as NodeJS.ErrnoException | undefined;
 
@@ -258,16 +300,16 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 	const mode = commandArgv ? 'argv' : 'shell';
 	const startedAt = new Date();
-	const argvExecutable = commandArgv ? resolveCommandExecutable(projectRoot, commandArgv[0] ?? '') : undefined;
+	const argvCommand = commandArgv ? resolveArgvCommand(projectRoot, intent, commandArgv) : undefined;
 	const result =
 		commandArgv
-			? spawnSync(argvExecutable ?? '', commandArgv.slice(1), {
+			? spawnSync(argvCommand?.executable ?? '', argvCommand?.args ?? [], {
 					cwd,
 					encoding: 'utf8',
 					input: '',
 					maxBuffer: maxOutputBytes,
 					env,
-					shell: shouldUseShellForArgvExecutable(argvExecutable ?? ''),
+					shell: argvCommand?.shell ?? false,
 					stdio: ['ignore', 'pipe', 'pipe'],
 					timeout: timeoutSeconds * 1000,
 					windowsHide: true,

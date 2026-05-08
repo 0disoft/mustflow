@@ -18,11 +18,19 @@ on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
 
 [intents.test]
-status = "unknown"
-description = "Run the test suite."
-reason = "This repository has not declared its test command yet."
-agent_action = "do_not_guess_report_missing"
-required_after = ["code_change", "behavior_change"]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the repository CLI test suite."
+argv = ["bun", "run", "test"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+network = false
+destructive = false
+required_after = ["code_change", "behavior_change", "test_change"]
 
 [intents.test_related]
 status = "unknown"
@@ -60,17 +68,33 @@ agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "style_change"]
 
 [intents.build]
-status = "unknown"
-description = "Run build or type checks."
-reason = "This repository has not declared its build command yet."
-agent_action = "do_not_guess_report_missing"
-required_after = ["build_config_change", "public_api_change"]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Build the TypeScript CLI into dist."
+argv = ["bun", "run", "build"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+network = false
+destructive = false
+required_after = ["code_change", "build_config_change", "public_api_change"]
 
 [intents.docs_validate]
-status = "unknown"
-description = "Validate documentation links, examples, and generated docs."
-reason = "This repository has not declared its documentation validation command yet."
-agent_action = "do_not_guess_report_missing"
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Validate the documentation site navigation and build output."
+argv = ["bun", "run", "docs:check"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["docs-site/dist/"]
+network = false
+destructive = false
 required_after = ["docs_change", "command_change"]
 
 [intents.mustflow_doctor]

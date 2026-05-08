@@ -1,4 +1,4 @@
-# mustflow docs site
+# mustflow 문서 사이트
 
 언어: [영어](../../../README.md) · [한국어](README.md) · [중국어](../zh/README.md) · [스페인어](../es/README.md) · [프랑스어](../fr/README.md) · [힌디어](../hi/README.md)
 
@@ -25,4 +25,10 @@ bun run docs:dev
 bun run docs:check
 bun run docs:build
 bun run docs:preview
+```
+
+저장소 루트에서 에이전트가 문서 검증을 실행할 때는 설정된 mustflow 의도를 우선 사용합니다.
+
+```sh
+mf run docs_validate
 ```

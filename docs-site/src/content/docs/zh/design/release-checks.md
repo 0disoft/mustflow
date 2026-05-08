@@ -13,6 +13,18 @@ mustflow 通过 npm 同时发布 CLI 与模板。
 bun run release:check
 ```
 
+在本仓库中进行常规 agent 验证时，应优先使用已配置的 mustflow 命令 intent。
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+`bun run release:check` 仍然是发布前关卡。`test_related`、`lint`、coverage
+和 test-audit intent 会保持未配置或 manual-only，直到本仓库拥有更细粒度的检查入口。
+
 ## 目的
 
 - `bun run release:check`：运行 CLI 检查、文档检查，并验证实际 npm 包安装。

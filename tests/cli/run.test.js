@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+const packageVersion = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8')).version;
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-run-'));
@@ -17,11 +18,21 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
+function runCli(cwd, args, options = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
+		...options,
 	});
+}
+
+function createEnvWithoutPathLookup() {
+	const env = { ...process.env };
+	const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+
+	env[pathKey] = '';
+
+	return env;
 }
 
 function initProject(projectPath) {
@@ -63,6 +74,46 @@ destructive = false
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /hello from mf run/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reruns mustflow built-in intents through the current CLI entrypoint', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.self_version]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a built-in mustflow command without relying on PATH lookup."
+argv = ["mf", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'self_version', '--json'], {
+			env: createEnvWithoutPathLookup(),
+		});
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0);
+		assert.equal(result.stderr, '');
+		assert.equal(receipt.intent, 'self_version');
+		assert.equal(receipt.status, 'passed');
+		assert.equal(receipt.stdout.tail.trim(), packageVersion);
 	} finally {
 		removeTempProject(projectPath);
 	}

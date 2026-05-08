@@ -26,3 +26,10 @@ bun run docs:check
 bun run docs:build
 bun run docs:preview
 ```
+
+For agent verification from the repository root, prefer the configured mustflow
+documentation intent:
+
+```sh
+mf run docs_validate
+```

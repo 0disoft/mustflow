@@ -14,6 +14,20 @@ install it into a temporary project, and verify the public commands with `npx mf
 bun run release:check
 ```
 
+For routine agent verification in this repository, prefer the configured
+mustflow command intents.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+`bun run release:check` remains the publishing gate. `test_related`, `lint`,
+coverage, and test-audit intents remain unset or manual-only until this
+repository has narrower gates for those workflows.
+
 ## Purpose
 
 - `bun run release:check`: Runs CLI checks, documentation checks, and verifies the actual npm package installation.

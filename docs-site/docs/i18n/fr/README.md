@@ -27,3 +27,10 @@ bun run docs:check
 bun run docs:build
 bun run docs:preview
 ```
+
+Pour la vérification de documentation par un agent depuis la racine du dépôt,
+privilégiez l'intent mustflow configuré :
+
+```sh
+mf run docs_validate
+```

@@ -28,3 +28,10 @@ bun run docs:check
 bun run docs:build
 bun run docs:preview
 ```
+
+रिपॉज़िटरी root से agent documentation verification के लिए configured mustflow
+intent को प्राथमिकता दें:
+
+```sh
+mf run docs_validate
+```

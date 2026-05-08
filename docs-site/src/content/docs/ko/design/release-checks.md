@@ -13,6 +13,18 @@ mustflow는 npm으로 설치되는 CLI와 템플릿을 함께 배포합니다.
 bun run release:check
 ```
 
+이 저장소에서 에이전트가 일반 검증을 실행할 때는 설정된 mustflow 명령 의도를 우선 사용합니다.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+`bun run release:check`는 배포 전 관문으로 유지합니다. `test_related`, `lint`, coverage,
+test-audit 의도는 해당 흐름을 위한 더 좁은 검증 관문이 생길 때까지 미설정 또는 수동 전용으로 둡니다.
+
 ## 역할
 
 - `bun run release:check`: CLI 검사, 문서 사이트 검사, 실제 npm 포장·설치 검증을 한 번에 실행합니다.

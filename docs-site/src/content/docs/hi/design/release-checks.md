@@ -13,6 +13,20 @@ mustflow npm के माध्यम से CLI और templates को सा
 bun run release:check
 ```
 
+इस रिपॉज़िटरी में agent verification के सामान्य कामों के लिए कॉन्फ़िगर किए गए
+mustflow command intents को प्राथमिकता दें।
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+`bun run release:check` publishing gate बना रहता है। `test_related`, `lint`,
+coverage, और test-audit intents तब तक unset या manual-only रहते हैं जब तक इस
+repository में उन flows के लिए अधिक संकीर्ण gates न हों।
+
 ## उद्देश्य
 
 - `bun run release:check`: CLI checks, documentation checks चलाता है, और वास्तविक npm package installation सत्यापित करता है।

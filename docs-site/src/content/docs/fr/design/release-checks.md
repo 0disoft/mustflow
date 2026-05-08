@@ -13,6 +13,20 @@ Avant la publication, ne vous fiez pas seulement aux contrôles de l’arbre sou
 bun run release:check
 ```
 
+Pour la vérification courante des agents dans ce dépôt, privilégiez les intents
+de commande mustflow configurés.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+`bun run release:check` reste la porte de publication. Les intents
+`test_related`, `lint`, coverage et test-audit restent non configurés ou
+manual-only tant que ce dépôt n'a pas de contrôles plus ciblés pour ces flux.
+
 ## Objectif
 
 - `bun run release:check`: exécute les contrôles de la CLI, les contrôles de documentation et vérifie l’installation réelle du paquet npm.

@@ -13,6 +13,21 @@ Antes de publicar, no dependas solo de comprobaciones hechas sobre el árbol fue
 bun run release:check
 ```
 
+Para la verificacion habitual de agentes en este repositorio, prefiere los
+intents de comando mustflow configurados.
+
+```sh
+mf run build
+mf run test
+mf run docs_validate
+mf run mustflow_check
+```
+
+`bun run release:check` sigue siendo la puerta de publicacion. Los intents
+`test_related`, `lint`, coverage y test-audit permanecen sin configurar o como
+manual-only hasta que este repositorio tenga comprobaciones mas especificas para
+esos flujos.
+
 ## Propósito
 
 - `bun run release:check`: ejecuta comprobaciones de CLI, comprobaciones de documentación y verifica la instalación real del paquete npm.

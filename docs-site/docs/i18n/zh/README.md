@@ -26,3 +26,9 @@ bun run docs:check
 bun run docs:build
 bun run docs:preview
 ```
+
+从仓库根目录进行 agent 文档验证时，应优先使用已配置的 mustflow intent：
+
+```sh
+mf run docs_validate
+```
