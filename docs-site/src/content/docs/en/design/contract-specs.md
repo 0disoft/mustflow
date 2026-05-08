@@ -1,0 +1,39 @@
+---
+title: Contract Specifications
+description: Versioned root documents that define mustflow's testable workflow rules.
+---
+
+mustflow keeps its versioned contract specifications in the repository under
+[`docs/spec/`](https://github.com/0disoft/mustflow/tree/main/docs/spec).
+
+These documents define the rules that future commands and schemas should share.
+They are concise reference documents, not tutorials.
+
+## JSON Schemas
+
+Published JSON Schemas live in
+[`schemas/`](https://github.com/0disoft/mustflow/tree/main/schemas) and are
+included in the npm package.
+
+- `doctor-report.schema.json`: `mf doctor --json`
+- `context-report.schema.json`: `mf context --json`
+- `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
+- `commands.schema.json`: parsed `.mustflow/config/commands.toml`
+
+## Current Specifications
+
+- `instruction-authority-v1.md`: effective rule resolution across user instructions, host policy, repository files, command contracts, and generated state.
+- `command-contract-v1.md`: when a command intent is runnable through `mf run`.
+- `verification-receipt-v1.md`: the latest run receipt written by `mf run`.
+- `state-retention-v1.md`: generated state, cache, receipt, and raw-output boundaries.
+
+## Relationship to Installed Files
+
+The specifications describe the behavior of installed files such as `AGENTS.md`,
+`.mustflow/docs/agent-workflow.md`, `.mustflow/config/mustflow.toml`, and
+`.mustflow/config/commands.toml`.
+
+If a specification and current behavior disagree, treat that as a bug to fix in
+the implementation or documentation. Do not use a specification to override
+current user instructions, host safety gates, or the nearest installed mustflow
+root.

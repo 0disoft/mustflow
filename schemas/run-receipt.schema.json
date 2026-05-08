@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/run-receipt.schema.json",
+  "title": "mustflow run receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "intent",
+    "status",
+    "timed_out",
+    "started_at",
+    "finished_at",
+    "duration_ms",
+    "cwd",
+    "lifecycle",
+    "run_policy",
+    "mode",
+    "timeout_seconds",
+    "max_output_bytes",
+    "success_exit_codes",
+    "exit_code",
+    "signal",
+    "error",
+    "kill_method",
+    "stdout",
+    "stderr",
+    "receipt_path"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "run" },
+    "intent": { "type": "string" },
+    "status": { "enum": ["passed", "failed", "timed_out", "start_failed"] },
+    "timed_out": { "type": "boolean" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "duration_ms": { "type": "integer" },
+    "cwd": { "type": "string" },
+    "lifecycle": { "type": "string" },
+    "run_policy": { "type": "string" },
+    "mode": { "enum": ["argv", "shell"] },
+    "argv": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cmd": { "type": "string" },
+    "timeout_seconds": { "type": "integer" },
+    "max_output_bytes": { "type": "integer" },
+    "success_exit_codes": {
+      "type": "array",
+      "items": { "type": "integer" }
+    },
+    "exit_code": { "type": ["integer", "null"] },
+    "signal": { "type": ["string", "null"] },
+    "error": { "type": ["string", "null"] },
+    "kill_method": { "type": ["string", "null"] },
+    "stdout": { "$ref": "#/$defs/output" },
+    "stderr": { "$ref": "#/$defs/output" },
+    "receipt_path": { "type": "string" }
+  },
+  "$defs": {
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "truncated", "tail"],
+      "properties": {
+        "bytes": { "type": "integer" },
+        "truncated": { "type": "boolean" },
+        "tail": { "type": "string" }
+      }
+    }
+  }
+}

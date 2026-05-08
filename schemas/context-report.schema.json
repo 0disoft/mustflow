@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/context-report.schema.json",
+  "title": "mustflow context report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "installed",
+    "manifest_lock",
+    "template",
+    "authority",
+    "capabilities",
+    "read_order",
+    "optional_read_order",
+    "command_contract",
+    "effective_policy",
+    "state_policy",
+    "blocked_actions",
+    "latest_run",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "context" },
+    "mustflow_root": { "type": "string" },
+    "installed": { "type": "boolean" },
+    "manifest_lock": { "enum": ["missing", "invalid", "present"] },
+    "template": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version"],
+          "properties": {
+            "id": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "authority": { "$ref": "#/$defs/scalarObject" },
+    "capabilities": { "$ref": "#/$defs/scalarObject" },
+    "read_order": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pathContext" }
+    },
+    "optional_read_order": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pathContext" }
+    },
+    "command_contract": { "$ref": "#/$defs/commandContractContext" },
+    "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
+    "state_policy": { "$ref": "#/$defs/statePolicy" },
+    "blocked_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "latest_run": { "$ref": "#/$defs/latestRun" },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "scalar": { "type": ["string", "number", "boolean", "null"] },
+    "scalarObject": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "$ref": "#/$defs/scalar" },
+          {
+            "type": "array",
+            "items": { "$ref": "#/$defs/scalar" }
+          }
+        ]
+      }
+    },
+    "pathContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists"],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" }
+      }
+    },
+    "intentContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "lifecycle", "run_policy", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "status": { "type": "string" },
+        "lifecycle": { "type": ["string", "null"] },
+        "run_policy": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] }
+      }
+    },
+    "commandContractContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "intents", "runnable_intents"],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "intents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/intentContext" }
+        },
+        "runnable_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "effectivePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entrypoint",
+        "nearest_agents",
+        "command_contract",
+        "project_commands_require_mf_run",
+        "allow_inferred_commands",
+        "auto_stage",
+        "auto_commit",
+        "auto_push",
+        "state_is_versioned",
+        "raw_logs_allowed"
+      ],
+      "properties": {
+        "entrypoint": { "type": "string" },
+        "nearest_agents": { "type": "string" },
+        "command_contract": { "type": "string" },
+        "project_commands_require_mf_run": { "type": "boolean" },
+        "allow_inferred_commands": { "type": "boolean" },
+        "auto_stage": { "type": "boolean" },
+        "auto_commit": { "type": "boolean" },
+        "auto_push": { "type": "boolean" },
+        "state_is_versioned": { "type": "boolean" },
+        "raw_logs_allowed": { "type": "boolean" }
+      }
+    },
+    "statePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cache_path",
+        "state_path",
+        "versioned",
+        "safe_to_delete",
+        "stores_raw_conversation",
+        "stores_full_terminal_output",
+        "stores_hidden_chain_of_thought"
+      ],
+      "properties": {
+        "cache_path": { "type": "string" },
+        "state_path": { "type": "string" },
+        "versioned": { "type": "boolean" },
+        "safe_to_delete": { "type": "boolean" },
+        "stores_raw_conversation": { "type": "boolean" },
+        "stores_full_terminal_output": { "type": "boolean" },
+        "stores_hidden_chain_of_thought": { "type": "boolean" }
+      }
+    },
+    "latestRun": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "exists"],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "const": false }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "exists", "valid", "error"],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "const": true },
+            "valid": { "const": false },
+            "error": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "exists",
+            "valid",
+            "intent",
+            "status",
+            "timed_out",
+            "exit_code",
+            "finished_at",
+            "duration_ms"
+          ],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "const": true },
+            "valid": { "const": true },
+            "intent": { "type": "string" },
+            "status": { "type": "string" },
+            "timed_out": { "type": "boolean" },
+            "exit_code": { "type": ["integer", "null"] },
+            "finished_at": { "type": ["string", "null"] },
+            "duration_ms": { "type": ["integer", "null"] }
+          }
+        }
+      ]
+    }
+  }
+}

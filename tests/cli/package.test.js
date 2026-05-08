@@ -169,6 +169,10 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/lib/template-i18n.js'));
 	assert.ok(files.has('templates/default/common/.mustflow/config/commands.toml'));
 	assert.ok(files.has('templates/default/common/.mustflow/config/preferences.toml'));
+	assert.ok(files.has('schemas/doctor-report.schema.json'));
+	assert.ok(files.has('schemas/context-report.schema.json'));
+	assert.ok(files.has('schemas/run-receipt.schema.json'));
+	assert.ok(files.has('schemas/commands.schema.json'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
 	}

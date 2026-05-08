@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/doctor-report.schema.json",
+  "title": "mustflow doctor report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "installed",
+    "strict",
+    "ok",
+    "check",
+    "context",
+    "effective_policy",
+    "state_policy",
+    "blocked_actions",
+    "diagnostics",
+    "next_steps"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "doctor" },
+    "mustflow_root": { "type": "string" },
+    "installed": { "type": "boolean" },
+    "strict": { "type": "boolean" },
+    "ok": { "type": "boolean" },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "issue_count", "issues"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "issue_count": { "type": "integer" },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_lock",
+        "template",
+        "command_contract_exists",
+        "runnable_intents",
+        "missing_read_order",
+        "missing_optional_read_order",
+        "latest_run_exists"
+      ],
+      "properties": {
+        "manifest_lock": { "enum": ["missing", "invalid", "present"] },
+        "template": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "version"],
+              "properties": {
+                "id": { "type": "string" },
+                "version": { "type": "string" }
+              }
+            }
+          ]
+        },
+        "command_contract_exists": { "type": "boolean" },
+        "runnable_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missing_read_order": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missing_optional_read_order": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "latest_run_exists": { "type": "boolean" }
+      }
+    },
+    "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
+    "state_policy": { "$ref": "#/$defs/statePolicy" },
+    "blocked_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "summary", "action"],
+        "properties": {
+          "id": {
+            "enum": [
+              "install",
+              "validation",
+              "commands",
+              "read_order",
+              "optional_read_order",
+              "repo_map",
+              "local_index",
+              "latest_run"
+            ]
+          },
+          "status": { "enum": ["ok", "warn", "fail", "info"] },
+          "summary": { "type": "string" },
+          "action": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "next_steps": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "effectivePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entrypoint",
+        "nearest_agents",
+        "command_contract",
+        "project_commands_require_mf_run",
+        "allow_inferred_commands",
+        "auto_stage",
+        "auto_commit",
+        "auto_push",
+        "state_is_versioned",
+        "raw_logs_allowed"
+      ],
+      "properties": {
+        "entrypoint": { "type": "string" },
+        "nearest_agents": { "type": "string" },
+        "command_contract": { "type": "string" },
+        "project_commands_require_mf_run": { "type": "boolean" },
+        "allow_inferred_commands": { "type": "boolean" },
+        "auto_stage": { "type": "boolean" },
+        "auto_commit": { "type": "boolean" },
+        "auto_push": { "type": "boolean" },
+        "state_is_versioned": { "type": "boolean" },
+        "raw_logs_allowed": { "type": "boolean" }
+      }
+    },
+    "statePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cache_path",
+        "state_path",
+        "versioned",
+        "safe_to_delete",
+        "stores_raw_conversation",
+        "stores_full_terminal_output",
+        "stores_hidden_chain_of_thought"
+      ],
+      "properties": {
+        "cache_path": { "type": "string" },
+        "state_path": { "type": "string" },
+        "versioned": { "type": "boolean" },
+        "safe_to_delete": { "type": "boolean" },
+        "stores_raw_conversation": { "type": "boolean" },
+        "stores_full_terminal_output": { "type": "boolean" },
+        "stores_hidden_chain_of_thought": { "type": "boolean" }
+      }
+    }
+  }
+}

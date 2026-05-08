@@ -86,6 +86,10 @@ test('packed npm package installs and runs the public mf workflow', () => {
 		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'locales', 'en', 'AGENTS.md')));
 		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'locales', 'ko', 'AGENTS.md')));
 		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml')));
+		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'doctor-report.schema.json')));
+		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'context-report.schema.json')));
+		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'run-receipt.schema.json')));
+		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'commands.schema.json')));
 		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'src')), false);
 		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'tests')), false);
 		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'docs-site')), false);

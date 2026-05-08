@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/commands.schema.json",
+  "title": "mustflow command contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "defaults", "intents"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_behavior",
+        "allow_inferred_commands",
+        "require_lifecycle",
+        "require_timeout_for_oneshot",
+        "deny_unmanaged_long_running",
+        "default_cwd",
+        "default_timeout_seconds",
+        "stdin",
+        "max_output_bytes",
+        "on_timeout",
+        "kill_after_seconds"
+      ],
+      "properties": {
+        "missing_behavior": { "type": "string" },
+        "allow_inferred_commands": { "type": "boolean" },
+        "require_lifecycle": { "type": "boolean" },
+        "require_timeout_for_oneshot": { "type": "boolean" },
+        "deny_unmanaged_long_running": { "type": "boolean" },
+        "default_cwd": { "type": "string" },
+        "default_timeout_seconds": { "type": "integer" },
+        "stdin": { "enum": ["closed"] },
+        "max_output_bytes": { "type": "integer" },
+        "on_timeout": { "type": "string" },
+        "kill_after_seconds": { "type": "integer" }
+      }
+    },
+    "intents": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/intent" }
+    }
+  },
+  "$defs": {
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "description"],
+      "properties": {
+        "status": { "enum": ["configured", "manual_only", "unknown"] },
+        "kind": { "type": "string" },
+        "lifecycle": { "type": "string" },
+        "run_policy": { "type": "string" },
+        "description": { "type": "string" },
+        "argv": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "cmd": { "type": "string" },
+        "cwd": { "type": "string" },
+        "timeout_seconds": { "type": "integer" },
+        "stdin": { "type": "string" },
+        "success_exit_codes": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "writes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "network": { "type": "boolean" },
+        "destructive": { "type": "boolean" },
+        "required_after": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reason": { "type": "string" },
+        "agent_action": { "type": "string" }
+      }
+    }
+  }
+}
