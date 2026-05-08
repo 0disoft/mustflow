@@ -119,6 +119,7 @@ La sortie lisible par machine utilise ces champs:
 - `strict` (`boolean`): indique si les contrôles `--strict` étaient activés.
 - `issueCount` (`number`): nombre de problèmes trouvés.
 - `issues` (`string[]`): messages de problème lisibles par une personne.
+- `issueDetails` (`object[]`): détails de problème lisibles par machine. `id` est un identifiant stable pour les limites de commande et les contrôles stricts associés lorsqu’il s’applique, et `message` reprend `issues`.
 
 Lorsque des problèmes sont trouvés, la forme JSON quitte aussi avec le code `1`.
 
@@ -133,4 +134,4 @@ La sortie d’aide est organisée en `Usage`, `Options`, `Examples` et `Exit cod
 - Code de sortie `0`: tous les fichiers et paramètres requis sont valides.
 - Code de sortie `1`: la validation a trouvé des problèmes, ou la commande a reçu une option inconnue.
 
-Les agents et automatisations doivent lire `ok` et `issues` depuis la sortie `--json` au lieu d’analyser le texte de succès ou d’échec destiné aux personnes.
+Les agents et automatisations doivent lire `ok`, `issues` et `issueDetails` depuis la sortie `--json` au lieu d’analyser le texte de succès ou d’échec destiné aux personnes.

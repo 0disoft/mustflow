@@ -103,6 +103,7 @@ La salida legible por máquinas usa estos campos:
 - `strict` (`boolean`): si las comprobaciones `--strict` estaban habilitadas.
 - `issueCount` (`number`): número de problemas encontrados.
 - `issues` (`string[]`): mensajes de problema legibles para personas.
+- `issueDetails` (`object[]`): detalles de problema legibles por máquinas. `id` es un identificador estable para límites de comando y comprobaciones estrictas relacionadas cuando corresponde, y `message` replica `issues`.
 
 Cuando se encuentran problemas, la salida JSON también termina con el código `1`.
 
@@ -117,4 +118,4 @@ La salida de ayuda está ordenada como `Usage`, `Options`, `Examples` y `Exit co
 - Código de salida `0`: todos los archivos y ajustes requeridos son válidos.
 - Código de salida `1`: la validación encontró problemas o el comando recibió una opción desconocida.
 
-Los agentes y la automatización deben usar los campos `ok` e `issues` de la salida `--json` en lugar de analizar texto de éxito o error legible para personas.
+Los agentes y la automatización deben usar los campos `ok`, `issues` e `issueDetails` de la salida `--json` en lugar de analizar texto de éxito o error legible para personas.

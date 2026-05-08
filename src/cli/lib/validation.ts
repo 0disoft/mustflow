@@ -17,6 +17,10 @@ import {
 	resolveRetentionLimits,
 	type RetentionLimits,
 } from '../../core/retention-policy.js';
+import {
+	formatManagedMarkdownLabel,
+	getManagedMarkdownExpectation,
+} from '../../core/authority-resolution.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
@@ -248,24 +252,6 @@ const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
 	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,
 	/\b(?:must not|do not|never)\s+(?:edit|modify|write|delete)\s+(?:files?\s+)?(?:outside|under|inside|in)\b/iu,
 ] as const;
-interface ManagedMarkdownExpectation {
-	readonly docId: string;
-	readonly authority: string;
-	readonly lifecycle: string;
-}
-
-const STATIC_MANAGED_MARKDOWN_EXPECTATIONS: Record<string, ManagedMarkdownExpectation> = {
-	'AGENTS.md': {
-		docId: 'agents.root',
-		authority: 'binding',
-		lifecycle: 'user-editable',
-	},
-	'.mustflow/skills/INDEX.md': {
-		docId: 'skills.index',
-		authority: 'router',
-		lifecycle: 'mustflow-owned',
-	},
-};
 const REPO_MAP_DOC_ID = 'repo-map';
 const REPO_MAP_LIFECYCLE = 'generated';
 const REPO_MAP_GENERATOR = 'mustflow';
@@ -313,6 +299,73 @@ const DESIGN_TOKEN_DEFINITION_PATTERNS = [
 
 interface CheckIssue {
 	readonly message: string;
+}
+
+export type CheckIssueId =
+	| 'mustflow.command_contract.intent_table_missing'
+	| 'mustflow.command_contract.intent_not_table'
+	| 'mustflow.command_contract.configured_missing_lifecycle'
+	| 'mustflow.command_contract.configured_missing_run_policy'
+	| 'mustflow.command_contract.oneshot_missing_timeout'
+	| 'mustflow.command_contract.oneshot_stdin_not_closed'
+	| 'mustflow.command_contract.long_running_agent_allowed'
+	| 'mustflow.command_contract.executable_source_missing'
+	| 'mustflow.command_contract.shell_background_pattern'
+	| 'mustflow.command_contract.success_exit_codes_invalid'
+	| 'mustflow.skill.procedure_only'
+	| 'mustflow.skill.raw_command_block'
+	| 'mustflow.skill.command_permission_claim'
+	| 'mustflow.skill.unknown_command_intent'
+	| 'mustflow.skill.index_route_unknown_command_intent'
+	| 'mustflow.skill.resource_unknown_command_intent'
+	| 'mustflow.run_receipt.invalid_json'
+	| 'mustflow.run_receipt.invalid_shape'
+	| 'mustflow.retention.run_receipt_size_limit'
+	| 'mustflow.retention.raw_jsonl_under_mustflow';
+
+export interface CheckIssueDetail {
+	readonly id: CheckIssueId | null;
+	readonly message: string;
+}
+
+const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
+	['mustflow.command_contract.intent_table_missing', /^Missing \[intents\] table in \.mustflow\/config\/commands\.toml$/u],
+	['mustflow.command_contract.intent_not_table', /^Intent [^\s]+ must be a TOML table$/u],
+	['mustflow.command_contract.configured_missing_lifecycle', /^Configured intent [^\s]+ must define lifecycle$/u],
+	['mustflow.command_contract.configured_missing_run_policy', /^Configured intent [^\s]+ must define run_policy$/u],
+	['mustflow.command_contract.oneshot_missing_timeout', /^Oneshot intent [^\s]+ must define timeout_seconds$/u],
+	['mustflow.command_contract.oneshot_stdin_not_closed', /^Oneshot intent [^\s]+ must set stdin = "closed"$/u],
+	['mustflow.command_contract.long_running_agent_allowed', /^Long-running intent [^\s]+ must not use run_policy = "agent_allowed"$/u],
+	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
+	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
+	['mustflow.command_contract.success_exit_codes_invalid', /^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be an integer array$/u],
+	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
+	['mustflow.skill.raw_command_block', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md contains a raw shell command block; reference command intents instead$/u],
+	['mustflow.skill.command_permission_claim', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md claims command execution permission; keep permissions in \.mustflow\/config\/commands\.toml$/u],
+	['mustflow.skill.unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.command_intents references unknown command intent "[^"]+"$/u],
+	['mustflow.skill.index_route_unknown_command_intent', /^Strict: \.mustflow\/skills\/INDEX\.md route \.mustflow\/skills\/[^/]+\/SKILL\.md references command intent "[^"]+" not declared by the skill frontmatter$/u],
+	['mustflow.skill.resource_unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/resources\.toml script [^\s]+ references unknown command intent "[^"]+"$/u],
+	['mustflow.run_receipt.invalid_json', /^Strict: \.mustflow\/state\/runs\/latest\.json is not valid JSON:/u],
+	['mustflow.run_receipt.invalid_shape', /^Strict: \.mustflow\/state\/runs\/latest\.json must contain a JSON object$/u],
+	['mustflow.retention.run_receipt_size_limit', /^Strict: \.mustflow\/state\/runs\/latest\.json exceeds \[retention\.run_receipts\]\.max_file_kb/u],
+	['mustflow.retention.raw_jsonl_under_mustflow', /^Strict: \.mustflow\/.*\.jsonl is a raw JSONL file under \.mustflow$/u],
+];
+
+export function getCheckIssueId(message: string): CheckIssueId | null {
+	for (const [id, pattern] of CHECK_ISSUE_ID_RULES) {
+		if (pattern.test(message)) {
+			return id;
+		}
+	}
+
+	return null;
+}
+
+export function describeCheckIssues(messages: readonly string[]): CheckIssueDetail[] {
+	return messages.map((message) => ({
+		id: getCheckIssueId(message),
+		message,
+	}));
 }
 
 export interface CheckOptions {
@@ -1716,54 +1769,6 @@ function validateSkillIndexRoutes(
 	}
 }
 
-function getManagedMarkdownExpectation(relativePath: string): ManagedMarkdownExpectation | undefined {
-	const normalizedPath = toPosixPath(relativePath);
-	const staticExpectation = STATIC_MANAGED_MARKDOWN_EXPECTATIONS[normalizedPath];
-
-	if (staticExpectation) {
-		return staticExpectation;
-	}
-
-	const docsMatch = /^\.mustflow\/docs\/([^/]+)\.md$/u.exec(normalizedPath);
-	if (docsMatch) {
-		return {
-			docId: `docs.${docsMatch[1]}`,
-			authority: 'workflow-policy',
-			lifecycle: 'mustflow-owned',
-		};
-	}
-
-	const contextMatch = /^\.mustflow\/context\/([^/]+)\.md$/u.exec(normalizedPath);
-	if (contextMatch) {
-		const contextName = contextMatch[1].toLowerCase();
-
-		if (contextName === 'index') {
-			return {
-				docId: 'context.index',
-				authority: 'router',
-				lifecycle: 'mustflow-owned',
-			};
-		}
-
-		return {
-			docId: `context.${contextName}`,
-			authority: 'contextual',
-			lifecycle: 'user-editable',
-		};
-	}
-
-	const skillMatch = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(normalizedPath);
-	if (skillMatch) {
-		return {
-			docId: `skill.${skillMatch[1]}`,
-			authority: 'procedure',
-			lifecycle: 'mustflow-owned',
-		};
-	}
-
-	return undefined;
-}
-
 function listManagedMarkdownDocuments(projectRoot: string): string[] {
 	const documents: string[] = [];
 
@@ -1792,10 +1797,6 @@ function listManagedMarkdownDocuments(projectRoot: string): string[] {
 	}
 
 	return [...new Set(documents)].sort();
-}
-
-function formatManagedMarkdownLabel(relativePath: string, expectation: ManagedMarkdownExpectation): string {
-	return `${expectation.docId} (${toPosixPath(relativePath)})`;
 }
 
 function validateStrictManagedMarkdownIdentities(projectRoot: string, issues: CheckIssue[]): void {

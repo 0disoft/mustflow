@@ -119,6 +119,7 @@ npx mf check --json
 - `strict` (`boolean`)：是否启用了 `--strict` 检查。
 - `issueCount` (`number`)：发现的问题数量。
 - `issues` (`string[]`)：面向人的问题消息。
+- `issueDetails` (`object[]`)：机器可读的问题详情。适用时，`id` 是命令边界及相关严格检查的稳定标识符，`message` 与 `issues` 中的消息一致。
 
 发现问题时，JSON 形式同样以退出码 `1` 退出。
 
@@ -133,4 +134,4 @@ npx mf check --help
 - 退出码 `0`：所有必需文件与设置有效。
 - 退出码 `1`：验证发现问题，或命令收到未知选项。
 
-代理和自动化应从 `--json` 输出读取 `ok` 与 `issues`，而不是解析面向人的成功或失败文本。
+代理和自动化应从 `--json` 输出读取 `ok`、`issues` 与 `issueDetails`，而不是解析面向人的成功或失败文本。

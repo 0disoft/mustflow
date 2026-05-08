@@ -107,6 +107,7 @@ Machine-readable output uses these fields:
 - `strict` (`boolean`): Whether `--strict` checks were enabled.
 - `issueCount` (`number`): Number of issues found.
 - `issues` (`string[]`): Human-readable issue messages.
+- `issueDetails` (`object[]`): Machine-readable issue details. `id` is a stable identifier for command-boundary and related strict checks when one applies, and `message` mirrors `issues`.
 
 When issues are found, the JSON form also exits with code `1`.
 
@@ -121,4 +122,4 @@ Help output is ordered as `Usage`, `Options`, `Examples`, and `Exit codes`.
 - Exit code `0`: All required files and settings are valid.
 - Exit code `1`: Validation found issues, or the command received an unknown option.
 
-Agents and automation should use the `ok` and `issues` fields from the `--json` output instead of parsing human-readable success or failure text.
+Agents and automation should use the `ok`, `issues`, and `issueDetails` fields from the `--json` output instead of parsing human-readable success or failure text.

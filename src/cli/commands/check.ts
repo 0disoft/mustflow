@@ -2,7 +2,7 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { checkMustflowProject } from '../lib/validation.js';
+import { checkMustflowProject, describeCheckIssues } from '../lib/validation.js';
 
 export function getCheckHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -59,6 +59,7 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 					strict,
 					issueCount: issues.length,
 					issues,
+					issueDetails: describeCheckIssues(issues),
 				},
 				null,
 				2,

@@ -42,6 +42,17 @@ function initProject(projectPath) {
 	assert.ok(existsSync(path.join(projectPath, 'AGENTS.md')));
 }
 
+function assertHasIssueDetail(check, expectedId, expectedMessage) {
+	assert.ok(
+		check.issueDetails.some(
+			(issue) =>
+				issue.id === expectedId &&
+				(expectedMessage === undefined || issue.message === expectedMessage),
+		),
+		`missing issue detail ${expectedId}`,
+	);
+}
+
 test('passes a freshly initialized mustflow project', () => {
 	const projectPath = createTempProject();
 
@@ -87,6 +98,12 @@ test('prints check result as json', () => {
 		assert.equal(check.ok, false);
 		assert.equal(check.issueCount, 1);
 		assert.deepEqual(check.issues, ['Lock hash mismatch: AGENTS.md']);
+		assert.deepEqual(check.issueDetails, [
+			{
+				id: null,
+				message: 'Lock hash mismatch: AGENTS.md',
+			},
+		]);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -105,6 +122,7 @@ test('passes strict check for a freshly initialized mustflow project', () => {
 		assert.equal(check.ok, true);
 		assert.equal(check.strict, true);
 		assert.deepEqual(check.issues, []);
+		assert.deepEqual(check.issueDetails, []);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -356,6 +374,11 @@ test('strict check fails unknown skill command intent metadata references', () =
 					'Strict: .mustflow/skills/code-review/SKILL.md metadata.command_intents references unknown command intent "deploy_prod"',
 			),
 		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.skill.unknown_command_intent',
+			'Strict: .mustflow/skills/code-review/SKILL.md metadata.command_intents references unknown command intent "deploy_prod"',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -398,6 +421,11 @@ test('strict check fails skill index route drift', () => {
 					issue ===
 					'Strict: .mustflow/skills/INDEX.md route .mustflow/skills/docs-update/SKILL.md references command intent "lint" not declared by the skill frontmatter',
 			),
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.skill.index_route_unknown_command_intent',
+			'Strict: .mustflow/skills/INDEX.md route .mustflow/skills/docs-update/SKILL.md references command intent "lint" not declared by the skill frontmatter',
 		);
 	} finally {
 		removeTempProject(projectPath);
@@ -452,6 +480,11 @@ test('strict check fails non-procedure skill metadata', () => {
 				(issue) =>
 					issue === 'Strict: .mustflow/skills/code-review/SKILL.md metadata.mustflow_kind must be "procedure"',
 			),
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.skill.procedure_only',
+			'Strict: .mustflow/skills/code-review/SKILL.md metadata.mustflow_kind must be "procedure"',
 		);
 	} finally {
 		removeTempProject(projectPath);
@@ -563,6 +596,11 @@ test('strict check fails skill command permission claims', () => {
 					issue ===
 					'Strict: .mustflow/skills/code-review/SKILL.md claims command execution permission; keep permissions in .mustflow/config/commands.toml',
 			),
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.skill.command_permission_claim',
+			'Strict: .mustflow/skills/code-review/SKILL.md claims command execution permission; keep permissions in .mustflow/config/commands.toml',
 		);
 	} finally {
 		removeTempProject(projectPath);
@@ -1608,6 +1646,60 @@ test('fails unsafe command lifecycle contracts', () => {
 		assert.match(result.stderr, /Oneshot intent test must define timeout_seconds/);
 		assert.match(result.stderr, /Long-running intent dev must not use run_policy = "agent_allowed"/);
 		assert.match(result.stderr, /Shell intent shell_bg contains a blocked long-running or background pattern/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('check json includes stable command-boundary issue ids', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				'schema_version = "1"',
+				'',
+				'[defaults]',
+				'missing_behavior = "do_not_guess"',
+				'allow_inferred_commands = false',
+				'require_lifecycle = true',
+				'require_timeout_for_oneshot = true',
+				'deny_unmanaged_long_running = true',
+				'default_cwd = "."',
+				'default_timeout_seconds = 600',
+				'stdin = "closed"',
+				'max_output_bytes = 1048576',
+				'on_timeout = "terminate_process_tree"',
+				'kill_after_seconds = 5',
+				'',
+				'[intents.test]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run tests."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.oneshot_missing_timeout',
+			'Oneshot intent test must define timeout_seconds',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
