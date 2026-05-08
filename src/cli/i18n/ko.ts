@@ -20,6 +20,9 @@ export const koMessages = {
   "cli.error.unexpectedArgument": "예상하지 못한 인자: {argument}",
   "cli.error.unexpectedValue": "{option}에 예상치 못한 값이 제공되었습니다",
   "cli.error.missingValue": "{option} 값이 없습니다",
+  "value.yes": "예",
+  "value.no": "아니요",
+  "value.none": "없음",
 
   "command.init.summary": "기본 mustflow 에이전트 워크플로우를 복사합니다",
   "command.check.summary": "mustflow 파일을 검사합니다",
@@ -34,6 +37,7 @@ export const koMessages = {
   "command.dashboard.summary":
     "로컬 mustflow 대시보드를 시작합니다",
   "command.versionSources.summary": "감지된 버전 기준 원본을 출력합니다",
+  "command.explain.summary": "mustflow 정책 결정을 설명합니다",
   "command.help.summary": "설치된 워크플로우 도움말을 출력합니다",
 
   "top.help.option.lang": "CLI 출력 언어를 선택합니다. 지원값: {languages}",
@@ -389,6 +393,25 @@ export const koMessages = {
   "versionSources.value.enabled": "켜짐",
   "versionSources.value.disabled": "꺼짐",
   "versionSources.noSources": "감지된 버전 기준 원본이 없습니다",
+
+  "explain.help.summary":
+    "파일을 수정하지 않고 mustflow 정책 결정이 왜 적용되는지 설명합니다.",
+  "explain.help.exit.ok": "정책 결정을 확인하고 출력했습니다",
+  "explain.title": "mustflow 설명",
+  "explain.label.topic": "주제",
+  "explain.label.decision": "결정",
+  "explain.label.reason": "이유",
+  "explain.label.effectiveAction": "적용할 조치",
+  "explain.label.countsAsMustflowVerification": "mustflow 검증으로 인정",
+  "explain.label.sourceFiles": "근거 파일",
+  "explain.label.expectedFrontmatter": "기대하는 머리말(frontmatter)",
+  "explain.label.commandIntent": "명령 의도",
+  "explain.label.commandName": "명령",
+  "explain.label.retentionPolicy": "보존 정책",
+  "explain.label.skillRoutes": "스킬 라우팅",
+  "explain.error.missingTopic": "설명할 주제가 없습니다",
+  "explain.error.missingCommand": "설명할 명령 의도가 없습니다",
+  "explain.error.unknownTopic": "알 수 없는 설명 주제: {topic}",
 
   "update.help.summary":
     "설치된 mustflow 작업 흐름의 갱신을 미리 보거나 적용합니다.",

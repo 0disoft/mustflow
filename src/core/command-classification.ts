@@ -3,6 +3,7 @@ const IN_PROCESS_MUSTFLOW_BUILTIN_COMMANDS = new Set([
 	'check',
 	'context',
 	'doctor',
+	'explain',
 	'help',
 	'map',
 	'status',

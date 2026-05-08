@@ -17,6 +17,9 @@ export const enMessages = {
   "cli.error.unexpectedArgument": "Unexpected argument: {argument}",
   "cli.error.unexpectedValue": "Unexpected value for {option}",
   "cli.error.missingValue": "Missing value for {option}",
+  "value.yes": "yes",
+  "value.no": "no",
+  "value.none": "none",
 
   "command.init.summary": "Copy the default mustflow agent workflow",
   "command.check.summary": "Validate mustflow files",
@@ -31,6 +34,7 @@ export const enMessages = {
   "command.dashboard.summary":
     "Start the local mustflow dashboard",
   "command.versionSources.summary": "Show detected version sources",
+  "command.explain.summary": "Explain mustflow policy decisions",
   "command.help.summary": "Show installed workflow help",
 
   "top.help.option.lang":
@@ -393,6 +397,25 @@ Read these files before working:
   "versionSources.value.enabled": "enabled",
   "versionSources.value.disabled": "disabled",
   "versionSources.noSources": "No version sources detected",
+
+  "explain.help.summary":
+    "Explain why a mustflow policy decision applies without modifying files.",
+  "explain.help.exit.ok": "The policy decision was inspected and printed",
+  "explain.title": "mustflow explain",
+  "explain.label.topic": "Topic",
+  "explain.label.decision": "Decision",
+  "explain.label.reason": "Reason",
+  "explain.label.effectiveAction": "Effective action",
+  "explain.label.countsAsMustflowVerification": "Counts as mustflow verification",
+  "explain.label.sourceFiles": "Source files",
+  "explain.label.expectedFrontmatter": "Expected frontmatter",
+  "explain.label.commandIntent": "Command intent",
+  "explain.label.commandName": "Command",
+  "explain.label.retentionPolicy": "Retention policy",
+  "explain.label.skillRoutes": "Skill routes",
+  "explain.error.missingTopic": "Missing explain topic",
+  "explain.error.missingCommand": "Missing command intent",
+  "explain.error.unknownTopic": "Unknown explain topic: {topic}",
 
   "update.help.summary":
     "Preview or apply updates for the installed mustflow workflow.",

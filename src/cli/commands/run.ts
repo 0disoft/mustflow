@@ -5,6 +5,7 @@ import path from 'node:path';
 import { runCheck } from './check.js';
 import { runContext } from './context.js';
 import { runDoctor } from './doctor.js';
+import { runExplain } from './explain.js';
 import { runHelp } from './help.js';
 import { runMap } from './map.js';
 import { runStatus } from './status.js';
@@ -243,6 +244,10 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 
 	if (command === 'doctor') {
 		return runDoctor(commandArgs, reporter, lang);
+	}
+
+	if (command === 'explain') {
+		return runExplain(commandArgs, reporter, lang);
 	}
 
 	if (command === 'help') {

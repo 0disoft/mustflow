@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/explain-report.schema.json",
+  "title": "mustflow explain report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "topic",
+    "mustflow_root",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "explain" },
+    "topic": { "enum": ["authority", "command", "retention", "skills"] },
+    "mustflow_root": { "type": "string" },
+    "decision": {
+      "oneOf": [
+        { "$ref": "#/$defs/authorityDecision" },
+        { "$ref": "#/$defs/commandDecision" },
+        { "$ref": "#/$defs/retentionDecision" },
+        { "$ref": "#/$defs/skillRouteAlignmentDecision" }
+      ]
+    }
+  },
+  "$defs": {
+    "authorityDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "inputPath",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "expectation"
+      ],
+      "properties": {
+        "kind": { "enum": ["overview", "recognized", "unrecognized"] },
+        "inputPath": { "type": ["string", "null"] },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "type": "boolean" },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "expectation": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["docId", "authority", "lifecycle"],
+          "properties": {
+            "docId": { "type": "string" },
+            "authority": { "type": "string" },
+            "lifecycle": { "type": "string" }
+          }
+        }
+      }
+    },
+    "commandDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "inputCommand",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "intent"
+      ],
+      "properties": {
+        "kind": { "enum": ["allowed", "blocked", "unknown"] },
+        "inputCommand": { "type": "string" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "type": "boolean" },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "intent": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "status",
+            "lifecycle",
+            "runPolicy",
+            "stdin",
+            "timeoutSeconds",
+            "mode",
+            "requiredAfter"
+          ],
+          "properties": {
+            "name": { "type": "string" },
+            "status": { "type": ["string", "null"] },
+            "lifecycle": { "type": ["string", "null"] },
+            "runPolicy": { "type": ["string", "null"] },
+            "stdin": { "type": ["string", "null"] },
+            "timeoutSeconds": { "type": ["integer", "null"] },
+            "mode": { "enum": ["argv", "shell", "missing"] },
+            "requiredAfter": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "retentionDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "retention"
+      ],
+      "properties": {
+        "kind": { "const": "retention" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "retention": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "rawEvents",
+            "runReceipts",
+            "knowledge",
+            "context",
+            "repoMap"
+          ],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "rawEvents": { "$ref": "#/$defs/rawEventsRetention" },
+            "runReceipts": { "$ref": "#/$defs/runReceiptsRetention" },
+            "knowledge": { "$ref": "#/$defs/knowledgeRetention" },
+            "context": { "$ref": "#/$defs/contextRetention" },
+            "repoMap": { "$ref": "#/$defs/repoMapRetention" }
+          }
+        }
+      }
+    },
+    "skillRouteAlignmentDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "alignment"
+      ],
+      "properties": {
+        "kind": { "const": "skill_routes" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "alignment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "issueCount", "issues", "summary", "action"],
+          "properties": {
+            "status": { "enum": ["ok", "fail"] },
+            "issueCount": { "type": "integer" },
+            "issues": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "summary": { "type": "string" },
+            "action": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "rawEventsRetention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["store", "maxFileMb", "maxTotalMb", "maxAgeDays", "onLimit"],
+      "properties": {
+        "store": { "type": ["string", "null"] },
+        "maxFileMb": { "type": ["integer", "null"] },
+        "maxTotalMb": { "type": ["integer", "null"] },
+        "maxAgeDays": { "type": ["integer", "null"] },
+        "onLimit": { "type": ["string", "null"] }
+      }
+    },
+    "runReceiptsRetention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "store",
+        "maxFileKb",
+        "maxItems",
+        "maxTotalMb",
+        "stdoutTailBytes",
+        "stderrTailBytes"
+      ],
+      "properties": {
+        "store": { "type": "string" },
+        "maxFileKb": { "type": "integer" },
+        "maxItems": { "type": "integer" },
+        "maxTotalMb": { "type": "integer" },
+        "stdoutTailBytes": { "type": "integer" },
+        "stderrTailBytes": { "type": "integer" }
+      }
+    },
+    "knowledgeRetention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "store", "maxFileKb", "maxTotalMb"],
+      "properties": {
+        "enabled": { "type": ["boolean", "null"] },
+        "store": { "type": ["string", "null"] },
+        "maxFileKb": { "type": "integer" },
+        "maxTotalMb": { "type": ["integer", "null"] }
+      }
+    },
+    "contextRetention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxFileKb"],
+      "properties": {
+        "maxFileKb": { "type": "integer" }
+      }
+    },
+    "repoMapRetention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxFileKb", "failIfLarger"],
+      "properties": {
+        "maxFileKb": { "type": "integer" },
+        "failIfLarger": { "type": "boolean" }
+      }
+    }
+  }
+}

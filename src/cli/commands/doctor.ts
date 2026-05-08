@@ -12,6 +12,7 @@ import { getLocalIndexDatabasePath } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { checkMustflowProject } from '../lib/validation.js';
+import { summarizeSkillRouteAlignment } from '../../core/skill-route-alignment.js';
 
 const DOCTOR_SCHEMA_VERSION = '1';
 
@@ -103,21 +104,13 @@ function pluralize(count: number, singular: string, plural: string): string {
 	return count === 1 ? singular : plural;
 }
 
-function isSkillRouteIssue(issue: string): boolean {
-	return (
-		issue.includes('.mustflow/skills/INDEX.md route') ||
-		issue.includes('.mustflow/skills/INDEX.md has duplicate route') ||
-		issue.endsWith(' is not listed in .mustflow/skills/INDEX.md')
-	);
-}
-
 function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[] {
 	const diagnostics: DoctorDiagnostic[] = [];
 	const checkCommand = output.strict ? 'mf check --strict' : 'mf check';
 	const repoMapExists = existsSync(path.join(output.mustflow_root, 'REPO_MAP.md'));
 	const localIndexExists = existsSync(getLocalIndexDatabasePath(output.mustflow_root));
 	const runnableIntentCount = output.context.runnable_intents.length;
-	const skillRouteIssueCount = output.check.issues.filter(isSkillRouteIssue).length;
+	const skillRouteAlignment = summarizeSkillRouteAlignment(output.check.issues);
 
 	diagnostics.push({
 		id: 'install',
@@ -135,11 +128,9 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 
 	diagnostics.push({
 		id: 'skill_routes',
-		status: output.strict ? (skillRouteIssueCount === 0 ? 'ok' : 'fail') : 'info',
-		summary: output.strict
-			? `${skillRouteIssueCount} skill index/body alignment ${pluralize(skillRouteIssueCount, 'issue', 'issues')}`
-			: 'not evaluated; run strict doctor',
-		action: output.strict ? (skillRouteIssueCount === 0 ? null : 'mf check --strict') : 'mf doctor --strict --json',
+		status: output.strict ? skillRouteAlignment.status : 'info',
+		summary: output.strict ? skillRouteAlignment.summary : 'not evaluated; run strict doctor',
+		action: output.strict ? skillRouteAlignment.action : 'mf doctor --strict --json',
 	});
 
 	diagnostics.push({

@@ -19,6 +19,9 @@ export const hiMessages = {
   "cli.error.unexpectedArgument": "अनपेक्षित आर्ग्युमेंट: {argument}",
   "cli.error.unexpectedValue": "{option} के लिए अनपेक्षित मान",
   "cli.error.missingValue": "{option} का मान नहीं दिया गया",
+  "value.yes": "हाँ",
+  "value.no": "नहीं",
+  "value.none": "none",
 
   "command.init.summary": "डिफ़ॉल्ट mustflow एजेंट वर्कफ़्लो कॉपी करें",
   "command.check.summary": "mustflow फ़ाइलों की जाँच करें",
@@ -33,6 +36,7 @@ export const hiMessages = {
   "command.dashboard.summary":
     "स्थानीय mustflow डैशबोर्ड शुरू करें",
   "command.versionSources.summary": "पहचाने गए संस्करण स्रोत दिखाएँ",
+  "command.explain.summary": "mustflow नीति निर्णय समझाएँ",
   "command.help.summary": "इंस्टॉल किए गए वर्कफ़्लो की सहायता दिखाएँ",
 
   "top.help.option.lang":
@@ -395,6 +399,25 @@ export const hiMessages = {
   "versionSources.value.enabled": "enabled",
   "versionSources.value.disabled": "disabled",
   "versionSources.noSources": "कोई version source नहीं मिला",
+
+  "explain.help.summary":
+    "फ़ाइलें बदले बिना समझाएँ कि mustflow policy decision क्यों लागू होता है।",
+  "explain.help.exit.ok": "Policy decision जाँचा और प्रिंट किया गया",
+  "explain.title": "mustflow explain",
+  "explain.label.topic": "Topic",
+  "explain.label.decision": "Decision",
+  "explain.label.reason": "Reason",
+  "explain.label.effectiveAction": "Effective action",
+  "explain.label.countsAsMustflowVerification": "mustflow verification माना जाता है",
+  "explain.label.sourceFiles": "Source files",
+  "explain.label.expectedFrontmatter": "Expected frontmatter",
+  "explain.label.commandIntent": "Command intent",
+  "explain.label.commandName": "Command",
+  "explain.label.retentionPolicy": "Retention policy",
+  "explain.label.skillRoutes": "Skill routes",
+  "explain.error.missingTopic": "Explain topic गुम है",
+  "explain.error.missingCommand": "Command intent गुम है",
+  "explain.error.unknownTopic": "अज्ञात explain topic: {topic}",
 
   "update.help.summary":
     "इंस्टॉल किए गए mustflow वर्कफ़्लो के अपडेट का पूर्वावलोकन करें या लागू करें।",

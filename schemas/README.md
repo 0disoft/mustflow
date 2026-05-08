@@ -9,6 +9,9 @@ Current schemas:
 - `context-report.schema.json`: `mf context --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
+- `version-sources-report.schema.json`: `mf version-sources --json`
+- `explain-report.schema.json`: `mf explain authority --json`, `mf explain command --json`,
+  `mf explain retention --json`, and `mf explain skills --json`
 
 These schemas describe stable automation-facing fields. Human-readable command
 output is intentionally not covered.

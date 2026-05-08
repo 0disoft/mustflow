@@ -8,6 +8,7 @@ import { runCheck } from './commands/check.js';
 import { runContext } from './commands/context.js';
 import { runDashboard } from './commands/dashboard.js';
 import { runDoctor } from './commands/doctor.js';
+import { runExplain } from './commands/explain.js';
 import { runHelp } from './commands/help.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index.js';
@@ -52,6 +53,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf context --json',
 				'mf map --write',
 				'mf search mustflow_check',
+				'mf explain authority AGENTS.md',
 				'mf version-sources --json',
 			],
 			exitCodes: [
@@ -191,6 +193,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'version-sources') {
 		return runVersionSources(args, reporter, parsed.lang);
+	}
+
+	if (command === 'explain') {
+		return runExplain(args, reporter, parsed.lang);
 	}
 
 	if (command === 'help') {

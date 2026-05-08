@@ -233,6 +233,8 @@ mf run mustflow_update_apply
 | `mf help <topic>` | Show installed mustflow help. |
 | `mf dashboard` | Start a local dashboard for safe mustflow preferences and refresh the customized lock baseline on save. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
+| `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
+| `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
 
 Automation and agents should use `--json` output instead of parsing human-facing
 text. Published JSON Schemas for stable outputs live in `schemas/`.

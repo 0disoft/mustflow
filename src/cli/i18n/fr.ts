@@ -19,6 +19,9 @@ export const frMessages = {
   "cli.error.unexpectedArgument": "Argument inattendu : {argument}",
   "cli.error.unexpectedValue": "Valeur inattendue pour {option}",
   "cli.error.missingValue": "Valeur manquante pour {option}",
+  "value.yes": "oui",
+  "value.no": "non",
+  "value.none": "aucun",
 
   "command.init.summary": "Copie le flux de travail d'agent mustflow par défaut",
   "command.check.summary": "Valide les fichiers mustflow",
@@ -33,6 +36,7 @@ export const frMessages = {
   "command.dashboard.summary":
     "Démarre le tableau de bord mustflow local",
   "command.versionSources.summary": "Affiche les sources de version détectées",
+  "command.explain.summary": "Explique les décisions de politique mustflow",
   "command.help.summary": "Affiche l'aide du flux de travail installé",
 
   "top.help.option.lang":
@@ -395,6 +399,25 @@ Lisez ces fichiers avant de travailler :
   "versionSources.value.enabled": "activé",
   "versionSources.value.disabled": "désactivé",
   "versionSources.noSources": "Aucune source de version détectée",
+
+  "explain.help.summary":
+    "Explique pourquoi une décision de politique mustflow s'applique sans modifier de fichiers.",
+  "explain.help.exit.ok": "La décision de politique a été inspectée et affichée",
+  "explain.title": "explication mustflow",
+  "explain.label.topic": "Sujet",
+  "explain.label.decision": "Décision",
+  "explain.label.reason": "Raison",
+  "explain.label.effectiveAction": "Action effective",
+  "explain.label.countsAsMustflowVerification": "Compte comme vérification mustflow",
+  "explain.label.sourceFiles": "Fichiers sources",
+  "explain.label.expectedFrontmatter": "Frontmatter attendu",
+  "explain.label.commandIntent": "Intention de commande",
+  "explain.label.commandName": "Commande",
+  "explain.label.retentionPolicy": "Politique de rétention",
+  "explain.label.skillRoutes": "Routage des skills",
+  "explain.error.missingTopic": "Sujet d'explication manquant",
+  "explain.error.missingCommand": "Intention de commande manquante",
+  "explain.error.unknownTopic": "Sujet d'explication inconnu : {topic}",
 
   "update.help.summary":
     "Prévisualise ou applique les mises à jour du flux de travail mustflow installé.",

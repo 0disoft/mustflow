@@ -19,6 +19,9 @@ export const esMessages = {
   "cli.error.unexpectedArgument": "Argumento inesperado: {argument}",
   "cli.error.unexpectedValue": "Valor inesperado para {option}",
   "cli.error.missingValue": "Falta el valor de {option}",
+  "value.yes": "sí",
+  "value.no": "no",
+  "value.none": "ninguno",
 
   "command.init.summary": "Copia el flujo de trabajo de agente mustflow predeterminado",
   "command.check.summary": "Valida los archivos mustflow",
@@ -33,6 +36,7 @@ export const esMessages = {
   "command.dashboard.summary":
     "Inicia el dashboard local de mustflow",
   "command.versionSources.summary": "Muestra fuentes de versión detectadas",
+  "command.explain.summary": "Explica decisiones de política de mustflow",
   "command.help.summary": "Muestra la ayuda del flujo de trabajo instalado",
 
   "top.help.option.lang":
@@ -395,6 +399,25 @@ Lee estos archivos antes de trabajar:
   "versionSources.value.enabled": "activado",
   "versionSources.value.disabled": "desactivado",
   "versionSources.noSources": "No se detectaron fuentes de versión",
+
+  "explain.help.summary":
+    "Explica por qué se aplica una decisión de política de mustflow sin modificar archivos.",
+  "explain.help.exit.ok": "La decisión de política se inspeccionó e imprimió",
+  "explain.title": "explicación mustflow",
+  "explain.label.topic": "Tema",
+  "explain.label.decision": "Decisión",
+  "explain.label.reason": "Razón",
+  "explain.label.effectiveAction": "Acción efectiva",
+  "explain.label.countsAsMustflowVerification": "Cuenta como verificación de mustflow",
+  "explain.label.sourceFiles": "Archivos fuente",
+  "explain.label.expectedFrontmatter": "Frontmatter esperado",
+  "explain.label.commandIntent": "Intención de comando",
+  "explain.label.commandName": "Comando",
+  "explain.label.retentionPolicy": "Política de retención",
+  "explain.label.skillRoutes": "Rutas de skills",
+  "explain.error.missingTopic": "Falta el tema de explicación",
+  "explain.error.missingCommand": "Falta la intención de comando",
+  "explain.error.unknownTopic": "Tema de explicación desconocido: {topic}",
 
   "update.help.summary":
     "Previsualiza o aplica actualizaciones para el flujo de trabajo mustflow instalado.",

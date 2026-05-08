@@ -19,6 +19,9 @@ export const zhMessages = {
   "cli.error.unexpectedArgument": "意外参数：{argument}",
   "cli.error.unexpectedValue": "{option} 的值不符合预期",
   "cli.error.missingValue": "{option} 缺少值",
+  "value.yes": "是",
+  "value.no": "否",
+  "value.none": "无",
 
   "command.init.summary": "复制默认的 mustflow 代理工作流",
   "command.check.summary": "验证 mustflow 文件",
@@ -33,6 +36,7 @@ export const zhMessages = {
   "command.dashboard.summary":
     "启动本地 mustflow 仪表板",
   "command.versionSources.summary": "显示检测到的版本来源",
+  "command.explain.summary": "解释 mustflow 策略决策",
   "command.help.summary": "显示已安装工作流的帮助",
 
   "top.help.option.lang":
@@ -385,6 +389,25 @@ export const zhMessages = {
   "versionSources.value.enabled": "已启用",
   "versionSources.value.disabled": "已禁用",
   "versionSources.noSources": "未检测到版本来源",
+
+  "explain.help.summary":
+    "在不修改文件的情况下解释 mustflow 策略决策为何适用。",
+  "explain.help.exit.ok": "已检查并输出策略决策",
+  "explain.title": "mustflow explain",
+  "explain.label.topic": "主题",
+  "explain.label.decision": "决策",
+  "explain.label.reason": "原因",
+  "explain.label.effectiveAction": "有效操作",
+  "explain.label.countsAsMustflowVerification": "算作 mustflow 验证",
+  "explain.label.sourceFiles": "来源文件",
+  "explain.label.expectedFrontmatter": "预期 frontmatter",
+  "explain.label.commandIntent": "命令意图",
+  "explain.label.commandName": "命令",
+  "explain.label.retentionPolicy": "保留策略",
+  "explain.label.skillRoutes": "技能路由",
+  "explain.error.missingTopic": "缺少 explain 主题",
+  "explain.error.missingCommand": "缺少命令意图",
+  "explain.error.unknownTopic": "未知 explain 主题：{topic}",
 
   "update.help.summary":
     "预览或应用已安装 mustflow 工作流的更新。",
