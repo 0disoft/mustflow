@@ -27,20 +27,8 @@ validations without making agents guess from prose.
 
 - Keep startup reading small and let compact indexes decide what additional
   context, skills, public surfaces, and validation contracts to load.
-- Introduce candidate `changes.toml`, `validations.toml`, `surfaces.toml`, and
-  `artifacts.toml` models.
-- Let translated docs follow an update-or-mark-stale policy.
-- Add public-surface drift checks for docs, template inventory, translations,
-  examples, and contract linting.
-- Track future CLI surfaces: `mf contract-lint` and `mf verify --from-plan <path>`.
+- Track future CLI surface: `mf contract-lint`.
 - Consider a small `policy.toml` only after the surrounding checks are clear.
-
-### M2.10: Version Source Discovery and Release Bump Contracts
-
-Goal: make version-impact reporting work across languages and frameworks
-without assuming every repository stores versions in the same file.
-
-- Refine version-impact severity beyond the initial patch-level decision.
 
 ### M2.11: Local Preferences Dashboard
 
@@ -58,6 +46,92 @@ conversion tools or leaving oversized production assets in website repositories.
 
 - Later, consider a companion `mf explain asset-optimization` or template hint
   once broader skill routing and command explanation are stable.
+
+### M2.14: Source Anchors and Navigation-Only Code Search
+
+Goal: let agents find important source-code locations by meaning without
+turning source comments into workflow instructions, command authority, or a
+parallel documentation system.
+
+Rationale:
+
+- LLM-generated code changes often require fast semantic navigation: "where is
+  authorization resolved", "where is payment state normalized", or "which route
+  maps external webhook events". Plain text search works only when the agent
+  already knows the right symbol or phrase.
+- Free-form "LLM comments" would pollute source files and become stale quickly.
+  mustflow should instead treat source anchors as short, structured navigation
+  coordinates that help agents find code, not as truth about what the code does.
+- Source anchors must have lower authority than `AGENTS.md`,
+  `.mustflow/config/commands.toml`, workflow docs, and skills. A source anchor
+  can explain where to look, but it cannot tell an agent to run, skip, override,
+  or broaden a command.
+- Stale detection cannot rely on a single surrounding-line hash. Nearby text is
+  useful for relocating an anchor after edits, but stale review should separate
+  locator signals, target-symbol signals, body-change signals, semantic cues,
+  and risk class.
+- Inline anchors and separate anchor files serve different needs. Inline anchors
+  are best for precise symbol-level navigation. Separate files are better for
+  cross-file flows, directories, or architecture relationships that would be too
+  verbose inside source comments.
+
+MVP scope:
+
+- Keep source indexing disabled by default.
+- Do not let `mf init`, `mf update`, or any template operation write application
+  source-code anchors automatically.
+- Start with structured inline symbol anchors only. A valid anchor should be
+  short and field-based, such as `mf:anchor`, `purpose`, `search`, `invariant`,
+  and `risk`.
+- Treat every source anchor as `navigation_only = true` and
+  `can_instruct_agent = false`.
+- Extend existing verbs first: `mf index --source`, `mf search --scope source`,
+  `mf search --scope all`, `mf check --strict`, and `mf explain anchor <id>`.
+- In `--scope all`, group workflow and authority results above source
+  navigation hints. Do not let a strong source-anchor text match outrank command
+  contracts or workflow rules.
+- Add a source-anchor table to the local SQLite index without storing full
+  source content by default.
+
+Anchor state model:
+
+- `valid`: anchor fields and target symbol still line up.
+- `moved`: locator text changed, but the same target symbol is found.
+- `changed`: target body changed, but signature, risk, and semantic cues still
+  appear compatible.
+- `review`: high-risk or large changes may affect the anchor's meaning.
+- `stale`: target symbol is gone, attached to the wrong target, or contradicts
+  the anchor invariant.
+- `invalid`: parse failure, duplicate ID, forbidden instruction, secret-like
+  content, generated/vendor path, or invalid risk value.
+
+Strict-check boundaries:
+
+- `mf check --strict` should fail on `invalid` anchors, duplicate IDs, forbidden
+  command or policy instructions, high-confidence secret patterns, generated or
+  vendor anchors, and unknown risk values.
+- Quality issues such as long `purpose`, too many `search` terms, high anchor
+  density, or ordinary target-body changes should be warnings or review items,
+  not immediate blocking errors.
+- High-risk classes such as authorization, personal data, payment, migration,
+  data loss, and security should use lower thresholds for `review`.
+
+Deferred scope:
+
+- Separate `.mustflow/source-anchors.toml` area or flow anchors.
+- Hybrid inline-ID plus external long description anchors.
+- `mf anchors list`, `mf anchors stale`, `mf anchors review`, or similar
+  lifecycle-management commands.
+- Automatic anchor suggestion or source-code modification by mustflow.
+
+Decision rule:
+
+- If the user needs to find a specific function, class, type, route handler, or
+  adapter, prefer an inline source anchor.
+- If the user needs to understand a flow across multiple files or directories,
+  defer to a separate anchor-file design.
+- If an anchor begins to read like prose documentation or an instruction to the
+  agent, it is the wrong format.
 
 ### M3: Core Policy Modules
 

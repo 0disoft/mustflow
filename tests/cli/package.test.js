@@ -9,13 +9,6 @@ import path from 'node:path';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
-const deferredContractConfigFiles = [
-	'.mustflow/config/changes.toml',
-	'.mustflow/config/validations.toml',
-	'.mustflow/config/surfaces.toml',
-	'.mustflow/config/artifacts.toml',
-	'.mustflow/config/policy.toml',
-];
 
 function collectRelativeFiles(directory) {
 	const files = [];
@@ -36,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.28');
+	assert.equal(packageJson.version, '1.15.37');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -110,7 +103,10 @@ test('default template includes complete folders for every supported document lo
 
 test('default template keeps candidate contract config files out of mf init surface', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const contractModelsModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'contract-models.js')).href);
 	const template = templatesModule.getDefaultTemplate();
+	const candidateModels = contractModelsModule.getCandidateContractModelDefinitions();
+	const nonInstalledContractConfigFiles = contractModelsModule.getNonInstalledContractConfigPaths();
 	const templateRoots = [
 		path.join(template.templateRoot, template.manifest.commonRoot),
 		...template.manifest.locales.map((locale) =>
@@ -118,7 +114,10 @@ test('default template keeps candidate contract config files out of mf init surf
 		),
 	];
 
-	for (const relativePath of deferredContractConfigFiles) {
+	assert.deepEqual(candidateModels.map((model) => model.id), ['changes', 'validations', 'surfaces', 'artifacts']);
+	assert.ok(candidateModels.every((model) => model.installByDefault === false));
+
+	for (const relativePath of nonInstalledContractConfigFiles) {
 		assert.equal(
 			template.manifest.creates.includes(relativePath),
 			false,
@@ -210,6 +209,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/commands/dashboard.js'));
 	assert.ok(files.has('dist/cli/commands/update.js'));
 	assert.ok(files.has('dist/cli/commands/verify.js'));
+	assert.ok(files.has('dist/core/contract-models.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
 	assert.ok(files.has('templates/default/i18n.toml'));
 	assert.ok(files.has('dist/cli/lib/template-i18n.js'));
