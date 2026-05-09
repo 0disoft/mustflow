@@ -25,24 +25,16 @@ workflows.
 Goal: classify changes, map affected public surfaces, and derive required
 validations without making agents guess from prose.
 
-- Reinforce command authority boundaries across docs, metadata, strict checks,
-  and command execution.
 - Keep startup reading small and let compact indexes decide what additional
   context, skills, public surfaces, and validation contracts to load.
 - Introduce candidate `changes.toml`, `validations.toml`, `surfaces.toml`, and
   `artifacts.toml` models.
-- Connect `[verification.selection]` preferences to future change
-  classification without letting preferences grant command permission.
 - Let translated docs follow an update-or-mark-stale policy.
 - Add public-surface drift checks for docs, template inventory, translations,
   examples, and contract linting.
 - Track future CLI surfaces: `mf contract-lint`, `mf classify --changed`,
   `mf impact --changed`, and `mf verify --from-plan <path>`.
-- Keep per-task plans or worklogs in ignored local state, not versioned project
-  truth.
 - Consider a small `policy.toml` only after the surrounding checks are clear.
-- Keep `mf init` thin; do not add all candidate contract files to the default
-  installed template at once.
 
 ### M2.10: Version Source Discovery and Release Bump Contracts
 
@@ -54,11 +46,6 @@ without assuming every repository stores versions in the same file.
 - Connect future `mf classify --changed` and `mf impact --changed` output to
   version-related surfaces.
 - Keep lockfile handling conservative unless a repository declares otherwise.
-- Add fixtures for multi-language repositories, tag-based Go releases,
-  duplicate version constants, and docs-only version strings.
-- Ensure dashboard controls only toggle preferences or show detected sources;
-  they must not silently bump versions, commit, tag, or push.
-
 ### M2.11: Local Preferences Dashboard
 
 Goal: provide a small human-facing surface for editing safe mustflow preferences

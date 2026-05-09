@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -9,6 +9,13 @@ import path from 'node:path';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
+const deferredContractConfigFiles = [
+	'.mustflow/config/changes.toml',
+	'.mustflow/config/validations.toml',
+	'.mustflow/config/surfaces.toml',
+	'.mustflow/config/artifacts.toml',
+	'.mustflow/config/policy.toml',
+];
 
 function collectRelativeFiles(directory) {
 	const files = [];
@@ -29,7 +36,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.16');
+	assert.equal(packageJson.version, '1.15.21');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -98,6 +105,33 @@ test('default template includes complete folders for every supported document lo
 	for (const locale of supportedTemplateLocales) {
 		const localeRoot = path.join(localesRoot, locale);
 		assert.deepEqual(collectRelativeFiles(localeRoot), sourceFiles, `${locale} should mirror English template files`);
+	}
+});
+
+test('default template keeps candidate contract config files out of mf init surface', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const template = templatesModule.getDefaultTemplate();
+	const templateRoots = [
+		path.join(template.templateRoot, template.manifest.commonRoot),
+		...template.manifest.locales.map((locale) =>
+			path.join(template.templateRoot, template.manifest.localesRoot, locale),
+		),
+	];
+
+	for (const relativePath of deferredContractConfigFiles) {
+		assert.equal(
+			template.manifest.creates.includes(relativePath),
+			false,
+			`${relativePath} must not be installed by default`,
+		);
+
+		for (const templateRoot of templateRoots) {
+			assert.equal(
+				existsSync(path.join(templateRoot, ...relativePath.split('/'))),
+				false,
+				`${relativePath} must not exist in ${path.relative(projectRoot, templateRoot)}`,
+			);
+		}
 	}
 });
 

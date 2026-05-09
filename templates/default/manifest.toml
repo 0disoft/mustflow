@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "1.15.16"
+version = "1.15.21"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -65,7 +65,15 @@ source = "en"
 scope = "llm_only"
 copied_targets = ["AGENTS.md", ".mustflow/**"]
 managed_targets = [".gitignore"]
-generated_targets = ["REPO_MAP.md", ".mustflow/config/manifest.lock.toml", ".mustflow/state/**"]
+generated_targets = [
+  "REPO_MAP.md",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/state/**",
+  ".mustflow/worklogs/**",
+  ".mustflow/plans/**",
+  ".mustflow/tasks/**",
+  ".mustflow/work-items/**",
+]
 forbidden_targets = [
   "README.md",
   "PROJECT.md",
@@ -131,3 +139,7 @@ default = "abort"
 "REPO_MAP.md" = "prompt"
 ".mustflow/config/manifest.lock.toml" = "regenerate"
 ".mustflow/state/**" = "keep"
+".mustflow/worklogs/**" = "keep"
+".mustflow/plans/**" = "keep"
+".mustflow/tasks/**" = "keep"
+".mustflow/work-items/**" = "keep"
