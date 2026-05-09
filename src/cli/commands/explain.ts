@@ -151,6 +151,24 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		);
 	}
 
+	if ('boundary' in output.decision) {
+		lines.push('', t(lang, 'explain.label.authorityBoundary'), `- role: ${output.decision.boundary.role}`);
+
+		if (output.decision.boundary.canDefine.length > 0) {
+			lines.push(`- ${t(lang, 'explain.label.canDefine')}:`);
+			for (const item of output.decision.boundary.canDefine) {
+				lines.push(`  - ${item}`);
+			}
+		}
+
+		if (output.decision.boundary.cannotDefine.length > 0) {
+			lines.push(`- ${t(lang, 'explain.label.cannotDefine')}:`);
+			for (const item of output.decision.boundary.cannotDefine) {
+				lines.push(`  - ${item}`);
+			}
+		}
+	}
+
 	if ('intent' in output.decision && output.decision.intent) {
 		const intent = output.decision.intent;
 		lines.push(

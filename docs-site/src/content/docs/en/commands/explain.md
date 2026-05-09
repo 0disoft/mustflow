@@ -25,6 +25,7 @@ Without a path, the command prints the authority model. With a path, it reports 
 - `Counts as mustflow verification`: Whether the command result is a verification receipt.
 - `Source files`: Files that define the rule source.
 - `Expected frontmatter`: Required `mustflow_doc`, `authority`, and `lifecycle` values when the path is recognized.
+- `Authority boundary`: What the authority lane may define and what it must leave to higher-authority files, current code, or `commands.toml`.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
 - `Skill route`: Trigger, scope, risk, checks, and expected output when the `skill` topic is used.
@@ -58,7 +59,7 @@ Machine-readable output uses these fields:
 - `command` (`string`): Always `explain`.
 - `topic` (`string`): `authority`, `command`, `retention`, `skill`, or `skills`.
 - `mustflow_root` (`string`): Current mustflow root.
-- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details.
+- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`.
 
 ## Help and Exit Codes
 

@@ -4,6 +4,12 @@ export interface ManagedMarkdownExpectation {
 	readonly lifecycle: string;
 }
 
+export interface AuthorityBoundary {
+	readonly role: string;
+	readonly canDefine: readonly string[];
+	readonly cannotDefine: readonly string[];
+}
+
 export type AuthorityDecisionKind = 'overview' | 'recognized' | 'unrecognized';
 
 export interface AuthorityDecision {
@@ -15,6 +21,7 @@ export interface AuthorityDecision {
 	readonly countsAsMustflowVerification: boolean;
 	readonly sourceFiles: readonly string[];
 	readonly expectation: ManagedMarkdownExpectation | null;
+	readonly boundary: AuthorityBoundary;
 }
 
 const STATIC_MANAGED_MARKDOWN_EXPECTATIONS: Record<string, ManagedMarkdownExpectation> = {
@@ -86,6 +93,59 @@ export function formatManagedMarkdownLabel(relativePath: string, expectation: Ma
 	return `${expectation.docId} (${toPosixPath(relativePath)})`;
 }
 
+function getAuthorityBoundary(authority: string): AuthorityBoundary {
+	switch (authority) {
+		case 'binding':
+			return {
+				role: 'binding repository instruction entry point',
+				canDefine: ['repository-local work rules', 'read order', 'delegation to mustflow workflow files'],
+				cannotDefine: ['host safety overrides', 'command execution permission outside commands.toml', 'facts that contradict current files'],
+			};
+		case 'workflow-policy':
+			return {
+				role: 'shared agent workflow policy',
+				canDefine: ['agent operating loop', 'refresh checkpoints', 'verification and reporting policy'],
+				cannotDefine: ['executable command permission', 'project product facts', 'host safety overrides'],
+			};
+		case 'router':
+			return {
+				role: 'routing index',
+				canDefine: ['which context or skill document to read', 'compact routing metadata'],
+				cannotDefine: ['procedure steps', 'command permission', 'project policy not owned by the router'],
+			};
+		case 'contextual':
+			return {
+				role: 'low-authority project context',
+				canDefine: ['supported project facts', 'known unknowns', 'domain conventions'],
+				cannotDefine: ['command policy', 'file edit prohibitions', 'facts that override code tests or user instructions'],
+			};
+		case 'procedure':
+			return {
+				role: 'repeatable task procedure',
+				canDefine: ['task trigger', 'allowed edit scope', 'verification and reporting shape'],
+				cannotDefine: ['command execution permission', 'repository-wide binding rules', 'facts outside the procedure scope'],
+			};
+		default:
+			return getUnrecognizedBoundary();
+	}
+}
+
+function getOverviewBoundary(): AuthorityBoundary {
+	return {
+		role: 'managed Markdown authority model',
+		canDefine: ['document authority lanes', 'expected frontmatter identity', 'which source should answer which class of question'],
+		cannotDefine: ['runtime command permission outside commands.toml', 'host safety overrides', 'project facts unsupported by current files'],
+	};
+}
+
+function getUnrecognizedBoundary(): AuthorityBoundary {
+	return {
+		role: 'unclassified by mustflow managed Markdown authority',
+		canDefine: [],
+		cannotDefine: ['mustflow document authority', 'command execution permission', 'workflow policy by path alone'],
+	};
+}
+
 export function explainManagedMarkdownAuthority(relativePath?: string): AuthorityDecision {
 	const sourceFiles = [
 		'AGENTS.md',
@@ -104,6 +164,7 @@ export function explainManagedMarkdownAuthority(relativePath?: string): Authorit
 			countsAsMustflowVerification: false,
 			sourceFiles,
 			expectation: null,
+			boundary: getOverviewBoundary(),
 		};
 	}
 
@@ -120,6 +181,7 @@ export function explainManagedMarkdownAuthority(relativePath?: string): Authorit
 			countsAsMustflowVerification: false,
 			sourceFiles,
 			expectation: null,
+			boundary: getUnrecognizedBoundary(),
 		};
 	}
 
@@ -132,5 +194,6 @@ export function explainManagedMarkdownAuthority(relativePath?: string): Authorit
 		countsAsMustflowVerification: false,
 		sourceFiles,
 		expectation,
+		boundary: getAuthorityBoundary(expectation.authority),
 	};
 }

@@ -25,6 +25,7 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 - `Counts as mustflow verification`: si el resultado cuenta como recibo de verificación.
 - `Source files`: archivos que definen la fuente de la regla.
 - `Expected frontmatter`: valores requeridos de `mustflow_doc`, `authority` y `lifecycle` cuando la ruta se reconoce.
+- `Authority boundary`: lo que esa autoridad puede definir y lo que debe dejar a archivos de mayor autoridad, al código actual o a `commands.toml`.
 - `Command intent`: metadatos del contrato de comando cuando se usa el tema `command`.
 - `Retention policy`: ajustes de retención efectivos cuando se usa el tema `retention`.
 - `Skill route`: disparador, alcance, riesgo, verificaciones y salida esperada cuando se usa el tema `skill`.
@@ -58,7 +59,7 @@ La salida legible por máquinas usa estos campos:
 - `command` (`string`): siempre `explain`.
 - `topic` (`string`): `authority`, `command`, `retention`, `skill` o `skills`.
 - `mustflow_root` (`string`): raíz mustflow actual.
-- `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema.
+- `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema. Para `authority`, incluye `boundary.role`, `boundary.canDefine` y `boundary.cannotDefine`.
 
 ## Ayuda y códigos de salida
 

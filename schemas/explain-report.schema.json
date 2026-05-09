@@ -38,7 +38,8 @@
         "effectiveAction",
         "countsAsMustflowVerification",
         "sourceFiles",
-        "expectation"
+        "expectation",
+        "boundary"
       ],
       "properties": {
         "kind": { "enum": ["overview", "recognized", "unrecognized"] },
@@ -59,6 +60,22 @@
             "docId": { "type": "string" },
             "authority": { "type": "string" },
             "lifecycle": { "type": "string" }
+          }
+        },
+        "boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "canDefine", "cannotDefine"],
+          "properties": {
+            "role": { "type": "string" },
+            "canDefine": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "cannotDefine": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
           }
         }
       }

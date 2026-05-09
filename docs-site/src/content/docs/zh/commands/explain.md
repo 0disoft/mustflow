@@ -25,6 +25,7 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 - `Counts as mustflow verification`：该命令结果是否算作验证回执。
 - `Source files`：定义规则来源的文件。
 - `Expected frontmatter`：路径被识别时所需的 `mustflow_doc`、`authority` 和 `lifecycle` 值。
+- `Authority boundary`：该权威范围可以定义什么，以及必须交给更高权威文件、当前代码或 `commands.toml` 的内容。
 - `Command intent`：使用 `command` 主题时的命令契约元数据。
 - `Retention policy`：使用 `retention` 主题时的有效保留设置。
 - `Skill route`：使用 `skill` 主题时的触发条件、范围、风险、验证和预期输出。
@@ -58,7 +59,7 @@ npx mf explain authority AGENTS.md --json
 - `command` (`string`)：始终为 `explain`。
 - `topic` (`string`)：`authority`、`command`、`retention`、`skill` 或 `skills`。
 - `mustflow_root` (`string`)：当前 mustflow 根目录。
-- `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。
+- `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。对于 `authority`，还包括 `boundary.role`、`boundary.canDefine` 和 `boundary.cannotDefine`。
 
 ## 帮助和退出码
 

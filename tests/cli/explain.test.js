@@ -50,6 +50,9 @@ test('explains managed AGENTS authority as json', () => {
 			authority: 'binding',
 			lifecycle: 'user-editable',
 		});
+		assert.equal(report.decision.boundary.role, 'binding repository instruction entry point');
+		assert.ok(report.decision.boundary.canDefine.includes('repository-local work rules'));
+		assert.ok(report.decision.boundary.cannotDefine.includes('command execution permission outside commands.toml'));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -66,6 +69,10 @@ test('explains managed skill index authority as text', () => {
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /expected skills\.index with router authority/);
 		assert.match(result.stdout, /mustflow_doc: skills\.index/);
+		assert.match(result.stdout, /Authority boundary/);
+		assert.match(result.stdout, /routing index/);
+		assert.match(result.stdout, /Cannot define/);
+		assert.match(result.stdout, /procedure steps/);
 		assert.match(result.stdout, /Counts as mustflow verification: no/);
 	} finally {
 		removeTempProject(projectPath);
@@ -85,6 +92,8 @@ test('reports unrecognized authority paths without granting document authority',
 		assert.equal(report.decision.kind, 'unrecognized');
 		assert.equal(report.decision.inputPath, 'README.md');
 		assert.equal(report.decision.expectation, null);
+		assert.equal(report.decision.boundary.role, 'unclassified by mustflow managed Markdown authority');
+		assert.ok(report.decision.boundary.cannotDefine.includes('mustflow document authority'));
 		assert.equal(report.decision.countsAsMustflowVerification, false);
 	} finally {
 		removeTempProject(projectPath);

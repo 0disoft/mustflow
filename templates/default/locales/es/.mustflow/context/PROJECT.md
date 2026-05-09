@@ -20,6 +20,16 @@ source_refs:
 Este archivo documenta contexto especifico del proyecto para agentes de codificacion.
 Si un campo es desconocido, dejalo sin completar; no supongas ni inventes detalles.
 
+## Limites De Autoridad
+
+- Este archivo puede registrar contexto respaldado, incognitas y conflictos.
+- No debe conceder permiso para ejecutar comandos, definir prohibiciones de
+  edicion de archivos, reemplazar `AGENTS.md` o `.mustflow/config/*.toml`, ni
+  prometer funciones que no esten respaldadas por las fuentes actuales.
+- Mueve las reglas operativas duraderas a `AGENTS.md`,
+  `.mustflow/docs/agent-workflow.md` o al archivo de configuracion correspondiente
+  en lugar de guardarlas aqui.
+
 ## Objetivo Actual
 
 Sin definir. Sustituye esto por el objetivo actual del proyecto cuando la persona responsable lo proporcione.

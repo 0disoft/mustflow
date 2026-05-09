@@ -20,6 +20,15 @@ source_refs:
 This file documents project-specific context for coding agents.
 If a field is unknown, leave it unset; do not assume or fabricate details.
 
+## Authority Boundaries
+
+- This file may record supported context, unknowns, and conflicts.
+- It must not grant command permission, define file-edit prohibitions, override
+  `AGENTS.md` or `.mustflow/config/*.toml`, or promise features not backed by
+  current sources.
+- Move durable operating rules to `AGENTS.md`, `.mustflow/docs/agent-workflow.md`,
+  or the matching configuration file instead of storing them here.
+
 ## Current Goal
 
 Unset. Replace this with the current project goal when the project owner provides it.

@@ -25,6 +25,7 @@ Sans chemin, la commande affiche le modèle d'autorité. Avec un chemin, elle in
 - `Counts as mustflow verification` : indique si le résultat compte comme reçu de vérification.
 - `Source files` : fichiers qui définissent la source de la règle.
 - `Expected frontmatter` : valeurs `mustflow_doc`, `authority` et `lifecycle` requises quand le chemin est reconnu.
+- `Authority boundary` : ce que cette autorité peut définir et ce qu'elle doit laisser aux fichiers de plus haute autorité, au code actuel ou à `commands.toml`.
 - `Command intent` : métadonnées du contrat de commande quand le sujet `command` est utilisé.
 - `Retention policy` : paramètres de rétention effectifs quand le sujet `retention` est utilisé.
 - `Skill route` : déclencheur, périmètre, risque, vérifications et sortie attendue quand le sujet `skill` est utilisé.
@@ -58,7 +59,7 @@ La sortie lisible par machine utilise ces champs :
 - `command` (`string`) : toujours `explain`.
 - `topic` (`string`) : `authority`, `command`, `retention`, `skill` ou `skills`.
 - `mustflow_root` (`string`) : racine mustflow actuelle.
-- `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet.
+- `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet. Pour `authority`, inclut `boundary.role`, `boundary.canDefine` et `boundary.cannotDefine`.
 
 ## Aide et codes de sortie
 
