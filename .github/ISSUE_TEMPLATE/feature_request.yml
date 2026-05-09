@@ -1,0 +1,49 @@
+name: Feature request
+description: Propose a focused mustflow improvement.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        mustflow is a repository-local workflow contract, not an autonomous agent runtime.
+        Keep proposals focused on CLI behavior, installed workflow files, schemas, docs, or maintainer workflow.
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What workflow problem should this solve?
+      placeholder: Agents need to understand ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the smallest useful behavior or document change.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Public surface
+      options:
+        - CLI command
+        - Installed template
+        - Command contract
+        - Skill or context routing
+        - JSON schema
+        - Documentation site
+        - Repository maintenance
+        - Unsure
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundary checks
+      options:
+        - label: This does not require `mf init` to generate application source code.
+        - label: This does not require `mf init` to generate CI or platform-specific files by default.
+        - label: This keeps command execution authority in `.mustflow/config/commands.toml`.

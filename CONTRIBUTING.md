@@ -77,6 +77,10 @@ Pull request descriptions should include:
 - Checks intentionally skipped and why
 - Screenshots only when a user interface changed
 
+Repository CI runs the CLI package check and the documentation site check on
+pull requests and pushes to `main`. Keep pull requests small enough that a
+failing check points to one likely cause.
+
 ## Release Notes
 
 When a change affects CLI behavior, installed templates, package metadata,

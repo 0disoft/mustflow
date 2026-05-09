@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a mustflow bug with a focused reproduction.
+title: "fix: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for bugs in the mustflow CLI, installed workflow files, schemas, docs, or repository tooling.
+        Do not include secrets, private repository content, or raw sensitive logs.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+      placeholder: mf check reports ... but I expected ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Minimal steps or a small public fixture that reproduces the issue.
+      placeholder: |
+        1. Run ...
+        2. Open ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: mustflow version
+      description: Use `mf --version` when available.
+      placeholder: 1.7.0
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI command
+        - Installed template
+        - Command contract
+        - Skill or context routing
+        - JSON schema
+        - Documentation site
+        - Repository maintenance
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Commands or configured mustflow intents you ran.
+      placeholder: mf run mustflow_check
+    validations:
+      required: false
