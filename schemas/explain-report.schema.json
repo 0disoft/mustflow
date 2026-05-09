@@ -55,7 +55,15 @@
         "surface": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "category", "isPublicSurface", "validationReasons", "affectedContracts"],
+          "required": [
+            "kind",
+            "category",
+            "isPublicSurface",
+            "validationReasons",
+            "affectedContracts",
+            "updatePolicy",
+            "driftChecks"
+          ],
           "properties": {
             "kind": { "type": "string" },
             "category": { "type": "string" },
@@ -65,6 +73,11 @@
               "items": { "type": "string" }
             },
             "affectedContracts": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "updatePolicy": { "enum": ["update", "update_or_mark_stale", "not_applicable"] },
+            "driftChecks": {
               "type": "array",
               "items": { "type": "string" }
             }

@@ -15,6 +15,8 @@ Without a path, the command prints the authority model. With a path, it reports 
 
 `mf explain skills` explains the strict skill index/body alignment summary used by `mf doctor --strict`. It reports whether every `.mustflow/skills/INDEX.md` route points to a skill body and whether every skill body is listed in the index.
 
+`mf explain surface [path]` explains how a repository-relative path maps to the public surface contract used by change classification. It reports the surface kind, validation reasons, affected contracts, update policy, and drift checks without running verification.
+
 ## Output
 
 - `mustflow root`: Current mustflow root.
@@ -30,6 +32,7 @@ Without a path, the command prints the authority model. With a path, it reports 
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
 - `Skill route`: Trigger, scope, risk, checks, and expected output when the `skill` topic is used.
 - `Skill routes`: Strict skill index/body alignment status when the `skills` topic is used.
+- `Public surface`: Surface kind, category, validation reasons, affected contracts, update policy, and drift checks when the `surface` topic is used.
 
 ## Examples
 
@@ -44,6 +47,8 @@ npx mf explain skill code-review
 npx mf explain skill mustflow.core.code-review --json
 npx mf explain skills
 npx mf explain skills --json
+npx mf explain surface README.md
+npx mf explain surface templates/default/locales/ko/AGENTS.md --json
 npx mf explain authority .mustflow/skills/INDEX.md --json
 ```
 
@@ -57,7 +62,7 @@ Machine-readable output uses these fields:
 
 - `schema_version` (`string`): Output format version.
 - `command` (`string`): Always `explain`.
-- `topic` (`string`): `authority`, `command`, `retention`, `skill`, or `skills`.
+- `topic` (`string`): `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
 - `mustflow_root` (`string`): Current mustflow root.
 - `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`.
 

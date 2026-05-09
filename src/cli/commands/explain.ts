@@ -274,6 +274,8 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 			`- is_public_surface: ${surface.isPublicSurface ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
 			`- ${t(lang, 'explain.label.validationReasons')}: ${surface.validationReasons.join(', ') || t(lang, 'value.none')}`,
 			`- ${t(lang, 'explain.label.affectedContracts')}: ${surface.affectedContracts.join(', ') || t(lang, 'value.none')}`,
+			`- ${t(lang, 'classify.label.updatePolicy')}: ${surface.updatePolicy}`,
+			`- ${t(lang, 'classify.label.driftChecks')}: ${surface.driftChecks.join(', ') || t(lang, 'value.none')}`,
 		);
 	}
 
