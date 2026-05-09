@@ -98,6 +98,7 @@ export const koMessages = {
   "label.commandIntents": "명령 의도",
   "label.wroteFiles": "작성된 파일",
   "label.query": "검색어",
+  "label.scope": "범위",
   "label.results": "결과",
   "label.comment": "코멘트",
 
@@ -494,6 +495,7 @@ export const koMessages = {
   "index.help.summary":
     "mustflow 워크플로우를 SQLite 색인으로 생성합니다.",
   "index.help.option.dryRun": "색인 대상만 계산하고 파일을 쓰지 않습니다",
+  "index.help.option.source": "소스 본문을 저장하지 않고 구조화된 소스 코드 앵커를 포함합니다",
   "index.help.exit.ok":
     "색인 대상을 계산했고 선택적으로 SQLite 파일을 저장했습니다",
   "index.title": "mustflow 색인",
@@ -619,10 +621,15 @@ export const koMessages = {
     "로컬 SQLite 색인에서 mustflow 워크플로우를 검색합니다.",
   "search.help.option.limit":
     "출력할 검색 결과 수를 설정합니다. 기본값: 10, 최대: 50",
+  "search.help.option.scope":
+    "색인된 워크플로 데이터, 소스 앵커, 또는 둘 다를 선택합니다. 기본값: workflow",
   "search.help.exit.ok": "검색을 완료했습니다",
   "search.help.exit.fail": "잘못된 입력이 있거나 로컬 색인이 없습니다",
   "search.error.missingLimit": "--limit 값이 없습니다",
   "search.error.invalidLimit": "--limit는 1 이상 50 이하의 정수여야 합니다",
+  "search.error.missingScope": "--scope 값이 없습니다",
+  "search.error.invalidScope":
+    '지원하지 않는 검색 범위 "{scope}"입니다. workflow, source, all 중 하나를 사용하세요',
   "search.error.missingQuery": "검색어가 필요합니다",
   "search.title": "mustflow 검색",
   "search.noMatches": "일치하는 항목이 없습니다.",
@@ -726,6 +733,7 @@ export const koMessages = {
   "explain.error.missingTopic": "설명할 주제가 없습니다",
   "explain.error.missingCommand": "설명할 명령 의도가 없습니다",
   "explain.error.missingSkill": "설명할 스킬 식별자가 없습니다",
+  "explain.error.missingAnchor": "설명할 소스 앵커 식별자가 없습니다",
   "explain.error.unknownTopic": "알 수 없는 설명 주제: {topic}",
 
   "update.help.summary":

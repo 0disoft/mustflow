@@ -32,6 +32,9 @@ npx mf check --strict
 
 - Managed mustflow Markdown files must keep the expected `mustflow_doc`, `locale`, `canonical`, `revision`, `authority`, and `lifecycle` frontmatter shape for their path. Related issues include both the logical document id and relative path.
 - Context documents must not claim to override direct user instructions, current code, tests, or command contracts.
+- Source anchors must stay structured navigation hints. Strict mode fails malformed anchor declarations, duplicate anchor IDs, agent command or policy instructions inside anchors, secret-like anchor text, anchors in generated or vendor paths, and unknown risk tags.
+- Source anchor quality signals such as long `purpose` text, too many `search` terms, or high anchor density are emitted as warnings and do not fail the check.
+- Source anchors tagged with high-risk classes such as authorization, personal data, payment, migration, data loss, secrets, or security use lower warning thresholds and are marked for review when the anchor lacks an `invariant`.
 - `.mustflow/skills/INDEX.md` and `.mustflow/context/INDEX.md` must remain routing indexes rather than procedure documents.
 - `.mustflow/skills/INDEX.md` routes must point to existing `SKILL.md` files, and every installed skill must be listed.
 - `SKILL.md` frontmatter must use `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure`, and a `name` matching its `.mustflow/skills/<name>/` folder.
@@ -45,11 +48,11 @@ Strict mode is optional to ensure the normal workflow remains lightweight. It is
 
 ## Error and Warning Classification
 
-`mf check` treats structural violations as blocking errors. A reported issue always exits with code `1`.
+`mf check` treats structural violations as blocking errors. Blocking issues exit with code `1`; warnings are reported separately and do not fail the command.
 
 - Base errors come from required files, parse failures, unsafe configuration values, command-contract violations, missing skill section identifiers, invalid context document identity, and manifest-lock drift.
-- Strict errors come from additional document identity, routing, skill metadata, command-boundary, repository-map, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
-- Non-blocking observations are not emitted as `mf check` issues. Use `mf doctor` diagnostics when automation needs informational or warning-level health signals.
+- Strict errors come from additional document identity, routing, skill metadata, source-anchor, command-boundary, repository-map, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
+- Non-blocking observations may appear as `warnings` in JSON output or as warning lines in human-readable output. Use `mf doctor` diagnostics when automation needs broader informational health signals.
 
 ## Configuration Rules
 
@@ -119,9 +122,11 @@ Machine-readable output uses these fields:
 - `strict` (`boolean`): Whether `--strict` checks were enabled.
 - `issueCount` (`number`): Number of issues found.
 - `issues` (`string[]`): Human-readable issue messages.
-- `issueDetails` (`object[]`): Machine-readable issue details. `id` is a stable identifier for command-boundary and related strict checks when one applies, `severity` is currently `error` for every blocking check issue, `mode` is `base` or `strict`, and `message` mirrors `issues`.
+- `warningCount` (`number`): Number of non-blocking warnings found.
+- `warnings` (`string[]`): Human-readable warning messages.
+- `issueDetails` (`object[]`): Machine-readable issue and warning details. `id` is a stable identifier for command-boundary and related strict checks when one applies, `severity` is `error` or `warning`, `mode` is `base` or `strict`, and `message` mirrors the corresponding entry from `issues` or `warnings`.
 
-When issues are found, the JSON form also exits with code `1`.
+When blocking issues are found, the JSON form also exits with code `1`. Warnings alone keep exit code `0`.
 
 ## Help and Exit Codes
 

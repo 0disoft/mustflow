@@ -77,6 +77,7 @@ npx mf update --apply
 
 existing file update करने से पहले, mustflow `.mustflow/backups/<timestamp>/` के अंतर्गत backup लिखता है।
 changes apply करने के बाद, यह `.mustflow/config/manifest.lock.toml` में affected entries को नए hash और `last_action` के साथ refresh करता है।
+यदि bundled template manifest `AGENTS.md` और `.mustflow/**` के बाहर target list करता है, तो update planning किसी भी write से पहले fail हो जाती है।
 
 यदि newly added template file user repository में पहले से मौजूद है, lock file में दर्ज नहीं है, और उसका content अलग है, तो mustflow उसे local change मानता है और overwrite करने से मना करता है।
 

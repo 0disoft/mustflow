@@ -77,6 +77,7 @@ npx mf update --apply
 
 mustflow crea una copia de seguridad en `.mustflow/backups/<timestamp>/` antes de modificar cualquier archivo existente.
 Después de aplicar los cambios, actualiza las entradas correspondientes en `.mustflow/config/manifest.lock.toml` con hashes nuevos y el estado `last_action`.
+Si el manifest de la plantilla incluida enumera un destino fuera de `AGENTS.md` y `.mustflow/**`, la planificación de actualización falla antes de cualquier escritura.
 
 Si un archivo de plantilla recién introducido ya existe en el repositorio pero no está registrado en el archivo de bloqueo, mustflow lo trata como un cambio local y se niega a sobrescribirlo si el contenido difiere.
 

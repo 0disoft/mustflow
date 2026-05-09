@@ -43,6 +43,23 @@ function markLockedFileCustomized(projectPath, relativePath, content) {
 	writeFileSync(lockPath, updatedLock);
 }
 
+function addTemplateCreate(templatePath, relativePath, content) {
+	const manifestPath = path.join(templatePath, 'manifest.toml');
+
+	writeFileSync(
+		manifestPath,
+		readFileSync(manifestPath, 'utf8').replace(
+			'  ".mustflow/docs/agent-workflow.md",',
+			`  ".mustflow/docs/agent-workflow.md",\n  "${relativePath}",`,
+		),
+	);
+
+	const sourcePath = path.join(templatePath, 'common', ...relativePath.split('/'));
+
+	mkdirSync(path.dirname(sourcePath), { recursive: true });
+	writeFileSync(sourcePath, content);
+}
+
 test('prints an update dry-run plan for an up-to-date project', () => {
 	const projectPath = createTempProject();
 
@@ -261,18 +278,9 @@ test('applies newly added template files when local files are clean', () => {
 	try {
 		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
-		const manifestPath = path.join(templatePath, 'manifest.toml');
 		const newRelativePath = '.mustflow/docs/new-guide.md';
 		const newContent = '# New Guide\n\nTemplate-added file.\n';
-		writeFileSync(
-			manifestPath,
-			readFileSync(manifestPath, 'utf8').replace(
-				'  ".mustflow/docs/agent-workflow.md",',
-				'  ".mustflow/docs/agent-workflow.md",\n  ".mustflow/docs/new-guide.md",',
-			),
-		);
-		mkdirSync(path.join(templatePath, 'common', '.mustflow', 'docs'), { recursive: true });
-		writeFileSync(path.join(templatePath, 'common', ...newRelativePath.split('/')), newContent);
+		addTemplateCreate(templatePath, newRelativePath, newContent);
 
 		const result = runCli(projectPath, ['update', '--apply', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
@@ -292,6 +300,35 @@ test('applies newly added template files when local files are clean', () => {
 		assert.match(lock, /\[files\.".mustflow\/docs\/new-guide.md"\]/);
 		assert.match(lock, /last_action = "created"/);
 		assert.match(lock, new RegExp(`content_hash = "${sha256Text(newContent)}"`));
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('refuses template creates outside the mustflow install surface during update', () => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		addTemplateCreate(
+			templatePath,
+			'src/anchored.ts',
+			'// mf:anchor app.generated\nexport const generated = true;\n',
+		);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--json'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+		});
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(output.ok, false);
+		assert.match(output.error, /outside the mustflow-managed install surface/);
+		assert.equal(output.wroteFiles, false);
+		assert.equal(existsSync(path.join(projectPath, 'src', 'anchored.ts')), false);
 	} finally {
 		removeTempProject(projectPath);
 		rmSync(templatePath, { recursive: true, force: true });

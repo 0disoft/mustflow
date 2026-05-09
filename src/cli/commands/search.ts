@@ -1,12 +1,13 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang, type MessageKey, type MessageParams } from '../lib/i18n.js';
-import { searchLocalIndex, type LocalSearchResult } from '../lib/local-index.js';
+import { searchLocalIndex, type LocalSearchResult, type LocalSearchScope } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
 interface ParsedSearchOptions {
 	readonly query: string;
 	readonly limit: number;
+	readonly scope: LocalSearchScope;
 	readonly json: boolean;
 	readonly error?: { readonly key: MessageKey; readonly params?: MessageParams };
 }
@@ -21,10 +22,20 @@ export function getSearchHelp(lang: CliLang = 'en'): string {
 					label: '--limit <number>',
 					description: t(lang, 'search.help.option.limit'),
 				},
+				{
+					label: '--scope <workflow|source|all>',
+					description: t(lang, 'search.help.option.scope'),
+				},
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf index', 'mf search mustflow_check', 'mf search "code review" --json', 'mf search test --limit 5'],
+			examples: [
+				'mf index',
+				'mf index --source',
+				'mf search mustflow_check',
+				'mf search "role mapping" --scope source',
+				'mf search test --limit 5',
+			],
 			exitCodes: [
 				{
 					label: '0',
@@ -43,6 +54,7 @@ export function getSearchHelp(lang: CliLang = 'en'): string {
 function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 	const queryParts: string[] = [];
 	let limit = 10;
+	let scope: LocalSearchScope = 'workflow';
 	let json = false;
 
 	for (let index = 0; index < args.length; index += 1) {
@@ -61,13 +73,13 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 			const rawLimit = args[index + 1];
 
 			if (!rawLimit || rawLimit.startsWith('-')) {
-				return { query: '', limit, json, error: { key: 'search.error.missingLimit' } };
+				return { query: '', limit, scope, json, error: { key: 'search.error.missingLimit' } };
 			}
 
 			const parsedLimit = Number.parseInt(rawLimit, 10);
 
 			if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-				return { query: '', limit, json, error: { key: 'search.error.invalidLimit' } };
+				return { query: '', limit, scope, json, error: { key: 'search.error.invalidLimit' } };
 			}
 
 			limit = parsedLimit;
@@ -80,15 +92,54 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 			const parsedLimit = Number.parseInt(rawLimit, 10);
 
 			if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-				return { query: '', limit, json, error: { key: 'search.error.invalidLimit' } };
+				return { query: '', limit, scope, json, error: { key: 'search.error.invalidLimit' } };
 			}
 
 			limit = parsedLimit;
 			continue;
 		}
 
+		if (arg === '--scope') {
+			const rawScope = args[index + 1];
+
+			if (!rawScope || rawScope.startsWith('-')) {
+				return { query: '', limit, scope, json, error: { key: 'search.error.missingScope' } };
+			}
+
+			if (!isSearchScope(rawScope)) {
+				return {
+					query: '',
+					limit,
+					scope,
+					json,
+					error: { key: 'search.error.invalidScope', params: { scope: rawScope } },
+				};
+			}
+
+			scope = rawScope;
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith('--scope=')) {
+			const rawScope = arg.slice('--scope='.length);
+
+			if (!isSearchScope(rawScope)) {
+				return {
+					query: '',
+					limit,
+					scope,
+					json,
+					error: { key: 'search.error.invalidScope', params: { scope: rawScope } },
+				};
+			}
+
+			scope = rawScope;
+			continue;
+		}
+
 		if (arg.startsWith('-')) {
-			return { query: '', limit, json, error: { key: 'cli.error.unknownOption', params: { option: arg } } };
+			return { query: '', limit, scope, json, error: { key: 'cli.error.unknownOption', params: { option: arg } } };
 		}
 
 		queryParts.push(arg);
@@ -97,23 +148,30 @@ function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
 	const query = queryParts.join(' ').trim();
 
 	if (query.length === 0) {
-		return { query, limit, json, error: { key: 'search.error.missingQuery' } };
+		return { query, limit, scope, json, error: { key: 'search.error.missingQuery' } };
 	}
 
-	return { query, limit, json };
+	return { query, limit, scope, json };
+}
+
+function isSearchScope(value: string): value is LocalSearchScope {
+	return value === 'workflow' || value === 'source' || value === 'all';
 }
 
 function renderSearchSummary(result: LocalSearchResult, lang: CliLang): string {
 	const lines = [
 		t(lang, 'search.title'),
 		`${t(lang, 'label.query')}: ${result.query}`,
+		`${t(lang, 'label.scope')}: ${result.scope}`,
 		`${t(lang, 'label.results')}: ${result.result_count}`,
 	];
 
 	for (const item of result.results) {
 		const target = item.path ?? item.name ?? item.title ?? item.kind;
 		const title = item.title && item.title !== target ? ` — ${item.title}` : '';
-		lines.push(`- [${item.kind}] ${target}${title}`);
+		const line = item.line_start ? `${target}:${item.line_start}` : target;
+		lines.push(`- [${item.kind}] ${line}${title}`);
+		lines.push(`  ${item.authority_label}; navigation_only=${String(item.navigation_only)}`);
 		lines.push(`  ${item.match}`);
 	}
 
@@ -138,7 +196,7 @@ export async function runSearch(args: string[], reporter: Reporter, lang: CliLan
 	}
 
 	try {
-		const result = await searchLocalIndex(resolveMustflowRoot(), options.query, { limit: options.limit });
+		const result = await searchLocalIndex(resolveMustflowRoot(), options.query, { limit: options.limit, scope: options.scope });
 
 		if (options.json) {
 			reporter.stdout(JSON.stringify(result, null, 2));

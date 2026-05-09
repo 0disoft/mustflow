@@ -79,6 +79,7 @@ Mustflow creates a backup in `.mustflow/backups/<timestamp>/` before modifying a
 Once changes are applied, it updates the corresponding entries in `.mustflow/config/manifest.lock.toml` with new hashes and the `last_action` state.
 
 If a template file being newly introduced already exists in the repository but is not tracked in the lock file, mustflow treats it as a local change and will refuse to overwrite it if the content differs.
+If the bundled template manifest lists a target outside `AGENTS.md` and `.mustflow/**`, update planning fails before any write.
 
 ## JSON Fields
 

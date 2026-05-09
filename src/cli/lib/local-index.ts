@@ -6,8 +6,9 @@ import path from 'node:path';
 import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { readTomlFile } from './toml.js';
+import { collectSourceAnchorSummaries, type SourceAnchorSummary } from '../../core/source-anchor-explanation.js';
 
-const LOCAL_INDEX_SCHEMA_VERSION = '3';
+const LOCAL_INDEX_SCHEMA_VERSION = '4';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 const LOCAL_INDEX_STORE_FULL_CONTENT = false;
@@ -55,6 +56,7 @@ interface SqlJsQueryResult {
 
 export interface LocalIndexOptions {
 	readonly dryRun?: boolean;
+	readonly includeSource?: boolean;
 }
 
 interface IndexDocument {
@@ -93,6 +95,8 @@ export interface LocalIndexResult {
 	readonly document_count: number;
 	readonly skill_count: number;
 	readonly command_intent_count: number;
+	readonly source_index_enabled: boolean;
+	readonly source_anchor_count: number;
 	readonly content_mode: typeof LOCAL_INDEX_CONTENT_MODE;
 	readonly store_full_content: typeof LOCAL_INDEX_STORE_FULL_CONTENT;
 	readonly max_snippet_bytes_per_document: typeof MAX_SNIPPET_BYTES_PER_DOCUMENT;
@@ -101,18 +105,30 @@ export interface LocalIndexResult {
 
 export interface LocalSearchOptions {
 	readonly limit?: number;
+	readonly scope?: LocalSearchScope;
 }
 
 type CacheLayer = 'stable' | 'task' | 'volatile';
+export type LocalSearchScope = 'workflow' | 'source' | 'all';
+type SearchSourceScope = 'workflow' | 'source';
 
 export interface LocalSearchItem {
-	readonly kind: 'document' | 'skill' | 'command_intent';
+	readonly kind: 'document' | 'skill' | 'command_intent' | 'source_anchor';
 	readonly path?: string;
 	readonly name?: string;
 	readonly title?: string;
 	readonly document_type?: string;
+	readonly anchor_id?: string;
+	readonly line_start?: number;
+	readonly risk?: string;
 	readonly cache_layer: CacheLayer;
 	readonly volatile: boolean;
+	readonly authority_rank: number;
+	readonly authority_label: string;
+	readonly source_scope: SearchSourceScope;
+	readonly navigation_only: boolean;
+	readonly can_instruct_agent: boolean;
+	readonly stale_status?: 'valid';
 	readonly match: string;
 	readonly score: number;
 }
@@ -125,6 +141,7 @@ export interface LocalSearchResult {
 	readonly database_path: string;
 	readonly query: string;
 	readonly limit: number;
+	readonly scope: LocalSearchScope;
 	readonly index_fresh: boolean;
 	readonly stale_paths: readonly string[];
 	readonly result_count: number;
@@ -456,6 +473,68 @@ function withCacheHint<T extends Omit<LocalSearchItem, 'cache_layer' | 'volatile
 	};
 }
 
+function workflowAuthorityForDocument(documentType: string): Pick<
+	LocalSearchItem,
+	'authority_rank' | 'authority_label' | 'source_scope' | 'navigation_only' | 'can_instruct_agent'
+> {
+	if (documentType === 'agent_rules' || documentType === 'config' || documentType === 'workflow_doc') {
+		return {
+			authority_rank: 2,
+			authority_label: 'workflow_authority',
+			source_scope: 'workflow',
+			navigation_only: false,
+			can_instruct_agent: true,
+		};
+	}
+
+	return {
+		authority_rank: 4,
+		authority_label: 'workflow_context',
+		source_scope: 'workflow',
+		navigation_only: false,
+		can_instruct_agent: false,
+	};
+}
+
+function skillAuthority(): Pick<
+	LocalSearchItem,
+	'authority_rank' | 'authority_label' | 'source_scope' | 'navigation_only' | 'can_instruct_agent'
+> {
+	return {
+		authority_rank: 3,
+		authority_label: 'skill_procedure',
+		source_scope: 'workflow',
+		navigation_only: false,
+		can_instruct_agent: true,
+	};
+}
+
+function commandIntentAuthority(): Pick<
+	LocalSearchItem,
+	'authority_rank' | 'authority_label' | 'source_scope' | 'navigation_only' | 'can_instruct_agent'
+> {
+	return {
+		authority_rank: 1,
+		authority_label: 'command_contract',
+		source_scope: 'workflow',
+		navigation_only: false,
+		can_instruct_agent: true,
+	};
+}
+
+function sourceAnchorAuthority(): Pick<
+	LocalSearchItem,
+	'authority_rank' | 'authority_label' | 'source_scope' | 'navigation_only' | 'can_instruct_agent'
+> {
+	return {
+		authority_rank: 5,
+		authority_label: 'source_navigation_hint',
+		source_scope: 'source',
+		navigation_only: true,
+		can_instruct_agent: false,
+	};
+}
+
 function getMatchSnippet(fields: readonly string[], query: string): string {
 	const normalized = normalizeSearchText(fields.join(' '));
 	const lower = normalized.toLowerCase();
@@ -541,6 +620,18 @@ CREATE TABLE command_intents (
   run_policy TEXT,
   description TEXT
 );
+
+CREATE TABLE source_anchors (
+  id TEXT PRIMARY KEY,
+  path TEXT NOT NULL,
+  line_start INTEGER NOT NULL,
+  purpose TEXT,
+  search_terms TEXT NOT NULL,
+  invariant TEXT,
+  risk TEXT NOT NULL,
+  navigation_only INTEGER NOT NULL,
+  can_instruct_agent INTEGER NOT NULL
+);
 `);
 }
 
@@ -563,6 +654,7 @@ function populateDatabase(
 	documents: readonly IndexDocument[],
 	skills: readonly IndexSkill[],
 	commandIntents: readonly IndexCommandIntent[],
+	sourceAnchors: readonly SourceAnchorSummary[],
 ): void {
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['schema_version', LOCAL_INDEX_SCHEMA_VERSION]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['content_mode', LOCAL_INDEX_CONTENT_MODE]);
@@ -614,6 +706,23 @@ function populateDatabase(
 		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.runPolicy, 'command_run_policy');
 		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.description, 'command_description');
 	}
+
+	for (const anchor of sourceAnchors) {
+		database.run(
+			'INSERT INTO source_anchors (id, path, line_start, purpose, search_terms, invariant, risk, navigation_only, can_instruct_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				anchor.id,
+				anchor.path,
+				anchor.lineStart,
+				anchor.purpose,
+				anchor.search.join(', '),
+				anchor.invariant,
+				anchor.risk.join(', '),
+				anchor.navigationOnly ? 1 : 0,
+				anchor.canInstructAgent ? 1 : 0,
+			],
+		);
+	}
 }
 
 export async function createLocalIndex(projectRoot: string, options: LocalIndexOptions = {}): Promise<LocalIndexResult> {
@@ -621,6 +730,8 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const documents = collectDocuments(projectRoot);
 	const skills = collectSkills(documents);
 	const commandIntents = collectCommandIntents(projectRoot);
+	const includeSource = options.includeSource === true;
+	const sourceAnchors = includeSource ? collectSourceAnchorSummaries(projectRoot) : [];
 	const dryRun = options.dryRun === true;
 
 	if (!dryRun) {
@@ -628,7 +739,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		const database = new SQL.Database();
 
 		createSchema(database);
-		populateDatabase(database, documents, skills, commandIntents);
+		populateDatabase(database, documents, skills, commandIntents, sourceAnchors);
 		mkdirSync(path.dirname(databasePath), { recursive: true });
 		writeFileSync(databasePath, database.export());
 		database.close();
@@ -645,6 +756,8 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		document_count: documents.length,
 		skill_count: skills.length,
 		command_intent_count: commandIntents.length,
+		source_index_enabled: includeSource,
+		source_anchor_count: sourceAnchors.length,
 		content_mode: LOCAL_INDEX_CONTENT_MODE,
 		store_full_content: LOCAL_INDEX_STORE_FULL_CONTENT,
 		max_snippet_bytes_per_document: MAX_SNIPPET_BYTES_PER_DOCUMENT,
@@ -699,6 +812,7 @@ function getDocumentTerms(database: SqlJsDatabase, documentPath: string): string
 export async function searchLocalIndex(projectRoot: string, query: string, options: LocalSearchOptions = {}): Promise<LocalSearchResult> {
 	const normalizedQuery = normalizeSearchText(query);
 	const limit = Math.max(1, Math.min(options.limit ?? 10, 50));
+	const scope = options.scope ?? 'workflow';
 	const databasePath = getLocalIndexDatabasePath(projectRoot);
 
 	if (!existsSync(databasePath)) {
@@ -721,92 +835,142 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 			throw new Error(`Local mustflow index is stale: ${stalePaths.join(', ')}. Run \`mf index\` before searching.`);
 		}
 
-		for (const row of queryRows(database, 'SELECT path, type, title, content_snippet FROM documents')) {
-			const pathValue = toSearchString(row.path);
-			const typeValue = toSearchString(row.type);
-			const title = toSearchString(row.title);
-			const contentSnippet = toSearchString(row.content_snippet);
-			const sectionHeadings = getSectionHeadings(database, pathValue);
-			const documentTerms = getDocumentTerms(database, pathValue);
-			const primaryFields = [pathValue, title];
-			const secondaryFields = [typeValue, contentSnippet, ...sectionHeadings, ...documentTerms];
+		if (scope === 'workflow' || scope === 'all') {
+			for (const row of queryRows(database, 'SELECT path, type, title, content_snippet FROM documents')) {
+				const pathValue = toSearchString(row.path);
+				const typeValue = toSearchString(row.type);
+				const title = toSearchString(row.title);
+				const contentSnippet = toSearchString(row.content_snippet);
+				const sectionHeadings = getSectionHeadings(database, pathValue);
+				const documentTerms = getDocumentTerms(database, pathValue);
+				const primaryFields = [pathValue, title];
+				const secondaryFields = [typeValue, contentSnippet, ...sectionHeadings, ...documentTerms];
 
-			if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
-				continue;
+				if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
+					continue;
+				}
+
+				results.push(
+					withCacheHint(
+						{
+							kind: 'document',
+							path: pathValue,
+							title,
+							document_type: typeValue,
+							...workflowAuthorityForDocument(typeValue),
+							match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
+							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+						},
+						cacheLayers,
+					),
+				);
 			}
 
-			results.push(
-				withCacheHint(
-					{
-						kind: 'document',
-						path: pathValue,
-						title,
-						document_type: typeValue,
-						match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
-						score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
-					},
-					cacheLayers,
-				),
-			);
+			for (const row of queryRows(database, 'SELECT name, path, title FROM skills')) {
+				const name = toSearchString(row.name);
+				const pathValue = toSearchString(row.path);
+				const title = toSearchString(row.title);
+				const fields = [name, pathValue, title];
+
+				if (!isMatched(fields, normalizedQuery)) {
+					continue;
+				}
+
+				results.push(
+					withCacheHint(
+						{
+							kind: 'skill',
+							name,
+							path: pathValue,
+							title,
+							...skillAuthority(),
+							match: getMatchSnippet(fields, normalizedQuery),
+							score: scoreMatch([name, pathValue, title], [], normalizedQuery),
+						},
+						cacheLayers,
+					),
+				);
+			}
+
+			for (const row of queryRows(database, 'SELECT name, status, lifecycle, run_policy, description FROM command_intents')) {
+				const name = toSearchString(row.name);
+				const status = toSearchString(row.status);
+				const lifecycle = toSearchString(row.lifecycle);
+				const runPolicy = toSearchString(row.run_policy);
+				const description = toSearchString(row.description);
+				const primaryFields = [name];
+				const secondaryFields = [status, lifecycle, runPolicy, description];
+
+				if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
+					continue;
+				}
+
+				results.push(
+					withCacheHint(
+						{
+							kind: 'command_intent',
+							name,
+							title: description || name,
+							...commandIntentAuthority(),
+							match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
+							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+						},
+						cacheLayers,
+					),
+				);
+			}
 		}
 
-		for (const row of queryRows(database, 'SELECT name, path, title FROM skills')) {
-			const name = toSearchString(row.name);
-			const pathValue = toSearchString(row.path);
-			const title = toSearchString(row.title);
-			const fields = [name, pathValue, title];
+		if (scope === 'source' || scope === 'all') {
+			for (const row of queryRows(
+				database,
+				'SELECT id, path, line_start, purpose, search_terms, invariant, risk, navigation_only, can_instruct_agent FROM source_anchors',
+			)) {
+				const id = toSearchString(row.id);
+				const pathValue = toSearchString(row.path);
+				const purpose = toSearchString(row.purpose);
+				const searchTerms = toSearchString(row.search_terms);
+				const invariant = toSearchString(row.invariant);
+				const risk = toSearchString(row.risk);
+				const primaryFields = [id, pathValue];
+				const secondaryFields = [purpose, searchTerms, invariant, risk];
 
-			if (!isMatched(fields, normalizedQuery)) {
-				continue;
+				if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
+					continue;
+				}
+
+				results.push(
+					withCacheHint(
+						{
+							kind: 'source_anchor',
+							anchor_id: id,
+							name: id,
+							path: pathValue,
+							line_start: Number(row.line_start),
+							title: purpose || id,
+							risk,
+							...sourceAnchorAuthority(),
+							stale_status: 'valid',
+							match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
+							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+						},
+						cacheLayers,
+					),
+				);
 			}
-
-			results.push(
-				withCacheHint(
-					{
-						kind: 'skill',
-						name,
-						path: pathValue,
-						title,
-						match: getMatchSnippet(fields, normalizedQuery),
-						score: scoreMatch([name, pathValue, title], [], normalizedQuery),
-					},
-					cacheLayers,
-				),
-			);
-		}
-
-		for (const row of queryRows(database, 'SELECT name, status, lifecycle, run_policy, description FROM command_intents')) {
-			const name = toSearchString(row.name);
-			const status = toSearchString(row.status);
-			const lifecycle = toSearchString(row.lifecycle);
-			const runPolicy = toSearchString(row.run_policy);
-			const description = toSearchString(row.description);
-			const primaryFields = [name];
-			const secondaryFields = [status, lifecycle, runPolicy, description];
-
-			if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
-				continue;
-			}
-
-			results.push(
-				withCacheHint(
-					{
-						kind: 'command_intent',
-						name,
-						title: description || name,
-						match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
-						score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
-					},
-					cacheLayers,
-				),
-			);
 		}
 	} finally {
 		database.close();
 	}
 
 	const sortedResults = results
-		.sort((left, right) => right.score - left.score || (left.path ?? left.name ?? '').localeCompare(right.path ?? right.name ?? ''))
+		.sort((left, right) => {
+			if (scope === 'all' && left.authority_rank !== right.authority_rank) {
+				return left.authority_rank - right.authority_rank;
+			}
+
+			return right.score - left.score || (left.path ?? left.name ?? '').localeCompare(right.path ?? right.name ?? '');
+		})
 		.slice(0, limit);
 
 	return {
@@ -817,6 +981,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		database_path: databasePath,
 		query: normalizedQuery,
 		limit,
+		scope,
 		index_fresh: true,
 		stale_paths: [],
 		result_count: sortedResults.length,

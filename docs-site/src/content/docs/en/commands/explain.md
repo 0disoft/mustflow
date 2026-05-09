@@ -9,6 +9,8 @@ Without a path, the command prints the authority model. With a path, it reports 
 
 `mf explain asset-optimization` explains the web image optimization decision path. It reports whether the `web-asset-optimization` skill applies and whether `asset_optimize` is a configured agent-runnable command intent, so agents do not guess image converters or package commands.
 
+`mf explain anchor <anchor_id>` explains a structured source-code anchor. Source anchors are navigation-only code coordinates: they can help agents find code, but they cannot define workflow rules, command permission, or verification authority.
+
 `mf explain command <intent>` explains whether a command intent in `.mustflow/config/commands.toml` is runnable through `mf run`, why it is allowed or blocked, and whether running it would count as mustflow verification.
 
 `mf explain retention` explains the effective retention policy from `.mustflow/config/mustflow.toml`, including raw event storage, bounded run receipts, and context limits.
@@ -28,6 +30,7 @@ Without a path, the command prints the authority model. With a path, it reports 
 - `Effective action`: What an agent should do with that decision.
 - `Counts as mustflow verification`: Whether the command result is a verification receipt.
 - `Source files`: Files that define the rule source.
+- `Source anchor`: Anchor path, line, purpose, search terms, invariant, risk, and navigation-only authority when the `anchor` topic is used.
 - `Expected frontmatter`: Required `mustflow_doc`, `authority`, and `lifecycle` values when the path is recognized.
 - `Authority boundary`: What the authority lane may define and what it must leave to higher-authority files, current code, or `commands.toml`.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
@@ -41,6 +44,8 @@ Without a path, the command prints the authority model. With a path, it reports 
 ```sh
 npx mf explain authority
 npx mf explain authority AGENTS.md
+npx mf explain anchor auth.session.resolve
+npx mf explain anchor auth.session.resolve --json
 npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
@@ -66,7 +71,7 @@ Machine-readable output uses these fields:
 
 - `schema_version` (`string`): Output format version.
 - `command` (`string`): Always `explain`.
-- `topic` (`string`): `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
+- `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
 - `mustflow_root` (`string`): Current mustflow root.
 - `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`.
 

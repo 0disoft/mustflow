@@ -14,6 +14,10 @@ export function getIndexHelp(lang: CliLang = 'en'): string {
 					label: '--dry-run',
 					description: t(lang, 'index.help.option.dryRun'),
 				},
+				{
+					label: '--source',
+					description: t(lang, 'index.help.option.source'),
+				},
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
@@ -38,6 +42,7 @@ function renderIndexSummary(result: Awaited<ReturnType<typeof createLocalIndex>>
 		`${t(lang, 'label.documents')}: ${result.document_count}`,
 		`${t(lang, 'label.skills')}: ${result.skill_count}`,
 		`${t(lang, 'label.commandIntents')}: ${result.command_intent_count}`,
+		`source_anchors: ${result.source_anchor_count}`,
 		`${t(lang, 'label.wroteFiles')}: ${result.wrote_files ? 'yes' : 'no'}`,
 	];
 
@@ -54,7 +59,7 @@ export async function runIndex(args: string[], reporter: Reporter, lang: CliLang
 		return 0;
 	}
 
-	const supported = new Set(['--dry-run', '--json']);
+	const supported = new Set(['--dry-run', '--json', '--source']);
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
@@ -62,7 +67,10 @@ export async function runIndex(args: string[], reporter: Reporter, lang: CliLang
 		return 1;
 	}
 
-	const result = await createLocalIndex(resolveMustflowRoot(), { dryRun: args.includes('--dry-run') });
+	const result = await createLocalIndex(resolveMustflowRoot(), {
+		dryRun: args.includes('--dry-run'),
+		includeSource: args.includes('--source'),
+	});
 
 	if (args.includes('--json')) {
 		reporter.stdout(JSON.stringify(result, null, 2));

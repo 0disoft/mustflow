@@ -80,6 +80,7 @@ templates/default/
 - `.mustflow/context/`는 에이전트용 프로젝트 맥락 정보용이며, 일반 문서 보관소가 아닙니다.
 - `README.md`, `.github/` 폴더 및 기존 프로젝트의 `config/`, `docs/`, `skills/` 디렉터리는 수정하지 않습니다.
 - 애플리케이션 소스 코드나 패키지 관리자, CI/CD 설정 등은 생성하지 않습니다.
+- 템플릿 매니페스트가 `AGENTS.md`와 `.mustflow/**` 밖의 설치 대상을 나열하면 거부합니다.
 - `--dry-run` 옵션은 파일을 쓰지 않고 설치 계획만 미리 보여줍니다.
 - 충돌로 중단됐거나 `--dry-run`으로 실행한 경우 `manifest.lock.toml`은 생성하지 않습니다.
 

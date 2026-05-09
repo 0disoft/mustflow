@@ -79,6 +79,7 @@ templates/default/
 - `.mustflow/context/` contient du contexte de projet destiné aux agents, pas une archive générale de documentation.
 - `README.md`, `.github/` et les répertoires existants `config/`, `docs/` et `skills/` ne sont pas modifiés.
 - Le code source, la configuration de gestionnaire de paquets et la configuration d’intégration continue ne sont pas créés.
+- Le manifeste de modèle est rejeté s’il déclare des cibles d’installation hors de `AGENTS.md` et `.mustflow/**`.
 - `--dry-run` imprime le plan d’installation sans écrire de fichiers.
 - `manifest.lock.toml` n’est pas écrit lorsque l’installation s’arrête sur des conflits ou s’exécute avec `--dry-run`.
 

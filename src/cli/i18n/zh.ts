@@ -99,6 +99,7 @@ export const zhMessages = {
   "label.commandIntents": "命令定义",
   "label.wroteFiles": "已写入文件",
   "label.query": "查询",
+  "label.scope": "范围",
   "label.results": "结果",
   "label.comment": "评论",
 
@@ -483,6 +484,7 @@ export const zhMessages = {
   "index.help.summary":
     "为 mustflow 工作流构建可重新生成的 SQLite 索引。",
   "index.help.option.dryRun": "计算索引目标但不写入文件",
+  "index.help.option.source": "包含结构化源码锚点但不存储源码内容",
   "index.help.exit.ok": "已计算索引目标，并可选写入",
   "index.title": "mustflow 索引",
   "index.dryRunNoFiles": "试运行：未写入文件。",
@@ -614,10 +616,15 @@ export const zhMessages = {
     "搜索本地 SQLite 索引中的 mustflow 工作流。",
   "search.help.option.limit":
     "设置要输出的结果数量。默认值：10，最大：50",
+  "search.help.option.scope":
+    "选择已索引的工作流数据、源码 anchors，或两者。默认值：workflow",
   "search.help.exit.ok": "搜索完成",
   "search.help.exit.fail": "输入无效或缺少本地索引",
   "search.error.missingLimit": "--limit 缺少值",
   "search.error.invalidLimit": "--limit 必须是 1 到 50 之间的整数",
+  "search.error.missingScope": "--scope 缺少值",
+  "search.error.invalidScope":
+    '不支持的搜索范围 "{scope}"。请使用 workflow、source 或 all',
   "search.error.missingQuery": "需要搜索查询",
   "search.title": "mustflow 搜索",
   "search.noMatches": "没有匹配条目。",
@@ -721,6 +728,7 @@ export const zhMessages = {
   "explain.error.missingTopic": "缺少 explain 主题",
   "explain.error.missingCommand": "缺少命令意图",
   "explain.error.missingSkill": "缺少技能标识",
+  "explain.error.missingAnchor": "缺少源码锚点标识",
   "explain.error.unknownTopic": "未知 explain 主题：{topic}",
 
   "update.help.summary":

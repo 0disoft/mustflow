@@ -32,6 +32,9 @@ npx mf check --strict
 
 - Los archivos Markdown administrados por mustflow deben conservar el frontmatter `mustflow_doc`, `locale`, `canonical`, `revision`, `authority` y `lifecycle` esperado para su ruta. Los mensajes relacionados incluyen el identificador logico del documento y la ruta relativa.
 - Los documentos de contexto no deben afirmar que reemplazan instrucciones directas del usuario, código actual, pruebas o contratos de comando.
+- Los anchors de código fuente deben seguir siendo pistas estructuradas de navegación. El modo estricto falla declaraciones de anchor mal formadas, IDs duplicados, instrucciones de comando o política para agentes dentro de anchors, texto parecido a secretos, anchors en rutas generadas o de vendor y etiquetas de riesgo desconocidas.
+- Las señales de calidad de los anchors, como `purpose` demasiado largo, demasiados términos en `search` o demasiados anchors en un archivo, se emiten como advertencias y no hacen fallar la verificación.
+- Los anchors con etiquetas de alto riesgo, como autorización, datos personales, pagos, migraciones, pérdida de datos, secretos o seguridad, usan umbrales de advertencia más bajos y se marcan para revisión cuando falta `invariant`.
 - `.mustflow/skills/INDEX.md` y `.mustflow/context/INDEX.md` deben seguir siendo índices de enrutamiento, no documentos de procedimiento.
 - El frontmatter de `SKILL.md` debe usar `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure` y un `name` que coincida con la carpeta `.mustflow/skills/<name>/`.
 - Las entradas `metadata.command_intents` del frontmatter de una skill deben referenciar intenciones declaradas en `.mustflow/config/commands.toml`.
@@ -41,11 +44,11 @@ El modo estricto es opcional para que el flujo normal siga siendo ligero. Se rec
 
 ## Clasificacion de errores y advertencias
 
-`mf check` trata las infracciones estructurales como errores bloqueantes. Cualquier problema informado termina con código `1`.
+`mf check` trata las infracciones estructurales como errores bloqueantes. Los errores bloqueantes terminan con código `1`; las advertencias se informan por separado y no hacen fallar el comando.
 
 - Los errores base vienen de archivos requeridos faltantes, errores de parseo, valores de configuración inseguros, infracciones del contrato de comandos, identificadores de sección de skill faltantes, identidad inválida de documentos de contexto y desajuste del archivo de bloqueo.
-- Los errores estrictos vienen de comprobaciones adicionales de identidad de documentos, rutas, metadatos de skills, límites de comando, mapa del repositorio, retención, recibo de ejecución e higiene de contexto. Solo aparecen cuando `--strict` está habilitado.
-- Las observaciones no bloqueantes no se emiten como problemas de `mf check`. Usa los diagnósticos de `mf doctor` cuando la automatización necesite señales informativas o de advertencia.
+- Los errores estrictos vienen de comprobaciones adicionales de identidad de documentos, rutas, metadatos de skills, anchors de código fuente, límites de comando, mapa del repositorio, retención, recibo de ejecución e higiene de contexto. Solo aparecen cuando `--strict` está habilitado.
+- Las observaciones no bloqueantes pueden aparecer como `warnings` en JSON o como líneas de advertencia en la salida legible. Usa `mf doctor` cuando la automatización necesite señales informativas más amplias.
 
 ## Reglas de configuración
 
@@ -115,9 +118,11 @@ La salida legible por máquinas usa estos campos:
 - `strict` (`boolean`): si las comprobaciones `--strict` estaban habilitadas.
 - `issueCount` (`number`): número de problemas encontrados.
 - `issues` (`string[]`): mensajes de problema legibles para personas.
-- `issueDetails` (`object[]`): detalles de problema legibles por máquinas. `id` es un identificador estable para límites de comando y comprobaciones estrictas relacionadas cuando corresponde, `severity` actualmente es `error` para todos los problemas bloqueantes, `mode` es `base` o `strict`, y `message` replica `issues`.
+- `warningCount` (`number`): número de advertencias no bloqueantes encontradas.
+- `warnings` (`string[]`): mensajes de advertencia legibles para personas.
+- `issueDetails` (`object[]`): detalles de problemas y advertencias legibles por máquinas. `id` es un identificador estable para límites de comando y comprobaciones estrictas relacionadas cuando corresponde, `severity` es `error` o `warning`, `mode` es `base` o `strict`, y `message` replica la entrada correspondiente de `issues` o `warnings`.
 
-Cuando se encuentran problemas, la salida JSON también termina con el código `1`.
+Cuando se encuentran problemas bloqueantes, la salida JSON también termina con el código `1`. Si solo hay advertencias, conserva el código de salida `0`.
 
 ## Ayuda y códigos de salida
 

@@ -11,20 +11,28 @@ index. This prevents stale search results from misleading an agent.
 
 ## Search Scope
 
-The command searches only mustflow workflow data:
+By default, the command searches only mustflow workflow data:
 
 - Indexed documents such as `AGENTS.md` and `.mustflow/docs/*.md`
 - Skill entries from `.mustflow/skills/*/SKILL.md`
 - Command intents from `.mustflow/config/commands.toml`
 
-It does not search arbitrary project source files.
+It does not search arbitrary project source files. If the index was created with `mf index --source`,
+you can search structured source anchors with `--scope source`.
+
+Use `--scope all` to include both workflow results and source-anchor hints. In that mode, mustflow keeps
+workflow authority and command-contract results above source anchors. Source anchors are navigation
+hints only; they cannot override command rules, skills, workflow documents, or `AGENTS.md`.
 
 ## Usage
 
 ```sh
 npx mf index
+npx mf index --source
 npx mf search mustflow_check
 npx mf search "code review" --json
+npx mf search "role mapping" --scope source
+npx mf search mustflow_check --scope all --json
 npx mf search test --limit 5
 ```
 
@@ -32,6 +40,7 @@ npx mf search test --limit 5
 
 - `--json`: Outputs results in machine-readable JSON format.
 - `--limit <number>`: Sets the number of returned results. Default is `10`; maximum is `50`.
+- `--scope <workflow|source|all>`: Selects indexed workflow data, source anchors, or both. Default is `workflow`.
 
 ## JSON Fields
 
@@ -48,20 +57,29 @@ Machine-readable output uses these fields:
 - `database_path` (`string`): SQLite file used for the query.
 - `query` (`string`): Normalized search query.
 - `limit` (`number`): Result limit.
+- `scope` (`string`): Search scope. One of `workflow`, `source`, or `all`.
 - `index_fresh` (`boolean`): Whether the index matches current file contents.
 - `stale_paths` (`string[]`): Paths changed after indexing. Empty if the index is up to date.
 - `result_count` (`number`): Number of returned results.
-- `results` (`object[]`): Matching documents, skills, and command intents.
+- `results` (`object[]`): Matching workflow entries and, when requested, source anchors.
 
 Each result can include these fields:
 
-- `results[].kind` (`string`): Result kind. One of `document`, `skill`, or `command_intent`.
+- `results[].kind` (`string`): Result kind. One of `document`, `skill`, `command_intent`, or `source_anchor`.
 - `results[].path` (`string`): Document or skill file path.
-- `results[].name` (`string`): Skill name or command intent name.
+- `results[].name` (`string`): Skill name, command intent name, or source-anchor ID.
 - `results[].title` (`string`): Document title.
 - `results[].document_type` (`string`): Document category.
+- `results[].anchor_id` (`string`): Source-anchor ID.
+- `results[].line_start` (`number`): Source line where the anchor starts.
+- `results[].risk` (`string`): Comma-separated source-anchor risk tags.
 - `results[].cache_layer` (`string`): Prompt-cache layer hint. One of `stable`, `task`, or `volatile`.
 - `results[].volatile` (`boolean`): Whether the result belongs to volatile state that should stay after stable prompt instructions.
+- `results[].authority_rank` (`number`): Authority order used when workflow and source results are shown together.
+- `results[].authority_label` (`string`): Authority category, such as `command_contract` or `source_navigation_hint`.
+- `results[].source_scope` (`string`): Whether the result came from workflow data or source-anchor data.
+- `results[].navigation_only` (`boolean`): Whether the result is only a code-navigation hint.
+- `results[].can_instruct_agent` (`boolean`): Whether the result may carry workflow instructions.
 - `results[].match` (`string`): Matching context snippet.
 - `results[].score` (`number`): Ranking score used for result order.
 

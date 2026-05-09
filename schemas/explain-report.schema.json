@@ -14,7 +14,7 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "explain" },
-    "topic": { "enum": ["asset-optimization", "authority", "command", "retention", "skill", "skills", "surface"] },
+    "topic": { "enum": ["anchor", "asset-optimization", "authority", "command", "retention", "skill", "skills", "surface"] },
     "mustflow_root": { "type": "string" },
     "decision": {
       "oneOf": [
@@ -23,11 +23,70 @@
         { "$ref": "#/$defs/retentionDecision" },
         { "$ref": "#/$defs/skillRouteDecision" },
         { "$ref": "#/$defs/skillRouteAlignmentDecision" },
-        { "$ref": "#/$defs/publicSurfaceDecision" }
+        { "$ref": "#/$defs/publicSurfaceDecision" },
+        { "$ref": "#/$defs/sourceAnchorDecision" }
       ]
     }
   },
   "$defs": {
+    "sourceAnchorDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "inputAnchor",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "anchor"
+      ],
+      "properties": {
+        "kind": { "enum": ["found", "missing"] },
+        "inputAnchor": { "type": "string" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "anchor": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "path",
+            "lineStart",
+            "purpose",
+            "search",
+            "invariant",
+            "risk",
+            "navigationOnly",
+            "canInstructAgent"
+          ],
+          "properties": {
+            "id": { "type": "string" },
+            "path": { "type": "string" },
+            "lineStart": { "type": "integer" },
+            "purpose": { "type": ["string", "null"] },
+            "search": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "invariant": { "type": ["string", "null"] },
+            "risk": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "navigationOnly": { "const": true },
+            "canInstructAgent": { "const": false }
+          }
+        }
+      }
+    },
     "publicSurfaceDecision": {
       "type": "object",
       "additionalProperties": false,

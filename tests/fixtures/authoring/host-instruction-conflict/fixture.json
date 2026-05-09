@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "name": "host-instruction-conflict",
+  "purpose": "Represents a repository where host-specific instructions overlap with mustflow command rules.",
+  "expected_authoring_boundary": [
+    "Do not let host instruction files authorize commands outside the mustflow command contract.",
+    "Preserve compatible style guidance only when it does not weaken repository or host safety rules."
+  ]
+}

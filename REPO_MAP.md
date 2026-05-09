@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 58
-source_fingerprint: "sha256:5b19ed0fb024000c69b5c838e56ed43dcacd622a095780f3b751571ffcbf05a2"
+anchor_count: 60
+source_fingerprint: "sha256:56c9f14828279342e083f0f5140344127e83e6e3870388f9a0dc375d2d0a61ca"
 ---
 
 # REPO_MAP.md
@@ -200,9 +200,17 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `examples/docs-only/README.md`: Directory guide for this area.
 
+### examples/host-instruction-conflicts/
+
+- `examples/host-instruction-conflicts/README.md`: Directory guide for this area.
+
 ### examples/minimal-js/
 
 - `examples/minimal-js/README.md`: Directory guide for this area.
+
+### examples/missing-command-contracts/
+
+- `examples/missing-command-contracts/README.md`: Directory guide for this area.
 
 ### examples/nested-repos/
 

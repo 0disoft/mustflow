@@ -1266,7 +1266,15 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 	}
 
 	const targetRoot = process.cwd();
-	const template = getDefaultTemplate();
+	let template: ReturnType<typeof getDefaultTemplate>;
+
+	try {
+		template = getDefaultTemplate();
+	} catch (error) {
+		reporter.stderr(error instanceof Error ? error.message : String(error));
+		return 1;
+	}
+
 	const options = shouldPromptForInit(args, parsedOptions) ? await promptInitOptions(template, parsedOptions, reporter, lang) : parsedOptions;
 	const selectedLocale = options.locale ?? template.manifest.defaultLocale;
 

@@ -79,6 +79,7 @@ templates/default/
 - `.mustflow/context/` में agent-facing project context होता है, general documentation archive नहीं।
 - `README.md`, `.github/` और मौजूदा `config/`, `docs/`, `skills/` directories को touch नहीं किया जाता।
 - source code, package-manager configuration और CI configuration create नहीं होते।
+- यदि template manifest `AGENTS.md` और `.mustflow/**` के बाहर install targets list करता है, तो उसे reject किया जाता है।
 - `--dry-run` files लिखे बिना install plan print करता है।
 - जब install conflicts पर abort हो या `--dry-run` के साथ चले, तब `manifest.lock.toml` नहीं लिखा जाता।
 

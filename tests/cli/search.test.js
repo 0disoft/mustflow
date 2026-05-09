@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -29,9 +29,27 @@ function initProject(projectPath) {
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
-function indexProject(projectPath) {
-	const result = runCli(projectPath, ['index', '--json']);
+function indexProject(projectPath, args = []) {
+	const result = runCli(projectPath, ['index', ...args, '--json']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function writeSourceAnchor(projectPath) {
+	mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+	writeFileSync(
+		path.join(projectPath, 'src', 'auth.ts'),
+		`/**
+ * mf:anchor auth.session.resolve
+ * purpose: Map verified server session claims to app user context.
+ * search: login, session refresh, role mapping, mustflow_check
+ * invariant: Do not trust client-provided role values.
+ * risk: authz, pii
+ */
+export function resolveSessionUser() {
+	return { ok: true };
+}
+`,
+	);
 }
 
 test('fails clearly when local index is missing', () => {
@@ -60,7 +78,7 @@ test('prints matching documents skills and command intents from the local index'
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '3');
+		assert.equal(output.schema_version, '4');
 		assert.equal(output.command, 'search');
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, true);
@@ -85,6 +103,95 @@ test('prints matching documents skills and command intents from the local index'
 					item.volatile === false,
 			),
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps source anchors out of default workflow search results', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeSourceAnchor(projectPath);
+		indexProject(projectPath, ['--source']);
+		const result = runCli(projectPath, ['search', 'role mapping', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.scope, 'workflow');
+		assert.equal(output.results.some((item) => item.kind === 'source_anchor'), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('searches source anchors only when source scope is requested', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeSourceAnchor(projectPath);
+		indexProject(projectPath, ['--source']);
+		const result = runCli(projectPath, ['search', 'role mapping', '--scope', 'source', '--json']);
+		const output = JSON.parse(result.stdout);
+		const anchor = output.results.find((item) => item.kind === 'source_anchor');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.scope, 'source');
+		assert.equal(anchor.anchor_id, 'auth.session.resolve');
+		assert.equal(anchor.path, 'src/auth.ts');
+		assert.equal(anchor.line_start, 2);
+		assert.equal(anchor.authority_rank, 5);
+		assert.equal(anchor.authority_label, 'source_navigation_hint');
+		assert.equal(anchor.source_scope, 'source');
+		assert.equal(anchor.navigation_only, true);
+		assert.equal(anchor.can_instruct_agent, false);
+		assert.equal(anchor.cache_layer, 'task');
+		assert.equal(anchor.volatile, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps workflow authority above source anchors in all-scope search results', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeSourceAnchor(projectPath);
+		indexProject(projectPath, ['--source']);
+		const result = runCli(projectPath, ['search', 'mustflow_check', '--scope=all', '--limit', '50', '--json']);
+		const output = JSON.parse(result.stdout);
+		const commandIndex = output.results.findIndex(
+			(item) => item.kind === 'command_intent' && item.name === 'mustflow_check',
+		);
+		const anchorIndex = output.results.findIndex(
+			(item) => item.kind === 'source_anchor' && item.anchor_id === 'auth.session.resolve',
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.scope, 'all');
+		assert.notEqual(commandIndex, -1);
+		assert.notEqual(anchorIndex, -1);
+		assert.ok(commandIndex < anchorIndex);
+		assert.equal(output.results[commandIndex].authority_label, 'command_contract');
+		assert.equal(output.results[anchorIndex].navigation_only, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects unsupported search scope values', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		const result = runCli(projectPath, ['search', 'mustflow_check', '--scope', 'source-code']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unsupported search scope "source-code"/);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -33,6 +33,9 @@ npx mf check --strict
 - Skill 文档不得包含 `sh`、`bash` 或 `powershell` 等原始 shell fenced blocks。
 - mustflow 管理的 Markdown 文件必须保留与路径匹配的 `mustflow_doc`、`locale`、`canonical`、`revision`、`authority`、`lifecycle` frontmatter 形态。相关消息会同时显示逻辑文档标识符和相对路径。
 - Context 文档不得声称自己覆盖直接用户指令、当前代码、测试或命令合同。
+- 源码 anchors 必须只作为结构化代码导航提示。严格模式会拒绝格式错误的 anchor 声明、重复 anchor ID、anchor 内的代理命令或策略指令、类似 secret 的 anchor 文本、生成物或 vendor 路径中的 anchors，以及未知风险标签。
+- 源码 anchor 的质量信号，例如 `purpose` 过长、`search` 条目过多，或单个文件中的 anchor 密度过高，会作为警告输出，不会导致检查失败。
+- 带有高风险标签的源码 anchor，例如授权、个人数据、支付、迁移、数据丢失、密钥或安全，会使用更低的警告阈值；缺少 `invariant` 时会标记为需要 review。
 - `.mustflow/skills/INDEX.md` 和 `.mustflow/context/INDEX.md` 必须保持路由索引角色，不得变成流程文档。
 - `SKILL.md` frontmatter 必须使用 `metadata.mustflow_schema: "1"`、`metadata.mustflow_kind: procedure`，并且 `name` 必须匹配 `.mustflow/skills/<name>/` 文件夹。
 - Skill frontmatter 中的 `metadata.command_intents` 只能引用 `.mustflow/config/commands.toml` 中已声明的命令意图。
@@ -57,11 +60,11 @@ npx mf check --strict
 
 ## 错误与警告分类
 
-`mf check` 将结构性违规视为阻塞错误。只要报告问题，就会以退出码 `1` 结束。
+`mf check` 将结构性违规视为阻塞错误。阻塞错误会以退出码 `1` 结束；警告会单独报告，但不会导致命令失败。
 
 - 基础错误来自缺失必需文件、解析失败、不安全的配置值、命令合同违规、skill 必需章节标识符缺失、context 文档身份无效，以及锁文件漂移。
-- 严格错误来自额外的文档身份、路由、skill 元数据、命令边界、仓库地图、保留策略、运行记录和 context 卫生检查。只有启用 `--strict` 时才会出现。
-- 非阻塞观察结果不会作为 `mf check` 问题输出。当自动化需要信息或警告级健康信号时，请使用 `mf doctor` diagnostics。
+- 严格错误来自额外的文档身份、路由、skill 元数据、源码 anchors、命令边界、仓库地图、保留策略、运行记录和 context 卫生检查。只有启用 `--strict` 时才会出现。
+- 非阻塞观察结果可能在 JSON 输出中显示为 `warnings`，或在人类可读输出中显示为警告行。当自动化需要更广泛的信息型健康信号时，请使用 `mf doctor` diagnostics。
 
 ## 配置规则
 
@@ -131,9 +134,11 @@ npx mf check --json
 - `strict` (`boolean`)：是否启用了 `--strict` 检查。
 - `issueCount` (`number`)：发现的问题数量。
 - `issues` (`string[]`)：面向人的问题消息。
-- `issueDetails` (`object[]`)：机器可读的问题详情。适用时，`id` 是命令边界及相关严格检查的稳定标识符；`severity` 当前对所有阻塞检查问题都是 `error`；`mode` 是 `base` 或 `strict`；`message` 与 `issues` 中的消息一致。
+- `warningCount` (`number`)：发现的非阻塞警告数量。
+- `warnings` (`string[]`)：面向人的警告消息。
+- `issueDetails` (`object[]`)：机器可读的问题和警告详情。适用时，`id` 是命令边界及相关严格检查的稳定标识符；`severity` 是 `error` 或 `warning`；`mode` 是 `base` 或 `strict`；`message` 与 `issues` 或 `warnings` 中的对应消息一致。
 
-发现问题时，JSON 形式同样以退出码 `1` 退出。
+发现阻塞问题时，JSON 形式同样以退出码 `1` 退出。只有警告时，退出码保持 `0`。
 
 ## 帮助与退出码
 

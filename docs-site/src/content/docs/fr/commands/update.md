@@ -78,6 +78,7 @@ npx mf update --apply
 
 Avant de mettre à jour un fichier existant, mustflow écrit une sauvegarde sous `.mustflow/backups/<timestamp>/`.
 Après application des changements, il actualise les entrées concernées dans `.mustflow/config/manifest.lock.toml` avec le nouveau hash et `last_action`.
+Si le manifeste du modèle intégré déclare une cible hors de `AGENTS.md` et `.mustflow/**`, la planification de mise à jour échoue avant toute écriture.
 
 Si un nouveau fichier ajouté par le modèle existe déjà dans le dépôt utilisateur, n’est pas enregistré dans le fichier de verrouillage et possède un contenu différent, mustflow le traite comme un changement local et refuse de l’écraser.
 

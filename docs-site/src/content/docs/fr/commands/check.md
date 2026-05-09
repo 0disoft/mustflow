@@ -33,6 +33,9 @@ npx mf check --strict
 - Les documents de skill ne doivent pas contenir de blocs shell bruts comme `sh`, `bash` ou `powershell`.
 - Les fichiers Markdown gérés par mustflow doivent conserver le frontmatter `mustflow_doc`, `locale`, `canonical`, `revision`, `authority` et `lifecycle` attendu pour leur chemin. Les messages associes incluent l'identifiant logique du document et le chemin relatif.
 - Les documents de contexte ne doivent pas prétendre remplacer les instructions directes de l’utilisateur, le code actuel, les tests ou les contrats de commande.
+- Les anchors de source doivent rester des indices de navigation structurés. Le mode strict échoue sur les déclarations d’anchor mal formées, les IDs dupliqués, les instructions de commande ou de politique pour agents dans les anchors, le texte ressemblant à un secret, les anchors dans des chemins générés ou vendor et les tags de risque inconnus.
+- Les signaux de qualité des anchors, comme un `purpose` trop long, trop de termes `search` ou une densité élevée d’anchors dans un fichier, sont émis comme avertissements et ne font pas échouer la vérification.
+- Les anchors portant des tags à haut risque, comme autorisation, données personnelles, paiement, migration, perte de données, secrets ou sécurité, utilisent des seuils d’avertissement plus bas et sont marqués pour revue lorsqu’il manque `invariant`.
 - `.mustflow/skills/INDEX.md` et `.mustflow/context/INDEX.md` doivent rester des index de routage, pas des documents de procédure.
 - Le frontmatter de `SKILL.md` doit utiliser `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure` et un `name` correspondant au dossier `.mustflow/skills/<name>/`.
 - Les entrées `metadata.command_intents` du frontmatter de skill doivent référencer des intentions déclarées dans `.mustflow/config/commands.toml`.
@@ -57,11 +60,11 @@ Le mode strict est facultatif pour que le flux normal reste léger. Il est recom
 
 ## Classification des erreurs et avertissements
 
-`mf check` traite les violations structurelles comme des erreurs bloquantes. Tout problème signalé quitte avec le code `1`.
+`mf check` traite les violations structurelles comme des erreurs bloquantes. Les erreurs bloquantes quittent avec le code `1`; les avertissements sont signalés séparément et ne font pas échouer la commande.
 
 - Les erreurs de base viennent des fichiers requis manquants, des erreurs d’analyse, des valeurs de configuration dangereuses, des violations du contrat de commande, des identifiants de section de skill manquants, d’une identité invalide de document de contexte et d’un écart avec le fichier de verrouillage.
-- Les erreurs strictes viennent des contrôles supplémentaires d’identité de document, de routage, de métadonnées de skill, de limites de commande, de plan de dépôt, de rétention, de reçu d’exécution et d’hygiène de contexte. Elles apparaissent seulement avec `--strict`.
-- Les observations non bloquantes ne sont pas émises comme problèmes de `mf check`. Utilise les diagnostics de `mf doctor` lorsqu’une automatisation a besoin de signaux informatifs ou d’avertissement.
+- Les erreurs strictes viennent des contrôles supplémentaires d’identité de document, de routage, de métadonnées de skill, d’anchors de source, de limites de commande, de plan de dépôt, de rétention, de reçu d’exécution et d’hygiène de contexte. Elles apparaissent seulement avec `--strict`.
+- Les observations non bloquantes peuvent apparaître comme `warnings` dans JSON ou comme lignes d’avertissement dans la sortie lisible. Utilise `mf doctor` lorsqu’une automatisation a besoin de signaux informatifs plus larges.
 
 ## Règles de configuration
 
@@ -131,9 +134,11 @@ La sortie lisible par machine utilise ces champs:
 - `strict` (`boolean`): indique si les contrôles `--strict` étaient activés.
 - `issueCount` (`number`): nombre de problèmes trouvés.
 - `issues` (`string[]`): messages de problème lisibles par une personne.
-- `issueDetails` (`object[]`): détails de problème lisibles par machine. `id` est un identifiant stable pour les limites de commande et les contrôles stricts associés lorsqu’il s’applique, `severity` vaut actuellement `error` pour chaque problème bloquant, `mode` vaut `base` ou `strict`, et `message` reprend `issues`.
+- `warningCount` (`number`): nombre d’avertissements non bloquants trouvés.
+- `warnings` (`string[]`): messages d’avertissement lisibles par une personne.
+- `issueDetails` (`object[]`): détails de problème et d’avertissement lisibles par machine. `id` est un identifiant stable pour les limites de commande et les contrôles stricts associés lorsqu’il s’applique, `severity` vaut `error` ou `warning`, `mode` vaut `base` ou `strict`, et `message` reprend l’entrée correspondante de `issues` ou `warnings`.
 
-Lorsque des problèmes sont trouvés, la forme JSON quitte aussi avec le code `1`.
+Lorsque des problèmes bloquants sont trouvés, la forme JSON quitte aussi avec le code `1`. Des avertissements seuls conservent le code de sortie `0`.
 
 ## Aide et codes de sortie
 

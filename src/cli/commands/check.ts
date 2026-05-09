@@ -2,7 +2,7 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { checkMustflowProject, describeCheckIssues } from '../lib/validation.js';
+import { checkMustflowProjectReport, describeCheckIssues } from '../lib/validation.js';
 
 export function getCheckHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -48,7 +48,9 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 	}
 
 	const strict = args.includes('--strict');
-	const issues = checkMustflowProject(resolveMustflowRoot(), { strict });
+	const report = checkMustflowProjectReport(resolveMustflowRoot(), { strict });
+	const issues = report.issues;
+	const warnings = report.warnings;
 	const ok = issues.length === 0;
 
 	if (args.includes('--json')) {
@@ -59,7 +61,9 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 					strict,
 					issueCount: issues.length,
 					issues,
-					issueDetails: describeCheckIssues(issues),
+					warningCount: warnings.length,
+					warnings,
+					issueDetails: describeCheckIssues([...issues, ...warnings]),
 				},
 				null,
 				2,
@@ -69,6 +73,10 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 	}
 
 	if (ok) {
+		for (const warning of warnings) {
+			reporter.stderr(warning);
+		}
+
 		if (strict) {
 			reporter.stdout(t(lang, 'check.result.strictPassed'));
 			return 0;

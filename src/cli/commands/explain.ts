@@ -15,18 +15,20 @@ import {
 	type SkillRouteAlignmentDecision,
 } from '../../core/skill-route-alignment.js';
 import { explainPublicSurface, type PublicSurfaceDecision } from '../../core/public-surface-explanation.js';
+import { explainSourceAnchor, type SourceAnchorDecision } from '../../core/source-anchor-explanation.js';
 import { checkMustflowProject } from '../lib/validation.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 
-type ExplainTopic = 'asset-optimization' | 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
+type ExplainTopic = 'anchor' | 'asset-optimization' | 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
 type ExplainDecision =
 	| AuthorityDecision
 	| CommandDecision
 	| RetentionDecision
 	| SkillRouteDecision
 	| SkillRouteAlignmentDecision
-	| PublicSurfaceDecision;
+	| PublicSurfaceDecision
+	| SourceAnchorDecision;
 
 interface ExplainOutput {
 	readonly schema_version: string;
@@ -48,6 +50,8 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 			examples: [
 				'mf explain authority',
 				'mf explain authority AGENTS.md',
+				'mf explain anchor auth.session.resolve',
+				'mf explain anchor auth.session.resolve --json',
 				'mf explain asset-optimization',
 				'mf explain asset-optimization --json',
 				'mf explain command test',
@@ -88,6 +92,16 @@ function getAssetOptimizationExplainOutput(projectRoot: string): ExplainOutput {
 		topic: 'asset-optimization',
 		mustflow_root: projectRoot,
 		decision: explainAssetOptimization(readCommandContract(projectRoot)),
+	};
+}
+
+function getAnchorExplainOutput(projectRoot: string, anchorId: string): ExplainOutput {
+	return {
+		schema_version: EXPLAIN_SCHEMA_VERSION,
+		command: 'explain',
+		topic: 'anchor',
+		mustflow_root: projectRoot,
+		decision: explainSourceAnchor(projectRoot, anchorId),
 	};
 }
 
@@ -291,6 +305,27 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		);
 	}
 
+	if ('anchor' in output.decision) {
+		const anchor = output.decision.anchor;
+		lines.push('', 'Source anchor');
+
+		if (!anchor) {
+			lines.push(`- ${t(lang, 'value.none')}`);
+		} else {
+			lines.push(
+				`- id: ${anchor.id}`,
+				`- path: ${anchor.path}`,
+				`- line_start: ${anchor.lineStart}`,
+				`- purpose: ${anchor.purpose ?? t(lang, 'value.none')}`,
+				`- search: ${anchor.search.join(', ') || t(lang, 'value.none')}`,
+				`- invariant: ${anchor.invariant ?? t(lang, 'value.none')}`,
+				`- risk: ${anchor.risk.join(', ') || t(lang, 'value.none')}`,
+				`- navigation_only: ${anchor.navigationOnly ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+				`- can_instruct_agent: ${anchor.canInstructAgent ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			);
+		}
+	}
+
 	return lines.join('\n');
 }
 
@@ -319,6 +354,7 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 
 	if (
 		topic !== 'asset-optimization' &&
+		topic !== 'anchor' &&
 		topic !== 'authority' &&
 		topic !== 'command' &&
 		topic !== 'retention' &&
@@ -358,6 +394,17 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 		return 1;
 	}
 
+	if (topic === 'anchor' && !targetArg) {
+		printUsageError(
+			reporter,
+			t(lang, 'explain.error.missingAnchor'),
+			'mf explain --help',
+			getExplainHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
 	if (topic === 'retention' && targetArg) {
 		printUsageError(
 			reporter,
@@ -373,6 +420,17 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 		printUsageError(
 			reporter,
 			t(lang, 'cli.error.unexpectedArgument', { argument: targetArg }),
+			'mf explain --help',
+			getExplainHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
+	if (topic === 'anchor' && rest.length > 0) {
+		printUsageError(
+			reporter,
+			t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }),
 			'mf explain --help',
 			getExplainHelp(lang),
 			lang,
@@ -406,6 +464,9 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 	let output: ExplainOutput;
 
 	switch (topic) {
+		case 'anchor':
+			output = getAnchorExplainOutput(projectRoot, targetArg);
+			break;
 		case 'asset-optimization':
 			output = getAssetOptimizationExplainOutput(projectRoot);
 			break;

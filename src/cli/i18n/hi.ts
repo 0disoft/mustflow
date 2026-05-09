@@ -99,6 +99,7 @@ export const hiMessages = {
   "label.commandIntents": "कमांड परिभाषाएँ",
   "label.wroteFiles": "लिखी गई फ़ाइलें",
   "label.query": "क्वेरी",
+  "label.scope": "दायरा",
   "label.results": "परिणाम",
   "label.comment": "टिप्पणी",
 
@@ -493,6 +494,7 @@ export const hiMessages = {
   "index.help.summary":
     "mustflow वर्कफ़्लो के लिए फिर से बनाया जा सकने वाला SQLite इंडेक्स बनाएँ।",
   "index.help.option.dryRun": "फ़ाइलें लिखे बिना इंडेक्स लक्ष्य गणना करें",
+  "index.help.option.source": "Source content store किए बिना structured source-code anchors शामिल करें",
   "index.help.exit.ok": "इंडेक्स लक्ष्य गणना किए गए और वैकल्पिक रूप से लिखे गए",
   "index.title": "mustflow इंडेक्स",
   "index.dryRunNoFiles": "ड्राई रन: कोई फ़ाइल नहीं लिखी गई।",
@@ -624,10 +626,15 @@ export const hiMessages = {
     "mustflow वर्कफ़्लो के लिए स्थानीय SQLite इंडेक्स में खोजें।",
   "search.help.option.limit":
     "प्रिंट किए जाने वाले परिणामों की संख्या सेट करें। डिफ़ॉल्ट: 10, अधिकतम: 50",
+  "search.help.option.scope":
+    "इंडेक्स किए गए वर्कफ़्लो डेटा, source anchors, या दोनों चुनें। डिफ़ॉल्ट: workflow",
   "search.help.exit.ok": "खोज पूरी हुई",
   "search.help.exit.fail": "अमान्य इनपुट या स्थानीय इंडेक्स नहीं मिला",
   "search.error.missingLimit": "--limit का मान नहीं दिया गया",
   "search.error.invalidLimit": "--limit 1 और 50 के बीच पूर्णांक होना चाहिए",
+  "search.error.missingScope": "--scope का मान नहीं दिया गया",
+  "search.error.invalidScope":
+    'असमर्थित खोज दायरा "{scope}"। workflow, source, या all इस्तेमाल करें',
   "search.error.missingQuery": "खोज क्वेरी आवश्यक है",
   "search.title": "mustflow खोज",
   "search.noMatches": "कोई मिलती हुई प्रविष्टि नहीं।",
@@ -731,6 +738,7 @@ export const hiMessages = {
   "explain.error.missingTopic": "Explain topic गुम है",
   "explain.error.missingCommand": "Command intent गुम है",
   "explain.error.missingSkill": "Skill id गुम है",
+  "explain.error.missingAnchor": "Source anchor id गुम है",
   "explain.error.unknownTopic": "अज्ञात explain topic: {topic}",
 
   "update.help.summary":

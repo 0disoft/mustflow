@@ -11,7 +11,9 @@ const expectedFixtures = [
 	'conflicting-public-docs',
 	'docs-only',
 	'empty-repository',
+	'host-instruction-conflict',
 	'malformed-skill',
+	'missing-command-contracts',
 	'polyglot-monorepo',
 	'private-looking-secrets',
 	'readme-only',
@@ -61,6 +63,9 @@ test('authoring fixtures cover declared repository shapes', () => {
 	assert.ok(existsSync(path.join(fixturesRoot, 'polyglot-monorepo', 'pyproject.toml')));
 	assert.ok(existsSync(path.join(fixturesRoot, 'polyglot-monorepo', 'go.mod')));
 	assert.ok(existsSync(path.join(fixturesRoot, 'malformed-skill', 'SKILL.md')));
+	assert.ok(existsSync(path.join(fixturesRoot, 'missing-command-contracts', 'package.json')));
+	assert.ok(existsSync(path.join(fixturesRoot, 'host-instruction-conflict', 'AGENTS.md')));
+	assert.ok(existsSync(path.join(fixturesRoot, 'host-instruction-conflict', '.github', 'copilot-instructions.md')));
 });
 
 test('README and project context authoring routes stay separated', () => {
@@ -93,4 +98,24 @@ test('authoring fixtures avoid active secrets and active mustflow roots', () => 
 	assert.doesNotMatch(combined, /-----BEGIN [A-Z ]*PRIVATE KEY-----/u);
 	assert.match(readText('tests/fixtures/authoring/private-looking-secrets/env.example'), /EXAMPLE_/u);
 	assert.match(readText('tests/fixtures/authoring/private-looking-secrets/README.md'), /not real secrets/u);
+});
+
+test('authoring fixtures cover missing command and host conflict boundaries', () => {
+	const missingCommand = readFixture('missing-command-contracts');
+	const hostConflict = readFixture('host-instruction-conflict');
+	const packageJson = JSON.parse(readText('tests/fixtures/authoring/missing-command-contracts/package.json'));
+	const hostInstruction = readText(
+		'tests/fixtures/authoring/host-instruction-conflict/.github/copilot-instructions.md',
+	);
+	const repositoryInstruction = readText('tests/fixtures/authoring/host-instruction-conflict/AGENTS.md');
+
+	assert.ok(packageJson.scripts.test);
+	assert.ok(packageJson.scripts.lint);
+	assert.match(missingCommand.expected_authoring_boundary.join('\n'), /Do not infer runnable commands/u);
+	assert.match(missingCommand.expected_authoring_boundary.join('\n'), /manual-only command intents/u);
+
+	assert.match(hostInstruction, /npm test/u);
+	assert.match(repositoryInstruction, /command intents declared/u);
+	assert.match(hostConflict.expected_authoring_boundary.join('\n'), /outside the mustflow command contract/u);
+	assert.match(hostConflict.expected_authoring_boundary.join('\n'), /compatible style guidance/u);
 });

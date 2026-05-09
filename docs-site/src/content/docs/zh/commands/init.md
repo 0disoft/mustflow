@@ -79,6 +79,7 @@ templates/default/
 - `.mustflow/context/` 包含面向代理的项目上下文，不是通用文档归档。
 - `README.md`、`.github/` 以及已有的 `config/`、`docs/` 和 `skills/` 目录不会被修改。
 - 不会创建源代码、包管理器配置或 CI 配置。
+- 如果模板 manifest 列出 `AGENTS.md` 和 `.mustflow/**` 之外的安装目标，mustflow 会拒绝该模板。
 - `--dry-run` 打印安装计划，不写入文件。
 - 当安装因冲突中止或以 `--dry-run` 运行时，不会写入 `manifest.lock.toml`。
 

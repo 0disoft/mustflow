@@ -97,6 +97,7 @@ export const enMessages = {
   "label.commandIntents": "Command definitions",
   "label.wroteFiles": "Wrote files",
   "label.query": "Query",
+  "label.scope": "Scope",
   "label.results": "Results",
   "label.comment": "Comment",
 
@@ -491,6 +492,7 @@ export const enMessages = {
   "index.help.summary":
     "Build a SQLite index that can be regenerated for the mustflow workflow.",
   "index.help.option.dryRun": "Calculate index targets without writing files",
+  "index.help.option.source": "Include structured source-code anchors without storing source content",
   "index.help.exit.ok": "Index targets were calculated and optionally written",
   "index.title": "mustflow index",
   "index.dryRunNoFiles": "Dry run: no files were written.",
@@ -622,10 +624,15 @@ Read these files before working:
     "Search the local SQLite index for the mustflow workflow.",
   "search.help.option.limit":
     "Set the number of results to print. Default: 10, max: 50",
+  "search.help.option.scope":
+    "Select indexed workflow data, source anchors, or both. Default: workflow",
   "search.help.exit.ok": "Search completed",
   "search.help.exit.fail": "Invalid input or missing local index",
   "search.error.missingLimit": "Missing value for --limit",
   "search.error.invalidLimit": "--limit must be an integer between 1 and 50",
+  "search.error.missingScope": "Missing value for --scope",
+  "search.error.invalidScope":
+    'Unsupported search scope "{scope}". Use workflow, source, or all',
   "search.error.missingQuery": "Search query is required",
   "search.title": "mustflow search",
   "search.noMatches": "No matching entries.",
@@ -729,6 +736,7 @@ Read these files before working:
   "explain.error.missingTopic": "Missing explain topic",
   "explain.error.missingCommand": "Missing command intent",
   "explain.error.missingSkill": "Missing skill id",
+  "explain.error.missingAnchor": "Missing source anchor id",
   "explain.error.unknownTopic": "Unknown explain topic: {topic}",
 
   "update.help.summary":

@@ -53,6 +53,7 @@ writes_only_template_manifest_paths: true
 - Si un nouveau fichier de modèle entre en conflit avec un fichier existant absent du verrou, il est traité comme un changement local et n’est pas écrasé.
 - Actualiser les entrées concernées de `manifest.lock.toml` après une mise à jour réussie.
 - `mf update` écrit uniquement les fichiers mustflow déclarés par le manifeste du modèle et le fichier de verrouillage.
+- Rejeter les modèles dont le manifeste déclare des cibles d’installation hors de `AGENTS.md` et `.mustflow/**`.
 - Si une écriture échoue, signaler les fichiers déjà écrits et les chemins de sauvegarde.
 
 ## Gestion de AGENTS.md

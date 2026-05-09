@@ -51,6 +51,7 @@ writes_only_template_manifest_paths: true
 - यदि कोई new template file lock में मौजूद न होने वाली existing file से conflict करती है, तो उसे local change माना जाता है और overwrite नहीं किया जाता।
 - successful update के बाद प्रभावित `manifest.lock.toml` entries refresh करें।
 - `mf update` केवल template manifest और lock file में घोषित mustflow files लिखता है।
+- ऐसे templates reject करें जिनका manifest `AGENTS.md` और `.mustflow/**` के बाहर install targets declare करता है।
 - यदि कोई write विफल होता है, तो पहले से लिखी गई files और backup paths report करें।
 
 ## AGENTS.md संभालना

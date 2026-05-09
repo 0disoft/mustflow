@@ -69,6 +69,38 @@ function readStringGroup(raw: unknown, label: string): { defaultValue: string; a
 	};
 }
 
+function normalizeTemplateTargetPath(relativePath: string): string {
+	return relativePath.replaceAll('\\', '/');
+}
+
+function isAllowedTemplateCreateTarget(relativePath: string): boolean {
+	const normalizedPath = normalizeTemplateTargetPath(relativePath);
+
+	if (
+		normalizedPath.startsWith('/') ||
+		normalizedPath.startsWith('../') ||
+		normalizedPath.includes('/../') ||
+		normalizedPath.endsWith('/..')
+	) {
+		return false;
+	}
+
+	return normalizedPath === 'AGENTS.md' || normalizedPath.startsWith('.mustflow/');
+}
+
+function validateTemplateCreateTargets(creates: readonly string[]): void {
+	const invalidTarget = creates.find((relativePath) => !isAllowedTemplateCreateTarget(relativePath));
+
+	if (!invalidTarget) {
+		return;
+	}
+
+	throw new Error(
+		`Template manifest creates target "${invalidTarget}" outside the mustflow-managed install surface. ` +
+			'Template installation and updates may write only AGENTS.md and .mustflow/**.',
+	);
+}
+
 function readManifest(manifestPath: string): TemplateManifest {
 	const raw = parse(readFileSync(manifestPath, 'utf8')) as RawManifest;
 
@@ -83,6 +115,8 @@ function readManifest(manifestPath: string): TemplateManifest {
 	if (!Array.isArray(raw.creates) || raw.creates.some((entry) => typeof entry !== 'string')) {
 		throw new Error(`Template manifest is missing string array field: creates`);
 	}
+
+	validateTemplateCreateTargets(raw.creates as string[]);
 
 	const profiles = readStringGroup(raw.profiles, 'profiles');
 	const locales = readStringGroup(raw.locales, 'locales');

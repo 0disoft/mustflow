@@ -9,6 +9,8 @@ Sans chemin, la commande affiche le modèle d'autorité. Avec un chemin, elle in
 
 `mf explain asset-optimization` explique le chemin de décision pour l'optimisation des images web. Il indique si le skill `web-asset-optimization` s'applique et si `asset_optimize` est une intention de commande configurée et exécutable par l'agent, afin que l'agent ne devine pas des convertisseurs d'images ou des commandes de paquet.
 
+`mf explain anchor <anchor_id>` explique une ancre structurée de code source. Les ancres source sont seulement des coordonnées de navigation : elles aident à trouver le code, mais ne définissent pas de règles de workflow, de permission de commande ni d'autorité de vérification.
+
 `mf explain command <intent>` explique si une intention de commande dans `.mustflow/config/commands.toml` peut être exécutée avec `mf run`, pourquoi elle est autorisée ou bloquée, et si son exécution compterait comme vérification mustflow.
 
 `mf explain retention` explique la politique de rétention effective de `.mustflow/config/mustflow.toml`, notamment le stockage des événements bruts, les reçus d'exécution bornés et les limites de contexte.
@@ -26,6 +28,7 @@ Sans chemin, la commande affiche le modèle d'autorité. Avec un chemin, elle in
 - `Effective action` : action que l'agent doit appliquer.
 - `Counts as mustflow verification` : indique si le résultat compte comme reçu de vérification.
 - `Source files` : fichiers qui définissent la source de la règle.
+- `Source anchor` : chemin, ligne, objectif, termes de recherche, invariant, risque et autorité limitée à la navigation quand le sujet `anchor` est utilisé.
 - `Expected frontmatter` : valeurs `mustflow_doc`, `authority` et `lifecycle` requises quand le chemin est reconnu.
 - `Authority boundary` : ce que cette autorité peut définir et ce qu'elle doit laisser aux fichiers de plus haute autorité, au code actuel ou à `commands.toml`.
 - `Command intent` : métadonnées du contrat de commande quand le sujet `command` est utilisé.
@@ -38,6 +41,8 @@ Sans chemin, la commande affiche le modèle d'autorité. Avec un chemin, elle in
 ```sh
 npx mf explain authority
 npx mf explain authority AGENTS.md
+npx mf explain anchor auth.session.resolve
+npx mf explain anchor auth.session.resolve --json
 npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
@@ -61,7 +66,7 @@ La sortie lisible par machine utilise ces champs :
 
 - `schema_version` (`string`) : version du format de sortie.
 - `command` (`string`) : toujours `explain`.
-- `topic` (`string`) : `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills` ou `surface`.
+- `topic` (`string`) : `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills` ou `surface`.
 - `mustflow_root` (`string`) : racine mustflow actuelle.
 - `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet. Pour `authority`, inclut `boundary.role`, `boundary.canDefine` et `boundary.cannotDefine`.
 

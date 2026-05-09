@@ -66,24 +66,6 @@ Rationale:
   cross-file flows, directories, or architecture relationships that would be too
   verbose inside source comments.
 
-MVP scope:
-
-- Keep source indexing disabled by default.
-- Do not let `mf init`, `mf update`, or any template operation write application
-  source-code anchors automatically.
-- Start with structured inline symbol anchors only. A valid anchor should be
-  short and field-based, such as `mf:anchor`, `purpose`, `search`, `invariant`,
-  and `risk`.
-- Treat every source anchor as `navigation_only = true` and
-  `can_instruct_agent = false`.
-- Extend existing verbs first: `mf index --source`, `mf search --scope source`,
-  `mf search --scope all`, `mf check --strict`, and `mf explain anchor <id>`.
-- In `--scope all`, group workflow and authority results above source
-  navigation hints. Do not let a strong source-anchor text match outrank command
-  contracts or workflow rules.
-- Add a source-anchor table to the local SQLite index without storing full
-  source content by default.
-
 Anchor state model:
 
 - `valid`: anchor fields and target symbol still line up.
@@ -95,17 +77,6 @@ Anchor state model:
   the anchor invariant.
 - `invalid`: parse failure, duplicate ID, forbidden instruction, secret-like
   content, generated/vendor path, or invalid risk value.
-
-Strict-check boundaries:
-
-- `mf check --strict` should fail on `invalid` anchors, duplicate IDs, forbidden
-  command or policy instructions, high-confidence secret patterns, generated or
-  vendor anchors, and unknown risk values.
-- Quality issues such as long `purpose`, too many `search` terms, high anchor
-  density, or ordinary target-body changes should be warnings or review items,
-  not immediate blocking errors.
-- High-risk classes such as authorization, personal data, payment, migration,
-  data loss, and security should use lower thresholds for `review`.
 
 Deferred scope:
 
@@ -133,20 +104,6 @@ promising a broad public API.
 - Export only the minimum surface needed internally until API stability is
   intentionally documented.
 - Preserve existing CLI behavior while reducing duplicated policy logic.
-
-## Supporting Milestones
-
-### Examples and Fixtures
-
-Goal: show real project shapes without making tests depend on presentation
-examples.
-
-- Cover missing command contracts and host instruction conflicts.
-- Assert that authoring skills do not invent goals, silently merge conflicts,
-  overwrite human context, edit README during context authoring, run raw
-  commands without intents, copy secrets, broaden bad skills, or create
-  unnecessary diffs on a second run.
-- Keep examples natural even when test fixtures need edge-case precision.
 
 ## Later Candidates
 

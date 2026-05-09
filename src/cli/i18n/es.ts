@@ -99,6 +99,7 @@ export const esMessages = {
   "label.commandIntents": "Definiciones de comandos",
   "label.wroteFiles": "Archivos escritos",
   "label.query": "Consulta",
+  "label.scope": "Alcance",
   "label.results": "Resultados",
   "label.comment": "Comentario",
 
@@ -493,6 +494,7 @@ export const esMessages = {
   "index.help.summary":
     "Construye un índice SQLite que se puede regenerar para el flujo de trabajo mustflow.",
   "index.help.option.dryRun": "Calcula los objetivos del índice sin escribir archivos",
+  "index.help.option.source": "Incluye anclas estructuradas de código fuente sin guardar el contenido fuente",
   "index.help.exit.ok": "Los objetivos del índice se calcularon y se escribieron opcionalmente",
   "index.title": "índice mustflow",
   "index.dryRunNoFiles": "Ensayo: no se escribieron archivos.",
@@ -624,10 +626,15 @@ Lee estos archivos antes de trabajar:
     "Busca en el índice SQLite local del flujo de trabajo mustflow.",
   "search.help.option.limit":
     "Define la cantidad de resultados que se imprimen. Predeterminado: 10, máximo: 50",
+  "search.help.option.scope":
+    "Selecciona datos del flujo de trabajo indexados, anchors de código fuente o ambos. Predeterminado: workflow",
   "search.help.exit.ok": "Búsqueda completada",
   "search.help.exit.fail": "Entrada no válida o índice local faltante",
   "search.error.missingLimit": "Falta el valor de --limit",
   "search.error.invalidLimit": "--limit debe ser un entero entre 1 y 50",
+  "search.error.missingScope": "Falta el valor de --scope",
+  "search.error.invalidScope":
+    'Alcance de búsqueda no soportado "{scope}". Usa workflow, source o all',
   "search.error.missingQuery": "Se requiere una consulta de búsqueda",
   "search.title": "búsqueda mustflow",
   "search.noMatches": "No hay entradas coincidentes.",
@@ -731,6 +738,7 @@ Lee estos archivos antes de trabajar:
   "explain.error.missingTopic": "Falta el tema de explicación",
   "explain.error.missingCommand": "Falta la intención de comando",
   "explain.error.missingSkill": "Falta el id de skill",
+  "explain.error.missingAnchor": "Falta el id del ancla de código fuente",
   "explain.error.unknownTopic": "Tema de explicación desconocido: {topic}",
 
   "update.help.summary":

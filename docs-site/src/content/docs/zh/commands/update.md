@@ -78,6 +78,7 @@ npx mf update --apply
 
 更新已有文件前，mustflow 会在 `.mustflow/backups/<timestamp>/` 下写入备份。
 应用变更后，它会用新的 hash 和 `last_action` 刷新 `.mustflow/config/manifest.lock.toml` 中受影响条目。
+如果内置模板 manifest 列出 `AGENTS.md` 和 `.mustflow/**` 之外的目标，更新计划会在任何写入前失败。
 
 如果新增模板文件在用户仓库中已存在，但未记录在锁文件中且内容不同，mustflow 会将其视为本地变更并拒绝覆盖。
 

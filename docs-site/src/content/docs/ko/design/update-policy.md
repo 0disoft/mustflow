@@ -53,6 +53,7 @@ writes_only_template_manifest_paths: true
 - 잠금 파일에 없는 기존 파일과 새 템플릿 파일이 충돌하면 로컬 변경으로 보고 덮어쓰지 않습니다.
 - 갱신 후에는 `manifest.lock.toml`의 적용 파일 항목을 새 해시와 처리 결과로 갱신합니다.
 - `mf update`는 템플릿 매니페스트에 선언된 mustflow 파일과 잠금 파일만 씁니다.
+- 템플릿 매니페스트가 `AGENTS.md`와 `.mustflow/**` 밖의 설치 대상을 선언하면 거부합니다.
 - 갱신 중 하나라도 실패하면 이미 쓴 파일과 백업 경로를 보고해야 합니다.
 
 ## AGENTS.md 처리

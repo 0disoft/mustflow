@@ -7,16 +7,19 @@ description: Builds the local SQLite index for mustflow documents.
 
 The source of truth remains the files on disk; the index serves as a cache that enables `mf search` and future map or dashboard features to retrieve mustflow documents efficiently.
 
+Use `--source` to include structured source-code anchors. Source indexing is opt-in and stores anchor metadata only, not full source content.
+
 ## Indexed Inputs
 
 - `AGENTS.md`
 - `.mustflow/docs/*.md`
 - `.mustflow/skills/INDEX.md`
-- `.//mustflow/skills/*/SKILL.md`
+- `.mustflow/skills/*/SKILL.md`
 - `.mustflow/config/*.toml`
 - Command intents from `.mustflow/config/commands.toml`
+- Structured source-code anchors only when `--source` is provided
 
-The command does not index arbitrary project source files; it is scoped exclusively to mustflow workflow files.
+The default command does not index arbitrary project source files; it is scoped exclusively to mustflow workflow files. With `--source`, it scans source files for structured `mf:anchor` comments and writes only anchor fields such as id, path, line, purpose, search terms, invariant, and risk.
 
 ## Output File
 
@@ -34,6 +37,14 @@ npx mf index --dry-run --json
 ```
 
 A dry run calculates the index targets and prints counts without writing the SQLite file.
+
+## Source Anchors
+
+```sh
+npx mf index --source --json
+```
+
+Source anchor indexing is for navigation only. The resulting `source_anchors` table cannot define workflow rules, command permission, or verification authority.
 
 ## JSON Fields
 
@@ -53,6 +64,8 @@ The machine-readable output uses the following fields:
 - `document_count` (`number`): Number of indexed mustflow documents and config files.
 - `skill_count` (`number`): Number of indexed skill documents.
 - `command_intent_count` (`number`): Number of indexed command intents.
+- `source_index_enabled` (`boolean`): Whether source-anchor indexing was requested.
+- `source_anchor_count` (`number`): Number of indexed structured source anchors.
 - `indexed_paths` (`string[]`): Paths included in the document index.
 
 ## Exit Codes

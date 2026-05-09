@@ -7,6 +7,8 @@ description: Construit l’index SQLite local des documents mustflow.
 
 La source de vérité reste les fichiers sur le disque. L’index est un cache qui aide `mf search` et les futures fonctions de carte ou de tableau de bord à lire rapidement les documents mustflow.
 
+Utilisez `--source` pour inclure des ancres structurées de code source. L’indexation source est optionnelle et stocke seulement les métadonnées d’ancre, pas le contenu complet du code.
+
 ## Entrées indexées
 
 - `AGENTS.md`
@@ -15,8 +17,9 @@ La source de vérité reste les fichiers sur le disque. L’index est un cache q
 - `.mustflow/skills/*/SKILL.md`
 - `.mustflow/config/*.toml`
 - Intentions de commande depuis `.mustflow/config/commands.toml`
+- Ancres structurées de code source seulement quand `--source` est fourni
 
-La commande n’indexe pas les fichiers source arbitraires du projet. Elle se limite aux fichiers de flux de travail mustflow.
+Par défaut, la commande n’indexe pas les fichiers source arbitraires du projet. Elle se limite aux fichiers de flux de travail mustflow. Avec `--source`, elle recherche les commentaires structurés `mf:anchor` et écrit seulement les champs d’ancre comme l’identifiant, le chemin, la ligne, l’objectif, les termes de recherche, l’invariant et le risque.
 
 ## Fichier de sortie
 
@@ -34,6 +37,14 @@ npx mf index --dry-run --json
 ```
 
 La simulation calcule les cibles de l’index et imprime les décomptes sans écrire le fichier SQLite.
+
+## Ancres source
+
+```sh
+npx mf index --source --json
+```
+
+L’indexation des ancres source sert seulement à la navigation. La table `source_anchors` produite ne peut pas définir de règles de workflow, de permission de commande ni d’autorité de vérification.
 
 ## Champs JSON
 
@@ -53,6 +64,8 @@ La sortie lisible par machine utilise ces champs:
 - `document_count` (`number`): nombre de documents mustflow et fichiers de configuration indexés.
 - `skill_count` (`number`): nombre de documents de skill indexés.
 - `command_intent_count` (`number`): nombre d’intentions de commande indexées.
+- `source_index_enabled` (`boolean`): indique si l’indexation des ancres source a été demandée.
+- `source_anchor_count` (`number`): nombre d’ancres structurées de code source indexées.
 - `indexed_paths` (`string[]`): chemins inclus dans l’index des documents.
 
 ## Codes de sortie

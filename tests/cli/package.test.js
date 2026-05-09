@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.42');
+	assert.equal(packageJson.version, '1.15.50');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -205,6 +205,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/commands/docs.js'));
 	assert.ok(files.has('dist/cli/commands/index.js'));
 	assert.ok(files.has('dist/cli/commands/explain.js'));
+	assert.ok(files.has('dist/core/source-anchor-explanation.js'));
 	assert.ok(files.has('dist/cli/commands/impact.js'));
 	assert.ok(files.has('dist/cli/commands/search.js'));
 	assert.ok(files.has('dist/cli/commands/dashboard.js'));
@@ -228,7 +229,9 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	assert.ok(files.has('examples/README.md'));
 	assert.ok(files.has('examples/docs-only/README.md'));
+	assert.ok(files.has('examples/host-instruction-conflicts/README.md'));
 	assert.ok(files.has('examples/minimal-js/README.md'));
+	assert.ok(files.has('examples/missing-command-contracts/README.md'));
 	assert.ok(files.has('examples/nested-repos/README.md'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));

@@ -99,6 +99,7 @@ export const frMessages = {
   "label.commandIntents": "Définitions de commandes",
   "label.wroteFiles": "Fichiers écrits",
   "label.query": "Requête",
+  "label.scope": "Portée",
   "label.results": "Résultats",
   "label.comment": "Commentaire",
 
@@ -493,6 +494,7 @@ export const frMessages = {
   "index.help.summary":
     "Construit un index SQLite régénérable pour le flux de travail mustflow.",
   "index.help.option.dryRun": "Calcule les cibles d'index sans écrire de fichiers",
+  "index.help.option.source": "Inclure les ancres structurées du code source sans stocker le contenu source",
   "index.help.exit.ok": "Les cibles d'index ont été calculées et éventuellement écrites",
   "index.title": "index mustflow",
   "index.dryRunNoFiles": "Simulation : aucun fichier n'a été écrit.",
@@ -624,10 +626,15 @@ Lisez ces fichiers avant de travailler :
     "Recherche dans l'index SQLite local du flux de travail mustflow.",
   "search.help.option.limit":
     "Définit le nombre de résultats à imprimer. Par défaut : 10, max : 50",
+  "search.help.option.scope":
+    "Sélectionne les données de workflow indexées, les anchors de source, ou les deux. Par défaut : workflow",
   "search.help.exit.ok": "Recherche terminée",
   "search.help.exit.fail": "Entrée non valide ou index local manquant",
   "search.error.missingLimit": "Valeur manquante pour --limit",
   "search.error.invalidLimit": "--limit doit être un entier entre 1 et 50",
+  "search.error.missingScope": "Valeur manquante pour --scope",
+  "search.error.invalidScope":
+    'Portée de recherche non prise en charge "{scope}". Utilise workflow, source ou all',
   "search.error.missingQuery": "La requête de recherche est requise",
   "search.title": "recherche mustflow",
   "search.noMatches": "Aucune entrée correspondante.",
@@ -731,6 +738,7 @@ Lisez ces fichiers avant de travailler :
   "explain.error.missingTopic": "Sujet d'explication manquant",
   "explain.error.missingCommand": "Intention de commande manquante",
   "explain.error.missingSkill": "Identifiant de skill manquant",
+  "explain.error.missingAnchor": "Identifiant d'ancre source manquant",
   "explain.error.unknownTopic": "Sujet d'explication inconnu : {topic}",
 
   "update.help.summary":

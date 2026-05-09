@@ -52,6 +52,7 @@ writes_only_template_manifest_paths: true
 - Si un archivo de plantilla nuevo entra en conflicto con un archivo existente que no está en el lock, se trata como cambio local y no se sobrescribe.
 - Refrescar las entradas afectadas de `manifest.lock.toml` después de una actualización correcta.
 - `mf update` escribe solo archivos mustflow declarados por el manifiesto de plantilla y el archivo de bloqueo.
+- Rechazar plantillas cuyo manifest declare destinos de instalación fuera de `AGENTS.md` y `.mustflow/**`.
 - Si alguna escritura falla, informar los archivos ya escritos y las rutas de copia de seguridad.
 
 ## Manejo de AGENTS.md

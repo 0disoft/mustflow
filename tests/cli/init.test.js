@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
+	cpSync,
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readdirSync,
 	readFileSync,
@@ -34,6 +36,23 @@ function runInit(cwd, args = ['--yes'], options = {}) {
 
 function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+}
+
+function addTemplateCreate(templatePath, relativePath, content) {
+	const manifestPath = path.join(templatePath, 'manifest.toml');
+
+	writeFileSync(
+		manifestPath,
+		readFileSync(manifestPath, 'utf8').replace(
+			'  ".mustflow/docs/agent-workflow.md",',
+			`  ".mustflow/docs/agent-workflow.md",\n  "${relativePath}",`,
+		),
+	);
+
+	const sourcePath = path.join(templatePath, 'common', ...relativePath.split('/'));
+
+	mkdirSync(path.dirname(sourcePath), { recursive: true });
+	writeFileSync(sourcePath, content);
 }
 
 test('copies the default agent workflow into an empty project', () => {
@@ -156,6 +175,32 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.doesNotMatch(agents, /Do not change version files unless the user explicitly requests/);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('refuses template creates outside the mustflow install surface during init', () => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+
+	try {
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		addTemplateCreate(
+			templatePath,
+			'src/anchored.ts',
+			'// mf:anchor app.generated\nexport const generated = true;\n',
+		);
+
+		const result = runInit(projectPath, ['--yes'], {
+			env: { ...process.env, MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath },
+		});
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /outside the mustflow-managed install surface/);
+		assert.equal(existsSync(path.join(projectPath, 'src', 'anchored.ts')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml')), false);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
 	}
 });
 

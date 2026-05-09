@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "name": "missing-command-contracts",
+  "purpose": "Represents a repository with package scripts that are not declared as mustflow command intents.",
+  "expected_authoring_boundary": [
+    "Do not infer runnable commands from package-manager files.",
+    "Report unknown or manual-only command intents instead of running raw package scripts."
+  ]
+}

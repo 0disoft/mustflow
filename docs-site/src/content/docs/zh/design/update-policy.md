@@ -53,6 +53,7 @@ writes_only_template_manifest_paths: true
 - 如果新的模板文件与未出现在锁文件中的已有文件冲突，该文件会被视为本地变更且不会被覆盖。
 - 成功更新后，刷新受影响的 `manifest.lock.toml` 条目。
 - `mf update` 只写入模板 manifest 和锁文件声明的 mustflow 文件。
+- 如果模板 manifest 声明 `AGENTS.md` 和 `.mustflow/**` 之外的安装目标，则拒绝该模板。
 - 如果任何写入失败，报告已写入文件和备份路径。
 
 ## AGENTS.md 处理

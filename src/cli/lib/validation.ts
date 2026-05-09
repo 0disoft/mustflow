@@ -263,6 +263,75 @@ const SECRET_LIKE_CONTEXT_PATTERNS = [
 	/\b(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=:-]{8,}/iu,
 	/\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/u,
 ];
+const SOURCE_ANCHOR_EXTENSIONS = new Set(['.cjs', '.go', '.js', '.jsx', '.mjs', '.py', '.rs', '.ts', '.tsx']);
+const SOURCE_ANCHOR_IGNORED_DIRECTORIES = new Set([
+	'.git',
+	'.mustflow',
+	'coverage',
+	'dist',
+	'build',
+	'node_modules',
+	'tests',
+	'.next',
+	'.nuxt',
+]);
+const SOURCE_ANCHOR_GENERATED_PATH_PARTS = new Set([
+	'__generated__',
+	'build',
+	'dist',
+	'generated',
+	'third_party',
+	'vendor',
+]);
+const SOURCE_ANCHOR_ALLOWED_FIELDS = new Set(['purpose', 'search', 'invariant', 'risk']);
+const SOURCE_ANCHOR_ALLOWED_RISKS = new Set([
+	'authn',
+	'authz',
+	'authorization',
+	'cache',
+	'config',
+	'data_consistency',
+	'data_loss',
+	'dependency',
+	'external_request',
+	'file_upload',
+	'injection',
+	'migration',
+	'payment',
+	'pii',
+	'privacy',
+	'retention',
+	'secrets',
+	'security',
+	'ssrf',
+	'state',
+	'xss',
+]);
+const SOURCE_ANCHOR_ID_PATTERN = /^[a-z0-9][a-z0-9.-]{0,95}$/u;
+const SOURCE_ANCHOR_PURPOSE_WARNING_MAX_CHARS = 180;
+const SOURCE_ANCHOR_SEARCH_WARNING_MAX_TERMS = 12;
+const SOURCE_ANCHOR_DENSITY_WARNING_MAX_PER_FILE = 5;
+const SOURCE_ANCHOR_DENSITY_WARNING_MIN_LINES_PER_ANCHOR = 120;
+const SOURCE_ANCHOR_HIGH_RISK_PURPOSE_REVIEW_MAX_CHARS = 120;
+const SOURCE_ANCHOR_HIGH_RISK_SEARCH_REVIEW_MAX_TERMS = 8;
+const SOURCE_ANCHOR_HIGH_RISK_TAGS = new Set([
+	'authz',
+	'authorization',
+	'data_loss',
+	'migration',
+	'payment',
+	'pii',
+	'privacy',
+	'secrets',
+	'security',
+]);
+const SOURCE_ANCHOR_FORBIDDEN_INSTRUCTION_PATTERNS = [
+	/\b(?:agent|agents|llm|model|assistant)\s+(?:must|should|may|can)\s+(?:not\s+)?(?:run|execute|skip|ignore|bypass|override)\b/iu,
+	/\b(?:do\s+not|don't|never|skip)\s+(?:run|execute)\s+(?:tests?|checks?|validation|mf\s+run)\b/iu,
+	/\b(?:ignore|bypass|override)\s+(?:AGENTS\.md|mustflow|command\s+contract|commands\.toml|workflow\s+rules?)\b/iu,
+	/\b(?:run|execute)\s+(?:this\s+)?(?:shell\s+)?command\b/iu,
+	/\bmf\s+run\s+[a-z0-9_.-]+\b/iu,
+];
 const DESIGN_TOKEN_DEFINITION_PATTERNS = [
 	/^\s*(?:colors?|palette|spacing|radius|radii|typography|fonts?|shadows?|breakpoints?)\s*[:=]\s*(?:\{|\[|["']?#|\d)/imu,
 	/^\s*(?:primary|secondary|accent|background|foreground|surface|brand|text|muted)\s*[:=]\s*["']?#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/imu,
@@ -273,6 +342,7 @@ const LOCAL_TASK_STATE_ROOTS = new Set(['worklogs', 'plans', 'tasks', 'work-item
 
 interface CheckIssue {
 	readonly message: string;
+	readonly severity?: 'error' | 'warning';
 }
 
 export type CheckIssueId =
@@ -297,6 +367,16 @@ export type CheckIssueId =
 	| 'mustflow.skill.unknown_command_intent'
 	| 'mustflow.skill.index_route_unknown_command_intent'
 	| 'mustflow.skill.resource_unknown_command_intent'
+	| 'mustflow.source_anchor.invalid_format'
+	| 'mustflow.source_anchor.duplicate_id'
+	| 'mustflow.source_anchor.forbidden_instruction'
+	| 'mustflow.source_anchor.secret_like'
+	| 'mustflow.source_anchor.generated_or_vendor_path'
+	| 'mustflow.source_anchor.unknown_risk'
+	| 'mustflow.source_anchor.long_purpose'
+	| 'mustflow.source_anchor.too_many_search_terms'
+	| 'mustflow.source_anchor.high_density'
+	| 'mustflow.source_anchor.high_risk_review'
 	| 'mustflow.run_receipt.invalid_json'
 	| 'mustflow.run_receipt.invalid_shape'
 	| 'mustflow.retention.run_receipt_size_limit'
@@ -332,6 +412,16 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.skill.unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.command_intents references unknown command intent "[^"]+"$/u],
 	['mustflow.skill.index_route_unknown_command_intent', /^Strict: \.mustflow\/skills\/INDEX\.md route \.mustflow\/skills\/[^/]+\/SKILL\.md references command intent "[^"]+" not declared by the skill frontmatter$/u],
 	['mustflow.skill.resource_unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/resources\.toml script [^\s]+ references unknown command intent "[^"]+"$/u],
+	['mustflow.source_anchor.invalid_format', /^Strict: source anchor .+ has invalid format:/u],
+	['mustflow.source_anchor.duplicate_id', /^Strict: source anchor id "[^"]+" is duplicated:/u],
+	['mustflow.source_anchor.forbidden_instruction', /^Strict: source anchor [^ ]+ in .+ contains agent command or policy instructions/u],
+	['mustflow.source_anchor.secret_like', /^Strict: source anchor [^ ]+ in .+ contains secret-like text/u],
+	['mustflow.source_anchor.generated_or_vendor_path', /^Strict: source anchor [^ ]+ is in generated or vendor path /u],
+	['mustflow.source_anchor.unknown_risk', /^Strict: source anchor [^ ]+ in .+ uses unknown risk tag "[^"]+"$/u],
+	['mustflow.source_anchor.long_purpose', /^Strict warning: source anchor [^ ]+ in .+ purpose is long/u],
+	['mustflow.source_anchor.too_many_search_terms', /^Strict warning: source anchor [^ ]+ in .+ has too many search terms/u],
+	['mustflow.source_anchor.high_density', /^Strict warning: .+ has high source anchor density/u],
+	['mustflow.source_anchor.high_risk_review', /^Strict warning: source anchor [^ ]+ in .+ uses high-risk tags and needs review:/u],
 	['mustflow.run_receipt.invalid_json', /^Strict: \.mustflow\/state\/runs\/latest\.json is not valid JSON:/u],
 	['mustflow.run_receipt.invalid_shape', /^Strict: \.mustflow\/state\/runs\/latest\.json must contain a JSON object$/u],
 	['mustflow.retention.run_receipt_size_limit', /^Strict: \.mustflow\/state\/runs\/latest\.json exceeds \[retention\.run_receipts\]\.max_file_kb/u],
@@ -352,8 +442,8 @@ export function getCheckIssueId(message: string): CheckIssueId | null {
 export function describeCheckIssues(messages: readonly string[]): CheckIssueDetail[] {
 	return messages.map((message) => ({
 		id: getCheckIssueId(message),
-		severity: 'error',
-		mode: message.startsWith('Strict: ') ? 'strict' : 'base',
+		severity: message.startsWith('Strict warning: ') ? 'warning' : 'error',
+		mode: message.startsWith('Strict') ? 'strict' : 'base',
 		message,
 	}));
 }
@@ -1634,6 +1724,10 @@ function pushStrictIssue(issues: CheckIssue[], message: string): void {
 	issues.push({ message: `Strict: ${message}` });
 }
 
+function pushStrictWarning(issues: CheckIssue[], message: string): void {
+	issues.push({ message: `Strict warning: ${message}`, severity: 'warning' });
+}
+
 function validateStrictPromptCachePolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!mustflowToml || !isRecord(mustflowToml.prompt_cache)) {
 		pushStrictIssue(issues, '[prompt_cache] table is required');
@@ -2402,6 +2496,262 @@ function validateStrictContextDocuments(projectRoot: string, limits: RetentionLi
 	}
 }
 
+interface StrictSourceAnchor {
+	readonly id: string;
+	readonly path: string;
+	readonly line: number;
+	readonly fields: ReadonlyMap<string, string>;
+	readonly rawText: string;
+}
+
+function stripSourceAnchorCommentPrefix(line: string): string {
+	return line
+		.trim()
+		.replace(/^\/\*\*?/u, '')
+		.replace(/\*\/$/u, '')
+		.replace(/^\/\//u, '')
+		.replace(/^#/u, '')
+		.replace(/^\*/u, '')
+		.trim();
+}
+
+function readSourceAnchorField(line: string): { readonly key: string; readonly value: string } | null {
+	const separator = line.indexOf(':');
+
+	if (separator === -1) {
+		return null;
+	}
+
+	const key = line.slice(0, separator).trim().toLowerCase();
+	const value = line.slice(separator + 1).trim();
+
+	if (key.length === 0 || value.length === 0) {
+		return null;
+	}
+
+	return { key, value };
+}
+
+function splitSourceAnchorList(value: string | undefined): readonly string[] {
+	if (!value) {
+		return [];
+	}
+
+	return value
+		.split(/[,;]/u)
+		.map((entry) => entry.trim())
+		.filter((entry) => entry.length > 0);
+}
+
+function sourceAnchorLabel(anchor: Pick<StrictSourceAnchor, 'id' | 'path' | 'line'>): string {
+	return `${anchor.id} in ${anchor.path}:${anchor.line}`;
+}
+
+function sourceAnchorPathIsGeneratedOrVendor(relativePath: string): boolean {
+	const normalized = toPosixPath(relativePath);
+	const parts = normalized.split('/');
+
+	if (normalized.endsWith('.min.js') || normalized.endsWith('.min.css')) {
+		return true;
+	}
+
+	return parts.some((part) => SOURCE_ANCHOR_GENERATED_PATH_PARTS.has(part));
+}
+
+function parseStrictSourceAnchors(relativePath: string, content: string, issues: CheckIssue[]): StrictSourceAnchor[] {
+	const lines = content.split(/\r?\n/);
+	const anchors: StrictSourceAnchor[] = [];
+
+	for (let index = 0; index < lines.length; index += 1) {
+		const normalized = stripSourceAnchorCommentPrefix(lines[index] ?? '');
+
+		if (!normalized.startsWith('mf:anchor')) {
+			continue;
+		}
+
+		const anchorMatch = normalized.match(/^mf:anchor\s+(.+)$/u);
+
+		if (!anchorMatch) {
+			pushStrictIssue(issues, `source anchor ${relativePath}:${index + 1} has invalid format: expected "mf:anchor <id>"`);
+			continue;
+		}
+
+		const id = anchorMatch[1]?.trim() ?? '';
+
+		if (!SOURCE_ANCHOR_ID_PATTERN.test(id)) {
+			pushStrictIssue(
+				issues,
+				`source anchor ${relativePath}:${index + 1} has invalid format: anchor id must be lowercase letters, numbers, dots, or hyphens`,
+			);
+			continue;
+		}
+
+		const fields = new Map<string, string>();
+		const rawLines = [normalized];
+
+		for (let fieldIndex = index + 1; fieldIndex < lines.length; fieldIndex += 1) {
+			const fieldLine = stripSourceAnchorCommentPrefix(lines[fieldIndex] ?? '');
+
+			if (fieldLine.length === 0) {
+				continue;
+			}
+
+			if (fieldLine.startsWith('@') || /^[A-Za-z_$][\w$]*\s/u.test(fieldLine)) {
+				break;
+			}
+
+			const field = readSourceAnchorField(fieldLine);
+
+			if (!field) {
+				break;
+			}
+
+			rawLines.push(fieldLine);
+
+			if (!SOURCE_ANCHOR_ALLOWED_FIELDS.has(field.key)) {
+				pushStrictIssue(
+					issues,
+					`source anchor ${id} in ${relativePath}:${index + 1} has invalid format: unsupported field "${field.key}"`,
+				);
+				continue;
+			}
+
+			fields.set(field.key, field.value);
+		}
+
+		anchors.push({
+			id,
+			path: relativePath,
+			line: index + 1,
+			fields,
+			rawText: rawLines.join('\n'),
+		});
+	}
+
+	return anchors;
+}
+
+function validateStrictSourceAnchor(anchor: StrictSourceAnchor, issues: CheckIssue[]): void {
+	const label = sourceAnchorLabel(anchor);
+
+	if (sourceAnchorPathIsGeneratedOrVendor(anchor.path)) {
+		pushStrictIssue(issues, `source anchor ${anchor.id} is in generated or vendor path ${anchor.path}`);
+	}
+
+	if (SOURCE_ANCHOR_FORBIDDEN_INSTRUCTION_PATTERNS.some((pattern) => pattern.test(anchor.rawText))) {
+		pushStrictIssue(issues, `source anchor ${label} contains agent command or policy instructions`);
+	}
+
+	if (SECRET_LIKE_CONTEXT_PATTERNS.some((pattern) => pattern.test(anchor.rawText))) {
+		pushStrictIssue(issues, `source anchor ${label} contains secret-like text`);
+	}
+
+	const riskTags = splitSourceAnchorList(anchor.fields.get('risk'));
+
+	for (const risk of riskTags) {
+		if (!SOURCE_ANCHOR_ALLOWED_RISKS.has(risk)) {
+			pushStrictIssue(issues, `source anchor ${label} uses unknown risk tag "${risk}"`);
+		}
+	}
+
+	const purpose = anchor.fields.get('purpose');
+	if (purpose && purpose.length > SOURCE_ANCHOR_PURPOSE_WARNING_MAX_CHARS) {
+		pushStrictWarning(
+			issues,
+			`source anchor ${label} purpose is long (${purpose.length} characters > ${SOURCE_ANCHOR_PURPOSE_WARNING_MAX_CHARS})`,
+		);
+	}
+
+	const searchTerms = splitSourceAnchorList(anchor.fields.get('search'));
+	if (searchTerms.length > SOURCE_ANCHOR_SEARCH_WARNING_MAX_TERMS) {
+		pushStrictWarning(
+			issues,
+			`source anchor ${label} has too many search terms (${searchTerms.length} > ${SOURCE_ANCHOR_SEARCH_WARNING_MAX_TERMS})`,
+		);
+	}
+
+	const highRiskTags = riskTags.filter((risk) => SOURCE_ANCHOR_HIGH_RISK_TAGS.has(risk));
+	if (highRiskTags.length === 0) {
+		return;
+	}
+
+	const reviewReasons: string[] = [];
+	if (!anchor.fields.has('invariant')) {
+		reviewReasons.push('missing invariant');
+	}
+
+	if (purpose && purpose.length > SOURCE_ANCHOR_HIGH_RISK_PURPOSE_REVIEW_MAX_CHARS) {
+		reviewReasons.push(`purpose ${purpose.length} characters > ${SOURCE_ANCHOR_HIGH_RISK_PURPOSE_REVIEW_MAX_CHARS}`);
+	}
+
+	if (searchTerms.length > SOURCE_ANCHOR_HIGH_RISK_SEARCH_REVIEW_MAX_TERMS) {
+		reviewReasons.push(`search terms ${searchTerms.length} > ${SOURCE_ANCHOR_HIGH_RISK_SEARCH_REVIEW_MAX_TERMS}`);
+	}
+
+	if (reviewReasons.length === 0) {
+		return;
+	}
+
+	pushStrictWarning(
+		issues,
+		`source anchor ${label} uses high-risk tags and needs review: ${highRiskTags.join(', ')}; ${reviewReasons.join('; ')}`,
+	);
+}
+
+function countNonEmptyLines(content: string): number {
+	return content.split(/\r?\n/u).filter((line) => line.trim().length > 0).length;
+}
+
+function validateStrictSourceAnchorDensity(relativePath: string, content: string, anchors: readonly StrictSourceAnchor[], issues: CheckIssue[]): void {
+	if (anchors.length <= SOURCE_ANCHOR_DENSITY_WARNING_MAX_PER_FILE) {
+		return;
+	}
+
+	const nonEmptyLines = countNonEmptyLines(content);
+	const linesPerAnchor = nonEmptyLines / anchors.length;
+
+	if (linesPerAnchor >= SOURCE_ANCHOR_DENSITY_WARNING_MIN_LINES_PER_ANCHOR) {
+		return;
+	}
+
+	pushStrictWarning(
+		issues,
+		`${relativePath} has high source anchor density (${anchors.length} anchors across ${nonEmptyLines} non-empty lines)`,
+	);
+}
+
+function validateStrictSourceAnchors(projectRoot: string, issues: CheckIssue[]): void {
+	const sourceFiles = listFilesRecursive(projectRoot, {
+		ignoredDirectoryNames: SOURCE_ANCHOR_IGNORED_DIRECTORIES,
+	}).filter((relativePath) => SOURCE_ANCHOR_EXTENSIONS.has(path.posix.extname(relativePath)));
+	const anchorsById = new Map<string, StrictSourceAnchor[]>();
+
+	for (const relativePath of sourceFiles) {
+		const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
+		const content = readFileSync(absolutePath, 'utf8');
+		const anchors = parseStrictSourceAnchors(relativePath, content, issues);
+		validateStrictSourceAnchorDensity(relativePath, content, anchors, issues);
+
+		for (const anchor of anchors) {
+			const anchorsForId = anchorsById.get(anchor.id) ?? [];
+			anchorsForId.push(anchor);
+			anchorsById.set(anchor.id, anchorsForId);
+			validateStrictSourceAnchor(anchor, issues);
+		}
+	}
+
+	for (const [id, anchors] of anchorsById) {
+		if (anchors.length <= 1) {
+			continue;
+		}
+
+		pushStrictIssue(
+			issues,
+			`source anchor id "${id}" is duplicated: ${anchors.map((anchor) => `${anchor.path}:${anchor.line}`).join(', ')}`,
+		);
+	}
+}
+
 function validateStrictRunReceipt(projectRoot: string, issues: CheckIssue[]): void {
 	const latestRunPath = path.join(projectRoot, '.mustflow', 'state', 'runs', 'latest.json');
 
@@ -2498,11 +2848,12 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
 	validateStrictRepoMap(projectRoot, issues);
 	validateStrictContextDocuments(projectRoot, retentionLimits, issues);
+	validateStrictSourceAnchors(projectRoot, issues);
 	validateStrictRunReceipt(projectRoot, issues);
 	validateStrictStorage(projectRoot, retentionLimits, issues);
 }
 
-export function checkMustflowProject(projectRoot: string, options: CheckOptions = {}): string[] {
+function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): CheckIssue[] {
 	const issues: CheckIssue[] = [];
 
 	validateRequiredFiles(projectRoot, issues);
@@ -2519,5 +2870,27 @@ export function checkMustflowProject(projectRoot: string, options: CheckOptions 
 		validateStrict(projectRoot, parsed, issues);
 	}
 
-	return issues.map((issue) => issue.message);
+	return issues;
+}
+
+export interface CheckProjectReport {
+	readonly issues: string[];
+	readonly warnings: string[];
+	readonly allMessages: string[];
+}
+
+export function checkMustflowProjectReport(projectRoot: string, options: CheckOptions = {}): CheckProjectReport {
+	const issues = collectCheckIssues(projectRoot, options);
+	const errors = issues.filter((issue) => issue.severity !== 'warning').map((issue) => issue.message);
+	const warnings = issues.filter((issue) => issue.severity === 'warning').map((issue) => issue.message);
+
+	return {
+		issues: errors,
+		warnings,
+		allMessages: [...errors, ...warnings],
+	};
+}
+
+export function checkMustflowProject(projectRoot: string, options: CheckOptions = {}): string[] {
+	return checkMustflowProjectReport(projectRoot, options).issues;
 }

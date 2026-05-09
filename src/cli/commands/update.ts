@@ -116,7 +116,14 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 		return { items: [], error: `Invalid manifest lock: ${lockResult.message}` };
 	}
 
-	const template = getDefaultTemplate();
+	let template: ReturnType<typeof getDefaultTemplate>;
+
+	try {
+		template = getDefaultTemplate();
+	} catch (error) {
+		return { items: [], error: error instanceof Error ? error.message : String(error) };
+	}
+
 	const selectedLocale = lockResult.lock.templateLocale ?? template.manifest.defaultLocale;
 	const templateFiles = getTemplateFiles(template, selectedLocale);
 	const lockedFiles = byRelativePath(lockResult.lock.files);

@@ -81,6 +81,7 @@ updated independently as translations evolve.
 - `.mustflow/context/` contains agent-facing project context, not a general documentation archive.
 - `README.md`, `.github/`, and existing `config/`, `docs/`, and `skills/` directories are not modified.
 - Source code, package-manager configurations, and CI configurations are not created.
+- The template manifest is rejected if it lists install targets outside `AGENTS.md` and `.mustflow/**`.
 - `--dry-run` prints the installation plan without writing files.
 - `manifest.lock.toml` is not written if the installation aborts due to conflicts or is run with `--dry-run`.
 

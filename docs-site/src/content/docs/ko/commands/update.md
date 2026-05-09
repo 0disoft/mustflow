@@ -78,6 +78,7 @@ npx mf update --apply
 
 기존 파일을 갱신하기 전에는 `.mustflow/backups/<timestamp>/` 아래에 백업을 만듭니다.
 적용 뒤에는 `.mustflow/config/manifest.lock.toml`의 해당 파일 항목을 새 해시와 `last_action`으로 갱신합니다.
+번들 템플릿 매니페스트가 `AGENTS.md`와 `.mustflow/**` 밖의 대상을 나열하면, 업데이트 계획 단계에서 실패하며 파일을 쓰지 않습니다.
 
 새 템플릿 파일이 사용자 저장소에 이미 있지만 잠금 파일에 기록되어 있지 않고 내용도 다르면, mustflow는 이를 로컬 변경으로 판단해 덮어쓰지 않습니다.
 
