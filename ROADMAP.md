@@ -27,7 +27,6 @@ validations without making agents guess from prose.
 
 - Keep startup reading small and let compact indexes decide what additional
   context, skills, public surfaces, and validation contracts to load.
-- Track future CLI surface: `mf contract-lint`.
 - Consider a small `policy.toml` only after the surrounding checks are clear.
 
 ### M2.11: Local Preferences Dashboard
@@ -38,14 +37,6 @@ without turning the dashboard into an autonomous workflow runner.
 - Expand dashboard coverage only after the corresponding command-line contract
   exists. Candidate future panes: effective policy explanation, impacted public
   surfaces, and deeper verification explanation.
-
-### M2.12: Web Asset Optimization Skill
-
-Goal: help agents handle generated web images without guessing ad hoc image
-conversion tools or leaving oversized production assets in website repositories.
-
-- Later, consider a companion `mf explain asset-optimization` or template hint
-  once broader skill routing and command explanation are stable.
 
 ### M2.14: Source Anchors and Navigation-Only Code Search
 
@@ -150,9 +141,7 @@ promising a broad public API.
 Goal: show real project shapes without making tests depend on presentation
 examples.
 
-- Add `examples/` for human-readable before and after project examples.
-- Cover minimal JavaScript projects, documentation-only projects, nested
-  repositories, missing command contracts, and host instruction conflicts.
+- Cover missing command contracts and host instruction conflicts.
 - Assert that authoring skills do not invent goals, silently merge conflicts,
   overwrite human context, edit README during context authoring, run raw
   commands without intents, copy secrets, broaden bad skills, or create

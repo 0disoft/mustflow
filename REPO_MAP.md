@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 54
-source_fingerprint: "sha256:042723e42649fe84ebfe722a6022dde99445d07e949be20fb913d151a04c7494"
+anchor_count: 58
+source_fingerprint: "sha256:5b19ed0fb024000c69b5c838e56ed43dcacd622a095780f3b751571ffcbf05a2"
 ---
 
 # REPO_MAP.md
@@ -191,6 +191,22 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### docs/spec/
 
 - `docs/spec/README.md`: Directory guide for this area.
+
+### examples/
+
+- `examples/README.md`: Directory guide for this area.
+
+### examples/docs-only/
+
+- `examples/docs-only/README.md`: Directory guide for this area.
+
+### examples/minimal-js/
+
+- `examples/minimal-js/README.md`: Directory guide for this area.
+
+### examples/nested-repos/
+
+- `examples/nested-repos/README.md`: Directory guide for this area.
 
 ### schemas/
 

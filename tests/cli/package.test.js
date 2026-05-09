@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.37');
+	assert.equal(packageJson.version, '1.15.42');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -200,6 +200,7 @@ test('npm package includes compiled cli and default template sources', () => {
 
 	assert.ok(files.has('dist/cli/index.js'));
 	assert.ok(files.has('dist/cli/commands/classify.js'));
+	assert.ok(files.has('dist/cli/commands/contract-lint.js'));
 	assert.ok(files.has('dist/cli/commands/init.js'));
 	assert.ok(files.has('dist/cli/commands/docs.js'));
 	assert.ok(files.has('dist/cli/commands/index.js'));
@@ -219,11 +220,16 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/context-report.schema.json'));
 	assert.ok(files.has('schemas/run-receipt.schema.json'));
 	assert.ok(files.has('schemas/commands.schema.json'));
+	assert.ok(files.has('schemas/contract-lint-report.schema.json'));
 	assert.ok(files.has('schemas/classify-report.schema.json'));
 	assert.ok(files.has('schemas/docs-review-list.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
+	assert.ok(files.has('examples/README.md'));
+	assert.ok(files.has('examples/docs-only/README.md'));
+	assert.ok(files.has('examples/minimal-js/README.md'));
+	assert.ok(files.has('examples/nested-repos/README.md'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/artifact-integrity-check/SKILL.md`));

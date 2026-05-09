@@ -36,6 +36,7 @@ and read matching `SKILL.md` files before editing that scope. Skills guide proce
 execution still comes from `.mustflow/config/commands.toml`.
 
 - Documentation site: <https://mustflow.github.io>
+- Human-readable project examples: [`examples/`](examples/)
 - Repository: <https://github.com/0disoft/mustflow>
 - Issues: <https://github.com/0disoft/mustflow/issues>
 - Contributing: [CONTRIBUTING.md](https://github.com/0disoft/mustflow/blob/main/CONTRIBUTING.md)
@@ -267,6 +268,7 @@ mf run mustflow_update_apply
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
 | `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
 | `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons without modifying files. |
+| `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
