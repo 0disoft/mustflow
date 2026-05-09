@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 40
-source_fingerprint: "sha256:ad886c486ec06c5450a5a3b650a10111eacad9afcc376ca2c423b9533a56f224"
+anchor_count: 46
+source_fingerprint: "sha256:0cdee0f2c6c23883fb1cfef1fd6e1a8dbf04bf8ac55fa0958310ccb954fec546"
 ---
 
 # REPO_MAP.md
@@ -46,9 +46,21 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/context/PROJECT.md`: Project goals, non-goals, terms, and repository-wide promises for agents.
 
+### .mustflow/skills/artifact-integrity-check/
+
+- `.mustflow/skills/artifact-integrity-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/code-review/
 
 - `.mustflow/skills/code-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/contract-sync-check/
+
+- `.mustflow/skills/contract-sync-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/dependency-reality-check/
+
+- `.mustflow/skills/dependency-reality-check/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/diff-risk-review/
 
@@ -66,9 +78,17 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/failure-triage/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/pattern-scout/
+
+- `.mustflow/skills/pattern-scout/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/project-context-authoring/
 
 - `.mustflow/skills/project-context-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/repro-first-debug/
+
+- `.mustflow/skills/repro-first-debug/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/security-regression-tests/
 
@@ -77,6 +97,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/skill-authoring/
 
 - `.mustflow/skills/skill-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/source-freshness-check/
+
+- `.mustflow/skills/source-freshness-check/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/test-maintenance/
 

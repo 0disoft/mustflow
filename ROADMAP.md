@@ -14,9 +14,9 @@ Before adding larger product surfaces, mustflow should reliably run configured
 command intents, produce useful receipts, and expose enough structured policy
 information for future commands to share the same decisions.
 
-Open command-contract follow-up: `test_related`, `lint`, coverage, and
-test-audit intents remain unset or manual-only until narrower repository gates
-exist for those workflows.
+Open command-contract follow-up: `lint`, coverage, and test-audit intents
+remain unset or manual-only until narrower repository gates exist for those
+workflows.
 
 ## Near-Term Milestones
 
@@ -42,9 +42,7 @@ moment they usually become expensive.
 - Keep always-on repository rules in `AGENTS.md` or `agent-workflow.md`; use
   skills only for repeatable task-specific procedures.
 - Prioritize the first defensive pack after skill metadata and validation work:
-  `pattern-scout`, `repro-first-debug`, `source-freshness-check`,
-  `contract-sync-check`, `artifact-integrity-check`,
-  `dependency-reality-check`, and `date-number-audit`.
+  `date-number-audit`.
 - Define report shapes for defensive skills so they do not expand scope, invent
   facts, mark unrun checks as passed, create unnecessary abstractions, or hide
   instruction conflicts.
@@ -105,9 +103,8 @@ Goal: provide a small human-facing surface for editing safe mustflow preferences
 without turning the dashboard into an autonomous workflow runner.
 
 - Expand dashboard coverage only after the corresponding command-line contract
-  exists. Candidate future panes: effective policy explanation, version source
-  discovery, impacted public surfaces, template inventory, skill selection
-  diagnostics, and deeper verification explanation.
+  exists. Candidate future panes: effective policy explanation, impacted public
+  surfaces, and deeper verification explanation.
 - Add optional `mf dashboard --open` only if browser-launch behavior has an
   explicit command contract and remains opt-in.
 
@@ -164,12 +161,6 @@ Host compatibility should be reported without claiming authority over a
 specific editor or agent product. A future scanner may detect host-like
 instruction sources and explain how they interact with mustflow's
 repository-local contract.
-
-### Dashboard
-
-The first dashboard is intentionally narrow: it edits safe preferences only.
-Broader panes should stay behind matching contract-engine work so the UI
-visualizes and edits existing contracts instead of inventing hidden behavior.
 
 ## Non-Goals
 

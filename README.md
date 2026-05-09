@@ -146,7 +146,13 @@ your-project/
    │  └─ agent-workflow.md
    └─ skills/
       ├─ INDEX.md
+      ├─ artifact-integrity-check/
+      │  └─ SKILL.md
       ├─ code-review/
+      │  └─ SKILL.md
+      ├─ contract-sync-check/
+      │  └─ SKILL.md
+      ├─ dependency-reality-check/
       │  └─ SKILL.md
       ├─ diff-risk-review/
       │  └─ SKILL.md
@@ -157,6 +163,12 @@ your-project/
       ├─ failure-triage/
       │  └─ SKILL.md
       ├─ project-context-authoring/
+      │  └─ SKILL.md
+      ├─ pattern-scout/
+      │  └─ SKILL.md
+      ├─ repro-first-debug/
+      │  └─ SKILL.md
+      ├─ source-freshness-check/
       │  └─ SKILL.md
       ├─ security-regression-tests/
       │  └─ SKILL.md

@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 11
+revision: 17
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -23,11 +23,17 @@ authority: router
 
 | 触发条件 | 技能文档 | 所需输入 | 编辑范围 | 风险 | 验证意图 | 预期输出 |
 | --- | --- | --- | --- | --- | --- | --- |
+| Generated artifacts, packaged files, binary assets, reports, or downloadable outputs are created, referenced, or reported | `.mustflow/skills/artifact-integrity-check/SKILL.md` | Artifact paths, source or generation path, package rules, and artifact expectations | Artifact references, package metadata, tests, and documentation | unverified or stale artifact claim | `changes_status`, `changes_diff_summary`, `test_release`, `build`, `mustflow_check` | Artifact evidence, inclusion or format checks, skipped checks, and integrity risk |
 | 报告前需要审查代码更改 | `.mustflow/skills/code-review/SKILL.md` | 差异和任务目标 | 已更改文件 | 行为和回归 | `test`, `test_related`, `test_audit`, `lint` | 问题列表或无问题说明 |
 | 已更改文件需要风险分类和验证选择 | `.mustflow/skills/diff-risk-review/SKILL.md` | 更改文件列表、差异摘要和任务目标 | 已更改表面和验证报告 | 验证不足或过度验证 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 风险级别、验证选择和回滚说明 |
+| Declared behavior must stay aligned across code, schemas, templates, tests, and docs | `.mustflow/skills/contract-sync-check/SKILL.md` | Changed files, intended behavior, source of truth, derived surfaces, and command contract entries | Contract source and required synchronized surfaces | contract drift | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | Contract source, synchronized surfaces, deferred surfaces, verification, and drift risk |
+| Packages, runtimes, tools, commands, services, or platform capabilities are assumed, added, invoked, or documented | `.mustflow/skills/dependency-reality-check/SKILL.md` | Dependency or capability, repository declarations, version or capability claim, and command contract entries | Dependency declarations, imports, command metadata, tests, and docs | invented or unavailable dependency | `changes_status`, `changes_diff_summary`, `build`, `test_release`, `mustflow_check` | Dependency status, synchronized surfaces, verification, and remaining dependency risk |
 | 添加、更新、删除或审计测试 | `.mustflow/skills/test-maintenance/SKILL.md` | 行为变化或过期测试证据 | 测试文件和相关源码 | 契约漂移 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 测试依据和验证结果 |
 | 安全敏感行为变更需要滥用场景回归测试 | `.mustflow/skills/security-regression-tests/SKILL.md` | 已变更的边界、参与者和预期拒绝行为 | 测试文件和相关安全边界源码 | 虚假安全感和不安全覆盖 | `test`, `test_related`, `test_audit`, `lint`, `build` | 安全边界、滥用场景、测试和剩余风险 |
 | 已配置的命令意图或验证步骤失败 | `.mustflow/skills/failure-triage/SKILL.md` | 失败意图和输出尾部 | 仅失败原因 | 误诊 | `mustflow_check`; 原失败意图 | 根因、修复和重跑结果 |
+| Implementation in an unfamiliar area needs a local precedent before new structure is introduced | `.mustflow/skills/pattern-scout/SKILL.md` | User request, intended file area, nearby examples, and current changed files | Pattern evidence and files needed to follow it | invented parallel structure | `changes_status`, `changes_diff_summary`, `mustflow_check` | Local pattern, applied alignment, intentional deviations, and verification |
+| A bug or confusing failure needs a fix before the smallest reproduction is clear | `.mustflow/skills/repro-first-debug/SKILL.md` | Symptom, expected behavior, observed output, and likely changed files | Reproduction notes, focused test, and likely cause | speculative fix or over-testing | `test_related`, `test_fast`, `mustflow_check` | Reproduction evidence, minimal fix, verification, and remaining risk |
+| Claims depend on current, external, dated, versioned, or otherwise drift-prone sources | `.mustflow/skills/source-freshness-check/SKILL.md` | Stale-sensitive claim, source text or page, date or version context, and source policy | Source wording, documentation, and freshness report | stale or unverifiable claim | `changes_status`, `docs_validate_fast`, `mustflow_check` | Checked source boundary, wording changes, skipped refreshes, and stale-source risk |
 | `.mustflow/context/PROJECT.md` 需要谨慎的项目上下文 | `.mustflow/skills/project-context-authoring/SKILL.md` | 有依据的项目事实 | `.mustflow/context/PROJECT.md` | 权限漂移 | `mustflow_check` | 已更新的谨慎上下文 |
 | 创建或维护技能流程或路由 | `.mustflow/skills/skill-authoring/SKILL.md` | 可重复任务证据 | `.mustflow/skills/**` | 重叠和命令漂移 | `mustflow_check`, `docs_validate` | 技能路由和流程更改 |
 | 文档审核队列条目需要润色语句 | `.mustflow/skills/docs-prose-review/SKILL.md` | 审核队列条目或选定文档路径、审核评论如有、目标语言、审核者元数据 | 选定文档文件和审核记录条目 | 含义漂移或队列状态过期 | `docs_validate`, `mustflow_check` | 语句修改、记录的审核状态和验证说明 |

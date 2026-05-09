@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.8');
+	assert.equal(packageJson.version, '1.15.9');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -188,10 +188,16 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/artifact-integrity-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/contract-sync-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-reality-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/docs-prose-review/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pattern-scout/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/project-context-authoring/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/repro-first-debug/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-regression-tests/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/source-freshness-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/skill-authoring/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/web-asset-optimization/SKILL.md`));
 	}

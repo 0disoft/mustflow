@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.8"
+version = "1.15.9"
 profile = "oss"
 locale = "en"
 
@@ -25,12 +25,27 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:57661d932d4f994fa28c1db3dacffaa296b6cee5190e0c0be71f5508f8135018"
+content_hash = "sha256:c3859aeec325565fc9a667b57d99fb7f31780e8e0e7b12608b8ab9336dab3c46"
+
+[files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:d60639f1f101d5db58ff9134d6e84e7ee89e2d336d7ec4a2da23a3002fda76b3"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:fe636e765ca06d9c02c3486c0816f5955ad5088acbebbdfb111438ee92eabae5"
+
+[files.".mustflow/skills/contract-sync-check/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:cfad0bf4cbd6844e943d8f27e4ad1e5489f2fa2c5e39492bed5e3b85162d12d4"
+
+[files.".mustflow/skills/dependency-reality-check/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:72ae59e6b0d24a5792c547a5bf793aa550a130154aa64357296242a3c596165e"
 
 [files.".mustflow/skills/diff-risk-review/SKILL.md"]
 source = "template_locale"
@@ -46,6 +61,21 @@ content_hash = "sha256:318a12fa3493071de9cf85cfbc1208b8f92e3984027bc269beee4e4ef
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:61106fb388a18b681182fa97f4b6dac6992823acc4721c7d6287bf882298dfcc"
+
+[files.".mustflow/skills/pattern-scout/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:c8d332dd07b0a958bd75cdcc09cdfbe193e9ede3c25467c74e8e58a18f7beeea"
+
+[files.".mustflow/skills/repro-first-debug/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:b26821502c8b62bd0a9eb1b60442735df80c16d5997ea4f3ad4f813acbc0437e"
+
+[files.".mustflow/skills/source-freshness-check/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:42c8c6de5e15587d0268a6e85ab3d56b88ca1a26bce01b7542bb080c4baaef80"
 
 [files.".mustflow/skills/docs-prose-review/SKILL.md"]
 source = "template_locale"
