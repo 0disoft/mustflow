@@ -18,6 +18,8 @@ npx mf classify README.md schemas/classify-report.schema.json --json
 - `파일`: 분류된 파일 수입니다.
 - `공개 표면`: 공개 문서나 설치 표면에 영향을 주는 경로 수입니다.
 - `검증 이유`: 향후 검증 계획에서 사용할 수 있는 `required_after` 이유 문자열입니다.
+- `갱신 정책`: 번역 문서나 지역화 템플릿의 `update_or_mark_stale` 같은 표면 갱신 정책을 합쳐 보여줍니다.
+- `어긋남 검사`: 문서, 템플릿 목록, 번역, 예시, 스키마, 명령 예시에서 확인해야 할 공개 표면 검사를 합쳐 보여줍니다.
 - `분류`: 경로별 변경 종류, 공개 표면 종류, 갱신 정책, 어긋남 검사입니다.
 
 번역 문서와 지역화된 템플릿은 같은 변경에서 원문과 맞춰 갱신할 수 없을 때 `update_or_mark_stale` 정책을 사용합니다.
@@ -36,7 +38,7 @@ npx mf classify --changed --json
 - `source` (`string`): `changed` 또는 `paths`입니다.
 - `files` (`string[]`): 분류한 저장소 상대 경로입니다.
 - `classifications` (`object[]`): 경로별 변경 종류와 공개 표면 계약입니다.
-- `summary` (`object`): 개수, 통합된 검증 이유, 변경 종류, 영향받는 계약입니다.
+- `summary` (`object`): 개수, 통합된 검증 이유, 변경 종류, 갱신 정책, 어긋남 검사, 영향받는 계약입니다.
 
 ## 종료 코드
 

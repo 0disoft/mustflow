@@ -35,6 +35,7 @@
       "additionalProperties": false,
       "required": [
         "requiresVersionDecision",
+        "severity",
         "suggestedBump",
         "reasons",
         "affectedVersionSources",
@@ -42,7 +43,8 @@
       ],
       "properties": {
         "requiresVersionDecision": { "type": "boolean" },
-        "suggestedBump": { "enum": ["patch", null] },
+        "severity": { "enum": ["none", "metadata", "contract"] },
+        "suggestedBump": { "enum": ["minor", "patch", null] },
         "reasons": {
           "type": "array",
           "items": { "type": "string" }
@@ -86,6 +88,8 @@
         "publicSurfaceCount",
         "changeKinds",
         "validationReasons",
+        "updatePolicies",
+        "driftChecks",
         "affectedContracts"
       ],
       "properties": {
@@ -96,6 +100,14 @@
           "items": { "type": "string" }
         },
         "validationReasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "updatePolicies": {
+          "type": "array",
+          "items": { "enum": ["update", "update_or_mark_stale"] }
+        },
+        "driftChecks": {
           "type": "array",
           "items": { "type": "string" }
         },

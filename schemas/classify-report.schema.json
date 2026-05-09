@@ -34,6 +34,8 @@
         "publicSurfaceCount",
         "changeKinds",
         "validationReasons",
+        "updatePolicies",
+        "driftChecks",
         "affectedContracts"
       ],
       "properties": {
@@ -44,6 +46,14 @@
           "items": { "type": "string" }
         },
         "validationReasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "updatePolicies": {
+          "type": "array",
+          "items": { "enum": ["update", "update_or_mark_stale"] }
+        },
+        "driftChecks": {
           "type": "array",
           "items": { "type": "string" }
         },

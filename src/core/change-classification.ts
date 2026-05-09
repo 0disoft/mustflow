@@ -23,6 +23,8 @@ export interface ChangeClassificationSummary {
 	readonly publicSurfaceCount: number;
 	readonly changeKinds: readonly string[];
 	readonly validationReasons: readonly string[];
+	readonly updatePolicies: readonly PublicSurfaceUpdatePolicy[];
+	readonly driftChecks: readonly string[];
 	readonly affectedContracts: readonly string[];
 }
 
@@ -273,6 +275,12 @@ export function createChangeClassificationReport(
 			validationReasons: uniqueSorted(
 				classifications.flatMap((classification) => classification.surface.validationReasons),
 			),
+			updatePolicies: uniqueSorted(
+				classifications
+					.map((classification) => classification.surface.updatePolicy)
+					.filter((updatePolicy) => updatePolicy !== 'not_applicable'),
+			) as PublicSurfaceUpdatePolicy[],
+			driftChecks: uniqueSorted(classifications.flatMap((classification) => classification.surface.driftChecks)),
 			affectedContracts: uniqueSorted(
 				classifications.flatMap((classification) => classification.surface.affectedContracts),
 			),

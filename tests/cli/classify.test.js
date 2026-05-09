@@ -57,6 +57,10 @@ test('classifies explicit paths with public surface contracts as json', () => {
 		assert.deepEqual(report.summary.changeKinds, ['documentation', 'schema', 'test_fixture', 'translation']);
 		assert.ok(report.summary.validationReasons.includes('docs_change'));
 		assert.ok(report.summary.validationReasons.includes('public_api_change'));
+		assert.deepEqual(report.summary.updatePolicies, ['update', 'update_or_mark_stale']);
+		assert.ok(report.summary.driftChecks.includes('command examples'));
+		assert.ok(report.summary.driftChecks.includes('source page parity'));
+		assert.ok(report.summary.driftChecks.includes('schema tests'));
 		assert.equal(report.summary.publicSurfaceCount, 3);
 
 		const readme = report.classifications.find((entry) => entry.path === 'README.md');

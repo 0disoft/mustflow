@@ -51,7 +51,8 @@ test('reports version impact for release-sensitive explicit paths', () => {
 		assert.equal(report.versioning_enabled, true);
 		assert.ok(report.version_sources.some((source) => source.path === 'package.json'));
 		assert.equal(report.version_impact.requiresVersionDecision, true);
-		assert.equal(report.version_impact.suggestedBump, 'patch');
+		assert.equal(report.version_impact.severity, 'contract');
+		assert.equal(report.version_impact.suggestedBump, 'minor');
 		assert.ok(report.version_impact.reasons.includes('package_metadata_changed'));
 		assert.ok(report.version_impact.reasons.includes('public_contract_changed'));
 		assert.ok(report.version_impact.affectedVersionSources.includes('package.json'));
@@ -72,6 +73,7 @@ test('does not require a version decision for documentation-only paths', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.version_impact.requiresVersionDecision, false);
+		assert.equal(report.version_impact.severity, 'none');
 		assert.equal(report.version_impact.suggestedBump, null);
 		assert.deepEqual(report.version_impact.reasons, []);
 		assert.deepEqual(report.version_impact.affectedVersionSources, []);
@@ -103,6 +105,8 @@ test('reports changed version source impact from git status', () => {
 		assert.equal(report.source, 'changed');
 		assert.deepEqual(report.files, ['.mustflow/config/manifest.lock.toml']);
 		assert.equal(report.version_impact.requiresVersionDecision, true);
+		assert.equal(report.version_impact.severity, 'metadata');
+		assert.equal(report.version_impact.suggestedBump, 'patch');
 		assert.ok(report.version_impact.reasons.includes('version_source_changed'));
 		assert.ok(report.version_impact.affectedVersionSources.includes('.mustflow/config/manifest.lock.toml'));
 	} finally {

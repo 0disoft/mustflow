@@ -18,6 +18,8 @@ npx mf classify README.md schemas/classify-report.schema.json --json
 - `Files`: Number of classified files.
 - `Public surfaces`: Number of paths that affect public or installed surfaces.
 - `Validation reasons`: `required_after` reason strings that future verification planning can use.
+- `Update policies`: Merged surface update policies, including `update_or_mark_stale` for translated documentation or localized templates.
+- `Drift checks`: Merged public-surface checks for docs, template inventory, translations, examples, schemas, and command examples.
 - `Classifications`: Per-path change kind, public surface kind, update policy, and drift checks.
 
 Translated documentation and localized templates use `update_or_mark_stale` when the source cannot be confidently updated in the same change.
@@ -36,7 +38,7 @@ Machine-readable output uses these fields:
 - `source` (`string`): `changed` or `paths`.
 - `files` (`string[]`): Classified repository-relative paths.
 - `classifications` (`object[]`): Per-path change kinds and public surface contract.
-- `summary` (`object`): Counts and merged validation reasons, change kinds, and affected contracts.
+- `summary` (`object`): Counts and merged validation reasons, change kinds, update policies, drift checks, and affected contracts.
 
 ## Exit Codes
 

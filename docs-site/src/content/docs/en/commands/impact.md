@@ -20,7 +20,8 @@ The command does not edit version files, create tags, commit, or push. It only r
 - `Files`: Number of inspected files.
 - `Versioning preferences`: Whether release versioning preferences are active.
 - `Requires version decision`: Whether the changed paths affect release-sensitive surfaces.
-- `Suggested bump`: Currently `patch` when a version decision is required, otherwise `none`.
+- `Severity`: `metadata` for package, template, or version-source changes; `contract` for public API or schema contract changes; `none` when no version decision is needed.
+- `Suggested bump`: `patch` for metadata-level changes, `minor` for public contract changes, otherwise `none`.
 - `Reasons`: Stable reason identifiers such as `version_source_changed` or `public_contract_changed`.
 - `Version sources`: Detected package and template version sources.
 - `Affected version sources`: Version source files touched by the change.
@@ -41,8 +42,8 @@ Machine-readable output uses these fields:
 - `files` (`string[]`): Inspected repository-relative paths.
 - `versioning_enabled` (`boolean`): Whether version-impact preferences are enabled.
 - `version_sources` (`object[]`): Detected package and template version sources.
-- `classification_summary` (`object`): Merged change classification summary.
-- `version_impact` (`object`): Version decision flag, suggested bump, reasons, affected version sources, and affected surfaces.
+- `classification_summary` (`object`): Merged change classification summary, including validation reasons, update policies, and drift checks.
+- `version_impact` (`object`): Version decision flag, severity, suggested bump, reasons, affected version sources, and affected surfaces.
 
 ## Exit Codes
 

@@ -20,7 +20,8 @@ npx mf impact package.json schemas/impact-report.schema.json --json
 - `파일`: 확인한 파일 수입니다.
 - `버전 관리 선호값`: 릴리스 버전 영향 선호값이 켜져 있는지 나타냅니다.
 - `버전 결정 필요`: 변경 경로가 릴리스 관련 표면에 영향을 주는지 나타냅니다.
-- `제안 버전 올림`: 버전 결정이 필요하면 현재는 `patch`, 아니면 `none`입니다.
+- `영향 심각도`: 패키지, 템플릿, 버전 기준 원본 변경은 `metadata`, 공개 API나 스키마 계약 변경은 `contract`, 버전 결정이 필요 없으면 `none`입니다.
+- `제안 버전 올림`: 메타데이터 수준 변경은 `patch`, 공개 계약 변경은 `minor`, 그 외에는 `none`입니다.
 - `이유`: `version_source_changed`, `public_contract_changed` 같은 안정적인 이유 식별자입니다.
 - `버전 기준 원본`: 감지된 패키지와 템플릿 버전 기준 원본입니다.
 - `영향받은 버전 기준 원본`: 이번 변경이 직접 건드린 버전 기준 원본입니다.
@@ -41,8 +42,8 @@ npx mf impact --changed --json
 - `files` (`string[]`): 확인한 저장소 상대 경로입니다.
 - `versioning_enabled` (`boolean`): 버전 영향 선호값이 켜져 있는지 나타냅니다.
 - `version_sources` (`object[]`): 감지된 패키지와 템플릿 버전 기준 원본입니다.
-- `classification_summary` (`object`): 통합된 변경 분류 요약입니다.
-- `version_impact` (`object`): 버전 결정 여부, 제안 버전 올림, 이유, 영향받은 버전 기준 원본, 영향받은 공개 표면입니다.
+- `classification_summary` (`object`): 검증 이유, 갱신 정책, 어긋남 검사를 포함한 통합 변경 분류 요약입니다.
+- `version_impact` (`object`): 버전 결정 여부, 영향 심각도, 제안 버전 올림, 이유, 영향받은 버전 기준 원본, 영향받은 공개 표면입니다.
 
 ## 종료 코드
 

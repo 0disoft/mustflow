@@ -94,6 +94,8 @@ function renderClassifyOutput(output: ClassifyOutput, lang: CliLang): string {
 		`${t(lang, 'classify.label.files')}: ${output.summary.fileCount}`,
 		`${t(lang, 'classify.label.publicSurfaces')}: ${output.summary.publicSurfaceCount}`,
 		`${t(lang, 'classify.label.validationReasons')}: ${renderList(output.summary.validationReasons, lang)}`,
+		`${t(lang, 'classify.label.updatePolicies')}: ${renderList(output.summary.updatePolicies, lang)}`,
+		`${t(lang, 'classify.label.driftChecks')}: ${renderList(output.summary.driftChecks, lang)}`,
 		'',
 		t(lang, 'classify.label.classifications'),
 	];

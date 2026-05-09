@@ -123,6 +123,7 @@ function renderImpactOutput(output: ImpactOutput, lang: CliLang): string {
 		`${t(lang, 'classify.label.files')}: ${output.files.length}`,
 		`${t(lang, 'impact.label.versioning')}: ${output.versioning_enabled ? t(lang, 'versionSources.value.enabled') : t(lang, 'versionSources.value.disabled')}`,
 		`${t(lang, 'impact.label.requiresVersionDecision')}: ${output.version_impact.requiresVersionDecision ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+		`${t(lang, 'impact.label.severity')}: ${output.version_impact.severity}`,
 		`${t(lang, 'impact.label.suggestedBump')}: ${output.version_impact.suggestedBump ?? t(lang, 'value.none')}`,
 		`${t(lang, 'impact.label.reasons')}: ${renderList(output.version_impact.reasons, lang)}`,
 		`${t(lang, 'impact.label.versionSources')}: ${renderList(output.version_sources.map((source) => source.path), lang)}`,
