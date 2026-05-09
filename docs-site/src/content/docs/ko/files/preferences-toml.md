@@ -162,7 +162,7 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 
 이 선호값은 저장소가 버전을 어디에 저장하는지까지 정하지 않습니다. 에이전트는 버전을 제안하거나 수정하기 전에 언어와 프레임워크에 맞는 실제 버전 기준 원본을 찾아야 합니다.
 
-`mf check --strict`는 버전 영향 선호값이 켜져 있을 때 버전 기준 원본을 찾을 수 있는지도 확인합니다. 현재는 `.mustflow/config/versioning.toml`에 선언한 기준 원본, 설치된 mustflow 템플릿 버전 잠금 파일, 루트의 `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle 파일, .NET 프로젝트 파일, gemspec 등에서 실제 버전 값을 찾습니다. 아무 기준도 없으면 에이전트가 임의로 `package.json`을 가정하지 않도록 엄격 검사 문제가 됩니다.
+`mf check --strict`는 버전 영향 선호값이 켜져 있을 때 버전 기준 원본을 찾을 수 있는지도 확인합니다. 현재는 `.mustflow/config/versioning.toml`에 선언한 기준 원본, 설치된 mustflow 템플릿 버전 잠금 파일, 루트의 `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle 파일, .NET 프로젝트 파일, gemspec 등에서 실제 버전 값을 찾습니다. Go 모듈은 `v1.2.3` 같은 시맨틱 버전 릴리스 태그가 함께 있을 때만 `go.mod`를 기준 원본으로 인정합니다. 아무 기준도 없으면 에이전트가 임의로 `package.json`을 가정하지 않도록 엄격 검사 문제가 됩니다.
 
 ## 검증 선택
 

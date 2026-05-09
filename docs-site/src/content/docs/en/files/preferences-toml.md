@@ -162,7 +162,7 @@ When a version changes, `sync_template_version`, `sync_docs_examples`, and `sync
 
 These preferences do not say where a repository stores its version. Agents still have to discover the language- or framework-specific version source before proposing or editing a version.
 
-When version-impact preferences are enabled, `mf check --strict` also verifies that a version source can be found. It currently accepts sources declared in `.mustflow/config/versioning.toml`, the installed mustflow template lock version, and root package or template sources such as `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle files, .NET project files, and gemspecs when they contain an actual version value. If none is present, strict mode reports an issue so agents do not assume `package.json` by default.
+When version-impact preferences are enabled, `mf check --strict` also verifies that a version source can be found. It currently accepts sources declared in `.mustflow/config/versioning.toml`, the installed mustflow template lock version, and root package or template sources such as `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle files, .NET project files, and gemspecs when they contain an actual version value. For Go modules, `go.mod` is accepted only when the repository also has a semantic-version release tag such as `v1.2.3`. If none is present, strict mode reports an issue so agents do not assume `package.json` by default.
 
 ## Verification Selection
 

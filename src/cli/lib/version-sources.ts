@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, type TomlTable } from './command-contract.js';
@@ -43,6 +43,8 @@ const VERSION_SOURCE_CANDIDATE_FILES = [
 	{ relativePath: 'pubspec.yaml', kind: 'package_manifest', pattern: /^\s*version\s*:\s*\S+/mu },
 	{ relativePath: 'Chart.yaml', kind: 'package_manifest', pattern: /^\s*version\s*:\s*\S+/mu },
 ] as const;
+
+const GO_RELEASE_TAG_PATTERN = /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u;
 
 const VERSION_SOURCE_ROOT_FILE_PATTERNS = [
 	{
@@ -127,6 +129,63 @@ function hasVersionSourceCandidate(projectRoot: string, candidate: (typeof VERSI
 	return 'pattern' in candidate && hasVersionPattern(filePath, candidate.pattern);
 }
 
+function resolveGitDirectory(projectRoot: string): string | undefined {
+	const gitPath = path.join(projectRoot, '.git');
+
+	if (!existsSync(gitPath)) {
+		return undefined;
+	}
+
+	try {
+		if (statSync(gitPath).isDirectory()) {
+			return gitPath;
+		}
+
+		const match = /^gitdir:\s*(.+)$/imu.exec(readFileSync(gitPath, 'utf8'));
+		if (!match) {
+			return undefined;
+		}
+
+		const gitDirectory = match[1].trim();
+		return path.resolve(projectRoot, gitDirectory);
+	} catch {
+		return undefined;
+	}
+}
+
+function hasSemverReleaseTag(projectRoot: string): boolean {
+	const gitDirectory = resolveGitDirectory(projectRoot);
+
+	if (!gitDirectory) {
+		return false;
+	}
+
+	const tagRoot = path.join(gitDirectory, 'refs', 'tags');
+
+	try {
+		for (const entry of readdirSync(tagRoot, { withFileTypes: true })) {
+			if (entry.isFile() && GO_RELEASE_TAG_PATTERN.test(entry.name)) {
+				return true;
+			}
+		}
+	} catch {
+		// Packed tags are checked below.
+	}
+
+	try {
+		const packedRefs = readFileSync(path.join(gitDirectory, 'packed-refs'), 'utf8');
+		return packedRefs
+			.split(/\r?\n/u)
+			.some((line) => GO_RELEASE_TAG_PATTERN.test(line.replace(/^.*\srefs\/tags\//u, '').trim()));
+	} catch {
+		return false;
+	}
+}
+
+function hasGoModuleVersionSource(projectRoot: string): boolean {
+	return existsSync(path.join(projectRoot, 'go.mod')) && hasSemverReleaseTag(projectRoot);
+}
+
 export function readDeclaredVersionSources(projectRoot: string): VersionSource[] {
 	try {
 		const versioningConfig = readTomlFile(path.join(projectRoot, VERSIONING_CONFIG_PATH));
@@ -164,6 +223,10 @@ export function detectVersionSources(projectRoot: string): VersionSource[] {
 		path: toPosixPath(candidate.relativePath),
 		kind: candidate.kind,
 	})));
+
+	if (hasGoModuleVersionSource(projectRoot)) {
+		sources.push({ path: 'go.mod', kind: 'package_manifest' });
+	}
 
 	try {
 		for (const entry of readdirSync(projectRoot, { withFileTypes: true })) {

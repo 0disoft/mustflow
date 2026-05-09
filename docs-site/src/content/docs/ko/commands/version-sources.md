@@ -3,7 +3,7 @@ title: mf version-sources
 description: 감지된 패키지와 템플릿 버전 기준 원본을 확인하는 읽기 전용 명령입니다.
 ---
 
-`mf version-sources`는 현재 mustflow 루트에서 패키지나 템플릿 버전 기준 원본으로 보이는 파일을 보고합니다. `.mustflow/config/versioning.toml`에 직접 선언한 기준 원본도 함께 읽습니다.
+`mf version-sources`는 현재 mustflow 루트에서 패키지나 템플릿 버전 기준 원본으로 보이는 파일을 보고합니다. Go 모듈은 `v1.2.3` 같은 시맨틱 버전 릴리스 태그가 함께 있을 때만 `go.mod`를 기준 원본으로 보고합니다. `.mustflow/config/versioning.toml`에 직접 선언한 기준 원본도 함께 읽습니다.
 
 이 명령은 버전을 수정하거나 태그, 커밋, 푸시를 만들지 않습니다. 에이전트와 향후 대시보드 화면이 `mf check --strict`와 같은 버전 원본 탐지 결과를 확인할 수 있게 하는 읽기 전용 표면입니다.
 

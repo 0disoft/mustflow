@@ -3,7 +3,7 @@ title: mf version-sources
 description: Read-only command to inspect detected package and template version sources.
 ---
 
-`mf version-sources` reports which files in the current mustflow root look like package or template version sources. It also reads optional declarations from `.mustflow/config/versioning.toml`.
+`mf version-sources` reports which files in the current mustflow root look like package or template version sources. For Go modules, it reports `go.mod` only when the repository also has a semantic-version release tag such as `v1.2.3`. It also reads optional declarations from `.mustflow/config/versioning.toml`.
 
 The command does not edit versions, create tags, commit, or push. It exists so agents and future dashboard panes can inspect the same version-source discovery used by `mf check --strict`.
 

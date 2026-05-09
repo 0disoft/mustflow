@@ -193,6 +193,13 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /dashboard\.release\.overview":"개요/);
 		assert.match(html, /dashboard\.release\.versionSources":"버전 소스/);
 		assert.match(html, /dashboard\.release\.reason\.versionCheck":"npm에 더 새로운 mustflow 패키지 버전/);
+		assert.match(html, /mf version --check/);
+		assert.doesNotMatch(html, /mf version --bump/);
+		assert.doesNotMatch(html, /\bgit commit\b/);
+		assert.doesNotMatch(html, /\bgit tag\b/);
+		assert.doesNotMatch(html, /\bgit push\b/);
+		assert.doesNotMatch(html, /\/api\/release/);
+		assert.doesNotMatch(html, /\/api\/git/);
 		assert.match(html, /dashboard\.update\.overview":"개요/);
 		assert.match(html, /dashboard\.update\.applyReady":"적용 가능/);
 		assert.match(html, /dashboard\.update\.reason\.dryRun":"파일을 쓰지 않고 템플릿 업데이트 계획/);
@@ -387,6 +394,13 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(status.release.package_version, /^\d+\.\d+\.\d+$/);
 		assert.ok(status.release.version_sources.some((source) => source.path === '.mustflow/config/manifest.lock.toml'));
 		assert.ok(Array.isArray(status.release.release_sensitive_changed_files));
+		for (const endpoint of ['/api/release/bump', '/api/git/commit', '/api/git/tag', '/api/git/push']) {
+			const forbiddenMutation = await fetch(new URL(endpoint, info.url), {
+				method: 'POST',
+				headers: { 'x-mustflow-dashboard-token': token },
+			});
+			assert.equal(forbiddenMutation.status, 404);
+		}
 		assert.equal(status.update.command, 'update');
 		assert.equal(status.update.mode, 'dry-run');
 		assert.equal(status.update.dry_run_command, 'mf update --dry-run');
