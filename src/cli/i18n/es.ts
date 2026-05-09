@@ -26,6 +26,7 @@ export const esMessages = {
   "command.init.summary": "Copia el flujo de trabajo de agente mustflow predeterminado",
   "command.check.summary": "Valida los archivos mustflow",
   "command.classify.summary": "Clasifica cambios y superficies publicas",
+  "command.contractLint.summary": "Revisa el contrato de comandos",
   "command.status.summary": "Muestra el estado de la instalación local de mustflow",
   "command.update.summary": "Previsualiza o aplica actualizaciones del flujo de trabajo mustflow",
   "command.map.summary": "Genera REPO_MAP.md",
@@ -59,6 +60,22 @@ export const esMessages = {
     "La validación falló o el comando recibió una entrada no válida",
   "check.result.passed": "comprobacion mustflow superada",
   "check.result.strictPassed": "comprobacion estricta de mustflow superada",
+
+  "contractLint.help.summary":
+    "Inspecciona .mustflow/config/commands.toml para encontrar errores y advertencias del contrato de comandos.",
+  "contractLint.help.exit.ok": "El contrato de comandos se inspeccionó sin errores bloqueantes",
+  "contractLint.help.exit.fail": "Se encontraron errores del contrato de comandos o la entrada no es válida",
+  "contractLint.title": "mustflow contract-lint",
+  "contractLint.label.status": "Estado",
+  "contractLint.label.totalIntents": "Intenciones totales",
+  "contractLint.label.configured": "Configuradas",
+  "contractLint.label.runnable": "Ejecutables",
+  "contractLint.label.manualOnly": "Solo manual",
+  "contractLint.label.unknown": "Desconocidas",
+  "contractLint.label.errors": "Errores",
+  "contractLint.label.warnings": "Advertencias",
+  "contractLint.label.sourceFiles": "Archivos fuente",
+  "contractLint.label.issues": "Problemas",
 
   "context.help.summary":
     "Imprime el contexto de agente para la raíz mustflow actual.",

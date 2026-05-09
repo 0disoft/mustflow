@@ -23,6 +23,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.classify.summary',
 	},
 	{
+		id: 'contract-lint',
+		usage: 'mf contract-lint',
+		summaryKey: 'command.contractLint.summary',
+	},
+	{
 		id: 'status',
 		usage: 'mf status',
 		summaryKey: 'command.status.summary',

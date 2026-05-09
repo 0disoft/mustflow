@@ -26,6 +26,7 @@ export const hiMessages = {
   "command.init.summary": "डिफ़ॉल्ट mustflow एजेंट वर्कफ़्लो कॉपी करें",
   "command.check.summary": "mustflow फ़ाइलों की जाँच करें",
   "command.classify.summary": "बदली फ़ाइलों और सार्वजनिक सतहों को वर्गीकृत करें",
+  "command.contractLint.summary": "कमांड अनुबंध की जाँच करें",
   "command.status.summary": "स्थानीय mustflow इंस्टॉल स्थिति दिखाएँ",
   "command.update.summary": "mustflow वर्कफ़्लो अपडेट का पूर्वावलोकन करें या लागू करें",
   "command.map.summary": "REPO_MAP.md बनाएँ",
@@ -59,6 +60,22 @@ export const hiMessages = {
     "सत्यापन विफल हुआ या कमांड को अमान्य इनपुट मिला",
   "check.result.passed": "mustflow check पास हुआ",
   "check.result.strictPassed": "mustflow strict check पास हुआ",
+
+  "contractLint.help.summary":
+    ".mustflow/config/commands.toml में command-contract errors और warnings जाँचें.",
+  "contractLint.help.exit.ok": "कमांड अनुबंध बिना blocking errors के जाँचा गया",
+  "contractLint.help.exit.fail": "कमांड अनुबंध errors मिले या input अमान्य था",
+  "contractLint.title": "mustflow contract-lint",
+  "contractLint.label.status": "स्थिति",
+  "contractLint.label.totalIntents": "कुल intents",
+  "contractLint.label.configured": "Configured",
+  "contractLint.label.runnable": "चलने योग्य",
+  "contractLint.label.manualOnly": "Manual only",
+  "contractLint.label.unknown": "Unknown",
+  "contractLint.label.errors": "Errors",
+  "contractLint.label.warnings": "Warnings",
+  "contractLint.label.sourceFiles": "Source files",
+  "contractLint.label.issues": "Issues",
 
   "context.help.summary":
     "वर्तमान mustflow रूट के लिए एजेंट संदर्भ प्रिंट करें।",

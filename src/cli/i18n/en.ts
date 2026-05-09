@@ -24,6 +24,7 @@ export const enMessages = {
   "command.init.summary": "Copy the default mustflow agent workflow",
   "command.check.summary": "Validate mustflow files",
   "command.classify.summary": "Classify changed files and public surfaces",
+  "command.contractLint.summary": "Lint the command contract",
   "command.status.summary": "Show local mustflow install status",
   "command.update.summary": "Preview or apply mustflow workflow updates",
   "command.map.summary": "Generate REPO_MAP.md",
@@ -57,6 +58,22 @@ export const enMessages = {
     "Validation failed or the command received invalid input",
   "check.result.passed": "mustflow check passed",
   "check.result.strictPassed": "mustflow strict check passed",
+
+  "contractLint.help.summary":
+    "Inspect .mustflow/config/commands.toml for command-contract errors and warnings.",
+  "contractLint.help.exit.ok": "The command contract was inspected without blocking errors",
+  "contractLint.help.exit.fail": "Command-contract errors were found or input was invalid",
+  "contractLint.title": "mustflow contract-lint",
+  "contractLint.label.status": "Status",
+  "contractLint.label.totalIntents": "Total intents",
+  "contractLint.label.configured": "Configured",
+  "contractLint.label.runnable": "Runnable",
+  "contractLint.label.manualOnly": "Manual only",
+  "contractLint.label.unknown": "Unknown",
+  "contractLint.label.errors": "Errors",
+  "contractLint.label.warnings": "Warnings",
+  "contractLint.label.sourceFiles": "Source files",
+  "contractLint.label.issues": "Issues",
 
   "context.help.summary":
     "Print the agent context for the current mustflow root.",

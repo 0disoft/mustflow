@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/contract-lint-report.schema.json",
+  "title": "mustflow contract-lint report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "mustflow_root", "report"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "contract-lint" },
+    "mustflow_root": { "type": "string" },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "summary", "issues", "sourceFiles"],
+      "properties": {
+        "status": { "enum": ["passed", "warning", "failed"] },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "totalIntents",
+            "configured",
+            "runnable",
+            "manualOnly",
+            "unknown",
+            "errors",
+            "warnings"
+          ],
+          "properties": {
+            "totalIntents": { "type": "integer" },
+            "configured": { "type": "integer" },
+            "runnable": { "type": "integer" },
+            "manualOnly": { "type": "integer" },
+            "unknown": { "type": "integer" },
+            "errors": { "type": "integer" },
+            "warnings": { "type": "integer" }
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "code", "intent", "message"],
+            "properties": {
+              "severity": { "enum": ["error", "warning"] },
+              "code": { "type": "string" },
+              "intent": { "type": ["string", "null"] },
+              "message": { "type": "string" }
+            }
+          }
+        },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -26,6 +26,7 @@ schémas du paquet installé ou ceux du dépôt mustflow.
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
+- `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`

@@ -64,6 +64,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf init/);
 	assert.match(result.stdout, /mf check/);
 	assert.match(result.stdout, /mf classify/);
+	assert.match(result.stdout, /mf contract-lint/);
 	assert.match(result.stdout, /mf status/);
 	assert.match(result.stdout, /mf update/);
 	assert.match(result.stdout, /mf map/);
@@ -204,7 +205,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 });
 
 test('routes command-specific help', () => {
-	for (const command of ['init', 'check', 'classify', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
+	for (const command of ['init', 'check', 'classify', 'contract-lint', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
 		const result = runCli([command, '--help']);
 
 		assert.equal(result.status, 0);
@@ -219,6 +220,7 @@ test('fails unknown command options with standardized guidance', () => {
 		['init', '--bad'],
 		['check', '--bad'],
 		['classify', '--bad'],
+		['contract-lint', '--bad'],
 		['status', '--bad'],
 		['update', '--bad'],
 		['map', '--bad'],

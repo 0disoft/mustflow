@@ -26,6 +26,7 @@ building automation around `--json` output.
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
+- `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `classify-report.schema.json`: `mf classify --changed --json` and
   `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact --changed --json` and

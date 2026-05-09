@@ -26,6 +26,7 @@ export const zhMessages = {
   "command.init.summary": "复制默认的 mustflow 代理工作流",
   "command.check.summary": "验证 mustflow 文件",
   "command.classify.summary": "分类变更文件和公开表面",
+  "command.contractLint.summary": "检查命令契约",
   "command.status.summary": "显示本地 mustflow 安装状态",
   "command.update.summary": "预览或应用 mustflow 工作流更新",
   "command.map.summary": "生成 REPO_MAP.md",
@@ -59,6 +60,22 @@ export const zhMessages = {
     "验证失败，或命令收到了无效输入",
   "check.result.passed": "mustflow 检查已通过",
   "check.result.strictPassed": "mustflow 严格检查已通过",
+
+  "contractLint.help.summary":
+    "检查 .mustflow/config/commands.toml 中的命令契约错误和警告。",
+  "contractLint.help.exit.ok": "命令契约已检查，未发现阻塞错误",
+  "contractLint.help.exit.fail": "发现命令契约错误，或输入无效",
+  "contractLint.title": "mustflow contract-lint",
+  "contractLint.label.status": "状态",
+  "contractLint.label.totalIntents": "意图总数",
+  "contractLint.label.configured": "已配置",
+  "contractLint.label.runnable": "可运行",
+  "contractLint.label.manualOnly": "仅手动",
+  "contractLint.label.unknown": "未知",
+  "contractLint.label.errors": "错误",
+  "contractLint.label.warnings": "警告",
+  "contractLint.label.sourceFiles": "来源文件",
+  "contractLint.label.issues": "问题",
 
   "context.help.summary":
     "输出当前 mustflow 根目录的代理上下文。",

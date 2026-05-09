@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { runCheck } from './commands/check.js';
 import { runClassify } from './commands/classify.js';
+import { runContractLint } from './commands/contract-lint.js';
 import { runContext } from './commands/context.js';
 import { runDashboard } from './commands/dashboard.js';
 import { runDoctor } from './commands/doctor.js';
@@ -57,6 +58,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf docs review list',
 				'mf check --json',
 				'mf classify --changed',
+				'mf contract-lint --json',
 				'mf context --json',
 				'mf map --write',
 				'mf search mustflow_check',
@@ -158,6 +160,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'classify') {
 		return runClassify(args, reporter, parsed.lang);
+	}
+
+	if (command === 'contract-lint') {
+		return runContractLint(args, reporter, parsed.lang);
 	}
 
 	if (command === 'status') {

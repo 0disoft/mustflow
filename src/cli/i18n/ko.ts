@@ -27,6 +27,7 @@ export const koMessages = {
   "command.init.summary": "기본 mustflow 에이전트 워크플로우를 복사합니다",
   "command.check.summary": "mustflow 파일을 검사합니다",
   "command.classify.summary": "변경 파일과 공개 표면을 분류합니다",
+  "command.contractLint.summary": "명령 계약을 점검합니다",
   "command.status.summary": "로컬 mustflow 설치 상태를 출력합니다",
   "command.update.summary": "mustflow 워크플로우 갱신을 미리 보거나 적용합니다",
   "command.map.summary": "REPO_MAP.md를 작성합니다",
@@ -58,6 +59,22 @@ export const koMessages = {
   "check.help.exit.fail": "검증 실패 또는 잘못된 입력이 제공되었습니다",
   "check.result.passed": "mustflow 검사 통과",
   "check.result.strictPassed": "mustflow 엄격 검사 통과",
+
+  "contractLint.help.summary":
+    ".mustflow/config/commands.toml의 명령 계약 오류와 경고를 확인합니다.",
+  "contractLint.help.exit.ok": "차단 오류 없이 명령 계약을 확인했습니다",
+  "contractLint.help.exit.fail": "명령 계약 오류가 있거나 입력이 잘못되었습니다",
+  "contractLint.title": "mustflow 명령 계약 점검",
+  "contractLint.label.status": "상태",
+  "contractLint.label.totalIntents": "전체 명령 의도",
+  "contractLint.label.configured": "설정됨",
+  "contractLint.label.runnable": "실행 가능",
+  "contractLint.label.manualOnly": "수동 전용",
+  "contractLint.label.unknown": "미설정",
+  "contractLint.label.errors": "오류",
+  "contractLint.label.warnings": "경고",
+  "contractLint.label.sourceFiles": "근거 파일",
+  "contractLint.label.issues": "문제",
 
   "context.help.summary":
     "현재 mustflow 루트의 에이전트 작업 맥락을 출력합니다.",
