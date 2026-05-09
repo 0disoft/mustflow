@@ -105,10 +105,9 @@ Goal: provide a small human-facing surface for editing safe mustflow preferences
 without turning the dashboard into an autonomous workflow runner.
 
 - Expand dashboard coverage only after the corresponding command-line contract
-  exists. Candidate future panes: effective policy explanation, configured
-  command intent status, version source discovery, impacted public surfaces,
-  template inventory, skill selection diagnostics, and actual verification
-  recommendations from changed files.
+  exists. Candidate future panes: effective policy explanation, version source
+  discovery, impacted public surfaces, template inventory, skill selection
+  diagnostics, and deeper verification explanation.
 - Add optional `mf dashboard --open` only if browser-launch behavior has an
   explicit command contract and remains opt-in.
 

@@ -53,6 +53,9 @@ mustflow installs and validates an agent workflow for user projects.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
 - Indexes and searches mustflow docs, skills, and command rules with SQLite via
   `mf index` and `mf search`.
+- Tracks agent-created or agent-modified documentation that needs prose review
+  with `mf docs review`, including optional multiline review comments and
+  cleanup of imported comment files.
 - Previews and applies bundled template updates safely with `mf update`.
 - Publishes JSON Schemas for automation-facing reports and command contracts in
   `schemas/`.
@@ -71,12 +74,18 @@ mustflow is not an automatic project editor and is not tied to one agent product
 - It does not add platform-specific files for GitHub, GitLab, or similar tools
   to the default template.
 - It does not create a `justfile`, `Makefile`, or `Taskfile.yml` by default.
-- `mf dashboard` starts a local browser UI for reviewing and editing safe
-  preferences in `.mustflow/config/preferences.toml`, then opens it in the
-  default browser. The page can switch between English, Korean, Chinese,
-  Spanish, French, and Hindi. It includes verification-selection and test
-  authoring preferences. When the dashboard saves preferences, it refreshes the
-  matching manifest-lock entry as a customized baseline if the lock file exists.
+- `mf dashboard` starts a local browser UI for inspecting mustflow status,
+  reviewing verification recommendations from changed files, inspecting
+  configured command intents, checking release and version-source status,
+  checking template update readiness, inspecting the latest run receipt,
+  inspecting skill routes, reviewing and editing safe preferences in
+  `.mustflow/config/preferences.toml`, and managing the documentation review
+  queue in `.mustflow/review/docs.toml`, then opens it in the default browser.
+  The page can switch between English, Korean, Chinese, Spanish, French, and
+  Hindi. It includes verification-selection and test authoring preferences.
+  When the dashboard saves preferences, it
+  refreshes the matching manifest-lock entry as a customized baseline if the lock
+  file exists.
 
 ## Candidate features
 
@@ -139,11 +148,17 @@ your-project/
       ├─ INDEX.md
       ├─ code-review/
       │  └─ SKILL.md
+      ├─ diff-risk-review/
+      │  └─ SKILL.md
+      ├─ docs-prose-review/
+      │  └─ SKILL.md
       ├─ docs-update/
       │  └─ SKILL.md
       ├─ failure-triage/
       │  └─ SKILL.md
       ├─ project-context-authoring/
+      │  └─ SKILL.md
+      ├─ security-regression-tests/
       │  └─ SKILL.md
       ├─ skill-authoring/
       │  └─ SKILL.md
@@ -166,6 +181,8 @@ mustflow updates only its managed block and preserves user rules.
 `REPO_MAP.md` is not copied from the template. Generate it when needed with
 `mf map --write`. `.mustflow/cache/mustflow.sqlite` is also a regenerable local
 index created by `mf index`.
+`.mustflow/review/docs.toml` is not copied from the template; `mf docs review`
+creates it only when a document is added to the review queue.
 
 If a project already has optional root Markdown files such as `README.md`,
 `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`,
@@ -224,6 +241,10 @@ mf run mustflow_update_apply
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
 | `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
+| `mf docs review list` | Show documents still waiting for prose review after agent edits. |
+| `mf docs review add <path>` | Add or refresh a document review queue entry. |
+| `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
+| `mf docs review approve <path>` | Mark review complete and hide the document from the default queue. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
@@ -234,7 +255,9 @@ mf run mustflow_update_apply
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
 | `mf help <topic>` | Show installed mustflow help. |
-| `mf dashboard` | Start a local dashboard for safe mustflow preferences and refresh the customized lock baseline on save. |
+| `mf dashboard` | Start a local dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. |
+| `mf version` | Print the installed mustflow package version. |
+| `mf version --check` | Compare the installed package version with the latest npm release and print an update command when a newer version exists. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
 | `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
@@ -343,6 +366,7 @@ Development commands in this repository use Bun. Users do not need Bun to run
 ```sh
 bun install
 bun run check
+bun run docs:check:fast
 bun run docs:check
 bun run check:install
 ```
@@ -352,14 +376,24 @@ for routine verification.
 
 ```sh
 mf run build
+mf run test_fast
+mf run test_related
 mf run test
+mf run test_release
+mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
 ```
 
 The Bun scripts remain available for human maintainers and release packaging.
-`test_related`, `lint`, coverage, and test-audit intents are intentionally not
-declared until the repository has narrower gates for those workflows.
+`test_fast` runs the fast CLI regression baseline, `test_related` selects tests
+from changed files and falls back to the fast baseline, and `test_release` keeps
+package metadata and packaging checks out of routine local edits. `lint`,
+coverage, and test-audit intents remain intentionally unset or manual-only until
+this repository has narrower gates for those workflows. `docs_validate_fast`
+checks documentation navigation and localized content links without building the
+whole static site; `docs_validate` remains the full static documentation build,
+search-index, and sitemap gate for release-sensitive changes.
 
 `dist/` is a generated build output and is not committed. `npm pack` and
 `npm publish` run `npm run build` through `prepack`, so the npm package contains

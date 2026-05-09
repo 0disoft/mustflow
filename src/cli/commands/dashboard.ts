@@ -1,20 +1,37 @@
 import { randomBytes } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 
 import { openPathInFileManager, openUrlInBrowser } from '../lib/browser-open.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { renderDashboardHtml } from '../lib/dashboard-html.js';
+import { renderDashboardHtml, type DashboardDocReviewSnapshot, type DashboardStatusSnapshot } from '../lib/dashboard-html.js';
+import { parseSkillIndexRoutes } from '../../core/skill-route-alignment.js';
+import { getAgentContext } from '../lib/agent-context.js';
+import { isRecord, readCommandContract, readPositiveInteger, readString, readStringArray } from '../lib/command-contract.js';
 import {
 	readDashboardPreferences,
 	updateDashboardPreferences,
 	type DashboardPreferenceUpdate,
 } from '../lib/dashboard-preferences.js';
+import {
+	DOC_REVIEW_LEDGER_RELATIVE_PATH,
+	isDocReviewStatus,
+	isReviewerKind,
+	listDocReviewEntries,
+	markDocReviewEntry,
+	type DocReviewStatus,
+	type ReviewerKind,
+} from '../lib/doc-review-ledger.js';
+import { inspectManifestLock } from '../lib/manifest-lock.js';
+import { readPackageMetadata } from '../lib/package-info.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+import { detectVersionSources } from '../lib/version-sources.js';
+import { planUpdate, summarizePlan } from './update.js';
 
 interface DashboardOptions {
 	readonly host: string;
@@ -27,6 +44,86 @@ const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
 const DEFAULT_DASHBOARD_PORT = 0;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+const VERIFICATION_MAX_FILE_MATCHES = 8;
+
+const DOCUMENT_FILE_PATTERNS = [
+	/^docs-site\//u,
+	/^docs\//u,
+	/^\.mustflow\/docs\//u,
+	/^\.mustflow\/skills\//u,
+	/^templates\/[^/]+\/common\/\.mustflow\/docs\//u,
+	/^templates\/[^/]+\/common\/\.mustflow\/skills\//u,
+	/(^|\/)(README|CHANGELOG|ROADMAP|AGENTS|REPO_MAP)\.md$/iu,
+	/\.mdx?$/iu,
+] as const;
+
+const MUSTFLOW_FILE_PATTERNS = [
+	/^AGENTS\.md$/u,
+	/^\.mustflow\/config\//u,
+	/^\.mustflow\/docs\//u,
+	/^\.mustflow\/skills\//u,
+	/^templates\/[^/]+\/common\/AGENTS\.md$/u,
+	/^templates\/[^/]+\/common\/\.mustflow\//u,
+] as const;
+
+const CODE_FILE_PATTERNS = [/^src\//u, /^tests\//u, /^scripts\//u, /\.(cjs|mjs|js|ts|tsx|json|schema\.json)$/iu] as const;
+
+const RELEASE_FILE_PATTERNS = [
+	/^package\.json$/u,
+	/^bun\.lockb?$/u,
+	/^templates\//u,
+	/^schemas\//u,
+	/^src\/cli\/lib\/package-info\.ts$/u,
+	/^src\/cli\/lib\/version-sources\.ts$/u,
+] as const;
+const SKILL_INDEX_RELATIVE_PATH = '.mustflow/skills/INDEX.md';
+const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
+
+function readFrontmatterLines(content: string): string[] {
+	if (!content.startsWith('---')) {
+		return [];
+	}
+
+	const end = content.indexOf('\n---', 3);
+	if (end < 0) {
+		return [];
+	}
+
+	return content.slice(3, end).split(/\r?\n/u);
+}
+
+function readFrontmatterList(content: string, key: string): string[] {
+	const lines = readFrontmatterLines(content);
+	const values: string[] = [];
+	let keyIndent: number | undefined;
+
+	for (const line of lines) {
+		const keyMatch = /^(\s*)([^:#]+):\s*$/u.exec(line);
+		if (keyMatch) {
+			keyIndent = keyMatch[2].trim() === key ? keyMatch[1].length : undefined;
+			continue;
+		}
+
+		if (keyIndent === undefined) {
+			continue;
+		}
+
+		const valueMatch = /^(\s*)-\s*(.+?)\s*$/u.exec(line);
+		if (!valueMatch || valueMatch[1].length <= keyIndent) {
+			keyIndent = undefined;
+			continue;
+		}
+
+		values.push(valueMatch[2].trim().replace(/^["']|["']$/gu, ''));
+	}
+
+	return values;
+}
+
+function skillNameFromPath(skillPath: string): string {
+	const match = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(skillPath);
+	return match?.[1] ?? skillPath;
+}
 
 export function getDashboardHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -198,6 +295,467 @@ function readUpdatePayload(value: unknown): DashboardPreferenceUpdate[] {
 	});
 }
 
+function readOptionalStringField(value: Record<string, unknown>, key: string): string | undefined {
+	const field = value[key];
+	return typeof field === 'string' && field.trim().length > 0 ? field.trim() : undefined;
+}
+
+function readRequiredStringField(value: Record<string, unknown>, key: string): string {
+	const field = readOptionalStringField(value, key);
+	if (!field) {
+		throw new Error(`${key} is required.`);
+	}
+
+	return field;
+}
+
+function readDocReviewPayload(value: unknown): {
+	path: string;
+	status: Extract<DocReviewStatus, 'approved' | 'needs_human' | 'ignored'>;
+	reviewerKind: ReviewerKind;
+	reviewerId: string;
+	reviewerLabel?: string;
+	reviewerProvider?: string;
+	reviewerModel?: string;
+	reviewerCommandIntent?: string;
+	summary?: string;
+} {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+		throw new Error('Request body must be a JSON object.');
+	}
+
+	const payload = value as Record<string, unknown>;
+	const status = readRequiredStringField(payload, 'status');
+	if (status !== 'approved' && status !== 'needs_human' && status !== 'ignored') {
+		throw new Error('status must be approved, needs_human, or ignored.');
+	}
+
+	const reviewerKind = readRequiredStringField(payload, 'reviewerKind');
+	if (!isReviewerKind(reviewerKind)) {
+		throw new Error('reviewerKind must be human, llm, tool, or external.');
+	}
+
+	return {
+		path: readRequiredStringField(payload, 'path'),
+		status,
+		reviewerKind,
+		reviewerId: readRequiredStringField(payload, 'reviewerId'),
+		reviewerLabel: readOptionalStringField(payload, 'reviewerLabel'),
+		reviewerProvider: readOptionalStringField(payload, 'reviewerProvider'),
+		reviewerModel: readOptionalStringField(payload, 'reviewerModel'),
+		reviewerCommandIntent: readOptionalStringField(payload, 'reviewerCommandIntent'),
+		summary: readOptionalStringField(payload, 'summary'),
+	};
+}
+
+function renderDocReviewResponse(projectRoot: string, requestUrl: URL): {
+	schema_version: '1';
+	command: 'docs review list';
+	ledger_path: string;
+	count: number;
+	documents: ReturnType<typeof listDocReviewEntries>;
+} & DashboardDocReviewSnapshot {
+	const status = requestUrl.searchParams.get('status');
+	if (status && !isDocReviewStatus(status)) {
+		throw new Error('Invalid review status.');
+	}
+
+	const documents = listDocReviewEntries(projectRoot, {
+		includeAll: requestUrl.searchParams.get('all') === '1',
+		status: status as DocReviewStatus | undefined,
+	});
+
+	return {
+		schema_version: '1',
+		command: 'docs review list',
+		ledger_path: DOC_REVIEW_LEDGER_RELATIVE_PATH,
+		count: documents.length,
+		documents,
+	};
+}
+
+function renderCommandContractResponse(projectRoot: string): DashboardStatusSnapshot['command_contract'] {
+	try {
+		const contract = readCommandContract(projectRoot);
+		const intents = Object.entries(contract.intents)
+			.sort(([left], [right]) => left.localeCompare(right))
+			.flatMap(([name, intent]) => {
+				if (!isRecord(intent)) {
+					return [];
+				}
+
+				const status = readString(intent, 'status') ?? 'unknown';
+				const lifecycle = readString(intent, 'lifecycle') ?? null;
+				const runPolicy = readString(intent, 'run_policy') ?? null;
+				const stdin = readString(intent, 'stdin') ?? null;
+				const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds') ?? null;
+				const runnable =
+					status === 'configured' &&
+					lifecycle === 'oneshot' &&
+					runPolicy === 'agent_allowed' &&
+					stdin === 'closed' &&
+					timeoutSeconds !== null &&
+					(readStringArray(intent, 'argv') !== undefined || readString(intent, 'cmd') !== undefined);
+
+				return [
+					{
+						name,
+						status,
+						lifecycle,
+						run_policy: runPolicy,
+						stdin,
+						timeout_seconds: timeoutSeconds,
+						cwd: readString(intent, 'cwd') ?? null,
+						description: readString(intent, 'description') ?? null,
+						reason: readString(intent, 'reason') ?? null,
+						agent_action: readString(intent, 'agent_action') ?? null,
+						writes: readStringArray(intent, 'writes') ?? [],
+						required_after: readStringArray(intent, 'required_after') ?? [],
+						runnable,
+					},
+				];
+			});
+
+		return {
+			path: '.mustflow/config/commands.toml',
+			exists: true,
+			intents,
+		};
+	} catch {
+		return {
+			path: '.mustflow/config/commands.toml',
+			exists: false,
+			intents: [],
+		};
+	}
+}
+
+function normalizeStatusPath(value: string): string {
+	const pathText = value.trim().replaceAll('\\', '/');
+	const renameTarget = pathText.includes(' -> ') ? (pathText.split(' -> ').pop() ?? pathText) : pathText;
+	return renameTarget.replace(/^"|"$/gu, '');
+}
+
+function parseGitStatusOutput(output: string): string[] {
+	const paths = output
+		.split(/\r?\n/u)
+		.map((line) => line.slice(3))
+		.map(normalizeStatusPath)
+		.filter((line) => line.length > 0);
+
+	return [...new Set(paths)].sort((left, right) => left.localeCompare(right));
+}
+
+function readGitChangedFiles(projectRoot: string): string[] {
+	const result = spawnSync('git', ['status', '--short'], {
+		cwd: projectRoot,
+		encoding: 'utf8',
+		windowsHide: true,
+	});
+
+	if (result.status !== 0 || typeof result.stdout !== 'string') {
+		return [];
+	}
+
+	return parseGitStatusOutput(result.stdout);
+}
+
+function pathMatches(filePath: string, patterns: readonly RegExp[]): boolean {
+	return patterns.some((pattern) => pattern.test(filePath));
+}
+
+function matchingFiles(files: readonly string[], patterns: readonly RegExp[]): string[] {
+	return files.filter((filePath) => pathMatches(filePath, patterns)).slice(0, VERIFICATION_MAX_FILE_MATCHES);
+}
+
+function buildVerificationSnapshot(
+	commandContract: DashboardStatusSnapshot['command_contract'],
+	changedFiles: readonly string[],
+	manifestChangedFiles: readonly string[],
+	manifestMissingFiles: readonly string[],
+): DashboardStatusSnapshot['verification'] {
+	type DashboardVerificationRecommendation = DashboardStatusSnapshot['verification']['recommendations'][number];
+	type DashboardSkippedVerification = DashboardStatusSnapshot['verification']['skipped'][number];
+	const allChangedFiles = [
+		...new Set(
+			[...changedFiles, ...manifestChangedFiles, ...manifestMissingFiles].map((filePath) => filePath.replaceAll('\\', '/')),
+		),
+	].sort((left, right) => left.localeCompare(right));
+	const commandByName = new Map(commandContract.intents.map((intent) => [intent.name, intent]));
+	const recommendations: DashboardVerificationRecommendation[] = [];
+	const skipped: DashboardSkippedVerification[] = [];
+	const surfaces = new Set<string>();
+
+	function addRecommendation(intent: string, reasonKey: string, files: readonly string[]): void {
+		if (files.length === 0 || recommendations.some((item) => item.intent === intent)) {
+			return;
+		}
+
+		const command = commandByName.get(intent);
+		recommendations.push({
+			intent,
+			command: `mf run ${intent}`,
+			reason_key: reasonKey,
+			files,
+			runnable: command?.runnable ?? false,
+		});
+	}
+
+	const mustflowFiles = matchingFiles(allChangedFiles, MUSTFLOW_FILE_PATTERNS);
+	const documentFiles = matchingFiles(allChangedFiles, DOCUMENT_FILE_PATTERNS);
+	const codeFiles = matchingFiles(allChangedFiles, CODE_FILE_PATTERNS);
+	const releaseFiles = matchingFiles(allChangedFiles, RELEASE_FILE_PATTERNS);
+
+	if (mustflowFiles.length > 0) {
+		surfaces.add('mustflow');
+		addRecommendation('mustflow_check', 'dashboard.verification.reason.mustflow', mustflowFiles);
+	}
+
+	if (documentFiles.length > 0) {
+		surfaces.add('docs');
+		const fastDocs = commandByName.get('docs_validate_fast');
+		addRecommendation(fastDocs?.runnable ? 'docs_validate_fast' : 'docs_validate', 'dashboard.verification.reason.docs', documentFiles);
+		if (fastDocs?.runnable && commandByName.has('docs_validate')) {
+			skipped.push({
+				intent: 'docs_validate',
+				reason_key: 'dashboard.verification.skip.fullCovered',
+			});
+		}
+	}
+
+	if (codeFiles.length > 0) {
+		surfaces.add('code');
+		const related = commandByName.get('test_related');
+		if (related?.runnable) {
+			addRecommendation('test_related', 'dashboard.verification.reason.code', codeFiles);
+		} else {
+			addRecommendation('test_fast', 'dashboard.verification.reason.code', codeFiles);
+			if (related) {
+				skipped.push({
+					intent: 'test_related',
+					reason_key: 'dashboard.verification.skip.notRunnable',
+				});
+			}
+		}
+	}
+
+	if (releaseFiles.length > 0) {
+		surfaces.add('release');
+		addRecommendation('test_release', 'dashboard.verification.reason.release', releaseFiles);
+	}
+
+	if (allChangedFiles.length > 0 && recommendations.length === 0) {
+		surfaces.add('general');
+		addRecommendation('test_fast', 'dashboard.verification.reason.fallback', allChangedFiles.slice(0, VERIFICATION_MAX_FILE_MATCHES));
+	}
+
+	if (recommendations.some((item) => item.intent === 'test_related') && commandByName.has('test')) {
+		skipped.push({
+			intent: 'test',
+			reason_key: 'dashboard.verification.skip.fullCovered',
+		});
+	}
+
+	return {
+		changed_files: allChangedFiles,
+		surfaces: [...surfaces],
+		recommendations,
+		skipped,
+	};
+}
+
+function arraysEqual(left: readonly string[], right: readonly string[]): boolean {
+	return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function renderSkillsResponse(projectRoot: string): DashboardStatusSnapshot['skills'] {
+	const indexPath = path.join(projectRoot, ...SKILL_INDEX_RELATIVE_PATH.split('/'));
+	if (!existsSync(indexPath)) {
+		return {
+			index_path: SKILL_INDEX_RELATIVE_PATH,
+			exists: false,
+			count: 0,
+			routes: [],
+		};
+	}
+
+	const routes = parseSkillIndexRoutes(readFileSync(indexPath, 'utf8')).map((route) => {
+		const skillPath = path.join(projectRoot, ...route.skillPath.split('/'));
+		const exists = existsSync(skillPath);
+		const declaredCommandIntents = exists ? readFrontmatterList(readFileSync(skillPath, 'utf8'), 'command_intents') : [];
+		const sortedRouteIntents = [...route.commandIntents].sort((left, right) => left.localeCompare(right));
+		const sortedDeclaredIntents = [...declaredCommandIntents].sort((left, right) => left.localeCompare(right));
+
+		return {
+			skill: skillNameFromPath(route.skillPath),
+			skill_path: route.skillPath,
+			trigger: route.trigger,
+			required_input: route.requiredInput,
+			edit_scope: route.editScope,
+			risk: route.risk,
+			verification_intents: route.commandIntents,
+			declared_command_intents: declaredCommandIntents,
+			expected_output: route.expectedOutput,
+			exists,
+			aligned: exists && arraysEqual(sortedRouteIntents, sortedDeclaredIntents),
+		};
+	});
+
+	return {
+		index_path: SKILL_INDEX_RELATIVE_PATH,
+		exists: true,
+		count: routes.length,
+		routes,
+	};
+}
+
+function renderUpdateResponse(projectRoot: string): DashboardStatusSnapshot['update'] {
+	const plan = planUpdate(projectRoot);
+	if (plan.error) {
+		return {
+			command: 'update',
+			mode: 'dry-run',
+			dry_run_command: 'mf update --dry-run',
+			apply_command: 'mf update --apply',
+			ok: false,
+			apply_ready: false,
+			error: plan.error,
+			summary: {
+				blockedLocalChanges: 0,
+				manualReview: 0,
+				wouldUpdate: 0,
+				wouldCreate: 0,
+				unchanged: 0,
+			},
+			blockers: [],
+			changes: [],
+		};
+	}
+
+	const summary = summarizePlan(plan.items);
+	const blockers = plan.items.filter((item) => item.action === 'blocked-local-change' || item.action === 'manual-review');
+	const changes = plan.items.filter((item) => item.action === 'create' || item.action === 'update');
+
+	return {
+		command: 'update',
+		mode: 'dry-run',
+		dry_run_command: 'mf update --dry-run',
+		apply_command: 'mf update --apply',
+		ok: true,
+		apply_ready: blockers.length === 0,
+		summary,
+		blockers,
+		changes,
+	};
+}
+
+function readRunOutput(value: unknown): { readonly bytes: number; readonly truncated: boolean; readonly tail: string } {
+	if (!isRecord(value)) {
+		return { bytes: 0, truncated: false, tail: '' };
+	}
+
+	return {
+		bytes: typeof value.bytes === 'number' ? value.bytes : 0,
+		truncated: value.truncated === true,
+		tail: typeof value.tail === 'string' ? value.tail : '',
+	};
+}
+
+function readNumberArray(value: unknown): number[] {
+	return Array.isArray(value) ? value.filter((entry): entry is number => Number.isInteger(entry)) : [];
+}
+
+function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot['run_history'] {
+	const receiptPath = path.join(projectRoot, ...LATEST_RUN_RELATIVE_PATH.split('/'));
+	if (!existsSync(receiptPath)) {
+		return {
+			path: LATEST_RUN_RELATIVE_PATH,
+			exists: false,
+		};
+	}
+
+	try {
+		const receipt = JSON.parse(readFileSync(receiptPath, 'utf8')) as unknown;
+		if (!isRecord(receipt)) {
+			throw new Error('Run receipt must be a JSON object.');
+		}
+
+		const mode = typeof receipt.mode === 'string' ? receipt.mode : '';
+		const argv = Array.isArray(receipt.argv) ? receipt.argv.filter((entry): entry is string => typeof entry === 'string') : [];
+		const cmd = typeof receipt.cmd === 'string' && receipt.cmd.length > 0 ? [receipt.cmd] : [];
+
+		return {
+			path: LATEST_RUN_RELATIVE_PATH,
+			exists: true,
+			valid: true,
+			intent: typeof receipt.intent === 'string' ? receipt.intent : '',
+			status: typeof receipt.status === 'string' ? receipt.status : '',
+			timed_out: receipt.timed_out === true,
+			started_at: typeof receipt.started_at === 'string' ? receipt.started_at : '',
+			finished_at: typeof receipt.finished_at === 'string' ? receipt.finished_at : '',
+			duration_ms: typeof receipt.duration_ms === 'number' ? receipt.duration_ms : 0,
+			cwd: typeof receipt.cwd === 'string' ? receipt.cwd : '',
+			lifecycle: typeof receipt.lifecycle === 'string' ? receipt.lifecycle : '',
+			run_policy: typeof receipt.run_policy === 'string' ? receipt.run_policy : '',
+			mode,
+			command_line: mode === 'shell' ? cmd : argv,
+			timeout_seconds: typeof receipt.timeout_seconds === 'number' ? receipt.timeout_seconds : 0,
+			max_output_bytes: typeof receipt.max_output_bytes === 'number' ? receipt.max_output_bytes : 0,
+			success_exit_codes: readNumberArray(receipt.success_exit_codes),
+			exit_code: typeof receipt.exit_code === 'number' ? receipt.exit_code : null,
+			signal: typeof receipt.signal === 'string' ? receipt.signal : null,
+			error: typeof receipt.error === 'string' ? receipt.error : null,
+			kill_method: typeof receipt.kill_method === 'string' ? receipt.kill_method : null,
+			receipt_path: typeof receipt.receipt_path === 'string' ? receipt.receipt_path : LATEST_RUN_RELATIVE_PATH,
+			stdout: readRunOutput(receipt.stdout),
+			stderr: readRunOutput(receipt.stderr),
+		};
+	} catch (error) {
+		return {
+			path: LATEST_RUN_RELATIVE_PATH,
+			exists: true,
+			valid: false,
+			error: error instanceof Error ? error.message : String(error),
+		};
+	}
+}
+
+function renderStatusResponse(projectRoot: string): DashboardStatusSnapshot {
+	const context = getAgentContext(projectRoot);
+	const manifest = inspectManifestLock(projectRoot);
+	const lock = manifest.readResult.kind === 'present' ? manifest.readResult.lock : undefined;
+	const activeDocuments = listDocReviewEntries(projectRoot);
+	const commandContract = renderCommandContractResponse(projectRoot);
+	const gitChangedFiles = readGitChangedFiles(projectRoot);
+	const packageMetadata = readPackageMetadata();
+
+	return {
+		schema_version: '1',
+		command: 'dashboard status',
+		installed: context.installed,
+		manifest_lock: context.manifest_lock,
+		template: context.template,
+		release: {
+			package_name: packageMetadata.name,
+			package_version: packageMetadata.version,
+			version_sources: detectVersionSources(projectRoot),
+			release_sensitive_changed_files: matchingFiles(gitChangedFiles, RELEASE_FILE_PATTERNS),
+		},
+		update: renderUpdateResponse(projectRoot),
+		run_history: renderRunHistoryResponse(projectRoot),
+		skills: renderSkillsResponse(projectRoot),
+		tracked_files: lock?.files.length ?? 0,
+		changed_files: manifest.changedFiles,
+		missing_files: manifest.missingFiles,
+		issues: manifest.issues,
+		runnable_intents: context.command_contract.runnable_intents,
+		command_contract: commandContract,
+		verification: buildVerificationSnapshot(commandContract, gitChangedFiles, manifest.changedFiles, manifest.missingFiles),
+		latest_run: context.latest_run,
+		active_review_documents: activeDocuments.length,
+	};
+}
+
 function toDashboardUrl(host: string, port: number): string {
 	const formattedHost = host === '::1' ? '[::1]' : host;
 	return `http://${formattedHost}:${port}/`;
@@ -228,7 +786,14 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 					'cache-control': 'no-store',
 					'content-type': 'text/html; charset=utf-8',
 				});
-				response.end(renderDashboardHtml(readDashboardPreferences(projectRoot), token));
+				response.end(
+					renderDashboardHtml(
+						readDashboardPreferences(projectRoot),
+						token,
+						renderStatusResponse(projectRoot),
+						renderDocReviewResponse(projectRoot, new URL('/api/docs/review', 'http://localhost')),
+					),
+				);
 				return;
 			}
 
@@ -236,6 +801,18 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 				response.writeHead(204, { 'cache-control': 'no-store' });
 				response.end();
 				return;
+			}
+
+			if (requestUrl.pathname === '/api/status') {
+				if (!isAuthorized(request, token)) {
+					sendText(response, 403, 'Forbidden');
+					return;
+				}
+
+				if (request.method === 'GET') {
+					sendJson(response, 200, renderStatusResponse(projectRoot));
+					return;
+				}
 			}
 
 			if (requestUrl.pathname === '/api/preferences') {
@@ -280,6 +857,25 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 
 				sendJson(response, 200, { opened: true });
 				return;
+			}
+
+			if (requestUrl.pathname === '/api/docs/review') {
+				if (!isAuthorized(request, token)) {
+					sendText(response, 403, 'Forbidden');
+					return;
+				}
+
+				if (request.method === 'GET') {
+					sendJson(response, 200, renderDocReviewResponse(projectRoot, requestUrl));
+					return;
+				}
+
+				if (request.method === 'POST') {
+					const body = await readRequestJson(request);
+					markDocReviewEntry(projectRoot, readDocReviewPayload(body));
+					sendJson(response, 200, renderDocReviewResponse(projectRoot, requestUrl));
+					return;
+				}
 			}
 
 			sendText(response, 404, 'Not found');

@@ -3,14 +3,14 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.7.1"
+version = "1.15.8"
 profile = "oss"
 locale = "en"
 
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:f6884f713cecb1fde7bf0229fa169e17d1c514f4211ab26e2b2d349593e4ac1e"
+content_hash = "sha256:8bcc841dcb0e54aeb58e2fdeb05129301631c92cdfde4f45f9a1e8c5649f6e61"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
@@ -25,7 +25,7 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:1f73728b04ca158ed29cf6e690d2d103862c1a5db4eafa109ce3a5d01f0401f1"
+content_hash = "sha256:57661d932d4f994fa28c1db3dacffaa296b6cee5190e0c0be71f5508f8135018"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
@@ -47,10 +47,15 @@ source = "template_locale"
 last_action = "created"
 content_hash = "sha256:61106fb388a18b681182fa97f4b6dac6992823acc4721c7d6287bf882298dfcc"
 
+[files.".mustflow/skills/docs-prose-review/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:4c65a4c98564b04ee5132908170c041f6163c4e591d6a577c2a3a22c3cf671e6"
+
 [files.".mustflow/skills/docs-update/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:8ba582e8d8b6e43ae88d5123a6dbb666b42993ce97447c78588dc9149a29d6da"
+content_hash = "sha256:4c3097aff72d50e0b2e667833f653d52c0cf564f39c09283dc4f57d09e50a6a2"
 
 [files.".mustflow/skills/project-context-authoring/SKILL.md"]
 source = "template_locale"
@@ -75,7 +80,7 @@ content_hash = "sha256:2aac79982126b2ac4bf6de2194cb5e5b1373600b3288bba093b2b7a51
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:892eb0ee234ce10f09620a17bf95b153bd5481b1d117ef43181bffac4c219cfa"
+content_hash = "sha256:9f291815a790c76a2d266709798181d5dde12dcd8aea7b2428db79cd5fa70071"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
@@ -85,7 +90,7 @@ content_hash = "sha256:4bc48d56de0afc3d2e885adeefcbe4b9cee3263c32db29e12c78dd1a2
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:d5530e5d5c2f18cab7e16b7dd7443ea8b14448344815f318db8dcdae9f9689a9"
+content_hash = "sha256:603256541fcf31aa471fbfd2b0343dcfc2b6809e3b7e28f99e911b4620fab022"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"

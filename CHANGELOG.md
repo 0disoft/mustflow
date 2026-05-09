@@ -16,6 +16,33 @@ user projects by `mf init`.
   mustflow maintainer workflows.
 - Added explicit authority-boundary guidance to installed project context
   templates.
+- Added `mf docs review` to track LLM-created or LLM-modified documentation
+  that needs prose review, with open-ended reviewer metadata and JSON output.
+- Added a document review tab to `mf dashboard` for filtering pending
+  documentation and marking entries approved, ignored, or needing additional
+  review.
+- Added a read-only status tab to `mf dashboard` for installation, manifest
+  lock, template, command, latest-run, and documentation-review counts.
+- Added a read-only command tab to `mf dashboard` for configured, manual-only,
+  and blocked command intent details from `.mustflow/config/commands.toml`.
+- Added the `docs-prose-review` skill so human or LLM reviewers can clean up
+  queued documentation prose and record the review result.
+- Added multiline review comments for documentation review queue entries, with
+  CLI support for inline comments, comment files, and automatic cleanup of
+  imported comment files.
+- Added `mf version --check` to compare the installed CLI package version with
+  the latest npm release and print an update command when a newer version is
+  available.
+- Added installed agent guidance to prefer the narrowest configured verification
+  intent that covers the changed risk before running slow full-suite tests.
+
+### Fixed
+
+- Fixed `mf dashboard` language switching so the current status tab content
+  updates immediately without requiring a reload or tab switch.
+- Clarified `mf dashboard` Git preference labels and command-intent status text
+  so `manual_only` commands appear as requiring a user request instead of as
+  broken or unavailable commands.
 
 ### Notes
 

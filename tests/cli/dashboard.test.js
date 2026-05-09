@@ -124,6 +124,21 @@ test('dashboard serves and updates safe preferences', async () => {
 	try {
 		const init = runCli(projectPath, ['init', '--yes']);
 		assert.equal(init.status, 0, init.stderr);
+		mkdirSync(path.join(projectPath, 'docs'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'docs', 'guide.md'), '# Guide\n\nDraft prose.\n');
+		const addReview = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'docs/guide.md',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+			'--comment',
+			'Rewrite the introduction.',
+		]);
+		assert.equal(addReview.status, 0, addReview.stderr || addReview.stdout);
 
 		dashboard = spawn(process.execPath, [cliPath, 'dashboard', '--json'], {
 			cwd: projectPath,
@@ -138,6 +153,84 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /mustflow dashboard/);
 		assert.match(html, /font-size: 17px;/);
 		assert.match(html, /id="open-mustflow"/);
+		assert.match(html, /id="tab-status"/);
+		assert.match(html, /id="tab-verification"/);
+		assert.match(html, /id="tab-commands"/);
+		assert.match(html, /id="tab-release"/);
+		assert.match(html, /id="tab-update"/);
+		assert.match(html, /id="tab-runs"/);
+		assert.match(html, /id="tab-skills"/);
+		assert.match(html, /id="tab-settings"/);
+		assert.match(html, /id="tab-documents"/);
+		assert.match(html, /id="panel-status"/);
+		assert.match(html, /id="panel-verification"/);
+		assert.match(html, /id="panel-commands"/);
+		assert.match(html, /id="panel-release"/);
+		assert.match(html, /id="panel-update"/);
+		assert.match(html, /id="panel-runs"/);
+		assert.match(html, /id="panel-skills"/);
+		assert.match(html, /id="panel-settings"/);
+		assert.match(html, /id="panel-documents"/);
+		assert.match(html, /fetch\("\/api\/status"/);
+		assert.match(html, /fetch\("\/api\/docs\/review"/);
+		assert.match(html, /const initialStatusSnapshot = \{"schema_version":"1","command":"dashboard status"/);
+		assert.match(
+			html,
+			/const initialDocReview = \{"schema_version":"1","command":"docs review list","ledger_path":"\.mustflow\/review\/docs\.toml","count":1,/,
+		);
+		assert.match(html, /dashboard\.tab\.status":"상태/);
+		assert.match(html, /dashboard\.tab\.verification":"검증 추천/);
+		assert.match(html, /dashboard\.tab\.commands":"명령/);
+		assert.match(html, /dashboard\.tab\.release":"릴리스/);
+		assert.match(html, /dashboard\.tab\.update":"업데이트/);
+		assert.match(html, /dashboard\.tab\.runs":"실행 기록/);
+		assert.match(html, /dashboard\.tab\.skills":"스킬/);
+		assert.match(html, /dashboard\.status\.overview":"개요/);
+		assert.match(html, /dashboard\.status\.latestRunMissing":"실행 기록 없음/);
+		assert.match(html, /dashboard\.commands\.heading":"명령 의도/);
+		assert.match(html, /dashboard\.commands\.manualOnly":"사용자 요청 필요/);
+		assert.match(html, /dashboard\.commands\.unavailable":"설정 안 됨/);
+		assert.match(html, /dashboard\.release\.overview":"개요/);
+		assert.match(html, /dashboard\.release\.versionSources":"버전 소스/);
+		assert.match(html, /dashboard\.release\.reason\.versionCheck":"npm에 더 새로운 mustflow 패키지 버전/);
+		assert.match(html, /dashboard\.update\.overview":"개요/);
+		assert.match(html, /dashboard\.update\.applyReady":"적용 가능/);
+		assert.match(html, /dashboard\.update\.reason\.dryRun":"파일을 쓰지 않고 템플릿 업데이트 계획/);
+		assert.match(html, /dashboard\.runs\.heading":"최근 실행/);
+		assert.match(html, /dashboard\.runs\.empty":"실행 기록이 없습니다/);
+		assert.match(html, /dashboard\.runs\.stdout":"표준 출력/);
+		assert.match(html, /dashboard\.skills\.heading":"스킬 라우트/);
+		assert.match(html, /dashboard\.skills\.mismatch":"명령 의도 불일치/);
+		assert.match(html, /dashboard\.verification\.recommendations":"추천/);
+		assert.match(html, /dashboard\.verification\.reason\.docs":"문서가 변경되었습니다/);
+		assert.match(html, /dashboard\.verification\.copy":"복사/);
+		assert.match(html, /dashboard\.setting\.git\.auto_commit":"요청 시 자동 커밋/);
+		assert.match(
+			html,
+			/dashboard\.setting\.git\.auto_commit\.description":"사용자가 커밋을 명시적으로 요청했을 때/,
+		);
+		assert.match(html, /function renderVerificationPanel\(\)/);
+		assert.match(html, /navigator\.clipboard\.writeText\(command\)/);
+		assert.match(html, /function renderCommandPanel\(\)/);
+		assert.match(html, /function renderReleasePanel\(\)/);
+		assert.match(html, /function renderUpdatePanel\(\)/);
+		assert.match(html, /function renderRunsPanel\(\)/);
+		assert.match(html, /function renderSkillsPanel\(\)/);
+		assert.match(html, /mf version --check/);
+		assert.match(html, /mf update --dry-run/);
+		assert.match(html, /mf update --apply/);
+		assert.match(html, /mf run test_release/);
+		assert.match(html, /function commandStateKey\(intent\)/);
+		assert.match(html, /document\.getElementById\("tab-commands"\)\.textContent/);
+		assert.match(html, /dashboard\.tab\.documents":"문서 검수/);
+		assert.match(html, /dashboard\.docs\.action\.approve":"승인/);
+		assert.match(html, /dashboard\.docs\.action\.approve\.tooltip":"선택한 검수자 기준으로 이 문서를 승인/);
+		assert.match(html, /dashboard\.docs\.action\.needsReview":"추가 검수 필요/);
+		assert.match(html, /dashboard\.docs\.action\.needsReview\.tooltip":"사람, LLM, 도구 등 다른 검수자/);
+		assert.match(html, /dashboard\.docs\.comment":"코멘트/);
+		assert.match(html, /Rewrite the introduction\./);
+		assert.match(html, /button\.title = message\(tooltipKey\);/);
+		assert.match(html, /button\.setAttribute\("aria-label", message\(tooltipKey\)\);/);
 		assert.match(html, /dashboard\.ui\.openMustflow":"\.mustflow 폴더 열기/);
 		assert.match(html, /fetch\("\/api\/open-mustflow"/);
 		assert.match(html, /background-position:\s*calc\(100% - 22px\) 50%,\s*calc\(100% - 16px\) 50%;/);
@@ -146,6 +239,10 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /\.language-picker \{\s*align-items: center;\s*display: inline-flex;\s*flex-shrink: 0;/);
 		assert.match(html, /\.language-picker span \{[^}]*white-space: nowrap;/);
 		assert.match(html, /const availableLocales = \["en","ko","zh","es","fr","hi"\];/);
+		assert.match(
+			html,
+			/document\.getElementById\("dashboard-language"\)\.addEventListener\("change"[\s\S]*?renderStatusPanel\(\);\s*renderVerificationPanel\(\);\s*renderCommandPanel\(\);\s*renderReleasePanel\(\);\s*renderUpdatePanel\(\);\s*renderRunsPanel\(\);\s*renderSkillsPanel\(\);\s*render\(\);\s*renderDocuments\(\);/,
+		);
 		assert.match(html, /한국어/);
 		assert.match(html, /中文/);
 		assert.match(html, /Español/);
@@ -272,6 +369,98 @@ test('dashboard serves and updates safe preferences', async () => {
 
 		const unauthorizedOpen = await fetch(new URL('/api/open-mustflow', info.url), { method: 'POST' });
 		assert.equal(unauthorizedOpen.status, 403);
+
+		const unauthorizedStatus = await fetch(new URL('/api/status', info.url));
+		assert.equal(unauthorizedStatus.status, 403);
+
+		const unauthorizedDocs = await fetch(new URL('/api/docs/review', info.url));
+		assert.equal(unauthorizedDocs.status, 403);
+
+		const status = await fetch(new URL('/api/status', info.url), {
+			headers: { 'x-mustflow-dashboard-token': token },
+		}).then((response) => response.json());
+		assert.equal(status.command, 'dashboard status');
+		assert.equal(status.installed, true);
+		assert.equal(status.manifest_lock, 'present');
+		assert.equal(status.active_review_documents, 1);
+		assert.equal(status.release.package_name, 'mustflow');
+		assert.match(status.release.package_version, /^\d+\.\d+\.\d+$/);
+		assert.ok(status.release.version_sources.some((source) => source.path === '.mustflow/config/manifest.lock.toml'));
+		assert.ok(Array.isArray(status.release.release_sensitive_changed_files));
+		assert.equal(status.update.command, 'update');
+		assert.equal(status.update.mode, 'dry-run');
+		assert.equal(status.update.dry_run_command, 'mf update --dry-run');
+		assert.equal(status.update.apply_command, 'mf update --apply');
+		assert.equal(typeof status.update.ok, 'boolean');
+		assert.equal(typeof status.update.apply_ready, 'boolean');
+		assert.equal(typeof status.update.summary.unchanged, 'number');
+		assert.ok(Array.isArray(status.update.blockers));
+		assert.ok(Array.isArray(status.update.changes));
+		assert.equal(status.run_history.path, '.mustflow/state/runs/latest.json');
+		assert.equal(typeof status.run_history.exists, 'boolean');
+		assert.equal(status.skills.index_path, '.mustflow/skills/INDEX.md');
+		assert.equal(status.skills.exists, true);
+		assert.ok(status.skills.count > 0);
+		assert.ok(status.skills.routes.some((route) => route.skill === 'docs-update' && route.exists === true));
+		assert.ok(status.tracked_files > 0);
+		assert.ok(Array.isArray(status.runnable_intents));
+		assert.equal(status.command_contract.path, '.mustflow/config/commands.toml');
+		assert.equal(status.command_contract.exists, true);
+		assert.ok(status.command_contract.intents.some((intent) => intent.name === 'mustflow_check' && intent.runnable === true));
+		assert.ok(
+			status.command_contract.intents.some(
+				(intent) => intent.name === 'test_related' && intent.runnable === false && intent.reason.includes('related-test command'),
+			),
+		);
+		assert.ok(Array.isArray(status.verification.changed_files));
+		assert.ok(Array.isArray(status.verification.surfaces));
+		assert.ok(Array.isArray(status.verification.recommendations));
+		assert.ok(Array.isArray(status.verification.skipped));
+		assert.equal(status.latest_run.path, '.mustflow/state/runs/latest.json');
+
+		const docsReview = await fetch(new URL('/api/docs/review', info.url), {
+			headers: { 'x-mustflow-dashboard-token': token },
+		}).then((response) => response.json());
+		assert.equal(docsReview.command, 'docs review list');
+		assert.equal(docsReview.count, 1);
+		assert.equal(docsReview.documents[0].path, 'docs/guide.md');
+		assert.equal(docsReview.documents[0].status, 'pending');
+		assert.equal(docsReview.documents[0].review_comment, 'Rewrite the introduction.');
+
+		const invalidDocReviewUpdate = await fetch(new URL('/api/docs/review', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ path: 'docs/guide.md', status: 'approved', reviewerKind: 'claude-code', reviewerId: 'claude-code' }),
+		});
+		assert.equal(invalidDocReviewUpdate.status, 400);
+
+		const approvedDocReview = await fetch(new URL('/api/docs/review', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({
+				path: 'docs/guide.md',
+				status: 'approved',
+				reviewerKind: 'llm',
+				reviewerId: 'opencode',
+				summary: 'Reviewed in dashboard.',
+			}),
+		}).then((response) => response.json());
+		assert.equal(approvedDocReview.count, 0);
+
+		const allDocsReview = await fetch(new URL('/api/docs/review?all=1', info.url), {
+			headers: { 'x-mustflow-dashboard-token': token },
+		}).then((response) => response.json());
+		assert.equal(allDocsReview.count, 1);
+		assert.equal(allDocsReview.documents[0].status, 'approved');
+		assert.equal(allDocsReview.documents[0].reviewer_kind, 'llm');
+		assert.equal(allDocsReview.documents[0].reviewer_id, 'opencode');
+		assert.match(allDocsReview.documents[0].review_summary, /dashboard/);
 
 		const preferences = await fetch(new URL('/api/preferences', info.url), {
 			headers: { 'x-mustflow-dashboard-token': token },

@@ -3,9 +3,9 @@ title: mf dashboard
 description: स्थानीय mustflow डैशबोर्ड शुरू करता है।
 ---
 
-`mf dashboard` सुरक्षित mustflow preferences देखने और बदलने के लिए स्थानीय browser dashboard शुरू करता है।
+`mf dashboard` mustflow status, verification suggestions, command intents, सुरक्षित preferences और दस्तावेज़ समीक्षा के लिए स्थानीय browser dashboard शुरू करता है।
 
-पहला dashboard surface केवल `.mustflow/config/preferences.toml` को edit करता है। यह stage, commit, push, version bump या command intents run नहीं करता।
+Status tab installation, manifest lock, template, बदली या missing tracked files, runnable commands, latest run और review वाले documents दिखाता है। Verification tab बदली हुई files पढ़कर copy किए जा सकने वाले `mf run ...` command intents suggest करता है, पर उन्हें run नहीं करता। Commands tab `.mustflow/config/commands.toml` पढ़कर runnable, user request required, not configured और blocked command intents दिखाता है। Settings tab `.mustflow/config/preferences.toml` edit करता है। Documents review tab `.mustflow/review/docs.toml` पढ़ता है और मौजूदा entries को approved, ignored या needs human review के रूप में mark कर सकता है। यह stage, commit, push, version bump या command intents run नहीं करता।
 
 Editable groups में Git defaults, commit message suggestions, reporting, verification selection, test authoring, code style, और version-impact preferences शामिल हैं।
 
@@ -19,6 +19,8 @@ npx mf dashboard
 
 Dashboard page में English, Korean, Chinese, Spanish, French और Hindi के लिए language selector है। चुनी गई भाषा browser में save होती है।
 
+Documents review tab default रूप से active review entries दिखाता है। Approved और ignored entries केवल status filter से चुने जाने पर दिखती हैं।
+
 किसी specific port के लिए `--port` use करें। Browser बंद रखना हो तो `--no-open` use करें। किसी tool को URL parse करना हो तो `--json` use करें; JSON mode browser open नहीं करता।
 
 ```sh
@@ -31,9 +33,11 @@ npx mf dashboard --json
 
 `--json` के साथ command local server चलाए रखते हुए dashboard URL, mustflow root और preferences path print करता है।
 
-Dashboard API session token use करती है और केवल page पर दिखाए गए limited preference fields update करती है। `git.auto_push` locked setting के रूप में दिखता है।
+Dashboard API session token use करती है और केवल page पर दिखाए गए limited preference fields तथा document-review status transitions update करती है। `git.auto_push` locked setting के रूप में दिखता है।
 
 Preference save सफल होने पर dashboard `.mustflow/config/preferences.toml` लिखता है और, यदि `.mustflow/config/manifest.lock.toml` मौजूद हो, तो उस file entry को `last_action = "customized"` के रूप में refresh करता है। इससे `mf check`, `mf status`, और `mf update --dry-run` accepted local preference baseline के साथ aligned रहते हैं।
+
+Document review action सफल होने पर dashboard `.mustflow/review/docs.toml` update करता है। Reviewer kind broad रहता है (`human`, `llm`, `tool`, या `external`); reviewer ID और summary free-form रहते हैं।
 
 ## सहायता और निकास कोड
 

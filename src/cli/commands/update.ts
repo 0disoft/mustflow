@@ -13,7 +13,7 @@ import { readTomlFile, stringifyToml } from '../lib/toml.js';
 const UPDATE_SCHEMA_VERSION = '1';
 const CUSTOMIZED_LOCK_ACTION = 'customized';
 
-type UpdateAction = 'unchanged' | 'create' | 'update' | 'blocked-local-change' | 'manual-review';
+export type UpdateAction = 'unchanged' | 'create' | 'update' | 'blocked-local-change' | 'manual-review';
 type UpdateMode = 'dry-run' | 'apply' | 'unspecified';
 
 interface UpdatePolicy {
@@ -36,14 +36,14 @@ const UPDATE_POLICY: UpdatePolicy = {
 	writes_only_template_manifest_paths: true,
 };
 
-interface UpdatePlanItem {
+export interface UpdatePlanItem {
 	readonly relativePath: string;
 	readonly sourceKind: TemplateFileSource['sourceKind'];
 	readonly action: UpdateAction;
 	readonly reason: string;
 }
 
-interface UpdatePlanSummary {
+export interface UpdatePlanSummary {
 	readonly blockedLocalChanges: number;
 	readonly manualReview: number;
 	readonly wouldUpdate: number;
@@ -105,7 +105,7 @@ function byRelativePath(files: readonly LockedFile[]): Map<string, LockedFile> {
 	return new Map(files.map((file) => [file.relativePath, file]));
 }
 
-function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
+export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
 	const lockResult = readManifestLock(projectRoot);
 
 	if (lockResult.kind === 'missing') {
@@ -221,7 +221,7 @@ function printItems(title: string, items: readonly UpdatePlanItem[], reporter: R
 	}
 }
 
-function summarizePlan(items: readonly UpdatePlanItem[]): UpdatePlanSummary {
+export function summarizePlan(items: readonly UpdatePlanItem[]): UpdatePlanSummary {
 	return {
 		blockedLocalChanges: items.filter((item) => item.action === 'blocked-local-change').length,
 		manualReview: items.filter((item) => item.action === 'manual-review').length,
