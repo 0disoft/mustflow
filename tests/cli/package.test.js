@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.7.1');
+	assert.equal(packageJson.version, '1.15.8');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -50,10 +50,17 @@ test('package metadata is ready for public npm publishing', () => {
 
 test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts.prepack, 'npm run build');
-	assert.match(packageJson.scripts.test, /--test-concurrency=1/);
+	assert.equal(packageJson.scripts.test, 'bun run test:full');
+	assert.equal(packageJson.scripts['test:fast'], 'bun run build && node scripts/run-cli-tests.mjs fast');
+	assert.equal(packageJson.scripts['test:related'], 'bun run build && node scripts/run-cli-tests.mjs related');
+	assert.equal(packageJson.scripts['test:cli'], 'bun run build && node scripts/run-cli-tests.mjs cli');
+	assert.equal(packageJson.scripts['test:release'], 'bun run build && node scripts/run-cli-tests.mjs release');
+	assert.equal(packageJson.scripts['test:full'], 'bun run build && node scripts/run-cli-tests.mjs full');
+	assert.equal(packageJson.scripts.check, 'bun run check:package && bun run test:full');
 	assert.equal(packageJson.scripts['check:pack'], 'npm pack --dry-run --json');
 	assert.equal(packageJson.scripts['check:install'], 'npm run check:pack && node --test tests/integration/*.test.js');
 	assert.equal(packageJson.scripts['release:check'], 'npm run check && npm run docs:check && npm run check:install');
+	assert.equal(packageJson.scripts['docs:check:fast'], 'bun run --cwd docs-site check:fast');
 	assert.equal(packageJson.scripts.prepublishOnly, 'npm run release:check');
 });
 
@@ -148,7 +155,7 @@ test('template i18n validation reports localized frontmatter drift', async () =>
 });
 
 test('npm package includes compiled cli and default template sources', () => {
-	const result = spawnSync('npm pack --dry-run --json', {
+	const result = spawnSync('npm pack --dry-run --json --ignore-scripts', {
 		cwd: projectRoot,
 		encoding: 'utf8',
 		shell: true,
@@ -160,6 +167,7 @@ test('npm package includes compiled cli and default template sources', () => {
 
 	assert.ok(files.has('dist/cli/index.js'));
 	assert.ok(files.has('dist/cli/commands/init.js'));
+	assert.ok(files.has('dist/cli/commands/docs.js'));
 	assert.ok(files.has('dist/cli/commands/index.js'));
 	assert.ok(files.has('dist/cli/commands/explain.js'));
 	assert.ok(files.has('dist/cli/commands/search.js'));
@@ -175,11 +183,13 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/context-report.schema.json'));
 	assert.ok(files.has('schemas/run-receipt.schema.json'));
 	assert.ok(files.has('schemas/commands.schema.json'));
+	assert.ok(files.has('schemas/docs-review-list.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/docs-prose-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/project-context-authoring/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-regression-tests/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/skill-authoring/SKILL.md`));

@@ -18,14 +18,21 @@ de commande mustflow configurés.
 
 ```sh
 mf run build
+mf run test_fast
+mf run test_related
 mf run test
+mf run test_release
 mf run docs_validate
 mf run mustflow_check
 ```
 
-`bun run release:check` reste la porte de publication. Les intents
-`test_related`, `lint`, coverage et test-audit restent non configurés ou
-manual-only tant que ce dépôt n'a pas de contrôles plus ciblés pour ces flux.
+`bun run release:check` reste la porte de publication. `test_fast` exécute la
+base rapide de régression de la CLI, `test_related` choisit les tests à partir
+des fichiers modifiés et revient à cette base s'il ne trouve pas de
+correspondance, et `test_release` sépare les contrôles de métadonnées et de
+paquetage du flux local courant. `lint`, coverage et test-audit restent non
+configurés ou manual-only tant que ce dépôt n'a pas de contrôles plus ciblés
+pour ces flux.
 
 ## Objectif
 

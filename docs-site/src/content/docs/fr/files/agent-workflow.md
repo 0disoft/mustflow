@@ -49,6 +49,11 @@ N’exécutez pas directement les commandes de cycle de vie `server`, `watch`, `
 
 Lorsque `mf run <intent>` est disponible, préférez-le pour les commandes finies.
 
+Le choix de vérification est fondé sur le risque. Les agents doivent préférer les tests liés,
+les contrôles rapides, les builds ou la validation de documentation lorsque ces intentions couvrent
+la surface modifiée, et signaler l’absence d’une intention plus étroite au lieu d’utiliser
+silencieusement une suite complète lente.
+
 `mf run` écrit le dernier résultat d’exécution dans `.mustflow/state/runs/latest.json` comme reçu d’exécution.
 Utilisez `mf run <intent> --json` lorsqu’une automatisation ou un rapport final a besoin d’une preuve structurée.
 Le reçu documente une seule exécution; la source de vérité de la définition de commande reste `commands.toml`.

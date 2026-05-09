@@ -18,14 +18,20 @@ mustflow command intents को प्राथमिकता दें।
 
 ```sh
 mf run build
+mf run test_fast
+mf run test_related
 mf run test
+mf run test_release
 mf run docs_validate
 mf run mustflow_check
 ```
 
-`bun run release:check` publishing gate बना रहता है। `test_related`, `lint`,
-coverage, और test-audit intents तब तक unset या manual-only रहते हैं जब तक इस
-repository में उन flows के लिए अधिक संकीर्ण gates न हों।
+`bun run release:check` publishing gate बना रहता है। `test_fast` fast CLI
+regression baseline चलाता है, `test_related` changed files से tests चुनता है और
+match न मिले तो उसी baseline पर लौटता है, और `test_release` package metadata और
+packaging checks को routine local edits से अलग रखता है। `lint`, coverage, और
+test-audit intents तब तक unset या manual-only रहते हैं जब तक इस repository में
+उन flows के लिए अधिक संकीर्ण gates न हों।
 
 ## उद्देश्य
 

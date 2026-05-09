@@ -54,6 +54,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'docs', 'agent-workflow.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'project-context-authoring', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')));

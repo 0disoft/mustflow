@@ -49,6 +49,10 @@ agent 只能运行满足全部执行关口的命令意图：`status = "configure
 
 当 `mf run <intent>` 可用时，有限命令应优先使用它。
 
+验证选择应基于风险。相关测试、快速检查、构建或文档专用验证意图能够覆盖变更范围时，
+agent 应优先使用这些更窄的意图；如果缺少更窄的意图，应报告这个空缺，而不是静默默认使用
+缓慢的完整测试套件。
+
 `mf run` 会把最新执行结果作为运行 receipt 写入 `.mustflow/state/runs/latest.json`。
 当自动化或最终报告需要结构化证据时，使用 `mf run <intent> --json`。
 receipt 是一次执行的记录；命令定义的事实来源仍然是 `commands.toml`。

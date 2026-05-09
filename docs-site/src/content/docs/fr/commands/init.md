@@ -27,6 +27,7 @@ AGENTS.md
    ├─ INDEX.md
    ├─ code-review/SKILL.md
    ├─ diff-risk-review/SKILL.md
+   ├─ docs-prose-review/SKILL.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
    ├─ project-context-authoring/SKILL.md

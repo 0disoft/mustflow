@@ -17,20 +17,31 @@ bun run release:check
 
 ```sh
 mf run build
+mf run test_fast
+mf run test_related
 mf run test
+mf run test_release
+mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
 ```
 
-`bun run release:check`는 배포 전 관문으로 유지합니다. `test_related`, `lint`, coverage,
-test-audit 의도는 해당 흐름을 위한 더 좁은 검증 관문이 생길 때까지 미설정 또는 수동 전용으로 둡니다.
+`bun run release:check`는 배포 전 관문으로 유지합니다. `test_fast`는 빠른 CLI 회귀
+기준선을 실행하고, `test_related`는 변경 파일에서 관련 테스트를 고른 뒤 없으면 빠른
+기준선으로 돌아가며, `test_release`는 패키지 메타데이터와 포장 검사를 일반 로컬
+수정 검증에서 분리합니다. `lint`, coverage, test-audit 의도는 해당 흐름을 위한 더
+좁은 검증 관문이 생길 때까지 미설정 또는 수동 전용으로 둡니다.
+`docs_validate_fast`는 전체 정적 사이트를 빌드하지 않고 내비게이션과 현지화 문서
+링크를 확인합니다. `docs_validate`는 릴리스 민감 변경을 위한 전체 문서 빌드,
+검색 색인, 사이트맵 검증으로 유지합니다.
 
 ## 역할
 
 - `bun run release:check`: CLI 검사, 문서 사이트 검사, 실제 npm 포장·설치 검증을 한 번에 실행합니다.
 - `bun run check:pack`: `npm pack --dry-run --json`으로 패키지 포함 파일 목록을 확인합니다. 이 과정에서 `prepack`이 먼저 빌드됩니다.
 - `bun run check:install`: 실제 `.tgz`를 만들고 임시 프로젝트에 설치한 뒤 `npx mf` 공개 흐름을 실행합니다.
-- `bun run docs:check`: 문서 사이트를 빌드하고 내비게이션을 확인합니다.
+- `bun run docs:check:fast`: 전체 정적 빌드 없이 내비게이션과 현지화 문서 링크를 확인합니다.
+- `bun run docs:check`: 문서 사이트를 빌드하고 내비게이션, 검색 색인, 사이트맵 출력을 확인합니다.
 
 ## 문서 사이트 배포
 

@@ -65,6 +65,10 @@ Do not directly execute commands with `server`, `watch`, `interactive`, `browser
 
 When `mf run <intent>` is available, it should be prioritized for oneshot commands.
 
+Verification selection is risk-based. Agents should prefer configured related tests, fast checks,
+builds, or docs-specific validation when those intents cover the changed surface, and report missing
+narrower intents instead of silently defaulting to slow full-suite tests.
+
 `mf run` writes the latest execution result to `.mustflow/state/runs/latest.json` as a run record.
 Use `mf run <intent> --json` when automation or final reports require structured evidence.
 The record serves as evidence for a specific execution; the definition source of truth remains `commands.toml`.

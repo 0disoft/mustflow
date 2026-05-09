@@ -7,6 +7,7 @@
     "start": "astro dev",
     "build": "astro build",
     "check": "bun run check:navigation && astro build",
+    "check:fast": "bun run check:navigation",
     "check:navigation": "node scripts/check-navigation.mjs",
     "preview": "astro preview",
     "astro": "astro"

@@ -19,21 +19,31 @@ mustflow command intents.
 
 ```sh
 mf run build
+mf run test_fast
+mf run test_related
 mf run test
+mf run test_release
+mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
 ```
 
-`bun run release:check` remains the publishing gate. `test_related`, `lint`,
-coverage, and test-audit intents remain unset or manual-only until this
-repository has narrower gates for those workflows.
+`bun run release:check` remains the publishing gate. `test_fast` runs the fast
+CLI regression baseline, `test_related` selects tests from changed files and
+falls back to that baseline, and `test_release` isolates package metadata and
+packaging checks. `lint`, coverage, and test-audit intents remain unset or
+manual-only until this repository has narrower gates for those workflows.
+`docs_validate_fast` checks navigation and localized content links without a full
+static site build. `docs_validate` remains the full documentation build,
+search-index, and sitemap gate for release-sensitive changes.
 
 ## Purpose
 
 - `bun run release:check`: Runs CLI checks, documentation checks, and verifies the actual npm package installation.
 - `bun run check:pack`: Uses `npm pack --dry-run --json` to inspect package contents. This also runs `prepack` first.
 - `bun run check:install`: Builds a real `.tgz`, installs it into a temporary project, and runs the public `npx mf` workflow.
-- `bun run docs:check`: Builds the documentation site and verifies navigation.
+- `bun run docs:check:fast`: Verifies navigation and localized content links without a full static build.
+- `bun run docs:check`: Builds the documentation site and verifies navigation, search index, and sitemap output.
 
 ## Documentation Site Deployment
 

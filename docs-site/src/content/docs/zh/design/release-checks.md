@@ -17,13 +17,18 @@ bun run release:check
 
 ```sh
 mf run build
+mf run test_fast
+mf run test_related
 mf run test
+mf run test_release
 mf run docs_validate
 mf run mustflow_check
 ```
 
-`bun run release:check` 仍然是发布前关卡。`test_related`、`lint`、coverage
-和 test-audit intent 会保持未配置或 manual-only，直到本仓库拥有更细粒度的检查入口。
+`bun run release:check` 仍然是发布前关卡。`test_fast` 运行快速 CLI 回归基线，
+`test_related` 会根据变更文件选择测试，找不到匹配项时回到快速基线，`test_release`
+则把包元数据和打包检查从日常本地修改验证中分离出来。`lint`、coverage 和
+test-audit intent 会保持未配置或 manual-only，直到本仓库拥有更细粒度的检查入口。
 
 ## 目的
 

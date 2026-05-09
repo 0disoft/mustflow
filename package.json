@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "1.7.1",
+  "version": "1.15.8",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -26,8 +26,13 @@
   ],
   "scripts": {
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
-    "test": "bun run build && node --test --test-concurrency=1 tests/cli/*.test.js",
-    "check": "bun run check:package && bun run test",
+    "test": "bun run test:full",
+    "test:fast": "bun run build && node scripts/run-cli-tests.mjs fast",
+    "test:related": "bun run build && node scripts/run-cli-tests.mjs related",
+    "test:cli": "bun run build && node scripts/run-cli-tests.mjs cli",
+    "test:release": "bun run build && node scripts/run-cli-tests.mjs release",
+    "test:full": "bun run build && node scripts/run-cli-tests.mjs full",
+    "check": "bun run check:package && bun run test:full",
     "check:package": "node -e \"const fs=require('fs'); JSON.parse(fs.readFileSync('package.json','utf8')); console.log('package.json ok')\"",
     "prepack": "npm run build",
     "check:pack": "npm pack --dry-run --json",
@@ -36,6 +41,7 @@
     "prepublishOnly": "npm run release:check",
     "docs:dev": "bun run --cwd docs-site dev",
     "docs:build": "bun run --cwd docs-site build",
+    "docs:check:fast": "bun run --cwd docs-site check:fast",
     "docs:check": "bun run --cwd docs-site check",
     "docs:preview": "bun run --cwd docs-site preview"
   },

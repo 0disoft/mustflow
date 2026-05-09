@@ -75,10 +75,17 @@ required_after = ["build_config_change", "public_api_change"]
 
 [intents.docs_validate]
 status = "unknown"
-description = "Validate documentation links, examples, and generated docs."
+description = "Validate full documentation links, examples, generated docs, search index, and sitemap output."
 reason = "This repository has not declared its documentation validation command yet."
 agent_action = "do_not_guess_report_missing"
-required_after = ["docs_change", "command_change"]
+required_after = ["docs_site_config_change", "release_risk", "before_publish"]
+
+[intents.docs_validate_fast]
+status = "unknown"
+description = "Validate documentation navigation and localized content links without a full static build."
+reason = "This repository has not declared its fast documentation validation command yet."
+agent_action = "do_not_guess_report_missing"
+required_after = ["docs_change", "copy_change", "i18n_change"]
 
 [intents.mustflow_doctor]
 status = "configured"
