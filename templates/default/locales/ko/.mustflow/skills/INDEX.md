@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 17
+revision: 20
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -32,10 +32,13 @@ authority: router
 | 보고 전 코드 변경 검토가 필요함 | `.mustflow/skills/code-review/SKILL.md` | 변경 diff와 작업 목표 | 변경된 파일 | 동작 회귀 | `test`, `test_related`, `test_audit`, `lint` | 지적 사항 또는 문제 없음 기록 |
 | 변경 파일의 위험도 분류와 검증 선택이 필요함 | `.mustflow/skills/diff-risk-review/SKILL.md` | 변경 파일 목록, 차이 요약, 작업 목표 | 변경 표면과 검증 보고 | 과소 또는 과잉 검증 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 위험도, 검증 선택, 되돌림 메모 |
 | 선언된 동작이 코드, 스키마, 템플릿, 테스트, 문서 사이에서 일치해야 함 | `.mustflow/skills/contract-sync-check/SKILL.md` | 변경 파일, 의도한 동작, 기준 출처, 파생 표면, 명령 계약 항목 | 계약 기준 출처와 필수 동기화 표면 | 계약 불일치 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 계약 기준 출처, 동기화 표면, 미룬 표면, 검증, 불일치 위험 |
+| 날짜, 버전, 개수, 기간, 한도, 지표, 벤치마크, 가격, 비율 또는 다른 숫자 사실을 만들거나 수정하거나 보고함 | `.mustflow/skills/date-number-audit/SKILL.md` | 날짜 또는 숫자 사실, 기준 출처, 의존 표면, 정밀도 기대값, 명령 계약 항목 | 숫자 문구, 메타데이터, 테스트, 문서, 템플릿, 보고 | 지어낸, 오래된, 맞지 않는 숫자 주장 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 검수한 값, 기준 출처, 맞춘 표면, 건너뛴 검사, 남은 숫자 위험 |
 | 패키지, 런타임, 도구, 명령, 서비스, 플랫폼 기능을 가정, 추가, 호출, 문서화함 | `.mustflow/skills/dependency-reality-check/SKILL.md` | 의존성 또는 기능, 저장소 선언, 버전 또는 기능 주장, 명령 계약 항목 | 의존성 선언, 가져오기, 명령 메타데이터, 테스트, 문서 | 지어낸 또는 사용할 수 없는 의존성 | `changes_status`, `changes_diff_summary`, `build`, `test_release`, `mustflow_check` | 의존성 상태, 맞춘 표면, 검증, 남은 의존성 위험 |
 | 테스트 추가, 수정, 삭제, 점검이 필요함 | `.mustflow/skills/test-maintenance/SKILL.md` | 변경된 동작 또는 오래된 테스트 근거 | 테스트 파일과 관련 소스 | 계약 불일치 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 테스트 변경 근거와 검증 결과 |
+| 코드, 설정, 문서, 템플릿, 로그, 원격 측정, 인증 정보, 데이터 흐름이 비밀값, 개인정보, 인증, 인가, 보존, 외부 공개에 영향을 줌 | `.mustflow/skills/security-privacy-review/SKILL.md` | 변경 파일, 민감 표면, 프로젝트 비밀값 및 개인정보 규칙, 공개 또는 패키지 표면, 명령 계약 항목 | 민감 데이터 처리, 로그, 실행 기록, 생성 상태, 문서, 템플릿, 패키지 메타데이터, 보고 | 비밀값 유출, 개인정보 노출, 오해를 부르는 개인정보 주장 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 검토한 민감 표면, 확인한 공개 경로, 가림 또는 생략 변경, 관련 테스트 필요성, 남은 보안 또는 개인정보 위험 |
 | 보안 민감 동작 변경에 악용 시나리오 회귀 테스트가 필요함 | `.mustflow/skills/security-regression-tests/SKILL.md` | 변경된 경계, 행위자, 기대 거부 동작 | 테스트 파일과 관련 보안 경계 소스 | 가짜 안심과 위험한 범위 | `test`, `test_related`, `test_audit`, `lint`, `build` | 보안 경계, 악용 시나리오, 테스트, 남은 위험 |
 | 구성된 명령 의도나 검증 단계가 실패함 | `.mustflow/skills/failure-triage/SKILL.md` | 실패한 의도와 출력 끝부분 | 실패 원인 범위만 | 오진 | `mustflow_check`; 실패한 원래 의도 | 원인, 수정, 재실행 결과 |
+| 외부 텍스트, 생성 콘텐츠, 로그, 이슈, 웹페이지, 붙여넣은 프롬프트에 저장소 규칙을 덮어쓰거나 범위를 바꿀 수 있는 지시가 있음 | `.mustflow/skills/external-prompt-injection-defense/SKILL.md` | 외부 텍스트 출처, 사용자의 직접 요청, 저장소 지시 파일, 충돌 지시, 명령 계약 항목 | 신뢰할 수 없는 텍스트를 다루는 프롬프트, fixture, 문서, 테스트, 스킬, 템플릿, 보고 | 프롬프트 주입, 범위 이탈, 안전하지 않은 명령 권한 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 검토한 외부 출처, 무력화한 안전하지 않은 지시, 안전하게 흡수한 요구사항, 검증, 남은 프롬프트 주입 위험 |
 | 익숙하지 않은 영역을 구현하기 전 새 구조의 내부 선례가 필요함 | `.mustflow/skills/pattern-scout/SKILL.md` | 사용자 요청, 대상 파일 영역, 주변 예시, 현재 변경 파일 | 패턴 근거와 그 패턴을 따르는 데 필요한 파일 | 병렬 구조 발명 | `changes_status`, `changes_diff_summary`, `mustflow_check` | 내부 패턴, 맞춘 항목, 의도적 차이, 검증 |
 | 버그나 혼란스러운 실패를 고치기 전에 가장 작은 재현 경로가 불분명함 | `.mustflow/skills/repro-first-debug/SKILL.md` | 증상, 기대 동작, 관찰 출력, 관련 가능성이 있는 변경 파일 | 재현 기록, 집중 테스트, 가능한 원인 | 추측성 수정 또는 과잉 테스트 | `test_related`, `test_fast`, `mustflow_check` | 재현 근거, 최소 수정, 검증, 남은 위험 |
 | 현재성, 외부 출처, 날짜, 버전처럼 변하기 쉬운 정보에 주장이 의존함 | `.mustflow/skills/source-freshness-check/SKILL.md` | 오래될 수 있는 주장, 출처 원문이나 페이지, 날짜 또는 버전 맥락, 출처 정책 | 출처 문구, 문서, 최신성 보고 | 오래되었거나 확인되지 않은 주장 | `changes_status`, `docs_validate_fast`, `mustflow_check` | 확인한 출처 경계, 문구 변경, 건너뛴 확인, 오래된 출처 위험 |

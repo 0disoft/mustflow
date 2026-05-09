@@ -56,12 +56,12 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 17
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 17, status = "current" }
-translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 17, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 17, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 17, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 17, status = "needs_review" }
+revision = 20
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 20, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 20, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 20, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 20, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 20, status = "needs_review" }
 
 [documents."skill.artifact-integrity-check"]
 source = "locales/en/.mustflow/skills/artifact-integrity-check/SKILL.md"
@@ -92,6 +92,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/contract-sync-check/SKIL
 translations.es = { path = "locales/es/.mustflow/skills/contract-sync-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/contract-sync-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/contract-sync-check/SKILL.md", source_revision = 1, status = "needs_review" }
+
+[documents."skill.date-number-audit"]
+source = "locales/en/.mustflow/skills/date-number-audit/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.dependency-reality-check"]
 source = "locales/en/.mustflow/skills/dependency-reality-check/SKILL.md"
@@ -143,6 +153,16 @@ translations.es = { path = "locales/es/.mustflow/skills/failure-triage/SKILL.md"
 translations.fr = { path = "locales/fr/.mustflow/skills/failure-triage/SKILL.md", source_revision = 3, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/failure-triage/SKILL.md", source_revision = 3, status = "needs_review" }
 
+[documents."skill.external-prompt-injection-defense"]
+source = "locales/en/.mustflow/skills/external-prompt-injection-defense/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/external-prompt-injection-defense/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/external-prompt-injection-defense/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/external-prompt-injection-defense/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/external-prompt-injection-defense/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/external-prompt-injection-defense/SKILL.md", source_revision = 1, status = "needs_review" }
+
 [documents."skill.pattern-scout"]
 source = "locales/en/.mustflow/skills/pattern-scout/SKILL.md"
 source_locale = "en"
@@ -182,6 +202,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/project-context-authorin
 translations.es = { path = "locales/es/.mustflow/skills/project-context-authoring/SKILL.md", source_revision = 3, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/project-context-authoring/SKILL.md", source_revision = 3, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/project-context-authoring/SKILL.md", source_revision = 3, status = "needs_review" }
+
+[documents."skill.security-privacy-review"]
+source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.security-regression-tests"]
 source = "locales/en/.mustflow/skills/security-regression-tests/SKILL.md"

@@ -152,6 +152,8 @@ your-project/
       │  └─ SKILL.md
       ├─ contract-sync-check/
       │  └─ SKILL.md
+      ├─ date-number-audit/
+      │  └─ SKILL.md
       ├─ dependency-reality-check/
       │  └─ SKILL.md
       ├─ diff-risk-review/
@@ -160,6 +162,8 @@ your-project/
       │  └─ SKILL.md
       ├─ docs-update/
       │  └─ SKILL.md
+      ├─ external-prompt-injection-defense/
+      │  └─ SKILL.md
       ├─ failure-triage/
       │  └─ SKILL.md
       ├─ project-context-authoring/
@@ -167,6 +171,8 @@ your-project/
       ├─ pattern-scout/
       │  └─ SKILL.md
       ├─ repro-first-debug/
+      │  └─ SKILL.md
+      ├─ security-privacy-review/
       │  └─ SKILL.md
       ├─ source-freshness-check/
       │  └─ SKILL.md

@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "1.15.9"
+version = "1.15.10"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -13,9 +13,11 @@ creates = [
   ".mustflow/skills/artifact-integrity-check/SKILL.md",
   ".mustflow/skills/code-review/SKILL.md",
   ".mustflow/skills/contract-sync-check/SKILL.md",
+  ".mustflow/skills/date-number-audit/SKILL.md",
   ".mustflow/skills/dependency-reality-check/SKILL.md",
   ".mustflow/skills/diff-risk-review/SKILL.md",
   ".mustflow/skills/test-maintenance/SKILL.md",
+  ".mustflow/skills/external-prompt-injection-defense/SKILL.md",
   ".mustflow/skills/failure-triage/SKILL.md",
   ".mustflow/skills/pattern-scout/SKILL.md",
   ".mustflow/skills/repro-first-debug/SKILL.md",
@@ -23,6 +25,7 @@ creates = [
   ".mustflow/skills/docs-prose-review/SKILL.md",
   ".mustflow/skills/docs-update/SKILL.md",
   ".mustflow/skills/project-context-authoring/SKILL.md",
+  ".mustflow/skills/security-privacy-review/SKILL.md",
   ".mustflow/skills/security-regression-tests/SKILL.md",
   ".mustflow/skills/skill-authoring/SKILL.md",
   ".mustflow/skills/web-asset-optimization/SKILL.md",

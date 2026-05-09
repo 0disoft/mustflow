@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 46
-source_fingerprint: "sha256:0cdee0f2c6c23883fb1cfef1fd6e1a8dbf04bf8ac55fa0958310ccb954fec546"
+anchor_count: 49
+source_fingerprint: "sha256:ddf67e443f885b4958bd29cc671780ccd31141ebecf9b956a3f258e8d78060d7"
 ---
 
 # REPO_MAP.md
@@ -58,6 +58,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/contract-sync-check/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/date-number-audit/
+
+- `.mustflow/skills/date-number-audit/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/dependency-reality-check/
 
 - `.mustflow/skills/dependency-reality-check/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -74,6 +78,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/docs-update/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/external-prompt-injection-defense/
+
+- `.mustflow/skills/external-prompt-injection-defense/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/failure-triage/
 
 - `.mustflow/skills/failure-triage/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -89,6 +97,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/repro-first-debug/
 
 - `.mustflow/skills/repro-first-debug/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/security-privacy-review/
+
+- `.mustflow/skills/security-privacy-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/security-regression-tests/
 

@@ -396,7 +396,7 @@ test('strict check fails skill index route drift', () => {
 		const skillsIndex = readText(skillsIndexPath)
 			.replace(/^\| Code changes need review before report \|.*\n/mu, '')
 			.replace(
-				/(\| Documentation changes affect public or workflow docs \| `\.mustflow\/skills\/docs-update\/SKILL\.md` \| Changed behavior or field \| Relevant docs only \| stale public docs \| `docs_validate`, `mustflow_check` \| Doc changes and skipped checks \|)/u,
+				/(\| Documentation changes affect public or workflow docs \| `\.mustflow\/skills\/docs-update\/SKILL\.md` \|.*\|)/u,
 				'$1\n| Broken route | `.mustflow/skills/missing/SKILL.md` | Any request | None | high | `deploy_prod` | Failure |\n| Docs drift | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior or field | Relevant docs only | stale public docs | `docs_validate`, `lint` | Doc changes and skipped checks |',
 			);
 		writeFileSync(skillsIndexPath, skillsIndex);
@@ -1061,6 +1061,26 @@ test('fails when a skill omits an extended contract section', () => {
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Missing required skill section ids/);
 		assert.match(result.stderr, /preconditions/);
+		assert.match(result.stderr, /code-review\/SKILL\.md/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails when a skill omits its output format contract', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readFileSync(skillPath, 'utf8');
+		writeFileSync(skillPath, skill.replace(/<!-- mustflow-section: output-format -->\r?\n/u, ''));
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Missing required skill section ids/);
+		assert.match(result.stderr, /output-format/);
 		assert.match(result.stderr, /code-review\/SKILL\.md/);
 	} finally {
 		removeTempProject(projectPath);

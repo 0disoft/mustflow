@@ -31,6 +31,13 @@ reason = "This repository has not declared its related-test command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "behavior_change", "test_change"]
 
+[intents.test_fast]
+status = "unknown"
+description = "Run the fast test baseline."
+reason = "This repository has not declared its fast-test command yet."
+agent_action = "do_not_guess_report_missing"
+required_after = ["low_risk_code_change", "copy_change", "i18n_change"]
+
 [intents.test_coverage]
 status = "manual_only"
 description = "Inspect test coverage information."
@@ -44,6 +51,13 @@ description = "Inspect stale or redundant test candidates."
 reason = "This repository has not declared its test-audit command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["test_change", "behavior_removed", "public_api_change"]
+
+[intents.test_release]
+status = "unknown"
+description = "Run release-sensitive package metadata and packaging tests."
+reason = "This repository has not declared its release-test command yet."
+agent_action = "do_not_guess_report_missing"
+required_after = ["package_metadata_change", "template_version_change", "packaging_change"]
 
 [intents.snapshot_update]
 status = "manual_only"

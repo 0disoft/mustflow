@@ -41,18 +41,9 @@ moment they usually become expensive.
   command-intent references, output format, and unverified-work reporting.
 - Keep always-on repository rules in `AGENTS.md` or `agent-workflow.md`; use
   skills only for repeatable task-specific procedures.
-- Prioritize the first defensive pack after skill metadata and validation work:
-  `date-number-audit`.
-- Define report shapes for defensive skills so they do not expand scope, invent
-  facts, mark unrun checks as passed, create unnecessary abstractions, or hide
-  instruction conflicts.
 - Track a second tier of optional or domain-specific skills:
-  `security-privacy-review`, `migration-safety-check`, `ui-quality-gate`,
-  `performance-budget-check`, `instruction-conflict-scope-check`, and
-  `external-prompt-injection-defense`.
-- Require defensive skills to reference command intents from
-  `.mustflow/config/commands.toml`, not raw package-manager, build, migration,
-  or deployment commands.
+  `migration-safety-check`, `ui-quality-gate`, `performance-budget-check`, and
+  `instruction-conflict-scope-check`.
 
 ### M2.9: Change Classification and Public Surface Contracts
 

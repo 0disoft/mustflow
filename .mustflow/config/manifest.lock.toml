@@ -25,7 +25,7 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:c3859aeec325565fc9a667b57d99fb7f31780e8e0e7b12608b8ab9336dab3c46"
+content_hash = "sha256:ccea23e13756dc38d365df2faa725e7983fc384b594a93828898487d1220b279"
 
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
@@ -41,6 +41,11 @@ content_hash = "sha256:fe636e765ca06d9c02c3486c0816f5955ad5088acbebbdfb111438ee9
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:cfad0bf4cbd6844e943d8f27e4ad1e5489f2fa2c5e39492bed5e3b85162d12d4"
+
+[files.".mustflow/skills/date-number-audit/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:c427fa1405c713faffb0c460fd10ba0a6b573012e3e0801a438ce6b47d6fe700"
 
 [files.".mustflow/skills/dependency-reality-check/SKILL.md"]
 source = "template_locale"
@@ -61,6 +66,11 @@ content_hash = "sha256:318a12fa3493071de9cf85cfbc1208b8f92e3984027bc269beee4e4ef
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:61106fb388a18b681182fa97f4b6dac6992823acc4721c7d6287bf882298dfcc"
+
+[files.".mustflow/skills/external-prompt-injection-defense/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:4cfd3ea32ca2649cd7a34c6da807112a86f8a1ceebf048690010c8091c29dcd5"
 
 [files.".mustflow/skills/pattern-scout/SKILL.md"]
 source = "template_locale"
@@ -91,6 +101,11 @@ content_hash = "sha256:4c3097aff72d50e0b2e667833f653d52c0cf564f39c09283dc4f57d09
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:86f68bd8ec3b5fd8f70330b0a3cd6a3af901c87e1e31e8c2b88322f3cfe946b3"
+
+[files.".mustflow/skills/security-privacy-review/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:1aa8eb34f022343f94d1ca15cfd4a22eee05bf5d56ef3c7a51cee86e84cd45d3"
 
 [files.".mustflow/skills/security-regression-tests/SKILL.md"]
 source = "template_locale"
