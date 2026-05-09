@@ -12,6 +12,10 @@ user projects by `mf init`.
 
 - Added repository contribution, security, and changelog documents for mustflow
   maintainers and contributors.
+- Added repository CI, issue templates, and a pull request template for
+  mustflow maintainer workflows.
+- Added explicit authority-boundary guidance to installed project context
+  templates.
 
 ### Notes
 

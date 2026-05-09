@@ -26,20 +26,11 @@ Goal: keep mustflow documents from drifting into overlapping or
 self-authorizing policy sources before higher-level explanation and
 verification commands depend on them.
 
-- Add stable section identifiers so localized documents can be validated by
-  section identity rather than English heading text.
-- Keep Markdown schema validation inside the mustflow CLI package by default;
-  do not install a `schemas/` directory into user projects unless they opt in.
-- Define which structural violations are errors and which are warnings.
 - Keep `AGENTS.md` thin and binding while delegating detailed workflow policy to
   `.mustflow/docs/agent-workflow.md`.
-- Clarify `.mustflow/context/PROJECT.md` as cautious, low-authority context:
-  it may record supported facts and unknowns, but not command policy, file-edit
-  prohibitions, or speculative product promises.
 - Extend context and skill routing without turning router indexes into policy
   manuals.
 - Keep host compatibility adapters subordinate to the canonical contract.
-- Feed these boundaries into future `mf explain` output.
 
 ### M2.7: Defensive Skill Pack Candidates
 
@@ -158,15 +149,6 @@ examples.
   commands without intents, copy secrets, broaden bad skills, or create
   unnecessary diffs on a second run.
 - Keep examples natural even when test fixtures need edge-case precision.
-
-### Open Source Operations
-
-Goal: make contribution and maintenance expectations explicit for this
-repository without changing what `mf init` installs into user projects.
-
-- Expand `.github/` with CI, issue templates, and a pull request template.
-- Keep the default installed template thin: no generated CI, no generated
-  platform-specific files, and no application source files.
 
 ## Later Candidates
 
