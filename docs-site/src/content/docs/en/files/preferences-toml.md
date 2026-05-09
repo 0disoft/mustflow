@@ -160,9 +160,9 @@ These values are preferences that guide version-impact reporting and version-fil
 
 When a version changes, `sync_template_version`, `sync_docs_examples`, and `sync_tests` tell the agent to keep package metadata, template manifests, documentation examples, and tests aligned in the same change.
 
-These preferences do not say where a repository stores its version. Agents still have to discover the language- or framework-specific version source before proposing or editing a version.
+These preferences do not say where a repository stores its version, and they do not grant release, tag, push, commit, or command-execution authority. Agents still have to discover the language- or framework-specific version source before proposing or editing a version. Repositories that need an explicit version source should declare it in `.mustflow/config/versioning.toml`; runnable release actions belong in `.mustflow/config/commands.toml`.
 
-When version-impact preferences are enabled, `mf check --strict` also verifies that a version source can be found. It currently accepts sources declared in `.mustflow/config/versioning.toml`, the installed mustflow template lock version, and root package or template sources such as `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle files, .NET project files, and gemspecs when they contain an actual version value. For Go modules, `go.mod` is accepted only when the repository also has a semantic-version release tag such as `v1.2.3`. If none is present, strict mode reports an issue so agents do not assume `package.json` by default.
+When version-impact preferences are enabled, `mf check --strict` also verifies that a version source can be found. It currently accepts sources declared in `.mustflow/config/versioning.toml`, the installed mustflow template lock version, and root package or template sources such as `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle files, .NET project files, and gemspecs when they contain an actual version value. For Go modules, `go.mod` is accepted only when the repository also has a semantic-version release tag such as `v1.2.3`. Package lockfiles are ignored unless a repository explicitly declares one in `.mustflow/config/versioning.toml`. If none is present, strict mode reports an issue so agents do not assume `package.json` by default.
 
 ## Verification Selection
 
@@ -198,6 +198,7 @@ If this file is present, `mf check` verifies the following:
 - `git.commit_message.max_suggestions` is a positive integer.
 - `reporting.commit_suggestion.enabled` is a boolean.
 - `[release.versioning]` fields are booleans.
+- `[release.versioning]` must stay a preference layer; version-source declarations and release command authority belong in `versioning.toml` or `commands.toml`.
 - When version-impact preferences are enabled, `mf check --strict` verifies that a declared version source or detectable package/template version source exists.
 - `[verification.selection]` uses an allowed strategy and boolean skip/report flags.
 - `[testing.authoring]` uses an allowed new-test policy and boolean authoring flags.

@@ -139,6 +139,51 @@ test('detects Go module version source only with a semver release tag', () => {
 	}
 });
 
+test('ignores package lockfiles unless a repository declares them as version sources', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'package-lock.json'),
+			JSON.stringify({ name: 'example', version: '1.0.0', lockfileVersion: 3 }, null, 2),
+		);
+
+		const automatic = runCli(projectPath, ['version-sources', '--json']);
+		assert.equal(automatic.status, 0);
+		assert.deepEqual(JSON.parse(automatic.stdout).sources, []);
+
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'versioning.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[[sources]]',
+				'path = "package-lock.json"',
+				'kind = "package_manifest"',
+				'authority = "derived"',
+				'',
+			].join('\n'),
+		);
+
+		const declared = runCli(projectPath, ['version-sources', '--json']);
+		const report = JSON.parse(declared.stdout);
+
+		assert.equal(declared.status, 0);
+		assert.deepEqual(report.sources, [
+			{
+				path: 'package-lock.json',
+				kind: 'package_manifest',
+				declared: true,
+				authority: 'derived',
+			},
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints declared version sources from versioning config', () => {
 	const projectPath = createTempProject();
 

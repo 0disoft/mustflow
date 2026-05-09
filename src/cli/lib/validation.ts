@@ -85,6 +85,24 @@ const RELEASE_VERSIONING_BOOLEAN_FIELDS = [
 	'sync_docs_examples',
 	'sync_tests',
 ] as const;
+const FORBIDDEN_RELEASE_VERSIONING_CONTRACT_FIELDS = [
+	'path',
+	'paths',
+	'source',
+	'sources',
+	'version_source',
+	'version_sources',
+	'authority',
+	'kind',
+	'command_intents',
+	'run_policy',
+	'argv',
+	'cmd',
+	'release',
+	'tag',
+	'push',
+	'commit',
+] as const;
 const ALLOWED_VERSION_SOURCE_KINDS = new Set(VERSION_SOURCE_KINDS);
 const ALLOWED_VERSION_SOURCE_AUTHORITIES = new Set(VERSION_SOURCE_AUTHORITIES);
 const ALLOWED_COMMIT_MESSAGE_STYLES = new Set(COMMIT_MESSAGE_STYLES);
@@ -263,6 +281,7 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.executable_source_missing'
 	| 'mustflow.command_contract.shell_background_pattern'
 	| 'mustflow.command_contract.success_exit_codes_invalid'
+	| 'mustflow.preferences.release_versioning_contract_authority'
 	| 'mustflow.preferences.verification_selection_command_authority'
 	| 'mustflow.skill.procedure_only'
 	| 'mustflow.skill.raw_command_block'
@@ -294,6 +313,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
 	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
 	['mustflow.command_contract.success_exit_codes_invalid', /^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be an integer array$/u],
+	['mustflow.preferences.release_versioning_contract_authority', /^Strict: \[preferences\.release\.versioning\]\.[a-z_]+ cannot define version sources or release authority; use \.mustflow\/config\/versioning\.toml or \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.preferences.verification_selection_command_authority', /^Strict: \[preferences\.verification\.selection\]\.[a-z_]+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
 	['mustflow.skill.raw_command_block', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md contains a raw shell command block; reference command intents instead$/u],
@@ -1819,6 +1839,26 @@ function validateStrictVerificationSelectionAuthority(preferencesToml: TomlTable
 	}
 }
 
+function validateStrictReleaseVersioningAuthority(preferencesToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!preferencesToml || !isRecord(preferencesToml.release)) {
+		return;
+	}
+
+	const versioning = preferencesToml.release.versioning;
+	if (!isRecord(versioning)) {
+		return;
+	}
+
+	for (const field of FORBIDDEN_RELEASE_VERSIONING_CONTRACT_FIELDS) {
+		if (hasOwn(versioning, field)) {
+			pushStrictIssue(
+				issues,
+				`[preferences.release.versioning].${field} cannot define version sources or release authority; use .mustflow/config/versioning.toml or .mustflow/config/commands.toml`,
+			);
+		}
+	}
+}
+
 function fileSizeBytes(filePath: string): number {
 	return statSync(filePath).size;
 }
@@ -2318,6 +2358,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(parsed.commandsToml, issues);
+	validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
 	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
 	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);

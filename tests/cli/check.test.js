@@ -176,6 +176,53 @@ test('strict check accepts a non-package-json version source', () => {
 	}
 });
 
+test('strict check ignores package lockfile versions unless declared', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'package-lock.json'),
+			JSON.stringify({ name: 'example', version: '1.0.0', lockfileVersion: 3 }, null, 2),
+		);
+
+		const automatic = runCli(projectPath, ['check', '--strict', '--json']);
+		const automaticCheck = JSON.parse(automatic.stdout);
+
+		assert.equal(automatic.status, 1);
+		assert.ok(
+			automaticCheck.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: [release.versioning] is enabled but no version source was detected; add .mustflow/config/versioning.toml or a package/template version source',
+			),
+		);
+
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'versioning.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[[sources]]',
+				'path = "package-lock.json"',
+				'kind = "package_manifest"',
+				'authority = "derived"',
+				'',
+			].join('\n'),
+		);
+
+		const declared = runCli(projectPath, ['check', '--strict', '--json']);
+		const declaredCheck = JSON.parse(declared.stdout);
+
+		assert.equal(declared.status, 0);
+		assert.equal(declaredCheck.ok, true);
+		assert.deepEqual(declaredCheck.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('check fails invalid declared versioning source config', () => {
 	const projectPath = createTempProject();
 
@@ -1661,6 +1708,40 @@ test('strict check fails when verification preferences try to define command aut
 			'mustflow.preferences.verification_selection_command_authority',
 			'Strict: [preferences.verification.selection].required_after cannot define command authority; use .mustflow/config/commands.toml',
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails when release versioning preferences define sources or release authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		const preferences = readText(preferencesPath).replace(
+			'sync_tests = true',
+			[
+				'sync_tests = true',
+				'version_source = "package.json"',
+				'authority = "source"',
+				'command_intents = ["release"]',
+				'push = true',
+			].join('\n'),
+		);
+		writeFileSync(preferencesPath, preferences);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		for (const field of ['version_source', 'authority', 'command_intents', 'push']) {
+			assertHasIssueDetail(
+				check,
+				'mustflow.preferences.release_versioning_contract_authority',
+				`Strict: [preferences.release.versioning].${field} cannot define version sources or release authority; use .mustflow/config/versioning.toml or .mustflow/config/commands.toml`,
+			);
+		}
 	} finally {
 		removeTempProject(projectPath);
 	}

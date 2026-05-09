@@ -160,9 +160,9 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 
 버전을 바꿀 때는 `sync_template_version`, `sync_docs_examples`, `sync_tests`에 따라 패키지 메타데이터, 템플릿 매니페스트, 문서 예시, 테스트를 같은 변경 안에서 맞춥니다.
 
-이 선호값은 저장소가 버전을 어디에 저장하는지까지 정하지 않습니다. 에이전트는 버전을 제안하거나 수정하기 전에 언어와 프레임워크에 맞는 실제 버전 기준 원본을 찾아야 합니다.
+이 선호값은 저장소가 버전을 어디에 저장하는지까지 정하지 않으며, 릴리스, 태그 생성, 푸시, 커밋, 명령 실행 권한도 부여하지 않습니다. 에이전트는 버전을 제안하거나 수정하기 전에 언어와 프레임워크에 맞는 실제 버전 기준 원본을 찾아야 합니다. 저장소가 명시적인 버전 기준 원본을 필요로 하면 `.mustflow/config/versioning.toml`에 선언하고, 실행 가능한 릴리스 동작은 `.mustflow/config/commands.toml`에 둡니다.
 
-`mf check --strict`는 버전 영향 선호값이 켜져 있을 때 버전 기준 원본을 찾을 수 있는지도 확인합니다. 현재는 `.mustflow/config/versioning.toml`에 선언한 기준 원본, 설치된 mustflow 템플릿 버전 잠금 파일, 루트의 `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle 파일, .NET 프로젝트 파일, gemspec 등에서 실제 버전 값을 찾습니다. Go 모듈은 `v1.2.3` 같은 시맨틱 버전 릴리스 태그가 함께 있을 때만 `go.mod`를 기준 원본으로 인정합니다. 아무 기준도 없으면 에이전트가 임의로 `package.json`을 가정하지 않도록 엄격 검사 문제가 됩니다.
+`mf check --strict`는 버전 영향 선호값이 켜져 있을 때 버전 기준 원본을 찾을 수 있는지도 확인합니다. 현재는 `.mustflow/config/versioning.toml`에 선언한 기준 원본, 설치된 mustflow 템플릿 버전 잠금 파일, 루트의 `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `composer.json`, `pubspec.yaml`, `Chart.yaml`, Gradle 파일, .NET 프로젝트 파일, gemspec 등에서 실제 버전 값을 찾습니다. Go 모듈은 `v1.2.3` 같은 시맨틱 버전 릴리스 태그가 함께 있을 때만 `go.mod`를 기준 원본으로 인정합니다. 패키지 잠금 파일은 저장소가 `.mustflow/config/versioning.toml`에 직접 선언한 경우에만 인정합니다. 아무 기준도 없으면 에이전트가 임의로 `package.json`을 가정하지 않도록 엄격 검사 문제가 됩니다.
 
 ## 검증 선택
 
@@ -198,6 +198,7 @@ do_not_translate = ["identifiers", "log_keys", "error_codes", "metric_names", "a
 - `git.commit_message.max_suggestions`는 양의 정수여야 합니다.
 - `reporting.commit_suggestion.enabled`는 참/거짓 값이어야 합니다.
 - `[release.versioning]` 필드는 참/거짓 값이어야 합니다.
+- `[release.versioning]`은 선호값 계층으로만 유지해야 합니다. 버전 기준 원본 선언과 릴리스 명령 권한은 `versioning.toml`이나 `commands.toml`에 둡니다.
 - 버전 영향 선호값이 켜져 있으면, `mf check --strict`는 선언된 버전 기준 파일이나 감지 가능한 패키지/템플릿 버전 원본이 있는지 확인합니다.
 - `[verification.selection]`은 허용된 전략 값과 참/거짓 생략·보고 값을 사용해야 합니다.
 - `[testing.authoring]`은 허용된 새 테스트 정책과 참/거짓 작성 선호값을 사용해야 합니다.
