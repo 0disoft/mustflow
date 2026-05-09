@@ -10,6 +10,7 @@ Current schemas:
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 - `version-sources-report.schema.json`: `mf version-sources --json`
+- `docs-review-list.schema.json`: `mf docs review list --json`
 - `explain-report.schema.json`: `mf explain authority --json`, `mf explain command --json`,
   `mf explain retention --json`, and `mf explain skills --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`

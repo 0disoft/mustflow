@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: fr
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -32,6 +32,7 @@ utilisez `AGENTS.md` et `.mustflow/config/commands.toml` pour faire le plus peti
 | Une intention de commande configuree ou une verification echoue | `.mustflow/skills/failure-triage/SKILL.md` | Intention echouee et fin de sortie | Cause de l'echec seulement | mauvais diagnostic | `mustflow_check`; intention echouee d'origine | Cause, correction et resultat de relance |
 | `.mustflow/context/PROJECT.md` a besoin d'un contexte prudent | `.mustflow/skills/project-context-authoring/SKILL.md` | Faits projet etayes | `.mustflow/context/PROJECT.md` | derive d'autorite | `mustflow_check` | Contexte prudent mis a jour |
 | Des procedures ou routes de skills sont creees ou maintenues | `.mustflow/skills/skill-authoring/SKILL.md` | Preuve de tache repetee | `.mustflow/skills/**` | chevauchement et derive de commande | `mustflow_check`, `docs_validate` | Changements de route et procedure |
+| Des entrees de file de revue documentaire demandent une amelioration de prose | `.mustflow/skills/docs-prose-review/SKILL.md` | Entree de file ou chemin de document choisi, commentaire de revue si present, langue cible, metadonnees du relecteur | Document selectionne et registre de revue | derive de sens ou file obsolete | `docs_validate`, `mustflow_check` | Changements de prose, statut enregistre et notes de verification |
 | Des images web sont ajoutees, converties, redimensionnees ou remplacees | `.mustflow/skills/web-asset-optimization/SKILL.md` | Demande d'image et chemin cible | Images web | qualite et taille du fichier | `asset_optimize`, `build` | Notes d'optimisation |
 | Des changements documentaires touchent les docs publiques ou le workflow | `.mustflow/skills/docs-update/SKILL.md` | Comportement ou champ modifie | Docs pertinentes seulement | docs publiques obsoletes | `docs_validate`, `mustflow_check` | Changements docs et verifications ignorees |
 

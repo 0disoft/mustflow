@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: es
 canonical: false
-revision: 8
+revision: 9
 lifecycle: user-editable
 authority: binding
 ---
@@ -35,6 +35,10 @@ Los detalles gestionados por mustflow estan en `.mustflow/`.
 - Ejecuta solo definiciones de comandos cuyo `status` sea `configured`, cuyo `lifecycle` sea `oneshot`
   y cuyo `run_policy` sea `agent_allowed`.
 - Prefiere `mf run <intent>` para comandos oneshot configurados.
+- Elige la intencion de verificacion configurada mas estrecha que cubra el riesgo. Da prioridad
+  a pruebas relacionadas o comprobaciones rapidas sobre suites amplias cuando el contrato de
+  comandos las exponga, e informa las intenciones mas estrechas ausentes en vez de usar en silencio
+  pruebas completas lentas.
 - No inicies directamente servidores de desarrollo, modos watch, interfaces de navegador, entradas interactivas
   ni procesos en segundo plano.
 - No inicies bucles autonomos, procesos worker, sistemas de personas ni procesos de harness de larga duracion,

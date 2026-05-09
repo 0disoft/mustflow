@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -32,6 +32,7 @@ usa `AGENTS.md` y `.mustflow/config/commands.toml` para hacer el cambio seguro m
 | Falla un intento de comando configurado o un paso de verificacion | `.mustflow/skills/failure-triage/SKILL.md` | Intento fallido y cola de salida | Solo causa de la falla | diagnostico erroneo | `mustflow_check`; intento fallido original | Causa, correccion y resultado de repeticion |
 | `.mustflow/context/PROJECT.md` necesita contexto prudente | `.mustflow/skills/project-context-authoring/SKILL.md` | Hechos del proyecto con evidencia | `.mustflow/context/PROJECT.md` | deriva de autoridad | `mustflow_check` | Contexto prudente actualizado |
 | Se crean o mantienen procedimientos o rutas de skills | `.mustflow/skills/skill-authoring/SKILL.md` | Evidencia de tarea repetida | `.mustflow/skills/**` | solapamiento y deriva de comandos | `mustflow_check`, `docs_validate` | Cambios de ruta y procedimiento |
+| Entradas de la cola de revision documental necesitan mejora de prosa | `.mustflow/skills/docs-prose-review/SKILL.md` | Entrada de cola o ruta documental elegida, comentario de revision si existe, idioma destino, metadatos del revisor | Documento seleccionado y registro de revision | deriva de significado o cola desactualizada | `docs_validate`, `mustflow_check` | Cambios de prosa, estado registrado y notas de verificacion |
 | Se agregan, convierten, redimensionan o reemplazan imagenes web | `.mustflow/skills/web-asset-optimization/SKILL.md` | Solicitud de imagen y ruta destino | Imagenes web | calidad y tamano del recurso | `asset_optimize`, `build` | Notas de recurso optimizado |
 | Cambios documentales afectan docs publicas o de flujo | `.mustflow/skills/docs-update/SKILL.md` | Comportamiento o campo cambiado | Solo docs relevantes | docs publicas obsoletas | `docs_validate`, `mustflow_check` | Cambios documentales y verificaciones omitidas |
 

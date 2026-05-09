@@ -48,6 +48,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.doctor.summary',
 	},
 	{
+		id: 'docs',
+		usage: 'mf docs',
+		summaryKey: 'command.docs.summary',
+	},
+	{
 		id: 'index',
 		usage: 'mf index',
 		summaryKey: 'command.index.summary',
@@ -61,6 +66,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'dashboard',
 		usage: 'mf dashboard',
 		summaryKey: 'command.dashboard.summary',
+	},
+	{
+		id: 'version',
+		usage: 'mf version',
+		summaryKey: 'command.version.summary',
 	},
 	{
 		id: 'version-sources',

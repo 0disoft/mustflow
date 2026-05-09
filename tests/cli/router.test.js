@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -10,10 +11,46 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 
-function runCli(args, cwd = projectRoot) {
+function runCli(args, cwd = projectRoot, env = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
+		env: { ...process.env, ...env },
+	});
+}
+
+function runCliAsync(args, cwd = projectRoot, env = {}) {
+	return new Promise((resolve) => {
+		const child = spawn(process.execPath, [cliPath, ...args], {
+			cwd,
+			env: { ...process.env, ...env },
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+		const stdout = [];
+		const stderr = [];
+
+		child.stdout.setEncoding('utf8');
+		child.stderr.setEncoding('utf8');
+		child.stdout.on('data', (chunk) => stdout.push(chunk));
+		child.stderr.on('data', (chunk) => stderr.push(chunk));
+		child.on('close', (status, signal) => {
+			resolve({ status, signal, stdout: stdout.join(''), stderr: stderr.join('') });
+		});
+	});
+}
+
+function listen(server) {
+	return new Promise((resolve) => {
+		server.listen(0, '127.0.0.1', () => resolve(server.address()));
+	});
+}
+
+function closeServer(server) {
+	return new Promise((resolve, reject) => {
+		server.close((error) => {
+			if (error) reject(error);
+			else resolve();
+		});
 	});
 }
 
@@ -35,6 +72,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf index/);
 	assert.match(result.stdout, /mf search/);
 	assert.match(result.stdout, /mf dashboard/);
+	assert.match(result.stdout, /mf version/);
 	assert.match(result.stdout, /mf version-sources/);
 	assert.match(result.stdout, /mf verify/);
 	assert.match(result.stdout, /mf explain/);
@@ -107,6 +145,34 @@ test('prints package version', () => {
 
 	assert.equal(result.status, 0);
 	assert.equal(result.stdout.trim(), packageJson.version);
+
+	const commandResult = runCli(['version']);
+	assert.equal(commandResult.status, 0);
+	assert.equal(commandResult.stdout.trim(), packageJson.version);
+});
+
+test('checks npm for a newer package version when requested', async () => {
+	const server = createServer((request, response) => {
+		assert.equal(request.url, '/mustflow/latest');
+		response.writeHead(200, { 'content-type': 'application/json' });
+		response.end(JSON.stringify({ version: '99.0.0' }));
+	});
+
+	const address = await listen(server);
+
+	try {
+		const result = await runCliAsync(['version', '--check'], projectRoot, {
+			MUSTFLOW_NPM_REGISTRY_URL: `http://127.0.0.1:${address.port}`,
+		});
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, new RegExp(`mustflow ${packageJson.version}`));
+		assert.match(result.stdout, /latest 99\.0\.0 available/);
+		assert.match(result.stdout, /npm install -g mustflow@latest/);
+		assert.equal(result.stderr, '');
+	} finally {
+		await closeServer(server);
+	}
 });
 
 test('fails unsupported CLI language before command routing', () => {
@@ -136,7 +202,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 });
 
 test('routes command-specific help', () => {
-	for (const command of ['init', 'check', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version-sources', 'verify', 'explain', 'help']) {
+	for (const command of ['init', 'check', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'help']) {
 		const result = runCli([command, '--help']);
 
 		assert.equal(result.status, 0);
@@ -159,6 +225,7 @@ test('fails unknown command options with standardized guidance', () => {
 		['index', '--bad'],
 		['search', '--bad'],
 		['dashboard', '--bad'],
+		['version', '--bad'],
 		['version-sources', '--bad'],
 		['verify', '--bad'],
 		['explain', '--bad'],

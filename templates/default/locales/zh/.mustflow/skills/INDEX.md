@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -30,6 +30,7 @@ authority: router
 | 已配置的命令意图或验证步骤失败 | `.mustflow/skills/failure-triage/SKILL.md` | 失败意图和输出尾部 | 仅失败原因 | 误诊 | `mustflow_check`; 原失败意图 | 根因、修复和重跑结果 |
 | `.mustflow/context/PROJECT.md` 需要谨慎的项目上下文 | `.mustflow/skills/project-context-authoring/SKILL.md` | 有依据的项目事实 | `.mustflow/context/PROJECT.md` | 权限漂移 | `mustflow_check` | 已更新的谨慎上下文 |
 | 创建或维护技能流程或路由 | `.mustflow/skills/skill-authoring/SKILL.md` | 可重复任务证据 | `.mustflow/skills/**` | 重叠和命令漂移 | `mustflow_check`, `docs_validate` | 技能路由和流程更改 |
+| 文档审核队列条目需要润色语句 | `.mustflow/skills/docs-prose-review/SKILL.md` | 审核队列条目或选定文档路径、审核评论如有、目标语言、审核者元数据 | 选定文档文件和审核记录条目 | 含义漂移或队列状态过期 | `docs_validate`, `mustflow_check` | 语句修改、记录的审核状态和验证说明 |
 | 添加、转换、调整或替换网页图片资源 | `.mustflow/skills/web-asset-optimization/SKILL.md` | 图片资源请求和目标路径 | 网页图片资源 | 资源质量和大小 | `asset_optimize`, `build` | 优化资源说明 |
 | 文档更改影响公开文档或工作流文档 | `.mustflow/skills/docs-update/SKILL.md` | 已变化的行为或字段 | 仅相关文档 | 公开文档过期 | `docs_validate`, `mustflow_check` | 文档更改和跳过的检查 |
 

@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: hi
 canonical: false
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -221,6 +221,21 @@ development servers, watchers, browser launches, interactive prompts, या bac
 
 परियोजना की मौजूदा शैली अपनाएं। यदि शैली स्पष्ट न हो, तो `.mustflow/config/preferences.toml` में दिए defaults लागू करें।
 
+## Documentation Review Queue
+
+जब agent user-facing, workflow, template, context, या skill documentation बनाता या बदलता है,
+तो user ने explicitly tracking न करने को न कहा हो तो `mf docs review add <path>` से document
+record करें. Queue `.mustflow/review/docs.toml` में stored होती है और जरूरत होने पर ही बनती है.
+
+Review human, LLM, tool, या external process पूरा कर सकता है. केवल broad reviewer kind और
+free-form identifiers जैसे reviewer id, provider, model, command intent, और summary record करें.
+Specific LLM products की fixed list maintain न करें.
+
+Approved document को default review list से hide करते हुए audit record रखने के लिए
+`mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>` use करें. Reviewer
+confidently approve न कर सके तो `needs-human`, और repository intentionally review skip करे तो
+`ignore` use करें.
+
 generated files को tools से refresh करें:
 
 - `REPO_MAP.md` को `mf map --write` से
@@ -244,6 +259,13 @@ generated files को tools से refresh करें:
 
 सत्यापन का दायरा चुनने के लिए `.mustflow/config/preferences.toml` में `[verification.selection]` देखें।
 ये preferences command execution permission नहीं देतीं। ये केवल बताती हैं कि कौन से configured command intents पर विचार करना है।
+
+सत्यापन risk के अनुपात में होना चाहिए। बदली हुई surface को ढकने वाले `test_related`,
+`test_fast`, `build`, या docs-specific checks configured हों तो उन्हें broad suites से पहले
+चलाएं। broad full-suite tests cross-cutting behavior, release risk, narrow coverage missing,
+या configured policy की स्पष्ट मांग पर चलाएं। यदि narrow intent सही होता लेकिन `unknown`,
+`manual_only`, या absent है, तो सबसे धीमी suite को चुपचाप normal default मानने के बजाय वह gap
+रिपोर्ट करें।
 
 - `strategy = "risk_based"`: बदले हुए behavior, public surface, command contract और risk area को ढकने वाली सबसे छोटी configured checks को प्राथमिकता दें।
 - `strategy = "targeted"`: user, skill या policy व्यापक coverage न मांगे तो सीधे संबंधित checks को प्राथमिकता दें।

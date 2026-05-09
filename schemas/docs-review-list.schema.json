@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/docs-review-list.schema.json",
+  "title": "mustflow docs review list output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ledger_path", "count", "documents"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "docs review list" },
+    "ledger_path": { "const": ".mustflow/review/docs.toml" },
+    "count": { "type": "integer" },
+    "documents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/document" }
+    }
+  },
+  "$defs": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "status", "origin", "reason", "first_seen_at", "last_touched_at"],
+      "properties": {
+        "path": { "type": "string" },
+        "status": {
+          "enum": ["pending", "in_review", "changes_made", "approved", "needs_human", "ignored"]
+        },
+        "origin": { "type": "string" },
+        "reason": { "type": "string" },
+        "first_seen_at": { "type": "string" },
+        "last_touched_at": { "type": "string" },
+        "last_touched_by_kind": { "enum": ["human", "llm", "tool", "external"] },
+        "last_touched_by_id": { "type": "string" },
+        "reviewed_at": { "type": "string" },
+        "reviewer_kind": { "enum": ["human", "llm", "tool", "external"] },
+        "reviewer_id": { "type": "string" },
+        "reviewer_label": { "type": "string" },
+        "reviewer_provider": { "type": "string" },
+        "reviewer_model": { "type": "string" },
+        "reviewer_command_intent": { "type": "string" },
+        "review_summary": { "type": "string" },
+        "review_comment": { "type": "string" },
+        "commented_at": { "type": "string" },
+        "commented_by_kind": { "enum": ["human", "llm", "tool", "external"] },
+        "commented_by_id": { "type": "string" }
+      }
+    }
+  }
+}

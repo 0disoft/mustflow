@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: fr
 canonical: false
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -227,6 +227,23 @@ Ne pas modifier les chemins proteges de `.mustflow/config/mustflow.toml`.
 
 Utiliser le style existant du projet. Si le style n'est pas clair, appliquer les valeurs par defaut dans `.mustflow/config/preferences.toml`.
 
+## File De Revision De Documentation
+
+Lorsqu'un agent cree ou modifie une documentation visible par les utilisateurs, de workflow, de
+modele, de contexte ou de skill, enregistre le document avec `mf docs review add <path>` sauf si
+l'utilisateur demande explicitement de ne pas le suivre. La file est stockee dans
+`.mustflow/review/docs.toml` et n'est creee que lorsque c'est necessaire.
+
+La revision peut etre terminee par un humain, un LLM, un outil ou un processus externe. Enregistre
+seulement le type large de reviseur et des identifiants libres comme l'id du reviseur, le fournisseur,
+le modele, l'intention de commande et le resume. Ne maintiens pas de liste fixe de produits LLM
+specifiques.
+
+Utilise `mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>` pour masquer un
+document approuve de la liste par defaut tout en gardant l'historique. Utilise `needs-human` lorsque
+le reviseur ne peut pas approuver avec confiance, et `ignore` seulement lorsque le depot decide
+intentionnellement de sauter la revision.
+
 Les fichiers generes doivent etre rafraichis via des outils:
 
 - `REPO_MAP.md` via `mf map --write`
@@ -250,6 +267,13 @@ Signaler ce qui a ete omis et pourquoi.
 
 Utiliser `[verification.selection]` dans `.mustflow/config/preferences.toml` pour choisir l'etendue de verification.
 Ces preferences n'accordent pas l'autorisation d'executer des commandes. Elles indiquent seulement quels command intents configures examiner.
+
+La verification doit etre proportionnelle au risque. Preferer `test_related`, `test_fast`, `build`
+ou les controles propres a la documentation quand ils sont configures et couvrent la surface modifiee.
+Utiliser les suites completes larges pour les comportements transversaux, le risque de release,
+l'absence de couverture plus etroite ou quand la politique configuree les exige explicitement. Si
+un intent plus etroit conviendrait mais est `unknown`, `manual_only` ou absent, signaler ce manque
+au lieu de traiter silencieusement la suite la plus lente comme valeur normale.
 
 - `strategy = "risk_based"`: preferer les controles configures les plus petits qui couvrent le comportement change, la surface publique, le contrat de commandes et la zone de risque.
 - `strategy = "targeted"`: preferer les controles directement lies sauf si l'utilisateur, une skill ou une politique exige une couverture plus large.

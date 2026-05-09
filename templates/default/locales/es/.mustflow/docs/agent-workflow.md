@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: es
 canonical: false
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -226,6 +226,22 @@ No modifiques rutas protegidas de `.mustflow/config/mustflow.toml`.
 
 Usa el estilo existente del proyecto. Si el estilo no es claro, aplica los valores predeterminados en `.mustflow/config/preferences.toml`.
 
+## Cola De Revision De Documentacion
+
+Cuando un agente crea o modifica documentacion visible para usuarios, de workflow, de plantilla,
+de contexto o de skill, registra el documento con `mf docs review add <path>` salvo que el usuario
+indique explicitamente no rastrearlo. La cola se guarda en `.mustflow/review/docs.toml` y se crea
+solo cuando hace falta.
+
+La revision puede completarla una persona, un LLM, una herramienta o un proceso externo. Registra
+solo el tipo amplio de revisor y metadatos libres como id de revisor, proveedor, modelo, intencion
+de comando y resumen. No mantengas una lista fija de productos LLM concretos.
+
+Usa `mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>` para ocultar un
+documento aprobado de la lista predeterminada conservando el registro. Usa `needs-human` cuando el
+revisor no pueda aprobarlo con confianza, e `ignore` solo cuando saltarse la revision sea una
+decision intencional del repositorio.
+
 Los archivos generados deben refrescarse con herramientas:
 
 - `REPO_MAP.md` mediante `mf map --write`
@@ -249,6 +265,13 @@ Reporta que se omitio y por que.
 
 Usa `[verification.selection]` en `.mustflow/config/preferences.toml` para elegir el alcance de verificacion.
 Estas preferencias no conceden permiso para ejecutar comandos. Solo orientan que command intents configurados considerar.
+
+La verificacion debe ser proporcional al riesgo. Prefiere `test_related`, `test_fast`, `build`
+o comprobaciones especificas de documentacion cuando esten configuradas y cubran la superficie
+modificada. Usa pruebas completas amplias para comportamiento transversal, riesgo de release,
+falta de cobertura mas estrecha o cuando la politica configurada las exija explicitamente. Si una
+intencion estrecha seria adecuada pero esta `unknown`, `manual_only` o ausente, informa ese hueco
+en vez de tratar en silencio la suite mas lenta como valor normal.
 
 - `strategy = "risk_based"`: prefiere las comprobaciones configuradas mas pequenas que cubran el comportamiento cambiado, la superficie publica, el contrato de comandos y el area de riesgo.
 - `strategy = "targeted"`: prefiere comprobaciones directamente relacionadas salvo que el usuario, una skill o una politica exija cobertura mas amplia.

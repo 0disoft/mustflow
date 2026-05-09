@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: zh
 canonical: false
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -212,6 +212,19 @@ release 文档和既有更新模式，然后报告哪些文件是权威来源，
 
 遵循项目既有风格。若风格不明确，使用 `.mustflow/config/preferences.toml` 中默认值。
 
+## 文档审阅队列
+
+当代理创建或修改面向用户、工作流、模板、上下文或 skill 文档时，除非用户明确要求不跟踪，
+否则用 `mf docs review add <path>` 记录被触及的文档。队列存储在
+`.mustflow/review/docs.toml`，只在需要时创建。
+
+审阅可以由人类、LLM、工具或外部流程完成。只记录宽泛的审阅者类型，以及审阅者 id、
+提供方、模型、命令意图和摘要等自由格式标识。不要维护固定的具体 LLM 产品列表。
+
+使用 `mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>` 可以把已批准
+文档从默认审阅列表中隐藏，同时保留审阅记录。审阅者无法有把握批准时使用 `needs-human`；
+只有仓库有意跳过审阅时才使用 `ignore`。
+
 生成文件应通过工具刷新：
 
 - `REPO_MAP.md` 通过 `mf map --write`
@@ -235,6 +248,11 @@ release 文档和既有更新模式，然后报告哪些文件是权威来源，
 
 使用 `.mustflow/config/preferences.toml` 的 `[verification.selection]` 选择验证范围。
 这些偏好不授予命令执行权限，只用于决定应考虑哪些已配置的 command intents。
+
+验证范围应与风险成比例。若 `test_related`、`test_fast`、`build` 或文档专用检查已经配置，
+并且能够覆盖本次变更表面，应优先于宽泛测试套件使用。全量测试适用于跨领域行为、发布风险、
+缺少更窄覆盖，或已配置策略明确要求的场景。若更窄的 intent 合适但处于 `unknown`、
+`manual_only` 或缺失状态，应报告这个缺口，而不是默默把最慢的套件当作常规默认值。
 
 - `strategy = "risk_based"`：优先选择覆盖变更行为、公开表面、命令契约和风险区域的最小检查。
 - `strategy = "targeted"`：除非用户、skill 或策略要求更广验证，否则优先选择直接相关检查。

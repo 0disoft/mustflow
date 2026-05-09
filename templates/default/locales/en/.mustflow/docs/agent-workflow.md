@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 14
+revision: 16
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -262,6 +262,21 @@ Do not modify protected paths from `.mustflow/config/mustflow.toml`.
 Use existing project style. If style is unclear, apply the defaults in
 `.mustflow/config/preferences.toml`.
 
+## Documentation Review Queue
+
+When an agent creates or modifies user-facing, workflow, template, context, or skill documentation,
+record the touched document with `mf docs review add <path>` unless the user explicitly says not to
+track it. The queue is stored in `.mustflow/review/docs.toml` and is created only when needed.
+
+Review completion may come from a human, an LLM, a tool, or an external process. Record only the
+broad reviewer kind plus free-form identifiers such as reviewer id, provider, model, command intent,
+and summary. Do not maintain a fixed list of specific LLM products.
+
+Use `mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>` to hide an approved
+document from the default review list while keeping the audit record. Use `needs-human` when the
+reviewer cannot confidently approve the document, and `ignore` only when skipping review is an
+intentional repository decision.
+
 Generated files should be refreshed by tools:
 
 - `REPO_MAP.md` through `mf map --write`
@@ -286,6 +301,13 @@ Report what was skipped and why.
 Use `.mustflow/config/preferences.toml` `[verification.selection]` to choose verification breadth.
 These preferences do not grant command execution permission. They only guide which configured
 command intents to consider.
+
+Verification should be proportional to risk. Prefer `test_related`, `test_fast`, `build`, or
+docs-specific checks when they are configured and cover the changed surface. Use broad full-suite
+tests for cross-cutting behavior, release risk, missing narrower coverage, or when the configured
+policy explicitly requires them. If a narrow intent would be appropriate but is `unknown`,
+`manual_only`, or absent, report that gap instead of silently treating the slowest suite as the
+normal default.
 
 - `strategy = "risk_based"`: prefer the smallest configured checks that cover the changed behavior,
   public surface, command contract, and risk area.

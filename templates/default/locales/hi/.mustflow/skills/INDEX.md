@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -31,6 +31,7 @@ authority: router
 | Configured command intent या verification step fail हुआ | `.mustflow/skills/failure-triage/SKILL.md` | Failing intent और output tail | सिर्फ failure cause | misdiagnosis | `mustflow_check`; original failing intent | Root cause, fix, rerun result |
 | `.mustflow/context/PROJECT.md` में cautious project context चाहिए | `.mustflow/skills/project-context-authoring/SKILL.md` | Supported project facts | `.mustflow/context/PROJECT.md` | authority drift | `mustflow_check` | Updated cautious context |
 | Skill procedures या routes create/maintain हो रहे हैं | `.mustflow/skills/skill-authoring/SKILL.md` | Repeated task evidence | `.mustflow/skills/**` | overlap और command drift | `mustflow_check`, `docs_validate` | Skill route और procedure changes |
+| Documentation review queue entries को prose cleanup चाहिए | `.mustflow/skills/docs-prose-review/SKILL.md` | Review queue entry या selected document path, review comment if present, target language, reviewer metadata | Selected documentation file और review ledger entry | meaning drift या stale queue state | `docs_validate`, `mustflow_check` | Prose changes, recorded review status, verification notes |
 | Web image assets add, convert, resize या replace हो रहे हैं | `.mustflow/skills/web-asset-optimization/SKILL.md` | Image asset request और target path | Web image assets | asset quality और size | `asset_optimize`, `build` | Optimized asset notes |
 | Documentation changes public या workflow docs को affect करते हैं | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior या field | Relevant docs only | stale public docs | `docs_validate`, `mustflow_check` | Doc changes और skipped checks |
 

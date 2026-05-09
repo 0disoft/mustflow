@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, realpathSync } from 'node:fs';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,7 @@ import { runCheck } from './commands/check.js';
 import { runContext } from './commands/context.js';
 import { runDashboard } from './commands/dashboard.js';
 import { runDoctor } from './commands/doctor.js';
+import { runDocs } from './commands/docs.js';
 import { runExplain } from './commands/explain.js';
 import { runHelp } from './commands/help.js';
 import { runInit } from './commands/init.js';
@@ -18,6 +19,7 @@ import { runSearch } from './commands/search.js';
 import { runStatus } from './commands/status.js';
 import { runUpdate } from './commands/update.js';
 import { runVerify } from './commands/verify.js';
+import { runVersion } from './commands/version.js';
 import { runVersionSources } from './commands/version-sources.js';
 import { COMMAND_DEFINITIONS } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
@@ -50,12 +52,14 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf --lang ko help',
 				'mf init --dry-run',
 				'mf doctor --json',
+				'mf docs review list',
 				'mf check --json',
 				'mf context --json',
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
 				'mf verify --reason code_change',
+				'mf version --check',
 				'mf version-sources --json',
 			],
 			exitCodes: [
@@ -71,14 +75,6 @@ function getTopLevelHelp(lang: CliLang): string {
 		},
 		lang,
 	);
-}
-
-function getPackageVersion(): string {
-	const packageUrl = new URL('../../package.json', import.meta.url);
-	const rawPackageJson = readFileSync(packageUrl, 'utf8');
-	const parsed = JSON.parse(rawPackageJson) as { version?: unknown };
-
-	return typeof parsed.version === 'string' ? parsed.version : '0.0.0';
 }
 
 function getErrorMessage(error: unknown): string {
@@ -145,8 +141,7 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 	}
 
 	if (command === '--version' || command === '-v' || command === 'version') {
-		reporter.stdout(getPackageVersion());
-		return 0;
+		return runVersion(args, reporter, parsed.lang);
 	}
 
 	if (command === 'init') {
@@ -179,6 +174,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'doctor') {
 		return runDoctor(args, reporter, parsed.lang);
+	}
+
+	if (command === 'docs') {
+		return runDocs(args, reporter, parsed.lang);
 	}
 
 	if (command === 'index') {

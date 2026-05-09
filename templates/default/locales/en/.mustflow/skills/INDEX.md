@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: en
 canonical: true
-revision: 10
+revision: 11
 authority: router
 lifecycle: mustflow-owned
 ---
@@ -37,8 +37,9 @@ refer to `AGENTS.md` and `.mustflow/config/commands.toml` to implement the most 
 | A configured command intent or verification step fails | `.mustflow/skills/failure-triage/SKILL.md` | Failing intent and output tail | Failure cause only | misdiagnosis | `mustflow_check`; original failing intent | Root cause, fix, rerun result |
 | `.mustflow/context/PROJECT.md` needs cautious project context | `.mustflow/skills/project-context-authoring/SKILL.md` | Supported project facts | `.mustflow/context/PROJECT.md` | authority drift | `mustflow_check` | Updated cautious context |
 | Skill procedures or routes are created or maintained | `.mustflow/skills/skill-authoring/SKILL.md` | Repeated task evidence | `.mustflow/skills/**` | overlap and command drift | `mustflow_check`, `docs_validate` | Skill route and procedure changes |
+| Documentation review queue entries need prose cleanup | `.mustflow/skills/docs-prose-review/SKILL.md` | Review queue entry or selected document path, review comment if present, target language, reviewer metadata | Selected documentation file and review ledger entry | meaning drift or stale queue state | `docs_validate`, `mustflow_check` | Prose changes, recorded review status, verification notes |
 | Web image assets are added, converted, resized, or replaced | `.mustflow/skills/web-asset-optimization/SKILL.md` | Image asset request and target path | Web image assets | asset quality and size | `asset_optimize`, `build` | Optimized asset notes |
-| Documentation changes affect public or workflow docs | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior or field | Relevant docs only | stale public docs | `docs_validate`, `mustflow_check` | Doc changes and skipped checks |
+| Documentation changes affect public or workflow docs | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior or field | Relevant docs only | stale public docs | `docs_validate_fast`, `docs_validate`, `mustflow_check` | Doc changes and skipped checks |
 
 When introducing a new skill, link it here and define the specific trigger and route fields.
 Avoid including raw shell commands in skill documents; instead, reference the command intent

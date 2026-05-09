@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 8
+revision: 9
 lifecycle: user-editable
 authority: binding
 ---
@@ -35,6 +35,9 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - केवल वही कमांड परिभाषाएं चलाएं जिनमें `status` = `configured`, `lifecycle` = `oneshot`,
   और `run_policy` = `agent_allowed` हो।
 - कॉन्फ़िगर किए गए oneshot कमांड के लिए `mf run <intent>` को प्राथमिकता दें।
+- जोखिम को ढकने वाली सबसे संकरी configured verification intent चुनें। command contract में
+  संबंधित tests या तेज checks उपलब्ध हों तो broad suites से पहले उन्हें चलाएं, और संकरी intent
+  न हो तो धीमे full-suite tests को चुपचाप default न बनाकर कमी रिपोर्ट करें।
 - विकास सर्वर, watcher, ब्राउज़र इंटरफेस, इंटरैक्टिव prompt,
   या पृष्ठभूमि प्रक्रियाएं सीधे शुरू न करें।
 - स्वायत्त लूप, worker प्रक्रिया, persona प्रणाली, या लंबी अवधि harness प्रक्रियाएं शुरू न करें,

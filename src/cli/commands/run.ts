@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { runCheck } from './check.js';
@@ -25,6 +25,7 @@ import {
 } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import { getPackageVersion } from '../lib/package-info.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../../core/run-receipt.js';
@@ -215,18 +216,10 @@ function createBufferedReporter(): BufferedReporter {
 	};
 }
 
-function getPackageVersion(): string {
-	const packageUrl = new URL('../../../package.json', import.meta.url);
-	const rawPackageJson = readFileSync(packageUrl, 'utf8');
-	const parsed = JSON.parse(rawPackageJson) as { version?: unknown };
-
-	return typeof parsed.version === 'string' ? parsed.version : '0.0.0';
-}
-
 function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lang: CliLang): number | undefined {
 	const [command, ...commandArgs] = args;
 
-	if (command === '--version' || command === '-v' || command === 'version') {
+	if ((command === '--version' || command === '-v' || command === 'version') && commandArgs.length === 0) {
 		reporter.stdout(getPackageVersion());
 		return 0;
 	}

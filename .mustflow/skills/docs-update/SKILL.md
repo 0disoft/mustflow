@@ -2,7 +2,7 @@
 mustflow_doc: skill.docs-update
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: docs-update
@@ -13,6 +13,7 @@ metadata:
   pack_id: mustflow.core
   skill_id: mustflow.core.docs-update
   command_intents:
+    - docs_validate_fast
     - docs_validate
     - mustflow_check
 ---
@@ -76,8 +77,11 @@ Ensure documentation accurately reflects the current workflow, commands, and use
 <!-- mustflow-section: verification -->
 ## Verification
 
-Execute `docs_validate` and `mustflow_check` provided they are configured and available for agent use.
-Otherwise, report the reason for skipping these checks.
+Use `docs_validate_fast` for routine documentation edits when it is configured and available for agent use.
+Use the full `docs_validate` when documentation site configuration, navigation generation, static output,
+Astro content validation, search indexing, sitemap output, or release readiness is affected. Always run `mustflow_check` for mustflow
+workflow or configuration documents when it is configured and available. Otherwise, report the reason for
+skipping these checks.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

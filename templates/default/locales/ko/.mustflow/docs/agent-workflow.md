@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 22
+revision: 24
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -476,6 +476,22 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
   mustflow 문서로 가정하지 않습니다.
 - mustflow 문서 흐름에 속한 파일은 기본적으로 `AGENTS.md`와 `.mustflow/**`입니다.
 
+## 문서 검수 대기열
+
+에이전트가 사용자에게 보이는 문서, 워크플로 문서, 템플릿 문서, 문맥 문서, 스킬 문서를
+생성하거나 수정하면 사용자가 추적하지 말라고 명시한 경우를 제외하고
+`mf docs review add <path>`로 해당 문서를 기록합니다. 대기열은
+`.mustflow/review/docs.toml`에 저장되며 필요할 때만 생성됩니다.
+
+검수 완료 주체는 사람, LLM, 도구, 외부 프로세스일 수 있습니다. 특정 LLM 제품 목록을
+고정으로 관리하지 말고, 넓은 검수자 종류와 자유 형식의 검수자 식별자, 제공자, 모델,
+명령 의도, 요약만 기록합니다.
+
+검수된 문서를 기본 목록에서 숨기되 기록을 남기려면
+`mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>`를 사용합니다.
+검수자가 확신을 가지고 승인할 수 없으면 `needs-human`을, 저장소가 의도적으로 검수에서
+제외하는 문서에는 `ignore`를 사용합니다.
+
 ## 검증 정책
 
 - 코드 변경 후에는 관련 테스트나 규칙 검사 의도가 `configured`인지 확인하고 실행합니다.
@@ -494,6 +510,13 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
 
 검증 범위는 `.mustflow/config/preferences.toml`의 `[verification.selection]`을 참고합니다.
 이 값은 명령 실행 권한이 아니라, 어떤 configured 명령 의도를 검토할지 정하는 기본값입니다.
+
+검증은 위험 크기에 비례해야 합니다. 바뀐 표면을 덮는 `test_related`, `test_fast`,
+`build`, 문서 전용 검증이 설정되어 있으면 넓은 전체 테스트보다 먼저 사용합니다.
+전체 테스트는 여러 영역을 가로지르는 동작, 릴리스 위험, 더 좁은 검증 누락, 또는 설정된
+정책이 명시적으로 요구하는 경우에 사용합니다. 더 좁은 의도가 적절하지만 `unknown`,
+`manual_only`, 또는 미선언 상태라면 느린 전체 테스트를 조용히 기본값으로 삼지 말고
+그 공백을 보고합니다.
 
 - `strategy = "risk_based"`: 바뀐 동작, 공개 표면, 명령 계약, 위험 영역을 덮는 가장 작은 검증을 우선합니다.
 - `strategy = "targeted"`: 사용자 지시, 스킬, 정책이 더 넓은 검증을 요구하지 않으면 직접 관련된 검증을 우선합니다.

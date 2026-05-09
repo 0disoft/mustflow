@@ -282,6 +282,20 @@ test('version sources json output matches the published schema', () => {
 	}
 });
 
+test('docs review list json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['docs', 'review', 'list', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema('docs-review-list.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explain json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
