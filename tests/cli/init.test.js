@@ -72,6 +72,10 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(gitignore, /\.mustflow\/cache\//);
 		assert.match(gitignore, /\.mustflow\/state\//);
 		assert.match(gitignore, /\.mustflow\/backups\//);
+		assert.match(gitignore, /\.mustflow\/worklogs\//);
+		assert.match(gitignore, /\.mustflow\/plans\//);
+		assert.match(gitignore, /\.mustflow\/tasks\//);
+		assert.match(gitignore, /\.mustflow\/work-items\//);
 		assert.doesNotMatch(gitignore, /^repos\//m);
 		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
 		assert.match(preferences, /\[project\]/);

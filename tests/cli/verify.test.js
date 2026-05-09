@@ -136,6 +136,37 @@ test('reports blocked verification when no intents match the reason', () => {
 	}
 });
 
+test('does not treat verification preferences as command authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		const preferences = readFileSync(preferencesPath, 'utf8').replace(
+			'report_skipped = true',
+			[
+				'report_skipped = true',
+				'command_intents = ["test"]',
+				'required_after = ["preference_only"]',
+				'run_policy = "agent_allowed"',
+			].join('\n'),
+		);
+		writeFileSync(preferencesPath, preferences);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'preference_only', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.status, 'blocked');
+		assert.equal(report.summary.matched, 0);
+		assert.equal(report.summary.ran, 0);
+		assert.equal(report.results[0].intent, null);
+		assert.equal(report.results[0].reason, 'no_matching_intents');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails verify when reason is missing', () => {
 	const result = runCli(projectRoot, ['verify', '--json']);
 

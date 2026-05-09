@@ -96,6 +96,19 @@ const VERIFICATION_SELECTION_BOOLEAN_FIELDS = [
 	'skip_copy_only_full_test',
 	'report_skipped',
 ] as const;
+const FORBIDDEN_VERIFICATION_SELECTION_AUTHORITY_FIELDS = [
+	'intents',
+	'command_intents',
+	'required_after',
+	'status',
+	'lifecycle',
+	'run_policy',
+	'argv',
+	'cmd',
+	'writes',
+	'network',
+	'destructive',
+] as const;
 const ALLOWED_VERIFICATION_SELECTION_STRATEGIES = new Set(['risk_based', 'targeted', 'full']);
 const TEST_AUTHORING_BOOLEAN_FIELDS = ['prefer_existing_tests', 'require_new_test_rationale'] as const;
 const ALLOWED_TEST_AUTHORING_POLICIES = new Set(TEST_AUTHORING_POLICIES);
@@ -233,6 +246,7 @@ const DESIGN_TOKEN_DEFINITION_PATTERNS = [
 	/^\s*--[a-z0-9-]+:\s*[^;]+;/imu,
 	/^\s*(?:border[_-]?radius|font[_-]?(?:family|size)|line[_-]?height|space[-_]\d+)\s*[:=]\s*/imu,
 ];
+const LOCAL_TASK_STATE_ROOTS = new Set(['worklogs', 'plans', 'tasks', 'work-items']);
 
 interface CheckIssue {
 	readonly message: string;
@@ -249,6 +263,7 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.executable_source_missing'
 	| 'mustflow.command_contract.shell_background_pattern'
 	| 'mustflow.command_contract.success_exit_codes_invalid'
+	| 'mustflow.preferences.verification_selection_command_authority'
 	| 'mustflow.skill.procedure_only'
 	| 'mustflow.skill.raw_command_block'
 	| 'mustflow.skill.command_permission_claim'
@@ -258,7 +273,8 @@ export type CheckIssueId =
 	| 'mustflow.run_receipt.invalid_json'
 	| 'mustflow.run_receipt.invalid_shape'
 	| 'mustflow.retention.run_receipt_size_limit'
-	| 'mustflow.retention.raw_jsonl_under_mustflow';
+	| 'mustflow.retention.raw_jsonl_under_mustflow'
+	| 'mustflow.local_state.versioned_task_worklog';
 
 export interface CheckIssueDetail {
 	readonly id: CheckIssueId | null;
@@ -278,6 +294,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
 	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
 	['mustflow.command_contract.success_exit_codes_invalid', /^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be an integer array$/u],
+	['mustflow.preferences.verification_selection_command_authority', /^Strict: \[preferences\.verification\.selection\]\.[a-z_]+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
 	['mustflow.skill.raw_command_block', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md contains a raw shell command block; reference command intents instead$/u],
 	['mustflow.skill.command_permission_claim', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md claims command execution permission; keep permissions in \.mustflow\/config\/commands\.toml$/u],
@@ -288,6 +305,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.run_receipt.invalid_shape', /^Strict: \.mustflow\/state\/runs\/latest\.json must contain a JSON object$/u],
 	['mustflow.retention.run_receipt_size_limit', /^Strict: \.mustflow\/state\/runs\/latest\.json exceeds \[retention\.run_receipts\]\.max_file_kb/u],
 	['mustflow.retention.raw_jsonl_under_mustflow', /^Strict: \.mustflow\/.*\.jsonl is a raw JSONL file under \.mustflow$/u],
+	['mustflow.local_state.versioned_task_worklog', /^Strict: \.mustflow\/(?:worklogs|plans|tasks|work-items)\/.+ is per-task local state; keep plans and worklogs under ignored local state$/u],
 ];
 
 export function getCheckIssueId(message: string): CheckIssueId | null {
@@ -1781,6 +1799,26 @@ function validateStrictHarnessPolicy(mustflowToml: TomlTable | undefined, issues
 	}
 }
 
+function validateStrictVerificationSelectionAuthority(preferencesToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!preferencesToml || !isRecord(preferencesToml.verification)) {
+		return;
+	}
+
+	const selection = preferencesToml.verification.selection;
+	if (!isRecord(selection)) {
+		return;
+	}
+
+	for (const field of FORBIDDEN_VERIFICATION_SELECTION_AUTHORITY_FIELDS) {
+		if (hasOwn(selection, field)) {
+			pushStrictIssue(
+				issues,
+				`[preferences.verification.selection].${field} cannot define command authority; use .mustflow/config/commands.toml`,
+			);
+		}
+	}
+}
+
 function fileSizeBytes(filePath: string): number {
 	return statSync(filePath).size;
 }
@@ -2259,8 +2297,18 @@ function validateStrictStorage(projectRoot: string, limits: RetentionLimits, iss
 	const mustflowFiles = listFilesRecursive(mustflowRoot);
 
 	for (const relativePath of mustflowFiles) {
+		const normalizedPath = toPosixPath(relativePath);
+		const [topLevelDirectory] = normalizedPath.split('/');
+
 		if (relativePath.toLowerCase().endsWith('.jsonl')) {
-			pushStrictIssue(issues, `.mustflow/${toPosixPath(relativePath)} is a raw JSONL file under .mustflow`);
+			pushStrictIssue(issues, `.mustflow/${normalizedPath} is a raw JSONL file under .mustflow`);
+		}
+
+		if (topLevelDirectory && LOCAL_TASK_STATE_ROOTS.has(topLevelDirectory)) {
+			pushStrictIssue(
+				issues,
+				`.mustflow/${normalizedPath} is per-task local state; keep plans and worklogs under ignored local state`,
+			);
 		}
 	}
 }
@@ -2270,6 +2318,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(parsed.commandsToml, issues);
+	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
 	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);
 	validateStrictRouterIndexes(projectRoot, issues);

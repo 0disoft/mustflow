@@ -907,6 +907,37 @@ test('strict check fails oversized generated files and raw JSONL logs under must
 	}
 });
 
+test('strict check rejects per-task plans and worklogs under versioned mustflow files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const worklogDir = path.join(projectPath, '.mustflow', 'worklogs');
+		const planDir = path.join(projectPath, '.mustflow', 'plans');
+		mkdirSync(worklogDir, { recursive: true });
+		mkdirSync(planDir, { recursive: true });
+		writeFileSync(path.join(worklogDir, 'task.md'), '# Task notes\n');
+		writeFileSync(path.join(planDir, 'next.md'), '# Plan\n');
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.local_state.versioned_task_worklog',
+			'Strict: .mustflow/worklogs/task.md is per-task local state; keep plans and worklogs under ignored local state',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.local_state.versioned_task_worklog',
+			'Strict: .mustflow/plans/next.md is per-task local state; keep plans and worklogs under ignored local state',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails unsafe context documents', () => {
 	const projectPath = createTempProject();
 
@@ -1588,6 +1619,48 @@ test('fails when preferences configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.source_locale must be a string/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.target_locales must be a string array/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.translation_policy must be/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails when verification preferences try to define command authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		const preferences = readText(preferencesPath).replace(
+			'report_skipped = true',
+			[
+				'report_skipped = true',
+				'command_intents = ["test"]',
+				'run_policy = "agent_allowed"',
+				'required_after = ["docs_change"]',
+			].join('\n'),
+		);
+		writeFileSync(preferencesPath, preferences);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.preferences.verification_selection_command_authority',
+			'Strict: [preferences.verification.selection].command_intents cannot define command authority; use .mustflow/config/commands.toml',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.preferences.verification_selection_command_authority',
+			'Strict: [preferences.verification.selection].run_policy cannot define command authority; use .mustflow/config/commands.toml',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.preferences.verification_selection_command_authority',
+			'Strict: [preferences.verification.selection].required_after cannot define command authority; use .mustflow/config/commands.toml',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
