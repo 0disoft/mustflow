@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "name": "docs-only",
+  "purpose": "Represents a documentation-only repository without a root README.",
+  "expected_authoring_boundary": [
+    "README authoring may create an entry point only from existing documentation evidence.",
+    "Project context authoring must not copy long public documentation into context."
+  ]
+}

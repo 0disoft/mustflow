@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "name": "readme-only",
+  "purpose": "Represents a project where README.md is the only public evidence.",
+  "expected_authoring_boundary": [
+    "README cleanup may preserve supported public wording.",
+    "Project context authoring may cite README.md as evidence but must not rewrite it."
+  ]
+}

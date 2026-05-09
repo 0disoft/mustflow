@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "name": "empty-repository",
+  "purpose": "Represents a repository with no public project evidence yet.",
+  "expected_authoring_boundary": [
+    "Do not invent README goals, installation steps, or project context.",
+    "Leave unknown project facts unset until evidence exists."
+  ]
+}

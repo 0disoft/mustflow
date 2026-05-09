@@ -25,7 +25,7 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:66153a9abec69403e4868265affa281a19a7b6e86a189fa10cb66faa31fd3eaa"
+content_hash = "sha256:b43df70bd6a8579066598d372e2a0021a93424ad2e66fd4a2440f665e2eca4aa"
 
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
@@ -121,6 +121,11 @@ content_hash = "sha256:4c3097aff72d50e0b2e667833f653d52c0cf564f39c09283dc4f57d09
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:86f68bd8ec3b5fd8f70330b0a3cd6a3af901c87e1e31e8c2b88322f3cfe946b3"
+
+[files.".mustflow/skills/readme-authoring/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:4e91af4bdfde20bf58d6117c48c7791cc06717d75ec5b35b582706ecf8232fab"
 
 [files.".mustflow/skills/security-privacy-review/SKILL.md"]
 source = "template_locale"

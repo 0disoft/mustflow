@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: hi
 canonical: false
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -44,6 +44,7 @@ authority: router
 | Claims depend on current, external, dated, versioned, or otherwise drift-prone sources | `.mustflow/skills/source-freshness-check/SKILL.md` | Stale-sensitive claim, source text or page, date or version context, and source policy | Source wording, documentation, and freshness report | stale or unverifiable claim | `changes_status`, `docs_validate_fast`, `mustflow_check` | Checked source boundary, wording changes, skipped refreshes, and stale-source risk |
 | `.mustflow/context/PROJECT.md` में cautious project context चाहिए | `.mustflow/skills/project-context-authoring/SKILL.md` | Supported project facts | `.mustflow/context/PROJECT.md` | authority drift | `mustflow_check` | Updated cautious context |
 | Skill procedures या routes create/maintain हो रहे हैं | `.mustflow/skills/skill-authoring/SKILL.md` | Repeated task evidence | `.mustflow/skills/**` | overlap और command drift | `mustflow_check`, `docs_validate` | Skill route और procedure changes |
+| `README.md` create, restructure या substantially rewrite हो रहा है | `.mustflow/skills/readme-authoring/SKILL.md` | User request, existing README if any, repository evidence, nearest instructions, and command contracts | `README.md` और directly linked public docs | invented project claims, marketing drift, या human-authored intent loss | `docs_validate_fast`, `mustflow_check` | Evidence-based README changes, preserved or deferred sections, verification notes |
 | Documentation review queue entries को prose cleanup चाहिए | `.mustflow/skills/docs-prose-review/SKILL.md` | Review queue entry या selected document path, review comment if present, target language, reviewer metadata | Selected documentation file और review ledger entry | meaning drift या stale queue state | `docs_validate`, `mustflow_check` | Prose changes, recorded review status, verification notes |
 | Web image assets add, convert, resize या replace हो रहे हैं | `.mustflow/skills/web-asset-optimization/SKILL.md` | Image asset request और target path | Web image assets | asset quality और size | `asset_optimize`, `build` | Optimized asset notes |
 | Documentation changes public या workflow docs को affect करते हैं | `.mustflow/skills/docs-update/SKILL.md` | Changed behavior या field | Relevant docs only | stale public docs | `docs_validate`, `mustflow_check` | Doc changes और skipped checks |

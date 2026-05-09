@@ -56,12 +56,12 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 24
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 24, status = "current" }
-translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 24, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 24, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 24, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 24, status = "needs_review" }
+revision = 25
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 25, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
 
 [documents."skill.artifact-integrity-check"]
 source = "locales/en/.mustflow/skills/artifact-integrity-check/SKILL.md"
@@ -232,6 +232,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/project-context-authorin
 translations.es = { path = "locales/es/.mustflow/skills/project-context-authoring/SKILL.md", source_revision = 3, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/project-context-authoring/SKILL.md", source_revision = 3, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/project-context-authoring/SKILL.md", source_revision = 3, status = "needs_review" }
+
+[documents."skill.readme-authoring"]
+source = "locales/en/.mustflow/skills/readme-authoring/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/readme-authoring/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/readme-authoring/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/readme-authoring/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/readme-authoring/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/readme-authoring/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"

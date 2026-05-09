@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: fr
 canonical: false
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -45,6 +45,7 @@ utilisez `AGENTS.md` et `.mustflow/config/commands.toml` pour faire le plus peti
 | Claims depend on current, external, dated, versioned, or otherwise drift-prone sources | `.mustflow/skills/source-freshness-check/SKILL.md` | Stale-sensitive claim, source text or page, date or version context, and source policy | Source wording, documentation, and freshness report | stale or unverifiable claim | `changes_status`, `docs_validate_fast`, `mustflow_check` | Checked source boundary, wording changes, skipped refreshes, and stale-source risk |
 | `.mustflow/context/PROJECT.md` a besoin d'un contexte prudent | `.mustflow/skills/project-context-authoring/SKILL.md` | Faits projet etayes | `.mustflow/context/PROJECT.md` | derive d'autorite | `mustflow_check` | Contexte prudent mis a jour |
 | Des procedures ou routes de skills sont creees ou maintenues | `.mustflow/skills/skill-authoring/SKILL.md` | Preuve de tache repetee | `.mustflow/skills/**` | chevauchement et derive de commande | `mustflow_check`, `docs_validate` | Changements de route et procedure |
+| `README.md` est cree, restructure ou largement reecrit | `.mustflow/skills/readme-authoring/SKILL.md` | Demande utilisateur, README existant si present, preuves du depot, instructions proches et contrats de commande | `README.md` et docs publiques directement liees | affirmations inventees, derive marketing ou perte d'intention humaine | `docs_validate_fast`, `mustflow_check` | Changements README fondes sur les preuves, sections preservees ou differees, notes de verification |
 | Des entrees de file de revue documentaire demandent une amelioration de prose | `.mustflow/skills/docs-prose-review/SKILL.md` | Entree de file ou chemin de document choisi, commentaire de revue si present, langue cible, metadonnees du relecteur | Document selectionne et registre de revue | derive de sens ou file obsolete | `docs_validate`, `mustflow_check` | Changements de prose, statut enregistre et notes de verification |
 | Des images web sont ajoutees, converties, redimensionnees ou remplacees | `.mustflow/skills/web-asset-optimization/SKILL.md` | Demande d'image et chemin cible | Images web | qualite et taille du fichier | `asset_optimize`, `build` | Notes d'optimisation |
 | Des changements documentaires touchent les docs publiques ou le workflow | `.mustflow/skills/docs-update/SKILL.md` | Comportement ou champ modifie | Docs pertinentes seulement | docs publiques obsoletes | `docs_validate`, `mustflow_check` | Changements docs et verifications ignorees |

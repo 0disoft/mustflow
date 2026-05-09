@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -45,6 +45,7 @@ usa `AGENTS.md` y `.mustflow/config/commands.toml` para hacer el cambio seguro m
 | Claims depend on current, external, dated, versioned, or otherwise drift-prone sources | `.mustflow/skills/source-freshness-check/SKILL.md` | Stale-sensitive claim, source text or page, date or version context, and source policy | Source wording, documentation, and freshness report | stale or unverifiable claim | `changes_status`, `docs_validate_fast`, `mustflow_check` | Checked source boundary, wording changes, skipped refreshes, and stale-source risk |
 | `.mustflow/context/PROJECT.md` necesita contexto prudente | `.mustflow/skills/project-context-authoring/SKILL.md` | Hechos del proyecto con evidencia | `.mustflow/context/PROJECT.md` | deriva de autoridad | `mustflow_check` | Contexto prudente actualizado |
 | Se crean o mantienen procedimientos o rutas de skills | `.mustflow/skills/skill-authoring/SKILL.md` | Evidencia de tarea repetida | `.mustflow/skills/**` | solapamiento y deriva de comandos | `mustflow_check`, `docs_validate` | Cambios de ruta y procedimiento |
+| Se crea, reestructura o reescribe de forma sustancial `README.md` | `.mustflow/skills/readme-authoring/SKILL.md` | Solicitud del usuario, README existente si lo hay, evidencia del repositorio, instrucciones cercanas y contratos de comando | `README.md` y docs publicas enlazadas directamente | afirmaciones inventadas, deriva de marketing o perdida de intencion humana | `docs_validate_fast`, `mustflow_check` | Cambios de README basados en evidencia, secciones preservadas o diferidas, notas de verificacion |
 | Entradas de la cola de revision documental necesitan mejora de prosa | `.mustflow/skills/docs-prose-review/SKILL.md` | Entrada de cola o ruta documental elegida, comentario de revision si existe, idioma destino, metadatos del revisor | Documento seleccionado y registro de revision | deriva de significado o cola desactualizada | `docs_validate`, `mustflow_check` | Cambios de prosa, estado registrado y notas de verificacion |
 | Se agregan, convierten, redimensionan o reemplazan imagenes web | `.mustflow/skills/web-asset-optimization/SKILL.md` | Solicitud de imagen y ruta destino | Imagenes web | calidad y tamano del recurso | `asset_optimize`, `build` | Notas de recurso optimizado |
 | Cambios documentales afectan docs publicas o de flujo | `.mustflow/skills/docs-update/SKILL.md` | Comportamiento o campo cambiado | Solo docs relevantes | docs publicas obsoletas | `docs_validate`, `mustflow_check` | Cambios documentales y verificaciones omitidas |

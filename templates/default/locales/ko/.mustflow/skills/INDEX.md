@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -48,6 +48,7 @@ authority: router
 | 현재성, 외부 출처, 날짜, 버전처럼 변하기 쉬운 정보에 주장이 의존함 | `.mustflow/skills/source-freshness-check/SKILL.md` | 오래될 수 있는 주장, 출처 원문이나 페이지, 날짜 또는 버전 맥락, 출처 정책 | 출처 문구, 문서, 최신성 보고 | 오래되었거나 확인되지 않은 주장 | `changes_status`, `docs_validate_fast`, `mustflow_check` | 확인한 출처 경계, 문구 변경, 건너뛴 확인, 오래된 출처 위험 |
 | `.mustflow/context/PROJECT.md`에 신중한 프로젝트 맥락이 필요함 | `.mustflow/skills/project-context-authoring/SKILL.md` | 근거가 있는 프로젝트 사실 | `.mustflow/context/PROJECT.md` | 권한 범위 이탈 | `mustflow_check` | 신중하게 갱신된 맥락 |
 | 스킬 절차나 경로를 만들거나 유지보수함 | `.mustflow/skills/skill-authoring/SKILL.md` | 반복 작업 근거 | `.mustflow/skills/**` | 절차 중복과 명령 불일치 | `mustflow_check`, `docs_validate` | 스킬 경로와 절차 변경 |
+| `README.md`를 만들거나 구조를 바꾸거나 크게 다시 씀 | `.mustflow/skills/readme-authoring/SKILL.md` | 사용자 요청, 기존 README가 있으면 그 내용, 저장소 근거, 가장 가까운 지시 파일, 명령 계약 | `README.md`와 직접 연결된 공개 문서 | 지어낸 프로젝트 주장, 홍보성 문구, 사람이 쓴 의도 손실 | `docs_validate_fast`, `mustflow_check` | 근거 기반 README 변경, 보존하거나 보류한 섹션, 검증 메모 |
 | 문서 검수 대기열 항목에 문장 다듬기가 필요함 | `.mustflow/skills/docs-prose-review/SKILL.md` | 대기열 항목 또는 선택한 문서 경로, 검수 코멘트가 있으면 그 내용, 대상 언어, 검수자 메타데이터 | 선택한 문서 파일과 검수 기록 항목 | 의미 변형 또는 오래된 대기열 상태 | `docs_validate`, `mustflow_check` | 문장 수정, 기록된 검수 상태, 검증 메모 |
 | 웹 이미지 자산을 추가, 변환, 크기 조정, 교체함 | `.mustflow/skills/web-asset-optimization/SKILL.md` | 이미지 자산 요청과 대상 경로 | 웹 이미지 자산 | 자산 품질과 용량 | `asset_optimize`, `build` | 최적화 결과 기록 |
 | 공개 문서나 워크플로 문서에 영향을 주는 문서 변경 | `.mustflow/skills/docs-update/SKILL.md` | 변경된 동작 또는 필드 | 관련 문서만 | 오래된 공개 문서 | `docs_validate`, `mustflow_check` | 문서 변경과 건너뛴 검증 |

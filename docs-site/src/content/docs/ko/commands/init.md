@@ -31,6 +31,7 @@ AGENTS.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
    ├─ project-context-authoring/SKILL.md
+   ├─ readme-authoring/SKILL.md
    ├─ skill-authoring/SKILL.md
    ├─ security-regression-tests/SKILL.md
    ├─ test-maintenance/SKILL.md

@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "name": "polyglot-monorepo",
+  "purpose": "Represents a monorepo with multiple runtime manifests.",
+  "expected_authoring_boundary": [
+    "Do not choose one runtime as the only project identity without evidence.",
+    "Mention package-specific commands only when a command contract supports them."
+  ]
+}

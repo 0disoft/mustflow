@@ -1,0 +1,7 @@
+{
+  "name": "polyglot-fixture",
+  "private": true,
+  "scripts": {
+    "check": "node --version"
+  }
+}

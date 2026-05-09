@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -43,6 +43,7 @@ authority: router
 | Claims depend on current, external, dated, versioned, or otherwise drift-prone sources | `.mustflow/skills/source-freshness-check/SKILL.md` | Stale-sensitive claim, source text or page, date or version context, and source policy | Source wording, documentation, and freshness report | stale or unverifiable claim | `changes_status`, `docs_validate_fast`, `mustflow_check` | Checked source boundary, wording changes, skipped refreshes, and stale-source risk |
 | `.mustflow/context/PROJECT.md` 需要谨慎的项目上下文 | `.mustflow/skills/project-context-authoring/SKILL.md` | 有依据的项目事实 | `.mustflow/context/PROJECT.md` | 权限漂移 | `mustflow_check` | 已更新的谨慎上下文 |
 | 创建或维护技能流程或路由 | `.mustflow/skills/skill-authoring/SKILL.md` | 可重复任务证据 | `.mustflow/skills/**` | 重叠和命令漂移 | `mustflow_check`, `docs_validate` | 技能路由和流程更改 |
+| 创建、重组或大幅重写 `README.md` | `.mustflow/skills/readme-authoring/SKILL.md` | 用户请求、现有 README、仓库证据、最近的指令文件和命令契约 | `README.md` 以及直接链接的公开文档 | 虚构项目声明、营销化偏移或丢失人工意图 | `docs_validate_fast`, `mustflow_check` | 基于证据的 README 变更、保留或推迟的章节、验证说明 |
 | 文档审核队列条目需要润色语句 | `.mustflow/skills/docs-prose-review/SKILL.md` | 审核队列条目或选定文档路径、审核评论如有、目标语言、审核者元数据 | 选定文档文件和审核记录条目 | 含义漂移或队列状态过期 | `docs_validate`, `mustflow_check` | 语句修改、记录的审核状态和验证说明 |
 | 添加、转换、调整或替换网页图片资源 | `.mustflow/skills/web-asset-optimization/SKILL.md` | 图片资源请求和目标路径 | 网页图片资源 | 资源质量和大小 | `asset_optimize`, `build` | 优化资源说明 |
 | 文档更改影响公开文档或工作流文档 | `.mustflow/skills/docs-update/SKILL.md` | 已变化的行为或字段 | 仅相关文档 | 公开文档过期 | `docs_validate`, `mustflow_check` | 文档更改和跳过的检查 |
