@@ -31,10 +31,19 @@ This command does not modify files. It does not replace the need to read the doc
 
 It does not include standard output or standard error tails. If an agent needs command output, it must explicitly read the receipt file.
 
+## Prompt Cache Profiles
+
+Use `--cache-profile stable|task|volatile|all` with `--json` when a host needs cache-friendly prompt layers instead of the full context report.
+
+The stable profile reports stable instruction paths, existence flags, content hashes, and a `stable_prefix.cache_key`. It deliberately omits the absolute mustflow root, latest run receipt, timestamps, changed files, command output tails, and the current user task.
+
+The task profile reports task-selective sources such as the context index, repository map, matching skill, and relevant source files. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
+
 ## Example
 
 ```sh
 npx mf context --json
+npx mf context --json --cache-profile stable
 ```
 
 ## JSON Fields
@@ -57,6 +66,17 @@ Machine-readable output uses these fields:
 - `blocked_actions` (`string[]`): Action classes blocked by the repository contract.
 - `latest_run` (`object`): Summary of the latest run receipt.
 - `issues` (`string[]`): Issues reported from the manifest lock.
+
+When `--cache-profile` is used, output switches to a prompt-cache profile report:
+
+- `cache_profile` (`string`): Selected profile. One of `stable`, `task`, `volatile`, or `all`.
+- `prompt_cache` (`object`): Effective prompt-cache settings from `mustflow.toml`.
+- `stable_prefix.cache_key` (`string | null`): Hash of the stable document path and content-hash list.
+- `stable_prefix.documents[]` (`object[]`): Stable document paths, existence flags, and content hashes.
+- `stable_prefix.volatile_excluded` (`string[]`): Volatile sources that must not appear before the stable prefix.
+- `task_context.sources` (`string[]`): Task-selective context sources.
+- `volatile_suffix.sources` (`string[]`): Volatile sources that belong after the stable prefix.
+- `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.
 
 Repeated and nested fields use these shapes:
 

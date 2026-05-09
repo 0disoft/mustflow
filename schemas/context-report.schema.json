@@ -3,32 +3,88 @@
   "$id": "https://mustflow.github.io/schemas/context-report.schema.json",
   "title": "mustflow context report",
   "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "command",
-    "mustflow_root",
-    "installed",
-    "manifest_lock",
-    "template",
-    "authority",
-    "capabilities",
-    "read_order",
-    "optional_read_order",
-    "command_contract",
-    "effective_policy",
-    "state_policy",
-    "blocked_actions",
-    "latest_run",
-    "issues"
+  "oneOf": [
+    { "$ref": "#/$defs/agentContextReport" },
+    { "$ref": "#/$defs/promptCacheProfileReport" }
   ],
-  "properties": {
-    "schema_version": { "const": "1" },
-    "command": { "const": "context" },
-    "mustflow_root": { "type": "string" },
-    "installed": { "type": "boolean" },
-    "manifest_lock": { "enum": ["missing", "invalid", "present"] },
-    "template": {
+  "$defs": {
+    "agentContextReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "command",
+        "mustflow_root",
+        "installed",
+        "manifest_lock",
+        "template",
+        "authority",
+        "capabilities",
+        "read_order",
+        "optional_read_order",
+        "command_contract",
+        "effective_policy",
+        "state_policy",
+        "blocked_actions",
+        "latest_run",
+        "issues"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "command": { "const": "context" },
+        "mustflow_root": { "type": "string" },
+        "installed": { "type": "boolean" },
+        "manifest_lock": { "enum": ["missing", "invalid", "present"] },
+        "template": { "$ref": "#/$defs/templateContext" },
+        "authority": { "$ref": "#/$defs/scalarObject" },
+        "capabilities": { "$ref": "#/$defs/scalarObject" },
+        "read_order": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pathContext" }
+        },
+        "optional_read_order": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pathContext" }
+        },
+        "command_contract": { "$ref": "#/$defs/commandContractContext" },
+        "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
+        "state_policy": { "$ref": "#/$defs/statePolicy" },
+        "blocked_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "latest_run": { "$ref": "#/$defs/latestRun" },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promptCacheProfileReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "command",
+        "cache_profile",
+        "prompt_cache",
+        "issues"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "command": { "const": "context" },
+        "cache_profile": { "enum": ["stable", "task", "volatile", "all"] },
+        "prompt_cache": { "$ref": "#/$defs/promptCacheSettings" },
+        "stable_prefix": { "$ref": "#/$defs/stablePrefixLayer" },
+        "task_context": { "$ref": "#/$defs/taskContextLayer" },
+        "volatile_suffix": { "$ref": "#/$defs/volatileSuffixLayer" },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "templateContext": {
       "anyOf": [
         { "type": "null" },
         {
@@ -42,30 +98,6 @@
         }
       ]
     },
-    "authority": { "$ref": "#/$defs/scalarObject" },
-    "capabilities": { "$ref": "#/$defs/scalarObject" },
-    "read_order": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/pathContext" }
-    },
-    "optional_read_order": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/pathContext" }
-    },
-    "command_contract": { "$ref": "#/$defs/commandContractContext" },
-    "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
-    "state_policy": { "$ref": "#/$defs/statePolicy" },
-    "blocked_actions": {
-      "type": "array",
-      "items": { "type": "string" }
-    },
-    "latest_run": { "$ref": "#/$defs/latestRun" },
-    "issues": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
-  },
-  "$defs": {
     "scalar": { "type": ["string", "number", "boolean", "null"] },
     "scalarObject": {
       "type": "object",
@@ -216,6 +248,94 @@
           }
         }
       ]
+    },
+    "promptCacheSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "strategy",
+        "stable_prefix_policy",
+        "prefer_references_when_unchanged",
+        "exclude_volatile_state_from_prefix",
+        "include_content_hashes",
+        "max_stable_prefix_kb",
+        "max_task_context_kb",
+        "max_volatile_suffix_kb"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "strategy": { "type": ["string", "null"] },
+        "stable_prefix_policy": { "type": ["string", "null"] },
+        "prefer_references_when_unchanged": { "type": "boolean" },
+        "exclude_volatile_state_from_prefix": { "type": "boolean" },
+        "include_content_hashes": { "type": "boolean" },
+        "max_stable_prefix_kb": { "type": ["integer", "null"] },
+        "max_task_context_kb": { "type": ["integer", "null"] },
+        "max_volatile_suffix_kb": { "type": ["integer", "null"] }
+      }
+    },
+    "stablePrefixLayer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cache_layer", "cache_key", "policy", "documents", "volatile_excluded"],
+      "properties": {
+        "cache_layer": { "const": "stable" },
+        "cache_key": { "type": ["string", "null"] },
+        "policy": { "type": ["string", "null"] },
+        "documents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptCacheDocument" }
+        },
+        "volatile_excluded": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promptCacheDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "content_hash"],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "content_hash": { "type": ["string", "null"] }
+      }
+    },
+    "taskContextLayer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cache_layer", "read_policy", "sources"],
+      "properties": {
+        "cache_layer": { "const": "task" },
+        "read_policy": { "type": ["string", "null"] },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "volatileSuffixLayer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cache_layer",
+        "sources",
+        "never_place_before_stable_prefix",
+        "include_absolute_root",
+        "include_latest_run"
+      ],
+      "properties": {
+        "cache_layer": { "const": "volatile" },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "never_place_before_stable_prefix": { "type": "boolean" },
+        "include_absolute_root": { "const": false },
+        "include_latest_run": { "const": false }
+      }
     }
   }
 }

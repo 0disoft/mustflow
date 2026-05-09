@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 16
+revision: 17
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -90,6 +90,29 @@ Avoid conflating these sources.
 
 When a generated file appears stale, refresh it through the matching `mf` command instead of editing
 it by hand.
+
+## Prompt Cache and Host Context Assembly
+
+Prompt caching is a performance optimization, not an authority source. A cached instruction block
+or cached summary never overrides direct user instructions, current files, current command
+contracts, host safety rules, or the nearest `AGENTS.md`.
+
+Hosts and agent harnesses that assemble model input should keep context in this order:
+
+1. Stable prefix: repository rules and workflow files from `mf context --json --cache-profile stable`.
+2. Task context: selected context files, matching skills, repository-map anchors, relevant source
+   files, and `mf search --json` results whose `cache_layer` is `task`.
+3. Volatile suffix: current user request, changed-file lists, command output tails, latest run
+   receipt metadata, timestamps, and any `mf search --json` result whose `volatile` field is `true`.
+
+Before reusing a stable prefix, compare the reported content hashes with the current files. If any
+stable document hash changes, reread the document instead of reusing cached text. Do not place
+absolute local paths, run receipt timestamps, command output, changed files, or current user task
+text before the stable prefix.
+
+`mf search --json` cache-layer fields are placement hints only. They do not raise the authority of
+search results, source anchors, generated maps, or cached state, and they never permit those sources
+to override `AGENTS.md`, `.mustflow/config/commands.toml`, current files, or direct user instructions.
 
 ## Effective Rule Lanes
 

@@ -62,6 +62,8 @@ export const koMessages = {
   "context.help.summary":
     "현재 mustflow 루트의 에이전트 작업 맥락을 출력합니다.",
   "context.help.option.json": "맥락을 JSON 형식으로 출력합니다",
+  "context.help.option.cacheProfile":
+    "프롬프트 캐시 프로필을 출력합니다: stable, task, volatile, all",
   "context.help.exit.ok": "맥락을 확인하고 출력했습니다",
   "context.title": "mustflow 맥락",
   "label.installed": "설치됨",
@@ -640,6 +642,7 @@ export const koMessages = {
   "classify.label.files": "파일",
   "classify.label.publicSurfaces": "공개 표면",
   "classify.label.validationReasons": "검증 이유",
+  "classify.label.updatePolicies": "갱신 정책",
   "classify.label.classifications": "분류",
   "classify.label.changeKinds": "변경 종류",
   "classify.label.updatePolicy": "갱신 정책",
@@ -653,9 +656,10 @@ export const koMessages = {
   "impact.help.option.changed": "git status --short --untracked-files=all에서 경로를 읽습니다",
   "impact.help.exit.ok": "버전 영향을 확인하고 출력했습니다",
   "impact.title": "mustflow 버전 영향",
-  "impact.label.versioning": "버전 관리 선호값",
-  "impact.label.requiresVersionDecision": "버전 결정 필요",
-  "impact.label.suggestedBump": "제안 버전 올림",
+	"impact.label.versioning": "버전 관리 선호값",
+	"impact.label.requiresVersionDecision": "버전 결정 필요",
+	"impact.label.severity": "영향 심각도",
+	"impact.label.suggestedBump": "제안 버전 올림",
   "impact.label.reasons": "이유",
   "impact.label.versionSources": "버전 기준 원본",
   "impact.label.affectedVersionSources": "영향받은 버전 기준 원본",
@@ -665,14 +669,20 @@ export const koMessages = {
   "verify.help.summary":
     "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",
   "verify.help.option.reason": "검증할 required_after 이유를 지정합니다",
+  "verify.help.option.fromPlan": "이 저장소 안의 JSON 계획 파일에서 검증 이유를 읽습니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":
     "검증이 실패했거나, 일부만 실행됐거나, 막혔거나, 입력이 올바르지 않습니다",
   "verify.title": "mustflow verify",
   "verify.label.reason": "이유",
+  "verify.label.planSource": "계획 원본",
   "verify.label.status": "상태",
   "verify.label.results": "결과",
   "verify.error.missingReason": "검증 이유가 없습니다",
+  "verify.error.conflictingInputs": "--reason과 --from-plan 중 하나만 사용하세요",
+  "verify.error.invalid_plan_file": "검증 계획은 읽을 수 있는 JSON 파일이어야 합니다",
+  "verify.error.missing_plan_reasons": "검증 계획에는 reason, reasons, validationReasons, summary.validationReasons, classification_summary.validationReasons 중 하나가 있어야 합니다",
+  "verify.error.plan_path_outside_root": "검증 계획 경로는 mustflow 루트 안에 있어야 합니다",
 
   "explain.help.summary":
     "파일을 수정하지 않고 mustflow 정책 결정이 왜 적용되는지 설명합니다.",

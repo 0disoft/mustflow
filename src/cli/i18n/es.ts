@@ -63,6 +63,8 @@ export const esMessages = {
   "context.help.summary":
     "Imprime el contexto de agente para la raíz mustflow actual.",
   "context.help.option.json": "Imprime JSON de contexto legible por máquinas",
+  "context.help.option.cacheProfile":
+    "Imprime un perfil de caché de prompt: stable, task, volatile o all",
   "context.help.exit.ok": "El contexto se inspeccionó e imprimió",
   "context.title": "contexto mustflow",
   "label.installed": "Instalado",
@@ -645,6 +647,7 @@ Lee estos archivos antes de trabajar:
   "classify.label.files": "Archivos",
   "classify.label.publicSurfaces": "Superficies publicas",
   "classify.label.validationReasons": "Razones de verificacion",
+  "classify.label.updatePolicies": "Politicas de actualizacion",
   "classify.label.classifications": "Clasificaciones",
   "classify.label.changeKinds": "Tipos de cambio",
   "classify.label.updatePolicy": "Politica de actualizacion",
@@ -658,9 +661,10 @@ Lee estos archivos antes de trabajar:
   "impact.help.option.changed": "Lee rutas desde git status --short --untracked-files=all",
   "impact.help.exit.ok": "El impacto de version fue inspeccionado e impreso",
   "impact.title": "mustflow impact",
-  "impact.label.versioning": "Preferencias de version",
-  "impact.label.requiresVersionDecision": "Requiere decision de version",
-  "impact.label.suggestedBump": "Incremento sugerido",
+	"impact.label.versioning": "Preferencias de version",
+	"impact.label.requiresVersionDecision": "Requiere decision de version",
+	"impact.label.severity": "Severidad",
+	"impact.label.suggestedBump": "Incremento sugerido",
   "impact.label.reasons": "Razones",
   "impact.label.versionSources": "Fuentes de version",
   "impact.label.affectedVersionSources": "Fuentes de version afectadas",
@@ -670,14 +674,20 @@ Lee estos archivos antes de trabajar:
   "verify.help.summary":
     "Ejecuta intenciones de verificación configuradas seleccionadas por metadatos required_after.",
   "verify.help.option.reason": "Selecciona la razón required_after que se debe verificar",
+  "verify.help.option.fromPlan": "Lee razones de verificación desde un plan JSON dentro de este repositorio",
   "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
   "verify.help.exit.fail":
     "La verificación falló, fue parcial, quedó bloqueada o la entrada no fue válida",
   "verify.title": "mustflow verify",
   "verify.label.reason": "Razón",
+  "verify.label.planSource": "Fuente del plan",
   "verify.label.status": "Estado",
   "verify.label.results": "Resultados",
   "verify.error.missingReason": "Falta la razón de verificación",
+  "verify.error.conflictingInputs": "Usa --reason o --from-plan, no ambos",
+  "verify.error.invalid_plan_file": "El plan de verificación debe ser un archivo JSON legible",
+  "verify.error.missing_plan_reasons": "El plan de verificación debe incluir reason, reasons, validationReasons, summary.validationReasons o classification_summary.validationReasons",
+  "verify.error.plan_path_outside_root": "La ruta del plan de verificación debe permanecer dentro de la raíz mustflow",
 
   "explain.help.summary":
     "Explica por qué se aplica una decisión de política de mustflow sin modificar archivos.",

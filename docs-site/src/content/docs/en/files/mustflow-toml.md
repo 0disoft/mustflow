@@ -23,6 +23,7 @@ description: Declares the agent reading order and protected paths.
 - `map`: How `REPO_MAP.md` should be generated and which anchor files can be included.
 - `workspace`: Limits for discovering independent nested repositories under workspace roots.
 - `context`: Project context layer used only when the task needs it.
+- `prompt_cache`: Cache-friendly prompt layers for stable instructions, task context, and volatile state.
 - `capabilities`: Agent work surface provided by this repository.
 - `agent_loop`: Standard loop agents should follow for each task.
 - `harness`: Repository-local contract boundary for agent harnesses.
@@ -142,6 +143,66 @@ external_anchors = [
 `external_anchors` lists root files that may provide context without becoming mustflow-owned files.
 `README.md` is a human-facing overview. `DESIGN.md` is an optional visual-design anchor when the project already has one.
 
+## Prompt Cache Fields
+
+```toml
+[prompt_cache]
+enabled = true
+strategy = "stable_prefix"
+stable_prefix_policy = "hash_verified"
+prefer_references_when_unchanged = true
+exclude_volatile_state_from_prefix = true
+include_content_hashes = true
+max_stable_prefix_kb = 96
+max_task_context_kb = 48
+max_volatile_suffix_kb = 24
+
+[prompt_cache.layers.stable]
+read = [
+  "AGENTS.md",
+  ".mustflow/docs/agent-workflow.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/skills/INDEX.md",
+]
+
+[prompt_cache.layers.task]
+read_policy = "task_relevant_only"
+sources = [
+  ".mustflow/context/INDEX.md",
+  "REPO_MAP.md",
+  "matching_skill",
+  "relevant_source_files",
+]
+
+[prompt_cache.layers.volatile]
+sources = [
+  ".mustflow/state/runs/latest.json",
+  "changed_files",
+  "command_output_tail",
+  "current_user_task",
+]
+never_place_before_stable_prefix = true
+```
+
+`prompt_cache` is a prompt-layout contract, not a guarantee that any specific LLM provider will cache
+the input. It separates stable instructions from task-specific context and volatile state so hosts can
+keep repeated prompt prefixes stable when they support caching.
+
+The stable layer contains repository rules and workflow configuration that should be placed before
+task-specific material in a consistent order. The task layer is selected per task. The volatile layer
+contains changing values such as current user requests, changed-file lists, command output tails, run
+receipts, timestamps, and local paths.
+
+`stable_prefix_policy = "hash_verified"` means unchanged files can be referenced by content hash when
+the host supports that behavior. Current files and current user instructions still override cached or
+summarized context.
+
+`exclude_volatile_state_from_prefix = true` and
+`prompt_cache.layers.volatile.never_place_before_stable_prefix = true` keep changing state out of the
+stable prompt prefix. `mf check --strict` reports a problem when volatile sources appear in the stable
+read layer.
+
 ## Workspace Fields
 
 ```toml
@@ -217,6 +278,7 @@ mode = "report_only"
 [harness]
 mode = "single_session"
 fresh_context_preferred = true
+fresh_context_mode = "hash_check_before_reread"
 
 [harness.phases]
 enabled = [
@@ -232,6 +294,11 @@ enabled = [
 runtime. `mode = "single_session"` is the conservative default. A future optional harness can read
 the same contract with `long_running_optional`.
 
+`fresh_context_preferred = true` means agents should prefer current files over stale summaries.
+`fresh_context_mode = "hash_check_before_reread"` clarifies that freshness can be checked by content
+hash before reinserting full instruction text. This preserves instruction freshness without treating
+prompt caches as authority.
+
 `harness.phases.enabled` defines the phases a long-running harness should separate. These are phases,
 not default folders or default subagents.
 
@@ -241,6 +308,9 @@ not default folders or default subagents.
 [refresh]
 enabled = true
 mode = "checkpoint"
+default_method = "hash_check"
+reread_when_hash_changed = true
+reuse_cached_prefix_when_unchanged = true
 required_at = [
   "session_start",
   "task_start",
@@ -257,18 +327,21 @@ output_bytes_threshold = 100000
 state_store = "cache"
 
 [refresh.levels.light]
+method = "hash_check"
 read = [
   "AGENTS.md",
   ".mustflow/docs/agent-workflow.md",
 ]
 
 [refresh.levels.command]
+method = "hash_check"
 read = [
   "AGENTS.md",
   ".mustflow/config/commands.toml",
 ]
 
 [refresh.levels.edit]
+method = "reread_if_changed"
 read = [
   "AGENTS.md",
   ".mustflow/config/mustflow.toml",
@@ -276,6 +349,7 @@ read = [
 ]
 
 [refresh.levels.report]
+method = "hash_check"
 read = [
   "AGENTS.md",
   ".mustflow/config/mustflow.toml",
@@ -283,12 +357,14 @@ read = [
 ]
 
 [refresh.levels.skill]
+method = "hash_check"
 read = [
   "AGENTS.md",
   ".mustflow/skills/INDEX.md",
 ]
 
 [refresh.levels.full]
+method = "reread_if_changed"
 read = [
   "AGENTS.md",
   ".mustflow/docs/agent-workflow.md",
@@ -301,11 +377,18 @@ read = [
 
 `refresh` declares when an agent should reread mustflow instructions because the session has become long, the root changed, command execution is about to happen, or instruction files changed.
 
+`default_method = "hash_check"` means a refresh checkpoint can verify content hashes before rereading
+or reinserting full instruction text. `reread_when_hash_changed = true` keeps current files
+authoritative. `reuse_cached_prefix_when_unchanged = true` lets hosts reuse stable prompt context when
+the relevant files have not changed.
+
 `before_command_run` means the current task and command intent must have a fresh command-level refresh. It does not require rereading every file before every repeated command when the command contract has not changed and thresholds remain current.
 
 `state_store = "cache"` means turn counts and session activity do not belong in project files. A host application may track them in local cache, but mustflow documents should remain stable and commit-safe.
 
-`refresh.levels` maps each refresh level to the files that should be reread. The default levels are `light`, `command`, `edit`, `report`, `skill`, and `full`.
+`refresh.levels` maps each refresh level to the files that should be checked or reread. The default
+levels are `light`, `command`, `edit`, `report`, `skill`, and `full`. Each level may use `method =
+"hash_check"` or `method = "reread_if_changed"`.
 
 `mf check` validates the refresh mode, checkpoint names, thresholds, state store, and refresh file paths.
 

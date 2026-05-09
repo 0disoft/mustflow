@@ -3,14 +3,35 @@ import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { isRecord, readCommandContract, readString } from './command-contract.js';
+import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
+import { readTomlFile } from './toml.js';
 
 const LOCAL_INDEX_SCHEMA_VERSION = '3';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 const LOCAL_INDEX_STORE_FULL_CONTENT = false;
 const MAX_SNIPPET_BYTES_PER_DOCUMENT = 2048;
+const MUSTFLOW_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
+const DEFAULT_PROMPT_CACHE_STABLE_READ = [
+	'AGENTS.md',
+	'.mustflow/docs/agent-workflow.md',
+	'.mustflow/config/mustflow.toml',
+	'.mustflow/config/commands.toml',
+	'.mustflow/skills/INDEX.md',
+] as const;
+const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
+	'.mustflow/context/INDEX.md',
+	'REPO_MAP.md',
+	'matching_skill',
+	'relevant_source_files',
+] as const;
+const DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES = [
+	'.mustflow/state/runs/latest.json',
+	'changed_files',
+	'command_output_tail',
+	'current_user_task',
+] as const;
 
 type SqlValue = number | string | Uint8Array | null;
 
@@ -82,12 +103,16 @@ export interface LocalSearchOptions {
 	readonly limit?: number;
 }
 
+type CacheLayer = 'stable' | 'task' | 'volatile';
+
 export interface LocalSearchItem {
 	readonly kind: 'document' | 'skill' | 'command_intent';
 	readonly path?: string;
 	readonly name?: string;
 	readonly title?: string;
 	readonly document_type?: string;
+	readonly cache_layer: CacheLayer;
+	readonly volatile: boolean;
 	readonly match: string;
 	readonly score: number;
 }
@@ -149,6 +174,29 @@ function getExistingIndexablePaths(projectRoot: string): string[] {
 
 function readText(projectRoot: string, relativePath: string): string {
 	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
+}
+
+function readMustflowToml(projectRoot: string): TomlTable | undefined {
+	const mustflowPath = path.join(projectRoot, ...MUSTFLOW_RELATIVE_PATH.split('/'));
+
+	if (!existsSync(mustflowPath)) {
+		return undefined;
+	}
+
+	const parsed = readTomlFile(mustflowPath);
+	return isRecord(parsed) ? parsed : undefined;
+}
+
+function readNestedTable(table: TomlTable | undefined, key: string): TomlTable | undefined {
+	if (!table || !isRecord(table[key])) {
+		return undefined;
+	}
+
+	return table[key];
+}
+
+function readOptionalStringArray(table: TomlTable | undefined, key: string): readonly string[] | null {
+	return table ? readStringArray(table, key) ?? null : null;
 }
 
 function sha256Text(content: string): string {
@@ -342,6 +390,70 @@ function queryRows(database: SqlJsDatabase, sql: string, params: SqlValue[] = []
 
 		return row;
 	});
+}
+
+interface CacheLayerSets {
+	readonly stable: ReadonlySet<string>;
+	readonly task: ReadonlySet<string>;
+	readonly volatile: ReadonlySet<string>;
+}
+
+function readCacheLayerSets(projectRoot: string): CacheLayerSets {
+	const mustflow = readMustflowToml(projectRoot);
+	const promptCache = readNestedTable(mustflow, 'prompt_cache');
+	const layers = readNestedTable(promptCache, 'layers');
+	const stable = readNestedTable(layers, 'stable');
+	const task = readNestedTable(layers, 'task');
+	const volatile = readNestedTable(layers, 'volatile');
+	const normalize = (values: readonly string[]) => new Set(values.map((value) => toPosixPath(value)));
+
+	return {
+		stable: normalize(readOptionalStringArray(stable, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ]),
+		task: normalize(readOptionalStringArray(task, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES]),
+		volatile: normalize(readOptionalStringArray(volatile, 'sources') ?? [...DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES]),
+	};
+}
+
+function inferCacheLayer(relativePath: string | null, kind: LocalSearchItem['kind'], cacheLayers: CacheLayerSets): CacheLayer {
+	const normalized = relativePath ? toPosixPath(relativePath) : null;
+
+	if (normalized && cacheLayers.volatile.has(normalized)) {
+		return 'volatile';
+	}
+
+	if (normalized && cacheLayers.stable.has(normalized)) {
+		return 'stable';
+	}
+
+	if (kind === 'command_intent' && cacheLayers.stable.has('.mustflow/config/commands.toml')) {
+		return 'stable';
+	}
+
+	if (
+		normalized &&
+		(cacheLayers.task.has(normalized) || normalized.startsWith('.mustflow/context/') || normalized.endsWith('/SKILL.md'))
+	) {
+		return 'task';
+	}
+
+	if (normalized?.startsWith('.mustflow/state/') || normalized?.startsWith('.mustflow/cache/')) {
+		return 'volatile';
+	}
+
+	return 'task';
+}
+
+function withCacheHint<T extends Omit<LocalSearchItem, 'cache_layer' | 'volatile'>>(
+	item: T,
+	cacheLayers: CacheLayerSets,
+): T & Pick<LocalSearchItem, 'cache_layer' | 'volatile'> {
+	const layer = inferCacheLayer(item.path ?? null, item.kind, cacheLayers);
+
+	return {
+		...item,
+		cache_layer: layer,
+		volatile: layer === 'volatile',
+	};
 }
 
 function getMatchSnippet(fields: readonly string[], query: string): string {
@@ -599,6 +711,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 
 	const SQL = await loadSqlJs();
 	const database = new SQL.Database(readFileSync(databasePath));
+	const cacheLayers = readCacheLayerSets(projectRoot);
 	const results: LocalSearchItem[] = [];
 
 	try {
@@ -622,14 +735,19 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				continue;
 			}
 
-			results.push({
-				kind: 'document',
-				path: pathValue,
-				title,
-				document_type: typeValue,
-				match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
-				score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
-			});
+			results.push(
+				withCacheHint(
+					{
+						kind: 'document',
+						path: pathValue,
+						title,
+						document_type: typeValue,
+						match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
+						score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+					},
+					cacheLayers,
+				),
+			);
 		}
 
 		for (const row of queryRows(database, 'SELECT name, path, title FROM skills')) {
@@ -642,14 +760,19 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				continue;
 			}
 
-			results.push({
-				kind: 'skill',
-				name,
-				path: pathValue,
-				title,
-				match: getMatchSnippet(fields, normalizedQuery),
-				score: scoreMatch([name, pathValue, title], [], normalizedQuery),
-			});
+			results.push(
+				withCacheHint(
+					{
+						kind: 'skill',
+						name,
+						path: pathValue,
+						title,
+						match: getMatchSnippet(fields, normalizedQuery),
+						score: scoreMatch([name, pathValue, title], [], normalizedQuery),
+					},
+					cacheLayers,
+				),
+			);
 		}
 
 		for (const row of queryRows(database, 'SELECT name, status, lifecycle, run_policy, description FROM command_intents')) {
@@ -665,13 +788,18 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				continue;
 			}
 
-			results.push({
-				kind: 'command_intent',
-				name,
-				title: description || name,
-				match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
-				score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
-			});
+			results.push(
+				withCacheHint(
+					{
+						kind: 'command_intent',
+						name,
+						title: description || name,
+						match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
+						score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+					},
+					cacheLayers,
+				),
+			);
 		}
 	} finally {
 		database.close();

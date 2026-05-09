@@ -60,6 +60,8 @@ npx mf search mustflow_check --json
 - `results[].name` (`string`): 스킬 이름 또는 명령 의도 이름입니다.
 - `results[].title` (`string`): 문서 제목입니다.
 - `results[].document_type` (`string`): 문서 분류입니다.
+- `results[].cache_layer` (`string`): 프롬프트 캐시 계층 힌트입니다. `stable`, `task`, `volatile` 중 하나입니다.
+- `results[].volatile` (`boolean`): 안정적인 프롬프트 지시문 뒤에 둬야 하는 변동 상태인지 여부입니다.
 - `results[].match` (`string`): 검색어와 일치한 문맥 조각입니다.
 - `results[].score` (`number`): 검색 결과 정렬에 쓰는 점수입니다.
 

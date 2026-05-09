@@ -150,12 +150,12 @@ content_hash = "sha256:2aac79982126b2ac4bf6de2194cb5e5b1373600b3288bba093b2b7a51
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:9f291815a790c76a2d266709798181d5dde12dcd8aea7b2428db79cd5fa70071"
+content_hash = "sha256:6accd8b2546864dc418970670d90c1f6dcbfa12e5e2464426b804c664cb6bb1a"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
 last_action = "updated"
-content_hash = "sha256:4bc48d56de0afc3d2e885adeefcbe4b9cee3263c32db29e12c78dd1a20be946e"
+content_hash = "sha256:eac25df8b64646b381613a9ff9777df77b71634a806c27b6cab4f67e3497c7ee"
 
 [files.".mustflow/config/commands.toml"]
 source = "template_common"

@@ -61,6 +61,8 @@ export const enMessages = {
   "context.help.summary":
     "Print the agent context for the current mustflow root.",
   "context.help.option.json": "Print machine-readable context JSON",
+  "context.help.option.cacheProfile":
+    "Print a prompt-cache profile: stable, task, volatile, or all",
   "context.help.exit.ok": "Context was inspected and printed",
   "context.title": "mustflow context",
   "label.installed": "Installed",
@@ -643,6 +645,7 @@ Read these files before working:
   "classify.label.files": "Files",
   "classify.label.publicSurfaces": "Public surfaces",
   "classify.label.validationReasons": "Validation reasons",
+  "classify.label.updatePolicies": "Update policies",
   "classify.label.classifications": "Classifications",
   "classify.label.changeKinds": "Change kinds",
   "classify.label.updatePolicy": "Update policy",
@@ -656,9 +659,10 @@ Read these files before working:
   "impact.help.option.changed": "Read paths from git status --short --untracked-files=all",
   "impact.help.exit.ok": "Version impact was inspected and printed",
   "impact.title": "mustflow impact",
-  "impact.label.versioning": "Versioning preferences",
-  "impact.label.requiresVersionDecision": "Requires version decision",
-  "impact.label.suggestedBump": "Suggested bump",
+	"impact.label.versioning": "Versioning preferences",
+	"impact.label.requiresVersionDecision": "Requires version decision",
+	"impact.label.severity": "Severity",
+	"impact.label.suggestedBump": "Suggested bump",
   "impact.label.reasons": "Reasons",
   "impact.label.versionSources": "Version sources",
   "impact.label.affectedVersionSources": "Affected version sources",
@@ -668,14 +672,20 @@ Read these files before working:
   "verify.help.summary":
     "Run configured verification intents selected by required_after metadata.",
   "verify.help.option.reason": "Select the required_after reason to verify",
+  "verify.help.option.fromPlan": "Read verification reasons from a JSON plan inside this repository",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
     "Verification failed, was partial, was blocked, or input was invalid",
   "verify.title": "mustflow verify",
   "verify.label.reason": "Reason",
+  "verify.label.planSource": "Plan source",
   "verify.label.status": "Status",
   "verify.label.results": "Results",
   "verify.error.missingReason": "Missing verification reason",
+  "verify.error.conflictingInputs": "Use either --reason or --from-plan, not both",
+  "verify.error.invalid_plan_file": "Verification plan must be a readable JSON file",
+  "verify.error.missing_plan_reasons": "Verification plan must include reason, reasons, validationReasons, summary.validationReasons, or classification_summary.validationReasons",
+  "verify.error.plan_path_outside_root": "Verification plan path must stay inside the mustflow root",
 
   "explain.help.summary":
     "Explain why a mustflow policy decision applies without modifying files.",

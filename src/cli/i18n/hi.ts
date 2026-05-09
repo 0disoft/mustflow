@@ -63,6 +63,8 @@ export const hiMessages = {
   "context.help.summary":
     "वर्तमान mustflow रूट के लिए एजेंट संदर्भ प्रिंट करें।",
   "context.help.option.json": "मशीन-पठनीय संदर्भ JSON प्रिंट करें",
+  "context.help.option.cacheProfile":
+    "prompt cache profile प्रिंट करें: stable, task, volatile, या all",
   "context.help.exit.ok": "संदर्भ जाँचा और प्रिंट किया गया",
   "context.title": "mustflow संदर्भ",
   "label.installed": "इंस्टॉल किया गया",
@@ -645,6 +647,7 @@ export const hiMessages = {
   "classify.label.files": "फ़ाइलें",
   "classify.label.publicSurfaces": "सार्वजनिक सतहें",
   "classify.label.validationReasons": "सत्यापन कारण",
+  "classify.label.updatePolicies": "अपडेट नीतियां",
   "classify.label.classifications": "वर्गीकरण",
   "classify.label.changeKinds": "बदलाव प्रकार",
   "classify.label.updatePolicy": "अपडेट नीति",
@@ -658,9 +661,10 @@ export const hiMessages = {
   "impact.help.option.changed": "git status --short --untracked-files=all से पथ पढ़ें",
   "impact.help.exit.ok": "Version impact जांचकर प्रिंट किया गया",
   "impact.title": "mustflow impact",
-  "impact.label.versioning": "Versioning preferences",
-  "impact.label.requiresVersionDecision": "Version decision चाहिए",
-  "impact.label.suggestedBump": "Suggested bump",
+	"impact.label.versioning": "Versioning preferences",
+	"impact.label.requiresVersionDecision": "Version decision चाहिए",
+	"impact.label.severity": "Severity",
+	"impact.label.suggestedBump": "Suggested bump",
   "impact.label.reasons": "कारण",
   "impact.label.versionSources": "Version sources",
   "impact.label.affectedVersionSources": "Affected version sources",
@@ -670,14 +674,20 @@ export const hiMessages = {
   "verify.help.summary":
     "required_after metadata से चुने गए configured verification intents चलाएँ।",
   "verify.help.option.reason": "Verify करने के लिए required_after reason चुनें",
+  "verify.help.option.fromPlan": "इस repository के अंदर JSON plan से verification reasons पढ़ें",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
     "Verification fail हुआ, partial रहा, blocked रहा, या input invalid था",
   "verify.title": "mustflow verify",
   "verify.label.reason": "Reason",
+  "verify.label.planSource": "Plan source",
   "verify.label.status": "Status",
   "verify.label.results": "Results",
   "verify.error.missingReason": "Verification reason missing है",
+  "verify.error.conflictingInputs": "--reason या --from-plan में से एक ही इस्तेमाल करें",
+  "verify.error.invalid_plan_file": "Verification plan readable JSON file होना चाहिए",
+  "verify.error.missing_plan_reasons": "Verification plan में reason, reasons, validationReasons, summary.validationReasons, या classification_summary.validationReasons होना चाहिए",
+  "verify.error.plan_path_outside_root": "Verification plan path mustflow root के अंदर रहना चाहिए",
 
   "explain.help.summary":
     "फ़ाइलें बदले बिना समझाएँ कि mustflow policy decision क्यों लागू होता है।",

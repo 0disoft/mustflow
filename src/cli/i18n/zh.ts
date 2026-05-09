@@ -63,6 +63,8 @@ export const zhMessages = {
   "context.help.summary":
     "输出当前 mustflow 根目录的代理上下文。",
   "context.help.option.json": "输出机器可读的上下文 JSON",
+  "context.help.option.cacheProfile":
+    "输出提示缓存配置文件：stable、task、volatile 或 all",
   "context.help.exit.ok": "已检查并输出上下文",
   "context.title": "mustflow 上下文",
   "label.installed": "已安装",
@@ -635,6 +637,7 @@ export const zhMessages = {
   "classify.label.files": "文件",
   "classify.label.publicSurfaces": "公开表面",
   "classify.label.validationReasons": "验证原因",
+  "classify.label.updatePolicies": "更新策略",
   "classify.label.classifications": "分类",
   "classify.label.changeKinds": "变更类型",
   "classify.label.updatePolicy": "更新策略",
@@ -648,9 +651,10 @@ export const zhMessages = {
   "impact.help.option.changed": "从 git status --short --untracked-files=all 读取路径",
   "impact.help.exit.ok": "已检查并输出版本影响",
   "impact.title": "mustflow impact",
-  "impact.label.versioning": "版本偏好",
-  "impact.label.requiresVersionDecision": "需要版本决策",
-  "impact.label.suggestedBump": "建议版本提升",
+	"impact.label.versioning": "版本偏好",
+	"impact.label.requiresVersionDecision": "需要版本决策",
+	"impact.label.severity": "严重级别",
+	"impact.label.suggestedBump": "建议版本提升",
   "impact.label.reasons": "原因",
   "impact.label.versionSources": "版本来源",
   "impact.label.affectedVersionSources": "受影响的版本来源",
@@ -660,14 +664,20 @@ export const zhMessages = {
   "verify.help.summary":
     "运行由 required_after 元数据选出的已配置验证意图。",
   "verify.help.option.reason": "选择要验证的 required_after 原因",
+  "verify.help.option.fromPlan": "从此仓库内的 JSON 计划读取验证原因",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
     "验证失败、部分完成、被阻止，或输入无效",
   "verify.title": "mustflow verify",
   "verify.label.reason": "原因",
+  "verify.label.planSource": "计划来源",
   "verify.label.status": "状态",
   "verify.label.results": "结果",
   "verify.error.missingReason": "缺少验证原因",
+  "verify.error.conflictingInputs": "只能使用 --reason 或 --from-plan 其中之一",
+  "verify.error.invalid_plan_file": "验证计划必须是可读取的 JSON 文件",
+  "verify.error.missing_plan_reasons": "验证计划必须包含 reason、reasons、validationReasons、summary.validationReasons 或 classification_summary.validationReasons",
+  "verify.error.plan_path_outside_root": "验证计划路径必须位于 mustflow 根目录内",
 
   "explain.help.summary":
     "在不修改文件的情况下解释 mustflow 策略决策为何适用。",

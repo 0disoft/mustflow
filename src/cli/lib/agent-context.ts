@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import {
@@ -20,6 +21,25 @@ const PREFERENCES_RELATIVE_PATH = '.mustflow/config/preferences.toml';
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 const CACHE_RELATIVE_PATH = '.mustflow/cache/';
 const STATE_RELATIVE_PATH = '.mustflow/state/';
+const DEFAULT_PROMPT_CACHE_STABLE_READ = [
+	'AGENTS.md',
+	'.mustflow/docs/agent-workflow.md',
+	'.mustflow/config/mustflow.toml',
+	'.mustflow/config/commands.toml',
+	'.mustflow/skills/INDEX.md',
+] as const;
+const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
+	'.mustflow/context/INDEX.md',
+	'REPO_MAP.md',
+	'matching_skill',
+	'relevant_source_files',
+] as const;
+const DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES = [
+	'.mustflow/state/runs/latest.json',
+	'changed_files',
+	'command_output_tail',
+	'current_user_task',
+] as const;
 const BLOCKED_ACTIONS = [
 	'unconfigured_project_command',
 	'unmanaged_long_running_process',
@@ -29,6 +49,7 @@ const BLOCKED_ACTIONS = [
 
 type JsonScalar = string | number | boolean | null;
 type JsonObject = Record<string, JsonScalar | JsonScalar[]>;
+export type PromptCacheProfile = 'stable' | 'task' | 'volatile' | 'all';
 
 export interface PathContext {
 	readonly path: string;
@@ -115,6 +136,57 @@ export interface AgentContext {
 	readonly issues: readonly string[];
 }
 
+export interface PromptCacheSettingsContext {
+	readonly enabled: boolean;
+	readonly strategy: string | null;
+	readonly stable_prefix_policy: string | null;
+	readonly prefer_references_when_unchanged: boolean;
+	readonly exclude_volatile_state_from_prefix: boolean;
+	readonly include_content_hashes: boolean;
+	readonly max_stable_prefix_kb: number | null;
+	readonly max_task_context_kb: number | null;
+	readonly max_volatile_suffix_kb: number | null;
+}
+
+export interface PromptCacheDocumentContext {
+	readonly path: string;
+	readonly exists: boolean;
+	readonly content_hash: string | null;
+}
+
+export interface StablePromptCacheLayerContext {
+	readonly cache_layer: 'stable';
+	readonly cache_key: string | null;
+	readonly policy: string | null;
+	readonly documents: readonly PromptCacheDocumentContext[];
+	readonly volatile_excluded: readonly string[];
+}
+
+export interface TaskPromptCacheLayerContext {
+	readonly cache_layer: 'task';
+	readonly read_policy: string | null;
+	readonly sources: readonly string[];
+}
+
+export interface VolatilePromptCacheLayerContext {
+	readonly cache_layer: 'volatile';
+	readonly sources: readonly string[];
+	readonly never_place_before_stable_prefix: boolean;
+	readonly include_absolute_root: false;
+	readonly include_latest_run: false;
+}
+
+export interface PromptCacheProfileContext {
+	readonly schema_version: string;
+	readonly command: 'context';
+	readonly cache_profile: PromptCacheProfile;
+	readonly prompt_cache: PromptCacheSettingsContext;
+	readonly stable_prefix?: StablePromptCacheLayerContext;
+	readonly task_context?: TaskPromptCacheLayerContext;
+	readonly volatile_suffix?: VolatilePromptCacheLayerContext;
+	readonly issues: readonly string[];
+}
+
 function safeExists(projectRoot: string, relativePath: string): boolean {
 	const resolved = path.resolve(projectRoot, ...relativePath.split('/'));
 	const root = path.resolve(projectRoot);
@@ -125,6 +197,18 @@ function safeExists(projectRoot: string, relativePath: string): boolean {
 	}
 
 	return existsSync(resolved);
+}
+
+function safeRead(projectRoot: string, relativePath: string): string | null {
+	const resolved = path.resolve(projectRoot, ...relativePath.split('/'));
+	const root = path.resolve(projectRoot);
+	const relative = path.relative(root, resolved);
+
+	if (relative.startsWith('..') || path.isAbsolute(relative) || !existsSync(resolved)) {
+		return null;
+	}
+
+	return readFileSync(resolved, 'utf8');
 }
 
 function readTomlTableIfExists(projectRoot: string, relativePath: string): TomlTable | undefined {
@@ -149,6 +233,19 @@ function readNestedTable(table: TomlTable | undefined, key: string): TomlTable |
 function readBoolean(table: TomlTable | undefined, key: string, fallback: boolean): boolean {
 	const value = table?.[key];
 	return typeof value === 'boolean' ? value : fallback;
+}
+
+function readOptionalString(table: TomlTable | undefined, key: string): string | null {
+	return table ? readString(table, key) ?? null : null;
+}
+
+function readOptionalStringArray(table: TomlTable | undefined, key: string): readonly string[] | null {
+	return table ? readStringArray(table, key) ?? null : null;
+}
+
+function readNumber(table: TomlTable | undefined, key: string): number | null {
+	const value = table?.[key];
+	return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function readPathContext(projectRoot: string, paths: readonly string[]): readonly PathContext[] {
@@ -177,6 +274,10 @@ function readScalarObject(table: TomlTable | undefined): JsonObject {
 	}
 
 	return result;
+}
+
+function sha256(content: string): string {
+	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
 
 function isRunnableIntent(intent: TomlTable): boolean {
@@ -307,6 +408,114 @@ function readLatestRunContext(projectRoot: string): LatestRunContext {
 			error: error instanceof Error ? error.message : String(error),
 		};
 	}
+}
+
+function readPromptCacheSettings(mustflow: TomlTable | undefined): PromptCacheSettingsContext {
+	const promptCache = readNestedTable(mustflow, 'prompt_cache');
+
+	return {
+		enabled: readBoolean(promptCache, 'enabled', false),
+		strategy: readOptionalString(promptCache, 'strategy'),
+		stable_prefix_policy: readOptionalString(promptCache, 'stable_prefix_policy'),
+		prefer_references_when_unchanged: readBoolean(promptCache, 'prefer_references_when_unchanged', false),
+		exclude_volatile_state_from_prefix: readBoolean(promptCache, 'exclude_volatile_state_from_prefix', false),
+		include_content_hashes: readBoolean(promptCache, 'include_content_hashes', false),
+		max_stable_prefix_kb: readNumber(promptCache, 'max_stable_prefix_kb'),
+		max_task_context_kb: readNumber(promptCache, 'max_task_context_kb'),
+		max_volatile_suffix_kb: readNumber(promptCache, 'max_volatile_suffix_kb'),
+	};
+}
+
+function readPromptCacheLayer(mustflow: TomlTable | undefined, name: string): TomlTable | undefined {
+	const promptCache = readNestedTable(mustflow, 'prompt_cache');
+	const layers = readNestedTable(promptCache, 'layers');
+	return readNestedTable(layers, name);
+}
+
+function readStablePromptCacheLayer(projectRoot: string, mustflow: TomlTable | undefined): StablePromptCacheLayerContext {
+	const promptCache = readNestedTable(mustflow, 'prompt_cache');
+	const layer = readPromptCacheLayer(mustflow, 'stable');
+	const volatileLayer = readPromptCacheLayer(mustflow, 'volatile');
+	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+	const documents = read.map((relativePath) => {
+		const content = safeRead(projectRoot, relativePath);
+
+		return {
+			path: toPosixPath(relativePath),
+			exists: content !== null,
+			content_hash: content === null ? null : sha256(content),
+		};
+	});
+	const cacheMaterial = documents
+		.map((document) => `${document.path}\0${document.content_hash ?? 'missing'}`)
+		.join('\n');
+
+	return {
+		cache_layer: 'stable',
+		cache_key: documents.length === 0 ? null : sha256(cacheMaterial),
+		policy: readOptionalString(promptCache, 'stable_prefix_policy'),
+		documents,
+		volatile_excluded: readOptionalStringArray(volatileLayer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES],
+	};
+}
+
+function readTaskPromptCacheLayer(mustflow: TomlTable | undefined): TaskPromptCacheLayerContext {
+	const layer = readPromptCacheLayer(mustflow, 'task');
+
+	return {
+		cache_layer: 'task',
+		read_policy: readOptionalString(layer, 'read_policy'),
+		sources: readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
+	};
+}
+
+function readVolatilePromptCacheLayer(mustflow: TomlTable | undefined): VolatilePromptCacheLayerContext {
+	const layer = readPromptCacheLayer(mustflow, 'volatile');
+
+	return {
+		cache_layer: 'volatile',
+		sources: readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES],
+		never_place_before_stable_prefix: readBoolean(layer, 'never_place_before_stable_prefix', false),
+		include_absolute_root: false,
+		include_latest_run: false,
+	};
+}
+
+export function getPromptCacheProfileContext(projectRoot: string, profile: PromptCacheProfile): PromptCacheProfileContext {
+	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
+	const lockInspection = inspectManifestLock(projectRoot);
+	const output: PromptCacheProfileContext = {
+		schema_version: CONTEXT_SCHEMA_VERSION,
+		command: 'context',
+		cache_profile: profile,
+		prompt_cache: readPromptCacheSettings(mustflow),
+		issues: lockInspection.issues,
+	};
+
+	if (profile === 'stable' || profile === 'all') {
+		return {
+			...output,
+			stable_prefix: readStablePromptCacheLayer(projectRoot, mustflow),
+			...(profile === 'all'
+				? {
+						task_context: readTaskPromptCacheLayer(mustflow),
+						volatile_suffix: readVolatilePromptCacheLayer(mustflow),
+				  }
+				: {}),
+		};
+	}
+
+	if (profile === 'task') {
+		return {
+			...output,
+			task_context: readTaskPromptCacheLayer(mustflow),
+		};
+	}
+
+	return {
+		...output,
+		volatile_suffix: readVolatilePromptCacheLayer(mustflow),
+	};
 }
 
 export function getAgentContext(projectRoot: string): AgentContext {

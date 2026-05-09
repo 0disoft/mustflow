@@ -60,6 +60,8 @@ Each result can include these fields:
 - `results[].name` (`string`): Skill name or command intent name.
 - `results[].title` (`string`): Document title.
 - `results[].document_type` (`string`): Document category.
+- `results[].cache_layer` (`string`): Prompt-cache layer hint. One of `stable`, `task`, or `volatile`.
+- `results[].volatile` (`boolean`): Whether the result belongs to volatile state that should stay after stable prompt instructions.
 - `results[].match` (`string`): Matching context snippet.
 - `results[].score` (`number`): Ranking score used for result order.
 

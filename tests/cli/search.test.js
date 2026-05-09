@@ -67,8 +67,42 @@ test('prints matching documents skills and command intents from the local index'
 		assert.deepEqual(output.stale_paths, []);
 		assert.equal(output.query, 'mustflow_check');
 		assert.ok(output.result_count > 0);
-		assert.ok(output.results.some((item) => item.kind === 'command_intent' && item.name === 'mustflow_check'));
-		assert.ok(output.results.some((item) => item.kind === 'document' && item.path === '.mustflow/config/commands.toml'));
+		assert.ok(
+			output.results.some(
+				(item) =>
+					item.kind === 'command_intent' &&
+					item.name === 'mustflow_check' &&
+					item.cache_layer === 'stable' &&
+					item.volatile === false,
+			),
+		);
+		assert.ok(
+			output.results.some(
+				(item) =>
+					item.kind === 'document' &&
+					item.path === '.mustflow/config/commands.toml' &&
+					item.cache_layer === 'stable' &&
+					item.volatile === false,
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints cache-layer hints for task-scoped search results', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		const result = runCli(projectPath, ['search', 'code-review', '--json']);
+		const output = JSON.parse(result.stdout);
+		const skill = output.results.find((item) => item.kind === 'skill' && item.name === 'code-review');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(skill.cache_layer, 'task');
+		assert.equal(skill.volatile, false);
 	} finally {
 		removeTempProject(projectPath);
 	}

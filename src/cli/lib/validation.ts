@@ -146,7 +146,11 @@ const FORBIDDEN_TEST_DELETION_REASONS = new Set([
 ]);
 const ALLOWED_STALE_TEST_ACTIONS = new Set(['update_remove_or_report']);
 const ALLOWED_HARNESS_MODES = new Set(['single_session', 'long_running_optional']);
+const ALLOWED_HARNESS_FRESH_CONTEXT_MODES = new Set(['hash_check_before_reread', 'reread']);
 const ALLOWED_HARNESS_PHASES = new Set(['plan', 'work', 'verify', 'judge', 'handoff']);
+const ALLOWED_PROMPT_CACHE_STRATEGIES = new Set(['stable_prefix']);
+const ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES = new Set(['hash_verified']);
+const ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES = new Set(['task_relevant_only']);
 const ALLOWED_BUDGET_LIMIT_ACTIONS = new Set(['stop_and_handoff', 'stop_and_report']);
 const ALLOWED_APPROVAL_GATES = new Set([
 	'git_commit',
@@ -163,6 +167,7 @@ const ALLOWED_APPROVAL_GATES = new Set([
 const ALLOWED_APPROVAL_ACTIONS = new Set(['stop_and_request_approval']);
 const ALLOWED_ISOLATION_PREFERENCES = new Set(['none', 'git_worktree', 'sandbox']);
 const ALLOWED_REFRESH_MODES = new Set(['checkpoint']);
+const ALLOWED_REFRESH_METHODS = new Set(['hash_check', 'reread_if_changed']);
 const ALLOWED_REFRESH_STATE_STORES = new Set(['none', 'cache']);
 const ALLOWED_COMPACTION_STRATEGIES = new Set(['tiered']);
 const ALLOWED_COMPACTION_STATE_STORES = new Set(['none', 'cache']);
@@ -281,6 +286,9 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.executable_source_missing'
 	| 'mustflow.command_contract.shell_background_pattern'
 	| 'mustflow.command_contract.success_exit_codes_invalid'
+	| 'mustflow.prompt_cache.required'
+	| 'mustflow.prompt_cache.volatile_in_stable'
+	| 'mustflow.refresh.hash_method_required'
 	| 'mustflow.preferences.release_versioning_contract_authority'
 	| 'mustflow.preferences.verification_selection_command_authority'
 	| 'mustflow.skill.procedure_only'
@@ -313,6 +321,9 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
 	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
 	['mustflow.command_contract.success_exit_codes_invalid', /^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be an integer array$/u],
+	['mustflow.prompt_cache.required', /^Strict: \[prompt_cache\] table is required$/u],
+	['mustflow.prompt_cache.volatile_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include volatile path /u],
+	['mustflow.refresh.hash_method_required', /^Strict: \[refresh\]\.default_method should be "hash_check" for cache-friendly refresh$/u],
 	['mustflow.preferences.release_versioning_contract_authority', /^Strict: \[preferences\.release\.versioning\]\.[a-z_]+ cannot define version sources or release authority; use \.mustflow\/config\/versioning\.toml or \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.preferences.verification_selection_command_authority', /^Strict: \[preferences\.verification\.selection\]\.[a-z_]+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
@@ -657,6 +668,67 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 		validatePathArrayField(context, 'external_anchors', '[context].external_anchors', issues);
 	}
 
+	const promptCache = validateTable(mustflowToml, 'prompt_cache', issues);
+
+	if (promptCache) {
+		validateBooleanField(promptCache, 'enabled', '[prompt_cache].enabled', issues);
+		validateAllowedStringField(promptCache, 'strategy', '[prompt_cache].strategy', ALLOWED_PROMPT_CACHE_STRATEGIES, issues);
+		validateAllowedStringField(
+			promptCache,
+			'stable_prefix_policy',
+			'[prompt_cache].stable_prefix_policy',
+			ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES,
+			issues,
+		);
+		validateBooleanField(
+			promptCache,
+			'prefer_references_when_unchanged',
+			'[prompt_cache].prefer_references_when_unchanged',
+			issues,
+		);
+		validateBooleanField(
+			promptCache,
+			'exclude_volatile_state_from_prefix',
+			'[prompt_cache].exclude_volatile_state_from_prefix',
+			issues,
+		);
+		validateBooleanField(promptCache, 'include_content_hashes', '[prompt_cache].include_content_hashes', issues);
+		validatePositiveIntegerField(promptCache, 'max_stable_prefix_kb', '[prompt_cache].max_stable_prefix_kb', issues);
+		validatePositiveIntegerField(promptCache, 'max_task_context_kb', '[prompt_cache].max_task_context_kb', issues);
+		validatePositiveIntegerField(promptCache, 'max_volatile_suffix_kb', '[prompt_cache].max_volatile_suffix_kb', issues);
+
+		const layers = validateNestedTable(promptCache, 'layers', '[prompt_cache.layers]', issues);
+		if (layers) {
+			const stable = validateNestedTable(layers, 'stable', '[prompt_cache.layers.stable]', issues);
+			if (stable) {
+				validatePathArrayField(stable, 'read', '[prompt_cache.layers.stable].read', issues);
+			}
+
+			const task = validateNestedTable(layers, 'task', '[prompt_cache.layers.task]', issues);
+			if (task) {
+				validateAllowedStringField(
+					task,
+					'read_policy',
+					'[prompt_cache.layers.task].read_policy',
+					ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES,
+					issues,
+				);
+				validateStringArrayField(task, 'sources', '[prompt_cache.layers.task].sources', issues);
+			}
+
+			const volatile = validateNestedTable(layers, 'volatile', '[prompt_cache.layers.volatile]', issues);
+			if (volatile) {
+				validateStringArrayField(volatile, 'sources', '[prompt_cache.layers.volatile].sources', issues);
+				validateBooleanField(
+					volatile,
+					'never_place_before_stable_prefix',
+					'[prompt_cache.layers.volatile].never_place_before_stable_prefix',
+					issues,
+				);
+			}
+		}
+	}
+
 	const workspace = validateTable(mustflowToml, 'workspace', issues);
 
 	if (workspace) {
@@ -697,6 +769,13 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 	if (harness) {
 		validateAllowedStringField(harness, 'mode', '[harness].mode', ALLOWED_HARNESS_MODES, issues);
 		validateBooleanField(harness, 'fresh_context_preferred', '[harness].fresh_context_preferred', issues);
+		validateAllowedStringField(
+			harness,
+			'fresh_context_mode',
+			'[harness].fresh_context_mode',
+			ALLOWED_HARNESS_FRESH_CONTEXT_MODES,
+			issues,
+		);
 
 		const phases = validateNestedTable(harness, 'phases', '[harness.phases]', issues);
 		if (phases) {
@@ -716,6 +795,14 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 	if (refresh) {
 		validateBooleanField(refresh, 'enabled', '[refresh].enabled', issues);
 		validateAllowedStringField(refresh, 'mode', '[refresh].mode', ALLOWED_REFRESH_MODES, issues);
+		validateAllowedStringField(refresh, 'default_method', '[refresh].default_method', ALLOWED_REFRESH_METHODS, issues);
+		validateBooleanField(refresh, 'reread_when_hash_changed', '[refresh].reread_when_hash_changed', issues);
+		validateBooleanField(
+			refresh,
+			'reuse_cached_prefix_when_unchanged',
+			'[refresh].reuse_cached_prefix_when_unchanged',
+			issues,
+		);
 		validateStringArrayMembers(
 			refresh,
 			'required_at',
@@ -737,6 +824,13 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 					continue;
 				}
 
+				validateAllowedStringField(
+					level,
+					'method',
+					`[refresh.levels.${levelName}].method`,
+					ALLOWED_REFRESH_METHODS,
+					issues,
+				);
 				validatePathArrayField(level, 'read', `[refresh.levels.${levelName}].read`, issues);
 			}
 		}
@@ -1540,6 +1634,39 @@ function pushStrictIssue(issues: CheckIssue[], message: string): void {
 	issues.push({ message: `Strict: ${message}` });
 }
 
+function validateStrictPromptCachePolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!mustflowToml || !isRecord(mustflowToml.prompt_cache)) {
+		pushStrictIssue(issues, '[prompt_cache] table is required');
+		return;
+	}
+
+	const promptCache = mustflowToml.prompt_cache;
+	if (!isRecord(promptCache.layers)) {
+		pushStrictIssue(issues, '[prompt_cache.layers] table is required');
+		return;
+	}
+
+	const stable = promptCache.layers.stable;
+	const volatile = promptCache.layers.volatile;
+	if (!isRecord(stable) || !Array.isArray(stable.read)) {
+		pushStrictIssue(issues, '[prompt_cache.layers.stable].read is required');
+		return;
+	}
+
+	const volatileSources = isRecord(volatile) && Array.isArray(volatile.sources)
+		? new Set(volatile.sources.filter((source): source is string => typeof source === 'string'))
+		: new Set<string>();
+	for (const entry of stable.read) {
+		if (typeof entry === 'string' && volatileSources.has(entry)) {
+			pushStrictIssue(issues, `[prompt_cache.layers.stable].read must not include volatile path "${entry}"`);
+		}
+	}
+
+	if (promptCache.exclude_volatile_state_from_prefix !== true) {
+		pushStrictIssue(issues, '[prompt_cache].exclude_volatile_state_from_prefix should be true');
+	}
+}
+
 function validateStrictVersionSources(
 	projectRoot: string,
 	preferencesToml: TomlTable | undefined,
@@ -1788,6 +1915,10 @@ function validateStrictRefreshPolicy(mustflowToml: TomlTable | undefined, issues
 	}
 
 	const refresh = mustflowToml.refresh;
+
+	if (refresh.default_method !== 'hash_check') {
+		pushStrictIssue(issues, '[refresh].default_method should be "hash_check" for cache-friendly refresh');
+	}
 
 	if (!Array.isArray(refresh.required_at) || !refresh.required_at.includes('before_command_run')) {
 		pushStrictIssue(issues, '[refresh].required_at should include "before_command_run"');
@@ -2355,6 +2486,7 @@ function validateStrictStorage(projectRoot: string, limits: RetentionLimits, iss
 
 function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[]): void {
 	const retentionLimits = validateStrictRetentionPolicy(parsed.mustflowToml, issues);
+	validateStrictPromptCachePolicy(parsed.mustflowToml, issues);
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(parsed.commandsToml, issues);

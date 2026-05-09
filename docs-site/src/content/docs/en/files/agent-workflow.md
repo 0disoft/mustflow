@@ -20,6 +20,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Skill Activation`: Defines when agents should select and read task-specific skill procedures.
 - `Pre-work Checks`: Instructs agents to verify modifications, protected paths, command intents, and relevant skills before initiating work.
 - `Input Stability Policy`: Ensures that volatile data is separated from required reading files.
+- `Prompt Cache and Host Context Assembly`: Guides host input assembly with stable, task, and volatile layers without treating cache state as authority.
 - `Instruction Refresh Policy`: Determines the checkpoints at which agents should reread instructions during extended sessions.
 - `Context Compaction Policy`: Outlines the hierarchy and authority of derived recent context, mid-level summaries, and long-term summaries.
 - `Harness Contract Boundary`: Distinguishes repository-local contracts from external agent execution environments.
@@ -110,6 +111,23 @@ Maintain the repository navigation map in the generated `REPO_MAP.md` rather tha
 Keep only stable generated metadata near the top of this file. Avoid volatile values such as generation timestamps, branch names, remote URLs, change summaries, and logs.
 
 Do not store full chat transcripts, terminal output, or raw JSONL event logs under `.mustflow/`. Maintain execution results as concise run records and knowledge files as summaries with source references.
+
+## Prompt Cache and Host Context Assembly
+
+Prompt caching is only a performance optimization. Cached instructions, summaries, search results,
+and generated maps stay below direct user instructions, current files, current command contracts,
+host safety rules, and the nearest `AGENTS.md`.
+
+Hosts that assemble model input should keep stable repository instructions first, selected
+task-specific context next, and volatile state last. Use
+`mf context --json --cache-profile stable` for the stable prefix, task-selected files and
+`mf search --json` results with `cache_layer: "task"` for task context, and current user requests,
+changed files, command output tails, timestamps, latest run metadata, and `volatile: true` search
+results only in the suffix.
+
+Before reusing a stable prefix, compare content hashes with the current files. If a hash changed,
+reread the file. Cache-layer fields are placement hints only; they do not grant command authority or
+allow search results to override workflow rules.
 
 ## Effective Rule Lanes
 

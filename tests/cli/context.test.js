@@ -111,3 +111,55 @@ destructive = false
 		removeTempProject(projectPath);
 	}
 });
+
+test('prints cache-profile context without volatile stable-prefix fields', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'stable']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.schema_version, '1');
+		assert.equal(context.command, 'context');
+		assert.equal(context.cache_profile, 'stable');
+		assert.equal(context.mustflow_root, undefined);
+		assert.equal(context.latest_run, undefined);
+		assert.equal(context.prompt_cache.strategy, 'stable_prefix');
+		assert.equal(context.prompt_cache.stable_prefix_policy, 'hash_verified');
+		assert.equal(context.prompt_cache.exclude_volatile_state_from_prefix, true);
+		assert.equal(context.stable_prefix.cache_layer, 'stable');
+		assert.match(context.stable_prefix.cache_key, /^sha256:[a-f0-9]{64}$/);
+		assert.ok(context.stable_prefix.documents.some((document) => document.path === 'AGENTS.md'));
+		assert.ok(context.stable_prefix.documents.every((document) => document.content_hash === null || /^sha256:[a-f0-9]{64}$/.test(document.content_hash)));
+		assert.ok(context.stable_prefix.volatile_excluded.includes('.mustflow/state/runs/latest.json'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints all prompt-cache layers when requested', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'all']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.cache_profile, 'all');
+		assert.equal(context.stable_prefix.cache_layer, 'stable');
+		assert.equal(context.task_context.cache_layer, 'task');
+		assert.equal(context.task_context.read_policy, 'task_relevant_only');
+		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
+		assert.equal(context.volatile_suffix.cache_layer, 'volatile');
+		assert.equal(context.volatile_suffix.never_place_before_stable_prefix, true);
+		assert.equal(context.volatile_suffix.include_absolute_root, false);
+		assert.equal(context.volatile_suffix.include_latest_run, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

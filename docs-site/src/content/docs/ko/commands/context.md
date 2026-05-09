@@ -31,10 +31,19 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 
 보안과 가독성을 위해 표준 출력(stdout), 표준 오류(stderr) 본문은 포함하지 않습니다. 전체 실행 로그가 필요하면 실행 결과 파일을 직접 확인하세요.
 
+## 프롬프트 캐시 프로필
+
+호스트가 전체 맥락 보고서 대신 캐시에 유리한 프롬프트 계층이 필요할 때는 `--json`과 함께 `--cache-profile stable|task|volatile|all`을 사용합니다.
+
+`stable` 프로필은 안정적인 지시문 경로, 파일 존재 여부, 내용 해시, `stable_prefix.cache_key`만 제공합니다. 절대 mustflow 루트 경로, 마지막 실행 기록, 시각 정보, 변경 파일 목록, 명령 출력 일부, 현재 사용자 요청처럼 자주 바뀌는 값은 의도적으로 제외합니다.
+
+`task` 프로필은 맥락 색인, 저장소 지도, 선택된 스킬, 관련 소스 파일처럼 작업별로 고르는 출처를 보여줍니다. `volatile` 프로필은 안정 계층 뒤에 붙어야 하는 변동 상태를 보여주며, `all` 프로필은 세 계층을 모두 포함합니다.
+
 ## 예시
 
 ```sh
 npx mf context --json
+npx mf context --json --cache-profile stable
 ```
 
 ## JSON 필드
@@ -57,6 +66,17 @@ npx mf context --json
 - `blocked_actions` (`string[]`): 저장소 계약에서 차단되는 행동 종류입니다.
 - `latest_run` (`object`): 마지막 실행 결과 요약입니다.
 - `issues` (`string[]`): 잠금 파일 기준 이슈 목록입니다.
+
+`--cache-profile`을 사용하면 출력은 프롬프트 캐시 프로필 보고서로 바뀝니다.
+
+- `cache_profile` (`string`): 선택한 프로필입니다. `stable`, `task`, `volatile`, `all` 중 하나입니다.
+- `prompt_cache` (`object`): `mustflow.toml`에서 읽은 유효 프롬프트 캐시 설정입니다.
+- `stable_prefix.cache_key` (`string | null`): 안정 문서 경로와 내용 해시 목록으로 만든 해시입니다.
+- `stable_prefix.documents[]` (`object[]`): 안정 문서 경로, 파일 존재 여부, 내용 해시입니다.
+- `stable_prefix.volatile_excluded` (`string[]`): 안정 계층 앞에 두면 안 되는 변동 출처입니다.
+- `task_context.sources` (`string[]`): 작업별로 선택하는 맥락 출처입니다.
+- `volatile_suffix.sources` (`string[]`): 안정 계층 뒤에 붙여야 하는 변동 출처입니다.
+- `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
 
 배열 안 객체의 세부 필드는 다음과 같습니다.
 

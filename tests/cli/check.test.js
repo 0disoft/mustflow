@@ -1253,6 +1253,51 @@ test('fails when context configuration fields are invalid', () => {
 	}
 });
 
+test('fails when prompt cache configuration fields are invalid', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readText(configPath)
+			.replace('[prompt_cache]\nenabled = true', '[prompt_cache]\nenabled = "yes"')
+			.replace('strategy = "stable_prefix"', 'strategy = "random_order"')
+			.replace('stable_prefix_policy = "hash_verified"', 'stable_prefix_policy = "trust_previous_prompt"')
+			.replace('prefer_references_when_unchanged = true', 'prefer_references_when_unchanged = "yes"')
+			.replace('exclude_volatile_state_from_prefix = true', 'exclude_volatile_state_from_prefix = "yes"')
+			.replace('include_content_hashes = true', 'include_content_hashes = "yes"')
+			.replace('max_stable_prefix_kb = 96', 'max_stable_prefix_kb = 0')
+			.replace('max_task_context_kb = 48', 'max_task_context_kb = "large"')
+			.replace('max_volatile_suffix_kb = 24', 'max_volatile_suffix_kb = -1')
+			.replace('[prompt_cache.layers.stable]\nread = [', '[prompt_cache.layers.stable]\nread = [\n  "../AGENTS.md",')
+			.replace(
+				/\[prompt_cache\.layers\.task\]\nread_policy = "task_relevant_only"\nsources = \[\n(?:  "[^"]+",\n)+\]/u,
+				'[prompt_cache.layers.task]\nread_policy = "read_all"\nsources = "all"',
+			)
+			.replace('never_place_before_stable_prefix = true', 'never_place_before_stable_prefix = "yes"');
+		writeFileSync(configPath, config);
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /\[prompt_cache\]\.enabled must be a boolean/);
+		assert.match(result.stderr, /\[prompt_cache\]\.strategy must be "stable_prefix"/);
+		assert.match(result.stderr, /\[prompt_cache\]\.stable_prefix_policy must be "hash_verified"/);
+		assert.match(result.stderr, /\[prompt_cache\]\.prefer_references_when_unchanged must be a boolean/);
+		assert.match(result.stderr, /\[prompt_cache\]\.exclude_volatile_state_from_prefix must be a boolean/);
+		assert.match(result.stderr, /\[prompt_cache\]\.include_content_hashes must be a boolean/);
+		assert.match(result.stderr, /\[prompt_cache\]\.max_stable_prefix_kb must be a positive integer/);
+		assert.match(result.stderr, /\[prompt_cache\]\.max_task_context_kb must be a positive integer/);
+		assert.match(result.stderr, /\[prompt_cache\]\.max_volatile_suffix_kb must be a positive integer/);
+		assert.match(result.stderr, /\[prompt_cache\.layers\.stable\]\.read entries must be non-empty relative paths/);
+		assert.match(result.stderr, /\[prompt_cache\.layers\.task\]\.read_policy must be "task_relevant_only"/);
+		assert.match(result.stderr, /\[prompt_cache\.layers\.task\]\.sources must be a string array/);
+		assert.match(result.stderr, /\[prompt_cache\.layers\.volatile\]\.never_place_before_stable_prefix must be a boolean/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails when agent control surface configuration fields are invalid', () => {
 	const projectPath = createTempProject();
 
@@ -1297,12 +1342,15 @@ test('fails when instruction refresh configuration fields are invalid', () => {
 		const config = readText(configPath)
 			.replace('[refresh]\nenabled = true', '[refresh]\nenabled = "yes"')
 			.replace('mode = "checkpoint"', 'mode = "always"')
+			.replace('default_method = "hash_check"', 'default_method = "always_reread"')
+			.replace('reread_when_hash_changed = true', 'reread_when_hash_changed = "yes"')
+			.replace('reuse_cached_prefix_when_unchanged = true', 'reuse_cached_prefix_when_unchanged = "yes"')
 			.replace('"before_command_run",', '"before_every_message",')
 			.replace('turn_threshold = 8', 'turn_threshold = 0')
 			.replace('tool_call_threshold = 16', 'tool_call_threshold = -1')
 			.replace('output_bytes_threshold = 100000', 'output_bytes_threshold = "large"')
 			.replace('state_store = "cache"', 'state_store = "project"')
-			.replace('[refresh.levels.light]\nread = [', '[refresh.levels.light]\nread = [\n  "../AGENTS.md",');
+			.replace('[refresh.levels.light]\nmethod = "hash_check"\nread = [', '[refresh.levels.light]\nmethod = "hash_check"\nread = [\n  "../AGENTS.md",');
 		writeFileSync(configPath, config);
 
 		const result = runCli(projectPath, ['check']);
@@ -1310,12 +1358,52 @@ test('fails when instruction refresh configuration fields are invalid', () => {
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /\[refresh\]\.enabled must be a boolean/);
 		assert.match(result.stderr, /\[refresh\]\.mode must be "checkpoint"/);
+		assert.match(result.stderr, /\[refresh\]\.default_method must be "hash_check" or "reread_if_changed"/);
+		assert.match(result.stderr, /\[refresh\]\.reread_when_hash_changed must be a boolean/);
+		assert.match(result.stderr, /\[refresh\]\.reuse_cached_prefix_when_unchanged must be a boolean/);
 		assert.match(result.stderr, /\[refresh\]\.required_at contains unsupported checkpoint "before_every_message"/);
 		assert.match(result.stderr, /\[refresh\]\.turn_threshold must be a positive integer/);
 		assert.match(result.stderr, /\[refresh\]\.tool_call_threshold must be a positive integer/);
 		assert.match(result.stderr, /\[refresh\]\.output_bytes_threshold must be a positive integer/);
 		assert.match(result.stderr, /\[refresh\]\.state_store must be "none" or "cache"/);
 		assert.match(result.stderr, /\[refresh\.levels\.light\]\.read entries must be non-empty relative paths/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails when prompt cache policy would put volatile state in the stable prefix', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readText(configPath)
+			.replace('exclude_volatile_state_from_prefix = true', 'exclude_volatile_state_from_prefix = false')
+			.replace(
+				'[prompt_cache.layers.stable]\nread = [',
+				'[prompt_cache.layers.stable]\nread = [\n  ".mustflow/state/runs/latest.json",',
+			)
+			.replace('default_method = "hash_check"', 'default_method = "reread_if_changed"');
+		writeFileSync(configPath, config);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.prompt_cache.volatile_in_stable',
+			'Strict: [prompt_cache.layers.stable].read must not include volatile path ".mustflow/state/runs/latest.json"',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.refresh.hash_method_required',
+			'Strict: [refresh].default_method should be "hash_check" for cache-friendly refresh',
+		);
+		assert.ok(
+			check.issues.includes('Strict: [prompt_cache].exclude_volatile_state_from_prefix should be true'),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1329,8 +1417,8 @@ test('fails when long-running harness policy fields are invalid', () => {
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
 		const config = readText(configPath)
 			.replace(
-				/\[harness\]\nmode = "single_session"\nfresh_context_preferred = true/u,
-				'[harness]\nmode = "agent_runtime"\nfresh_context_preferred = "yes"',
+				/\[harness\]\nmode = "single_session"\nfresh_context_preferred = true\nfresh_context_mode = "hash_check_before_reread"/u,
+				'[harness]\nmode = "agent_runtime"\nfresh_context_preferred = "yes"\nfresh_context_mode = "always_reread"',
 			)
 			.replace(
 				/\[harness\.phases\]\nenabled = \[\n  "plan",\n  "work",\n  "verify",\n  "judge",\n  "handoff",\n\]/u,
@@ -1381,6 +1469,7 @@ test('fails when long-running harness policy fields are invalid', () => {
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /\[harness\]\.mode must be "single_session" or "long_running_optional"/);
 		assert.match(result.stderr, /\[harness\]\.fresh_context_preferred must be a boolean/);
+		assert.match(result.stderr, /\[harness\]\.fresh_context_mode must be "hash_check_before_reread" or "reread"/);
 		assert.match(result.stderr, /\[harness\.phases\]\.enabled contains unsupported phase "spawn_workers"/);
 		assert.match(result.stderr, /\[budget\]\.enabled must be a boolean/);
 		assert.match(result.stderr, /\[budget\]\.max_iterations must be a positive integer/);
