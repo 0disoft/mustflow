@@ -2,7 +2,7 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { explainCommandIntent, type CommandDecision } from '../../core/command-explanation.js';
+import { explainAssetOptimization, explainCommandIntent, type CommandDecision } from '../../core/command-explanation.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import {
 	explainManagedMarkdownAuthority,
@@ -19,7 +19,7 @@ import { checkMustflowProject } from '../lib/validation.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 
-type ExplainTopic = 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
+type ExplainTopic = 'asset-optimization' | 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
 type ExplainDecision =
 	| AuthorityDecision
 	| CommandDecision
@@ -48,6 +48,8 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 			examples: [
 				'mf explain authority',
 				'mf explain authority AGENTS.md',
+				'mf explain asset-optimization',
+				'mf explain asset-optimization --json',
 				'mf explain command test',
 				'mf explain command lint --json',
 				'mf explain retention',
@@ -76,6 +78,16 @@ function getAuthorityExplainOutput(projectRoot: string, pathArg: string | undefi
 		topic: 'authority',
 		mustflow_root: projectRoot,
 		decision: explainManagedMarkdownAuthority(pathArg),
+	};
+}
+
+function getAssetOptimizationExplainOutput(projectRoot: string): ExplainOutput {
+	return {
+		schema_version: EXPLAIN_SCHEMA_VERSION,
+		command: 'explain',
+		topic: 'asset-optimization',
+		mustflow_root: projectRoot,
+		decision: explainAssetOptimization(readCommandContract(projectRoot)),
 	};
 }
 
@@ -305,7 +317,15 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 	const positional = args.filter((arg) => arg !== '--json');
 	const [topic, targetArg, ...rest] = positional;
 
-	if (topic !== 'authority' && topic !== 'command' && topic !== 'retention' && topic !== 'skill' && topic !== 'skills' && topic !== 'surface') {
+	if (
+		topic !== 'asset-optimization' &&
+		topic !== 'authority' &&
+		topic !== 'command' &&
+		topic !== 'retention' &&
+		topic !== 'skill' &&
+		topic !== 'skills' &&
+		topic !== 'surface'
+	) {
 		printUsageError(
 			reporter,
 			t(lang, topic ? 'explain.error.unknownTopic' : 'explain.error.missingTopic', { topic: topic ?? '' }),
@@ -349,6 +369,17 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 		return 1;
 	}
 
+	if (topic === 'asset-optimization' && targetArg) {
+		printUsageError(
+			reporter,
+			t(lang, 'cli.error.unexpectedArgument', { argument: targetArg }),
+			'mf explain --help',
+			getExplainHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
 	if (topic === 'skills' && targetArg) {
 		printUsageError(
 			reporter,
@@ -372,18 +403,31 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 	}
 
 	const projectRoot = resolveMustflowRoot();
-	const output =
-		topic === 'authority'
-			? getAuthorityExplainOutput(projectRoot, targetArg)
-			: topic === 'command'
-				? getCommandExplainOutput(projectRoot, targetArg)
-				: topic === 'retention'
-					? getRetentionExplainOutput(projectRoot)
-					: topic === 'skill'
-						? getSkillExplainOutput(projectRoot, targetArg)
-						: topic === 'surface'
-							? getSurfaceExplainOutput(projectRoot, targetArg)
-							: getSkillsExplainOutput(projectRoot);
+	let output: ExplainOutput;
+
+	switch (topic) {
+		case 'asset-optimization':
+			output = getAssetOptimizationExplainOutput(projectRoot);
+			break;
+		case 'authority':
+			output = getAuthorityExplainOutput(projectRoot, targetArg);
+			break;
+		case 'command':
+			output = getCommandExplainOutput(projectRoot, targetArg);
+			break;
+		case 'retention':
+			output = getRetentionExplainOutput(projectRoot);
+			break;
+		case 'skill':
+			output = getSkillExplainOutput(projectRoot, targetArg);
+			break;
+		case 'surface':
+			output = getSurfaceExplainOutput(projectRoot, targetArg);
+			break;
+		case 'skills':
+			output = getSkillsExplainOutput(projectRoot);
+			break;
+	}
 
 	if (json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

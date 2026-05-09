@@ -7,6 +7,8 @@ description: Read-only command to explain why mustflow policy decisions apply.
 
 Without a path, the command prints the authority model. With a path, it reports whether that path has an expected mustflow document role.
 
+`mf explain asset-optimization` explains the web image optimization decision path. It reports whether the `web-asset-optimization` skill applies and whether `asset_optimize` is a configured agent-runnable command intent, so agents do not guess image converters or package commands.
+
 `mf explain command <intent>` explains whether a command intent in `.mustflow/config/commands.toml` is runnable through `mf run`, why it is allowed or blocked, and whether running it would count as mustflow verification.
 
 `mf explain retention` explains the effective retention policy from `.mustflow/config/mustflow.toml`, including raw event storage, bounded run receipts, and context limits.
@@ -39,6 +41,8 @@ Without a path, the command prints the authority model. With a path, it reports 
 ```sh
 npx mf explain authority
 npx mf explain authority AGENTS.md
+npx mf explain asset-optimization
+npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
 npx mf explain retention
@@ -62,7 +66,7 @@ Machine-readable output uses these fields:
 
 - `schema_version` (`string`): Output format version.
 - `command` (`string`): Always `explain`.
-- `topic` (`string`): `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
+- `topic` (`string`): `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
 - `mustflow_root` (`string`): Current mustflow root.
 - `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`.
 

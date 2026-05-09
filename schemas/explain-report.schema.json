@@ -14,7 +14,7 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "explain" },
-    "topic": { "enum": ["authority", "command", "retention", "skill", "skills", "surface"] },
+    "topic": { "enum": ["asset-optimization", "authority", "command", "retention", "skill", "skills", "surface"] },
     "mustflow_root": { "type": "string" },
     "decision": {
       "oneOf": [

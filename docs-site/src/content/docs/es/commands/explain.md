@@ -7,6 +7,8 @@ description: Comando de solo lectura para explicar por qué se aplican decisione
 
 Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa si esa ruta tiene un rol de documento mustflow esperado.
 
+`mf explain asset-optimization` explica la ruta de decisión para optimizar imágenes web. Informa si se aplica el skill `web-asset-optimization` y si `asset_optimize` es una intención de comando configurada y ejecutable por el agente, para que el agente no adivine convertidores de imágenes ni comandos de paquetes.
+
 `mf explain command <intent>` explica si una intención de comando en `.mustflow/config/commands.toml` puede ejecutarse con `mf run`, por qué se permite o se bloquea, y si su ejecución contaría como verificación de mustflow.
 
 `mf explain retention` explica la política de retención efectiva de `.mustflow/config/mustflow.toml`, incluida la forma de guardar eventos sin procesar, los recibos de ejecución acotados y los límites de contexto.
@@ -36,6 +38,8 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 ```sh
 npx mf explain authority
 npx mf explain authority AGENTS.md
+npx mf explain asset-optimization
+npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
 npx mf explain retention
@@ -57,7 +61,7 @@ La salida legible por máquinas usa estos campos:
 
 - `schema_version` (`string`): versión del formato de salida.
 - `command` (`string`): siempre `explain`.
-- `topic` (`string`): `authority`, `command`, `retention`, `skill` o `skills`.
+- `topic` (`string`): `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills` o `surface`.
 - `mustflow_root` (`string`): raíz mustflow actual.
 - `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema. Para `authority`, incluye `boundary.role`, `boundary.canDefine` y `boundary.cannotDefine`.
 

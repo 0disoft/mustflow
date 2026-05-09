@@ -42,6 +42,12 @@ const COMMAND_CONTRACT_SOURCE_FILES = [
 	'.mustflow/config/commands.toml',
 	'.mustflow/config/mustflow.toml',
 ];
+const ASSET_OPTIMIZATION_SOURCE_FILES = [
+	'.mustflow/skills/INDEX.md',
+	'.mustflow/skills/web-asset-optimization/SKILL.md',
+	'.mustflow/config/commands.toml',
+	'.mustflow/config/mustflow.toml',
+];
 
 function readOptionalStringArray(table: TomlTable, key: string): readonly string[] {
 	return readStringArray(table, key) ?? [];
@@ -168,5 +174,31 @@ export function explainCommandIntent(contract: CommandContract, commandName: str
 		countsAsMustflowVerification: false,
 		sourceFiles: COMMAND_CONTRACT_SOURCE_FILES,
 		intent,
+	};
+}
+
+export function explainAssetOptimization(contract: CommandContract): CommandDecision {
+	const decision = explainCommandIntent(contract, 'asset_optimize');
+
+	if (decision.kind === 'allowed') {
+		return {
+			...decision,
+			decision: 'web asset optimization has a configured command intent',
+			reason:
+				'the web-asset-optimization skill is available and asset_optimize is configured as an agent-runnable command intent.',
+			effectiveAction:
+				'Read .mustflow/skills/web-asset-optimization/SKILL.md, then run mf run asset_optimize when image asset changes require optimization evidence.',
+			sourceFiles: ASSET_OPTIMIZATION_SOURCE_FILES,
+		};
+	}
+
+	return {
+		...decision,
+		decision: 'web asset optimization is skill-guided but command-gated',
+		reason:
+			'the web-asset-optimization skill applies to web image asset work, but asset_optimize is not currently an agent-runnable configured intent.',
+		effectiveAction:
+			'Read .mustflow/skills/web-asset-optimization/SKILL.md, do not guess external converters or package commands, and report the missing asset_optimize contract when optimization evidence is required.',
+		sourceFiles: ASSET_OPTIMIZATION_SOURCE_FILES,
 	};
 }

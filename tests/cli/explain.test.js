@@ -169,6 +169,28 @@ test('explains configured agent-runnable command intents as json', () => {
 	}
 });
 
+test('explains web asset optimization without guessing missing converters', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'asset-optimization', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'asset-optimization');
+		assert.equal(report.decision.kind, 'blocked');
+		assert.equal(report.decision.inputCommand, 'asset_optimize');
+		assert.equal(report.decision.countsAsMustflowVerification, false);
+		assert.equal(report.decision.intent.status, 'unknown');
+		assert.ok(report.decision.sourceFiles.includes('.mustflow/skills/web-asset-optimization/SKILL.md'));
+		assert.match(report.decision.effectiveAction, /do not guess external converters/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explains blocked command intents without allowing guessed execution', () => {
 	const projectPath = createTempProject();
 
@@ -379,6 +401,22 @@ test('fails explain retention when a target argument is provided', () => {
 		initProject(projectPath);
 
 		const result = runCli(projectPath, ['explain', 'retention', 'extra']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Error: Unexpected argument: extra/);
+		assert.match(result.stdout, /Usage:/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails explain asset optimization when a target argument is provided', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'asset-optimization', 'extra']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unexpected argument: extra/);

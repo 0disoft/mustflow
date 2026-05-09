@@ -7,6 +7,8 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 
 省略路径时，命令输出权威分类模型。提供路径时，命令报告该路径是否有预期的 mustflow 文档角色。
 
+`mf explain asset-optimization` 解释 Web 图像优化的决策路径。它报告 `web-asset-optimization` 技能是否适用，以及 `asset_optimize` 是否是已配置且代理可运行的命令意图，避免代理猜测图像转换器或包命令。
+
 `mf explain command <intent>` 解释 `.mustflow/config/commands.toml` 中的命令意图是否可通过 `mf run` 运行、为什么允许或阻止，以及运行后是否算作 mustflow 验证。
 
 `mf explain retention` 解释 `.mustflow/config/mustflow.toml` 中的有效保留策略，包括原始事件存储、有界运行回执和上下文限制。
@@ -36,6 +38,8 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 ```sh
 npx mf explain authority
 npx mf explain authority AGENTS.md
+npx mf explain asset-optimization
+npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
 npx mf explain retention
@@ -57,7 +61,7 @@ npx mf explain authority AGENTS.md --json
 
 - `schema_version` (`string`)：输出格式版本。
 - `command` (`string`)：始终为 `explain`。
-- `topic` (`string`)：`authority`、`command`、`retention`、`skill` 或 `skills`。
+- `topic` (`string`)：`asset-optimization`、`authority`、`command`、`retention`、`skill`、`skills` 或 `surface`。
 - `mustflow_root` (`string`)：当前 mustflow 根目录。
 - `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。对于 `authority`，还包括 `boundary.role`、`boundary.canDefine` 和 `boundary.cannotDefine`。
 
