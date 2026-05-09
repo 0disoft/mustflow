@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -66,6 +66,8 @@ required_after = ["custom_verify"]
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.command, 'verify');
 		assert.equal(report.reason, 'custom_verify');
+		assert.deepEqual(report.reasons, ['custom_verify']);
+		assert.equal(report.plan_source, null);
 		assert.equal(report.status, 'passed');
 		assert.deepEqual(report.summary, {
 			matched: 1,
@@ -78,6 +80,50 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].status, 'passed');
 		assert.equal(report.results[0].receipt.intent, 'verify_echo');
 		assert.match(report.results[0].receipt.stdout.tail, /verify ok/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('runs verification intents selected from a JSON plan', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_from_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a verify from plan message."
+argv = ['${process.execPath}', '-e', 'console.log("verify from plan")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_verify"]
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'verify-plan.json'),
+			JSON.stringify({ classification_summary: { validationReasons: ['schema_verify'] } }, null, 2),
+		);
+
+		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.reason, 'schema_verify');
+		assert.deepEqual(report.reasons, ['schema_verify']);
+		assert.equal(report.plan_source, 'verify-plan.json');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.summary.ran, 1);
+		assert.equal(report.results[0].intent, 'verify_from_plan');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -167,10 +213,45 @@ test('does not treat verification preferences as command authority', () => {
 	}
 });
 
+test('rejects conflicting verify reason inputs', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'verify-plan.json'), JSON.stringify({ reasons: ['schema_verify'] }));
+
+		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--from-plan', 'verify-plan.json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Use either --reason or --from-plan, not both/);
+		assert.match(result.stdout, /Usage: mf verify/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails verify when reason is missing', () => {
 	const result = runCli(projectRoot, ['verify', '--json']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Missing verification reason/);
 	assert.match(result.stdout, /Usage: mf verify/);
+});
+
+test('rejects verify plans outside the mustflow root', () => {
+	const projectPath = createTempProject();
+	const outsidePlanPath = path.join(tmpdir(), `mustflow-outside-plan-${Date.now()}.json`);
+
+	try {
+		initProject(projectPath);
+		writeFileSync(outsidePlanPath, JSON.stringify({ reasons: ['schema_verify'] }));
+
+		const result = runCli(projectPath, ['verify', '--from-plan', outsidePlanPath]);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Verification plan path must stay inside the mustflow root/);
+	} finally {
+		rmSync(outsidePlanPath, { force: true });
+		removeTempProject(projectPath);
+	}
 });

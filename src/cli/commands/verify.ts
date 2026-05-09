@@ -1,8 +1,11 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { runRun } from './run.js';
 import { createVerificationPlan, type VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { t, type CliLang } from '../lib/i18n.js';
+import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
@@ -40,6 +43,8 @@ interface VerificationOutput {
 	readonly command: 'verify';
 	readonly mustflow_root: string;
 	readonly reason: string;
+	readonly reasons: readonly string[];
+	readonly plan_source: string | null;
 	readonly status: VerificationStatus;
 	readonly summary: VerificationSummary;
 	readonly results: readonly VerificationResult[];
@@ -70,16 +75,18 @@ function createBufferedOutput(): BufferedOutput {
 export function getVerifyHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf verify --reason <event> [options]',
+			usage: 'mf verify --reason <event> [options] | mf verify --from-plan <path> [options]',
 			summary: t(lang, 'verify.help.summary'),
 			options: [
 				{ label: '--reason <event>', description: t(lang, 'verify.help.option.reason') },
+				{ label: '--from-plan <path>', description: t(lang, 'verify.help.option.fromPlan') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
 				'mf verify --reason code_change',
 				'mf verify --reason docs_change --json',
+				'mf verify --from-plan verify-plan.json --json',
 				'mf verify --reason mustflow_docs_change',
 			],
 			exitCodes: [
@@ -91,8 +98,14 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-function parseVerifyArgs(args: readonly string[]): { json: boolean; reason?: string; error?: string } {
+function parseVerifyArgs(args: readonly string[]): {
+	json: boolean;
+	reason?: string;
+	fromPlan?: string;
+	error?: string;
+} {
 	let reason: string | undefined;
+	let fromPlan: string | undefined;
 	let json = false;
 
 	for (let index = 0; index < args.length; index += 1) {
@@ -114,6 +127,17 @@ function parseVerifyArgs(args: readonly string[]): { json: boolean; reason?: str
 			continue;
 		}
 
+		if (arg === '--from-plan') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return { json, reason, fromPlan, error: 'missing_from_plan_value' };
+			}
+
+			fromPlan = value;
+			index += 1;
+			continue;
+		}
+
 		if (arg.startsWith('--reason=')) {
 			const value = arg.slice('--reason='.length);
 			if (value.length === 0) {
@@ -124,6 +148,16 @@ function parseVerifyArgs(args: readonly string[]): { json: boolean; reason?: str
 			continue;
 		}
 
+		if (arg.startsWith('--from-plan=')) {
+			const value = arg.slice('--from-plan='.length);
+			if (value.length === 0) {
+				return { json, reason, fromPlan, error: 'missing_from_plan_value' };
+			}
+
+			fromPlan = value;
+			continue;
+		}
+
 		if (arg.startsWith('-')) {
 			return { json, reason, error: arg };
 		}
@@ -131,7 +165,86 @@ function parseVerifyArgs(args: readonly string[]): { json: boolean; reason?: str
 		return { json, reason, error: `unexpected:${arg}` };
 	}
 
-	return { json, reason };
+	return { json, reason, fromPlan };
+}
+
+function uniqueStrings(values: readonly string[]): string[] {
+	return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))];
+}
+
+function readStringArray(value: unknown): string[] {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+
+	return value.filter((item): item is string => typeof item === 'string');
+}
+
+function readPlanReasons(plan: unknown): string[] {
+	if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
+		return [];
+	}
+
+	const record = plan as Record<string, unknown>;
+	const summary = record.summary;
+	const classificationSummary = record.classification_summary;
+	const verification = record.verification;
+	const reasons = [
+		typeof record.reason === 'string' ? record.reason : '',
+		...readStringArray(record.reasons),
+		...readStringArray(record.validationReasons),
+		...(summary && typeof summary === 'object' && !Array.isArray(summary)
+			? readStringArray((summary as Record<string, unknown>).validationReasons)
+			: []),
+		...(classificationSummary && typeof classificationSummary === 'object' && !Array.isArray(classificationSummary)
+			? readStringArray((classificationSummary as Record<string, unknown>).validationReasons)
+			: []),
+		...(verification && typeof verification === 'object' && !Array.isArray(verification)
+			? readStringArray((verification as Record<string, unknown>).reasons)
+			: []),
+	];
+
+	return uniqueStrings(reasons);
+}
+
+function resolvePlanPath(projectRoot: string, inputPath: string): string {
+	const resolved = path.resolve(projectRoot, inputPath);
+	const relative = path.relative(projectRoot, resolved);
+
+	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+		throw new Error('plan_path_outside_root');
+	}
+
+	return resolved;
+}
+
+function readReasonsFromPlan(projectRoot: string, inputPath: string): string[] {
+	let parsed: unknown;
+	const planPath = resolvePlanPath(projectRoot, inputPath);
+
+	try {
+		parsed = JSON.parse(readFileSync(planPath, 'utf8'));
+	} catch {
+		throw new Error('invalid_plan_file');
+	}
+
+	const reasons = readPlanReasons(parsed);
+	if (reasons.length === 0) {
+		throw new Error('missing_plan_reasons');
+	}
+
+	return reasons;
+}
+
+function planErrorMessageKey(code: string): MessageKey {
+	switch (code) {
+		case 'plan_path_outside_root':
+			return 'verify.error.plan_path_outside_root';
+		case 'missing_plan_reasons':
+			return 'verify.error.missing_plan_reasons';
+		default:
+			return 'verify.error.invalid_plan_file';
+	}
 }
 
 function skippedResult(candidate: VerificationCandidate): VerificationResult {
@@ -215,9 +328,34 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 	return 'passed';
 }
 
-function createVerifyOutput(reason: string, projectRoot: string, lang: CliLang): VerificationOutput {
-	const plan = createVerificationPlan(readCommandContract(projectRoot), reason);
-	const results = plan.candidates.map((candidate) =>
+function createVerifyOutput(
+	reasons: readonly string[],
+	planSource: string | null,
+	projectRoot: string,
+	lang: CliLang,
+): VerificationOutput {
+	const contract = readCommandContract(projectRoot);
+	const candidatesByIntent = new Map<string, VerificationCandidate>();
+	const unmatchedCandidates: VerificationCandidate[] = [];
+
+	for (const reason of reasons) {
+		const plan = createVerificationPlan(contract, reason);
+		for (const candidate of plan.candidates) {
+			if (!candidate.intent) {
+				unmatchedCandidates.push(candidate);
+				continue;
+			}
+
+			if (!candidatesByIntent.has(candidate.intent)) {
+				candidatesByIntent.set(candidate.intent, candidate);
+			}
+		}
+	}
+
+	const candidates = [...candidatesByIntent.values(), ...unmatchedCandidates].sort((left, right) =>
+		left.intent.localeCompare(right.intent),
+	);
+	const results = candidates.map((candidate) =>
 		candidate.status === 'runnable' ? runVerificationIntent(candidate.intent, lang) : skippedResult(candidate),
 	);
 	const summary = summarizeResults(results);
@@ -226,7 +364,9 @@ function createVerifyOutput(reason: string, projectRoot: string, lang: CliLang):
 		schema_version: VERIFY_SCHEMA_VERSION,
 		command: 'verify',
 		mustflow_root: projectRoot,
-		reason,
+		reason: reasons.join(', '),
+		reasons,
+		plan_source: planSource,
 		status: getVerificationStatus(summary),
 		summary,
 		results,
@@ -238,6 +378,7 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 		t(lang, 'verify.title'),
 		`${t(lang, 'label.mustflowRoot')}: ${output.mustflow_root}`,
 		`${t(lang, 'verify.label.reason')}: ${output.reason}`,
+		`${t(lang, 'verify.label.planSource')}: ${output.plan_source ?? t(lang, 'value.none')}`,
 		`${t(lang, 'verify.label.status')}: ${output.status}`,
 		`matched: ${output.summary.matched}`,
 		`ran: ${output.summary.ran}`,
@@ -269,6 +410,8 @@ export function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'e
 		const message =
 			parsed.error === 'missing_reason_value'
 				? t(lang, 'cli.error.missingValue', { option: '--reason' })
+				: parsed.error === 'missing_from_plan_value'
+					? t(lang, 'cli.error.missingValue', { option: '--from-plan' })
 				: parsed.error.startsWith('unexpected:')
 					? t(lang, 'cli.error.unexpectedArgument', { argument: parsed.error.slice('unexpected:'.length) })
 					: t(lang, 'cli.error.unknownOption', { option: parsed.error });
@@ -276,12 +419,28 @@ export function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 1;
 	}
 
-	if (!parsed.reason) {
+	if (parsed.reason && parsed.fromPlan) {
+		printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf verify --help', getVerifyHelp(lang), lang);
+		return 1;
+	}
+
+	if (!parsed.reason && !parsed.fromPlan) {
 		printUsageError(reporter, t(lang, 'verify.error.missingReason'), 'mf verify --help', getVerifyHelp(lang), lang);
 		return 1;
 	}
 
-	const output = createVerifyOutput(parsed.reason, resolveMustflowRoot(), lang);
+	const projectRoot = resolveMustflowRoot();
+	let reasons: string[];
+
+	try {
+		reasons = parsed.fromPlan ? readReasonsFromPlan(projectRoot, parsed.fromPlan) : [parsed.reason as string];
+	} catch (error) {
+		const code = error instanceof Error ? error.message : 'invalid_plan_file';
+		printUsageError(reporter, t(lang, planErrorMessageKey(code)), 'mf verify --help', getVerifyHelp(lang), lang);
+		return 1;
+	}
+
+	const output = createVerifyOutput(reasons, parsed.fromPlan ?? null, projectRoot, lang);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

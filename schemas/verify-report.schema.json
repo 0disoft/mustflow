@@ -9,6 +9,8 @@
     "command",
     "mustflow_root",
     "reason",
+    "reasons",
+    "plan_source",
     "status",
     "summary",
     "results"
@@ -18,6 +20,11 @@
     "command": { "const": "verify" },
     "mustflow_root": { "type": "string" },
     "reason": { "type": "string" },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "plan_source": { "type": ["string", "null"] },
     "status": { "enum": ["passed", "partial", "failed", "blocked"] },
     "summary": {
       "type": "object",
