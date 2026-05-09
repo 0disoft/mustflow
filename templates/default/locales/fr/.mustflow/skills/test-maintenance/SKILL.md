@@ -23,10 +23,12 @@ metadata:
 
 # Maintenance Des Tests
 
+<!-- mustflow-section: purpose -->
 ## Objectif
 
 Maintenir les tests alignes avec le contrat de comportement actuel.
 
+<!-- mustflow-section: use-when -->
 ## Utiliser Quand
 
 - Un comportement est ajoute, modifie, supprime ou deprecie.
@@ -34,11 +36,13 @@ Maintenir les tests alignes avec le contrat de comportement actuel.
 - Les tests existants peuvent etre obsoletes, dupliques, trop larges ou lies a des details d'implementation supprimes.
 - La sortie de snapshot a change.
 
+<!-- mustflow-section: do-not-use-when -->
 ## Ne Pas Utiliser Quand
 
 - La tache change uniquement de la prose ou des commentaires.
 - Le depot n'a pas d'intent de test configure et l'utilisateur a demande de ne pas ajouter de tests.
 
+<!-- mustflow-section: required-inputs -->
 ## Entrees Requises
 
 - Demande utilisateur
@@ -48,17 +52,20 @@ Maintenir les tests alignes avec le contrat de comportement actuel.
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` `[testing]`
 
+<!-- mustflow-section: preconditions -->
 ## Preconditions
 
 - La tache correspond aux conditions d'utilisation et ne correspond pas aux exclusions.
 - Les entrees requises sont disponibles, ou les entrees manquantes peuvent etre signalees sans supposition.
 - Les instructions de priorite superieure et `.mustflow/config/commands.toml` ont ete verifiees pour le perimetre actuel.
 
+<!-- mustflow-section: allowed-edits -->
 ## Modifications Autorisees
 
 - Garder les modifications dans le perimetre decrit par cette skill, la demande utilisateur et la route correspondante dans `.mustflow/skills/INDEX.md`.
 - Ne pas elargir les permissions de commande, inventer des faits projet ou modifier des fichiers de workflow sans rapport.
 
+<!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Definir le comportement actuel attendu.
@@ -74,11 +81,13 @@ Maintenir les tests alignes avec le contrat de comportement actuel.
 6. Traiter les mises a jour de snapshots comme manuelles, sauf si `snapshot_update` est explicitement approuve et configure.
 7. Garder les tests deterministes et proches du contrat de comportement.
 
+<!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - La sortie attendue peut etre produite avec preuves claires, intentions de commande executees, verifications ignorees et risques restants.
 - Toute intention de commande manquante, entree inconnue ou conflit d'autorite est signale au lieu d'etre cache.
 
+<!-- mustflow-section: verification -->
 ## Verification
 
 Utiliser les command intents oneshot configures quand ils sont disponibles:
@@ -92,6 +101,7 @@ Utiliser les command intents oneshot configures quand ils sont disponibles:
 
 Ne pas deduire des commandes de test manquantes.
 
+<!-- mustflow-section: failure-handling -->
 ## Gestion Des Echecs
 
 - Si les tests echouent, inspecter le premier echec pertinent.
@@ -99,6 +109,7 @@ Ne pas deduire des commandes de test manquantes.
 - S'il est incertain qu'un test soit obsolete, le signaler au lieu de le supprimer.
 - Si la commande de test est indisponible, signaler l'intent manquant.
 
+<!-- mustflow-section: output-format -->
 ## Format De Sortie
 
 - Contrat de comportement teste

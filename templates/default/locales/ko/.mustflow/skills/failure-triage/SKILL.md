@@ -22,20 +22,24 @@ metadata:
 
 # 실패 분석 (Failure Triage)
 
+<!-- mustflow-section: purpose -->
 ## 목적
 
 실패를 임의로 수정하거나 은폐하지 않고, 가장 가능성 높은 근본 원인을 체계적으로 분석합니다.
 
+<!-- mustflow-section: use-when -->
 ## 적용 시나리오
 
 - 설정된 명령 의도가 실패했을 때 적용합니다.
 - 테스트, 빌드, 규칙 검사, 문서 검증 실패의 원인을 좁혀야 할 때 적용합니다.
 
+<!-- mustflow-section: do-not-use-when -->
 ## 적용하지 않는 경우
 
 - 실패 로그나 실행한 명령 의도를 확인할 수 없는 경우, 먼저 실행 기록을 확보하십시오.
 - 파괴적인 복구 명령이 필요하다고 판단되면, 사용자의 승인 전까지는 진행하지 마십시오.
 
+<!-- mustflow-section: required-inputs -->
 ## 필요한 입력
 
 - 실패한 명령 의도 이름
@@ -45,17 +49,20 @@ metadata:
 - `.mustflow/docs/agent-workflow.md`의 실패 대응 정책
 - `.mustflow/config/commands.toml`의 실패한 명령 의도 계약
 
+<!-- mustflow-section: preconditions -->
 ## 사전 조건
 
 - 작업이 사용 조건에 맞고 사용하지 않는 경우에는 해당하지 않습니다.
 - 필요한 입력을 확보했거나, 빠진 입력을 추측하지 않고 보고할 수 있습니다.
 - 현재 범위에 대해 더 높은 우선순위의 지침과 `.mustflow/config/commands.toml`을 확인했습니다.
 
+<!-- mustflow-section: allowed-edits -->
 ## 허용 수정 범위
 
 - 이 스킬, 사용자 요청, `.mustflow/skills/INDEX.md`의 맞는 경로가 설명하는 범위 안에서만 수정합니다.
 - 명령 권한을 넓히거나, 프로젝트 사실을 지어내거나, 관련 없는 워크플로 파일을 변경하지 않습니다.
 
+<!-- mustflow-section: procedure -->
 ## 절차
 
 1. 실패한 명령 의도와 작업 디렉터리를 확인합니다.
@@ -68,11 +75,13 @@ metadata:
 8. 가장 작은 단위의 재현 명령이나 관련 파일을 식별합니다.
 9. 최소한의 수정을 적용한 후 실패한 명령 의도를 다시 실행하여 검증합니다.
 
+<!-- mustflow-section: postconditions -->
 ## 사후 조건
 
 - 명확한 근거, 실행한 명령 의도, 건너뛴 확인, 남은 위험을 포함해 예상 출력을 작성할 수 있습니다.
 - 빠진 명령 의도, 알 수 없는 입력, 권한 충돌은 숨기지 않고 보고합니다.
 
+<!-- mustflow-section: verification -->
 ## 검증
 
 공유 명령 정책은 `.mustflow/docs/agent-workflow.md#명령-실행-정책`을 따릅니다.
@@ -88,6 +97,7 @@ metadata:
 `test_watch`, `dev`, `start`, 브라우저 UI, 원시 개발 서버 명령은 검증 명령으로 사용하지 않습니다.
 스킬 문서 내에 실제 셸 명령을 직접 작성하지 마십시오.
 
+<!-- mustflow-section: failure-handling -->
 ## 실패 대응
 
 - 민감한 정보가 로그에 노출된 경우 즉시 중단하고 보고하십시오.
@@ -96,6 +106,7 @@ metadata:
 - 제한 시간 초과 후 정리가 실패했다면 프로세스 ID, 명령 의도, 정리 오류를 보고하십시오.
 - 원인이 외부 서비스나 권한 문제로 판단되면 현재까지 확인한 내용을 보고하십시오.
 
+<!-- mustflow-section: output-format -->
 ## 출력 형식
 
 - 작업 요약

@@ -19,10 +19,12 @@ metadata:
 
 # Web Asset Optimization
 
+<!-- mustflow-section: purpose -->
 ## Purpose
 
 Keep web image assets small, format-appropriate, and correctly referenced without inventing an image pipeline for the project.
 
+<!-- mustflow-section: use-when -->
 ## Use When
 
 - A generated PNG, JPEG, WebP, AVIF, GIF, or other raster image is added to a website or web app.
@@ -30,6 +32,7 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 - A page, component, stylesheet, or metadata file changes image references.
 - A user asks to reduce image size, convert to WebP or AVIF, or prepare generated images for production use.
 
+<!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
 
 - The asset is a vector source such as SVG, icon font, or design-token file.
@@ -37,6 +40,7 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 - The repository already has a more specific media, design-system, or framework asset procedure.
 - The task is only to generate a new image and not to install or reference it in the repository.
 
+<!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
 - The image file paths and their current or intended references.
@@ -44,17 +48,20 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 - Existing framework image conventions, static asset folders, and import style.
 - `.mustflow/config/commands.toml` entries for `asset_optimize` and `build`.
 
+<!-- mustflow-section: preconditions -->
 ## Preconditions
 
 - The task matches the Use When conditions and does not match the Do Not Use When exclusions.
 - Required inputs are available, or missing inputs can be reported without guessing.
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 
+<!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
 - Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
 - Do not broaden command permission, invent project facts, or change unrelated workflow files.
 
+<!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Identify every changed image asset and every page, component, style, metadata, or manifest reference that depends on it.
@@ -66,11 +73,13 @@ Keep web image assets small, format-appropriate, and correctly referenced withou
 7. Update imports, static paths, metadata references, dimensions, and cache-sensitive filenames according to the local style.
 8. Compare before and after file sizes and note any quality, transparency, animation, browser-support, or fallback tradeoff.
 
+<!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
 - Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
+<!-- mustflow-section: verification -->
 ## Verification
 
 Use configured oneshot command intents when available:
@@ -80,6 +89,7 @@ Use configured oneshot command intents when available:
 
 Do not infer missing image optimization commands. If `asset_optimize` is unknown, missing, manual-only, or not agent-runnable, report that status and describe the intended optimization without executing an unconfigured tool.
 
+<!-- mustflow-section: failure-handling -->
 ## Failure Handling
 
 - If optimization visibly degrades the image or breaks transparency, restore or keep the better asset and report the tradeoff.
@@ -87,6 +97,7 @@ Do not infer missing image optimization commands. If `asset_optimize` is unknown
 - If the repository lacks an optimization command, propose the smallest project-specific command intent instead of running an external website or guessed package command.
 - If the build fails after asset changes, investigate the first asset-related failure before touching unrelated code.
 
+<!-- mustflow-section: output-format -->
 ## Output Format
 
 - Images reviewed or changed

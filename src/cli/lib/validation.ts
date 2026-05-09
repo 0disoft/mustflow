@@ -44,86 +44,20 @@ import {
 	releaseVersioningIsEnabled,
 } from './version-sources.js';
 
-const REQUIRED_SKILL_SECTION_SETS = [
-	[
-		'## 목적',
-		'## 사용 조건',
-		'## 사용하지 않는 경우',
-		'## 필요한 입력',
-		'## 사전 조건',
-		'## 허용 수정 범위',
-		'## 절차',
-		'## 사후 조건',
-		'## 검증',
-		'## 실패 대응',
-		'## 출력 형식',
-	],
-	[
-		'## Purpose',
-		'## Use When',
-		'## Do Not Use When',
-		'## Required Inputs',
-		'## Preconditions',
-		'## Allowed Edits',
-		'## Procedure',
-		'## Postconditions',
-		'## Verification',
-		'## Failure Handling',
-		'## Output Format',
-	],
-	[
-		'## Proposito',
-		'## Usar Cuando',
-		'## No Usar Cuando',
-		'## Entradas Requeridas',
-		'## Precondiciones',
-		'## Ediciones Permitidas',
-		'## Procedimiento',
-		'## Postcondiciones',
-		'## Verificacion',
-		'## Manejo De Fallos',
-		'## Formato De Salida',
-	],
-	[
-		'## Objectif',
-		'## Utiliser Quand',
-		'## Ne Pas Utiliser Quand',
-		'## Entrees Requises',
-		'## Preconditions',
-		'## Modifications Autorisees',
-		'## Procedure',
-		'## Postconditions',
-		'## Verification',
-		'## Gestion Des Echecs',
-		'## Format De Sortie',
-	],
-	[
-		'## उद्देश्य',
-		'## कब उपयोग करें',
-		'## कब उपयोग न करें',
-		'## आवश्यक इनपुट',
-		'## पूर्व शर्तें',
-		'## अनुमत edits',
-		'## प्रक्रिया',
-		'## पश्च शर्तें',
-		'## सत्यापन',
-		'## विफलता प्रबंधन',
-		'## आउटपुट प्रारूप',
-	],
-	[
-		'## 目标',
-		'## 使用时机',
-		'## 不适用时机',
-		'## 必要输入',
-		'## 前置条件',
-		'## 允许编辑范围',
-		'## 流程',
-		'## 后置条件',
-		'## 验证',
-		'## 失败处理',
-		'## 输出格式',
-	],
+const REQUIRED_SKILL_SECTION_IDS = [
+	'purpose',
+	'use-when',
+	'do-not-use-when',
+	'required-inputs',
+	'preconditions',
+	'allowed-edits',
+	'procedure',
+	'postconditions',
+	'verification',
+	'failure-handling',
+	'output-format',
 ] as const;
+const SKILL_SECTION_MARKER_PATTERN = /^<!--\s*mustflow-section:\s*([a-z][a-z0-9-]*)\s*-->\s*\r?\n##\s+.+$/gimu;
 
 const REQUIRED_FILES = [
 	'AGENTS.md',
@@ -328,6 +262,8 @@ export type CheckIssueId =
 
 export interface CheckIssueDetail {
 	readonly id: CheckIssueId | null;
+	readonly severity: 'error' | 'warning';
+	readonly mode: 'base' | 'strict';
 	readonly message: string;
 }
 
@@ -367,6 +303,8 @@ export function getCheckIssueId(message: string): CheckIssueId | null {
 export function describeCheckIssues(messages: readonly string[]): CheckIssueDetail[] {
 	return messages.map((message) => ({
 		id: getCheckIssueId(message),
+		severity: 'error',
+		mode: message.startsWith('Strict: ') ? 'strict' : 'base',
 		message,
 	}));
 }
@@ -1426,16 +1364,19 @@ function validateSkills(projectRoot: string, issues: CheckIssue[]): void {
 	for (const relativePath of skillFiles) {
 		const absolutePath = path.join(skillsRoot, relativePath);
 		const content = readFileSync(absolutePath, 'utf8');
-		const matchingSectionSet = REQUIRED_SKILL_SECTION_SETS.find((sectionSet) =>
-			sectionSet.every((section) => content.includes(section)),
-		);
+		const sectionIds = readSkillSectionIds(content);
+		const missingSectionIds = REQUIRED_SKILL_SECTION_IDS.filter((sectionId) => !sectionIds.has(sectionId));
 
-		if (!matchingSectionSet) {
+		if (missingSectionIds.length > 0) {
 			issues.push({
-				message: `Missing required skill section set in .mustflow/skills/${toPosixPath(relativePath)}; expected a supported mustflow skill heading set`,
+				message: `Missing required skill section ids in .mustflow/skills/${toPosixPath(relativePath)}: ${missingSectionIds.join(', ')}`,
 			});
 		}
 	}
+}
+
+function readSkillSectionIds(content: string): Set<string> {
+	return new Set([...content.matchAll(SKILL_SECTION_MARKER_PATTERN)].map((match) => match[1]));
 }
 
 function parseSimpleFrontmatter(content: string): Record<string, string> {

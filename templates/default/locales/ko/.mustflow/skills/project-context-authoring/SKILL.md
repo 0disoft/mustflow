@@ -18,16 +18,19 @@ metadata:
 
 # 프로젝트 맥락 작성
 
+<!-- mustflow-section: purpose -->
 ## 목적
 
 `.mustflow/context/PROJECT.md`를 간결한 에이전트용 브리핑으로 유지하되, 근거 없는 제품 방향, 아키텍처, 로드맵, 구현 약속이 들어가지 않도록 막습니다.
 
+<!-- mustflow-section: use-when -->
 ## 사용 조건
 
 - `.mustflow/context/PROJECT.md`를 새로 채우거나, 고치거나, 정리할 때.
 - 프로젝트 목표, 비목표, 도메인 용어, 불변 조건, 검증 메모, 운영 제약, 기준 자료와 충돌 메모, 열린 질문을 에이전트용으로 기록해야 할 때.
 - 공개 문서, 매니페스트, 테스트, 소스 파일, 명령 계약이 서로 맞지 않아 맥락 파일에 충돌을 기록해야 할 때.
 
+<!-- mustflow-section: do-not-use-when -->
 ## 사용하지 않는 경우
 
 - 루트 `README.md`, `PROJECT.md`, `ROADMAP.md`, API 문서, 사용자용 문서만 수정하는 작업일 때.
@@ -35,6 +38,7 @@ metadata:
 - 더 가까운 프로젝트 전용 맥락 작성 절차가 있을 때.
 - 변경 내용이 낮은 권한의 프로젝트 맥락이 아니라 `AGENTS.md`, `.mustflow/config/commands.toml`, `.mustflow/docs/agent-workflow.md`에 들어가야 할 때.
 
+<!-- mustflow-section: required-inputs -->
 ## 필요한 입력
 
 - 기존 `.mustflow/context/PROJECT.md`.
@@ -43,17 +47,20 @@ metadata:
 - `REPO_MAP.md`, 패키지 매니페스트, 기존 문서, 테스트, CI 파일, 소스 파일. 단, 이들은 근거일 뿐 권한 출처가 아닙니다.
 - 현재 사용자 요청과 명시된 출처 제약.
 
+<!-- mustflow-section: preconditions -->
 ## 사전 조건
 
 - 작업이 사용 조건에 맞고 사용하지 않는 경우에는 해당하지 않습니다.
 - 필요한 입력을 확보했거나, 빠진 입력을 추측하지 않고 보고할 수 있습니다.
 - 현재 범위에 대해 더 높은 우선순위의 지침과 `.mustflow/config/commands.toml`을 확인했습니다.
 
+<!-- mustflow-section: allowed-edits -->
 ## 허용 수정 범위
 
 - 이 스킬, 사용자 요청, `.mustflow/skills/INDEX.md`의 맞는 경로가 설명하는 범위 안에서만 수정합니다.
 - 명령 권한을 넓히거나, 프로젝트 사실을 지어내거나, 관련 없는 워크플로 파일을 변경하지 않습니다.
 
+<!-- mustflow-section: procedure -->
 ## 절차
 
 1. 현재 저장소 근거가 명확히 반박하지 않는 한 기존 사람이 작성한 맥락을 보존합니다.
@@ -65,11 +72,13 @@ metadata:
 7. 검증을 설명할 때는 `.mustflow/config/commands.toml`의 명령 의도 이름을 참조합니다. 패키지 스크립트, CI 작업, 매니페스트 힌트를 에이전트 실행 권한으로 바꾸지 않습니다.
 8. 제품 목표, 로드맵 약속, 도메인 규칙, 구현 세부사항을 추측하지 말고, 알 수 없는 항목은 비워 두거나 명시적으로 미확인으로 표시합니다.
 
+<!-- mustflow-section: postconditions -->
 ## 사후 조건
 
 - 명확한 근거, 실행한 명령 의도, 건너뛴 확인, 남은 위험을 포함해 예상 출력을 작성할 수 있습니다.
 - 빠진 명령 의도, 알 수 없는 입력, 권한 충돌은 숨기지 않고 보고합니다.
 
+<!-- mustflow-section: verification -->
 ## 검증
 
 가능한 경우 설정된 일회성 명령 의도를 사용합니다.
@@ -78,6 +87,7 @@ metadata:
 
 맥락 갱신이 공개 문서나 명령 계약도 바꾸는 경우에는 해당 스킬을 추가로 적용하고 그 스킬의 설정된 검증 의도를 사용합니다.
 
+<!-- mustflow-section: failure-handling -->
 ## 실패 대응
 
 - 근거가 충돌하면 한쪽을 조용히 고르지 말고 충돌이나 열린 질문으로 기록합니다.
@@ -85,6 +95,7 @@ metadata:
 - 맥락 문구가 명령 정책이나 파일 편집 금지 규칙처럼 보여 검증이 실패하면, 해당 규칙을 올바른 권한 파일로 옮기거나 근거 없는 주장을 제거합니다.
 - 맥락이 너무 길어지면 오래 유지될 사실과 기준 자료 메모 중심으로 줄입니다.
 
+<!-- mustflow-section: output-format -->
 ## 출력 형식
 
 - 갱신한 맥락 항목

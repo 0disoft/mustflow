@@ -17,7 +17,7 @@ Use `--json` when automation or an agent needs to parse the results.
 - `.mustflow/config/preferences.toml`, if present, uses valid basic types for language, formatting, code style, git, docs, and logging preferences.
 - `.mustflow/config/manifest.lock.toml`, if present, is validated against current file contents.
 - `.mustflow/skills/INDEX.md` exists.
-- `.mustflow/skills/*/SKILL.md` files contain the required standard sections.
+- `.mustflow/skills/*/SKILL.md` files contain the required stable section identifiers.
 - `.mustflow/context/*.md` files, if present, are correctly identified as mustflow context documents.
 - `commands.toml` intents with `status = "configured"` include necessary command information, lifecycle, run policy, and timeout.
 - Long-running lifecycles are not exposed with `run_policy = "agent_allowed"`.
@@ -43,6 +43,14 @@ npx mf check --strict
 
 Strict mode is optional to ensure the normal workflow remains lightweight. It is recommended after modifying mustflow documents, skills, command contracts, or repository-map generation rules.
 
+## Error and Warning Classification
+
+`mf check` treats structural violations as blocking errors. A reported issue always exits with code `1`.
+
+- Base errors come from required files, parse failures, unsafe configuration values, command-contract violations, missing skill section identifiers, invalid context document identity, and manifest-lock drift.
+- Strict errors come from additional document identity, routing, skill metadata, command-boundary, repository-map, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
+- Non-blocking observations are not emitted as `mf check` issues. Use `mf doctor` diagnostics when automation needs informational or warning-level health signals.
+
 ## Configuration Rules
 
 `mf check` treats `[map]`, `[workspace]`, and `[context]` as flexible, default-backed configurations, but fails if values are unsafe or ambiguous.
@@ -66,20 +74,24 @@ For older installations, a missing `manifest.lock.toml` does not cause the check
 - Intents with `lifecycle = "oneshot"` require `timeout_seconds` and `stdin = "closed"`.
 - `server`, `watch`, `interactive`, `browser`, and `background` intents must not be exposed as default agent-runnable commands.
 
-## Standard Skill Sections
+## Standard Skill Section IDs
 
-Skill documents must include these sections.
+Skill documents must include these stable section identifiers before their localized section headings.
 
 ```text
-## 목적
-## 사용 조건
-## 사용하지 않는 경우
-## 필요한 입력
-## 절차
-## 검증
-## 실패 대응
-## 출력 형식
+<!-- mustflow-section: purpose -->
+<!-- mustflow-section: use-when -->
+<!-- mustflow-section: do-not-use-when -->
+<!-- mustflow-section: required-inputs -->
+<!-- mustflow-section: preconditions -->
+<!-- mustflow-section: allowed-edits -->
+<!-- mustflow-section: procedure -->
+<!-- mustflow-section: postconditions -->
+<!-- mustflow-section: verification -->
+<!-- mustflow-section: failure-handling -->
+<!-- mustflow-section: output-format -->
 ```
+
 
 ## Example
 
@@ -93,7 +105,7 @@ On success, it prints:
 mustflow check passed
 ```
 
-On failure, it prints missing files or sections to standard error and exits with code `1`.
+On failure, it prints missing files or section identifiers to standard error and exits with code `1`.
 
 ## JSON Fields
 
@@ -107,7 +119,7 @@ Machine-readable output uses these fields:
 - `strict` (`boolean`): Whether `--strict` checks were enabled.
 - `issueCount` (`number`): Number of issues found.
 - `issues` (`string[]`): Human-readable issue messages.
-- `issueDetails` (`object[]`): Machine-readable issue details. `id` is a stable identifier for command-boundary and related strict checks when one applies, and `message` mirrors `issues`.
+- `issueDetails` (`object[]`): Machine-readable issue details. `id` is a stable identifier for command-boundary and related strict checks when one applies, `severity` is currently `error` for every blocking check issue, `mode` is `base` or `strict`, and `message` mirrors `issues`.
 
 When issues are found, the JSON form also exits with code `1`.
 

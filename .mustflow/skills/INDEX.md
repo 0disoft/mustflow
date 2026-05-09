@@ -3,8 +3,8 @@ mustflow_doc: skills.index
 locale: en
 canonical: true
 revision: 10
-lifecycle: mustflow-owned
 authority: router
+lifecycle: mustflow-owned
 ---
 
 # Skills Index

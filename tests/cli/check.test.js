@@ -101,6 +101,8 @@ test('prints check result as json', () => {
 		assert.deepEqual(check.issueDetails, [
 			{
 				id: null,
+				severity: 'error',
+				mode: 'base',
 				message: 'Lock hash mismatch: AGENTS.md',
 			},
 		]);
@@ -146,6 +148,7 @@ test('strict check fails enabled versioning preferences without a detected versi
 					'Strict: [release.versioning] is enabled but no version source was detected; add .mustflow/config/versioning.toml or a package/template version source',
 			),
 		);
+		assert.ok(check.issueDetails.some((issue) => issue.severity === 'error' && issue.mode === 'strict'));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1031,12 +1034,13 @@ test('fails when a skill omits a required section', () => {
 		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
-		writeFileSync(skillPath, skill.replace('## Verification', '## Checks'));
+		writeFileSync(skillPath, skill.replace(/<!-- mustflow-section: verification -->\r?\n/u, ''));
 
 		const result = runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Missing required skill section set/);
+		assert.match(result.stderr, /Missing required skill section ids/);
+		assert.match(result.stderr, /verification/);
 		assert.match(result.stderr, /code-review\/SKILL\.md/);
 	} finally {
 		removeTempProject(projectPath);
@@ -1050,13 +1054,33 @@ test('fails when a skill omits an extended contract section', () => {
 		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
-		writeFileSync(skillPath, skill.replace('## Preconditions', '## Starting State'));
+		writeFileSync(skillPath, skill.replace(/<!-- mustflow-section: preconditions -->\r?\n/u, ''));
 
 		const result = runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Missing required skill section set/);
+		assert.match(result.stderr, /Missing required skill section ids/);
+		assert.match(result.stderr, /preconditions/);
 		assert.match(result.stderr, /code-review\/SKILL\.md/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('accepts localized skill headings when stable section ids remain', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
+		const skill = readFileSync(skillPath, 'utf8');
+		writeFileSync(skillPath, skill.replace('## Verification', '## Checks'));
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /mustflow check passed/);
 	} finally {
 		removeTempProject(projectPath);
 	}

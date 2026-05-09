@@ -23,10 +23,12 @@ metadata:
 
 # परीक्षण रखरखाव
 
+<!-- mustflow-section: purpose -->
 ## उद्देश्य
 
 परीक्षणों को वर्तमान व्यवहार अनुबंध के अनुरूप बनाए रखना।
 
+<!-- mustflow-section: use-when -->
 ## कब उपयोग करें
 
 - व्यवहार जोड़ा, बदला, हटाया, या deprecated हुआ हो।
@@ -34,11 +36,13 @@ metadata:
 - मौजूदा परीक्षण stale, duplicate, बहुत व्यापक, या हटे हुए implementation details से जुड़े हो सकते हों।
 - snapshot output बदल गई हो।
 
+<!-- mustflow-section: do-not-use-when -->
 ## कब उपयोग न करें
 
 - कार्य केवल गद्य या टिप्पणियां बदलता हो।
 - रिपॉजिटरी में configured test intent न हो और उपयोगकर्ता ने परीक्षण न जोड़ने को कहा हो।
 
+<!-- mustflow-section: required-inputs -->
 ## आवश्यक इनपुट
 
 - उपयोगकर्ता अनुरोध
@@ -48,17 +52,20 @@ metadata:
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` का `[testing]`
 
+<!-- mustflow-section: preconditions -->
 ## पूर्व शर्तें
 
 - Task Use When conditions से match करता है और Do Not Use When exclusions से match नहीं करता।
 - Required inputs उपलब्ध हैं, या missing inputs को guess किए बिना report किया जा सकता है।
 - Higher-priority instructions और `.mustflow/config/commands.toml` current scope के लिए check किए गए हैं।
 
+<!-- mustflow-section: allowed-edits -->
 ## अनुमत edits
 
 - Edits को इस skill, user request और `.mustflow/skills/INDEX.md` की matching route में बताए scope तक सीमित रखें।
 - Command permission न बढ़ाएं, project facts invent न करें और unrelated workflow files न बदलें।
 
+<!-- mustflow-section: procedure -->
 ## प्रक्रिया
 
 1. अपेक्षित वर्तमान व्यवहार परिभाषित करें।
@@ -74,11 +81,13 @@ metadata:
 6. snapshot updates को manual मानें, जब तक `snapshot_update` स्पष्ट रूप से approved और configured न हो।
 7. परीक्षणों को deterministic और व्यवहार अनुबंध के निकट रखें।
 
+<!-- mustflow-section: postconditions -->
 ## पश्च शर्तें
 
 - Expected output clear evidence, executed command intents, skipped checks और remaining risks के साथ बनाया जा सकता है।
 - Missing command intent, unknown input या authority conflict को छिपाने के बजाय report किया जाता है।
 
+<!-- mustflow-section: verification -->
 ## सत्यापन
 
 जहां उपलब्ध हों, configured oneshot command intents उपयोग करें:
@@ -92,6 +101,7 @@ metadata:
 
 गायब परीक्षण कमांड का अनुमान न लगाएं।
 
+<!-- mustflow-section: failure-handling -->
 ## विफलता प्रबंधन
 
 - परीक्षण विफल होने पर पहला प्रासंगिक विफलता कारण देखें।
@@ -99,6 +109,7 @@ metadata:
 - यदि यह स्पष्ट न हो कि परीक्षण stale है, तो हटाने के बजाय रिपोर्ट करें।
 - यदि test command उपलब्ध न हो, तो missing intent रिपोर्ट करें।
 
+<!-- mustflow-section: output-format -->
 ## आउटपुट प्रारूप
 
 - परीक्षणित व्यवहार अनुबंध

@@ -26,10 +26,12 @@ metadata:
 
 # Diff Risk Review
 
+<!-- mustflow-section: purpose -->
 ## Purpose
 
 Classify the risk of a completed change, choose the smallest relevant configured verification, and record rollback notes without expanding into a broad code review or speculative refactor.
 
+<!-- mustflow-section: use-when -->
 ## Use When
 
 - A change touches more than one public surface, workflow file, command contract, template, generated map, test, or documentation area.
@@ -37,6 +39,7 @@ Classify the risk of a completed change, choose the smallest relevant configured
 - Verification breadth is unclear and the agent must decide between targeted, docs-only, build, strict check, or full test intents.
 - A change has potential rollback concerns because it affects installed templates, package metadata, generated files, user-facing docs, command behavior, security-sensitive paths, or data-handling rules.
 
+<!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
 
 - The task is only to perform a detailed code review with findings; use `code-review` instead.
@@ -44,6 +47,7 @@ Classify the risk of a completed change, choose the smallest relevant configured
 - The change is a trivial wording edit that is already covered by a more specific documentation or translation procedure.
 - The user explicitly asks not to review risk or verification scope.
 
+<!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
 - Current changed-file list or diff summary.
@@ -52,17 +56,20 @@ Classify the risk of a completed change, choose the smallest relevant configured
 - `.mustflow/config/preferences.toml` verification-selection settings.
 - Relevant skill or context documents for the changed surfaces.
 
+<!-- mustflow-section: preconditions -->
 ## Preconditions
 
 - The task matches the Use When conditions and does not match the Do Not Use When exclusions.
 - Required inputs are available, or missing inputs can be reported without guessing.
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 
+<!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
 - Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
 - Do not broaden command permission, invent project facts, change unrelated files, or add new abstractions only because a risk was noticed.
 
+<!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Read the changed-file list and diff summary before judging risk.
@@ -84,12 +91,14 @@ Classify the risk of a completed change, choose the smallest relevant configured
 6. Check for scope drift: unrelated files, invented facts, unnecessary abstractions, weakened validation, or unreported generated-file refreshes.
 7. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
 
+<!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
 - Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 - The final report can explain why each verification intent was run or skipped.
 
+<!-- mustflow-section: verification -->
 ## Verification
 
 Use configured oneshot command intents when available:
@@ -106,6 +115,7 @@ Use configured oneshot command intents when available:
 
 Do not infer missing commands. If `test_related`, `test_audit`, or `lint` is unknown or manual-only, report the status and choose the next configured intent that covers the risk.
 
+<!-- mustflow-section: failure-handling -->
 ## Failure Handling
 
 - If the changed-file list is unavailable, run or request a configured status intent before classifying risk.
@@ -113,6 +123,7 @@ Do not infer missing commands. If `test_related`, `test_audit`, or `lint` is unk
 - If the risk level is high but the matching verification intent is missing, report the gap instead of downgrading risk.
 - If generated files such as `REPO_MAP.md` are stale, refresh them only through their configured intent.
 
+<!-- mustflow-section: output-format -->
 ## Output Format
 
 - Changed surfaces

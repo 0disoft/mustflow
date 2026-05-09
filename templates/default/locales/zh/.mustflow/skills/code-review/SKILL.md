@@ -21,20 +21,24 @@ metadata:
 
 # 代码审查
 
+<!-- mustflow-section: purpose -->
 ## 目标
 
 验证改动是否与请求一致，并确保不存在行为风险或验证缺口。
 
+<!-- mustflow-section: use-when -->
 ## 使用时机
 
 - 代码变更、diff、pull request 或潜在回归风险需要审查时。
 - 主要目标是风险评估，而非实现新行为。
 
+<!-- mustflow-section: do-not-use-when -->
 ## 不适用时机
 
 - 任务仅涉及措辞、翻译或格式调整。
 - 没有可供审查的变更文件或 diff。
 
+<!-- mustflow-section: required-inputs -->
 ## 必要输入
 
 - 修改文件或 diff
@@ -43,17 +47,20 @@ metadata:
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+<!-- mustflow-section: preconditions -->
 ## 前置条件
 
 - 任务符合使用时机，且不符合不适用时机中的排除条件。
 - 所需输入已经可用，或可以报告缺失输入而不进行猜测。
 - 已针对当前范围检查更高优先级的指令和 `.mustflow/config/commands.toml`。
 
+<!-- mustflow-section: allowed-edits -->
 ## 允许编辑范围
 
 - 编辑必须限制在此技能、用户请求以及 `.mustflow/skills/INDEX.md` 中匹配路由描述的范围内。
 - 不要扩大命令权限、编造项目事实或更改无关的工作流文件。
 
+<!-- mustflow-section: procedure -->
 ## 流程
 
 1. 审查已修改文件列表。
@@ -69,11 +76,13 @@ metadata:
 5. 验证相关 command intents 是否存在。
 6. 按严重级别记录发现项。
 
+<!-- mustflow-section: postconditions -->
 ## 后置条件
 
 - 可以用清晰证据、已执行的命令意图、跳过的检查和剩余风险产出预期输出。
 - 任何缺失的命令意图、未知输入或权限冲突都会被报告，而不是被隐藏。
 
+<!-- mustflow-section: verification -->
 ## 验证
 
 遵循 `.mustflow/docs/agent-workflow.md#command-execution-policy`。
@@ -87,12 +96,14 @@ metadata:
 
 不要引入原始 shell 命令；应引用 `.mustflow/config/commands.toml` 中定义的 command intent 名称。
 
+<!-- mustflow-section: failure-handling -->
 ## 失败处理
 
 - 若 command intent 缺失、仅允许手动执行、已禁用或未知，应报告状态，不要猜测。
 - 记录所有跳过的验证及其对应剩余风险。
 - 若发现敏感数据或破坏性命令风险，应立即停止并上报。
 
+<!-- mustflow-section: output-format -->
 ## 输出格式
 
 - 摘要

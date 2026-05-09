@@ -21,20 +21,24 @@ metadata:
 
 # Revision De Codigo
 
+<!-- mustflow-section: purpose -->
 ## Proposito
 
 Verificar que un cambio se alinee con la solicitud y asegurar que no queden riesgos de comportamiento ni brechas de verificacion.
 
+<!-- mustflow-section: use-when -->
 ## Usar Cuando
 
 - Cambios de codigo, diferencias, solicitudes de extraccion o riesgos potenciales de regresion requieran revision.
 - El objetivo principal sea evaluar riesgos en lugar de implementar comportamiento nuevo.
 
+<!-- mustflow-section: do-not-use-when -->
 ## No Usar Cuando
 
 - La tarea solo implique cambios de redaccion, traduccion o formato.
 - No haya archivos cambiados ni diferencias disponibles para revisar.
 
+<!-- mustflow-section: required-inputs -->
 ## Entradas Requeridas
 
 - Archivos modificados o diferencias
@@ -43,17 +47,20 @@ Verificar que un cambio se alinee con la solicitud y asegurar que no queden ries
 - `.mustflow/docs/agent-workflow.md`
 - `.mustflow/config/commands.toml`
 
+<!-- mustflow-section: preconditions -->
 ## Precondiciones
 
 - La tarea coincide con las condiciones de uso y no coincide con las exclusiones.
 - Las entradas requeridas estan disponibles, o las entradas faltantes pueden reportarse sin adivinar.
 - Las instrucciones de mayor prioridad y `.mustflow/config/commands.toml` se revisaron para el alcance actual.
 
+<!-- mustflow-section: allowed-edits -->
 ## Ediciones Permitidas
 
 - Mantener las ediciones dentro del alcance descrito por esta skill, la solicitud del usuario y la ruta coincidente en `.mustflow/skills/INDEX.md`.
 - No ampliar permisos de comando, inventar hechos del proyecto ni cambiar archivos de workflow no relacionados.
 
+<!-- mustflow-section: procedure -->
 ## Procedimiento
 
 1. Revisa la lista de archivos modificados.
@@ -69,11 +76,13 @@ Verificar que un cambio se alinee con la solicitud y asegurar que no queden ries
 5. Verifica la existencia de command intents relevantes.
 6. Documenta hallazgos categorizados por severidad.
 
+<!-- mustflow-section: postconditions -->
 ## Postcondiciones
 
 - La salida esperada puede producirse con evidencia clara, intentos de comando ejecutados, verificaciones omitidas y riesgos restantes.
 - Cualquier intento de comando faltante, entrada desconocida o conflicto de autoridad se reporta en lugar de ocultarse.
 
+<!-- mustflow-section: verification -->
 ## Verificacion
 
 Sigue `.mustflow/docs/agent-workflow.md#command-execution-policy`.
@@ -87,12 +96,14 @@ Command intents relacionados:
 
 Evita introducir comandos crudos de shell; referencia los nombres de command intent definidos en `.mustflow/config/commands.toml`.
 
+<!-- mustflow-section: failure-handling -->
 ## Manejo De Fallos
 
 - Si un command intent falta, esta restringido a ejecucion manual, esta deshabilitado o es desconocido, reporta el estado en lugar de adivinar.
 - Documenta cualquier verificacion omitida y los riesgos remanentes asociados.
 - Deten el proceso de inmediato y reporta si se identifican datos sensibles o riesgos de comandos destructivos.
 
+<!-- mustflow-section: output-format -->
 ## Formato De Salida
 
 - Resumen

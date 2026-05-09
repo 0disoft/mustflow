@@ -17,7 +17,7 @@ Usa `--json` cuando una automatización o un agente necesite analizar los result
 - `.mustflow/config/preferences.toml`, si existe, usa formas básicas válidas para idioma, formato, estilo de código, Git, documentación y preferencias de registro.
 - `.mustflow/config/manifest.lock.toml`, si existe, se valida contra el contenido actual de los archivos.
 - `.mustflow/skills/INDEX.md` existe.
-- Los archivos `.mustflow/skills/*/SKILL.md` contienen las secciones estándar requeridas.
+- Los archivos `.mustflow/skills/*/SKILL.md` contienen los identificadores de sección estables requeridos.
 - Los archivos `.mustflow/context/*.md`, si existen, están identificados correctamente como documentos de contexto mustflow.
 - Las intenciones de `commands.toml` con `status = "configured"` incluyen la información de comando, el ciclo de vida, la política de ejecución y el tiempo de espera requeridos.
 - Los ciclos de vida de larga duración no se exponen con `run_policy = "agent_allowed"`.
@@ -38,6 +38,14 @@ npx mf check --strict
 - El cuerpo de una skill no debe afirmar que concede permiso para ejecutar comandos; esos permisos permanecen en `.mustflow/config/commands.toml`.
 
 El modo estricto es opcional para que el flujo normal siga siendo ligero. Se recomienda después de modificar documentos mustflow, skills, contratos de comando o reglas de generación del mapa del repositorio.
+
+## Clasificacion de errores y advertencias
+
+`mf check` trata las infracciones estructurales como errores bloqueantes. Cualquier problema informado termina con código `1`.
+
+- Los errores base vienen de archivos requeridos faltantes, errores de parseo, valores de configuración inseguros, infracciones del contrato de comandos, identificadores de sección de skill faltantes, identidad inválida de documentos de contexto y desajuste del archivo de bloqueo.
+- Los errores estrictos vienen de comprobaciones adicionales de identidad de documentos, rutas, metadatos de skills, límites de comando, mapa del repositorio, retención, recibo de ejecución e higiene de contexto. Solo aparecen cuando `--strict` está habilitado.
+- Las observaciones no bloqueantes no se emiten como problemas de `mf check`. Usa los diagnósticos de `mf doctor` cuando la automatización necesite señales informativas o de advertencia.
 
 ## Reglas de configuración
 
@@ -62,20 +70,24 @@ En instalaciones antiguas, la ausencia de `manifest.lock.toml` no hace fallar la
 - Las intenciones con `lifecycle = "oneshot"` requieren `timeout_seconds` y `stdin = "closed"`.
 - Las intenciones `server`, `watch`, `interactive`, `browser` y `background` no deben exponerse como comandos predeterminados ejecutables por agentes.
 
-## Secciones estándar de skill
+## Identificadores estándar de secciones de skill
 
-Los documentos de skill deben incluir estas secciones.
+Los documentos de skill deben incluir estos identificadores estables antes de sus títulos localizados.
 
 ```text
-## Propósito
-## Cuándo usar
-## Cuándo no usar
-## Entradas requeridas
-## Procedimiento
-## Validación
-## Manejo de fallos
-## Contrato de salida
+<!-- mustflow-section: purpose -->
+<!-- mustflow-section: use-when -->
+<!-- mustflow-section: do-not-use-when -->
+<!-- mustflow-section: required-inputs -->
+<!-- mustflow-section: preconditions -->
+<!-- mustflow-section: allowed-edits -->
+<!-- mustflow-section: procedure -->
+<!-- mustflow-section: postconditions -->
+<!-- mustflow-section: verification -->
+<!-- mustflow-section: failure-handling -->
+<!-- mustflow-section: output-format -->
 ```
+
 
 ## Ejemplo
 
@@ -89,7 +101,7 @@ Si tiene éxito, imprime:
 mustflow check passed
 ```
 
-Si falla, imprime los archivos o secciones faltantes en el error estándar y sale con el código `1`.
+Si falla, imprime los archivos o identificadores de sección faltantes en el error estándar y sale con el código `1`.
 
 ## Campos JSON
 
@@ -103,7 +115,7 @@ La salida legible por máquinas usa estos campos:
 - `strict` (`boolean`): si las comprobaciones `--strict` estaban habilitadas.
 - `issueCount` (`number`): número de problemas encontrados.
 - `issues` (`string[]`): mensajes de problema legibles para personas.
-- `issueDetails` (`object[]`): detalles de problema legibles por máquinas. `id` es un identificador estable para límites de comando y comprobaciones estrictas relacionadas cuando corresponde, y `message` replica `issues`.
+- `issueDetails` (`object[]`): detalles de problema legibles por máquinas. `id` es un identificador estable para límites de comando y comprobaciones estrictas relacionadas cuando corresponde, `severity` actualmente es `error` para todos los problemas bloqueantes, `mode` es `base` o `strict`, y `message` replica `issues`.
 
 Cuando se encuentran problemas, la salida JSON también termina con el código `1`.
 

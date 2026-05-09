@@ -23,10 +23,12 @@ metadata:
 
 # Test Maintenance
 
+<!-- mustflow-section: purpose -->
 ## Purpose
 
 Keep tests aligned with the current behavior contract.
 
+<!-- mustflow-section: use-when -->
 ## Use When
 
 - Behavior is added, changed, removed, or deprecated.
@@ -34,11 +36,13 @@ Keep tests aligned with the current behavior contract.
 - Existing tests may be stale, duplicated, too broad, or tied to removed implementation details.
 - Snapshot output has changed.
 
+<!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
 
 - The task only changes prose or comments.
 - The repository lacks a configured test intent and the user has requested not to add tests.
 
+<!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
 - User request
@@ -48,17 +52,20 @@ Keep tests aligned with the current behavior contract.
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` `[testing]`
 
+<!-- mustflow-section: preconditions -->
 ## Preconditions
 
 - The task matches the Use When conditions and does not match the Do Not Use When exclusions.
 - Required inputs are available, or missing inputs can be reported without guessing.
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 
+<!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
 - Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
 - Do not broaden command permission, invent project facts, or change unrelated workflow files.
 
+<!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Define the expected current behavior.
@@ -74,11 +81,13 @@ Keep tests aligned with the current behavior contract.
 6. Treat snapshot updates as manual unless `snapshot_update` is explicitly approved and configured.
 7. Keep tests deterministic and close to the behavior contract.
 
+<!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
 - Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 
+<!-- mustflow-section: verification -->
 ## Verification
 
 Use configured oneshot command intents when available:
@@ -92,6 +101,7 @@ Use configured oneshot command intents when available:
 
 Do not infer missing test commands.
 
+<!-- mustflow-section: failure-handling -->
 ## Failure Handling
 
 - If tests fail, inspect the first relevant failure.
@@ -99,6 +109,7 @@ Do not infer missing test commands.
 - If it is uncertain whether a test is stale, report it instead of deleting it.
 - If the test command is unavailable, report the missing intent.
 
+<!-- mustflow-section: output-format -->
 ## Output Format
 
 - Behavior contract being tested

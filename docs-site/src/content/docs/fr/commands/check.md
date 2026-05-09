@@ -17,7 +17,7 @@ Utilise `--json` lorsqu’une automatisation ou un agent doit analyser le résul
 - `.mustflow/config/preferences.toml` utilise des types de base valides pour les préférences de langue, formatage, style de code, Git, documentation et journalisation lorsqu’il est présent.
 - `.mustflow/config/manifest.lock.toml` est comparé au contenu actuel des fichiers lorsqu’il est présent.
 - `.mustflow/skills/INDEX.md` existe.
-- Les fichiers `.mustflow/skills/*/SKILL.md` contiennent les sections standard.
+- Les fichiers `.mustflow/skills/*/SKILL.md` contiennent les identifiants de section stables requis.
 - Les fichiers `.mustflow/context/*.md`, lorsqu’ils existent, s’identifient comme documents de contexte mustflow.
 - Les intentions de `commands.toml` avec `status = "configured"` incluent les informations de commande, le cycle de vie, la politique d’exécution et le délai d’expiration.
 - Les cycles de vie de longue durée ne sont pas exposés avec `run_policy = "agent_allowed"`.
@@ -55,6 +55,14 @@ npx mf check --strict
 
 Le mode strict est facultatif pour que le flux normal reste léger. Il est recommandé après une modification de documents mustflow, de skills, de contrats de commande ou de règles de génération du plan de dépôt.
 
+## Classification des erreurs et avertissements
+
+`mf check` traite les violations structurelles comme des erreurs bloquantes. Tout problème signalé quitte avec le code `1`.
+
+- Les erreurs de base viennent des fichiers requis manquants, des erreurs d’analyse, des valeurs de configuration dangereuses, des violations du contrat de commande, des identifiants de section de skill manquants, d’une identité invalide de document de contexte et d’un écart avec le fichier de verrouillage.
+- Les erreurs strictes viennent des contrôles supplémentaires d’identité de document, de routage, de métadonnées de skill, de limites de commande, de plan de dépôt, de rétention, de reçu d’exécution et d’hygiène de contexte. Elles apparaissent seulement avec `--strict`.
+- Les observations non bloquantes ne sont pas émises comme problèmes de `mf check`. Utilise les diagnostics de `mf doctor` lorsqu’une automatisation a besoin de signaux informatifs ou d’avertissement.
+
 ## Règles de configuration
 
 `mf check` traite `[map]`, `[workspace]` et `[context]` comme une configuration flexible avec valeurs par défaut, mais échoue sur les valeurs dangereuses ou difficiles à interpréter.
@@ -78,20 +86,24 @@ Pour les anciennes installations, l’absence de `manifest.lock.toml` ne fait pa
 - Les intentions avec `lifecycle = "oneshot"` exigent `timeout_seconds` et `stdin = "closed"`.
 - Les intentions `server`, `watch`, `interactive`, `browser` et `background` ne doivent pas être exposées comme commandes exécutables par défaut par les agents.
 
-## Sections standard de skill
+## Identifiants standard des sections de skill
 
-Les documents de skill doivent inclure ces sections.
+Les documents de skill doivent inclure ces identifiants stables avant leurs titres de section localisés.
 
 ```text
-## Objectif
-## Conditions d’utilisation
-## Ne pas utiliser quand
-## Entrées requises
-## Procédure
-## Validation
-## Gestion des échecs
-## Format de sortie
+<!-- mustflow-section: purpose -->
+<!-- mustflow-section: use-when -->
+<!-- mustflow-section: do-not-use-when -->
+<!-- mustflow-section: required-inputs -->
+<!-- mustflow-section: preconditions -->
+<!-- mustflow-section: allowed-edits -->
+<!-- mustflow-section: procedure -->
+<!-- mustflow-section: postconditions -->
+<!-- mustflow-section: verification -->
+<!-- mustflow-section: failure-handling -->
+<!-- mustflow-section: output-format -->
 ```
+
 
 ## Exemple
 
@@ -105,7 +117,7 @@ En cas de succès, la commande affiche:
 mustflow check passed
 ```
 
-En cas d’échec, elle imprime les fichiers ou sections manquants dans l’erreur standard et quitte avec le code `1`.
+En cas d’échec, elle imprime les fichiers ou identifiants de section manquants dans l’erreur standard et quitte avec le code `1`.
 
 ## Champs JSON
 
@@ -119,7 +131,7 @@ La sortie lisible par machine utilise ces champs:
 - `strict` (`boolean`): indique si les contrôles `--strict` étaient activés.
 - `issueCount` (`number`): nombre de problèmes trouvés.
 - `issues` (`string[]`): messages de problème lisibles par une personne.
-- `issueDetails` (`object[]`): détails de problème lisibles par machine. `id` est un identifiant stable pour les limites de commande et les contrôles stricts associés lorsqu’il s’applique, et `message` reprend `issues`.
+- `issueDetails` (`object[]`): détails de problème lisibles par machine. `id` est un identifiant stable pour les limites de commande et les contrôles stricts associés lorsqu’il s’applique, `severity` vaut actuellement `error` pour chaque problème bloquant, `mode` vaut `base` ou `strict`, et `message` reprend `issues`.
 
 Lorsque des problèmes sont trouvés, la forme JSON quitte aussi avec le code `1`.
 

@@ -22,10 +22,12 @@ metadata:
 
 # Security Regression Tests
 
+<!-- mustflow-section: purpose -->
 ## Purpose
 
 Convert security-sensitive behavior changes into safe negative tests that preserve defensive expectations without turning the task into vulnerability scanning, exploit development, or penetration testing.
 
+<!-- mustflow-section: use-when -->
 ## Use When
 
 - Authentication, authorization, session, CSRF, rate-limit, admin, payment, credit, subscription, personal-data, or tenant-boundary behavior changes.
@@ -33,6 +35,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 - A bug fix closes an abuse case and the fix needs a regression test to prevent reintroduction.
 - A review identifies a concrete security-sensitive boundary that can be expressed as a deterministic test.
 
+<!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
 
 - The task is only a general security review, dependency audit, static analysis request, or policy discussion.
@@ -41,6 +44,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 - The test would require real external services, live attack traffic, credential guessing, destructive input, or unsafe payload collection.
 - The user explicitly asks not to add or propose tests.
 
+<!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
 - The changed behavior, diff, route, component, handler, data model, or bug fix that creates the security-sensitive boundary.
@@ -49,6 +53,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 - `.mustflow/config/commands.toml` entries for test, audit, lint, and build-related intents.
 - Any project context or public contract that defines privacy, authorization, upload, callback, payment, or tenant rules.
 
+<!-- mustflow-section: preconditions -->
 ## Preconditions
 
 - The task matches the Use When conditions and does not match the Do Not Use When exclusions.
@@ -56,12 +61,14 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 - The test can be written as a defensive expectation without teaching an exploit recipe or contacting unsafe targets.
 
+<!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
 - Keep edits within the scope described by this skill, the user request, and the matching route in `.mustflow/skills/INDEX.md`.
 - Prefer existing test files, fixtures, factories, mocks, and helper APIs before adding new test structure.
 - Do not broaden command permission, invent project facts, introduce external scanners, add offensive payload corpora, or change unrelated workflow files.
 
+<!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Identify the protected boundary: actor, resource, operation, trust boundary, and expected defensive outcome.
@@ -81,12 +88,14 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 8. Avoid dumping long exploit strings into the test. Use minimal representative input that proves the validation or boundary rule.
 9. If the project lacks enough context to write a deterministic test, output a concrete test proposal instead of inventing fixtures or behavior.
 
+<!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
 - Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 - New tests are justified by a concrete security-sensitive behavior contract, not by a habit of adding tests to every change.
 
+<!-- mustflow-section: verification -->
 ## Verification
 
 Use configured oneshot command intents when available:
@@ -99,6 +108,7 @@ Use configured oneshot command intents when available:
 
 Prefer the narrowest configured test intent that covers the changed boundary. Do not infer missing test, lint, scanner, or build commands. If a relevant intent is unknown or manual-only, report that status and the remaining verification risk.
 
+<!-- mustflow-section: failure-handling -->
 ## Failure Handling
 
 - If a generated test fails because the defensive behavior is missing, inspect the nearest production code that owns the boundary before weakening the test.
@@ -107,6 +117,7 @@ Prefer the narrowest configured test intent that covers the changed boundary. Do
 - If existing tests already prove the boundary, report the existing coverage rather than adding duplicate cases.
 - If the repository's testing policy requires more evidence before adding tests, report the security-sensitive contract that justifies the test or stop at a proposal.
 
+<!-- mustflow-section: output-format -->
 ## Output Format
 
 - Security-sensitive boundary reviewed
