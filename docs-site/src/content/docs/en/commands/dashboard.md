@@ -3,7 +3,7 @@ title: mf dashboard
 description: Start the local mustflow dashboard.
 ---
 
-`mf dashboard` starts a local browser dashboard for mustflow status, verification recommendations, command intent inspection, release and version-source status, template update readiness, the latest run receipt, skill routes, safe preferences, and documentation review.
+`mf dashboard` starts a local dashboard server for mustflow status, verification recommendations, command intent inspection, release and version-source status, template update readiness, the latest run receipt, skill routes, safe preferences, and documentation review.
 
 The status tab shows installation, manifest lock, template, changed or missing tracked files, runnable command count, latest run receipt, and active documentation review count. The verification tab reads changed files and recommends configured `mf run ...` intents to copy, without executing them. The command tab reads `.mustflow/config/commands.toml` and shows which command intents are runnable, require a user request, are not configured, or are blocked without executing them. The release tab shows the installed mustflow version, template version, detected version sources, release-sensitive changed files, and copyable release-check commands. The update tab shows the `mf update --dry-run` plan, blockers, and template changes without applying them. The run history tab reads `.mustflow/state/runs/latest.json` and shows the latest `mf run` receipt, including status, timing, command line, exit details, and retained output tails. The skills tab reads `.mustflow/skills/INDEX.md` and shows each route's trigger, scope, risk, and command-intent alignment. The settings tab edits `.mustflow/config/preferences.toml`. The document review tab reads `.mustflow/review/docs.toml`, shows review comments when present, and can mark existing review entries approved, ignored, or needing human review. It does not stage, commit, push, bump versions, apply template updates, or run command intents.
 
@@ -15,7 +15,7 @@ Editable groups include Git defaults, commit message suggestions, reporting, ver
 npx mf dashboard
 ```
 
-This command starts a local HTTP server bound to `127.0.0.1` by default, prints the dashboard URL, and opens it in the default browser.
+This command starts a local HTTP server bound to `127.0.0.1` by default and prints the dashboard URL. It does not open a browser unless `--open` is passed.
 
 The dashboard page includes a language selector for English, Korean, Chinese, Spanish, French, and Hindi. The selected language is saved in the browser.
 
@@ -35,10 +35,11 @@ The skills tab is read-only. It shows the installed skill routes from `.mustflow
 
 The document review tab shows active review entries by default. Approved and ignored entries are hidden unless the status filter requests them.
 
-Use `--port` to request a specific port. Use `--no-open` to keep the browser closed. Use `--json` when another tool needs the listening URL; JSON mode does not open a browser.
+Use `--port` to request a specific port. Use `--open` to open the dashboard in the default browser after the server starts. `--no-open` is kept as an explicit compatibility option for scripts that want to state the default. Use `--json` when another tool needs the listening URL; JSON mode does not open a browser.
 
 ```sh
 npx mf dashboard --port 4173
+npx mf dashboard --open
 npx mf dashboard --no-open
 npx mf dashboard --json
 ```

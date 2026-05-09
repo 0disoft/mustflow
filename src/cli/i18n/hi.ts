@@ -25,6 +25,7 @@ export const hiMessages = {
 
   "command.init.summary": "डिफ़ॉल्ट mustflow एजेंट वर्कफ़्लो कॉपी करें",
   "command.check.summary": "mustflow फ़ाइलों की जाँच करें",
+  "command.classify.summary": "बदली फ़ाइलों और सार्वजनिक सतहों को वर्गीकृत करें",
   "command.status.summary": "स्थानीय mustflow इंस्टॉल स्थिति दिखाएँ",
   "command.update.summary": "mustflow वर्कफ़्लो अपडेट का पूर्वावलोकन करें या लागू करें",
   "command.map.summary": "REPO_MAP.md बनाएँ",
@@ -40,6 +41,7 @@ export const hiMessages = {
   "command.versionSources.summary": "पहचाने गए संस्करण स्रोत दिखाएँ",
   "command.verify.summary": "किसी reason के लिए required verification चलाएँ",
   "command.explain.summary": "mustflow नीति निर्णय समझाएँ",
+  "command.impact.summary": "बदली फ़ाइलों से version impact रिपोर्ट करें",
   "command.help.summary": "इंस्टॉल किए गए वर्कफ़्लो की सहायता दिखाएँ",
 
   "top.help.option.lang":
@@ -85,7 +87,8 @@ export const hiMessages = {
     "सुरक्षित mustflow preferences और दस्तावेज़ समीक्षा के लिए स्थानीय डैशबोर्ड शुरू करें।",
   "dashboard.help.option.host": "डैशबोर्ड को स्थानीय host से बाँधें। डिफ़ॉल्ट: 127.0.0.1",
   "dashboard.help.option.port": "डैशबोर्ड को port से बाँधें। डिफ़ॉल्ट: 0 उपलब्ध port चुनता है",
-  "dashboard.help.option.noOpen": "डैशबोर्ड को browser में अपने आप न खोलें",
+  "dashboard.help.option.open": "Server शुरू होने के बाद dashboard को default browser में खोलें",
+  "dashboard.help.option.noOpen": "Browser बंद रखें। यह default व्यवहार है",
   "dashboard.help.exit.ok": "डैशबोर्ड शुरू हुआ या सहायता प्रिंट हुई",
   "dashboard.help.exit.fail": "डैशबोर्ड शुरू नहीं हो सका या इनपुट अमान्य था",
   "dashboard.error.invalidPort": "अमान्य डैशबोर्ड port: {port}",
@@ -632,6 +635,37 @@ export const hiMessages = {
   "version.check.upToDate": "latest {version}; पहले से up to date",
   "version.check.updateCommand": "Update command:",
   "version.error.checkFailed": "npm पर नया version जाँचा नहीं जा सका: {message}",
+
+  "classify.help.summary":
+    "फ़ाइल बदले बिना बदले पथ, सार्वजनिक सतह और जरूरी सत्यापन कारण वर्गीकृत करें.",
+  "classify.help.option.changed": "git status --short --untracked-files=all से पथ पढ़ें",
+  "classify.help.exit.ok": "बदलाव वर्गीकरण जांचकर प्रिंट किया गया",
+  "classify.title": "mustflow classify",
+  "classify.label.source": "स्रोत",
+  "classify.label.files": "फ़ाइलें",
+  "classify.label.publicSurfaces": "सार्वजनिक सतहें",
+  "classify.label.validationReasons": "सत्यापन कारण",
+  "classify.label.classifications": "वर्गीकरण",
+  "classify.label.changeKinds": "बदलाव प्रकार",
+  "classify.label.updatePolicy": "अपडेट नीति",
+  "classify.label.driftChecks": "ड्रिफ्ट जांच",
+  "classify.source.changed": "बदली फ़ाइलें",
+  "classify.source.paths": "दिए गए पथ",
+  "classify.error.missingInput": "--changed या कम से कम एक पथ दें",
+
+  "impact.help.summary":
+    "फ़ाइल बदले बिना बताएं कि बदले पथ package या template version decision मांगते हैं या नहीं.",
+  "impact.help.option.changed": "git status --short --untracked-files=all से पथ पढ़ें",
+  "impact.help.exit.ok": "Version impact जांचकर प्रिंट किया गया",
+  "impact.title": "mustflow impact",
+  "impact.label.versioning": "Versioning preferences",
+  "impact.label.requiresVersionDecision": "Version decision चाहिए",
+  "impact.label.suggestedBump": "Suggested bump",
+  "impact.label.reasons": "कारण",
+  "impact.label.versionSources": "Version sources",
+  "impact.label.affectedVersionSources": "Affected version sources",
+  "impact.label.affectedSurfaces": "Affected surfaces",
+  "impact.error.missingInput": "--changed या कम से कम एक पथ दें",
 
   "verify.help.summary":
     "required_after metadata से चुने गए configured verification intents चलाएँ।",

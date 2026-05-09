@@ -25,6 +25,7 @@ export const frMessages = {
 
   "command.init.summary": "Copie le flux de travail d'agent mustflow par défaut",
   "command.check.summary": "Valide les fichiers mustflow",
+  "command.classify.summary": "Classe les changements et surfaces publiques",
   "command.status.summary": "Affiche l'état de l'installation locale de mustflow",
   "command.update.summary": "Prévisualise ou applique les mises à jour du flux de travail mustflow",
   "command.map.summary": "Génère REPO_MAP.md",
@@ -40,6 +41,7 @@ export const frMessages = {
   "command.versionSources.summary": "Affiche les sources de version détectées",
   "command.verify.summary": "Exécute la vérification requise pour une raison",
   "command.explain.summary": "Explique les décisions de politique mustflow",
+  "command.impact.summary": "Signale l'impact de version des changements",
   "command.help.summary": "Affiche l'aide du flux de travail installé",
 
   "top.help.option.lang":
@@ -85,7 +87,8 @@ export const frMessages = {
     "Démarre un tableau de bord local pour les préférences mustflow sûres et la revue des documents.",
   "dashboard.help.option.host": "Lie le tableau de bord à un hôte local. Par défaut : 127.0.0.1",
   "dashboard.help.option.port": "Lie le tableau de bord à un port. Par défaut : 0 choisit un port disponible",
-  "dashboard.help.option.noOpen": "N'ouvre pas automatiquement le tableau de bord dans un navigateur",
+  "dashboard.help.option.open": "Ouvre le tableau de bord dans le navigateur par défaut après le démarrage du serveur",
+  "dashboard.help.option.noOpen": "Garde le navigateur fermé. C'est le comportement par défaut",
   "dashboard.help.exit.ok": "Le tableau de bord a démarré ou l'aide a été imprimée",
   "dashboard.help.exit.fail": "Le tableau de bord n'a pas pu démarrer ou l'entrée était non valide",
   "dashboard.error.invalidPort": "Port de tableau de bord non valide : {port}",
@@ -632,6 +635,37 @@ Lisez ces fichiers avant de travailler :
   "version.check.upToDate": "dernière version {version}; déjà à jour",
   "version.check.updateCommand": "Commande de mise à jour :",
   "version.error.checkFailed": "Impossible de vérifier une nouvelle version sur npm : {message}",
+
+  "classify.help.summary":
+    "Classe les chemins modifies, les surfaces publiques et les raisons de verification sans modifier les fichiers.",
+  "classify.help.option.changed": "Lire les chemins depuis git status --short --untracked-files=all",
+  "classify.help.exit.ok": "La classification des changements a ete inspectee et affichee",
+  "classify.title": "mustflow classify",
+  "classify.label.source": "Source",
+  "classify.label.files": "Fichiers",
+  "classify.label.publicSurfaces": "Surfaces publiques",
+  "classify.label.validationReasons": "Raisons de verification",
+  "classify.label.classifications": "Classifications",
+  "classify.label.changeKinds": "Types de changement",
+  "classify.label.updatePolicy": "Politique de mise a jour",
+  "classify.label.driftChecks": "Controles de derive",
+  "classify.source.changed": "fichiers modifies",
+  "classify.source.paths": "chemins explicites",
+  "classify.error.missingInput": "Indiquez --changed ou au moins un chemin",
+
+  "impact.help.summary":
+    "Signale si les chemins modifies exigent une decision de version de paquet ou de modele sans modifier les fichiers.",
+  "impact.help.option.changed": "Lire les chemins depuis git status --short --untracked-files=all",
+  "impact.help.exit.ok": "L'impact de version a ete inspecte et affiche",
+  "impact.title": "mustflow impact",
+  "impact.label.versioning": "Preferences de version",
+  "impact.label.requiresVersionDecision": "Decision de version requise",
+  "impact.label.suggestedBump": "Incrementation suggeree",
+  "impact.label.reasons": "Raisons",
+  "impact.label.versionSources": "Sources de version",
+  "impact.label.affectedVersionSources": "Sources de version affectees",
+  "impact.label.affectedSurfaces": "Surfaces affectees",
+  "impact.error.missingInput": "Indiquez --changed ou au moins un chemin",
 
   "verify.help.summary":
     "Exécute les intentions de vérification configurées sélectionnées par les métadonnées required_after.",

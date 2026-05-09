@@ -25,6 +25,7 @@ export const zhMessages = {
 
   "command.init.summary": "复制默认的 mustflow 代理工作流",
   "command.check.summary": "验证 mustflow 文件",
+  "command.classify.summary": "分类变更文件和公开表面",
   "command.status.summary": "显示本地 mustflow 安装状态",
   "command.update.summary": "预览或应用 mustflow 工作流更新",
   "command.map.summary": "生成 REPO_MAP.md",
@@ -40,6 +41,7 @@ export const zhMessages = {
   "command.versionSources.summary": "显示检测到的版本来源",
   "command.verify.summary": "按原因运行必需验证",
   "command.explain.summary": "解释 mustflow 策略决策",
+  "command.impact.summary": "报告变更文件的版本影响",
   "command.help.summary": "显示已安装工作流的帮助",
 
   "top.help.option.lang":
@@ -85,7 +87,8 @@ export const zhMessages = {
     "启动本地仪表板，用于安全的 mustflow 偏好设置和文档审阅。",
   "dashboard.help.option.host": "将仪表板绑定到本地主机。默认值：127.0.0.1",
   "dashboard.help.option.port": "将仪表板绑定到端口。默认值 0 会选择可用端口",
-  "dashboard.help.option.noOpen": "不要自动在浏览器中打开仪表板",
+  "dashboard.help.option.open": "服务器启动后在默认浏览器中打开仪表板",
+  "dashboard.help.option.noOpen": "保持浏览器关闭。这是默认行为",
   "dashboard.help.exit.ok": "仪表板已启动，或已输出帮助",
   "dashboard.help.exit.fail": "仪表板无法启动，或输入无效",
   "dashboard.error.invalidPort": "无效的仪表板端口：{port}",
@@ -622,6 +625,37 @@ export const zhMessages = {
   "version.check.upToDate": "最新版本 {version}；已是最新",
   "version.check.updateCommand": "更新命令：",
   "version.error.checkFailed": "无法从 npm 检查新版本：{message}",
+
+  "classify.help.summary":
+    "在不修改文件的情况下分类变更路径、公开表面和所需验证原因。",
+  "classify.help.option.changed": "从 git status --short --untracked-files=all 读取路径",
+  "classify.help.exit.ok": "已检查并输出变更分类",
+  "classify.title": "mustflow classify",
+  "classify.label.source": "来源",
+  "classify.label.files": "文件",
+  "classify.label.publicSurfaces": "公开表面",
+  "classify.label.validationReasons": "验证原因",
+  "classify.label.classifications": "分类",
+  "classify.label.changeKinds": "变更类型",
+  "classify.label.updatePolicy": "更新策略",
+  "classify.label.driftChecks": "漂移检查",
+  "classify.source.changed": "变更文件",
+  "classify.source.paths": "指定路径",
+  "classify.error.missingInput": "请指定 --changed 或至少一个路径",
+
+  "impact.help.summary":
+    "在不修改文件的情况下报告变更路径是否需要包或模板版本决策。",
+  "impact.help.option.changed": "从 git status --short --untracked-files=all 读取路径",
+  "impact.help.exit.ok": "已检查并输出版本影响",
+  "impact.title": "mustflow impact",
+  "impact.label.versioning": "版本偏好",
+  "impact.label.requiresVersionDecision": "需要版本决策",
+  "impact.label.suggestedBump": "建议版本提升",
+  "impact.label.reasons": "原因",
+  "impact.label.versionSources": "版本来源",
+  "impact.label.affectedVersionSources": "受影响的版本来源",
+  "impact.label.affectedSurfaces": "受影响的公开表面",
+  "impact.error.missingInput": "请指定 --changed 或至少一个路径",
 
   "verify.help.summary":
     "运行由 required_after 元数据选出的已配置验证意图。",

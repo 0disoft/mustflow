@@ -26,6 +26,7 @@ export const koMessages = {
 
   "command.init.summary": "기본 mustflow 에이전트 워크플로우를 복사합니다",
   "command.check.summary": "mustflow 파일을 검사합니다",
+  "command.classify.summary": "변경 파일과 공개 표면을 분류합니다",
   "command.status.summary": "로컬 mustflow 설치 상태를 출력합니다",
   "command.update.summary": "mustflow 워크플로우 갱신을 미리 보거나 적용합니다",
   "command.map.summary": "REPO_MAP.md를 작성합니다",
@@ -41,6 +42,7 @@ export const koMessages = {
   "command.versionSources.summary": "감지된 버전 기준 원본을 출력합니다",
   "command.verify.summary": "이유에 맞는 필수 검증을 실행합니다",
   "command.explain.summary": "mustflow 정책 결정을 설명합니다",
+  "command.impact.summary": "변경 파일의 버전 영향을 보고합니다",
   "command.help.summary": "설치된 워크플로우 도움말을 출력합니다",
 
   "top.help.option.lang": "CLI 출력 언어를 선택합니다. 지원값: {languages}",
@@ -86,7 +88,9 @@ export const koMessages = {
     "대시보드를 바인딩할 로컬 호스트입니다. 기본값: 127.0.0.1",
   "dashboard.help.option.port":
     "대시보드를 바인딩할 포트입니다. 기본값 0이면 사용 가능한 포트를 자동으로 선택합니다",
-  "dashboard.help.option.noOpen": "브라우저를 자동으로 열지 않습니다",
+  "dashboard.help.option.open":
+    "서버가 시작된 뒤 기본 브라우저에서 대시보드를 엽니다",
+  "dashboard.help.option.noOpen": "브라우저를 열지 않습니다. 이 동작이 기본값입니다",
   "dashboard.help.exit.ok": "대시보드를 시작했거나 도움말을 출력했습니다",
   "dashboard.help.exit.fail":
     "대시보드를 시작하지 못했거나 잘못된 입력이 제공되었습니다",
@@ -626,6 +630,37 @@ export const koMessages = {
   "version.check.upToDate": "최신 {version}; 이미 최신 상태입니다",
   "version.check.updateCommand": "업데이트 명령:",
   "version.error.checkFailed": "npm에서 새 버전을 확인하지 못했습니다: {message}",
+
+  "classify.help.summary":
+    "파일을 수정하지 않고 변경 경로, 공개 표면, 필요한 검증 이유를 분류합니다.",
+  "classify.help.option.changed": "git status --short --untracked-files=all에서 경로를 읽습니다",
+  "classify.help.exit.ok": "변경 분류를 확인하고 출력했습니다",
+  "classify.title": "mustflow 변경 분류",
+  "classify.label.source": "입력",
+  "classify.label.files": "파일",
+  "classify.label.publicSurfaces": "공개 표면",
+  "classify.label.validationReasons": "검증 이유",
+  "classify.label.classifications": "분류",
+  "classify.label.changeKinds": "변경 종류",
+  "classify.label.updatePolicy": "갱신 정책",
+  "classify.label.driftChecks": "어긋남 검사",
+  "classify.source.changed": "변경 파일",
+  "classify.source.paths": "지정한 경로",
+  "classify.error.missingInput": "--changed 또는 하나 이상의 경로를 지정하세요",
+
+  "impact.help.summary":
+    "파일을 수정하지 않고 변경 경로가 패키지나 템플릿 버전 결정을 요구하는지 보고합니다.",
+  "impact.help.option.changed": "git status --short --untracked-files=all에서 경로를 읽습니다",
+  "impact.help.exit.ok": "버전 영향을 확인하고 출력했습니다",
+  "impact.title": "mustflow 버전 영향",
+  "impact.label.versioning": "버전 관리 선호값",
+  "impact.label.requiresVersionDecision": "버전 결정 필요",
+  "impact.label.suggestedBump": "제안 버전 올림",
+  "impact.label.reasons": "이유",
+  "impact.label.versionSources": "버전 기준 원본",
+  "impact.label.affectedVersionSources": "영향받은 버전 기준 원본",
+  "impact.label.affectedSurfaces": "영향받은 공개 표면",
+  "impact.error.missingInput": "--changed 또는 하나 이상의 경로를 지정하세요",
 
   "verify.help.summary":
     "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",

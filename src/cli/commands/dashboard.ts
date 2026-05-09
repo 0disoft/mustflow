@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -10,6 +9,7 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { renderDashboardHtml, type DashboardDocReviewSnapshot, type DashboardStatusSnapshot } from '../lib/dashboard-html.js';
 import { parseSkillIndexRoutes } from '../../core/skill-route-alignment.js';
 import { getAgentContext } from '../lib/agent-context.js';
+import { readGitChangedFiles } from '../lib/git-changes.js';
 import { isRecord, readCommandContract, readPositiveInteger, readString, readStringArray } from '../lib/command-contract.js';
 import {
 	readDashboardPreferences,
@@ -133,11 +133,12 @@ export function getDashboardHelp(lang: CliLang = 'en'): string {
 			options: [
 				{ label: '--host <host>', description: t(lang, 'dashboard.help.option.host') },
 				{ label: '--port <port>', description: t(lang, 'dashboard.help.option.port') },
+				{ label: '--open', description: t(lang, 'dashboard.help.option.open') },
 				{ label: '--no-open', description: t(lang, 'dashboard.help.option.noOpen') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf dashboard', 'mf dashboard --port 4173', 'mf dashboard --json'],
+			examples: ['mf dashboard', 'mf dashboard --open', 'mf dashboard --port 4173', 'mf dashboard --json'],
 			exitCodes: [
 				{
 					label: '0',
@@ -157,7 +158,7 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 	let host = DEFAULT_DASHBOARD_HOST;
 	let port = DEFAULT_DASHBOARD_PORT;
 	let json = false;
-	let openBrowser = true;
+	let openBrowser = false;
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -169,6 +170,11 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 		if (arg === '--json') {
 			json = true;
 			openBrowser = false;
+			continue;
+		}
+
+		if (arg === '--open') {
+			openBrowser = true;
 			continue;
 		}
 
@@ -225,6 +231,10 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 
 	if (!LOCAL_DASHBOARD_HOSTS.has(host)) {
 		return { error: t(lang, 'dashboard.error.nonLocalHost', { host }) };
+	}
+
+	if (json) {
+		openBrowser = false;
 	}
 
 	return { options: { host, port, json, openBrowser } };
@@ -428,36 +438,6 @@ function renderCommandContractResponse(projectRoot: string): DashboardStatusSnap
 			intents: [],
 		};
 	}
-}
-
-function normalizeStatusPath(value: string): string {
-	const pathText = value.trim().replaceAll('\\', '/');
-	const renameTarget = pathText.includes(' -> ') ? (pathText.split(' -> ').pop() ?? pathText) : pathText;
-	return renameTarget.replace(/^"|"$/gu, '');
-}
-
-function parseGitStatusOutput(output: string): string[] {
-	const paths = output
-		.split(/\r?\n/u)
-		.map((line) => line.slice(3))
-		.map(normalizeStatusPath)
-		.filter((line) => line.length > 0);
-
-	return [...new Set(paths)].sort((left, right) => left.localeCompare(right));
-}
-
-function readGitChangedFiles(projectRoot: string): string[] {
-	const result = spawnSync('git', ['status', '--short'], {
-		cwd: projectRoot,
-		encoding: 'utf8',
-		windowsHide: true,
-	});
-
-	if (result.status !== 0 || typeof result.stdout !== 'string') {
-		return [];
-	}
-
-	return parseGitStatusOutput(result.stdout);
 }
 
 function pathMatches(filePath: string, patterns: readonly RegExp[]): boolean {

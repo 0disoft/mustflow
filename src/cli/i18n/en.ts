@@ -23,6 +23,7 @@ export const enMessages = {
 
   "command.init.summary": "Copy the default mustflow agent workflow",
   "command.check.summary": "Validate mustflow files",
+  "command.classify.summary": "Classify changed files and public surfaces",
   "command.status.summary": "Show local mustflow install status",
   "command.update.summary": "Preview or apply mustflow workflow updates",
   "command.map.summary": "Generate REPO_MAP.md",
@@ -38,6 +39,7 @@ export const enMessages = {
   "command.versionSources.summary": "Show detected version sources",
   "command.verify.summary": "Run required verification for a reason",
   "command.explain.summary": "Explain mustflow policy decisions",
+  "command.impact.summary": "Report version impact from changed files",
   "command.help.summary": "Show installed workflow help",
 
   "top.help.option.lang":
@@ -83,7 +85,8 @@ export const enMessages = {
     "Start a local dashboard for safe mustflow preferences and document review.",
   "dashboard.help.option.host": "Bind the dashboard to a local host. Default: 127.0.0.1",
   "dashboard.help.option.port": "Bind the dashboard to a port. Default: 0 chooses an available port",
-  "dashboard.help.option.noOpen": "Do not open the dashboard in a browser automatically",
+  "dashboard.help.option.open": "Open the dashboard in the default browser after the server starts",
+  "dashboard.help.option.noOpen": "Keep the browser closed. This is the default",
   "dashboard.help.exit.ok": "Dashboard was started or help was printed",
   "dashboard.help.exit.fail": "Dashboard could not start or input was invalid",
   "dashboard.error.invalidPort": "Invalid dashboard port: {port}",
@@ -630,6 +633,37 @@ Read these files before working:
   "version.check.upToDate": "latest {version}; already up to date",
   "version.check.updateCommand": "Update command:",
   "version.error.checkFailed": "Could not check npm for a newer version: {message}",
+
+  "classify.help.summary":
+    "Classify changed paths, public surfaces, and required validation reasons without modifying files.",
+  "classify.help.option.changed": "Read paths from git status --short --untracked-files=all",
+  "classify.help.exit.ok": "Change classification was inspected and printed",
+  "classify.title": "mustflow classify",
+  "classify.label.source": "Source",
+  "classify.label.files": "Files",
+  "classify.label.publicSurfaces": "Public surfaces",
+  "classify.label.validationReasons": "Validation reasons",
+  "classify.label.classifications": "Classifications",
+  "classify.label.changeKinds": "Change kinds",
+  "classify.label.updatePolicy": "Update policy",
+  "classify.label.driftChecks": "Drift checks",
+  "classify.source.changed": "changed files",
+  "classify.source.paths": "explicit paths",
+  "classify.error.missingInput": "Specify --changed or at least one path",
+
+  "impact.help.summary":
+    "Report whether changed paths require a package or template version decision without modifying files.",
+  "impact.help.option.changed": "Read paths from git status --short --untracked-files=all",
+  "impact.help.exit.ok": "Version impact was inspected and printed",
+  "impact.title": "mustflow impact",
+  "impact.label.versioning": "Versioning preferences",
+  "impact.label.requiresVersionDecision": "Requires version decision",
+  "impact.label.suggestedBump": "Suggested bump",
+  "impact.label.reasons": "Reasons",
+  "impact.label.versionSources": "Version sources",
+  "impact.label.affectedVersionSources": "Affected version sources",
+  "impact.label.affectedSurfaces": "Affected surfaces",
+  "impact.error.missingInput": "Specify --changed or at least one path",
 
   "verify.help.summary":
     "Run configured verification intents selected by required_after metadata.",

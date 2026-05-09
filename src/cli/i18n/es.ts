@@ -25,6 +25,7 @@ export const esMessages = {
 
   "command.init.summary": "Copia el flujo de trabajo de agente mustflow predeterminado",
   "command.check.summary": "Valida los archivos mustflow",
+  "command.classify.summary": "Clasifica cambios y superficies publicas",
   "command.status.summary": "Muestra el estado de la instalación local de mustflow",
   "command.update.summary": "Previsualiza o aplica actualizaciones del flujo de trabajo mustflow",
   "command.map.summary": "Genera REPO_MAP.md",
@@ -40,6 +41,7 @@ export const esMessages = {
   "command.versionSources.summary": "Muestra fuentes de versión detectadas",
   "command.verify.summary": "Ejecuta la verificación requerida para una razón",
   "command.explain.summary": "Explica decisiones de política de mustflow",
+  "command.impact.summary": "Informa impacto de version desde cambios",
   "command.help.summary": "Muestra la ayuda del flujo de trabajo instalado",
 
   "top.help.option.lang":
@@ -85,7 +87,8 @@ export const esMessages = {
     "Inicia un dashboard local para preferencias seguras de mustflow y revisión de documentos.",
   "dashboard.help.option.host": "Vincula el dashboard a un host local. Predeterminado: 127.0.0.1",
   "dashboard.help.option.port": "Vincula el dashboard a un puerto. Predeterminado: 0 elige un puerto disponible",
-  "dashboard.help.option.noOpen": "No abre el dashboard automáticamente en un navegador",
+  "dashboard.help.option.open": "Abre el dashboard en el navegador predeterminado cuando el servidor inicia",
+  "dashboard.help.option.noOpen": "Mantiene cerrado el navegador. Es el comportamiento predeterminado",
   "dashboard.help.exit.ok": "El dashboard se inició o se imprimió la ayuda",
   "dashboard.help.exit.fail": "No se pudo iniciar el dashboard o la entrada no fue válida",
   "dashboard.error.invalidPort": "Puerto de dashboard no válido: {port}",
@@ -632,6 +635,37 @@ Lee estos archivos antes de trabajar:
   "version.check.upToDate": "última versión {version}; ya está actualizado",
   "version.check.updateCommand": "Comando de actualización:",
   "version.error.checkFailed": "No se pudo consultar npm para una versión nueva: {message}",
+
+  "classify.help.summary":
+    "Clasifica rutas cambiadas, superficies publicas y razones de verificacion sin modificar archivos.",
+  "classify.help.option.changed": "Lee rutas desde git status --short --untracked-files=all",
+  "classify.help.exit.ok": "La clasificacion de cambios fue inspeccionada e impresa",
+  "classify.title": "mustflow classify",
+  "classify.label.source": "Origen",
+  "classify.label.files": "Archivos",
+  "classify.label.publicSurfaces": "Superficies publicas",
+  "classify.label.validationReasons": "Razones de verificacion",
+  "classify.label.classifications": "Clasificaciones",
+  "classify.label.changeKinds": "Tipos de cambio",
+  "classify.label.updatePolicy": "Politica de actualizacion",
+  "classify.label.driftChecks": "Comprobaciones de deriva",
+  "classify.source.changed": "archivos cambiados",
+  "classify.source.paths": "rutas explicitas",
+  "classify.error.missingInput": "Indica --changed o al menos una ruta",
+
+  "impact.help.summary":
+    "Informa si las rutas cambiadas requieren una decision de version de paquete o plantilla sin modificar archivos.",
+  "impact.help.option.changed": "Lee rutas desde git status --short --untracked-files=all",
+  "impact.help.exit.ok": "El impacto de version fue inspeccionado e impreso",
+  "impact.title": "mustflow impact",
+  "impact.label.versioning": "Preferencias de version",
+  "impact.label.requiresVersionDecision": "Requiere decision de version",
+  "impact.label.suggestedBump": "Incremento sugerido",
+  "impact.label.reasons": "Razones",
+  "impact.label.versionSources": "Fuentes de version",
+  "impact.label.affectedVersionSources": "Fuentes de version afectadas",
+  "impact.label.affectedSurfaces": "Superficies afectadas",
+  "impact.error.missingInput": "Indica --changed o al menos una ruta",
 
   "verify.help.summary":
     "Ejecuta intenciones de verificación configuradas seleccionadas por metadatos required_after.",
