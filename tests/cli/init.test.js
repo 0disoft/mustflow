@@ -63,6 +63,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.equal(existsSync(path.join(projectPath, 'README.md')), false);
 		assert.equal(existsSync(path.join(projectPath, 'DESIGN.md')), false);
 		assert.equal(existsSync(path.join(projectPath, 'ROADMAP.md')), false);
+		assert.equal(existsSync(path.join(projectPath, 'schemas')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'schemas')), false);
 		assert.equal(existsSync(path.join(projectPath, 'REPO_MAP.md')), false);
 		const gitignore = readText(path.join(projectPath, '.gitignore'));
 		assert.match(gitignore, /# mustflow:start schema=1/);
