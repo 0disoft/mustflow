@@ -266,6 +266,7 @@ mf run mustflow_update_apply
 | `mf init --force` | Back up conflicting files, then overwrite them. |
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
 | `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
+| `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons without modifying files. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
@@ -285,6 +286,7 @@ mf run mustflow_update_apply
 | `mf version` | Print the installed mustflow package version. |
 | `mf version --check` | Compare the installed package version with the latest npm release and print an update command when a newer version exists. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
+| `mf impact --changed` | Report whether changed paths require a package or template version decision. |
 | `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
 | `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, and output contract for one skill route. |

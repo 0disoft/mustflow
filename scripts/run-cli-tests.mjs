@@ -11,6 +11,9 @@ const allCliTests = readdirSync(testsRoot)
 
 const fastTests = [
 	'docs.test.js',
+	'authoring-fixtures.test.js',
+	'classify.test.js',
+	'impact.test.js',
 	'i18n-architecture.test.js',
 	'index.test.js',
 	'pages-workflow.test.js',
@@ -24,14 +27,18 @@ const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
 
 const commandTestNames = new Set(allCliTests);
 const commandRelatedTests = new Map([
+	['classify', ['classify.test.js', 'router.test.js', 'schema.test.js']],
 	['dashboard', ['dashboard.test.js', 'router.test.js']],
 	['docs', ['docs.test.js', 'router.test.js']],
+	['impact', ['impact.test.js', 'router.test.js', 'schema.test.js']],
 	['version', ['index.test.js', 'router.test.js']],
 ]);
 
 const relatedRules = [
 	{ match: /^schemas\//u, tests: ['schema.test.js'] },
 	{ match: /^templates\//u, tests: ['init.test.js', 'update.test.js'] },
+	{ match: /^tests\/fixtures\/authoring\//u, tests: ['authoring-fixtures.test.js'] },
+	{ match: /^\.mustflow\/skills\/(readme-authoring|project-context-authoring)\//u, tests: ['authoring-fixtures.test.js'] },
 	{ match: /^src\/cli\/index\.ts$/u, tests: ['router.test.js', 'index.test.js'] },
 	{ match: /^src\/cli\/i18n\//u, tests: ['i18n-architecture.test.js', 'router.test.js', 'dashboard.test.js'] },
 	{

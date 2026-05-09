@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/impact-report.schema.json",
+  "title": "mustflow impact report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "source",
+    "files",
+    "versioning_enabled",
+    "version_sources",
+    "classification_summary",
+    "version_impact"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "impact" },
+    "mustflow_root": { "type": "string" },
+    "source": { "enum": ["changed", "paths"] },
+    "files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "versioning_enabled": { "type": "boolean" },
+    "version_sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/versionSource" }
+    },
+    "classification_summary": { "$ref": "#/$defs/classificationSummary" },
+    "version_impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiresVersionDecision",
+        "suggestedBump",
+        "reasons",
+        "affectedVersionSources",
+        "affectedSurfaces"
+      ],
+      "properties": {
+        "requiresVersionDecision": { "type": "boolean" },
+        "suggestedBump": { "enum": ["patch", null] },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "affectedVersionSources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "affectedSurfaces": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "versionSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind"],
+      "properties": {
+        "path": { "type": "string" },
+        "kind": {
+          "enum": [
+            "template_lock",
+            "template_manifest",
+            "package_manifest"
+          ]
+        },
+        "declared": { "type": "boolean" },
+        "authority": {
+          "enum": ["source", "derived"]
+        }
+      }
+    },
+    "classificationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fileCount",
+        "publicSurfaceCount",
+        "changeKinds",
+        "validationReasons",
+        "affectedContracts"
+      ],
+      "properties": {
+        "fileCount": { "type": "integer" },
+        "publicSurfaceCount": { "type": "integer" },
+        "changeKinds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validationReasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "affectedContracts": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

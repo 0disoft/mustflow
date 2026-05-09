@@ -1,10 +1,12 @@
 const MUSTFLOW_BIN_NAMES = new Set(['mf', 'mustflow']);
 const IN_PROCESS_MUSTFLOW_BUILTIN_COMMANDS = new Set([
 	'check',
+	'classify',
 	'context',
 	'doctor',
 	'explain',
 	'help',
+	'impact',
 	'map',
 	'status',
 	'update',

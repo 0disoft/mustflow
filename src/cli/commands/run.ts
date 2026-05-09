@@ -3,10 +3,12 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { runCheck } from './check.js';
+import { runClassify } from './classify.js';
 import { runContext } from './context.js';
 import { runDoctor } from './doctor.js';
 import { runExplain } from './explain.js';
 import { runHelp } from './help.js';
+import { runImpact } from './impact.js';
 import { runMap } from './map.js';
 import { runStatus } from './status.js';
 import { runUpdate } from './update.js';
@@ -232,6 +234,10 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 		return runCheck(commandArgs, reporter, lang);
 	}
 
+	if (command === 'classify') {
+		return runClassify(commandArgs, reporter, lang);
+	}
+
 	if (command === 'context') {
 		return runContext(commandArgs, reporter, lang);
 	}
@@ -246,6 +252,10 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 
 	if (command === 'help') {
 		return runHelp(commandArgs, reporter, lang);
+	}
+
+	if (command === 'impact') {
+		return runImpact(commandArgs, reporter, lang);
 	}
 
 	if (command === 'map') {

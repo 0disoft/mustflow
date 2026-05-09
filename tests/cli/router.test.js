@@ -63,6 +63,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /Exit codes:/);
 	assert.match(result.stdout, /mf init/);
 	assert.match(result.stdout, /mf check/);
+	assert.match(result.stdout, /mf classify/);
 	assert.match(result.stdout, /mf status/);
 	assert.match(result.stdout, /mf update/);
 	assert.match(result.stdout, /mf map/);
@@ -76,6 +77,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf version-sources/);
 	assert.match(result.stdout, /mf verify/);
 	assert.match(result.stdout, /mf explain/);
+	assert.match(result.stdout, /mf impact/);
 });
 
 test('runs when invoked through a linked package path', () => {
@@ -202,7 +204,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 });
 
 test('routes command-specific help', () => {
-	for (const command of ['init', 'check', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'help']) {
+	for (const command of ['init', 'check', 'classify', 'status', 'update', 'map', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
 		const result = runCli([command, '--help']);
 
 		assert.equal(result.status, 0);
@@ -216,6 +218,7 @@ test('fails unknown command options with standardized guidance', () => {
 	const cases = [
 		['init', '--bad'],
 		['check', '--bad'],
+		['classify', '--bad'],
 		['status', '--bad'],
 		['update', '--bad'],
 		['map', '--bad'],
@@ -229,6 +232,7 @@ test('fails unknown command options with standardized guidance', () => {
 		['version-sources', '--bad'],
 		['verify', '--bad'],
 		['explain', '--bad'],
+		['impact', '--bad'],
 		['help', 'workflow', '--bad'],
 	];
 
@@ -250,6 +254,7 @@ test('dashboard help reports the implemented local server command', () => {
 	assert.match(result.stdout, /Start a local dashboard/);
 	assert.match(result.stdout, /--host <host>/);
 	assert.match(result.stdout, /--port <port>/);
+	assert.match(result.stdout, /--open/);
 	assert.match(result.stdout, /--no-open/);
 	assert.equal(result.stderr, '');
 });
@@ -261,6 +266,7 @@ test('dashboard help reports the implemented command in Korean', () => {
 	assert.match(result.stdout, /로컬 대시보드를 시작합니다/);
 	assert.match(result.stdout, /--host <host>/);
 	assert.match(result.stdout, /--port <port>/);
+	assert.match(result.stdout, /--open/);
 	assert.match(result.stdout, /--no-open/);
 	assert.equal(result.stderr, '');
 });

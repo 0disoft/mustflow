@@ -5,12 +5,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runCheck } from './commands/check.js';
+import { runClassify } from './commands/classify.js';
 import { runContext } from './commands/context.js';
 import { runDashboard } from './commands/dashboard.js';
 import { runDoctor } from './commands/doctor.js';
 import { runDocs } from './commands/docs.js';
 import { runExplain } from './commands/explain.js';
 import { runHelp } from './commands/help.js';
+import { runImpact } from './commands/impact.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index.js';
 import { runMap } from './commands/map.js';
@@ -54,10 +56,12 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf doctor --json',
 				'mf docs review list',
 				'mf check --json',
+				'mf classify --changed',
 				'mf context --json',
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
+				'mf impact --changed',
 				'mf verify --reason code_change',
 				'mf version --check',
 				'mf version-sources --json',
@@ -152,6 +156,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 		return runCheck(args, reporter, parsed.lang);
 	}
 
+	if (command === 'classify') {
+		return runClassify(args, reporter, parsed.lang);
+	}
+
 	if (command === 'status') {
 		return runStatus(args, reporter, parsed.lang);
 	}
@@ -202,6 +210,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'explain') {
 		return runExplain(args, reporter, parsed.lang);
+	}
+
+	if (command === 'impact') {
+		return runImpact(args, reporter, parsed.lang);
 	}
 
 	if (command === 'help') {

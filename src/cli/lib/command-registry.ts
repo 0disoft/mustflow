@@ -18,6 +18,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.check.summary',
 	},
 	{
+		id: 'classify',
+		usage: 'mf classify',
+		summaryKey: 'command.classify.summary',
+	},
+	{
 		id: 'status',
 		usage: 'mf status',
 		summaryKey: 'command.status.summary',
@@ -86,6 +91,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'explain',
 		usage: 'mf explain',
 		summaryKey: 'command.explain.summary',
+	},
+	{
+		id: 'impact',
+		usage: 'mf impact',
+		summaryKey: 'command.impact.summary',
 	},
 	{
 		id: 'help',

@@ -26,8 +26,13 @@ building automation around `--json` output.
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
+- `classify-report.schema.json`: `mf classify --changed --json` and
+  `mf classify <path...> --json`
+- `impact-report.schema.json`: `mf impact --changed --json` and
+  `mf impact <path...> --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `explain-report.schema.json`: `mf explain <topic> --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
