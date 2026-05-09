@@ -79,6 +79,46 @@ test('explains managed skill index authority as text', () => {
 	}
 });
 
+test('explains context index and skill documents as bounded authority lanes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const contextResult = runCli(projectPath, ['explain', 'authority', '.mustflow/context/INDEX.md', '--json']);
+		const contextReport = JSON.parse(contextResult.stdout);
+
+		assert.equal(contextResult.status, 0, contextResult.stderr || contextResult.stdout);
+		assert.equal(contextReport.decision.kind, 'recognized');
+		assert.deepEqual(contextReport.decision.expectation, {
+			docId: 'context.index',
+			authority: 'router',
+			lifecycle: 'mustflow-owned',
+		});
+		assert.equal(contextReport.decision.boundary.role, 'routing index');
+		assert.ok(contextReport.decision.boundary.canDefine.includes('which context or skill document to read'));
+		assert.ok(contextReport.decision.boundary.cannotDefine.includes('procedure steps'));
+		assert.ok(contextReport.decision.boundary.cannotDefine.includes('command permission'));
+
+		const skillResult = runCli(projectPath, ['explain', 'authority', '.mustflow/skills/code-review/SKILL.md', '--json']);
+		const skillReport = JSON.parse(skillResult.stdout);
+
+		assert.equal(skillResult.status, 0, skillResult.stderr || skillResult.stdout);
+		assert.equal(skillReport.decision.kind, 'recognized');
+		assert.deepEqual(skillReport.decision.expectation, {
+			docId: 'skill.code-review',
+			authority: 'procedure',
+			lifecycle: 'mustflow-owned',
+		});
+		assert.equal(skillReport.decision.boundary.role, 'repeatable task procedure');
+		assert.ok(skillReport.decision.boundary.canDefine.includes('task trigger'));
+		assert.ok(skillReport.decision.boundary.cannotDefine.includes('command execution permission'));
+		assert.ok(skillReport.decision.boundary.cannotDefine.includes('repository-wide binding rules'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('reports unrecognized authority paths without granting document authority', () => {
 	const projectPath = createTempProject();
 
@@ -118,6 +158,12 @@ test('explains configured agent-runnable command intents as json', () => {
 		assert.equal(report.decision.intent.lifecycle, 'oneshot');
 		assert.equal(report.decision.intent.runPolicy, 'agent_allowed');
 		assert.equal(report.decision.intent.mode, 'argv');
+		assert.equal(report.decision.intent.cwd, '.');
+		assert.deepEqual(report.decision.intent.writes, []);
+		assert.equal(report.decision.intent.network, false);
+		assert.equal(report.decision.intent.destructive, false);
+		assert.deepEqual(report.decision.intent.successExitCodes, [0]);
+		assert.deepEqual(report.decision.intent.requiredAfter, ['mustflow_config_change', 'mustflow_docs_change']);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -133,6 +179,7 @@ test('explains blocked command intents without allowing guessed execution', () =
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /command intent "lint" is not agent-runnable/);
 		assert.match(result.stdout, /status is unknown, not configured/);
+		assert.match(result.stdout, /required_after: code_change, style_change/);
 		assert.match(result.stdout, /Counts as mustflow verification: no/);
 	} finally {
 		removeTempProject(projectPath);
@@ -276,6 +323,50 @@ test('reports an undeclared skill route without inventing a route', () => {
 		assert.equal(report.decision.kind, 'skill_route');
 		assert.equal(report.decision.route, null);
 		assert.match(report.decision.reason, /no matching route/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains public surface classification as json', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'surface', 'README.md', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'surface');
+		assert.equal(report.decision.kind, 'classified');
+		assert.equal(report.decision.inputPath, 'README.md');
+		assert.equal(report.decision.countsAsMustflowVerification, false);
+		assert.equal(report.decision.surface.kind, 'readme_page');
+		assert.equal(report.decision.surface.category, 'documentation');
+		assert.equal(report.decision.surface.isPublicSurface, true);
+		assert.deepEqual(report.decision.surface.validationReasons, ['docs_change', 'copy_change']);
+		assert.ok(report.decision.surface.affectedContracts.includes('public documentation'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains installed template surface classification as text', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'surface', 'templates/default/locales/ko/AGENTS.md']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /templates\/default\/locales\/ko\/AGENTS\.md is classified as installed_template_translation/);
+		assert.match(result.stdout, /Public surface/);
+		assert.match(result.stdout, /is_public_surface: yes/);
+		assert.match(result.stdout, /i18n_change, template_version_change/);
+		assert.match(result.stdout, /localized workflow documents/);
+		assert.match(result.stdout, /Counts as mustflow verification: no/);
 	} finally {
 		removeTempProject(projectPath);
 	}

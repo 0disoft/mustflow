@@ -20,31 +20,6 @@ workflows.
 
 ## Near-Term Milestones
 
-### M2.5: Document Authority Boundaries
-
-Goal: keep mustflow documents from drifting into overlapping or
-self-authorizing policy sources before higher-level explanation and
-verification commands depend on them.
-
-- Keep `AGENTS.md` thin and binding while delegating detailed workflow policy to
-  `.mustflow/docs/agent-workflow.md`.
-- Extend context and skill routing without turning router indexes into policy
-  manuals.
-- Keep host compatibility adapters subordinate to the canonical contract.
-
-### M2.7: Defensive Skill Pack Candidates
-
-Goal: define skill candidates that interrupt common LLM failure modes at the
-moment they usually become expensive.
-
-- Treat defensive skills as concrete guardrails with triggers, sources, checks,
-  command-intent references, output format, and unverified-work reporting.
-- Keep always-on repository rules in `AGENTS.md` or `agent-workflow.md`; use
-  skills only for repeatable task-specific procedures.
-- Track a second tier of optional or domain-specific skills:
-  `migration-safety-check`, `ui-quality-gate`, `performance-budget-check`, and
-  `instruction-conflict-scope-check`.
-
 ### M2.9: Change Classification and Public Surface Contracts
 
 Goal: classify changes, map affected public surfaces, and derive required
@@ -52,11 +27,8 @@ validations without making agents guess from prose.
 
 - Reinforce command authority boundaries across docs, metadata, strict checks,
   and command execution.
-- Move command intent definitions toward structured execution metadata.
 - Keep startup reading small and let compact indexes decide what additional
   context, skills, public surfaces, and validation contracts to load.
-- Model README pages, docs-site pages, installed templates, generated examples,
-  translations, and workflow roots as public surfaces.
 - Introduce candidate `changes.toml`, `validations.toml`, `surfaces.toml`, and
   `artifacts.toml` models.
 - Connect `[verification.selection]` preferences to future change
@@ -69,7 +41,6 @@ validations without making agents guess from prose.
 - Keep per-task plans or worklogs in ignored local state, not versioned project
   truth.
 - Consider a small `policy.toml` only after the surrounding checks are clear.
-- Use the model to strengthen future `mf explain` output.
 - Keep `mf init` thin; do not add all candidate contract files to the default
   installed template at once.
 

@@ -166,6 +166,12 @@ your-project/
       │  └─ SKILL.md
       ├─ failure-triage/
       │  └─ SKILL.md
+      ├─ instruction-conflict-scope-check/
+      │  └─ SKILL.md
+      ├─ migration-safety-check/
+      │  └─ SKILL.md
+      ├─ performance-budget-check/
+      │  └─ SKILL.md
       ├─ project-context-authoring/
       │  └─ SKILL.md
       ├─ pattern-scout/
@@ -181,6 +187,8 @@ your-project/
       ├─ skill-authoring/
       │  └─ SKILL.md
       ├─ test-maintenance/
+      │  └─ SKILL.md
+      ├─ ui-quality-gate/
       │  └─ SKILL.md
       └─ web-asset-optimization/
          └─ SKILL.md
@@ -281,6 +289,7 @@ mf run mustflow_update_apply
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
 | `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, and output contract for one skill route. |
 | `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
+| `mf explain surface [path]` | Explain how a path maps to public-surface and validation categories. |
 
 Automation and agents should use `--json` output instead of parsing human-facing
 text. Published JSON Schemas for stable outputs live in `schemas/`.

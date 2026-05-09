@@ -14,7 +14,7 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "explain" },
-    "topic": { "enum": ["authority", "command", "retention", "skill", "skills"] },
+    "topic": { "enum": ["authority", "command", "retention", "skill", "skills", "surface"] },
     "mustflow_root": { "type": "string" },
     "decision": {
       "oneOf": [
@@ -22,11 +22,56 @@
         { "$ref": "#/$defs/commandDecision" },
         { "$ref": "#/$defs/retentionDecision" },
         { "$ref": "#/$defs/skillRouteDecision" },
-        { "$ref": "#/$defs/skillRouteAlignmentDecision" }
+        { "$ref": "#/$defs/skillRouteAlignmentDecision" },
+        { "$ref": "#/$defs/publicSurfaceDecision" }
       ]
     }
   },
   "$defs": {
+    "publicSurfaceDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "inputPath",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "surface"
+      ],
+      "properties": {
+        "kind": { "enum": ["overview", "classified"] },
+        "inputPath": { "type": ["string", "null"] },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "category", "isPublicSurface", "validationReasons", "affectedContracts"],
+          "properties": {
+            "kind": { "type": "string" },
+            "category": { "type": "string" },
+            "isPublicSurface": { "type": "boolean" },
+            "validationReasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "affectedContracts": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "authorityDecision": {
       "type": "object",
       "additionalProperties": false,
@@ -115,6 +160,11 @@
             "stdin",
             "timeoutSeconds",
             "mode",
+            "cwd",
+            "writes",
+            "network",
+            "destructive",
+            "successExitCodes",
             "requiredAfter"
           ],
           "properties": {
@@ -125,6 +175,17 @@
             "stdin": { "type": ["string", "null"] },
             "timeoutSeconds": { "type": ["integer", "null"] },
             "mode": { "enum": ["argv", "shell", "missing"] },
+            "cwd": { "type": ["string", "null"] },
+            "writes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "network": { "type": ["boolean", "null"] },
+            "destructive": { "type": ["boolean", "null"] },
+            "successExitCodes": {
+              "type": "array",
+              "items": { "type": "integer" }
+            },
             "requiredAfter": {
               "type": "array",
               "items": { "type": "string" }

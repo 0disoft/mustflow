@@ -14,17 +14,19 @@ import {
 	explainSkillRouteAlignment,
 	type SkillRouteAlignmentDecision,
 } from '../../core/skill-route-alignment.js';
+import { explainPublicSurface, type PublicSurfaceDecision } from '../../core/public-surface-explanation.js';
 import { checkMustflowProject } from '../lib/validation.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 
-type ExplainTopic = 'authority' | 'command' | 'retention' | 'skill' | 'skills';
+type ExplainTopic = 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
 type ExplainDecision =
 	| AuthorityDecision
 	| CommandDecision
 	| RetentionDecision
 	| SkillRouteDecision
-	| SkillRouteAlignmentDecision;
+	| SkillRouteAlignmentDecision
+	| PublicSurfaceDecision;
 
 interface ExplainOutput {
 	readonly schema_version: string;
@@ -54,6 +56,8 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 				'mf explain skill mustflow.core.code-review --json',
 				'mf explain skills',
 				'mf explain skills --json',
+				'mf explain surface README.md',
+				'mf explain surface templates/default/manifest.toml --json',
 				'mf explain authority .mustflow/skills/INDEX.md --json',
 			],
 			exitCodes: [
@@ -112,6 +116,16 @@ function getSkillExplainOutput(projectRoot: string, skillName: string): ExplainO
 		topic: 'skill',
 		mustflow_root: projectRoot,
 		decision: explainSkillRoute(projectRoot, skillName),
+	};
+}
+
+function getSurfaceExplainOutput(projectRoot: string, pathArg: string | undefined): ExplainOutput {
+	return {
+		schema_version: EXPLAIN_SCHEMA_VERSION,
+		command: 'explain',
+		topic: 'surface',
+		mustflow_root: projectRoot,
+		decision: explainPublicSurface(pathArg),
 	};
 }
 
@@ -181,6 +195,12 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 			`- stdin: ${intent.stdin ?? t(lang, 'value.none')}`,
 			`- timeout_seconds: ${intent.timeoutSeconds ?? t(lang, 'value.none')}`,
 			`- mode: ${intent.mode}`,
+			`- cwd: ${intent.cwd ?? t(lang, 'value.none')}`,
+			`- writes: ${intent.writes.join(', ') || t(lang, 'value.none')}`,
+			`- network: ${formatNullable(intent.network, lang)}`,
+			`- destructive: ${formatNullable(intent.destructive, lang)}`,
+			`- success_exit_codes: ${intent.successExitCodes.join(', ') || t(lang, 'value.none')}`,
+			`- required_after: ${intent.requiredAfter.join(', ') || t(lang, 'value.none')}`,
 		);
 	}
 
@@ -244,6 +264,19 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		}
 	}
 
+	if ('surface' in output.decision) {
+		const surface = output.decision.surface;
+		lines.push(
+			'',
+			t(lang, 'explain.label.publicSurface'),
+			`- kind: ${surface.kind}`,
+			`- category: ${surface.category}`,
+			`- is_public_surface: ${surface.isPublicSurface ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			`- ${t(lang, 'explain.label.validationReasons')}: ${surface.validationReasons.join(', ') || t(lang, 'value.none')}`,
+			`- ${t(lang, 'explain.label.affectedContracts')}: ${surface.affectedContracts.join(', ') || t(lang, 'value.none')}`,
+		);
+	}
+
 	return lines.join('\n');
 }
 
@@ -270,7 +303,7 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 	const positional = args.filter((arg) => arg !== '--json');
 	const [topic, targetArg, ...rest] = positional;
 
-	if (topic !== 'authority' && topic !== 'command' && topic !== 'retention' && topic !== 'skill' && topic !== 'skills') {
+	if (topic !== 'authority' && topic !== 'command' && topic !== 'retention' && topic !== 'skill' && topic !== 'skills' && topic !== 'surface') {
 		printUsageError(
 			reporter,
 			t(lang, topic ? 'explain.error.unknownTopic' : 'explain.error.missingTopic', { topic: topic ?? '' }),
@@ -346,7 +379,9 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 					? getRetentionExplainOutput(projectRoot)
 					: topic === 'skill'
 						? getSkillExplainOutput(projectRoot, targetArg)
-						: getSkillsExplainOutput(projectRoot);
+						: topic === 'surface'
+							? getSurfaceExplainOutput(projectRoot, targetArg)
+							: getSkillsExplainOutput(projectRoot);
 
 	if (json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

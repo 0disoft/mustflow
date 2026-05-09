@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.10');
+	assert.equal(packageJson.version, '1.15.16');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -195,6 +195,9 @@ test('npm package includes compiled cli and default template sources', () => {
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/docs-prose-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/external-prompt-injection-defense/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/instruction-conflict-scope-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/migration-safety-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/performance-budget-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pattern-scout/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/project-context-authoring/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/repro-first-debug/SKILL.md`));
@@ -202,6 +205,7 @@ test('npm package includes compiled cli and default template sources', () => {
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-regression-tests/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/source-freshness-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/skill-authoring/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/ui-quality-gate/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/web-asset-optimization/SKILL.md`));
 	}
 	assert.equal(files.has('templates/default/files/AGENTS.md'), false);

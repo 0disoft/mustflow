@@ -17,6 +17,11 @@ export interface CommandIntentSummary {
 	readonly stdin: string | null;
 	readonly timeoutSeconds: number | null;
 	readonly mode: 'argv' | 'shell' | 'missing';
+	readonly cwd: string | null;
+	readonly writes: readonly string[];
+	readonly network: boolean | null;
+	readonly destructive: boolean | null;
+	readonly successExitCodes: readonly number[];
 	readonly requiredAfter: readonly string[];
 }
 
@@ -40,6 +45,22 @@ const COMMAND_CONTRACT_SOURCE_FILES = [
 
 function readOptionalStringArray(table: TomlTable, key: string): readonly string[] {
 	return readStringArray(table, key) ?? [];
+}
+
+function readOptionalBoolean(table: TomlTable, key: string): boolean | null {
+	const value = table[key];
+
+	return typeof value === 'boolean' ? value : null;
+}
+
+function readOptionalIntegerArray(table: TomlTable, key: string): readonly number[] {
+	const value = table[key];
+
+	if (!Array.isArray(value) || value.some((entry) => !Number.isInteger(entry))) {
+		return [];
+	}
+
+	return value.map((entry) => Number(entry));
 }
 
 function resolveCommandMode(intent: TomlTable): 'argv' | 'shell' | 'missing' {
@@ -66,6 +87,11 @@ function summarizeIntent(name: string, intent: TomlTable): CommandIntentSummary 
 		stdin: readString(intent, 'stdin') ?? null,
 		timeoutSeconds: readPositiveInteger(intent, 'timeout_seconds') ?? null,
 		mode: resolveCommandMode(intent),
+		cwd: readString(intent, 'cwd') ?? null,
+		writes: readOptionalStringArray(intent, 'writes'),
+		network: readOptionalBoolean(intent, 'network'),
+		destructive: readOptionalBoolean(intent, 'destructive'),
+		successExitCodes: readOptionalIntegerArray(intent, 'success_exit_codes'),
 		requiredAfter: readOptionalStringArray(intent, 'required_after'),
 	};
 }

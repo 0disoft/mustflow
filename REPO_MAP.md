@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 49
-source_fingerprint: "sha256:ddf67e443f885b4958bd29cc671780ccd31141ebecf9b956a3f258e8d78060d7"
+anchor_count: 53
+source_fingerprint: "sha256:cb1f7d89a3b973610bb0a24774c9fb11da8b9eb34ec76795b126272abfee1299"
 ---
 
 # REPO_MAP.md
@@ -86,9 +86,21 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/failure-triage/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/instruction-conflict-scope-check/
+
+- `.mustflow/skills/instruction-conflict-scope-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/migration-safety-check/
+
+- `.mustflow/skills/migration-safety-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/pattern-scout/
 
 - `.mustflow/skills/pattern-scout/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/performance-budget-check/
+
+- `.mustflow/skills/performance-budget-check/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/project-context-authoring/
 
@@ -117,6 +129,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/test-maintenance/
 
 - `.mustflow/skills/test-maintenance/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/ui-quality-gate/
+
+- `.mustflow/skills/ui-quality-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/web-asset-optimization/
 
