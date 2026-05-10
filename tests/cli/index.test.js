@@ -71,7 +71,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '5');
+		assert.equal(output.schema_version, '6');
 		assert.equal(output.command, 'index');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
@@ -83,6 +83,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		assert.ok(output.document_count >= 7);
 		assert.ok(output.skill_count >= 4);
 		assert.ok(output.command_intent_count >= 8);
+		assert.ok(output.command_effect_count >= 1);
 		assert.equal(output.source_index_enabled, false);
 		assert.equal(output.source_anchor_count, 0);
 		assert.ok(output.indexed_paths.includes('.mustflow/context/INDEX.md'));
@@ -121,7 +122,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '5');
+		assert.equal(output.schema_version, '6');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -130,9 +131,10 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.wrote_files, true);
 		assert.equal(output.source_index_enabled, false);
 		assert.equal(output.source_anchor_count, 0);
+		assert.ok(output.command_effect_count >= 1);
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.equal(header, 'SQLite format 3\0');
-		assert.equal(metadata.schema_version, '5');
+		assert.equal(metadata.schema_version, '6');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
@@ -181,6 +183,26 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'navigation_only',
 			'can_instruct_agent',
 		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(command_effects)').map((row) => row.name), [
+			'intent',
+			'source',
+			'access',
+			'mode',
+			'path',
+			'lock',
+			'concurrency',
+		]);
+		assert.ok(
+			queryRows(database, 'SELECT * FROM command_effects WHERE intent = "repo_map"').some(
+				(row) =>
+					row.source === 'writes' &&
+					row.access === 'write' &&
+					row.mode === 'write' &&
+					row.path === 'REPO_MAP.md' &&
+					row.lock === 'path:REPO_MAP.md' &&
+					row.concurrency === 'exclusive',
+			),
+		);
 		assert.deepEqual(queryRows(database, 'SELECT id FROM source_anchors'), []);
 		assert.equal(commandTerm.term, 'mustflow_check');
 		assert.ok(projectContext.content_snippet.length <= 2048);
@@ -256,7 +278,7 @@ class SessionStore {
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '5');
+		assert.equal(output.schema_version, '6');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');

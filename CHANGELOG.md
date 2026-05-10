@@ -13,7 +13,8 @@ user projects by `mf init`.
 - Added a configured `test_audit` command intent backed by a read-only JSON test
   audit script for focused-test and empty-test-file signals.
 - Added a configured `test_coverage` command intent backed by a fast CLI
-  coverage run with Node's built-in coverage report and no enforced thresholds.
+  coverage run with Node's built-in coverage report, no enforced thresholds, and
+  `MUSTFLOW_TEST_COVERAGE_CONCURRENCY` for local worker-count tuning.
 - Added a shared command intent eligibility core decision so verification
   planning and `mf run` use the same configured, oneshot, agent-allowed,
   closed-stdin, timeout, and command-source checks.
@@ -35,6 +36,8 @@ user projects by `mf init`.
 - Added command `resources` and `effects` contract metadata plus verification
   scheduling so plan-only verification can explain resource locks and serial
   ordering without making `mf run` parallel.
+- Added command-effect rows to the local SQLite index so `mf search` can find
+  command intents by resource locks, effect paths, and effect modes.
 - Added the verification plan order to `mf dashboard` so the read-only
   verification tab shows copied commands, command effects, resource locks, and
   serial batches without running anything.

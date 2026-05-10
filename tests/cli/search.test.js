@@ -78,7 +78,7 @@ test('prints matching documents skills and command intents from the local index'
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '5');
+		assert.equal(output.schema_version, '6');
 		assert.equal(output.command, 'search');
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, true);
@@ -103,6 +103,26 @@ test('prints matching documents skills and command intents from the local index'
 					item.volatile === false,
 			),
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('searches command effect paths and locks from the local index', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		const result = runCli(projectPath, ['search', 'REPO_MAP.md', '--json']);
+		const output = JSON.parse(result.stdout);
+		const repoMapIntent = output.results.find((item) => item.kind === 'command_intent' && item.name === 'repo_map');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(repoMapIntent);
+		assert.deepEqual(repoMapIntent.effect_paths, ['REPO_MAP.md']);
+		assert.deepEqual(repoMapIntent.effect_locks, ['path:REPO_MAP.md']);
+		assert.deepEqual(repoMapIntent.effect_modes, ['write']);
 	} finally {
 		removeTempProject(projectPath);
 	}

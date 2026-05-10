@@ -15,7 +15,7 @@ By default, the command searches only mustflow workflow data:
 
 - Indexed documents such as `AGENTS.md` and `.mustflow/docs/*.md`
 - Skill entries from `.mustflow/skills/*/SKILL.md`
-- Command intents from `.mustflow/config/commands.toml`
+- Command intents from `.mustflow/config/commands.toml`, including resource locks and effect paths
 
 It does not search arbitrary project source files. If the index was created with `mf index --source`,
 you can search structured source anchors with `--scope source`.
@@ -80,6 +80,9 @@ Each result can include these fields:
 - `results[].source_scope` (`string`): Whether the result came from workflow data or source-anchor data.
 - `results[].navigation_only` (`boolean`): Whether the result is only a code-navigation hint.
 - `results[].can_instruct_agent` (`boolean`): Whether the result may carry workflow instructions.
+- `results[].effect_locks` (`string[]`): Resource locks for a matching command intent.
+- `results[].effect_paths` (`string[]`): Effect paths for a matching command intent.
+- `results[].effect_modes` (`string[]`): Effect modes for a matching command intent.
 - `results[].match` (`string`): Matching context snippet.
 - `results[].score` (`number`): Ranking score used for result order.
 

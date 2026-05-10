@@ -16,7 +16,7 @@ Use `--source` to include structured source-code anchors. Source indexing is opt
 - `.mustflow/skills/INDEX.md`
 - `.mustflow/skills/*/SKILL.md`
 - `.mustflow/config/*.toml`
-- Command intents from `.mustflow/config/commands.toml`
+- Command intents and command-effect metadata from `.mustflow/config/commands.toml`
 - Structured source-code anchors only when `--source` is provided
 
 The default command does not index arbitrary project source files; it is scoped exclusively to mustflow workflow files. With `--source`, it scans source files for structured `mf:anchor` comments and writes only anchor fields such as id, path, line, purpose, search terms, invariant, and risk.
@@ -69,6 +69,7 @@ The machine-readable output uses the following fields:
 - `document_count` (`number`): Number of indexed mustflow documents and config files.
 - `skill_count` (`number`): Number of indexed skill documents.
 - `command_intent_count` (`number`): Number of indexed command intents.
+- `command_effect_count` (`number`): Number of indexed command effect rows derived from `effects` or `writes`.
 - `source_index_enabled` (`boolean`): Whether source-anchor indexing was requested.
 - `source_anchor_count` (`number`): Number of indexed structured source anchors.
 - `indexed_paths` (`string[]`): Paths included in the document index.

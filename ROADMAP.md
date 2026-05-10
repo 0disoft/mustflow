@@ -59,8 +59,7 @@ it into memory, an audit log, or project truth.
 - Treat `.mustflow/cache/mustflow.sqlite` as rebuildable cache only.
 - Add or refine index tables only for current-file lookup and explanation, such
   as index metadata, indexed files, document sections, skill routes, command
-  intents, command effects, source anchors, source anchor fingerprints, and
-  source anchor status.
+  intents, source anchors, source anchor fingerprints, and source anchor status.
 - Do not store full source files, raw diffs, raw terminal logs, environment
   variables, secrets, customer data, full chat history, hidden reasoning,
   browser tokens, remote document bodies, or long-term memory summaries.

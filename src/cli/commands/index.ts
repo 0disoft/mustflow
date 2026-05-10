@@ -42,6 +42,7 @@ function renderIndexSummary(result: Awaited<ReturnType<typeof createLocalIndex>>
 		`${t(lang, 'label.documents')}: ${result.document_count}`,
 		`${t(lang, 'label.skills')}: ${result.skill_count}`,
 		`${t(lang, 'label.commandIntents')}: ${result.command_intent_count}`,
+		`command_effects: ${result.command_effect_count}`,
 		`source_anchors: ${result.source_anchor_count}`,
 		`${t(lang, 'label.wroteFiles')}: ${result.wrote_files ? 'yes' : 'no'}`,
 	];

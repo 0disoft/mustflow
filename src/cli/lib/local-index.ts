@@ -13,8 +13,9 @@ import {
 	type SourceAnchorStatus,
 	type SourceAnchorSymbol,
 } from '../../core/source-anchor-status.js';
+import { normalizeCommandEffects, type NormalizedCommandEffect } from '../../core/command-effects.js';
 
-const LOCAL_INDEX_SCHEMA_VERSION = '5';
+const LOCAL_INDEX_SCHEMA_VERSION = '6';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 const LOCAL_INDEX_STORE_FULL_CONTENT = false;
@@ -88,6 +89,7 @@ interface IndexCommandIntent {
 	readonly lifecycle: string | null;
 	readonly runPolicy: string | null;
 	readonly description: string | null;
+	readonly effects: readonly NormalizedCommandEffect[];
 }
 
 export interface LocalIndexResult {
@@ -101,6 +103,7 @@ export interface LocalIndexResult {
 	readonly document_count: number;
 	readonly skill_count: number;
 	readonly command_intent_count: number;
+	readonly command_effect_count: number;
 	readonly source_index_enabled: boolean;
 	readonly source_anchor_count: number;
 	readonly content_mode: typeof LOCAL_INDEX_CONTENT_MODE;
@@ -136,6 +139,9 @@ export interface LocalSearchItem {
 	readonly can_instruct_agent: boolean;
 	readonly stale_status?: SourceAnchorStatus;
 	readonly stale_confidence?: number;
+	readonly effect_locks?: readonly string[];
+	readonly effect_paths?: readonly string[];
+	readonly effect_modes?: readonly string[];
 	readonly match: string;
 	readonly score: number;
 }
@@ -359,6 +365,7 @@ function collectCommandIntents(projectRoot: string): IndexCommandIntent[] {
 			lifecycle: readString(intent, 'lifecycle') ?? null,
 			runPolicy: readString(intent, 'run_policy') ?? null,
 			description: readString(intent, 'description') ?? null,
+			effects: normalizeCommandEffects(projectRoot, contract, name),
 		});
 	}
 
@@ -719,6 +726,17 @@ CREATE TABLE command_intents (
   description TEXT
 );
 
+CREATE TABLE command_effects (
+  intent TEXT NOT NULL,
+  source TEXT NOT NULL,
+  access TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  path TEXT NOT NULL,
+  lock TEXT NOT NULL,
+  concurrency TEXT NOT NULL,
+  PRIMARY KEY (intent, source, access, mode, path, lock, concurrency)
+);
+
 CREATE TABLE source_anchors (
   id TEXT PRIMARY KEY,
   path TEXT NOT NULL,
@@ -837,6 +855,16 @@ function populateDatabase(
 		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.lifecycle, 'command_lifecycle');
 		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.runPolicy, 'command_run_policy');
 		insertDocumentTerm(database, '.mustflow/config/commands.toml', intent.description, 'command_description');
+
+		for (const effect of intent.effects) {
+			database.run(
+				'INSERT INTO command_effects (intent, source, access, mode, path, lock, concurrency) VALUES (?, ?, ?, ?, ?, ?, ?)',
+				[effect.intent, effect.source, effect.access, effect.mode, effect.path, effect.lock, effect.concurrency],
+			);
+			insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.path, 'command_effect_path');
+			insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.lock, 'command_effect_lock');
+			insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.mode, 'command_effect_mode');
+		}
 	}
 
 	for (const anchor of sourceAnchors) {
@@ -934,6 +962,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		document_count: documents.length,
 		skill_count: skills.length,
 		command_intent_count: commandIntents.length,
+		command_effect_count: commandIntents.reduce((count, intent) => count + intent.effects.length, 0),
 		source_index_enabled: includeSource,
 		source_anchor_count: sourceAnchors.length,
 		content_mode: LOCAL_INDEX_CONTENT_MODE,
@@ -985,6 +1014,22 @@ function getDocumentTerms(database: SqlJsDatabase, documentPath: string): string
 	return queryRows(database, 'SELECT term FROM document_terms WHERE document_path = ? ORDER BY term', [documentPath]).map((row) =>
 		toSearchString(row.term),
 	);
+}
+
+function getCommandEffects(database: SqlJsDatabase, intent: string): NormalizedCommandEffect[] {
+	return queryRows(
+		database,
+		'SELECT intent, source, access, mode, path, lock, concurrency FROM command_effects WHERE intent = ? ORDER BY lock, path, mode',
+		[intent],
+	).map((row) => ({
+		intent: toSearchString(row.intent),
+		source: toSearchString(row.source) as NormalizedCommandEffect['source'],
+		access: toSearchString(row.access) as NormalizedCommandEffect['access'],
+		mode: toSearchString(row.mode) as NormalizedCommandEffect['mode'],
+		path: toSearchString(row.path),
+		lock: toSearchString(row.lock),
+		concurrency: toSearchString(row.concurrency) as NormalizedCommandEffect['concurrency'],
+	}));
 }
 
 /**
@@ -1083,8 +1128,18 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				const lifecycle = toSearchString(row.lifecycle);
 				const runPolicy = toSearchString(row.run_policy);
 				const description = toSearchString(row.description);
+				const effects = getCommandEffects(database, name);
+				const effectLocks = [...new Set(effects.map((effect) => effect.lock))].sort((left, right) =>
+					left.localeCompare(right),
+				);
+				const effectPaths = [...new Set(effects.map((effect) => effect.path))].sort((left, right) =>
+					left.localeCompare(right),
+				);
+				const effectModes = [...new Set(effects.map((effect) => effect.mode))].sort((left, right) =>
+					left.localeCompare(right),
+				);
 				const primaryFields = [name];
-				const secondaryFields = [status, lifecycle, runPolicy, description];
+				const secondaryFields = [status, lifecycle, runPolicy, description, ...effectLocks, ...effectPaths, ...effectModes];
 
 				if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
 					continue;
@@ -1096,6 +1151,9 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							kind: 'command_intent',
 							name,
 							title: description || name,
+							effect_locks: effectLocks,
+							effect_paths: effectPaths,
+							effect_modes: effectModes,
 							...commandIntentAuthority(),
 							match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
 							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),

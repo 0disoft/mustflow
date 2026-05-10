@@ -116,8 +116,8 @@ mustflow installs and validates an agent workflow for user projects.
   `mf verify` when the selected intent is runnable.
 - Writes command receipts to `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
-- Indexes and searches mustflow docs, skills, command rules, and opt-in source
-  anchor metadata with SQLite via `mf index` and `mf search`.
+- Indexes and searches mustflow docs, skills, command rules, command-effect
+  locks, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`.
 - Tracks agent-created or agent-modified documentation that needs prose review
   with `mf docs review`.
 - Previews and applies bundled template updates safely with `mf update`.
@@ -315,8 +315,8 @@ mf run mustflow_update_apply
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf run <intent>` | Run an allowed one-shot command. |
-| `mf index` | Build a SQLite index for mustflow docs and command rules. |
-| `mf search <query>` | Search docs, skills, and command rules in the SQLite index. |
+| `mf index` | Build a SQLite index for mustflow docs, command rules, and command-effect locks. |
+| `mf search <query>` | Search docs, skills, command rules, and command-effect locks in the SQLite index. |
 | `mf status` | Inspect installed state and changed or missing files. |
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
@@ -460,6 +460,7 @@ mf run build
 mf run test_fast
 mf run test_related
 mf run test
+mf run test_coverage
 mf run test_release
 mf run docs_validate_fast
 mf run docs_validate
@@ -469,9 +470,11 @@ mf run mustflow_check
 The Bun scripts remain available for human maintainers and release packaging.
 `test_fast` runs the fast CLI regression baseline, `test_related` selects tests
 from changed files and falls back to the fast baseline, and `test_release` keeps
-package metadata and packaging checks out of routine local edits. `lint`,
-coverage, and test-audit intents remain intentionally unset or manual-only until
-this repository has narrower gates for those workflows. `docs_validate_fast`
+package metadata and packaging checks out of routine local edits. `test_coverage`
+runs the fast CLI baseline through Node's built-in coverage report with no
+enforced threshold; set `MUSTFLOW_TEST_COVERAGE_CONCURRENCY=1`, `2`, or another
+positive integer when a local machine needs a different worker count. `lint` and
+test-audit are configured as narrow repository-local gates. `docs_validate_fast`
 checks documentation navigation and localized content links without building the
 whole static site; `docs_validate` remains the full static documentation build,
 search-index, and sitemap gate for release-sensitive changes.
