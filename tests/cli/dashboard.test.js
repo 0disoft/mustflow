@@ -359,6 +359,41 @@ test('dashboard serves and updates safe preferences', async () => {
 			html,
 			/dashboard\.setting\.verification\.selection\.skip_low_risk_code_full_test\.description":"공개 동작, 설정, 스키마, 보안, 마이그레이션/,
 		);
+		assert.match(html, /dashboard\.group\.refactoring":"Refactoring/);
+		assert.match(html, /dashboard\.group\.refactoring":"리팩토링/);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.large_file_candidate_kb":"Large file candidate threshold/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.large_file_candidate_kb":"대형 파일 후보 기준/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.large_file_candidate_kb\.description":"Treat source files at or above this size in KB as review candidates/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.large_file_candidate_kb\.description":"이 KB 값 이상인 소스 파일/,
+		);
+		assert.match(html, /dashboard\.setting\.refactoring\.hotspots\.history_days":"Hotspot history window/);
+		assert.match(html, /dashboard\.setting\.refactoring\.hotspots\.history_days":"후보 탐색 이력 기간/);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.primary_candidate_limit":"Primary hotspot candidate limit/,
+		);
+		assert.match(html, /dashboard\.setting\.refactoring\.hotspots\.primary_candidate_limit":"1차 후보 최대 개수/);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.structure_candidate_limit":"Structure review candidate limit/,
+		);
+		assert.match(html, /dashboard\.setting\.refactoring\.hotspots\.structure_candidate_limit":"구조 확인 후보 최대 개수/);
+		assert.match(
+			html,
+			/dashboard\.setting\.refactoring\.hotspots\.full_file_candidate_limit":"Full-file review candidate limit/,
+		);
+		assert.match(html, /dashboard\.setting\.refactoring\.hotspots\.full_file_candidate_limit":"전문 분석 후보 최대 개수/);
 		assert.match(html, /dashboard\.group\.testAuthoring":"Test authoring/);
 		assert.match(html, /dashboard\.group\.testAuthoring":"테스트 작성/);
 		assert.match(html, /dashboard\.setting\.testing\.authoring\.new_test_policy":"New test policy/);
@@ -502,6 +537,23 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.ok(preferences.settings.some((setting) => setting.id === 'git.auto_commit'));
 		assert.ok(preferences.settings.some((setting) => setting.id === 'verification.selection.strategy'));
 		assert.ok(preferences.settings.some((setting) => setting.id === 'verification.selection.skip_low_risk_code_full_test'));
+		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'refactoring.hotspots.large_file_candidate_kb')?.value,
+			40,
+		);
+		assert.equal(preferences.settings.find((setting) => setting.id === 'refactoring.hotspots.history_days')?.value, 90);
+		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'refactoring.hotspots.primary_candidate_limit')?.value,
+			50,
+		);
+		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'refactoring.hotspots.structure_candidate_limit')?.value,
+			10,
+		);
+		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'refactoring.hotspots.full_file_candidate_limit')?.value,
+			3,
+		);
 		assert.ok(preferences.settings.some((setting) => setting.id === 'testing.authoring.new_test_policy'));
 		assert.ok(preferences.settings.some((setting) => setting.id === 'testing.authoring.prefer_existing_tests'));
 		assert.ok(
@@ -554,6 +606,26 @@ test('dashboard serves and updates safe preferences', async () => {
 		});
 		assert.equal(invalidTestAuthoringPolicy.status, 400);
 
+		const invalidRefactoringHotspotThreshold = await fetch(new URL('/api/preferences', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ updates: [{ id: 'refactoring.hotspots.large_file_candidate_kb', value: 0 }] }),
+		});
+		assert.equal(invalidRefactoringHotspotThreshold.status, 400);
+
+		const invalidRefactoringCandidateLimit = await fetch(new URL('/api/preferences', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ updates: [{ id: 'refactoring.hotspots.full_file_candidate_limit', value: 0 }] }),
+		});
+		assert.equal(invalidRefactoringCandidateLimit.status, 400);
+
 		const saved = await fetch(new URL('/api/preferences', info.url), {
 			method: 'POST',
 			headers: {
@@ -569,6 +641,11 @@ test('dashboard serves and updates safe preferences', async () => {
 					{ id: 'verification.selection.strategy', value: 'targeted' },
 					{ id: 'verification.selection.skip_low_risk_code_full_test', value: false },
 					{ id: 'verification.selection.report_skipped', value: false },
+					{ id: 'refactoring.hotspots.large_file_candidate_kb', value: 96 },
+					{ id: 'refactoring.hotspots.history_days', value: 45 },
+					{ id: 'refactoring.hotspots.primary_candidate_limit', value: 24 },
+					{ id: 'refactoring.hotspots.structure_candidate_limit', value: 8 },
+					{ id: 'refactoring.hotspots.full_file_candidate_limit', value: 2 },
 					{ id: 'testing.authoring.new_test_policy', value: 'manual_approval' },
 					{ id: 'testing.authoring.require_new_test_rationale', value: false },
 				],
@@ -586,6 +663,11 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?strategy = "targeted"/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?skip_low_risk_code_full_test = false/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?report_skipped = false/);
+		assert.match(updatedPreferences, /\[refactoring\.hotspots\]\r?\n(?:.*\r?\n)*?large_file_candidate_kb = 96/);
+		assert.match(updatedPreferences, /\[refactoring\.hotspots\]\r?\n(?:.*\r?\n)*?history_days = 45/);
+		assert.match(updatedPreferences, /\[refactoring\.hotspots\]\r?\n(?:.*\r?\n)*?primary_candidate_limit = 24/);
+		assert.match(updatedPreferences, /\[refactoring\.hotspots\]\r?\n(?:.*\r?\n)*?structure_candidate_limit = 8/);
+		assert.match(updatedPreferences, /\[refactoring\.hotspots\]\r?\n(?:.*\r?\n)*?full_file_candidate_limit = 2/);
 		assert.match(updatedPreferences, /\[testing\.authoring\]\r?\n(?:.*\r?\n)*?new_test_policy = "manual_approval"/);
 		assert.match(updatedPreferences, /\[testing\.authoring\]\r?\n(?:.*\r?\n)*?require_new_test_rationale = false/);
 

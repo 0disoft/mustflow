@@ -324,6 +324,7 @@ export const koMessages = {
   "dashboard.group.verification": "검증",
   "dashboard.group.testAuthoring": "테스트 작성",
   "dashboard.group.codeStyle": "코드 스타일",
+  "dashboard.group.refactoring": "리팩토링",
   "dashboard.group.versioning": "버전",
   "dashboard.setting.git.auto_stage": "요청 시 자동 스테이징",
   "dashboard.setting.git.auto_stage.description": "사용자가 Git 작업을 요청했을 때 스테이징까지 진행할 수 있게 합니다.",
@@ -394,6 +395,21 @@ export const koMessages = {
   "dashboard.setting.testing.authoring.require_new_test_rationale.description":
     "테스트를 추가했다면 각 테스트가 왜 필요한지 최종 보고에 남깁니다.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "요청과 무관한 리팩터링 방지",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb": "대형 파일 후보 기준",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb.description":
+    "이 KB 값 이상인 소스 파일을 확정 리팩토링 대상이 아니라 검토 후보로 봅니다.",
+  "dashboard.setting.refactoring.hotspots.history_days": "후보 탐색 이력 기간",
+  "dashboard.setting.refactoring.hotspots.history_days.description":
+    "변경 빈도와 버그 수정 이력을 볼 때 최근 며칠을 기준으로 삼을지 정합니다.",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit": "1차 후보 최대 개수",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit.description":
+    "파일을 열기 전에 남겨둘 1차 리팩토링 후보 최대 개수입니다.",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit": "구조 확인 후보 최대 개수",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit.description":
+    "import, export, 선언 목록, TODO 주변을 확인할 후보 최대 개수입니다.",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit": "전문 분석 후보 최대 개수",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit.description":
+    "한 번의 리팩토링 탐색에서 파일 전체를 읽을 후보 최대 개수입니다.",
   "dashboard.setting.release.versioning.impact_check": "버전 영향 확인",
   "dashboard.setting.release.versioning.impact_check.description":
     "변경사항이 패키지나 템플릿 버전에 영향을 주는지 확인합니다.",

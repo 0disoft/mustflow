@@ -51,6 +51,13 @@ comments = "only_when_helpful"
 public_api_docs = "when_new_or_changed"
 avoid_drive_by_refactors = true
 
+[refactoring.hotspots]
+large_file_candidate_kb = 40
+history_days = 90
+primary_candidate_limit = 50
+structure_candidate_limit = 10
+full_file_candidate_limit = 3
+
 [git]
 auto_stage = false
 auto_commit = false

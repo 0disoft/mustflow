@@ -34,8 +34,8 @@ content_hash = "sha256:d60639f1f101d5db58ff9134d6e84e7ee89e2d336d7ec4a2da23a3002
 
 [files.".mustflow/skills/behavior-preserving-refactor/SKILL.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:60d7268a4ea00d521601eaf953714f1f393a6cd1b87b9dd7ff5397106ea2acfc"
+last_action = "customized"
+content_hash = "sha256:321a29c99513f5c27a1219eeaa9b43b50b7629875cac055b4b60ac58cf4dd970"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
@@ -215,4 +215,4 @@ content_hash = "sha256:21bc3c8f889447fd317c2fe73f828798c565f4ee2107a733fbd92c584
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:880a197363d01a834b571e3c6babc0fab97700cd45bfa99ea1e8f9d39ae01d4e"
+content_hash = "sha256:2f5c7fb1551cd65e5670e8fff3a6e7776abfa8691f75e3f132a52a1ef8185100"

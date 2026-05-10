@@ -1081,6 +1081,22 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 		);
 	}
 
+	const refactoring = validateTable(preferencesToml, 'refactoring', issues);
+	if (refactoring) {
+		const hotspots = validateNestedTable(refactoring, 'hotspots', '[preferences.refactoring.hotspots]', issues);
+		if (hotspots) {
+			for (const field of [
+				'large_file_candidate_kb',
+				'history_days',
+				'primary_candidate_limit',
+				'structure_candidate_limit',
+				'full_file_candidate_limit',
+			]) {
+				validatePositiveIntegerField(hotspots, field, `[preferences.refactoring.hotspots].${field}`, issues);
+			}
+		}
+	}
+
 	const git = validateTable(preferencesToml, 'git', issues);
 	if (git) {
 		validatePreferencesStringFields(git, 'git', ['commit_message_style', 'commit_message_language'], issues);

@@ -1868,6 +1868,13 @@ test('fails when preferences configuration fields are invalid', () => {
 				'prefer_existing_tests = "yes"',
 				'require_new_test_rationale = "yes"',
 				'',
+				'[refactoring.hotspots]',
+				'large_file_candidate_kb = 0',
+				'history_days = 0',
+				'primary_candidate_limit = 0',
+				'structure_candidate_limit = 0',
+				'full_file_candidate_limit = 0',
+				'',
 				'[docs]',
 				'update_when = "always"',
 				'tone = 1',
@@ -1923,6 +1930,11 @@ test('fails when preferences configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[preferences\.testing\.authoring\]\.new_test_policy must be "evidence_required"/);
 		assert.match(result.stderr, /\[preferences\.testing\.authoring\]\.prefer_existing_tests must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.testing\.authoring\]\.require_new_test_rationale must be a boolean/);
+		assert.match(result.stderr, /\[preferences\.refactoring\.hotspots\]\.large_file_candidate_kb must be a positive integer/);
+		assert.match(result.stderr, /\[preferences\.refactoring\.hotspots\]\.history_days must be a positive integer/);
+		assert.match(result.stderr, /\[preferences\.refactoring\.hotspots\]\.primary_candidate_limit must be a positive integer/);
+		assert.match(result.stderr, /\[preferences\.refactoring\.hotspots\]\.structure_candidate_limit must be a positive integer/);
+		assert.match(result.stderr, /\[preferences\.refactoring\.hotspots\]\.full_file_candidate_limit must be a positive integer/);
 		assert.match(result.stderr, /\[preferences\.docs\]\.update_when must be a string array/);
 		assert.match(result.stderr, /\[preferences\.logging\]\.include_sensitive_data must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.enabled must be a boolean/);

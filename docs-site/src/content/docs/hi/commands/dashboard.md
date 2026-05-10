@@ -7,7 +7,7 @@ description: स्थानीय mustflow डैशबोर्ड शुर�
 
 Status tab installation, manifest lock, template, बदली या missing tracked files, runnable commands, latest run और review वाले documents दिखाता है। Verification tab बदली हुई files पढ़कर copy किए जा सकने वाले `mf run ...` command intents suggest करता है, पर उन्हें run नहीं करता। Commands tab `.mustflow/config/commands.toml` पढ़कर runnable, user request required, not configured और blocked command intents दिखाता है। Settings tab `.mustflow/config/preferences.toml` edit करता है। Documents review tab `.mustflow/review/docs.toml` पढ़ता है और मौजूदा entries को approved, ignored या needs human review के रूप में mark कर सकता है। यह stage, commit, push, version bump या command intents run नहीं करता।
 
-Editable groups में Git defaults, commit message suggestions, reporting, verification selection, test authoring, code style, और version-impact preferences शामिल हैं।
+Editable groups में Git defaults, commit message suggestions, reporting, verification selection, test authoring, refactoring hotspot thresholds and limits, code style, और version-impact preferences शामिल हैं।
 
 ## वर्तमान व्यवहार
 

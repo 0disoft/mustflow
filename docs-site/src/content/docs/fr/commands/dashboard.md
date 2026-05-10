@@ -7,7 +7,7 @@ description: Démarre le tableau de bord local de mustflow.
 
 L’onglet d’état affiche l’installation, le verrou de manifeste, le modèle, les fichiers suivis modifiés ou manquants, les commandes exécutables, la dernière exécution et les documents à relire. L’onglet de vérification lit les fichiers modifiés et recommande des command intents `mf run ...` à copier, sans les exécuter. L’onglet des commandes lit `.mustflow/config/commands.toml` et montre quels command intents sont exécutables, nécessitent une demande utilisateur, ne sont pas configurés ou sont bloqués. L’onglet des réglages modifie `.mustflow/config/preferences.toml`. L’onglet de revue des documents lit `.mustflow/review/docs.toml` et peut marquer les entrées existantes comme approuvées, ignorées ou nécessitant une revue humaine. Il ne prépare pas de fichiers, ne crée pas de commit, ne pousse rien, ne modifie pas les versions et n’exécute pas de command intents.
 
-Les groupes modifiables couvrent les valeurs Git, les suggestions de commit, les rapports, la sélection de vérification, l’écriture des tests, le style de code et les préférences d’impact de version.
+Les groupes modifiables couvrent les valeurs Git, les suggestions de commit, les rapports, la sélection de vérification, l’écriture des tests, les seuils et limites de candidats de refactorisation, le style de code et les préférences d’impact de version.
 
 ## Comportement actuel
 

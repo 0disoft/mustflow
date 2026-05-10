@@ -77,6 +77,15 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 <!-- mustflow-section: procedure -->
 ## Procedure
 
+Avant une recherche large de candidats de refactorisation, reduis les candidats avant de lire les fichiers.
+
+- Exclue les fichiers generes, empaquetes, de verrouillage, les repertoires de dependances, les gros fixtures, les snapshots, les sorties de build, les fichiers minifies et les source maps avant de classer les candidats.
+- Utilise les preferences `[refactoring.hotspots]` comme limites d'exploration: `large_file_candidate_kb` pour le premier signal de taille, `history_days` pour les changements recents et l'historique des correctifs, et les limites de candidats pour le nombre de fichiers a inspecter a chaque profondeur.
+- Prefere les signaux peu couteux qui se recoupent plutot qu'une seule metrique: taille, frequence de changement recente, historique de bugs, nombre d'imports/exports, TODO/FIXME/HACK, contournements de types ou lint, absence de tests proches et imports qui franchissent des limites d'architecture.
+- Traite les combinaisons fortes comme prioritaires: gros fichiers souvent modifies sans tests, petits fichiers de securite/paiement/permission avec bugs repetes, gros composants React client avec beaucoup d'effets, et fichiers API/controller qui melangent validation, autorisation, logique metier, base de donnees et formatage de reponse.
+- Ne lis pas tous les candidats. Garde la premiere passe dans la limite primaire configuree, reduis a la limite de revue structurelle et lis les fichiers complets seulement jusqu'a la limite configuree.
+- Quand tu ouvres un candidat, inspecte imports, exports, declarations, zones TODO ou contournement de types, et la fonction la plus grande ou la plus branchee avant de lire tout le fichier.
+
 1. Diagnose whether refactoring is needed.
    - Name the real problem: change cost, unclear responsibility, repeated bug risk, test difficulty, dependency coupling, or confusing flow.
    - Do not refactor only because code looks long, old, or stylistically uneven.

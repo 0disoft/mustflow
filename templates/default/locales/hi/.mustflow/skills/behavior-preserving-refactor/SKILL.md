@@ -77,6 +77,15 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 <!-- mustflow-section: procedure -->
 ## Procedure
 
+Broad refactoring hotspot scan में files पढ़ने से पहले candidates को कम करें।
+
+- Ranking से पहले generated files, bundled files, lock files, dependency directories, large fixtures, snapshots, build outputs, minified files और source maps को बाहर रखें।
+- `[refactoring.hotspots]` preferences को scan limits की तरह उपयोग करें: `large_file_candidate_kb` first size signal है, `history_days` recent change और bug-fix history window है, और candidate limits हर depth पर कितनी files देखें यह तय करते हैं।
+- Single metric के बजाय overlapping low-cost signals को प्राथमिकता दें: size, recent change frequency, bug-fix history, import/export count, TODO/FIXME/HACK count, type या lint bypasses, nearby tests की कमी, और architecture-boundary imports.
+- Strong combinations को high priority दें: large files with frequent changes and no tests, security/payment/permission files with repeated fixes, large React client components with many effects, और API/controller files जो validation, authorization, business logic, database access और response formatting मिलाती हैं।
+- हर candidate न पढ़ें। First pass को configured primary limit तक रखें, फिर structure-review limit तक कम करें, और full file contents सिर्फ configured full-file limit तक पढ़ें।
+- Candidate खोलते समय पहले imports, exports, declarations, TODO/type-bypass neighborhoods, और सबसे बड़ी या सबसे branch-heavy function देखें; full file तभी पढ़ें जब सच में जरूरत हो।
+
 1. Diagnose whether refactoring is needed.
    - Name the real problem: change cost, unclear responsibility, repeated bug risk, test difficulty, dependency coupling, or confusing flow.
    - Do not refactor only because code looks long, old, or stylistically uneven.

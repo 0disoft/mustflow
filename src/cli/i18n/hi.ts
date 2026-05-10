@@ -321,6 +321,7 @@ export const hiMessages = {
   "dashboard.group.verification": "सत्यापन",
   "dashboard.group.testAuthoring": "Test authoring",
   "dashboard.group.codeStyle": "कोड शैली",
+  "dashboard.group.refactoring": "Refactoring",
   "dashboard.group.versioning": "वर्जनिंग",
   "dashboard.setting.git.auto_stage": "अनुरोध पर stage",
   "dashboard.setting.git.auto_stage.description": "उपयोगकर्ता Git कार्य मांगे तो stage करने की अनुमति देता है।",
@@ -391,6 +392,21 @@ export const hiMessages = {
   "dashboard.setting.testing.authoring.require_new_test_rationale.description":
     "tests जोड़ने पर हर नए test की जरूरत final report में बताएँ।",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "असंबंधित refactor से बचें",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb": "बड़ी file candidate threshold",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb.description":
+    "इस KB size या उससे बड़ी source files को review candidates मानें, confirmed refactor targets नहीं।",
+  "dashboard.setting.refactoring.hotspots.history_days": "Hotspot history window",
+  "dashboard.setting.refactoring.hotspots.history_days.description":
+    "Change frequency और bug-fix history देखते समय इतने recent days का उपयोग करें।",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit": "Primary candidate limit",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit.description":
+    "Files खोलने से पहले first-pass candidates को अधिकतम इतनी संख्या तक रखें।",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit": "Structure review limit",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit.description":
+    "Imports, exports, declarations और TODO आसपास देखने के लिए अधिकतम इतनी candidates रखें।",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit": "Full-file review limit",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit.description":
+    "एक refactoring scan में अधिकतम इतनी candidate files का पूरा content पढ़ें।",
   "dashboard.setting.release.versioning.impact_check": "Version प्रभाव जाँच",
   "dashboard.setting.release.versioning.impact_check.description":
     "जाँचें कि बदलाव package या template version को प्रभावित करता है या नहीं।",

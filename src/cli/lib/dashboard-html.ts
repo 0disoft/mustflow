@@ -680,6 +680,7 @@ const groups = [
 	["dashboard.group.verification", "verification.selection."],
 	["dashboard.group.testAuthoring", "testing.authoring."],
 	["dashboard.group.codeStyle", "code_style."],
+	["dashboard.group.refactoring", "refactoring.hotspots."],
 	["dashboard.group.versioning", "release.versioning."]
 ];
 const docStatusFilters = ["active", "pending", "in_review", "changes_made", "needs_human", "approved", "ignored", "all"];

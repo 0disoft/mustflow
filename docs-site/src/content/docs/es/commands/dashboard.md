@@ -7,7 +7,7 @@ description: Inicia el panel local de mustflow.
 
 La pestaña de estado muestra la instalación, el bloqueo de manifiesto, la plantilla, archivos rastreados cambiados o faltantes, comandos ejecutables, la ejecución más reciente y documentos pendientes de revisión. La pestaña de verificación lee los archivos cambiados y recomienda command intents `mf run ...` que se pueden copiar, sin ejecutarlos. La pestaña de comandos lee `.mustflow/config/commands.toml` y muestra qué command intents son ejecutables, requieren solicitud del usuario, no están configurados o están bloqueados. La pestaña de configuración edita `.mustflow/config/preferences.toml`. La pestaña de revisión de documentos lee `.mustflow/review/docs.toml` y puede marcar entradas existentes como aprobadas, ignoradas o pendientes de revisión humana. No prepara cambios, no crea commits, no hace push, no cambia versiones y no ejecuta command intents.
 
-Los grupos editables incluyen valores de Git, sugerencias de commit, informes, selección de verificación, escritura de tests, estilo de código y preferencias de impacto de versión.
+Los grupos editables incluyen valores de Git, sugerencias de commit, informes, selección de verificación, escritura de tests, umbrales y límites de candidatos de refactorización, estilo de código y preferencias de impacto de versión.
 
 ## Comportamiento actual
 

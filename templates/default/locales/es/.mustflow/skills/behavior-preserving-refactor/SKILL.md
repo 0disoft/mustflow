@@ -77,6 +77,15 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 <!-- mustflow-section: procedure -->
 ## Procedure
 
+Antes de buscar candidatos de refactorizacion en un area amplia, reduce candidatos antes de leer archivos.
+
+- Excluye archivos generados, empaquetados, lockfiles, directorios de dependencias, fixtures grandes, snapshots, salidas de build, archivos minificados y source maps antes de ordenar candidatos.
+- Usa las preferencias `[refactoring.hotspots]` como limites de exploracion: `large_file_candidate_kb` para la primera senal de tamano, `history_days` para cambios recientes e historial de correcciones, y los limites de candidatos para decidir cuantos archivos revisar en cada profundidad.
+- Prioriza senales baratas que se superponen, no una sola metrica: tamano, frecuencia de cambio reciente, historial de bugs, cantidad de imports/exports, TODO/FIXME/HACK, bypass de tipos o lint, ausencia de tests cercanos e imports que cruzan limites arquitectonicos.
+- Trata las combinaciones fuertes como mayor prioridad: archivos grandes con cambios frecuentes y sin tests, archivos pequenos de seguridad/pagos/permisos con bugs repetidos, componentes React cliente grandes con muchos efectos, y archivos API/controller que mezclan validacion, autorizacion, logica de negocio, base de datos y formato de respuesta.
+- No leas todos los candidatos. Manten la primera pasada dentro del limite primario configurado, reduce al limite de revision estructural y lee archivos completos solo hasta el limite configurado.
+- Al abrir un candidato, revisa imports, exports, declaraciones, zonas de TODO o bypass de tipos, y la funcion mas grande o con mas ramas antes de leer el archivo completo.
+
 1. Diagnose whether refactoring is needed.
    - Name the real problem: change cost, unclear responsibility, repeated bug risk, test difficulty, dependency coupling, or confusing flow.
    - Do not refactor only because code looks long, old, or stylistically uneven.

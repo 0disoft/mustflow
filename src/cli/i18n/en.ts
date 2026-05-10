@@ -319,6 +319,7 @@ export const enMessages = {
   "dashboard.group.verification": "Verification",
   "dashboard.group.testAuthoring": "Test authoring",
   "dashboard.group.codeStyle": "Code style",
+  "dashboard.group.refactoring": "Refactoring",
   "dashboard.group.versioning": "Versioning",
   "dashboard.setting.git.auto_stage": "Stage on request",
   "dashboard.setting.git.auto_stage.description": "Allow staging when the user asks for Git work.",
@@ -389,6 +390,21 @@ export const enMessages = {
   "dashboard.setting.testing.authoring.require_new_test_rationale.description":
     "Report why each new test is needed when tests are added.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "Avoid drive-by refactors",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb": "Large file candidate threshold",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb.description":
+    "Treat source files at or above this size in KB as review candidates, not confirmed refactor targets.",
+  "dashboard.setting.refactoring.hotspots.history_days": "Hotspot history window",
+  "dashboard.setting.refactoring.hotspots.history_days.description":
+    "Use this many recent days when considering change frequency and bug-fix history.",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit": "Primary hotspot candidate limit",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit.description":
+    "Keep at most this many first-pass candidates before opening files.",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit": "Structure review candidate limit",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit.description":
+    "Keep at most this many candidates for import, export, declaration, and TODO review.",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit": "Full-file review candidate limit",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit.description":
+    "Read full file contents for at most this many candidates in one refactoring scan.",
   "dashboard.setting.release.versioning.impact_check": "Version impact check",
   "dashboard.setting.release.versioning.impact_check.description":
     "Check whether the change should affect a package or template version.",

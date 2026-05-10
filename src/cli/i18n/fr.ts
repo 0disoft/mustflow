@@ -321,6 +321,7 @@ export const frMessages = {
   "dashboard.group.verification": "Vérification",
   "dashboard.group.testAuthoring": "Rédaction des tests",
   "dashboard.group.codeStyle": "Style de code",
+  "dashboard.group.refactoring": "Refactorisation",
   "dashboard.group.versioning": "Version",
   "dashboard.setting.git.auto_stage": "Stage sur demande",
   "dashboard.setting.git.auto_stage.description": "Autorise le stage quand l'utilisateur demande une action Git.",
@@ -391,6 +392,21 @@ export const frMessages = {
   "dashboard.setting.testing.authoring.require_new_test_rationale.description":
     "Indique pourquoi chaque nouveau test était nécessaire quand des tests sont ajoutés.",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "Éviter les refactorisations hors sujet",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb": "Seuil de fichier volumineux",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb.description":
+    "Traite les fichiers source de cette taille en Ko ou plus comme des candidats à examiner, pas comme des cibles de refactorisation confirmées.",
+  "dashboard.setting.refactoring.hotspots.history_days": "Fenêtre d'historique des candidats",
+  "dashboard.setting.refactoring.hotspots.history_days.description":
+    "Utilise ce nombre de jours récents pour examiner la fréquence des changements et l'historique des correctifs.",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit": "Limite des candidats initiaux",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit.description":
+    "Conserve au maximum ce nombre de candidats de premier passage avant d'ouvrir des fichiers.",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit": "Limite de revue structurelle",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit.description":
+    "Conserve au maximum ce nombre de candidats pour revoir imports, exports, déclarations et TODO.",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit": "Limite de lecture complète",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit.description":
+    "Lis le contenu complet d'au maximum ce nombre de candidats dans une exploration de refactorisation.",
   "dashboard.setting.release.versioning.impact_check": "Vérifier l'impact sur la version",
   "dashboard.setting.release.versioning.impact_check.description":
     "Vérifie si le changement doit affecter une version de paquet ou de modèle.",

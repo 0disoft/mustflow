@@ -77,6 +77,15 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 <!-- mustflow-section: procedure -->
 ## Procedure
 
+在大范围查找重构候选时，先压缩候选，再阅读文件。
+
+- 排序候选前，先排除生成文件、打包文件、锁文件、依赖目录、大型 fixture、snapshot、构建产物、压缩文件和 source map。
+- 将 `[refactoring.hotspots]` 偏好作为扫描限制：`large_file_candidate_kb` 是第一轮大小信号，`history_days` 是近期变更和修复历史窗口，候选限制值决定每个深度最多检查多少文件。
+- 优先看多个低成本信号重叠的文件，而不是单一指标：大小、近期变更频率、修复历史、import/export 数量、TODO/FIXME/HACK 数量、类型或 lint 绕过、附近缺少测试、跨架构边界 import。
+- 将强组合提高优先级，例如大文件 + 频繁变更 + 无测试，安全/支付/权限相关小文件 + 反复修复，大型 React 客户端组件 + 多个 effect，以及混合验证、授权、业务逻辑、数据库访问和响应格式化的 API/controller 文件。
+- 不要阅读所有候选。第一轮保留数量不超过配置的主候选上限，再缩小到结构检查候选上限，只有配置允许的少数候选才阅读全文。
+- 打开候选时，先检查 import、export、声明列表、TODO 或类型绕过附近，以及最大或分支最多的函数，必要时再阅读全文。
+
 1. Diagnose whether refactoring is needed.
    - Name the real problem: change cost, unclear responsibility, repeated bug risk, test difficulty, dependency coupling, or confusing flow.
    - Do not refactor only because code looks long, old, or stylistically uneven.

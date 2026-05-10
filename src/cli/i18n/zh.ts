@@ -321,6 +321,7 @@ export const zhMessages = {
   "dashboard.group.verification": "验证",
   "dashboard.group.testAuthoring": "测试编写",
   "dashboard.group.codeStyle": "代码风格",
+  "dashboard.group.refactoring": "重构",
   "dashboard.group.versioning": "版本",
   "dashboard.setting.git.auto_stage": "请求时自动暂存",
   "dashboard.setting.git.auto_stage.description": "允许在用户请求 Git 操作时执行暂存。",
@@ -381,6 +382,21 @@ export const zhMessages = {
   "dashboard.setting.testing.authoring.require_new_test_rationale.description":
     "添加测试时，在最终报告中说明每个新测试为什么必要。",
   "dashboard.setting.code_style.avoid_drive_by_refactors": "避免无关重构",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb": "大文件候选阈值",
+  "dashboard.setting.refactoring.hotspots.large_file_candidate_kb.description":
+    "将达到或超过此 KB 大小的源文件视为需要进一步查看的候选项，而不是已确认的重构目标。",
+  "dashboard.setting.refactoring.hotspots.history_days": "候选历史窗口",
+  "dashboard.setting.refactoring.hotspots.history_days.description":
+    "查看变更频率和修复历史时使用最近多少天。",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit": "第一轮候选上限",
+  "dashboard.setting.refactoring.hotspots.primary_candidate_limit.description":
+    "打开文件前最多保留多少个第一轮候选。",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit": "结构查看候选上限",
+  "dashboard.setting.refactoring.hotspots.structure_candidate_limit.description":
+    "最多对多少个候选查看 import、export、声明列表和 TODO 周边。",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit": "全文查看候选上限",
+  "dashboard.setting.refactoring.hotspots.full_file_candidate_limit.description":
+    "一次重构扫描中最多完整阅读多少个候选文件。",
   "dashboard.setting.release.versioning.impact_check": "版本影响检查",
   "dashboard.setting.release.versioning.impact_check.description":
     "检查变更是否应影响包或模板版本。",
