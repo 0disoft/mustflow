@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.60');
+	assert.equal(packageJson.version, '1.15.61');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -240,6 +240,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/artifact-integrity-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/behavior-preserving-refactor/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/codebase-orientation/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/contract-sync-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/date-number-audit/SKILL.md`));

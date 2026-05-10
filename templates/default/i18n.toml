@@ -56,12 +56,12 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 30
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 30, status = "current" }
-translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 30, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 30, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 30, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 30, status = "needs_review" }
+revision = 31
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 31, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 31, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 31, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 31, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 31, status = "needs_review" }
 
 [documents."skill.artifact-integrity-check"]
 source = "locales/en/.mustflow/skills/artifact-integrity-check/SKILL.md"
@@ -72,6 +72,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/artifact-integrity-check
 translations.es = { path = "locales/es/.mustflow/skills/artifact-integrity-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/artifact-integrity-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/artifact-integrity-check/SKILL.md", source_revision = 1, status = "needs_review" }
+
+[documents."skill.behavior-preserving-refactor"]
+source = "locales/en/.mustflow/skills/behavior-preserving-refactor/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "current" }
+translations.zh = { path = "locales/zh/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.code-review"]
 source = "locales/en/.mustflow/skills/code-review/SKILL.md"

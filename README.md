@@ -150,6 +150,8 @@ your-project/
       ├─ INDEX.md
       ├─ artifact-integrity-check/
       │  └─ SKILL.md
+      ├─ behavior-preserving-refactor/
+      │  └─ SKILL.md
       ├─ code-review/
       │  └─ SKILL.md
       ├─ codebase-orientation/

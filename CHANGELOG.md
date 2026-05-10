@@ -10,6 +10,9 @@ user projects by `mf init`.
 
 ### Added
 
+- Added the `behavior-preserving-refactor` default skill so agents can
+  refactor with explicit behavior evidence, safe ordering, duplication
+  judgment, and verification boundaries.
 - Added repository contribution, security, and changelog documents for mustflow
   maintainers and contributors.
 - Added repository CI, issue templates, and a pull request template for

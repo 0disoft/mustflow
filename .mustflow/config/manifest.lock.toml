@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.60"
+version = "1.15.61"
 profile = "oss"
 locale = "en"
 
@@ -25,12 +25,17 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:3c1df8dd0d158e9ee84bef1dc0686c86055e5ecf67eb418dc0c045f04fc6e7a7"
+content_hash = "sha256:d1fda1c8bb8519b3efae656dc1c18e28ca71ac7a5c5d56d972aa0f247a943711"
 
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:d60639f1f101d5db58ff9134d6e84e7ee89e2d336d7ec4a2da23a3002fda76b3"
+
+[files.".mustflow/skills/behavior-preserving-refactor/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:60d7268a4ea00d521601eaf953714f1f393a6cd1b87b9dd7ff5397106ea2acfc"
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
