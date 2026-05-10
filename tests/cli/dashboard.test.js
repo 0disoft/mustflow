@@ -37,6 +37,13 @@ function runCli(cwd, args) {
 	});
 }
 
+function runGit(cwd, args) {
+	return spawnSync('git', args, {
+		cwd,
+		encoding: 'utf8',
+	});
+}
+
 function sha256Text(text) {
 	return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
@@ -234,10 +241,23 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /dashboard\.docs\.action\.approve\.tooltip":"선택한 검수자 기준으로 이 문서를 승인/);
 		assert.match(html, /dashboard\.docs\.action\.needsReview":"추가 검수 필요/);
 		assert.match(html, /dashboard\.docs\.action\.needsReview\.tooltip":"사람, LLM, 도구 등 다른 검수자/);
+		assert.match(html, /id="doc-path-filter"/);
+		assert.match(html, /dashboard\.docs\.pathFilter":"파일명/);
+		assert.match(html, /dashboard\.docs\.pathFilterPlaceholder":"경로 또는 파일명/);
+		assert.match(html, /dashboard\.docs\.noSearchMatches":"일치하는 문서가 없습니다/);
+		assert.match(html, /id="doc-review-fields-label"/);
+		assert.match(html, /dashboard\.docs\.reviewFields":"검수 기록/);
+		assert.match(html, /dashboard\.docs\.summary":"검수 요약/);
 		assert.match(html, /dashboard\.docs\.comment":"코멘트/);
 		assert.match(html, /Rewrite the introduction\./);
-		assert.match(html, /button\.title = message\(tooltipKey\);/);
-		assert.match(html, /button\.setAttribute\("aria-label", message\(tooltipKey\)\);/);
+		assert.match(html, /button\.title = actionLabel;/);
+		assert.match(html, /button\.setAttribute\("aria-label", actionLabel\);/);
+		assert.match(html, /button\.disabled = reviewerIdMissing \|\| entry\.status === nextStatus;/);
+		assert.match(html, /function documentMatchesPathFilter\(entry, query\)/);
+		assert.match(html, /function currentReviewerId\(\)/);
+		assert.match(html, /docReview\.documents\.filter\(\(entry\) => documentMatchesPathFilter\(entry, pathFilter\)\)/);
+		assert.match(html, /document\.getElementById\("doc-path-filter"\)\.addEventListener\("input"/);
+		assert.match(html, /document\.getElementById\("doc-reviewer-id"\)\.addEventListener\("input"/);
 		assert.match(html, /dashboard\.ui\.openMustflow":"\.mustflow 폴더 열기/);
 		assert.match(html, /fetch\("\/api\/open-mustflow"/);
 		assert.match(html, /background-position:\s*calc\(100% - 22px\) 50%,\s*calc\(100% - 16px\) 50%;/);
@@ -579,6 +599,73 @@ test('dashboard serves and updates safe preferences', async () => {
 
 		const check = runCli(projectPath, ['check', '--strict']);
 		assert.equal(check.status, 0, check.stderr || check.stdout);
+	} finally {
+		if (dashboard) {
+			await stopDashboard(dashboard);
+		}
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard verification recommendations use the core change verification contract', async () => {
+	const projectPath = createTempProject();
+	let dashboard;
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.verify_schema_contract]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify schema contract changes."
+argv = ['${process.execPath}', '-e', 'console.log("schema contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["public_api_change"]
+`,
+		);
+		assert.equal(runGit(projectPath, ['init']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.email', 'mustflow@example.invalid']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.name', 'mustflow test']).status, 0);
+		assert.equal(runGit(projectPath, ['add', '.']).status, 0);
+		assert.equal(runGit(projectPath, ['commit', '-m', 'baseline']).status, 0);
+
+		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'schemas', 'output.schema.json'), '{"type":"object"}\n');
+
+		dashboard = spawn(process.execPath, [cliPath, 'dashboard', '--json'], {
+			cwd: projectPath,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+
+		const info = await waitForDashboardInfo(dashboard);
+		const html = await fetch(info.url).then((response) => response.text());
+		const token = /const dashboardToken = "([^"]+)";/u.exec(html)?.[1];
+		assert.ok(token);
+
+		const status = await fetch(new URL('/api/status', info.url), {
+			headers: { 'x-mustflow-dashboard-token': token },
+		}).then((response) => response.json());
+		const recommendedIntents = status.verification.recommendations.map((recommendation) => recommendation.intent);
+		const skippedIntents = status.verification.skipped.map((skipped) => skipped.intent);
+
+		assert.ok(status.verification.changed_files.includes('schemas/output.schema.json'));
+		assert.ok(status.verification.surfaces.includes('schema_contract'));
+		assert.ok(recommendedIntents.includes('verify_schema_contract'));
+		assert.equal(recommendedIntents.includes('test_release'), false);
+		assert.ok(skippedIntents.includes('build'));
+		assert.ok(skippedIntents.includes('docs_validate'));
+		assert.ok(skippedIntents.includes('test_audit'));
 	} finally {
 		if (dashboard) {
 			await stopDashboard(dashboard);

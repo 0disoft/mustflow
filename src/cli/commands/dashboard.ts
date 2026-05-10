@@ -7,10 +7,23 @@ import path from 'node:path';
 import { openPathInFileManager, openUrlInBrowser } from '../lib/browser-open.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { renderDashboardHtml, type DashboardDocReviewSnapshot, type DashboardStatusSnapshot } from '../lib/dashboard-html.js';
+import { createChangeClassificationReport } from '../../core/change-classification.js';
+import {
+	createChangeVerificationReport,
+	type ChangeVerificationCandidate,
+	type VerificationRequirement,
+} from '../../core/change-verification.js';
 import { parseSkillIndexRoutes } from '../../core/skill-route-alignment.js';
 import { getAgentContext } from '../lib/agent-context.js';
 import { readGitChangedFiles } from '../lib/git-changes.js';
-import { isRecord, readCommandContract, readPositiveInteger, readString, readStringArray } from '../lib/command-contract.js';
+import {
+	isRecord,
+	readCommandContract,
+	readPositiveInteger,
+	readString,
+	readStringArray,
+	type CommandContract,
+} from '../lib/command-contract.js';
 import {
 	readDashboardPreferences,
 	updateDashboardPreferences,
@@ -45,28 +58,6 @@ const DEFAULT_DASHBOARD_PORT = 0;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 const VERIFICATION_MAX_FILE_MATCHES = 8;
-
-const DOCUMENT_FILE_PATTERNS = [
-	/^docs-site\//u,
-	/^docs\//u,
-	/^\.mustflow\/docs\//u,
-	/^\.mustflow\/skills\//u,
-	/^templates\/[^/]+\/common\/\.mustflow\/docs\//u,
-	/^templates\/[^/]+\/common\/\.mustflow\/skills\//u,
-	/(^|\/)(README|CHANGELOG|ROADMAP|AGENTS|REPO_MAP)\.md$/iu,
-	/\.mdx?$/iu,
-] as const;
-
-const MUSTFLOW_FILE_PATTERNS = [
-	/^AGENTS\.md$/u,
-	/^\.mustflow\/config\//u,
-	/^\.mustflow\/docs\//u,
-	/^\.mustflow\/skills\//u,
-	/^templates\/[^/]+\/common\/AGENTS\.md$/u,
-	/^templates\/[^/]+\/common\/\.mustflow\//u,
-] as const;
-
-const CODE_FILE_PATTERNS = [/^src\//u, /^tests\//u, /^scripts\//u, /\.(cjs|mjs|js|ts|tsx|json|schema\.json)$/iu] as const;
 
 const RELEASE_FILE_PATTERNS = [
 	/^package\.json$/u,
@@ -384,60 +375,67 @@ function renderDocReviewResponse(projectRoot: string, requestUrl: URL): {
 	};
 }
 
-function renderCommandContractResponse(projectRoot: string): DashboardStatusSnapshot['command_contract'] {
+function readDashboardCommandContract(projectRoot: string): CommandContract | null {
 	try {
-		const contract = readCommandContract(projectRoot);
-		const intents = Object.entries(contract.intents)
-			.sort(([left], [right]) => left.localeCompare(right))
-			.flatMap(([name, intent]) => {
-				if (!isRecord(intent)) {
-					return [];
-				}
-
-				const status = readString(intent, 'status') ?? 'unknown';
-				const lifecycle = readString(intent, 'lifecycle') ?? null;
-				const runPolicy = readString(intent, 'run_policy') ?? null;
-				const stdin = readString(intent, 'stdin') ?? null;
-				const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds') ?? null;
-				const runnable =
-					status === 'configured' &&
-					lifecycle === 'oneshot' &&
-					runPolicy === 'agent_allowed' &&
-					stdin === 'closed' &&
-					timeoutSeconds !== null &&
-					(readStringArray(intent, 'argv') !== undefined || readString(intent, 'cmd') !== undefined);
-
-				return [
-					{
-						name,
-						status,
-						lifecycle,
-						run_policy: runPolicy,
-						stdin,
-						timeout_seconds: timeoutSeconds,
-						cwd: readString(intent, 'cwd') ?? null,
-						description: readString(intent, 'description') ?? null,
-						reason: readString(intent, 'reason') ?? null,
-						agent_action: readString(intent, 'agent_action') ?? null,
-						writes: readStringArray(intent, 'writes') ?? [],
-						required_after: readStringArray(intent, 'required_after') ?? [],
-						runnable,
-					},
-				];
-			});
-
-		return {
-			path: '.mustflow/config/commands.toml',
-			exists: true,
-			intents,
-		};
+		return readCommandContract(projectRoot);
 	} catch {
+		return null;
+	}
+}
+
+function renderCommandContractResponse(contract: CommandContract | null): DashboardStatusSnapshot['command_contract'] {
+	if (!contract) {
 		return {
 			path: '.mustflow/config/commands.toml',
 			exists: false,
 			intents: [],
 		};
 	}
+
+	const intents = Object.entries(contract.intents)
+		.sort(([left], [right]) => left.localeCompare(right))
+		.flatMap(([name, intent]) => {
+			if (!isRecord(intent)) {
+				return [];
+			}
+
+			const status = readString(intent, 'status') ?? 'unknown';
+			const lifecycle = readString(intent, 'lifecycle') ?? null;
+			const runPolicy = readString(intent, 'run_policy') ?? null;
+			const stdin = readString(intent, 'stdin') ?? null;
+			const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds') ?? null;
+			const runnable =
+				status === 'configured' &&
+				lifecycle === 'oneshot' &&
+				runPolicy === 'agent_allowed' &&
+				stdin === 'closed' &&
+				timeoutSeconds !== null &&
+				(readStringArray(intent, 'argv') !== undefined || readString(intent, 'cmd') !== undefined);
+
+			return [
+				{
+					name,
+					status,
+					lifecycle,
+					run_policy: runPolicy,
+					stdin,
+					timeout_seconds: timeoutSeconds,
+					cwd: readString(intent, 'cwd') ?? null,
+					description: readString(intent, 'description') ?? null,
+					reason: readString(intent, 'reason') ?? null,
+					agent_action: readString(intent, 'agent_action') ?? null,
+					writes: readStringArray(intent, 'writes') ?? [],
+					required_after: readStringArray(intent, 'required_after') ?? [],
+					runnable,
+				},
+			];
+		});
+
+	return {
+		path: '.mustflow/config/commands.toml',
+		exists: true,
+		intents,
+	};
 }
 
 function pathMatches(filePath: string, patterns: readonly RegExp[]): boolean {
@@ -448,97 +446,159 @@ function matchingFiles(files: readonly string[], patterns: readonly RegExp[]): s
 	return files.filter((filePath) => pathMatches(filePath, patterns)).slice(0, VERIFICATION_MAX_FILE_MATCHES);
 }
 
+function toPosixChangedFiles(
+	changedFiles: readonly string[],
+	manifestChangedFiles: readonly string[],
+	manifestMissingFiles: readonly string[],
+): string[] {
+	return [
+		...new Set(
+			[...changedFiles, ...manifestChangedFiles, ...manifestMissingFiles].map((filePath) => filePath.replaceAll('\\', '/')),
+		),
+	].sort((left, right) => left.localeCompare(right));
+}
+
+function uniqueLimitedFiles(left: readonly string[], right: readonly string[]): string[] {
+	return [...new Set([...left, ...right])].slice(0, VERIFICATION_MAX_FILE_MATCHES);
+}
+
+type DashboardVerificationRecommendation = {
+	intent: string;
+	command: string;
+	reason_key: string;
+	files: string[];
+	runnable: boolean;
+};
+
+type DashboardSkippedVerification = {
+	intent: string;
+	reason_key: string;
+};
+
+function verificationReasonKey(requirement: VerificationRequirement): string {
+	if (requirement.reason === 'mustflow_config_change' || requirement.reason === 'mustflow_docs_change') {
+		return 'dashboard.verification.reason.mustflow';
+	}
+
+	if (requirement.reason === 'docs_change' || requirement.reason === 'copy_change' || requirement.reason === 'i18n_change') {
+		return 'dashboard.verification.reason.docs';
+	}
+
+	if (
+		requirement.reason === 'package_metadata_change' ||
+		requirement.reason === 'template_version_change' ||
+		requirement.reason === 'packaging_change' ||
+		requirement.reason === 'release_risk'
+	) {
+		return 'dashboard.verification.reason.release';
+	}
+
+	if (
+		requirement.reason === 'code_change' ||
+		requirement.reason === 'test_change' ||
+		requirement.reason === 'public_api_change'
+	) {
+		return 'dashboard.verification.reason.code';
+	}
+
+	return 'dashboard.verification.reason.fallback';
+}
+
+function requirementFiles(requirement: VerificationRequirement, allChangedFiles: readonly string[]): string[] {
+	return (requirement.files.length > 0 ? requirement.files : allChangedFiles).slice(0, VERIFICATION_MAX_FILE_MATCHES);
+}
+
+function addDashboardRecommendation(
+	recommendations: DashboardVerificationRecommendation[],
+	commandByName: ReadonlyMap<string, DashboardStatusSnapshot['command_contract']['intents'][number]>,
+	intent: string,
+	reasonKey: string,
+	files: readonly string[],
+): void {
+	const existing = recommendations.find((item) => item.intent === intent);
+	if (existing) {
+		existing.files = uniqueLimitedFiles(existing.files, files);
+		return;
+	}
+
+	const command = commandByName.get(intent);
+	recommendations.push({
+		intent,
+		command: `mf run ${intent}`,
+		reason_key: reasonKey,
+		files: files.slice(0, VERIFICATION_MAX_FILE_MATCHES),
+		runnable: command?.runnable ?? false,
+	});
+}
+
+function addSkippedCandidate(
+	skipped: DashboardSkippedVerification[],
+	candidate: ChangeVerificationCandidate,
+): void {
+	if (!candidate.intent || skipped.some((item) => item.intent === candidate.intent)) {
+		return;
+	}
+
+	skipped.push({
+		intent: candidate.intent,
+		reason_key: 'dashboard.verification.skip.notRunnable',
+	});
+}
+
+function buildEmptyVerificationSnapshot(changedFiles: readonly string[]): DashboardStatusSnapshot['verification'] {
+	return {
+		changed_files: changedFiles,
+		surfaces: [],
+		recommendations: [],
+		skipped: [],
+	};
+}
+
 function buildVerificationSnapshot(
+	rawCommandContract: CommandContract | null,
 	commandContract: DashboardStatusSnapshot['command_contract'],
 	changedFiles: readonly string[],
 	manifestChangedFiles: readonly string[],
 	manifestMissingFiles: readonly string[],
 ): DashboardStatusSnapshot['verification'] {
-	type DashboardVerificationRecommendation = DashboardStatusSnapshot['verification']['recommendations'][number];
-	type DashboardSkippedVerification = DashboardStatusSnapshot['verification']['skipped'][number];
-	const allChangedFiles = [
-		...new Set(
-			[...changedFiles, ...manifestChangedFiles, ...manifestMissingFiles].map((filePath) => filePath.replaceAll('\\', '/')),
-		),
-	].sort((left, right) => left.localeCompare(right));
+	const allChangedFiles = toPosixChangedFiles(changedFiles, manifestChangedFiles, manifestMissingFiles);
+
+	if (!rawCommandContract || allChangedFiles.length === 0) {
+		return buildEmptyVerificationSnapshot(allChangedFiles);
+	}
+
+	const classificationReport = createChangeClassificationReport('changed', allChangedFiles);
+	const verificationReport = createChangeVerificationReport(classificationReport, rawCommandContract);
 	const commandByName = new Map(commandContract.intents.map((intent) => [intent.name, intent]));
 	const recommendations: DashboardVerificationRecommendation[] = [];
 	const skipped: DashboardSkippedVerification[] = [];
-	const surfaces = new Set<string>();
+	const requirementByReason = new Map(verificationReport.requirements.map((requirement) => [requirement.reason, requirement]));
 
-	function addRecommendation(intent: string, reasonKey: string, files: readonly string[]): void {
-		if (files.length === 0 || recommendations.some((item) => item.intent === intent)) {
-			return;
+	for (const candidate of verificationReport.candidates) {
+		const requirement = requirementByReason.get(candidate.reason);
+		if (!requirement) {
+			continue;
 		}
 
-		const command = commandByName.get(intent);
-		recommendations.push({
-			intent,
-			command: `mf run ${intent}`,
-			reason_key: reasonKey,
-			files,
-			runnable: command?.runnable ?? false,
-		});
-	}
-
-	const mustflowFiles = matchingFiles(allChangedFiles, MUSTFLOW_FILE_PATTERNS);
-	const documentFiles = matchingFiles(allChangedFiles, DOCUMENT_FILE_PATTERNS);
-	const codeFiles = matchingFiles(allChangedFiles, CODE_FILE_PATTERNS);
-	const releaseFiles = matchingFiles(allChangedFiles, RELEASE_FILE_PATTERNS);
-
-	if (mustflowFiles.length > 0) {
-		surfaces.add('mustflow');
-		addRecommendation('mustflow_check', 'dashboard.verification.reason.mustflow', mustflowFiles);
-	}
-
-	if (documentFiles.length > 0) {
-		surfaces.add('docs');
-		const fastDocs = commandByName.get('docs_validate_fast');
-		addRecommendation(fastDocs?.runnable ? 'docs_validate_fast' : 'docs_validate', 'dashboard.verification.reason.docs', documentFiles);
-		if (fastDocs?.runnable && commandByName.has('docs_validate')) {
-			skipped.push({
-				intent: 'docs_validate',
-				reason_key: 'dashboard.verification.skip.fullCovered',
-			});
+		if (candidate.status === 'runnable' && candidate.intent) {
+			addDashboardRecommendation(
+				recommendations,
+				commandByName,
+				candidate.intent,
+				verificationReasonKey(requirement),
+				requirementFiles(requirement, allChangedFiles),
+			);
+			continue;
 		}
-	}
 
-	if (codeFiles.length > 0) {
-		surfaces.add('code');
-		const related = commandByName.get('test_related');
-		if (related?.runnable) {
-			addRecommendation('test_related', 'dashboard.verification.reason.code', codeFiles);
-		} else {
-			addRecommendation('test_fast', 'dashboard.verification.reason.code', codeFiles);
-			if (related) {
-				skipped.push({
-					intent: 'test_related',
-					reason_key: 'dashboard.verification.skip.notRunnable',
-				});
-			}
-		}
-	}
-
-	if (releaseFiles.length > 0) {
-		surfaces.add('release');
-		addRecommendation('test_release', 'dashboard.verification.reason.release', releaseFiles);
-	}
-
-	if (allChangedFiles.length > 0 && recommendations.length === 0) {
-		surfaces.add('general');
-		addRecommendation('test_fast', 'dashboard.verification.reason.fallback', allChangedFiles.slice(0, VERIFICATION_MAX_FILE_MATCHES));
-	}
-
-	if (recommendations.some((item) => item.intent === 'test_related') && commandByName.has('test')) {
-		skipped.push({
-			intent: 'test',
-			reason_key: 'dashboard.verification.skip.fullCovered',
-		});
+		addSkippedCandidate(skipped, candidate);
 	}
 
 	return {
-		changed_files: allChangedFiles,
-		surfaces: [...surfaces],
+		changed_files: verificationReport.files,
+		surfaces: [...new Set(verificationReport.requirements.flatMap((requirement) => requirement.surfaces))].sort((left, right) =>
+			left.localeCompare(right),
+		),
 		recommendations,
 		skipped,
 	};
@@ -705,7 +765,8 @@ function renderStatusResponse(projectRoot: string): DashboardStatusSnapshot {
 	const manifest = inspectManifestLock(projectRoot);
 	const lock = manifest.readResult.kind === 'present' ? manifest.readResult.lock : undefined;
 	const activeDocuments = listDocReviewEntries(projectRoot);
-	const commandContract = renderCommandContractResponse(projectRoot);
+	const rawCommandContract = readDashboardCommandContract(projectRoot);
+	const commandContract = renderCommandContractResponse(rawCommandContract);
 	const gitChangedFiles = readGitChangedFiles(projectRoot);
 	const packageMetadata = readPackageMetadata();
 
@@ -730,7 +791,13 @@ function renderStatusResponse(projectRoot: string): DashboardStatusSnapshot {
 		issues: manifest.issues,
 		runnable_intents: context.command_contract.runnable_intents,
 		command_contract: commandContract,
-		verification: buildVerificationSnapshot(commandContract, gitChangedFiles, manifest.changedFiles, manifest.missingFiles),
+		verification: buildVerificationSnapshot(
+			rawCommandContract,
+			commandContract,
+			gitChangedFiles,
+			manifest.changedFiles,
+			manifest.missingFiles,
+		),
 		latest_run: context.latest_run,
 		active_review_documents: activeDocuments.length,
 	};

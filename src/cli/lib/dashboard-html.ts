@@ -430,17 +430,29 @@ h2 {
 	padding: 0 10px;
 }
 .doc-controls {
+	display: grid;
+	gap: 10px;
+	margin-bottom: 14px;
+}
+.doc-filter-controls,
+.doc-review-controls {
 	align-items: end;
 	display: grid;
 	gap: 10px;
-	grid-template-columns: minmax(140px, 180px) minmax(130px, 170px) minmax(160px, 1fr) minmax(180px, 1fr);
-	margin-bottom: 14px;
 }
-.doc-controls label {
+.doc-filter-controls {
+	grid-template-columns: minmax(130px, 160px) minmax(180px, 1fr);
+}
+.doc-review-controls {
+	grid-template-columns: minmax(130px, 170px) minmax(160px, 1fr) minmax(180px, 1fr);
+}
+.doc-controls label,
+.doc-control-group-label {
 	display: grid;
 	gap: 5px;
 }
-.doc-controls span {
+.doc-controls span,
+.doc-control-group-label {
 	color: var(--muted);
 	font-size: 13px;
 }
@@ -544,6 +556,8 @@ input[type="checkbox"] {
 		justify-self: start;
 	}
 	.doc-controls,
+	.doc-filter-controls,
+	.doc-review-controls,
 	.doc-row,
 	.verification-row,
 	.status-grid {
@@ -615,22 +629,31 @@ input[type="checkbox"] {
 	</div>
 	<div id="panel-documents" class="tab-panel" hidden>
 		<div class="doc-controls">
-			<label for="doc-status-filter">
-				<span id="doc-status-filter-label">Status</span>
-				<select id="doc-status-filter"></select>
-			</label>
-			<label for="doc-reviewer-kind">
-				<span id="doc-reviewer-kind-label">Reviewer kind</span>
-				<select id="doc-reviewer-kind"></select>
-			</label>
-			<label for="doc-reviewer-id">
-				<span id="doc-reviewer-id-label">Reviewer ID</span>
-				<input id="doc-reviewer-id" type="text" autocomplete="off" spellcheck="false">
-			</label>
-			<label for="doc-review-summary">
-				<span id="doc-review-summary-label">Summary</span>
-				<input id="doc-review-summary" type="text" autocomplete="off">
-			</label>
+			<div class="doc-filter-controls">
+				<label for="doc-status-filter">
+					<span id="doc-status-filter-label">Status</span>
+					<select id="doc-status-filter"></select>
+				</label>
+				<label for="doc-path-filter">
+					<span id="doc-path-filter-label">File name</span>
+					<input id="doc-path-filter" type="text" autocomplete="off" spellcheck="false">
+				</label>
+			</div>
+			<div class="doc-control-group-label" id="doc-review-fields-label">Review record</div>
+			<div class="doc-review-controls">
+				<label for="doc-reviewer-kind">
+					<span id="doc-reviewer-kind-label">Reviewer kind</span>
+					<select id="doc-reviewer-kind"></select>
+				</label>
+				<label for="doc-reviewer-id">
+					<span id="doc-reviewer-id-label">Reviewer ID</span>
+					<input id="doc-reviewer-id" type="text" autocomplete="off" spellcheck="false">
+				</label>
+				<label for="doc-review-summary">
+					<span id="doc-review-summary-label">Summary</span>
+					<input id="doc-review-summary" type="text" autocomplete="off">
+				</label>
+			</div>
 		</div>
 		<div id="docs-review-list" class="doc-list"></div>
 	</div>
@@ -922,9 +945,12 @@ function renderChrome() {
 	document.getElementById("save").textContent = message("dashboard.ui.save");
 	document.getElementById("save").hidden = currentTab !== "settings";
 	document.getElementById("doc-status-filter-label").textContent = message("dashboard.docs.statusFilter");
+	document.getElementById("doc-path-filter-label").textContent = message("dashboard.docs.pathFilter");
+	document.getElementById("doc-review-fields-label").textContent = message("dashboard.docs.reviewFields");
 	document.getElementById("doc-reviewer-kind-label").textContent = message("dashboard.docs.reviewerKind");
 	document.getElementById("doc-reviewer-id-label").textContent = message("dashboard.docs.reviewerId");
 	document.getElementById("doc-review-summary-label").textContent = message("dashboard.docs.summary");
+	document.getElementById("doc-path-filter").placeholder = message("dashboard.docs.pathFilterPlaceholder");
 	document.getElementById("doc-reviewer-id").placeholder = message("dashboard.docs.reviewerIdPlaceholder");
 	document.getElementById("doc-review-summary").placeholder = message("dashboard.docs.summaryPlaceholder");
 	renderStatus();
@@ -1789,6 +1815,18 @@ function renderDocFilters() {
 	}
 }
 
+function documentMatchesPathFilter(entry, query) {
+	const normalizedQuery = query.trim().toLowerCase();
+	if (!normalizedQuery) return true;
+	const path = String(entry.path || "");
+	const fileName = path.split(/[\\\\/]/u).pop() || path;
+	return path.toLowerCase().includes(normalizedQuery) || fileName.toLowerCase().includes(normalizedQuery);
+}
+
+function currentReviewerId() {
+	return document.getElementById("doc-reviewer-id").value.trim();
+}
+
 function renderDocuments() {
 	const root = document.getElementById("docs-review-list");
 	root.textContent = "";
@@ -1801,7 +1839,17 @@ function renderDocuments() {
 		return;
 	}
 
-	for (const entry of docReview.documents) {
+	const pathFilter = document.getElementById("doc-path-filter").value;
+	const documents = docReview.documents.filter((entry) => documentMatchesPathFilter(entry, pathFilter));
+	if (documents.length === 0) {
+		const empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = message("dashboard.docs.noSearchMatches");
+		root.appendChild(empty);
+		return;
+	}
+
+	for (const entry of documents) {
 		const row = document.createElement("div");
 		row.className = "doc-row";
 		const details = document.createElement("div");
@@ -1826,6 +1874,7 @@ function renderDocuments() {
 
 		const actions = document.createElement("div");
 		actions.className = "doc-actions";
+		const reviewerIdMissing = currentReviewerId().length === 0;
 		for (const [nextStatus, labelKey, tooltipKey] of [
 			["approved", "dashboard.docs.action.approve", "dashboard.docs.action.approve.tooltip"],
 			["needs_human", "dashboard.docs.action.needsReview", "dashboard.docs.action.needsReview.tooltip"],
@@ -1834,9 +1883,10 @@ function renderDocuments() {
 			const button = document.createElement("button");
 			button.type = "button";
 			button.textContent = message(labelKey);
-			button.title = message(tooltipKey);
-			button.setAttribute("aria-label", message(tooltipKey));
-			button.disabled = entry.status === nextStatus;
+			const actionLabel = reviewerIdMissing ? message("dashboard.docs.missingReviewerId") : message(tooltipKey);
+			button.title = actionLabel;
+			button.setAttribute("aria-label", actionLabel);
+			button.disabled = reviewerIdMissing || entry.status === nextStatus;
 			button.addEventListener("click", () => {
 				markDocument(entry.path, nextStatus).catch((error) => statusText(error.message, "error"));
 			});
@@ -1879,6 +1929,12 @@ document.getElementById("open-mustflow").addEventListener("click", () => {
 });
 document.getElementById("doc-status-filter").addEventListener("change", () => {
 	loadDocuments().catch((error) => statusText(error.message, "error"));
+});
+document.getElementById("doc-path-filter").addEventListener("input", () => {
+	renderDocuments();
+});
+document.getElementById("doc-reviewer-id").addEventListener("input", () => {
+	renderDocuments();
 });
 for (const tab of document.querySelectorAll(".tab")) {
 	tab.addEventListener("click", () => {
