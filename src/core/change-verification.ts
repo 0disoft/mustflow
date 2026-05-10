@@ -7,6 +7,12 @@ import type {
 } from './change-classification.js';
 import type { CommandContract } from './config-loading.js';
 import {
+	CHANGE_CLASSIFICATION_SURFACE_AUTHORITY,
+	createPathTarget,
+	type SurfaceDecision,
+	type SurfaceReason,
+} from './surface-decision-model.js';
+import {
 	createVerificationPlan,
 	type VerificationCandidate,
 	type VerificationRunnableStatus,
@@ -15,7 +21,7 @@ import {
 
 export const CHANGE_VERIFICATION_SCHEMA_VERSION = '1';
 
-export type VerificationReason = string;
+export type VerificationReason = SurfaceReason;
 
 export interface VerificationRequirement {
 	readonly reason: VerificationReason;
@@ -69,20 +75,37 @@ function classificationsForReason(
 	);
 }
 
+function toSurfaceDecision(classification: ChangeClassification): SurfaceDecision {
+	return {
+		target: createPathTarget(classification.path),
+		changeKinds: classification.changeKinds,
+		surface: {
+			kind: classification.surface.kind,
+			category: classification.surface.category,
+			isPublicSurface: classification.surface.isPublicSurface,
+		},
+		reasons: classification.surface.validationReasons,
+		affectedContracts: classification.surface.affectedContracts,
+		driftChecks: classification.surface.driftChecks,
+		authority: CHANGE_CLASSIFICATION_SURFACE_AUTHORITY,
+	};
+}
+
 function createVerificationRequirement(
 	classificationReport: ChangeClassificationReport,
 	reason: VerificationReason,
 ): VerificationRequirement {
 	const classifications = classificationsForReason(classificationReport, reason);
+	const decisions = classifications.map(toSurfaceDecision);
 
 	return {
 		reason,
-		files: uniqueSorted(classifications.map((classification) => classification.path)),
-		surfaces: uniqueSorted(classifications.map((classification) => classification.surface.kind)),
-		affectedContracts: uniqueSorted(
-			classifications.flatMap((classification) => classification.surface.affectedContracts),
+		files: uniqueSorted(
+			decisions.flatMap((decision) => (decision.target.kind === 'path' ? [decision.target.path] : [])),
 		),
-		driftChecks: uniqueSorted(classifications.flatMap((classification) => classification.surface.driftChecks)),
+		surfaces: uniqueSorted(decisions.flatMap((decision) => (decision.surface ? [decision.surface.kind] : []))),
+		affectedContracts: uniqueSorted(decisions.flatMap((decision) => decision.affectedContracts ?? [])),
+		driftChecks: uniqueSorted(decisions.flatMap((decision) => decision.driftChecks ?? [])),
 		updatePolicies: uniqueUpdatePolicies(classifications.map((classification) => classification.surface.updatePolicy)),
 		source: 'change_classification',
 	};
