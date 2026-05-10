@@ -19,6 +19,8 @@ const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 function createTempProject() {
 	const projectPath = mkdtempSync(path.join(tmpdir(), 'mustflow-map-'));
 	writeFileSync(path.join(projectPath, 'AGENTS.md'), '# AGENTS.md\n');
+	writeFileSync(path.join(projectPath, '.gitattributes'), '* text=auto eol=lf\n');
+	writeFileSync(path.join(projectPath, '.editorconfig'), 'root = true\n');
 	writeFileSync(path.join(projectPath, 'README.md'), '# Temp project\n');
 	writeFileSync(path.join(projectPath, 'PROJECT.md'), '# Project brief\n');
 	writeFileSync(path.join(projectPath, 'ROADMAP.md'), '# Roadmap\n');
@@ -94,6 +96,8 @@ function createNestedRepository(projectPath) {
 	mkdirSync(path.join(nestedPath, '.mustflow', 'config'), { recursive: true });
 	mkdirSync(path.join(nestedPath, 'src'), { recursive: true });
 	writeFileSync(path.join(nestedPath, 'AGENTS.md'), '# Alpha rules\n');
+	writeFileSync(path.join(nestedPath, '.gitattributes'), '* text=auto eol=lf\n');
+	writeFileSync(path.join(nestedPath, '.editorconfig'), 'root = true\n');
 	writeFileSync(path.join(nestedPath, 'REPO_MAP.md'), '# Alpha map\n');
 	writeFileSync(path.join(nestedPath, '.mustflow', 'config', 'commands.toml'), 'version = 1\n');
 	writeFileSync(path.join(nestedPath, 'package.json'), '{"name":"alpha-private-name"}\n');
@@ -151,6 +155,8 @@ test('prints an anchor-based repository map without ignored paths', () => {
 		assert.match(result.stdout, /Priority Anchors/);
 		assert.match(result.stdout, /Directory Anchors/);
 		assert.match(result.stdout, /AGENTS\.md/);
+		assert.match(result.stdout, /\.gitattributes/);
+		assert.match(result.stdout, /\.editorconfig/);
 		assert.match(result.stdout, /README\.md/);
 		assert.match(result.stdout, /PROJECT\.md/);
 		assert.match(result.stdout, /ROADMAP\.md/);
@@ -277,6 +283,8 @@ test('prints nested repository entrypoints when workspace map is enabled', () =>
 		assert.match(result.stdout, /git repository: yes/);
 		assert.match(result.stdout, /mustflow: yes/);
 		assert.match(result.stdout, /agent rules: `projects\/alpha\/AGENTS\.md`/);
+		assert.match(result.stdout, /`projects\/alpha\/\.gitattributes`/);
+		assert.match(result.stdout, /`projects\/alpha\/\.editorconfig`/);
 		assert.match(result.stdout, /repo map: `projects\/alpha\/REPO_MAP\.md`/);
 		assert.match(result.stdout, /command contract: `projects\/alpha\/\.mustflow\/config\/commands\.toml`/);
 		assert.match(result.stdout, /`projects\/alpha\/package\.json`/);

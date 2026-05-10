@@ -76,6 +76,8 @@ const MACHINE_CONTRACT_ANCHOR_FILES = [
 const DEFAULT_NESTED_ANCHOR_FILES = [
 	'AGENTS.md',
 	'REPO_MAP.md',
+	'.gitattributes',
+	'.editorconfig',
 	'.mustflow/config/mustflow.toml',
 	'.mustflow/config/commands.toml',
 	'.mustflow/config/preferences.toml',
@@ -98,6 +100,7 @@ const DEFAULT_NESTED_ANCHOR_FILES = [
 ];
 const MANIFEST_ANCHORS = new Set(['package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'deno.json', 'deno.jsonc']);
 const COMMAND_ADAPTER_ANCHORS = new Set(['justfile', 'Justfile', 'Makefile', 'Taskfile.yml', 'Taskfile.yaml']);
+const EDITING_POLICY_ANCHORS = new Set(['.gitattributes', '.editorconfig']);
 const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
 	['README.md', 'human overview'],
 	['PROJECT.md', 'project brief'],
@@ -126,6 +129,8 @@ const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
 ]);
 const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['AGENTS.md', 'Root agent operating rules. Read this before changing files.'],
+	['.gitattributes', 'Git text, binary, and line-ending policy. Check before normalizing files.'],
+	['.editorconfig', 'Editor formatting defaults such as indentation, charset, and final newline.'],
 	['README.md', 'Human-facing project overview. Use it as context, not as agent policy.'],
 	['PROJECT.md', 'Optional project-owned brief. Use below .mustflow/context/PROJECT.md when both exist.'],
 	['ROADMAP.md', 'Optional project planning, priority, milestone, and non-goal context.'],
@@ -240,6 +245,7 @@ interface NestedRepository {
 	readonly machineContracts: readonly string[];
 	readonly manifests: readonly string[];
 	readonly commandAdapters: readonly string[];
+	readonly editingPolicies: readonly string[];
 }
 
 interface RepoMapConfig {
@@ -496,6 +502,9 @@ function collectNestedRepository(
 	const commandAdapters = anchorFiles
 		.filter((anchorFile) => COMMAND_ADAPTER_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
+	const editingPolicies = anchorFiles
+		.filter((anchorFile) => EDITING_POLICY_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
+		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
 	const rootDocuments = anchorFiles
 		.filter((anchorFile) => ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES.includes(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => ({
@@ -521,6 +530,7 @@ function collectNestedRepository(
 		machineContracts,
 		manifests,
 		commandAdapters,
+		editingPolicies,
 	};
 }
 
@@ -641,6 +651,11 @@ function renderNestedRepositories(nestedRepositories: readonly NestedRepository[
 			lines.push(...repository.commandAdapters.map((adapter) => `  - \`${adapter}\``));
 		}
 
+		if (repository.editingPolicies.length > 0) {
+			lines.push('- editing policies:');
+			lines.push(...repository.editingPolicies.map((policy) => `  - \`${policy}\``));
+		}
+
 		for (const document of repository.rootDocuments) {
 			lines.push(`- ${document.label}: \`${document.relativePath}\``);
 		}
@@ -668,6 +683,7 @@ function countNestedEntrypoints(repository: NestedRepository): number {
 		...repository.machineContracts,
 		...repository.manifests,
 		...repository.commandAdapters,
+		...repository.editingPolicies,
 	].filter(Boolean).length;
 }
 
@@ -697,6 +713,7 @@ function getSourceFingerprint(
 				machineContracts: [...repository.machineContracts].sort(),
 				manifests: [...repository.manifests].sort(),
 				commandAdapters: [...repository.commandAdapters].sort(),
+				editingPolicies: [...repository.editingPolicies].sort(),
 			}))
 			.sort((left, right) => left.relativePath.localeCompare(right.relativePath)),
 	};

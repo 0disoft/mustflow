@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 60
-source_fingerprint: "sha256:56c9f14828279342e083f0f5140344127e83e6e3870388f9a0dc375d2d0a61ca"
+anchor_count: 62
+source_fingerprint: "sha256:781af9e54dedf1e07e12accfcd7bff8998232ac359c893fd5b1dc5477dafecbb"
 ---
 
 # REPO_MAP.md
@@ -34,6 +34,7 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 ### /
 
+- `.gitattributes`: Git text, binary, and line-ending policy. Check before normalizing files.
 - `CHANGELOG.md`: Optional release history and user-visible change log.
 - `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.
 - `package.json`: Node.js package manifest, binary entry points, and package scripts.
@@ -89,6 +90,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/instruction-conflict-scope-check/
 
 - `.mustflow/skills/instruction-conflict-scope-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/line-ending-hygiene/
+
+- `.mustflow/skills/line-ending-hygiene/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/migration-safety-check/
 
