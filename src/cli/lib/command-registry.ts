@@ -43,6 +43,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.map.summary',
 	},
 	{
+		id: 'line-endings',
+		usage: 'mf line-endings',
+		summaryKey: 'command.lineEndings.summary',
+	},
+	{
 		id: 'run',
 		usage: 'mf run',
 		summaryKey: 'command.run.summary',

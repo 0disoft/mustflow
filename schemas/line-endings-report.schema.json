@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/line-endings-report.schema.json",
+  "title": "mustflow line-endings report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mode",
+    "scope",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "policy_path",
+    "git_tracked",
+    "checked_files",
+    "non_compliant_files",
+    "changed_files",
+    "dry_run",
+    "wrote_files",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "line-endings" },
+    "mode": { "enum": ["check", "normalize"] },
+    "scope": { "enum": ["changed", "tracked"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "enum": ["lf", "unknown"] },
+    "policy_path": { "type": ["string", "null"] },
+    "git_tracked": { "type": "boolean" },
+    "checked_files": { "type": "integer" },
+    "non_compliant_files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/lineEndingFile" }
+    },
+    "changed_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "dry_run": { "type": "boolean" },
+    "wrote_files": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "lineEndingFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "lineEnding", "wouldChange", "changed"],
+      "properties": {
+        "path": { "type": "string" },
+        "lineEnding": { "enum": ["lf", "crlf", "mixed", "none", "binary"] },
+        "wouldChange": { "type": "boolean" },
+        "changed": { "type": "boolean" }
+      }
+    }
+  }
+}

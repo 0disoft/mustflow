@@ -80,6 +80,29 @@ reason = "This repository has not declared its lint command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "style_change"]
 
+[intents.line_endings_check]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect tracked files for CRLF or mixed line-ending drift."
+argv = ["mf", "line-endings", "check", "--json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["line_ending_warning", "formatting_change"]
+
+[intents.line_endings_normalize]
+status = "manual_only"
+description = "Normalize tracked text files to the repository line-ending policy."
+reason = "Line-ending normalization rewrites tracked files and requires an explicit request."
+agent_action = "do_not_normalize_report_suggestion_only"
+required_after = ["user_requested_line_ending_normalization"]
+
 [intents.build]
 status = "unknown"
 description = "Run build or type checks."

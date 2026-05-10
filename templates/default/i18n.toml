@@ -56,8 +56,8 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 25
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 25, status = "current" }
+revision = 26
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 26, status = "current" }
 translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 25, status = "needs_review" }
@@ -112,6 +112,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/dependency-reality-check
 translations.es = { path = "locales/es/.mustflow/skills/dependency-reality-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/dependency-reality-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/dependency-reality-check/SKILL.md", source_revision = 1, status = "needs_review" }
+
+[documents."skill.line-ending-hygiene"]
+source = "locales/en/.mustflow/skills/line-ending-hygiene/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/line-ending-hygiene/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.zh = { path = "locales/zh/.mustflow/skills/line-ending-hygiene/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/line-ending-hygiene/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/line-ending-hygiene/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/line-ending-hygiene/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.diff-risk-review"]
 source = "locales/en/.mustflow/skills/diff-risk-review/SKILL.md"

@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.9"
+version = "1.15.52"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:b43df70bd6a8579066598d372e2a0021a93424ad2e66fd4a2440f665e2eca4aa"
+content_hash = "sha256:12d8ba9d847b51c4f9e8c803853078be0d5a258b5b797c4f968010902a744950"
 
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
@@ -71,6 +71,11 @@ content_hash = "sha256:e802a3479264110d2ffa60a04e496bff6cdeec8aacdfddf4d1f189218
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:61106fb388a18b681182fa97f4b6dac6992823acc4721c7d6287bf882298dfcc"
+
+[files.".mustflow/skills/line-ending-hygiene/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:216ff6a301704d32ded0bfa62aac056bb3d3e7c4cc1c2f2a082bc50c55437866"
 
 [files.".mustflow/skills/external-prompt-injection-defense/SKILL.md"]
 source = "template_locale"
@@ -160,7 +165,7 @@ content_hash = "sha256:eac25df8b64646b381613a9ff9777df77b71634a806c27b6cab4f67e3
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:603256541fcf31aa471fbfd2b0343dcfc2b6809e3b7e28f99e911b4620fab022"
+content_hash = "sha256:21bc3c8f889447fd317c2fe73f828798c565f4ee2107a733fbd92c58441de671"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"

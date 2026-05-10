@@ -16,6 +16,7 @@ import { runHelp } from './commands/help.js';
 import { runImpact } from './commands/impact.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index.js';
+import { runLineEndings } from './commands/line-endings.js';
 import { runMap } from './commands/map.js';
 import { runRun } from './commands/run.js';
 import { runSearch } from './commands/search.js';
@@ -65,6 +66,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf explain authority AGENTS.md',
 				'mf impact --changed',
 				'mf verify --reason code_change',
+				'mf line-endings check',
 				'mf version --check',
 				'mf version-sources --json',
 			],
@@ -176,6 +178,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'map') {
 		return runMap(args, reporter, parsed.lang);
+	}
+
+	if (command === 'line-endings') {
+		return runLineEndings(args, reporter, parsed.lang);
 	}
 
 	if (command === 'run') {

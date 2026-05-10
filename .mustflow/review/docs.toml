@@ -88,9 +88,9 @@ commented_by_id = "codex"
 path = ".mustflow/skills/INDEX.md"
 status = "pending"
 origin = "llm_modified"
-reason = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
 first_seen_at = "2026-05-09T10:05:45.208Z"
-last_touched_at = "2026-05-09T13:25:13.185Z"
+last_touched_at = "2026-05-10T00:46:30.387Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 review_comment = "Added the readme-authoring route. Check that the trigger and scope do not overlap too much with docs-update or project-context-authoring."
@@ -111,6 +111,16 @@ review_comment = "instruction-conflict-scope-check 스킬 추가와 M2.7 후보 
 commented_at = "2026-05-09T11:59:18.495Z"
 commented_by_kind = "llm"
 commented_by_id = "codex"
+
+[[documents]]
+path = ".mustflow/skills/line-ending-hygiene/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:30.726Z"
+last_touched_at = "2026-05-10T00:46:30.726Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
 
 [[documents]]
 path = ".mustflow/skills/migration-safety-check/SKILL.md"
@@ -393,6 +403,16 @@ commented_by_kind = "llm"
 commented_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/commands/line-endings.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:31.146Z"
+last_touched_at = "2026-05-10T00:46:31.146Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/commands/search.md"
 status = "pending"
 origin = "llm_modified"
@@ -613,6 +633,16 @@ commented_by_kind = "llm"
 commented_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/es/commands/line-endings.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:32.806Z"
+last_touched_at = "2026-05-10T00:46:32.806Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
+
+[[documents]]
 path = "docs-site/src/content/docs/es/commands/search.md"
 status = "pending"
 origin = "llm_modified"
@@ -791,6 +821,16 @@ commented_by_kind = "llm"
 commented_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/fr/commands/line-endings.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:33.241Z"
+last_touched_at = "2026-05-10T00:46:33.241Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
+
+[[documents]]
 path = "docs-site/src/content/docs/fr/commands/search.md"
 status = "pending"
 origin = "llm_modified"
@@ -967,6 +1007,16 @@ review_comment = "Template install/update surface guard wording changed; review 
 commented_at = "2026-05-09T17:03:02.022Z"
 commented_by_kind = "llm"
 commented_by_id = "codex"
+
+[[documents]]
+path = "docs-site/src/content/docs/hi/commands/line-endings.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:33.779Z"
+last_touched_at = "2026-05-10T00:46:33.779Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
 
 [[documents]]
 path = "docs-site/src/content/docs/hi/commands/search.md"
@@ -1191,6 +1241,16 @@ review_comment = "Template install/update surface guard wording changed; review 
 commented_at = "2026-05-09T17:03:00.713Z"
 commented_by_kind = "llm"
 commented_by_id = "codex"
+
+[[documents]]
+path = "docs-site/src/content/docs/ko/commands/line-endings.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:31.774Z"
+last_touched_at = "2026-05-10T00:46:31.774Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
 
 [[documents]]
 path = "docs-site/src/content/docs/ko/commands/search.md"
@@ -1425,6 +1485,16 @@ review_comment = "Template install/update surface guard wording changed; review 
 commented_at = "2026-05-09T17:03:02.438Z"
 commented_by_kind = "llm"
 commented_by_id = "codex"
+
+[[documents]]
+path = "docs-site/src/content/docs/zh/commands/line-endings.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-authored line-ending hygiene documentation needs prose review."
+first_seen_at = "2026-05-10T00:46:32.314Z"
+last_touched_at = "2026-05-10T00:46:32.314Z"
+last_touched_by_kind = "llm"
+last_touched_by_id = "codex"
 
 [[documents]]
 path = "docs-site/src/content/docs/zh/commands/search.md"

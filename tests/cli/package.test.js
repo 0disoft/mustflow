@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.51');
+	assert.equal(packageJson.version, '1.15.52');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -204,7 +204,9 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/commands/init.js'));
 	assert.ok(files.has('dist/cli/commands/docs.js'));
 	assert.ok(files.has('dist/cli/commands/index.js'));
+	assert.ok(files.has('dist/cli/commands/line-endings.js'));
 	assert.ok(files.has('dist/cli/commands/explain.js'));
+	assert.ok(files.has('dist/core/line-endings.js'));
 	assert.ok(files.has('dist/core/source-anchor-explanation.js'));
 	assert.ok(files.has('dist/core/source-anchors.js'));
 	assert.ok(files.has('dist/cli/commands/impact.js'));
@@ -227,6 +229,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/docs-review-list.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
+	assert.ok(files.has('schemas/line-endings-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	assert.ok(files.has('examples/README.md'));
 	assert.ok(files.has('examples/docs-only/README.md'));

@@ -13,6 +13,8 @@ Current schemas:
   `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact --changed --json` and
   `mf impact <path...> --json`
+- `line-endings-report.schema.json`: `mf line-endings check --json` and
+  `mf line-endings normalize --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `explain-report.schema.json`: `mf explain authority --json`, `mf explain command --json`,

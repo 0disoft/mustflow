@@ -9,6 +9,7 @@ import { runDoctor } from './doctor.js';
 import { runExplain } from './explain.js';
 import { runHelp } from './help.js';
 import { runImpact } from './impact.js';
+import { runLineEndings } from './line-endings.js';
 import { runMap } from './map.js';
 import { runStatus } from './status.js';
 import { runUpdate } from './update.js';
@@ -263,6 +264,10 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 
 	if (command === 'impact') {
 		return runImpact(commandArgs, reporter, lang);
+	}
+
+	if (command === 'line-endings') {
+		return runLineEndings(commandArgs, reporter, lang);
 	}
 
 	if (command === 'map') {

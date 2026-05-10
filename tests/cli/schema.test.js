@@ -338,6 +338,20 @@ test('impact json output matches the published schema', () => {
 	}
 });
 
+test('line-endings json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['line-endings', 'check', '--json']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema('line-endings-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('docs review list json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

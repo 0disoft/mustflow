@@ -7,6 +7,7 @@ const IN_PROCESS_MUSTFLOW_BUILTIN_COMMANDS = new Set([
 	'explain',
 	'help',
 	'impact',
+	'line-endings',
 	'map',
 	'status',
 	'update',
