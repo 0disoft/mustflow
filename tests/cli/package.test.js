@@ -29,7 +29,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.52');
+	assert.equal(packageJson.version, '1.15.55');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -240,6 +240,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/artifact-integrity-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/codebase-orientation/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/contract-sync-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/date-number-audit/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-reality-check/SKILL.md`));
@@ -258,6 +259,9 @@ test('npm package includes compiled cli and default template sources', () => {
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/source-freshness-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/skill-authoring/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/ui-quality-gate/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/visual-review-artifact/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/visual-review-artifact/resources.toml`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/visual-review-artifact/assets/review-template.html`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/web-asset-optimization/SKILL.md`));
 	}
 	assert.equal(files.has('templates/default/files/AGENTS.md'), false);

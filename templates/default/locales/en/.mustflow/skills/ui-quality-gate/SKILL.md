@@ -2,7 +2,7 @@
 mustflow_doc: skill.ui-quality-gate
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: ui-quality-gate
@@ -72,10 +72,12 @@ Keep user-facing interfaces usable, minimal, responsive, and verifiable instead 
 2. Check nearby UI patterns before adding new layout, component, color, copy, or state conventions.
 3. Remove or avoid non-essential welcome text, feature summaries, decorative cards, fake metrics, marketing copy, and invented controls.
 4. Verify controls are understandable: icon buttons need accessible names or tooltips, destructive or state-changing actions need clear labels, and disabled states need a visible reason when useful.
-5. Check layout constraints: text should not overflow, overlap, resize fixed-format controls unexpectedly, or depend on viewport-width font scaling.
-6. Check state coverage: loading, empty, error, saved, changed, disabled, selected, focused, and language-switched states should update consistently where applicable.
-7. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
-8. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
+5. Check accessibility behavior before visual polish: native elements first, keyboard access, focus order and return, visible focus state, names for icon-only controls, form error linkage, live status announcements, reduced-motion handling, and sufficient contrast.
+6. Check localization-sensitive behavior: language switching, fallback text, placeholders, plural or formatted values, long translated labels, bidirectional text, logical spacing, and date, time, number, currency, or unit display where applicable.
+7. Check layout constraints: text should not overflow, overlap, resize fixed-format controls unexpectedly, or depend on viewport-width font scaling.
+8. Check state coverage: loading, empty, error, saved, changed, disabled, selected, focused, and language-switched states should update consistently where applicable.
+9. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
+10. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -110,7 +112,7 @@ Use a narrower configured test, build, browser, screenshot, or accessibility int
 
 - UI surface reviewed
 - User task and states checked
-- Layout, accessibility, and localization checks
+- Layout, keyboard, focus, accessibility, and localization checks
 - Decorative or unnecessary UI avoided or removed
 - Command intents run
 - Skipped visual checks and reasons

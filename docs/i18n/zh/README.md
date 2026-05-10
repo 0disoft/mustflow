@@ -125,6 +125,8 @@ your-project/
       ├─ INDEX.md
       ├─ code-review/
       │  └─ SKILL.md
+      ├─ codebase-orientation/
+      │  └─ SKILL.md
       ├─ docs-update/
       │  └─ SKILL.md
       ├─ failure-triage/
@@ -134,6 +136,8 @@ your-project/
       ├─ skill-authoring/
       │  └─ SKILL.md
       ├─ test-maintenance/
+      │  └─ SKILL.md
+      ├─ visual-review-artifact/
       │  └─ SKILL.md
       └─ web-asset-optimization/
          └─ SKILL.md

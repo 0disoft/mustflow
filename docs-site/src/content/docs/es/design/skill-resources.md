@@ -138,5 +138,5 @@ Los futuros comandos `mf skill add` o `mf pack add` deben implementar estas regl
 - Las declaraciones `writes` de scripts se restringen a la carpeta del skill mediante rutas relativas.
 - Cada carpeta de skill contiene un `SKILL.md`.
 
-La plantilla predeterminada actual aún no incluye `resources.toml`. El formato y las reglas se documentan primero; los índices reales de recursos deben añadirse solo cuando un skill se vuelva lo suficientemente complejo como para necesitarlos.
+La plantilla predeterminada incluye ahora el primer skill con recursos: `visual-review-artifact/resources.toml`. Añade más índices de recursos solo cuando un skill necesite referencias, assets o scripts de apoyo.
 Las comprobaciones de archivos grandes, secretos y cachés pueden ampliarse como comprobaciones de seguridad de repositorio separadas, similares a la validación de retención y archivos de contexto.

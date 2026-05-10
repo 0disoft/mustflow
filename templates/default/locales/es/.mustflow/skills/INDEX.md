@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: es
 canonical: false
-revision: 26
+revision: 28
 lifecycle: mustflow-owned
 authority: router
 ---

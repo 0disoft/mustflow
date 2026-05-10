@@ -145,7 +145,5 @@ Future `mf skill add` or `mf pack add` commands must implement these safety rule
 - Script `writes` declarations are restricted to the skill folder through relative paths.
 - Every skill folder contains a `SKILL.md`.
 
-The current default template does not include a `resources.toml` yet. The format and rules are
-documented first; real resource indexes should be added only when a skill becomes complex enough to
-require them.
+The default template includes `visual-review-artifact/resources.toml` as the first resource-backed skill. Add more resource indexes only when a skill becomes complex enough to require supporting references, assets, or scripts.
 Large-file, secret, and cache checks can be expanded as separate repository safety checks, similar to retention and context-file validation.

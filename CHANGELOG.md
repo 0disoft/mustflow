@@ -14,6 +14,17 @@ user projects by `mf init`.
   maintainers and contributors.
 - Added repository CI, issue templates, and a pull request template for
   mustflow maintainer workflows.
+- Added Renovate configuration for dependency update pull requests without
+  automatic merging.
+- Added a trusted npm publishing workflow for GitHub Releases with provenance
+  attestations and no long-lived npm token.
+- Added CodeQL analysis for JavaScript/TypeScript source and GitHub Actions
+  workflows.
+- Added GitHub Actions hygiene checks with actionlint and zizmor.
+- Added OpenSSF Scorecard supply-chain security analysis.
+- Added OSV-Scanner dependency vulnerability checks.
+- Added execution-free verification plan JSON output for
+  `mf verify --plan-only --json`.
 - Added explicit authority-boundary guidance to installed project context
   templates.
 - Added `mf docs review` to track LLM-created or LLM-modified documentation
@@ -35,6 +46,10 @@ user projects by `mf init`.
   available.
 - Added installed agent guidance to prefer the narrowest configured verification
   intent that covers the changed risk before running slow full-suite tests.
+- Added the `codebase-orientation` default skill and strengthened default skill
+  guidance for pre-change risk checks, accessibility, and localization review.
+- Added the `visual-review-artifact` default skill with a static HTML review
+  template for safe plan, suggestion, review, flow, and decision artifacts.
 
 ### Fixed
 

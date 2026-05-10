@@ -10,33 +10,14 @@ reading project history.
 
 Make this repository a strong example of its own workflow contract.
 
-Before adding larger product surfaces, mustflow should reliably run configured
-command intents, produce useful receipts, and expose enough structured policy
-information for future commands to share the same decisions.
+Before adding larger product surfaces, mustflow should reduce duplicated policy
+logic and keep future commands sharing the same core decisions.
 
 Open command-contract follow-up: `lint`, coverage, and test-audit intents
 remain unset or manual-only until narrower repository gates exist for those
 workflows.
 
 ## Near-Term Milestones
-
-### M2.9: Change Classification and Public Surface Contracts
-
-Goal: classify changes, map affected public surfaces, and derive required
-validations without making agents guess from prose.
-
-- Keep startup reading small and let compact indexes decide what additional
-  context, skills, public surfaces, and validation contracts to load.
-- Consider a small `policy.toml` only after the surrounding checks are clear.
-
-### M2.11: Local Preferences Dashboard
-
-Goal: provide a small human-facing surface for editing safe mustflow preferences
-without turning the dashboard into an autonomous workflow runner.
-
-- Expand dashboard coverage only after the corresponding command-line contract
-  exists. Candidate future panes: effective policy explanation, impacted public
-  surfaces, and deeper verification explanation.
 
 ### M2.14: Source Anchors and Navigation-Only Code Search
 
@@ -122,8 +103,3 @@ promising a broad public API.
   `AGENTS.md`, `.gitignore`, and `.mustflow/**`.
 - Public documentation should distinguish this repository's own open source
   operations from files installed into user projects.
-- `mf check` should say whether mustflow files are valid.
-- `mf doctor` should say what the current root state is.
-- `mf explain` should say why an action is allowed, blocked, or warned.
-- `mf verify` should say which checks are required for a given reason and run
-  only those that the command contract allows.

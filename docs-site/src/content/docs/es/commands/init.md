@@ -24,14 +24,17 @@ AGENTS.md
 └─ skills/
    ├─ INDEX.md
    ├─ code-review/SKILL.md
+   ├─ codebase-orientation/SKILL.md
    ├─ diff-risk-review/SKILL.md
    ├─ docs-prose-review/SKILL.md
    ├─ docs-update/SKILL.md
    ├─ failure-triage/SKILL.md
    ├─ project-context-authoring/SKILL.md
+   ├─ readme-authoring/SKILL.md
    ├─ skill-authoring/SKILL.md
    ├─ security-regression-tests/SKILL.md
    ├─ test-maintenance/SKILL.md
+   ├─ visual-review-artifact/SKILL.md
    └─ web-asset-optimization/SKILL.md
 ```
 

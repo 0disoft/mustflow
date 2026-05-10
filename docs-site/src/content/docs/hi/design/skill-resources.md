@@ -138,5 +138,5 @@ Skill समूहों को automation skills नहीं, बल्कि 
 - Script `writes` declarations relative paths के माध्यम से skill folder तक सीमित हैं।
 - हर skill folder में `SKILL.md` मौजूद है।
 
-मौजूदा default template अभी `resources.toml` शामिल नहीं करता। format और rules पहले document किए गए हैं; वास्तविक resource indexes केवल तब जोड़े जाने चाहिए जब skill उन्हें आवश्यक बनाने जितनी जटिल हो जाए।
+Default template अब पहला resource-backed skill शामिल करता है: `visual-review-artifact/resources.toml`। और resource indexes केवल तब जोड़ें जब किसी skill को supporting references, assets, या scripts सच में चाहिए हों।
 Large-file, secret, और cache checks को retention और context-file validation की तरह अलग repository safety checks के रूप में बढ़ाया जा सकता है।

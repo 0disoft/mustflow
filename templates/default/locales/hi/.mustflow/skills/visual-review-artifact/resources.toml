@@ -1,0 +1,7 @@
+schema_version = "1"
+
+[resources."assets/review-template.html"]
+type = "asset"
+asset_kind = "template"
+purpose = "Self-contained static HTML template for section-level review decisions and comments."
+required = false

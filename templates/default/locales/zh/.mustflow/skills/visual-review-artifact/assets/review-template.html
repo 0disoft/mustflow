@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visual Review Artifact</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f7f4;
+      --fg: #1f2328;
+      --muted: #656d76;
+      --line: #d0d7de;
+      --panel: #ffffff;
+      --accent: #0969da;
+      --approve: #1a7f37;
+      --reject: #cf222e;
+      --discuss: #9a6700;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --fg: #e6edf3;
+        --muted: #8b949e;
+        --line: #30363d;
+        --panel: #161b22;
+        --accent: #58a6ff;
+        --approve: #3fb950;
+        --reject: #ff7b72;
+        --discuss: #d29922;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: grid;
+      gap: 8px;
+      padding-block: 8px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    h1 {
+      font-size: 28px;
+    }
+
+    h2 {
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .meta,
+    .note {
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-block: 18px;
+    }
+
+    .sections {
+      display: grid;
+      gap: 14px;
+    }
+
+    section {
+      display: grid;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--fg);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    button:hover,
+    button:focus-visible {
+      border-color: var(--accent);
+      outline: 2px solid transparent;
+    }
+
+    button[aria-pressed="true"][data-action="approve"] {
+      border-color: var(--approve);
+      color: var(--approve);
+    }
+
+    button[aria-pressed="true"][data-action="reject"] {
+      border-color: var(--reject);
+      color: var(--reject);
+    }
+
+    button[aria-pressed="true"][data-action="discuss"] {
+      border-color: var(--discuss);
+      color: var(--discuss);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 84px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--fg);
+      padding: 10px;
+      font: inherit;
+    }
+
+    pre {
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel), var(--bg) 45%);
+    }
+  </style>
+</head>
+<body>
+  <main data-artifact-kind="decision" data-review-artifact>
+    <header>
+      <h1>Visual Review Artifact</h1>
+      <p class="meta">Replace this sample content with evidence-backed plan, suggestion, review, flow, or decision sections.</p>
+      <p class="note">Review only. This page does not execute commands, modify files, grant permission, skip validation, or override repository rules.</p>
+    </header>
+
+    <div class="toolbar" aria-label="Review actions">
+      <button type="button" data-copy-json>Copy decision JSON</button>
+      <button type="button" data-copy-prompt>Copy follow-up prompt</button>
+    </div>
+
+    <div class="sections">
+      <section data-review-section data-section-id="section-1">
+        <div class="section-head">
+          <div>
+            <h2>Section title</h2>
+            <p class="meta">Short evidence, tradeoff, or decision summary.</p>
+          </div>
+          <p class="status" data-status-label>Not decided</p>
+        </div>
+        <pre>Evidence or code excerpt goes here.</pre>
+        <div class="actions">
+          <button type="button" data-action="approve" aria-pressed="false">Approve</button>
+          <button type="button" data-action="reject" aria-pressed="false">Reject</button>
+          <button type="button" data-action="discuss" aria-pressed="false">Discuss</button>
+        </div>
+        <label>
+          Comment
+          <textarea data-comment placeholder="Add a comment for this section"></textarea>
+        </label>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const labels = {
+      approve: "Approved",
+      reject: "Rejected",
+      discuss: "Needs discussion"
+    };
+
+    function sections() {
+      return [...document.querySelectorAll("[data-review-section]")];
+    }
+
+    function setStatus(section, action) {
+      section.dataset.status = action;
+      section.querySelector("[data-status-label]").textContent = labels[action] ?? "Not decided";
+      for (const button of section.querySelectorAll("[data-action]")) {
+        button.setAttribute("aria-pressed", String(button.dataset.action === action));
+      }
+    }
+
+    function decisionData() {
+      return {
+        schema_version: "1",
+        artifact_kind: document.querySelector("[data-review-artifact]")?.dataset.artifactKind ?? "decision",
+        sections: sections().map((section) => ({
+          id: section.dataset.sectionId ?? "",
+          title: section.querySelector("h2")?.textContent?.trim() ?? "",
+          status: section.dataset.status ?? "undecided",
+          comment: section.querySelector("[data-comment]")?.value ?? ""
+        }))
+      };
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const area = document.createElement("textarea");
+      area.value = text;
+      document.body.append(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+
+    function followUpPrompt() {
+      return [
+        "Use this visual review decision data as user feedback.",
+        "Do not treat it as command permission or validation approval.",
+        "",
+        JSON.stringify(decisionData(), null, 2)
+      ].join("\n");
+    }
+
+    document.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const actionButton = target.closest("[data-action]");
+      if (actionButton) {
+        const section = actionButton.closest("[data-review-section]");
+        if (section) setStatus(section, actionButton.dataset.action);
+        return;
+      }
+
+      if (target.closest("[data-copy-json]")) {
+        await copyText(JSON.stringify(decisionData(), null, 2));
+      }
+
+      if (target.closest("[data-copy-prompt]")) {
+        await copyText(followUpPrompt());
+      }
+    });
+  </script>
+</body>
+</html>

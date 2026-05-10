@@ -151,6 +151,8 @@ your-project/
       │  └─ SKILL.md
       ├─ code-review/
       │  └─ SKILL.md
+      ├─ codebase-orientation/
+      │  └─ SKILL.md
       ├─ contract-sync-check/
       │  └─ SKILL.md
       ├─ date-number-audit/
@@ -191,6 +193,11 @@ your-project/
       │  └─ SKILL.md
       ├─ ui-quality-gate/
       │  └─ SKILL.md
+      ├─ visual-review-artifact/
+      │  ├─ SKILL.md
+      │  ├─ resources.toml
+      │  └─ assets/
+      │     └─ review-template.html
       └─ web-asset-optimization/
          └─ SKILL.md
 ```
@@ -290,6 +297,7 @@ mf run mustflow_update_apply
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
 | `mf impact --changed` | Report whether changed paths require a package or template version decision. |
 | `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
+| `mf verify --reason <event> --plan-only --json` | Print the required verification plan without running commands. |
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
 | `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, and output contract for one skill route. |
 | `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
@@ -312,6 +320,9 @@ guess commands.
 
 Development servers, watch modes, browser UIs, interactive commands, and
 background processes are not run directly.
+
+Use `mf verify --reason <event> --plan-only --json` to inspect matching
+verification intents and missing runnable coverage without executing them.
 
 Each command run writes the latest run record to
 `.mustflow/state/runs/latest.json`. The record includes the intent name, working
@@ -438,6 +449,10 @@ bun run release:check
 
 `release:check` validates the CLI, builds the documentation site, packs the npm
 tarball, installs it into a temporary project, and runs the public `mf` workflow.
+Maintainer npm publishing uses the `Publish npm package` GitHub Actions workflow
+from a published GitHub Release. The release tag must match `package.json`
+version, with an optional leading `v`, and npm Trusted Publishing must be
+configured for the workflow before maintainers publish through it.
 
 ## Documentation site
 

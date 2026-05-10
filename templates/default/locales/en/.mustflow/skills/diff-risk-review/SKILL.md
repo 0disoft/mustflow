@@ -2,7 +2,7 @@
 mustflow_doc: skill.diff-risk-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: diff-risk-review
@@ -82,14 +82,20 @@ Classify the risk of a completed change, choose the smallest relevant configured
    - public documentation
    - generated maps or local state
    - security, privacy, data, migration, or external integration boundaries
-3. Assign a risk level:
+3. Run a short pre-mortem before choosing verification:
+   - What invariant must stay true for users, callers, installed templates, or automation consumers?
+   - Could the change affect idempotency, concurrency, caching, ordering, rollback, or partial failure?
+   - Could permissions, secrets, privacy, logging, retention, or externally visible artifacts change?
+   - Could tests, docs, schemas, localization, accessibility, or generated outputs now describe a different contract?
+   - What would make the change easy to revert or safely leave in place if verification is incomplete?
+4. Assign a risk level:
    - `low`: wording, translation, or isolated documentation with matching docs validation
    - `medium`: templates, tests, package metadata, generated maps, or workflow docs without runtime behavior changes
    - `high`: runtime behavior, command execution, security, privacy, data handling, migrations, release behavior, or multi-surface changes
-4. Identify the minimum relevant configured verification intents. Prefer the narrowest configured intents that cover the changed surfaces, but do not hide missing, unknown, manual-only, or skipped intents.
-5. Record rollback notes for any changed installed template, command contract, package version, generated file, migration-like change, or public behavior change.
-6. Check for scope drift: unrelated files, invented facts, unnecessary abstractions, weakened validation, or unreported generated-file refreshes.
-7. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
+5. Identify the minimum relevant configured verification intents. Prefer the narrowest configured intents that cover the changed surfaces, but do not hide missing, unknown, manual-only, or skipped intents.
+6. Record rollback notes for any changed installed template, command contract, package version, generated file, migration-like change, or public behavior change.
+7. Check for scope drift: unrelated files, invented facts, unnecessary abstractions, weakened validation, or unreported generated-file refreshes.
+8. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -127,6 +133,7 @@ Do not infer missing commands. If `test_related`, `test_audit`, or `lint` is unk
 ## Output Format
 
 - Changed surfaces
+- Pre-mortem risk notes
 - Risk level and reason
 - Minimum relevant verification
 - Command intents run

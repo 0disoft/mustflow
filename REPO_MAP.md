@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 62
-source_fingerprint: "sha256:781af9e54dedf1e07e12accfcd7bff8998232ac359c893fd5b1dc5477dafecbb"
+anchor_count: 64
+source_fingerprint: "sha256:0c021bfe725bc5099eed8ffcc06a7bf8098791d967f1767395e81d34d8b61c5a"
 ---
 
 # REPO_MAP.md
@@ -54,6 +54,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/code-review/
 
 - `.mustflow/skills/code-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/codebase-orientation/
+
+- `.mustflow/skills/codebase-orientation/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/contract-sync-check/
 
@@ -142,6 +146,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/ui-quality-gate/
 
 - `.mustflow/skills/ui-quality-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/visual-review-artifact/
+
+- `.mustflow/skills/visual-review-artifact/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/web-asset-optimization/
 

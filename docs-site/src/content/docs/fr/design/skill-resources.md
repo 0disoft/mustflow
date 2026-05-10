@@ -138,5 +138,5 @@ Les futures commandes `mf skill add` ou `mf pack add` doivent implémenter ces r
 - Les déclarations `writes` des scripts sont limitées au dossier du skill via des chemins relatifs.
 - Chaque dossier de skill contient un `SKILL.md`.
 
-Le modèle par défaut actuel n’inclut pas encore de `resources.toml`. Le format et les règles sont d’abord documentés; de vrais index de ressources doivent être ajoutés uniquement lorsqu’un skill devient assez complexe pour les exiger.
+Le modèle par défaut inclut maintenant un premier skill avec ressources : `visual-review-artifact/resources.toml`. Ajoutez d’autres index de ressources uniquement lorsqu’un skill a vraiment besoin de références, d’assets ou de scripts de support.
 Les contrôles de gros fichiers, de secrets et de caches peuvent être étendus comme contrôles séparés de sûreté du dépôt, de façon similaire à la rétention et à la validation des fichiers de contexte.
