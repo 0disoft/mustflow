@@ -105,22 +105,6 @@ promising a broad public API.
   intentionally documented.
 - Preserve existing CLI behavior while reducing duplicated policy logic.
 
-## Later Candidates
-
-### Skill Packs
-
-Skill packs remain useful, but they should wait until the skill format,
-command-contract behavior, and validation boundaries are specified. Packs
-should affect mustflow-owned workflow files only, such as `.mustflow/skills`,
-`.mustflow/context`, and candidate command intents.
-
-### Host Compatibility Scanner
-
-Host compatibility should be reported without claiming authority over a
-specific editor or agent product. A future scanner may detect host-like
-instruction sources and explain how they interact with mustflow's
-repository-local contract.
-
 ## Non-Goals
 
 - Do not make mustflow an autonomous agent runtime.
