@@ -32,6 +32,10 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Install documentation site dependencies
+        run: bun install --frozen-lockfile
+        working-directory: docs-site
+
       - name: Check CLI package
         run: bun run check
 
