@@ -64,48 +64,63 @@ function hasBinShim(projectPath, name) {
 		existsSync(path.join(projectPath, 'node_modules', '.bin', `${name}.cmd`));
 }
 
+function packRepository(packRoot) {
+	const pack = run(npmCommand(), ['pack', '--json', '--pack-destination', packRoot], {
+		cwd: projectRoot,
+	});
+
+	assert.equal(pack.status, 0, pack.stderr || pack.stdout);
+	const packed = parsePackResult(pack.stdout);
+	const tarballPath = path.join(packRoot, packed.filename);
+	assert.ok(existsSync(tarballPath));
+	return tarballPath;
+}
+
+function installPackedPackage(projectPath, tarballPath) {
+	writeFileSync(path.join(projectPath, 'package.json'), '{"private":true,"type":"module"}\n');
+
+	const install = run(npmCommand(), ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--save-dev', tarballPath], {
+		cwd: projectPath,
+	});
+
+	assert.equal(install.status, 0, install.stderr || install.stdout);
+}
+
+function assertInstalledPackageSurface(projectPath) {
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'locales', 'en', 'AGENTS.md')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'locales', 'ko', 'AGENTS.md')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'doctor-report.schema.json')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'context-report.schema.json')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'run-receipt.schema.json')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'commands.schema.json')));
+	assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'dist', 'core', 'public-json-contracts.js')));
+	assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'src')), false);
+	assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'tests')), false);
+	assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'docs-site')), false);
+	assert.equal(hasBinShim(projectPath, 'mf'), true);
+	assert.equal(hasBinShim(projectPath, 'mustflow'), true);
+}
+
+function assertInstalledCliVersions(projectPath) {
+	const mfVersion = run(npxCommand(), ['mf', '--version'], { cwd: projectPath });
+	assert.equal(mfVersion.status, 0, mfVersion.stderr || mfVersion.stdout);
+	assert.equal(mfVersion.stdout.trim(), packageJson.version);
+
+	const mustflowVersion = run(npxCommand(), ['mustflow', '--version'], { cwd: projectPath });
+	assert.equal(mustflowVersion.status, 0, mustflowVersion.stderr || mustflowVersion.stdout);
+	assert.equal(mustflowVersion.stdout.trim(), packageJson.version);
+}
+
 test('packed npm package installs and runs the public mf workflow', async () => {
 	const packRoot = createTempRoot('mustflow-pack-');
 	const projectPath = createTempRoot('mustflow-install-');
 
 	try {
-		const pack = run(npmCommand(), ['pack', '--json', '--pack-destination', packRoot], {
-			cwd: projectRoot,
-		});
-
-		assert.equal(pack.status, 0, pack.stderr || pack.stdout);
-		const packed = parsePackResult(pack.stdout);
-		const tarballPath = path.join(packRoot, packed.filename);
-		assert.ok(existsSync(tarballPath));
-
-		writeFileSync(path.join(projectPath, 'package.json'), '{"private":true,"type":"module"}\n');
-
-		const install = run(npmCommand(), ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--save-dev', tarballPath], {
-			cwd: projectPath,
-		});
-
-		assert.equal(install.status, 0, install.stderr || install.stdout);
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'locales', 'en', 'AGENTS.md')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'locales', 'ko', 'AGENTS.md')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'doctor-report.schema.json')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'context-report.schema.json')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'run-receipt.schema.json')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'commands.schema.json')));
-		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'dist', 'core', 'public-json-contracts.js')));
-		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'src')), false);
-		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'tests')), false);
-		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'docs-site')), false);
-		assert.equal(hasBinShim(projectPath, 'mf'), true);
-		assert.equal(hasBinShim(projectPath, 'mustflow'), true);
-
-		const mfVersion = run(npxCommand(), ['mf', '--version'], { cwd: projectPath });
-		assert.equal(mfVersion.status, 0, mfVersion.stderr || mfVersion.stdout);
-		assert.equal(mfVersion.stdout.trim(), packageJson.version);
-
-		const mustflowVersion = run(npxCommand(), ['mustflow', '--version'], { cwd: projectPath });
-		assert.equal(mustflowVersion.status, 0, mustflowVersion.stderr || mustflowVersion.stdout);
-		assert.equal(mustflowVersion.stdout.trim(), packageJson.version);
+		const tarballPath = packRepository(packRoot);
+		installPackedPackage(projectPath, tarballPath);
+		assertInstalledPackageSurface(projectPath);
+		assertInstalledCliVersions(projectPath);
 
 		const dryRun = run(
 			npxCommand(),
