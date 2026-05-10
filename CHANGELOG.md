@@ -22,6 +22,13 @@ user projects by `mf init`.
 - Added a conditional version sync policy so strict checks fail template versions
   ahead of the package, require equality when installed template files change,
   and warn when CLI-only releases intentionally leave the template version older.
+- Added a thin internal surface decision model so change classification,
+  verification planning, source anchors, document review, and command intents
+  can share target, reason, surface, and authority vocabulary without creating a
+  broad policy API.
+- Added release-priority triage to `mf docs review list --json` so pending
+  documentation is classified as P0, P1, or P2 with release-blocking status and
+  a machine-readable triage reason.
 - Added previous-snapshot source anchor status comparison for `mf index --source`
   so moved, changed, review-needed, and stale anchors are recorded in the local
   SQLite index without turning anchors into verification authority.

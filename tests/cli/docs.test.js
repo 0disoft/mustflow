@@ -82,10 +82,68 @@ test('adds LLM-modified documentation to the review queue', () => {
 		assert.equal(output.count, 1);
 		assert.equal(output.documents[0].path, 'docs/guide.md');
 		assert.equal(output.documents[0].status, 'pending');
+		assert.equal(output.documents[0].review_priority, 'P1');
+		assert.equal(output.documents[0].release_blocking, false);
+		assert.equal(output.documents[0].triage_reason, 'user_visible_doc');
 		assert.equal(output.documents[0].last_touched_by_kind, 'llm');
 		assert.equal(output.documents[0].last_touched_by_id, 'codex');
 		assert.match(ledger, /path = "docs\/guide\.md"/);
 		assert.match(ledger, /status = "pending"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('classifies release-blocking documentation review entries as P0', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeDoc(projectPath, 'README.md');
+
+		const addResult = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'README.md',
+			'--reason',
+			'llm_modified',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+		]);
+		const listResult = runCli(projectPath, ['docs', 'review', 'list', '--json']);
+		const output = JSON.parse(listResult.stdout);
+
+		assert.equal(addResult.status, 0, addResult.stderr || addResult.stdout);
+		assert.equal(listResult.status, 0, listResult.stderr || listResult.stdout);
+		assert.equal(output.documents[0].path, 'README.md');
+		assert.equal(output.documents[0].review_priority, 'P0');
+		assert.equal(output.documents[0].release_blocking, true);
+		assert.equal(output.documents[0].triage_reason, 'release_contract');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('classifies fixture documentation review entries as non-blocking P2', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeDoc(projectPath, 'tests/fixtures/broken-doc.md');
+
+		const addResult = runCli(projectPath, ['docs', 'review', 'add', 'tests/fixtures/broken-doc.md']);
+		const listResult = runCli(projectPath, ['docs', 'review', 'list', '--json']);
+		const output = JSON.parse(listResult.stdout);
+
+		assert.equal(addResult.status, 0, addResult.stderr || addResult.stdout);
+		assert.equal(listResult.status, 0, listResult.stderr || listResult.stdout);
+		assert.equal(output.documents[0].path, 'tests/fixtures/broken-doc.md');
+		assert.equal(output.documents[0].review_priority, 'P2');
+		assert.equal(output.documents[0].release_blocking, false);
+		assert.equal(output.documents[0].triage_reason, 'test_fixture');
 	} finally {
 		removeTempProject(projectPath);
 	}

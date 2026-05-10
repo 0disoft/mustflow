@@ -211,7 +211,8 @@ function renderEntries(entries: ReturnType<typeof listDocReviewEntries>, lang: C
 	}
 
 	for (const entry of entries) {
-		lines.push(`- ${entry.path} [${entry.status}] ${entry.reason}`);
+		const blocking = entry.release_blocking ? ' release-blocking' : '';
+		lines.push(`- ${entry.path} [${entry.status} ${entry.review_priority}${blocking}] ${entry.reason}`);
 		if (entry.review_comment) {
 			const firstLine = entry.review_comment.split(/\r?\n/).find((line) => line.trim().length > 0);
 			lines.push(`  ${t(lang, 'label.comment')}: ${firstLine ?? entry.review_comment}`);

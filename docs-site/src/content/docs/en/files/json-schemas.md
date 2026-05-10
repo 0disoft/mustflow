@@ -31,10 +31,14 @@ building automation around `--json` output.
   `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact --changed --json` and
   `mf impact <path...> --json`
+- `line-endings-report.schema.json`: `mf line-endings check --json` and
+  `mf line-endings normalize --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `explain-report.schema.json`: `mf explain <topic> --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
+  and `mf verify --from-plan <path> --plan-only --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 

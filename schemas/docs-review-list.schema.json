@@ -19,7 +19,17 @@
     "document": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "status", "origin", "reason", "first_seen_at", "last_touched_at"],
+      "required": [
+        "path",
+        "status",
+        "origin",
+        "reason",
+        "first_seen_at",
+        "last_touched_at",
+        "review_priority",
+        "release_blocking",
+        "triage_reason"
+      ],
       "properties": {
         "path": { "type": "string" },
         "status": {
@@ -29,6 +39,19 @@
         "reason": { "type": "string" },
         "first_seen_at": { "type": "string" },
         "last_touched_at": { "type": "string" },
+        "review_priority": { "enum": ["P0", "P1", "P2"] },
+        "release_blocking": { "type": "boolean" },
+        "triage_reason": {
+          "enum": [
+            "release_contract",
+            "authority_or_security_skill",
+            "default_template_source",
+            "english_command_doc",
+            "user_visible_doc",
+            "translation_review_debt",
+            "test_fixture"
+          ]
+        },
         "last_touched_by_kind": { "enum": ["human", "llm", "tool", "external"] },
         "last_touched_by_id": { "type": "string" },
         "reviewed_at": { "type": "string" },

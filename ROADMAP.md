@@ -25,10 +25,9 @@ but add structured command effects and resource locks before suggesting parallel
 verification batches. Path writes alone cannot express delete-and-recreate build
 outputs such as `dist/`.
 
-Contract-surface follow-up: keep the shared model thin. Connect target paths to
-public surfaces, reasons, command candidates, and eligibility status, but do not
-collapse document review, source anchors, command permissions, and dashboard
-display into one large policy object.
+Contract-surface follow-up: keep shared surface decisions as internal vocabulary
+only. Do not collapse document review, source anchors, command permissions, and
+dashboard display into one large policy object.
 
 ## Near-Term Milestones
 
@@ -41,55 +40,6 @@ promising a broad public API.
 - Export only the minimum surface needed internally until API stability is
   intentionally documented.
 - Preserve existing CLI behavior while reducing duplicated policy logic.
-
-#### M3.0: Thin Surface Decision Model
-
-Goal: give related contracts a small shared vocabulary without creating a broad
-policy API.
-
-- Define a minimal target and surface model that can describe repository paths,
-  documents, source anchors, and command intents without making them equivalent
-  authorities.
-- Connect change classification to verification through
-  `path -> surface -> reason -> command candidate -> eligibility status`.
-- Keep `validationReasons` as the join key between change classification and
-  `commands.toml` `required_after` values.
-- Keep document review as a prose-quality and human-review ledger, not as a
-  command-verification result.
-- Keep source anchors navigation-only. They may contribute paths, risk tags, and
-  stale/moved/review signals, but never command permission or verification
-  selection.
-- Let the dashboard render core decisions, not invent additional policy rules.
-
-#### M3.3: Configured Command Gates
-
-Goal: promote configured command intents only when they are deterministic,
-bounded, and already backed by repository tooling.
-
-- Keep `asset_optimize` deferred until image optimization is an actual
-  repository workflow rather than an implied pipeline.
-
-#### M3.4: Documentation Review Triage
-
-Goal: make the documentation review queue release-useful by classifying pending
-items by risk instead of treating all pending prose equally.
-
-- Define P0 documents that must be reviewed before release: `README.md`,
-  `CHANGELOG.md`, `AGENTS.md`, `.mustflow/docs/agent-workflow.md`,
-  `.mustflow/skills/INDEX.md`, default template English source files, English
-  command docs, and skills that affect authority, security, command execution,
-  or validation boundaries.
-- Define P1 documents as user-visible but non-blocking: general docs-site pages,
-  detailed skill procedures, important translations, and example explanations.
-- Define P2 documents as non-blocking review debt: non-default translations
-  marked stale or needing review, older example prose, and test fixture
-  documents.
-- Manage translations by source freshness. Do not approve translations while the
-  canonical English source is still pending, and treat a `current` translation
-  with a mismatched source revision as a release risk.
-- Treat fixture documents as test inputs. Preserve the broken state or edge case
-  they are meant to exercise instead of polishing prose, and verify fixture
-  changes with the tests that consume them.
 
 #### M3.5: Default Skill Surface
 

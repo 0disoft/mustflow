@@ -30,7 +30,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.72');
+	assert.equal(packageJson.version, '1.15.74');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -222,6 +222,8 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/commands/update.js'));
 	assert.ok(files.has('dist/cli/commands/verify.js'));
 	assert.ok(files.has('dist/core/contract-models.js'));
+	assert.ok(files.has('dist/core/doc-review-triage.js'));
+	assert.ok(files.has('dist/core/surface-decision-model.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
 	assert.ok(files.has('templates/default/i18n.toml'));
 	assert.ok(files.has('dist/cli/lib/template-i18n.js'));

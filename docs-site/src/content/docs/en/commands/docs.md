@@ -31,6 +31,21 @@ npx mf docs review list --all
 
 The default list shows only active items. Use `--all` to include approved and ignored entries.
 
+JSON output includes release triage fields for each document:
+
+- `review_priority`: `P0`, `P1`, or `P2`.
+- `release_blocking`: `true` when an unapproved P0 document should block release.
+- `triage_reason`: the machine-readable reason for the priority, such as
+  `release_contract`, `english_command_doc`, `translation_review_debt`, or
+  `test_fixture`.
+
+P0 covers release-sensitive workflow and command documentation such as `README.md`,
+`CHANGELOG.md`, `AGENTS.md`, `.mustflow/docs/agent-workflow.md`, `.mustflow/skills/INDEX.md`,
+default template English source files, English command docs, and skills that affect
+authority, security, command execution, or validation boundaries. P1 covers normal
+user-visible documentation. P2 covers non-blocking review debt such as non-default
+translations and test fixtures.
+
 ## Add A Document
 
 ```sh

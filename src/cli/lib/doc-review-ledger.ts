@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { triageDocReview, type DocReviewTriage } from '../../core/doc-review-triage.js';
 import { ensureInside, toPosixPath } from './filesystem.js';
 import { readTomlFile, stringifyToml } from './toml.js';
 
@@ -35,6 +36,8 @@ export interface DocReviewEntry {
 	readonly commented_by_kind?: ReviewerKind;
 	readonly commented_by_id?: string;
 }
+
+export type DocReviewListEntry = DocReviewEntry & DocReviewTriage;
 
 export interface DocReviewLedger {
 	readonly schema_version: string;
@@ -231,7 +234,7 @@ export function readDocReviewLedger(projectRoot: string): DocReviewLedger {
 export function listDocReviewEntries(
 	projectRoot: string,
 	options: { readonly includeAll?: boolean; readonly status?: DocReviewStatus } = {},
-): readonly DocReviewEntry[] {
+): readonly DocReviewListEntry[] {
 	const ledger = readLedgerFile(projectRoot);
 	const activeStatuses = new Set<string>(DOC_REVIEW_ACTIVE_STATUSES);
 
@@ -241,7 +244,10 @@ export function listDocReviewEntries(
 		}
 
 		return options.includeAll === true || activeStatuses.has(entry.status);
-	});
+	}).map((entry) => ({
+		...entry,
+		...triageDocReview(entry),
+	}));
 }
 
 export function addDocReviewEntry(projectRoot: string, input: AddDocReviewEntryInput): DocReviewEntry {
