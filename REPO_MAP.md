@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 67
-source_fingerprint: "sha256:9c69de62b41f71c6628db9ec6ca7b06ad50a7fef68c6e1a1a9372c5cb082e82e"
+anchor_count: 68
+source_fingerprint: "sha256:6c4cd6e05c6f24f4d8e3219cdd4d55daa87427223f85f3a0ce89261ad1f63975"
 ---
 
 # REPO_MAP.md
@@ -130,6 +130,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/repro-first-debug/
 
 - `.mustflow/skills/repro-first-debug/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/requirement-regression-guard/
+
+- `.mustflow/skills/requirement-regression-guard/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/security-privacy-review/
 

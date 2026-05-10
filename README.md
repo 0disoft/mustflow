@@ -184,6 +184,8 @@ your-project/
       │  └─ SKILL.md
       ├─ repo-improvement-loop/
       │  └─ SKILL.md
+      ├─ requirement-regression-guard/
+      │  └─ SKILL.md
       ├─ repro-first-debug/
       │  └─ SKILL.md
       ├─ security-privacy-review/

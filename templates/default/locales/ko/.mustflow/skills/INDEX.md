@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 31
+revision: 32
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -31,6 +31,7 @@ authority: router
 | 생성 산출물, 패키지 포함 파일, 바이너리 자산, 보고서, 내려받을 수 있는 출력물이 생성, 참조, 보고됨 | `.mustflow/skills/artifact-integrity-check/SKILL.md` | 산출물 경로, 출처 또는 생성 경로, 패키지 규칙, 산출물 기대값 | 산출물 참조, 패키지 메타데이터, 테스트, 문서 | 확인되지 않았거나 오래된 산출물 주장 | `changes_status`, `changes_diff_summary`, `test_release`, `build`, `mustflow_check` | 산출물 근거, 포함 또는 형식 확인, 건너뛴 검증, 무결성 위험 |
 | 보고 전 코드 변경 검토가 필요함 | `.mustflow/skills/code-review/SKILL.md` | 변경 diff와 작업 목표 | 변경된 파일 | 동작 회귀 | `test`, `test_related`, `test_audit`, `lint` | 지적 사항 또는 문제 없음 기록 |
 | 코드를 리팩토링, 재구성, 이름 변경, 중복 제거, 단순화, 구조 개선하면서 기존 동작은 보존해야 함 | `.mustflow/skills/behavior-preserving-refactor/SKILL.md` | 리팩토링 목표, 대상 영역, 동작 근거, 로컬 패턴, 현재 변경 파일, 명령 계약 항목 | 작은 동작 보존 리팩토링 단계, 관련 테스트, 직접 맞춰야 하는 문서 또는 계약 | 숨은 동작 변경, 넓은 정리, 오해를 부르는 추상화, 위험한 중복 제거, 검증되지 않은 레거시 변경 | `changes_status`, `changes_diff_summary`, `test_related`, `test`, `docs_validate_fast`, `test_release`, `mustflow_check` | 목표, 동작 근거, 구조적 위험, 리팩토링 순서, 변경 내용, 제외한 동작 변경, 검증, 남은 위험 |
+| 사용자 요구사항, 인수 조건, 이슈 보고, 버그 보고, 제품 메모, 호환성 약속, 예시를 구현 전후의 회귀 검증으로 보존해야 함 | `.mustflow/skills/requirement-regression-guard/SKILL.md` | 요구사항 출처, 관찰 가능한 동작, 기존 테스트 또는 고정 데이터, 구현 범위, 변경 파일, 명령 계약 항목 | 요구사항과 직접 연결된 집중 테스트, 고정 데이터, 예시, 스키마, 문서, 구현 변경 | 테스트되지 않은 요구사항, 지어낸 인수 조건, 약화된 테스트, 숨은 동작 변화, 검증 불가능한 구현 주장 | `changes_status`, `changes_diff_summary`, `test_related`, `test`, `test_audit`, `docs_validate_fast`, `test_release`, `mustflow_check` | 요구사항 출처, 검증 상태 지도, 추가 또는 재사용한 보호 장치, 구현 변경, 미룬 요구사항, 검증, 남은 회귀 위험 |
 | 익숙하지 않은 코드베이스 영역을 계획, 구현, 보고 전에 근거 기반으로 파악해야 함 | `.mustflow/skills/codebase-orientation/SKILL.md` | 사용자 요청, 대상 영역, 관련 지시, 현재 소스, 테스트, 스키마, 템플릿, 설정 또는 문서 파일 | 읽기 전용 파악 메모와 확인한 근거에서 고른 가장 작은 후속 수정 | 오래된 문서, 잘못된 소유 경계, 지어낸 아키텍처 주장 | `changes_status`, `changes_diff_summary`, `mustflow_check` | 확인한 범위, 진입점, 흐름 지도, 소유 경계, 검증 선택지, 위험, 미확인 사항, 가장 작은 안전한 다음 단계 |
 | 저장소 개선, 감사, 우선순위 선정, 안정화, 다듬기, 온보딩, 기여 준비, 운영 준비, 반복 개선을 요청했지만 단일 수정 대상이 정해지지 않음 | `.mustflow/skills/repo-improvement-loop/SKILL.md` | 사용자 목표, 개선 모드, 저장소 근거, 후보 위험, 현재 변경 파일, 명령 계약 항목 | 사용자가 명시적으로 분석 전용을 요청하지 않은 한 저장소 진단, 우선순위 후보, 한 번에 하나의 좁은 개선 주기 | 아이디어 나열, 근거 없는 우선순위, 자율 루프 이탈, 대규모 재작성, 검증되지 않은 개선 주장 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 모드, 확인한 근거, 점수화한 후보, 선택한 개선, 변경 파일 또는 분석 전용 메모, 검증, 다음 개선 질문, 중단 이유 |
 | 복잡한 계획, 제안, 코드 설명, 검토 결과, 흐름 지도, 결정 묶음을 안전한 정적 HTML 검토 산출물로 보면 더 이해하기 쉬움 | `.mustflow/skills/visual-review-artifact/SKILL.md` | 사용자 요청, 산출물 목표, 대상 독자, 근거 자료, 출력 경로, 관련 명령 계약 항목 | 임시 `.mustflow/state/artifacts/**` 출력 또는 명시적으로 요청된 버전 관리 대상 HTML 산출물과 직접 참조, 문서, 패키지 메타데이터 | 안전하지 않은 HTML 동작, 프롬프트 주입, 검증되지 않은 산출물 주장, 승인 권한 오해 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 산출물 종류와 경로, 근거, 검토 전용 경계, 로컬 상호작용, 검증, 건너뛴 검사, 남은 결정 위험 |

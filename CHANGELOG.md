@@ -10,6 +10,8 @@ user projects by `mf init`.
 
 ### Added
 
+- Added the `requirement-regression-guard` default skill so agents map
+  requirements to regression coverage before or during implementation.
 - Added the `behavior-preserving-refactor` default skill so agents can
   refactor with explicit behavior evidence, safe ordering, duplication
   judgment, and verification boundaries.
