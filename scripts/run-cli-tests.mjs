@@ -24,6 +24,7 @@ const fastTests = [
 
 const releaseTests = ['package.test.js'];
 const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
+const coverageTests = fastTests;
 
 const commandTestNames = new Set(allCliTests);
 const commandRelatedTests = new Map([
@@ -132,6 +133,7 @@ const suites = {
 	fast: fastTests,
 	related: relatedTests(),
 	cli: cliTests,
+	coverage: coverageTests,
 	release: releaseTests,
 	full: allCliTests,
 };
@@ -146,6 +148,11 @@ if (!selected) {
 
 const testPaths = uniqueExisting(selected).map((name) => path.join('tests', 'cli', name));
 const concurrency = mode === 'fast' || mode === 'related' ? '4' : '1';
+const nodeTestArgs = ['--test', `--test-concurrency=${concurrency}`];
+
+if (mode === 'coverage') {
+	nodeTestArgs.push('--experimental-test-coverage');
+}
 
 console.log(
 	`Running ${mode} CLI tests (${testPaths.length} files, concurrency ${concurrency}): ${testPaths.join(', ')}`,
@@ -155,7 +162,7 @@ if (mode === 'related' && hasRelatedReleaseChanges()) {
 	console.log('Release-sensitive files changed; run `mf run test_release` before publishing or committing release metadata.');
 }
 
-const result = spawnSync(process.execPath, ['--test', `--test-concurrency=${concurrency}`, ...testPaths], {
+const result = spawnSync(process.execPath, [...nodeTestArgs, ...testPaths], {
 	cwd: repoRoot,
 	stdio: 'inherit',
 });

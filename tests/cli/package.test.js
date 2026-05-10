@@ -30,7 +30,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.67');
+	assert.equal(packageJson.version, '1.15.70');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -59,6 +59,8 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts['test:fast'], 'bun run build && node scripts/run-cli-tests.mjs fast');
 	assert.equal(packageJson.scripts['test:related'], 'bun run build && node scripts/run-cli-tests.mjs related');
 	assert.equal(packageJson.scripts['test:cli'], 'bun run build && node scripts/run-cli-tests.mjs cli');
+	assert.equal(packageJson.scripts['test:coverage'], 'bun run build && node scripts/run-cli-tests.mjs coverage');
+	assert.equal(packageJson.scripts['test:audit'], 'node scripts/audit-tests.mjs --json');
 	assert.equal(packageJson.scripts['test:release'], 'bun run build && node scripts/run-cli-tests.mjs release');
 	assert.equal(packageJson.scripts['test:full'], 'bun run build && node scripts/run-cli-tests.mjs full');
 	assert.equal(packageJson.scripts.check, 'bun run check:package && bun run test:full');

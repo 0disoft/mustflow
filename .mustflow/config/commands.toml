@@ -63,18 +63,34 @@ destructive = false
 required_after = ["low_risk_code_change", "copy_change", "i18n_change"]
 
 [intents.test_coverage]
-status = "manual_only"
-description = "Inspect test coverage information."
-reason = "Coverage runs may be slow or require repository-specific interpretation."
-agent_action = "do_not_run_report_manual"
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the fast CLI baseline with Node's built-in coverage report without enforcing thresholds."
+argv = ["bun", "run", "test:coverage"]
+cwd = "."
+timeout_seconds = 420
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+network = false
+destructive = false
 required_after = ["test_policy_change", "coverage_request"]
 
 [intents.test_audit]
-status = "unknown"
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
 description = "Inspect stale or redundant test candidates."
-reason = "This repository has not declared its test-audit command yet."
-agent_action = "do_not_guess_report_missing"
-required_after = ["test_change", "behavior_removed", "public_api_change"]
+argv = ["bun", "run", "test:audit"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["test_change", "test_policy_change", "behavior_removed"]
 
 [intents.test_release]
 status = "configured"
@@ -106,10 +122,18 @@ agent_action = "do_not_guess_report_missing"
 required_after = ["image_asset_change", "web_asset_change"]
 
 [intents.lint]
-status = "unknown"
-description = "Run linting or static analysis."
-reason = "This repository has not declared its lint command yet."
-agent_action = "do_not_guess_report_missing"
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the TypeScript no-emit static check."
+argv = ["bun", "run", "check:typecheck"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
 required_after = ["code_change", "style_change"]
 
 [intents.line_endings_check]
