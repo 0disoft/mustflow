@@ -6,7 +6,13 @@ import path from 'node:path';
 import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { readTomlFile } from './toml.js';
-import { collectSourceAnchorIndexRecords, type SourceAnchorIndexRecord, type SourceAnchorStatus } from '../../core/source-anchor-status.js';
+import {
+	collectSourceAnchorIndexRecords,
+	type SourceAnchorIndexRecord,
+	type SourceAnchorSnapshot,
+	type SourceAnchorStatus,
+	type SourceAnchorSymbol,
+} from '../../core/source-anchor-status.js';
 
 const LOCAL_INDEX_SCHEMA_VERSION = '5';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
@@ -410,6 +416,97 @@ function queryRows(database: SqlJsDatabase, sql: string, params: SqlValue[] = []
 	});
 }
 
+function toNullableNumber(value: SqlValue | undefined): number | null {
+	if (typeof value !== 'number') {
+		return null;
+	}
+
+	return Number.isFinite(value) ? value : null;
+}
+
+async function readPreviousSourceAnchorSnapshots(databasePath: string): Promise<SourceAnchorSnapshot[]> {
+	if (!existsSync(databasePath)) {
+		return [];
+	}
+
+	const SQL = await loadSqlJs();
+	const database = new SQL.Database(readFileSync(databasePath));
+
+	try {
+		const rows = queryRows(
+			database,
+			`
+SELECT
+  source_anchors.id,
+  source_anchors.path,
+  source_anchors.line_start,
+  source_anchors.purpose,
+  source_anchors.search_terms,
+  source_anchors.invariant,
+  source_anchors.risk,
+  source_anchor_fingerprints.anchor_metadata_hash,
+  source_anchor_fingerprints.anchor_text_hash,
+  source_anchor_fingerprints.context_hash,
+  source_anchor_fingerprints.search_terms_hash,
+  source_anchor_fingerprints.invariant_hash,
+  source_anchor_fingerprints.risk_hash,
+  source_anchor_fingerprints.symbol_kind,
+  source_anchor_fingerprints.symbol_name,
+  source_anchor_fingerprints.symbol_exported,
+  source_anchor_fingerprints.signature_hash,
+  source_anchor_fingerprints.body_hash,
+  source_anchor_fingerprints.symbol_start_line,
+  source_anchor_fingerprints.symbol_end_line
+FROM source_anchors
+JOIN source_anchor_fingerprints ON source_anchor_fingerprints.anchor_id = source_anchors.id
+`,
+		);
+
+		return rows.map((row) => {
+			const symbol: SourceAnchorSymbol = {
+				kind: toSearchString(row.symbol_kind) as SourceAnchorSymbol['kind'],
+				name: toSearchString(row.symbol_name) || null,
+				exported: Number(row.symbol_exported) === 1,
+				signatureHash: toSearchString(row.signature_hash) || null,
+				bodyHash: toSearchString(row.body_hash) || null,
+				startLine: toNullableNumber(row.symbol_start_line),
+				endLine: toNullableNumber(row.symbol_end_line),
+			};
+
+			return {
+				id: toSearchString(row.id),
+				path: toSearchString(row.path),
+				lineStart: Number(row.line_start),
+				purpose: toSearchString(row.purpose) || null,
+				search: toSearchString(row.search_terms)
+					.split(/[,;]/u)
+					.map((value) => value.trim())
+					.filter((value) => value.length > 0),
+				invariant: toSearchString(row.invariant) || null,
+				risk: toSearchString(row.risk)
+					.split(/[,;]/u)
+					.map((value) => value.trim())
+					.filter((value) => value.length > 0),
+				navigationOnly: true,
+				canInstructAgent: false,
+				fingerprint: {
+					anchorMetadataHash: toSearchString(row.anchor_metadata_hash),
+					anchorTextHash: toSearchString(row.anchor_text_hash),
+					contextHash: toSearchString(row.context_hash),
+					searchTermsHash: toSearchString(row.search_terms_hash) || null,
+					invariantHash: toSearchString(row.invariant_hash) || null,
+					riskHash: toSearchString(row.risk_hash),
+					symbol,
+				},
+			};
+		});
+	} catch {
+		return [];
+	} finally {
+		database.close();
+	}
+}
+
 interface CacheLayerSets {
 	readonly stable: ReadonlySet<string>;
 	readonly task: ReadonlySet<string>;
@@ -811,7 +908,8 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const skills = collectSkills(documents);
 	const commandIntents = collectCommandIntents(projectRoot);
 	const includeSource = options.includeSource === true;
-	const sourceAnchors = includeSource ? collectSourceAnchorIndexRecords(projectRoot) : [];
+	const previousSourceAnchors = includeSource ? await readPreviousSourceAnchorSnapshots(databasePath) : [];
+	const sourceAnchors = includeSource ? collectSourceAnchorIndexRecords(projectRoot, previousSourceAnchors) : [];
 	const dryRun = options.dryRun === true;
 
 	if (!dryRun) {

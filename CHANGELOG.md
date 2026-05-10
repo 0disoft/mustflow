@@ -10,6 +10,12 @@ user projects by `mf init`.
 
 ### Added
 
+- Added previous-snapshot source anchor status comparison for `mf index --source`
+  so moved, changed, review-needed, and stale anchors are recorded in the local
+  SQLite index without turning anchors into verification authority.
+- Kept invalid source anchors out of the local SQLite source anchor tables so
+  malformed anchors remain strict validation issues instead of cached
+  navigation metadata.
 - Added the `multi-agent-work-coordination` default skill so agents can keep
   parallel worker roles, write ownership, credentials, and merge responsibility
   explicit before using multiple AI workers.

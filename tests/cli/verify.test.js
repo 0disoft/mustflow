@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -407,6 +407,42 @@ test('does not treat verification preferences as command authority', () => {
 		assert.equal(report.summary.ran, 0);
 		assert.equal(report.results[0].intent, null);
 		assert.equal(report.results[0].reason, 'no_matching_intents');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not treat source anchors or local index rows as verification authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'anchor-authority.ts'),
+			`/**
+ * mf:anchor verify.anchor-only
+ * purpose: Mention source_anchor_only as searchable navigation metadata.
+ * search: source_anchor_only, verification
+ * invariant: Source anchors remain navigation hints only.
+ * risk: config
+ */
+export function anchorOnly() {
+	return true;
+}
+`,
+		);
+
+		const indexResult = runCli(projectPath, ['index', '--source', '--json']);
+		const verifyResult = runCli(projectPath, ['verify', '--reason', 'source_anchor_only', '--plan-only', '--json']);
+		const report = JSON.parse(verifyResult.stdout);
+
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+		assert.equal(verifyResult.status, 0, verifyResult.stderr || verifyResult.stdout);
+		assert.equal(report.candidates[0].intent, null);
+		assert.equal(report.candidates[0].status, 'skipped');
+		assert.equal(report.candidates[0].skipReason, 'no_matching_intents');
+		assert.equal(report.gaps[0].reason, 'source_anchor_only');
 	} finally {
 		removeTempProject(projectPath);
 	}

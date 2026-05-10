@@ -19,53 +19,6 @@ workflows.
 
 ## Near-Term Milestones
 
-### M2.14: Source Anchor Status Signals
-
-Goal: detect whether existing source anchors still point at the intended code
-after edits without turning anchors into workflow instructions, command
-authority, or a parallel documentation system.
-
-Remaining work:
-
-- Add status comparison against a previous fingerprint snapshot for `moved`,
-  `changed`, `review`, `stale`, and `invalid` anchors.
-- Keep status output explanatory: include confidence and signals for identity,
-  location, symbol, body, metadata, semantic cues, and risk.
-- Treat high-risk anchors conservatively. A high-risk body, signature, search,
-  or invariant change should require review instead of being marked valid.
-- Keep source anchors out of verification planning. Verification requirements
-  must continue to come from change classification and `commands.toml`, not
-  from anchor metadata.
-
-Anchor state model:
-
-- `valid`: anchor fields and target symbol still line up.
-- `moved`: locator text changed, but the same target symbol is found.
-- `changed`: target body changed, but signature, risk, and semantic cues still
-  appear compatible.
-- `review`: high-risk or large changes may affect the anchor's meaning.
-- `stale`: target symbol is gone, attached to the wrong target, or contradicts
-  the anchor invariant.
-- `invalid`: parse failure, duplicate ID, forbidden instruction, secret-like
-  content, generated/vendor path, or invalid risk value.
-
-Deferred scope:
-
-- Separate `.mustflow/source-anchors.toml` area or flow anchors.
-- Hybrid inline-ID plus external long description anchors.
-- `mf anchors list`, `mf anchors stale`, `mf anchors review`, or similar
-  lifecycle-management commands.
-- Automatic anchor suggestion or source-code modification by mustflow.
-
-Decision rule:
-
-- If the user needs to find a specific function, class, type, route handler, or
-  adapter, prefer an inline source anchor.
-- If the user needs to understand a flow across multiple files or directories,
-  defer to a separate anchor-file design.
-- If an anchor begins to read like prose documentation or an instruction to the
-  agent, it is the wrong format.
-
 ### M3: Core Policy Modules
 
 Goal: move shared decision logic out of command handlers without prematurely

@@ -297,3 +297,164 @@ class SessionStore {
 		removeTempProject(projectPath);
 	}
 });
+
+test('does not index invalid source anchors and leaves them to strict validation', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'invalid-anchor.ts'),
+			`/**
+ * mf:anchor Invalid.Anchor
+ * purpose: This malformed anchor should not enter the source index.
+ * search: invalid source anchor
+ * invariant: Strict validation reports the invalid format.
+ */
+export const invalidAnchor = true;
+`,
+		);
+
+		const indexResult = runCli(projectPath, ['index', '--source', '--json']);
+		const output = JSON.parse(indexResult.stdout);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJs();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [anchorCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchors');
+		const [statusCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchor_status');
+		const checkResult = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(checkResult.stdout);
+		const issueIds = new Set(check.issueDetails.map((issue) => issue.id));
+
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+		assert.equal(output.source_index_enabled, true);
+		assert.equal(output.source_anchor_count, 0);
+		assert.equal(anchorCount.count, 0);
+		assert.equal(statusCount.count, 0);
+		assert.equal(checkResult.status, 1);
+		assert.ok(issueIds.has('mustflow.source_anchor.invalid_format'));
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('compares source anchor status against the previous fingerprint snapshot', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		const sourcePath = path.join(projectPath, 'src', 'anchors.ts');
+		writeFileSync(
+			sourcePath,
+			`/**
+ * mf:anchor docs.helper
+ * purpose: Track a low-risk helper.
+ * search: helper
+ * invariant: Keep helper deterministic.
+ */
+export function helper() {
+	return 1;
+}
+
+/**
+ * mf:anchor auth.critical
+ * purpose: Track a high-risk auth decision.
+ * search: auth decision
+ * invariant: Never grant access by default.
+ * risk: security
+ */
+export function criticalAuthDecision() {
+	return true;
+}
+
+/**
+ * mf:anchor stale.target
+ * purpose: Track an anchor that will disappear.
+ * search: stale target
+ * invariant: Anchor should become stale when removed.
+ */
+export function staleTarget() {
+	return 'old';
+}
+
+/**
+ * mf:anchor moved.target
+ * purpose: Track a moved function.
+ * search: moved target
+ * invariant: Moving the function should preserve the target.
+ */
+export function movedTarget() {
+	return 'same';
+}
+`,
+		);
+
+		const firstIndex = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
+
+		writeFileSync(
+			sourcePath,
+			`/**
+ * mf:anchor docs.helper
+ * purpose: Track a low-risk helper.
+ * search: helper
+ * invariant: Keep helper deterministic.
+ */
+export function helper() {
+	return 2;
+}
+
+/**
+ * mf:anchor auth.critical
+ * purpose: Track a high-risk auth decision.
+ * search: auth decision
+ * invariant: Never grant access by default.
+ * risk: security
+ */
+export function criticalAuthDecision() {
+	return false;
+}
+
+const gap = 1;
+const anotherGap = gap + 1;
+
+/**
+ * mf:anchor moved.target
+ * purpose: Track a moved function.
+ * search: moved target
+ * invariant: Moving the function should preserve the target.
+ */
+export function movedTarget() {
+	return 'same';
+}
+`,
+		);
+
+		const secondIndex = runCli(projectPath, ['index', '--source', '--json']);
+		const output = JSON.parse(secondIndex.stdout);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJs();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const statuses = Object.fromEntries(
+			queryRows(database, 'SELECT anchor_id, status, confidence, risk_signal FROM source_anchor_status').map((row) => [
+				row.anchor_id,
+				row,
+			]),
+		);
+
+		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
+		assert.equal(output.source_anchor_count, 4);
+		assert.equal(statuses['docs.helper'].status, 'changed');
+		assert.equal(statuses['auth.critical'].status, 'review');
+		assert.equal(statuses['auth.critical'].risk_signal, 'high_risk_anchor_requires_review_after_change');
+		assert.equal(statuses['moved.target'].status, 'moved');
+		assert.equal(statuses['stale.target'].status, 'stale');
+		assert.ok(statuses['stale.target'].confidence < 0.5);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

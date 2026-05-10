@@ -46,6 +46,9 @@ npx mf index --source --json
 
 Source anchor indexing is for navigation only. The resulting `source_anchors`, `source_anchor_fingerprints`, and `source_anchor_status` tables cannot define workflow rules, command permission, or verification authority.
 Fingerprint and status rows are derived search metadata that help later checks explain whether an anchor still points at the expected code.
+When a previous local SQLite index exists, `mf index --source` compares the new anchor fingerprints with the prior snapshot and records status values such as `valid`, `moved`, `changed`, `review`, and `stale`.
+High-risk anchors are conservative: body, signature, search, invariant, or metadata changes are marked for review instead of being treated as automatically valid.
+Invalid anchors are not written to the source anchor tables. Use `mf check --strict` to report malformed anchors, duplicate IDs, forbidden instructions, secret-like text, generated or vendor paths, and unknown risk tags.
 When a nearby function, class, method, or constant can be detected, the fingerprint table stores derived symbol metadata such as the kind, name, signature hash, and body hash.
 
 ## JSON Fields
