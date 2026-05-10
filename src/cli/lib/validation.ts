@@ -31,6 +31,7 @@ import {
 import { validateTemplateVersionSync } from '../../core/release-version-validation.js';
 import { validateSourceAnchorsInProject } from '../../core/source-anchor-validation.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
+import { readGitChangedFiles } from './git-changes.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
 import { generateRepoMap } from './repo-map.js';
@@ -1511,7 +1512,14 @@ function validateStrictTemplateVersionSync(
 	preferencesToml: TomlTable | undefined,
 	issues: CheckIssue[],
 ): void {
-	for (const issue of validateTemplateVersionSync(projectRoot, preferencesToml)) {
+	const changedPaths = existsSync(path.join(projectRoot, '.git')) ? readGitChangedFiles(projectRoot) : undefined;
+
+	for (const issue of validateTemplateVersionSync(projectRoot, preferencesToml, changedPaths)) {
+		if (issue.severity === 'warning') {
+			pushStrictWarning(issues, issue.message);
+			continue;
+		}
+
 		pushStrictIssue(issues, issue.message);
 	}
 }

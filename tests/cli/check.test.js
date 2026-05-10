@@ -32,6 +32,21 @@ function runCli(cwd, args) {
 	});
 }
 
+function runGit(cwd, args) {
+	return spawnSync('git', args, {
+		cwd,
+		encoding: 'utf8',
+	});
+}
+
+function commitGitBaseline(projectPath) {
+	assert.equal(runGit(projectPath, ['init']).status, 0);
+	assert.equal(runGit(projectPath, ['config', 'user.name', 'mustflow test']).status, 0);
+	assert.equal(runGit(projectPath, ['config', 'user.email', 'mustflow@example.invalid']).status, 0);
+	assert.equal(runGit(projectPath, ['add', '.']).status, 0);
+	assert.equal(runGit(projectPath, ['commit', '-m', 'baseline']).status, 0);
+}
+
 function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
 }
@@ -212,6 +227,101 @@ test('strict check fails package and template manifest version drift when templa
 				(issue) =>
 					issue.id === 'mustflow.release.template_version_mismatch' &&
 					issue.severity === 'error' &&
+					issue.mode === 'strict',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check always fails when template manifest version is ahead of package version', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			JSON.stringify({ name: 'example', version: '1.2.3' }, null, 2),
+		);
+		mkdirSync(path.join(projectPath, 'templates', 'default'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'templates', 'default', 'manifest.toml'),
+			[
+				'id = "default"',
+				'name = "default"',
+				'version = "1.2.4"',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: templates/default/manifest.toml version "1.2.4" must not be ahead of package.json version "1.2.3"',
+			),
+		);
+		assert.ok(
+			check.issueDetails.some(
+				(issue) =>
+					issue.id === 'mustflow.release.template_version_ahead' &&
+					issue.severity === 'error' &&
+					issue.mode === 'strict',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check warns instead of failing when only package version changed and template surface is unchanged', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			JSON.stringify({ name: 'example', version: '1.2.2' }, null, 2),
+		);
+		mkdirSync(path.join(projectPath, 'templates', 'default'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'templates', 'default', 'manifest.toml'),
+			[
+				'id = "default"',
+				'name = "default"',
+				'version = "1.2.2"',
+				'',
+			].join('\n'),
+		);
+		commitGitBaseline(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			JSON.stringify({ name: 'example', version: '1.2.3' }, null, 2),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0);
+		assert.equal(check.ok, true);
+		assert.deepEqual(check.issues, []);
+		assert.ok(
+			check.warnings.some(
+				(warning) =>
+					warning ===
+					'Strict warning: templates/default/manifest.toml version "1.2.2" is older than package.json version "1.2.3"; this is allowed only when the installed template surface is unchanged',
+			),
+		);
+		assert.ok(
+			check.issueDetails.some(
+				(issue) =>
+					issue.id === 'mustflow.release.template_version_intentionally_unchanged' &&
+					issue.severity === 'warning' &&
 					issue.mode === 'strict',
 			),
 		);

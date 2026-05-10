@@ -17,6 +17,11 @@ user projects by `mf init`.
 - Added a shared command intent eligibility core decision so verification
   planning and `mf run` use the same configured, oneshot, agent-allowed,
   closed-stdin, timeout, and command-source checks.
+- Added a shared command cwd boundary resolver so `mf run` keeps command working
+  directories inside the current mustflow root through a reusable core policy.
+- Added a conditional version sync policy so strict checks fail template versions
+  ahead of the package, require equality when installed template files change,
+  and warn when CLI-only releases intentionally leave the template version older.
 - Added previous-snapshot source anchor status comparison for `mf index --source`
   so moved, changed, review-needed, and stale anchors are recorded in the local
   SQLite index without turning anchors into verification authority.

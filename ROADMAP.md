@@ -13,9 +13,9 @@ Make this repository a strong example of its own workflow contract.
 Before adding larger product surfaces, mustflow should reduce duplicated policy
 logic and keep future commands sharing the same core decisions.
 
-Command-intent eligibility is now centralized in `src/core`. The remaining M3
-work should continue extracting the adjacent command safety decisions without
-moving process execution out of the CLI too early.
+Command-intent eligibility and command cwd boundary checks are now centralized
+in `src/core`. The remaining M3 work should continue extracting adjacent
+policy decisions without moving process execution out of the CLI too early.
 
 Open command-contract follow-up: defer asset optimization until there is a real
 repository pipeline.
@@ -60,32 +60,6 @@ policy API.
   stale/moved/review signals, but never command permission or verification
   selection.
 - Let the dashboard render core decisions, not invent additional policy rules.
-
-#### M3.1: Command Intent Eligibility
-
-Goal: make command eligibility a single core decision without moving process
-execution out of the CLI.
-
-- Extract command `cwd` boundary checks after the shared eligibility decision,
-  for example as `resolveSafeProjectCwd(projectRoot, rawCwd)`, while preserving
-  existing `mf run` messages, exit codes, receipts, in-process mustflow
-  execution, and process spawning.
-
-#### M3.2: Conditional Version Sync Policy
-
-Goal: make package/template version sync explain when equality is required
-instead of treating every package release as a template release.
-
-- Add a core version-sync policy function that compares package version,
-  template manifest version, `sync_template_version`, and changed paths.
-- Always fail if the template manifest version is ahead of the package version.
-- When the installed template surface changes and `sync_template_version = true`,
-  require the template manifest version to match the package version.
-- When only CLI code, tests, repository docs, or docs-site files change, allow an
-  older template manifest version with a warning or release-note explanation.
-- Treat the installed template surface as `templates/default/manifest.toml`,
-  `templates/default/i18n.toml`, `templates/default/common/**`,
-  `templates/default/locales/**`, and files referenced by `manifest.creates`.
 
 #### M3.3: Configured Command Gates
 

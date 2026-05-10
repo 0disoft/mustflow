@@ -3,9 +3,11 @@ import path from 'node:path';
 
 import { isRecord, type TomlTable } from './config-loading.js';
 import { readTomlFile } from './toml.js';
+import { evaluateVersionSync, type VersionSyncIssueSeverity } from './version-sync-policy.js';
 
 export interface ReleaseVersionValidationIssue {
 	readonly message: string;
+	readonly severity: VersionSyncIssueSeverity;
 }
 
 export const PACKAGE_JSON_VERSION_SOURCE_PATH = 'package.json';
@@ -48,21 +50,19 @@ function readTomlRootVersion(filePath: string): string | undefined {
 export function validateTemplateVersionSync(
 	projectRoot: string,
 	preferencesToml: TomlTable | undefined,
+	changedPaths?: readonly string[],
 ): ReleaseVersionValidationIssue[] {
-	if (!releaseVersioningSyncsTemplateVersion(preferencesToml)) {
-		return [];
-	}
-
 	const packageVersion = readPackageJsonVersion(path.join(projectRoot, PACKAGE_JSON_VERSION_SOURCE_PATH));
 	const templateVersion = readTomlRootVersion(path.join(projectRoot, DEFAULT_TEMPLATE_MANIFEST_PATH));
+	const syncTemplateVersion = releaseVersioningSyncsTemplateVersion(preferencesToml);
 
-	if (!packageVersion || !templateVersion || packageVersion === templateVersion) {
-		return [];
-	}
-
-	return [
-		{
-			message: `${DEFAULT_TEMPLATE_MANIFEST_PATH} version "${templateVersion}" must match ${PACKAGE_JSON_VERSION_SOURCE_PATH} version "${packageVersion}" when [release.versioning].sync_template_version is true`,
-		},
-	];
+	return evaluateVersionSync({
+		packageVersion,
+		templateVersion,
+		syncTemplateVersion,
+		changedPaths,
+	}).issues.map((issue) => ({
+		message: issue.message,
+		severity: issue.severity,
+	}));
 }

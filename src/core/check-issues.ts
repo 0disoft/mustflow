@@ -13,6 +13,8 @@ export type CheckIssueId =
 	| 'mustflow.prompt_cache.volatile_in_stable'
 	| 'mustflow.refresh.hash_method_required'
 	| 'mustflow.release.template_version_mismatch'
+	| 'mustflow.release.template_version_ahead'
+	| 'mustflow.release.template_version_intentionally_unchanged'
 	| 'mustflow.preferences.release_versioning_contract_authority'
 	| 'mustflow.preferences.verification_selection_command_authority'
 	| 'mustflow.skill.procedure_only'
@@ -59,6 +61,8 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.prompt_cache.volatile_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include volatile path /u],
 	['mustflow.refresh.hash_method_required', /^Strict: \[refresh\]\.default_method should be "hash_check" for cache-friendly refresh$/u],
 	['mustflow.release.template_version_mismatch', /^Strict: templates\/default\/manifest\.toml version "[^"]+" must match package\.json version "[^"]+" when \[release\.versioning\]\.sync_template_version is true$/u],
+	['mustflow.release.template_version_ahead', /^Strict: templates\/default\/manifest\.toml version "[^"]+" must not be ahead of package\.json version "[^"]+"$/u],
+	['mustflow.release.template_version_intentionally_unchanged', /^Strict warning: templates\/default\/manifest\.toml version "[^"]+" is older than package\.json version "[^"]+"; this is allowed only when the installed template surface is unchanged$/u],
 	['mustflow.preferences.release_versioning_contract_authority', /^Strict: \[preferences\.release\.versioning\]\.[a-z_]+ cannot define version sources or release authority; use \.mustflow\/config\/versioning\.toml or \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.preferences.verification_selection_command_authority', /^Strict: \[preferences\.verification\.selection\]\.[a-z_]+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
