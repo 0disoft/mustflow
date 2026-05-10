@@ -10,6 +10,9 @@ user projects by `mf init`.
 
 ### Added
 
+- Added the `multi-agent-work-coordination` default skill so agents can keep
+  parallel worker roles, write ownership, credentials, and merge responsibility
+  explicit before using multiple AI workers.
 - Added the `requirement-regression-guard` default skill so agents map
   requirements to regression coverage before or during implementation.
 - Added the `behavior-preserving-refactor` default skill so agents can

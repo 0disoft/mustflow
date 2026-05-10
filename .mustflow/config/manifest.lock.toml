@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.62"
+version = "1.15.63"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:64d9d801a4b29abfb69206a774e588db89de693d435d5a29701ebdd218699724"
+content_hash = "sha256:f2e0aa7941bd9b860069aaae46cffded7b921bd48e0a9b4f4caa011d2373c294"
 
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
@@ -96,6 +96,11 @@ content_hash = "sha256:4cfd3ea32ca2649cd7a34c6da807112a86f8a1ceebf048690010c8091
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:8bb2e9f2c97cb295b85e1b19dca6fa6d6bb69385c4e25e8d78ecc75f6870ded2"
+
+[files.".mustflow/skills/multi-agent-work-coordination/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:81fb67e4cb3416a531b3b7aae541d57ffa2688b3f2e4118d69c8c116db2670ed"
 
 [files.".mustflow/skills/performance-budget-check/SKILL.md"]
 source = "template_locale"

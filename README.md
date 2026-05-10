@@ -176,6 +176,8 @@ your-project/
       │  └─ SKILL.md
       ├─ migration-safety-check/
       │  └─ SKILL.md
+      ├─ multi-agent-work-coordination/
+      │  └─ SKILL.md
       ├─ performance-budget-check/
       │  └─ SKILL.md
       ├─ project-context-authoring/

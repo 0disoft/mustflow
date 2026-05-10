@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 68
-source_fingerprint: "sha256:6c4cd6e05c6f24f4d8e3219cdd4d55daa87427223f85f3a0ce89261ad1f63975"
+anchor_count: 69
+source_fingerprint: "sha256:3abefb134caf924e516c17204999fff3ffcef36e77a7d299ea315cccc63233f0"
 ---
 
 # REPO_MAP.md
@@ -106,6 +106,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/migration-safety-check/
 
 - `.mustflow/skills/migration-safety-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/multi-agent-work-coordination/
+
+- `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/pattern-scout/
 
