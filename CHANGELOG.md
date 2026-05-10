@@ -10,6 +10,13 @@ user projects by `mf init`.
 
 ### Added
 
+- Added a configured `test_audit` command intent backed by a read-only JSON test
+  audit script for focused-test and empty-test-file signals.
+- Added a configured `test_coverage` command intent backed by a fast CLI
+  coverage run with Node's built-in coverage report and no enforced thresholds.
+- Added a shared command intent eligibility core decision so verification
+  planning and `mf run` use the same configured, oneshot, agent-allowed,
+  closed-stdin, timeout, and command-source checks.
 - Added previous-snapshot source anchor status comparison for `mf index --source`
   so moved, changed, review-needed, and stale anchors are recorded in the local
   SQLite index without turning anchors into verification authority.

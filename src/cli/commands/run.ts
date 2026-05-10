@@ -16,6 +16,7 @@ import { runUpdate } from './update.js';
 import { runVerify } from './verify.js';
 import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
+import { evaluateCommandIntentEligibility } from '../../core/command-intent-eligibility.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import {
 	isRecord,
@@ -463,60 +464,74 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 		return 1;
 	}
 
+	const eligibility = evaluateCommandIntentEligibility(intentName, intent);
 	const intentStatus = readString(intent, 'status') ?? 'unknown';
-	if (intentStatus !== 'configured') {
-		reporter.stderr(
-			renderCliError(t(lang, 'run.error.statusNotConfigured', { intent: intentName, status: intentStatus }), 'mf help commands', lang),
-		);
-		return 1;
-	}
-
 	const lifecycle = readString(intent, 'lifecycle');
-	if (lifecycle !== 'oneshot') {
-		reporter.stderr(
-			renderCliError(
-				t(lang, 'run.error.lifecycleNotOneshot', { intent: intentName, lifecycle: lifecycle ?? 'unknown' }),
-				'mf help commands',
-				lang,
-			),
-		);
-		return 1;
-	}
-
 	const runPolicy = readString(intent, 'run_policy');
-	if (runPolicy !== 'agent_allowed') {
-		reporter.stderr(
-			renderCliError(t(lang, 'run.error.runPolicy', { intent: intentName }), 'mf help commands', lang),
-		);
-		return 1;
-	}
-
-	if (intent.stdin !== 'closed') {
-		reporter.stderr(renderCliError(t(lang, 'run.error.stdin', { intent: intentName }), 'mf help commands', lang));
-		return 1;
-	}
-
 	const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds');
-	if (!timeoutSeconds) {
-		reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: intentName }), 'mf help commands', lang));
+
+	if (!eligibility.ok) {
+		if (eligibility.code === 'status_not_configured') {
+			reporter.stderr(
+				renderCliError(t(lang, 'run.error.statusNotConfigured', { intent: intentName, status: intentStatus }), 'mf help commands', lang),
+			);
+			return 1;
+		}
+
+		if (eligibility.code === 'lifecycle_not_oneshot') {
+			reporter.stderr(
+				renderCliError(
+					t(lang, 'run.error.lifecycleNotOneshot', { intent: intentName, lifecycle: lifecycle ?? 'unknown' }),
+					'mf help commands',
+					lang,
+				),
+			);
+			return 1;
+		}
+
+		if (eligibility.code === 'run_policy_not_agent_allowed') {
+			reporter.stderr(
+				renderCliError(t(lang, 'run.error.runPolicy', { intent: intentName }), 'mf help commands', lang),
+			);
+			return 1;
+		}
+
+		if (eligibility.code === 'stdin_not_closed') {
+			reporter.stderr(renderCliError(t(lang, 'run.error.stdin', { intent: intentName }), 'mf help commands', lang));
+			return 1;
+		}
+
+		if (eligibility.code === 'missing_timeout') {
+			reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: intentName }), 'mf help commands', lang));
+			return 1;
+		}
+
+		if (eligibility.code === 'missing_command_source') {
+			reporter.stderr(
+				renderCliError(t(lang, 'run.error.commandSource', { intent: intentName }), 'mf help commands', lang),
+			);
+			return 1;
+		}
+
+		reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: intentName }), 'mf help commands', lang));
 		return 1;
 	}
 
 	const maxOutputBytes =
 		readPositiveInteger(intent, 'max_output_bytes') ?? readPositiveInteger(contract.defaults, 'max_output_bytes') ?? 1_048_576;
+	if (!timeoutSeconds) {
+		reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: intentName }), 'mf help commands', lang));
+		return 1;
+	}
+
 	const cwd = resolveSafeCwd(projectRoot, readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd'));
 	const successExitCodes = getSuccessExitCodes(intent);
 	const argv = readStringArray(intent, 'argv');
 	const commandArgv = argv && argv.length > 0 ? argv : undefined;
 	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
 	const env = createCommandEnv(projectRoot);
-
-	if (!commandArgv && !shellCommand) {
-		reporter.stderr(
-			renderCliError(t(lang, 'run.error.commandSource', { intent: intentName }), 'mf help commands', lang),
-		);
-		return 1;
-	}
+	const lifecycleValue = lifecycle ?? 'oneshot';
+	const runPolicyValue = runPolicy ?? 'agent_allowed';
 
 	const mode = commandArgv ? 'argv' : 'shell';
 	const startedAt = new Date();
@@ -546,8 +561,8 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 		finishedAt,
 		projectRoot,
 		cwd,
-		lifecycle,
-		runPolicy,
+		lifecycle: lifecycleValue,
+		runPolicy: runPolicyValue,
 		mode,
 		argv: commandArgv,
 		cmd: shellCommand,
