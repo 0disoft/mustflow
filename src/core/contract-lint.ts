@@ -5,10 +5,13 @@ import {
 	isRecord,
 	readPositiveInteger,
 	readString,
-	readStringArray,
 	type CommandContract,
 	type TomlTable,
 } from './config-loading.js';
+import {
+	commandIntentHasCommandSource,
+	evaluateCommandIntentEligibility,
+} from './command-intent-eligibility.js';
 
 export type ContractLintStatus = 'passed' | 'warning' | 'failed';
 export type ContractLintSeverity = 'error' | 'warning';
@@ -39,15 +42,6 @@ export interface ContractLintReport {
 
 const CONTRACT_LINT_SOURCE_FILES = ['.mustflow/config/commands.toml', '.mustflow/docs/agent-workflow.md', 'AGENTS.md'];
 
-function hasExecutableCommand(intent: TomlTable): boolean {
-	const argv = readStringArray(intent, 'argv');
-	if (argv && argv.length > 0) {
-		return true;
-	}
-
-	return intent.mode === 'shell' && Boolean(readString(intent, 'cmd'));
-}
-
 function readBoolean(intent: TomlTable, key: string): boolean | null {
 	const value = intent[key];
 	return typeof value === 'boolean' ? value : null;
@@ -74,14 +68,7 @@ function pushIssue(
 }
 
 function configuredIntentIsRunnable(intent: TomlTable): boolean {
-	return (
-		readString(intent, 'status') === 'configured' &&
-		readString(intent, 'lifecycle') === 'oneshot' &&
-		readString(intent, 'run_policy') === 'agent_allowed' &&
-		readString(intent, 'stdin') === 'closed' &&
-		readPositiveInteger(intent, 'timeout_seconds') !== undefined &&
-		hasExecutableCommand(intent)
-	);
+	return evaluateCommandIntentEligibility('summary', intent).ok;
 }
 
 function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): TomlTable | null {
@@ -131,7 +118,7 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 		pushIssue(issues, 'error', 'long_running_agent_allowed', name, `Long-running intent ${name} must not be agent_allowed.`);
 	}
 
-	if (!hasExecutableCommand(value)) {
+	if (!commandIntentHasCommandSource(value)) {
 		pushIssue(issues, 'error', 'executable_source_missing', name, `Configured intent ${name} must define argv or shell cmd.`);
 	}
 

@@ -8,14 +8,11 @@ reading project history.
 
 ## Current Priority
 
-Make this repository a strong example of its own workflow contract.
+No active near-term implementation milestone is tracked here.
 
-Before adding larger product surfaces, mustflow should reduce duplicated policy
-logic and keep future commands sharing the same core decisions.
-
-Command-intent eligibility and command cwd boundary checks are now centralized
-in `src/core`. The remaining M3 work should continue extracting adjacent
-policy decisions without moving process execution out of the CLI too early.
+Completed items are removed after verification. Add a new milestone only when
+there is a concrete remaining contract, verification, or documentation gap to
+close.
 
 Open command-contract follow-up: defer asset optimization until there is a real
 repository pipeline.
@@ -24,19 +21,9 @@ Contract-surface follow-up: keep shared surface decisions as internal vocabulary
 only. Do not collapse document review, source anchors, command permissions, and
 dashboard display into one large policy object.
 
-## Near-Term Milestones
+## Deferred Milestones
 
-### M3: Core Policy Modules
-
-Goal: move shared decision logic out of command handlers without prematurely
-promising a broad public API.
-
-- Keep CLI commands thin by calling shared core functions.
-- Export only the minimum surface needed internally until API stability is
-  intentionally documented.
-- Preserve existing CLI behavior while reducing duplicated policy logic.
-
-#### Deferred: Path Classification Policy
+### Deferred: Path Classification Policy
 
 Goal: leave repository-specific path classification configurable only after the
 core model is stable and permission boundaries are enforceable.

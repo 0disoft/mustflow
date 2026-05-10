@@ -22,7 +22,7 @@ export type CommandIntentEligibilityResult =
 			readonly detail: string | null;
 	  };
 
-function hasCommandSource(intent: TomlTable): boolean {
+export function commandIntentHasCommandSource(intent: TomlTable): boolean {
 	const argv = readStringArray(intent, 'argv');
 	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
 
@@ -85,7 +85,7 @@ export function evaluateCommandIntentEligibility(
 		};
 	}
 
-	if (!hasCommandSource(rawIntent)) {
+	if (!commandIntentHasCommandSource(rawIntent)) {
 		return {
 			ok: false,
 			code: 'missing_command_source',

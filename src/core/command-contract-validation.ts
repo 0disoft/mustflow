@@ -12,6 +12,7 @@ import {
 	validateCommandEffectLockWarnings,
 	validateCommandEffects,
 } from './command-effects.js';
+import { commandIntentHasCommandSource } from './command-intent-eligibility.js';
 
 export interface CommandContractValidationIssue {
 	readonly message: string;
@@ -40,14 +41,6 @@ function hasOwn(table: TomlTable, key: string): boolean {
 
 function isPositiveInteger(value: unknown): boolean {
 	return Number.isInteger(value) && Number(value) > 0;
-}
-
-function hasExecutableCommand(intent: TomlTable): boolean {
-	if (Array.isArray(intent.argv) && intent.argv.every((entry) => typeof entry === 'string')) {
-		return intent.argv.length > 0;
-	}
-
-	return intent.mode === 'shell' && typeof intent.cmd === 'string' && intent.cmd.trim().length > 0;
 }
 
 function validateTable(config: TomlTable, tableName: string, issues: CommandContractValidationIssue[]): TomlTable | undefined {
@@ -271,7 +264,7 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		issues.push(commandContractIssue(`Long-running intent ${intentName} must not use run_policy = "agent_allowed"`));
 	}
 
-	if (!hasExecutableCommand(intent)) {
+	if (!commandIntentHasCommandSource(intent)) {
 		issues.push(commandContractIssue(`Configured intent ${intentName} must define argv or mode = "shell" with cmd`));
 	}
 
