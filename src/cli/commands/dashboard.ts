@@ -7,12 +7,10 @@ import path from 'node:path';
 import { openPathInFileManager, openUrlInBrowser } from '../lib/browser-open.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { renderDashboardHtml, type DashboardDocReviewSnapshot, type DashboardStatusSnapshot } from '../lib/dashboard-html.js';
-import { createChangeClassificationReport } from '../../core/change-classification.js';
 import {
-	createChangeVerificationReport,
-	type ChangeVerificationCandidate,
-	type VerificationRequirement,
-} from '../../core/change-verification.js';
+	DASHBOARD_VERIFICATION_MAX_FILE_MATCHES,
+	createDashboardVerificationSnapshot,
+} from '../../core/dashboard-verification.js';
 import { parseSkillIndexRoutes } from '../../core/skill-route-alignment.js';
 import { getAgentContext } from '../lib/agent-context.js';
 import { readGitChangedFiles } from '../lib/git-changes.js';
@@ -57,7 +55,6 @@ const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
 const DEFAULT_DASHBOARD_PORT = 0;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
-const VERIFICATION_MAX_FILE_MATCHES = 8;
 
 const RELEASE_FILE_PATTERNS = [
 	/^package\.json$/u,
@@ -443,165 +440,7 @@ function pathMatches(filePath: string, patterns: readonly RegExp[]): boolean {
 }
 
 function matchingFiles(files: readonly string[], patterns: readonly RegExp[]): string[] {
-	return files.filter((filePath) => pathMatches(filePath, patterns)).slice(0, VERIFICATION_MAX_FILE_MATCHES);
-}
-
-function toPosixChangedFiles(
-	changedFiles: readonly string[],
-	manifestChangedFiles: readonly string[],
-	manifestMissingFiles: readonly string[],
-): string[] {
-	return [
-		...new Set(
-			[...changedFiles, ...manifestChangedFiles, ...manifestMissingFiles].map((filePath) => filePath.replaceAll('\\', '/')),
-		),
-	].sort((left, right) => left.localeCompare(right));
-}
-
-function uniqueLimitedFiles(left: readonly string[], right: readonly string[]): string[] {
-	return [...new Set([...left, ...right])].slice(0, VERIFICATION_MAX_FILE_MATCHES);
-}
-
-type DashboardVerificationRecommendation = {
-	intent: string;
-	command: string;
-	reason_key: string;
-	files: string[];
-	runnable: boolean;
-};
-
-type DashboardSkippedVerification = {
-	intent: string;
-	reason_key: string;
-};
-
-function verificationReasonKey(requirement: VerificationRequirement): string {
-	if (requirement.reason === 'mustflow_config_change' || requirement.reason === 'mustflow_docs_change') {
-		return 'dashboard.verification.reason.mustflow';
-	}
-
-	if (requirement.reason === 'docs_change' || requirement.reason === 'copy_change' || requirement.reason === 'i18n_change') {
-		return 'dashboard.verification.reason.docs';
-	}
-
-	if (
-		requirement.reason === 'package_metadata_change' ||
-		requirement.reason === 'template_version_change' ||
-		requirement.reason === 'packaging_change' ||
-		requirement.reason === 'release_risk'
-	) {
-		return 'dashboard.verification.reason.release';
-	}
-
-	if (
-		requirement.reason === 'code_change' ||
-		requirement.reason === 'test_change' ||
-		requirement.reason === 'public_api_change'
-	) {
-		return 'dashboard.verification.reason.code';
-	}
-
-	return 'dashboard.verification.reason.fallback';
-}
-
-function requirementFiles(requirement: VerificationRequirement, allChangedFiles: readonly string[]): string[] {
-	return (requirement.files.length > 0 ? requirement.files : allChangedFiles).slice(0, VERIFICATION_MAX_FILE_MATCHES);
-}
-
-function addDashboardRecommendation(
-	recommendations: DashboardVerificationRecommendation[],
-	commandByName: ReadonlyMap<string, DashboardStatusSnapshot['command_contract']['intents'][number]>,
-	intent: string,
-	reasonKey: string,
-	files: readonly string[],
-): void {
-	const existing = recommendations.find((item) => item.intent === intent);
-	if (existing) {
-		existing.files = uniqueLimitedFiles(existing.files, files);
-		return;
-	}
-
-	const command = commandByName.get(intent);
-	recommendations.push({
-		intent,
-		command: `mf run ${intent}`,
-		reason_key: reasonKey,
-		files: files.slice(0, VERIFICATION_MAX_FILE_MATCHES),
-		runnable: command?.runnable ?? false,
-	});
-}
-
-function addSkippedCandidate(
-	skipped: DashboardSkippedVerification[],
-	candidate: ChangeVerificationCandidate,
-): void {
-	if (!candidate.intent || skipped.some((item) => item.intent === candidate.intent)) {
-		return;
-	}
-
-	skipped.push({
-		intent: candidate.intent,
-		reason_key: 'dashboard.verification.skip.notRunnable',
-	});
-}
-
-function buildEmptyVerificationSnapshot(changedFiles: readonly string[]): DashboardStatusSnapshot['verification'] {
-	return {
-		changed_files: changedFiles,
-		surfaces: [],
-		recommendations: [],
-		skipped: [],
-	};
-}
-
-function buildVerificationSnapshot(
-	rawCommandContract: CommandContract | null,
-	commandContract: DashboardStatusSnapshot['command_contract'],
-	changedFiles: readonly string[],
-	manifestChangedFiles: readonly string[],
-	manifestMissingFiles: readonly string[],
-): DashboardStatusSnapshot['verification'] {
-	const allChangedFiles = toPosixChangedFiles(changedFiles, manifestChangedFiles, manifestMissingFiles);
-
-	if (!rawCommandContract || allChangedFiles.length === 0) {
-		return buildEmptyVerificationSnapshot(allChangedFiles);
-	}
-
-	const classificationReport = createChangeClassificationReport('changed', allChangedFiles);
-	const verificationReport = createChangeVerificationReport(classificationReport, rawCommandContract);
-	const commandByName = new Map(commandContract.intents.map((intent) => [intent.name, intent]));
-	const recommendations: DashboardVerificationRecommendation[] = [];
-	const skipped: DashboardSkippedVerification[] = [];
-	const requirementByReason = new Map(verificationReport.requirements.map((requirement) => [requirement.reason, requirement]));
-
-	for (const candidate of verificationReport.candidates) {
-		const requirement = requirementByReason.get(candidate.reason);
-		if (!requirement) {
-			continue;
-		}
-
-		if (candidate.status === 'runnable' && candidate.intent) {
-			addDashboardRecommendation(
-				recommendations,
-				commandByName,
-				candidate.intent,
-				verificationReasonKey(requirement),
-				requirementFiles(requirement, allChangedFiles),
-			);
-			continue;
-		}
-
-		addSkippedCandidate(skipped, candidate);
-	}
-
-	return {
-		changed_files: verificationReport.files,
-		surfaces: [...new Set(verificationReport.requirements.flatMap((requirement) => requirement.surfaces))].sort((left, right) =>
-			left.localeCompare(right),
-		),
-		recommendations,
-		skipped,
-	};
+	return files.filter((filePath) => pathMatches(filePath, patterns)).slice(0, DASHBOARD_VERIFICATION_MAX_FILE_MATCHES);
 }
 
 function arraysEqual(left: readonly string[], right: readonly string[]): boolean {
@@ -791,9 +630,9 @@ function renderStatusResponse(projectRoot: string): DashboardStatusSnapshot {
 		issues: manifest.issues,
 		runnable_intents: context.command_contract.runnable_intents,
 		command_contract: commandContract,
-		verification: buildVerificationSnapshot(
+		verification: createDashboardVerificationSnapshot(
 			rawCommandContract,
-			commandContract,
+			commandContract.intents,
 			gitChangedFiles,
 			manifest.changedFiles,
 			manifest.missingFiles,
