@@ -68,7 +68,7 @@
     "workflow"
   ],
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/sql.js": "^1.4.11",
     "typescript": "^6.0.3"
   },
