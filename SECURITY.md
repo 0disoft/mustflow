@@ -51,6 +51,33 @@ Security reports are most useful when they involve one of these boundaries:
 General feature requests, documentation gaps, and non-security bugs should use
 regular GitHub issues.
 
+## Automated Security Checks
+
+Repository CodeQL analysis is configured in `.github/workflows/codeql.yml` for
+JavaScript/TypeScript source and GitHub Actions workflows. It runs on pull
+requests, pushes to `main`, a weekly schedule, and manual workflow dispatch.
+
+Repository GitHub Actions hygiene checks are configured in
+`.github/workflows/actions-hygiene.yml`. `actionlint` checks workflow syntax and
+inline workflow mistakes, while `zizmor` audits workflow and action definitions
+for GitHub Actions security risks.
+
+Repository OpenSSF Scorecard checks are configured in
+`.github/workflows/scorecard.yml` for supply-chain security posture scoring on
+`main` pushes and a weekly schedule. The workflow publishes SARIF to code
+scanning and public project results to the Scorecard API.
+
+Repository OSV-Scanner checks are configured in
+`.github/workflows/osv-scanner.yml` for dependency vulnerability scanning.
+Pull request scans run when dependency files change, while full scans run on
+dependency file pushes to `main`, a weekly schedule, and manual workflow
+dispatch. The workflow publishes SARIF to code scanning when GitHub code
+scanning is available.
+
+Automated findings are triage input for maintainers. They do not replace
+private vulnerability reports for issues that include exploit details, secrets,
+private repository content, or customer data.
+
 ## Safe Research Guidelines
 
 - Test only on repositories and systems you own or have permission to inspect.

@@ -1,0 +1,51 @@
+name: GitHub Actions Hygiene
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "12 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: actions-hygiene-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Lint workflow syntax
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+  zizmor:
+    name: Audit workflow security
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@v0.5.3

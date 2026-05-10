@@ -47,6 +47,70 @@ mf run mustflow_check
 
 Human maintainers can also use the package scripts documented in `README.md`.
 
+## Dependency Updates
+
+Renovate is configured for hosted GitHub App use through `.github/renovate.json`.
+It discovers Bun package files, Bun version declarations, GitHub Actions, and
+lock files, then opens pull requests for maintainers to review.
+
+Renovate pull requests are not auto-merged. Major updates require Dependency
+Dashboard approval before Renovate creates the update pull request. Merge only
+after the repository CI and the relevant configured mustflow intents pass.
+
+Renovate updates external dependencies only. It does not own mustflow package
+or template version synchronization. When a dependency update also changes CLI
+behavior, installed templates, schemas, package metadata, or user-visible
+documentation, follow `.mustflow/config/preferences.toml` `[release.versioning]`
+and keep the repository's version sources synchronized.
+
+## Publishing
+
+mustflow npm releases are published from the `Publish npm package` GitHub
+Actions workflow. The workflow runs when a GitHub Release is published, verifies
+that the release tag matches `package.json` version with an optional leading
+`v`, installs dependencies with Bun, and runs `npm publish`. The existing
+`prepublishOnly` script runs the full `release:check` gate before npm accepts
+the package.
+
+The workflow is designed for npm Trusted Publishing. Maintainers must configure
+the `mustflow` package on npmjs.com with this repository, the `publish-npm.yml`
+workflow filename, and the `npm` GitHub environment before using it. Do not add
+an `NPM_TOKEN` secret for the normal release path.
+
+Trusted Publishing uses short-lived GitHub Actions identity tokens and npm
+automatically publishes provenance attestations for public packages published
+from public repositories through that path. After the trusted publisher is
+confirmed working, maintainers should restrict traditional npm token publishing
+in the npm package settings and remove any unused automation tokens.
+
+## Security Automation
+
+CodeQL is configured in `.github/workflows/codeql.yml` for JavaScript/TypeScript
+source and GitHub Actions workflows. Treat CodeQL findings as security triage
+items: confirm the affected boundary, decide whether the finding affects the
+published package or only repository automation, and keep the fix focused on the
+reported path.
+
+GitHub Actions workflow hygiene checks are configured in
+`.github/workflows/actions-hygiene.yml`. `actionlint` checks workflow syntax,
+expressions, job wiring, and inline script issues. `zizmor` audits workflow and
+action definitions for GitHub Actions security risks and uploads findings to
+code scanning when GitHub code scanning is available.
+
+OpenSSF Scorecard is configured in `.github/workflows/scorecard.yml` for
+supply-chain security posture checks on `main` pushes and a weekly schedule.
+Scorecard publishes SARIF to code scanning and publishes project results for
+the public Scorecard API. Treat score changes as maintenance signals, not as a
+standalone release gate.
+
+OSV-Scanner is configured in `.github/workflows/osv-scanner.yml` for dependency
+vulnerability checks. Pull request scans run when dependency files change and
+block newly introduced vulnerable dependencies. Full scans run on dependency
+file pushes to `main`, a weekly schedule, and manual workflow dispatch, then
+publish SARIF results to code scanning. Treat findings as vulnerability triage:
+update, replace, remove, or explicitly mitigate the affected dependency before
+merging or releasing.
+
 ## Change Guidelines
 
 - Keep pull requests focused on one logical change.

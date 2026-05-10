@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "enabledManagers": ["bun", "bun-version", "github-actions"],
+  "automerge": false,
+  "platformAutomerge": false,
+  "timezone": "Asia/Seoul",
+  "schedule": ["before 10am on monday"],
+  "minimumReleaseAge": "3 days",
+  "prConcurrentLimit": 3,
+  "branchConcurrentLimit": 3,
+  "labels": ["dependencies"],
+  "major": {
+    "dependencyDashboardApproval": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 10am on monday"],
+    "labels": ["dependencies", "lockfile-maintenance"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["bun", "bun-version"],
+      "matchFileNames": ["package.json", "bun.lock"],
+      "groupName": "root package dependencies",
+      "labels": ["dependencies", "root"]
+    },
+    {
+      "matchManagers": ["bun"],
+      "matchFileNames": ["docs-site/package.json", "docs-site/bun.lock"],
+      "groupName": "documentation site dependencies",
+      "labels": ["dependencies", "docs-site"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "labels": ["dependencies", "github-actions"]
+    }
+  ]
+}
