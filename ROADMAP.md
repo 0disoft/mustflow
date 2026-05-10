@@ -1,6 +1,6 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-09
+Last reviewed: 2026-05-10
 
 This roadmap lists remaining work only. Completed items are removed after
 verification so agents can spend context on the next decisions instead of
@@ -19,33 +19,26 @@ workflows.
 
 ## Near-Term Milestones
 
-### M2.14: Source Anchors and Navigation-Only Code Search
+### M2.14: Source Anchor Status Signals
 
-Goal: let agents find important source-code locations by meaning without
-turning source comments into workflow instructions, command authority, or a
-parallel documentation system.
+Goal: detect whether existing source anchors still point at the intended code
+after edits without turning anchors into workflow instructions, command
+authority, or a parallel documentation system.
 
-Rationale:
+Remaining work:
 
-- LLM-generated code changes often require fast semantic navigation: "where is
-  authorization resolved", "where is payment state normalized", or "which route
-  maps external webhook events". Plain text search works only when the agent
-  already knows the right symbol or phrase.
-- Free-form "LLM comments" would pollute source files and become stale quickly.
-  mustflow should instead treat source anchors as short, structured navigation
-  coordinates that help agents find code, not as truth about what the code does.
-- Source anchors must have lower authority than `AGENTS.md`,
-  `.mustflow/config/commands.toml`, workflow docs, and skills. A source anchor
-  can explain where to look, but it cannot tell an agent to run, skip, override,
-  or broaden a command.
-- Stale detection cannot rely on a single surrounding-line hash. Nearby text is
-  useful for relocating an anchor after edits, but stale review should separate
-  locator signals, target-symbol signals, body-change signals, semantic cues,
-  and risk class.
-- Inline anchors and separate anchor files serve different needs. Inline anchors
-  are best for precise symbol-level navigation. Separate files are better for
-  cross-file flows, directories, or architecture relationships that would be too
-  verbose inside source comments.
+- Add a core source-anchor fingerprint model that separates anchor metadata,
+  locator text, target symbol, signature, body, search terms, invariant, and
+  risk tags.
+- Add status evaluation for `valid`, `moved`, `changed`, `review`, `stale`, and
+  `invalid` anchors.
+- Keep status output explanatory: include confidence and signals for identity,
+  location, symbol, body, metadata, semantic cues, and risk.
+- Treat high-risk anchors conservatively. A high-risk body, signature, search,
+  or invariant change should require review instead of being marked valid.
+- Keep source anchors out of verification planning. Verification requirements
+  must continue to come from change classification and `commands.toml`, not
+  from anchor metadata.
 
 Anchor state model:
 

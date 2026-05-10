@@ -53,6 +53,8 @@ user projects by `mf init`.
 
 ### Fixed
 
+- Fixed source anchor validation so authority-like anchor text cannot claim
+  permission to skip validation or change command policy.
 - Fixed `mf dashboard` language switching so the current status tab content
   updates immediately without requiring a reload or tab switch.
 - Clarified `mf dashboard` Git preference labels and command-intent status text

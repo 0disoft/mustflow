@@ -55,6 +55,8 @@ const relatedRules = [
 	{ match: /^src\/cli\/lib\/schema/u, tests: ['schema.test.js'] },
 	{ match: /^src\/core\/change-(classification|verification)\.ts$/u, tests: ['classify.test.js', 'verify.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/verification-plan\.ts$/u, tests: ['verify.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check.test.js', 'explain.test.js'] },
+	{ match: /^src\/core\/source-anchors\.ts$/u, tests: ['check.test.js', 'explain.test.js', 'index.test.js', 'search.test.js'] },
 	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js', 'schema.test.js'] },
 	{ match: /^tests\/cli\/([^/]+\.test\.js)$/u, testsForMatch: ([, testName]) => [testName] },
 	{ match: /^\.mustflow\/config\/commands\.toml$/u, tests: ['run.test.js'] },
