@@ -81,6 +81,8 @@ user projects by `mf init`.
 
 ### Fixed
 
+- Fixed strict validation to catch package and default-template manifest version
+  drift when template version synchronization is enabled.
 - Fixed source anchor validation so authority-like anchor text cannot claim
   permission to skip validation or change command policy.
 - Fixed `mf dashboard` language switching so the current status tab content

@@ -8,6 +8,7 @@ import path from 'node:path';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 
 function collectRelativeFiles(directory) {
@@ -46,6 +47,10 @@ test('package metadata is ready for public npm publishing', () => {
 	assert.ok(packageJson.keywords.includes('agent-workflow'));
 	assert.ok(packageJson.keywords.includes('agents-md'));
 	assert.equal(packageJson.packageManager, 'bun@1.3.13');
+});
+
+test('default template manifest version stays synchronized with package version', () => {
+	assert.match(templateManifest, new RegExp(`^version = "${packageJson.version}"$`, 'm'));
 });
 
 test('package exposes a real install verification script', () => {

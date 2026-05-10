@@ -176,6 +176,50 @@ test('strict check accepts a non-package-json version source', () => {
 	}
 });
 
+test('strict check fails package and template manifest version drift when template sync is enabled', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			JSON.stringify({ name: 'example', version: '1.2.3' }, null, 2),
+		);
+		mkdirSync(path.join(projectPath, 'templates', 'default'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'templates', 'default', 'manifest.toml'),
+			[
+				'id = "default"',
+				'name = "default"',
+				'version = "1.2.2"',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: templates/default/manifest.toml version "1.2.2" must match package.json version "1.2.3" when [release.versioning].sync_template_version is true',
+			),
+		);
+		assert.ok(
+			check.issueDetails.some(
+				(issue) =>
+					issue.id === 'mustflow.release.template_version_mismatch' &&
+					issue.severity === 'error' &&
+					issue.mode === 'strict',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check ignores package lockfile versions unless declared', () => {
 	const projectPath = createTempProject();
 

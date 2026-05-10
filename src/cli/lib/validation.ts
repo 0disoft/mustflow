@@ -28,6 +28,7 @@ import {
 	parseSkillIndexRoutes,
 	readBacktickValues,
 } from '../../core/skill-route-alignment.js';
+import { validateTemplateVersionSync } from '../../core/release-version-validation.js';
 import { validateSourceAnchorsInProject } from '../../core/source-anchor-validation.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
@@ -1505,6 +1506,16 @@ function validateStrictVersionSources(
 	);
 }
 
+function validateStrictTemplateVersionSync(
+	projectRoot: string,
+	preferencesToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): void {
+	for (const issue of validateTemplateVersionSync(projectRoot, preferencesToml)) {
+		pushStrictIssue(issues, issue.message);
+	}
+}
+
 function validateStrictCommandDefaults(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	for (const issue of validateCommandContractStrictDefaults(commandsToml)) {
 		pushStrictIssue(issues, issue.message);
@@ -2313,6 +2324,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
 	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
 	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);
+	validateStrictTemplateVersionSync(projectRoot, parsed.preferencesToml, issues);
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);
 	validateStrictRouterIndexes(projectRoot, issues);
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
