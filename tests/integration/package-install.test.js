@@ -65,7 +65,7 @@ function hasBinShim(projectPath, name) {
 }
 
 function packRepository(packRoot) {
-	const pack = run(npmCommand(), ['pack', '--json', '--pack-destination', packRoot], {
+	const pack = run(npmCommand(), ['pack', '--json', '--dry-run=false', '--pack-destination', packRoot], {
 		cwd: projectRoot,
 	});
 
@@ -79,9 +79,13 @@ function packRepository(packRoot) {
 function installPackedPackage(projectPath, tarballPath) {
 	writeFileSync(path.join(projectPath, 'package.json'), '{"private":true,"type":"module"}\n');
 
-	const install = run(npmCommand(), ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--save-dev', tarballPath], {
-		cwd: projectPath,
-	});
+	const install = run(
+		npmCommand(),
+		['install', '--dry-run=false', '--no-audit', '--no-fund', '--ignore-scripts', '--save-dev', tarballPath],
+		{
+			cwd: projectPath,
+		},
+	);
 
 	assert.equal(install.status, 0, install.stderr || install.stdout);
 }
