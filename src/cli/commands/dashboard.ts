@@ -41,7 +41,7 @@ import { readPackageMetadata } from '../lib/package-info.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { detectVersionSources } from '../lib/version-sources.js';
+import { detectVersionSources } from '../../core/version-sources.js';
 import { planUpdate, summarizePlan } from './update.js';
 
 interface DashboardOptions {

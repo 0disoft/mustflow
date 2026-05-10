@@ -10,7 +10,7 @@ import {
 	detectVersionSources,
 	releaseVersioningIsEnabled,
 	type VersionSource,
-} from '../lib/version-sources.js';
+} from '../../core/version-sources.js';
 
 const VERSION_SOURCES_SCHEMA_VERSION = '1';
 

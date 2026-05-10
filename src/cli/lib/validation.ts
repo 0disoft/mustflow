@@ -42,7 +42,7 @@ import {
 	detectVersionSourcePaths,
 	readDeclaredVersionSources,
 	releaseVersioningIsEnabled,
-} from './version-sources.js';
+} from '../../core/version-sources.js';
 
 export {
 	describeCheckIssues,
