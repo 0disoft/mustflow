@@ -46,6 +46,7 @@ npx mf index --source --json
 
 Source anchor indexing सिर्फ navigation के लिए है। बनी हुई `source_anchors`, `source_anchor_fingerprints`, और `source_anchor_status` tables workflow rules, command permission, या verification authority define नहीं कर सकतीं।
 Fingerprint और status rows derived search metadata हैं, जिनसे बाद में यह समझाने में मदद मिलती है कि anchor अभी भी expected code की ओर इशारा कर रहा है या नहीं।
+जब पास की function, class, method, या constant पहचानी जा सकती है, तो fingerprint table kind, name, signature hash, और body hash जैसे derived symbol metadata भी store करती है।
 
 ## JSON फ़ील्ड
 

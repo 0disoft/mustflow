@@ -8,9 +8,15 @@ import {
 	splitSourceAnchorList,
 	type SourceAnchorSummary,
 } from './source-anchors.js';
+import {
+	extractSourceAnchorSymbol,
+	type SourceAnchorSymbol,
+	type SourceAnchorSymbolKind,
+} from './source-anchor-symbols.js';
+
+export type { SourceAnchorSymbol, SourceAnchorSymbolKind } from './source-anchor-symbols.js';
 
 export type SourceAnchorStatus = 'valid' | 'moved' | 'changed' | 'review' | 'stale' | 'invalid';
-export type SourceAnchorSymbolKind = 'function' | 'class' | 'method' | 'const' | 'unknown';
 
 export interface SourceAnchorFingerprint {
 	readonly anchorMetadataHash: string;
@@ -19,15 +25,7 @@ export interface SourceAnchorFingerprint {
 	readonly searchTermsHash: string | null;
 	readonly invariantHash: string | null;
 	readonly riskHash: string;
-	readonly symbol: {
-		readonly kind: SourceAnchorSymbolKind;
-		readonly name: string | null;
-		readonly exported: boolean;
-		readonly signatureHash: string | null;
-		readonly bodyHash: string | null;
-		readonly startLine: number | null;
-		readonly endLine: number | null;
-	};
+	readonly symbol: SourceAnchorSymbol;
 }
 
 export interface SourceAnchorStatusSignals {
@@ -89,15 +87,7 @@ function createFingerprint(
 		searchTermsHash: hashStringList(search),
 		invariantHash: invariant ? sha256(invariant) : null,
 		riskHash: sha256(risk.join('\n')),
-		symbol: {
-			kind: 'unknown',
-			name: null,
-			exported: false,
-			signatureHash: null,
-			bodyHash: null,
-			startLine: null,
-			endLine: null,
-		},
+		symbol: extractSourceAnchorSymbol(content, anchor.lineStart),
 	};
 }
 
@@ -105,8 +95,8 @@ function currentAnchorSignals(risk: readonly string[]): SourceAnchorStatusSignal
 	return {
 		identity: 'current_anchor_id_valid',
 		location: 'current_file_and_line_indexed',
-		symbol: 'not_evaluated',
-		body: 'not_evaluated',
+		symbol: 'current_symbol_fingerprinted',
+		body: 'current_body_fingerprinted',
 		metadata: 'current_anchor_metadata_fingerprinted',
 		semantic: 'search_terms_and_invariant_fingerprinted',
 		risk: risk.length > 0 ? 'risk_tags_fingerprinted' : 'no_risk_tags',

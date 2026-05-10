@@ -28,6 +28,8 @@ user projects by `mf init`.
 - Added source anchor fingerprint and status tables to the local SQLite index
   so source navigation hints can carry derived status signals without becoming
   command authority.
+- Added derived source anchor symbol fingerprints for functions, classes,
+  methods, constants, signatures, and bodies in the local SQLite index.
 - Added explicit authority-boundary guidance to installed project context
   templates.
 - Added `mf docs review` to track LLM-created or LLM-modified documentation

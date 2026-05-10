@@ -214,6 +214,32 @@ test('indexes source anchors only when source indexing is requested', async () =
 export function resolveSessionUser() {
 	return null;
 }
+
+/**
+ * mf:anchor auth.session.mapper
+ * purpose: Convert session claims into app state.
+ * search: session mapper
+ * invariant: Keep the mapper pure.
+ */
+export const sessionMapper = () => ({});
+
+/**
+ * mf:anchor auth.session.store
+ * purpose: Store session state in memory.
+ * search: session store
+ * invariant: Do not persist raw tokens.
+ */
+class SessionStore {
+	/**
+	 * mf:anchor auth.session.store.get-user
+	 * purpose: Read the current session user.
+	 * search: current user
+	 * invariant: Keep token values out of the result.
+	 */
+	getUser() {
+		return null;
+	}
+}
 `,
 		);
 
@@ -224,12 +250,15 @@ export function resolveSessionUser() {
 		const database = new SQL.Database(readFileSync(indexPath));
 		const [anchor] = queryRows(database, 'SELECT * FROM source_anchors WHERE id = "auth.session.resolve"');
 		const [fingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.resolve"');
+		const [constFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.mapper"');
+		const [classFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store"');
+		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.schema_version, '5');
 		assert.equal(output.source_index_enabled, true);
-		assert.equal(output.source_anchor_count, 1);
+		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');
 		assert.equal(anchor.purpose, 'Map verified server session claims to app user context.');
 		assert.equal(anchor.search_terms, 'login, session refresh, role mapping, authorization');
@@ -239,11 +268,27 @@ export function resolveSessionUser() {
 		assert.match(fingerprint.anchor_metadata_hash, /^sha256:/);
 		assert.match(fingerprint.anchor_text_hash, /^sha256:/);
 		assert.match(fingerprint.context_hash, /^sha256:/);
-		assert.equal(fingerprint.symbol_kind, 'unknown');
-		assert.equal(fingerprint.symbol_exported, 0);
+		assert.equal(fingerprint.symbol_kind, 'function');
+		assert.equal(fingerprint.symbol_name, 'resolveSessionUser');
+		assert.equal(fingerprint.symbol_exported, 1);
+		assert.match(fingerprint.signature_hash, /^sha256:/);
+		assert.match(fingerprint.body_hash, /^sha256:/);
+		assert.equal(fingerprint.symbol_start_line, 8);
+		assert.equal(fingerprint.symbol_end_line, 10);
+		assert.equal(constFingerprint.symbol_kind, 'const');
+		assert.equal(constFingerprint.symbol_name, 'sessionMapper');
+		assert.equal(constFingerprint.symbol_exported, 1);
+		assert.equal(classFingerprint.symbol_kind, 'class');
+		assert.equal(classFingerprint.symbol_name, 'SessionStore');
+		assert.equal(classFingerprint.symbol_exported, 0);
+		assert.equal(methodFingerprint.symbol_kind, 'method');
+		assert.equal(methodFingerprint.symbol_name, 'getUser');
+		assert.equal(methodFingerprint.symbol_exported, 1);
 		assert.equal(status.status, 'valid');
 		assert.equal(status.confidence, 1);
 		assert.equal(status.identity_signal, 'current_anchor_id_valid');
+		assert.equal(status.symbol_signal, 'current_symbol_fingerprinted');
+		assert.equal(status.body_signal, 'current_body_fingerprinted');
 		assert.equal(status.navigation_only, 1);
 		assert.equal(status.can_instruct_agent, 0);
 		assert.equal(Object.hasOwn(anchor, 'source_content'), false);

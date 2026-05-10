@@ -46,6 +46,7 @@ npx mf index --source --json
 
 源码锚点索引仅用于导航。生成的 `source_anchors`、`source_anchor_fingerprints` 和 `source_anchor_status` 表不能定义工作流规则、命令权限或验证权威。
 指纹和状态行是派生的搜索元数据，用于之后解释某个锚点是否仍指向预期代码。
+如果可以检测到附近的函数、类、方法或常量，指纹表还会保存派生的符号元数据，例如类型、名称、签名哈希和正文哈希。
 
 ## JSON 字段
 

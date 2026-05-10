@@ -27,8 +27,6 @@ authority, or a parallel documentation system.
 
 Remaining work:
 
-- Extend the current source-anchor fingerprint model with symbol extraction for
-  function, class, method, const, export, signature, and body boundaries.
 - Add status comparison against a previous fingerprint snapshot for `moved`,
   `changed`, `review`, `stale`, and `invalid` anchors.
 - Keep status output explanatory: include confidence and signals for identity,

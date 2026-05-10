@@ -46,6 +46,7 @@ npx mf index --source --json
 
 L’indexation des ancres source sert seulement à la navigation. Les tables `source_anchors`, `source_anchor_fingerprints` et `source_anchor_status` produites ne peuvent pas définir de règles de workflow, de permission de commande ni d’autorité de vérification.
 Les lignes de fingerprint et de statut sont des métadonnées de recherche dérivées qui aident ensuite à expliquer si une ancre pointe toujours vers le code attendu.
+Quand une fonction, classe, méthode ou constante proche peut être détectée, la table de fingerprint stocke aussi des métadonnées de symbole dérivées, comme le type, le nom, le hash de signature et le hash de corps.
 
 ## Champs JSON
 
