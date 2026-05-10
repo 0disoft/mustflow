@@ -379,3 +379,37 @@ destructive = false
 		removeTempProject(projectPath);
 	}
 });
+
+test('refuses command intent cwd values outside the mustflow root', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.outside_cwd]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run outside the project root."
+argv = ['${process.execPath}', '-e', 'console.log("outside")']
+cwd = ".."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'outside_cwd']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Intent cwd must stay inside the current root/);
+		assert.doesNotMatch(result.stdout, /outside/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

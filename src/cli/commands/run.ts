@@ -16,6 +16,7 @@ import { runUpdate } from './update.js';
 import { runVerify } from './verify.js';
 import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
+import { resolveSafeProjectCwd } from '../../core/command-cwd.js';
 import { evaluateCommandIntentEligibility } from '../../core/command-intent-eligibility.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import {
@@ -47,20 +48,6 @@ interface BufferedReporter {
 	readonly reporter: Reporter;
 	readonly stdout: () => string;
 	readonly stderr: () => string;
-}
-
-function resolveSafeCwd(projectRoot: string, rawCwd: string | undefined): string {
-	const cwd = rawCwd ?? '.';
-	const resolved = path.resolve(projectRoot, cwd);
-	const root = path.resolve(projectRoot);
-	const resolvedLower = resolved.toLowerCase();
-	const rootLower = root.toLowerCase();
-
-	if (resolvedLower !== rootLower && !resolvedLower.startsWith(`${rootLower}${path.sep}`)) {
-		throw new Error(`Intent cwd must stay inside the current root: ${cwd}`);
-	}
-
-	return resolved;
 }
 
 function getSuccessExitCodes(intent: TomlTable): number[] {
@@ -524,7 +511,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 		return 1;
 	}
 
-	const cwd = resolveSafeCwd(projectRoot, readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd'));
+	const cwd = resolveSafeProjectCwd(projectRoot, readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd'));
 	const successExitCodes = getSuccessExitCodes(intent);
 	const argv = readStringArray(intent, 'argv');
 	const commandArgv = argv && argv.length > 0 ? argv : undefined;
