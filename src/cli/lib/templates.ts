@@ -88,6 +88,13 @@ function isAllowedTemplateCreateTarget(relativePath: string): boolean {
 	return normalizedPath === 'AGENTS.md' || normalizedPath.startsWith('.mustflow/');
 }
 
+/**
+ * mf:anchor cli.templates.install-surface
+ * purpose: Keep template installation and update targets inside the mustflow-managed surface.
+ * search: template manifest, creates, AGENTS.md, .mustflow, install surface
+ * invariant: Template creates targets are limited to AGENTS.md and .mustflow paths.
+ * risk: config, security
+ */
 function validateTemplateCreateTargets(creates: readonly string[]): void {
 	const invalidTarget = creates.find((relativePath) => !isAllowedTemplateCreateTarget(relativePath));
 

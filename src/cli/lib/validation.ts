@@ -30,6 +30,14 @@ import {
 	parseSkillIndexRoutes,
 	readBacktickValues,
 } from '../../core/skill-route-alignment.js';
+import {
+	SOURCE_ANCHOR_ALLOWED_RISKS,
+	listSourceAnchorFiles,
+	parseSourceAnchorsInContent,
+	sourceAnchorPathIsGeneratedOrVendor,
+	splitSourceAnchorList,
+	type ParsedSourceAnchor,
+} from '../../core/source-anchors.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
@@ -263,7 +271,6 @@ const SECRET_LIKE_CONTEXT_PATTERNS = [
 	/\b(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=:-]{8,}/iu,
 	/\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/u,
 ];
-const SOURCE_ANCHOR_EXTENSIONS = new Set(['.cjs', '.go', '.js', '.jsx', '.mjs', '.py', '.rs', '.ts', '.tsx']);
 const SOURCE_ANCHOR_IGNORED_DIRECTORIES = new Set([
 	'.git',
 	'.mustflow',
@@ -275,39 +282,6 @@ const SOURCE_ANCHOR_IGNORED_DIRECTORIES = new Set([
 	'.next',
 	'.nuxt',
 ]);
-const SOURCE_ANCHOR_GENERATED_PATH_PARTS = new Set([
-	'__generated__',
-	'build',
-	'dist',
-	'generated',
-	'third_party',
-	'vendor',
-]);
-const SOURCE_ANCHOR_ALLOWED_FIELDS = new Set(['purpose', 'search', 'invariant', 'risk']);
-const SOURCE_ANCHOR_ALLOWED_RISKS = new Set([
-	'authn',
-	'authz',
-	'authorization',
-	'cache',
-	'config',
-	'data_consistency',
-	'data_loss',
-	'dependency',
-	'external_request',
-	'file_upload',
-	'injection',
-	'migration',
-	'payment',
-	'pii',
-	'privacy',
-	'retention',
-	'secrets',
-	'security',
-	'ssrf',
-	'state',
-	'xss',
-]);
-const SOURCE_ANCHOR_ID_PATTERN = /^[a-z0-9][a-z0-9.-]{0,95}$/u;
 const SOURCE_ANCHOR_PURPOSE_WARNING_MAX_CHARS = 180;
 const SOURCE_ANCHOR_SEARCH_WARNING_MAX_TERMS = 12;
 const SOURCE_ANCHOR_DENSITY_WARNING_MAX_PER_FILE = 5;
@@ -1453,6 +1427,13 @@ function validateVersioningConfig(versioningToml: TomlTable | undefined, issues:
 	}
 }
 
+/**
+ * mf:anchor cli.validation.command-intents
+ * purpose: Validate command intent declarations that gate agent-executable repository commands.
+ * search: commands.toml, intent status, lifecycle, run policy, timeout
+ * invariant: Agent-executable commands need configured status, oneshot lifecycle, timeout, and explicit command source.
+ * risk: config, security
+ */
 function validateCommandIntents(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!commandsToml) {
 		return;
@@ -2496,146 +2477,23 @@ function validateStrictContextDocuments(projectRoot: string, limits: RetentionLi
 	}
 }
 
-interface StrictSourceAnchor {
-	readonly id: string;
-	readonly path: string;
-	readonly line: number;
-	readonly fields: ReadonlyMap<string, string>;
-	readonly rawText: string;
+function sourceAnchorLabel(anchor: Pick<ParsedSourceAnchor, 'rawId' | 'path' | 'lineStart'>): string {
+	return `${anchor.rawId} in ${anchor.path}:${anchor.lineStart}`;
 }
 
-function stripSourceAnchorCommentPrefix(line: string): string {
-	return line
-		.trim()
-		.replace(/^\/\*\*?/u, '')
-		.replace(/\*\/$/u, '')
-		.replace(/^\/\//u, '')
-		.replace(/^#/u, '')
-		.replace(/^\*/u, '')
-		.trim();
-}
-
-function readSourceAnchorField(line: string): { readonly key: string; readonly value: string } | null {
-	const separator = line.indexOf(':');
-
-	if (separator === -1) {
-		return null;
+function validateStrictSourceAnchor(anchor: ParsedSourceAnchor, issues: CheckIssue[]): void {
+	if (!anchor.idValid) {
+		pushStrictIssue(
+			issues,
+			`source anchor ${anchor.path}:${anchor.lineStart} has invalid format: anchor id must be lowercase letters, numbers, dots, or hyphens`,
+		);
+		return;
 	}
 
-	const key = line.slice(0, separator).trim().toLowerCase();
-	const value = line.slice(separator + 1).trim();
-
-	if (key.length === 0 || value.length === 0) {
-		return null;
-	}
-
-	return { key, value };
-}
-
-function splitSourceAnchorList(value: string | undefined): readonly string[] {
-	if (!value) {
-		return [];
-	}
-
-	return value
-		.split(/[,;]/u)
-		.map((entry) => entry.trim())
-		.filter((entry) => entry.length > 0);
-}
-
-function sourceAnchorLabel(anchor: Pick<StrictSourceAnchor, 'id' | 'path' | 'line'>): string {
-	return `${anchor.id} in ${anchor.path}:${anchor.line}`;
-}
-
-function sourceAnchorPathIsGeneratedOrVendor(relativePath: string): boolean {
-	const normalized = toPosixPath(relativePath);
-	const parts = normalized.split('/');
-
-	if (normalized.endsWith('.min.js') || normalized.endsWith('.min.css')) {
-		return true;
-	}
-
-	return parts.some((part) => SOURCE_ANCHOR_GENERATED_PATH_PARTS.has(part));
-}
-
-function parseStrictSourceAnchors(relativePath: string, content: string, issues: CheckIssue[]): StrictSourceAnchor[] {
-	const lines = content.split(/\r?\n/);
-	const anchors: StrictSourceAnchor[] = [];
-
-	for (let index = 0; index < lines.length; index += 1) {
-		const normalized = stripSourceAnchorCommentPrefix(lines[index] ?? '');
-
-		if (!normalized.startsWith('mf:anchor')) {
-			continue;
-		}
-
-		const anchorMatch = normalized.match(/^mf:anchor\s+(.+)$/u);
-
-		if (!anchorMatch) {
-			pushStrictIssue(issues, `source anchor ${relativePath}:${index + 1} has invalid format: expected "mf:anchor <id>"`);
-			continue;
-		}
-
-		const id = anchorMatch[1]?.trim() ?? '';
-
-		if (!SOURCE_ANCHOR_ID_PATTERN.test(id)) {
-			pushStrictIssue(
-				issues,
-				`source anchor ${relativePath}:${index + 1} has invalid format: anchor id must be lowercase letters, numbers, dots, or hyphens`,
-			);
-			continue;
-		}
-
-		const fields = new Map<string, string>();
-		const rawLines = [normalized];
-
-		for (let fieldIndex = index + 1; fieldIndex < lines.length; fieldIndex += 1) {
-			const fieldLine = stripSourceAnchorCommentPrefix(lines[fieldIndex] ?? '');
-
-			if (fieldLine.length === 0) {
-				continue;
-			}
-
-			if (fieldLine.startsWith('@') || /^[A-Za-z_$][\w$]*\s/u.test(fieldLine)) {
-				break;
-			}
-
-			const field = readSourceAnchorField(fieldLine);
-
-			if (!field) {
-				break;
-			}
-
-			rawLines.push(fieldLine);
-
-			if (!SOURCE_ANCHOR_ALLOWED_FIELDS.has(field.key)) {
-				pushStrictIssue(
-					issues,
-					`source anchor ${id} in ${relativePath}:${index + 1} has invalid format: unsupported field "${field.key}"`,
-				);
-				continue;
-			}
-
-			fields.set(field.key, field.value);
-		}
-
-		anchors.push({
-			id,
-			path: relativePath,
-			line: index + 1,
-			fields,
-			rawText: rawLines.join('\n'),
-		});
-	}
-
-	return anchors;
-}
-
-function validateStrictSourceAnchor(anchor: StrictSourceAnchor, issues: CheckIssue[]): void {
 	const label = sourceAnchorLabel(anchor);
 
 	if (sourceAnchorPathIsGeneratedOrVendor(anchor.path)) {
-		pushStrictIssue(issues, `source anchor ${anchor.id} is in generated or vendor path ${anchor.path}`);
+		pushStrictIssue(issues, `source anchor ${anchor.rawId} is in generated or vendor path ${anchor.path}`);
 	}
 
 	if (SOURCE_ANCHOR_FORBIDDEN_INSTRUCTION_PATTERNS.some((pattern) => pattern.test(anchor.rawText))) {
@@ -2644,6 +2502,10 @@ function validateStrictSourceAnchor(anchor: StrictSourceAnchor, issues: CheckIss
 
 	if (SECRET_LIKE_CONTEXT_PATTERNS.some((pattern) => pattern.test(anchor.rawText))) {
 		pushStrictIssue(issues, `source anchor ${label} contains secret-like text`);
+	}
+
+	for (const field of anchor.unsupportedFields) {
+		pushStrictIssue(issues, `source anchor ${anchor.rawId} in ${anchor.path}:${anchor.lineStart} has invalid format: unsupported field "${field}"`);
 	}
 
 	const riskTags = splitSourceAnchorList(anchor.fields.get('risk'));
@@ -2702,7 +2564,7 @@ function countNonEmptyLines(content: string): number {
 	return content.split(/\r?\n/u).filter((line) => line.trim().length > 0).length;
 }
 
-function validateStrictSourceAnchorDensity(relativePath: string, content: string, anchors: readonly StrictSourceAnchor[], issues: CheckIssue[]): void {
+function validateStrictSourceAnchorDensity(relativePath: string, content: string, anchors: readonly ParsedSourceAnchor[], issues: CheckIssue[]): void {
 	if (anchors.length <= SOURCE_ANCHOR_DENSITY_WARNING_MAX_PER_FILE) {
 		return;
 	}
@@ -2720,23 +2582,35 @@ function validateStrictSourceAnchorDensity(relativePath: string, content: string
 	);
 }
 
+/**
+ * mf:anchor cli.validation.source-anchors
+ * purpose: Validate structured source anchors as navigation metadata with no command authority.
+ * search: mf:anchor, duplicate id, forbidden instruction, risk tag, anchor density
+ * invariant: Source anchors stay navigation-only and cannot carry command or policy instructions.
+ * risk: config, security
+ */
 function validateStrictSourceAnchors(projectRoot: string, issues: CheckIssue[]): void {
-	const sourceFiles = listFilesRecursive(projectRoot, {
+	const sourceFiles = listSourceAnchorFiles(projectRoot, {
 		ignoredDirectoryNames: SOURCE_ANCHOR_IGNORED_DIRECTORIES,
-	}).filter((relativePath) => SOURCE_ANCHOR_EXTENSIONS.has(path.posix.extname(relativePath)));
-	const anchorsById = new Map<string, StrictSourceAnchor[]>();
+	});
+	const anchorsById = new Map<string, ParsedSourceAnchor[]>();
 
 	for (const relativePath of sourceFiles) {
 		const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
 		const content = readFileSync(absolutePath, 'utf8');
-		const anchors = parseStrictSourceAnchors(relativePath, content, issues);
+		const anchors = parseSourceAnchorsInContent(relativePath, content);
 		validateStrictSourceAnchorDensity(relativePath, content, anchors, issues);
 
 		for (const anchor of anchors) {
-			const anchorsForId = anchorsById.get(anchor.id) ?? [];
-			anchorsForId.push(anchor);
-			anchorsById.set(anchor.id, anchorsForId);
 			validateStrictSourceAnchor(anchor, issues);
+
+			if (!anchor.idValid) {
+				continue;
+			}
+
+			const anchorsForId = anchorsById.get(anchor.rawId) ?? [];
+			anchorsForId.push(anchor);
+			anchorsById.set(anchor.rawId, anchorsForId);
 		}
 	}
 
@@ -2747,7 +2621,7 @@ function validateStrictSourceAnchors(projectRoot: string, issues: CheckIssue[]):
 
 		pushStrictIssue(
 			issues,
-			`source anchor id "${id}" is duplicated: ${anchors.map((anchor) => `${anchor.path}:${anchor.line}`).join(', ')}`,
+			`source anchor id "${id}" is duplicated: ${anchors.map((anchor) => `${anchor.path}:${anchor.lineStart}`).join(', ')}`,
 		);
 	}
 }

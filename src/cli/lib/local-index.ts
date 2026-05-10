@@ -6,7 +6,7 @@ import path from 'node:path';
 import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { readTomlFile } from './toml.js';
-import { collectSourceAnchorSummaries, type SourceAnchorSummary } from '../../core/source-anchor-explanation.js';
+import { collectSourceAnchorSummaries, type SourceAnchorSummary } from '../../core/source-anchors.js';
 
 const LOCAL_INDEX_SCHEMA_VERSION = '4';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
@@ -725,6 +725,13 @@ function populateDatabase(
 	}
 }
 
+/**
+ * mf:anchor cli.index.create
+ * purpose: Build the local SQLite index for workflow documents and optional source anchors.
+ * search: mf index, local index, sqlite, source anchors, workflow documents
+ * invariant: Source anchors are indexed only when source indexing is explicitly requested.
+ * risk: cache, config
+ */
 export async function createLocalIndex(projectRoot: string, options: LocalIndexOptions = {}): Promise<LocalIndexResult> {
 	const databasePath = getLocalIndexDatabasePath(projectRoot);
 	const documents = collectDocuments(projectRoot);
@@ -809,6 +816,13 @@ function getDocumentTerms(database: SqlJsDatabase, documentPath: string): string
 	);
 }
 
+/**
+ * mf:anchor cli.search.local-index
+ * purpose: Search the local index while preserving workflow authority above source navigation hints.
+ * search: mf search, scope workflow source all, authority rank, navigation only
+ * invariant: Source anchor results remain navigation-only and cannot outrank command or workflow authority.
+ * risk: cache, config
+ */
 export async function searchLocalIndex(projectRoot: string, query: string, options: LocalSearchOptions = {}): Promise<LocalSearchResult> {
 	const normalizedQuery = normalizeSearchText(query);
 	const limit = Math.max(1, Math.min(options.limit ?? 10, 50));

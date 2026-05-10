@@ -218,6 +218,13 @@ function createBufferedReporter(): BufferedReporter {
 	};
 }
 
+/**
+ * mf:anchor cli.run.builtin-inprocess
+ * purpose: Dispatch selected mustflow built-in commands without spawning a nested CLI process.
+ * search: builtin intent, in-process command, nested mf run, run receipt
+ * invariant: Only commands classified by command-classification can use this path.
+ * risk: config, state
+ */
 function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lang: CliLang): number | undefined {
 	const [command, ...commandArgs] = args;
 
@@ -406,6 +413,13 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 	);
 }
 
+/**
+ * mf:anchor cli.run.intent-contract
+ * purpose: Enforce command intent eligibility before executing a configured oneshot command.
+ * search: command contract, agent_allowed, oneshot, stdin closed, timeout
+ * invariant: Execution requires configured status, oneshot lifecycle, agent_allowed policy, and closed stdin.
+ * risk: config, security, state
+ */
 export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getRunHelp(lang));

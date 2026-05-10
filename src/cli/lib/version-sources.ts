@@ -214,6 +214,13 @@ export function readDeclaredVersionSources(projectRoot: string): VersionSource[]
 	}
 }
 
+/**
+ * mf:anchor cli.version.sources.detect
+ * purpose: Detect repository version sources before suggesting or applying version changes.
+ * search: version source, package metadata, template version, release tag, auto bump
+ * invariant: Declared version sources are preferred before fallback candidate detection.
+ * risk: config, data_consistency
+ */
 export function detectVersionSources(projectRoot: string): VersionSource[] {
 	const sources: VersionSource[] = readDeclaredVersionSources(projectRoot);
 

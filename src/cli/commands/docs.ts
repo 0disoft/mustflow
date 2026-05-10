@@ -287,6 +287,13 @@ function runReviewList(args: string[], reporter: Reporter, lang: CliLang): numbe
 	return 0;
 }
 
+/**
+ * mf:anchor cli.docs.review-add
+ * purpose: Add LLM-modified or generated documentation to the review queue with optional comments.
+ * search: docs review add, review ledger, actor kind, comment file, documentation queue
+ * invariant: Imported comment files are removed only after the review entry is recorded.
+ * risk: state, data_consistency
+ */
 function runReviewAdd(args: string[], reporter: Reporter, lang: CliLang): number {
 	const parsed = parseOptions(args, ADD_VALUE_OPTIONS, new Set());
 
