@@ -44,7 +44,8 @@ npx mf index --dry-run --json
 npx mf index --source --json
 ```
 
-Source anchor indexing सिर्फ navigation के लिए है। बनी हुई `source_anchors` table workflow rules, command permission, या verification authority define नहीं कर सकती।
+Source anchor indexing सिर्फ navigation के लिए है। बनी हुई `source_anchors`, `source_anchor_fingerprints`, और `source_anchor_status` tables workflow rules, command permission, या verification authority define नहीं कर सकतीं।
+Fingerprint और status rows derived search metadata हैं, जिनसे बाद में यह समझाने में मदद मिलती है कि anchor अभी भी expected code की ओर इशारा कर रहा है या नहीं।
 
 ## JSON फ़ील्ड
 

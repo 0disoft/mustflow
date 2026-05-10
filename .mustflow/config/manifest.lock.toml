@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.56"
+version = "1.15.57"
 profile = "oss"
 locale = "en"
 

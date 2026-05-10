@@ -44,7 +44,8 @@ A dry run calculates the index targets and prints counts without writing the SQL
 npx mf index --source --json
 ```
 
-Source anchor indexing is for navigation only. The resulting `source_anchors` table cannot define workflow rules, command permission, or verification authority.
+Source anchor indexing is for navigation only. The resulting `source_anchors`, `source_anchor_fingerprints`, and `source_anchor_status` tables cannot define workflow rules, command permission, or verification authority.
+Fingerprint and status rows are derived search metadata that help later checks explain whether an anchor still points at the expected code.
 
 ## JSON Fields
 

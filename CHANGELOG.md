@@ -25,6 +25,9 @@ user projects by `mf init`.
 - Added OSV-Scanner dependency vulnerability checks.
 - Added execution-free verification plan JSON output for
   `mf verify --plan-only --json`.
+- Added source anchor fingerprint and status tables to the local SQLite index
+  so source navigation hints can carry derived status signals without becoming
+  command authority.
 - Added explicit authority-boundary guidance to installed project context
   templates.
 - Added `mf docs review` to track LLM-created or LLM-modified documentation

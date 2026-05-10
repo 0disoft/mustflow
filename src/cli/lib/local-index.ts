@@ -6,9 +6,9 @@ import path from 'node:path';
 import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from './command-contract.js';
 import { listFilesRecursive, toPosixPath } from './filesystem.js';
 import { readTomlFile } from './toml.js';
-import { collectSourceAnchorSummaries, type SourceAnchorSummary } from '../../core/source-anchors.js';
+import { collectSourceAnchorIndexRecords, type SourceAnchorIndexRecord, type SourceAnchorStatus } from '../../core/source-anchor-status.js';
 
-const LOCAL_INDEX_SCHEMA_VERSION = '4';
+const LOCAL_INDEX_SCHEMA_VERSION = '5';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 const LOCAL_INDEX_STORE_FULL_CONTENT = false;
@@ -128,7 +128,8 @@ export interface LocalSearchItem {
 	readonly source_scope: SearchSourceScope;
 	readonly navigation_only: boolean;
 	readonly can_instruct_agent: boolean;
-	readonly stale_status?: 'valid';
+	readonly stale_status?: SourceAnchorStatus;
+	readonly stale_confidence?: number;
 	readonly match: string;
 	readonly score: number;
 }
@@ -632,6 +633,40 @@ CREATE TABLE source_anchors (
   navigation_only INTEGER NOT NULL,
   can_instruct_agent INTEGER NOT NULL
 );
+
+CREATE TABLE source_anchor_fingerprints (
+  anchor_id TEXT PRIMARY KEY,
+  path TEXT NOT NULL,
+  line_start INTEGER NOT NULL,
+  anchor_metadata_hash TEXT NOT NULL,
+  anchor_text_hash TEXT NOT NULL,
+  context_hash TEXT NOT NULL,
+  search_terms_hash TEXT,
+  invariant_hash TEXT,
+  risk_hash TEXT NOT NULL,
+  symbol_kind TEXT NOT NULL,
+  symbol_name TEXT,
+  symbol_exported INTEGER NOT NULL,
+  signature_hash TEXT,
+  body_hash TEXT,
+  symbol_start_line INTEGER,
+  symbol_end_line INTEGER
+);
+
+CREATE TABLE source_anchor_status (
+  anchor_id TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  identity_signal TEXT NOT NULL,
+  location_signal TEXT NOT NULL,
+  symbol_signal TEXT NOT NULL,
+  body_signal TEXT NOT NULL,
+  metadata_signal TEXT NOT NULL,
+  semantic_signal TEXT NOT NULL,
+  risk_signal TEXT NOT NULL,
+  navigation_only INTEGER NOT NULL,
+  can_instruct_agent INTEGER NOT NULL
+);
 `);
 }
 
@@ -654,7 +689,7 @@ function populateDatabase(
 	documents: readonly IndexDocument[],
 	skills: readonly IndexSkill[],
 	commandIntents: readonly IndexCommandIntent[],
-	sourceAnchors: readonly SourceAnchorSummary[],
+	sourceAnchors: readonly SourceAnchorIndexRecord[],
 ): void {
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['schema_version', LOCAL_INDEX_SCHEMA_VERSION]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['content_mode', LOCAL_INDEX_CONTENT_MODE]);
@@ -722,6 +757,44 @@ function populateDatabase(
 				anchor.canInstructAgent ? 1 : 0,
 			],
 		);
+		database.run(
+			'INSERT INTO source_anchor_fingerprints (anchor_id, path, line_start, anchor_metadata_hash, anchor_text_hash, context_hash, search_terms_hash, invariant_hash, risk_hash, symbol_kind, symbol_name, symbol_exported, signature_hash, body_hash, symbol_start_line, symbol_end_line) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				anchor.id,
+				anchor.path,
+				anchor.lineStart,
+				anchor.fingerprint.anchorMetadataHash,
+				anchor.fingerprint.anchorTextHash,
+				anchor.fingerprint.contextHash,
+				anchor.fingerprint.searchTermsHash,
+				anchor.fingerprint.invariantHash,
+				anchor.fingerprint.riskHash,
+				anchor.fingerprint.symbol.kind,
+				anchor.fingerprint.symbol.name,
+				anchor.fingerprint.symbol.exported ? 1 : 0,
+				anchor.fingerprint.symbol.signatureHash,
+				anchor.fingerprint.symbol.bodyHash,
+				anchor.fingerprint.symbol.startLine,
+				anchor.fingerprint.symbol.endLine,
+			],
+		);
+		database.run(
+			'INSERT INTO source_anchor_status (anchor_id, status, confidence, identity_signal, location_signal, symbol_signal, body_signal, metadata_signal, semantic_signal, risk_signal, navigation_only, can_instruct_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				anchor.id,
+				anchor.status,
+				anchor.confidence,
+				anchor.signals.identity,
+				anchor.signals.location,
+				anchor.signals.symbol,
+				anchor.signals.body,
+				anchor.signals.metadata,
+				anchor.signals.semantic,
+				anchor.signals.risk,
+				anchor.navigationOnly ? 1 : 0,
+				anchor.canInstructAgent ? 1 : 0,
+			],
+		);
 	}
 }
 
@@ -738,7 +811,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const skills = collectSkills(documents);
 	const commandIntents = collectCommandIntents(projectRoot);
 	const includeSource = options.includeSource === true;
-	const sourceAnchors = includeSource ? collectSourceAnchorSummaries(projectRoot) : [];
+	const sourceAnchors = includeSource ? collectSourceAnchorIndexRecords(projectRoot) : [];
 	const dryRun = options.dryRun === true;
 
 	if (!dryRun) {
@@ -938,7 +1011,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		if (scope === 'source' || scope === 'all') {
 			for (const row of queryRows(
 				database,
-				'SELECT id, path, line_start, purpose, search_terms, invariant, risk, navigation_only, can_instruct_agent FROM source_anchors',
+				'SELECT source_anchors.id, path, line_start, purpose, search_terms, invariant, risk, source_anchors.navigation_only, source_anchors.can_instruct_agent, status, confidence FROM source_anchors LEFT JOIN source_anchor_status ON source_anchor_status.anchor_id = source_anchors.id',
 			)) {
 				const id = toSearchString(row.id);
 				const pathValue = toSearchString(row.path);
@@ -964,7 +1037,8 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							title: purpose || id,
 							risk,
 							...sourceAnchorAuthority(),
-							stale_status: 'valid',
+							stale_status: toSearchString(row.status) as SourceAnchorStatus,
+							stale_confidence: Number(row.confidence),
 							match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
 							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
 						},

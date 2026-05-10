@@ -44,7 +44,8 @@ La simulation calcule les cibles de l’index et imprime les décomptes sans éc
 npx mf index --source --json
 ```
 
-L’indexation des ancres source sert seulement à la navigation. La table `source_anchors` produite ne peut pas définir de règles de workflow, de permission de commande ni d’autorité de vérification.
+L’indexation des ancres source sert seulement à la navigation. Les tables `source_anchors`, `source_anchor_fingerprints` et `source_anchor_status` produites ne peuvent pas définir de règles de workflow, de permission de commande ni d’autorité de vérification.
+Les lignes de fingerprint et de statut sont des métadonnées de recherche dérivées qui aident ensuite à expliquer si une ancre pointe toujours vers le code attendu.
 
 ## Champs JSON
 

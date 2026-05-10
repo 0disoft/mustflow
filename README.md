@@ -52,8 +52,8 @@ mustflow installs and validates an agent workflow for user projects.
 - Checks install health and configuration structure with `mf check` and `mf doctor`.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
-- Indexes and searches mustflow docs, skills, and command rules with SQLite via
-  `mf index` and `mf search`.
+- Indexes and searches mustflow docs, skills, command rules, and opt-in source
+  anchor metadata with SQLite via `mf index` and `mf search`.
 - Tracks agent-created or agent-modified documentation that needs prose review
   with `mf docs review`, including optional multiline review comments and
   cleanup of imported comment files.

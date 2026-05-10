@@ -44,7 +44,8 @@ npx mf index --dry-run --json
 npx mf index --source --json
 ```
 
-소스 앵커 색인은 탐색 전용입니다. 생성되는 `source_anchors` 테이블은 작업 규칙, 명령 권한, 검증 권한을 정의할 수 없습니다.
+소스 앵커 색인은 탐색 전용입니다. 생성되는 `source_anchors`, `source_anchor_fingerprints`, `source_anchor_status` 테이블은 작업 규칙, 명령 권한, 검증 권한을 정의할 수 없습니다.
+지문과 상태 행은 나중에 앵커가 여전히 의도한 코드를 가리키는지 설명하기 위한 파생 검색 메타데이터입니다.
 
 ## JSON 필드
 

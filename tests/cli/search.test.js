@@ -78,7 +78,7 @@ test('prints matching documents skills and command intents from the local index'
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '4');
+		assert.equal(output.schema_version, '5');
 		assert.equal(output.command, 'search');
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, true);
@@ -147,6 +147,8 @@ test('searches source anchors only when source scope is requested', () => {
 		assert.equal(anchor.source_scope, 'source');
 		assert.equal(anchor.navigation_only, true);
 		assert.equal(anchor.can_instruct_agent, false);
+		assert.equal(anchor.stale_status, 'valid');
+		assert.equal(anchor.stale_confidence, 1);
 		assert.equal(anchor.cache_layer, 'task');
 		assert.equal(anchor.volatile, false);
 	} finally {

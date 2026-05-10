@@ -44,7 +44,8 @@ Dry run 会计算索引目标并打印数量，但不会写入 SQLite 文件。
 npx mf index --source --json
 ```
 
-源码锚点索引仅用于导航。生成的 `source_anchors` 表不能定义工作流规则、命令权限或验证权威。
+源码锚点索引仅用于导航。生成的 `source_anchors`、`source_anchor_fingerprints` 和 `source_anchor_status` 表不能定义工作流规则、命令权限或验证权威。
+指纹和状态行是派生的搜索元数据，用于之后解释某个锚点是否仍指向预期代码。
 
 ## JSON 字段
 

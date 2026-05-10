@@ -44,7 +44,8 @@ Una simulación calcula los objetivos del índice e imprime los recuentos sin es
 npx mf index --source --json
 ```
 
-La indexación de anclas de código fuente es solo para navegación. La tabla `source_anchors` resultante no puede definir reglas de flujo de trabajo, permisos de comando ni autoridad de verificación.
+La indexación de anclas de código fuente es solo para navegación. Las tablas `source_anchors`, `source_anchor_fingerprints` y `source_anchor_status` resultantes no pueden definir reglas de flujo de trabajo, permisos de comando ni autoridad de verificación.
+Las filas de huella y estado son metadatos de búsqueda derivados que ayudan a explicar después si un ancla todavía apunta al código esperado.
 
 ## Campos JSON
 

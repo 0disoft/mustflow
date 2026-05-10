@@ -71,7 +71,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '4');
+		assert.equal(output.schema_version, '5');
 		assert.equal(output.command, 'index');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
@@ -121,7 +121,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '4');
+		assert.equal(output.schema_version, '5');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -132,7 +132,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.source_anchor_count, 0);
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.equal(header, 'SQLite format 3\0');
-		assert.equal(metadata.schema_version, '4');
+		assert.equal(metadata.schema_version, '5');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
@@ -146,6 +146,38 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'search_terms',
 			'invariant',
 			'risk',
+			'navigation_only',
+			'can_instruct_agent',
+		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(source_anchor_fingerprints)').map((row) => row.name), [
+			'anchor_id',
+			'path',
+			'line_start',
+			'anchor_metadata_hash',
+			'anchor_text_hash',
+			'context_hash',
+			'search_terms_hash',
+			'invariant_hash',
+			'risk_hash',
+			'symbol_kind',
+			'symbol_name',
+			'symbol_exported',
+			'signature_hash',
+			'body_hash',
+			'symbol_start_line',
+			'symbol_end_line',
+		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(source_anchor_status)').map((row) => row.name), [
+			'anchor_id',
+			'status',
+			'confidence',
+			'identity_signal',
+			'location_signal',
+			'symbol_signal',
+			'body_signal',
+			'metadata_signal',
+			'semantic_signal',
+			'risk_signal',
 			'navigation_only',
 			'can_instruct_agent',
 		]);
@@ -191,9 +223,11 @@ export function resolveSessionUser() {
 		const SQL = await loadSqlJs();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const [anchor] = queryRows(database, 'SELECT * FROM source_anchors WHERE id = "auth.session.resolve"');
+		const [fingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.resolve"');
+		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '4');
+		assert.equal(output.schema_version, '5');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 1);
 		assert.equal(anchor.path, 'src/auth.ts');
@@ -202,6 +236,16 @@ export function resolveSessionUser() {
 		assert.equal(anchor.risk, 'authz, pii');
 		assert.equal(anchor.navigation_only, 1);
 		assert.equal(anchor.can_instruct_agent, 0);
+		assert.match(fingerprint.anchor_metadata_hash, /^sha256:/);
+		assert.match(fingerprint.anchor_text_hash, /^sha256:/);
+		assert.match(fingerprint.context_hash, /^sha256:/);
+		assert.equal(fingerprint.symbol_kind, 'unknown');
+		assert.equal(fingerprint.symbol_exported, 0);
+		assert.equal(status.status, 'valid');
+		assert.equal(status.confidence, 1);
+		assert.equal(status.identity_signal, 'current_anchor_id_valid');
+		assert.equal(status.navigation_only, 1);
+		assert.equal(status.can_instruct_agent, 0);
 		assert.equal(Object.hasOwn(anchor, 'source_content'), false);
 		database.close();
 	} finally {

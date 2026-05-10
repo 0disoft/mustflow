@@ -27,11 +27,10 @@ authority, or a parallel documentation system.
 
 Remaining work:
 
-- Add a core source-anchor fingerprint model that separates anchor metadata,
-  locator text, target symbol, signature, body, search terms, invariant, and
-  risk tags.
-- Add status evaluation for `valid`, `moved`, `changed`, `review`, `stale`, and
-  `invalid` anchors.
+- Extend the current source-anchor fingerprint model with symbol extraction for
+  function, class, method, const, export, signature, and body boundaries.
+- Add status comparison against a previous fingerprint snapshot for `moved`,
+  `changed`, `review`, `stale`, and `invalid` anchors.
 - Keep status output explanatory: include confidence and signals for identity,
   location, symbol, body, metadata, semantic cues, and risk.
 - Treat high-risk anchors conservatively. A high-risk body, signature, search,
