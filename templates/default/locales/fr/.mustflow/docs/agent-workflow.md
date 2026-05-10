@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: fr
 canonical: false
-revision: 12
+revision: 13
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -212,6 +212,12 @@ Un command intent est eligible a l'usage agent uniquement quand toutes ces condi
 `manual_only` est un statut pour les nouvelles configurations. `run_policy = "manual_only"` peut etre lu pour compatibilite avec les anciennes configurations, mais les nouveaux modeles doivent utiliser `status = "manual_only"`.
 
 Preferer `mf run <intent>` pour que le projet recoive un enregistrement d'execution concis dans `.mustflow/state/runs/latest.json`.
+
+Executer les command intents `mf run` en serie. Ne pas lancer un second `mf run` tant qu'une autre
+intention configuree est encore en cours. Les intentions qui declarent des `writes` non vides sont
+des phases de verification exclusives; attendre leur fin avant d'executer tout autre `mf run`. C'est
+particulierement important quand une intention reecrit une sortie de paquet comme `dist/`, car
+l'executable local `mf` peut etre charge depuis cette sortie.
 
 Les shells du host peuvent executer des commandes, mais les commandes projet executees directement ne
 comptent pas automatiquement comme verification mustflow. Si une commande contourne `mf run`, traite sa

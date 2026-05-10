@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 17
+revision: 18
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -261,6 +261,12 @@ A command intent is eligible for agent use only when all of these are true:
 
 Prefer `mf run <intent>` so the project receives a concise run record in
 `.mustflow/state/runs/latest.json`.
+
+Run `mf run` command intents serially. Do not start a second `mf run` while another configured
+intent is still running. Intents that declare non-empty `writes` are exclusive verification phases;
+wait for them to finish before running any other `mf run`. This is especially important when an
+intent rewrites package output such as `dist/`, because the local `mf` executable may load from
+that output.
 
 For installed mustflow workflow updates, use configured update intents instead of
 running raw `mf update` directly. Run `mustflow_update_dry_run` first. Run

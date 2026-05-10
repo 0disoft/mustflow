@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 9
+revision: 10
 lifecycle: user-editable
 authority: binding
 ---
@@ -35,6 +35,8 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - केवल वही कमांड परिभाषाएं चलाएं जिनमें `status` = `configured`, `lifecycle` = `oneshot`,
   और `run_policy` = `agent_allowed` हो।
 - कॉन्फ़िगर किए गए oneshot कमांड के लिए `mf run <intent>` को प्राथमिकता दें।
+- `mf run` command intents को क्रम से चलाएं। जब कोई configured intent अभी चल रहा हो तो दूसरा
+  `mf run` शुरू न करें, खासकर जब intent `dist/` जैसे non-empty `writes` declare करता हो।
 - जोखिम को ढकने वाली सबसे संकरी configured verification intent चुनें। command contract में
   संबंधित tests या तेज checks उपलब्ध हों तो broad suites से पहले उन्हें चलाएं, और संकरी intent
   न हो तो धीमे full-suite tests को चुपचाप default न बनाकर कमी रिपोर्ट करें।

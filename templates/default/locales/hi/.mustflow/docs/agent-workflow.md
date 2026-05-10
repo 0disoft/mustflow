@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: hi
 canonical: false
-revision: 12
+revision: 13
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -207,6 +207,12 @@ command intent तभी agent उपयोग के लिए पात्र 
 `manual_only` नई configurations में status है। पुराने configs के लिए `run_policy = "manual_only"` पढ़ा जा सकता है, लेकिन नई templates को `status = "manual_only"` उपयोग करना चाहिए।
 
 `mf run <intent>` को प्राथमिकता दें ताकि परियोजना को `.mustflow/state/runs/latest.json` में concise run record मिले।
+
+`mf run` command intents को क्रम से चलाएं। जब कोई दूसरा configured intent अभी चल रहा हो तो
+दूसरा `mf run` शुरू न करें। जिन intents में non-empty `writes` declared हैं वे exclusive
+verification phases हैं; कोई और `mf run` चलाने से पहले उनके समाप्त होने की प्रतीक्षा करें। यह
+खास तौर पर तब जरूरी है जब कोई intent `dist/` जैसी package output फिर से लिखता है, क्योंकि local
+`mf` executable उसी output से load हो सकता है।
 
 Host shells commands चला सकते हैं, लेकिन direct project commands अपने आप mustflow verification नहीं बनते।
 यदि कोई command `mf run` को bypass करती है, तो उसकी output को lower-confidence context मानें, सिवाय इसके

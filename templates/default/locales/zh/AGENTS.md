@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: zh
 canonical: false
-revision: 9
+revision: 10
 lifecycle: user-editable
 authority: binding
 ---
@@ -35,6 +35,8 @@ authority: binding
 - 仅运行满足 `status` 为 `configured`、`lifecycle` 为 `oneshot`、
   且 `run_policy` 为 `agent_allowed` 的命令定义。
 - 对已配置的 oneshot 命令优先使用 `mf run <intent>`。
+- 串行运行 `mf run` command intents。当某个已配置 intent 仍在运行时，不要启动另一个
+  `mf run`，尤其是该 intent 声明了 `dist/` 等非空 `writes` 时。
 - 选择能够覆盖风险的最窄已配置验证意图。若命令契约提供相关测试或快速检查，应优先于
   宽泛测试套件使用；若缺少更窄的验证意图，应报告该缺口，而不是默默退回到缓慢的全量测试。
 - 不要直接启动开发服务器、watcher、浏览器界面、交互式提示，

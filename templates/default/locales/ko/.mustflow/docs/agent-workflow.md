@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -475,6 +475,12 @@ Git 기록을 바꾸는 행동은 기본적으로 금지합니다.
 남깁니다. 자동화가 결과를 읽어야 하거나 최종 보고의 근거가 필요하면 `mf run <intent>
 --json`을 사용합니다. 실행 결과 기록에는 의도 이름, 실제 실행 방식, 작업 디렉터리, 제한
 시간, 종료 코드, 시간 초과 여부, 표준 출력/오류의 끝부분이 들어갑니다.
+
+`mf run` 명령 의도는 순차로 실행합니다. 설정된 다른 의도가 아직 실행 중이면 두 번째
+`mf run`을 시작하지 않습니다. 비어 있지 않은 `writes`를 선언한 의도는 배타적인 검증
+단계이므로, 다른 `mf run`을 실행하기 전에 끝날 때까지 기다립니다. 특히 의도가 `dist/`
+같은 패키지 산출물을 다시 쓰는 경우 중요합니다. 로컬 `mf` 실행 파일이 그 산출물에서
+로드될 수 있기 때문입니다.
 
 설치된 mustflow 문서 흐름을 갱신할 때도 원시 `mf update`를 직접 실행하지 말고 설정된
 갱신 의도를 사용합니다. 먼저 `mustflow_update_dry_run`으로 계획을 확인하고, 차단된

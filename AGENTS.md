@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 10
+revision: 11
 lifecycle: user-editable
 authority: binding
 ---
@@ -35,6 +35,8 @@ mustflow-managed details are under `.mustflow/`.
 - Run only command definitions whose `status` is `configured`, `lifecycle` is `oneshot`,
   and `run_policy` is `agent_allowed`.
 - Prefer `mf run <intent>` for configured oneshot commands.
+- Run `mf run` command intents serially. Do not start another `mf run` while a configured
+  intent is still running, especially when an intent declares non-empty `writes` such as `dist/`.
 - Choose the narrowest configured verification intent that covers the risk. Prefer related or
   fast checks over broad suites when the command contract exposes them, and report missing
   narrower intents instead of defaulting silently to slow full-suite tests.

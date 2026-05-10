@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: zh
 canonical: false
-revision: 12
+revision: 13
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -198,6 +198,11 @@ release 文档和既有更新模式，然后报告哪些文件是权威来源，
 `manual_only` 是新配置中的状态值。为兼容旧配置，可以读取 `run_policy = "manual_only"`，但新模板应使用 `status = "manual_only"`。
 
 优先使用 `mf run <intent>`，以便项目在 `.mustflow/state/runs/latest.json` 中获得精简运行记录。
+
+串行运行 `mf run` command intents。当另一个已配置 intent 仍在运行时，不要启动第二个
+`mf run`。声明了非空 `writes` 的 intent 是排他的验证阶段；运行任何其他 `mf run` 前，
+先等待它完成。尤其当 intent 重写 `dist/` 等 package output 时，这一点很重要，因为本地
+`mf` executable 可能从该 output 加载。
 
 宿主 shell 可以执行命令，但直接运行项目命令不会自动算作 mustflow 验证。
 如果某个命令绕过 `mf run`，除非用户明确批准手动例外，并且最终报告说明没有生成 mustflow 运行回执，
