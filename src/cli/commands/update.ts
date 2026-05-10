@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -105,6 +106,25 @@ function byRelativePath(files: readonly LockedFile[]): Map<string, LockedFile> {
 	return new Map(files.map((file) => [file.relativePath, file]));
 }
 
+function sha256Text(content: string): string {
+	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function templateFileHash(source: TemplateFileSource): string {
+	return source.content === undefined ? sha256File(source.sourcePath) : sha256Text(source.content);
+}
+
+function writeTemplateFile(source: TemplateFileSource, targetPath: string): void {
+	mkdirSync(path.dirname(targetPath), { recursive: true });
+
+	if (source.content !== undefined) {
+		writeFileSync(targetPath, source.content);
+		return;
+	}
+
+	copyFileSync(source.sourcePath, targetPath);
+}
+
 export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
 	const lockResult = readManifestLock(projectRoot);
 
@@ -125,7 +145,8 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 	}
 
 	const selectedLocale = lockResult.lock.templateLocale ?? template.manifest.defaultLocale;
-	const templateFiles = getTemplateFiles(template, selectedLocale);
+	const selectedProfile = lockResult.lock.templateProfile ?? template.manifest.defaultProfile;
+	const templateFiles = getTemplateFiles(template, selectedLocale, selectedProfile);
 	const lockedFiles = byRelativePath(lockResult.lock.files);
 	const items: UpdatePlanItem[] = [];
 
@@ -157,7 +178,7 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 		}
 
 		const currentHash = sha256File(targetPath);
-		const templateHash = sha256File(source.sourcePath);
+		const templateHash = templateFileHash(source);
 
 		if (!lockedFile && currentHash !== templateHash) {
 			items.push({
@@ -246,15 +267,22 @@ function fileActionToLockAction(action: UpdateAction): 'created' | 'updated' {
 	return action === 'create' ? 'created' : 'updated';
 }
 
-function readInstalledLocale(projectRoot: string): string | undefined {
+function readInstalledTemplateSelection(projectRoot: string): { readonly locale?: string; readonly profile?: string } {
 	const lockResult = readManifestLock(projectRoot);
 
-	return lockResult.kind === 'present' ? lockResult.lock.templateLocale : undefined;
+	return lockResult.kind === 'present'
+		? { locale: lockResult.lock.templateLocale, profile: lockResult.lock.templateProfile }
+		: {};
 }
 
 function copyTemplateFile(projectRoot: string, relativePath: string): void {
 	const template = getDefaultTemplate();
-	const source = getTemplateFiles(template, readInstalledLocale(projectRoot) ?? template.manifest.defaultLocale).find(
+	const selection = readInstalledTemplateSelection(projectRoot);
+	const source = getTemplateFiles(
+		template,
+		selection.locale ?? template.manifest.defaultLocale,
+		selection.profile ?? template.manifest.defaultProfile,
+	).find(
 		(file) => file.relativePath === relativePath,
 	);
 	const targetPath = path.join(projectRoot, relativePath);
@@ -265,8 +293,7 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 
 	ensureInside(template.templateRoot, source.sourcePath);
 	ensureInside(projectRoot, targetPath);
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-	copyFileSync(source.sourcePath, targetPath);
+	writeTemplateFile(source, targetPath);
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {

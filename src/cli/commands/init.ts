@@ -18,6 +18,7 @@ interface PlannedFile {
 	readonly relativePath: string;
 	readonly sourcePath: string;
 	readonly sourceKind: TemplateFileSource['sourceKind'];
+	readonly content?: string;
 	readonly targetPath: string;
 	readonly status: PlannedStatus;
 	readonly lock: boolean;
@@ -604,8 +605,8 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 	};
 }
 
-function sameFileContent(sourcePath: string, targetPath: string): boolean {
-	return readFileSync(sourcePath, 'utf8') === readFileSync(targetPath, 'utf8');
+function sameTemplateFileContent(source: TemplateFileSource, targetPath: string): boolean {
+	return (source.content ?? readFileSync(source.sourcePath, 'utf8')) === readFileSync(targetPath, 'utf8');
 }
 
 function formatLocaleChoice(locale: string): string {
@@ -860,12 +861,12 @@ function escapeRegExp(value: string): string {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function planStatus(relativePath: string, sourcePath: string, targetPath: string, options: InitOptions): PlannedStatus {
+function planStatus(source: TemplateFileSource, targetPath: string, options: InitOptions): PlannedStatus {
 	if (!existsSync(targetPath)) {
 		return 'create';
 	}
 
-	if (sameFileContent(sourcePath, targetPath)) {
+	if (sameTemplateFileContent(source, targetPath)) {
 		return 'unchanged';
 	}
 
@@ -873,11 +874,26 @@ function planStatus(relativePath: string, sourcePath: string, targetPath: string
 		return 'overwrite';
 	}
 
-	if (options.merge && relativePath === 'AGENTS.md') {
+	if (options.merge && source.relativePath === 'AGENTS.md') {
 		return 'merge';
 	}
 
 	return 'conflict';
+}
+
+function writeTemplateFile(source: TemplateFileSource, targetPath: string): void {
+	mkdirSync(path.dirname(targetPath), { recursive: true });
+
+	if (source.content !== undefined) {
+		writeFileSync(targetPath, source.content);
+		return;
+	}
+
+	copyFileSync(source.sourcePath, targetPath);
+}
+
+function writePlannedFile(file: PlannedFile): void {
+	writeTemplateFile(file, file.targetPath);
 }
 
 function gitignoreFragmentPath(template: ReturnType<typeof getDefaultTemplate>): string {
@@ -965,7 +981,8 @@ function buildPlannedFiles(
 	targetRoot: string,
 	options: InitOptions,
 ): PlannedFile[] {
-	const plannedFiles = getTemplateFiles(template, selectedLocale).map((source): PlannedFile => {
+	const selectedProfile = options.profile ?? template.manifest.defaultProfile;
+	const plannedFiles = getTemplateFiles(template, selectedLocale, selectedProfile).map((source): PlannedFile => {
 		const targetPath = path.join(targetRoot, source.relativePath);
 
 		ensureInside(template.templateRoot, source.sourcePath);
@@ -975,8 +992,9 @@ function buildPlannedFiles(
 			relativePath: source.relativePath,
 			sourcePath: source.sourcePath,
 			sourceKind: source.sourceKind,
+			content: source.content,
 			targetPath,
-			status: planStatus(source.relativePath, source.sourcePath, targetPath, options),
+			status: planStatus(source, targetPath, options),
 			lock: true,
 		};
 	});
@@ -1315,8 +1333,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 
 	for (const file of plannedFiles) {
 		if (file.status === 'create') {
-			mkdirSync(path.dirname(file.targetPath), { recursive: true });
-			copyFileSync(file.sourcePath, file.targetPath);
+			writePlannedFile(file);
 			created += 1;
 			reporter.stdout(t(lang, 'init.action.created', { path: file.relativePath }));
 			continue;
@@ -1341,8 +1358,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		}
 
 		if (file.status === 'overwrite') {
-			mkdirSync(path.dirname(file.targetPath), { recursive: true });
-			copyFileSync(file.sourcePath, file.targetPath);
+			writePlannedFile(file);
 			overwritten += 1;
 			reporter.stdout(t(lang, 'init.action.overwrote', { path: file.relativePath }));
 		}

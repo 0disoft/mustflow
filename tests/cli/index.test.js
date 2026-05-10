@@ -71,7 +71,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '6');
+		assert.equal(output.schema_version, '7');
 		assert.equal(output.command, 'index');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
@@ -82,6 +82,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.ok(output.document_count >= 7);
 		assert.ok(output.skill_count >= 4);
+		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_intent_count >= 8);
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(output.source_index_enabled, false);
@@ -111,6 +112,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		const SQL = await loadSqlJs();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const metadata = Object.fromEntries(queryRows(database, 'SELECT key, value FROM metadata').map((row) => [row.key, row.value]));
+		const tableNames = queryRows(database, "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").map((row) => row.name);
 		const documentColumns = queryRows(database, 'PRAGMA table_info(documents)').map((row) => row.name);
 		const [projectContext] = queryRows(
 			database,
@@ -122,7 +124,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '6');
+		assert.equal(output.schema_version, '7');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -131,13 +133,27 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.wrote_files, true);
 		assert.equal(output.source_index_enabled, false);
 		assert.equal(output.source_anchor_count, 0);
+		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.equal(header, 'SQLite format 3\0');
-		assert.equal(metadata.schema_version, '6');
+		assert.equal(metadata.schema_version, '7');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
+		assert.deepEqual(tableNames, [
+			'command_effects',
+			'command_intents',
+			'document_terms',
+			'documents',
+			'metadata',
+			'sections',
+			'skill_routes',
+			'skills',
+			'source_anchor_fingerprints',
+			'source_anchor_status',
+			'source_anchors',
+		]);
 		assert.ok(documentColumns.includes('content_snippet'));
 		assert.equal(documentColumns.includes('content'), false);
 		assert.deepEqual(queryRows(database, 'PRAGMA table_info(source_anchors)').map((row) => row.name), [
@@ -192,6 +208,24 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'lock',
 			'concurrency',
 		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(skill_routes)').map((row) => row.name), [
+			'skill_name',
+			'skill_path',
+			'trigger',
+			'required_input',
+			'edit_scope',
+			'risk',
+			'verification_intents',
+			'expected_output',
+		]);
+		assert.ok(
+			queryRows(database, 'SELECT * FROM skill_routes WHERE skill_name = "code-review"').some(
+				(row) =>
+					String(row.trigger).includes('Code changes need review') &&
+					String(row.verification_intents).includes('test_related') &&
+					row.skill_path === '.mustflow/skills/code-review/SKILL.md',
+			),
+		);
 		assert.ok(
 			queryRows(database, 'SELECT * FROM command_effects WHERE intent = "repo_map"').some(
 				(row) =>
@@ -278,7 +312,7 @@ class SessionStore {
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '6');
+		assert.equal(output.schema_version, '7');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');

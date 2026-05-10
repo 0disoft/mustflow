@@ -41,6 +41,7 @@ function renderIndexSummary(result: Awaited<ReturnType<typeof createLocalIndex>>
 		`${t(lang, 'label.database')}: ${result.database_path}`,
 		`${t(lang, 'label.documents')}: ${result.document_count}`,
 		`${t(lang, 'label.skills')}: ${result.skill_count}`,
+		`skill_routes: ${result.skill_route_count}`,
 		`${t(lang, 'label.commandIntents')}: ${result.command_intent_count}`,
 		`command_effects: ${result.command_effect_count}`,
 		`source_anchors: ${result.source_anchor_count}`,

@@ -15,7 +15,7 @@ import {
 } from '../../core/source-anchor-status.js';
 import { normalizeCommandEffects, type NormalizedCommandEffect } from '../../core/command-effects.js';
 
-const LOCAL_INDEX_SCHEMA_VERSION = '6';
+const LOCAL_INDEX_SCHEMA_VERSION = '7';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 const LOCAL_INDEX_STORE_FULL_CONTENT = false;
@@ -83,6 +83,17 @@ interface IndexSkill {
 	readonly title: string;
 }
 
+interface IndexSkillRoute {
+	readonly skillName: string;
+	readonly skillPath: string;
+	readonly trigger: string;
+	readonly requiredInput: string;
+	readonly editScope: string;
+	readonly risk: string;
+	readonly verificationIntents: readonly string[];
+	readonly expectedOutput: string;
+}
+
 interface IndexCommandIntent {
 	readonly name: string;
 	readonly status: string;
@@ -102,6 +113,7 @@ export interface LocalIndexResult {
 	readonly wrote_files: boolean;
 	readonly document_count: number;
 	readonly skill_count: number;
+	readonly skill_route_count: number;
 	readonly command_intent_count: number;
 	readonly command_effect_count: number;
 	readonly source_index_enabled: boolean;
@@ -122,7 +134,7 @@ export type LocalSearchScope = 'workflow' | 'source' | 'all';
 type SearchSourceScope = 'workflow' | 'source';
 
 export interface LocalSearchItem {
-	readonly kind: 'document' | 'skill' | 'command_intent' | 'source_anchor';
+	readonly kind: 'document' | 'skill' | 'skill_route' | 'command_intent' | 'source_anchor';
 	readonly path?: string;
 	readonly name?: string;
 	readonly title?: string;
@@ -142,6 +154,9 @@ export interface LocalSearchItem {
 	readonly effect_locks?: readonly string[];
 	readonly effect_paths?: readonly string[];
 	readonly effect_modes?: readonly string[];
+	readonly route_trigger?: string;
+	readonly route_risk?: string;
+	readonly verification_intents?: readonly string[];
 	readonly match: string;
 	readonly score: number;
 }
@@ -344,6 +359,94 @@ function collectSkills(documents: readonly IndexDocument[]): IndexSkill[] {
 			title: document.title,
 		}))
 		.sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function normalizeMarkdownCell(value: string): string {
+	return value
+		.replace(/<br\s*\/?>/giu, ' ')
+		.replace(/`([^`]+)`/gu, '$1')
+		.replace(/\s+/gu, ' ')
+		.trim();
+}
+
+function parseMarkdownTableRow(line: string): string[] {
+	return line
+		.trim()
+		.replace(/^\|/u, '')
+		.replace(/\|$/u, '')
+		.split('|')
+		.map((cell) => normalizeMarkdownCell(cell));
+}
+
+function isMarkdownSeparatorRow(cells: readonly string[]): boolean {
+	return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/u.test(cell));
+}
+
+function skillNameFromPath(skillPath: string): string {
+	return skillPath.split('/').at(-2) ?? path.posix.basename(skillPath, '.md');
+}
+
+function splitVerificationIntents(value: string): string[] {
+	return value
+		.split(',')
+		.map((item) => item.trim())
+		.filter(Boolean)
+		.sort((left, right) => left.localeCompare(right));
+}
+
+function collectSkillRoutes(projectRoot: string): IndexSkillRoute[] {
+	const indexPath = path.join(projectRoot, '.mustflow', 'skills', 'INDEX.md');
+
+	if (!existsSync(indexPath)) {
+		return [];
+	}
+
+	const content = readFileSync(indexPath, 'utf8');
+	const routes: IndexSkillRoute[] = [];
+	let inRouteTable = false;
+
+	for (const line of content.split(/\r?\n/u)) {
+		if (!line.trim().startsWith('|')) {
+			if (inRouteTable && line.trim() === '') {
+				break;
+			}
+
+			continue;
+		}
+
+		const cells = parseMarkdownTableRow(line);
+
+		if (cells.includes('Skill Document') && cells.includes('Trigger')) {
+			inRouteTable = true;
+			continue;
+		}
+
+		if (!inRouteTable || isMarkdownSeparatorRow(cells) || cells.length < 7) {
+			continue;
+		}
+
+		const [trigger, skillPath, requiredInput, editScope, risk, verificationIntents, expectedOutput] = cells;
+
+		if (!skillPath?.startsWith('.mustflow/skills/') || !skillPath.endsWith('/SKILL.md')) {
+			continue;
+		}
+
+		routes.push({
+			skillName: skillNameFromPath(skillPath),
+			skillPath,
+			trigger: trigger ?? '',
+			requiredInput: requiredInput ?? '',
+			editScope: editScope ?? '',
+			risk: risk ?? '',
+			verificationIntents: splitVerificationIntents(verificationIntents ?? ''),
+			expectedOutput: expectedOutput ?? '',
+		});
+	}
+
+	return routes.sort((left, right) => {
+		const skillOrder = left.skillName.localeCompare(right.skillName);
+		return skillOrder === 0 ? left.trigger.localeCompare(right.trigger) : skillOrder;
+	});
 }
 
 function collectCommandIntents(projectRoot: string): IndexCommandIntent[] {
@@ -718,6 +821,18 @@ CREATE TABLE skills (
   title TEXT NOT NULL
 );
 
+CREATE TABLE skill_routes (
+  skill_name TEXT NOT NULL,
+  skill_path TEXT NOT NULL,
+  trigger TEXT NOT NULL,
+  required_input TEXT NOT NULL,
+  edit_scope TEXT NOT NULL,
+  risk TEXT NOT NULL,
+  verification_intents TEXT NOT NULL,
+  expected_output TEXT NOT NULL,
+  PRIMARY KEY (skill_name, trigger)
+);
+
 CREATE TABLE command_intents (
   name TEXT PRIMARY KEY,
   status TEXT NOT NULL,
@@ -803,6 +918,7 @@ function populateDatabase(
 	database: SqlJsDatabase,
 	documents: readonly IndexDocument[],
 	skills: readonly IndexSkill[],
+	skillRoutes: readonly IndexSkillRoute[],
 	commandIntents: readonly IndexCommandIntent[],
 	sourceAnchors: readonly SourceAnchorIndexRecord[],
 ): void {
@@ -842,6 +958,29 @@ function populateDatabase(
 
 	for (const skill of skills) {
 		database.run('INSERT INTO skills (name, path, title) VALUES (?, ?, ?)', [skill.name, skill.path, skill.title]);
+	}
+
+	for (const route of skillRoutes) {
+		const verificationIntents = route.verificationIntents.join(', ');
+		database.run(
+			'INSERT INTO skill_routes (skill_name, skill_path, trigger, required_input, edit_scope, risk, verification_intents, expected_output) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				route.skillName,
+				route.skillPath,
+				route.trigger,
+				route.requiredInput,
+				route.editScope,
+				route.risk,
+				verificationIntents,
+				route.expectedOutput,
+			],
+		);
+		insertDocumentTerm(database, '.mustflow/skills/INDEX.md', route.skillName, 'skill_route_name');
+		insertDocumentTerm(database, '.mustflow/skills/INDEX.md', route.trigger, 'skill_route_trigger');
+		insertDocumentTerm(database, '.mustflow/skills/INDEX.md', route.risk, 'skill_route_risk');
+		insertDocumentTerm(database, '.mustflow/skills/INDEX.md', route.requiredInput, 'skill_route_required_input');
+		insertDocumentTerm(database, '.mustflow/skills/INDEX.md', route.editScope, 'skill_route_edit_scope');
+		insertDocumentTerm(database, '.mustflow/skills/INDEX.md', verificationIntents, 'skill_route_verification_intents');
 	}
 
 	for (const intent of commandIntents) {
@@ -934,6 +1073,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const databasePath = getLocalIndexDatabasePath(projectRoot);
 	const documents = collectDocuments(projectRoot);
 	const skills = collectSkills(documents);
+	const skillRoutes = collectSkillRoutes(projectRoot);
 	const commandIntents = collectCommandIntents(projectRoot);
 	const includeSource = options.includeSource === true;
 	const previousSourceAnchors = includeSource ? await readPreviousSourceAnchorSnapshots(databasePath) : [];
@@ -945,7 +1085,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		const database = new SQL.Database();
 
 		createSchema(database);
-		populateDatabase(database, documents, skills, commandIntents, sourceAnchors);
+		populateDatabase(database, documents, skills, skillRoutes, commandIntents, sourceAnchors);
 		mkdirSync(path.dirname(databasePath), { recursive: true });
 		writeFileSync(databasePath, database.export());
 		database.close();
@@ -961,6 +1101,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		wrote_files: !dryRun,
 		document_count: documents.length,
 		skill_count: skills.length,
+		skill_route_count: skillRoutes.length,
 		command_intent_count: commandIntents.length,
 		command_effect_count: commandIntents.reduce((count, intent) => count + intent.effects.length, 0),
 		source_index_enabled: includeSource,
@@ -1062,7 +1203,9 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		const stalePaths = getStalePaths(projectRoot, database);
 
 		if (stalePaths.length > 0) {
-			throw new Error(`Local mustflow index is stale: ${stalePaths.join(', ')}. Run \`mf index\` before searching.`);
+			throw new Error(
+				`Local mustflow index is stale: ${stalePaths.join(', ')}. Run \`mf index\` before searching. Refresh command: mf index`,
+			);
 		}
 
 		if (scope === 'workflow' || scope === 'all') {
@@ -1116,6 +1259,44 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							...skillAuthority(),
 							match: getMatchSnippet(fields, normalizedQuery),
 							score: scoreMatch([name, pathValue, title], [], normalizedQuery),
+						},
+						cacheLayers,
+					),
+				);
+			}
+
+			for (const row of queryRows(
+				database,
+				'SELECT skill_name, skill_path, trigger, required_input, edit_scope, risk, verification_intents, expected_output FROM skill_routes',
+			)) {
+				const name = toSearchString(row.skill_name);
+				const pathValue = toSearchString(row.skill_path);
+				const trigger = toSearchString(row.trigger);
+				const requiredInput = toSearchString(row.required_input);
+				const editScope = toSearchString(row.edit_scope);
+				const risk = toSearchString(row.risk);
+				const verificationIntents = splitVerificationIntents(toSearchString(row.verification_intents));
+				const expectedOutput = toSearchString(row.expected_output);
+				const primaryFields = [name, trigger];
+				const secondaryFields = [pathValue, requiredInput, editScope, risk, expectedOutput];
+
+				if (!isMatched([...primaryFields, ...secondaryFields], normalizedQuery)) {
+					continue;
+				}
+
+				results.push(
+					withCacheHint(
+						{
+							kind: 'skill_route',
+							name,
+							path: pathValue,
+							title: name,
+							route_trigger: trigger,
+							route_risk: risk,
+							verification_intents: verificationIntents,
+							...skillAuthority(),
+							match: getMatchSnippet([...primaryFields, ...secondaryFields], normalizedQuery),
+							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
 						},
 						cacheLayers,
 					),

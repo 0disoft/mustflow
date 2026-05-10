@@ -16,6 +16,7 @@ Use `--source` to include structured source-code anchors. Source indexing is opt
 - `.mustflow/skills/INDEX.md`
 - `.mustflow/skills/*/SKILL.md`
 - `.mustflow/config/*.toml`
+- Skill route metadata from `.mustflow/skills/INDEX.md`
 - Command intents and command-effect metadata from `.mustflow/config/commands.toml`
 - Structured source-code anchors only when `--source` is provided
 
@@ -29,6 +30,13 @@ The default command does not index arbitrary project source files; it is scoped 
 
 This file is generated and can be deleted and rebuilt at any time.
 The index stores content hashes for indexed files, allowing `mf search` to detect stale cache data.
+
+The index is a lookup cache, not a memory store or audit log. It stores metadata,
+hashes, short document snippets, command contract summaries, skill route rows,
+and source-anchor navigation metadata. It does not store full source files, raw
+diffs, raw terminal logs, environment variables, secrets, customer data, chat
+history, hidden reasoning, browser tokens, remote document bodies, or long-term
+memory summaries.
 
 ## Dry Run
 
@@ -68,6 +76,7 @@ The machine-readable output uses the following fields:
 - `wrote_files` (`boolean`): Whether the SQLite file was written.
 - `document_count` (`number`): Number of indexed mustflow documents and config files.
 - `skill_count` (`number`): Number of indexed skill documents.
+- `skill_route_count` (`number`): Number of indexed skill route rows from `.mustflow/skills/INDEX.md`.
 - `command_intent_count` (`number`): Number of indexed command intents.
 - `command_effect_count` (`number`): Number of indexed command effect rows derived from `effects` or `writes`.
 - `source_index_enabled` (`boolean`): Whether source-anchor indexing was requested.

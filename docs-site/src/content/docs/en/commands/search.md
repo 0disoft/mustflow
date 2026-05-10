@@ -7,7 +7,8 @@ description: Searches the local SQLite index for mustflow documents.
 
 It does not create or modify files. If the index is missing, run `mf index` first.
 If any indexed mustflow file has changed since indexing, the command stops and asks you to rebuild the
-index. This prevents stale search results from misleading an agent.
+index. The stale-index error includes the copyable refresh command `mf index` so
+agents can report the next safe command without trusting old rows.
 
 ## Search Scope
 
@@ -15,6 +16,7 @@ By default, the command searches only mustflow workflow data:
 
 - Indexed documents such as `AGENTS.md` and `.mustflow/docs/*.md`
 - Skill entries from `.mustflow/skills/*/SKILL.md`
+- Skill routes from `.mustflow/skills/INDEX.md`, including triggers and risks
 - Command intents from `.mustflow/config/commands.toml`, including resource locks and effect paths
 
 It does not search arbitrary project source files. If the index was created with `mf index --source`,
@@ -65,7 +67,7 @@ Machine-readable output uses these fields:
 
 Each result can include these fields:
 
-- `results[].kind` (`string`): Result kind. One of `document`, `skill`, `command_intent`, or `source_anchor`.
+- `results[].kind` (`string`): Result kind. One of `document`, `skill`, `skill_route`, `command_intent`, or `source_anchor`.
 - `results[].path` (`string`): Document or skill file path.
 - `results[].name` (`string`): Skill name, command intent name, or source-anchor ID.
 - `results[].title` (`string`): Document title.
@@ -83,6 +85,9 @@ Each result can include these fields:
 - `results[].effect_locks` (`string[]`): Resource locks for a matching command intent.
 - `results[].effect_paths` (`string[]`): Effect paths for a matching command intent.
 - `results[].effect_modes` (`string[]`): Effect modes for a matching command intent.
+- `results[].route_trigger` (`string`): Trigger text for a matching skill route.
+- `results[].route_risk` (`string`): Risk text for a matching skill route.
+- `results[].verification_intents` (`string[]`): Verification intents listed by a matching skill route.
 - `results[].match` (`string`): Matching context snippet.
 - `results[].score` (`number`): Ranking score used for result order.
 

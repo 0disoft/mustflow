@@ -12,6 +12,7 @@ export interface TemplateManifest {
 	readonly creates: string[];
 	readonly defaultProfile: string;
 	readonly profiles: string[];
+	readonly skillProfiles: Readonly<Record<string, readonly string[]>>;
 	readonly defaultLocale: string;
 	readonly locales: string[];
 }
@@ -26,6 +27,7 @@ export interface TemplateFileSource {
 	readonly relativePath: string;
 	readonly sourcePath: string;
 	readonly sourceKind: 'common' | 'locale' | 'legacy';
+	readonly content?: string;
 }
 
 interface RawManifest {
@@ -36,6 +38,7 @@ interface RawManifest {
 	readonly locales_root?: unknown;
 	readonly creates?: unknown;
 	readonly profiles?: unknown;
+	readonly skill_profiles?: unknown;
 	readonly locales?: unknown;
 }
 
@@ -69,8 +72,79 @@ function readStringGroup(raw: unknown, label: string): { defaultValue: string; a
 	};
 }
 
+function readStringArrayTable(raw: unknown, label: string): Record<string, string[]> {
+	if (raw === undefined) {
+		return {};
+	}
+
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+		throw new Error(`Template manifest ${label} must be a table`);
+	}
+
+	const table: Record<string, string[]> = {};
+
+	for (const [key, value] of Object.entries(raw)) {
+		if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+			throw new Error(`Template manifest ${label}.${key} must be a string array`);
+		}
+
+		table[key] = value as string[];
+	}
+
+	return table;
+}
+
 function normalizeTemplateTargetPath(relativePath: string): string {
 	return relativePath.replaceAll('\\', '/');
+}
+
+function skillNameForTemplatePath(relativePath: string): string | undefined {
+	const match = /^\.mustflow\/skills\/([^/]+)\//u.exec(normalizeTemplateTargetPath(relativePath));
+
+	return match?.[1];
+}
+
+function templateSkillNames(creates: readonly string[]): string[] {
+	return [
+		...new Set(
+			creates
+				.map((relativePath) => {
+					const normalizedPath = normalizeTemplateTargetPath(relativePath);
+					const match = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(normalizedPath);
+
+					return match?.[1];
+				})
+				.filter((value): value is string => Boolean(value)),
+		),
+	].sort();
+}
+
+function resolveSkillProfileSkills(manifest: Pick<TemplateManifest, 'creates' | 'skillProfiles'>, profile: string): readonly string[] {
+	return manifest.skillProfiles[profile] ?? templateSkillNames(manifest.creates);
+}
+
+function shouldIncludeTemplatePath(manifest: Pick<TemplateManifest, 'creates' | 'skillProfiles'>, relativePath: string, profile: string): boolean {
+	const normalizedPath = normalizeTemplateTargetPath(relativePath);
+	const skillName = skillNameForTemplatePath(normalizedPath);
+
+	if (!skillName) {
+		return true;
+	}
+
+	return resolveSkillProfileSkills(manifest, profile).includes(skillName);
+}
+
+function filterSkillIndexContent(content: string, selectedSkills: readonly string[]): string {
+	const selectedSkillSet = new Set(selectedSkills);
+
+	return content
+		.split(/\r?\n/u)
+		.filter((line) => {
+			const match = /`\.mustflow\/skills\/([^/]+)\/SKILL\.md`/u.exec(line);
+
+			return !match || selectedSkillSet.has(match[1] ?? '');
+		})
+		.join('\n');
 }
 
 function isAllowedTemplateCreateTarget(relativePath: string): boolean {
@@ -128,6 +202,8 @@ function readManifest(manifestPath: string): TemplateManifest {
 	const profiles = readStringGroup(raw.profiles, 'profiles');
 	const locales = readStringGroup(raw.locales, 'locales');
 	const commonRoot = typeof raw.common_root === 'string' ? raw.common_root : raw.files_root;
+	const skillProfiles = readStringArrayTable(raw.skill_profiles, 'skill_profiles');
+	const availableSkillNames = new Set(templateSkillNames(raw.creates as string[]));
 
 	if (typeof commonRoot !== 'string') {
 		throw new Error(`Template manifest is missing string field: common_root`);
@@ -135,6 +211,18 @@ function readManifest(manifestPath: string): TemplateManifest {
 
 	if (raw.locales_root !== undefined && typeof raw.locales_root !== 'string') {
 		throw new Error(`Template manifest locales_root must be a string when present`);
+	}
+
+	for (const [profile, skills] of Object.entries(skillProfiles)) {
+		if (!profiles.available.includes(profile)) {
+			throw new Error(`Template manifest skill_profiles.${profile} is not listed in profiles.available`);
+		}
+
+		for (const skill of skills) {
+			if (!availableSkillNames.has(skill)) {
+				throw new Error(`Template manifest skill_profiles.${profile} references unknown skill: ${skill}`);
+			}
+		}
 	}
 
 	return {
@@ -145,6 +233,7 @@ function readManifest(manifestPath: string): TemplateManifest {
 		creates: raw.creates as string[],
 		defaultProfile: profiles.defaultValue,
 		profiles: profiles.available,
+		skillProfiles,
 		defaultLocale: locales.defaultValue,
 		locales: locales.available,
 	};
@@ -164,19 +253,32 @@ export function getDefaultTemplate(): TemplatePaths {
 	};
 }
 
-export function getTemplateFiles(template: TemplatePaths, locale: string = template.manifest.defaultLocale): TemplateFileSource[] {
+export function getTemplateFiles(
+	template: TemplatePaths,
+	locale: string = template.manifest.defaultLocale,
+	profile: string = template.manifest.defaultProfile,
+): TemplateFileSource[] {
 	const commonRoot = path.join(template.templateRoot, template.manifest.commonRoot);
 	const localeRoot = template.manifest.localesRoot ? path.join(template.templateRoot, template.manifest.localesRoot, locale) : undefined;
+	const selectedSkills = resolveSkillProfileSkills(template.manifest, profile);
 
-	return template.manifest.creates.map((relativePath) => {
+	return template.manifest.creates.filter((relativePath) => shouldIncludeTemplatePath(template.manifest, relativePath, profile)).map((relativePath) => {
 		const localePath = localeRoot ? path.join(localeRoot, ...relativePath.split('/')) : undefined;
 		const commonPath = path.join(commonRoot, ...relativePath.split('/'));
+		const content =
+			relativePath === '.mustflow/skills/INDEX.md'
+				? filterSkillIndexContent(
+						readFileSync(localePath && existsSync(localePath) ? localePath : commonPath, 'utf8'),
+						selectedSkills,
+					)
+				: undefined;
 
 		if (localePath && existsSync(localePath)) {
 			return {
 				relativePath,
 				sourcePath: localePath,
 				sourceKind: 'locale',
+				content,
 			};
 		}
 
@@ -185,6 +287,7 @@ export function getTemplateFiles(template: TemplatePaths, locale: string = templ
 				relativePath,
 				sourcePath: commonPath,
 				sourceKind: template.manifest.localesRoot ? 'common' : 'legacy',
+				content,
 			};
 		}
 

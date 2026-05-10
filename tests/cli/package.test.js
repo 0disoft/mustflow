@@ -38,7 +38,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.78');
+	assert.equal(packageJson.version, '1.15.81');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -116,6 +116,22 @@ test('default template source metadata uses English text', () => {
 		const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
 		assert.equal(/[가-힣]/u.test(content), false, `${relativePath} should not contain Korean text`);
 	}
+});
+
+test('default template declares profile-specific skill surfaces', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const template = templatesModule.getDefaultTemplate();
+
+	assert.deepEqual(template.manifest.profiles, ['minimal', 'oss', 'team', 'product', 'library']);
+	assert.equal(template.manifest.defaultProfile, 'minimal');
+	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
+	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
+	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
+	assert.ok(template.manifest.skillProfiles.product.includes('visual-review-artifact'));
+	assert.ok(template.manifest.skillProfiles.team.includes('multi-agent-work-coordination'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('skill-authoring'));
+	assert.ok(template.manifest.skillProfiles.library.includes('migration-safety-check'));
 });
 
 test('default template includes complete folders for every supported document locale', async () => {

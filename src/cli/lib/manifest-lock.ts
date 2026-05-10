@@ -18,6 +18,7 @@ export interface ManifestLock {
 	readonly schemaVersion: string;
 	readonly templateId: string;
 	readonly templateVersion: string;
+	readonly templateProfile?: string;
 	readonly templateLocale?: string;
 	readonly files: readonly LockedFile[];
 }
@@ -85,6 +86,7 @@ function parseManifestLock(raw: unknown): ManifestLock {
 		schemaVersion: readString(raw, 'schema_version', 'schema_version'),
 		templateId: readString(template, 'id', '[template].id'),
 		templateVersion: readString(template, 'version', '[template].version'),
+		templateProfile: typeof template.profile === 'string' ? template.profile : undefined,
 		templateLocale: typeof template.locale === 'string' ? template.locale : undefined,
 		files: lockedFiles,
 	};

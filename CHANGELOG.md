@@ -10,6 +10,10 @@ user projects by `mf init`.
 
 ### Added
 
+- Added profile-aware skill installation for `mf init` so the default
+  `minimal` profile installs only core everyday coding skills while broader
+  profiles can opt into maintainer, team, product, web, and library skill
+  groups from the same packaged template.
 - Added a configured `test_audit` command intent backed by a read-only JSON test
   audit script for focused-test and empty-test-file signals.
 - Added a configured `test_coverage` command intent backed by a fast CLI
@@ -38,6 +42,15 @@ user projects by `mf init`.
   ordering without making `mf run` parallel.
 - Added command-effect rows to the local SQLite index so `mf search` can find
   command intents by resource locks, effect paths, and effect modes.
+- Added skill-route rows to the local SQLite index so `mf search` can find
+  matching skill procedures by route triggers and risks while showing their
+  verification intents as metadata.
+- Added a local-index storage-boundary test so the SQLite cache keeps only
+  approved lookup tables and does not grow into a memory store or audit log.
+- Added an explicit `Refresh command: mf index` hint to stale local-index search
+  failures.
+- Tightened local-search coverage so all-scope source-anchor results remain
+  navigation-only and cannot instruct agents.
 - Added the verification plan order to `mf dashboard` so the read-only
   verification tab shows copied commands, command effects, resource locks, and
   serial batches without running anything.

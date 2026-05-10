@@ -73,12 +73,15 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'docs', 'agent-workflow.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'project-context-authoring', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'readme-authoring', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'web-asset-optimization', 'SKILL.md')));
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'multi-agent-work-coordination', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'project-context-authoring', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'readme-authoring', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-quality-gate', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'visual-review-artifact', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'web-asset-optimization', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-authoring', 'SKILL.md')), false);
 		assert.ok(existsSync(path.join(projectPath, '.gitignore')));
 		assert.equal(existsSync(path.join(projectPath, 'README.md')), false);
@@ -128,6 +131,10 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(commands, /required_after = \["image_asset_change", "web_asset_change"\]/);
 		assert.match(commands, /\[intents\.git_commit\]/);
 		assert.match(commands, /status = "manual_only"/);
+		const skillsIndex = readText(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'));
+		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
+		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/docs-prose-review\/SKILL\.md/);
+		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/web-asset-optimization\/SKILL\.md/);
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));
 		assert.match(mustflowConfig, /optional_read_order = \[\n  "\.mustflow\/context\/INDEX\.md",/);
 		assert.match(mustflowConfig, /\[context\]/);
@@ -255,6 +262,7 @@ test('applies profile locale agent language and product locale preferences', () 
 		assert.match(result.stdout, /Customized \.mustflow\/config\/preferences\.toml/);
 
 		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
+		const skillsIndex = readText(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'));
 		assert.match(preferences, /profile = "product"/);
 		assert.match(preferences, /agent_response = "en"/);
 		assert.match(preferences, /docs = "ko"/);
@@ -263,6 +271,14 @@ test('applies profile locale agent language and product locale preferences', () 
 		assert.match(preferences, /source_locale = "en"/);
 		assert.match(preferences, /target_locales = \["en-US", "ko-KR"\]/);
 		assert.match(preferences, /translation_policy = "update_source_mark_targets_stale"/);
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-quality-gate', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'visual-review-artifact', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'visual-review-artifact', 'assets', 'review-template.html')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'web-asset-optimization', 'SKILL.md')));
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'multi-agent-work-coordination', 'SKILL.md')), false);
+		assert.match(skillsIndex, /\.mustflow\/skills\/ui-quality-gate\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/visual-review-artifact\/SKILL\.md/);
+		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md/);
 
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
 		assert.match(lock, /profile = "product"/);

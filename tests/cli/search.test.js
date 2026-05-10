@@ -78,7 +78,7 @@ test('prints matching documents skills and command intents from the local index'
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '6');
+		assert.equal(output.schema_version, '7');
 		assert.equal(output.command, 'search');
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, true);
@@ -103,6 +103,26 @@ test('prints matching documents skills and command intents from the local index'
 					item.volatile === false,
 			),
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('searches skill routes from the local index', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		indexProject(projectPath);
+		const result = runCli(projectPath, ['search', 'Code changes need review', '--json']);
+		const output = JSON.parse(result.stdout);
+		const codeReviewRoute = output.results.find((item) => item.kind === 'skill_route' && item.name === 'code-review');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(codeReviewRoute);
+		assert.equal(codeReviewRoute.path, '.mustflow/skills/code-review/SKILL.md');
+		assert.match(codeReviewRoute.route_trigger, /Code changes need review/);
+		assert.ok(codeReviewRoute.verification_intents.includes('test_related'));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -198,7 +218,9 @@ test('keeps workflow authority above source anchors in all-scope search results'
 		assert.notEqual(anchorIndex, -1);
 		assert.ok(commandIndex < anchorIndex);
 		assert.equal(output.results[commandIndex].authority_label, 'command_contract');
+		assert.equal(output.results[anchorIndex].authority_label, 'source_navigation_hint');
 		assert.equal(output.results[anchorIndex].navigation_only, true);
+		assert.equal(output.results[anchorIndex].can_instruct_agent, false);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -251,6 +273,7 @@ test('fails when indexed mustflow files changed after indexing', () => {
 		assert.match(result.stderr, /Local mustflow index is stale/);
 		assert.match(result.stderr, /AGENTS\.md/);
 		assert.match(result.stderr, /Run `mf index` before searching\./);
+		assert.match(result.stderr, /Refresh command: mf index/);
 		assert.equal(result.stdout, '');
 	} finally {
 		removeTempProject(projectPath);

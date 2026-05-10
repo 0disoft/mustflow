@@ -116,8 +116,10 @@ mustflow installs and validates an agent workflow for user projects.
   `mf verify` when the selected intent is runnable.
 - Writes command receipts to `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
-- Indexes and searches mustflow docs, skills, command rules, command-effect
-  locks, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`.
+- Indexes and searches mustflow docs, skills, skill routes, command rules,
+  command-effect locks, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`.
+  The local SQLite file is a rebuildable lookup cache, not a memory store,
+  audit log, command transcript store, or source-content database.
 - Tracks agent-created or agent-modified documentation that needs prose review
   with `mf docs review`.
 - Previews and applies bundled template updates safely with `mf update`.
@@ -315,8 +317,8 @@ mf run mustflow_update_apply
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf run <intent>` | Run an allowed one-shot command. |
-| `mf index` | Build a SQLite index for mustflow docs, command rules, and command-effect locks. |
-| `mf search <query>` | Search docs, skills, command rules, and command-effect locks in the SQLite index. |
+| `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, and command-effect locks. |
+| `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |
 | `mf status` | Inspect installed state and changed or missing files. |
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
@@ -369,7 +371,10 @@ npx mf init --product-source-locale en --product-locale ko-KR
 npx mf init --set git.auto_commit=true
 ```
 
-- `--profile`: Project profile. The default is `minimal`.
+- `--profile`: Project profile. The default is `minimal`. Profiles also choose
+  the installed skill surface: `minimal` installs the core everyday coding
+  skills, while `oss`, `team`, `product`, and `library` add opt-in skill groups
+  without removing those optional skill files from the package.
 - `--locale`: Installed mustflow document language. The default template
   currently provides `en`, `ko`, `zh`, `es`, `fr`, and `hi`. The default
   template includes localized documents for all listed locales.

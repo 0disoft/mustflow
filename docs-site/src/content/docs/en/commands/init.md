@@ -169,6 +169,14 @@ Supported built-in profiles are:
 - `product`
 - `library`
 
+Profiles also select the installed skill surface. The default `minimal` profile
+installs the core skills that apply to ordinary coding work in most
+repositories. Broader profiles add opt-in skill groups for open source
+maintenance, team coordination, product and web work, or library maintenance.
+Packaged templates still include the optional skill files so a later profile or
+template update can install them without making every new project start with the
+full skill set.
+
 `--locale` specifies the language of the installed mustflow documents. The current default template provides `en`, `ko`, `zh`, `es`, `fr`, and `hi`, defaulting to `en`.
 
 `--agent-lang` is the default language for agent final reports. It may differ from the mustflow document locale.

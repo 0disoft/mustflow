@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "1.15.78"
+version = "1.15.81"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -66,6 +66,129 @@ after_install = [
 [profiles]
 default = "minimal"
 available = ["minimal", "oss", "team", "product", "library"]
+
+[skill_profiles]
+minimal = [
+  "behavior-preserving-refactor",
+  "code-review",
+  "codebase-orientation",
+  "contract-sync-check",
+  "date-number-audit",
+  "dependency-reality-check",
+  "diff-risk-review",
+  "docs-update",
+  "external-prompt-injection-defense",
+  "failure-triage",
+  "instruction-conflict-scope-check",
+  "pattern-scout",
+  "requirement-regression-guard",
+  "repro-first-debug",
+  "security-privacy-review",
+  "source-freshness-check",
+  "structure-discovery-gate",
+  "test-maintenance",
+]
+oss = [
+  "artifact-integrity-check",
+  "behavior-preserving-refactor",
+  "code-review",
+  "codebase-orientation",
+  "contract-sync-check",
+  "date-number-audit",
+  "dependency-reality-check",
+  "diff-risk-review",
+  "docs-prose-review",
+  "docs-update",
+  "external-prompt-injection-defense",
+  "failure-triage",
+  "instruction-conflict-scope-check",
+  "line-ending-hygiene",
+  "migration-safety-check",
+  "pattern-scout",
+  "project-context-authoring",
+  "readme-authoring",
+  "repo-improvement-loop",
+  "requirement-regression-guard",
+  "repro-first-debug",
+  "security-privacy-review",
+  "security-regression-tests",
+  "skill-authoring",
+  "source-freshness-check",
+  "structure-discovery-gate",
+  "test-maintenance",
+]
+team = [
+  "behavior-preserving-refactor",
+  "code-review",
+  "codebase-orientation",
+  "contract-sync-check",
+  "date-number-audit",
+  "dependency-reality-check",
+  "diff-risk-review",
+  "docs-update",
+  "external-prompt-injection-defense",
+  "failure-triage",
+  "instruction-conflict-scope-check",
+  "multi-agent-work-coordination",
+  "pattern-scout",
+  "requirement-regression-guard",
+  "repro-first-debug",
+  "security-privacy-review",
+  "source-freshness-check",
+  "structure-discovery-gate",
+  "test-maintenance",
+]
+product = [
+  "behavior-preserving-refactor",
+  "code-review",
+  "codebase-orientation",
+  "contract-sync-check",
+  "date-number-audit",
+  "dependency-reality-check",
+  "diff-risk-review",
+  "docs-update",
+  "external-prompt-injection-defense",
+  "failure-triage",
+  "instruction-conflict-scope-check",
+  "pattern-scout",
+  "performance-budget-check",
+  "requirement-regression-guard",
+  "repro-first-debug",
+  "security-privacy-review",
+  "source-freshness-check",
+  "structure-discovery-gate",
+  "test-maintenance",
+  "ui-quality-gate",
+  "visual-review-artifact",
+  "web-asset-optimization",
+]
+library = [
+  "artifact-integrity-check",
+  "behavior-preserving-refactor",
+  "code-review",
+  "codebase-orientation",
+  "contract-sync-check",
+  "date-number-audit",
+  "dependency-reality-check",
+  "diff-risk-review",
+  "docs-prose-review",
+  "docs-update",
+  "external-prompt-injection-defense",
+  "failure-triage",
+  "instruction-conflict-scope-check",
+  "line-ending-hygiene",
+  "migration-safety-check",
+  "pattern-scout",
+  "project-context-authoring",
+  "readme-authoring",
+  "requirement-regression-guard",
+  "repro-first-debug",
+  "security-privacy-review",
+  "security-regression-tests",
+  "source-freshness-check",
+  "structure-discovery-gate",
+  "test-maintenance",
+]
 
 [locales]
 default = "en"

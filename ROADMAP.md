@@ -36,39 +36,6 @@ promising a broad public API.
   intentionally documented.
 - Preserve existing CLI behavior while reducing duplicated policy logic.
 
-#### M3.5: Default Skill Surface
-
-Goal: keep mustflow's default installed surface small while still allowing
-larger skill packs to ship with the package.
-
-- Keep package distribution broad enough to include optional skill packs.
-- Reduce the default `mf init` skill set to the skills that raise safety for
-  ordinary coding work in most repositories.
-- Move product/web, release/maintainer, authoring/docs, and team coordination
-  skills into opt-in profiles or packs.
-- Add a profile-aware installation path before adding more default skills, for
-  example `mf init --profile <name>` or `mf skills add <pack>`.
-- Update `.mustflow/skills/INDEX.md` and template lock metadata when a skill pack
-  is installed so route state stays explicit.
-
-#### M3.6: Local Index Contracts
-
-Goal: use SQLite more aggressively as a fresh local lookup index without turning
-it into memory, an audit log, or project truth.
-
-- Treat `.mustflow/cache/mustflow.sqlite` as rebuildable cache only.
-- Add or refine index tables only for current-file lookup and explanation, such
-  as index metadata, indexed files, document sections, skill routes, command
-  intents, source anchors, source anchor fingerprints, and source anchor status.
-- Do not store full source files, raw diffs, raw terminal logs, environment
-  variables, secrets, customer data, full chat history, hidden reasoning,
-  browser tokens, remote document bodies, or long-term memory summaries.
-- Make stale index handling fail closed: if indexed files changed, require a
-  refresh or show the copyable refresh command instead of silently trusting old
-  rows.
-- Keep source anchors navigation-only. Indexed anchor data must not authorize
-  commands, skip validation, or override workflow rules.
-
 #### Deferred: Path Classification Policy
 
 Goal: leave repository-specific path classification configurable only after the
