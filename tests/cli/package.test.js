@@ -9,6 +9,7 @@ import path from 'node:path';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
+const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 
 async function readPublicJsonContracts() {
@@ -37,7 +38,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.77');
+	assert.equal(packageJson.version, '1.15.78');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -76,6 +77,23 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts['release:check'], 'npm run check && npm run docs:check && npm run check:install');
 	assert.equal(packageJson.scripts['docs:check:fast'], 'bun run --cwd docs-site check:fast');
 	assert.equal(packageJson.scripts.prepublishOnly, 'npm run release:check');
+});
+
+test('coverage test runner keeps Node coverage concurrency configurable', () => {
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY/u);
+	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4'\)/u);
+
+	const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'coverage'], {
+		cwd: projectRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			MUSTFLOW_TEST_COVERAGE_CONCURRENCY: '0',
+		},
+	});
+
+	assert.equal(result.status, 2);
+	assert.match(result.stderr, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY must be a positive integer\./u);
 });
 
 test('default template i18n metadata stays in sync with localized template files', async () => {

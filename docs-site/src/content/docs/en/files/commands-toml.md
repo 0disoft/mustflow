@@ -151,6 +151,11 @@ status = "unknown"
 reason = "No stale-test audit command has been declared."
 agent_action = "do_not_guess_report_missing"
 
+[intents.test_coverage]
+status = "unknown"
+reason = "No coverage command has been declared."
+agent_action = "do_not_guess_report_missing"
+
 [intents.snapshot_update]
 status = "manual_only"
 reason = "Snapshot updates can hide unintended output changes."

@@ -22,6 +22,7 @@ mf run build
 mf run test_fast
 mf run test_related
 mf run test
+mf run test_coverage
 mf run test_release
 mf run docs_validate_fast
 mf run docs_validate
@@ -31,11 +32,13 @@ mf run mustflow_check
 `bun run release:check` remains the publishing gate. `test_fast` runs the fast
 CLI regression baseline, `test_related` selects tests from changed files and
 falls back to that baseline, and `test_release` isolates package metadata and
-packaging checks. `lint`, coverage, and test-audit intents remain unset or
-manual-only until this repository has narrower gates for those workflows.
-`docs_validate_fast` checks navigation and localized content links without a full
-static site build. `docs_validate` remains the full documentation build,
-search-index, and sitemap gate for release-sensitive changes.
+packaging checks. `test_coverage` runs the fast CLI baseline through Node's
+built-in coverage report without threshold enforcement; maintainers can tune its
+worker count with `MUSTFLOW_TEST_COVERAGE_CONCURRENCY`. `lint` and test-audit
+are configured as narrow repository-local gates. `docs_validate_fast` checks
+navigation and localized content links without a full static site build.
+`docs_validate` remains the full documentation build, search-index, and sitemap
+gate for release-sensitive changes.
 
 ## Purpose
 

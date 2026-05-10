@@ -146,8 +146,30 @@ if (!selected) {
 	process.exit(2);
 }
 
+function readPositiveIntegerEnv(name, fallback) {
+	const rawValue = process.env[name];
+
+	if (!rawValue) {
+		return fallback;
+	}
+
+	const value = Number(rawValue);
+
+	if (!Number.isInteger(value) || value < 1) {
+		console.error(`${name} must be a positive integer.`);
+		process.exit(2);
+	}
+
+	return String(value);
+}
+
 const testPaths = uniqueExisting(selected).map((name) => path.join('tests', 'cli', name));
-const concurrency = mode === 'fast' || mode === 'related' ? '4' : '1';
+const concurrency =
+	mode === 'coverage'
+		? readPositiveIntegerEnv('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4')
+		: mode === 'fast' || mode === 'related'
+			? '4'
+			: '1';
 const nodeTestArgs = ['--test', `--test-concurrency=${concurrency}`];
 
 if (mode === 'coverage') {
