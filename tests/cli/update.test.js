@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -58,6 +58,19 @@ function addTemplateCreate(templatePath, relativePath, content) {
 
 	mkdirSync(path.dirname(sourcePath), { recursive: true });
 	writeFileSync(sourcePath, content);
+}
+
+function trySymlink(target, linkPath, type) {
+	try {
+		symlinkSync(target, linkPath, type);
+		return true;
+	} catch (error) {
+		if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'ENOTSUP'].includes(error.code)) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 test('prints an update dry-run plan for an up-to-date project', () => {
@@ -303,6 +316,80 @@ test('applies newly added template files when local files are clean', () => {
 	} finally {
 		removeTempProject(projectPath);
 		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('blocks template create through a symlink target', (t) => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+	const outsidePath = path.join(tmpdir(), `mustflow-outside-${process.pid}-${Date.now()}.md`);
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		const newRelativePath = '.mustflow/docs/symlink-create.md';
+		addTemplateCreate(templatePath, newRelativePath, '# Symlink Create\n');
+		if (!trySymlink(outsidePath, path.join(projectPath, ...newRelativePath.split('/')), 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runCli(projectPath, ['update', '--apply', '--json'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+		});
+		const output = JSON.parse(result.stdout);
+		const item = output.items.find((candidate) => candidate.relativePath === newRelativePath);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(item.action, 'blocked-local-change');
+		assert.match(item.reason, /symlinks/);
+		assert.equal(existsSync(outsidePath), false);
+		assert.equal(lstatSync(path.join(projectPath, ...newRelativePath.split('/'))).isSymbolicLink(), true);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+		rmSync(outsidePath, { force: true });
+	}
+});
+
+test('blocks template update through a symlink target', (t) => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+	const outsidePath = path.join(tmpdir(), `mustflow-outside-existing-${process.pid}-${Date.now()}.md`);
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		const agentsPath = path.join(projectPath, 'AGENTS.md');
+		const originalAgents = readFileSync(agentsPath, 'utf8');
+		writeFileSync(outsidePath, originalAgents);
+		rmSync(agentsPath);
+		if (!trySymlink(outsidePath, agentsPath, 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+		writeFileSync(
+			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
+			`${readFileSync(path.join(templatePath, 'locales', 'en', 'AGENTS.md'), 'utf8')}\n<!-- simulated template update -->\n`,
+		);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--json'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+		});
+		const output = JSON.parse(result.stdout);
+		const item = output.items.find((candidate) => candidate.relativePath === 'AGENTS.md');
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(item.action, 'blocked-local-change');
+		assert.match(item.reason, /symlinks/);
+		assert.equal(readFileSync(outsidePath, 'utf8'), originalAgents);
+		assert.equal(lstatSync(agentsPath).isSymbolicLink(), true);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+		rmSync(outsidePath, { force: true });
 	}
 });
 

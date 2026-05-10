@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -33,6 +33,19 @@ function writeDoc(projectPath, relativePath) {
 	const filePath = path.join(projectPath, relativePath);
 	mkdirSync(path.dirname(filePath), { recursive: true });
 	writeFileSync(filePath, '# Guide\n\nDraft prose.\n');
+}
+
+function trySymlink(target, linkPath, type) {
+	try {
+		symlinkSync(target, linkPath, type);
+		return true;
+	} catch (error) {
+		if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'ENOTSUP'].includes(error.code)) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 test('lists an empty documentation review queue without creating a ledger', () => {
@@ -91,6 +104,40 @@ test('adds LLM-modified documentation to the review queue', () => {
 		assert.match(ledger, /status = "pending"/);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('rejects a documentation review ledger path that traverses a symlink', (t) => {
+	const projectPath = createTempProject();
+	const outsidePath = mkdtempSync(path.join(tmpdir(), 'mustflow-docs-outside-'));
+
+	try {
+		initProject(projectPath);
+		writeDoc(projectPath, 'docs/guide.md');
+		if (!trySymlink(outsidePath, path.join(projectPath, '.mustflow', 'review'), 'dir')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'docs/guide.md',
+			'--reason',
+			'llm_modified',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+		]);
+
+		assert.equal(result.status, 1);
+		assert.match(`${result.stdout}${result.stderr}`, /symlinks/);
+		assert.equal(existsSync(path.join(outsidePath, 'docs.toml')), false);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
 	}
 });
 
@@ -188,6 +235,43 @@ test('records multiline review comments from a file', () => {
 		assert.match(ledger, /Second item needs terminology cleanup/);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('rejects comment files that resolve through a symlink', (t) => {
+	const projectPath = createTempProject();
+	const secretPath = path.join(tmpdir(), `mustflow-docs-secret-${process.pid}-${Date.now()}.txt`);
+
+	try {
+		initProject(projectPath);
+		writeDoc(projectPath, 'docs/guide.md');
+		writeFileSync(secretPath, 'TOP_SECRET_TOKEN=abc123\n');
+		if (!trySymlink(secretPath, path.join(projectPath, 'review-note.md'), 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'docs/guide.md',
+			'--comment-file',
+			'review-note.md',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+		]);
+		const listResult = runCli(projectPath, ['docs', 'review', 'list', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(`${result.stdout}${result.stderr}`, /symlinks/);
+		assert.doesNotMatch(listResult.stdout, /TOP_SECRET_TOKEN/);
+		assert.equal(existsSync(path.join(projectPath, 'review-note.md')), true);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(secretPath, { force: true });
 	}
 });
 

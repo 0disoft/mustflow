@@ -1,4 +1,9 @@
-import { isRecord, readString, readStringArray, type TomlTable } from './config-loading.js';
+import { isRecord, readString, type TomlTable } from './config-loading.js';
+import {
+	commandIntentHasBlockedShellBackgroundPattern,
+	commandIntentHasCommandSource,
+	commandIntentNameIsSafe,
+} from './command-contract-rules.js';
 
 export type CommandIntentEligibilityCode =
 	| 'ok'
@@ -8,7 +13,9 @@ export type CommandIntentEligibilityCode =
 	| 'run_policy_not_agent_allowed'
 	| 'stdin_not_closed'
 	| 'missing_timeout'
-	| 'missing_command_source';
+	| 'missing_command_source'
+	| 'unsafe_intent_name'
+	| 'blocked_shell_background_pattern';
 
 export type CommandIntentEligibilityResult =
 	| {
@@ -22,17 +29,18 @@ export type CommandIntentEligibilityResult =
 			readonly detail: string | null;
 	  };
 
-export function commandIntentHasCommandSource(intent: TomlTable): boolean {
-	const argv = readStringArray(intent, 'argv');
-	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
-
-	return Boolean((argv && argv.length > 0) || shellCommand);
-}
-
 export function evaluateCommandIntentEligibility(
-	_intentName: string,
+	intentName: string,
 	rawIntent: unknown,
 ): CommandIntentEligibilityResult {
+	if (!commandIntentNameIsSafe(intentName)) {
+		return {
+			ok: false,
+			code: 'unsafe_intent_name',
+			detail: 'Intent name can contain only ASCII letters, numbers, underscores, and hyphens.',
+		};
+	}
+
 	if (!isRecord(rawIntent)) {
 		return {
 			ok: false,
@@ -90,6 +98,14 @@ export function evaluateCommandIntentEligibility(
 			ok: false,
 			code: 'missing_command_source',
 			detail: 'Intent does not define argv or shell cmd.',
+		};
+	}
+
+	if (commandIntentHasBlockedShellBackgroundPattern(rawIntent)) {
+		return {
+			ok: false,
+			code: 'blocked_shell_background_pattern',
+			detail: 'Shell command contains a blocked long-running or background pattern.',
 		};
 	}
 

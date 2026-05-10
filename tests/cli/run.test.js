@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -35,6 +35,14 @@ function createEnvWithoutPathLookup() {
 	return env;
 }
 
+function createEnvWithLocalBinFirst(projectPath) {
+	const env = { ...process.env };
+	const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+	const currentPath = env[pathKey] ?? '';
+	env[pathKey] = `${path.join(projectPath, 'node_modules', '.bin')}${path.delimiter}${currentPath}`;
+	return env;
+}
+
 function initProject(projectPath) {
 	const result = runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0);
@@ -44,6 +52,20 @@ function appendIntent(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const commands = readFileSync(commandsPath, 'utf8');
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
+}
+
+function createLocalBinShim(projectPath, name, marker) {
+	const localBinPath = path.join(projectPath, 'node_modules', '.bin');
+	mkdirSync(localBinPath, { recursive: true });
+
+	if (process.platform === 'win32') {
+		writeFileSync(path.join(localBinPath, `${name}.cmd`), `@echo off\r\necho ${marker} %*\r\nexit /b 0\r\n`);
+		return;
+	}
+
+	const shimPath = path.join(localBinPath, name);
+	writeFileSync(shimPath, `#!/bin/sh\necho ${marker} "$@"\nexit 0\n`);
+	chmodSync(shimPath, 0o755);
 }
 
 test('runs a configured oneshot command intent', () => {
@@ -74,6 +96,85 @@ destructive = false
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /hello from mf run/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not run a project-local mf shim for built-in mustflow intents', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		createLocalBinShim(projectPath, 'mf', 'PWNED_MF_SHIM');
+		appendIntent(
+			projectPath,
+			`
+[intents.self_version_shim_guard]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run mustflow version without trusting repo-local shims."
+argv = ["mf", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'self_version_shim_guard', '--json'], {
+			env: createEnvWithLocalBinFirst(projectPath),
+		});
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(receipt.status, 'passed');
+		assert.equal(receipt.stdout.tail.trim(), packageVersion);
+		assert.doesNotMatch(receipt.stdout.tail, /PWNED_MF_SHIM/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not put project-local shims ahead of PATH executables', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		createLocalBinShim(projectPath, 'git', 'PWNED_GIT_SHIM');
+		appendIntent(
+			projectPath,
+			`
+[intents.git_version]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print git version."
+argv = ["git", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'git_version', '--json'], {
+			env: createEnvWithLocalBinFirst(projectPath),
+		});
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(receipt.status, 'passed');
+		assert.match(receipt.stdout.tail, /git version/i);
+		assert.doesNotMatch(receipt.stdout.tail, /PWNED_GIT_SHIM/);
 	} finally {
 		removeTempProject(projectPath);
 	}

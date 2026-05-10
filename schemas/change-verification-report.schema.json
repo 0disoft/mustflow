@@ -146,7 +146,9 @@
         "run_policy_not_agent_allowed",
         "stdin_not_closed",
         "missing_timeout",
-        "missing_command_source"
+        "missing_command_source",
+        "unsafe_intent_name",
+        "blocked_shell_background_pattern"
       ]
     },
     "verificationCandidate": {

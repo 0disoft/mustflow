@@ -8,6 +8,7 @@ import {
 	readdirSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -53,6 +54,19 @@ function addTemplateCreate(templatePath, relativePath, content) {
 
 	mkdirSync(path.dirname(sourcePath), { recursive: true });
 	writeFileSync(sourcePath, content);
+}
+
+function trySymlink(target, linkPath, type) {
+	try {
+		symlinkSync(target, linkPath, type);
+		return true;
+	} catch (error) {
+		if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'ENOTSUP'].includes(error.code)) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 test('copies the default agent workflow into an empty project', () => {
@@ -621,6 +635,54 @@ test('uses defaults without prompts in non-interactive execution', () => {
 		assert.match(lock, /locale = "en"/);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('rejects .gitignore symlinks that resolve outside the project', (t) => {
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-outside-'));
+	const outsidePath = path.join(outsideRoot, 'victim.txt');
+	const outsideContent = 'USER_SETTING=keep\n';
+
+	try {
+		writeFileSync(outsidePath, outsideContent);
+		if (!trySymlink(outsidePath, path.join(projectPath, '.gitignore'), 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runInit(projectPath);
+
+		assert.equal(result.status, 1);
+		assert.match(`${result.stdout}${result.stderr}`, /symlinks/);
+		assert.equal(readFileSync(outsidePath, 'utf8'), outsideContent);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow')), false);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(outsideRoot, { recursive: true, force: true });
+	}
+});
+
+test('rejects dangling .gitignore symlinks without creating the outside target', (t) => {
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-missing-outside-'));
+	const outsidePath = path.join(outsideRoot, 'victim.txt');
+
+	try {
+		if (!trySymlink(outsidePath, path.join(projectPath, '.gitignore'), 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runInit(projectPath);
+
+		assert.equal(result.status, 1);
+		assert.match(`${result.stdout}${result.stderr}`, /symlinks/);
+		assert.equal(existsSync(outsidePath), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow')), false);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(outsideRoot, { recursive: true, force: true });
 	}
 });
 

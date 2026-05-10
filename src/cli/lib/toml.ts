@@ -1,1 +1,1 @@
-export { readTomlFile, stringifyToml } from '../../core/toml.js';
+export { parseTomlText, readTomlFile, stringifyToml } from '../../core/toml.js';

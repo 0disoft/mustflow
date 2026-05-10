@@ -12,24 +12,16 @@ import {
 	validateCommandEffectLockWarnings,
 	validateCommandEffects,
 } from './command-effects.js';
-import { commandIntentHasCommandSource } from './command-intent-eligibility.js';
+import {
+	commandIntentHasBlockedShellBackgroundPattern,
+	commandIntentHasCommandSource,
+	commandIntentNameIsSafe,
+} from './command-contract-rules.js';
 
 export interface CommandContractValidationIssue {
 	readonly message: string;
 	readonly severity?: 'warning' | 'error';
 }
-
-const BACKGROUND_SHELL_PATTERNS = [
-	/\s&\s*$/u,
-	/\bnohup\b/iu,
-	/\bdisown\b/iu,
-	/\bStart-Process\b/iu,
-	/\bstart\s+/iu,
-	/\bxdg-open\b/iu,
-	/\bopen\s+/iu,
-	/\bchrome(?:\.exe)?\b/iu,
-	/\bchromium(?:\.exe)?\b/iu,
-] as const;
 
 function commandContractIssue(message: string): CommandContractValidationIssue {
 	return { message };
@@ -217,6 +209,10 @@ function validateCommandIntentEffects(intentName: string, intent: TomlTable, iss
 }
 
 function validateCommandIntent(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
+	if (!commandIntentNameIsSafe(intentName)) {
+		issues.push(commandContractIssue(`Intent ${intentName} name must contain only letters, numbers, underscores, and hyphens`));
+	}
+
 	validateStringField(intent, 'status', `[commands.intents.${intentName}].status`, issues);
 	validateAllowedStringField(
 		intent,
@@ -268,13 +264,8 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		issues.push(commandContractIssue(`Configured intent ${intentName} must define argv or mode = "shell" with cmd`));
 	}
 
-	if (intent.mode === 'shell' && typeof intent.cmd === 'string') {
-		for (const pattern of BACKGROUND_SHELL_PATTERNS) {
-			if (pattern.test(intent.cmd)) {
-				issues.push(commandContractIssue(`Shell intent ${intentName} contains a blocked long-running or background pattern`));
-				break;
-			}
-		}
+	if (commandIntentHasBlockedShellBackgroundPattern(intent)) {
+		issues.push(commandContractIssue(`Shell intent ${intentName} contains a blocked long-running or background pattern`));
 	}
 
 	if (hasOwn(intent, 'success_exit_codes')) {

@@ -1,8 +1,12 @@
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { ensureInside } from '../lib/filesystem.js';
+import {
+	ensureFileTargetInsideWithoutSymlinks,
+	ensureInside,
+	writeUtf8FileInsideWithoutSymlinks,
+} from '../lib/filesystem.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File, type LockedFile } from '../lib/manifest-lock.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -114,15 +118,24 @@ function templateFileHash(source: TemplateFileSource): string {
 	return source.content === undefined ? sha256File(source.sourcePath) : sha256Text(source.content);
 }
 
-function writeTemplateFile(source: TemplateFileSource, targetPath: string): void {
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-
+function writeTemplateFile(projectRoot: string, source: TemplateFileSource, targetPath: string): void {
 	if (source.content !== undefined) {
-		writeFileSync(targetPath, source.content);
+		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
 		return;
 	}
 
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
+	mkdirSync(path.dirname(targetPath), { recursive: true });
 	copyFileSync(source.sourcePath, targetPath);
+}
+
+function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allowMissingLeaf: boolean): string | undefined {
+	try {
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf });
+		return undefined;
+	} catch (error) {
+		return error instanceof Error ? error.message : String(error);
+	}
 }
 
 export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
@@ -156,6 +169,17 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 
 		ensureInside(template.templateRoot, source.sourcePath);
 		ensureInside(projectRoot, targetPath);
+		const unsafeTargetReason = templateTargetSafetyIssue(projectRoot, targetPath, true);
+
+		if (unsafeTargetReason) {
+			items.push({
+				relativePath: source.relativePath,
+				sourceKind: source.sourceKind,
+				action: 'blocked-local-change',
+				reason: unsafeTargetReason,
+			});
+			continue;
+		}
 
 		if (!existsSync(targetPath)) {
 			if (lockedFile) {
@@ -293,7 +317,8 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 
 	ensureInside(template.templateRoot, source.sourcePath);
 	ensureInside(projectRoot, targetPath);
-	writeTemplateFile(source, targetPath);
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
+	writeTemplateFile(projectRoot, source, targetPath);
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
@@ -312,6 +337,8 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 
 		ensureInside(projectRoot, sourcePath);
 		ensureInside(backupRoot, backupPath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, sourcePath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, backupPath, { allowMissingLeaf: true });
 		mkdirSync(path.dirname(backupPath), { recursive: true });
 		copyFileSync(sourcePath, backupPath);
 	}
@@ -332,6 +359,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 	ensureInside(projectRoot, lockPath);
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, lockPath);
 	const parsed = readTomlFile(lockPath);
 
 	if (!isMutableTable(parsed)) {
@@ -349,6 +377,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	for (const item of appliedItems) {
 		const targetPath = path.join(projectRoot, item.relativePath);
 		ensureInside(projectRoot, targetPath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath);
 		const existing = filesTable[item.relativePath];
 		const existingTable = isMutableTable(existing) ? existing : {};
 
@@ -365,7 +394,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	}
 
 	parsed.files = filesTable;
-	writeFileSync(lockPath, stringifyToml(parsed));
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, stringifyToml(parsed));
 }
 
 function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): ApplyResult {

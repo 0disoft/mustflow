@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { runCheck } from './check.js';
@@ -106,39 +105,29 @@ function getPathEnvKey(env: NodeJS.ProcessEnv): string {
 	return Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
 }
 
+function sameResolvedPath(left: string, right: string): boolean {
+	const resolvedLeft = path.resolve(left);
+	const resolvedRight = path.resolve(right);
+
+	return process.platform === 'win32'
+		? resolvedLeft.toLowerCase() === resolvedRight.toLowerCase()
+		: resolvedLeft === resolvedRight;
+}
+
 function createCommandEnv(projectRoot: string): NodeJS.ProcessEnv {
 	const env = { ...process.env };
 	const pathKey = getPathEnvKey(env);
 	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
 	const currentPath = env[pathKey];
 
-	env[pathKey] = currentPath ? `${localBinPath}${path.delimiter}${currentPath}` : localBinPath;
+	if (currentPath) {
+		env[pathKey] = currentPath
+			.split(path.delimiter)
+			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath))
+			.join(path.delimiter);
+	}
 
 	return env;
-}
-
-function hasPathSeparator(value: string): boolean {
-	return value.includes('/') || value.includes('\\');
-}
-
-function resolveCommandExecutable(projectRoot: string, command: string): string {
-	if (command.length === 0 || path.isAbsolute(command) || hasPathSeparator(command)) {
-		return command;
-	}
-
-	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
-	const candidateNames =
-		process.platform === 'win32' ? [`${command}.cmd`, `${command}.exe`, command] : [command];
-
-	for (const candidateName of candidateNames) {
-		const candidatePath = path.join(localBinPath, candidateName);
-
-		if (existsSync(candidatePath)) {
-			return candidatePath;
-		}
-	}
-
-	return command;
 }
 
 function shouldUseShellForArgvExecutable(executablePath: string): boolean {
@@ -161,7 +150,7 @@ function resolveCurrentCliEntrypoint(): string | undefined {
 	return entrypoint ? path.resolve(entrypoint) : undefined;
 }
 
-function resolveArgvCommand(projectRoot: string, intent: TomlTable, commandArgv: string[]): ResolvedArgvCommand {
+function resolveArgvCommand(intent: TomlTable, commandArgv: string[]): ResolvedArgvCommand {
 	const [command = '', ...args] = commandArgv;
 
 	if (isMustflowBuiltinIntent(intent) && isMustflowBinName(command)) {
@@ -176,12 +165,10 @@ function resolveArgvCommand(projectRoot: string, intent: TomlTable, commandArgv:
 		}
 	}
 
-	const executable = resolveCommandExecutable(projectRoot, command);
-
 	return {
-		executable,
+		executable: command,
 		args,
-		shell: shouldUseShellForArgvExecutable(executable),
+		shell: shouldUseShellForArgvExecutable(command),
 	};
 }
 
@@ -500,6 +487,28 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 			return 1;
 		}
 
+		if (eligibility.code === 'unsafe_intent_name') {
+			reporter.stderr(
+				renderCliError(
+					`Intent ${intentName} has an unsafe name. ${eligibility.detail ?? 'Use a shell-safe intent name.'}`,
+					'mf help commands',
+					lang,
+				),
+			);
+			return 1;
+		}
+
+		if (eligibility.code === 'blocked_shell_background_pattern') {
+			reporter.stderr(
+				renderCliError(
+					`Intent ${intentName} is blocked. ${eligibility.detail ?? 'Shell commands must not spawn background work.'}`,
+					'mf help commands',
+					lang,
+				),
+			);
+			return 1;
+		}
+
 		reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: intentName }), 'mf help commands', lang));
 		return 1;
 	}
@@ -522,7 +531,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 	const mode = commandArgv ? 'argv' : 'shell';
 	const startedAt = new Date();
-	const argvCommand = commandArgv ? resolveArgvCommand(projectRoot, intent, commandArgv) : undefined;
+	const argvCommand = commandArgv ? resolveArgvCommand(intent, commandArgv) : undefined;
 	const result =
 		commandArgv && isMustflowBuiltinIntent(intent)
 			? (runBuiltinArgvInProcess(commandArgv, cwd, lang) ??

@@ -81,3 +81,87 @@ description = "Malformed test intent."
 		removeTempProject(projectPath);
 	}
 });
+
+test('contract-lint rejects shell commands with background patterns', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const current = readFileSync(commandsPath(projectPath), 'utf8');
+		writeFileSync(
+			commandsPath(projectPath),
+			`${current}
+
+[intents.shell_bg]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Blocked shell intent."
+mode = "shell"
+cmd = "nohup sh -c 'sleep 60' >/dev/null 2>&1 &"
+timeout_seconds = 30
+stdin = "closed"
+`,
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.report.status, 'failed');
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'shell_bg' &&
+					issue.severity === 'error' &&
+					issue.code === 'shell_background_pattern',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint rejects unsafe intent names', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const current = readFileSync(commandsPath(projectPath), 'utf8');
+		writeFileSync(
+			commandsPath(projectPath),
+			`${current}
+
+[intents."safe_name; echo injected #"]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Unsafe names must not become runnable."
+argv = ['${process.execPath}', '-e', 'console.log("ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.report.status, 'failed');
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'safe_name; echo injected #' &&
+					issue.severity === 'error' &&
+					issue.code === 'unsafe_intent_name',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

@@ -1,4 +1,4 @@
-import { readFileSync, unlinkSync } from 'node:fs';
+import { unlinkSync } from 'node:fs';
 import path from 'node:path';
 
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
@@ -14,7 +14,7 @@ import {
 	type DocReviewStatus,
 	type ReviewerKind,
 } from '../lib/doc-review-ledger.js';
-import { ensureInside } from '../lib/filesystem.js';
+import { ensureInside, readUtf8FileInsideWithoutSymlinks } from '../lib/filesystem.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -142,7 +142,7 @@ function readCommentFile(projectRoot: string, commentFile: string): { readonly c
 	const commentFilePath = path.resolve(projectRoot, commentFile);
 	ensureInside(projectRoot, commentFilePath);
 	return {
-		comment: readFileSync(commentFilePath, 'utf8').trimEnd(),
+		comment: readUtf8FileInsideWithoutSymlinks(projectRoot, commentFilePath).trimEnd(),
 		absolutePath: commentFilePath,
 	};
 }

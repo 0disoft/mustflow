@@ -1,9 +1,15 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { triageDocReview, type DocReviewTriage } from '../../core/doc-review-triage.js';
-import { ensureInside, toPosixPath } from './filesystem.js';
-import { readTomlFile, stringifyToml } from './toml.js';
+import {
+	ensureInside,
+	ensureInsideWithoutSymlinks,
+	readUtf8FileInsideWithoutSymlinks,
+	toPosixPath,
+	writeUtf8FileInsideWithoutSymlinks,
+} from './filesystem.js';
+import { parseTomlText, stringifyToml } from './toml.js';
 
 export const DOC_REVIEW_LEDGER_RELATIVE_PATH = '.mustflow/review/docs.toml';
 
@@ -159,13 +165,21 @@ function parseDocReviewEntry(value: unknown): DocReviewEntry {
 
 function readLedgerFile(projectRoot: string): DocReviewLedger {
 	const ledgerPath = path.join(projectRoot, DOC_REVIEW_LEDGER_RELATIVE_PATH);
+	const ledgerDirectoryPath = path.dirname(ledgerPath);
 	ensureInside(projectRoot, ledgerPath);
+	ensureInsideWithoutSymlinks(projectRoot, ledgerDirectoryPath, { allowMissingLeaf: true });
+
+	if (!existsSync(ledgerDirectoryPath)) {
+		return { schema_version: '1', documents: [] };
+	}
+
+	ensureInsideWithoutSymlinks(projectRoot, ledgerPath, { allowMissingLeaf: true });
 
 	if (!existsSync(ledgerPath)) {
 		return { schema_version: '1', documents: [] };
 	}
 
-	const parsed = readTomlFile(ledgerPath);
+	const parsed = parseTomlText(readUtf8FileInsideWithoutSymlinks(projectRoot, ledgerPath));
 	if (!isRecord(parsed)) {
 		throw new Error(`${DOC_REVIEW_LEDGER_RELATIVE_PATH} must contain a TOML table`);
 	}
@@ -215,9 +229,8 @@ function entryToToml(entry: DocReviewEntry): TomlTable {
 
 function writeLedgerFile(projectRoot: string, ledger: DocReviewLedger): string {
 	const ledgerPath = path.join(projectRoot, DOC_REVIEW_LEDGER_RELATIVE_PATH);
-	ensureInside(projectRoot, ledgerPath);
-	mkdirSync(path.dirname(ledgerPath), { recursive: true });
-	writeFileSync(
+	writeUtf8FileInsideWithoutSymlinks(
+		projectRoot,
 		ledgerPath,
 		stringifyToml({
 			schema_version: ledger.schema_version,

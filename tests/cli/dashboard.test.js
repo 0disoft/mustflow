@@ -746,6 +746,21 @@ effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = 
 network = false
 destructive = false
 required_after = ["public_api_change"]
+
+[intents."verify_schema_contract; echo injected #"]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Unsafe intent names must not become copyable shell recommendations."
+argv = ['${process.execPath}', '-e', 'console.log("schema contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["public_api_change"]
 `,
 		);
 		assert.equal(runGit(projectPath, ['init']).status, 0);
@@ -771,12 +786,17 @@ required_after = ["public_api_change"]
 			headers: { 'x-mustflow-dashboard-token': token },
 		}).then((response) => response.json());
 		const recommendedIntents = status.verification.recommendations.map((recommendation) => recommendation.intent);
+		const recommendedCommands = status.verification.recommendations.map((recommendation) => recommendation.command);
 		const skippedIntents = status.verification.skipped.map((skipped) => skipped.intent);
 
 		assert.ok(status.verification.changed_files.includes('schemas/output.schema.json'));
 		assert.ok(status.verification.surfaces.includes('schema_contract'));
 		assert.ok(recommendedIntents.includes('verify_schema_contract'));
 		assert.ok(recommendedIntents.includes('verify_schema_contract_followup'));
+		assert.ok(recommendedCommands.includes('mf run verify_schema_contract'));
+		assert.equal(recommendedIntents.includes('verify_schema_contract; echo injected #'), false);
+		assert.equal(recommendedCommands.includes('mf run verify_schema_contract; echo injected #'), false);
+		assert.ok(skippedIntents.includes('verify_schema_contract; echo injected #'));
 		const schemaBatch = status.verification.schedule.batches.find((batch) =>
 			batch.intents.includes('verify_schema_contract'),
 		);

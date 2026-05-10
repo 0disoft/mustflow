@@ -1,10 +1,15 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { stdin as processStdin, stdout as processStdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { ensureInside } from '../lib/filesystem.js';
+import {
+	ensureFileTargetInsideWithoutSymlinks,
+	ensureInside,
+	readUtf8FileInsideWithoutSymlinks,
+	writeUtf8FileInsideWithoutSymlinks,
+} from '../lib/filesystem.js';
 import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { isLocaleTag } from '../lib/locale-tags.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
@@ -605,8 +610,8 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 	};
 }
 
-function sameTemplateFileContent(source: TemplateFileSource, targetPath: string): boolean {
-	return (source.content ?? readFileSync(source.sourcePath, 'utf8')) === readFileSync(targetPath, 'utf8');
+function sameTemplateFileContent(projectRoot: string, source: TemplateFileSource, targetPath: string): boolean {
+	return (source.content ?? readFileSync(source.sourcePath, 'utf8')) === readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath);
 }
 
 function formatLocaleChoice(locale: string): string {
@@ -861,12 +866,12 @@ function escapeRegExp(value: string): string {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function planStatus(source: TemplateFileSource, targetPath: string, options: InitOptions): PlannedStatus {
+function planStatus(projectRoot: string, source: TemplateFileSource, targetPath: string, options: InitOptions): PlannedStatus {
 	if (!existsSync(targetPath)) {
 		return 'create';
 	}
 
-	if (sameTemplateFileContent(source, targetPath)) {
+	if (sameTemplateFileContent(projectRoot, source, targetPath)) {
 		return 'unchanged';
 	}
 
@@ -881,19 +886,19 @@ function planStatus(source: TemplateFileSource, targetPath: string, options: Ini
 	return 'conflict';
 }
 
-function writeTemplateFile(source: TemplateFileSource, targetPath: string): void {
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-
+function writeTemplateFile(projectRoot: string, source: TemplateFileSource, targetPath: string): void {
 	if (source.content !== undefined) {
-		writeFileSync(targetPath, source.content);
+		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
 		return;
 	}
 
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
+	mkdirSync(path.dirname(targetPath), { recursive: true });
 	copyFileSync(source.sourcePath, targetPath);
 }
 
-function writePlannedFile(file: PlannedFile): void {
-	writeTemplateFile(file, file.targetPath);
+function writePlannedFile(projectRoot: string, file: PlannedFile): void {
+	writeTemplateFile(projectRoot, file, file.targetPath);
 }
 
 function gitignoreFragmentPath(template: ReturnType<typeof getDefaultTemplate>): string {
@@ -915,14 +920,14 @@ function mergeGitignoreContent(existingContent: string, fragmentContent: string)
 	return `${existingContent.trimEnd()}\n\n${normalizedFragment}\n`;
 }
 
-function planGitignoreStatus(sourcePath: string, targetPath: string): PlannedStatus {
+function planGitignoreStatus(projectRoot: string, sourcePath: string, targetPath: string): PlannedStatus {
 	if (!existsSync(targetPath)) {
 		return 'create';
 	}
 
-	const mergedContent = mergeGitignoreContent(readFileSync(targetPath, 'utf8'), readFileSync(sourcePath, 'utf8'));
+	const mergedContent = mergeGitignoreContent(readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath), readFileSync(sourcePath, 'utf8'));
 
-	return mergedContent === readFileSync(targetPath, 'utf8') ? 'unchanged' : 'merge';
+	return mergedContent === readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath) ? 'unchanged' : 'merge';
 }
 
 function renderPlanVerb(status: PlannedStatus): string {
@@ -987,6 +992,7 @@ function buildPlannedFiles(
 
 		ensureInside(template.templateRoot, source.sourcePath);
 		ensureInside(targetRoot, targetPath);
+		ensureFileTargetInsideWithoutSymlinks(targetRoot, targetPath, { allowMissingLeaf: true });
 
 		return {
 			relativePath: source.relativePath,
@@ -994,7 +1000,7 @@ function buildPlannedFiles(
 			sourceKind: source.sourceKind,
 			content: source.content,
 			targetPath,
-			status: planStatus(source, targetPath, options),
+			status: planStatus(targetRoot, source, targetPath, options),
 			lock: true,
 		};
 	});
@@ -1003,13 +1009,14 @@ function buildPlannedFiles(
 
 	ensureInside(template.templateRoot, sourcePath);
 	ensureInside(targetRoot, targetPath);
+	ensureFileTargetInsideWithoutSymlinks(targetRoot, targetPath, { allowMissingLeaf: true });
 
 	plannedFiles.push({
 		relativePath: GITIGNORE_RELATIVE_PATH,
 		sourcePath,
 		sourceKind: 'common',
 		targetPath,
-		status: planGitignoreStatus(sourcePath, targetPath),
+		status: planGitignoreStatus(targetRoot, sourcePath, targetPath),
 		lock: false,
 	});
 
@@ -1027,6 +1034,8 @@ function backupConflictingFiles(projectRoot: string, conflicts: readonly Planned
 	for (const conflict of conflicts) {
 		const backupPath = path.join(backupRoot, conflict.relativePath);
 		ensureInside(backupRoot, backupPath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, conflict.targetPath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, backupPath, { allowMissingLeaf: true });
 		mkdirSync(path.dirname(backupPath), { recursive: true });
 		copyFileSync(conflict.targetPath, backupPath);
 	}
@@ -1123,6 +1132,7 @@ function renderProductI18nBlock(sourceLocale: string, targetLocales: readonly st
 }
 
 function applyInitPreferences(
+	projectRoot: string,
 	preferencesPath: string,
 	template: ReturnType<typeof getDefaultTemplate>,
 	options: InitOptions,
@@ -1131,7 +1141,8 @@ function applyInitPreferences(
 		return false;
 	}
 
-	const original = readFileSync(preferencesPath, 'utf8');
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, preferencesPath);
+	const original = readUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath);
 	let next = original;
 
 	if (options.profile) {
@@ -1161,7 +1172,7 @@ function applyInitPreferences(
 		return false;
 	}
 
-	writeFileSync(preferencesPath, next);
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath, next);
 	return true;
 }
 
@@ -1267,8 +1278,7 @@ function writeManifestLock(
 ): void {
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 	ensureInside(projectRoot, lockPath);
-	mkdirSync(path.dirname(lockPath), { recursive: true });
-	writeFileSync(lockPath, renderManifestLock(template, plannedFiles, options, customizedFiles));
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, renderManifestLock(template, plannedFiles, options, customizedFiles));
 }
 
 export async function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
@@ -1333,7 +1343,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 
 	for (const file of plannedFiles) {
 		if (file.status === 'create') {
-			writePlannedFile(file);
+			writePlannedFile(targetRoot, file);
 			created += 1;
 			reporter.stdout(t(lang, 'init.action.created', { path: file.relativePath }));
 			continue;
@@ -1346,19 +1356,20 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		}
 
 		if (file.status === 'merge') {
+			ensureFileTargetInsideWithoutSymlinks(targetRoot, file.targetPath);
 			const mergedContent =
 				file.relativePath === GITIGNORE_RELATIVE_PATH
-					? mergeGitignoreContent(readFileSync(file.targetPath, 'utf8'), readFileSync(file.sourcePath, 'utf8'))
-					: mergeAgentsContent(readFileSync(file.targetPath, 'utf8'), selectedLocale);
+					? mergeGitignoreContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), readFileSync(file.sourcePath, 'utf8'))
+					: mergeAgentsContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), selectedLocale);
 
-			writeFileSync(file.targetPath, mergedContent);
+			writeUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath, mergedContent);
 			merged += 1;
 			reporter.stdout(t(lang, 'init.action.merged', { path: file.relativePath }));
 			continue;
 		}
 
 		if (file.status === 'overwrite') {
-			writePlannedFile(file);
+			writePlannedFile(targetRoot, file);
 			overwritten += 1;
 			reporter.stdout(t(lang, 'init.action.overwrote', { path: file.relativePath }));
 		}
@@ -1366,7 +1377,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 
 	const customizedFiles = new Set<string>();
 	const preferencesPath = path.join(targetRoot, '.mustflow', 'config', 'preferences.toml');
-	if (applyInitPreferences(preferencesPath, template, options)) {
+	if (applyInitPreferences(targetRoot, preferencesPath, template, options)) {
 		customizedFiles.add('.mustflow/config/preferences.toml');
 		reporter.stdout(t(lang, 'init.action.customizedPreferences'));
 	}

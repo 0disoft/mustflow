@@ -8,10 +8,12 @@ import {
 	type CommandContract,
 	type TomlTable,
 } from './config-loading.js';
+import { evaluateCommandIntentEligibility } from './command-intent-eligibility.js';
 import {
+	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
-	evaluateCommandIntentEligibility,
-} from './command-intent-eligibility.js';
+	commandIntentNameIsSafe,
+} from './command-contract-rules.js';
 
 export type ContractLintStatus = 'passed' | 'warning' | 'failed';
 export type ContractLintSeverity = 'error' | 'warning';
@@ -72,6 +74,16 @@ function configuredIntentIsRunnable(intent: TomlTable): boolean {
 }
 
 function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): TomlTable | null {
+	if (!commandIntentNameIsSafe(name)) {
+		pushIssue(
+			issues,
+			'error',
+			'unsafe_intent_name',
+			name,
+			`Intent ${name} name must contain only letters, numbers, underscores, and hyphens.`,
+		);
+	}
+
 	if (!isRecord(value)) {
 		pushIssue(issues, 'error', 'intent_not_table', name, `Intent ${name} must be a TOML table.`);
 		return null;
@@ -120,6 +132,16 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 
 	if (!commandIntentHasCommandSource(value)) {
 		pushIssue(issues, 'error', 'executable_source_missing', name, `Configured intent ${name} must define argv or shell cmd.`);
+	}
+
+	if (commandIntentHasBlockedShellBackgroundPattern(value)) {
+		pushIssue(
+			issues,
+			'error',
+			'shell_background_pattern',
+			name,
+			`Shell intent ${name} contains a blocked long-running or background pattern.`,
+		);
 	}
 
 	if (!successExitCodesAreValid(value)) {
