@@ -186,6 +186,8 @@ your-project/
       │  └─ SKILL.md
       ├─ source-freshness-check/
       │  └─ SKILL.md
+      ├─ structure-discovery-gate/
+      │  └─ SKILL.md
       ├─ security-regression-tests/
       │  └─ SKILL.md
       ├─ skill-authoring/

@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 28
+revision: 29
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -46,6 +46,7 @@ authority: router
 | 코드, 데이터, 스키마, 설정, 파일 구조, 템플릿, 생성 상태 마이그레이션을 계획, 수정, 문서화, 보고함 | `.mustflow/skills/migration-safety-check/SKILL.md` | 원래 상태, 목표 상태, 마이그레이션 표면 소유 영역, 반복 실행 가능성, 되돌리기, dry-run, 호환성, 명령 계약 항목 | 마이그레이션 계획, 호환성 설명, lock 메타데이터, 문서, 테스트, 템플릿, 생성 상태, 보고 | 되돌릴 수 없는 마이그레이션, 데이터 손실, 거짓 마이그레이션 성공 주장 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 마이그레이션 표면, 원래 상태와 목표 상태, 반복 실행 가능성, 되돌리기, 메타데이터 갱신, 검증, 남은 마이그레이션 위험 |
 | 사용자에게 보이는 UI, 대시보드, 설정, 내비게이션, 폼, 문구, 반응형 레이아웃, 접근성, 시각 상태 변경을 계획, 수정, 검토, 보고함 | `.mustflow/skills/ui-quality-gate/SKILL.md` | 변경된 UI 표면, 사용자 작업, 상호작용 경로, 기존 패턴, 상태 조합, 다국어 규칙, 명령 계약 항목 | UI 컨트롤, 라벨, 상태, 레이아웃 제약, 접근성 속성, 다국어 연결, 문서, 템플릿, 보고 | 장식용 UI 이탈, 접근하기 어려운 컨트롤, 레이아웃 깨짐, 검증되지 않은 시각 주장 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 검토한 UI 표면, 확인한 상태, 레이아웃/접근성/다국어 기록, 건너뛴 시각 검사, 남은 UI 위험 |
 | 익숙하지 않은 영역을 구현하기 전 새 구조의 내부 선례가 필요함 | `.mustflow/skills/pattern-scout/SKILL.md` | 사용자 요청, 대상 파일 영역, 주변 예시, 현재 변경 파일 | 패턴 근거와 그 패턴을 따르는 데 필요한 파일 | 병렬 구조 발명 | `changes_status`, `changes_diff_summary`, `mustflow_check` | 내부 패턴, 맞춘 항목, 의도적 차이, 검증 |
+| 새 기능, 모듈, 폴더 구조, 아키텍처, 스캐폴드, 리팩터링, 라우팅, 데이터 모델, 외부 서비스 연동이 코드 작성 전에 숨은 구조 결정을 필요로 할 수 있음 | `.mustflow/skills/structure-discovery-gate/SKILL.md` | 사용자 요청, 의도한 기능, 숨은 가정, 언급된 기술 또는 서비스, 관련 내부 패턴 | 질문, 가정, 제안한 파일 경계, 그에 따른 가장 작은 구현 | 깨지기 쉬운 구조, 업체명 누수, 과한 질문, 추측성 추상화 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 차단 질문, 가정, 제안한 파일과 책임, 의존 방향, 내부 패턴, 검증, 남은 구조 위험 |
 | 버그나 혼란스러운 실패를 고치기 전에 가장 작은 재현 경로가 불분명함 | `.mustflow/skills/repro-first-debug/SKILL.md` | 증상, 기대 동작, 관찰 출력, 관련 가능성이 있는 변경 파일 | 재현 기록, 집중 테스트, 가능한 원인 | 추측성 수정 또는 과잉 테스트 | `test_related`, `test_fast`, `mustflow_check` | 재현 근거, 최소 수정, 검증, 남은 위험 |
 | 현재성, 외부 출처, 날짜, 버전처럼 변하기 쉬운 정보에 주장이 의존함 | `.mustflow/skills/source-freshness-check/SKILL.md` | 오래될 수 있는 주장, 출처 원문이나 페이지, 날짜 또는 버전 맥락, 출처 정책 | 출처 문구, 문서, 최신성 보고 | 오래되었거나 확인되지 않은 주장 | `changes_status`, `docs_validate_fast`, `mustflow_check` | 확인한 출처 경계, 문구 변경, 건너뛴 확인, 오래된 출처 위험 |
 | `.mustflow/context/PROJECT.md`에 신중한 프로젝트 맥락이 필요함 | `.mustflow/skills/project-context-authoring/SKILL.md` | 근거가 있는 프로젝트 사실 | `.mustflow/context/PROJECT.md` | 권한 범위 이탈 | `mustflow_check` | 신중하게 갱신된 맥락 |

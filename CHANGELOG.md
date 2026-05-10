@@ -55,6 +55,9 @@ user projects by `mf init`.
   guidance for pre-change risk checks, accessibility, and localization review.
 - Added the `visual-review-artifact` default skill with a static HTML review
   template for safe plan, suggestion, review, flow, and decision artifacts.
+- Added the `structure-discovery-gate` default skill so agents ask only
+  structure-changing questions before introducing new folders, file boundaries,
+  routing, data models, or external service integration boundaries.
 
 ### Fixed
 

@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.58"
+version = "1.15.59"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:fafe68800fe2e336d5269a4ab91e59687fd35e41cc17b5388feb5e718
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:eb0f7a31afd0568e21b27869be6ae63db9c03acb32ad3da9e36cf51224a8373e"
+content_hash = "sha256:1482d9c671ac32d367952bee446d122a8e5042075bb09932467f90e8a370a8e2"
 
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
@@ -106,6 +106,11 @@ content_hash = "sha256:6c7dd256637ea60f706d8936af407e4444f34592f9f225bf6beb0c701
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:c8d332dd07b0a958bd75cdcc09cdfbe193e9ede3c25467c74e8e58a18f7beeea"
+
+[files.".mustflow/skills/structure-discovery-gate/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:75ef326640ed5eef154e7629def983bf69aab81abf48271865a5de67a36f119a"
 
 [files.".mustflow/skills/repro-first-debug/SKILL.md"]
 source = "template_locale"
