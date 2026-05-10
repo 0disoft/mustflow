@@ -180,6 +180,8 @@ your-project/
       │  └─ SKILL.md
       ├─ pattern-scout/
       │  └─ SKILL.md
+      ├─ repo-improvement-loop/
+      │  └─ SKILL.md
       ├─ repro-first-debug/
       │  └─ SKILL.md
       ├─ security-privacy-review/

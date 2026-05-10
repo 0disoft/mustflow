@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: ko
 canonical: false
-revision: 29
+revision: 30
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -31,6 +31,7 @@ authority: router
 | 생성 산출물, 패키지 포함 파일, 바이너리 자산, 보고서, 내려받을 수 있는 출력물이 생성, 참조, 보고됨 | `.mustflow/skills/artifact-integrity-check/SKILL.md` | 산출물 경로, 출처 또는 생성 경로, 패키지 규칙, 산출물 기대값 | 산출물 참조, 패키지 메타데이터, 테스트, 문서 | 확인되지 않았거나 오래된 산출물 주장 | `changes_status`, `changes_diff_summary`, `test_release`, `build`, `mustflow_check` | 산출물 근거, 포함 또는 형식 확인, 건너뛴 검증, 무결성 위험 |
 | 보고 전 코드 변경 검토가 필요함 | `.mustflow/skills/code-review/SKILL.md` | 변경 diff와 작업 목표 | 변경된 파일 | 동작 회귀 | `test`, `test_related`, `test_audit`, `lint` | 지적 사항 또는 문제 없음 기록 |
 | 익숙하지 않은 코드베이스 영역을 계획, 구현, 보고 전에 근거 기반으로 파악해야 함 | `.mustflow/skills/codebase-orientation/SKILL.md` | 사용자 요청, 대상 영역, 관련 지시, 현재 소스, 테스트, 스키마, 템플릿, 설정 또는 문서 파일 | 읽기 전용 파악 메모와 확인한 근거에서 고른 가장 작은 후속 수정 | 오래된 문서, 잘못된 소유 경계, 지어낸 아키텍처 주장 | `changes_status`, `changes_diff_summary`, `mustflow_check` | 확인한 범위, 진입점, 흐름 지도, 소유 경계, 검증 선택지, 위험, 미확인 사항, 가장 작은 안전한 다음 단계 |
+| 저장소 개선, 감사, 우선순위 선정, 안정화, 다듬기, 온보딩, 기여 준비, 운영 준비, 반복 개선을 요청했지만 단일 수정 대상이 정해지지 않음 | `.mustflow/skills/repo-improvement-loop/SKILL.md` | 사용자 목표, 개선 모드, 저장소 근거, 후보 위험, 현재 변경 파일, 명령 계약 항목 | 사용자가 명시적으로 분석 전용을 요청하지 않은 한 저장소 진단, 우선순위 후보, 한 번에 하나의 좁은 개선 주기 | 아이디어 나열, 근거 없는 우선순위, 자율 루프 이탈, 대규모 재작성, 검증되지 않은 개선 주장 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 모드, 확인한 근거, 점수화한 후보, 선택한 개선, 변경 파일 또는 분석 전용 메모, 검증, 다음 개선 질문, 중단 이유 |
 | 복잡한 계획, 제안, 코드 설명, 검토 결과, 흐름 지도, 결정 묶음을 안전한 정적 HTML 검토 산출물로 보면 더 이해하기 쉬움 | `.mustflow/skills/visual-review-artifact/SKILL.md` | 사용자 요청, 산출물 목표, 대상 독자, 근거 자료, 출력 경로, 관련 명령 계약 항목 | 임시 `.mustflow/state/artifacts/**` 출력 또는 명시적으로 요청된 버전 관리 대상 HTML 산출물과 직접 참조, 문서, 패키지 메타데이터 | 안전하지 않은 HTML 동작, 프롬프트 주입, 검증되지 않은 산출물 주장, 승인 권한 오해 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 산출물 종류와 경로, 근거, 검토 전용 경계, 로컬 상호작용, 검증, 건너뛴 검사, 남은 결정 위험 |
 | 변경 파일의 위험도 분류와 검증 선택이 필요함 | `.mustflow/skills/diff-risk-review/SKILL.md` | 변경 파일 목록, 차이 요약, 작업 목표 | 변경 표면과 검증 보고 | 과소 또는 과잉 검증 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 위험도, 검증 선택, 되돌림 메모 |
 | 선언된 동작이 코드, 스키마, 템플릿, 테스트, 문서 사이에서 일치해야 함 | `.mustflow/skills/contract-sync-check/SKILL.md` | 변경 파일, 의도한 동작, 기준 출처, 파생 표면, 명령 계약 항목 | 계약 기준 출처와 필수 동기화 표면 | 계약 불일치 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 계약 기준 출처, 동기화 표면, 미룬 표면, 검증, 불일치 위험 |

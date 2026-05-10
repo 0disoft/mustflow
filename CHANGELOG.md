@@ -58,6 +58,9 @@ user projects by `mf init`.
 - Added the `structure-discovery-gate` default skill so agents ask only
   structure-changing questions before introducing new folders, file boundaries,
   routing, data models, or external service integration boundaries.
+- Added the `repo-improvement-loop` default skill for evidence-based repository
+  improvement cycles with ranked candidates, one scoped change, verification,
+  and a next improvement question.
 
 ### Fixed
 

@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 29
+revision: 30
 lifecycle: mustflow-owned
 authority: router
 ---
@@ -25,6 +25,7 @@ authority: router
 | --- | --- | --- | --- | --- | --- | --- |
 | Generated artifacts, packaged files, binary assets, reports, or downloadable outputs are created, referenced, or reported | `.mustflow/skills/artifact-integrity-check/SKILL.md` | Artifact paths, source or generation path, package rules, and artifact expectations | Artifact references, package metadata, tests, and documentation | unverified or stale artifact claim | `changes_status`, `changes_diff_summary`, `test_release`, `build`, `mustflow_check` | Artifact evidence, inclusion or format checks, skipped checks, and integrity risk |
 | 报告前需要审查代码更改 | `.mustflow/skills/code-review/SKILL.md` | 差异和任务目标 | 已更改文件 | 行为和回归 | `test`, `test_related`, `test_audit`, `lint` | 问题列表或无问题说明 |
+| Repository improvement, audit, prioritization, stabilization, polish, onboarding, contributor-readiness, production-readiness, or iterative improvement is requested without a single predetermined edit | `.mustflow/skills/repo-improvement-loop/SKILL.md` | User goal, improvement mode, repository evidence, candidate risks, current changed files, and command contract entries | Repository diagnosis, ranked candidates, and at most one scoped improvement cycle unless the user explicitly requests analysis-only | idea spam, ungrounded prioritization, autonomous loop drift, broad rewrite, or unverified improvement claim | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | Mode, evidence inspected, scored candidates, selected improvement, files changed or analysis-only note, verification, next improvement question, and stop reason |
 | 已更改文件需要风险分类和验证选择 | `.mustflow/skills/diff-risk-review/SKILL.md` | 更改文件列表、差异摘要和任务目标 | 已更改表面和验证报告 | 验证不足或过度验证 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 风险级别、验证选择和回滚说明 |
 | Declared behavior must stay aligned across code, schemas, templates, tests, and docs | `.mustflow/skills/contract-sync-check/SKILL.md` | Changed files, intended behavior, source of truth, derived surfaces, and command contract entries | Contract source and required synchronized surfaces | contract drift | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | Contract source, synchronized surfaces, deferred surfaces, verification, and drift risk |
 | Dates, versions, counts, durations, limits, metrics, benchmarks, prices, percentages, or other numeric facts are created, edited, or reported | `.mustflow/skills/date-number-audit/SKILL.md` | Date or numeric fact, source of truth, dependent surfaces, precision expectation, and command contract entries | Numeric statements, metadata, tests, docs, templates, and reports | invented, stale, or mismatched numeric claim | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | Audited values, source of truth, synchronized surfaces, skipped checks, and remaining numeric risk |
