@@ -139,6 +139,33 @@ export interface DashboardStatusSnapshot {
 			readonly intent: string;
 			readonly reason_key: string;
 		}[];
+		readonly schedule: {
+			readonly runner: string;
+			readonly batches: readonly {
+				readonly index: number;
+				readonly intents: readonly string[];
+				readonly commands: readonly string[];
+				readonly locks: readonly string[];
+			}[];
+			readonly entries: readonly {
+				readonly intent: string;
+				readonly command: string;
+				readonly locks: readonly string[];
+				readonly effects: readonly {
+					readonly access: string;
+					readonly mode: string;
+					readonly path: string;
+					readonly lock: string;
+					readonly concurrency: string;
+				}[];
+				readonly conflicts: readonly {
+					readonly intent: string;
+					readonly lock: string;
+					readonly detail: string;
+				}[];
+			}[];
+			readonly notes: readonly string[];
+		};
 	};
 	readonly latest_run:
 		| { readonly path: string; readonly exists: false }
@@ -1119,6 +1146,11 @@ async function copyVerificationCommand(command) {
 	statusKey("dashboard.verification.copied", "ok");
 }
 
+async function copyVerificationPlan(commands) {
+	await navigator.clipboard.writeText(commands.join("\\n"));
+	statusKey("dashboard.verification.planCopied", "ok");
+}
+
 async function copyReleaseCommand(command) {
 	await navigator.clipboard.writeText(command);
 	statusKey("dashboard.release.copied", "ok");
@@ -1207,6 +1239,65 @@ function renderVerificationPanel() {
 	}
 
 	root.appendChild(section);
+
+	if (verification.schedule.batches.length > 0) {
+		const scheduleSection = document.createElement("section");
+		const scheduleHeading = document.createElement("h2");
+		scheduleHeading.textContent = message("dashboard.verification.schedule");
+		scheduleSection.appendChild(scheduleHeading);
+		const entriesByIntent = new Map(verification.schedule.entries.map((entry) => [entry.intent, entry]));
+		const planCommands = verification.schedule.batches.flatMap((batch) => batch.commands);
+		for (const batch of verification.schedule.batches) {
+			const row = document.createElement("div");
+			row.className = "verification-row";
+			const summary = document.createElement("div");
+			const name = document.createElement("div");
+			name.className = "command-name";
+			name.textContent = message("dashboard.verification.batch") + " " + batch.index;
+			const state = document.createElement("div");
+			state.className = "command-state ok";
+			state.textContent = batch.locks.length > 0 ? message("dashboard.verification.locks") + ": " + batch.locks.join(", ") : message("dashboard.verification.noLocks");
+			summary.appendChild(name);
+			summary.appendChild(state);
+
+			const details = document.createElement("div");
+			const commands = document.createElement("div");
+			commands.className = "verification-command";
+			commands.textContent = batch.commands.join(" -> ");
+			details.appendChild(commands);
+			for (const intent of batch.intents) {
+				const entry = entriesByIntent.get(intent);
+				if (!entry) continue;
+				const effects = document.createElement("div");
+				effects.className = "verification-files";
+				effects.textContent = message("dashboard.verification.effects") + ": " + entry.effects.map((effect) => effect.mode + " " + effect.path + " [" + effect.lock + "]").join(", ");
+				details.appendChild(effects);
+				if (entry.conflicts.length > 0) {
+					const conflicts = document.createElement("div");
+					conflicts.className = "command-note";
+					conflicts.textContent = message("dashboard.verification.conflicts") + ": " + entry.conflicts.map((conflict) => conflict.intent + " (" + conflict.lock + ")").join(", ");
+					details.appendChild(conflicts);
+				}
+			}
+
+			const copy = document.createElement("button");
+			copy.type = "button";
+			copy.className = "verification-copy";
+			copy.textContent = message("dashboard.verification.copyPlan");
+			copy.title = message("dashboard.verification.copyPlan");
+			copy.setAttribute("aria-label", message("dashboard.verification.copyPlan"));
+			copy.disabled = planCommands.length === 0;
+			copy.addEventListener("click", () => {
+				copyVerificationPlan(planCommands).catch((error) => statusText(error.message, "error"));
+			});
+
+			row.appendChild(summary);
+			row.appendChild(details);
+			row.appendChild(copy);
+			scheduleSection.appendChild(row);
+		}
+		root.appendChild(scheduleSection);
+	}
 
 	if (verification.skipped.length > 0) {
 		const skippedSection = document.createElement("section");

@@ -11,7 +11,8 @@
     "classification_summary",
     "requirements",
     "candidates",
-    "gaps"
+    "gaps",
+    "schedule"
   ],
   "properties": {
     "schema_version": {
@@ -43,6 +44,9 @@
       "items": {
         "$ref": "#/$defs/verificationGap"
       }
+    },
+    "schedule": {
+      "$ref": "#/$defs/verificationSchedule"
     }
   },
   "$defs": {
@@ -190,6 +194,122 @@
         },
         "detail": {
           "type": "string"
+        }
+      }
+    },
+    "verificationScheduleEffect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "source", "access", "mode", "path", "lock", "concurrency"],
+      "properties": {
+        "intent": {
+          "type": "string"
+        },
+        "source": {
+          "enum": ["effects", "writes"]
+        },
+        "access": {
+          "enum": ["read", "write"]
+        },
+        "mode": {
+          "enum": ["read", "write", "append", "replace", "delete_recreate"]
+        },
+        "path": {
+          "type": "string"
+        },
+        "lock": {
+          "type": "string"
+        },
+        "concurrency": {
+          "enum": ["shared", "exclusive"]
+        }
+      }
+    },
+    "verificationScheduleConflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "conflictsWith", "lock", "detail"],
+      "properties": {
+        "intent": {
+          "type": "string"
+        },
+        "conflictsWith": {
+          "type": "string"
+        },
+        "lock": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    },
+    "verificationScheduleEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "status", "effects", "locks", "conflicts"],
+      "properties": {
+        "intent": {
+          "type": "string"
+        },
+        "status": {
+          "const": "runnable"
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationScheduleEffect"
+          }
+        },
+        "locks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationScheduleConflict"
+          }
+        }
+      }
+    },
+    "verificationScheduleBatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "intents", "locks"],
+      "properties": {
+        "index": {
+          "type": "integer"
+        },
+        "intents": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "locks": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "verificationSchedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runner", "batches", "entries", "notes"],
+      "properties": {
+        "runner": {
+          "const": "serial_mf_run_receipts"
+        },
+        "batches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationScheduleBatch"
+          }
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationScheduleEntry"
+          }
+        },
+        "notes": {
+          "$ref": "#/$defs/stringArray"
         }
       }
     }

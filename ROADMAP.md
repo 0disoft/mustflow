@@ -20,11 +20,6 @@ policy decisions without moving process execution out of the CLI too early.
 Open command-contract follow-up: defer asset optimization until there is a real
 repository pipeline.
 
-Parallel verification follow-up: keep existing `writes` fields for compatibility,
-but add structured command effects and resource locks before suggesting parallel
-verification batches. Path writes alone cannot express delete-and-recreate build
-outputs such as `dist/`.
-
 Contract-surface follow-up: keep shared surface decisions as internal vocabulary
 only. Do not collapse document review, source anchors, command permissions, and
 dashboard display into one large policy object.
@@ -74,77 +69,6 @@ it into memory, an audit log, or project truth.
   rows.
 - Keep source anchors navigation-only. Indexed anchor data must not authorize
   commands, skip validation, or override workflow rules.
-
-#### M3.7: Dashboard Plan Views
-
-Goal: expand the dashboard only where it explains repository state without
-starting work on the user's behalf.
-
-- Add a validation plan view before any broader dashboard surface.
-- Show changed files, verification reasons, runnable or skipped intents, skip
-  reasons, release sensitivity, command effects, resource locks, and recommended
-  serial order.
-- Allow copy actions such as copy command or copy full plan, plus file opening
-  when safe.
-- Do not add run, fix, apply, start-agent, merge, push, or automatic update
-  buttons.
-- Consider an index health view after the validation plan view, showing index
-  presence, schema version, stale paths, skill count, source anchor status, and
-  cache-layer summary without auto-generating the index.
-
-#### M3.8: Command Effects And Resource Locks
-
-Goal: prevent verification races by expressing command side effects beyond
-simple write globs.
-
-- Keep `writes` as the backward-compatible path summary.
-- Add command `resources` and `effects` to the command contract schema.
-- Support effect modes such as `read`, `write`, `append`, `replace`, and
-  `delete_recreate`.
-- Treat `delete_recreate` as conflicting with both readers and writers of the
-  same resource.
-- Derive conservative exclusive locks from `writes` when `effects` are absent.
-- Add `src/core/command-effects.ts` to normalize intent effects and reject root
-  escapes.
-- Add `src/core/verification-scheduler.ts` to group verification plan candidates
-  into ordered batches and explain conflicts.
-- Warn in strict checks when multiple configured, agent-allowed, oneshot intents
-  share a write path without explicit effects or locks.
-- Keep actual `mf run` execution serial until run receipts can move from a
-  single `latest.json` write target to per-run records with a safe latest
-  pointer.
-
-#### M3.9: Release Contract Manifest
-
-Goal: close the release gap between schema files, documentation, package
-contents, and installed-package command output.
-
-- Add a single public-contract manifest or generator for shipped JSON schemas
-  and their producing commands.
-- Compare the actual `schemas/*.schema.json` file list with `schemas/README.md`.
-- Compare that list with `npm pack --dry-run --json` output.
-- Install the packed `.tgz` in a temporary project and verify representative
-  JSON-producing public commands against the declared schemas.
-- Include recent public surfaces such as change verification, version sources,
-  impact, classify, docs review, line endings, and contract lint reports.
-- Fail when a schema is documented but not packaged, packaged but undocumented,
-  or no installed command can produce the promised JSON shape.
-
-#### M3.10: Public Documentation Information Architecture
-
-Goal: make README and documentation-site entry points emphasize the workflow
-contract instead of making mustflow look like an autonomous agent platform.
-
-- Lead with the no-guessing flow: required read order, command contract, change
-  classification, verification planning, declared command execution, and
-  receipts.
-- Move SQLite details, dashboard settings, exhaustive command lists, candidate
-  feature lists, and long installation trees below the first-use flow.
-- Make `mf init --yes`, `mf check --strict`, `mf classify --changed --json`, and
-  `mf verify --plan-only --json` the primary first-read examples.
-- Present source anchors as navigation hints that do not grant authority.
-- Keep dashboard documentation centered on inspection, copying, and explanation,
-  not execution or automatic repair.
 
 #### Deferred: Path Classification Policy
 

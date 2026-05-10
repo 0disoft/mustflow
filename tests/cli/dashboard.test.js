@@ -216,6 +216,10 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /dashboard\.skills\.heading":"스킬 라우트/);
 		assert.match(html, /dashboard\.skills\.mismatch":"명령 의도 불일치/);
 		assert.match(html, /dashboard\.verification\.recommendations":"추천/);
+		assert.match(html, /dashboard\.verification\.schedule":"권장 순서/);
+		assert.match(html, /dashboard\.verification\.copyPlan":"계획 복사/);
+		assert.match(html, /dashboard\.verification\.locks":"잠금/);
+		assert.match(html, /dashboard\.verification\.effects":"효과/);
 		assert.match(html, /dashboard\.verification\.reason\.docs":"문서가 변경되었습니다/);
 		assert.match(html, /dashboard\.verification\.copy":"복사/);
 		assert.match(html, /dashboard\.setting\.git\.auto_commit":"요청 시 자동 커밋/);
@@ -225,6 +229,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		);
 		assert.match(html, /function renderVerificationPanel\(\)/);
 		assert.match(html, /navigator\.clipboard\.writeText\(command\)/);
+		assert.match(html, /async function copyVerificationPlan\(commands\)/);
+		assert.match(html, /verification\.schedule\.batches/);
 		assert.match(html, /function renderCommandPanel\(\)/);
 		assert.match(html, /function renderReleasePanel\(\)/);
 		assert.match(html, /function renderUpdatePanel\(\)/);
@@ -485,6 +491,9 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.ok(Array.isArray(status.verification.surfaces));
 		assert.ok(Array.isArray(status.verification.recommendations));
 		assert.ok(Array.isArray(status.verification.skipped));
+		assert.equal(status.verification.schedule.runner, 'serial_mf_run_receipts');
+		assert.ok(Array.isArray(status.verification.schedule.batches));
+		assert.ok(Array.isArray(status.verification.schedule.entries));
 		assert.equal(status.latest_run.path, '.mustflow/state/runs/latest.json');
 
 		const docsReview = await fetch(new URL('/api/docs/review', info.url), {
@@ -700,6 +709,12 @@ test('dashboard verification recommendations use the core change verification co
 		writeFileSync(
 			commandsPath,
 			`${readFileSync(commandsPath, 'utf8')}
+[resources.schema_artifact]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Schema verification artifact."
+
 [intents.verify_schema_contract]
 status = "configured"
 lifecycle = "oneshot"
@@ -711,6 +726,23 @@ timeout_seconds = 10
 stdin = "closed"
 success_exit_codes = [0]
 writes = []
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "schema_artifact", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["public_api_change"]
+
+[intents.verify_schema_contract_followup]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify schema contract follow-up."
+argv = ['${process.execPath}', '-e', 'console.log("schema followup")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "schema_artifact", concurrency = "exclusive" }]
 network = false
 destructive = false
 required_after = ["public_api_change"]
@@ -744,6 +776,25 @@ required_after = ["public_api_change"]
 		assert.ok(status.verification.changed_files.includes('schemas/output.schema.json'));
 		assert.ok(status.verification.surfaces.includes('schema_contract'));
 		assert.ok(recommendedIntents.includes('verify_schema_contract'));
+		assert.ok(recommendedIntents.includes('verify_schema_contract_followup'));
+		const schemaBatch = status.verification.schedule.batches.find((batch) =>
+			batch.intents.includes('verify_schema_contract'),
+		);
+		const schemaFollowupBatch = status.verification.schedule.batches.find((batch) =>
+			batch.intents.includes('verify_schema_contract_followup'),
+		);
+		assert.ok(schemaBatch);
+		assert.ok(schemaFollowupBatch);
+		assert.notEqual(schemaBatch.index, schemaFollowupBatch.index);
+		assert.ok(schemaBatch.locks.includes('schema_artifact'));
+		assert.ok(schemaFollowupBatch.locks.includes('schema_artifact'));
+		assert.ok(
+			status.verification.schedule.entries.some(
+				(entry) =>
+					entry.intent === 'verify_schema_contract' &&
+					entry.effects.some((effect) => effect.mode === 'delete_recreate' && effect.lock === 'schema_artifact'),
+			),
+		);
 		assert.equal(recommendedIntents.includes('test_release'), false);
 		assert.ok(skippedIntents.includes('build'));
 		assert.ok(skippedIntents.includes('docs_validate'));

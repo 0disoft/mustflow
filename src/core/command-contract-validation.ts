@@ -5,9 +5,17 @@ import {
 	isRecord,
 	type TomlTable,
 } from './config-loading.js';
+import {
+	COMMAND_EFFECT_CONCURRENCY,
+	COMMAND_EFFECT_MODES,
+	COMMAND_EFFECT_TYPES,
+	validateCommandEffectLockWarnings,
+	validateCommandEffects,
+} from './command-effects.js';
 
 export interface CommandContractValidationIssue {
 	readonly message: string;
+	readonly severity?: 'warning' | 'error';
 }
 
 const BACKGROUND_SHELL_PATTERNS = [
@@ -135,6 +143,86 @@ function validateCommandDefaults(commandsToml: TomlTable, issues: CommandContrac
 	validatePositiveIntegerField(defaults, 'kill_after_seconds', '[commands.defaults].kill_after_seconds', issues);
 }
 
+function validateCommandResources(commandsToml: TomlTable, issues: CommandContractValidationIssue[]): void {
+	if (!hasOwn(commandsToml, 'resources')) {
+		return;
+	}
+
+	if (!isRecord(commandsToml.resources)) {
+		issues.push(commandContractIssue('[commands.resources] must be a TOML table'));
+		return;
+	}
+
+	for (const [resourceName, resource] of Object.entries(commandsToml.resources)) {
+		if (!isRecord(resource)) {
+			issues.push(commandContractIssue(`[commands.resources.${resourceName}] must be a TOML table`));
+			continue;
+		}
+
+		validateStringField(resource, 'type', `[commands.resources.${resourceName}].type`, issues);
+		if (hasOwn(resource, 'paths')) {
+			const paths = resource.paths;
+			if (!Array.isArray(paths) || paths.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+				issues.push(commandContractIssue(`[commands.resources.${resourceName}].paths must be a string array`));
+			}
+		}
+
+		validateAllowedStringField(
+			resource,
+			'concurrency',
+			`[commands.resources.${resourceName}].concurrency`,
+			new Set(['shared_reader', 'exclusive_writer', 'exclusive']),
+			issues,
+		);
+		validateStringField(resource, 'description', `[commands.resources.${resourceName}].description`, issues);
+	}
+}
+
+function validateCommandIntentEffects(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
+	if (!hasOwn(intent, 'effects')) {
+		return;
+	}
+
+	if (!Array.isArray(intent.effects) || intent.effects.some((entry) => !isRecord(entry))) {
+		issues.push(commandContractIssue(`[commands.intents.${intentName}].effects must be an array of tables`));
+		return;
+	}
+
+	for (const effect of intent.effects) {
+		const effectTable = effect as TomlTable;
+		validateAllowedStringField(
+			effectTable,
+			'type',
+			`[commands.intents.${intentName}].effects.type`,
+			COMMAND_EFFECT_TYPES,
+			issues,
+		);
+		validateAllowedStringField(
+			effectTable,
+			'mode',
+			`[commands.intents.${intentName}].effects.mode`,
+			COMMAND_EFFECT_MODES,
+			issues,
+		);
+		validateAllowedStringField(
+			effectTable,
+			'concurrency',
+			`[commands.intents.${intentName}].effects.concurrency`,
+			COMMAND_EFFECT_CONCURRENCY,
+			issues,
+		);
+		validateStringField(effectTable, 'path', `[commands.intents.${intentName}].effects.path`, issues);
+		validateStringField(effectTable, 'lock', `[commands.intents.${intentName}].effects.lock`, issues);
+
+		if (hasOwn(effectTable, 'paths')) {
+			const paths = effectTable.paths;
+			if (!Array.isArray(paths) || paths.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+				issues.push(commandContractIssue(`[commands.intents.${intentName}].effects.paths must be a string array`));
+			}
+		}
+	}
+}
+
 function validateCommandIntent(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
 	validateStringField(intent, 'status', `[commands.intents.${intentName}].status`, issues);
 	validateAllowedStringField(
@@ -202,6 +290,8 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 			issues.push(commandContractIssue(`[commands.intents.${intentName}].success_exit_codes must be an integer array`));
 		}
 	}
+
+	validateCommandIntentEffects(intentName, intent, issues);
 }
 
 /**
@@ -220,6 +310,7 @@ export function validateCommandContractConfig(commandsToml: TomlTable | undefine
 
 	validateStringField(commandsToml, 'schema_version', '[commands].schema_version', issues);
 	validateCommandDefaults(commandsToml, issues);
+	validateCommandResources(commandsToml, issues);
 
 	if (!isRecord(commandsToml.intents)) {
 		issues.push(commandContractIssue('Missing [intents] table in .mustflow/config/commands.toml'));
@@ -238,7 +329,10 @@ export function validateCommandContractConfig(commandsToml: TomlTable | undefine
 	return issues;
 }
 
-export function validateCommandContractStrictDefaults(commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
+export function validateCommandContractStrictDefaults(
+	projectRoot: string,
+	commandsToml: TomlTable | undefined,
+): CommandContractValidationIssue[] {
 	const issues: CommandContractValidationIssue[] = [];
 
 	if (!commandsToml || !isRecord(commandsToml.defaults)) {
@@ -252,6 +346,9 @@ export function validateCommandContractStrictDefaults(commandsToml: TomlTable | 
 	if (!hasOwn(commandsToml.defaults, 'on_timeout')) {
 		issues.push(commandContractIssue('[commands.defaults].on_timeout is required'));
 	}
+
+	issues.push(...validateCommandEffects(projectRoot, commandsToml));
+	issues.push(...validateCommandEffectLockWarnings(commandsToml));
 
 	return issues;
 }

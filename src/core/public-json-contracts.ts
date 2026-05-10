@@ -1,0 +1,124 @@
+export interface PublicJsonSchemaContract {
+	readonly id: string;
+	readonly schemaFile: string;
+	readonly producer: string;
+	readonly packaged: true;
+	readonly documented: true;
+	readonly installedCommand?: readonly string[];
+	readonly expectedExitCodes?: readonly number[];
+}
+
+const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
+	{
+		id: 'doctor-report',
+		schemaFile: 'doctor-report.schema.json',
+		producer: 'mf doctor --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'doctor', '--json'],
+	},
+	{
+		id: 'context-report',
+		schemaFile: 'context-report.schema.json',
+		producer: 'mf context --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'context', '--json'],
+	},
+	{
+		id: 'run-receipt',
+		schemaFile: 'run-receipt.schema.json',
+		producer: 'mf run <intent> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'run', 'mustflow_check', '--json'],
+	},
+	{
+		id: 'commands',
+		schemaFile: 'commands.schema.json',
+		producer: 'parsed .mustflow/config/commands.toml',
+		packaged: true,
+		documented: true,
+	},
+	{
+		id: 'contract-lint-report',
+		schemaFile: 'contract-lint-report.schema.json',
+		producer: 'mf contract-lint --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'contract-lint', '--json'],
+	},
+	{
+		id: 'classify-report',
+		schemaFile: 'classify-report.schema.json',
+		producer: 'mf classify <path...> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'classify', 'README.md', '--json'],
+	},
+	{
+		id: 'impact-report',
+		schemaFile: 'impact-report.schema.json',
+		producer: 'mf impact <path...> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'impact', 'package.json', '--json'],
+	},
+	{
+		id: 'line-endings-report',
+		schemaFile: 'line-endings-report.schema.json',
+		producer: 'mf line-endings check --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'line-endings', 'check', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
+		id: 'version-sources-report',
+		schemaFile: 'version-sources-report.schema.json',
+		producer: 'mf version-sources --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'version-sources', '--json'],
+	},
+	{
+		id: 'docs-review-list',
+		schemaFile: 'docs-review-list.schema.json',
+		producer: 'mf docs review list --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'docs', 'review', 'list', '--json'],
+	},
+	{
+		id: 'explain-report',
+		schemaFile: 'explain-report.schema.json',
+		producer: 'mf explain <topic> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'explain', 'authority', 'AGENTS.md', '--json'],
+	},
+	{
+		id: 'verify-report',
+		schemaFile: 'verify-report.schema.json',
+		producer: 'mf verify --reason <event> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'verify', '--reason', 'schema_verify', '--json'],
+	},
+	{
+		id: 'change-verification-report',
+		schemaFile: 'change-verification-report.schema.json',
+		producer: 'mf verify --reason <event> --plan-only --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'verify', '--reason', 'schema_verify', '--plan-only', '--json'],
+	},
+];
+
+export function getPublicJsonSchemaContracts(): readonly PublicJsonSchemaContract[] {
+	return PUBLIC_JSON_SCHEMA_CONTRACTS;
+}
+
+export function getPublicJsonSchemaFiles(): readonly string[] {
+	return PUBLIC_JSON_SCHEMA_CONTRACTS.map((contract) => contract.schemaFile);
+}

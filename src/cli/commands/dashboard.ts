@@ -631,6 +631,7 @@ function renderStatusResponse(projectRoot: string): DashboardStatusSnapshot {
 		runnable_intents: context.command_contract.runnable_intents,
 		command_contract: commandContract,
 		verification: createDashboardVerificationSnapshot(
+			projectRoot,
 			rawCommandContract,
 			commandContract.intents,
 			gitChangedFiles,

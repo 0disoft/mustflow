@@ -9,6 +9,7 @@ Current schemas:
 - `context-report.schema.json`: `mf context --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
+- `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `classify-report.schema.json`: `mf classify --changed --json` and
   `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact --changed --json` and
@@ -25,3 +26,7 @@ Current schemas:
 
 These schemas describe stable automation-facing fields. Human-readable command
 output is intentionally not covered.
+
+The shipped schema surface is tracked in `src/core/public-json-contracts.ts`.
+Release tests compare that manifest with this README, `schemas/*.schema.json`,
+`npm pack --dry-run --json`, and installed-package JSON command output.

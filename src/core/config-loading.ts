@@ -15,6 +15,7 @@ export const MUSTFLOW_CONFIG_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 export interface CommandContract {
 	readonly defaults: TomlTable;
 	readonly intents: TomlTable;
+	readonly resources: TomlTable;
 }
 
 export function isRecord(value: unknown): value is TomlTable {
@@ -55,6 +56,7 @@ export function readCommandContract(projectRoot: string): CommandContract {
 	return {
 		defaults: isRecord(parsed.defaults) ? parsed.defaults : {},
 		intents: parsed.intents,
+		resources: isRecord(parsed.resources) ? parsed.resources : {},
 	};
 }
 

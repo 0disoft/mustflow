@@ -25,6 +25,38 @@ valid:
 If any requirement is missing or invalid, `mf run <intent>` must refuse the
 intent.
 
+## Effects and Resource Locks
+
+`writes` remains the backward-compatible path summary for files a command may
+modify. When a command has side effects that matter for scheduling, declare
+`effects` and optional top-level `resources`.
+
+```toml
+[resources.dist_build_output]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Generated build output."
+
+[intents.test_release]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
+```
+
+Effect paths are resolved from the intent working directory and must stay inside
+the current mustflow root. When `effects` are absent, mustflow treats each
+`writes` entry as a conservative exclusive write lock. `delete_recreate`
+conflicts with readers and writers of the same lock.
+
+This scheduling metadata does not make `mf run` parallel. Until run receipts no
+longer share one `latest.json` target, copied verification commands should still
+be executed serially.
+
 ## Status Values
 
 - `configured`: the intent may be considered for execution if all runnable
@@ -73,4 +105,3 @@ mustflow verification.
 - `mf run build` fails when `cwd` escapes the current mustflow root.
 - `mf run mustflow_check` does not require an externally discoverable `mf`
   executable when the intent is a mustflow built-in.
-

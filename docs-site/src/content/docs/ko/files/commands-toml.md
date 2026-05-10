@@ -80,6 +80,8 @@ required_after = ["code_change", "behavior_change"]
 - `stdin`: 표준 입력 처리 방식입니다. 자동 실행 가능한 의도는 `closed`여야 합니다.
 - `success_exit_codes`: 성공으로 볼 종료 코드 목록입니다.
 - `writes`: 명령이 수정할 수 있는 경로 목록입니다.
+- `resources`: 빌드 출력 디렉터리처럼 여러 명령이 공유하는 자원을 선언하는 선택 필드입니다.
+- `effects`: 명령별 부수 효과를 선언하는 선택 필드입니다. 검증 계획에서 자원 잠금과 안전한 실행 순서를 설명할 때 씁니다. 이 필드가 없으면 `writes` 항목을 보수적인 독점 쓰기 잠금으로 봅니다.
 - `network`: 네트워크 사용 여부입니다.
 - `destructive`: 파괴적 작업 가능성이 있는지 나타냅니다.
 
@@ -106,6 +108,33 @@ destructive = false
 복잡한 셸 기능이 필요하면 `mode = "shell"`과 `cmd`를 명시하고, 실행 영향과 쓰기 경로를 함께 적습니다.
 
 `unknown`, `not_applicable`, `manual_only`, `disabled` 상태에서는 대체 명령을 추측하지 않습니다.
+
+## 부수 효과와 자원 잠금
+
+단순한 쓰기 경로만으로 명령 충돌을 설명하기 어렵다면 `resources`와 `effects`를 사용합니다.
+
+```toml
+[resources.dist_build_output]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Generated build output."
+
+[intents.test_release]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
+```
+
+지원하는 효과 모드는 `read`, `write`, `append`, `replace`, `delete_recreate`입니다.
+`delete_recreate`는 같은 잠금을 사용하는 읽기와 쓰기 모두와 충돌합니다.
+효과 경로는 의도의 `cwd`를 기준으로 해석하며 현재 mustflow 루트 밖으로 나가면 안 됩니다.
+`effects`가 없으면 mustflow는 각 `writes` 경로에서 독점 잠금을 파생합니다.
+이 메타데이터는 검증 계획의 안전한 순서를 설명하기 위한 것입니다. `mf run` 자체는 여전히 한 번에 하나의 명령만 실행하고 최신 실행 기록 하나를 씁니다.
 
 ## 테스트 관련 의도
 

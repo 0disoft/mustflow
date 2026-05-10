@@ -513,7 +513,7 @@ function createVerifyOutput(
 
 function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): ChangeVerificationReport {
 	const contract = readCommandContract(projectRoot);
-	return createChangeVerificationReport(input.classificationReport, contract);
+	return createChangeVerificationReport(input.classificationReport, contract, projectRoot);
 }
 
 function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {

@@ -11,6 +11,13 @@ const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 
+async function readPublicJsonContracts() {
+	const contractsModule = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'public-json-contracts.js')).href
+	);
+	return contractsModule.getPublicJsonSchemaContracts();
+}
+
 function collectRelativeFiles(directory) {
 	const files = [];
 
@@ -30,7 +37,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.74');
+	assert.equal(packageJson.version, '1.15.77');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
 	assert.deepEqual(packageJson.repository, {
@@ -194,7 +201,8 @@ test('template i18n validation reports localized frontmatter drift', async () =>
 	}
 });
 
-test('npm package includes compiled cli and default template sources', () => {
+test('npm package includes compiled cli, schema contracts, and default template sources', async () => {
+	const publicJsonContracts = await readPublicJsonContracts();
 	const result = spawnSync('npm pack --dry-run --json --ignore-scripts', {
 		cwd: projectRoot,
 		encoding: 'utf8',
@@ -223,6 +231,7 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('dist/cli/commands/verify.js'));
 	assert.ok(files.has('dist/core/contract-models.js'));
 	assert.ok(files.has('dist/core/doc-review-triage.js'));
+	assert.ok(files.has('dist/core/public-json-contracts.js'));
 	assert.ok(files.has('dist/core/surface-decision-model.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
 	assert.ok(files.has('templates/default/i18n.toml'));
@@ -240,6 +249,9 @@ test('npm package includes compiled cli and default template sources', () => {
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/line-endings-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
+	for (const contract of publicJsonContracts) {
+		assert.ok(files.has(`schemas/${contract.schemaFile}`), `${contract.schemaFile} should be packaged`);
+	}
 	assert.ok(files.has('examples/README.md'));
 	assert.ok(files.has('examples/docs-only/README.md'));
 	assert.ok(files.has('examples/host-instruction-conflicts/README.md'));

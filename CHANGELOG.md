@@ -29,6 +29,15 @@ user projects by `mf init`.
 - Added release-priority triage to `mf docs review list --json` so pending
   documentation is classified as P0, P1, or P2 with release-blocking status and
   a machine-readable triage reason.
+- Added a public JSON schema contract manifest so release tests compare schema
+  files, schema documentation, package contents, and installed-package JSON
+  command output from one declared surface.
+- Added command `resources` and `effects` contract metadata plus verification
+  scheduling so plan-only verification can explain resource locks and serial
+  ordering without making `mf run` parallel.
+- Added the verification plan order to `mf dashboard` so the read-only
+  verification tab shows copied commands, command effects, resource locks, and
+  serial batches without running anything.
 - Added previous-snapshot source anchor status comparison for `mf index --source`
   so moved, changed, review-needed, and stale anchors are recorded in the local
   SQLite index without turning anchors into verification authority.
@@ -97,6 +106,13 @@ user projects by `mf init`.
 - Added the `repo-improvement-loop` default skill for evidence-based repository
   improvement cycles with ranked candidates, one scoped change, verification,
   and a next improvement question.
+
+### Changed
+
+- Reorganized README and documentation-site entry points around the no-guessing
+  workflow contract, with change classification, execution-free verification
+  planning, command receipts, navigation-only source anchors, and dashboard
+  non-execution boundaries shown before deeper reference material.
 
 ### Fixed
 

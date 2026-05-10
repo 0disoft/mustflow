@@ -80,6 +80,8 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `stdin`: Standard input behavior. Agent-runnable intents must use `closed`.
 - `success_exit_codes`: Exit codes considered successful.
 - `writes`: Paths the command may modify.
+- `resources`: Optional top-level resource declarations for shared outputs such as build directories.
+- `effects`: Optional per-intent side-effect declarations used to explain resource locks and safe verification order. When absent, `writes` is treated as a conservative exclusive write lock.
 - `network`: Whether the command uses the network.
 - `destructive`: Whether the command may be destructive.
 
@@ -106,6 +108,33 @@ destructive = false
 If a shell is required, set `mode = "shell"` and `cmd`, then declare the command impact and write paths.
 
 For `unknown`, `not_applicable`, `manual_only`, and `disabled`, agents must not infer a replacement command.
+
+## Effects and Resource Locks
+
+Use `resources` and `effects` when simple write paths are not enough to explain command conflicts.
+
+```toml
+[resources.dist_build_output]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Generated build output."
+
+[intents.test_release]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
+```
+
+Supported effect modes are `read`, `write`, `append`, `replace`, and `delete_recreate`.
+`delete_recreate` conflicts with both readers and writers of the same lock.
+Effect paths are resolved from the intent `cwd` and must stay inside the current mustflow root.
+If `effects` are omitted, mustflow derives an exclusive lock from each `writes` path.
+This metadata explains safe ordering for verification plans; `mf run` itself still executes one command at a time and writes one latest receipt.
 
 ## Test-Related Intents
 

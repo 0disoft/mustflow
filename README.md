@@ -10,6 +10,42 @@ The core model is simple: put `AGENTS.md` at the project root, then keep the
 detailed workflow under `.mustflow/`. Agents start from `AGENTS.md`, then follow
 the command contract, skills, project context, and verification rules in order.
 
+- Documentation site: <https://mustflow.github.io>
+- Human-readable project examples: [`examples/`](examples/)
+- Repository: <https://github.com/0disoft/mustflow>
+- Issues: <https://github.com/0disoft/mustflow/issues>
+- Contributing: [CONTRIBUTING.md](https://github.com/0disoft/mustflow/blob/main/CONTRIBUTING.md)
+- Security: [SECURITY.md](https://github.com/0disoft/mustflow/blob/main/SECURITY.md)
+- Changelog: [CHANGELOG.md](https://github.com/0disoft/mustflow/blob/main/CHANGELOG.md)
+
+## No-guessing workflow
+
+The first path through mustflow is intentionally narrow.
+
+```sh
+npm install -D mustflow
+npx mf init --yes
+npx mf check --strict
+```
+
+After code, template, schema, or documentation changes, classify the changed
+paths and inspect the verification plan before running anything.
+
+```sh
+npx mf classify --changed --json > .mustflow/state/change-plan.json
+npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
+npx mf verify --from-plan .mustflow/state/change-plan.json --json
+```
+
+The plan is derived from change classification and
+`.mustflow/config/commands.toml` `required_after` metadata. A command is runnable
+only when its declared intent is configured, one-shot, agent-allowed,
+closed-stdin, bounded by a timeout, and backed by an explicit command source.
+
+Source anchors, maps, and SQLite search results are navigation hints only. They
+do not grant command permission, skip validation, or override `AGENTS.md` and
+`.mustflow/config/commands.toml`.
+
 ## Agent Read Flow
 
 ```mermaid
@@ -35,13 +71,36 @@ The skills index is an active routing step: agents compare the task with `.mustf
 and read matching `SKILL.md` files before editing that scope. Skills guide procedure only; command
 execution still comes from `.mustflow/config/commands.toml`.
 
-- Documentation site: <https://mustflow.github.io>
-- Human-readable project examples: [`examples/`](examples/)
-- Repository: <https://github.com/0disoft/mustflow>
-- Issues: <https://github.com/0disoft/mustflow/issues>
-- Contributing: [CONTRIBUTING.md](https://github.com/0disoft/mustflow/blob/main/CONTRIBUTING.md)
-- Security: [SECURITY.md](https://github.com/0disoft/mustflow/blob/main/SECURITY.md)
-- Changelog: [CHANGELOG.md](https://github.com/0disoft/mustflow/blob/main/CHANGELOG.md)
+## Quick start
+
+Node.js 20 or newer is required. mustflow is distributed as an npm package, and
+the CLI name is `mf`.
+
+```sh
+npm install -D mustflow
+npx mf init --yes
+npx mf check --strict
+```
+
+In an interactive terminal, `mf init` asks you to choose the document language,
+project profile, and agent report language. Use `mf init --yes` when scripts
+should install the English defaults without prompts.
+
+Use `mf init --dry-run` before writing files when you want to inspect the
+installation plan first.
+
+pnpm and Bun can use the same npm package.
+
+```sh
+pnpm add -D mustflow
+pnpm exec mf init --yes
+
+bun add -d mustflow
+bunx mf init --yes
+```
+
+Deno `npm:` execution should be treated as experimental until separately
+verified.
 
 ## What it does
 
@@ -50,14 +109,17 @@ mustflow installs and validates an agent workflow for user projects.
 - Installs `AGENTS.md` and the `.mustflow/**` workflow files.
 - Declares runnable command rules in `.mustflow/config/commands.toml`.
 - Checks install health and configuration structure with `mf check` and `mf doctor`.
-- Runs only allowed one-shot commands within a timeout via `mf run <intent>`.
+- Classifies changed files, public surfaces, and validation reasons with
+  `mf classify`.
+- Prints execution-free verification plans with `mf verify --plan-only --json`.
+- Runs only allowed one-shot commands within a timeout via `mf run <intent>` or
+  `mf verify` when the selected intent is runnable.
+- Writes command receipts to `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
 - Indexes and searches mustflow docs, skills, command rules, and opt-in source
-  anchor metadata, including derived symbol fingerprints and previous-snapshot
-  status comparisons, with SQLite via `mf index` and `mf search`.
+  anchor metadata with SQLite via `mf index` and `mf search`.
 - Tracks agent-created or agent-modified documentation that needs prose review
-  with `mf docs review`, including optional multiline review comments and
-  cleanup of imported comment files.
+  with `mf docs review`.
 - Previews and applies bundled template updates safely with `mf update`.
 - Publishes JSON Schemas for automation-facing reports and command contracts in
   `schemas/`.
@@ -76,56 +138,12 @@ mustflow is not an automatic project editor and is not tied to one agent product
 - It does not add platform-specific files for GitHub, GitLab, or similar tools
   to the default template.
 - It does not create a `justfile`, `Makefile`, or `Taskfile.yml` by default.
-- `mf dashboard` starts a local browser UI for inspecting mustflow status,
-  reviewing verification recommendations from changed files, inspecting
-  configured command intents, checking release and version-source status,
-  checking template update readiness, inspecting the latest run receipt,
-  inspecting skill routes, reviewing and editing safe preferences in
-  `.mustflow/config/preferences.toml`, and managing the documentation review
-  queue in `.mustflow/review/docs.toml`, then opens it in the default browser.
-  The page can switch between English, Korean, Chinese, Spanish, French, and
-  Hindi. It includes verification-selection and test authoring preferences.
-  When the dashboard saves preferences, it
-  refreshes the matching manifest-lock entry as a customized baseline if the lock
-  file exists.
-
-## Candidate features
-
-These are parked ideas, not yet officially supported.
-
-- Community skill registry and skill pack installs
-- Optional `.mustflow/work-items/`
-- `mf orient`, `mf refresh`
-- Tool-specific adapters
-
-## Quick start
-
-Node.js 20 or newer is required. mustflow is distributed as an npm package, and
-the CLI name is `mf`.
-
-```sh
-npm install -D mustflow
-npx mf init --dry-run
-npx mf init
-npx mf check --strict
-```
-
-In an interactive terminal, `mf init` asks you to choose the document language,
-project profile, and agent report language. Use `mf init --yes` when scripts
-should install the English defaults without prompts.
-
-pnpm and Bun can use the same npm package.
-
-```sh
-pnpm add -D mustflow
-pnpm exec mf init --yes
-
-bun add -d mustflow
-bunx mf init --yes
-```
-
-Deno `npm:` execution should be treated as experimental until separately
-verified.
+- `mf dashboard` is for inspecting status, verification recommendations,
+  command intents, release/version-source status, template update readiness,
+  latest run receipts, skill routes, safe preferences, and documentation review
+  state. It can copy or explain workflow information, but it does not run
+  commands, apply fixes, start agents, merge branches, push changes, or update
+  files automatically.
 
 ## Installed files
 
@@ -242,11 +260,12 @@ by default.
 ## Basic workflow
 
 ```sh
-npx mf init --dry-run
-npx mf init
+npx mf init --yes
 npx mf doctor
 npx mf check --strict
-npx mf map --write
+npx mf classify --changed --json > .mustflow/state/change-plan.json
+npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
+npx mf verify --from-plan .mustflow/state/change-plan.json --json
 ```
 
 Create the optional local search index if search capabilities are needed.
@@ -302,7 +321,7 @@ mf run mustflow_update_apply
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
 | `mf help <topic>` | Show installed mustflow help. |
-| `mf dashboard` | Start a local dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. |
+| `mf dashboard` | Start a local inspection dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. It does not execute commands or apply fixes. |
 | `mf version` | Print the installed mustflow package version. |
 | `mf version --check` | Compare the installed package version with the latest npm release and print an update command when a newer version exists. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
@@ -410,6 +429,15 @@ Files copied into user projects come from `templates/default/common/` and
 
 Versioned contract specifications live in `docs/spec/`. The documentation site
 links them from Design -> Contract specifications.
+
+## Candidate features
+
+These are parked ideas, not yet officially supported.
+
+- Community skill registry and skill pack installs
+- Optional `.mustflow/work-items/`
+- `mf orient`, `mf refresh`
+- Tool-specific adapters
 
 ## Development
 

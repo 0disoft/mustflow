@@ -40,9 +40,39 @@
     "intents": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/intent" }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/resource" }
     }
   },
   "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["path"] },
+        "paths": { "$ref": "#/$defs/stringArray" },
+        "concurrency": { "enum": ["shared_reader", "exclusive_writer", "exclusive"] },
+        "description": { "type": "string" }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["read", "write"] },
+        "mode": { "enum": ["read", "write", "append", "replace", "delete_recreate"] },
+        "path": { "type": "string" },
+        "paths": { "$ref": "#/$defs/stringArray" },
+        "lock": { "type": "string" },
+        "concurrency": { "enum": ["shared", "exclusive"] }
+      }
+    },
     "intent": {
       "type": "object",
       "additionalProperties": false,
@@ -66,8 +96,11 @@
           "items": { "type": "integer" }
         },
         "writes": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "effects": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "$ref": "#/$defs/effect" }
         },
         "network": { "type": "boolean" },
         "destructive": { "type": "boolean" },

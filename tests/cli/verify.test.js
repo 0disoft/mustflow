@@ -131,6 +131,76 @@ required_after = ["custom_verify"]
 	}
 });
 
+test('prints verification schedule batches from command effects', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[resources.dist_build_output]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Generated build output."
+
+[intents.verify_build_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Build A."
+argv = ['${process.execPath}', '-e', 'console.log("a")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["custom_verify"]
+
+[intents.verify_build_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Build B."
+argv = ['${process.execPath}', '-e', 'console.log("b")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["custom_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.schedule.runner, 'serial_mf_run_receipts');
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent),
+			['verify_build_a', 'verify_build_b'],
+		);
+		assert.deepEqual(report.schedule.batches.map((batch) => batch.intents), [['verify_build_a'], ['verify_build_b']]);
+		assert.equal(report.schedule.entries[0].locks[0], 'dist_build_output');
+		assert.equal(report.schedule.entries[0].effects[0].mode, 'delete_recreate');
+		assert.equal(report.schedule.entries[0].conflicts[0].conflictsWith, 'verify_build_b');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps manual-only plan candidates as skipped and reports gaps', () => {
 	const projectPath = createTempProject();
 

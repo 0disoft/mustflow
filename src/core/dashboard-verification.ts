@@ -26,11 +26,46 @@ export interface DashboardSkippedVerification {
 	readonly reason_key: string;
 }
 
+export interface DashboardVerificationScheduleEffect {
+	readonly access: string;
+	readonly mode: string;
+	readonly path: string;
+	readonly lock: string;
+	readonly concurrency: string;
+}
+
+export interface DashboardVerificationScheduleEntry {
+	readonly intent: string;
+	readonly command: string;
+	readonly locks: readonly string[];
+	readonly effects: readonly DashboardVerificationScheduleEffect[];
+	readonly conflicts: readonly {
+		readonly intent: string;
+		readonly lock: string;
+		readonly detail: string;
+	}[];
+}
+
+export interface DashboardVerificationScheduleBatch {
+	readonly index: number;
+	readonly intents: readonly string[];
+	readonly commands: readonly string[];
+	readonly locks: readonly string[];
+}
+
+export interface DashboardVerificationSchedule {
+	readonly runner: string;
+	readonly batches: readonly DashboardVerificationScheduleBatch[];
+	readonly entries: readonly DashboardVerificationScheduleEntry[];
+	readonly notes: readonly string[];
+}
+
 export interface DashboardVerificationSnapshot {
 	readonly changed_files: readonly string[];
 	readonly surfaces: readonly string[];
 	readonly recommendations: readonly DashboardVerificationRecommendation[];
 	readonly skipped: readonly DashboardSkippedVerification[];
+	readonly schedule: DashboardVerificationSchedule;
 }
 
 function toPosixChangedFiles(
@@ -132,10 +167,17 @@ function createEmptyDashboardVerificationSnapshot(changedFiles: readonly string[
 		surfaces: [],
 		recommendations: [],
 		skipped: [],
+		schedule: {
+			runner: 'serial_mf_run_receipts',
+			batches: [],
+			entries: [],
+			notes: [],
+		},
 	};
 }
 
 export function createDashboardVerificationSnapshot(
+	projectRoot: string,
 	rawCommandContract: CommandContract | null,
 	commandIntents: readonly DashboardVerificationIntent[],
 	changedFiles: readonly string[],
@@ -149,7 +191,7 @@ export function createDashboardVerificationSnapshot(
 	}
 
 	const classificationReport = createChangeClassificationReport('changed', allChangedFiles);
-	const verificationReport = createChangeVerificationReport(classificationReport, rawCommandContract);
+	const verificationReport = createChangeVerificationReport(classificationReport, rawCommandContract, projectRoot);
 	const commandByName = new Map(commandIntents.map((intent) => [intent.name, intent]));
 	const recommendations: DashboardVerificationRecommendation[] = [];
 	const skipped: DashboardSkippedVerification[] = [];
@@ -182,5 +224,32 @@ export function createDashboardVerificationSnapshot(
 		),
 		recommendations,
 		skipped,
+		schedule: {
+			runner: verificationReport.schedule.runner,
+			batches: verificationReport.schedule.batches.map((batch) => ({
+				index: batch.index,
+				intents: batch.intents,
+				commands: batch.intents.map((intent) => `mf run ${intent}`),
+				locks: batch.locks,
+			})),
+			entries: verificationReport.schedule.entries.map((entry) => ({
+				intent: entry.intent,
+				command: `mf run ${entry.intent}`,
+				locks: entry.locks,
+				effects: entry.effects.map((effect) => ({
+					access: effect.access,
+					mode: effect.mode,
+					path: effect.path,
+					lock: effect.lock,
+					concurrency: effect.concurrency,
+				})),
+				conflicts: entry.conflicts.map((conflict) => ({
+					intent: conflict.conflictsWith,
+					lock: conflict.lock,
+					detail: conflict.detail,
+				})),
+			})),
+			notes: verificationReport.schedule.notes,
+		},
 	};
 }

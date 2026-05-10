@@ -13,12 +13,23 @@ mustflow의 버전 있는 계약 명세는 저장소의
 
 공개 JSON 스키마는
 [`schemas/`](https://github.com/0disoft/mustflow/tree/main/schemas)에 있으며 npm 패키지에도
-포함됩니다.
+포함됩니다. 배포되는 스키마 표면은 `src/core/public-json-contracts.ts`에서 추적하며,
+릴리스 테스트는 이 매니페스트를 스키마 디렉터리, 이 문서 표면, 패키지 내용, 설치된
+패키지의 JSON 명령 출력과 비교합니다.
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
 - `run-receipt.schema.json`: `mf run <intent> --json`과 `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: 파싱된 `.mustflow/config/commands.toml`
+- `contract-lint-report.schema.json`: `mf contract-lint --json`
+- `classify-report.schema.json`: `mf classify <path...> --json`
+- `impact-report.schema.json`: `mf impact <path...> --json`
+- `line-endings-report.schema.json`: `mf line-endings check --json`
+- `version-sources-report.schema.json`: `mf version-sources --json`
+- `docs-review-list.schema.json`: `mf docs review list --json`
+- `explain-report.schema.json`: `mf explain <topic> --json`
+- `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
 
 ## 현재 명세
 

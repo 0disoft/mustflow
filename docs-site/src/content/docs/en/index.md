@@ -3,16 +3,34 @@ title: mustflow
 description: Technical documentation for the agent-readable workflow managed by mustflow.
 ---
 
-Mustflow documentation provides detailed specifications for the LLM-optimized files and configuration schemas created by `mf init` within user repositories.
+Mustflow keeps LLM coding agents from guessing inside a repository. It installs a required read order, a command contract, change classification, execution-free verification planning, and command receipts.
 
-## Scope of Documentation
+## First Flow
 
-- **File Placement**: Defines the directory structure within the target repository.
-- **Read Sequence**: Specifies the mandatory order for agent instruction processing.
-- **Configuration Schemas**: Explains the purpose of each field and document section.
-- **Installation Logic**: Distinguishes between copied, generated, and excluded files.
-- **Command Contracts**: Details how predefined intents prevent command inference.
-- **Agent Context**: Describes the machine-readable state available via `mf context --json`.
+```sh
+npm install -D mustflow
+npx mf init --yes
+npx mf check --strict
+```
+
+After changing code, templates, schemas, or documentation, inspect the required verification before running commands.
+
+```sh
+npx mf classify --changed --json > .mustflow/state/change-plan.json
+npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
+npx mf verify --from-plan .mustflow/state/change-plan.json --json
+```
+
+`mf classify` maps changed paths to public surfaces and validation reasons. `mf verify --plan-only --json` joins those reasons to `.mustflow/config/commands.toml` `required_after` metadata without executing commands. Runnable commands still need the declared command contract: configured, one-shot, agent-allowed, closed stdin, timeout, and an explicit command source.
+
+## Contract Pieces
+
+- **Read sequence**: Agents start with `AGENTS.md`, then read the configured workflow files in order.
+- **Command contracts**: `commands.toml` is the only source of runnable command authority.
+- **Change acceptance**: `classify` and `verify --plan-only` explain why a check is needed before execution.
+- **Receipts**: `mf run` and executable `mf verify` flows write the latest command receipt under `.mustflow/state/`.
+- **Navigation hints**: `REPO_MAP.md`, SQLite search rows, and source anchors help agents find files, but do not grant permission, skip validation, or override workflow rules.
+- **Dashboard**: The dashboard is for inspection, copying, and explanation. It does not run commands, apply fixes, start agents, merge branches, push changes, or update files automatically.
 
 ## Default Structure
 

@@ -18,6 +18,10 @@ import {
 	type VerificationRunnableStatus,
 	type VerificationSkipReason,
 } from './verification-plan.js';
+import {
+	createVerificationSchedule,
+	type VerificationSchedule,
+} from './verification-scheduler.js';
 
 export const CHANGE_VERIFICATION_SCHEMA_VERSION = '1';
 
@@ -56,6 +60,7 @@ export interface ChangeVerificationReport {
 	readonly requirements: readonly VerificationRequirement[];
 	readonly candidates: readonly ChangeVerificationCandidate[];
 	readonly gaps: readonly ChangeVerificationGap[];
+	readonly schedule: VerificationSchedule;
 }
 
 function uniqueSorted(values: Iterable<string>): string[] {
@@ -147,10 +152,12 @@ function gapForRequirement(
 export function createChangeVerificationReport(
 	classificationReport: ChangeClassificationReport,
 	commandContract: CommandContract,
+	projectRoot: string,
 ): ChangeVerificationReport {
 	const requirements = classificationReport.summary.validationReasons.map((reason) =>
 		createVerificationRequirement(classificationReport, reason),
 	);
+	const candidatePlans = requirements.flatMap((requirement) => createVerificationPlan(commandContract, requirement.reason).candidates);
 	const candidates = requirements.flatMap((requirement) =>
 		createVerificationPlan(commandContract, requirement.reason).candidates.map((candidate) =>
 			toChangeVerificationCandidate(requirement.reason, candidate),
@@ -168,5 +175,6 @@ export function createChangeVerificationReport(
 		requirements,
 		candidates,
 		gaps,
+		schedule: createVerificationSchedule(projectRoot, commandContract, candidatePlans),
 	};
 }

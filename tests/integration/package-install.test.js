@@ -11,7 +11,8 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertMatchesSchema } from '../helpers/json-schema.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
@@ -63,7 +64,7 @@ function hasBinShim(projectPath, name) {
 		existsSync(path.join(projectPath, 'node_modules', '.bin', `${name}.cmd`));
 }
 
-test('packed npm package installs and runs the public mf workflow', () => {
+test('packed npm package installs and runs the public mf workflow', async () => {
 	const packRoot = createTempRoot('mustflow-pack-');
 	const projectPath = createTempRoot('mustflow-install-');
 
@@ -91,6 +92,7 @@ test('packed npm package installs and runs the public mf workflow', () => {
 		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'context-report.schema.json')));
 		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'run-receipt.schema.json')));
 		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'schemas', 'commands.schema.json')));
+		assert.ok(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'dist', 'core', 'public-json-contracts.js')));
 		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'src')), false);
 		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'tests')), false);
 		assert.equal(existsSync(path.join(projectPath, 'node_modules', 'mustflow', 'docs-site')), false);
@@ -155,6 +157,72 @@ test('packed npm package installs and runs the public mf workflow', () => {
 		assert.match(preferences, /agent_response = "ko"/);
 		assert.match(preferences, /source_locale = "en"/);
 		assert.match(preferences, /target_locales = \["ko-KR"\]/);
+
+		const installedPackageRoot = path.join(projectPath, 'node_modules', 'mustflow');
+		const installedSchemaRoot = path.join(installedPackageRoot, 'schemas');
+		const installedContractsModule = await import(
+			pathToFileURL(path.join(installedPackageRoot, 'dist', 'core', 'public-json-contracts.js')).href
+		);
+		const publicJsonContracts = installedContractsModule.getPublicJsonSchemaContracts();
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const originalCommands = readFileSync(commandsPath, 'utf8');
+		let schemaVerifyIntentInstalled = false;
+
+		function ensureSchemaVerifyIntent() {
+			if (schemaVerifyIntentInstalled) {
+				return;
+			}
+
+			writeFileSync(
+				commandsPath,
+				`${originalCommands}
+
+[intents.schema_verify]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a schema verification smoke message."
+argv = ["${process.execPath.replace(/\\/g, '\\\\')}", "-e", "console.log('schema smoke')"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_verify"]
+`,
+			);
+			schemaVerifyIntentInstalled = true;
+		}
+
+		for (const contract of publicJsonContracts) {
+			assert.ok(
+				existsSync(path.join(installedSchemaRoot, contract.schemaFile)),
+				`${contract.schemaFile} should be installed`,
+			);
+
+			if (!contract.installedCommand) {
+				continue;
+			}
+
+			if (contract.installedCommand.includes('schema_verify')) {
+				ensureSchemaVerifyIntent();
+			}
+
+			const jsonCommand = run(npxCommand(), contract.installedCommand, { cwd: projectPath });
+			const expectedExitCodes = contract.expectedExitCodes ?? [0];
+
+			assert.ok(
+				expectedExitCodes.includes(jsonCommand.status),
+				`${contract.schemaFile} producer exited ${jsonCommand.status}: ${jsonCommand.stderr || jsonCommand.stdout}`,
+			);
+			assertMatchesSchema(installedSchemaRoot, contract.schemaFile, JSON.parse(jsonCommand.stdout));
+		}
+
+		if (schemaVerifyIntentInstalled) {
+			writeFileSync(commandsPath, originalCommands);
+		}
 
 		const check = run(npxCommand(), ['mf', 'check', '--strict', '--json'], { cwd: projectPath });
 		assert.equal(check.status, 0, check.stderr || check.stdout);

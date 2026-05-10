@@ -2331,3 +2331,64 @@ test('check json includes stable command-boundary issue ids', () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('strict check warns when configured intents share writes without effects', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				readText(commandsPath),
+				'[intents.writer_a]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Write A."',
+				`argv = ['${process.execPath}', '-e', 'console.log("a")']`,
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = ["dist/"]',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.writer_b]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Write B."',
+				`argv = ['${process.execPath}', '-e', 'console.log("b")']`,
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = ["dist/"]',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'pyproject.toml'),
+			['[project]', 'name = "example"', 'version = "1.0.0"', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes('writer_a, writer_b share path:dist through writes without explicit effects or resource locks'),
+			),
+		);
+		assertHasIssueDetail(check, 'mustflow.command_contract.shared_writes_without_effects');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

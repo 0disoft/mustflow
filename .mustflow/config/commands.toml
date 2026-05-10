@@ -17,6 +17,18 @@ max_output_bytes = 1048576
 on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
 
+[resources.dist_build_output]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Generated CLI build output. Commands that rebuild dist must not overlap."
+
+[resources.docs_site_build_output]
+type = "path"
+paths = ["docs-site/dist/**"]
+concurrency = "exclusive_writer"
+description = "Generated documentation site build output."
+
 [intents.test]
 status = "configured"
 lifecycle = "oneshot"
@@ -28,6 +40,9 @@ timeout_seconds = 900
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["cross_cutting_code_change", "behavior_change", "test_change", "release_risk"]
@@ -43,6 +58,9 @@ timeout_seconds = 420
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change"]
@@ -58,6 +76,9 @@ timeout_seconds = 360
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["low_risk_code_change", "copy_change", "i18n_change"]
@@ -73,6 +94,9 @@ timeout_seconds = 420
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["test_policy_change", "coverage_request"]
@@ -103,6 +127,9 @@ timeout_seconds = 420
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["package_metadata_change", "template_version_change", "packaging_change"]
@@ -170,6 +197,9 @@ timeout_seconds = 300
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["code_change", "build_config_change", "public_api_change"]
@@ -185,6 +215,9 @@ timeout_seconds = 600
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["docs-site/dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "docs-site/dist/**", lock = "docs_site_build_output", concurrency = "exclusive" },
+]
 network = false
 destructive = false
 required_after = ["docs_site_config_change", "release_risk", "before_publish"]

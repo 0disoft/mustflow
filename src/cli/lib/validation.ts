@@ -1524,8 +1524,17 @@ function validateStrictTemplateVersionSync(
 	}
 }
 
-function validateStrictCommandDefaults(commandsToml: TomlTable | undefined, issues: CheckIssue[]): void {
-	for (const issue of validateCommandContractStrictDefaults(commandsToml)) {
+function validateStrictCommandDefaults(
+	projectRoot: string,
+	commandsToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): void {
+	for (const issue of validateCommandContractStrictDefaults(projectRoot, commandsToml)) {
+		if (issue.severity === 'warning') {
+			pushStrictWarning(issues, issue.message);
+			continue;
+		}
+
 		pushStrictIssue(issues, issue.message);
 	}
 }
@@ -2328,7 +2337,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictPromptCachePolicy(parsed.mustflowToml, issues);
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
-	validateStrictCommandDefaults(parsed.commandsToml, issues);
+	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
 	validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
 	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
 	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);

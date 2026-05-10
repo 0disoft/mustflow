@@ -13,12 +13,24 @@ They are concise reference documents, not tutorials.
 
 Published JSON Schemas live in
 [`schemas/`](https://github.com/0disoft/mustflow/tree/main/schemas) and are
-included in the npm package.
+included in the npm package. The shipped schema surface is tracked in
+`src/core/public-json-contracts.ts`; release tests compare that manifest with
+the schema directory, this documentation surface, package contents, and
+installed-package JSON command output.
 
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
+- `contract-lint-report.schema.json`: `mf contract-lint --json`
+- `classify-report.schema.json`: `mf classify <path...> --json`
+- `impact-report.schema.json`: `mf impact <path...> --json`
+- `line-endings-report.schema.json`: `mf line-endings check --json`
+- `version-sources-report.schema.json`: `mf version-sources --json`
+- `docs-review-list.schema.json`: `mf docs review list --json`
+- `explain-report.schema.json`: `mf explain <topic> --json`
+- `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
 
 ## Current Specifications
 
