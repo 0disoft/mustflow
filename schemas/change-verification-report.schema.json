@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.dev/schemas/change-verification-report.schema.json",
+  "title": "mustflow change verification report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "files",
+    "classification_summary",
+    "requirements",
+    "candidates",
+    "gaps"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "source": {
+      "enum": ["changed", "paths"]
+    },
+    "files": {
+      "$ref": "#/$defs/stringArray"
+    },
+    "classification_summary": {
+      "$ref": "#/$defs/classificationSummary"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/verificationRequirement"
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/verificationCandidate"
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/verificationGap"
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updatePolicy": {
+      "enum": ["update", "update_or_mark_stale", "not_applicable"]
+    },
+    "classificationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fileCount",
+        "publicSurfaceCount",
+        "changeKinds",
+        "validationReasons",
+        "updatePolicies",
+        "driftChecks",
+        "affectedContracts"
+      ],
+      "properties": {
+        "fileCount": {
+          "type": "integer"
+        },
+        "publicSurfaceCount": {
+          "type": "integer"
+        },
+        "changeKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "validationReasons": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "updatePolicies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/updatePolicy"
+          }
+        },
+        "driftChecks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "affectedContracts": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "verificationRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "files",
+        "surfaces",
+        "affectedContracts",
+        "driftChecks",
+        "updatePolicies",
+        "source"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "files": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "surfaces": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "affectedContracts": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "driftChecks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "updatePolicies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/updatePolicy"
+          }
+        },
+        "source": {
+          "const": "change_classification"
+        }
+      }
+    },
+    "skipReason": {
+      "enum": [
+        "no_matching_intents",
+        "intent_not_table",
+        "status_not_configured",
+        "lifecycle_not_oneshot",
+        "run_policy_not_agent_allowed",
+        "stdin_not_closed",
+        "missing_timeout",
+        "missing_command_source"
+      ]
+    },
+    "verificationCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "intent", "status", "skipReason", "detail"],
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "intent": {
+          "type": ["string", "null"]
+        },
+        "status": {
+          "enum": ["runnable", "skipped"]
+        },
+        "skipReason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/skipReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "detail": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "verificationGap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "files", "surfaces", "detail"],
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "files": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "surfaces": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

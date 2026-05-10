@@ -2,6 +2,17 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { runRun } from './run.js';
+import {
+	createChangeVerificationReport,
+	type ChangeVerificationReport,
+} from '../../core/change-verification.js';
+import type {
+	ChangeClassification,
+	ChangeClassificationReport,
+	ChangeClassificationSummary,
+	ChangeSource,
+	PublicSurfaceUpdatePolicy,
+} from '../../core/change-classification.js';
 import { createVerificationPlan, type VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
@@ -50,6 +61,11 @@ interface VerificationOutput {
 	readonly results: readonly VerificationResult[];
 }
 
+interface VerifyInput {
+	readonly reasons: readonly string[];
+	readonly classificationReport: ChangeClassificationReport;
+}
+
 function createBufferedOutput(): BufferedOutput {
 	const stdout: string[] = [];
 	const stderr: string[] = [];
@@ -80,12 +96,14 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 			options: [
 				{ label: '--reason <event>', description: t(lang, 'verify.help.option.reason') },
 				{ label: '--from-plan <path>', description: t(lang, 'verify.help.option.fromPlan') },
+				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
 				'mf verify --reason code_change',
 				'mf verify --reason docs_change --json',
+				'mf verify --reason docs_change --plan-only --json',
 				'mf verify --from-plan verify-plan.json --json',
 				'mf verify --reason mustflow_docs_change',
 			],
@@ -100,6 +118,7 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 
 function parseVerifyArgs(args: readonly string[]): {
 	json: boolean;
+	planOnly: boolean;
 	reason?: string;
 	fromPlan?: string;
 	error?: string;
@@ -107,6 +126,7 @@ function parseVerifyArgs(args: readonly string[]): {
 	let reason: string | undefined;
 	let fromPlan: string | undefined;
 	let json = false;
+	let planOnly = false;
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -116,10 +136,15 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
+		if (arg === '--plan-only') {
+			planOnly = true;
+			continue;
+		}
+
 		if (arg === '--reason') {
 			const value = args[index + 1];
 			if (!value || value.startsWith('-')) {
-				return { json, reason, error: 'missing_reason_value' };
+				return { json, planOnly, reason, error: 'missing_reason_value' };
 			}
 
 			reason = value;
@@ -130,7 +155,7 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg === '--from-plan') {
 			const value = args[index + 1];
 			if (!value || value.startsWith('-')) {
-				return { json, reason, fromPlan, error: 'missing_from_plan_value' };
+				return { json, planOnly, reason, fromPlan, error: 'missing_from_plan_value' };
 			}
 
 			fromPlan = value;
@@ -141,7 +166,7 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg.startsWith('--reason=')) {
 			const value = arg.slice('--reason='.length);
 			if (value.length === 0) {
-				return { json, reason, error: 'missing_reason_value' };
+				return { json, planOnly, reason, error: 'missing_reason_value' };
 			}
 
 			reason = value;
@@ -151,7 +176,7 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg.startsWith('--from-plan=')) {
 			const value = arg.slice('--from-plan='.length);
 			if (value.length === 0) {
-				return { json, reason, fromPlan, error: 'missing_from_plan_value' };
+				return { json, planOnly, reason, fromPlan, error: 'missing_from_plan_value' };
 			}
 
 			fromPlan = value;
@@ -159,13 +184,13 @@ function parseVerifyArgs(args: readonly string[]): {
 		}
 
 		if (arg.startsWith('-')) {
-			return { json, reason, error: arg };
+			return { json, planOnly, reason, error: arg };
 		}
 
-		return { json, reason, error: `unexpected:${arg}` };
+		return { json, planOnly, reason, error: `unexpected:${arg}` };
 	}
 
-	return { json, reason, fromPlan };
+	return { json, planOnly, reason, fromPlan };
 }
 
 function uniqueStrings(values: readonly string[]): string[] {
@@ -178,6 +203,116 @@ function readStringArray(value: unknown): string[] {
 	}
 
 	return value.filter((item): item is string => typeof item === 'string');
+}
+
+function readNumber(value: unknown): number | null {
+	return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : null;
+}
+
+function readUpdatePolicies(value: unknown): PublicSurfaceUpdatePolicy[] {
+	return readStringArray(value).filter((item): item is PublicSurfaceUpdatePolicy =>
+		item === 'update' || item === 'update_or_mark_stale' || item === 'not_applicable',
+	);
+}
+
+function readChangeSource(value: unknown): ChangeSource {
+	return value === 'changed' || value === 'paths' ? value : 'paths';
+}
+
+function emptyClassificationSummary(validationReasons: readonly string[]): ChangeClassificationSummary {
+	return {
+		fileCount: 0,
+		publicSurfaceCount: 0,
+		changeKinds: [],
+		validationReasons,
+		updatePolicies: [],
+		driftChecks: [],
+		affectedContracts: [],
+	};
+}
+
+function readClassificationSummary(value: unknown, fallbackReasons: readonly string[]): ChangeClassificationSummary {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return emptyClassificationSummary(fallbackReasons);
+	}
+
+	const record = value as Record<string, unknown>;
+	const validationReasons = uniqueStrings([...fallbackReasons, ...readStringArray(record.validationReasons)]);
+
+	return {
+		fileCount: readNumber(record.fileCount) ?? 0,
+		publicSurfaceCount: readNumber(record.publicSurfaceCount) ?? 0,
+		changeKinds: readStringArray(record.changeKinds),
+		validationReasons,
+		updatePolicies: readUpdatePolicies(record.updatePolicies),
+		driftChecks: readStringArray(record.driftChecks),
+		affectedContracts: readStringArray(record.affectedContracts),
+	};
+}
+
+function readClassifications(value: unknown): ChangeClassification[] {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+
+	return value.filter((item): item is ChangeClassification => {
+		if (!item || typeof item !== 'object' || Array.isArray(item)) {
+			return false;
+		}
+
+		const record = item as Record<string, unknown>;
+		const surface = record.surface;
+		const surfaceRecord = surface as Record<string, unknown>;
+		return (
+			typeof record.path === 'string' &&
+			Array.isArray(record.changeKinds) &&
+			readStringArray(record.changeKinds).length === record.changeKinds.length &&
+			surface !== null &&
+			typeof surface === 'object' &&
+			!Array.isArray(surface) &&
+			typeof surfaceRecord.kind === 'string' &&
+			typeof surfaceRecord.category === 'string' &&
+			typeof surfaceRecord.isPublicSurface === 'boolean' &&
+			Array.isArray(surfaceRecord.validationReasons) &&
+			readStringArray(surfaceRecord.validationReasons).length === surfaceRecord.validationReasons.length &&
+			Array.isArray(surfaceRecord.affectedContracts) &&
+			readStringArray(surfaceRecord.affectedContracts).length === surfaceRecord.affectedContracts.length &&
+			readUpdatePolicies([surfaceRecord.updatePolicy]).length === 1 &&
+			Array.isArray(surfaceRecord.driftChecks) &&
+			readStringArray(surfaceRecord.driftChecks).length === surfaceRecord.driftChecks.length
+		);
+	});
+}
+
+function createSyntheticClassificationReport(
+	reasons: readonly string[],
+	source: ChangeSource = 'paths',
+	files: readonly string[] = [],
+): ChangeClassificationReport {
+	return {
+		source,
+		files,
+		classifications: [],
+		summary: emptyClassificationSummary(reasons),
+	};
+}
+
+function readClassificationReport(plan: unknown, fallbackReasons: readonly string[]): ChangeClassificationReport {
+	if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
+		return createSyntheticClassificationReport(fallbackReasons);
+	}
+
+	const record = plan as Record<string, unknown>;
+	const summary = readClassificationSummary(record.classification_summary ?? record.summary, fallbackReasons);
+	const files = readStringArray(record.files);
+	const classifications = readClassifications(record.classifications);
+
+	return {
+		source: readChangeSource(record.source),
+		files,
+		classifications,
+		summary,
+	};
 }
 
 function readPlanReasons(plan: unknown): string[] {
@@ -218,7 +353,7 @@ function resolvePlanPath(projectRoot: string, inputPath: string): string {
 	return resolved;
 }
 
-function readReasonsFromPlan(projectRoot: string, inputPath: string): string[] {
+function readInputFromPlan(projectRoot: string, inputPath: string): VerifyInput {
 	let parsed: unknown;
 	const planPath = resolvePlanPath(projectRoot, inputPath);
 
@@ -233,7 +368,10 @@ function readReasonsFromPlan(projectRoot: string, inputPath: string): string[] {
 		throw new Error('missing_plan_reasons');
 	}
 
-	return reasons;
+	return {
+		reasons,
+		classificationReport: readClassificationReport(parsed, reasons),
+	};
 }
 
 function planErrorMessageKey(code: string): MessageKey {
@@ -373,6 +511,11 @@ function createVerifyOutput(
 	};
 }
 
+function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): ChangeVerificationReport {
+	const contract = readCommandContract(projectRoot);
+	return createChangeVerificationReport(input.classificationReport, contract);
+}
+
 function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 	const lines = [
 		t(lang, 'verify.title'),
@@ -429,18 +572,33 @@ export function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 1;
 	}
 
+	if (parsed.planOnly && !parsed.json) {
+		printUsageError(reporter, t(lang, 'verify.error.planOnlyJson'), 'mf verify --help', getVerifyHelp(lang), lang);
+		return 1;
+	}
+
 	const projectRoot = resolveMustflowRoot();
-	let reasons: string[];
+	let input: VerifyInput;
 
 	try {
-		reasons = parsed.fromPlan ? readReasonsFromPlan(projectRoot, parsed.fromPlan) : [parsed.reason as string];
+		input = parsed.fromPlan
+			? readInputFromPlan(projectRoot, parsed.fromPlan)
+			: {
+					reasons: [parsed.reason as string],
+					classificationReport: createSyntheticClassificationReport([parsed.reason as string]),
+				};
 	} catch (error) {
 		const code = error instanceof Error ? error.message : 'invalid_plan_file';
 		printUsageError(reporter, t(lang, planErrorMessageKey(code)), 'mf verify --help', getVerifyHelp(lang), lang);
 		return 1;
 	}
 
-	const output = createVerifyOutput(reasons, parsed.fromPlan ?? null, projectRoot, lang);
+	if (parsed.planOnly) {
+		reporter.stdout(JSON.stringify(createPlanOnlyOutput(input, projectRoot), null, 2));
+		return 0;
+	}
+
+	const output = createVerifyOutput(input.reasons, parsed.fromPlan ?? null, projectRoot, lang);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

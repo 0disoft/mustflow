@@ -20,6 +20,8 @@ Current schemas:
 - `explain-report.schema.json`: `mf explain authority --json`, `mf explain command --json`,
   `mf explain retention --json`, `mf explain skills --json`, and `mf explain surface --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
+  and `mf verify --from-plan <path> --plan-only --json`
 
 These schemas describe stable automation-facing fields. Human-readable command
 output is intentionally not covered.

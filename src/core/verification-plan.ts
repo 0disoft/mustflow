@@ -41,7 +41,7 @@ function hasCommandSource(intent: TomlTable): boolean {
 	return Boolean((argv && argv.length > 0) || shellCommand);
 }
 
-function classifyCandidate(intentName: string, rawIntent: unknown): VerificationCandidate {
+export function classifyVerificationCandidate(intentName: string, rawIntent: unknown): VerificationCandidate {
 	if (!isRecord(rawIntent)) {
 		return {
 			intent: intentName,
@@ -120,7 +120,7 @@ function classifyCandidate(intentName: string, rawIntent: unknown): Verification
 export function createVerificationPlan(contract: CommandContract, reason: string): VerificationPlan {
 	const candidates = Object.entries(contract.intents)
 		.filter(([, intent]) => isRecord(intent) && hasRequiredAfter(intent, reason))
-		.map(([intentName, intent]) => classifyCandidate(intentName, intent))
+		.map(([intentName, intent]) => classifyVerificationCandidate(intentName, intent))
 		.sort((left, right) => left.intent.localeCompare(right.intent));
 
 	return {
