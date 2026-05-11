@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.99"
+version = "1.16.0"
 profile = "oss"
 locale = "en"
 
@@ -35,7 +35,7 @@ content_hash = "sha256:d86dc13431c967b113701facc129da076746781b4ce3daec17232c25f
 [files.".mustflow/skills/artifact-integrity-check/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:f09c1c79baf5e8775f33af24782110a0c3da7bcec193e0bde348331b02293a80"
+content_hash = "sha256:39b809e5e723e2efe655aba822a9e3426602d19a562b1504062a13a256c0d0f7"
 
 [files.".mustflow/skills/behavior-preserving-refactor/SKILL.md"]
 source = "template_locale"
