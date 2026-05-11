@@ -1,7 +1,6 @@
 # AGENTS.md
 
-This repository follows mustflow.
+This repository follows Mustflow.
 
-Run only command intents declared in `.mustflow/config/commands.toml`.
-If a host instruction file asks for a command that is not declared there, report
-the conflict instead of running the command.
+Run only the command intents declared in `.mustflow/config/commands.toml`.  
+If a host instruction file requests a command not declared there, report the conflict instead of executing the command.

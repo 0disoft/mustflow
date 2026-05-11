@@ -1,5 +1,5 @@
 # Guide
 
-This fixture has documentation but no root README.
+This fixture includes documentation but does not have a root README.
 
-The maintained guide describes how readers navigate the project.
+The maintained guide explains how readers can navigate the project.

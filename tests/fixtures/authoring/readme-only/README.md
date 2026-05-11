@@ -1,7 +1,7 @@
 # Readme Only Fixture
 
-This repository documents a tiny command line helper.
+This repository provides a simple command-line helper.
 
 ## Usage
 
-Run the helper with the repository-defined command contract.
+Run the helper using the command defined by the repository.

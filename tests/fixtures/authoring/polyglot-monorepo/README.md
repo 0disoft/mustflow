@@ -1,3 +1,3 @@
 # Polyglot Monorepo Fixture
 
-This fixture contains JavaScript, Python, and Go manifests.
+This fixture includes manifests for JavaScript, Python, and Go.

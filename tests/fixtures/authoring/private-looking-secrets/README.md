@@ -1,5 +1,5 @@
 # Private Looking Secrets Fixture
 
-Use placeholders from `env.example` only.
+Use placeholders exclusively from `env.example`.
 
-The values are examples and not real secrets.
+The values provided are examples and do not represent real secrets.

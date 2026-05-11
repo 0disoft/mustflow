@@ -1,5 +1,5 @@
 # Risky Domain Fixture
 
-This project handles access decisions for account records.
+This project manages access decisions for account records.
 
-Security guarantees are intentionally not specified in this fixture.
+Security guarantees are intentionally unspecified in this fixture.

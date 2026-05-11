@@ -1,5 +1,5 @@
 # Malformed Skill Fixture
 
-This is intentionally not a mustflow skill document.
+This document is intentionally not a valid Mustflow skill.
 
-It lacks required metadata and must be treated as fixture text only.
+It lacks the required metadata and should be treated as fixture text only.
