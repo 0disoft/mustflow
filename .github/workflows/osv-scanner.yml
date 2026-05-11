@@ -23,33 +23,45 @@ on:
     - cron: "23 5 * * 1"
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  actions: read
+  contents: read
+  security-events: write
 
 concurrency:
   group: osv-scanner-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  scan-pr:
-    name: Scan pull request dependencies
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      security-events: write
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@375a0e8ebdc98e99b02ac4338a724f5750f21213
-    with:
-      scan-args: |-
-        --recursive
-        ./
+  scan:
+    name: Scan dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
-  scan-full:
-    name: Scan repository dependencies
-    if: github.event_name != 'pull_request'
-    permissions:
-      contents: read
-      security-events: write
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@375a0e8ebdc98e99b02ac4338a724f5750f21213
-    with:
-      scan-args: |-
-        --recursive
-        ./
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@ffff457756fc02fd3b933aabf3705406f57a2e19
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --output=results.json
+            --format=json
+            --recursive
+            ./
+
+      - name: Generate SARIF
+        uses: google/osv-scanner-action/osv-reporter-action@ffff457756fc02fd3b933aabf3705406f57a2e19
+        with:
+          scan-args: |-
+            --output=results.sarif
+            --new=results.json
+            --gh-annotations=true
+            --fail-on-vuln=false
+
+      - name: Upload OSV SARIF
+        uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e
+        with:
+          sarif_file: results.sarif
