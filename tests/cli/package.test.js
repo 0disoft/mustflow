@@ -10,6 +10,7 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
+const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 
 async function readPublicJsonContracts() {
@@ -77,6 +78,15 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts['release:check'], 'npm run check && npm run docs:check && npm run check:install');
 	assert.equal(packageJson.scripts['docs:check:fast'], 'bun run --cwd docs-site check:fast');
 	assert.equal(packageJson.scripts.prepublishOnly, 'npm run release:check');
+});
+
+test('npm publish workflow uses trusted publisher identity', () => {
+	assert.match(publishNpmWorkflow, /push:\s*\n\s+tags:\s*\n\s+- "v\*"/u);
+	assert.match(publishNpmWorkflow, /environment: npm/u);
+	assert.match(publishNpmWorkflow, /id-token: write/u);
+	assert.match(publishNpmWorkflow, /npm publish --access public/u);
+	assert.doesNotMatch(publishNpmWorkflow, /NODE_AUTH_TOKEN/u);
+	assert.doesNotMatch(publishNpmWorkflow, /secrets\.NODE_AUTH_TOKEN/u);
 });
 
 test('coverage test runner keeps Node coverage concurrency configurable', () => {
