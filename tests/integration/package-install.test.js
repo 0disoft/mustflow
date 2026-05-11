@@ -25,20 +25,7 @@ function removeTempRoot(rootPath) {
 	rmSync(rootPath, { recursive: true, force: true });
 }
 
-function quoteShellArg(value) {
-	return `"${String(value).replace(/"/g, '\\"')}"`;
-}
-
 function run(command, args, options = {}) {
-	if (process.platform === 'win32') {
-		return spawnSync([command, ...args.map(quoteShellArg)].join(' '), {
-			encoding: 'utf8',
-			shell: true,
-			windowsHide: true,
-			...options,
-		});
-	}
-
 	return spawnSync(command, args, {
 		encoding: 'utf8',
 		windowsHide: true,
@@ -47,11 +34,11 @@ function run(command, args, options = {}) {
 }
 
 function npmCommand() {
-	return 'npm';
+	return process.platform === 'win32' ? 'npm.cmd' : 'npm';
 }
 
 function npxCommand() {
-	return 'npx';
+	return process.platform === 'win32' ? 'npx.cmd' : 'npx';
 }
 
 function parsePackResult(stdout) {

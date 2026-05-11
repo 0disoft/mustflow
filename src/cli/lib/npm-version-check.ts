@@ -94,7 +94,9 @@ function getTimeoutMs(): number {
 
 function buildLatestPackageUrl(registryUrl: string, packageName: string): string {
 	const trimmedRegistryUrl = registryUrl.replace(/\/+$/u, '');
-	const encodedPackageName = encodeURIComponent(packageName).replace('%40', '@');
+	const encodedPackageName = packageName.startsWith('@')
+		? `@${encodeURIComponent(packageName.slice(1))}`
+		: encodeURIComponent(packageName);
 
 	return `${trimmedRegistryUrl}/${encodedPackageName}/latest`;
 }

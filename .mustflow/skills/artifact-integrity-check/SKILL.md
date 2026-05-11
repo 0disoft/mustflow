@@ -2,7 +2,7 @@
 mustflow_doc: skill.artifact-integrity-check
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: artifact-integrity-check
@@ -34,6 +34,8 @@ Ensure generated artifacts, packaged files, media assets, reports, and downloada
 - A final report claims that a file was generated, optimized, exported, included in a package, or safe to use.
 - A build or packaging step writes files that may be stale, missing, oversized, or excluded from distribution.
 - A document, README, manifest, or test points to a generated file or asset path.
+- A release, package publish, workflow, or trusted publishing path can modify artifacts before publication.
+- A code-scanning or workflow-security alert involves published artifacts, uploaded artifacts, SARIF files, package tarballs, Pages output, cache contents, or release credentials.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -49,6 +51,8 @@ Ensure generated artifacts, packaged files, media assets, reports, and downloada
 - Source files, generation steps, or package rules that should produce the artifact.
 - Any size, format, hash, manifest, package, or documentation expectation.
 - Relevant command-intent contract entries for build, packaging, validation, or asset optimization.
+- Workflow steps, action references, publish credentials, OIDC permissions, package registry identity, and pre-publish lifecycle scripts when artifacts are released.
+- Code-scanning artifact paths, upload steps, credential scope, and whether the uploaded artifact can contain checkout credentials, generated secrets, or tampered package contents.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -70,10 +74,12 @@ Ensure generated artifacts, packaged files, media assets, reports, and downloada
 1. List each artifact or binary asset affected by the task and the claim being made about it.
 2. Identify whether the artifact is source-controlled, generated, packaged, ignored local state, or external output.
 3. Check that source references, manifests, package includes, docs links, and tests point to the same path and format.
-4. Verify existence, format, and expected inclusion using the narrowest configured command intent available.
-5. If a generated artifact is stale or missing, regenerate it only through a configured command intent or report the missing command.
-6. If an artifact should not be versioned, ensure the final report does not imply that it was committed or distributed.
-7. Report artifact evidence precisely: path checked, command intent run, and any remaining unverified attribute.
+4. For publish workflows, inspect code that runs before artifact publication. Treat mutable third-party actions, lifecycle scripts, package manifests, and generated files as artifact mutation points.
+5. For workflow artifact alerts, check whether checkout credentials persist into the workspace, whether artifacts are uploaded after untrusted code runs, and whether the job permission is broader than the artifact operation needs.
+6. Verify existence, format, and expected inclusion using the narrowest configured command intent available.
+7. If a generated artifact is stale or missing, regenerate it only through a configured command intent or report the missing command.
+8. If an artifact should not be versioned, ensure the final report does not imply that it was committed or distributed.
+9. Report artifact evidence precisely: path checked, command intent run, and any remaining unverified attribute.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -100,6 +106,7 @@ Use a narrower configured asset or documentation validation intent when it bette
 
 - If the artifact cannot be generated or inspected, report the missing tool, command intent, or source file.
 - If package inclusion and source references disagree, fix the manifest or docs before reporting the artifact as shipped.
+- If a privileged release workflow runs mutable actions or repository-controlled code before publishing, report the artifact integrity risk or isolate and pin the publish path before claiming the package is trustworthy.
 - If an artifact is too large, stale, or in the wrong format, report the issue and avoid claiming it is production-ready.
 - If verification would require external services or unavailable tools, stop at that boundary and name the unchecked artifact property.
 

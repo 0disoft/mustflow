@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-regression-tests
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: security-regression-tests
@@ -32,8 +32,11 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 
 - Authentication, authorization, session, CSRF, rate-limit, admin, payment, credit, subscription, personal-data, or tenant-boundary behavior changes.
 - Input validation, output encoding, file upload, path handling, webhook callback, redirect, or external URL handling changes.
+- Command construction, command recommendation, executable resolution, command-contract linting, or copy-to-clipboard command behavior changes.
+- Filesystem containment, symlink handling, package publishing, build pipeline, or release automation behavior changes.
 - A bug fix closes an abuse case and the fix needs a regression test to prevent reintroduction.
 - A review identifies a concrete security-sensitive boundary that can be expressed as a deterministic test.
+- A static analysis alert identifies a concrete data flow, permission boundary, command boundary, artifact boundary, or input-handling bug that can be locked with a local test.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -52,6 +55,8 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 - Existing test framework, fixtures, factories, mocks, request helpers, and naming conventions.
 - `.mustflow/config/commands.toml` entries for test, audit, lint, and build-related intents.
 - Any project context or public contract that defines privacy, authorization, upload, callback, payment, or tenant rules.
+- The executable, shell, filesystem, package, or workflow boundary that should reject repository-controlled input.
+- Static-analysis rule identifier, flagged location, source-to-sink path, and the intended defensive outcome after the fix.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -78,15 +83,24 @@ Convert security-sensitive behavior changes into safe negative tests that preser
    - unsafe input shape, size, encoding, path, or MIME mismatch
    - unsafe output rendering or serialization
    - unsafe external URL, callback, redirect, or server-side request target
+   - unsafe shell command construction, command name interpolation, clipboard command output, or executable lookup
+   - filesystem escape through symlinks, path traversal, archive entries, generated state, or package contents
+   - mismatch between two validators, linters, dashboards, schemas, or release gates that claim the same policy
+   - release or package-publishing pipeline code execution before artifact publication
+   - incomplete escaping, quoting, encoding, or sanitization where the safe behavior can be asserted without invoking a real shell or network target
+   - stack trace or internal error exposure through a user-visible API, report, dashboard, or command output
+   - workflow permission drift, mutable action references, or artifact credential leakage that can be checked through repository-local workflow tests or linters
    - payment, credit, coupon, subscription, refund, or entitlement abuse
    - personal-data or admin-only access leakage
 3. Search for existing tests that already cover the same boundary. Strengthen the existing test when that gives clearer coverage than adding a new one.
 4. Build the smallest safe negative test data: at least one allowed control case when useful, and one denied case that proves the boundary rejects the abuse condition.
-5. Use mocks or local fakes for external requests, uploads, redirects, webhooks, payment providers, and file systems. Do not contact live suspicious endpoints.
+5. Use mocks or local fakes for external requests, uploads, redirects, webhooks, payment providers, file systems, shell commands, package registries, and CI workflows. Do not contact live suspicious endpoints or publish real artifacts.
 6. Name the test after the defensive expectation, such as `cannot_read_other_users_invoice` or `rejects_private_network_callback_url`.
 7. Keep assertions tied to observable behavior: status code, returned error shape, unchanged database state, missing side effect, sanitized output, or rejected job.
 8. Avoid dumping long exploit strings into the test. Use minimal representative input that proves the validation or boundary rule.
-9. If the project lacks enough context to write a deterministic test, output a concrete test proposal instead of inventing fixtures or behavior.
+9. For command and filesystem boundaries, assert the denied side effect directly: no injected command appears in a runnable recommendation, no repository-local shim is executed, no background shell pattern is counted runnable, no symlink target outside the root is read or written.
+10. For scanner-driven fixes, include a regression only when the rule reflects a durable project contract. Do not add brittle tests that merely assert the scanner's current wording, line number, or severity.
+11. If the project lacks enough context to write a deterministic test, output a concrete test proposal instead of inventing fixtures or behavior.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

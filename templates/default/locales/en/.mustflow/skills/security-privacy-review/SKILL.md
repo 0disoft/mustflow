@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -34,6 +34,10 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - A change adds or modifies logging, telemetry, diagnostics, receipts, reports, caches, generated state, retention, redaction, export, or external transmission.
 - Documentation, templates, examples, tests, or final reports mention sensitive data handling, privacy behavior, secret handling, or user-identifying data.
 - A diff could expose data through filenames, paths, command output, screenshots, generated artifacts, package contents, or public docs.
+- A change constructs, recommends, copies, resolves, or runs commands based on repository-controlled names, configuration, or generated reports.
+- A change reads or writes repository paths, follows filesystem links, packages files, or publishes release artifacts.
+- A workflow gains publish credentials, package registry identity, OIDC permissions, or third-party actions before artifact publication.
+- A code-scanning, Scorecard, CodeQL, zizmor, or dependency-scanning alert reports a security or quality issue that may cross a trust, disclosure, permission, or release boundary.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -49,6 +53,8 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Sensitive data, actor, trust boundary, storage, logging, retention, export, or external disclosure surfaces involved.
 - Existing project rules for secrets, privacy, generated state, public docs, package contents, and command output.
 - Relevant command-intent contract entries for status, diff, docs, release, or mustflow validation.
+- Any repository-controlled names, paths, symlinks, command strings, environment path entries, workflow actions, or package contents that cross a trust boundary.
+- Scanner name, rule identifier, alert location, severity, data-flow evidence, and whether the alert is fixable in code or requires repository settings.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -71,10 +77,14 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 1. Identify the sensitive surface: secret, personal data, actor, permission, storage location, log, generated artifact, package file, public document, or external recipient.
 2. Decide whether the change creates, stores, reads, transforms, logs, exports, deletes, or reports sensitive information.
 3. Check whether the changed surface is public, packaged, generated, cached, retained, user-visible, or sent outside the repository boundary.
-4. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
-5. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
-6. If the change affects an authorization or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
-7. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
+4. Treat shell commands, copyable command text, executable names, workflow action references, publish identities, package manifests, and environment path entries as disclosure and execution surfaces, not as harmless strings.
+5. For filesystem changes, distinguish lexical containment from the real target. Check symlinks, generated state, package contents, and file APIs that may follow links before claiming a path stays inside the repository.
+6. For code-scanning alerts, group findings by root cause and rule. Fix the underlying pattern, not only the exact flagged line, and separate repository-setting alerts such as branch protection or maintainer activity from code changes.
+7. For workflow scanner alerts, check action pinning, `persist-credentials`, job-level permissions, reusable workflow permissions, artifact upload boundaries, and privileged identity timing before treating the warning as cosmetic.
+8. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
+9. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
+10. If the change affects an authorization or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
+11. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -101,6 +111,7 @@ Use a narrower configured test, build, or documentation intent when it better pr
 
 - If a sensitive value appears in command output, stop copying it and summarize the issue without the value.
 - If the project lacks enough context to confirm privacy or secret handling, report the uncertainty and avoid claiming safety.
+- If a copyable command, executable lookup, symlink-following path, or publishing workflow uses repository-controlled input across a trust boundary, treat it as a security issue until quoting, validation, no-follow file handling, or workflow isolation is verified.
 - If a package, generated artifact, or public doc includes sensitive data, remove or redact it before continuing unrelated work.
 - If verification requires unavailable scanners or live systems, report the missing check and the remaining risk.
 

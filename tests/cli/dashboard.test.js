@@ -514,6 +514,7 @@ test('dashboard serves and updates safe preferences', async () => {
 			body: JSON.stringify({ path: 'docs/guide.md', status: 'approved', reviewerKind: 'claude-code', reviewerId: 'claude-code' }),
 		});
 		assert.equal(invalidDocReviewUpdate.status, 400);
+		assert.equal(await invalidDocReviewUpdate.text(), 'Bad request');
 
 		const approvedDocReview = await fetch(new URL('/api/docs/review', info.url), {
 			method: 'POST',
@@ -584,6 +585,7 @@ test('dashboard serves and updates safe preferences', async () => {
 			body: JSON.stringify({ updates: [{ id: 'git.auto_push', value: true }] }),
 		});
 		assert.equal(locked.status, 400);
+		assert.equal(await locked.text(), 'Bad request');
 
 		const invalidLanguage = await fetch(new URL('/api/preferences', info.url), {
 			method: 'POST',

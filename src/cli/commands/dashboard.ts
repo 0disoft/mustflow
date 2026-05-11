@@ -244,6 +244,10 @@ function sendText(response: ServerResponse, statusCode: number, value: string): 
 	response.end(value);
 }
 
+function sendBadRequest(response: ServerResponse): void {
+	sendText(response, 400, 'Bad request');
+}
+
 function isAuthorized(request: IncomingMessage, token: string): boolean {
 	return request.headers['x-mustflow-dashboard-token'] === token;
 }
@@ -766,9 +770,8 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 			}
 
 			sendText(response, 404, 'Not found');
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			sendText(response, 400, message);
+		} catch {
+			sendBadRequest(response);
 		}
 	});
 
