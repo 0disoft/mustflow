@@ -11,36 +11,36 @@ source_fingerprint: "sha256:3abefb134caf924e516c17204999fff3ffcef36e77a7d299ea31
 
 # REPO_MAP.md
 
-This file is an agent navigation map for the current mustflow root. It is not a full file listing.
-Regenerate it with `mf map --write` instead of editing it by hand.
+This file serves as an agent navigation map for the current mustflow root. It does not list all files.  
+Regenerate it with `mf map --write` instead of editing manually.
 
 ## How To Use
 
-- Start with `AGENTS.md` and the mustflow files listed in Priority Anchors.
-- Use Directory Anchors to find local rules, guides, package manifests, and command adapters.
-- Use `git ls-files` or your editor when you need the complete file list.
+- Begin with `AGENTS.md` and the mustflow files listed under Priority Anchors.  
+- Use Directory Anchors to locate local rules, guides, package manifests, and command adapters.  
+- Use `git ls-files` or your editor for a complete file listing.
 
 ## Priority Anchors
 
-- `AGENTS.md`: Root agent operating rules. Read this before changing files.
-- `.mustflow/docs/agent-workflow.md`: Shared workflow policy for agent work.
-- `.mustflow/config/mustflow.toml`: Mustflow read order, authority, document roots, and protected paths.
-- `.mustflow/config/commands.toml`: Command intent contract. Check this before running project commands.
-- `.mustflow/config/preferences.toml`: Repository-level agent preferences. Treat them as defaults below user instructions and local style.
-- `.mustflow/skills/INDEX.md`: Index of available procedural skills.
-- `.mustflow/context/INDEX.md`: Task-specific project context router. Read only when context is needed.
+- `AGENTS.md`: Root agent operating rules. Read before modifying files.  
+- `.mustflow/docs/agent-workflow.md`: Shared workflow policy for agent tasks.  
+- `.mustflow/config/mustflow.toml`: Mustflow read order, authority, document roots, and protected paths.  
+- `.mustflow/config/commands.toml`: Command intent contract. Review before running project commands.  
+- `.mustflow/config/preferences.toml`: Repository-level agent preferences. Consider these defaults below user instructions and local style.  
+- `.mustflow/skills/INDEX.md`: Index of available procedural skills.  
+- `.mustflow/context/INDEX.md`: Task-specific project context router. Consult only when context is needed.
 
 ## Directory Anchors
 
 ### /
 
-- `.gitattributes`: Git text, binary, and line-ending policy. Check before normalizing files.
-- `CHANGELOG.md`: Optional release history and user-visible change log.
-- `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.
-- `package.json`: Node.js package manifest, binary entry points, and package scripts.
-- `README.md`: Human-facing project overview. Use it as context, not as agent policy.
-- `ROADMAP.md`: Optional project planning, priority, milestone, and non-goal context.
-- `SECURITY.md`: Optional security policy, vulnerability reporting, and sensitive-change guidance.
+- `.gitattributes`: Git text, binary, and line-ending policies. Check before normalizing files.  
+- `CHANGELOG.md`: Optional release history and user-visible change log.  
+- `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.  
+- `package.json`: Node.js package manifest, binary entry points, and package scripts.  
+- `README.md`: Human-facing project overview. Use for context, not as agent policy.  
+- `ROADMAP.md`: Optional project planning, priorities, milestones, and non-goal context.  
+- `SECURITY.md`: Optional security policy, vulnerability reporting, and sensitive-change guidance.  
 - `tsconfig.json`: TypeScript compiler configuration.
 
 ### .mustflow/context/
@@ -177,8 +177,8 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 ### docs-site/
 
-- `docs-site/package.json`: Node.js package manifest for this directory.
-- `docs-site/README.md`: Directory guide for this area.
+- `docs-site/package.json`: Node.js package manifest for this directory.  
+- `docs-site/README.md`: Directory guide for this area.  
 - `docs-site/tsconfig.json`: TypeScript compiler configuration.
 
 ### docs-site/docs/i18n/
@@ -259,7 +259,7 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 ## Excluded Areas
 
-- `.git/`
-- `node_modules/`
-- `dist/`, `build/`, and `coverage/`
-- cache directories such as `.cache/`, `cache/`, and `.astro/`
+- `.git/`  
+- `node_modules/`  
+- `dist/`, `build/`, and `coverage/`  
+- Cache directories such as `.cache/`, `cache/`, and `.astro/`
