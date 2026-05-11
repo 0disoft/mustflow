@@ -13,6 +13,7 @@ metadata:
   pack_id: mustflow.core
   skill_id: mustflow.core.docs-update
   command_intents:
+    - docs_validate_fast
     - docs_validate
     - mustflow_check
 ---
