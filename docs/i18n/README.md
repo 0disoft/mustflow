@@ -1,8 +1,6 @@
 # README Translations
 
-The root [`README.md`](../../README.md) is the source README for the repository
-and npm package. Keep translations in this directory aligned with the root
-README when public behavior, commands, install steps, or release checks change.
+The root [`README.md`](../../README.md) serves as the source of truth for the repository and the npm package. Ensure translations in this directory stay aligned with the root README whenever public behavior, commands, installation steps, or release checks change.
 
 ## Language Files
 
@@ -17,11 +15,7 @@ README when public behavior, commands, install steps, or release checks change.
 
 ## Maintenance Notes
 
-- Keep the language switcher line in the root README and every locale README in
-  sync.
-- Locale README files may be seeded from English when the locale is already
-  exposed by the CLI, templates, and documentation site. Mark seeded files until
-  they are fully translated.
-- Keep command examples and file paths identical to the root README unless a
-  locale-specific note is required.
-- Prefer updating the root README first, then update each translation.
+- Keep the language switcher line synchronized across the root README and every locale README.
+- Locale README files may initially be seeded from English if the locale is already supported by the CLI, templates, and documentation site. Mark these seeded files until they are fully translated.
+- Keep command examples and file paths identical to the root README unless a locale-specific note is necessary.
+- Always update the root README first, then propagate the changes to each translation.
