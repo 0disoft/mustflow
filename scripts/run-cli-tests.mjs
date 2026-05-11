@@ -18,6 +18,7 @@ const fastTests = [
 	'index.test.js',
 	'pages-workflow.test.js',
 	'router.test.js',
+	'security-fuzz.test.js',
 	'status.test.js',
 	'version-sources.test.js',
 ];
