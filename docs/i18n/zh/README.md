@@ -1,10 +1,11 @@
+```markdown
 # mustflow
 
 语言：[英文](../../../README.md) · [韩文](../ko/README.md) · [中文](README.md) · [西班牙文](../es/README.md) · [法文](../fr/README.md) · [印地文](../hi/README.md)
 
-mustflow 是面向大型语言模型（LLM）编码代理的工作流命令行工具。它帮助代理进入代码仓库，读取正确的运行上下文，仅执行已声明的命令，并在不依赖猜测的情况下验证自身工作。
+mustflow 是面向大型语言模型（LLM）编码代理的工作流命令行工具。它帮助代理深入代码仓库，获取准确的运行上下文，仅执行已声明的命令，并在无需猜测的情况下验证自身操作。
 
-核心模型非常简单：在项目根目录放置 `AGENTS.md`，详细工作流则存放在 `.mustflow/` 目录下。代理从 `AGENTS.md` 开始，依次读取命令合同、技能、项目上下文和验证规则。
+核心模型非常简洁：在项目根目录放置 `AGENTS.md`，详细工作流则存放于 `.mustflow/` 目录。代理从 `AGENTS.md` 开始，依次读取命令合同、技能、项目上下文和验证规则。
 
 ## 代理读取流程
 
@@ -23,9 +24,9 @@ flowchart TD
   I --> J
 ```
 
-`read_order` 定义了必须读取的顺序，`optional_read_order` 和 `[context]` 控制任务特定上下文的加载方式。`[refresh]` 策略决定代理何时重新读取相同指令。
+`read_order` 定义了必须的读取顺序，`optional_read_order` 和 `[context]` 控制任务特定上下文的加载方式，`[refresh]` 策略决定代理何时重新读取相同指令。
 
-技能索引是主动分流的步骤：代理会将任务与 `.mustflow/skills/INDEX.md` 对比，并在编辑对应范围前读取匹配的 `SKILL.md`。技能只指导流程，命令执行仍由 `.mustflow/config/commands.toml` 决定。
+技能索引是主动分流的关键步骤：代理会将任务与 `.mustflow/skills/INDEX.md` 进行匹配，并在编辑对应范围前加载匹配的 `SKILL.md`。技能仅指导流程，命令执行仍由 `.mustflow/config/commands.toml` 决定。
 
 - 文档站点：<https://0disoft.github.io/mustflow/>
 - 仓库地址：<https://github.com/0disoft/mustflow>
@@ -37,7 +38,7 @@ mustflow 为用户项目安装并验证代理工作流。
 
 - 安装 `AGENTS.md` 和 `.mustflow/**` 工作流文件。
 - 在 `.mustflow/config/commands.toml` 中声明可执行的命令规则。
-- 使用 `mf check` 和 `mf doctor` 检查安装状态和配置结构。
+- 使用 `mf check` 和 `mf doctor` 检查安装状态及配置结构。
 - 通过 `mf run <intent>` 在超时限制内仅执行允许的一次性命令。
 - 使用 `mf map` 生成简洁的仓库导航地图 `REPO_MAP.md`。
 - 通过 `mf index` 和 `mf search` 利用 SQLite 索引搜索 mustflow 文档、技能和命令规则。
@@ -49,8 +50,8 @@ mustflow 为用户项目安装并验证代理工作流。
 mustflow 不是自动项目编辑器，也不绑定任何特定代理产品。
 
 - 不会生成或修改应用源码。
-- 不会因安装包存在而更改项目文件。只有运行 `mf init` 时才会创建文件。
-- 不强制使用 `CLAUDE.md` 或 `GEMINI.md` 等特定工具文件名。
+- 不会因安装包存在而更改项目文件，仅在执行 `mf init` 时创建文件。
+- 不强制使用 `CLAUDE.md`、`GEMINI.md` 等特定工具文件名。
 - 不替代构建系统、测试运行器、包管理器或 CI/CD 配置。
 - 不会将 GitHub、GitLab 等平台特定文件纳入默认模板。
 - 默认不创建 `justfile`、`Makefile` 或 `Taskfile.yml`。
@@ -76,7 +77,7 @@ npx mf init
 npx mf check --strict
 ```
 
-在交互式终端中，`mf init` 会让你选择文档语言、项目配置档案和代理报告语言。若需无提示安装英文默认值，请使用 `mf init --yes`。
+在交互式终端中，`mf init` 会引导你选择文档语言、项目配置档案和代理报告语言。若需无提示安装英文默认配置，请使用 `mf init --yes`。
 
 pnpm 和 Bun 同样支持该 npm 包。
 
@@ -133,7 +134,7 @@ your-project/
 
 默认模板不会创建 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、`GOVERNANCE.md`、`TESTING.md`、`API.md`、`project.contract.json`、`openapi.yaml` 等项目自有根文档或合同文件，也不会创建 CI 配置、通用 `docs/` 或通用 `skills/`。用户项目可能已使用这些名称存放自己的文件。
 
-如果 `.gitignore` 不存在，`mf init` 会创建它；若已存在，mustflow 只会更新自己管理的部分，保留用户自定义规则。
+如果 `.gitignore` 不存在，`mf init` 会创建它；若已存在，mustflow 仅更新自己管理的部分，保留用户自定义规则。
 
 `REPO_MAP.md` 不会从模板复制，需时请使用 `mf map --write` 生成。`.mustflow/cache/mustflow.sqlite` 由 `mf index` 创建，是可重新生成的本地索引。
 
@@ -170,6 +171,7 @@ npx mf update --apply
 ```sh
 mf run mustflow_update_dry_run
 mf run mustflow_update_apply
+```
 ```
 
 ## 命令
@@ -230,7 +232,7 @@ npx mf init --set git.auto_commit=true
 - `--interactive`：通过交互提问选择初始化设置。
 - `--yes`：无提示使用英文默认设置。
 - `--set`：安装过程中设置允许的偏好项。支持键包括 `git.auto_stage`、`git.auto_commit`、`git.auto_push=false`、`git.commit_message.*`、`reporting.commit_suggestion.enabled`、`language.memory.summary`、`release.versioning.*`、`verification.selection.*` 和 `testing.authoring.*`。  
-  `git.commit_message.style` 可选 `conventional`、`descriptive` 或 `gitmoji`，其中 `gitmoji` 只改变建议消息格式。  
+  `git.commit_message.style` 可选 `conventional`、`descriptive` 或 `gitmoji`，其中 `gitmoji` 仅改变建议消息格式。  
   `git.commit_message.language` 可选 `preserve_existing`、`agent_response`、`docs`，也可直接指定如 `ja`、`de`、`pt-BR` 等 locale 标签。  
   `testing.authoring.new_test_policy` 可选 `evidence_required`、`manual_approval` 或 `broad`。
 - `--product-source-locale`、`--product-locale`：面向用户的产品字符串的源区域设置和目标区域设置。
@@ -261,7 +263,7 @@ mustflow/
 
 复制到用户项目的文件来自 `templates/default/common/` 和 `templates/default/locales/<locale>/`。
 
-带版本的契约规范位于 `docs/spec/`，文档站点从 Design -> Contract specifications 链接到这些规范。
+带版本的契约规范位于 `docs/spec/`，文档站点通过 Design -> Contract specifications 链接到这些规范。
 
 ## 开发
 

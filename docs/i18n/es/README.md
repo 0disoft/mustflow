@@ -179,7 +179,7 @@ mf run mustflow_update_apply
 | `mf init`                   | Instala `AGENTS.md` y `.mustflow/**`.                                                        |
 | `mf init --dry-run`         | Muestra qué archivos se crearían sin escribirlos.                                            |
 | `mf init --merge`           | Fusiona el bloque gestionado por mustflow en un `AGENTS.md` existente.                        |
-| `mf init --force`           | Hace copia de seguridad de archivos en conflicto y luego los sobrescribe.                    |
+| `mf init --force`           | Realiza una copia de seguridad de los archivos en conflicto y luego los sobrescribe.         |
 | `mf check`                  | Valida archivos mustflow, configuración TOML y la estructura de documentos de habilidades.   |
 | `mf check --strict`         | Realiza comprobaciones adicionales de seguridad para identidad documental, metadatos, límites, política y contexto. |
 | `mf doctor`                 | Inspecciona la raíz mustflow actual sin modificar archivos.                                  |
@@ -212,7 +212,7 @@ El trabajo ejecutable se declara en `.mustflow/config/commands.toml` para evitar
 
 No se ejecutan directamente servidores de desarrollo, modos de observación, interfaces web, comandos interactivos ni procesos en segundo plano.
 
-Cada ejecución de comando escribe el registro más reciente en `.mustflow/state/runs/latest.json`. Este registro incluye el nombre de la intención, directorio de trabajo, límite de tiempo, código de salida, estado de tiempo agotado y final de stdout y stderr.
+Cada ejecución de comando escribe el registro más reciente en `.mustflow/state/runs/latest.json`. Este registro incluye el nombre de la intención, directorio de trabajo, límite de tiempo, código de salida, estado de tiempo agotado y salida final de stdout y stderr.
 
 ## Idiomas y perfiles
 

@@ -2,7 +2,7 @@
 
 Langues : [Anglais](../../../README.md) · [Coréen](../ko/README.md) · [Chinois](../zh/README.md) · [Espagnol](../es/README.md) · [Français](README.md) · [Hindi](../hi/README.md)
 
-mustflow est une CLI de gestion de flux de travail pour les agents de codage basés sur les LLM. Elle aide les agents à explorer un dépôt, à lire le contexte opérationnel pertinent, à exécuter uniquement les commandes déclarées et à vérifier leur travail sans faire de suppositions.
+mustflow est une CLI de gestion de flux de travail pour les agents de codage basés sur les LLM. Elle permet aux agents d’explorer un dépôt, de lire le contexte opérationnel pertinent, d’exécuter uniquement les commandes déclarées et de vérifier leur travail sans faire de suppositions.
 
 Le modèle central est simple : placez un fichier `AGENTS.md` à la racine du projet, puis conservez le flux de travail détaillé dans `.mustflow/`. Les agents commencent par lire `AGENTS.md`, puis suivent dans l’ordre le contrat des commandes, les compétences, le contexte du projet et les règles de vérification.
 
