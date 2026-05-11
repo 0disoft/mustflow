@@ -2,7 +2,7 @@
 mustflow_doc: skill.behavior-preserving-refactor
 locale: zh
 canonical: false
-revision: 1
+revision: 11
 lifecycle: mustflow-owned
 authority: procedure
 name: behavior-preserving-refactor
@@ -37,6 +37,12 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 - The user asks to refactor, clean up, reorganize, simplify, split, extract, rename, remove duplication, or improve structure.
 - A planned change risks mixing renames, moves, extractions, deduplication, bug fixes, and feature behavior in one diff.
 - Existing code is hard to change because responsibilities, names, branches, dependencies, or tests are unclear.
+- Existing inheritance, base classes, abstract classes, template methods, protected state, or subclass variants make behavior harder to test or change.
+- Existing handlers, repositories, adapters, jobs, or services mix business decisions with database access, network calls, logging, current time, generated identifiers, randomness, environment reads, or framework objects.
+- Existing controllers, handlers, jobs, or services mix one state-changing intent with authorization, transactions, idempotency, audit logs, outbox events, retries, concurrency checks, and external side effects.
+- Existing controllers, handlers, workers, command handlers, or services repeat the same multi-step subsystem sequence and should move behind a stable facade without changing behavior.
+- Existing lifecycle state changes are scattered across direct assignments, handlers, repositories, jobs, UI checks, SQL conditions, or provider callbacks.
+- Existing code repeats presence checks for optional collaborators such as loggers, analytics clients, caches, optional notifications, or no-op processors.
 - The task touches legacy or weakly tested code and needs a safer refactoring order.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -71,20 +77,21 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 - Extract small functions, policies, or helpers when they have a clear concept, inputs, outputs, and test value.
 - Flatten conditional flow when it preserves the same guard conditions and error behavior.
 - Separate responsibilities, dependencies, or side effects in the smallest useful step.
+- Move domain decisions toward pure functions or narrow policy objects, and keep I/O, clocks, network calls, process spawning, persistence, and logging in the imperative edge.
 - Add or update tests that preserve current behavior or make the refactoring safe.
 - Do not mix behavior changes, bug fixes, new features, broad formatting churn, or unrelated cleanup into the refactor.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-在大范围查找重构候选时，先压缩候选，再阅读文件。
+Before broad hotspot scans, compress candidates before reading files.
 
-- 排序候选前，先排除生成文件、打包文件、锁文件、依赖目录、大型 fixture、snapshot、构建产物、压缩文件和 source map。
-- 将 `[refactoring.hotspots]` 偏好作为扫描限制：`large_file_candidate_kb` 是第一轮大小信号，`history_days` 是近期变更和修复历史窗口，候选限制值决定每个深度最多检查多少文件。
-- 优先看多个低成本信号重叠的文件，而不是单一指标：大小、近期变更频率、修复历史、import/export 数量、TODO/FIXME/HACK 数量、类型或 lint 绕过、附近缺少测试、跨架构边界 import。
-- 将强组合提高优先级，例如大文件 + 频繁变更 + 无测试，安全/支付/权限相关小文件 + 反复修复，大型 React 客户端组件 + 多个 effect，以及混合验证、授权、业务逻辑、数据库访问和响应格式化的 API/controller 文件。
-- 不要阅读所有候选。第一轮保留数量不超过配置的主候选上限，再缩小到结构检查候选上限，只有配置允许的少数候选才阅读全文。
-- 打开候选时，先检查 import、export、声明列表、TODO 或类型绕过附近，以及最大或分支最多的函数，必要时再阅读全文。
+- Exclude generated files, bundled files, lock files, dependency directories, large fixtures, snapshots, build outputs, minified files, and source maps before ranking candidates.
+- Use `[refactoring.hotspots]` preferences as scan limits: `large_file_candidate_kb` for the first size signal, `history_days` for recent change and bug-fix history, and the candidate limits for how many files to inspect at each depth.
+- Prefer overlapping low-cost signals over a single metric: size, recent change frequency, bug-fix history, import/export count, TODO/FIXME/HACK count, type or lint bypasses, missing nearby tests, and architecture-boundary imports.
+- Treat strong combinations as higher priority, such as large files with frequent changes and no tests, small security/payment/permission files with repeated bug fixes, large React client components with many effects, and API/controller files that mix validation, authorization, business logic, database access, and response formatting.
+- Do not read every candidate. Keep the first pass to the configured primary limit, narrow to the configured structure-review limit, and read full file contents only for the configured full-file limit.
+- When opening a candidate, inspect imports, exports, declarations, TODO or type-bypass neighborhoods, and the largest or most branch-heavy function before reading the full file.
 
 1. Diagnose whether refactoring is needed.
    - Name the real problem: change cost, unclear responsibility, repeated bug risk, test difficulty, dependency coupling, or confusing flow.
@@ -107,14 +114,25 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
    - Extract only concepts that can be named precisely.
    - Avoid vague names such as `process`, `handle`, `do`, or `helper` unless they match established local style.
    - Boolean functions should read naturally at call sites and reveal the condition being tested.
-6. Handle conditional complexity by finding the policy.
+6. Prefer the low-ceremony structural pattern that matches the pain:
+   - Dependency injection when direct construction, global lookup, or hidden imports of tools, clients, clocks, file systems, processes, loggers, configuration, random generators, identifiers, queues, or external SDKs makes behavior hard to test. Use `dependency-injection` before editing that boundary.
+   - Adapter or translator boundaries when external formats leak into core logic. Use `adapter-boundary` when provider data, protocols, errors, timeouts, retries, idempotency, security, or observability are part of the boundary.
+   - Composition over inheritance when behavior can be assembled from small explicit collaborators. Use `composition-over-inheritance` before editing `extends`, base classes, abstract classes, template methods, protected state, mixins, or subclass combinations.
+   - Command pattern when a state-changing user or system intent needs a traceable execution unit with explicit payload, context, authorization, transaction boundary, idempotency, outbox, audit, retry, or concurrency behavior. Use `command-pattern` before editing that execution unit.
+   - Pure core with an imperative shell when business decisions, validation, authorization, pricing, eligibility, state transitions, or domain events are mixed with I/O, time, generated identifiers, randomness, environment reads, or framework objects. Use `pure-core-imperative-shell` before editing that split.
+   - State machine pattern when status, state, phase, step, or stage controls allowed behavior and transitions are scattered or assigned directly. Use `state-machine-pattern` before editing lifecycle transitions.
+   - Strategy pattern when repeated branches choose among interchangeable algorithms, policies, pricing rules, scoring methods, provider choices, or feature variants that share one purpose. Use `strategy-pattern` before editing that strategy family.
+   - Result and Option values when expected failures, meaningful absence, null returns, thrown business failures, or ambiguous success flags make behavior hard to follow. Use `result-option` before editing that return-shape contract.
+   - Null Object pattern when repeated nullable checks around an optional collaborator can be replaced by a same-interface neutral implementation without hiding required failures. Use `null-object-pattern` before editing that optional dependency boundary.
+   - Injected time context when current time affects preserved behavior.
+7. Handle conditional complexity by finding the policy.
    - Use early exits for simple guard conditions when they preserve behavior.
    - Separate state, type, permission, and exceptional-rule branches when they are mixed.
    - Avoid replacing clear branches with a strategy object, table, or abstraction before the policy boundary is proven.
-7. Keep commits and reports reviewable.
+8. Keep commits and reports reviewable.
    - Separate renames, moves, extractions, deduplication, tests, and behavior changes when possible.
    - If behavior changes are discovered, stop and report them as a separate fix path.
-8. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
+9. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -154,7 +172,9 @@ Choose the narrowest configured test or build intent that proves the refactored 
 - Refactoring goal
 - Behavior preservation evidence
 - Structural risk signals found
+- Facade extraction used or intentionally avoided
 - Refactoring ladder chosen
+- Structural pattern used or intentionally avoided
 - Changes made or analysis-only recommendation
 - Behavior changes intentionally excluded
 - Verification intents run

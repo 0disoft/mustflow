@@ -2,7 +2,7 @@
 mustflow_doc: skill.behavior-preserving-refactor
 locale: en
 canonical: true
-revision: 2
+revision: 11
 lifecycle: mustflow-owned
 authority: procedure
 name: behavior-preserving-refactor
@@ -37,6 +37,12 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 - The user asks to refactor, clean up, reorganize, simplify, split, extract, rename, remove duplication, or improve structure.
 - A planned change risks mixing renames, moves, extractions, deduplication, bug fixes, and feature behavior in one diff.
 - Existing code is hard to change because responsibilities, names, branches, dependencies, or tests are unclear.
+- Existing inheritance, base classes, abstract classes, template methods, protected state, or subclass variants make behavior harder to test or change.
+- Existing handlers, repositories, adapters, jobs, or services mix business decisions with database access, network calls, logging, current time, generated identifiers, randomness, environment reads, or framework objects.
+- Existing controllers, handlers, jobs, or services mix one state-changing intent with authorization, transactions, idempotency, audit logs, outbox events, retries, concurrency checks, and external side effects.
+- Existing controllers, handlers, workers, command handlers, or services repeat the same multi-step subsystem sequence and should move behind a stable facade without changing behavior.
+- Existing lifecycle state changes are scattered across direct assignments, handlers, repositories, jobs, UI checks, SQL conditions, or provider callbacks.
+- Existing code repeats presence checks for optional collaborators such as loggers, analytics clients, caches, optional notifications, or no-op processors.
 - The task touches legacy or weakly tested code and needs a safer refactoring order.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -109,10 +115,15 @@ Before broad hotspot scans, compress candidates before reading files.
    - Avoid vague names such as `process`, `handle`, `do`, or `helper` unless they match established local style.
    - Boolean functions should read naturally at call sites and reveal the condition being tested.
 6. Prefer the low-ceremony structural pattern that matches the pain:
-   - Dependency injection when direct construction of tools, clients, clocks, file systems, or processes makes behavior hard to test.
-   - Adapter or translator boundaries when external formats leak into core logic.
-   - Composition over inheritance when behavior can be assembled from small explicit collaborators.
-   - Result values for expected failures that callers must handle, while keeping exceptions for broken assumptions or infrastructure faults.
+   - Dependency injection when direct construction, global lookup, or hidden imports of tools, clients, clocks, file systems, processes, loggers, configuration, random generators, identifiers, queues, or external SDKs makes behavior hard to test. Use `dependency-injection` before editing that boundary.
+   - Adapter or translator boundaries when external formats leak into core logic. Use `adapter-boundary` when provider data, protocols, errors, timeouts, retries, idempotency, security, or observability are part of the boundary.
+   - Composition over inheritance when behavior can be assembled from small explicit collaborators. Use `composition-over-inheritance` before editing `extends`, base classes, abstract classes, template methods, protected state, mixins, or subclass combinations.
+   - Command pattern when a state-changing user or system intent needs a traceable execution unit with explicit payload, context, authorization, transaction boundary, idempotency, outbox, audit, retry, or concurrency behavior. Use `command-pattern` before editing that execution unit.
+   - Pure core with an imperative shell when business decisions, validation, authorization, pricing, eligibility, state transitions, or domain events are mixed with I/O, time, generated identifiers, randomness, environment reads, or framework objects. Use `pure-core-imperative-shell` before editing that split.
+   - State machine pattern when status, state, phase, step, or stage controls allowed behavior and transitions are scattered or assigned directly. Use `state-machine-pattern` before editing lifecycle transitions.
+   - Strategy pattern when repeated branches choose among interchangeable algorithms, policies, pricing rules, scoring methods, provider choices, or feature variants that share one purpose. Use `strategy-pattern` before editing that strategy family.
+   - Result and Option values when expected failures, meaningful absence, null returns, thrown business failures, or ambiguous success flags make behavior hard to follow. Use `result-option` before editing that return-shape contract.
+   - Null Object pattern when repeated nullable checks around an optional collaborator can be replaced by a same-interface neutral implementation without hiding required failures. Use `null-object-pattern` before editing that optional dependency boundary.
    - Injected time context when current time affects preserved behavior.
 7. Handle conditional complexity by finding the policy.
    - Use early exits for simple guard conditions when they preserve behavior.
@@ -161,6 +172,7 @@ Choose the narrowest configured test or build intent that proves the refactored 
 - Refactoring goal
 - Behavior preservation evidence
 - Structural risk signals found
+- Facade extraction used or intentionally avoided
 - Refactoring ladder chosen
 - Structural pattern used or intentionally avoided
 - Changes made or analysis-only recommendation

@@ -5,47 +5,51 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 69
-source_fingerprint: "sha256:3abefb134caf924e516c17204999fff3ffcef36e77a7d299ea315cccc63233f0"
+anchor_count: 79
+source_fingerprint: "sha256:9e94522dc5b0725636e5dc6903d8aa8f1be9d2792dfdaaf1bcf40a10226f60d7"
 ---
 
 # REPO_MAP.md
 
-This file serves as an agent navigation map for the current mustflow root. It does not list all files.  
-Regenerate it with `mf map --write` instead of editing manually.
+This file is an agent navigation map for the current mustflow root. It is not a full file listing.
+Regenerate it with `mf map --write` instead of editing it by hand.
 
 ## How To Use
 
-- Begin with `AGENTS.md` and the mustflow files listed under Priority Anchors.  
-- Use Directory Anchors to locate local rules, guides, package manifests, and command adapters.  
-- Use `git ls-files` or your editor for a complete file listing.
+- Start with `AGENTS.md` and the mustflow files listed in Priority Anchors.
+- Use Directory Anchors to find local rules, guides, package manifests, and command adapters.
+- Use `git ls-files` or your editor when you need the complete file list.
 
 ## Priority Anchors
 
-- `AGENTS.md`: Root agent operating rules. Read before modifying files.  
-- `.mustflow/docs/agent-workflow.md`: Shared workflow policy for agent tasks.  
-- `.mustflow/config/mustflow.toml`: Mustflow read order, authority, document roots, and protected paths.  
-- `.mustflow/config/commands.toml`: Command intent contract. Review before running project commands.  
-- `.mustflow/config/preferences.toml`: Repository-level agent preferences. Consider these defaults below user instructions and local style.  
-- `.mustflow/skills/INDEX.md`: Index of available procedural skills.  
-- `.mustflow/context/INDEX.md`: Task-specific project context router. Consult only when context is needed.
+- `AGENTS.md`: Root agent operating rules. Read this before changing files.
+- `.mustflow/docs/agent-workflow.md`: Shared workflow policy for agent work.
+- `.mustflow/config/mustflow.toml`: Mustflow read order, authority, document roots, and protected paths.
+- `.mustflow/config/commands.toml`: Command intent contract. Check this before running project commands.
+- `.mustflow/config/preferences.toml`: Repository-level agent preferences. Treat them as defaults below user instructions and local style.
+- `.mustflow/skills/INDEX.md`: Index of available procedural skills.
+- `.mustflow/context/INDEX.md`: Task-specific project context router. Read only when context is needed.
 
 ## Directory Anchors
 
 ### /
 
-- `.gitattributes`: Git text, binary, and line-ending policies. Check before normalizing files.  
-- `CHANGELOG.md`: Optional release history and user-visible change log.  
-- `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.  
-- `package.json`: Node.js package manifest, binary entry points, and package scripts.  
-- `README.md`: Human-facing project overview. Use for context, not as agent policy.  
-- `ROADMAP.md`: Optional project planning, priorities, milestones, and non-goal context.  
-- `SECURITY.md`: Optional security policy, vulnerability reporting, and sensitive-change guidance.  
+- `.gitattributes`: Git text, binary, and line-ending policy. Check before normalizing files.
+- `CHANGELOG.md`: Optional release history and user-visible change log.
+- `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.
+- `package.json`: Node.js package manifest, binary entry points, and package scripts.
+- `README.md`: Human-facing project overview. Use it as context, not as agent policy.
+- `ROADMAP.md`: Optional project planning, priority, milestone, and non-goal context.
+- `SECURITY.md`: Optional security policy, vulnerability reporting, and sensitive-change guidance.
 - `tsconfig.json`: TypeScript compiler configuration.
 
 ### .mustflow/context/
 
 - `.mustflow/context/PROJECT.md`: Project goals, non-goals, terms, and repository-wide promises for agents.
+
+### .mustflow/skills/adapter-boundary/
+
+- `.mustflow/skills/adapter-boundary/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/artifact-integrity-check/
 
@@ -63,6 +67,14 @@ Regenerate it with `mf map --write` instead of editing manually.
 
 - `.mustflow/skills/codebase-orientation/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/command-pattern/
+
+- `.mustflow/skills/command-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/composition-over-inheritance/
+
+- `.mustflow/skills/composition-over-inheritance/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/contract-sync-check/
 
 - `.mustflow/skills/contract-sync-check/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -70,6 +82,10 @@ Regenerate it with `mf map --write` instead of editing manually.
 ### .mustflow/skills/date-number-audit/
 
 - `.mustflow/skills/date-number-audit/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/dependency-injection/
+
+- `.mustflow/skills/dependency-injection/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/dependency-reality-check/
 
@@ -91,6 +107,10 @@ Regenerate it with `mf map --write` instead of editing manually.
 
 - `.mustflow/skills/external-prompt-injection-defense/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/facade-pattern/
+
+- `.mustflow/skills/facade-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/failure-triage/
 
 - `.mustflow/skills/failure-triage/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -111,6 +131,10 @@ Regenerate it with `mf map --write` instead of editing manually.
 
 - `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/null-object-pattern/
+
+- `.mustflow/skills/null-object-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/pattern-scout/
 
 - `.mustflow/skills/pattern-scout/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -122,6 +146,10 @@ Regenerate it with `mf map --write` instead of editing manually.
 ### .mustflow/skills/project-context-authoring/
 
 - `.mustflow/skills/project-context-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/pure-core-imperative-shell/
+
+- `.mustflow/skills/pure-core-imperative-shell/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/readme-authoring/
 
@@ -139,6 +167,10 @@ Regenerate it with `mf map --write` instead of editing manually.
 
 - `.mustflow/skills/requirement-regression-guard/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/result-option/
+
+- `.mustflow/skills/result-option/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/security-privacy-review/
 
 - `.mustflow/skills/security-privacy-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -154,6 +186,14 @@ Regenerate it with `mf map --write` instead of editing manually.
 ### .mustflow/skills/source-freshness-check/
 
 - `.mustflow/skills/source-freshness-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/state-machine-pattern/
+
+- `.mustflow/skills/state-machine-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/strategy-pattern/
+
+- `.mustflow/skills/strategy-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/structure-discovery-gate/
 
@@ -177,8 +217,8 @@ Regenerate it with `mf map --write` instead of editing manually.
 
 ### docs-site/
 
-- `docs-site/package.json`: Node.js package manifest for this directory.  
-- `docs-site/README.md`: Directory guide for this area.  
+- `docs-site/package.json`: Node.js package manifest for this directory.
+- `docs-site/README.md`: Directory guide for this area.
 - `docs-site/tsconfig.json`: TypeScript compiler configuration.
 
 ### docs-site/docs/i18n/
@@ -259,7 +299,7 @@ Regenerate it with `mf map --write` instead of editing manually.
 
 ## Excluded Areas
 
-- `.git/`  
-- `node_modules/`  
-- `dist/`, `build/`, and `coverage/`  
-- Cache directories such as `.cache/`, `cache/`, and `.astro/`
+- `.git/`
+- `node_modules/`
+- `dist/`, `build/`, and `coverage/`
+- cache directories such as `.cache/`, `cache/`, and `.astro/`

@@ -2,11 +2,11 @@
 mustflow_doc: skill.structure-discovery-gate
 locale: ko
 canonical: false
-revision: 1
+revision: 12
 lifecycle: mustflow-owned
 authority: procedure
 name: structure-discovery-gate
-description: 새 기능 구조, 폴더, 파일 경계, 라우팅, 데이터 모델, 외부 연동 경계를 만들기 전에 적용합니다.
+description: Apply this skill before introducing new feature structure, folders, file boundaries, routing, data models, or integration boundaries.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -20,85 +20,113 @@ metadata:
     - mustflow_check
 ---
 
-# 구조화 전 질문 게이트
+# Structure Discovery Gate
 
 <!-- mustflow-section: purpose -->
-## 목적
+## Purpose
 
-코드를 작성하기 전에 숨은 구조 결정을 찾아 새 파일, 폴더, 이름, 라우팅, 데이터 모델, 연동 경계가 보기 좋은 트리에서 끝나지 않고 이후 변경 비용을 줄이도록 합니다.
+Find hidden structure decisions before coding so new files, folders, names, routing, data models, and integration boundaries reduce future change cost instead of producing a neat but brittle tree.
 
 <!-- mustflow-section: use-when -->
-## 사용 시점
+## Use When
 
-- 작업이 새 기능, 모듈, 폴더 구조, 아키텍처, 스캐폴드, 리팩터링, API 연동, 웹사이트, 앱 흐름, 라우팅 구조, 데이터 모델, 상태 모델, 파일 분리를 요구합니다.
-- AdSense, Stripe, Supabase, Firebase, Resend, SendGrid, Google Analytics, Plausible, CMS처럼 사용자가 언급한 기술이나 서비스가 제품 도메인이 아니라 구현 수단일 수 있습니다.
-- 다국어, 검색엔진 최적화, 인증, 인가, 결제, 광고, 분석, 관리자 흐름, 배포, 콘텐츠 관리, 저장소, 보존 정책, 외부 서비스 교체 가능성처럼 나중에 바꾸기 비싼 구조 결정이 숨어 있을 수 있습니다.
-- 에이전트가 새 최상위 폴더, 공통 모듈, 제공자, 어댑터, 서비스, 상수, 공개 이름을 만들려 합니다.
+- The task asks for a new feature, module, folder layout, architecture, scaffold, refactor, API integration, website, app flow, routing structure, data model, state model, or file split.
+- A named technology or service may be only an implementation choice rather than the product domain, such as AdSense, Stripe, Supabase, Firebase, Resend, SendGrid, Google Analytics, Plausible, or a CMS.
+- The request may hide costly structural decisions around localization, SEO, authentication, authorization, payments, ads, analytics, admin workflows, deployment, content management, storage, retention, or external service replacement.
+- The agent is about to create new top-level folders, shared modules, providers, adapters, services, constants, or public names.
 
 <!-- mustflow-section: do-not-use-when -->
-## 사용하지 않을 때
+## Do Not Use When
 
-- 작업이 대상 파일이 분명하고 새 경계를 만들지 않는 작은 기계적 수정입니다.
-- 사용자가 미래 구조를 고려하지 않는 폐기용 프로토타입, 실험, 일회성 예시를 명시적으로 요청했습니다.
-- 현재 프로젝트 지시, 승인된 설계 문서, 바로 앞선 사용자 답변에서 구조 결정이 이미 내려졌습니다.
-- 작업이 기존 내부 패턴을 따르는 것뿐입니다. 숨은 제품 전제가 구조를 바꿀 수 있는 경우가 아니라면 `pattern-scout`를 사용합니다.
+- The task is a tiny mechanical edit with an obvious target file and no new boundary.
+- The user explicitly asks for a disposable prototype, spike, or one-off example where future structure is out of scope.
+- A structure decision has already been made in current project instructions, accepted design docs, or the immediately preceding user answer.
+- The task is only to match an existing local pattern; use `pattern-scout` unless hidden product assumptions may still change the shape.
 
 <!-- mustflow-section: required-inputs -->
-## 필요한 입력
+## Required Inputs
 
-- 사용자 요청과 의도한 제품 또는 코드 변경.
-- 현재 프로젝트 지시, 관련 맥락, 가능하면 가까운 구현 패턴.
-- 알려진 대상 플랫폼, 언어, 프레임워크, 패키지, 배포 제약.
-- 요청에 등장한 외부 서비스, 콘텐츠 출처, 사용자 역할, 로케일, 데이터 저장소, 수익화 표면.
-- 이후 검증에 필요한 관련 명령 의도 계약.
+- User request and intended product or code change.
+- Current project instructions, relevant context, and nearby implementation patterns when available.
+- Known target platform, language, framework, package, or deployment constraints.
+- Any named external services, content sources, user roles, locales, data stores, algorithms, policies, feature flags, or revenue surfaces in the request.
+- Risk surfaces that could require a plan/apply gate, capability object, Result or Option return shape, command execution unit, facade entry point, invariant policy, state machine, pure core with an imperative shell, dependency injection boundary, adapter boundary, composition over inheritance, injected clock, state transition table, or idempotency ledger.
+- Optional collaborators whose absence might require a null object, disabled implementation, identity implementation, deny-all policy, or explicit failure.
+- Relevant command-intent contract entries for later verification.
 
 <!-- mustflow-section: preconditions -->
-## 사전 조건
+## Preconditions
 
-- 작업이 사용 시점에 해당하고 사용하지 않을 때의 조건에는 해당하지 않습니다.
-- 필요한 입력을 현재 맥락에서 확인할 수 있거나, 추측하지 않고 미확인으로 보고할 수 있습니다.
-- 현재 범위에 맞는 상위 지시와 `.mustflow/config/commands.toml`을 확인했습니다.
+- The task matches the Use When conditions and does not match the Do Not Use When exclusions.
+- Required inputs are available from current context or can be stated as unknown without guessing.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 
 <!-- mustflow-section: allowed-edits -->
-## 허용되는 수정
+## Allowed Edits
 
-- 이 스킬은 계획, 질문, 가정, 파일 경계, 그 결과로 이어지는 가장 작은 구현을 정하는 데 사용합니다.
-- 답변했거나 합리적으로 가정한 구조에 필요한 파일만 수정합니다.
-- 정돈되어 보인다는 이유만으로 넓은 설계 문서, 정책 파일, 공통 폴더, 제공자 체계, 추상화를 만들지 않습니다.
-- 모든 작업을 긴 인터뷰로 지연시키는 권한으로 쓰지 않습니다. 구조를 바꿀 수 있는 질문만 묻습니다.
+- Use this skill to shape the plan, questions, assumptions, file boundaries, and the smallest resulting implementation.
+- Edit only files needed for the accepted or reasonably assumed structure.
+- Do not create broad design documents, policy files, shared folders, provider systems, or abstractions just because they sound tidy.
+- Do not treat this skill as permission to delay every task for a long interview; ask only questions that can change the structure.
 
 <!-- mustflow-section: procedure -->
-## 절차
+## Procedure
 
-1. 요청된 변경을 사용자가 언급한 기술명이 아니라 제품 기능 또는 코드 책임으로 다시 정리합니다.
-2. 라우팅, 폴더 이름, 파일 경계, 데이터 모델, 상태 소유권, 환경 변수, 테스트, 배포, 검색엔진 최적화, 다국어, 외부 연동, 법적 또는 정책 요구사항을 바꿀 수 있는 숨은 결정을 찾습니다.
-3. 각 결정을 분류합니다.
-   - 차단 질문: 답에 따라 기본 구조가 달라져 안전하게 가정할 수 없습니다.
-   - 구조 영향 질문: 답에 따라 경계가 달라지지만, 사용자가 답하지 않으면 보수적 기본값을 명시할 수 있습니다.
-   - 취향 질문: 스타일, 문구, 작은 세부사항에만 영향을 주므로 구조를 막지 않습니다.
-4. 코딩 전에 가치가 가장 큰 질문을 최대 다섯 개만 묻습니다. 다국어, 인증, 인가, 결제, 광고, 개인정보, 데이터 삭제, 관리자 흐름, 검색엔진 최적화, 콘텐츠 저장, 외부 서비스 교체 가능성을 우선합니다.
-5. 묻지 않은 질문은 기본 가정을 짧게 적습니다. 기본값은 추측성 계층을 늘리지 않으면서도 나중에 바꾸기 어렵지 않아야 합니다.
-6. 제품 도메인과 업체별 구현을 분리합니다. 제품 경계에는 넓은 이름을, 제공자나 어댑터 내부에는 구체적인 이름을 사용합니다.
-   - 최상위 `adsense`보다 `monetization/ads/providers/adsense`를 선호합니다.
-   - 최상위 `stripe`보다 `payments/providers/stripe`를 선호합니다.
-   - 최상위 `resend`보다 `notifications/email/providers/resend`를 선호합니다.
-   - 최상위 `googleAnalytics`보다 `analytics/providers/google-analytics`를 선호합니다.
-7. 답변과 가정에 맞는 가장 작은 폴더와 파일 구조를 제안합니다. 새 파일이나 폴더마다 책임과 포함하면 안 되는 내용을 적습니다.
-8. 저장소에 가까운 패턴이 이미 있다면 `pattern-scout`로 구조를 대조합니다.
-9. 질문, 가정, 구조, 의존 방향, 검증 표면이 작업 크기에 맞게 충분히 분명해진 뒤에만 구현합니다.
+1. Restate the requested change as the product capability or code responsibility, not just the named technology.
+2. Identify hidden decisions that could change routing, folder names, file boundaries, data model, state ownership, environment variables, tests, deployment, SEO, localization, external integrations, or legal and policy requirements.
+3. Classify each decision:
+   - Blocking: the answer can change the basic structure and cannot be safely assumed.
+   - Structure-impacting: the answer changes boundaries, but a conservative default can be stated if the user does not answer.
+   - Preference: the answer affects styling, wording, or minor details and should not block structure.
+4. Ask at most five high-value questions before coding. Prioritize localization, authentication, authorization, payments, ads, personal data, destructive data actions, admin workflows, SEO, content storage, and external service replacement.
+5. For any question not asked, state the default assumption briefly. Defaults should keep future changes possible without adding speculative layers.
+6. Select structure patterns only when the task's risk shape requires them:
+   - Use a plan/apply gate for destructive, bulk, migration, billing, permission, publishing, or external-send operations that need review before execution.
+   - Use a capability object when a function should require a specific granted action instead of reading broad user or role state.
+   - Use Result and Option values for expected business failures, meaningful absence, not found, invalid input, denied access, stale state, or blocked policy. Use `result-option` before editing that return-shape contract.
+   - Use a Null Object only when an optional collaborator can safely implement the same interface with honest neutral behavior and the caller should not branch on presence. Use `null-object-pattern` before editing that optional dependency boundary.
+   - Use a command pattern when a state-changing user or system intent needs explicit payload, context, authorization, transaction, idempotency, outbox, audit, retry, concurrency, or queue and worker reuse. Use `command-pattern` before editing that execution unit.
+   - Use a facade pattern when controllers, handlers, workers, command handlers, services, or UI events need one stable high-level entry point over a repeated multi-step subsystem workflow. Use `facade-pattern` before editing that entry point.
+   - Use invariant policy modules when a state change must preserve non-negotiable rules, such as last-owner, paid-order, refund, or entitlement constraints.
+   - Use a state machine when status, state, phase, step, or stage controls allowed events, terminal states, guards, effects, transition history, duplicate-event handling, or concurrency. Use `state-machine-pattern` before editing that lifecycle.
+   - Use a strategy pattern when several algorithms, policies, calculations, provider choices, feature-flag variants, or scoring methods share one purpose and should not keep branching inside the stable workflow. Use `strategy-pattern` before editing that strategy family.
+   - Use pure core with an imperative shell when business decisions, validation, authorization, pricing, eligibility, state transitions, domain events, or effect descriptions would otherwise be mixed with I/O, clocks, generated identifiers, randomness, environment reads, or framework objects.
+   - Use composition over inheritance when behavior varies by multiple dimensions, class inheritance is proposed for implementation reuse, or framework subclasses could stay thin by delegating to explicit collaborators.
+   - Use dependency injection when core logic would otherwise construct, import, resolve, or hide databases, SDKs, clocks, random generators, configuration, loggers, framework objects, filesystems, queues, AI clients, payment gateways, or email senders.
+   - Use an adapter boundary when external APIs, databases, model responses, webhooks, files, queues, caches, framework objects, or command output cross into internal logic or leave it.
+   - Inject time or a time context when expiration, scheduling, retries, leases, or rate windows affect behavior.
+   - Use explicit state transitions when three or more states have meaningful allowed moves.
+   - Use an action ledger or idempotency key when repeating a side effect would be harmful.
+7. Prefer the smallest local version of the selected pattern. Do not add a framework, base class, service locator, global event bus, broad repository layer, or abstract factory when a plain function, table, adapter, or narrow policy object is enough.
+8. Separate product domains from vendor implementations. Use broad names at the product boundary and specific names inside provider or adapter internals.
+   - Prefer `monetization/ads/providers/adsense` over top-level `adsense`.
+   - Prefer `payments/providers/stripe` over top-level `stripe`.
+   - Prefer `notifications/email/providers/resend` over top-level `resend`.
+   - Prefer `analytics/providers/google-analytics` over top-level `googleAnalytics`.
+9. Propose the smallest folder and file structure that follows the answers and assumptions. For each new file or folder, state its responsibility and what it must not contain.
+10. Check the structure against local precedent with `pattern-scout` when the repository already has a nearby pattern.
+11. If the selected structure changes expected failure, meaningful absence, thrown business errors, null returns, or public error mapping, use `result-option` before editing that scope.
+12. If the selected structure creates or repairs a state-changing execution unit, use `command-pattern` before editing that scope.
+13. If the selected structure introduces or repairs lifecycle state transitions, use `state-machine-pattern` before editing that scope.
+14. If the selected structure introduces interchangeable algorithms, policies, calculations, provider choices, or feature-flag variants, use `strategy-pattern` before editing that scope.
+15. If the selected structure introduces one high-level entry point over several subsystem collaborators, use `facade-pattern` before editing that scope.
+16. If the selected structure separates business decisions from execution, use `pure-core-imperative-shell` before editing that scope.
+17. If the selected structure introduces inheritance, base classes, protected state, or subclass variants, use `composition-over-inheritance` before editing that scope.
+18. If the selected structure introduces or repairs an external dependency boundary, use `dependency-injection` for construction and collaborator flow, and `adapter-boundary` for external data, protocol, error, timeout, retry, idempotency, security, and observability handling.
+19. Implement only after the questions, assumptions, structure, dependency direction, and verification surface are clear enough for the task size.
 
 <!-- mustflow-section: postconditions -->
-## 사후 조건
+## Postconditions
 
-- 최종 구조는 명시적인 답변 또는 가정에 근거합니다.
-- 특정 업체가 제품 자체인 경우를 제외하고, 최상위 이름은 교체 가능한 업체명이 아니라 제품 책임을 나타냅니다.
-- 새 폴더와 파일에는 명확한 책임, 비책임, 의존 방향이 있습니다.
-- 건너뛴 질문, 미룬 결정, 의도적으로 좁게 둔 가정을 보고합니다.
+- The final structure follows an explicit set of answers or assumptions.
+- Top-level names reflect product responsibilities rather than replaceable vendor names unless the vendor is the product itself.
+- New folders and files have clear responsibilities, non-responsibilities, and dependency direction.
+- Any skipped question, deferred decision, or intentionally narrow assumption is reported.
 
 <!-- mustflow-section: verification -->
-## 검증
+## Verification
 
-사용 가능한 구성된 단발성 명령 의도를 사용합니다.
+Use configured oneshot command intents when available:
 
 - `changes_status`
 - `changes_diff_summary`
@@ -106,25 +134,26 @@ metadata:
 - `test_release`
 - `mustflow_check`
 
-변경한 소스, 템플릿, 문서, 공개 계약에 필요한 더 좁은 테스트나 빌드 의도가 있으면 함께 실행합니다.
+Also run narrower configured tests or builds required by the changed source, template, documentation, or public contract.
 
 <!-- mustflow-section: failure-handling -->
-## 실패 처리
+## Failure Handling
 
-- 구조적 미확인 사항이 너무 많으면 영향이 가장 큰 차단 질문만 묻고, 안전하게 가정할 수 없는 항목을 보고합니다.
-- 사용자가 차단되지 않는 질문에 답하지 않으면 보수적 기본값으로 진행하고 첫 구현을 작게 유지합니다.
-- 업체명이 넓은 공개 구조에 이미 새어 나갔다면 제공자 내부로 국소화하거나, 이름 변경이 범위 밖인 이유를 보고합니다.
-- 추상화의 알려진 사용처가 하나뿐이고 교체 압력이 뚜렷하지 않으면 공통 코드로 옮기지 말고 기능 가까이에 둡니다.
-- 이 스킬이 `codebase-orientation`과 겹치면 먼저 orientation으로 기존 영역을 파악한 뒤 이 스킬로 구조 결정을 이어갑니다.
+- If too many structural unknowns remain, ask only the highest-impact blocking questions and report the assumptions that are unsafe to make.
+- If the user does not answer non-blocking questions, proceed with conservative defaults and keep the first implementation small.
+- If a vendor name has already leaked into broad public structure, either localize it inside a provider or report why renaming is out of scope.
+- If a proposed abstraction has only one known use and no likely replacement pressure, keep it close to the feature instead of moving it to shared code.
+- If this skill overlaps with `codebase-orientation`, use orientation to map the existing area first, then return to this skill for the structure decision.
 
 <!-- mustflow-section: output-format -->
-## 출력 형식
+## Output Format
 
-- 만들 기능 또는 책임
-- 물은 차단 질문, 없으면 없음
-- 구조에 영향을 주는 가정
-- 제안한 파일과 책임
-- 의존 방향
-- 사용한 내부 패턴 또는 패턴이 적용되지 않는 이유
-- 실행한 명령 의도
-- 건너뛴 검사와 남은 구조 위험
+- Capability or responsibility being built
+- Blocking questions asked, or none
+- Structure-impacting assumptions
+- Proposed files and responsibilities
+- Dependency direction
+- Structural patterns selected or intentionally skipped
+- Local pattern used or reason no pattern applies
+- Command intents run
+- Skipped checks and remaining structure risk

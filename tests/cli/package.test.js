@@ -38,7 +38,7 @@ function collectRelativeFiles(directory) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.15.86');
+	assert.equal(packageJson.version, '1.15.96');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -124,7 +124,13 @@ test('default template declares profile-specific skill surfaces', async () => {
 
 	assert.deepEqual(template.manifest.profiles, ['minimal', 'oss', 'team', 'product', 'library']);
 	assert.equal(template.manifest.defaultProfile, 'minimal');
+	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('composition-over-inheritance'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-injection'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('null-object-pattern'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('result-option'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
@@ -294,18 +300,26 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('examples/nested-repos/README.md'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/adapter-boundary/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/artifact-integrity-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/behavior-preserving-refactor/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/codebase-orientation/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/command-pattern/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/composition-over-inheritance/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/contract-sync-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/date-number-audit/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-reality-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-injection/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/docs-prose-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/external-prompt-injection-defense/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/facade-pattern/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/instruction-conflict-scope-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pure-core-imperative-shell/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/result-option/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/migration-safety-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/multi-agent-work-coordination/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/null-object-pattern/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/performance-budget-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pattern-scout/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/project-context-authoring/SKILL.md`));
@@ -316,6 +330,8 @@ test('npm package includes compiled cli, schema contracts, and default template 
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-privacy-review/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-regression-tests/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/source-freshness-check/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/state-machine-pattern/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/strategy-pattern/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/structure-discovery-gate/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/skill-authoring/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/ui-quality-gate/SKILL.md`));

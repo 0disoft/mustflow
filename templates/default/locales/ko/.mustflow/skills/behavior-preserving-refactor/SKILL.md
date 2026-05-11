@@ -2,11 +2,11 @@
 mustflow_doc: skill.behavior-preserving-refactor
 locale: ko
 canonical: false
-revision: 1
+revision: 11
 lifecycle: mustflow-owned
 authority: procedure
 name: behavior-preserving-refactor
-description: 기존 동작을 보존하고 동작 변경을 분리하면서 변경 비용을 낮추는 리팩토링이 필요할 때 이 스킬을 적용합니다.
+description: Apply this skill when refactoring should reduce change cost while preserving existing behavior and keeping behavior changes separate.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -22,112 +22,130 @@ metadata:
     - mustflow_check
 ---
 
-# 동작 보존 리팩토링
+# Behavior-Preserving Refactor
 
 <!-- mustflow-section: purpose -->
-## 목적
+## Purpose
 
-실행 동작을 몰래 바꾸지 않으면서 미래 변경 비용을 낮추는 리팩토링을 안내합니다.
+Guide refactoring that lowers future change cost without silently changing runtime behavior.
 
-리팩토링은 보기 좋게 정리하는 작업이 아닙니다. 버그 수정, 기능 추가, 동작 변경을 분리한 채 코드를 이해, 테스트, 변경하기 쉽게 만드는 통제된 구조 개선입니다.
+Refactoring is not cleanup for aesthetics. It is a controlled way to make code easier to understand, test, and change while keeping bug fixes, feature work, and behavior changes separate.
 
 <!-- mustflow-section: use-when -->
-## 사용 시점
+## Use When
 
-- 사용자가 리팩토링, 정리, 재구성, 단순화, 분리, 추출, 이름 변경, 중복 제거, 구조 개선을 요청합니다.
-- 계획한 변경이 이름 변경, 파일 이동, 함수 추출, 중복 제거, 버그 수정, 기능 동작을 한 변경분에 섞을 위험이 있습니다.
-- 기존 코드의 책임, 이름, 분기, 의존성, 테스트가 불명확해 변경하기 어렵습니다.
-- 오래되었거나 테스트가 약한 코드를 다루며 더 안전한 리팩토링 순서가 필요합니다.
+- The user asks to refactor, clean up, reorganize, simplify, split, extract, rename, remove duplication, or improve structure.
+- A planned change risks mixing renames, moves, extractions, deduplication, bug fixes, and feature behavior in one diff.
+- Existing code is hard to change because responsibilities, names, branches, dependencies, or tests are unclear.
+- Existing inheritance, base classes, abstract classes, template methods, protected state, or subclass variants make behavior harder to test or change.
+- Existing handlers, repositories, adapters, jobs, or services mix business decisions with database access, network calls, logging, current time, generated identifiers, randomness, environment reads, or framework objects.
+- Existing controllers, handlers, jobs, or services mix one state-changing intent with authorization, transactions, idempotency, audit logs, outbox events, retries, concurrency checks, and external side effects.
+- Existing controllers, handlers, workers, command handlers, or services repeat the same multi-step subsystem sequence and should move behind a stable facade without changing behavior.
+- Existing lifecycle state changes are scattered across direct assignments, handlers, repositories, jobs, UI checks, SQL conditions, or provider callbacks.
+- Existing code repeats presence checks for optional collaborators such as loggers, analytics clients, caches, optional notifications, or no-op processors.
+- The task touches legacy or weakly tested code and needs a safer refactoring order.
 
 <!-- mustflow-section: do-not-use-when -->
-## 사용하지 않을 때
+## Do Not Use When
 
-- 요청의 핵심이 버그 수정이나 실패 진단입니다. 이 경우 먼저 `repro-first-debug`를 사용합니다.
-- 리팩토링 범위가 분명해지기 전에 새 폴더, 모듈, 라우팅, 데이터 모델, 외부 서비스 경계를 도입합니다. 이 경우 `structure-discovery-gate`를 사용합니다.
-- 이미 완료된 변경분을 검토하는 작업입니다. 이 경우 `diff-risk-review` 또는 `code-review`를 사용합니다.
-- 대상 코드가 곧 삭제될 예정이거나, 요구사항이 아직 불명확하거나, 다음 단계가 리팩토링보다 제품 결정에 가깝습니다.
+- The requested task is primarily a bug fix or failure diagnosis; use `repro-first-debug` first.
+- The change introduces new folders, modules, routing, data models, or external service boundaries before refactoring scope is clear; use `structure-discovery-gate`.
+- The task is only to review an already completed diff; use `diff-risk-review` or `code-review`.
+- The target code is about to be deleted, the requirement is still unclear, or the next step requires a product decision rather than a refactor.
 
 <!-- mustflow-section: required-inputs -->
-## 필요한 입력
+## Required Inputs
 
-- 리팩토링 목표, 대상 파일 또는 영역, 줄이려는 구체적인 불편함.
-- 테스트, 예제, 고정 데이터, 명령 출력, 관찰한 입력과 출력 사례 같은 현재 동작 근거.
-- 이름, 파일 경계, 의존성, 테스트에 대한 기존 로컬 패턴.
-- 작업 트리가 이미 더러울 경우 현재 변경 파일 목록.
-- 검증에 필요한 명령 의도 계약 항목.
+- The refactoring goal, target files or area, and the concrete pain being reduced.
+- Current behavior evidence, such as tests, examples, fixtures, command output, or observed input and output cases.
+- Existing local patterns for naming, file boundaries, dependencies, and tests.
+- Current changed-file list when the worktree is already dirty.
+- Relevant command-intent contract entries for verification.
 
 <!-- mustflow-section: preconditions -->
-## 사전 조건
+## Preconditions
 
-- 현재 범위에 대해 상위 지시와 `.mustflow/config/commands.toml`을 확인했습니다.
-- 보존해야 할 기대 동작을 알고 있거나, 수정 전에 알 수 없는 동작을 보고했습니다.
-- 영역이 낯설면 병렬 구조를 지어내지 않도록 `codebase-orientation` 또는 `pattern-scout`를 사용했습니다.
-- 테스트가 없거나 약하면 첫 안전 조치는 특성화 테스트 추가, 입력과 출력 사례 기록, 또는 검증 공백 명시입니다.
+- Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
+- The expected behavior to preserve is known, or the unknown behavior has been reported before edits begin.
+- If the area is unfamiliar, `codebase-orientation` or `pattern-scout` has been used to avoid inventing a parallel structure.
+- If tests are absent or weak, the first safe step is to add characterization coverage, capture input and output cases, or explicitly report the verification gap.
 
 <!-- mustflow-section: allowed-edits -->
-## 허용되는 수정
+## Allowed Edits
 
-- 호출부 의미가 좋아지고 동작을 바꾸지 않는 범위에서 불명확한 식별자 이름을 바꿉니다.
-- 명확한 개념, 입력, 출력, 테스트 가치가 있는 작은 함수, 정책, 도움 함수를 추출합니다.
-- 같은 보호 조건과 오류 동작을 보존하는 경우 조건 흐름을 평평하게 만듭니다.
-- 책임, 의존성, 부작용을 가장 작은 유용한 단계로 분리합니다.
-- 현재 동작을 보존하거나 리팩토링을 안전하게 만드는 테스트를 추가하거나 갱신합니다.
-- 동작 변경, 버그 수정, 새 기능, 넓은 서식 변경, 무관한 정리를 리팩토링에 섞지 않습니다.
+- Rename unclear identifiers when the rename improves call-site meaning without changing behavior.
+- Extract small functions, policies, or helpers when they have a clear concept, inputs, outputs, and test value.
+- Flatten conditional flow when it preserves the same guard conditions and error behavior.
+- Separate responsibilities, dependencies, or side effects in the smallest useful step.
+- Move domain decisions toward pure functions or narrow policy objects, and keep I/O, clocks, network calls, process spawning, persistence, and logging in the imperative edge.
+- Add or update tests that preserve current behavior or make the refactoring safe.
+- Do not mix behavior changes, bug fixes, new features, broad formatting churn, or unrelated cleanup into the refactor.
 
 <!-- mustflow-section: procedure -->
-## 절차
+## Procedure
 
-넓은 영역에서 리팩토링 후보를 찾을 때는 파일을 열기 전에 후보를 먼저 압축합니다.
+Before broad hotspot scans, compress candidates before reading files.
 
-- 후보 순위를 매기기 전에 생성 파일, 번들 파일, 잠금 파일, 의존성 디렉터리, 대형 픽스처, 스냅샷, 빌드 산출물, minified 파일, 소스 맵은 제외합니다.
-- `[refactoring.hotspots]` 선호값을 탐색 제한으로 사용합니다. `large_file_candidate_kb`는 1차 크기 신호, `history_days`는 최근 변경과 버그 수정 이력 기간, 후보 제한 값들은 단계별로 확인할 파일 수입니다.
-- 단일 지표보다 여러 저비용 신호가 겹치는 파일을 우선합니다. 예: 크기, 최근 변경 빈도, 버그 수정 이력, import/export 수, TODO/FIXME/HACK 수, 타입 또는 린트 우회, 가까운 테스트 부재, 아키텍처 경계 위반 import.
-- 강한 조합은 더 높은 우선순위로 봅니다. 예: 큰 파일 + 잦은 변경 + 테스트 없음, 보안/결제/권한 관련 작은 파일 + 반복 버그 수정, 효과 훅이 많은 큰 React 클라이언트 컴포넌트, 검증/권한/비즈니스 로직/DB 접근/응답 생성이 섞인 API/controller 파일.
-- 모든 후보를 읽지 않습니다. 1차 후보는 설정된 최대 개수로 제한하고, 구조 확인 후보로 다시 좁힌 뒤, 파일 전체는 설정된 전문 분석 후보 수만큼만 읽습니다.
-- 후보 파일을 열 때도 먼저 import, export, 선언 목록, TODO 또는 타입 우회 주변, 가장 크거나 분기가 많은 함수 주변을 확인한 뒤 필요할 때만 전체를 읽습니다.
+- Exclude generated files, bundled files, lock files, dependency directories, large fixtures, snapshots, build outputs, minified files, and source maps before ranking candidates.
+- Use `[refactoring.hotspots]` preferences as scan limits: `large_file_candidate_kb` for the first size signal, `history_days` for recent change and bug-fix history, and the candidate limits for how many files to inspect at each depth.
+- Prefer overlapping low-cost signals over a single metric: size, recent change frequency, bug-fix history, import/export count, TODO/FIXME/HACK count, type or lint bypasses, missing nearby tests, and architecture-boundary imports.
+- Treat strong combinations as higher priority, such as large files with frequent changes and no tests, small security/payment/permission files with repeated bug fixes, large React client components with many effects, and API/controller files that mix validation, authorization, business logic, database access, and response formatting.
+- Do not read every candidate. Keep the first pass to the configured primary limit, narrow to the configured structure-review limit, and read full file contents only for the configured full-file limit.
+- When opening a candidate, inspect imports, exports, declarations, TODO or type-bypass neighborhoods, and the largest or most branch-heavy function before reading the full file.
 
-1. 리팩토링이 필요한지 진단합니다.
-   - 실제 문제를 이름 붙입니다: 변경 비용, 불명확한 책임, 반복 버그 위험, 테스트 어려움, 의존성 결합, 헷갈리는 흐름.
-   - 코드가 길거나 오래되었거나 스타일이 고르지 않다는 이유만으로 리팩토링하지 않습니다.
-2. 고정해야 할 동작을 확인합니다.
-   - 기존 테스트나 예제를 우선합니다.
-   - 검증 범위가 부족하면 구조 편집 전에 대표 입력과 출력 사례를 기록하거나 집중된 특성화 테스트를 추가합니다.
-   - 의심되는 버그는 사용자가 명시적으로 동작 변경을 요청하지 않은 한 별도 후속 수정으로 다룹니다.
-3. 가장 안전한 리팩토링 순서를 선택합니다.
-   - 이름과 로컬 가독성부터 시작합니다.
-   - 그다음 입력과 출력이 분명한 작은 개념을 추출합니다.
-   - 그다음 조건문을 평평하게 만들거나 정책을 격리합니다.
-   - 중복 제거는 중복 코드가 같은 이유로 바뀐다는 근거가 있을 때만 합니다.
-   - 파일 이동, 추상화 도입, 모듈 분리는 로컬 동작을 더 쉽게 볼 수 있게 된 뒤에 합니다.
-4. 코드를 합치기 전에 중복을 점검합니다.
-   - 모양만 비슷하거나 서로 다른 이유로 바뀔 코드는 중복으로 남겨둡니다.
-   - 같은 규칙을 표현하고, 호출부를 단순하게 만들며, 매개변수나 분기 복잡도를 늘리지 않을 때만 공통화합니다.
-   - 오해를 부르는 추상화보다 명시적인 중복을 선호합니다.
-5. 추출한 함수와 이름을 점검합니다.
-   - 정확하게 이름 붙일 수 있는 개념만 추출합니다.
-   - 기존 로컬 스타일과 맞지 않는 한 `process`, `handle`, `do`, `helper` 같은 모호한 이름을 피합니다.
-   - 불리언 함수는 호출부에서 자연스럽게 읽히고 검사 조건을 드러내야 합니다.
-6. 조건문 복잡도는 정책을 찾아 처리합니다.
-   - 단순 보호 조건은 동작을 보존하는 경우 조기 반환으로 정리합니다.
-   - 상태, 타입, 권한, 예외 규칙 분기가 섞여 있으면 분리합니다.
-   - 정책 경계가 증명되기 전에 명확한 분기를 전략 객체, 표, 추상화로 바꾸지 않습니다.
-7. 커밋과 보고를 검토하기 쉽게 유지합니다.
-   - 가능하면 이름 변경, 파일 이동, 함수 추출, 중복 제거, 테스트, 동작 변경을 분리합니다.
-   - 동작 변경을 발견하면 멈추고 별도 수정 경로로 보고합니다.
-8. 변경 코드와 계약 표면을 포괄하는 가장 좁은 설정된 명령 의도로 검증합니다.
+1. Diagnose whether refactoring is needed.
+   - Name the real problem: change cost, unclear responsibility, repeated bug risk, test difficulty, dependency coupling, or confusing flow.
+   - Do not refactor only because code looks long, old, or stylistically uneven.
+2. Identify behavior that must stay fixed.
+   - Prefer existing tests or examples.
+   - If coverage is missing, record representative input and output cases or add focused characterization tests before structural edits.
+   - Treat suspected bugs as separate follow-up fixes unless the user explicitly asks to change behavior.
+3. Choose the safest refactoring ladder.
+   - Start with names and local clarity.
+   - Then extract small concepts with clear inputs and outputs.
+   - Then flatten conditions or isolate policies.
+   - Then remove duplication only when the duplicated code changes for the same reason.
+   - Move files, introduce abstractions, or split modules only after local behavior is easier to see.
+4. Check duplication before merging code.
+   - Keep duplication when code only looks similar or will change for different reasons.
+   - Prefer common code only when it represents the same rule, simplifies call sites, and does not add parameter or branch complexity.
+   - Prefer explicit duplication over a misleading abstraction.
+5. Check extracted functions and names.
+   - Extract only concepts that can be named precisely.
+   - Avoid vague names such as `process`, `handle`, `do`, or `helper` unless they match established local style.
+   - Boolean functions should read naturally at call sites and reveal the condition being tested.
+6. Prefer the low-ceremony structural pattern that matches the pain:
+   - Dependency injection when direct construction, global lookup, or hidden imports of tools, clients, clocks, file systems, processes, loggers, configuration, random generators, identifiers, queues, or external SDKs makes behavior hard to test. Use `dependency-injection` before editing that boundary.
+   - Adapter or translator boundaries when external formats leak into core logic. Use `adapter-boundary` when provider data, protocols, errors, timeouts, retries, idempotency, security, or observability are part of the boundary.
+   - Composition over inheritance when behavior can be assembled from small explicit collaborators. Use `composition-over-inheritance` before editing `extends`, base classes, abstract classes, template methods, protected state, mixins, or subclass combinations.
+   - Command pattern when a state-changing user or system intent needs a traceable execution unit with explicit payload, context, authorization, transaction boundary, idempotency, outbox, audit, retry, or concurrency behavior. Use `command-pattern` before editing that execution unit.
+   - Pure core with an imperative shell when business decisions, validation, authorization, pricing, eligibility, state transitions, or domain events are mixed with I/O, time, generated identifiers, randomness, environment reads, or framework objects. Use `pure-core-imperative-shell` before editing that split.
+   - State machine pattern when status, state, phase, step, or stage controls allowed behavior and transitions are scattered or assigned directly. Use `state-machine-pattern` before editing lifecycle transitions.
+   - Strategy pattern when repeated branches choose among interchangeable algorithms, policies, pricing rules, scoring methods, provider choices, or feature variants that share one purpose. Use `strategy-pattern` before editing that strategy family.
+   - Result and Option values when expected failures, meaningful absence, null returns, thrown business failures, or ambiguous success flags make behavior hard to follow. Use `result-option` before editing that return-shape contract.
+   - Null Object pattern when repeated nullable checks around an optional collaborator can be replaced by a same-interface neutral implementation without hiding required failures. Use `null-object-pattern` before editing that optional dependency boundary.
+   - Injected time context when current time affects preserved behavior.
+7. Handle conditional complexity by finding the policy.
+   - Use early exits for simple guard conditions when they preserve behavior.
+   - Separate state, type, permission, and exceptional-rule branches when they are mixed.
+   - Avoid replacing clear branches with a strategy object, table, or abstraction before the policy boundary is proven.
+8. Keep commits and reports reviewable.
+   - Separate renames, moves, extractions, deduplication, tests, and behavior changes when possible.
+   - If behavior changes are discovered, stop and report them as a separate fix path.
+9. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
 
 <!-- mustflow-section: postconditions -->
-## 사후 조건
+## Postconditions
 
-- 기존 동작이 보존되었거나, 동작 변경이 명확히 분리되어 보고되었습니다.
-- 리팩토링 목적이 변경 비용 감소, 결함 위험 감소, 테스트 가능성 향상과 연결되어 있습니다.
-- 검토자가 기계적 변경과 의미 변경을 구분할 수 있을 만큼 변경분이 작습니다.
-- 가장 회귀하기 쉬운 동작을 테스트나 검증 근거가 포괄합니다.
+- Existing behavior is preserved or any behavior change is clearly separated and reported.
+- The refactor has a named purpose tied to lower change cost, lower defect risk, or better testability.
+- The diff is small enough for a reviewer to distinguish mechanical changes from semantic changes.
+- Tests or verification evidence cover the behavior most likely to regress.
 
 <!-- mustflow-section: verification -->
-## 검증
+## Verification
 
-사용 가능한 경우 설정된 일회성 명령 의도를 사용합니다.
+Use configured oneshot command intents when available:
 
 - `changes_status`
 - `changes_diff_summary`
@@ -137,26 +155,28 @@ metadata:
 - `test_release`
 - `mustflow_check`
 
-리팩토링된 동작을 증명하는 가장 좁은 설정된 테스트 또는 빌드 명령 의도를 선택합니다. 공개 문서, 템플릿, 스키마, 패키지 메타데이터, 릴리스 민감 표면이 바뀐 경우에만 문서와 릴리스 검사를 사용합니다.
+Choose the narrowest configured test or build intent that proves the refactored behavior. Use documentation and release checks only when the refactor changes public docs, templates, schemas, package metadata, or release-sensitive surfaces.
 
 <!-- mustflow-section: failure-handling -->
-## 실패 처리
+## Failure Handling
 
-- 현재 동작을 관찰할 수 없으면 넓은 구조 변경 전에 멈추고 부족한 안전 근거를 보고합니다.
-- 리팩토링 중 버그가 드러나면 리팩토링은 동작 보존으로 유지하고 수정은 별도 변경으로 제안합니다.
-- 중복 제거가 옵션, 분기, 모호한 이름을 늘리면 그 추상화를 되돌리거나 미룹니다.
-- 동작 보존 편집 뒤 테스트가 실패하면 계속하기 전에 동작 차이를 진단합니다.
-- 다음 유용한 단계가 큰 모듈 이동이나 공개 경계 변경이면 진행 전에 `structure-discovery-gate`와 `contract-sync-check`를 사용합니다.
+- If current behavior cannot be observed, stop before broad restructuring and report the missing safety evidence.
+- If a refactor uncovers a bug, keep the refactor behavior-preserving and propose the fix as a separate change.
+- If deduplication creates more options, branches, or vague names, undo or postpone that abstraction.
+- If tests fail after a supposedly behavior-preserving edit, diagnose the behavior difference before continuing.
+- If the next useful step is a large module move or public boundary change, use `structure-discovery-gate` and `contract-sync-check` before proceeding.
 
 <!-- mustflow-section: output-format -->
-## 출력 형식
+## Output Format
 
-- 리팩토링 목표
-- 동작 보존 근거
-- 발견한 구조적 위험 신호
-- 선택한 리팩토링 순서
-- 변경 내용 또는 분석 전용 추천
-- 의도적으로 제외한 동작 변경
-- 실행한 검증 명령 의도
-- 건너뛴 검사와 이유
-- 남은 위험 또는 후속 수정 경로
+- Refactoring goal
+- Behavior preservation evidence
+- Structural risk signals found
+- Facade extraction used or intentionally avoided
+- Refactoring ladder chosen
+- Structural pattern used or intentionally avoided
+- Changes made or analysis-only recommendation
+- Behavior changes intentionally excluded
+- Verification intents run
+- Skipped checks and reasons
+- Remaining risks or follow-up fix path
