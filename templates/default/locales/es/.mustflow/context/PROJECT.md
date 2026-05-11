@@ -15,53 +15,49 @@ source_refs:
   - .mustflow/config/commands.toml
 ---
 
-# Contexto Del Proyecto
+# Contexto del Proyecto
 
-Este archivo documenta contexto especifico del proyecto para agentes de codificacion.
-Si un campo es desconocido, dejalo sin completar; no supongas ni inventes detalles.
+Este archivo documenta el contexto específico del proyecto para agentes de codificación.  
+Si algún campo es desconocido, déjalo sin completar; no supongas ni inventes detalles.
 
-## Limites De Autoridad
+## Límites de Autoridad
 
-- Este archivo puede registrar contexto respaldado, incognitas y conflictos.
-- No debe conceder permiso para ejecutar comandos, definir prohibiciones de
-  edicion de archivos, reemplazar `AGENTS.md` o `.mustflow/config/*.toml`, ni
-  prometer funciones que no esten respaldadas por las fuentes actuales.
-- Mueve las reglas operativas duraderas a `AGENTS.md`,
-  `.mustflow/docs/agent-workflow.md` o al archivo de configuracion correspondiente
-  en lugar de guardarlas aqui.
+- Este archivo puede registrar contexto respaldado, incógnitas y conflictos.  
+- No debe otorgar permisos para ejecutar comandos, definir prohibiciones de edición de archivos, reemplazar `AGENTS.md` o `.mustflow/config/*.toml`, ni prometer funciones que no estén respaldadas por las fuentes actuales.  
+- Traslada las reglas operativas duraderas a `AGENTS.md`, `.mustflow/docs/agent-workflow.md` o al archivo de configuración correspondiente en lugar de guardarlas aquí.
 
 ## Objetivo Actual
 
-Sin definir. Sustituye esto por el objetivo actual del proyecto cuando la persona responsable lo proporcione.
+Sin definir. Sustituye este texto por el objetivo actual del proyecto cuando la persona responsable lo proporcione.
 
 ## No-Objetivos
 
-Sin definir. Enumera areas u objetivos que el agente no debe perseguir en tareas no relacionadas.
+Sin definir. Enumera áreas u objetivos que el agente no debe perseguir en tareas no relacionadas.
 
 ## Promesas Principales
 
-- Sigue `AGENTS.md` para reglas operativas obligatorias.
-- Trata `.mustflow/config/commands.toml` como la fuente de verdad para comandos.
-- Trata `.mustflow/config/mustflow.toml` como la fuente de verdad para limites de flujo de trabajo y documentos.
-- Usa `REPO_MAP.md` como mapa de navegacion superficial cuando se necesite una vista mas amplia del repositorio.
+- Sigue `AGENTS.md` para las reglas operativas obligatorias.  
+- Considera `.mustflow/config/commands.toml` como la fuente de verdad para comandos.  
+- Considera `.mustflow/config/mustflow.toml` como la fuente de verdad para límites de flujo de trabajo y documentos.  
+- Usa `REPO_MAP.md` como mapa de navegación superficial cuando se requiera una vista más amplia del repositorio.
 
-## Terminos Del Dominio
+## Términos del Dominio
 
-Sin definir. Agrega solo terminos que afecten decisiones de implementacion.
+Sin definir. Agrega solo términos que afecten decisiones de implementación.
 
-## Areas De Cuidado Especial
+## Áreas de Cuidado Especial
 
-Sin definir. Lista rutas, API publicas, archivos generados, migraciones, secretos o superficies de compatibilidad que requieran atencion especial.
+Sin definir. Lista rutas, API públicas, archivos generados, migraciones, secretos o superficies de compatibilidad que requieran atención especial.
 
-## Leer A Continuacion
+## Lectura Recomendada
 
-- `AGENTS.md`
-- `.mustflow/docs/agent-workflow.md`
-- `.mustflow/config/mustflow.toml`
-- `.mustflow/config/commands.toml`
+- `AGENTS.md`  
+- `.mustflow/docs/agent-workflow.md`  
+- `.mustflow/config/mustflow.toml`  
+- `.mustflow/config/commands.toml`  
 - `.mustflow/skills/INDEX.md`
 
-## Verificacion De Obsolescencia
+## Verificación de Obsolescencia
 
-- Si este archivo entra en conflicto con el codigo actual, pruebas, contratos de comandos o instrucciones del usuario, tratalo como desactualizado y reporta el conflicto.
-- Actualiza este archivo solo cuando cambien realmente la direccion del proyecto, los no-objetivos o las promesas de alcance del repositorio.
+- Si este archivo entra en conflicto con el código actual, pruebas, contratos de comandos o instrucciones del usuario, trátalo como desactualizado y reporta el conflicto.  
+- Actualiza este archivo solo cuando cambie realmente la dirección del proyecto, los no-objetivos o las promesas de alcance del repositorio.

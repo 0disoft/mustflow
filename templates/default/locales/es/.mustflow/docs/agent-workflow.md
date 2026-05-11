@@ -9,14 +9,14 @@ authority: workflow-policy
 
 # Flujo De Trabajo Del Agente
 
-Este documento amplia el enrutador breve de `AGENTS.md`.
-Define el bucle operativo predeterminado para agentes que trabajan dentro de una raiz de mustflow.
+Este documento amplía la guía de enrutamiento de `AGENTS.md`.
+Define el ciclo operativo predeterminado para los agentes que trabajan dentro de una raíz de mustflow.
 
 ## Orientacion
 
-Consulta los archivos listados en `AGENTS.md` antes de iniciar ediciones. Usa `mf doctor` para una comprobacion rapida y de solo lectura del estado de instalacion, los command intents configurados y los siguientes pasos sugeridos.
+Consulta los archivos enumerados en `AGENTS.md` antes de comenzar a editar. Usa `mf doctor` para una comprobación rápida de solo lectura del estado de instalacion, los intents de comando configurados y los siguientes pasos sugeridos.
 
-Usa `REPO_MAP.md` exclusivamente como mapa de navegacion generado para la raiz actual de mustflow. No es un listado completo de archivos y no reemplaza la necesidad de leer los archivos relevantes para la tarea.
+Usa `REPO_MAP.md` exclusivamente como un mapa de navegación generado para la raiz actual de mustflow. No es una lista exhaustiva de archivos y no sustituye la necesidad de leer los archivos pertinentes para la tarea.
 
 ## Contexto Del Proyecto
 
