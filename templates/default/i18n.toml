@@ -76,7 +76,7 @@ translations.hi = { path = "locales/hi/.mustflow/skills/adapter-boundary/SKILL.m
 [documents."skill.artifact-integrity-check"]
 source = "locales/en/.mustflow/skills/artifact-integrity-check/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations.ko = { path = "locales/ko/.mustflow/skills/artifact-integrity-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/skills/artifact-integrity-check/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/artifact-integrity-check/SKILL.md", source_revision = 1, status = "needs_review" }

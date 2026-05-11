@@ -2,7 +2,7 @@
 mustflow_doc: skill.artifact-integrity-check
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: artifact-integrity-check
@@ -75,11 +75,13 @@ Ensure generated artifacts, packaged files, media assets, reports, and downloada
 2. Identify whether the artifact is source-controlled, generated, packaged, ignored local state, or external output.
 3. Check that source references, manifests, package includes, docs links, and tests point to the same path and format.
 4. For publish workflows, inspect code that runs before artifact publication. Treat mutable third-party actions, lifecycle scripts, package manifests, and generated files as artifact mutation points.
-5. For workflow artifact alerts, check whether checkout credentials persist into the workspace, whether artifacts are uploaded after untrusted code runs, and whether the job permission is broader than the artifact operation needs.
-6. Verify existence, format, and expected inclusion using the narrowest configured command intent available.
-7. If a generated artifact is stale or missing, regenerate it only through a configured command intent or report the missing command.
-8. If an artifact should not be versioned, ensure the final report does not imply that it was committed or distributed.
-9. Report artifact evidence precisely: path checked, command intent run, and any remaining unverified attribute.
+5. Prefer explicit release gates for publish automation. Do not publish packages on every branch push; use a version tag or a manually published release, then verify the tag matches the package metadata before publication.
+6. If a workflow creates a release and publishes an artifact, keep release creation and publication in the same trusted workflow unless it uses a token that is intended to trigger follow-up workflows. Repository `GITHUB_TOKEN` events generally should not be used as the only trigger for a second publish workflow.
+7. For workflow artifact alerts, check whether checkout credentials persist into the workspace, whether artifacts are uploaded after untrusted code runs, and whether the job permission is broader than the artifact operation needs.
+8. Verify existence, format, and expected inclusion using the narrowest configured command intent available.
+9. If a generated artifact is stale or missing, regenerate it only through a configured command intent or report the missing command.
+10. If an artifact should not be versioned, ensure the final report does not imply that it was committed or distributed.
+11. Report artifact evidence precisely: path checked, command intent run, and any remaining unverified attribute.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

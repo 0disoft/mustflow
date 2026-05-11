@@ -1,6 +1,9 @@
 name: Publish npm package
 
 on:
+  push:
+    tags:
+      - "v*"
   release:
     types:
       - published
@@ -17,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - name: Checkout
@@ -51,6 +54,21 @@ jobs:
             echo "::error::Release tag ${GITHUB_REF_NAME} does not match package.json version ${package_version}."
             exit 1
           fi
+
+      - name: Create GitHub release for pushed tag
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists."
+            exit 0
+          fi
+
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Release ${GITHUB_REF_NAME}."
 
       - name: Publish package
         run: npm publish --access public
