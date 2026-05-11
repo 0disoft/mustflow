@@ -2,12 +2,9 @@
 
 语言：[英文](../../../README.md) · [韩文](../ko/README.md) · [中文](README.md) · [西班牙文](../es/README.md) · [法文](../fr/README.md) · [印地文](../hi/README.md)
 
-mustflow 是面向 LLM 编码代理的工作流 CLI。它帮助代理进入仓库，读取正确
-的运行上下文，只执行已声明的命令，并在不猜测的情况下验证自己的工作。
+mustflow 是面向大型语言模型（LLM）编码代理的工作流命令行工具。它帮助代理进入代码仓库，读取正确的运行上下文，仅执行已声明的命令，并在不依赖猜测的情况下验证自身工作。
 
-核心模型很简单：在项目根目录放置 `AGENTS.md`，再把详细工作流放在
-`.mustflow/` 下。代理从 `AGENTS.md` 开始，然后按顺序读取命令合同、技能、
-项目上下文和验证规则。
+核心模型非常简单：在项目根目录放置 `AGENTS.md`，详细工作流则存放在 `.mustflow/` 目录下。代理从 `AGENTS.md` 开始，依次读取命令合同、技能、项目上下文和验证规则。
 
 ## 代理读取流程
 
@@ -26,49 +23,42 @@ flowchart TD
   I --> J
 ```
 
-`read_order` 定义必读顺序，而 `optional_read_order` 和 `[context]` 控制
-如何加载任务特定上下文。`[refresh]` 策略决定代理何时重新读取相同指令。
+`read_order` 定义了必须读取的顺序，`optional_read_order` 和 `[context]` 控制任务特定上下文的加载方式。`[refresh]` 策略决定代理何时重新读取相同指令。
 
-技能索引是主动分流步骤：代理会将任务与 `.mustflow/skills/INDEX.md` 比较，并在编辑
-对应范围前读取匹配的 `SKILL.md`。技能只指导流程；命令执行仍由
-`.mustflow/config/commands.toml` 决定。
+技能索引是主动分流的步骤：代理会将任务与 `.mustflow/skills/INDEX.md` 对比，并在编辑对应范围前读取匹配的 `SKILL.md`。技能只指导流程，命令执行仍由 `.mustflow/config/commands.toml` 决定。
 
 - 文档站点：<https://0disoft.github.io/mustflow/>
-- 仓库：<https://github.com/0disoft/mustflow>
-- 问题：<https://github.com/0disoft/mustflow/issues>
+- 仓库地址：<https://github.com/0disoft/mustflow>
+- 问题反馈：<https://github.com/0disoft/mustflow/issues>
 
-## 它做什么
+## 它能做什么
 
 mustflow 为用户项目安装并验证代理工作流。
 
 - 安装 `AGENTS.md` 和 `.mustflow/**` 工作流文件。
-- 在 `.mustflow/config/commands.toml` 中声明可运行的命令规则。
-- 使用 `mf check` 和 `mf doctor` 检查安装健康状况和配置结构。
-- 通过 `mf run <intent>` 在超时限制内只运行允许的一次性命令。
+- 在 `.mustflow/config/commands.toml` 中声明可执行的命令规则。
+- 使用 `mf check` 和 `mf doctor` 检查安装状态和配置结构。
+- 通过 `mf run <intent>` 在超时限制内仅执行允许的一次性命令。
 - 使用 `mf map` 生成简洁的仓库导航地图 `REPO_MAP.md`。
-- 通过 `mf index` 和 `mf search` 使用 SQLite 索引并搜索 mustflow 文档、
-  技能和命令规则。
-- 使用 `mf update` 安全地预览并应用内置模板更新。
-- 在 `schemas/` 中发布面向自动化报告和命令合同的 JSON Schema。
+- 通过 `mf index` 和 `mf search` 利用 SQLite 索引搜索 mustflow 文档、技能和命令规则。
+- 使用 `mf update` 安全预览并应用内置模板更新。
+- 在 `schemas/` 目录发布面向自动化报告和命令合同的 JSON Schema。
 
 ## 它不做什么
 
-mustflow 不是自动项目编辑器，也不绑定到某个代理产品。
+mustflow 不是自动项目编辑器，也不绑定任何特定代理产品。
 
-- 它不会生成或修改应用源码。
-- 它不会因为安装包存在就更改项目文件。只有运行 `mf init` 时才会创建文件。
-- 它不会强制使用 `CLAUDE.md` 或 `GEMINI.md` 这类特定工具文件名。
-- 它不会替代构建系统、测试运行器、包管理器或 CI/CD 设置。
-- 它不会把 GitHub、GitLab 或类似平台的特定文件加入默认模板。
-- 它默认不会创建 `justfile`、`Makefile` 或 `Taskfile.yml`。
-- `mf dashboard` 会启动一个本地浏览器界面，用于查看和编辑
-  `.mustflow/config/preferences.toml` 中的安全偏好设置，然后在默认浏览器中打开。
-  页面语言可在英语、韩语、中文、西班牙语、法语和印地语之间切换。它也包含验证
-  选择和测试编写偏好。保存设置时，如果锁文件存在，对应条目会刷新为自定义基线。
+- 不会生成或修改应用源码。
+- 不会因安装包存在而更改项目文件。只有运行 `mf init` 时才会创建文件。
+- 不强制使用 `CLAUDE.md` 或 `GEMINI.md` 等特定工具文件名。
+- 不替代构建系统、测试运行器、包管理器或 CI/CD 配置。
+- 不会将 GitHub、GitLab 等平台特定文件纳入默认模板。
+- 默认不创建 `justfile`、`Makefile` 或 `Taskfile.yml`。
+- `mf dashboard` 会启动本地浏览器界面，用于查看和编辑 `.mustflow/config/preferences.toml` 中的安全偏好设置，随后在默认浏览器打开。页面支持英语、韩语、中文、西班牙语、法语和印地语切换。界面还包含验证选项和测试编写偏好。保存时，如果存在锁文件，相关条目会刷新为自定义基线。
 
 ## 候选功能
 
-这些是暂存想法，尚未正式支持。
+以下为暂存的想法，尚未正式支持：
 
 - 社区技能注册表和技能包安装
 - 可选的 `.mustflow/work-items/`
@@ -77,8 +67,7 @@ mustflow 不是自动项目编辑器，也不绑定到某个代理产品。
 
 ## 快速开始
 
-需要 Node.js 20 或更高版本。mustflow 以 npm 包形式发布，CLI 名称为
-`mf`。
+需 Node.js 20 及以上版本。mustflow 以 npm 包形式发布，CLI 命令为 `mf`。
 
 ```sh
 npm install -D mustflow
@@ -87,10 +76,9 @@ npx mf init
 npx mf check --strict
 ```
 
-在交互式终端中，`mf init` 会让你选择文档语言、项目配置档案和代理报告语言。
-脚本需要无提示安装英文默认值时，请使用 `mf init --yes`。
+在交互式终端中，`mf init` 会让你选择文档语言、项目配置档案和代理报告语言。若需无提示安装英文默认值，请使用 `mf init --yes`。
 
-pnpm 和 Bun 可以使用同一个 npm 包。
+pnpm 和 Bun 同样支持该 npm 包。
 
 ```sh
 pnpm add -D mustflow
@@ -100,11 +88,11 @@ bun add -d mustflow
 bunx mf init --yes
 ```
 
-Deno 的 `npm:` 执行在单独验证前应视为实验性功能。
+Deno 的 `npm:` 执行功能仍属实验性质，建议先单独验证。
 
 ## 安装的文件
 
-`mf init` 只会把代理工作流安装到当前目录。
+`mf init` 仅会将代理工作流安装到当前目录。
 
 ```text
 your-project/
@@ -143,25 +131,13 @@ your-project/
          └─ SKILL.md
 ```
 
-默认模板不会创建 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、
-`GOVERNANCE.md`、`TESTING.md`、`API.md`、`project.contract.json`、`openapi.yaml`
-等项目自有根文档或合同文件，也不会创建 CI 配置、通用 `docs/` 或通用 `skills/`。
-用户项目可能已经把这些名称用于自己的文件。
+默认模板不会创建 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、`GOVERNANCE.md`、`TESTING.md`、`API.md`、`project.contract.json`、`openapi.yaml` 等项目自有根文档或合同文件，也不会创建 CI 配置、通用 `docs/` 或通用 `skills/`。用户项目可能已使用这些名称存放自己的文件。
 
-如果 `.gitignore` 不存在，`mf init` 会创建它。若已存在，mustflow 只更新自己的
-受管理块，并保留用户规则。
+如果 `.gitignore` 不存在，`mf init` 会创建它；若已存在，mustflow 只会更新自己管理的部分，保留用户自定义规则。
 
-`REPO_MAP.md` 不会从模板复制。需要时请使用 `mf map --write` 生成。
-`.mustflow/cache/mustflow.sqlite` 也是由 `mf index` 创建、可重新生成的本地
-索引。
+`REPO_MAP.md` 不会从模板复制，需时请使用 `mf map --write` 生成。`.mustflow/cache/mustflow.sqlite` 由 `mf index` 创建，是可重新生成的本地索引。
 
-如果项目已经有 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、
-`GOVERNANCE.md`、`TESTING.md`、`DEPLOYMENT.md`、`ARCHITECTURE.md`、`API.md`
-等可选根 Markdown 文档，仓库地图可以把它们作为导航锚点。它也可以发现
-`project.contract.json`、`project.constants.json`、`design-tokens.json`、
-`openapi.yaml`、`asyncapi.yaml`、`schema.graphql`、`schema.prisma` 等用途明确的
-机器可读合同文件。`SSOT.json` 这类泛用名称不是默认锚点。`mf init` 仍然不会默认
-创建或覆盖这些项目自有文件。
+若项目已有 `README.md`、`PROJECT.md`、`ROADMAP.md`、`DESIGN.md`、`GOVERNANCE.md`、`TESTING.md`、`DEPLOYMENT.md`、`ARCHITECTURE.md`、`API.md` 等可选根目录 Markdown 文档，仓库地图可将它们作为导航锚点。它也能识别 `project.contract.json`、`project.constants.json`、`design-tokens.json`、`openapi.yaml`、`asyncapi.yaml`、`schema.graphql`、`schema.prisma` 等用途明确的机器可读合同文件。`SSOT.json` 等泛用名称不作为默认锚点。`mf init` 仍不会默认创建或覆盖这些项目自有文件。
 
 ## 基本工作流
 
@@ -173,7 +149,7 @@ npx mf check --strict
 npx mf map --write
 ```
 
-如果需要搜索能力，可以创建可选的本地搜索索引。
+如需搜索功能，可创建可选的本地搜索索引：
 
 ```sh
 npx mf index --dry-run --json
@@ -181,7 +157,7 @@ npx mf index
 npx mf search mustflow_check
 ```
 
-应用模板更新前先预览。
+应用模板更新前先预览：
 
 ```sh
 npx mf status
@@ -189,7 +165,7 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
-代理应优先使用已配置的更新意图，这样仓库会留下运行记录。
+代理应优先使用已配置的更新意图，以便仓库保留运行记录：
 
 ```sh
 mf run mustflow_update_dry_run
@@ -198,53 +174,49 @@ mf run mustflow_update_apply
 
 ## 命令
 
-| 命令 | 作用 |
+| 命令 | 说明 |
 | --- | --- |
 | `mf init` | 安装 `AGENTS.md` 和 `.mustflow/**`。 |
-| `mf init --dry-run` | 显示将创建哪些文件，但不写入文件。 |
+| `mf init --dry-run` | 显示将创建的文件，但不写入。 |
 | `mf init --merge` | 将 mustflow 管理块合并到现有 `AGENTS.md`。 |
-| `mf init --force` | 备份冲突文件，然后覆盖它们。 |
+| `mf init --force` | 备份冲突文件后覆盖。 |
 | `mf check` | 验证 mustflow 文件、TOML 配置和技能文档结构。 |
-| `mf check --strict` | 针对文档身份、skill 元数据、命令边界、保留策略、输出限制、原始日志和类似秘密的上下文运行额外安全检查。 |
+| `mf check --strict` | 额外执行文档身份、技能元数据、命令边界、保留策略、输出限制、原始日志及类似秘密上下文的安全检查。 |
 | `mf doctor` | 以只读方式检查当前 mustflow 根目录。 |
-| `mf context --json` | 以 JSON 输出读取顺序、命令规则、可用能力和最近运行摘要。 |
+| `mf context --json` | 以 JSON 格式输出读取顺序、命令规则、可用能力及最近运行摘要。 |
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |
 | `mf map --write` | 创建或更新 `REPO_MAP.md`。 |
 | `mf run <intent>` | 运行允许的一次性命令。 |
 | `mf index` | 为 mustflow 文档和命令规则构建 SQLite 索引。 |
 | `mf search <query>` | 在 SQLite 索引中搜索文档、技能和命令规则。 |
-| `mf status` | 检查已安装状态以及已更改或缺失的文件。 |
+| `mf status` | 检查安装状态及已更改或缺失的文件。 |
 | `mf update --dry-run` | 计算模板更新计划，但不写入文件。 |
-| `mf update --apply` | 在没有阻塞项时应用模板更新。 |
+| `mf update --apply` | 在无阻塞项时应用模板更新。 |
 | `mf help <topic>` | 显示已安装的 mustflow 帮助。 |
-| `mf dashboard` | 启动用于安全 mustflow 偏好设置的本地 dashboard，并在默认浏览器中打开。保存设置时，如果锁文件存在，会刷新自定义基线。 |
-| `mf version-sources` | 在不修改文件的情况下检查检测到的 package、template 和声明的版本来源。 |
-| `mf explain authority [path]` | 在不修改文件的情况下解释受管 Markdown 文档的权威决策。 |
+| `mf dashboard` | 启动本地 dashboard 管理安全偏好设置，并在默认浏览器打开。保存时若存在锁文件，会刷新自定义基线。 |
+| `mf version-sources` | 不修改文件的情况下检查检测到的 package、模板及声明的版本来源。 |
+| `mf explain authority [path]` | 不修改文件的情况下解释受管 Markdown 文档的权威决策。 |
 
-自动化和代理应使用 `--json` 输出，而不是解析面向人类的文本。稳定输出的
-JSON Schema 位于 `schemas/`。
+自动化和代理应使用 `--json` 输出，避免解析面向人类的文本。稳定的 JSON Schema 位于 `schemas/`。
 
 ## 命令执行策略
 
-可执行工作在 `.mustflow/config/commands.toml` 中声明，这样代理就不会猜测
-命令。
+可执行命令在 `.mustflow/config/commands.toml` 中声明，避免代理猜测命令。
 
-`mf run` 只执行满足以下所有条件的命令：
+`mf run` 仅执行同时满足以下条件的命令：
 
 - `status = "configured"`
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
 
-开发服务器、监听模式、浏览器界面、交互式命令和后台进程不会被直接运行。
+开发服务器、监听模式、浏览器界面、交互式命令和后台进程不会被直接执行。
 
-每次命令运行都会把最新运行记录写入
-`.mustflow/state/runs/latest.json`。该记录包含意图名称、工作目录、超时、
-退出码、是否超时，以及 stdout 和 stderr 的末尾内容。
+每次命令运行后，最新运行记录会写入 `.mustflow/state/runs/latest.json`，包含意图名称、工作目录、超时、退出码、是否超时，以及 stdout 和 stderr 的尾部内容。
 
 ## 语言和配置档案
 
-已安装工作流语言、代理回复语言和面向产品的区域设置是相互独立的设置。
+已安装工作流语言、代理回复语言和面向产品的区域设置是相互独立的配置。
 
 ```sh
 npx mf init --profile product --locale ko --agent-lang ko
@@ -252,28 +224,17 @@ npx mf init --product-source-locale en --product-locale ko-KR
 npx mf init --set git.auto_commit=true
 ```
 
-- `--profile`：项目配置档案。默认值是 `minimal`。
-- `--locale`：已安装 mustflow 文档语言。默认模板当前提供 `en`、`ko`、
-  `zh`、`es`、`fr` 和 `hi`。默认模板为所有列出的语言包含本地化文档。
+- `--profile`：项目配置档案，默认是 `minimal`。
+- `--locale`：mustflow 文档语言。默认模板支持 `en`、`ko`、`zh`、`es`、`fr` 和 `hi`，且包含所有列出语言的本地化文档。
 - `--agent-lang`：代理最终报告的默认语言。
-- `--interactive`：通过提问选择初始化设置。
-- `--yes`：无提示使用英文默认初始化设置。
-- `--set`：在安装过程中设置允许的偏好项。支持的键包括
-  `git.auto_stage`、`git.auto_commit`、`git.auto_push=false`、
-  `git.commit_message.*`、`reporting.commit_suggestion.enabled`、
-  `language.memory.summary`、`release.versioning.*`、`verification.selection.*`
-  和 `testing.authoring.*`。
-  `git.commit_message.style` 可以使用 `conventional`、`descriptive` 或
-  `gitmoji`；`gitmoji` 只改变建议消息的格式。
-  `git.commit_message.language` 可以使用 `preserve_existing`、
-  `agent_response`、`docs`，也可以直接指定 `ja`、`de`、`pt-BR` 等
-  locale tag。
-  `testing.authoring.new_test_policy` 可以使用 `evidence_required`、
-  `manual_approval` 或 `broad`。
-- `--product-source-locale`、`--product-locale`：面向用户的产品字符串的
-  源区域设置和目标区域设置。
-- `--lang`：CLI 输出语言。当前值为 `en`、`ko`、`zh`、`es`、`fr` 和
-  `hi`。
+- `--interactive`：通过交互提问选择初始化设置。
+- `--yes`：无提示使用英文默认设置。
+- `--set`：安装过程中设置允许的偏好项。支持键包括 `git.auto_stage`、`git.auto_commit`、`git.auto_push=false`、`git.commit_message.*`、`reporting.commit_suggestion.enabled`、`language.memory.summary`、`release.versioning.*`、`verification.selection.*` 和 `testing.authoring.*`。  
+  `git.commit_message.style` 可选 `conventional`、`descriptive` 或 `gitmoji`，其中 `gitmoji` 只改变建议消息格式。  
+  `git.commit_message.language` 可选 `preserve_existing`、`agent_response`、`docs`，也可直接指定如 `ja`、`de`、`pt-BR` 等 locale 标签。  
+  `testing.authoring.new_test_policy` 可选 `evidence_required`、`manual_approval` 或 `broad`。
+- `--product-source-locale`、`--product-locale`：面向用户的产品字符串的源区域设置和目标区域设置。
+- `--lang`：CLI 输出语言，当前支持 `en`、`ko`、`zh`、`es`、`fr` 和 `hi`。
 
 ## 仓库结构
 
@@ -298,11 +259,9 @@ mustflow/
 └─ tests/
 ```
 
-复制到用户项目的文件来自 `templates/default/common/` 和
-`templates/default/locales/<locale>/`。
+复制到用户项目的文件来自 `templates/default/common/` 和 `templates/default/locales/<locale>/`。
 
-带版本的契约规范位于 `docs/spec/`。文档站点从 Design -> Contract
-specifications 链接到这些规范。
+带版本的契约规范位于 `docs/spec/`，文档站点从 Design -> Contract specifications 链接到这些规范。
 
 ## 开发
 
@@ -315,7 +274,7 @@ bun run docs:check
 bun run check:install
 ```
 
-在本仓库中工作的 agent 应优先使用已配置的 mustflow intent 进行日常验证。
+在本仓库中工作的代理应优先使用已配置的 mustflow intent 进行日常验证。
 
 ```sh
 mf run build
@@ -324,20 +283,17 @@ mf run docs_validate
 mf run mustflow_check
 ```
 
-Bun 脚本仍可供人工维护者和发布打包流程使用。`test_related`、`lint`、
-coverage 和 test-audit intent 会在仓库拥有更细粒度的检查入口后再声明。
+Bun 脚本仍供维护者和发布打包流程使用。`test_related`、`lint`、coverage 和 test-audit intent 会在仓库拥有更细粒度检查入口后再声明。
 
-`dist/` 是生成的构建输出，不提交到仓库。`npm pack` 和 `npm publish` 会通过
-`prepack` 运行 `npm run build`，因此 npm 包包含构建后的 CLI。
+`dist/` 是构建输出目录，不提交到仓库。`npm pack` 和 `npm publish` 会通过 `prepack` 运行 `npm run build`，确保 npm 包包含构建后的 CLI。
 
-发布前运行完整发布检查。
+发布前执行完整发布检查：
 
 ```sh
 bun run release:check
 ```
 
-`release:check` 会验证 CLI、构建文档站点、打包 npm tarball、将其安装到临时
-项目，并运行公开的 `mf` 工作流。
+`release:check` 会验证 CLI、构建文档站点、打包 npm 压缩包、将其安装到临时项目，并运行公开的 `mf` 工作流。
 
 ## 文档站点
 
@@ -349,12 +305,11 @@ bun run docs:build
 bun run docs:preview
 ```
 
-GitHub Pages 使用 GitHub Actions 从 `main` 分支构建 `docs-site/` 源码，并将
-`docs-site/dist` 部署为 Pages 工件。不要提交 `docs-site/dist`。
+GitHub Pages 通过 GitHub Actions 从 `main` 分支构建 `docs-site/` 源码，并将 `docs-site/dist` 部署为 Pages 工件。请勿提交 `docs-site/dist`。
 
 ## 包内容
 
-npm 包只包含：
+npm 包仅包含：
 
 ```text
 dist/
