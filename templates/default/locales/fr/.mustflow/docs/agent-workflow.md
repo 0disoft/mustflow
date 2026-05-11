@@ -258,7 +258,7 @@ Les fichiers generes doivent etre rafraichis via des outils:
 
 ## Verification
 
-Utiliser les command intents configures pour les controles. Noms d'intent typiques:
+Utiliser les intentions de commande configurées pour les controles. Noms d'intent typiques:
 
 - `mustflow_check`
 - `test`
