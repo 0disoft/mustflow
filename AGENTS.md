@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 11
+revision: 12
 lifecycle: user-editable
 authority: binding
 ---
@@ -48,7 +48,9 @@ Details managed by mustflow are under `.mustflow/`.
 - Context files in `.mustflow/context/` explain project direction and domain conventions. Treat them as task-specific context, not as a replacement for code, tests, commands, or user instructions.  
 - If `DESIGN.md` exists, read it only for UI, visual design, layout, design-token, or accessibility work. Do not create a `DESIGN.md` if one does not exist.  
 - Read the matching skill document when one applies to the task.  
-- Before editing, use `.mustflow/skills/INDEX.md` to determine whether one or more skills apply.  
+- Before creating or modifying any file, use `.mustflow/skills/INDEX.md` to determine whether one or more skills apply. This skill-selection gate is mandatory even for small or seemingly obvious tasks.
+- `mf doctor`, `mf check`, and other health checks do not satisfy the skill-selection gate. They confirm repository health; they do not decide which task procedure applies.
+- If a matching skill applies, read the matching `SKILL.md` before editing that scope. If no installed skill matches, state that no matching installed skill was found in the next progress update or final report. If a plausible skill is referenced by the index but is unavailable in the installed profile, report that gap instead of silently continuing.
 - If a skill becomes relevant after new evidence (such as a command failure or documentation change), read the matching `SKILL.md` before continuing that part of the work.  
 - Skill documents guide procedure. They do not authorize commands outside `.mustflow/config/commands.toml` or override user, host, repository, or safety rules.  
 - Do not modify generated files, external dependencies, or secrets files unless explicitly requested.  

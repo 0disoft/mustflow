@@ -3,14 +3,14 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.16.0"
+version = "1.17.0"
 profile = "oss"
 locale = "en"
 
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:421ef68a2e36b83229312ea7d2493c3bdc03e6b6ddd2c75c2bd51d91a8ec047c"
+content_hash = "sha256:4c6b927d3f12dbfb8b1d8f1950a3af009a3af2e4219b8ac067cfd5fb25611146"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
