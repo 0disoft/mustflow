@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -81,10 +81,12 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 5. For filesystem changes, distinguish lexical containment from the real target. Check symlinks, generated state, package contents, and file APIs that may follow links before claiming a path stays inside the repository.
 6. For code-scanning alerts, group findings by root cause and rule. Fix the underlying pattern, not only the exact flagged line, and separate repository-setting alerts such as branch protection or maintainer activity from code changes.
 7. For workflow scanner alerts, check action pinning, `persist-credentials`, job-level permissions, reusable workflow permissions, artifact upload boundaries, and privileged identity timing before treating the warning as cosmetic.
-8. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
-9. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
-10. If the change affects an authorization or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
-11. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
+8. For pinned action references, distinguish tag objects from the commit that implements the tag. Verify pinned SHAs against the action repository so scanner tooling does not report an imposter or non-member commit.
+9. For dependency scanner alerts, separate production dependency manifests from fixtures, examples, generated test repositories, and intentionally vulnerable samples. Narrow the scan scope before treating fixture-only alerts as product vulnerabilities.
+10. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
+11. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
+12. If the change affects an authorization or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
+13. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -112,6 +114,7 @@ Use a narrower configured test, build, or documentation intent when it better pr
 - If a sensitive value appears in command output, stop copying it and summarize the issue without the value.
 - If the project lacks enough context to confirm privacy or secret handling, report the uncertainty and avoid claiming safety.
 - If a copyable command, executable lookup, symlink-following path, or publishing workflow uses repository-controlled input across a trust boundary, treat it as a security issue until quoting, validation, no-follow file handling, or workflow isolation is verified.
+- If a scanner reports many alerts from test fixtures or generated sample repositories, do not hide them by dismissal first. Prefer narrowing scanner inputs to the real release and runtime dependency surfaces, then document any intentionally scanned fixture exceptions.
 - If a package, generated artifact, or public doc includes sensitive data, remove or redact it before continuing unrelated work.
 - If verification requires unavailable scanners or live systems, report the missing check and the remaining risk.
 

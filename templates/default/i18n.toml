@@ -316,7 +316,7 @@ translations.hi = { path = "locales/hi/.mustflow/skills/readme-authoring/SKILL.m
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations.ko = { path = "locales/ko/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/security-privacy-review/SKILL.md", source_revision = 1, status = "needs_review" }
@@ -326,7 +326,7 @@ translations.hi = { path = "locales/hi/.mustflow/skills/security-privacy-review/
 [documents."skill.security-regression-tests"]
 source = "locales/en/.mustflow/skills/security-regression-tests/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations.ko = { path = "locales/ko/.mustflow/skills/security-regression-tests/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/skills/security-regression-tests/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/security-regression-tests/SKILL.md", source_revision = 1, status = "needs_review" }

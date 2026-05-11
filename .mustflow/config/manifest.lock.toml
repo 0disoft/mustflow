@@ -165,12 +165,12 @@ content_hash = "sha256:4e91af4bdfde20bf58d6117c48c7791cc06717d75ec5b35b582706ecf
 [files.".mustflow/skills/security-privacy-review/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:c0e195330c974ba4d0cb5b0aa1c3604f6fcfd91e5913393dfaf76f4919f4be97"
+content_hash = "sha256:ff4a51f0ea5c3019fe9b6274dfb4811cfcee27453977721c75d228121e36fe62"
 
 [files.".mustflow/skills/security-regression-tests/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:ddc3f58eb19fac2f58a4fec16ce026ad431f833eff517169e543119f875f92bc"
+content_hash = "sha256:b0de1776468b9c6eabdadfc9da20e594997fe982159bd9980069fa6e00df8a04"
 
 [files.".mustflow/skills/skill-authoring/SKILL.md"]
 source = "template_locale"

@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-regression-tests
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: security-regression-tests
@@ -89,7 +89,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
    - release or package-publishing pipeline code execution before artifact publication
    - incomplete escaping, quoting, encoding, or sanitization where the safe behavior can be asserted without invoking a real shell or network target
    - stack trace or internal error exposure through a user-visible API, report, dashboard, or command output
-   - workflow permission drift, mutable action references, or artifact credential leakage that can be checked through repository-local workflow tests or linters
+   - workflow permission drift, mutable action references, wrong pinned-action object type, dependency scan overreach, or artifact credential leakage that can be checked through repository-local workflow tests or linters
    - payment, credit, coupon, subscription, refund, or entitlement abuse
    - personal-data or admin-only access leakage
 3. Search for existing tests that already cover the same boundary. Strengthen the existing test when that gives clearer coverage than adding a new one.
@@ -99,8 +99,9 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 7. Keep assertions tied to observable behavior: status code, returned error shape, unchanged database state, missing side effect, sanitized output, or rejected job.
 8. Avoid dumping long exploit strings into the test. Use minimal representative input that proves the validation or boundary rule.
 9. For command and filesystem boundaries, assert the denied side effect directly: no injected command appears in a runnable recommendation, no repository-local shim is executed, no background shell pattern is counted runnable, no symlink target outside the root is read or written.
-10. For scanner-driven fixes, include a regression only when the rule reflects a durable project contract. Do not add brittle tests that merely assert the scanner's current wording, line number, or severity.
-11. If the project lacks enough context to write a deterministic test, output a concrete test proposal instead of inventing fixtures or behavior.
+10. For workflow scanner fixes, prefer repository-local assertions for durable contracts: action references are pinned to commit SHAs or digest-pinned containers, privileged permissions are job-scoped, deployment or scanner jobs can be manually rerun when useful, and dependency scans exclude fixture-only manifests unless intentionally included.
+11. For scanner-driven fixes, include a regression only when the rule reflects a durable project contract. Do not add brittle tests that merely assert the scanner's current wording, line number, or severity.
+12. If the project lacks enough context to write a deterministic test, output a concrete test proposal instead of inventing fixtures or behavior.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
