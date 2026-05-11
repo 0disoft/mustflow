@@ -2,7 +2,7 @@
 
 언어: [영어](../../../README.md) · [한국어](README.md) · [중국어](../zh/README.md) · [스페인어](../es/README.md) · [프랑스어](../fr/README.md) · [힌디어](../hi/README.md)
 
-`mustflow.github.io`에 배포되는 문서 사이트입니다.
+`0disoft.github.io/mustflow`에 배포되는 문서 사이트입니다.
 
 이 사이트는 `mf init`으로 사용자 저장소에 설치되는 문서가 아닙니다.
 mustflow가 생성하는 파일과 설정에 대한 상세 가이드 문서입니다.

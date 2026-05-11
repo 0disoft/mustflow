@@ -4,7 +4,7 @@
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
-  "homepage": "https://mustflow.github.io",
+  "homepage": "https://0disoft.github.io/mustflow/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/0disoft/mustflow.git"

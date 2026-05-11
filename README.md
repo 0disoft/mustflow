@@ -10,7 +10,7 @@ The core model is simple: put `AGENTS.md` at the project root, then keep the
 detailed workflow under `.mustflow/`. Agents start from `AGENTS.md`, then follow
 the command contract, skills, project context, and verification rules in order.
 
-- Documentation site: <https://mustflow.github.io>
+- Documentation site: <https://0disoft.github.io/mustflow/>
 - Human-readable project examples: [`examples/`](examples/)
 - Repository: <https://github.com/0disoft/mustflow>
 - Issues: <https://github.com/0disoft/mustflow/issues>

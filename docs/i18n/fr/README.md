@@ -39,7 +39,7 @@ L’index des skills est une étape de routage active : les agents comparent la 
 Les skills guident seulement la procédure ; l’exécution des commandes vient toujours de
 `.mustflow/config/commands.toml`.
 
-- Site de documentation : <https://mustflow.github.io>
+- Site de documentation : <https://0disoft.github.io/mustflow/>
 - Dépôt : <https://github.com/0disoft/mustflow>
 - Issues : <https://github.com/0disoft/mustflow/issues>
 

@@ -7,5 +7,6 @@ import { site } from './src/config/site.mjs';
 // https://astro.build/config
 export default defineConfig({
 	site: site.url,
+	base: site.base,
 	integrations: [starlight(starlightOptions)],
 });

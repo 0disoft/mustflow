@@ -2,7 +2,7 @@
 
 语言：[英文](../../../README.md) · [韩文](../ko/README.md) · [中文](README.md) · [西班牙文](../es/README.md) · [法文](../fr/README.md) · [印地文](../hi/README.md)
 
-这是部署到 `mustflow.github.io` 的文档站点。
+这是部署到 `0disoft.github.io/mustflow` 的文档站点。
 
 该文档站点不会通过 `mf init` 安装到用户仓库中。它提供 mustflow 创建的
 文件和配置的详细指南。

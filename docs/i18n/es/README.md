@@ -38,7 +38,7 @@ El índice de skills es un paso activo de enrutamiento: los agentes comparan la 
 Las skills solo guían el procedimiento; la ejecución de comandos sigue viniendo de
 `.mustflow/config/commands.toml`.
 
-- Sitio de documentación: <https://mustflow.github.io>
+- Sitio de documentación: <https://0disoft.github.io/mustflow/>
 - Repositorio: <https://github.com/0disoft/mustflow>
 - Incidencias: <https://github.com/0disoft/mustflow/issues>
 

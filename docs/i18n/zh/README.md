@@ -33,7 +33,7 @@ flowchart TD
 对应范围前读取匹配的 `SKILL.md`。技能只指导流程；命令执行仍由
 `.mustflow/config/commands.toml` 决定。
 
-- 文档站点：<https://mustflow.github.io>
+- 文档站点：<https://0disoft.github.io/mustflow/>
 - 仓库：<https://github.com/0disoft/mustflow>
 - 问题：<https://github.com/0disoft/mustflow/issues>
 

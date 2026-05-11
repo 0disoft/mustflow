@@ -2,7 +2,7 @@
 
 Langues : [Anglais](../../../README.md) · [Coréen](../ko/README.md) · [Chinois](../zh/README.md) · [Espagnol](../es/README.md) · [Français](README.md) · [Hindi](../hi/README.md)
 
-Voici le site de documentation déployé sur `mustflow.github.io`.
+Voici le site de documentation déployé sur `0disoft.github.io/mustflow`.
 
 Le site de documentation n'est pas installé dans les dépôts utilisateur via
 `mf init`. Il fournit des guides détaillés sur les fichiers et configurations

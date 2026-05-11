@@ -34,7 +34,7 @@ flowchart TD
 읽습니다. 스킬은 절차만 안내하며, 명령 실행은 계속 `.mustflow/config/commands.toml`을
 따릅니다.
 
-- 문서 사이트: <https://mustflow.github.io>
+- 문서 사이트: <https://0disoft.github.io/mustflow/>
 - 저장소: <https://github.com/0disoft/mustflow>
 - 이슈: <https://github.com/0disoft/mustflow/issues>
 

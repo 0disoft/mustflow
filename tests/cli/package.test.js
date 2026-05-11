@@ -40,7 +40,7 @@ function collectRelativeFiles(directory) {
 test('package metadata is ready for public npm publishing', () => {
 	assert.equal(packageJson.version, '1.15.83');
 	assert.equal(packageJson.license, 'MIT-0');
-	assert.equal(packageJson.homepage, 'https://mustflow.github.io');
+	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
 		type: 'git',
 		url: 'git+https://github.com/0disoft/mustflow.git',

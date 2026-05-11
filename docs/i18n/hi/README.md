@@ -37,7 +37,7 @@ compare करते हैं और उस scope को edit करने स�
 Skills केवल procedure guide करती हैं; command execution अब भी
 `.mustflow/config/commands.toml` से आती है।
 
-- दस्तावेज़ साइट: <https://mustflow.github.io>
+- दस्तावेज़ साइट: <https://0disoft.github.io/mustflow/>
 - रिपॉज़िटरी: <https://github.com/0disoft/mustflow>
 - इश्यू: <https://github.com/0disoft/mustflow/issues>
 
