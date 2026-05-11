@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.15.98"
+version = "1.15.99"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:86566ddb4c86e53e4450aa06b1a26f4492a355cc43a97865201bd4dee
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:eafb63bda1d33d9123957206e8b8103d0454163d10f5c1a92267b56341ab1b60"
+content_hash = "sha256:866539b4b46d13e3736be1e8ad9c36c15bbaacb103a1145a6078004d6510e0a2"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
