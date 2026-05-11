@@ -6,6 +6,8 @@ import {
 } from '../config/locales.mjs';
 
 const supportedLanguageCodes = languageSelectorOptions.map(({ code }) => code);
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const localizedRootPath = (locale) => `${basePath}/${locale}/`;
 const routeByLanguageCode = Object.fromEntries(
 	languageSelectorOptions.map(({ code, hasContent, starlightLocale }) => [
 		code,
@@ -17,6 +19,7 @@ const redirectScript = `
 (() => {
 	const storageKey = ${JSON.stringify(languagePreference.storageKey)};
 	const defaultLocale = ${JSON.stringify(languagePreference.defaultLocale)};
+	const basePath = ${JSON.stringify(basePath)};
 	const supportedLocales = new Set(${JSON.stringify(supportedLanguageCodes)});
 	const unsupportedLocales = new Set(${JSON.stringify(unsupportedLanguageCodes)});
 	const routeByLocale = ${JSON.stringify(routeByLanguageCode)};
@@ -63,7 +66,7 @@ const redirectScript = `
 		? defaultLocale
 		: routeByLocale[preferredLocale] || defaultLocale;
 
-	window.location.replace('/' + routeLocale + '/' + window.location.search + window.location.hash);
+	window.location.replace(basePath + '/' + routeLocale + '/' + window.location.search + window.location.hash);
 })();
 `.trim();
 ---
@@ -72,7 +75,7 @@ const redirectScript = `
 	<head>
 		<meta charset="utf-8" />
 		<meta name="robots" content="noindex" />
-		<meta http-equiv="refresh" content={`0; url=/${languagePreference.defaultLocale}/`} />
+		<meta http-equiv="refresh" content={`0; url=${localizedRootPath(languagePreference.defaultLocale)}`} />
 		<script is:inline set:html={redirectScript}></script>
 	</head>
 	<body></body>

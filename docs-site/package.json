@@ -6,9 +6,10 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "check": "bun run check:navigation && astro build",
+    "check": "bun run check:navigation && astro build && bun run check:root-redirect",
     "check:fast": "bun run check:navigation",
     "check:navigation": "node scripts/check-navigation.mjs",
+    "check:root-redirect": "node scripts/check-root-redirect.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
