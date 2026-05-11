@@ -1,7 +1,6 @@
 # Nested Repositories
 
-This example shows how mustflow should be interpreted when one repository
-contains other repositories that also have mustflow installed.
+This example demonstrates how mustflow should be interpreted when one repository contains other repositories that also have mustflow installed.
 
 ## Layout
 
@@ -24,25 +23,21 @@ workspace-a/
             └─ commands.toml
 ```
 
-`workspace-a` can describe broad workspace conventions, but it does not own the
-command contract for `repos/service-b` or `repos/docs-c`.
+`workspace-a` can define broad workspace conventions, but it does not control the command contract for `repos/service-b` or `repos/docs-c`.
 
 ## Working Rule
 
-When an agent edits files inside a nested repository, it should reread that
-repository's nearest `AGENTS.md` and `.mustflow/config/*.toml` files before
-editing or running commands.
+When an agent edits files within a nested repository, it should reload that repository's nearest `AGENTS.md` and `.mustflow/config/*.toml` files before editing or running commands.
 
-The nearest child repository decides local details such as:
+The nearest child repository determines local details such as:
 
-- commit-message language and style preferences
-- documentation language
-- available command intents
-- safe verification commands
-- project-specific context and skills
+- Commit message language and style preferences
+- Documentation language
+- Available command intents
+- Safe verification commands
+- Project-specific context and skills
 
-Safety rules are cumulative. A child repository can narrow behavior for its own
-files, but it cannot weaken parent, host, user, or platform safety constraints.
+Safety rules are cumulative. A child repository can impose stricter behavior for its own files but cannot weaken safety constraints set by the parent, host, user, or platform.
 
 ## Example Difference
 
@@ -60,14 +55,8 @@ The nested documentation repository might prefer Korean commit messages:
 language = "ko"
 ```
 
-When editing `repos/docs-c/**`, the nested repository's preference is the local
-one. The agent should not use the parent preference just because the command was
-started from `workspace-a`.
+When editing files under `repos/docs-c/**`, the nested repository's preference applies locally. The agent should not use the parent preference simply because the command was initiated from `workspace-a`.
 
 ## Command Contract Boundary
 
-If `workspace-a` has `test_related` but `repos/service-b` does not, the agent
-must not borrow the parent's command intent to validate child changes. It should
-use the child repository's configured intents or report the missing child command
-contract.
-
+If `workspace-a` includes `test_related` but `repos/service-b` does not, the agent must not borrow the parent's command intent to validate changes in the child. Instead, it should use the child repository's configured intents or report the absence of a child command contract.

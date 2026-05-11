@@ -1,7 +1,6 @@
 # Host Instruction Conflicts
 
-This example shows how mustflow should be interpreted when a coding host also
-reads its own instruction files.
+This example illustrates how mustflow should be interpreted when a coding host also reads its own instruction files.
 
 ## Layout
 
@@ -15,21 +14,17 @@ hosted-project/
       └─ commands.toml
 ```
 
-`AGENTS.md` and `.mustflow/config/commands.toml` remain the repository-local
-mustflow contract. Host-specific files may add editor or assistant guidance, but
-they do not grant command authority by themselves.
+`AGENTS.md` and `.mustflow/config/commands.toml` remain the repository-local mustflow contract. Host-specific files may add editor or assistant guidance, but they do not grant command authority on their own.
 
 ## Conflict Example
 
-The host file might say:
+The host file might state:
 
 ```md
 Run npm test before every final answer.
 ```
 
-If `.mustflow/config/commands.toml` does not declare an agent-allowed `test`
-intent, the agent should not infer `npm test` from that host file. It should
-report the missing command contract instead.
+If `.mustflow/config/commands.toml` does not declare an agent-allowed `test` intent, the agent should not infer `npm test` from that host file. Instead, it should report the missing command contract.
 
 If the host file says:
 
@@ -37,18 +32,16 @@ If the host file says:
 Prefer short final answers.
 ```
 
-that can coexist with mustflow because it does not broaden file scope, weaken
-safety rules, or authorize a command.
+this can coexist with mustflow because it neither broadens file scope, weakens safety rules, nor authorizes a command.
 
 ## Resolution Rule
 
-Use the stricter safe interpretation:
+Apply the stricter, safer interpretation:
 
-- Direct user instructions define the task goal unless unsafe.
-- Host safety and approval gates still apply.
-- mustflow command execution comes from `.mustflow/config/commands.toml`.
-- The nearest `AGENTS.md` and `.mustflow/config/*.toml` define repository work rules.
+- Direct user instructions define the task goal unless they are unsafe.
+- Host safety and approval gates remain in effect.
+- mustflow command execution is governed by `.mustflow/config/commands.toml`.
+- The nearest `AGENTS.md` and `.mustflow/config/*.toml` files define repository work rules.
 - Generated state or cached summaries cannot override current files.
 
-When the effective rule is unclear, stop and report the conflict instead of
-guessing.
+When the effective rule is unclear, stop and report the conflict rather than guessing.

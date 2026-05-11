@@ -1,10 +1,8 @@
 # Minimal JavaScript Project
 
-This example shows how a small JavaScript package changes when mustflow is added.
+This example demonstrates how a small JavaScript package changes when mustflow is added.
 
-It is intentionally short. The installed `.mustflow/**` files are summarized here
-instead of copied in full, because the real source of truth is the default
-template under `templates/default/`.
+It is intentionally brief. The installed `.mustflow/**` files are summarized here rather than shown in full, since the definitive source is the default template under `templates/default/`.
 
 ## Before
 
@@ -15,8 +13,7 @@ minimal-js/
    └─ index.js
 ```
 
-The project has ordinary package scripts, but no repository-local agent workflow
-contract. An agent would need to infer which commands are safe to run.
+The project includes standard package scripts but lacks a repository-local agent workflow contract. An agent would need to infer which commands are safe to run.
 
 ```json
 {
@@ -52,11 +49,9 @@ minimal-js/
       └─ ...
 ```
 
-`AGENTS.md` becomes the first file an agent reads. `.mustflow/config/commands.toml`
-becomes the command contract, so agents run declared intents instead of guessing
-from `package.json`.
+`AGENTS.md` becomes the first file an agent reads. `.mustflow/config/commands.toml` defines the command contract, so agents run declared intents instead of guessing from `package.json`.
 
-For this project, the owner might configure only the checks that are real:
+For this project, the owner might configure only the checks that are relevant:
 
 ```toml
 [intents.build]
@@ -90,7 +85,7 @@ destructive = false
 required_after = ["code_change", "test_change"]
 ```
 
-If a command is not real yet, it stays explicit instead of being inferred:
+If a command is not yet defined, it remains explicit rather than inferred:
 
 ```toml
 [intents.lint]
@@ -100,7 +95,4 @@ reason = "This project has not declared a lint command yet."
 agent_action = "do_not_guess_report_missing"
 ```
 
-The resulting workflow is small: read `AGENTS.md`, select relevant mustflow
-context and skills, run only configured one-shot intents, then report the checks
-that were run or skipped.
-
+The resulting workflow is minimal: read `AGENTS.md`, select the relevant mustflow context and skills, run only configured one-shot intents, then report which checks were run or skipped.

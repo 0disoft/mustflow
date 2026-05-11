@@ -1,7 +1,6 @@
 # Documentation-Only Project
 
-This example shows how mustflow can fit a repository that primarily contains
-Markdown documentation and has no application build.
+This example demonstrates how mustflow can be applied to a repository that primarily contains Markdown documentation and does not include an application build.
 
 ## Before
 
@@ -13,9 +12,7 @@ docs-handbook/
    └─ release-notes.md
 ```
 
-The project has useful documents, but no explicit agent contract for which checks
-exist. An agent might look for package scripts or invent a documentation build
-command that does not exist.
+The project contains useful documents but lacks an explicit agent contract for which checks exist. An agent might search for package scripts or attempt to infer a documentation build command that does not exist.
 
 ## After
 
@@ -41,8 +38,7 @@ docs-handbook/
       └─ ...
 ```
 
-The owner can declare that documentation validation is available while making
-missing code checks explicit:
+The owner can declare that documentation validation is available while explicitly marking missing code checks:
 
 ```toml
 [intents.docs_validate_fast]
@@ -73,7 +69,4 @@ reason = "This documentation-only repository has no test suite."
 agent_action = "do_not_guess_report_missing"
 ```
 
-With that contract, an agent can update prose, run the declared documentation
-check, and report that code build or test checks are intentionally unavailable
-instead of treating missing scripts as hidden failures.
-
+With this contract, an agent can update prose, run the declared documentation check, and report that code build or test checks are intentionally unavailable, rather than treating missing scripts as hidden failures.

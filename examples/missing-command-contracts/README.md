@@ -1,7 +1,6 @@
 # Missing Command Contracts
 
-This example shows how mustflow treats package scripts that have not been
-declared as command intents.
+This example demonstrates how mustflow handles package scripts that have not been declared as command intents.
 
 ## Before
 
@@ -12,7 +11,7 @@ scripted-project/
    └─ index.js
 ```
 
-The package has scripts:
+The package includes the following scripts:
 
 ```json
 {
@@ -24,8 +23,7 @@ The package has scripts:
 }
 ```
 
-Without mustflow, an agent may guess that any script is safe to run. mustflow
-does not use that rule.
+Without mustflow, an agent might assume any script is safe to run. mustflow does not follow this assumption.
 
 ## After
 
@@ -38,8 +36,7 @@ scripted-project/
       └─ commands.toml
 ```
 
-Only command intents declared as configured, one-shot, agent-allowed, and
-closed-stdin are available to agents.
+Only command intents that are declared as configured, one-shot, agent-allowed, and closed-stdin are available to agents.
 
 ```toml
 [intents.build]
@@ -70,6 +67,4 @@ reason = "The test suite may be slow or require a local service."
 agent_action = "do_not_run_report_manual"
 ```
 
-In this state, an agent may run `mf run build` for a covered code change, but it
-must not run `npm run lint` or `npm test` directly. The final report should say
-that lint is missing and tests are manual-only.
+In this configuration, an agent may run `mf run build` for a covered code change, but it must not run `npm run lint` or `npm test` directly. The final report will indicate that lint is missing and tests are manual-only.
