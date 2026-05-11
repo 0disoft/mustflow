@@ -2,7 +2,7 @@
 mustflow_doc: skill.behavior-preserving-refactor
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: behavior-preserving-refactor
@@ -71,6 +71,7 @@ Refactoring is not cleanup for aesthetics. It is a controlled way to make code e
 - Extract small functions, policies, or helpers when they have a clear concept, inputs, outputs, and test value.
 - Flatten conditional flow when it preserves the same guard conditions and error behavior.
 - Separate responsibilities, dependencies, or side effects in the smallest useful step.
+- Move domain decisions toward pure functions or narrow policy objects, and keep I/O, clocks, network calls, process spawning, persistence, and logging in the imperative edge.
 - Add or update tests that preserve current behavior or make the refactoring safe.
 - Do not mix behavior changes, bug fixes, new features, broad formatting churn, or unrelated cleanup into the refactor.
 
@@ -107,14 +108,20 @@ Before broad hotspot scans, compress candidates before reading files.
    - Extract only concepts that can be named precisely.
    - Avoid vague names such as `process`, `handle`, `do`, or `helper` unless they match established local style.
    - Boolean functions should read naturally at call sites and reveal the condition being tested.
-6. Handle conditional complexity by finding the policy.
+6. Prefer the low-ceremony structural pattern that matches the pain:
+   - Dependency injection when direct construction of tools, clients, clocks, file systems, or processes makes behavior hard to test.
+   - Adapter or translator boundaries when external formats leak into core logic.
+   - Composition over inheritance when behavior can be assembled from small explicit collaborators.
+   - Result values for expected failures that callers must handle, while keeping exceptions for broken assumptions or infrastructure faults.
+   - Injected time context when current time affects preserved behavior.
+7. Handle conditional complexity by finding the policy.
    - Use early exits for simple guard conditions when they preserve behavior.
    - Separate state, type, permission, and exceptional-rule branches when they are mixed.
    - Avoid replacing clear branches with a strategy object, table, or abstraction before the policy boundary is proven.
-7. Keep commits and reports reviewable.
+8. Keep commits and reports reviewable.
    - Separate renames, moves, extractions, deduplication, tests, and behavior changes when possible.
    - If behavior changes are discovered, stop and report them as a separate fix path.
-8. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
+9. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -155,6 +162,7 @@ Choose the narrowest configured test or build intent that proves the refactored 
 - Behavior preservation evidence
 - Structural risk signals found
 - Refactoring ladder chosen
+- Structural pattern used or intentionally avoided
 - Changes made or analysis-only recommendation
 - Behavior changes intentionally excluded
 - Verification intents run

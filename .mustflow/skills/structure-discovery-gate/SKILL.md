@@ -2,7 +2,7 @@
 mustflow_doc: skill.structure-discovery-gate
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: structure-discovery-gate
@@ -50,6 +50,7 @@ Find hidden structure decisions before coding so new files, folders, names, rout
 - Current project instructions, relevant context, and nearby implementation patterns when available.
 - Known target platform, language, framework, package, or deployment constraints.
 - Any named external services, content sources, user roles, locales, data stores, or revenue surfaces in the request.
+- Risk surfaces that could require a plan/apply gate, capability object, result type, invariant policy, adapter, injected clock, state transition table, or idempotency ledger.
 - Relevant command-intent contract entries for later verification.
 
 <!-- mustflow-section: preconditions -->
@@ -78,14 +79,24 @@ Find hidden structure decisions before coding so new files, folders, names, rout
    - Preference: the answer affects styling, wording, or minor details and should not block structure.
 4. Ask at most five high-value questions before coding. Prioritize localization, authentication, authorization, payments, ads, personal data, destructive data actions, admin workflows, SEO, content storage, and external service replacement.
 5. For any question not asked, state the default assumption briefly. Defaults should keep future changes possible without adding speculative layers.
-6. Separate product domains from vendor implementations. Use broad names at the product boundary and specific names inside provider or adapter internals.
+6. Select structure patterns only when the task's risk shape requires them:
+   - Use a plan/apply gate for destructive, bulk, migration, billing, permission, publishing, or external-send operations that need review before execution.
+   - Use a capability object when a function should require a specific granted action instead of reading broad user or role state.
+   - Use result values for expected business failures such as not found, invalid input, denied access, stale state, or blocked policy.
+   - Use invariant policy modules when a state change must preserve non-negotiable rules, such as last-owner, paid-order, refund, or entitlement constraints.
+   - Use adapters or translators when external APIs, databases, model responses, webhooks, files, or command output cross into internal logic.
+   - Inject time or a time context when expiration, scheduling, retries, leases, or rate windows affect behavior.
+   - Use explicit state transitions when three or more states have meaningful allowed moves.
+   - Use an action ledger or idempotency key when repeating a side effect would be harmful.
+7. Prefer the smallest local version of the selected pattern. Do not add a framework, base class, service locator, global event bus, broad repository layer, or abstract factory when a plain function, table, adapter, or narrow policy object is enough.
+8. Separate product domains from vendor implementations. Use broad names at the product boundary and specific names inside provider or adapter internals.
    - Prefer `monetization/ads/providers/adsense` over top-level `adsense`.
    - Prefer `payments/providers/stripe` over top-level `stripe`.
    - Prefer `notifications/email/providers/resend` over top-level `resend`.
    - Prefer `analytics/providers/google-analytics` over top-level `googleAnalytics`.
-7. Propose the smallest folder and file structure that follows the answers and assumptions. For each new file or folder, state its responsibility and what it must not contain.
-8. Check the structure against local precedent with `pattern-scout` when the repository already has a nearby pattern.
-9. Implement only after the questions, assumptions, structure, dependency direction, and verification surface are clear enough for the task size.
+9. Propose the smallest folder and file structure that follows the answers and assumptions. For each new file or folder, state its responsibility and what it must not contain.
+10. Check the structure against local precedent with `pattern-scout` when the repository already has a nearby pattern.
+11. Implement only after the questions, assumptions, structure, dependency direction, and verification surface are clear enough for the task size.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -125,6 +136,7 @@ Also run narrower configured tests or builds required by the changed source, tem
 - Structure-impacting assumptions
 - Proposed files and responsibilities
 - Dependency direction
+- Structural patterns selected or intentionally skipped
 - Local pattern used or reason no pattern applies
 - Command intents run
 - Skipped checks and remaining structure risk

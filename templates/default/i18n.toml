@@ -76,8 +76,8 @@ translations.hi = { path = "locales/hi/.mustflow/skills/artifact-integrity-check
 [documents."skill.behavior-preserving-refactor"]
 source = "locales/en/.mustflow/skills/behavior-preserving-refactor/SKILL.md"
 source_locale = "en"
-revision = 1
-translations.ko = { path = "locales/ko/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "current" }
+revision = 2
+translations.ko = { path = "locales/ko/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/behavior-preserving-refactor/SKILL.md", source_revision = 1, status = "needs_review" }
@@ -266,8 +266,8 @@ translations.hi = { path = "locales/hi/.mustflow/skills/requirement-regression-g
 [documents."skill.structure-discovery-gate"]
 source = "locales/en/.mustflow/skills/structure-discovery-gate/SKILL.md"
 source_locale = "en"
-revision = 1
-translations.ko = { path = "locales/ko/.mustflow/skills/structure-discovery-gate/SKILL.md", source_revision = 1, status = "current" }
+revision = 2
+translations.ko = { path = "locales/ko/.mustflow/skills/structure-discovery-gate/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/skills/structure-discovery-gate/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/structure-discovery-gate/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/structure-discovery-gate/SKILL.md", source_revision = 1, status = "needs_review" }
@@ -326,7 +326,7 @@ translations.hi = { path = "locales/hi/.mustflow/skills/security-privacy-review/
 [documents."skill.security-regression-tests"]
 source = "locales/en/.mustflow/skills/security-regression-tests/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 6
 translations.ko = { path = "locales/ko/.mustflow/skills/security-regression-tests/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/skills/security-regression-tests/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/skills/security-regression-tests/SKILL.md", source_revision = 1, status = "needs_review" }
