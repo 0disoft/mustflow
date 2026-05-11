@@ -598,7 +598,7 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 			path: LATEST_RUN_RELATIVE_PATH,
 			exists: true,
 			valid: false,
-			error: error instanceof Error ? error.message : String(error),
+			error: 'Invalid latest run receipt.',
 		};
 	}
 }
