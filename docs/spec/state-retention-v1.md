@@ -1,38 +1,30 @@
 # State Retention v1
 
-This specification defines how mustflow treats generated local state, caches,
-and retained command output.
+This specification defines how mustflow manages generated local state, caches, and retained command output.
 
 ## Scope
 
-State retention applies to repository-local files created by mustflow during
-use. It does not authorize storing chat transcripts, hidden reasoning, secrets,
-customer data, or raw terminal logs.
+State retention applies to repository-local files created by mustflow during operation. It does not permit storing chat transcripts, hidden reasoning, secrets, customer data, or raw terminal logs.
 
 ## State Classes
 
-mustflow uses these broad state classes:
+mustflow uses the following broad state classes:
 
-- Source files: versioned project files such as `AGENTS.md`,
-  `.mustflow/config/*.toml`, `.mustflow/docs/**`, and `.mustflow/skills/**`.
+- Source files: versioned project files such as `AGENTS.md`, `.mustflow/config/*.toml`, `.mustflow/docs/**`, and `.mustflow/skills/**`.
 - Generated navigation: files such as `REPO_MAP.md`, refreshed by `mf map`.
 - Generated cache: files under `.mustflow/cache/**`, refreshed by `mf index`.
-- Generated run state: files under `.mustflow/state/**`, written by commands
-  such as `mf run`.
+- Generated run state: files under `.mustflow/state/**`, written by commands such as `mf run`.
 
 ## Version Control Rules
 
-Generated cache and generated run state must stay unversioned by default.
+Generated cache and generated run state must remain unversioned by default.
 
-`REPO_MAP.md` may be versioned when a repository chooses to keep a generated
-navigation map, but it remains generated. It must be refreshed through `mf map`
-rather than edited by hand.
+`REPO_MAP.md` may be versioned if a repository chooses to retain a generated navigation map, but it remains a generated file. It must be refreshed via `mf map` rather than edited manually.
 
 ## Retention Limits
 
-Retention settings are configured in
-[.mustflow/config/mustflow.toml](../../.mustflow/config/mustflow.toml). The
-implementation must respect the configured limits for:
+Retention settings are configured in  
+[.mustflow/config/mustflow.toml](../../.mustflow/config/mustflow.toml). The implementation must enforce the configured limits for:
 
 - maximum receipt size;
 - maximum retained output tail size;
@@ -50,25 +42,21 @@ mustflow-managed state must not store:
 - raw unbounded command logs;
 - raw terminal history;
 - customer data; or
-- generated summaries that claim higher authority than current files.
+- generated summaries that claim greater authority than current files.
 
 ## Authority
 
-Generated state is evidence or cache only. It never overrides:
+Generated state serves only as evidence or cache. It must never override:
 
 - current direct user instructions;
-- host safety and approval policy;
+- host safety and approval policies;
 - the nearest `AGENTS.md`;
 - `.mustflow/config/*.toml`; or
 - current source files.
 
 ## Testable Outcomes
 
-- `.mustflow/state/runs/latest.json` can summarize a run, but it cannot change
-  which command is runnable.
-- `.mustflow/cache/mustflow.sqlite` can speed up search, but it cannot replace
-  reading current files.
-- A missing cache is not a broken installation when the feature is optional.
-- Oversized generated files should be reported by strict checks when they exceed
-  configured limits.
-
+- `.mustflow/state/runs/latest.json` can summarize a run but cannot alter which commands are runnable.
+- `.mustflow/cache/mustflow.sqlite` can accelerate search but cannot replace reading current files.
+- A missing cache does not indicate a broken installation when the feature is optional.
+- Oversized generated files should trigger strict checks when they exceed configured limits.
