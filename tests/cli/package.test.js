@@ -84,6 +84,8 @@ test('npm publish workflow uses trusted publisher identity', () => {
 	assert.match(publishNpmWorkflow, /push:\s*\n\s+tags:\s*\n\s+- "v\*"/u);
 	assert.match(publishNpmWorkflow, /environment: npm/u);
 	assert.match(publishNpmWorkflow, /id-token: write/u);
+	assert.match(publishNpmWorkflow, /package-manager-cache: false/u);
+	assert.match(publishNpmWorkflow, /no-cache: true/u);
 	assert.match(publishNpmWorkflow, /npm publish --access public/u);
 	assert.doesNotMatch(publishNpmWorkflow, /NODE_AUTH_TOKEN/u);
 	assert.doesNotMatch(publishNpmWorkflow, /secrets\.NODE_AUTH_TOKEN/u);
