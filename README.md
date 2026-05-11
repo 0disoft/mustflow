@@ -55,7 +55,7 @@ flowchart TD
 
 `read_order` defines the required reading sequence, while `optional_read_order` and `[context]` control how task-specific context loads. The `[refresh]` policy sets when agents reread the same instructions.
 
-The skills index acts as an active routing step: agents compare the task with `.mustflow/skills/INDEX.md` and read matching `SKILL.md` files before editing that scope. This step is required before file edits even when `mf doctor` or `mf check` passes, because health checks do not decide which task procedure applies. Skills guide procedure only; command execution still comes from `.mustflow/config/commands.toml`.
+The skills index acts as an active routing step: agents compare the task with `.mustflow/skills/INDEX.md` and read matching `SKILL.md` files before editing that scope. This step is required before file edits even when `mf doctor` or `mf check` passes, because health checks do not decide which task procedure applies. When files are created or modified, the final report should include a concise skill-selection note. Skills guide procedure only; command execution still comes from `.mustflow/config/commands.toml`.
 
 ## Quick start
 

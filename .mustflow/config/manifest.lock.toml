@@ -3,14 +3,14 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.17.0"
+version = "1.18.0"
 profile = "oss"
 locale = "en"
 
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:4c6b927d3f12dbfb8b1d8f1950a3af009a3af2e4219b8ac067cfd5fb25611146"
+content_hash = "sha256:c985875bf8ae22a8c792c54bb4e9c68b5a2a6f45d2604b311e344d2a4ff4cd0d"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
@@ -250,7 +250,7 @@ content_hash = "sha256:2aac79982126b2ac4bf6de2194cb5e5b1373600b3288bba093b2b7a51
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:dfdf29fe62f08e3956b98c1baa2d09d2af8ee2cac48ccbb39d540607c0b41314"
+content_hash = "sha256:1b4b58113f9eea833ad95e36534d433d17875f671f10f065175e664c96414015"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"

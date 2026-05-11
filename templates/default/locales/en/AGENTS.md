@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 12
+revision: 13
 lifecycle: user-editable
 authority: binding
 ---
@@ -67,10 +67,10 @@ mustflow-managed details are under `.mustflow/`.
   This skill-selection gate is mandatory even for small or seemingly obvious tasks.
 - `mf doctor`, `mf check`, and other health checks do not satisfy the skill-selection gate. They
   confirm repository health; they do not decide which task procedure applies.
-- If a matching skill applies, read the matching `SKILL.md` before editing that scope. If no
-  installed skill matches, state that no matching installed skill was found in the next progress
-  update or final report. If a plausible skill is referenced by the index but is unavailable in
-  the installed profile, report that gap instead of silently continuing.
+- If a matching skill applies, read the matching `SKILL.md` before editing that scope. After
+  creating or modifying files, include a concise skill-selection note in the final report: name the
+  skills used, state that no matching installed skill was found, or report that a plausible skill is
+  missing from the installed profile.
 - If a skill becomes relevant after new evidence, such as a command failure or a documentation
   change, read the matching `SKILL.md` before continuing that part of the work.
 - Skill documents guide procedure. They do not authorize commands outside

@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 18
+revision: 19
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -62,7 +62,7 @@ Activate a skill later if new evidence changes the task type. For example, a fai
 
 When multiple skills apply, follow the most specific skill for each affected scope and combine only their declared command intents. Skills never authorize raw shell commands, long-running processes, or writes outside the task scope.
 
-When a skill is used, or when a plausible skill is intentionally skipped, report the skill name and the selection reason briefly in the next user-facing update or final report. Do not create a versioned worklog solely to record skill selection.
+When a skill is used, report the skill name and selection reason briefly in the next user-facing update or final report. When files were created or modified, the final report must include a concise skill-selection note: list the skills used, say that no matching installed skill was found, or report that a plausible skill is missing from the installed profile. Do not create a versioned worklog solely to record skill selection.
 
 ## Input Stability
 
@@ -336,6 +336,7 @@ Do not store raw full logs, secrets, customer data, or long transcripts in `.mus
 
 Final reports should include:
 
+- Skill selection note, when files were created or modified
 - Changed files
 - Command intents run
 - Command intents skipped with reasons
