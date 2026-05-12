@@ -44,8 +44,8 @@ content_hash = "sha256:31afde7f88f558d8bc9970b3ffb1c82c05c0c264b7577009e185c301f
 
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:fe636e765ca06d9c02c3486c0816f5955ad5088acbebbdfb111438ee92eabae5"
+last_action = "customized"
+content_hash = "sha256:631e199a91fc477e7a52a5fc31f63e84884dcb5e97d70f6574a4cff0de31206e"
 
 [files.".mustflow/skills/codebase-orientation/SKILL.md"]
 source = "template_locale"
@@ -99,8 +99,8 @@ last_action = "created"
 content_hash = "sha256:f1426cd709cdb02234ab3679c297e4c6435298f4896769102019bf1a05ed4ac3"
 [files.".mustflow/skills/test-maintenance/SKILL.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:318a12fa3493071de9cf85cfbc1208b8f92e3984027bc269beee4e4ef6c1f716"
+last_action = "customized"
+content_hash = "sha256:070c4945a00def0d75716f4ccd5ed2f3084d146face3199b2f3204ee413b2af2"
 
 [files.".mustflow/skills/ui-quality-gate/SKILL.md"]
 source = "template_locale"
@@ -114,8 +114,8 @@ content_hash = "sha256:3a751aa481cb864c64b1dae8d29f146400136454d353d9fef76e2beb4
 
 [files.".mustflow/skills/failure-triage/SKILL.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:61106fb388a18b681182fa97f4b6dac6992823acc4721c7d6287bf882298dfcc"
+last_action = "customized"
+content_hash = "sha256:b5586b8b434b32dbb91ccd3e32348a08514eb4bd5041520d77d6fdb097942ae6"
 
 [files.".mustflow/skills/line-ending-hygiene/SKILL.md"]
 source = "template_locale"
@@ -199,8 +199,8 @@ content_hash = "sha256:4c65a4c98564b04ee5132908170c041f6163c4e591d6a577c2a3a22c3
 
 [files.".mustflow/skills/docs-update/SKILL.md"]
 source = "template_locale"
-last_action = "created"
-content_hash = "sha256:4c3097aff72d50e0b2e667833f653d52c0cf564f39c09283dc4f57d09e50a6a2"
+last_action = "customized"
+content_hash = "sha256:1c3f3de703872f883520617ce96856f255c60f55ae1ed65376c05849a2eb07f9"
 
 [files.".mustflow/skills/project-context-authoring/SKILL.md"]
 source = "template_locale"

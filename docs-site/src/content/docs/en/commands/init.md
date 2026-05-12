@@ -25,6 +25,7 @@ AGENTS.md
    ├─ INDEX.md
    ├─ code-review/SKILL.md
    ├─ codebase-orientation/SKILL.md
+   ├─ database-change-safety/SKILL.md
    ├─ diff-risk-review/SKILL.md
    ├─ docs-prose-review/SKILL.md
    ├─ docs-update/SKILL.md

@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 43
+revision: 44
 authority: router
 lifecycle: mustflow-owned
 ---
@@ -43,6 +43,7 @@ lifecycle: mustflow-owned
 | 变更文件需要风险分类和验证选择 | `.mustflow/skills/diff-risk-review/SKILL.md` | 变更文件列表，差异摘要和任务目标 | 变更表面及验证报告 | 验证不足或过度 | `changes_status`, `changes_diff_summary`, `test`, `test_related`, `test_audit`, `lint`, `build`, `docs_validate`, `mustflow_check` | 风险等级，验证选择，回滚备注 |
 | 声明行为必须在代码、模式、模板、测试和文档间保持一致 | `.mustflow/skills/contract-sync-check/SKILL.md` | 变更文件，预期行为，事实来源，派生表面及命令契约条目 | 合同源及必需同步表面 | 合同漂移 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 合同源，同步表面，延期表面，验证及漂移风险 |
 | 日期、版本、计数、时长、限制、指标、基准、价格、百分比或其他数值事实被创建、编辑或报告 | `.mustflow/skills/date-number-audit/SKILL.md` | 日期或数值事实，事实来源，依赖表面，精度预期及命令契约条目 | 数值声明，元数据，测试，文档，模板及报告 | 虚构、陈旧或不匹配的数值声明 | `changes_status`, `changes_diff_summary`, `docs_validate_fast`, `test_release`, `mustflow_check` | 审计值，事实来源，同步表面，跳过检查及剩余数值风险 |
+| Database schema, query, transaction, ORM model, repository/store, index, cache-backed read model, data retention, pagination, concurrency, idempotency, audit log, or persistence boundary is introduced, changed, reviewed, or reported | `.mustflow/skills/database-change-safety/SKILL.md` | Data role, affected tables or stores, read/write path, transaction boundary, migration or rollback expectations, local DB or ORM patterns, changed files, and command contract entries | Schema, migrations, repositories, stores, queries, transactions, indexes, read models, fixtures, tests, docs, and directly synchronized templates | data loss, stale cache, authorization leak, transaction bug, duplicate side effect, slow query, or unverified migration claim | `changes_status`, `changes_diff_summary`, `test_related`, `test`, `lint`, `build`, `docs_validate_fast`, `test_release`, `mustflow_check` | Data role, schema/query/transaction review, migration and rollback status, index/performance notes, security/retention checks, tests, verification, and remaining database risk |
 | 假设、添加、调用或记录包、运行时、工具、命令、服务或平台能力 | `.mustflow/skills/dependency-reality-check/SKILL.md` | 依赖或能力，仓库声明，版本或能力声明及命令契约条目 | 依赖声明，导入，命令元数据，测试及文档 | 虚构或不可用依赖 | `changes_status`, `changes_diff_summary`, `build`, `test_release`, `mustflow_check` | 依赖状态，同步表面，验证及剩余依赖风险 |
 | 外部系统、协议、SDK、数据库、Webhook、队列、文件、缓存、框架请求或响应、AI 模型、浏览器存储或提供者数据跨越核心边界或需要端口/适配器转换、错误映射、重试、幂等、安全或可观测性处理 | `.mustflow/skills/adapter-boundary/SKILL.md` | 外部系统或协议，入站/出站方向，内部用例，本地端口/适配器模式，提供者风险，变更文件及命令契约条目 | 端口、适配器、映射器、控制器、工作线程、存储、网关、测试、固件、组装连接及直接同步的文档或模板 | 提供者泄漏，透传包装，未分类外部失败，重复副作用，不安全重试，缺失超时，秘密或个人数据泄漏，未测试集成漂移 | `changes_status`, `changes_diff_summary`, `test_related`, `test`, `lint`, `build`, `docs_validate_fast`, `test_release`, `mustflow_check` | 边界分类，内部端口，提供者封装，验证与映射，超时/重试/幂等处理，安全备注，验证及剩余提供者风险 |
 | 核心或应用逻辑创建、导入、解析或隐藏外部依赖，如数据库、SDK、时钟、随机数生成器、配置、日志器、框架对象、文件系统、队列、AI 客户端或支付/邮件提供者 | `.mustflow/skills/dependency-injection/SKILL.md` | 目标代码区域，隐藏依赖，预期业务能力，层所有权，本地端口/适配器模式，变更文件及命令契约条目 | 核心逻辑签名，端口，适配器，组装根，测试及直接同步的文档或模板 | 隐藏全局状态，难测业务逻辑，提供者泄漏，生命周期漂移，服务定位器耦合 | `changes_status`, `changes_diff_summary`, `test_related`, `test`, `lint`, `build`, `docs_validate_fast`, `test_release`, `mustflow_check` | 依赖边界，发现直接依赖，注入风格，端口/适配器，组装边界，测试或替身，验证及剩余依赖泄漏 |

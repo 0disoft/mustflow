@@ -56,12 +56,12 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 43
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 43, status = "needs_review" }
-translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 43, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 43, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 43, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 43, status = "needs_review" }
+revision = 44
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
 
 [documents."skill.adapter-boundary"]
 source = "locales/en/.mustflow/skills/adapter-boundary/SKILL.md"
@@ -122,6 +122,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/date-number-audit/SKILL.
 translations.es = { path = "locales/es/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/date-number-audit/SKILL.md", source_revision = 1, status = "needs_review" }
+
+[documents."skill.database-change-safety"]
+source = "locales/en/.mustflow/skills/database-change-safety/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/database-change-safety/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.zh = { path = "locales/zh/.mustflow/skills/database-change-safety/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/database-change-safety/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/database-change-safety/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/database-change-safety/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.dependency-injection"]
 source = "locales/en/.mustflow/skills/dependency-injection/SKILL.md"

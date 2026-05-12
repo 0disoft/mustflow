@@ -39,7 +39,7 @@ mustflow-managed details are under `.mustflow/`.
   intent is still running, especially when an intent declares non-empty `writes` such as `dist/`.
 - Choose the narrowest configured verification intent that covers the risk. Prefer related or
   fast checks over broad suites when the command contract exposes them, and report missing
-  narrower intents instead of defaulting silently to slow full-suite tests.
+  narrower intents instead of silently defaulting to slow full-suite tests.
 - Do not directly start development servers, watchers, browser interfaces, interactive prompts,
   or background processes.
 - Do not start autonomous loops, worker processes, persona systems, or long-running harness
@@ -66,7 +66,7 @@ mustflow-managed details are under `.mustflow/`.
 - Before creating or modifying any file, use `.mustflow/skills/INDEX.md` to decide whether one or more skills apply.
   This skill-selection gate is mandatory even for small or seemingly obvious tasks.
 - `mf doctor`, `mf check`, and other health checks do not satisfy the skill-selection gate. They
-  confirm repository health; they do not decide which task procedure applies.
+  confirm repository health; they do not determine which task procedure applies.
 - If a matching skill applies, read the matching `SKILL.md` before editing that scope. After
   creating or modifying files, include a concise skill-selection note in the final report: name the
   skills used, state that no matching installed skill was found, or report that a plausible skill is
@@ -80,7 +80,7 @@ mustflow-managed details are under `.mustflow/`.
 
 ## Parent and Child Rule Priority
 
-- The nearest `AGENTS.md` to the edited files is the more specific rule.
+- The `AGENTS.md` closest to the edited files takes precedence.
 - If workflow, style, tests, or command rules conflict, follow the child repository's `AGENTS.md`
   and `.mustflow/config/commands.toml`.
 - Safety rules for secrets, privacy, destructive commands, and permitted edit paths are cumulative.
@@ -94,14 +94,14 @@ mustflow-managed details are under `.mustflow/`.
 Some coding hosts may read additional host-specific instruction files or enforce their own
 approval, sandbox, checkpoint, and command execution policies.
 
-Treat those host policies as additive safety and execution constraints. They do not replace this
+Treat those host policies as additional safety and execution constraints. They do not replace this
 repository's mustflow command contract. When host instructions conflict with mustflow rules:
 
 - Direct user instructions define the task goal unless unsafe.
 - Host safety and approval gates remain binding.
 - Repository work rules come from the nearest `AGENTS.md` and `.mustflow/config/*.toml`.
 - Project verification commands must use configured mustflow intents.
-- Stricter privacy, secret, destructive-command, and Git push rules win.
+- Stricter privacy, secret, destructive-command, and Git push rules take precedence.
 - Generated state, summaries, and caches never override current files or current user instructions.
 
 When the effective rule is unclear, stop and report the conflict instead of guessing.
