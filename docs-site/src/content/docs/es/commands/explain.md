@@ -12,12 +12,15 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 `mf explain anchor <anchor_id>` explica un ancla estructurada de código fuente. Las anclas de código son coordenadas solo de navegación: ayudan a encontrar código, pero no definen reglas de flujo de trabajo, permisos de comando ni autoridad de verificación.
 
 `mf explain command <intent>` explica si una intención de comando en `.mustflow/config/commands.toml` puede ejecutarse con `mf run`, por qué se permite o se bloquea, y si su ejecución contaría como verificación de mustflow.
+Cuando existe un índice local actualizado, también lee el grafo derivado de efectos de comando para mostrar bloqueos de escritura y conflictos sin cambiar la autoridad del comando.
 
 `mf explain retention` explica la política de retención efectiva de `.mustflow/config/mustflow.toml`, incluida la forma de guardar eventos sin procesar, los recibos de ejecución acotados y los límites de contexto.
 
 `mf explain skill <skill_id>` explica una ruta de `.mustflow/skills/INDEX.md`, incluidos el disparador, la entrada requerida, el alcance de edición, el riesgo, las intenciones de verificación y la salida esperada. El objetivo puede ser el nombre de carpeta, el `metadata.skill_id` completo, `mustflow_doc` o la ruta del skill.
 
 `mf explain skills` explica el resumen estricto de alineación entre el índice de skills y sus cuerpos que usa `mf doctor --strict`. Informa si cada ruta de `.mustflow/skills/INDEX.md` apunta a un cuerpo de skill y si cada cuerpo está listado en el índice.
+
+`mf explain surface [path]` explica cómo una ruta relativa del repositorio se asigna al contrato de superficie pública usado por la clasificación de cambios. Cuando existe un índice local actualizado, también muestra la regla derivada de ruta-superficie que coincidió. Si el índice falta o está obsoleto, muestra una sugerencia de reconstrucción y no cambia la clasificación ni la selección de comandos.
 
 ## Salida
 
@@ -32,9 +35,12 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 - `Expected frontmatter`: valores requeridos de `mustflow_doc`, `authority` y `lifecycle` cuando la ruta se reconoce.
 - `Authority boundary`: lo que esa autoridad puede definir y lo que debe dejar a archivos de mayor autoridad, al código actual o a `commands.toml`.
 - `Command intent`: metadatos del contrato de comando cuando se usa el tema `command`.
+- `Command effect graph`: bloqueos de escritura y conflictos leídos del índice local actualizado cuando se usa el tema `command`. Si el índice falta o está obsoleto, se muestra una sugerencia de reconstrucción sin cambiar la decisión del comando.
 - `Retention policy`: ajustes de retención efectivos cuando se usa el tema `retention`.
 - `Skill route`: disparador, alcance, riesgo, verificaciones y salida esperada cuando se usa el tema `skill`.
 - `Skill routes`: estado estricto de alineación entre índice y cuerpo cuando se usa el tema `skills`.
+- `Public surface`: tipo de superficie, categoría, motivos de verificación, contratos afectados, política de actualización y comprobaciones de deriva cuando se usa el tema `surface`.
+- `Path-surface read model`: id de regla, patrón y metadatos derivados de superficie del índice local actualizado cuando se usa el tema `surface` y `.mustflow/cache/mustflow.sqlite` está disponible.
 
 ## Ejemplos
 
@@ -53,6 +59,8 @@ npx mf explain skill code-review
 npx mf explain skill mustflow.core.code-review --json
 npx mf explain skills
 npx mf explain skills --json
+npx mf explain surface README.md
+npx mf explain surface templates/default/locales/es/AGENTS.md --json
 npx mf explain authority .mustflow/skills/INDEX.md --json
 ```
 
@@ -68,7 +76,7 @@ La salida legible por máquinas usa estos campos:
 - `command` (`string`): siempre `explain`.
 - `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills` o `surface`.
 - `mustflow_root` (`string`): raíz mustflow actual.
-- `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema. Para `authority`, incluye `boundary.role`, `boundary.canDefine` y `boundary.cannotDefine`.
+- `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema. Para `authority`, incluye `boundary.role`, `boundary.canDefine` y `boundary.cannotDefine`. Para `command`, `decision.effectGraph` contiene el estado del grafo de efectos de comando del índice local, bloqueos de escritura, conflictos, rutas obsoletas y sugerencias de reconstrucción cuando la intención está declarada. Para `surface`, `decision.readModel` contiene el estado de ruta-superficie del índice local de solo lectura y los metadatos de la regla coincidente cuando están disponibles.
 
 ## Ayuda y códigos de salida
 

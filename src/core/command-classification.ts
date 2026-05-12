@@ -4,7 +4,6 @@ const IN_PROCESS_MUSTFLOW_BUILTIN_COMMANDS = new Set([
 	'classify',
 	'context',
 	'doctor',
-	'explain',
 	'help',
 	'impact',
 	'line-endings',
@@ -12,7 +11,6 @@ const IN_PROCESS_MUSTFLOW_BUILTIN_COMMANDS = new Set([
 	'status',
 	'update',
 	'version-sources',
-	'verify',
 ]);
 
 export function isMustflowBinName(command: string): boolean {

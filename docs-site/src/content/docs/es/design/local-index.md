@@ -43,11 +43,16 @@ Esto significa que el índice es dato generado opcional, no un documento fuente.
 - Títulos y encabezados de sección
 - Metadatos de frontmatter
 - Revisiones y hashes de documentos
+- Huellas de archivos indexados
 - Fragmentos breves de contenido
 - Metadatos de intenciones de comando
 - Referencias de skills
 
 El comando actual `mf index` usa el modo `metadata_and_snippets`. Almacena como máximo 2048 bytes de fragmento por documento, no almacena cuerpos completos de documentos de forma predeterminada y guarda nombres y descripciones de intenciones de comando como términos derivados para que `mf search` aún pueda encontrar el archivo de configuración relevante.
+
+La tabla `indexed_files` guarda huellas derivadas para cada archivo de flujo de trabajo indexado y para archivos de anclas de fuente opcionales: ruta, alcance de origen, tamaño, hora de modificación, hash de contenido, hora de indexación, modo de índice y versión del parser. `mf index --incremental` solo reutiliza un archivo SQLite existente cuando el esquema, la versión del parser, la configuración de alcance de fuente y las huellas de archivo siguen siendo compatibles; si no, vuelve a una reconstrucción completa.
+
+Los metadatos de búsqueda también se guardan en la tabla `search_ngrams`. Esas filas son fragmentos derivados y breves de términos que ayudan a las búsquedas multilingües cuando los espacios o la tokenización de SQLite son débiles. Apuntan a documentos, skills, rutas de skill, intenciones de comando y anclas de código fuente; no almacenan documentos ni código fuente completos y no cambian el orden de autoridad.
 
 Antes de buscar, `mf search` compara los hashes almacenados con los archivos actuales y devuelve un error si la caché está obsoleta. Los últimos resultados de verificación y el análisis de ejecuciones quedan reservados para funciones futuras.
 

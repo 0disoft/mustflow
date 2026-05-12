@@ -45,6 +45,10 @@ export const SOURCE_ANCHOR_ALLOWED_RISKS = new Set([
 	'xss',
 ]);
 export const SOURCE_ANCHOR_ID_PATTERN = /^[a-z0-9][a-z0-9.-]{0,95}$/u;
+export const SOURCE_ANCHOR_SECRET_LIKE_PATTERNS = [
+	/\b(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=:-]{8,}/iu,
+	/\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/u,
+] as const;
 
 export interface SourceAnchorSummary {
 	readonly id: string;
@@ -56,6 +60,15 @@ export interface SourceAnchorSummary {
 	readonly risk: readonly string[];
 	readonly navigationOnly: true;
 	readonly canInstructAgent: false;
+}
+
+export interface SourceAnchorFileOptions {
+	readonly ignoredDirectoryNames?: ReadonlySet<string>;
+	readonly include?: readonly string[];
+	readonly exclude?: readonly string[];
+	readonly excludeGeneratedOrVendor?: boolean;
+	readonly maxFileBytes?: number | null;
+	readonly allowedExtensions?: readonly string[] | ReadonlySet<string>;
 }
 
 export interface ParsedSourceAnchor {
@@ -101,15 +114,103 @@ function listFilesRecursive(root: string, ignoredDirectoryNames: ReadonlySet<str
 	return files.sort((left, right) => left.localeCompare(right));
 }
 
-export function listSourceAnchorFiles(
-	root: string,
-	options: { readonly ignoredDirectoryNames?: ReadonlySet<string> } = {},
-): string[] {
-	const ignoredDirectoryNames = options.ignoredDirectoryNames ?? SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS;
+function escapeRegExp(value: string): string {
+	return value.replace(/[\\^$.*+?()[\]{}|]/gu, '\\$&');
+}
+
+function globToRegExp(pattern: string): RegExp {
+	const normalized = toPosixPath(pattern).replace(/^\/+/u, '');
+	let source = '^';
+
+	for (let index = 0; index < normalized.length; ) {
+		const current = normalized[index];
+		const next = normalized[index + 1];
+		const afterNext = normalized[index + 2];
+
+		if (current === '*' && next === '*') {
+			if (afterNext === '/') {
+				source += '(?:.*/)?';
+				index += 3;
+				continue;
+			}
+
+			source += '.*';
+			index += 2;
+			continue;
+		}
+
+		if (current === '*') {
+			source += '[^/]*';
+			index += 1;
+			continue;
+		}
+
+		if (current === '?') {
+			source += '[^/]';
+			index += 1;
+			continue;
+		}
+
+		source += escapeRegExp(current ?? '');
+		index += 1;
+	}
+
+	return new RegExp(`${source}$`, 'u');
+}
+
+function matchesAnyGlob(relativePath: string, patterns: readonly RegExp[]): boolean {
+	return patterns.some((pattern) => pattern.test(relativePath));
+}
+
+function normalizeSourceAnchorExtension(value: string): string | null {
+	const normalized = value.trim().toLowerCase();
+
+	if (normalized.length === 0) {
+		return null;
+	}
+
+	return normalized.startsWith('.') ? normalized : `.${normalized}`;
+}
+
+function normalizeAllowedExtensions(allowedExtensions: SourceAnchorFileOptions['allowedExtensions']): ReadonlySet<string> {
+	if (!allowedExtensions) {
+		return SOURCE_ANCHOR_EXTENSIONS;
+	}
+
+	const normalized = [...allowedExtensions]
+		.map((extension) => normalizeSourceAnchorExtension(extension))
+		.filter((extension): extension is string => Boolean(extension));
+
+	return normalized.length > 0 ? new Set(normalized) : SOURCE_ANCHOR_EXTENSIONS;
+}
+
+function mergeIgnoredDirectoryNames(ignoredDirectoryNames: ReadonlySet<string> | undefined): ReadonlySet<string> {
+	return new Set([...(ignoredDirectoryNames ?? []), ...SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS]);
+}
+
+function fileIsWithinSizeLimit(root: string, relativePath: string, maxFileBytes: number | null | undefined): boolean {
+	if (typeof maxFileBytes !== 'number' || !Number.isFinite(maxFileBytes) || maxFileBytes <= 0) {
+		return true;
+	}
+
+	const filePath = path.join(root, ...relativePath.split('/'));
+
+	return statSync(filePath).size <= maxFileBytes;
+}
+
+export function listSourceAnchorFiles(root: string, options: SourceAnchorFileOptions = {}): string[] {
+	const ignoredDirectoryNames = mergeIgnoredDirectoryNames(options.ignoredDirectoryNames);
+	const allowedExtensions = normalizeAllowedExtensions(options.allowedExtensions);
+	const include = (options.include ?? []).map((pattern) => globToRegExp(pattern));
+	const exclude = (options.exclude ?? []).map((pattern) => globToRegExp(pattern));
 
 	return listFilesRecursive(root, ignoredDirectoryNames)
 		.map((relativePath) => toPosixPath(relativePath))
-		.filter((relativePath) => SOURCE_ANCHOR_EXTENSIONS.has(path.posix.extname(relativePath)));
+		.filter((relativePath) => allowedExtensions.has(path.posix.extname(relativePath)))
+		.filter((relativePath) => options.excludeGeneratedOrVendor !== true || !sourceAnchorPathIsGeneratedOrVendor(relativePath))
+		.filter((relativePath) => include.length === 0 || matchesAnyGlob(relativePath, include))
+		.filter((relativePath) => exclude.length === 0 || !matchesAnyGlob(relativePath, exclude))
+		.filter((relativePath) => fileIsWithinSizeLimit(root, relativePath, options.maxFileBytes));
 }
 
 export function stripSourceAnchorCommentPrefix(line: string): string {
@@ -160,6 +261,10 @@ export function sourceAnchorPathIsGeneratedOrVendor(relativePath: string): boole
 	}
 
 	return parts.some((part) => SOURCE_ANCHOR_GENERATED_PATH_PARTS.has(part));
+}
+
+export function sourceAnchorTextContainsSecretLike(value: string): boolean {
+	return SOURCE_ANCHOR_SECRET_LIKE_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 export function parseSourceAnchorsInContent(relativePath: string, content: string): ParsedSourceAnchor[] {
@@ -241,7 +346,7 @@ export function collectSourceAnchorSummaries(projectRoot: string): SourceAnchorS
 		const content = readFileSync(filePath, 'utf8');
 
 		for (const anchor of parseSourceAnchorsInContent(relativePath, content)) {
-			if (!anchor.idValid) {
+			if (!anchor.idValid || sourceAnchorTextContainsSecretLike(anchor.rawText)) {
 				continue;
 			}
 

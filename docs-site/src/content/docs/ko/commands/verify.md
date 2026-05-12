@@ -7,6 +7,8 @@ description: required_after 메타데이터로 선택한 설정된 검증 의도
 
 `mf verify --from-plan <path>`는 mustflow 루트 안의 JSON 파일에서 검증 이유를 읽습니다. `reason`, `reasons`, `validationReasons`, `summary.validationReasons`, `classification_summary.validationReasons`를 인식하므로 계획이나 변경 분류 명령의 출력을 다시 손으로 옮기지 않고 검증에 연결할 수 있습니다.
 
+`mf verify --plan-only --json`은 명령을 실행하지 않고 검증 계획만 출력합니다. 최신 로컬 색인이 있으면 각 예정 항목에 `.mustflow/cache/mustflow.sqlite`에서 읽은 `effectGraph` 설명이 붙을 수 있습니다. 이 설명에는 쓰기 잠금과 잠금 충돌이 들어갑니다. 각 요구사항에는 변경 파일과 맞은 경로-표면 규칙을 설명하는 `surfaceReadModels` 메타데이터도 붙을 수 있습니다. 로컬 색인이 없거나 오래되면 다시 색인하라는 안내만 표시하며, 명령 선택이나 실행 권한은 바꾸지 않습니다.
+
 ## 선택 규칙
 
 - `required_after`의 이유 문자열이 정확히 일치해야 선택됩니다.
@@ -40,6 +42,8 @@ npx mf verify --reason code_change --json
 - `status` (`string`): `passed`, `partial`, `failed`, `blocked` 중 하나입니다.
 - `summary` (`object`): 일치, 실행, 통과, 실패, 건너뜀 개수입니다.
 - `results` (`object[]`): 의도별 실행 또는 건너뜀 결과입니다.
+
+`--plan-only --json` 출력은 변경 검증 보고서 스키마를 사용합니다. `schedule.entries[].effectGraph` 필드가 있으면 잠금과 충돌을 설명하기 위한 읽기 전용 로컬 색인 메타데이터입니다. `requirements[].surfaceReadModels` 필드가 있으면 검증 사유 뒤의 경로-표면 규칙을 설명하기 위한 읽기 전용 로컬 색인 메타데이터입니다.
 
 ## 종료 코드
 

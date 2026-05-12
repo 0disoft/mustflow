@@ -31,10 +31,17 @@ description: 为当前 mustflow 根目录打印 JSON 代理工作上下文。
 
 它不包含 standard output 或 standard error 尾部。如果代理需要命令输出，必须明确读取回执文件。
 
+## Prompt Cache Profiles
+
+当宿主需要适合缓存的 prompt layers，而不是完整 context report 时，可将 `--cache-profile stable|task|volatile|all` 与 `--json` 一起使用。
+
+`task` profile 包含 `task_context.local_index`，这是 local index 的只读状态。`status` 为 `fresh`、`missing`、`stale` 或 `unreadable`；当索引不能复用时，`refresh_hint` 会提示运行 `mf index`。
+
 ## 示例
 
 ```sh
 npx mf context --json
+npx mf context --json --cache-profile task
 ```
 
 ## JSON 字段

@@ -5,7 +5,9 @@ import path from 'node:path';
 import {
 	listSourceAnchorFiles,
 	parseSourceAnchorsInContent,
+	sourceAnchorTextContainsSecretLike,
 	splitSourceAnchorList,
+	type SourceAnchorFileOptions,
 	type SourceAnchorSummary,
 } from './source-anchors.js';
 import {
@@ -307,10 +309,11 @@ function findUniqueSymbolCandidate(
 export function collectSourceAnchorIndexRecords(
 	projectRoot: string,
 	previousSnapshots: readonly SourceAnchorSnapshot[] = [],
+	fileOptions: SourceAnchorFileOptions = {},
 ): SourceAnchorIndexRecord[] {
 	const currentRecords: SourceAnchorSnapshot[] = [];
 
-	for (const relativePath of listSourceAnchorFiles(projectRoot)) {
+	for (const relativePath of listSourceAnchorFiles(projectRoot, fileOptions)) {
 		const filePath = path.join(projectRoot, ...relativePath.split('/'));
 
 		if (!existsSync(filePath) || !statSync(filePath).isFile()) {
@@ -320,7 +323,7 @@ export function collectSourceAnchorIndexRecords(
 		const content = readFileSync(filePath, 'utf8');
 
 		for (const anchor of parseSourceAnchorsInContent(relativePath, content)) {
-			if (!anchor.idValid) {
+			if (!anchor.idValid || sourceAnchorTextContainsSecretLike(anchor.rawText)) {
 				continue;
 			}
 

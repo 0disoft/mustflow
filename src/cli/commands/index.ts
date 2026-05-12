@@ -18,10 +18,14 @@ export function getIndexHelp(lang: CliLang = 'en'): string {
 					label: '--source',
 					description: t(lang, 'index.help.option.source'),
 				},
+				{
+					label: '--incremental',
+					description: t(lang, 'index.help.option.incremental'),
+				},
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf index --dry-run --json', 'mf index', 'mf index --json'],
+			examples: ['mf index --dry-run --json', 'mf index', 'mf index --incremental --json'],
 			exitCodes: [
 				{
 					label: '0',
@@ -45,6 +49,8 @@ function renderIndexSummary(result: Awaited<ReturnType<typeof createLocalIndex>>
 		`${t(lang, 'label.commandIntents')}: ${result.command_intent_count}`,
 		`command_effects: ${result.command_effect_count}`,
 		`source_anchors: ${result.source_anchor_count}`,
+		`index_mode: ${result.index_mode}`,
+		`reused_existing: ${result.reused_existing ? 'yes' : 'no'}`,
 		`${t(lang, 'label.wroteFiles')}: ${result.wrote_files ? 'yes' : 'no'}`,
 	];
 
@@ -61,7 +67,7 @@ export async function runIndex(args: string[], reporter: Reporter, lang: CliLang
 		return 0;
 	}
 
-	const supported = new Set(['--dry-run', '--json', '--source']);
+	const supported = new Set(['--dry-run', '--json', '--source', '--incremental']);
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
@@ -72,6 +78,7 @@ export async function runIndex(args: string[], reporter: Reporter, lang: CliLang
 	const result = await createLocalIndex(resolveMustflowRoot(), {
 		dryRun: args.includes('--dry-run'),
 		includeSource: args.includes('--source'),
+		incremental: args.includes('--incremental'),
 	});
 
 	if (args.includes('--json')) {

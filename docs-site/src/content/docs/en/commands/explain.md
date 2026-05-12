@@ -12,6 +12,7 @@ Without a path, the command prints the authority model. With a path, it reports 
 `mf explain anchor <anchor_id>` explains a structured source-code anchor. Source anchors are navigation-only code coordinates: they can help agents find code, but they cannot define workflow rules, command permission, or verification authority.
 
 `mf explain command <intent>` explains whether a command intent in `.mustflow/config/commands.toml` is runnable through `mf run`, why it is allowed or blocked, and whether running it would count as mustflow verification.
+When a fresh local index exists, it also reads the derived command-effect graph so the report can show write locks and lock conflicts without changing command authority.
 
 `mf explain retention` explains the effective retention policy from `.mustflow/config/mustflow.toml`, including raw event storage, bounded run receipts, and context limits.
 
@@ -20,6 +21,7 @@ Without a path, the command prints the authority model. With a path, it reports 
 `mf explain skills` explains the strict skill index/body alignment summary used by `mf doctor --strict`. It reports whether every `.mustflow/skills/INDEX.md` route points to a skill body and whether every skill body is listed in the index.
 
 `mf explain surface [path]` explains how a repository-relative path maps to the public surface contract used by change classification. It reports the surface kind, validation reasons, affected contracts, update policy, and drift checks without running verification.
+When a fresh local index exists, it also shows the derived path-surface rule that matched the path. Missing or stale indexes show a rebuild hint and never change classification or command selection.
 
 ## Output
 
@@ -34,10 +36,12 @@ Without a path, the command prints the authority model. With a path, it reports 
 - `Expected frontmatter`: Required `mustflow_doc`, `authority`, and `lifecycle` values when the path is recognized.
 - `Authority boundary`: What the authority lane may define and what it must leave to higher-authority files, current code, or `commands.toml`.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
+- `Command effect graph`: Fresh local-index write locks and lock conflicts when the `command` topic is used and `.mustflow/cache/mustflow.sqlite` is available. Missing or stale indexes show a rebuild hint instead of changing the command decision.
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
 - `Skill route`: Trigger, scope, risk, checks, and expected output when the `skill` topic is used.
 - `Skill routes`: Strict skill index/body alignment status when the `skills` topic is used.
 - `Public surface`: Surface kind, category, validation reasons, affected contracts, update policy, and drift checks when the `surface` topic is used.
+- `Path-surface read model`: Fresh local-index rule id, pattern, and derived surface metadata when the `surface` topic is used and `.mustflow/cache/mustflow.sqlite` is available. Missing or stale indexes show a rebuild hint instead of changing the surface decision.
 
 ## Examples
 
@@ -73,7 +77,7 @@ Machine-readable output uses these fields:
 - `command` (`string`): Always `explain`.
 - `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
 - `mustflow_root` (`string`): Current mustflow root.
-- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`.
+- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, and refresh hints when an intent is declared. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available.
 
 ## Help and Exit Codes
 

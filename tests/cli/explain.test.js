@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -27,6 +27,55 @@ function runCli(cwd, args) {
 function initProject(projectPath) {
 	const result = runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function appendCommandGraphFixture(projectPath) {
+	appendFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+		`
+[resources.graph_artifact]
+type = "path"
+paths = ["graph-output/**"]
+concurrency = "exclusive_writer"
+description = "Graph view test output."
+
+[intents.graph_writer_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Graph writer A."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["graph-output/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "graph-output/**", lock = "graph_artifact", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["graph_view_fixture"]
+
+[intents.graph_writer_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Graph writer B."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["graph-output/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "graph-output/**", lock = "graph_artifact", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["graph_view_fixture"]
+`,
+	);
 }
 
 test('explains managed AGENTS authority as json', () => {
@@ -164,6 +213,56 @@ test('explains configured agent-runnable command intents as json', () => {
 		assert.equal(report.decision.intent.destructive, false);
 		assert.deepEqual(report.decision.intent.successExitCodes, [0]);
 		assert.deepEqual(report.decision.intent.requiredAfter, ['mustflow_config_change', 'mustflow_docs_change']);
+		assert.equal(report.decision.effectGraph.source, 'local_index');
+		assert.equal(report.decision.effectGraph.status, 'missing');
+		assert.equal(report.decision.effectGraph.indexFresh, false);
+		assert.deepEqual(report.decision.effectGraph.writeLocks, []);
+		assert.deepEqual(report.decision.effectGraph.lockConflicts, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains command-effect graph rows from a fresh local index', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendCommandGraphFixture(projectPath);
+
+		const indexResult = runCli(projectPath, ['index', '--json']);
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+
+		const result = runCli(projectPath, ['explain', 'command', 'graph_writer_a', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.decision.kind, 'allowed');
+		assert.equal(report.decision.effectGraph.status, 'fresh');
+		assert.equal(report.decision.effectGraph.indexFresh, true);
+		assert.deepEqual(report.decision.effectGraph.stalePaths, []);
+		assert.deepEqual(report.decision.effectGraph.writeLocks, [
+			{
+				lock: 'graph_artifact',
+				paths: ['graph-output/**'],
+				modes: ['delete_recreate'],
+				sources: ['effects'],
+				concurrencies: ['exclusive'],
+				effectCount: 1,
+			},
+		]);
+		assert.deepEqual(report.decision.effectGraph.lockConflicts, [
+			{
+				intent: 'graph_writer_b',
+				lock: 'graph_artifact',
+				paths: ['graph-output/**'],
+				modes: ['delete_recreate'],
+				concurrencies: ['exclusive'],
+				conflictingPaths: ['graph-output/**'],
+				conflictingModes: ['delete_recreate'],
+				conflictingConcurrencies: ['exclusive'],
+			},
+		]);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -431,6 +530,34 @@ test('explains public surface classification as json', () => {
 		assert.equal(report.decision.surface.isPublicSurface, true);
 		assert.deepEqual(report.decision.surface.validationReasons, ['docs_change', 'copy_change']);
 		assert.ok(report.decision.surface.affectedContracts.includes('public documentation'));
+		assert.equal(report.decision.readModel.status, 'missing');
+		assert.equal(report.decision.readModel.indexFresh, false);
+		assert.equal(report.decision.readModel.match, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains public surface classification from a fresh local index read model', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const indexResult = runCli(projectPath, ['index', '--json']);
+		const result = runCli(projectPath, ['explain', 'surface', 'README.md', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'surface');
+		assert.equal(report.decision.surface.kind, 'readme_page');
+		assert.equal(report.decision.readModel.status, 'fresh');
+		assert.equal(report.decision.readModel.indexFresh, true);
+		assert.equal(report.decision.readModel.match.ruleId, 'readme_page');
+		assert.equal(report.decision.readModel.match.surface.kind, 'readme_page');
+		assert.deepEqual(report.decision.readModel.match.surface.validationReasons, ['docs_change', 'copy_change']);
+		assert.equal(report.decision.readModel.match.surface.isPublicSurface, true);
 	} finally {
 		removeTempProject(projectPath);
 	}

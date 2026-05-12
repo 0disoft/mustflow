@@ -11,6 +11,7 @@ import {
 } from './command-contract.js';
 import { readRetentionStore } from '../../core/retention-policy.js';
 import { toPosixPath } from './filesystem.js';
+import { readLocalIndexPromptContext, type LocalIndexPromptContext } from './local-index.js';
 import { inspectManifestLock } from './manifest-lock.js';
 import { readTomlFile } from './toml.js';
 
@@ -166,6 +167,18 @@ export interface TaskPromptCacheLayerContext {
 	readonly cache_layer: 'task';
 	readonly read_policy: string | null;
 	readonly sources: readonly string[];
+	readonly local_index: TaskPromptCacheLocalIndexContext;
+}
+
+export interface TaskPromptCacheLocalIndexContext {
+	readonly source: 'local_index';
+	readonly status: 'fresh' | 'missing' | 'stale' | 'unreadable';
+	readonly database_path: string;
+	readonly index_fresh: boolean;
+	readonly stale_paths: readonly string[];
+	readonly search_backend: string | null;
+	readonly search_fts5_available: boolean | null;
+	readonly refresh_hint: string | null;
 }
 
 export interface VolatilePromptCacheLayerContext {
@@ -459,13 +472,28 @@ function readStablePromptCacheLayer(projectRoot: string, mustflow: TomlTable | u
 	};
 }
 
-function readTaskPromptCacheLayer(mustflow: TomlTable | undefined): TaskPromptCacheLayerContext {
+function mapLocalIndexPromptContext(context: LocalIndexPromptContext): TaskPromptCacheLocalIndexContext {
+	return {
+		source: context.source,
+		status: context.status,
+		database_path: context.databasePath,
+		index_fresh: context.indexFresh,
+		stale_paths: context.stalePaths,
+		search_backend: context.searchBackend,
+		search_fts5_available: context.searchFts5Available,
+		refresh_hint: context.refreshHint,
+	};
+}
+
+async function readTaskPromptCacheLayer(projectRoot: string, mustflow: TomlTable | undefined): Promise<TaskPromptCacheLayerContext> {
 	const layer = readPromptCacheLayer(mustflow, 'task');
+	const localIndex = await readLocalIndexPromptContext(projectRoot);
 
 	return {
 		cache_layer: 'task',
 		read_policy: readOptionalString(layer, 'read_policy'),
 		sources: readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
+		local_index: mapLocalIndexPromptContext(localIndex),
 	};
 }
 
@@ -481,7 +509,7 @@ function readVolatilePromptCacheLayer(mustflow: TomlTable | undefined): Volatile
 	};
 }
 
-export function getPromptCacheProfileContext(projectRoot: string, profile: PromptCacheProfile): PromptCacheProfileContext {
+export async function getPromptCacheProfileContext(projectRoot: string, profile: PromptCacheProfile): Promise<PromptCacheProfileContext> {
 	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
 	const lockInspection = inspectManifestLock(projectRoot);
 	const output: PromptCacheProfileContext = {
@@ -498,7 +526,7 @@ export function getPromptCacheProfileContext(projectRoot: string, profile: Promp
 			stable_prefix: readStablePromptCacheLayer(projectRoot, mustflow),
 			...(profile === 'all'
 				? {
-						task_context: readTaskPromptCacheLayer(mustflow),
+						task_context: await readTaskPromptCacheLayer(projectRoot, mustflow),
 						volatile_suffix: readVolatilePromptCacheLayer(mustflow),
 				  }
 				: {}),
@@ -508,7 +536,7 @@ export function getPromptCacheProfileContext(projectRoot: string, profile: Promp
 	if (profile === 'task') {
 		return {
 			...output,
-			task_context: readTaskPromptCacheLayer(mustflow),
+			task_context: await readTaskPromptCacheLayer(projectRoot, mustflow),
 		};
 	}
 

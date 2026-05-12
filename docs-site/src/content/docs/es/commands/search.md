@@ -8,6 +8,8 @@ description: Busca documentos mustflow en el índice SQLite local.
 No crea ni modifica archivos. Si falta el índice, ejecuta primero `mf index`.
 Si algún archivo mustflow indexado cambió desde la indexación, el comando se detiene y pide reconstruir el índice. Esto evita que resultados de búsqueda obsoletos lleven a un agente por mal camino.
 
+La búsqueda usa el backend registrado por `mf index`. Cuando FTS5 está disponible, usa tablas de búsqueda de texto; si no, consulta los mismos metadatos derivados con un escaneo acotado de tablas. Ambos caminos también usan filas n-gram derivadas para que las consultas multilingües puedan coincidir aunque los espacios o la tokenización de SQLite no encajen exactamente.
+
 ## Alcance de búsqueda
 
 De forma predeterminada, el comando busca únicamente datos del flujo de trabajo mustflow:
@@ -56,12 +58,14 @@ La salida legible por máquinas usa estos campos:
 - `scope` (`string`): alcance de búsqueda. Uno de `workflow`, `source` o `all`.
 - `index_fresh` (`boolean`): si el índice coincide con el contenido actual de los archivos.
 - `stale_paths` (`string[]`): rutas que cambiaron después de la indexación. Vacío si el índice está actualizado.
+- `search_backend` (`string`): backend de búsqueda usado para esta consulta. Uno de `fts5` o `table_scan`.
+- `search_fts5_available` (`boolean`): si el índice se construyó cuando SQLite FTS5 estaba disponible.
 - `result_count` (`number`): número de resultados devueltos.
 - `results` (`object[]`): entradas de workflow coincidentes y, cuando se solicita, anchors de código fuente.
 
 Cada resultado puede incluir estos campos:
 
-- `results[].kind` (`string`): tipo de resultado. Uno de `document`, `skill`, `command_intent` o `source_anchor`.
+- `results[].kind` (`string`): tipo de resultado. Uno de `document`, `skill`, `skill_route`, `command_intent` o `source_anchor`.
 - `results[].path` (`string`): ruta del documento o archivo de skill.
 - `results[].name` (`string`): nombre del skill, nombre de la intención de comando o ID del anchor de código fuente.
 - `results[].title` (`string`): título del documento.

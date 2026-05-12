@@ -197,6 +197,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /dashboard\.commands\.heading":"명령 의도/);
 		assert.match(html, /dashboard\.commands\.manualOnly":"사용자 요청 필요/);
 		assert.match(html, /dashboard\.commands\.unavailable":"설정 안 됨/);
+		assert.match(html, /dashboard\.commands\.effectGraph":"명령 효과/);
+		assert.match(html, /dashboard\.commands\.effectGraphUnavailable":"명령 효과 정보를 사용할 수 없습니다/);
 		assert.match(html, /dashboard\.release\.overview":"개요/);
 		assert.match(html, /dashboard\.release\.versionSources":"버전 소스/);
 		assert.match(html, /dashboard\.release\.reason\.versionCheck":"npm에 더 새로운 mustflow 패키지 버전/);
@@ -232,6 +234,7 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /async function copyVerificationPlan\(commands\)/);
 		assert.match(html, /verification\.schedule\.batches/);
 		assert.match(html, /function renderCommandPanel\(\)/);
+		assert.match(html, /function appendCommandEffectGraph\(root, intent\)/);
 		assert.match(html, /function renderReleasePanel\(\)/);
 		assert.match(html, /function renderUpdatePanel\(\)/);
 		assert.match(html, /function renderRunsPanel\(\)/);
@@ -770,6 +773,8 @@ required_after = ["public_api_change"]
 		assert.equal(runGit(projectPath, ['config', 'user.name', 'mustflow test']).status, 0);
 		assert.equal(runGit(projectPath, ['add', '.']).status, 0);
 		assert.equal(runGit(projectPath, ['commit', '-m', 'baseline']).status, 0);
+		const index = runCli(projectPath, ['index', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
 
 		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
 		writeFileSync(path.join(projectPath, 'schemas', 'output.schema.json'), '{"type":"object"}\n');
@@ -810,6 +815,20 @@ required_after = ["public_api_change"]
 		assert.notEqual(schemaBatch.index, schemaFollowupBatch.index);
 		assert.ok(schemaBatch.locks.includes('schema_artifact'));
 		assert.ok(schemaFollowupBatch.locks.includes('schema_artifact'));
+		assert.equal(status.command_contract.effect_graph_status.status, 'fresh');
+		const schemaIntent = status.command_contract.intents.find((intent) => intent.name === 'verify_schema_contract');
+		assert.ok(schemaIntent);
+		assert.equal(schemaIntent.effect_graph.status, 'fresh');
+		assert.ok(
+			schemaIntent.effect_graph.write_locks.some(
+				(lock) => lock.lock === 'schema_artifact' && lock.paths.includes('dist/**'),
+			),
+		);
+		assert.ok(
+			schemaIntent.effect_graph.lock_conflicts.some(
+				(conflict) => conflict.intent === 'verify_schema_contract_followup' && conflict.lock === 'schema_artifact',
+			),
+		);
 		assert.ok(
 			status.verification.schedule.entries.some(
 				(entry) =>

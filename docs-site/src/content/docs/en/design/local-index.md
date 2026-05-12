@@ -46,14 +46,46 @@ This means the index is optional generated data, not a source document.
 - Titles and section headings
 - Frontmatter metadata
 - Document revisions and hashes
+- Indexed file fingerprints
 - Short content snippets
 - Command intent metadata
+- Command-effect graph views
 - Skill references
+- Path-surface classification metadata
 
 The current `mf index` command uses `metadata_and_snippets` mode. It stores at most 2048 bytes of
 content snippet per document, does not store full document bodies by default, and stores command
 intent names and descriptions as derived document terms so `mf search` can still find the relevant
 configuration file.
+
+The `indexed_files` table stores derived fingerprints for each indexed workflow file and optional
+source-anchor file: path, source scope, size, modified time, content hash, indexed time, index mode,
+and parser version. `mf index --incremental` may reuse an existing SQLite file only when the schema,
+parser version, source-scope settings, and file fingerprints remain compatible; otherwise it falls
+back to a full rebuild.
+
+`path_surfaces` and `path_surface_reasons` are derived from the built-in change classification
+rules. They store rule id, pattern shape, pattern flags, surface kind, category, public-surface flag, validation
+reasons, affected contracts, update policy, and drift checks. The TypeScript classification rules
+remain the canonical command-selection path; SQLite rows are only a rebuildable read model for
+`mf explain surface` and `mf verify --plan-only` explanations.
+
+The index records its selected search backend. If the bundled SQLite runtime supports FTS5, `mf index`
+writes derived FTS tables for token matching. If FTS5 is unavailable, `mf search` uses the same base
+metadata and snippet tables through a bounded table-scan fallback. Both paths keep the authority
+boundary unchanged: search ranking cannot turn source anchors or cache rows into workflow or command
+authority.
+
+Search metadata is also written to a `search_ngrams` table. These rows are short derived term
+fragments used as a multilingual fallback when spacing or SQLite tokenization is weak. They point
+back to documents, skills, skill routes, command intents, and source anchors; they do not store full
+document or source content and they do not change authority ordering.
+
+Command-effect rows from `.mustflow/config/commands.toml` are exposed through
+`command_write_locks` and `command_lock_conflicts` views. These views help
+read-only tools explain shared locks, exclusive effects, and recreated output
+paths. They remain derived cache data; `commands.toml` is still the only source
+that decides whether an intent is configured, runnable, or agent-allowed.
 
 Before searching, `mf search` compares stored content hashes with the current files and returns an
 error if the cache is stale. Last verification results and run analysis are reserved for future

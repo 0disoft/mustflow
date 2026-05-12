@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -61,6 +61,55 @@ function initProject(projectPath) {
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
+function appendCommandGraphFixture(projectPath) {
+	appendFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+		`
+[resources.graph_artifact]
+type = "path"
+paths = ["graph-output/**"]
+concurrency = "exclusive_writer"
+description = "Graph view test output."
+
+[intents.graph_writer_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Graph writer A."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["graph-output/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "graph-output/**", lock = "graph_artifact", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["graph_view_fixture"]
+
+[intents.graph_writer_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Graph writer B."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["graph-output/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "graph-output/**", lock = "graph_artifact", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["graph_view_fixture"]
+`,
+	);
+}
+
 test('prints a dry-run local index plan without writing sqlite', () => {
 	const projectPath = createTempProject();
 
@@ -71,14 +120,20 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '7');
+		assert.equal(output.schema_version, '12');
 		assert.equal(output.command, 'index');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
 		assert.equal(output.max_snippet_bytes_per_document, 2048);
+		assert.ok(['fts5', 'table_scan'].includes(output.search_backend));
+		assert.equal(typeof output.search_fts5_available, 'boolean');
 		assert.equal(output.dry_run, true);
 		assert.equal(output.wrote_files, false);
+		assert.equal(output.index_mode, 'full');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, null);
+		assert.ok(output.indexed_file_count >= output.document_count);
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.ok(output.document_count >= 7);
 		assert.ok(output.skill_count >= 4);
@@ -100,6 +155,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 
 	try {
 		initProject(projectPath);
+		appendCommandGraphFixture(projectPath);
 		const marker = 'TAIL_MARKER_SHOULD_NOT_BE_STORED_IN_FULL';
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'),
@@ -113,7 +169,10 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		const database = new SQL.Database(readFileSync(indexPath));
 		const metadata = Object.fromEntries(queryRows(database, 'SELECT key, value FROM metadata').map((row) => [row.key, row.value]));
 		const tableNames = queryRows(database, "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").map((row) => row.name);
+		const viewNames = queryRows(database, "SELECT name FROM sqlite_master WHERE type = 'view' ORDER BY name").map((row) => row.name);
 		const documentColumns = queryRows(database, 'PRAGMA table_info(documents)').map((row) => row.name);
+		const indexedFileColumns = queryRows(database, 'PRAGMA table_info(indexed_files)').map((row) => row.name);
+		const [agentsIndexedFile] = queryRows(database, 'SELECT * FROM indexed_files WHERE path = "AGENTS.md"');
 		const [projectContext] = queryRows(
 			database,
 			'SELECT content_snippet FROM documents WHERE path = ".mustflow/context/PROJECT.md"',
@@ -122,40 +181,86 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			database,
 			'SELECT term FROM document_terms WHERE document_path = ".mustflow/config/commands.toml" AND term = "mustflow_check"',
 		);
+		const commandNgrams = queryRows(
+			database,
+			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
+		).map((row) => row.gram);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '7');
+		assert.equal(output.schema_version, '12');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
 		assert.equal(output.max_snippet_bytes_per_document, 2048);
+		assert.ok(['fts5', 'table_scan'].includes(output.search_backend));
+		assert.equal(typeof output.search_fts5_available, 'boolean');
 		assert.equal(output.dry_run, false);
 		assert.equal(output.wrote_files, true);
+		assert.equal(output.index_mode, 'full');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, null);
+		assert.ok(output.indexed_file_count >= output.document_count);
 		assert.equal(output.source_index_enabled, false);
 		assert.equal(output.source_anchor_count, 0);
 		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.equal(header, 'SQLite format 3\0');
-		assert.equal(metadata.schema_version, '7');
+		assert.equal(metadata.schema_version, '12');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
-		assert.deepEqual(tableNames, [
+		assert.equal(metadata.search_backend, output.search_backend);
+		assert.equal(metadata.search_fts5_available, String(output.search_fts5_available));
+		assert.equal(metadata.parser_version, '1');
+		assert.match(metadata.source_scope_hash, /^sha256:/);
+		assert.equal(metadata.source_index_enabled, 'false');
+		assert.equal(metadata.index_mode, 'full');
+		for (const tableName of [
 			'command_effects',
 			'command_intents',
 			'document_terms',
 			'documents',
+			'indexed_files',
 			'metadata',
+			'path_surface_reasons',
+			'path_surfaces',
+			'search_ngrams',
 			'sections',
 			'skill_routes',
 			'skills',
 			'source_anchor_fingerprints',
 			'source_anchor_status',
 			'source_anchors',
-		]);
+		]) {
+			assert.ok(tableNames.includes(tableName), `${tableName} should exist`);
+		}
+		if (output.search_backend === 'fts5') {
+			for (const tableName of [
+				'search_documents_fts',
+				'search_skills_fts',
+				'search_skill_routes_fts',
+				'search_command_intents_fts',
+				'search_source_anchors_fts',
+			]) {
+				assert.ok(tableNames.includes(tableName), `${tableName} should exist`);
+			}
+		}
+		for (const viewName of ['command_lock_conflicts', 'command_write_locks']) {
+			assert.ok(viewNames.includes(viewName), `${viewName} should exist`);
+		}
 		assert.ok(documentColumns.includes('content_snippet'));
 		assert.equal(documentColumns.includes('content'), false);
+		assert.deepEqual(indexedFileColumns, [
+			'path',
+			'source_scope',
+			'size_bytes',
+			'mtime_ms',
+			'content_hash',
+			'indexed_at',
+			'index_mode',
+			'parser_version',
+		]);
 		assert.deepEqual(queryRows(database, 'PRAGMA table_info(source_anchors)').map((row) => row.name), [
 			'id',
 			'path',
@@ -208,6 +313,48 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'lock',
 			'concurrency',
 		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(search_ngrams)').map((row) => row.name), [
+			'target_kind',
+			'target_key',
+			'gram',
+			'source',
+		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(command_write_locks)').map((row) => row.name), [
+			'intent',
+			'lock',
+			'paths',
+			'modes',
+			'sources',
+			'concurrencies',
+			'effect_count',
+		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(command_lock_conflicts)').map((row) => row.name), [
+			'left_intent',
+			'right_intent',
+			'lock',
+			'left_paths',
+			'right_paths',
+			'left_modes',
+			'right_modes',
+			'left_concurrencies',
+			'right_concurrencies',
+		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(path_surfaces)').map((row) => row.name), [
+			'rule_id',
+			'pattern_kind',
+			'pattern',
+			'pattern_flags',
+			'surface_kind',
+			'category',
+			'is_public_surface',
+			'update_policy',
+		]);
+		assert.deepEqual(queryRows(database, 'PRAGMA table_info(path_surface_reasons)').map((row) => row.name), [
+			'rule_id',
+			'reason_kind',
+			'reason',
+			'ordinal',
+		]);
 		assert.deepEqual(queryRows(database, 'PRAGMA table_info(skill_routes)').map((row) => row.name), [
 			'skill_name',
 			'skill_path',
@@ -237,8 +384,64 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 					row.concurrency === 'exclusive',
 			),
 		);
+		assert.deepEqual(queryRows(database, 'SELECT * FROM command_write_locks WHERE intent = "repo_map"'), [
+			{
+				intent: 'repo_map',
+				lock: 'path:REPO_MAP.md',
+				paths: 'REPO_MAP.md',
+				modes: 'write',
+				sources: 'writes',
+				concurrencies: 'exclusive',
+				effect_count: 1,
+			},
+		]);
+		assert.ok(
+			queryRows(database, 'SELECT * FROM command_lock_conflicts WHERE lock = "graph_artifact"').some(
+				(row) =>
+					row.left_intent === 'graph_writer_a' &&
+					row.right_intent === 'graph_writer_b' &&
+					row.left_paths === 'graph-output/**' &&
+					row.right_paths === 'graph-output/**' &&
+					row.left_modes === 'delete_recreate' &&
+					row.right_modes === 'delete_recreate',
+			),
+		);
+		assert.deepEqual(queryRows(database, 'SELECT * FROM path_surfaces WHERE rule_id = "readme_page"'), [
+			{
+				rule_id: 'readme_page',
+				pattern_kind: 'regexp',
+				pattern: '^README\\.md$',
+				pattern_flags: 'u',
+				surface_kind: 'readme_page',
+				category: 'documentation',
+				is_public_surface: 1,
+				update_policy: 'update',
+			},
+		]);
+		assert.deepEqual(
+			queryRows(
+				database,
+				'SELECT reason FROM path_surface_reasons WHERE rule_id = "readme_page" AND reason_kind = "validation_reason" ORDER BY ordinal',
+			).map((row) => row.reason),
+			['docs_change', 'copy_change'],
+		);
+		assert.ok(
+			queryRows(
+				database,
+				'SELECT reason FROM path_surface_reasons WHERE rule_id = "workflow_root" AND reason_kind = "affected_contract"',
+			).some((row) => row.reason === 'command contract'),
+		);
 		assert.deepEqual(queryRows(database, 'SELECT id FROM source_anchors'), []);
 		assert.equal(commandTerm.term, 'mustflow_check');
+		assert.ok(commandNgrams.includes('mus'));
+		assert.ok(commandNgrams.includes('che'));
+		assert.equal(agentsIndexedFile.source_scope, 'workflow');
+		assert.equal(typeof agentsIndexedFile.size_bytes, 'number');
+		assert.equal(typeof agentsIndexedFile.mtime_ms, 'number');
+		assert.match(agentsIndexedFile.content_hash, /^sha256:/);
+		assert.match(agentsIndexedFile.indexed_at, /^\d{4}-\d{2}-\d{2}T/u);
+		assert.equal(agentsIndexedFile.index_mode, 'full');
+		assert.equal(agentsIndexedFile.parser_version, '1');
 		assert.ok(projectContext.content_snippet.length <= 2048);
 		assert.equal(projectContext.content_snippet.includes(marker), false);
 		assert.ok(output.indexed_paths.includes('AGENTS.md'));
@@ -246,6 +449,92 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.ok(output.indexed_paths.includes('.mustflow/context/PROJECT.md'));
 		assert.ok(output.indexed_paths.includes('.mustflow/config/commands.toml'));
 		assert.ok(output.indexed_paths.includes('.mustflow/skills/code-review/SKILL.md'));
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reuses a fresh sqlite local index in incremental mode', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const firstIndex = runCli(projectPath, ['index', '--json']);
+		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
+		const firstOutput = JSON.parse(firstIndex.stdout);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const firstBytes = readFileSync(indexPath).toString('base64');
+		const secondIndex = runCli(projectPath, ['index', '--incremental', '--json']);
+		const secondOutput = JSON.parse(secondIndex.stdout);
+		const secondBytes = readFileSync(indexPath).toString('base64');
+
+		assert.equal(firstOutput.index_mode, 'full');
+		assert.equal(firstOutput.reused_existing, false);
+		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
+		assert.equal(secondOutput.index_mode, 'incremental');
+		assert.equal(secondOutput.reused_existing, true);
+		assert.equal(secondOutput.rebuild_reason, null);
+		assert.equal(secondOutput.wrote_files, false);
+		assert.equal(secondOutput.indexed_file_count, firstOutput.indexed_file_count);
+		assert.equal(secondBytes, firstBytes);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('incremental mode rebuilds when indexed workflow files change', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const firstIndex = runCli(projectPath, ['index', '--json']);
+		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
+
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'context', 'INDEX.md'),
+			'# Context Index\n\nChanged incremental marker.\n',
+		);
+		writeFileSync(path.join(projectPath, '.mustflow', 'context', 'EXTRA.md'), '# Extra Context\n\nNew context file.\n');
+		rmSync(path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'), { force: true });
+
+		const secondIndex = runCli(projectPath, ['index', '--incremental', '--json']);
+		const output = JSON.parse(secondIndex.stdout);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJs();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [contextIndex] = queryRows(
+			database,
+			'SELECT content_snippet FROM documents WHERE path = ".mustflow/context/INDEX.md"',
+		);
+		const [extraContext] = queryRows(database, 'SELECT path FROM documents WHERE path = ".mustflow/context/EXTRA.md"');
+		const [deletedProjectContext] = queryRows(
+			database,
+			'SELECT path FROM documents WHERE path = ".mustflow/context/PROJECT.md"',
+		);
+		const [extraIndexedFile] = queryRows(
+			database,
+			'SELECT source_scope, index_mode, parser_version FROM indexed_files WHERE path = ".mustflow/context/EXTRA.md"',
+		);
+		const [deletedIndexedFile] = queryRows(
+			database,
+			'SELECT path FROM indexed_files WHERE path = ".mustflow/context/PROJECT.md"',
+		);
+
+		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
+		assert.equal(output.index_mode, 'incremental');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
+		assert.equal(output.wrote_files, true);
+		assert.match(contextIndex.content_snippet, /Changed incremental marker/u);
+		assert.equal(extraContext.path, '.mustflow/context/EXTRA.md');
+		assert.equal(deletedProjectContext, undefined);
+		assert.deepEqual(extraIndexedFile, {
+			source_scope: 'workflow',
+			index_mode: 'incremental',
+			parser_version: '1',
+		});
+		assert.equal(deletedIndexedFile, undefined);
 		database.close();
 	} finally {
 		removeTempProject(projectPath);
@@ -312,7 +601,7 @@ class SessionStore {
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '7');
+		assert.equal(output.schema_version, '12');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');
@@ -354,6 +643,119 @@ class SessionStore {
 	}
 });
 
+test('uses index config to bound source anchor scanning', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'kept'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'ignored'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'generated'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'index.toml'),
+			[
+				'[source_index]',
+				'enabled_by_default = true',
+				'include = ["src/**/*.ts"]',
+				'exclude = ["src/ignored/**", "**/*.generated.ts"]',
+				'max_file_bytes = 420',
+				'allowed_extensions = [".ts"]',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'kept', 'anchor.ts'),
+			`/**
+ * mf:anchor source.config.kept
+ * purpose: Keep this configured source anchor.
+ * search: configured source scan
+ * invariant: Configured source scans remain navigation-only.
+ */
+export const keptAnchor = true;
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'ignored', 'anchor.ts'),
+			`/**
+ * mf:anchor source.config.ignored
+ * purpose: Excluded by configured path.
+ * search: ignored source scan
+ * invariant: Excluded paths do not enter the local index.
+ */
+export const ignoredAnchor = true;
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'generated', 'client.ts'),
+			`/**
+ * mf:anchor source.config.generated
+ * purpose: Generated paths stay excluded from the local index.
+ * search: generated source scan
+ * invariant: Generated source anchors do not enter the local index.
+ */
+export const generatedAnchor = true;
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'too-large.ts'),
+			`/**
+ * mf:anchor source.config.too-large
+ * purpose: Oversized source files stay out of the local index.
+ * search: large source scan
+ * invariant: Maximum file size limits source scanning.
+ */
+export const tooLargeAnchor = true;
+${'x'.repeat(500)}
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'javascript.js'),
+			`/**
+ * mf:anchor source.config.javascript
+ * purpose: Disallowed extensions stay out of the local index.
+ * search: javascript source scan
+ * invariant: Allowed extensions bound source scanning.
+ */
+export const javascriptAnchor = true;
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'excluded.generated.ts'),
+			`/**
+ * mf:anchor source.config.generated-file
+ * purpose: Exclude glob patterns apply after include patterns.
+ * search: generated file source scan
+ * invariant: Exclude patterns can narrow include patterns.
+ */
+export const generatedFileAnchor = true;
+`,
+		);
+
+		const result = runCli(projectPath, ['index', '--json']);
+		const output = JSON.parse(result.stdout);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJs();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const anchorRows = queryRows(database, 'SELECT id, path, navigation_only, can_instruct_agent FROM source_anchors ORDER BY id');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.source_index_enabled, true);
+		assert.equal(output.source_anchor_count, 1);
+		assert.deepEqual(anchorRows, [
+			{
+				id: 'source.config.kept',
+				path: 'src/kept/anchor.ts',
+				navigation_only: 1,
+				can_instruct_agent: 0,
+			},
+		]);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('does not index invalid source anchors and leaves them to strict validation', async () => {
 	const projectPath = createTempProject();
 
@@ -369,6 +771,18 @@ test('does not index invalid source anchors and leaves them to strict validation
  * invariant: Strict validation reports the invalid format.
  */
 export const invalidAnchor = true;
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'secret-anchor.ts'),
+			`/**
+ * mf:anchor secrets.local-token
+ * purpose: This valid anchor id should still stay out of the source index.
+ * search: local token
+ * invariant: api_key = "sk-1234567890abcdef"
+ * risk: secrets
+ */
+export const secretAnchor = true;
 `,
 		);
 
@@ -390,6 +804,7 @@ export const invalidAnchor = true;
 		assert.equal(statusCount.count, 0);
 		assert.equal(checkResult.status, 1);
 		assert.ok(issueIds.has('mustflow.source_anchor.invalid_format'));
+		assert.ok(issueIds.has('mustflow.source_anchor.secret_like'));
 		database.close();
 	} finally {
 		removeTempProject(projectPath);
@@ -489,7 +904,7 @@ export function movedTarget() {
 `,
 		);
 
-		const secondIndex = runCli(projectPath, ['index', '--source', '--json']);
+		const secondIndex = runCli(projectPath, ['index', '--source', '--incremental', '--json']);
 		const output = JSON.parse(secondIndex.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJs();
@@ -502,6 +917,9 @@ export function movedTarget() {
 		);
 
 		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
+		assert.equal(output.index_mode, 'incremental');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(statuses['docs.helper'].status, 'changed');
 		assert.equal(statuses['auth.critical'].status, 'review');

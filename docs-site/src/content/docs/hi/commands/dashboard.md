@@ -3,9 +3,11 @@ title: mf dashboard
 description: स्थानीय mustflow डैशबोर्ड शुरू करता है।
 ---
 
-`mf dashboard` mustflow status, verification suggestions, command intents, सुरक्षित preferences और दस्तावेज़ समीक्षा के लिए स्थानीय browser dashboard शुरू करता है।
+`mf dashboard` mustflow status, verification suggestions, command intents, command-effect explanations, सुरक्षित preferences और दस्तावेज़ समीक्षा के लिए स्थानीय browser dashboard शुरू करता है।
 
-Status tab installation, manifest lock, template, बदली या missing tracked files, runnable commands, latest run और review वाले documents दिखाता है। Verification tab बदली हुई files पढ़कर copy किए जा सकने वाले `mf run ...` command intents suggest करता है, पर उन्हें run नहीं करता। Commands tab `.mustflow/config/commands.toml` पढ़कर runnable, user request required, not configured और blocked command intents दिखाता है। Settings tab `.mustflow/config/preferences.toml` edit करता है। Documents review tab `.mustflow/review/docs.toml` पढ़ता है और मौजूदा entries को approved, ignored या needs human review के रूप में mark कर सकता है। यह stage, commit, push, version bump या command intents run नहीं करता।
+Status tab installation, manifest lock, template, बदली या missing tracked files, runnable commands, latest run और review वाले documents दिखाता है। Verification tab बदली हुई files पढ़कर copy किए जा सकने वाले `mf run ...` command intents suggest करता है, पर उन्हें run नहीं करता। Commands tab `.mustflow/config/commands.toml` पढ़ता है; local index fresh हो तो SQLite command-effect graph से निकले shared locks और lock conflicts भी दिखाता है। `commands.toml` ही command authority रहता है और dashboard intents run नहीं करता। Settings tab `.mustflow/config/preferences.toml` edit करता है। Documents review tab `.mustflow/review/docs.toml` पढ़ता है और मौजूदा entries को approved, ignored या needs human review के रूप में mark कर सकता है। यह stage, commit, push, version bump या command intents run नहीं करता।
+
+Commands tab read-only है। यह हर command intent का status, lifecycle, run policy, stdin setting, timeout, working directory, write paths और declared blocking reason दिखाता है। `.mustflow/cache/mustflow.sqlite` मौजूद और fresh हो तो यह हर intent के derived write locks और conflict lock share करने वाले दूसरे intents भी दिखाता है। Index missing या stale हो तो stale graph details लौटाने के बजाय rebuild hint दिखाता है।
 
 Editable groups में Git defaults, commit message suggestions, reporting, verification selection, test authoring, refactoring hotspot thresholds and limits, code style, और version-impact preferences शामिल हैं।
 

@@ -200,6 +200,8 @@ export const koMessages = {
   "dashboard.commands.writes": "쓰기 경로",
   "dashboard.commands.reason": "이유",
   "dashboard.commands.agentAction": "에이전트 조치",
+  "dashboard.commands.effectGraph": "명령 효과",
+  "dashboard.commands.effectGraphUnavailable": "명령 효과 정보를 사용할 수 없습니다",
   "dashboard.release.reloaded": "릴리스 상태를 다시 불러왔습니다",
   "dashboard.release.copied": "명령을 복사했습니다",
   "dashboard.release.overview": "개요",
@@ -526,6 +528,7 @@ export const koMessages = {
     "mustflow 워크플로우를 SQLite 색인으로 생성합니다.",
   "index.help.option.dryRun": "색인 대상만 계산하고 파일을 쓰지 않습니다",
   "index.help.option.source": "소스 본문을 저장하지 않고 구조화된 소스 코드 앵커를 포함합니다",
+  "index.help.option.incremental": "호환되는 최신 로컬 색인이 있으면 다시 쓰지 않고 재사용합니다",
   "index.help.exit.ok":
     "색인 대상을 계산했고 선택적으로 SQLite 파일을 저장했습니다",
   "index.title": "mustflow 색인",

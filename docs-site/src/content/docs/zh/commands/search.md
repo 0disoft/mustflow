@@ -9,6 +9,8 @@ description: 在本地 SQLite 索引中搜索 mustflow 文档。
 如果任何已索引的 mustflow 文件在索引后发生变化，命令会停止并要求重建索引。
 这可以避免过期搜索结果误导代理。
 
+搜索会使用 `mf index` 记录的后端。可用 FTS5 时使用文本搜索表；不可用时，会对同一批派生元数据执行有界表扫描。两条路径都会使用派生 n-gram 行，让多语言查询在空格或 SQLite 分词方式不完全一致时也能匹配已索引术语。
+
 ## 搜索范围
 
 默认情况下，该命令只搜索 mustflow 工作流数据：
@@ -57,12 +59,14 @@ npx mf search mustflow_check --json
 - `scope` (`string`)：搜索范围，取值为 `workflow`、`source` 或 `all`。
 - `index_fresh` (`boolean`)：索引是否匹配当前文件内容。
 - `stale_paths` (`string[]`)：索引后发生变化的路径。若索引是最新的，则为空。
+- `search_backend` (`string`)：此查询使用的搜索后端，取值为 `fts5` 或 `table_scan`。
+- `search_fts5_available` (`boolean`)：索引构建时 SQLite FTS5 是否可用。
 - `result_count` (`number`)：返回结果数量。
 - `results` (`object[]`)：匹配的工作流条目，以及按需返回的源码 anchors。
 
 每个结果可包含这些字段：
 
-- `results[].kind` (`string`)：结果类型，取值为 `document`、`skill`、`command_intent` 或 `source_anchor`。
+- `results[].kind` (`string`)：结果类型，取值为 `document`、`skill`、`skill_route`、`command_intent` 或 `source_anchor`。
 - `results[].path` (`string`)：文档或 skill 文件路径。
 - `results[].name` (`string`)：skill 名称、command intent 名称或源码 anchor ID。
 - `results[].title` (`string`)：文档标题。

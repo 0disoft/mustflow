@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -17,10 +17,11 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
+function runCli(cwd, args, options = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
+		env: options.env ?? process.env,
 	});
 }
 
@@ -29,9 +30,10 @@ function initProject(projectPath) {
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
-function indexProject(projectPath, args = []) {
-	const result = runCli(projectPath, ['index', ...args, '--json']);
+function indexProject(projectPath, args = [], options = {}) {
+	const result = runCli(projectPath, ['index', ...args, '--json'], options);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+	return JSON.parse(result.stdout);
 }
 
 function writeSourceAnchor(projectPath) {
@@ -78,11 +80,13 @@ test('prints matching documents skills and command intents from the local index'
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '7');
+		assert.equal(output.schema_version, '12');
 		assert.equal(output.command, 'search');
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, true);
 		assert.deepEqual(output.stale_paths, []);
+		assert.ok(['fts5', 'table_scan'].includes(output.search_backend));
+		assert.equal(typeof output.search_fts5_available, 'boolean');
 		assert.equal(output.query, 'mustflow_check');
 		assert.ok(output.result_count > 0);
 		assert.ok(
@@ -143,6 +147,96 @@ test('searches command effect paths and locks from the local index', () => {
 		assert.deepEqual(repoMapIntent.effect_paths, ['REPO_MAP.md']);
 		assert.deepEqual(repoMapIntent.effect_locks, ['path:REPO_MAP.md']);
 		assert.deepEqual(repoMapIntent.effect_modes, ['write']);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('uses fts-backed token matching when the sqlite runtime supports it', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const indexOutput = indexProject(projectPath);
+
+		if (indexOutput.search_backend !== 'fts5') {
+			assert.equal(indexOutput.search_backend, 'table_scan');
+			return;
+		}
+
+		const result = runCli(projectPath, ['search', 'mustflow check', '--json']);
+		const output = JSON.parse(result.stdout);
+		const mustflowCheck = output.results.find((item) => item.kind === 'command_intent' && item.name === 'mustflow_check');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.search_backend, 'fts5');
+		assert.equal(output.search_fts5_available, true);
+		assert.ok(mustflowCheck);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('falls back to table scan search when fts is unavailable', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const env = { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' };
+		const indexOutput = indexProject(projectPath, [], { env });
+		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
+		const output = JSON.parse(result.stdout);
+		const mustflowCheck = output.results.find((item) => item.kind === 'command_intent' && item.name === 'mustflow_check');
+
+		assert.equal(indexOutput.search_backend, 'table_scan');
+		assert.equal(indexOutput.search_fts5_available, false);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.search_backend, 'table_scan');
+		assert.equal(output.search_fts5_available, false);
+		assert.ok(mustflowCheck);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('uses n-gram fallback for multilingual queries when fts is unavailable', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'),
+			[
+				'---',
+				'mustflow_doc: context.project',
+				'kind: mustflow-context',
+				'locale: ko',
+				'canonical: false',
+				'revision: 1',
+				'name: project',
+				'authority: contextual',
+				'lifecycle: user-editable',
+				'---',
+				'',
+				'# Project Context',
+				'',
+				'검증상태는 로컬 색인 설명과 분리해서 판단한다.',
+				'',
+			].join('\n'),
+		);
+		const env = { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' };
+		indexProject(projectPath, [], { env });
+
+		const result = runCli(projectPath, ['search', '검증 상태', '--json']);
+		const output = JSON.parse(result.stdout);
+		const projectContext = output.results.find(
+			(item) => item.kind === 'document' && item.path === '.mustflow/context/PROJECT.md',
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.search_backend, 'table_scan');
+		assert.ok(projectContext);
+		assert.match(projectContext.match, /검증상태/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -216,6 +310,54 @@ test('keeps workflow authority above source anchors in all-scope search results'
 		assert.equal(output.scope, 'all');
 		assert.notEqual(commandIndex, -1);
 		assert.notEqual(anchorIndex, -1);
+		assert.ok(commandIndex < anchorIndex);
+		assert.equal(output.results[commandIndex].authority_label, 'command_contract');
+		assert.equal(output.results[anchorIndex].authority_label, 'source_navigation_hint');
+		assert.equal(output.results[anchorIndex].navigation_only, true);
+		assert.equal(output.results[anchorIndex].can_instruct_agent, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps command authority above a stronger source-anchor text match', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commandsToml = readFileSync(commandsPath, 'utf8').replace(
+			/(\[intents\.mustflow_check\][\s\S]*?description = ")[^"]+(")/u,
+			'$1priorityprobe command contract term$2',
+		);
+		writeFileSync(commandsPath, commandsToml);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'priority.ts'),
+			`/**
+ * mf:anchor priorityprobe
+ * purpose: priorityprobe
+ * search: priorityprobe
+ * invariant: This source anchor must stay navigation-only.
+ */
+export const priorityprobe = true;
+`,
+		);
+		indexProject(projectPath, ['--source']);
+
+		const result = runCli(projectPath, ['search', 'priorityprobe', '--scope=all', '--limit', '50', '--json']);
+		const output = JSON.parse(result.stdout);
+		const commandIndex = output.results.findIndex(
+			(item) => item.kind === 'command_intent' && item.name === 'mustflow_check',
+		);
+		const anchorIndex = output.results.findIndex(
+			(item) => item.kind === 'source_anchor' && item.anchor_id === 'priorityprobe',
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.notEqual(commandIndex, -1);
+		assert.notEqual(anchorIndex, -1);
+		assert.ok(output.results[anchorIndex].score > output.results[commandIndex].score);
 		assert.ok(commandIndex < anchorIndex);
 		assert.equal(output.results[commandIndex].authority_label, 'command_contract');
 		assert.equal(output.results[anchorIndex].authority_label, 'source_navigation_hint');

@@ -55,7 +55,7 @@ function parseCacheProfile(args: string[]): { readonly profile: PromptCacheProfi
 	return { profile: value as PromptCacheProfile, error: null };
 }
 
-export function runContext(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runContext(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getContextHelp(lang));
 		return 0;
@@ -99,7 +99,7 @@ export function runContext(args: string[], reporter: Reporter, lang: CliLang = '
 
 	if (args.includes('--json')) {
 		if (cacheProfile.profile) {
-			reporter.stdout(JSON.stringify(getPromptCacheProfileContext(mustflowRoot, cacheProfile.profile), null, 2));
+			reporter.stdout(JSON.stringify(await getPromptCacheProfileContext(mustflowRoot, cacheProfile.profile), null, 2));
 			return 0;
 		}
 

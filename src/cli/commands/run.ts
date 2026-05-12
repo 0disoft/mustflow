@@ -5,14 +5,12 @@ import { runCheck } from './check.js';
 import { runClassify } from './classify.js';
 import { runContext } from './context.js';
 import { runDoctor } from './doctor.js';
-import { runExplain } from './explain.js';
 import { runHelp } from './help.js';
 import { runImpact } from './impact.js';
 import { runLineEndings } from './line-endings.js';
 import { runMap } from './map.js';
 import { runStatus } from './status.js';
 import { runUpdate } from './update.js';
-import { runVerify } from './verify.js';
 import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
 import { resolveSafeProjectCwd } from '../../core/command-cwd.js';
@@ -201,7 +199,7 @@ function createBufferedReporter(): BufferedReporter {
  * invariant: Only commands classified by command-classification can use this path.
  * risk: config, state
  */
-function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lang: CliLang): number | undefined {
+async function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lang: CliLang): Promise<number | undefined> {
 	const [command, ...commandArgs] = args;
 
 	if ((command === '--version' || command === '-v' || command === 'version') && commandArgs.length === 0) {
@@ -227,10 +225,6 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 
 	if (command === 'doctor') {
 		return runDoctor(commandArgs, reporter, lang);
-	}
-
-	if (command === 'explain') {
-		return runExplain(commandArgs, reporter, lang);
 	}
 
 	if (command === 'help') {
@@ -261,26 +255,22 @@ function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lan
 		return runVersionSources(commandArgs, reporter, lang);
 	}
 
-	if (command === 'verify') {
-		return runVerify(commandArgs, reporter, lang);
-	}
-
 	return undefined;
 }
 
-function withWorkingDirectory<T>(cwd: string, callback: () => T): T {
+async function withWorkingDirectory<T>(cwd: string, callback: () => T | Promise<T>): Promise<T> {
 	const previousCwd = process.cwd();
 
 	process.chdir(cwd);
 
 	try {
-		return callback();
+		return await callback();
 	} finally {
 		process.chdir(previousCwd);
 	}
 }
 
-function runBuiltinArgvInProcess(commandArgv: readonly string[], cwd: string, lang: CliLang): CommandResult | undefined {
+async function runBuiltinArgvInProcess(commandArgv: readonly string[], cwd: string, lang: CliLang): Promise<CommandResult | undefined> {
 	const [command = '', ...builtinArgs] = commandArgv;
 
 	if (!isMustflowBinName(command)) {
@@ -290,7 +280,7 @@ function runBuiltinArgvInProcess(commandArgv: readonly string[], cwd: string, la
 	const output = createBufferedReporter();
 
 	try {
-		const status = withWorkingDirectory(cwd, () => runKnownBuiltinCommand(builtinArgs, output.reporter, lang));
+		const status = await withWorkingDirectory(cwd, () => runKnownBuiltinCommand(builtinArgs, output.reporter, lang));
 
 		if (status === undefined) {
 			return undefined;
@@ -400,7 +390,7 @@ export function getRunHelp(lang: CliLang = 'en'): string {
  * invariant: Execution requires configured status, oneshot lifecycle, agent_allowed policy, and closed stdin.
  * risk: config, security, state
  */
-export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getRunHelp(lang));
 		return 0;
@@ -534,7 +524,7 @@ export function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	const argvCommand = commandArgv ? resolveArgvCommand(intent, commandArgv) : undefined;
 	const result =
 		commandArgv && isMustflowBuiltinIntent(intent)
-			? (runBuiltinArgvInProcess(commandArgv, cwd, lang) ??
+			? ((await runBuiltinArgvInProcess(commandArgv, cwd, lang)) ??
 				runArgvCommand(argvCommand, cwd, maxOutputBytes, env, timeoutSeconds))
 		: commandArgv
 			? runArgvCommand(argvCommand, cwd, maxOutputBytes, env, timeoutSeconds)

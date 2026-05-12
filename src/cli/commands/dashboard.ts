@@ -6,7 +6,13 @@ import path from 'node:path';
 
 import { openPathInFileManager, openUrlInBrowser } from '../lib/browser-open.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { renderDashboardHtml, type DashboardDocReviewSnapshot, type DashboardStatusSnapshot } from '../lib/dashboard-html.js';
+import {
+	renderDashboardHtml,
+	type DashboardCommandEffectGraph,
+	type DashboardCommandEffectGraphStatus,
+	type DashboardDocReviewSnapshot,
+	type DashboardStatusSnapshot,
+} from '../lib/dashboard-html.js';
 import {
 	DASHBOARD_VERIFICATION_MAX_FILE_MATCHES,
 	createDashboardVerificationSnapshot,
@@ -37,6 +43,7 @@ import {
 	type ReviewerKind,
 } from '../lib/doc-review-ledger.js';
 import { inspectManifestLock } from '../lib/manifest-lock.js';
+import { readLocalCommandEffectGraphs, type LocalCommandEffectGraph } from '../lib/local-index.js';
 import { readPackageMetadata } from '../lib/package-info.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
@@ -384,7 +391,70 @@ function readDashboardCommandContract(projectRoot: string): CommandContract | nu
 	}
 }
 
-function renderCommandContractResponse(contract: CommandContract | null): DashboardStatusSnapshot['command_contract'] {
+function toDashboardCommandEffectGraphStatus(graph: LocalCommandEffectGraph): DashboardCommandEffectGraphStatus {
+	return {
+		source: graph.source,
+		status: graph.status,
+		database_path: graph.databasePath,
+		index_fresh: graph.indexFresh,
+		stale_paths: graph.stalePaths,
+		refresh_hint: graph.refreshHint,
+	};
+}
+
+function toDashboardCommandEffectGraph(graph: LocalCommandEffectGraph): DashboardCommandEffectGraph {
+	return {
+		...toDashboardCommandEffectGraphStatus(graph),
+		write_locks: graph.writeLocks.map((writeLock) => ({
+			lock: writeLock.lock,
+			paths: writeLock.paths,
+			modes: writeLock.modes,
+			sources: writeLock.sources,
+			concurrencies: writeLock.concurrencies,
+			effect_count: writeLock.effectCount,
+		})),
+		lock_conflicts: graph.lockConflicts.map((conflict) => ({
+			intent: conflict.intent,
+			lock: conflict.lock,
+			paths: conflict.paths,
+			modes: conflict.modes,
+			concurrencies: conflict.concurrencies,
+			conflicting_paths: conflict.conflictingPaths,
+			conflicting_modes: conflict.conflictingModes,
+			conflicting_concurrencies: conflict.conflictingConcurrencies,
+		})),
+	};
+}
+
+async function readCommandEffectGraphMap(
+	projectRoot: string,
+	intentNames: readonly string[],
+): Promise<{
+	readonly status?: DashboardCommandEffectGraphStatus;
+	readonly graphs: ReadonlyMap<string, DashboardCommandEffectGraph>;
+}> {
+	if (intentNames.length === 0) {
+		return { graphs: new Map() };
+	}
+
+	const graphs = new Map<string, DashboardCommandEffectGraph>();
+	let status: DashboardCommandEffectGraphStatus | undefined;
+	const localGraphs = await readLocalCommandEffectGraphs(projectRoot, intentNames);
+
+	for (const [intentName, graph] of localGraphs) {
+		status ??= toDashboardCommandEffectGraphStatus(graph);
+		if (graph.status === 'fresh') {
+			graphs.set(intentName, toDashboardCommandEffectGraph(graph));
+		}
+	}
+
+	return { status, graphs };
+}
+
+async function renderCommandContractResponse(
+	projectRoot: string,
+	contract: CommandContract | null,
+): Promise<DashboardStatusSnapshot['command_contract']> {
 	if (!contract) {
 		return {
 			path: '.mustflow/config/commands.toml',
@@ -432,10 +502,19 @@ function renderCommandContractResponse(contract: CommandContract | null): Dashbo
 			];
 		});
 
+	const effectGraphs = await readCommandEffectGraphMap(
+		projectRoot,
+		intents.map((intent) => intent.name),
+	);
+
 	return {
 		path: '.mustflow/config/commands.toml',
 		exists: true,
-		intents,
+		effect_graph_status: effectGraphs.status,
+		intents: intents.map((intent) => {
+			const graph = effectGraphs.graphs.get(intent.name);
+			return graph ? { ...intent, effect_graph: graph } : intent;
+		}),
 	};
 }
 
@@ -603,13 +682,13 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 	}
 }
 
-function renderStatusResponse(projectRoot: string): DashboardStatusSnapshot {
+async function renderStatusResponse(projectRoot: string): Promise<DashboardStatusSnapshot> {
 	const context = getAgentContext(projectRoot);
 	const manifest = inspectManifestLock(projectRoot);
 	const lock = manifest.readResult.kind === 'present' ? manifest.readResult.lock : undefined;
 	const activeDocuments = listDocReviewEntries(projectRoot);
 	const rawCommandContract = readDashboardCommandContract(projectRoot);
-	const commandContract = renderCommandContractResponse(rawCommandContract);
+	const commandContract = await renderCommandContractResponse(projectRoot, rawCommandContract);
 	const gitChangedFiles = readGitChangedFiles(projectRoot);
 	const packageMetadata = readPackageMetadata();
 
@@ -681,7 +760,7 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 					renderDashboardHtml(
 						readDashboardPreferences(projectRoot),
 						token,
-						renderStatusResponse(projectRoot),
+						await renderStatusResponse(projectRoot),
 						renderDocReviewResponse(projectRoot, new URL('/api/docs/review', 'http://localhost')),
 					),
 				);
@@ -701,7 +780,7 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 				}
 
 				if (request.method === 'GET') {
-					sendJson(response, 200, renderStatusResponse(projectRoot));
+					sendJson(response, 200, await renderStatusResponse(projectRoot));
 					return;
 				}
 			}

@@ -5,9 +5,14 @@ description: Exécute les intentions de vérification configurées sélectionné
 
 `mf verify --reason <event>` lit `.mustflow/config/commands.toml`, trouve les intentions dont `required_after` contient la raison demandée, puis exécute seulement les intentions configurées, ponctuelles, autorisées pour les agents et avec stdin fermé.
 
+`mf verify --from-plan <path>` lit les raisons de vérification depuis un fichier JSON situé dans la racine mustflow. Il reconnaît `reason`, `reasons`, `validationReasons`, `summary.validationReasons` et `classification_summary.validationReasons`.
+
+`mf verify --plan-only --json` imprime le plan de vérification sans exécuter de commande. Quand un index local à jour existe, chaque entrée planifiée peut inclure `effectGraph` lu depuis `.mustflow/cache/mustflow.sqlite`, avec les verrous d'écriture et les conflits de verrous. Les exigences peuvent aussi inclure les métadonnées `surfaceReadModels`, qui expliquent quelle règle chemin-surface a correspondu aux fichiers modifiés. Si l'index est absent ou obsolète, la sortie affiche une suggestion de reconstruction sans modifier la sélection ni l'autorité d'exécution.
+
 ## Règles de sélection
 
 - La raison doit correspondre exactement à la chaîne `required_after`.
+- Les fichiers de plan doivent rester dans la racine mustflow et être du JSON.
 - Les intentions exécutables passent par la même voie sûre que `mf run <intent>`.
 - Les intentions inconnues, manuelles, longues, bloquées ou incomplètes ne sont pas devinées; elles sont signalées comme ignorées.
 - Si aucune intention ne correspond à la raison, le résultat est `blocked`.
@@ -17,6 +22,8 @@ description: Exécute les intentions de vérification configurées sélectionné
 ```sh
 npx mf verify --reason code_change
 npx mf verify --reason docs_change --json
+npx mf verify --reason docs_change --plan-only --json
+npx mf verify --from-plan verify-plan.json --json
 ```
 
 ## Champs JSON
@@ -30,10 +37,14 @@ La sortie lisible par machine utilise ces champs:
 - `schema_version` (`string`): version du format de rapport.
 - `command` (`string`): toujours `verify`.
 - `mustflow_root` (`string`): racine mustflow résolue.
-- `reason` (`string`): raison `required_after` demandée.
+- `reason` (`string`): raison `required_after` demandée, ou résumé séparé par des virgules quand un plan est utilisé.
+- `reasons` (`string[]`): raisons utilisées pour sélectionner les intentions.
+- `plan_source` (`string | null`): chemin du plan JSON quand `--from-plan` est utilisé.
 - `status` (`string`): `passed`, `partial`, `failed` ou `blocked`.
 - `summary` (`object`): nombres d'intentions trouvées, exécutées, réussies, échouées et ignorées.
 - `results` (`object[]`): résultat d'exécution ou d'ignorance par intention.
+
+Avec `--plan-only --json`, la sortie utilise le schéma de rapport de vérification des changements. Le champ `schedule.entries[].effectGraph`, s'il est présent, est une métadonnée d'index local en lecture seule pour expliquer les verrous et conflits. Le champ `requirements[].surfaceReadModels`, s'il est présent, est une métadonnée d'index local en lecture seule pour expliquer la règle chemin-surface derrière une raison de vérification.
 
 ## Codes de sortie
 

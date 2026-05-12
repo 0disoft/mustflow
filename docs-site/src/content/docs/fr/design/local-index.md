@@ -43,11 +43,16 @@ Cela signifie que l’index est une donnée générée optionnelle, pas un docum
 - Titres et titres de section
 - Métadonnées de frontmatter
 - Révisions et hashes de documents
+- Empreintes de fichiers indexés
 - Courts extraits de contenu
 - Métadonnées d’intentions de commande
 - Références de skills
 
 La commande actuelle `mf index` utilise le mode `metadata_and_snippets`. Elle stocke au plus 2048 octets d’extrait par document, ne stocke pas les corps complets des documents par défaut, et conserve les noms et descriptions d’intentions de commande comme termes dérivés pour que `mf search` puisse encore retrouver le fichier de configuration pertinent.
+
+La table `indexed_files` stocke des empreintes dérivées pour chaque fichier de workflow indexé et pour les fichiers d’ancres source optionnels : chemin, portée source, taille, heure de modification, hash de contenu, heure d’indexation, mode d’index et version du parser. `mf index --incremental` ne réutilise un fichier SQLite existant que lorsque le schéma, la version du parser, les réglages de portée source et les empreintes de fichiers restent compatibles ; sinon il revient à une reconstruction complète.
+
+Les métadonnées de recherche sont aussi écrites dans la table `search_ngrams`. Ces lignes sont de courts fragments de termes dérivés qui aident les recherches multilingues lorsque les espaces ou la tokenisation SQLite sont faibles. Elles pointent vers des documents, skills, routes de skill, intentions de commande et ancres source ; elles ne stockent pas de documents ou de code source complets et ne changent pas l’ordre d’autorité.
 
 Avant une recherche, `mf search` compare les hashes stockés avec les fichiers actuels et renvoie une erreur si le cache est obsolète. Les derniers résultats de vérification et l’analyse des exécutions sont réservés à de futures fonctionnalités.
 

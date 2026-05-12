@@ -43,11 +43,16 @@ local_index = "generated_optional"
 - Titles और section headings
 - Frontmatter metadata
 - Document revisions और hashes
+- Indexed file fingerprints
 - छोटे content snippets
 - Command intent metadata
 - Skill references
 
 मौजूदा `mf index` command `metadata_and_snippets` mode उपयोग करती है। यह हर document के लिए अधिकतम 2048 bytes का snippet रखती है, default रूप से पूरे document bodies store नहीं करती, और command intent names/descriptions को derived document terms की तरह रखती है ताकि `mf search` relevant config file ढूंढ सके।
+
+`indexed_files` table हर indexed workflow file और optional source-anchor file के लिए derived fingerprints रखती है: path, source scope, size, modified time, content hash, indexed time, index mode, और parser version। `mf index --incremental` existing SQLite file सिर्फ तब reuse कर सकता है जब schema, parser version, source-scope settings, और file fingerprints compatible रहें; नहीं तो यह full rebuild करता है।
+
+Search metadata `search_ngrams` table में भी लिखी जाती है। ये rows छोटे derived term fragments हैं, जो spaces या SQLite tokenization कमजोर होने पर multilingual search को सहारा देते हैं। वे documents, skills, skill routes, command intents, और source anchors की ओर point करते हैं; full documents या full source content store नहीं करते और authority ordering नहीं बदलते।
 
 Search से पहले `mf search` stored hashes की तुलना current files से करता है और cache stale होने पर error लौटाता है। Last verification results और run analysis future features के लिए reserved हैं।
 

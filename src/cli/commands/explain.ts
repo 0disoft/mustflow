@@ -17,17 +17,29 @@ import {
 import { explainPublicSurface, type PublicSurfaceDecision } from '../../core/public-surface-explanation.js';
 import { explainSourceAnchor, type SourceAnchorDecision } from '../../core/source-anchor-explanation.js';
 import { checkMustflowProject } from '../lib/validation.js';
+import {
+	readLocalCommandEffectGraph,
+	readLocalPathSurface,
+	type LocalCommandEffectGraph,
+	type LocalPathSurfaceReadModel,
+} from '../lib/local-index.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 
 type ExplainTopic = 'anchor' | 'asset-optimization' | 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
+type ExplainCommandDecision = CommandDecision & {
+	readonly effectGraph?: LocalCommandEffectGraph;
+};
+type ExplainSurfaceDecision = PublicSurfaceDecision & {
+	readonly readModel?: LocalPathSurfaceReadModel;
+};
 type ExplainDecision =
 	| AuthorityDecision
-	| CommandDecision
+	| ExplainCommandDecision
 	| RetentionDecision
 	| SkillRouteDecision
 	| SkillRouteAlignmentDecision
-	| PublicSurfaceDecision
+	| ExplainSurfaceDecision
 	| SourceAnchorDecision;
 
 interface ExplainOutput {
@@ -105,13 +117,16 @@ function getAnchorExplainOutput(projectRoot: string, anchorId: string): ExplainO
 	};
 }
 
-function getCommandExplainOutput(projectRoot: string, commandName: string): ExplainOutput {
+async function getCommandExplainOutput(projectRoot: string, commandName: string): Promise<ExplainOutput> {
+	const decision = explainCommandIntent(readCommandContract(projectRoot), commandName);
+	const effectGraph = decision.intent ? await readLocalCommandEffectGraph(projectRoot, commandName) : undefined;
+
 	return {
 		schema_version: EXPLAIN_SCHEMA_VERSION,
 		command: 'explain',
 		topic: 'command',
 		mustflow_root: projectRoot,
-		decision: explainCommandIntent(readCommandContract(projectRoot), commandName),
+		decision: effectGraph ? { ...decision, effectGraph } : decision,
 	};
 }
 
@@ -145,13 +160,16 @@ function getSkillExplainOutput(projectRoot: string, skillName: string): ExplainO
 	};
 }
 
-function getSurfaceExplainOutput(projectRoot: string, pathArg: string | undefined): ExplainOutput {
+async function getSurfaceExplainOutput(projectRoot: string, pathArg: string | undefined): Promise<ExplainOutput> {
+	const decision = explainPublicSurface(pathArg);
+	const readModel = await readLocalPathSurface(projectRoot, pathArg);
+
 	return {
 		schema_version: EXPLAIN_SCHEMA_VERSION,
 		command: 'explain',
 		topic: 'surface',
 		mustflow_root: projectRoot,
-		decision: explainPublicSurface(pathArg),
+		decision: { ...decision, readModel },
 	};
 }
 
@@ -230,6 +248,48 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		);
 	}
 
+	if ('effectGraph' in output.decision && output.decision.effectGraph) {
+		const graph = output.decision.effectGraph;
+		lines.push(
+			'',
+			'Command effect graph',
+			`- source: ${graph.source}`,
+			`- status: ${graph.status}`,
+			`- index_fresh: ${graph.indexFresh ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+		);
+
+		if (graph.refreshHint) {
+			lines.push(`- refresh_hint: ${graph.refreshHint}`);
+		}
+
+		if (graph.stalePaths.length > 0) {
+			lines.push(`- stale_paths: ${graph.stalePaths.join(', ')}`);
+		}
+
+		if (graph.writeLocks.length > 0) {
+			lines.push('- write_locks:');
+			for (const lock of graph.writeLocks) {
+				lines.push(
+					`  - ${lock.lock}`,
+					`    paths: ${lock.paths.join(', ') || t(lang, 'value.none')}`,
+					`    modes: ${lock.modes.join(', ') || t(lang, 'value.none')}`,
+					`    concurrencies: ${lock.concurrencies.join(', ') || t(lang, 'value.none')}`,
+				);
+			}
+		}
+
+		if (graph.lockConflicts.length > 0) {
+			lines.push('- lock_conflicts:');
+			for (const conflict of graph.lockConflicts) {
+				lines.push(
+					`  - ${conflict.intent} (${conflict.lock})`,
+					`    paths: ${conflict.paths.join(', ') || t(lang, 'value.none')}`,
+					`    conflicting_paths: ${conflict.conflictingPaths.join(', ') || t(lang, 'value.none')}`,
+				);
+			}
+		}
+	}
+
 	if ('retention' in output.decision) {
 		const retention = output.decision.retention;
 		lines.push(
@@ -303,6 +363,32 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 			`- ${t(lang, 'classify.label.updatePolicy')}: ${surface.updatePolicy}`,
 			`- ${t(lang, 'classify.label.driftChecks')}: ${surface.driftChecks.join(', ') || t(lang, 'value.none')}`,
 		);
+
+		const readModel = output.decision.readModel;
+		if (readModel) {
+			lines.push(
+				'',
+				'Local index path-surface model',
+				`- status: ${readModel.status}`,
+				`- index_fresh: ${readModel.indexFresh ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			);
+
+			if (readModel.refreshHint) {
+				lines.push(`- refresh_hint: ${readModel.refreshHint}`);
+			}
+
+			if (readModel.stalePaths.length > 0) {
+				lines.push(`- stale_paths: ${readModel.stalePaths.join(', ')}`);
+			}
+
+			if (readModel.match) {
+				lines.push(
+					`- rule_id: ${readModel.match.ruleId}`,
+					`- pattern: ${readModel.match.pattern}`,
+					`- change_kinds: ${readModel.match.changeKinds.join(', ') || t(lang, 'value.none')}`,
+				);
+			}
+		}
 	}
 
 	if ('anchor' in output.decision) {
@@ -329,7 +415,7 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 	return lines.join('\n');
 }
 
-export function runExplain(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runExplain(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getExplainHelp(lang));
 		return 0;
@@ -474,7 +560,7 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 			output = getAuthorityExplainOutput(projectRoot, targetArg);
 			break;
 		case 'command':
-			output = getCommandExplainOutput(projectRoot, targetArg);
+			output = await getCommandExplainOutput(projectRoot, targetArg);
 			break;
 		case 'retention':
 			output = getRetentionExplainOutput(projectRoot);
@@ -483,7 +569,7 @@ export function runExplain(args: string[], reporter: Reporter, lang: CliLang = '
 			output = getSkillExplainOutput(projectRoot, targetArg);
 			break;
 		case 'surface':
-			output = getSurfaceExplainOutput(projectRoot, targetArg);
+			output = await getSurfaceExplainOutput(projectRoot, targetArg);
 			break;
 		case 'skills':
 			output = getSkillsExplainOutput(projectRoot);

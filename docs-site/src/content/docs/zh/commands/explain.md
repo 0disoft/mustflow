@@ -12,12 +12,15 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 `mf explain anchor <anchor_id>` 解释结构化源码锚点。源码锚点只是导航坐标：它们可以帮助代理找到代码，但不能定义工作流规则、命令权限或验证权威。
 
 `mf explain command <intent>` 解释 `.mustflow/config/commands.toml` 中的命令意图是否可通过 `mf run` 运行、为什么允许或阻止，以及运行后是否算作 mustflow 验证。
+如果存在最新的本地索引，它还会读取派生的命令效果图，显示写入锁和锁冲突，但不会改变命令权限。
 
 `mf explain retention` 解释 `.mustflow/config/mustflow.toml` 中的有效保留策略，包括原始事件存储、有界运行回执和上下文限制。
 
 `mf explain skill <skill_id>` 说明 `.mustflow/skills/INDEX.md` 中的一条技能路由，包括触发条件、必需输入、编辑范围、风险、验证意图和预期输出。目标可以是技能文件夹名、完整 `metadata.skill_id`、`mustflow_doc` 或技能路径。
 
 `mf explain skills` 解释 `mf doctor --strict` 使用的严格技能索引与技能正文对齐摘要。它报告 `.mustflow/skills/INDEX.md` 中的每条路由是否指向技能正文，以及每个技能正文是否列在索引中。
+
+`mf explain surface [path]` 解释仓库相对路径如何映射到变更分类使用的公开表面契约。存在最新本地索引时，它还会显示匹配的派生路径-表面规则。索引缺失或过期时只显示重建提示，不改变分类或命令选择。
 
 ## 输出
 
@@ -32,9 +35,12 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 - `Expected frontmatter`：路径被识别时所需的 `mustflow_doc`、`authority` 和 `lifecycle` 值。
 - `Authority boundary`：该权威范围可以定义什么，以及必须交给更高权威文件、当前代码或 `commands.toml` 的内容。
 - `Command intent`：使用 `command` 主题时的命令契约元数据。
+- `Command effect graph`：使用 `command` 主题时，从最新本地索引读取的写入锁和锁冲突。如果索引缺失或过期，输出只显示重建提示，不改变命令决策。
 - `Retention policy`：使用 `retention` 主题时的有效保留设置。
 - `Skill route`：使用 `skill` 主题时的触发条件、范围、风险、验证和预期输出。
 - `Skill routes`：使用 `skills` 主题时的严格技能索引/正文对齐状态。
+- `Public surface`：使用 `surface` 主题时的表面类型、类别、验证原因、受影响契约、更新策略和漂移检查。
+- `Path-surface read model`：使用 `surface` 主题且 `.mustflow/cache/mustflow.sqlite` 可用时，从最新本地索引读取的规则标识、模式和派生表面元数据。
 
 ## 示例
 
@@ -53,6 +59,8 @@ npx mf explain skill code-review
 npx mf explain skill mustflow.core.code-review --json
 npx mf explain skills
 npx mf explain skills --json
+npx mf explain surface README.md
+npx mf explain surface templates/default/locales/zh/AGENTS.md --json
 npx mf explain authority .mustflow/skills/INDEX.md --json
 ```
 
@@ -68,7 +76,7 @@ npx mf explain authority AGENTS.md --json
 - `command` (`string`)：始终为 `explain`。
 - `topic` (`string`)：`anchor`、`asset-optimization`、`authority`、`command`、`retention`、`skill`、`skills` 或 `surface`。
 - `mustflow_root` (`string`)：当前 mustflow 根目录。
-- `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。对于 `authority`，还包括 `boundary.role`、`boundary.canDefine` 和 `boundary.cannotDefine`。
+- `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。对于 `authority`，还包括 `boundary.role`、`boundary.canDefine` 和 `boundary.cannotDefine`。对于 `command`，当命令意图已声明时，`decision.effectGraph` 包含本地索引中的命令效果图状态、写入锁、冲突、过期路径和重建提示。对于 `surface`，可用时 `decision.readModel` 包含只读本地索引的路径-表面状态和匹配规则元数据。
 
 ## 帮助和退出码
 

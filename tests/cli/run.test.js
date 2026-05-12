@@ -252,7 +252,7 @@ destructive = false
 
 		process.chdir(projectPath);
 
-		const status = runRun(
+		const status = await runRun(
 			['self_check', '--json'],
 			{
 				stdout(message) {

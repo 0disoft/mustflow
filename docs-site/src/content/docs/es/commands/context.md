@@ -31,10 +31,17 @@ Este comando no modifica archivos. No reemplaza la lectura de los documentos rea
 
 No incluye colas de salida estándar ni de error estándar. Si un agente necesita la salida del comando, debe leer explícitamente el archivo de recibo.
 
+## Perfiles de caché de prompt
+
+Use `--cache-profile stable|task|volatile|all` junto con `--json` cuando un host necesite capas de prompt aptas para caché en lugar del informe completo.
+
+El perfil `task` incluye `task_context.local_index`, un estado de solo lectura del índice local. `status` es `fresh`, `missing`, `stale` o `unreadable`; cuando el índice no se puede reutilizar, `refresh_hint` indica que se debe ejecutar `mf index`.
+
 ## Ejemplo
 
 ```sh
 npx mf context --json
+npx mf context --json --cache-profile task
 ```
 
 ## Campos JSON

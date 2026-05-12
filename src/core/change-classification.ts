@@ -35,10 +35,19 @@ export interface ChangeClassificationReport {
 	readonly summary: ChangeClassificationSummary;
 }
 
-interface ChangeClassificationRule {
-	readonly match: RegExp;
+export type ChangeClassificationRulePatternKind = 'regexp';
+
+export interface ChangeClassificationRuleDescriptor {
+	readonly id: string;
+	readonly patternKind: ChangeClassificationRulePatternKind;
+	readonly pattern: string;
+	readonly patternFlags: string;
 	readonly changeKinds: readonly string[];
 	readonly surface: PublicSurfaceContract;
+}
+
+interface ChangeClassificationRule extends ChangeClassificationRuleDescriptor {
+	readonly match: RegExp;
 }
 
 function surface(
@@ -63,11 +72,29 @@ function surface(
 
 const UNKNOWN_SURFACE = surface('unclassified_path', 'unknown', false, [], [], 'not_applicable', []);
 
+function rule(
+	id: string,
+	match: RegExp,
+	changeKinds: readonly string[],
+	surfaceContract: PublicSurfaceContract,
+): ChangeClassificationRule {
+	return {
+		id,
+		patternKind: 'regexp',
+		pattern: match.source,
+		patternFlags: match.flags,
+		match,
+		changeKinds,
+		surface: surfaceContract,
+	};
+}
+
 const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
-	{
-		match: /^README\.md$/u,
-		changeKinds: ['documentation'],
-		surface: surface(
+	rule(
+		'readme_page',
+		/^README\.md$/u,
+		['documentation'],
+		surface(
 			'readme_page',
 			'documentation',
 			true,
@@ -76,11 +103,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['link targets', 'command examples', 'package metadata references'],
 		),
-	},
-	{
-		match: /^docs-site\/src\/content\/docs\/(?!en\/)[^/]+\//u,
-		changeKinds: ['documentation', 'translation'],
-		surface: surface(
+	),
+	rule(
+		'docs_site_translation',
+		/^docs-site\/src\/content\/docs\/(?!en\/)[^/]+\//u,
+		['documentation', 'translation'],
+		surface(
 			'docs_site_translation',
 			'documentation',
 			true,
@@ -89,11 +117,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update_or_mark_stale',
 			['source page parity', 'navigation links', 'localized examples'],
 		),
-	},
-	{
-		match: /^docs-site\/src\/content\/docs\//u,
-		changeKinds: ['documentation'],
-		surface: surface(
+	),
+	rule(
+		'docs_site_page',
+		/^docs-site\/src\/content\/docs\//u,
+		['documentation'],
+		surface(
 			'docs_site_page',
 			'documentation',
 			true,
@@ -102,11 +131,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['navigation links', 'localized copies', 'command examples'],
 		),
-	},
-	{
-		match: /^templates\/[^/]+\/locales\/[^/]+\//u,
-		changeKinds: ['installed_template', 'translation'],
-		surface: surface(
+	),
+	rule(
+		'installed_template_translation',
+		/^templates\/[^/]+\/locales\/[^/]+\//u,
+		['installed_template', 'translation'],
+		surface(
 			'installed_template_translation',
 			'installed-template',
 			true,
@@ -115,11 +145,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update_or_mark_stale',
 			['template i18n metadata', 'localized frontmatter', 'source revision'],
 		),
-	},
-	{
-		match: /^templates\/[^/]+\//u,
-		changeKinds: ['installed_template'],
-		surface: surface(
+	),
+	rule(
+		'installed_template',
+		/^templates\/[^/]+\//u,
+		['installed_template'],
+		surface(
 			'installed_template',
 			'installed-template',
 			true,
@@ -128,11 +159,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['template manifest', 'package inventory', 'localized copies'],
 		),
-	},
-	{
-		match: /^(AGENTS\.md|\.mustflow\/(?:docs|context|skills|config)\/)/u,
-		changeKinds: ['workflow'],
-		surface: surface(
+	),
+	rule(
+		'workflow_root',
+		/^(AGENTS\.md|\.mustflow\/(?:docs|context|skills|config)\/)/u,
+		['workflow'],
+		surface(
 			'workflow_root',
 			'workflow',
 			true,
@@ -141,11 +173,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['strict workflow validation', 'installed template parity', 'skill route alignment'],
 		),
-	},
-	{
-		match: /^examples\//u,
-		changeKinds: ['example'],
-		surface: surface(
+	),
+	rule(
+		'example',
+		/^examples\//u,
+		['example'],
+		surface(
 			'example',
 			'example',
 			true,
@@ -154,11 +187,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['example commands', 'linked docs', 'public behavior claims'],
 		),
-	},
-	{
-		match: /^schemas\//u,
-		changeKinds: ['schema'],
-		surface: surface(
+	),
+	rule(
+		'schema_contract',
+		/^schemas\//u,
+		['schema'],
+		surface(
 			'schema_contract',
 			'contract',
 			true,
@@ -167,11 +201,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['schema tests', 'documented JSON fields', 'package inventory'],
 		),
-	},
-	{
-		match: /^package\.json$/u,
-		changeKinds: ['package_metadata'],
-		surface: surface(
+	),
+	rule(
+		'package_metadata',
+		/^package\.json$/u,
+		['package_metadata'],
+		surface(
 			'package_metadata',
 			'release',
 			true,
@@ -180,11 +215,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'update',
 			['package metadata tests', 'version source discovery', 'published file inventory'],
 		),
-	},
-	{
-		match: /^tests\/fixtures\//u,
-		changeKinds: ['test_fixture'],
-		surface: surface(
+	),
+	rule(
+		'test_fixture',
+		/^tests\/fixtures\//u,
+		['test_fixture'],
+		surface(
 			'test_fixture',
 			'test',
 			false,
@@ -193,11 +229,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'not_applicable',
 			['fixture safety', 'test route coverage'],
 		),
-	},
-	{
-		match: /^tests\//u,
-		changeKinds: ['test'],
-		surface: surface(
+	),
+	rule(
+		'test_contract',
+		/^tests\//u,
+		['test'],
+		surface(
 			'test_contract',
 			'test',
 			false,
@@ -206,11 +243,12 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'not_applicable',
 			['related test selection'],
 		),
-	},
-	{
-		match: /^(src|scripts)\//u,
-		changeKinds: ['implementation'],
-		surface: surface(
+	),
+	rule(
+		'implementation',
+		/^(src|scripts)\//u,
+		['implementation'],
+		surface(
 			'implementation',
 			'code',
 			false,
@@ -219,7 +257,7 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			'not_applicable',
 			['related tests', 'build output'],
 		),
-	},
+	),
 ];
 
 function uniqueSorted(values: Iterable<string>): string[] {
@@ -255,6 +293,17 @@ export function classifyChangePath(relativePath: string): ChangeClassification {
 		changeKinds: rule?.changeKinds ?? ['unknown'],
 		surface: rule?.surface ?? UNKNOWN_SURFACE,
 	};
+}
+
+export function listChangeClassificationRuleDescriptors(): readonly ChangeClassificationRuleDescriptor[] {
+	return CHANGE_CLASSIFICATION_RULES.map((classificationRule) => ({
+		id: classificationRule.id,
+		patternKind: classificationRule.patternKind,
+		pattern: classificationRule.pattern,
+		patternFlags: classificationRule.patternFlags,
+		changeKinds: classificationRule.changeKinds,
+		surface: classificationRule.surface,
+	}));
 }
 
 export function createChangeClassificationReport(

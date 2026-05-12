@@ -155,10 +155,54 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.task_context.cache_layer, 'task');
 		assert.equal(context.task_context.read_policy, 'task_relevant_only');
 		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
+		assert.equal(context.task_context.local_index.source, 'local_index');
+		assert.equal(context.task_context.local_index.status, 'missing');
+		assert.equal(context.task_context.local_index.index_fresh, false);
+		assert.deepEqual(context.task_context.local_index.stale_paths, []);
+		assert.equal(context.task_context.local_index.search_backend, null);
+		assert.equal(context.task_context.local_index.search_fts5_available, null);
+		assert.match(context.task_context.local_index.refresh_hint, /mf index/u);
 		assert.equal(context.volatile_suffix.cache_layer, 'volatile');
 		assert.equal(context.volatile_suffix.never_place_before_stable_prefix, true);
 		assert.equal(context.volatile_suffix.include_absolute_root, false);
 		assert.equal(context.volatile_suffix.include_latest_run, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints prompt-cache task local-index status when the index is fresh or stale', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const index = runCli(projectPath, ['index', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		const freshResult = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const freshContext = JSON.parse(freshResult.stdout);
+
+		assert.equal(freshResult.status, 0, freshResult.stderr || freshResult.stdout);
+		assert.equal(freshContext.task_context.local_index.status, 'fresh');
+		assert.equal(freshContext.task_context.local_index.index_fresh, true);
+		assert.deepEqual(freshContext.task_context.local_index.stale_paths, []);
+		assert.match(freshContext.task_context.local_index.database_path, /\.mustflow[\\/]+cache[\\/]+mustflow\.sqlite$/u);
+		assert.ok(['fts5', 'table_scan'].includes(freshContext.task_context.local_index.search_backend));
+		assert.equal(typeof freshContext.task_context.local_index.search_fts5_available, 'boolean');
+		assert.equal(freshContext.task_context.local_index.refresh_hint, null);
+
+		const agentsPath = path.join(projectPath, 'AGENTS.md');
+		writeFileSync(agentsPath, `${readFileSync(agentsPath, 'utf8')}\n<!-- context stale probe -->\n`);
+
+		const staleResult = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const staleContext = JSON.parse(staleResult.stdout);
+
+		assert.equal(staleResult.status, 0, staleResult.stderr || staleResult.stdout);
+		assert.equal(staleContext.task_context.local_index.status, 'stale');
+		assert.equal(staleContext.task_context.local_index.index_fresh, false);
+		assert.ok(staleContext.task_context.local_index.stale_paths.includes('AGENTS.md'));
+		assert.match(staleContext.task_context.local_index.refresh_hint, /mf index/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

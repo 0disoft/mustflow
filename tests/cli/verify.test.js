@@ -183,9 +183,11 @@ required_after = ["custom_verify"]
 `,
 		);
 
+		const indexResult = runCli(projectPath, ['index', '--json']);
 		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.schedule.runner, 'serial_mf_run_receipts');
 		assert.deepEqual(
@@ -196,6 +198,20 @@ required_after = ["custom_verify"]
 		assert.equal(report.schedule.entries[0].locks[0], 'dist_build_output');
 		assert.equal(report.schedule.entries[0].effects[0].mode, 'delete_recreate');
 		assert.equal(report.schedule.entries[0].conflicts[0].conflictsWith, 'verify_build_b');
+		assert.equal(report.schedule.entries[0].effectGraph.status, 'fresh');
+		assert.equal(report.schedule.entries[0].effectGraph.indexFresh, true);
+		assert.equal(
+			report.schedule.entries[0].effectGraph.writeLocks.some(
+				(lock) => lock.lock === 'dist_build_output' && lock.paths.includes('dist/**'),
+			),
+			true,
+		);
+		assert.equal(
+			report.schedule.entries[0].effectGraph.lockConflicts.some(
+				(conflict) => conflict.intent === 'verify_build_b' && conflict.lock === 'dist_build_output',
+			),
+			true,
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -328,9 +344,11 @@ required_after = ["docs_change"]
 			),
 		);
 
+		const indexResult = runCli(projectPath, ['index', '--json']);
 		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.deepEqual(report.files, ['README.md']);
 		assert.deepEqual(report.requirements[0].files, ['README.md']);
@@ -338,6 +356,12 @@ required_after = ["docs_change"]
 		assert.deepEqual(report.requirements[0].affectedContracts, ['public documentation']);
 		assert.deepEqual(report.requirements[0].driftChecks, ['command examples']);
 		assert.deepEqual(report.requirements[0].updatePolicies, ['update']);
+		assert.equal(report.requirements[0].surfaceReadModels[0].status, 'fresh');
+		assert.equal(report.requirements[0].surfaceReadModels[0].match.ruleId, 'readme_page');
+		assert.deepEqual(report.requirements[0].surfaceReadModels[0].match.surface.validationReasons, [
+			'docs_change',
+			'copy_change',
+		]);
 		assert.equal(
 			report.candidates.some((candidate) => candidate.intent === 'verify_docs_plan' && candidate.status === 'runnable'),
 			true,

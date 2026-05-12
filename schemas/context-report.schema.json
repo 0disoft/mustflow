@@ -306,14 +306,42 @@
     "taskContextLayer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["cache_layer", "read_policy", "sources"],
+      "required": ["cache_layer", "read_policy", "sources", "local_index"],
       "properties": {
         "cache_layer": { "const": "task" },
         "read_policy": { "type": ["string", "null"] },
         "sources": {
           "type": "array",
           "items": { "type": "string" }
-        }
+        },
+        "local_index": { "$ref": "#/$defs/promptCacheLocalIndex" }
+      }
+    },
+    "promptCacheLocalIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "status",
+        "database_path",
+        "index_fresh",
+        "stale_paths",
+        "search_backend",
+        "search_fts5_available",
+        "refresh_hint"
+      ],
+      "properties": {
+        "source": { "const": "local_index" },
+        "status": { "enum": ["fresh", "missing", "stale", "unreadable"] },
+        "database_path": { "type": "string" },
+        "index_fresh": { "type": "boolean" },
+        "stale_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "search_backend": { "type": ["string", "null"], "enum": ["fts5", "table_scan", null] },
+        "search_fts5_available": { "type": ["boolean", "null"] },
+        "refresh_hint": { "type": ["string", "null"] }
       }
     },
     "volatileSuffixLayer": {

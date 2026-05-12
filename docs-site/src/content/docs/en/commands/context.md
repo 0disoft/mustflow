@@ -37,7 +37,7 @@ Use `--cache-profile stable|task|volatile|all` with `--json` when a host needs c
 
 The stable profile reports stable instruction paths, existence flags, content hashes, and a `stable_prefix.cache_key`. It deliberately omits the absolute mustflow root, latest run receipt, timestamps, changed files, command output tails, and the current user task.
 
-The task profile reports task-selective sources such as the context index, repository map, matching skill, and relevant source files. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
+The task profile reports task-selective sources such as the context index, repository map, matching skill, and relevant source files. It also reports the local-index status so a host can reuse fresh task metadata or show a targeted `mf index` refresh hint when the index is missing, stale, or unreadable. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
 
 ## Example
 
@@ -75,6 +75,7 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `stable_prefix.documents[]` (`object[]`): Stable document paths, existence flags, and content hashes.
 - `stable_prefix.volatile_excluded` (`string[]`): Volatile sources that must not appear before the stable prefix.
 - `task_context.sources` (`string[]`): Task-selective context sources.
+- `task_context.local_index` (`object`): Read-only local-index status for task context. `status` is `fresh`, `missing`, `stale`, or `unreadable`; stale or unavailable states include a `refresh_hint` for `mf index`.
 - `volatile_suffix.sources` (`string[]`): Volatile sources that belong after the stable prefix.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.
 

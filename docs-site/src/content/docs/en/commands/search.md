@@ -10,6 +10,12 @@ If any indexed mustflow file has changed since indexing, the command stops and a
 index. The stale-index error includes the copyable refresh command `mf index` so
 agents can report the next safe command without trusting old rows.
 
+Search uses the backend recorded by `mf index`. Fresh indexes use FTS5 when the
+bundled SQLite runtime supports it, and otherwise fall back to bounded table
+scanning over the same derived metadata. Both backends also use derived n-gram
+rows so multilingual queries can match indexed terms even when spaces or SQLite
+tokenization do not line up exactly.
+
 ## Search Scope
 
 By default, the command searches only mustflow workflow data:
@@ -52,7 +58,7 @@ npx mf search mustflow_check --json
 
 Machine-readable output uses these fields:
 
-- `schema_version` (`number`): Output format version.
+- `schema_version` (`string`): Output format version.
 - `command` (`string`): Always `search`.
 - `ok` (`boolean`): Whether search succeeded.
 - `mustflow_root` (`string`): Current mustflow root.
@@ -62,6 +68,8 @@ Machine-readable output uses these fields:
 - `scope` (`string`): Search scope. One of `workflow`, `source`, or `all`.
 - `index_fresh` (`boolean`): Whether the index matches current file contents.
 - `stale_paths` (`string[]`): Paths changed after indexing. Empty if the index is up to date.
+- `search_backend` (`string`): Search backend used for this query. One of `fts5` or `table_scan`.
+- `search_fts5_available` (`boolean`): Whether the index was built when SQLite FTS5 support was available.
 - `result_count` (`number`): Number of returned results.
 - `results` (`object[]`): Matching workflow entries and, when requested, source anchors.
 

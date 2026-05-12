@@ -37,7 +37,7 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 
 `stable` 프로필은 안정적인 지시문 경로, 파일 존재 여부, 내용 해시, `stable_prefix.cache_key`만 제공합니다. 절대 mustflow 루트 경로, 마지막 실행 기록, 시각 정보, 변경 파일 목록, 명령 출력 일부, 현재 사용자 요청처럼 자주 바뀌는 값은 의도적으로 제외합니다.
 
-`task` 프로필은 맥락 색인, 저장소 지도, 선택된 스킬, 관련 소스 파일처럼 작업별로 고르는 출처를 보여줍니다. `volatile` 프로필은 안정 계층 뒤에 붙어야 하는 변동 상태를 보여주며, `all` 프로필은 세 계층을 모두 포함합니다.
+`task` 프로필은 맥락 색인, 저장소 지도, 선택된 스킬, 관련 소스 파일처럼 작업별로 고르는 출처를 보여줍니다. 또한 로컬 색인 상태도 함께 제공하므로, 호스트는 신선한 작업 메타데이터를 재사용하거나 색인이 없거나 오래되었거나 읽을 수 없을 때 `mf index` 재생성 안내를 표시할 수 있습니다. `volatile` 프로필은 안정 계층 뒤에 붙어야 하는 변동 상태를 보여주며, `all` 프로필은 세 계층을 모두 포함합니다.
 
 ## 예시
 
@@ -75,6 +75,7 @@ npx mf context --json --cache-profile stable
 - `stable_prefix.documents[]` (`object[]`): 안정 문서 경로, 파일 존재 여부, 내용 해시입니다.
 - `stable_prefix.volatile_excluded` (`string[]`): 안정 계층 앞에 두면 안 되는 변동 출처입니다.
 - `task_context.sources` (`string[]`): 작업별로 선택하는 맥락 출처입니다.
+- `task_context.local_index` (`object`): 작업 맥락용 읽기 전용 로컬 색인 상태입니다. `status`는 `fresh`, `missing`, `stale`, `unreadable` 중 하나이며, 색인이 오래되었거나 사용할 수 없으면 `mf index`용 `refresh_hint`를 함께 제공합니다.
 - `volatile_suffix.sources` (`string[]`): 안정 계층 뒤에 붙여야 하는 변동 출처입니다.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
 

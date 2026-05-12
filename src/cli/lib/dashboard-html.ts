@@ -9,6 +9,42 @@ export interface DashboardDocReviewSnapshot {
 	readonly documents: readonly unknown[];
 }
 
+export type DashboardCommandEffectGraphStatusKind = 'fresh' | 'missing' | 'stale' | 'unreadable';
+
+export interface DashboardCommandEffectGraphStatus {
+	readonly source: 'local_index';
+	readonly status: DashboardCommandEffectGraphStatusKind;
+	readonly database_path: string;
+	readonly index_fresh: boolean;
+	readonly stale_paths: readonly string[];
+	readonly refresh_hint: string | null;
+}
+
+export interface DashboardCommandWriteLock {
+	readonly lock: string;
+	readonly paths: readonly string[];
+	readonly modes: readonly string[];
+	readonly sources: readonly string[];
+	readonly concurrencies: readonly string[];
+	readonly effect_count: number;
+}
+
+export interface DashboardCommandLockConflict {
+	readonly intent: string;
+	readonly lock: string;
+	readonly paths: readonly string[];
+	readonly modes: readonly string[];
+	readonly concurrencies: readonly string[];
+	readonly conflicting_paths: readonly string[];
+	readonly conflicting_modes: readonly string[];
+	readonly conflicting_concurrencies: readonly string[];
+}
+
+export interface DashboardCommandEffectGraph extends DashboardCommandEffectGraphStatus {
+	readonly write_locks: readonly DashboardCommandWriteLock[];
+	readonly lock_conflicts: readonly DashboardCommandLockConflict[];
+}
+
 export interface DashboardStatusSnapshot {
 	readonly schema_version: '1';
 	readonly command: 'dashboard status';
@@ -109,6 +145,7 @@ export interface DashboardStatusSnapshot {
 	readonly command_contract: {
 		readonly path: string;
 		readonly exists: boolean;
+		readonly effect_graph_status?: DashboardCommandEffectGraphStatus;
 		readonly intents: readonly {
 			readonly name: string;
 			readonly status: string;
@@ -123,6 +160,7 @@ export interface DashboardStatusSnapshot {
 			readonly writes: readonly string[];
 			readonly required_after: readonly string[];
 			readonly runnable: boolean;
+			readonly effect_graph?: DashboardCommandEffectGraph;
 		}[];
 	};
 	readonly verification: {
@@ -1332,6 +1370,35 @@ function formatList(values) {
 	return values.length === 0 ? message("value.none") : values.join(", ");
 }
 
+function formatCommandWriteLock(writeLock) {
+	const paths = writeLock.paths.length === 0 ? message("value.none") : writeLock.paths.join(", ");
+	return writeLock.lock + ": " + paths;
+}
+
+function formatCommandLockConflict(conflict) {
+	const paths = conflict.conflicting_paths.length === 0 ? "" : " / " + conflict.conflicting_paths.join(", ");
+	return conflict.intent + " (" + conflict.lock + ")" + paths;
+}
+
+function appendCommandEffectGraph(root, intent) {
+	const graph = intent.effect_graph;
+	if (!graph || graph.status !== "fresh") return;
+
+	if (graph.write_locks.length > 0) {
+		const locks = document.createElement("div");
+		locks.className = "verification-files";
+		locks.textContent = message("dashboard.commands.effectGraph") + ": " + graph.write_locks.map(formatCommandWriteLock).join(", ");
+		root.appendChild(locks);
+	}
+
+	if (graph.lock_conflicts.length > 0) {
+		const conflicts = document.createElement("div");
+		conflicts.className = "command-note";
+		conflicts.textContent = message("dashboard.verification.conflicts") + ": " + graph.lock_conflicts.map(formatCommandLockConflict).join(", ");
+		root.appendChild(conflicts);
+	}
+}
+
 function renderCommandPanel() {
 	const root = document.getElementById("dashboard-commands");
 	root.textContent = "";
@@ -1347,6 +1414,17 @@ function renderCommandPanel() {
 		section.appendChild(empty);
 		root.appendChild(section);
 		return;
+	}
+
+	const graphStatus = dashboardStatus.command_contract.effect_graph_status;
+	if (graphStatus && graphStatus.status !== "fresh") {
+		const note = document.createElement("div");
+		note.className = "command-note";
+		note.textContent =
+			message("dashboard.commands.effectGraphUnavailable") +
+			": " +
+			(graphStatus.refresh_hint || graphStatus.status);
+		section.appendChild(note);
 	}
 
 	for (const intent of dashboardStatus.command_contract.intents) {
@@ -1389,6 +1467,7 @@ function renderCommandPanel() {
 			action.textContent = message("dashboard.commands.agentAction") + ": " + intent.agent_action;
 			details.appendChild(action);
 		}
+		appendCommandEffectGraph(details, intent);
 
 		row.appendChild(summary);
 		row.appendChild(details);

@@ -3,9 +3,11 @@ title: mf dashboard
 description: 启动本地 mustflow dashboard。
 ---
 
-`mf dashboard` 会启动一个本地浏览器 dashboard，用于 mustflow 状态、验证建议、command intent、安全偏好设置和文档审阅。
+`mf dashboard` 会启动一个本地浏览器 dashboard，用于 mustflow 状态、验证建议、command intent、命令效果说明、安全偏好设置和文档审阅。
 
-状态标签页显示安装状态、清单锁、模板、已更改或缺失的跟踪文件、可运行命令、最近运行记录和待审阅文档数。验证建议标签页读取已更改文件，并推荐可复制的 `mf run ...` command intent，但不会执行它们。命令标签页读取 `.mustflow/config/commands.toml`，显示哪些 command intent 可运行、需要用户请求、未配置或已阻止。设置标签页编辑 `.mustflow/config/preferences.toml`。文档审阅标签页读取 `.mustflow/review/docs.toml`，并可将已有审阅条目标记为已批准、已忽略或需要人工审阅。它不会暂存文件、创建 commit、push、修改版本号或执行 command intent。
+状态标签页显示安装状态、清单锁、模板、已更改或缺失的跟踪文件、可运行命令、最近运行记录和待审阅文档数。验证建议标签页读取已更改文件，并推荐可复制的 `mf run ...` command intent，但不会执行它们。命令标签页读取 `.mustflow/config/commands.toml`；如果本地索引是最新的，还会显示从 SQLite 命令效果图派生出的共享锁和锁冲突。`commands.toml` 仍然是唯一的命令权限来源，dashboard 不会执行 intent。设置标签页编辑 `.mustflow/config/preferences.toml`。文档审阅标签页读取 `.mustflow/review/docs.toml`，并可将已有审阅条目标记为已批准、已忽略或需要人工审阅。它不会暂存文件、创建 commit、push、修改版本号或执行 command intent。
+
+命令标签页是只读的。它显示每个 command intent 的状态、生命周期、运行策略、标准输入设置、超时、工作目录、写入路径和声明的阻止原因。`.mustflow/cache/mustflow.sqlite` 存在且最新时，它还显示每个 intent 的派生写入锁，以及共享冲突锁的其他 intent。索引缺失或过期时，它会显示重建提示，而不是返回过期的图信息。
 
 可编辑分组包括 Git 默认值、提交消息建议、报告、验证选择、测试编写、重构候选阈值和限制、代码风格和版本影响偏好。
 

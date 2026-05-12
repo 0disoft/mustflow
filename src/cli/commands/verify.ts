@@ -17,6 +17,12 @@ import { createVerificationPlan, type VerificationCandidate } from '../../core/v
 import { readCommandContract } from '../../core/config-loading.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
+import {
+	readLocalCommandEffectGraph,
+	readLocalPathSurfaces,
+	type LocalCommandEffectGraph,
+	type LocalPathSurfaceReadModel,
+} from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
@@ -65,6 +71,21 @@ interface VerifyInput {
 	readonly reasons: readonly string[];
 	readonly classificationReport: ChangeClassificationReport;
 }
+
+type PlanOnlyScheduleEntry = ChangeVerificationReport['schedule']['entries'][number] & {
+	readonly effectGraph?: LocalCommandEffectGraph;
+};
+
+type PlanOnlyRequirement = ChangeVerificationReport['requirements'][number] & {
+	readonly surfaceReadModels?: readonly LocalPathSurfaceReadModel[];
+};
+
+type PlanOnlyOutput = ChangeVerificationReport & {
+	readonly requirements: readonly PlanOnlyRequirement[];
+	readonly schedule: Omit<ChangeVerificationReport['schedule'], 'entries'> & {
+		readonly entries: readonly PlanOnlyScheduleEntry[];
+	};
+};
 
 function createBufferedOutput(): BufferedOutput {
 	const stdout: string[] = [];
@@ -397,9 +418,9 @@ function skippedResult(candidate: VerificationCandidate): VerificationResult {
 	};
 }
 
-function runVerificationIntent(intent: string, lang: CliLang): VerificationResult {
+async function runVerificationIntent(intent: string, lang: CliLang): Promise<VerificationResult> {
 	const output = createBufferedOutput();
-	const exitCode = runRun([intent, '--json'], output.reporter, lang);
+	const exitCode = await runRun([intent, '--json'], output.reporter, lang);
 	const rawStdout = output.stdout().trim();
 	let receipt: Record<string, unknown> | null = null;
 	let status: VerificationResultStatus = exitCode === 0 ? 'passed' : 'failed';
@@ -466,12 +487,12 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 	return 'passed';
 }
 
-function createVerifyOutput(
+async function createVerifyOutput(
 	reasons: readonly string[],
 	planSource: string | null,
 	projectRoot: string,
 	lang: CliLang,
-): VerificationOutput {
+): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const candidatesByIntent = new Map<string, VerificationCandidate>();
 	const unmatchedCandidates: VerificationCandidate[] = [];
@@ -493,9 +514,11 @@ function createVerifyOutput(
 	const candidates = [...candidatesByIntent.values(), ...unmatchedCandidates].sort((left, right) =>
 		left.intent.localeCompare(right.intent),
 	);
-	const results = candidates.map((candidate) =>
-		candidate.status === 'runnable' ? runVerificationIntent(candidate.intent, lang) : skippedResult(candidate),
-	);
+	const results: VerificationResult[] = [];
+
+	for (const candidate of candidates) {
+		results.push(candidate.status === 'runnable' ? await runVerificationIntent(candidate.intent, lang) : skippedResult(candidate));
+	}
 	const summary = summarizeResults(results);
 
 	return {
@@ -511,9 +534,45 @@ function createVerifyOutput(
 	};
 }
 
-function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): ChangeVerificationReport {
+async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Promise<PlanOnlyOutput> {
 	const contract = readCommandContract(projectRoot);
-	return createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const localSurfaceReadModels = await readLocalPathSurfaces(projectRoot, report.files);
+	const [firstEntry] = report.schedule.entries;
+	const requirements = report.requirements.map((requirement) => {
+		const surfaceReadModels = requirement.files
+			.map((filePath) => localSurfaceReadModels.get(filePath))
+			.filter((readModel): readModel is LocalPathSurfaceReadModel => Boolean(readModel));
+
+		return surfaceReadModels.length > 0 ? { ...requirement, surfaceReadModels } : requirement;
+	});
+
+	if (!firstEntry) {
+		return { ...report, requirements };
+	}
+
+	const firstGraph = await readLocalCommandEffectGraph(projectRoot, firstEntry.intent);
+	const graphsByIntent = new Map<string, LocalCommandEffectGraph>([[firstEntry.intent, firstGraph]]);
+
+	if (firstGraph.status === 'fresh') {
+		for (const entry of report.schedule.entries.slice(1)) {
+			if (!graphsByIntent.has(entry.intent)) {
+				graphsByIntent.set(entry.intent, await readLocalCommandEffectGraph(projectRoot, entry.intent));
+			}
+		}
+	}
+
+	return {
+		...report,
+		requirements,
+		schedule: {
+			...report.schedule,
+			entries: report.schedule.entries.map((entry) => ({
+				...entry,
+				effectGraph: graphsByIntent.get(entry.intent) ?? firstGraph,
+			})),
+		},
+	};
 }
 
 function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
@@ -541,7 +600,7 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 	return lines.join('\n');
 }
 
-export function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getVerifyHelp(lang));
 		return 0;
@@ -594,11 +653,11 @@ export function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'e
 	}
 
 	if (parsed.planOnly) {
-		reporter.stdout(JSON.stringify(createPlanOnlyOutput(input, projectRoot), null, 2));
+		reporter.stdout(JSON.stringify(await createPlanOnlyOutput(input, projectRoot), null, 2));
 		return 0;
 	}
 
-	const output = createVerifyOutput(input.reasons, parsed.fromPlan ?? null, projectRoot, lang);
+	const output = await createVerifyOutput(input.reasons, parsed.fromPlan ?? null, projectRoot, lang);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

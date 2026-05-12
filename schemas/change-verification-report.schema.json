@@ -134,6 +134,97 @@
         },
         "source": {
           "const": "change_classification"
+        },
+        "surfaceReadModels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/localPathSurfaceReadModel"
+          }
+        }
+      }
+    },
+    "localPathSurfaceReadModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "status",
+        "databasePath",
+        "indexFresh",
+        "stalePaths",
+        "inputPath",
+        "match",
+        "refreshHint"
+      ],
+      "properties": {
+        "source": { "const": "local_index" },
+        "status": { "enum": ["fresh", "missing", "stale", "unreadable"] },
+        "databasePath": { "type": "string" },
+        "indexFresh": { "type": "boolean" },
+        "stalePaths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "inputPath": { "type": ["string", "null"] },
+        "match": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/localPathSurfaceRuleMatch" }
+          ]
+        },
+        "refreshHint": { "type": ["string", "null"] }
+      }
+    },
+    "localPathSurfaceRuleMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "patternKind",
+        "pattern",
+        "patternFlags",
+        "changeKinds",
+        "surface"
+      ],
+      "properties": {
+        "ruleId": { "type": "string" },
+        "patternKind": { "type": "string" },
+        "pattern": { "type": "string" },
+        "patternFlags": { "type": "string" },
+        "changeKinds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "category",
+            "isPublicSurface",
+            "validationReasons",
+            "affectedContracts",
+            "updatePolicy",
+            "driftChecks"
+          ],
+          "properties": {
+            "kind": { "type": "string" },
+            "category": { "type": "string" },
+            "isPublicSurface": { "type": "boolean" },
+            "validationReasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "affectedContracts": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "updatePolicy": { "enum": ["update", "update_or_mark_stale", "not_applicable"] },
+            "driftChecks": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
         }
       }
     },
@@ -271,6 +362,109 @@
           "items": {
             "$ref": "#/$defs/verificationScheduleConflict"
           }
+        },
+        "effectGraph": {
+          "$ref": "#/$defs/commandEffectGraph"
+        }
+      }
+    },
+    "commandEffectGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "status",
+        "databasePath",
+        "indexFresh",
+        "stalePaths",
+        "writeLocks",
+        "lockConflicts",
+        "refreshHint"
+      ],
+      "properties": {
+        "source": { "const": "local_index" },
+        "status": { "enum": ["fresh", "missing", "stale", "unreadable"] },
+        "databasePath": { "type": "string" },
+        "indexFresh": { "type": "boolean" },
+        "stalePaths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "writeLocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/commandWriteLock" }
+        },
+        "lockConflicts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/commandLockConflict" }
+        },
+        "refreshHint": { "type": ["string", "null"] }
+      }
+    },
+    "commandWriteLock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lock", "paths", "modes", "sources", "concurrencies", "effectCount"],
+      "properties": {
+        "lock": { "type": "string" },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "modes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "concurrencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "effectCount": { "type": "integer" }
+      }
+    },
+    "commandLockConflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "lock",
+        "paths",
+        "modes",
+        "concurrencies",
+        "conflictingPaths",
+        "conflictingModes",
+        "conflictingConcurrencies"
+      ],
+      "properties": {
+        "intent": { "type": "string" },
+        "lock": { "type": "string" },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "modes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "concurrencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conflictingPaths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conflictingModes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conflictingConcurrencies": {
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     },

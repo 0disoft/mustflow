@@ -91,6 +91,8 @@ export const DASHBOARD_UI_MESSAGE_KEYS = [
 	'dashboard.commands.writes',
 	'dashboard.commands.reason',
 	'dashboard.commands.agentAction',
+	'dashboard.commands.effectGraph',
+	'dashboard.commands.effectGraphUnavailable',
 	'dashboard.release.reloaded',
 	'dashboard.release.copied',
 	'dashboard.release.overview',

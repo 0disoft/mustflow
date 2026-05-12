@@ -8,6 +8,8 @@ description: Recherche dans l’index SQLite local des documents mustflow.
 La commande ne crée ni ne modifie de fichiers. Si l’index est absent, exécute d’abord `mf index`.
 Si un fichier mustflow indexé a changé depuis l’indexation, la commande s’arrête et demande de reconstruire l’index. Cela évite que des résultats obsolètes induisent un agent en erreur.
 
+La recherche utilise le backend enregistré par `mf index`. Quand FTS5 est disponible, elle utilise des tables de recherche textuelle ; sinon, elle interroge les mêmes métadonnées dérivées par un scan borné des tables. Les deux chemins utilisent aussi des lignes n-gram dérivées afin que les requêtes multilingues puissent correspondre même quand les espaces ou la tokenisation SQLite ne s’alignent pas exactement.
+
 ## Portée de recherche
 
 Par défaut, la commande recherche uniquement dans les données de flux de travail mustflow:
@@ -56,12 +58,14 @@ La sortie lisible par machine utilise ces champs:
 - `scope` (`string`): portée de recherche. L’une de `workflow`, `source` ou `all`.
 - `index_fresh` (`boolean`): indique si l’index correspond au contenu actuel des fichiers.
 - `stale_paths` (`string[]`): chemins modifiés après l’indexation. Vide si l’index est à jour.
+- `search_backend` (`string`): backend de recherche utilisé pour cette requête. L’un de `fts5` ou `table_scan`.
+- `search_fts5_available` (`boolean`): indique si l’index a été construit quand SQLite FTS5 était disponible.
 - `result_count` (`number`): nombre de résultats retournés.
 - `results` (`object[]`): entrées de workflow correspondantes et, sur demande, anchors de source.
 
 Chaque résultat peut inclure ces champs:
 
-- `results[].kind` (`string`): type de résultat. L’un de `document`, `skill`, `command_intent` ou `source_anchor`.
+- `results[].kind` (`string`): type de résultat. L’un de `document`, `skill`, `skill_route`, `command_intent` ou `source_anchor`.
 - `results[].path` (`string`): chemin du document ou du fichier de skill.
 - `results[].name` (`string`): nom de skill, nom d’intention de commande ou ID d’anchor de source.
 - `results[].title` (`string`): titre du document.

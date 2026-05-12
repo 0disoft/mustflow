@@ -6,6 +6,7 @@ import {
 	listSourceAnchorFiles,
 	parseSourceAnchorsInContent,
 	sourceAnchorPathIsGeneratedOrVendor,
+	sourceAnchorTextContainsSecretLike,
 	splitSourceAnchorList,
 	type ParsedSourceAnchor,
 } from './source-anchors.js';
@@ -48,11 +49,6 @@ const SOURCE_ANCHOR_FORBIDDEN_INSTRUCTION_PATTERNS = [
 	/\bthis\s+anchor\s+(?:authorizes|grants|allows)\b.*\b(?:agents?|commands?|validation|verification)\b/iu,
 	/\b(?:command_intents?|required_after|run_policy|argv|cmd|permissions?|allowed_edits|skip_validation|agent_action)\s*[:=]/iu,
 ];
-const SOURCE_ANCHOR_SECRET_LIKE_PATTERNS = [
-	/\b(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=:-]{8,}/iu,
-	/\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/u,
-];
-
 export interface SourceAnchorValidationIssue {
 	readonly severity: 'error' | 'warning';
 	readonly message: string;
@@ -91,7 +87,7 @@ function validateSourceAnchor(anchor: ParsedSourceAnchor): SourceAnchorValidatio
 		issues.push(sourceAnchorIssue(`source anchor ${label} contains agent command or policy instructions`));
 	}
 
-	if (SOURCE_ANCHOR_SECRET_LIKE_PATTERNS.some((pattern) => pattern.test(anchor.rawText))) {
+	if (sourceAnchorTextContainsSecretLike(anchor.rawText)) {
 		issues.push(sourceAnchorIssue(`source anchor ${label} contains secret-like text`));
 	}
 

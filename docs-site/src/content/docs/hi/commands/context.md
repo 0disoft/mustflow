@@ -31,10 +31,17 @@ description: वर्तमान mustflow रूट के लिए JSON ए�
 
 इसमें standard output या standard error tails शामिल नहीं होते। यदि किसी एजेंट को command output चाहिए, तो उसे receipt file स्पष्ट रूप से पढ़नी होगी।
 
+## Prompt Cache Profiles
+
+जब किसी host को पूरे context report के बजाय cache-friendly prompt layers चाहिए हों, तो `--json` के साथ `--cache-profile stable|task|volatile|all` उपयोग करें।
+
+`task` profile में `task_context.local_index` शामिल होता है, जो local index का read-only status है। `status` `fresh`, `missing`, `stale`, या `unreadable` होता है; index reuse न हो सके तो `refresh_hint` `mf index` चलाने का संकेत देता है।
+
 ## उदाहरण
 
 ```sh
 npx mf context --json
+npx mf context --json --cache-profile task
 ```
 
 ## JSON फ़ील्ड
