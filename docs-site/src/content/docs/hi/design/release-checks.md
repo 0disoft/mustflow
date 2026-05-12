@@ -28,10 +28,13 @@ mf run mustflow_check
 
 `bun run release:check` publishing gate बना रहता है। `test_fast` fast CLI
 regression baseline चलाता है, `test_related` changed files से tests चुनता है और
-match न मिले तो उसी baseline पर लौटता है, और `test_release` package metadata और
-packaging checks को routine local edits से अलग रखता है। `lint`, coverage, और
-test-audit intents तब तक unset या manual-only रहते हैं जब तक इस repository में
-उन flows के लिए अधिक संकीर्ण gates न हों।
+match न मिले तो उसी baseline पर लौटता है। दोनों flows default रूप से 8 Node test
+workers उपयोग करते हैं, और maintainers इन्हें `MUSTFLOW_TEST_CONCURRENCY` से
+adjust कर सकते हैं। `test_release` package metadata और packaging checks को
+routine local edits से अलग रखता है। `test_coverage` fast CLI baseline को Node
+built-in coverage report के साथ बिना enforced threshold चलाता है; इसका worker
+count `MUSTFLOW_TEST_COVERAGE_CONCURRENCY` से adjust किया जा सकता है। `lint` और
+test-audit narrow local gates के रूप में configured हैं।
 
 ## उद्देश्य
 

@@ -169,7 +169,7 @@ const concurrency =
 	mode === 'coverage'
 		? readPositiveIntegerEnv('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4')
 		: mode === 'fast' || mode === 'related'
-			? '4'
+			? readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '8')
 			: '1';
 const nodeTestArgs = ['--test', `--test-concurrency=${concurrency}`];
 

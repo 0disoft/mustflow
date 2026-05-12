@@ -29,10 +29,13 @@ mf run mustflow_check
 `bun run release:check` reste la porte de publication. `test_fast` exécute la
 base rapide de régression de la CLI, `test_related` choisit les tests à partir
 des fichiers modifiés et revient à cette base s'il ne trouve pas de
-correspondance, et `test_release` sépare les contrôles de métadonnées et de
-paquetage du flux local courant. `lint`, coverage et test-audit restent non
-configurés ou manual-only tant que ce dépôt n'a pas de contrôles plus ciblés
-pour ces flux.
+correspondance, et tous deux utilisent 8 workers Node test par défaut. Les
+mainteneurs peuvent les ajuster avec `MUSTFLOW_TEST_CONCURRENCY`.
+`test_release` sépare les contrôles de métadonnées et de paquetage du flux
+local courant. `test_coverage` exécute la base rapide avec le rapport coverage
+intégré de Node sans seuil obligatoire; son nombre de workers peut être ajusté
+avec `MUSTFLOW_TEST_COVERAGE_CONCURRENCY`. `lint` et test-audit restent des
+portes locales ciblées.
 
 ## Objectif
 

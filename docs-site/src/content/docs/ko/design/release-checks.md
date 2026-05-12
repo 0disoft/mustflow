@@ -28,12 +28,15 @@ mf run mustflow_check
 
 `bun run release:check`는 배포 전 관문으로 유지합니다. `test_fast`는 빠른 CLI 회귀
 기준선을 실행하고, `test_related`는 변경 파일에서 관련 테스트를 고른 뒤 없으면 빠른
-기준선으로 돌아가며, `test_release`는 패키지 메타데이터와 포장 검사를 일반 로컬
-수정 검증에서 분리합니다. `lint`, coverage, test-audit 의도는 해당 흐름을 위한 더
-좁은 검증 관문이 생길 때까지 미설정 또는 수동 전용으로 둡니다.
-`docs_validate_fast`는 전체 정적 사이트를 빌드하지 않고 내비게이션과 현지화 문서
-링크를 확인합니다. `docs_validate`는 릴리스 민감 변경을 위한 전체 문서 빌드,
-검색 색인, 사이트맵 검증으로 유지합니다.
+기준선으로 돌아갑니다. 두 흐름은 기본적으로 Node 테스트 워커 8개를 사용하며,
+로컬 환경에 맞게 `MUSTFLOW_TEST_CONCURRENCY`로 조정할 수 있습니다. `test_release`는
+패키지 메타데이터와 포장 검사를 일반 로컬 수정 검증에서 분리합니다. `test_coverage`는
+강제 임계값 없이 빠른 CLI 기준선을 Node 내장 coverage 보고서로 실행하며,
+`MUSTFLOW_TEST_COVERAGE_CONCURRENCY`로 워커 수를 조정할 수 있습니다. `lint`와
+test-audit는 좁은 저장소 로컬 관문으로 구성됩니다. `docs_validate_fast`는 전체 정적
+사이트를 빌드하지 않고 내비게이션과 현지화 문서 링크를 확인합니다.
+`docs_validate`는 릴리스 민감 변경을 위한 전체 문서 빌드, 검색 색인, 사이트맵
+검증으로 유지합니다.
 
 ## 역할
 
