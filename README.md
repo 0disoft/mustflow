@@ -91,11 +91,11 @@ mustflow installs and validates an agent workflow for user projects.
 - Declares runnable command rules in `.mustflow/config/commands.toml`.
 - Checks installation health and configuration structure with `mf check` and `mf doctor`.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
-- Prints execution-free verification plans with `mf verify --plan-only --json`.
+- Prints execution-free verification plans with `mf verify --plan-only --json`, including read-only local-index lock explanations when available.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Writes command receipts to `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
-- Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, or source-content database.
+- Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, or source-content database.
 - Tracks agent-created or agent-modified documentation needing prose review with `mf docs review`.
 - Previews and applies bundled template updates safely with `mf update`.
 - Publishes JSON Schemas for automation-facing reports and command contracts in `schemas/`.
@@ -144,6 +144,8 @@ your-project/
       ├─ contract-sync-check/
       │  └─ SKILL.md
       ├─ date-number-audit/
+      │  └─ SKILL.md
+      ├─ database-change-safety/
       │  └─ SKILL.md
       ├─ dependency-reality-check/
       │  └─ SKILL.md
@@ -217,12 +219,20 @@ npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
 npx mf verify --from-plan .mustflow/state/change-plan.json --json
 ```
 
-Create the optional local search index if search capabilities are needed.
+Create the optional local search index if search capabilities are needed. Run the normal command
+when creating the index for the first time.
 
 ```sh
 npx mf index --dry-run --json
 npx mf index
 npx mf search mustflow_check
+```
+
+On later runs, use incremental mode when you want to reuse a compatible fresh cache without rewriting
+the SQLite file. If the cache is missing, stale, or incompatible, mustflow falls back to a full rebuild.
+
+```sh
+npx mf index --incremental --json
 ```
 
 Preview template updates before applying them. Files marked as customized in `.mustflow/config/manifest.lock.toml` remain as repository-specific baselines while their current content matches the lock.
@@ -261,7 +271,7 @@ mf run mustflow_update_apply
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf run <intent>` | Run an allowed one-shot command. |
-| `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, and command-effect locks. |
+| `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |
 | `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |
 | `mf status` | Inspect installed state and changed or missing files. |
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
@@ -294,7 +304,7 @@ Runnable work is declared in `.mustflow/config/commands.toml` so agents do not g
 
 Development servers, watch modes, browser UIs, interactive commands, and background processes do not run directly.
 
-Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents and missing runnable coverage without executing commands.
+Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents and missing runnable coverage without executing commands. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries include read-only `effectGraph` metadata for write locks and lock conflicts.
 
 Each command run writes the latest run record to `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
 
@@ -379,7 +389,7 @@ mf run docs_validate
 mf run mustflow_check
 ```
 
-The Bun scripts remain available for human maintainers and release packaging. `test_fast` runs the fast CLI regression baseline, `test_related` selects tests from changed files and falls back to the fast baseline, and `test_release` keeps package metadata and packaging checks out of routine local edits. `test_coverage` runs the fast CLI baseline through Node's built-in coverage report with no enforced threshold; set `MUSTFLOW_TEST_COVERAGE_CONCURRENCY=1`, `2`, or another positive integer to adjust worker count on local machines. `lint` and test-audit are configured as narrow repository-local gates. `docs_validate_fast` checks documentation navigation and localized content links without building the entire static site; `docs_validate` performs the full static documentation build, search index, and sitemap gate for release-sensitive changes.
+The Bun scripts remain available for human maintainers and release packaging. `test_fast` runs the fast CLI regression baseline, `test_related` selects tests from changed files and falls back to the fast baseline, and both use 8 Node test workers by default. Set `MUSTFLOW_TEST_CONCURRENCY=1`, `2`, or another positive integer to tune those workers on local machines. `test_release` keeps package metadata and packaging checks out of routine local edits. `test_coverage` runs the fast CLI baseline through Node's built-in coverage report with no enforced threshold; set `MUSTFLOW_TEST_COVERAGE_CONCURRENCY=1`, `2`, or another positive integer to adjust its worker count. `lint` and test-audit are configured as narrow repository-local gates. `docs_validate_fast` checks documentation navigation and localized content links without building the entire static site; `docs_validate` performs the full static documentation build, search index, and sitemap gate for release-sensitive changes.
 
 `dist/` is a generated build output and is not committed. `npm pack` and `npm publish` run `npm run build` via `prepack`, so the npm package contains the built CLI.
 

@@ -1,12 +1,28 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-10
+Last reviewed: 2026-05-12
 
 This roadmap lists only remaining work. Completed items are removed after verification so agents can focus on upcoming decisions instead of reviewing project history.
 
 ## Current Priority
 
-No active near-term implementation milestones are tracked here.
+### SQLite-backed Search and Verification Read Model
+
+Goal: evolve the local SQLite cache from a simple table-backed lookup store into a safer, faster read model for search, classification explanations, verification planning, and dashboard inspection.
+
+The source of truth must remain the current repository files. SQLite remains a rebuildable local cache under `.mustflow/cache/`, not a memory store, audit log, command transcript store, source-content database, or command authority source.
+
+Primary guardrails:
+
+- Keep `AGENTS.md`, `.mustflow/config/commands.toml`, current code, tests, and source documents authoritative.
+- Keep local index rows derived and rebuildable; deleting `.mustflow/cache/mustflow.sqlite` must never lose project truth.
+- Keep bounded snippets only. Do not store full documents, full source files, raw command logs, chat transcripts, hidden reasoning, secrets, or personal data.
+- Preserve `authority_rank`, `authority_label`, `navigation_only`, `can_instruct_agent`, `cache_layer`, and `volatile` semantics in every search-result path.
+- Keep source anchors opt-in for indexing and navigation-only in results. They must not define workflow rules, command permission, verification authority, or agent instructions.
+- Keep `commands.toml` as the only source of runnable command authority. SQLite views may explain command effects and conflicts, but they must not make an intent runnable.
+- Keep path classification rules canonical in TypeScript until a narrow, validated configuration contract exists.
+
+No active implementation items remain in this priority area.
 
 Completed items are removed after verification. Add a new milestone only when there is a clear remaining contract, verification, or documentation gap to close.
 

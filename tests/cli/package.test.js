@@ -38,8 +38,12 @@ function collectRelativeFiles(directory) {
 	return files.sort((left, right) => left.localeCompare(right));
 }
 
+function readProjectText(relativePath) {
+	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
+}
+
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.18.0');
+	assert.equal(packageJson.version, '1.18.14');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -91,9 +95,23 @@ test('npm publish workflow uses trusted publisher identity', () => {
 	assert.doesNotMatch(publishNpmWorkflow, /secrets\.NODE_AUTH_TOKEN/u);
 });
 
-test('coverage test runner keeps Node coverage concurrency configurable', () => {
+test('CLI test runner keeps concurrency configurable', () => {
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_CONCURRENCY/u);
+	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '8'\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4'\)/u);
+
+	const relatedResult = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related'], {
+		cwd: projectRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			MUSTFLOW_TEST_CONCURRENCY: '0',
+		},
+	});
+
+	assert.equal(relatedResult.status, 2);
+	assert.match(relatedResult.stderr, /MUSTFLOW_TEST_CONCURRENCY must be a positive integer\./u);
 
 	const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'coverage'], {
 		cwd: projectRoot,
@@ -106,6 +124,42 @@ test('coverage test runner keeps Node coverage concurrency configurable', () => 
 
 	assert.equal(result.status, 2);
 	assert.match(result.stderr, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY must be a positive integer\./u);
+});
+
+test('SQLite local index contracts stay synchronized across docs and schemas', () => {
+	const explainSchema = readProjectText('schemas/explain-report.schema.json');
+	const changeVerificationSchema = readProjectText('schemas/change-verification-report.schema.json');
+	const readme = readProjectText('README.md');
+
+	assert.match(explainSchema, /"effectGraph"/u);
+	assert.match(explainSchema, /"readModel"/u);
+	assert.match(changeVerificationSchema, /"effectGraph"/u);
+	assert.match(changeVerificationSchema, /"surfaceReadModels"/u);
+	assert.match(readme, /read-only local-index lock explanations/u);
+
+	for (const locale of supportedTemplateLocales) {
+		const commandIndex = readProjectText(`docs-site/src/content/docs/${locale}/commands/index.md`);
+		const searchCommand = readProjectText(`docs-site/src/content/docs/${locale}/commands/search.md`);
+		const explainCommand = readProjectText(`docs-site/src/content/docs/${locale}/commands/explain.md`);
+		const verifyCommand = readProjectText(`docs-site/src/content/docs/${locale}/commands/verify.md`);
+		const localIndexDesign = readProjectText(`docs-site/src/content/docs/${locale}/design/local-index.md`);
+		const releaseChecksDesign = readProjectText(`docs-site/src/content/docs/${locale}/design/release-checks.md`);
+
+		assert.match(commandIndex, /`search_backend`/u, `${locale} index command docs should document search_backend`);
+		assert.match(commandIndex, /`search_fts5_available`/u, `${locale} index command docs should document FTS5 status`);
+		assert.match(commandIndex, /--incremental/u, `${locale} index command docs should document incremental mode`);
+		assert.match(commandIndex, /`indexed_file_count`/u, `${locale} index command docs should document indexed_file_count`);
+		assert.match(searchCommand, /`search_backend`/u, `${locale} search command docs should document search_backend`);
+		assert.match(searchCommand, /`search_fts5_available`/u, `${locale} search command docs should document FTS5 status`);
+		assert.match(searchCommand, /`skill_route`/u, `${locale} search command docs should document skill route results`);
+		assert.match(explainCommand, /decision\.effectGraph/u, `${locale} explain docs should document command graphs`);
+		assert.match(explainCommand, /decision\.readModel/u, `${locale} explain docs should document surface read models`);
+		assert.match(verifyCommand, /effectGraph/u, `${locale} verify docs should document command graphs`);
+		assert.match(verifyCommand, /surfaceReadModels/u, `${locale} verify docs should document surface read models`);
+		assert.match(localIndexDesign, /search_ngrams/u, `${locale} local index docs should document n-gram search rows`);
+		assert.match(localIndexDesign, /indexed_files/u, `${locale} local index docs should document indexed file fingerprints`);
+		assert.match(releaseChecksDesign, /MUSTFLOW_TEST_CONCURRENCY/u, `${locale} release docs should document test concurrency`);
+	}
 });
 
 test('default template i18n metadata stays in sync with localized template files', async () => {
@@ -139,6 +193,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('composition-over-inheritance'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-injection'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('null-object-pattern'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'));
@@ -320,6 +375,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/composition-over-inheritance/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/contract-sync-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/date-number-audit/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/database-change-safety/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-reality-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-injection/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));
