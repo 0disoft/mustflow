@@ -289,6 +289,7 @@ mf run mustflow_update_apply
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf run <intent>` | Run an allowed one-shot command. |
+| `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |
 | `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |
 | `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |
 | `mf status` | Inspect installed state and changed or missing files. |
@@ -322,9 +323,9 @@ Runnable work is declared in `.mustflow/config/commands.toml` so agents do not g
 
 Development servers, watch modes, browser UIs, interactive commands, and background processes do not run directly.
 
-Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents and missing runnable coverage without executing commands. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries include read-only `effectGraph` metadata for write locks and lock conflicts.
+Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries include read-only `effectGraph` metadata for write locks and lock conflicts.
 
-Each command run writes the latest run record to `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
+Each executed command run writes the latest run record to `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
 
 ## Language and profiles
 

@@ -655,7 +655,9 @@ Lee estos archivos antes de trabajar:
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
   "run.help.summary":
     "Ejecuta un comando configurado de una sola ejecución desde .mustflow/config/commands.toml.",
-  "run.help.option.json": "Imprime el registro de ejecución como JSON",
+  "run.help.option.dryRun": "Imprime un plan de comando sin ejecutarlo",
+  "run.help.option.planOnly": "Alias de --dry-run",
+  "run.help.option.json": "Imprime el registro de ejecución o el plan de comando como JSON",
   "run.help.exit.ok": "El comando se completo con un codigo de salida permitido",
   "run.help.exit.fail": "El comando no era válido, fue rechazado, agotó el tiempo o falló",
   "run.error.missingIntent": "Falta el nombre del comando",
@@ -670,6 +672,8 @@ Lee estos archivos antes de trabajar:
   "run.error.timeout": 'El comando "{intent}" debe definir timeout_seconds',
   "run.error.commandSource":
     'El comando "{intent}" debe definir argv o mode = "shell" con cmd',
+  "run.error.conflictingPreviewModes":
+    "Usa --dry-run o --plan-only, no ambos",
   "run.error.timedOut": 'El comando "{intent}" agotó el tiempo después de {seconds} segundos',
   "run.error.startFailed": 'No se pudo iniciar el comando "{intent}": {message}',
 

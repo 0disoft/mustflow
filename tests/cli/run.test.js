@@ -18,6 +18,10 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
+function latestRunReceiptPath(projectPath) {
+	return path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
+}
+
 function runCli(cwd, args, options = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
@@ -97,6 +101,212 @@ destructive = false
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /hello from mf run/);
 	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews a runnable command intent without spawning or writing a receipt', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'dry-run-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.preview_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Would create a marker file if executed."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dry-run-spawned.txt"]
+effects = [
+  { type = "write", mode = "create", path = "dry-run-spawned.txt" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'preview_marker', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.schema_version, '1');
+		assert.equal(preview.command, 'run');
+		assert.equal(preview.preview, true);
+		assert.equal(preview.preview_mode, 'dry-run');
+		assert.equal(preview.intent, 'preview_marker');
+		assert.equal(preview.runnable, true);
+		assert.deepEqual(preview.eligibility, { ok: true, code: 'ok', detail: null });
+		assert.equal(preview.reason_code, null);
+		assert.equal(preview.cwd, '.');
+		assert.equal(preview.resolved_cwd, projectPath);
+		assert.equal(preview.timeout_seconds, 10);
+		assert.equal(preview.mode, 'argv');
+		assert.deepEqual(preview.argv, [
+			process.execPath,
+			'-e',
+			`require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")`,
+		]);
+		assert.equal(preview.resolved_argv.executable, process.execPath);
+		assert.equal(preview.resolved_argv.shell, false);
+		assert.deepEqual(preview.writes, ['dry-run-spawned.txt']);
+		assert.equal(preview.effects[0].path, 'dry-run-spawned.txt');
+		assert.equal(preview.network, false);
+		assert.equal(preview.destructive, false);
+		assert.deepEqual(preview.success_exit_codes, [0]);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews blocked and unknown command intents without writing a receipt', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "Run a development server."
+argv = ['${process.execPath}', '-e', 'setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const manualOnlyResult = runCli(projectPath, ['run', 'snapshot_update', '--dry-run', '--json']);
+		const manualOnlyPreview = JSON.parse(manualOnlyResult.stdout);
+
+		assert.equal(manualOnlyResult.status, 1);
+		assert.equal(manualOnlyPreview.runnable, false);
+		assert.equal(manualOnlyPreview.status, 'manual_only');
+		assert.equal(manualOnlyPreview.reason_code, 'status_not_configured');
+
+		const longRunningResult = runCli(projectPath, ['run', 'dev_server', '--dry-run', '--json']);
+		const longRunningPreview = JSON.parse(longRunningResult.stdout);
+
+		assert.equal(longRunningResult.status, 1);
+		assert.equal(longRunningPreview.runnable, false);
+		assert.equal(longRunningPreview.lifecycle, 'server');
+		assert.equal(longRunningPreview.reason_code, 'lifecycle_not_oneshot');
+
+		const unknownResult = runCli(projectPath, ['run', 'does_not_exist', '--plan-only', '--json']);
+		const unknownPreview = JSON.parse(unknownResult.stdout);
+
+		assert.equal(unknownResult.status, 1);
+		assert.equal(unknownPreview.preview_mode, 'plan-only');
+		assert.equal(unknownPreview.runnable, false);
+		assert.equal(unknownPreview.reason_code, 'intent_not_table');
+		assert.equal(unknownPreview.status, null);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews mustflow built-in intents through the current CLI entrypoint', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		createLocalBinShim(projectPath, 'mf', 'PWNED_MF_SHIM');
+		appendIntent(
+			projectPath,
+			`
+[intents.self_version_preview]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Preview mustflow version without trusting repo-local shims."
+argv = ["mf", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'self_version_preview', '--plan-only', '--json'], {
+			env: createEnvWithLocalBinFirst(projectPath),
+		});
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(preview.runnable, true);
+		assert.deepEqual(preview.argv, ['mf', '--version']);
+		assert.equal(preview.resolved_argv.executable, process.execPath);
+		assert.deepEqual(preview.resolved_argv.args, [cliPath, '--version']);
+		assert.equal(preview.resolved_argv.shell, false);
+		assert.doesNotMatch(result.stdout, /PWNED_MF_SHIM/);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews command intent cwd boundary failures without spawning or writing a receipt', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(path.dirname(projectPath), 'mustflow-outside-cwd-preview.txt');
+
+	try {
+		rmSync(markerPath, { force: true });
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.outside_cwd_preview]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run outside the project root."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = ".."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'outside_cwd_preview', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'cwd_outside_project');
+		assert.equal(preview.configured_cwd, '..');
+		assert.equal(preview.resolved_cwd, null);
+		assert.match(preview.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		rmSync(markerPath, { force: true });
 		removeTempProject(projectPath);
 	}
 });

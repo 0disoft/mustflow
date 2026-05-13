@@ -653,7 +653,9 @@ Read these files before working:
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
   "run.help.summary":
     "Run a configured oneshot command from .mustflow/config/commands.toml.",
-  "run.help.option.json": "Print the run record as JSON",
+  "run.help.option.dryRun": "Print a non-executing command plan",
+  "run.help.option.planOnly": "Alias for --dry-run",
+  "run.help.option.json": "Print the run record or command plan as JSON",
   "run.help.exit.ok": "The command completed with an allowed exit code",
   "run.help.exit.fail": "The command was invalid, refused, timed out, or failed",
   "run.error.missingIntent": "Missing command name",
@@ -668,6 +670,8 @@ Read these files before working:
   "run.error.timeout": 'Command "{intent}" must define timeout_seconds',
   "run.error.commandSource":
     'Command "{intent}" must define argv or mode = "shell" with cmd',
+  "run.error.conflictingPreviewModes":
+    "Use either --dry-run or --plan-only, not both",
   "run.error.timedOut": 'Command "{intent}" timed out after {seconds} seconds',
   "run.error.startFailed": 'Command "{intent}" failed to start: {message}',
 

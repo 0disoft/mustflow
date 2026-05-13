@@ -645,7 +645,9 @@ export const zhMessages = {
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
   "run.help.summary":
     "从 .mustflow/config/commands.toml 运行已配置的一次性命令。",
-  "run.help.option.json": "将运行记录输出为 JSON",
+  "run.help.option.dryRun": "输出命令计划但不执行",
+  "run.help.option.planOnly": "--dry-run 的别名",
+  "run.help.option.json": "将运行记录或命令计划输出为 JSON",
   "run.help.exit.ok": "命令已以允许的退出码完成",
   "run.help.exit.fail": "命令无效、被拒绝、超时或失败",
   "run.error.missingIntent": "缺少命令名称",
@@ -660,6 +662,8 @@ export const zhMessages = {
   "run.error.timeout": '命令 "{intent}" 必须定义 timeout_seconds',
   "run.error.commandSource":
     '命令 "{intent}" 必须定义 argv，或定义 mode = "shell" 并提供 cmd',
+  "run.error.conflictingPreviewModes":
+    "只能使用 --dry-run 或 --plan-only，不能同时使用",
   "run.error.timedOut": '命令 "{intent}" 在 {seconds} 秒后超时',
   "run.error.startFailed": '命令 "{intent}" 启动失败：{message}',
 

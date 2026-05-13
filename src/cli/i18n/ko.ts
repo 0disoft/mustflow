@@ -649,7 +649,9 @@ export const koMessages = {
   "lineEndings.error.conflictingModes": "--apply와 --dry-run은 함께 사용할 수 없습니다",
   "run.help.summary":
     ".mustflow/config/commands.toml에 설정된 일회성 명령을 실행합니다.",
-  "run.help.option.json": "실행 결과를 JSON으로 출력합니다",
+  "run.help.option.dryRun": "실행하지 않고 명령 계획을 출력합니다",
+  "run.help.option.planOnly": "--dry-run과 같은 동작입니다",
+  "run.help.option.json": "실행 결과 또는 명령 계획을 JSON으로 출력합니다",
   "run.help.exit.ok": "명령이 허용된 종료 코드로 완료되었습니다",
   "run.help.exit.fail":
     "명령이 잘못되었거나, 거부되었거나, 시간 초과되었거나, 실패했습니다",
@@ -665,6 +667,8 @@ export const koMessages = {
   "run.error.timeout": '명령 "{intent}"는 timeout_seconds를 정의해야 합니다',
   "run.error.commandSource":
     '명령 "{intent}"는 argv를 정의하거나 mode = "shell"과 cmd를 함께 정의해야 합니다',
+  "run.error.conflictingPreviewModes":
+    "--dry-run과 --plan-only 중 하나만 사용하세요",
   "run.error.timedOut": '명령 "{intent}"가 {seconds}초 뒤 시간 초과되었습니다',
   "run.error.startFailed": '명령 "{intent}"를 시작하지 못했습니다: {message}',
 

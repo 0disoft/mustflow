@@ -13,23 +13,22 @@ import { runStatus } from './status.js';
 import { runUpdate } from './update.js';
 import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
-import { resolveSafeProjectCwd } from '../../core/command-cwd.js';
-import { evaluateCommandIntentEligibility } from '../../core/command-intent-eligibility.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
-import {
-	isRecord,
-	readCommandContract,
-	readMustflowConfigIfExists,
-	readPositiveInteger,
-	readString,
-	readStringArray,
-	type TomlTable,
-} from '../../core/config-loading.js';
+import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { getPackageVersion } from '../lib/package-info.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+import {
+	createRunPlan,
+	createRunPreview,
+	isMustflowBuiltinIntent,
+	renderRunPreviewText,
+	type BlockedRunPlan,
+	type ResolvedArgvCommand,
+	type RunPreviewMode,
+} from '../lib/run-plan.js';
 import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../../core/run-receipt.js';
 
 interface CommandResult {
@@ -45,16 +44,6 @@ interface BufferedReporter {
 	readonly reporter: Reporter;
 	readonly stdout: () => string;
 	readonly stderr: () => string;
-}
-
-function getSuccessExitCodes(intent: TomlTable): number[] {
-	const value = intent.success_exit_codes;
-
-	if (!Array.isArray(value) || value.length === 0 || value.some((entry) => !Number.isInteger(entry))) {
-		return [0];
-	}
-
-	return value.map(Number);
 }
 
 function emitOutput(reporter: Reporter, output: string | Buffer | null, stream: 'stdout' | 'stderr'): void {
@@ -126,48 +115,6 @@ function createCommandEnv(projectRoot: string): NodeJS.ProcessEnv {
 	}
 
 	return env;
-}
-
-function shouldUseShellForArgvExecutable(executablePath: string): boolean {
-	return process.platform === 'win32' && executablePath.toLowerCase().endsWith('.cmd');
-}
-
-interface ResolvedArgvCommand {
-	readonly executable: string;
-	readonly args: string[];
-	readonly shell: boolean;
-}
-
-function isMustflowBuiltinIntent(intent: TomlTable): boolean {
-	return readString(intent, 'kind') === 'mustflow_builtin';
-}
-
-function resolveCurrentCliEntrypoint(): string | undefined {
-	const entrypoint = process.argv[1];
-
-	return entrypoint ? path.resolve(entrypoint) : undefined;
-}
-
-function resolveArgvCommand(intent: TomlTable, commandArgv: string[]): ResolvedArgvCommand {
-	const [command = '', ...args] = commandArgv;
-
-	if (isMustflowBuiltinIntent(intent) && isMustflowBinName(command)) {
-		const entrypoint = resolveCurrentCliEntrypoint();
-
-		if (entrypoint) {
-			return {
-				executable: process.execPath,
-				args: [entrypoint, ...args],
-				shell: false,
-			};
-		}
-	}
-
-	return {
-		executable: command,
-		args,
-		shell: shouldUseShellForArgvExecutable(command),
-	};
 }
 
 function createBufferedReporter(): BufferedReporter {
@@ -358,16 +305,91 @@ function getRunStatus(error: Error | undefined, exitCode: number | null, success
 	return exitCode !== null && successExitCodes.includes(exitCode) ? 'passed' : 'failed';
 }
 
+function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: CliLang): void {
+	if (plan.reasonCode === 'status_not_configured') {
+		reporter.stderr(
+			renderCliError(
+				t(lang, 'run.error.statusNotConfigured', { intent: plan.intentName, status: plan.intentStatus ?? 'unknown' }),
+				'mf help commands',
+				lang,
+			),
+		);
+		return;
+	}
+
+	if (plan.reasonCode === 'lifecycle_not_oneshot') {
+		reporter.stderr(
+			renderCliError(
+				t(lang, 'run.error.lifecycleNotOneshot', { intent: plan.intentName, lifecycle: plan.lifecycle ?? 'unknown' }),
+				'mf help commands',
+				lang,
+			),
+		);
+		return;
+	}
+
+	if (plan.reasonCode === 'run_policy_not_agent_allowed') {
+		reporter.stderr(renderCliError(t(lang, 'run.error.runPolicy', { intent: plan.intentName }), 'mf help commands', lang));
+		return;
+	}
+
+	if (plan.reasonCode === 'stdin_not_closed') {
+		reporter.stderr(renderCliError(t(lang, 'run.error.stdin', { intent: plan.intentName }), 'mf help commands', lang));
+		return;
+	}
+
+	if (plan.reasonCode === 'missing_timeout') {
+		reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: plan.intentName }), 'mf help commands', lang));
+		return;
+	}
+
+	if (plan.reasonCode === 'missing_command_source') {
+		reporter.stderr(renderCliError(t(lang, 'run.error.commandSource', { intent: plan.intentName }), 'mf help commands', lang));
+		return;
+	}
+
+	if (plan.reasonCode === 'unsafe_intent_name') {
+		reporter.stderr(
+			renderCliError(
+				`Intent ${plan.intentName} has an unsafe name. ${plan.detail ?? 'Use a shell-safe intent name.'}`,
+				'mf help commands',
+				lang,
+			),
+		);
+		return;
+	}
+
+	if (plan.reasonCode === 'blocked_shell_background_pattern') {
+		reporter.stderr(
+			renderCliError(
+				`Intent ${plan.intentName} is blocked. ${plan.detail ?? 'Shell commands must not spawn background work.'}`,
+				'mf help commands',
+				lang,
+			),
+		);
+		return;
+	}
+
+	if (plan.reasonCode === 'cwd_outside_project') {
+		reporter.stderr(renderCliError(plan.detail ?? 'Intent cwd must stay inside the current root.', 'mf help commands', lang));
+		return;
+	}
+
+	reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: plan.intentName }), 'mf help commands', lang));
+}
+
 export function getRunHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
 			usage: 'mf run <intent> [options]',
 			summary: t(lang, 'run.help.summary'),
 			options: [
+				{ label: '--dry-run', description: t(lang, 'run.help.option.dryRun') },
+				{ label: '--plan-only', description: t(lang, 'run.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'run.help.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf run test', 'mf run lint --json', 'mf run mustflow_check'],
+			examples: ['mf run test', 'mf run lint --json', 'mf run mustflow_check --dry-run --json'],
 			exitCodes: [
 				{
 					label: '0',
@@ -396,7 +418,7 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		return 0;
 	}
 
-	const supportedOptions = new Set(['--json']);
+	const supportedOptions = new Set(['--json', '--dry-run', '--plan-only']);
 	const unsupported = args.filter((arg) => arg.startsWith('-') && !supportedOptions.has(arg));
 
 	if (unsupported.length > 0) {
@@ -405,6 +427,15 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 	}
 
 	const json = args.includes('--json');
+	const dryRun = args.includes('--dry-run');
+	const planOnly = args.includes('--plan-only');
+	const previewMode: RunPreviewMode | null = dryRun ? 'dry-run' : planOnly ? 'plan-only' : null;
+
+	if (dryRun && planOnly) {
+		printUsageError(reporter, t(lang, 'run.error.conflictingPreviewModes'), 'mf run --help', getRunHelp(lang), lang);
+		return 1;
+	}
+
 	const positional = args.filter((arg) => !supportedOptions.has(arg));
 	const [intentName, ...extra] = positional;
 
@@ -420,118 +451,39 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 
 	const projectRoot = resolveMustflowRoot();
 	const contract = readCommandContract(projectRoot);
+	const plan = createRunPlan(projectRoot, contract, intentName);
+
+	if (previewMode) {
+		if (json) {
+			reporter.stdout(JSON.stringify(createRunPreview(plan, previewMode), null, 2));
+		} else {
+			reporter.stdout(renderRunPreviewText(plan, previewMode));
+		}
+
+		return plan.ok ? 0 : 1;
+	}
+
+	if (!plan.ok) {
+		reportRunPlanFailure(plan, reporter, lang);
+		return 1;
+	}
+
 	const runReceiptPolicy = resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot));
-	const intent = contract.intents[intentName];
-
-	if (!isRecord(intent)) {
-		reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: intentName }), 'mf help commands', lang));
-		return 1;
-	}
-
-	const eligibility = evaluateCommandIntentEligibility(intentName, intent);
-	const intentStatus = readString(intent, 'status') ?? 'unknown';
-	const lifecycle = readString(intent, 'lifecycle');
-	const runPolicy = readString(intent, 'run_policy');
-	const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds');
-
-	if (!eligibility.ok) {
-		if (eligibility.code === 'status_not_configured') {
-			reporter.stderr(
-				renderCliError(t(lang, 'run.error.statusNotConfigured', { intent: intentName, status: intentStatus }), 'mf help commands', lang),
-			);
-			return 1;
-		}
-
-		if (eligibility.code === 'lifecycle_not_oneshot') {
-			reporter.stderr(
-				renderCliError(
-					t(lang, 'run.error.lifecycleNotOneshot', { intent: intentName, lifecycle: lifecycle ?? 'unknown' }),
-					'mf help commands',
-					lang,
-				),
-			);
-			return 1;
-		}
-
-		if (eligibility.code === 'run_policy_not_agent_allowed') {
-			reporter.stderr(
-				renderCliError(t(lang, 'run.error.runPolicy', { intent: intentName }), 'mf help commands', lang),
-			);
-			return 1;
-		}
-
-		if (eligibility.code === 'stdin_not_closed') {
-			reporter.stderr(renderCliError(t(lang, 'run.error.stdin', { intent: intentName }), 'mf help commands', lang));
-			return 1;
-		}
-
-		if (eligibility.code === 'missing_timeout') {
-			reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: intentName }), 'mf help commands', lang));
-			return 1;
-		}
-
-		if (eligibility.code === 'missing_command_source') {
-			reporter.stderr(
-				renderCliError(t(lang, 'run.error.commandSource', { intent: intentName }), 'mf help commands', lang),
-			);
-			return 1;
-		}
-
-		if (eligibility.code === 'unsafe_intent_name') {
-			reporter.stderr(
-				renderCliError(
-					`Intent ${intentName} has an unsafe name. ${eligibility.detail ?? 'Use a shell-safe intent name.'}`,
-					'mf help commands',
-					lang,
-				),
-			);
-			return 1;
-		}
-
-		if (eligibility.code === 'blocked_shell_background_pattern') {
-			reporter.stderr(
-				renderCliError(
-					`Intent ${intentName} is blocked. ${eligibility.detail ?? 'Shell commands must not spawn background work.'}`,
-					'mf help commands',
-					lang,
-				),
-			);
-			return 1;
-		}
-
-		reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: intentName }), 'mf help commands', lang));
-		return 1;
-	}
-
-	const maxOutputBytes =
-		readPositiveInteger(intent, 'max_output_bytes') ?? readPositiveInteger(contract.defaults, 'max_output_bytes') ?? 1_048_576;
-	if (!timeoutSeconds) {
-		reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: intentName }), 'mf help commands', lang));
-		return 1;
-	}
-
-	const cwd = resolveSafeProjectCwd(projectRoot, readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd'));
-	const successExitCodes = getSuccessExitCodes(intent);
-	const argv = readStringArray(intent, 'argv');
-	const commandArgv = argv && argv.length > 0 ? argv : undefined;
-	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
 	const env = createCommandEnv(projectRoot);
-	const lifecycleValue = lifecycle ?? 'oneshot';
-	const runPolicyValue = runPolicy ?? 'agent_allowed';
+	const lifecycleValue = plan.lifecycle ?? 'oneshot';
+	const runPolicyValue = plan.runPolicy ?? 'agent_allowed';
 
-	const mode = commandArgv ? 'argv' : 'shell';
 	const startedAt = new Date();
-	const argvCommand = commandArgv ? resolveArgvCommand(intent, commandArgv) : undefined;
 	const result =
-		commandArgv && isMustflowBuiltinIntent(intent)
-			? ((await runBuiltinArgvInProcess(commandArgv, cwd, lang)) ??
-				runArgvCommand(argvCommand, cwd, maxOutputBytes, env, timeoutSeconds))
-		: commandArgv
-			? runArgvCommand(argvCommand, cwd, maxOutputBytes, env, timeoutSeconds)
-			: runShellCommand(shellCommand, cwd, maxOutputBytes, env, timeoutSeconds);
+		plan.commandArgv && isMustflowBuiltinIntent(plan.intent)
+			? ((await runBuiltinArgvInProcess(plan.commandArgv, plan.cwd, lang)) ??
+				runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds))
+		: plan.commandArgv
+			? runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds)
+			: runShellCommand(plan.shellCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
 	const finishedAt = new Date();
 	const exitCode = typeof result.status === 'number' ? result.status : null;
-	const runStatus = getRunStatus(result.error, exitCode, successExitCodes);
+	const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
 	let killMethod: string | null = null;
 
 	if (runStatus === 'timed_out') {
@@ -546,15 +498,15 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		startedAt,
 		finishedAt,
 		projectRoot,
-		cwd,
+		cwd: plan.cwd,
 		lifecycle: lifecycleValue,
 		runPolicy: runPolicyValue,
-		mode,
-		argv: commandArgv,
-		cmd: shellCommand,
-		timeoutSeconds,
-		maxOutputBytes,
-		successExitCodes,
+		mode: plan.mode,
+		argv: plan.commandArgv,
+		cmd: plan.shellCommand,
+		timeoutSeconds: plan.timeoutSeconds,
+		maxOutputBytes: plan.maxOutputBytes,
+		successExitCodes: plan.successExitCodes,
 		exitCode,
 		signal: result.signal,
 		error: result.error?.message ?? null,
@@ -578,7 +530,7 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 	if (result.error) {
 		const errorWithCode = result.error as NodeJS.ErrnoException;
 		if (errorWithCode.code === 'ETIMEDOUT') {
-			reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: timeoutSeconds }));
+			reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: plan.timeoutSeconds }));
 			return 1;
 		}
 

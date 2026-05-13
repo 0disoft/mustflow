@@ -655,7 +655,9 @@ export const hiMessages = {
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
   "run.help.summary":
     ".mustflow/config/commands.toml से कॉन्फ़िगर की गई एक-बार चलने वाली कमांड चलाएँ।",
-  "run.help.option.json": "Run record को JSON के रूप में प्रिंट करें",
+  "run.help.option.dryRun": "कमांड चलाए बिना उसका plan प्रिंट करें",
+  "run.help.option.planOnly": "--dry-run का alias",
+  "run.help.option.json": "Run record या command plan को JSON के रूप में प्रिंट करें",
   "run.help.exit.ok": "कमांड अनुमत exit code के साथ पूरी हुई",
   "run.help.exit.fail": "कमांड अमान्य थी, अस्वीकार हुई, timed out हुई या विफल हुई",
   "run.error.missingIntent": "कमांड नाम नहीं दिया गया",
@@ -670,6 +672,8 @@ export const hiMessages = {
   "run.error.timeout": 'कमांड "{intent}" को timeout_seconds परिभाषित करना होगा',
   "run.error.commandSource":
     'कमांड "{intent}" को argv या mode = "shell" के साथ cmd परिभाषित करना होगा',
+  "run.error.conflictingPreviewModes":
+    "--dry-run या --plan-only में से एक इस्तेमाल करें, दोनों नहीं",
   "run.error.timedOut": 'कमांड "{intent}" {seconds} सेकंड बाद time out हुई',
   "run.error.startFailed": 'कमांड "{intent}" शुरू नहीं हो सकी: {message}',
 
