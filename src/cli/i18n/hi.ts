@@ -672,6 +672,17 @@ export const hiMessages = {
   "run.error.timeout": 'कमांड "{intent}" को timeout_seconds परिभाषित करना होगा',
   "run.error.commandSource":
     'कमांड "{intent}" को argv या mode = "shell" के साथ cmd परिभाषित करना होगा',
+  "run.error.unsafeIntent":
+    'इंटेंट "{intent}" का नाम सुरक्षित नहीं है। {detail}',
+  "run.error.unsafeIntentDetail": "shell-safe इंटेंट नाम इस्तेमाल करें।",
+  "run.error.blockedShellBackground":
+    'इंटेंट "{intent}" अवरुद्ध है। {detail}',
+  "run.error.blockedShellBackgroundDetail":
+    "Shell commands background work शुरू नहीं कर सकतीं।",
+  "run.error.cwdOutsideProject":
+    'कमांड "{intent}" का cwd अमान्य है: {detail}',
+  "run.error.cwdOutsideProjectDetail":
+    "Intent cwd current root के अंदर रहना चाहिए।",
   "run.error.conflictingPreviewModes":
     "--dry-run या --plan-only में से एक इस्तेमाल करें, दोनों नहीं",
   "run.error.timedOut": 'कमांड "{intent}" {seconds} सेकंड बाद time out हुई',

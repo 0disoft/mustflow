@@ -672,6 +672,17 @@ Lee estos archivos antes de trabajar:
   "run.error.timeout": 'El comando "{intent}" debe definir timeout_seconds',
   "run.error.commandSource":
     'El comando "{intent}" debe definir argv o mode = "shell" con cmd',
+  "run.error.unsafeIntent":
+    'La intención "{intent}" tiene un nombre no seguro. {detail}',
+  "run.error.unsafeIntentDetail": "Usa un nombre de intención seguro para shell.",
+  "run.error.blockedShellBackground":
+    'La intención "{intent}" está bloqueada. {detail}',
+  "run.error.blockedShellBackgroundDetail":
+    "Los comandos de shell no deben iniciar trabajo en segundo plano.",
+  "run.error.cwdOutsideProject":
+    'El comando "{intent}" tiene un cwd no válido: {detail}',
+  "run.error.cwdOutsideProjectDetail":
+    "El cwd de la intención debe permanecer dentro de la raíz actual.",
   "run.error.conflictingPreviewModes":
     "Usa --dry-run o --plan-only, no ambos",
   "run.error.timedOut": 'El comando "{intent}" agotó el tiempo después de {seconds} segundos',

@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-authoring
 locale: en
 canonical: true
-revision: 5
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-authoring
@@ -47,7 +47,7 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 - Existing `.mustflow/skills/INDEX.md` and nearby skill documents.
 - `.mustflow/config/commands.toml` command intent names relevant to verification.
 - Any repository evidence showing that the task is repeatable and not better handled by an existing skill.
-- Localization and template metadata when the skill is part of an installed template.
+- Canonical source locale, localization policy, and template metadata when the skill is part of an installed template.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -72,7 +72,7 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 5. Keep the procedure concrete and bounded. Include what to read, what to change, what to avoid, and what evidence to report.
 6. Reference command intent names only. Do not include raw shell command blocks or claim that the skill authorizes command execution.
 7. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
-8. If the skill is installed by a template, update template manifests, localization metadata, installation docs, package tests, and public docs that list installed files.
+8. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

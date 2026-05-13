@@ -2,7 +2,7 @@
 mustflow_doc: skill.code-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: code-review
@@ -66,15 +66,20 @@ Verify that a change aligns with the request and ensure that no behavioral risks
 1. Review the list of modified files.
 2. Identify any unrelated or extraneous edits.
 3. Assess the impact on behavior, configuration, commands, and documentation.
-4. Review test relevance:
+4. Check maintainability risks that should be caught before PR readiness:
+   - long `if`/`else if` dispatch over one reason, status, or type code where a `switch`, lookup table, or policy helper would clarify intent
+   - user-visible strings embedded in control flow instead of the existing localization or message-catalog surface
+   - repeated metadata reads or object assembly across success, failure, preview, and reporting paths
+   - external bot or AI review comments treated as authority instead of triage evidence
+5. Review test relevance:
    - missing tests for new functionality
    - obsolete tests for removed functionality
    - redundant tests that fail to address new risks
    - weakened or insufficient assertions
    - snapshot updates lacking a clear rationale
    - tests that inadvertently reintroduce removed behavior
-5. Verify the existence of relevant command intents.
-6. Document findings categorized by severity.
+6. Verify the existence of relevant command intents.
+7. Document findings categorized by severity.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

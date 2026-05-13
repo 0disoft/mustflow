@@ -229,7 +229,7 @@ test('refuses template creates outside the mustflow install surface during init'
 	}
 });
 
-test('installs Korean localized documents when requested', () => {
+test('installs Korean workflow documents with canonical English skills when requested', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -247,7 +247,9 @@ test('installs Korean localized documents when requested', () => {
 		assert.match(agents, /auto_bump = true/);
 		assert.match(agents, /require_user_confirmation = false/);
 		assert.doesNotMatch(agents, /명시적으로 요청하지 않았다면 버전 파일을\s+바꾸지 않습니다/);
-		assert.match(skill, /## 목적/);
+		assert.match(skill, /locale: en/);
+		assert.match(skill, /canonical: true/);
+		assert.match(skill, /## Purpose/);
 		assert.match(preferences, /docs = "ko"/);
 		assert.match(lock, /locale = "ko"/);
 		assert.match(lock, /last_action = "customized"/);

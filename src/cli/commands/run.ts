@@ -16,7 +16,7 @@ import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/co
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
-import { t, type CliLang } from '../lib/i18n.js';
+import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
 import { getPackageVersion } from '../lib/package-info.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -305,77 +305,57 @@ function getRunStatus(error: Error | undefined, exitCode: number | null, success
 	return exitCode !== null && successExitCodes.includes(exitCode) ? 'passed' : 'failed';
 }
 
+function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
+	return plan.detail ?? t(lang, fallbackKey);
+}
+
 function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: CliLang): void {
-	if (plan.reasonCode === 'status_not_configured') {
-		reporter.stderr(
-			renderCliError(
-				t(lang, 'run.error.statusNotConfigured', { intent: plan.intentName, status: plan.intentStatus ?? 'unknown' }),
-				'mf help commands',
-				lang,
-			),
-		);
-		return;
+	let message: string;
+
+	switch (plan.reasonCode) {
+		case 'status_not_configured':
+			message = t(lang, 'run.error.statusNotConfigured', { intent: plan.intentName, status: plan.intentStatus ?? 'unknown' });
+			break;
+		case 'lifecycle_not_oneshot':
+			message = t(lang, 'run.error.lifecycleNotOneshot', { intent: plan.intentName, lifecycle: plan.lifecycle ?? 'unknown' });
+			break;
+		case 'run_policy_not_agent_allowed':
+			message = t(lang, 'run.error.runPolicy', { intent: plan.intentName });
+			break;
+		case 'stdin_not_closed':
+			message = t(lang, 'run.error.stdin', { intent: plan.intentName });
+			break;
+		case 'missing_timeout':
+			message = t(lang, 'run.error.timeout', { intent: plan.intentName });
+			break;
+		case 'missing_command_source':
+			message = t(lang, 'run.error.commandSource', { intent: plan.intentName });
+			break;
+		case 'unsafe_intent_name':
+			message = t(lang, 'run.error.unsafeIntent', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.unsafeIntentDetail'),
+			});
+			break;
+		case 'blocked_shell_background_pattern':
+			message = t(lang, 'run.error.blockedShellBackground', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.blockedShellBackgroundDetail'),
+			});
+			break;
+		case 'cwd_outside_project':
+			message = t(lang, 'run.error.cwdOutsideProject', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.cwdOutsideProjectDetail'),
+			});
+			break;
+		case 'intent_not_table':
+		default:
+			message = t(lang, 'run.error.unknownIntent', { intent: plan.intentName });
+			break;
 	}
 
-	if (plan.reasonCode === 'lifecycle_not_oneshot') {
-		reporter.stderr(
-			renderCliError(
-				t(lang, 'run.error.lifecycleNotOneshot', { intent: plan.intentName, lifecycle: plan.lifecycle ?? 'unknown' }),
-				'mf help commands',
-				lang,
-			),
-		);
-		return;
-	}
-
-	if (plan.reasonCode === 'run_policy_not_agent_allowed') {
-		reporter.stderr(renderCliError(t(lang, 'run.error.runPolicy', { intent: plan.intentName }), 'mf help commands', lang));
-		return;
-	}
-
-	if (plan.reasonCode === 'stdin_not_closed') {
-		reporter.stderr(renderCliError(t(lang, 'run.error.stdin', { intent: plan.intentName }), 'mf help commands', lang));
-		return;
-	}
-
-	if (plan.reasonCode === 'missing_timeout') {
-		reporter.stderr(renderCliError(t(lang, 'run.error.timeout', { intent: plan.intentName }), 'mf help commands', lang));
-		return;
-	}
-
-	if (plan.reasonCode === 'missing_command_source') {
-		reporter.stderr(renderCliError(t(lang, 'run.error.commandSource', { intent: plan.intentName }), 'mf help commands', lang));
-		return;
-	}
-
-	if (plan.reasonCode === 'unsafe_intent_name') {
-		reporter.stderr(
-			renderCliError(
-				`Intent ${plan.intentName} has an unsafe name. ${plan.detail ?? 'Use a shell-safe intent name.'}`,
-				'mf help commands',
-				lang,
-			),
-		);
-		return;
-	}
-
-	if (plan.reasonCode === 'blocked_shell_background_pattern') {
-		reporter.stderr(
-			renderCliError(
-				`Intent ${plan.intentName} is blocked. ${plan.detail ?? 'Shell commands must not spawn background work.'}`,
-				'mf help commands',
-				lang,
-			),
-		);
-		return;
-	}
-
-	if (plan.reasonCode === 'cwd_outside_project') {
-		reporter.stderr(renderCliError(plan.detail ?? 'Intent cwd must stay inside the current root.', 'mf help commands', lang));
-		return;
-	}
-
-	reporter.stderr(renderCliError(t(lang, 'run.error.unknownIntent', { intent: plan.intentName }), 'mf help commands', lang));
+	reporter.stderr(renderCliError(message, 'mf help commands', lang));
 }
 
 export function getRunHelp(lang: CliLang = 'en'): string {

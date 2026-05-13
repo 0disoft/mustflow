@@ -26,6 +26,24 @@ export interface ResolvedArgvCommand {
 export type RunPreviewMode = 'dry-run' | 'plan-only';
 export type RunPlanReasonCode = Exclude<CommandIntentEligibilityCode, 'ok'> | 'cwd_outside_project';
 
+interface RunIntentMetadata {
+	readonly intentStatus: string;
+	readonly lifecycle: string | null;
+	readonly runPolicy: string | null;
+	readonly kind: string | null;
+	readonly configuredCwd: string;
+	readonly timeoutSeconds: number | null;
+	readonly maxOutputBytes: number;
+	readonly successExitCodes: readonly number[];
+	readonly commandArgv: readonly string[] | undefined;
+	readonly shellCommand: string | undefined;
+	readonly mode: RunCommandMode | null;
+	readonly writes: readonly string[] | undefined;
+	readonly effects: readonly unknown[] | undefined;
+	readonly network: boolean | undefined;
+	readonly destructive: boolean | undefined;
+}
+
 interface RunPlanBase {
 	readonly intentName: string;
 	readonly intent: TomlTable | undefined;
@@ -119,7 +137,7 @@ function resolveCurrentCliEntrypoint(): string | undefined {
 	return entrypoint ? path.resolve(entrypoint) : undefined;
 }
 
-function resolveArgvCommand(intent: TomlTable, commandArgv: string[]): ResolvedArgvCommand {
+function resolveArgvCommand(intent: TomlTable, commandArgv: readonly string[]): ResolvedArgvCommand {
 	const [command = '', ...args] = commandArgv;
 
 	if (isMustflowBuiltinIntent(intent) && isMustflowBinName(command)) {
@@ -149,6 +167,31 @@ function getRunPlanMode(commandArgv: readonly string[] | undefined, intent: Toml
 	return intent.mode === 'shell' ? 'shell' : null;
 }
 
+function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): RunIntentMetadata {
+	const configuredCwd = readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd') ?? '.';
+	const commandArgv = readStringArray(intent, 'argv');
+	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
+
+	return {
+		intentStatus: readString(intent, 'status') ?? 'unknown',
+		lifecycle: readString(intent, 'lifecycle') ?? null,
+		runPolicy: readString(intent, 'run_policy') ?? null,
+		kind: readString(intent, 'kind') ?? null,
+		configuredCwd,
+		timeoutSeconds: readPositiveInteger(intent, 'timeout_seconds') ?? null,
+		maxOutputBytes:
+			readPositiveInteger(intent, 'max_output_bytes') ?? readPositiveInteger(contract.defaults, 'max_output_bytes') ?? 1_048_576,
+		successExitCodes: getSuccessExitCodes(intent),
+		commandArgv,
+		shellCommand,
+		mode: getRunPlanMode(commandArgv, intent),
+		writes: readStringArray(intent, 'writes'),
+		effects: readArray(intent, 'effects'),
+		network: readBoolean(intent, 'network'),
+		destructive: readBoolean(intent, 'destructive'),
+	};
+}
+
 function createBlockedRunPlan(
 	contract: CommandContract,
 	intentName: string,
@@ -157,13 +200,7 @@ function createBlockedRunPlan(
 	reasonCode: RunPlanReasonCode,
 	detail: string | null,
 ): BlockedRunPlan {
-	const configuredCwd = intent ? (readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd') ?? '.') : null;
-	const commandArgv = intent ? readStringArray(intent, 'argv') : undefined;
-	const shellCommand = intent?.mode === 'shell' ? readString(intent, 'cmd') : undefined;
-	const mode = intent ? getRunPlanMode(commandArgv, intent) : null;
-	const maxOutputBytes = intent
-		? (readPositiveInteger(intent, 'max_output_bytes') ?? readPositiveInteger(contract.defaults, 'max_output_bytes') ?? 1_048_576)
-		: null;
+	const metadata = intent ? readRunIntentMetadata(contract, intent) : null;
 
 	return {
 		intentName,
@@ -172,24 +209,24 @@ function createBlockedRunPlan(
 		eligibility,
 		reasonCode,
 		detail,
-		intentStatus: intent ? (readString(intent, 'status') ?? 'unknown') : null,
-		lifecycle: intent ? (readString(intent, 'lifecycle') ?? null) : null,
-		runPolicy: intent ? (readString(intent, 'run_policy') ?? null) : null,
-		kind: intent ? (readString(intent, 'kind') ?? null) : null,
-		configuredCwd,
+		intentStatus: metadata?.intentStatus ?? null,
+		lifecycle: metadata?.lifecycle ?? null,
+		runPolicy: metadata?.runPolicy ?? null,
+		kind: metadata?.kind ?? null,
+		configuredCwd: metadata?.configuredCwd ?? null,
 		cwd: null,
 		relativeCwd: null,
-		timeoutSeconds: intent ? (readPositiveInteger(intent, 'timeout_seconds') ?? null) : null,
-		maxOutputBytes,
-		successExitCodes: intent ? getSuccessExitCodes(intent) : null,
-		commandArgv,
-		shellCommand,
-		mode,
+		timeoutSeconds: metadata?.timeoutSeconds ?? null,
+		maxOutputBytes: metadata?.maxOutputBytes ?? null,
+		successExitCodes: metadata?.successExitCodes ?? null,
+		commandArgv: metadata?.commandArgv,
+		shellCommand: metadata?.shellCommand,
+		mode: metadata?.mode ?? null,
 		argvCommand: undefined,
-		writes: intent ? readStringArray(intent, 'writes') : undefined,
-		effects: intent ? readArray(intent, 'effects') : undefined,
-		network: intent ? readBoolean(intent, 'network') : undefined,
-		destructive: intent ? readBoolean(intent, 'destructive') : undefined,
+		writes: metadata?.writes,
+		effects: metadata?.effects,
+		network: metadata?.network,
+		destructive: metadata?.destructive,
 	};
 }
 
@@ -198,19 +235,18 @@ export function createRunPlan(projectRoot: string, contract: CommandContract, in
 	const eligibility = evaluateCommandIntentEligibility(intentName, rawIntent);
 
 	if (!isRecord(rawIntent)) {
-		const reasonCode = eligibility.ok ? 'intent_not_table' : eligibility.code;
-		return createBlockedRunPlan(contract, intentName, undefined, eligibility, reasonCode, eligibility.detail);
+		return createBlockedRunPlan(contract, intentName, undefined, eligibility, 'intent_not_table', eligibility.detail);
 	}
 
 	if (!eligibility.ok) {
 		return createBlockedRunPlan(contract, intentName, rawIntent, eligibility, eligibility.code, eligibility.detail);
 	}
 
-	const configuredCwd = readString(rawIntent, 'cwd') ?? readString(contract.defaults, 'default_cwd') ?? '.';
+	const metadata = readRunIntentMetadata(contract, rawIntent);
 	let cwd: string;
 
 	try {
-		cwd = resolveSafeProjectCwd(projectRoot, configuredCwd);
+		cwd = resolveSafeProjectCwd(projectRoot, metadata.configuredCwd);
 	} catch (error) {
 		return createBlockedRunPlan(
 			contract,
@@ -222,19 +258,14 @@ export function createRunPlan(projectRoot: string, contract: CommandContract, in
 		);
 	}
 
-	const commandArgv = readStringArray(rawIntent, 'argv');
-	const shellCommand = rawIntent.mode === 'shell' ? readString(rawIntent, 'cmd') : undefined;
-	const mode = getRunPlanMode(commandArgv, rawIntent);
-	const timeoutSeconds = readPositiveInteger(rawIntent, 'timeout_seconds');
-
-	if (!timeoutSeconds || !mode) {
+	if (!metadata.timeoutSeconds || !metadata.mode) {
 		return createBlockedRunPlan(
 			contract,
 			intentName,
 			rawIntent,
 			eligibility,
-			!timeoutSeconds ? 'missing_timeout' : 'missing_command_source',
-			!timeoutSeconds ? 'Intent timeout_seconds is missing or invalid.' : 'Intent does not define argv or shell cmd.',
+			!metadata.timeoutSeconds ? 'missing_timeout' : 'missing_command_source',
+			!metadata.timeoutSeconds ? 'Intent timeout_seconds is missing or invalid.' : 'Intent does not define argv or shell cmd.',
 		);
 	}
 
@@ -245,25 +276,24 @@ export function createRunPlan(projectRoot: string, contract: CommandContract, in
 		eligibility,
 		reasonCode: null,
 		detail: null,
-		intentStatus: readString(rawIntent, 'status') ?? 'unknown',
-		lifecycle: readString(rawIntent, 'lifecycle') ?? null,
-		runPolicy: readString(rawIntent, 'run_policy') ?? null,
-		kind: readString(rawIntent, 'kind') ?? null,
-		configuredCwd,
+		intentStatus: metadata.intentStatus,
+		lifecycle: metadata.lifecycle,
+		runPolicy: metadata.runPolicy,
+		kind: metadata.kind,
+		configuredCwd: metadata.configuredCwd,
 		cwd,
 		relativeCwd: getRelativeProjectPath(projectRoot, cwd),
-		timeoutSeconds,
-		maxOutputBytes:
-			readPositiveInteger(rawIntent, 'max_output_bytes') ?? readPositiveInteger(contract.defaults, 'max_output_bytes') ?? 1_048_576,
-		successExitCodes: getSuccessExitCodes(rawIntent),
-		commandArgv,
-		shellCommand,
-		mode,
-		argvCommand: commandArgv ? resolveArgvCommand(rawIntent, commandArgv) : undefined,
-		writes: readStringArray(rawIntent, 'writes'),
-		effects: readArray(rawIntent, 'effects'),
-		network: readBoolean(rawIntent, 'network'),
-		destructive: readBoolean(rawIntent, 'destructive'),
+		timeoutSeconds: metadata.timeoutSeconds,
+		maxOutputBytes: metadata.maxOutputBytes,
+		successExitCodes: metadata.successExitCodes,
+		commandArgv: metadata.commandArgv,
+		shellCommand: metadata.shellCommand,
+		mode: metadata.mode,
+		argvCommand: metadata.commandArgv ? resolveArgvCommand(rawIntent, metadata.commandArgv) : undefined,
+		writes: metadata.writes,
+		effects: metadata.effects,
+		network: metadata.network,
+		destructive: metadata.destructive,
 	};
 }
 

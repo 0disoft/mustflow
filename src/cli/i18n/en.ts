@@ -670,6 +670,17 @@ Read these files before working:
   "run.error.timeout": 'Command "{intent}" must define timeout_seconds',
   "run.error.commandSource":
     'Command "{intent}" must define argv or mode = "shell" with cmd',
+  "run.error.unsafeIntent":
+    'Intent "{intent}" has an unsafe name. {detail}',
+  "run.error.unsafeIntentDetail": "Use a shell-safe intent name.",
+  "run.error.blockedShellBackground":
+    'Intent "{intent}" is blocked. {detail}',
+  "run.error.blockedShellBackgroundDetail":
+    "Shell commands must not spawn background work.",
+  "run.error.cwdOutsideProject":
+    'Command "{intent}" has an invalid cwd: {detail}',
+  "run.error.cwdOutsideProjectDetail":
+    "Intent cwd must stay inside the current root.",
   "run.error.conflictingPreviewModes":
     "Use either --dry-run or --plan-only, not both",
   "run.error.timedOut": 'Command "{intent}" timed out after {seconds} seconds',

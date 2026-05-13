@@ -662,6 +662,17 @@ export const zhMessages = {
   "run.error.timeout": '命令 "{intent}" 必须定义 timeout_seconds',
   "run.error.commandSource":
     '命令 "{intent}" 必须定义 argv，或定义 mode = "shell" 并提供 cmd',
+  "run.error.unsafeIntent":
+    '意图 "{intent}" 的名称不安全。{detail}',
+  "run.error.unsafeIntentDetail": "请使用 shell 安全的意图名称。",
+  "run.error.blockedShellBackground":
+    '意图 "{intent}" 已被阻止。{detail}',
+  "run.error.blockedShellBackgroundDetail":
+    "Shell 命令不得启动后台工作。",
+  "run.error.cwdOutsideProject":
+    '命令 "{intent}" 的 cwd 无效：{detail}',
+  "run.error.cwdOutsideProjectDetail":
+    "意图 cwd 必须位于当前根目录内。",
   "run.error.conflictingPreviewModes":
     "只能使用 --dry-run 或 --plan-only，不能同时使用",
   "run.error.timedOut": '命令 "{intent}" 在 {seconds} 秒后超时',

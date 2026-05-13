@@ -12,12 +12,24 @@ const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'defau
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
+const templateCreates = readTomlStringArrayBlock(templateManifest, 'creates');
+const templateSkillCreates = templateCreates.filter((relativePath) => relativePath.startsWith('.mustflow/skills/'));
 
 async function readPublicJsonContracts() {
 	const contractsModule = await import(
 		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'public-json-contracts.js')).href
 	);
 	return contractsModule.getPublicJsonSchemaContracts();
+}
+
+function readTomlStringArrayBlock(content, key) {
+	const match = new RegExp(`^${key} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(content);
+
+	if (!match) {
+		throw new Error(`Missing TOML array block: ${key}`);
+	}
+
+	return Array.from(match[1].matchAll(/"([^"]+)"/gu), (entry) => entry[1]);
 }
 
 function collectRelativeFiles(directory) {
@@ -36,6 +48,10 @@ function collectRelativeFiles(directory) {
 	}
 
 	return files.sort((left, right) => left.localeCompare(right));
+}
+
+function toPosix(relativePath) {
+	return relativePath.split(path.sep).join('/');
 }
 
 function readProjectText(relativePath) {
@@ -208,18 +224,41 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.library.includes('migration-safety-check'));
 });
 
-test('default template includes complete folders for every supported document locale', async () => {
+test('default template locales use localized workflow docs and canonical English skills', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
 	const template = templatesModule.getDefaultTemplate();
 	const localesRoot = path.join(projectRoot, 'templates', 'default', 'locales');
 	const sourceRoot = path.join(localesRoot, 'en');
 	const sourceFiles = collectRelativeFiles(sourceRoot);
+	const localizedDocumentFiles = sourceFiles.filter((relativePath) => !toPosix(relativePath).startsWith('.mustflow/skills/'));
 
 	assert.deepEqual(template.manifest.locales, supportedTemplateLocales);
 
 	for (const locale of supportedTemplateLocales) {
 		const localeRoot = path.join(localesRoot, locale);
-		assert.deepEqual(collectRelativeFiles(localeRoot), sourceFiles, `${locale} should mirror English template files`);
+		const localeFiles = collectRelativeFiles(localeRoot);
+
+		if (locale === template.manifest.defaultLocale) {
+			assert.deepEqual(localeFiles, sourceFiles, `${locale} should contain the canonical template files`);
+			continue;
+		}
+
+		assert.deepEqual(localeFiles, localizedDocumentFiles, `${locale} should localize workflow docs without duplicating skills`);
+
+		const selectedFiles = templatesModule.getTemplateFiles(template, locale);
+		const skillFile = selectedFiles.find((file) => file.relativePath === '.mustflow/skills/code-review/SKILL.md');
+		const agentsFile = selectedFiles.find((file) => file.relativePath === 'AGENTS.md');
+
+		assert.ok(skillFile, `${locale} should still install selected skills`);
+		assert.ok(
+			toPosix(path.relative(projectRoot, skillFile.sourcePath)).startsWith('templates/default/locales/en/.mustflow/skills/'),
+			`${locale} should fall back to canonical English skills`,
+		);
+		assert.ok(agentsFile, `${locale} should install localized AGENTS.md`);
+		assert.ok(
+			toPosix(path.relative(projectRoot, agentsFile.sourcePath)).startsWith(`templates/default/locales/${locale}/`),
+			`${locale} should still use localized workflow documents`,
+		);
 	}
 });
 
@@ -368,47 +407,18 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('examples/nested-repos/README.md'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/adapter-boundary/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/artifact-integrity-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/behavior-preserving-refactor/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/codebase-orientation/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/command-pattern/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/composition-over-inheritance/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/contract-sync-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/date-number-audit/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/database-change-safety/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-reality-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/dependency-injection/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/diff-risk-review/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/docs-prose-review/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/external-prompt-injection-defense/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/facade-pattern/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/instruction-conflict-scope-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pure-core-imperative-shell/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/result-option/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/test-design-guard/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/migration-safety-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/multi-agent-work-coordination/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/null-object-pattern/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/performance-budget-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pattern-scout/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/project-context-authoring/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/readme-authoring/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/requirement-regression-guard/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/repo-improvement-loop/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/repro-first-debug/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-privacy-review/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/security-regression-tests/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/source-freshness-check/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/state-machine-pattern/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/strategy-pattern/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/structure-discovery-gate/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/skill-authoring/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/ui-quality-gate/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/visual-review-artifact/SKILL.md`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/visual-review-artifact/resources.toml`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/visual-review-artifact/assets/review-template.html`));
-		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/web-asset-optimization/SKILL.md`));
+	}
+	for (const relativePath of templateSkillCreates) {
+		assert.ok(files.has(`templates/default/locales/en/${relativePath}`), `${relativePath} should be packaged from the canonical locale`);
+	}
+	for (const locale of supportedTemplateLocales.filter((entry) => entry !== 'en')) {
+		const localizedSkillPrefix = `templates/default/locales/${locale}/.mustflow/skills/`;
+
+		assert.equal(
+			Array.from(files).some((file) => file.startsWith(localizedSkillPrefix)),
+			false,
+			`${locale} should not package duplicated localized skill files`,
+		);
 	}
 	assert.equal(files.has('templates/default/files/AGENTS.md'), false);
 	assert.equal(files.has('dist/cli/lib/package-manager.js'), false);

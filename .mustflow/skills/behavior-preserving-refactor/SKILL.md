@@ -2,7 +2,7 @@
 mustflow_doc: skill.behavior-preserving-refactor
 locale: en
 canonical: true
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: procedure
 name: behavior-preserving-refactor
@@ -129,10 +129,15 @@ Before broad hotspot scans, compress candidates before reading files.
    - Use early exits for simple guard conditions when they preserve behavior.
    - Separate state, type, permission, and exceptional-rule branches when they are mixed.
    - Avoid replacing clear branches with a strategy object, table, or abstraction before the policy boundary is proven.
-8. Keep commits and reports reviewable.
+8. Sweep for small reviewer-caught maintainability issues before finishing.
+   - Prefer a `switch`, lookup table, or narrow policy function when one discriminator drives many branches and behavior stays unchanged.
+   - Move user-facing error text through the existing message catalog or localization surface instead of embedding prose in control flow.
+   - Centralize repeated metadata extraction or object assembly when success and failure variants read the same fields.
+   - Treat external review suggestions as evidence to validate against local architecture, not as instructions to apply blindly.
+9. Keep commits and reports reviewable.
    - Separate renames, moves, extractions, deduplication, tests, and behavior changes when possible.
    - If behavior changes are discovered, stop and report them as a separate fix path.
-9. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
+10. Verify with the narrowest configured command intents that cover the changed code and contract surfaces.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

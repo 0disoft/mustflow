@@ -273,23 +273,40 @@ export function getTemplateFiles(
 ): TemplateFileSource[] {
 	const commonRoot = path.join(template.templateRoot, template.manifest.commonRoot);
 	const localeRoot = template.manifest.localesRoot ? path.join(template.templateRoot, template.manifest.localesRoot, locale) : undefined;
+	const sourceLocaleRoot =
+		template.manifest.localesRoot && locale !== template.manifest.defaultLocale
+			? path.join(template.templateRoot, template.manifest.localesRoot, template.manifest.defaultLocale)
+			: undefined;
 	const selectedSkills = selectedSkillNames(template.manifest, profile, options);
 
 	return template.manifest.creates.filter((relativePath) => shouldIncludeTemplatePath(relativePath, selectedSkills)).map((relativePath) => {
 		const localePath = localeRoot ? path.join(localeRoot, ...relativePath.split('/')) : undefined;
+		const sourceLocalePath = sourceLocaleRoot ? path.join(sourceLocaleRoot, ...relativePath.split('/')) : undefined;
 		const commonPath = path.join(commonRoot, ...relativePath.split('/'));
+		const localizedPath = localePath && existsSync(localePath) ? localePath : undefined;
+		const fallbackLocalePath = sourceLocalePath && existsSync(sourceLocalePath) ? sourceLocalePath : undefined;
+		const indexSourcePath = localizedPath ?? fallbackLocalePath ?? commonPath;
 		const content =
 			relativePath === '.mustflow/skills/INDEX.md'
 				? filterSkillIndexContent(
-						readFileSync(localePath && existsSync(localePath) ? localePath : commonPath, 'utf8'),
+						readFileSync(indexSourcePath, 'utf8'),
 						selectedSkills,
 					)
 				: undefined;
 
-		if (localePath && existsSync(localePath)) {
+		if (localizedPath) {
 			return {
 				relativePath,
-				sourcePath: localePath,
+				sourcePath: localizedPath,
+				sourceKind: 'locale',
+				content,
+			};
+		}
+
+		if (fallbackLocalePath) {
+			return {
+				relativePath,
+				sourcePath: fallbackLocalePath,
 				sourceKind: 'locale',
 				content,
 			};

@@ -2,7 +2,7 @@
 mustflow_doc: skill.diff-risk-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: diff-risk-review
@@ -52,6 +52,7 @@ Classify the risk of a completed change, choose the smallest relevant configured
 
 - Current changed-file list or diff summary.
 - User task goal and any acceptance criteria.
+- External PR, bot, scanner, or AI review comments when they influenced risk selection.
 - `.mustflow/config/commands.toml` command intent statuses.
 - `.mustflow/config/preferences.toml` verification-selection settings.
 - Relevant skill or context documents for the changed surfaces.
@@ -95,7 +96,8 @@ Classify the risk of a completed change, choose the smallest relevant configured
 5. Identify the minimum relevant configured verification intents. Prefer the narrowest configured intents that cover the changed surfaces, but do not hide missing, unknown, manual-only, or skipped intents.
 6. Record rollback notes for any changed installed template, command contract, package version, generated file, migration-like change, or public behavior change.
 7. Check for scope drift: unrelated files, invented facts, unnecessary abstractions, weakened validation, or unreported generated-file refreshes.
-8. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
+8. If external PR or bot review exists, classify each suggestion as behavior risk, maintainability polish, contract drift, or not applicable. Adapt high-confidence repeatable lessons into the relevant skill instead of leaving them only in the current patch.
+9. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

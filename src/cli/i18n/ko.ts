@@ -667,6 +667,17 @@ export const koMessages = {
   "run.error.timeout": '명령 "{intent}"는 timeout_seconds를 정의해야 합니다',
   "run.error.commandSource":
     '명령 "{intent}"는 argv를 정의하거나 mode = "shell"과 cmd를 함께 정의해야 합니다',
+  "run.error.unsafeIntent":
+    '명령 의도 "{intent}"의 이름이 안전하지 않습니다. {detail}',
+  "run.error.unsafeIntentDetail": "셸에서 안전한 명령 의도 이름을 사용하세요.",
+  "run.error.blockedShellBackground":
+    '명령 의도 "{intent}"가 차단되었습니다. {detail}',
+  "run.error.blockedShellBackgroundDetail":
+    "셸 명령은 백그라운드 작업을 시작하면 안 됩니다.",
+  "run.error.cwdOutsideProject":
+    '명령 "{intent}"의 실행 위치(cwd)가 올바르지 않습니다: {detail}',
+  "run.error.cwdOutsideProjectDetail":
+    "명령 실행 위치(cwd)는 현재 루트 안에 있어야 합니다.",
   "run.error.conflictingPreviewModes":
     "--dry-run과 --plan-only 중 하나만 사용하세요",
   "run.error.timedOut": '명령 "{intent}"가 {seconds}초 뒤 시간 초과되었습니다',
