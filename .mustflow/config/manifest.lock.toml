@@ -25,7 +25,7 @@ content_hash = "sha256:259834228dc4f9d6936415f5b5bc7f7f1b6d3d582f423aa06eadcdd24
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:1e6dbb571319be6acdea773077579da08d60fc37b787493328fe7f41933bd3da"
+content_hash = "sha256:7dbb0f08f75418ee0d9e5ec4d9e4763420363dc971e81c844ede601868a91dbd"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
