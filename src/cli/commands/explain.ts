@@ -2,7 +2,11 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { explainAssetOptimization, explainCommandIntent, type CommandDecision } from '../../core/command-explanation.js';
+import {
+	explainAssetOptimization,
+	explainCommandIntent,
+	type CommandDecision,
+} from '../../core/command-explanation.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import {
 	explainManagedMarkdownAuthority,
@@ -23,10 +27,28 @@ import {
 	type LocalCommandEffectGraph,
 	type LocalPathSurfaceReadModel,
 } from '../lib/local-index.js';
+import {
+	explainVerifyArgErrorMessage,
+	explainVerifyPlanErrorMessage,
+	getVerifyExplainOutput,
+	parseExplainVerifyArgs,
+	readExplainVerifyPlanReasons,
+	renderVerifyExplainDecision,
+	type ExplainVerificationDecision,
+} from './explain-verify.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 
-type ExplainTopic = 'anchor' | 'asset-optimization' | 'authority' | 'command' | 'retention' | 'skill' | 'skills' | 'surface';
+type ExplainTopic =
+	| 'anchor'
+	| 'asset-optimization'
+	| 'authority'
+	| 'command'
+	| 'retention'
+	| 'skill'
+	| 'skills'
+	| 'surface'
+	| 'verify';
 type ExplainCommandDecision = CommandDecision & {
 	readonly effectGraph?: LocalCommandEffectGraph;
 };
@@ -40,7 +62,8 @@ type ExplainDecision =
 	| SkillRouteDecision
 	| SkillRouteAlignmentDecision
 	| ExplainSurfaceDecision
-	| SourceAnchorDecision;
+	| SourceAnchorDecision
+	| ExplainVerificationDecision;
 
 interface ExplainOutput {
 	readonly schema_version: string;
@@ -53,7 +76,7 @@ interface ExplainOutput {
 export function getExplainHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf explain <topic> [target] [options]',
+			usage: 'mf explain <topic> [target] [options] | mf explain verify --reason <event> [options] | mf explain verify --from-plan <path> [options]',
 			summary: t(lang, 'explain.help.summary'),
 			options: [
 				{ label: '--json', description: t(lang, 'cli.option.json') },
@@ -70,6 +93,8 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 				'mf explain command lint --json',
 				'mf explain retention',
 				'mf explain retention --json',
+				'mf explain verify --reason code_change',
+				'mf explain verify --from-plan verify-plan.json --json',
 				'mf explain skill code-review',
 				'mf explain skill mustflow.core.code-review --json',
 				'mf explain skills',
@@ -207,6 +232,10 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 			`- authority: ${output.decision.expectation.authority}`,
 			`- lifecycle: ${output.decision.expectation.lifecycle}`,
 		);
+	}
+
+	if ('verification' in output.decision) {
+		lines.push(...renderVerifyExplainDecision(output.decision, lang));
 	}
 
 	if ('boundary' in output.decision) {
@@ -422,6 +451,60 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 	}
 
 	const json = args.includes('--json');
+	const positional = args.filter((arg) => arg !== '--json');
+	const [topic, targetArg, ...rest] = positional;
+
+	if (topic === 'verify') {
+		const verifyArgs = targetArg === undefined ? rest : [targetArg, ...rest];
+		const parsed = parseExplainVerifyArgs(verifyArgs);
+
+		if (parsed.error) {
+			printUsageError(reporter, explainVerifyArgErrorMessage(parsed.error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+			return 1;
+		}
+
+		const selectedInputCount = [parsed.reason, parsed.fromPlan].filter(Boolean).length;
+
+		if (selectedInputCount > 1) {
+			printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf explain --help', getExplainHelp(lang), lang);
+			return 1;
+		}
+
+		if (selectedInputCount === 0) {
+			printUsageError(reporter, t(lang, 'verify.error.missingReason'), 'mf explain --help', getExplainHelp(lang), lang);
+			return 1;
+		}
+
+		const projectRoot = resolveMustflowRoot();
+		let output: ExplainOutput;
+
+		try {
+			if (parsed.fromPlan) {
+				const reasons = readExplainVerifyPlanReasons(projectRoot, parsed.fromPlan);
+				output = await getVerifyExplainOutput(EXPLAIN_SCHEMA_VERSION, projectRoot, reasons, null, parsed.fromPlan);
+			} else {
+				output = await getVerifyExplainOutput(
+					EXPLAIN_SCHEMA_VERSION,
+					projectRoot,
+					[parsed.reason as string],
+					parsed.reason as string,
+					null,
+				);
+			}
+		} catch (error) {
+			printUsageError(reporter, explainVerifyPlanErrorMessage(error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+			return 1;
+		}
+
+		if (json) {
+			reporter.stdout(JSON.stringify(output, null, 2));
+			return 0;
+		}
+
+		reporter.stdout(renderExplainDecision(output, lang));
+		return 0;
+	}
+
 	const unsupported = args.filter((arg) => arg.startsWith('-') && arg !== '--json');
 
 	if (unsupported.length > 0) {
@@ -434,9 +517,6 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 		);
 		return 1;
 	}
-
-	const positional = args.filter((arg) => arg !== '--json');
-	const [topic, targetArg, ...rest] = positional;
 
 	if (
 		topic !== 'asset-optimization' &&

@@ -68,7 +68,7 @@ interface VerificationOutput {
 	readonly results: readonly VerificationResult[];
 }
 
-interface VerifyInput {
+export interface VerifyInput {
 	readonly reasons: readonly string[];
 	readonly classificationReport: ChangeClassificationReport;
 }
@@ -409,7 +409,7 @@ function resolvePlanPath(projectRoot: string, inputPath: string): string {
 	return resolved;
 }
 
-function readInputFromPlan(projectRoot: string, inputPath: string): VerifyInput {
+export function readInputFromPlan(projectRoot: string, inputPath: string): VerifyInput {
 	let parsed: unknown;
 	const planPath = resolvePlanPath(projectRoot, inputPath);
 
@@ -447,7 +447,7 @@ function writeChangedPlan(projectRoot: string, inputPath: string, plan: Classify
 	writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
 }
 
-function planErrorMessageKey(code: string): MessageKey {
+export function planErrorMessageKey(code: string): MessageKey {
 	switch (code) {
 		case 'plan_path_outside_root':
 			return 'verify.error.plan_path_outside_root';

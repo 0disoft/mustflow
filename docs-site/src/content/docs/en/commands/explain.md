@@ -14,6 +14,9 @@ Without a path, the command prints the authority model. With a path, it reports 
 `mf explain command <intent>` explains whether a command intent in `.mustflow/config/commands.toml` is runnable through `mf run`, why it is allowed or blocked, and whether running it would count as mustflow verification.
 When a fresh local index exists, it also reads the derived command-effect graph so the report can show write locks and lock conflicts without changing command authority.
 
+`mf explain verify --reason <event>` and `mf explain verify --from-plan <path>` explain which verification candidates `mf verify` would select without running commands or writing receipts. They use the same `required_after` matching and command eligibility rules as `mf verify`, and show skipped candidates with stable reason codes.
+When a fresh local index exists, verify explanations also include read-only command-effect graph status for matching candidates. Missing or stale indexes show a rebuild hint and do not change command selection.
+
 `mf explain retention` explains the effective retention policy from `.mustflow/config/mustflow.toml`, including raw event storage, bounded run receipts, and context limits.
 
 `mf explain skill <skill_id>` explains one route from `.mustflow/skills/INDEX.md`, including its trigger, required input, edit scope, risk, verification intents, and expected output. The target may be the skill folder name, full `metadata.skill_id`, `mustflow_doc`, or skill path.
@@ -37,6 +40,7 @@ When a fresh local index exists, it also shows the derived path-surface rule tha
 - `Authority boundary`: What the authority lane may define and what it must leave to higher-authority files, current code, or `commands.toml`.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
 - `Command effect graph`: Fresh local-index write locks and lock conflicts when the `command` topic is used and `.mustflow/cache/mustflow.sqlite` is available. Missing or stale indexes show a rebuild hint instead of changing the command decision.
+- `Verification explanation`: Reasons, matching `required_after` intents, runnable candidates, skipped candidates, gaps, and local-index command-effect status when the `verify` topic is used.
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
 - `Skill route`: Trigger, scope, risk, checks, and expected output when the `skill` topic is used.
 - `Skill routes`: Strict skill index/body alignment status when the `skills` topic is used.
@@ -54,6 +58,8 @@ npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
+npx mf explain verify --reason code_change
+npx mf explain verify --from-plan verify-plan.json --json
 npx mf explain retention
 npx mf explain retention --json
 npx mf explain skill code-review
@@ -75,9 +81,9 @@ Machine-readable output uses these fields:
 
 - `schema_version` (`string`): Output format version.
 - `command` (`string`): Always `explain`.
-- `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, or `surface`.
+- `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface`, or `verify`.
 - `mustflow_root` (`string`): Current mustflow root.
-- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, and refresh hints when an intent is declared. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available.
+- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, and refresh hints when an intent is declared. For `verify`, `decision.verification` contains selected reasons, matching candidates, skip reasons, gaps, and local-index command-effect status. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available.
 
 ## Help and Exit Codes
 
@@ -85,5 +91,5 @@ Machine-readable output uses these fields:
 npx mf explain --help
 ```
 
-- Exit code `0`: The authority decision was inspected and printed.
+- Exit code `0`: The policy decision was inspected and printed.
 - Exit code `1`: The command received an invalid topic, unknown option, or unexpected argument.

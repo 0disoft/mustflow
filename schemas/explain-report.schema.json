@@ -14,7 +14,7 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "explain" },
-    "topic": { "enum": ["anchor", "asset-optimization", "authority", "command", "retention", "skill", "skills", "surface"] },
+    "topic": { "enum": ["anchor", "asset-optimization", "authority", "command", "retention", "skill", "skills", "surface", "verify"] },
     "mustflow_root": { "type": "string" },
     "decision": {
       "oneOf": [
@@ -24,7 +24,8 @@
         { "$ref": "#/$defs/skillRouteDecision" },
         { "$ref": "#/$defs/skillRouteAlignmentDecision" },
         { "$ref": "#/$defs/publicSurfaceDecision" },
-        { "$ref": "#/$defs/sourceAnchorDecision" }
+        { "$ref": "#/$defs/sourceAnchorDecision" },
+        { "$ref": "#/$defs/verificationDecision" }
       ]
     }
   },
@@ -452,6 +453,176 @@
           "items": { "type": "string" }
         },
         "conflictingConcurrencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "verificationDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "input",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "verification"
+      ],
+      "properties": {
+        "kind": { "const": "verify" },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason", "planSource"],
+          "properties": {
+            "reason": { "type": ["string", "null"] },
+            "planSource": { "type": ["string", "null"] }
+          }
+        },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "planSource",
+            "reasons",
+            "candidateCount",
+            "runnableCount",
+            "skippedCount",
+            "requirements"
+          ],
+          "properties": {
+            "planSource": { "type": ["string", "null"] },
+            "reasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "candidateCount": { "type": "integer" },
+            "runnableCount": { "type": "integer" },
+            "skippedCount": { "type": "integer" },
+            "requirements": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/verificationRequirement" }
+            }
+          }
+        }
+      }
+    },
+    "verificationRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "matchingIntents", "candidates", "gap"],
+      "properties": {
+        "reason": { "type": "string" },
+        "matchingIntents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verificationCandidate" }
+        },
+        "gap": { "type": ["string", "null"] }
+      }
+    },
+    "verificationCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "status",
+        "skipReason",
+        "detail",
+        "requiredAfter",
+        "command",
+        "effectGraph"
+      ],
+      "properties": {
+        "intent": { "type": ["string", "null"] },
+        "status": { "enum": ["runnable", "skipped"] },
+        "skipReason": {
+          "type": ["string", "null"],
+          "enum": [
+            "no_matching_intents",
+            "intent_not_table",
+            "status_not_configured",
+            "lifecycle_not_oneshot",
+            "run_policy_not_agent_allowed",
+            "stdin_not_closed",
+            "missing_timeout",
+            "missing_command_source",
+            "unsafe_intent_name",
+            "blocked_shell_background_pattern",
+            null
+          ]
+        },
+        "detail": { "type": ["string", "null"] },
+        "requiredAfter": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "command": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/verificationCommandSummary" }
+          ]
+        },
+        "effectGraph": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/commandEffectGraph" }
+          ]
+        }
+      }
+    },
+    "verificationCommandSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "status",
+        "lifecycle",
+        "runPolicy",
+        "stdin",
+        "timeoutSeconds",
+        "mode",
+        "cwd",
+        "writes",
+        "network",
+        "destructive",
+        "successExitCodes",
+        "requiredAfter"
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "status": { "type": ["string", "null"] },
+        "lifecycle": { "type": ["string", "null"] },
+        "runPolicy": { "type": ["string", "null"] },
+        "stdin": { "type": ["string", "null"] },
+        "timeoutSeconds": { "type": ["integer", "null"] },
+        "mode": { "enum": ["argv", "shell", "missing"] },
+        "cwd": { "type": ["string", "null"] },
+        "writes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "network": { "type": ["boolean", "null"] },
+        "destructive": { "type": ["boolean", "null"] },
+        "successExitCodes": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "requiredAfter": {
           "type": "array",
           "items": { "type": "string" }
         }

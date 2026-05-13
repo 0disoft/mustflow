@@ -19,7 +19,8 @@ Current schemas:
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
 - `docs-review-list.schema.json`: output of `mf docs review list --json`
 - `explain-report.schema.json`: output of `mf explain authority --json`, `mf explain command --json`,  
-  `mf explain retention --json`, `mf explain skills --json`, and `mf explain surface --json`
+  `mf explain verify --reason <event> --json`, `mf explain retention --json`, `mf explain skills --json`,
+  and `mf explain surface --json`
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
   `mf verify --from-plan <path> --plan-only --json`

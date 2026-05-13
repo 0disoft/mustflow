@@ -14,6 +14,9 @@ Sin una ruta, el comando imprime el modelo de autoridad. Con una ruta, informa s
 `mf explain command <intent>` explica si una intención de comando en `.mustflow/config/commands.toml` puede ejecutarse con `mf run`, por qué se permite o se bloquea, y si su ejecución contaría como verificación de mustflow.
 Cuando existe un índice local actualizado, también lee el grafo derivado de efectos de comando para mostrar bloqueos de escritura y conflictos sin cambiar la autoridad del comando.
 
+`mf explain verify --reason <event>` y `mf explain verify --from-plan <path>` explican qué candidatos de verificación elegiría `mf verify` sin ejecutar comandos ni escribir recibos. Usan la misma coincidencia `required_after` y las mismas reglas de elegibilidad de comandos que `mf verify`, y muestran los candidatos omitidos con códigos de motivo estables.
+Cuando existe un índice local actualizado, las explicaciones de verificación también incluyen el estado de solo lectura del grafo de efectos de comando para los candidatos coincidentes. Si el índice falta o está obsoleto, muestran una sugerencia de reconstrucción y no cambian la selección de comandos.
+
 `mf explain retention` explica la política de retención efectiva de `.mustflow/config/mustflow.toml`, incluida la forma de guardar eventos sin procesar, los recibos de ejecución acotados y los límites de contexto.
 
 `mf explain skill <skill_id>` explica una ruta de `.mustflow/skills/INDEX.md`, incluidos el disparador, la entrada requerida, el alcance de edición, el riesgo, las intenciones de verificación y la salida esperada. El objetivo puede ser el nombre de carpeta, el `metadata.skill_id` completo, `mustflow_doc` o la ruta del skill.
@@ -36,6 +39,7 @@ Cuando existe un índice local actualizado, también lee el grafo derivado de ef
 - `Authority boundary`: lo que esa autoridad puede definir y lo que debe dejar a archivos de mayor autoridad, al código actual o a `commands.toml`.
 - `Command intent`: metadatos del contrato de comando cuando se usa el tema `command`.
 - `Command effect graph`: bloqueos de escritura y conflictos leídos del índice local actualizado cuando se usa el tema `command`. Si el índice falta o está obsoleto, se muestra una sugerencia de reconstrucción sin cambiar la decisión del comando.
+- `Verification explanation`: motivos, intenciones `required_after` coincidentes, candidatos ejecutables, candidatos omitidos, huecos y estado del grafo de efectos de comando local cuando se usa el tema `verify`.
 - `Retention policy`: ajustes de retención efectivos cuando se usa el tema `retention`.
 - `Skill route`: disparador, alcance, riesgo, verificaciones y salida esperada cuando se usa el tema `skill`.
 - `Skill routes`: estado estricto de alineación entre índice y cuerpo cuando se usa el tema `skills`.
@@ -53,6 +57,8 @@ npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
+npx mf explain verify --reason code_change
+npx mf explain verify --from-plan verify-plan.json --json
 npx mf explain retention
 npx mf explain retention --json
 npx mf explain skill code-review
@@ -74,9 +80,9 @@ La salida legible por máquinas usa estos campos:
 
 - `schema_version` (`string`): versión del formato de salida.
 - `command` (`string`): siempre `explain`.
-- `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills` o `surface`.
+- `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface` o `verify`.
 - `mustflow_root` (`string`): raíz mustflow actual.
-- `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema. Para `authority`, incluye `boundary.role`, `boundary.canDefine` y `boundary.cannotDefine`. Para `command`, `decision.effectGraph` contiene el estado del grafo de efectos de comando del índice local, bloqueos de escritura, conflictos, rutas obsoletas y sugerencias de reconstrucción cuando la intención está declarada. Para `surface`, `decision.readModel` contiene el estado de ruta-superficie del índice local de solo lectura y los metadatos de la regla coincidente cuando están disponibles.
+- `decision` (`object`): decisión resuelta, motivo, acción efectiva, archivos fuente, estado de verificación y detalles específicos del tema. Para `authority`, incluye `boundary.role`, `boundary.canDefine` y `boundary.cannotDefine`. Para `command`, `decision.effectGraph` contiene el estado del grafo de efectos de comando del índice local, bloqueos de escritura, conflictos, rutas obsoletas y sugerencias de reconstrucción cuando la intención está declarada. Para `verify`, `decision.verification` contiene motivos seleccionados, candidatos coincidentes, motivos de omisión, huecos y estado del grafo de efectos de comando local. Para `surface`, `decision.readModel` contiene el estado de ruta-superficie del índice local de solo lectura y los metadatos de la regla coincidente cuando están disponibles.
 
 ## Ayuda y códigos de salida
 
@@ -84,5 +90,5 @@ La salida legible por máquinas usa estos campos:
 npx mf explain --help
 ```
 
-- Código `0`: la decisión de autoridad se inspeccionó e imprimió.
+- Código `0`: la decisión de política se inspeccionó e imprimió.
 - Código `1`: el comando recibió un tema inválido, una opción desconocida o un argumento inesperado.
