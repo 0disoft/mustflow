@@ -14,6 +14,11 @@ import {
 	type DashboardStatusSnapshot,
 } from '../lib/dashboard-html.js';
 import {
+	DashboardExportPathError,
+	writeDashboardExport,
+	type DashboardExportFormat,
+} from '../lib/dashboard-export.js';
+import {
 	DASHBOARD_VERIFICATION_MAX_FILE_MATCHES,
 	createDashboardVerificationSnapshot,
 } from '../../core/dashboard-verification.js';
@@ -56,6 +61,8 @@ interface DashboardOptions {
 	readonly port: number;
 	readonly json: boolean;
 	readonly openBrowser: boolean;
+	readonly exportPath?: string;
+	readonly exportFormat?: DashboardExportFormat;
 }
 
 const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
@@ -131,9 +138,18 @@ export function getDashboardHelp(lang: CliLang = 'en'): string {
 				{ label: '--open', description: t(lang, 'dashboard.help.option.open') },
 				{ label: '--no-open', description: t(lang, 'dashboard.help.option.noOpen') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
+				{ label: '--export <path>', description: t(lang, 'dashboard.help.option.export') },
+				{ label: '--export-json <path>', description: t(lang, 'dashboard.help.option.exportJson') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf dashboard', 'mf dashboard --open', 'mf dashboard --port 4173', 'mf dashboard --json'],
+			examples: [
+				'mf dashboard',
+				'mf dashboard --open',
+				'mf dashboard --port 4173',
+				'mf dashboard --json',
+				'mf dashboard --export .mustflow/state/artifacts/dashboard.html',
+				'mf dashboard --export-json .mustflow/state/artifacts/dashboard.json',
+			],
 			exitCodes: [
 				{
 					label: '0',
@@ -154,6 +170,9 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 	let port = DEFAULT_DASHBOARD_PORT;
 	let json = false;
 	let openBrowser = false;
+	let exportPath: string | undefined;
+	let exportFormat: DashboardExportFormat | undefined;
+	let serverOptionUsed = false;
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -165,16 +184,19 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 		if (arg === '--json') {
 			json = true;
 			openBrowser = false;
+			serverOptionUsed = true;
 			continue;
 		}
 
 		if (arg === '--open') {
 			openBrowser = true;
+			serverOptionUsed = true;
 			continue;
 		}
 
 		if (arg === '--no-open') {
 			openBrowser = false;
+			serverOptionUsed = true;
 			continue;
 		}
 
@@ -184,12 +206,14 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 				return { error: t(lang, 'cli.error.missingValue', { option: '--host' }) };
 			}
 			host = value;
+			serverOptionUsed = true;
 			index += 1;
 			continue;
 		}
 
 		if (arg.startsWith('--host=')) {
 			host = arg.slice('--host='.length);
+			serverOptionUsed = true;
 			continue;
 		}
 
@@ -203,6 +227,7 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 				return { error: t(lang, 'dashboard.error.invalidPort', { port: value }) };
 			}
 			port = parsedPort;
+			serverOptionUsed = true;
 			index += 1;
 			continue;
 		}
@@ -214,6 +239,45 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 				return { error: t(lang, 'dashboard.error.invalidPort', { port: value }) };
 			}
 			port = parsedPort;
+			serverOptionUsed = true;
+			continue;
+		}
+
+		if (arg === '--export' || arg === '--export-json') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return { error: t(lang, 'cli.error.missingValue', { option: arg }) };
+			}
+			if (exportPath) {
+				return { error: t(lang, 'dashboard.error.conflictingExportModes') };
+			}
+			exportPath = value;
+			exportFormat = arg === '--export-json' ? 'json' : 'html';
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith('--export=')) {
+			if (exportPath) {
+				return { error: t(lang, 'dashboard.error.conflictingExportModes') };
+			}
+			exportPath = arg.slice('--export='.length);
+			exportFormat = 'html';
+			if (!exportPath) {
+				return { error: t(lang, 'cli.error.missingValue', { option: '--export' }) };
+			}
+			continue;
+		}
+
+		if (arg.startsWith('--export-json=')) {
+			if (exportPath) {
+				return { error: t(lang, 'dashboard.error.conflictingExportModes') };
+			}
+			exportPath = arg.slice('--export-json='.length);
+			exportFormat = 'json';
+			if (!exportPath) {
+				return { error: t(lang, 'cli.error.missingValue', { option: '--export-json' }) };
+			}
 			continue;
 		}
 
@@ -222,6 +286,14 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 		}
 
 		return { error: t(lang, 'cli.error.unexpectedArgument', { argument: arg }) };
+	}
+
+	if (exportPath && serverOptionUsed) {
+		return { error: t(lang, 'dashboard.error.exportServerOptions') };
+	}
+
+	if (exportPath) {
+		return { options: { host, port, json: false, openBrowser: false, exportPath, exportFormat: exportFormat ?? 'html' } };
 	}
 
 	if (!LOCAL_DASHBOARD_HOSTS.has(host)) {
@@ -745,6 +817,32 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 
 	const options = parsed.options;
 	const projectRoot = resolveMustflowRoot();
+
+	if (options.exportPath) {
+		try {
+			const result = writeDashboardExport({
+				projectRoot,
+				outputPath: options.exportPath,
+				format: options.exportFormat ?? 'html',
+				preferences: readDashboardPreferences(projectRoot),
+				status: await renderStatusResponse(projectRoot),
+				docsReview: renderDocReviewResponse(projectRoot, new URL('/api/docs/review', 'http://localhost')),
+			});
+
+			reporter.stdout(t(lang, 'dashboard.export.wrote', { path: result.relativePath, bytes: result.bytes }));
+			return 0;
+		} catch (error) {
+			const message =
+				error instanceof DashboardExportPathError
+					? t(lang, 'dashboard.error.exportPathOutsideRoot', { path: error.targetPath })
+					: error instanceof Error
+						? error.message
+						: String(error);
+			printUsageError(reporter, message, 'mf dashboard --help', getDashboardHelp(lang), lang);
+			return 1;
+		}
+	}
+
 	const token = randomBytes(18).toString('base64url');
 	const initialSnapshot = readDashboardPreferences(projectRoot);
 	const server = http.createServer(async (request, response) => {

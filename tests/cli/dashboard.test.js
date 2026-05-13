@@ -48,6 +48,43 @@ function sha256Text(text) {
 	return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
 
+function writeLatestRunReceipt(projectPath) {
+	const statePath = path.join(projectPath, '.mustflow', 'state', 'runs');
+	mkdirSync(statePath, { recursive: true });
+	writeFileSync(
+		path.join(statePath, 'latest.json'),
+		JSON.stringify(
+			{
+				schema_version: '1',
+				command: 'run',
+				intent: 'test_related',
+				status: 'passed',
+				timed_out: false,
+				started_at: '2026-05-13T00:00:00.000Z',
+				finished_at: '2026-05-13T00:00:01.000Z',
+				duration_ms: 1000,
+				cwd: '.',
+				lifecycle: 'oneshot',
+				run_policy: 'agent_allowed',
+				mode: 'argv',
+				argv: [process.execPath, '-e', 'console.log("SECRET_ARG_VALUE")'],
+				timeout_seconds: 10,
+				max_output_bytes: 1024,
+				success_exit_codes: [0],
+				exit_code: 0,
+				signal: null,
+				error: null,
+				kill_method: null,
+				receipt_path: '.mustflow/state/runs/latest.json',
+				stdout: { bytes: 19, truncated: false, tail: 'SECRET_STDOUT_VALUE' },
+				stderr: { bytes: 19, truncated: false, tail: 'SECRET_STDERR_VALUE' },
+			},
+			null,
+			2,
+		),
+	);
+}
+
 test('dashboard browser opener uses platform-native commands', async () => {
 	const { getBrowserOpenCommand, getFileManagerOpenCommand } = await import(browserOpenModuleUrl);
 	const url = 'http://127.0.0.1:4173/';
@@ -80,6 +117,92 @@ test('dashboard browser opener uses platform-native commands', async () => {
 		args: [folderPath],
 	});
 	assert.equal(getFileManagerOpenCommand(folderPath, 'aix'), undefined);
+});
+
+test('dashboard exports static HTML and redacted JSON without starting a server', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		writeLatestRunReceipt(projectPath);
+
+		const htmlResult = runCli(projectPath, ['dashboard', '--export', 'reports/dashboard.html']);
+		assert.equal(htmlResult.status, 0, htmlResult.stderr || htmlResult.stdout);
+		assert.match(htmlResult.stdout, /Wrote dashboard export to reports\/dashboard\.html/);
+		assert.doesNotMatch(htmlResult.stdout, /listening/);
+
+		const htmlPath = path.join(projectPath, 'reports', 'dashboard.html');
+		assert.ok(existsSync(htmlPath));
+		const html = readFileSync(htmlPath, 'utf8');
+		assert.match(html, /mustflow dashboard export/);
+		assert.match(html, /Dashboard status/);
+		assert.match(html, /<script id="dashboard-export-data" type="application\/json">/);
+		assert.doesNotMatch(html, /dashboardToken/);
+		assert.doesNotMatch(html, /fetch\("/);
+		assert.doesNotMatch(html, /\/api\//);
+		assert.doesNotMatch(html, /navigator\.clipboard/);
+		assert.doesNotMatch(html, /id="open-mustflow"/);
+		assert.doesNotMatch(html, /<button\b/);
+		assert.doesNotMatch(html, /SECRET_ARG_VALUE/);
+		assert.doesNotMatch(html, /SECRET_STDOUT_VALUE/);
+		assert.doesNotMatch(html, /SECRET_STDERR_VALUE/);
+
+		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', 'reports/dashboard.json']);
+		assert.equal(jsonResult.status, 0, jsonResult.stderr || jsonResult.stdout);
+		assert.match(jsonResult.stdout, /Wrote dashboard export to reports\/dashboard\.json/);
+		assert.doesNotMatch(jsonResult.stdout, /listening/);
+
+		const jsonPath = path.join(projectPath, 'reports', 'dashboard.json');
+		assert.ok(existsSync(jsonPath));
+		const exportSnapshot = JSON.parse(readFileSync(jsonPath, 'utf8'));
+		assert.equal(exportSnapshot.schema_version, '1');
+		assert.equal(exportSnapshot.command, 'dashboard export');
+		assert.equal(exportSnapshot.format, 'json');
+		assert.equal(exportSnapshot.output_policy.starts_server, false);
+		assert.equal(exportSnapshot.output_policy.omits_dashboard_token, true);
+		assert.equal(exportSnapshot.output_policy.omits_raw_run_output, true);
+		assert.equal(exportSnapshot.status.run_history.command_line_omitted, true);
+		assert.equal(exportSnapshot.status.run_history.stdout.tail_omitted, true);
+		assert.equal(exportSnapshot.status.run_history.stderr.tail_omitted, true);
+		assert.ok(exportSnapshot.limits.omitted_fields.includes('status.run_history.command_line'));
+		assert.ok(exportSnapshot.limits.omitted_fields.includes('status.run_history.stdout.tail'));
+		assert.equal(typeof exportSnapshot.limits.max_string_bytes, 'number');
+		assert.equal(typeof exportSnapshot.limits.max_array_items, 'number');
+		assert.ok(Array.isArray(exportSnapshot.limits.truncated_fields));
+		const serialized = JSON.stringify(exportSnapshot);
+		assert.doesNotMatch(serialized, /dashboardToken/);
+		assert.doesNotMatch(serialized, /SECRET_ARG_VALUE/);
+		assert.doesNotMatch(serialized, /SECRET_STDOUT_VALUE/);
+		assert.doesNotMatch(serialized, /SECRET_STDERR_VALUE/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard export rejects paths outside the mustflow root', () => {
+	const projectPath = createTempProject();
+	const outsideHtmlPath = path.resolve(projectPath, '..', 'mustflow-dashboard-outside.html');
+	const outsideJsonPath = path.resolve(projectPath, '..', 'mustflow-dashboard-outside.json');
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		const htmlResult = runCli(projectPath, ['dashboard', '--export', '../mustflow-dashboard-outside.html']);
+		assert.equal(htmlResult.status, 1);
+		assert.match(htmlResult.stderr, /export path must stay inside the mustflow root/i);
+		assert.equal(existsSync(outsideHtmlPath), false);
+
+		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', '../mustflow-dashboard-outside.json']);
+		assert.equal(jsonResult.status, 1);
+		assert.match(jsonResult.stderr, /export path must stay inside the mustflow root/i);
+		assert.equal(existsSync(outsideJsonPath), false);
+	} finally {
+		rmSync(outsideHtmlPath, { force: true });
+		rmSync(outsideJsonPath, { force: true });
+		removeTempProject(projectPath);
+	}
 });
 
 async function waitForDashboardInfo(child) {

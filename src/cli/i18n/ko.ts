@@ -119,12 +119,19 @@ export const koMessages = {
   "dashboard.help.option.open":
     "서버가 시작된 뒤 기본 브라우저에서 대시보드를 엽니다",
   "dashboard.help.option.noOpen": "브라우저를 열지 않습니다. 이 동작이 기본값입니다",
-  "dashboard.help.exit.ok": "대시보드를 시작했거나 도움말을 출력했습니다",
+  "dashboard.help.option.export": "서버를 시작하지 않고 정적 HTML 스냅샷을 씁니다",
+  "dashboard.help.option.exportJson": "서버를 시작하지 않고 구조화된 JSON 스냅샷을 씁니다",
+  "dashboard.help.exit.ok": "대시보드를 시작했거나, 내보내기를 썼거나, 도움말을 출력했습니다",
   "dashboard.help.exit.fail":
     "대시보드를 시작하지 못했거나 잘못된 입력이 제공되었습니다",
   "dashboard.error.invalidPort": "잘못된 대시보드 포트: {port}",
   "dashboard.error.nonLocalHost":
     "대시보드 호스트 {host} 사용을 거부했습니다. localhost, 127.0.0.1, ::1 중 하나를 사용하세요.",
+  "dashboard.error.conflictingExportModes": "대시보드 내보내기 방식은 하나만 사용할 수 있습니다",
+  "dashboard.error.exportServerOptions": "대시보드 내보내기는 서버 옵션과 함께 사용할 수 없습니다",
+  "dashboard.error.exportPathOutsideRoot":
+    "대시보드 내보내기 경로는 mustflow 루트 안에 있어야 합니다: {path}",
+  "dashboard.export.wrote": "대시보드 내보내기를 {path}에 썼습니다({bytes}바이트)",
   "dashboard.listening": "mf dashboard 실행 중: {url}",
   "dashboard.ui.title": "mustflow 대시보드",
   "dashboard.ui.language": "언어",

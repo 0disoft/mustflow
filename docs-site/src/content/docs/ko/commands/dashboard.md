@@ -42,11 +42,17 @@ npx mf dashboard --port 4173
 npx mf dashboard --open
 npx mf dashboard --no-open
 npx mf dashboard --json
+npx mf dashboard --export .mustflow/state/artifacts/dashboard.html
+npx mf dashboard --export-json .mustflow/state/artifacts/dashboard.json
 ```
+
+`--export <path>`를 사용하면 로컬 서버를 시작하지 않고 정적 HTML 대시보드 스냅샷을 씁니다. `--export-json <path>`는 같은 제한된 스냅샷을 구조화된 JSON으로 씁니다. 내보내기 경로는 현재 mustflow 루트 안에 있어야 합니다. 내보낸 파일에는 대시보드 세션 토큰, API 호출, 선호 설정 저장 컨트롤, 문서 검수 상태 변경 컨트롤, 원시 명령 출력 꼬리, 실행 중인 서버를 전제로 한 코드가 들어가지 않습니다.
 
 ## 구조화된 출력
 
 `--json`을 사용하면 로컬 서버가 계속 실행되는 동안 대시보드 주소, mustflow 루트, 선호 설정 파일 경로를 먼저 출력합니다.
+
+`--export-json`을 사용하면 서버 주소를 출력하는 대신 JSON 파일을 씁니다. JSON에는 상태, 검증 추천, 명령, 업데이트, 스킬, 문서 검수, 선호 설정 스냅샷이 들어가며, 원시 실행 출력은 빠지고 잘림 정보는 `limits` 아래에 기록됩니다.
 
 대시보드 API는 세션별 토큰을 사용합니다. 상태 조회, 선호 설정 수정, 문서 검수 상태 전환은 모두 이 토큰이 있어야 합니다. API는 화면에 노출된 제한된 선호 설정과 문서 검수 상태 전환만 수정합니다. Git 선호값 토글은 사용자의 명시적 요청 뒤에 에이전트가 어디까지 진행해도 되는지를 나타내며, `git_commit` 같은 명령 계약 항목을 실행 가능 상태로 바꾸지는 않습니다. `git.auto_push`는 잠긴 설정으로 표시됩니다.
 

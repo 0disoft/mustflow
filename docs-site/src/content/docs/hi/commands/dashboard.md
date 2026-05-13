@@ -29,11 +29,17 @@ Documents review tab default रूप से active review entries दिखा
 npx mf dashboard --port 4173
 npx mf dashboard --no-open
 npx mf dashboard --json
+npx mf dashboard --export .mustflow/state/artifacts/dashboard.html
+npx mf dashboard --export-json .mustflow/state/artifacts/dashboard.json
 ```
+
+`--export <path>` local server शुरू किए बिना static HTML dashboard snapshot लिखता है। `--export-json <path>` वही bounded snapshot structured JSON के रूप में लिखता है। Export paths current mustflow root के अंदर रहने चाहिए। Exported files में dashboard session token, API calls, preference-save controls, document-review mutation controls, raw command-output tails, या live-server assumptions शामिल नहीं होते।
 
 ## संरचित आउटपुट
 
 `--json` के साथ command local server चलाए रखते हुए dashboard URL, mustflow root और preferences path print करता है।
+
+`--export-json` के साथ command server URL print करने के बजाय JSON file लिखता है। JSON status, verification, commands, update, skills, document-review और preferences snapshots शामिल करता है; raw run output omit करता है और truncation metadata `limits` के तहत रखता है।
 
 Dashboard API session token use करती है और केवल page पर दिखाए गए limited preference fields तथा document-review status transitions update करती है। `git.auto_push` locked setting के रूप में दिखता है।
 

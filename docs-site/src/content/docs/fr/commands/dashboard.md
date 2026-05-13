@@ -29,11 +29,17 @@ Utilisez `--port` pour demander un port précis. Utilisez `--no-open` pour garde
 npx mf dashboard --port 4173
 npx mf dashboard --no-open
 npx mf dashboard --json
+npx mf dashboard --export .mustflow/state/artifacts/dashboard.html
+npx mf dashboard --export-json .mustflow/state/artifacts/dashboard.json
 ```
+
+Utilisez `--export <path>` pour écrire un instantané HTML statique du tableau de bord sans démarrer le serveur local. Utilisez `--export-json <path>` pour écrire le même instantané borné au format JSON structuré. Les chemins d’export doivent rester dans la racine mustflow courante. Les fichiers exportés ne contiennent pas le jeton de session du tableau de bord, les appels API, les contrôles d’enregistrement des préférences, les contrôles de mutation de revue documentaire, les queues de sortie brute des commandes, ni les hypothèses de serveur actif.
 
 ## Sortie structurée
 
 Avec `--json`, la commande imprime l’URL du tableau de bord, la racine mustflow et le chemin du fichier de préférences avant de garder le serveur local actif.
+
+Avec `--export-json`, la commande écrit un fichier JSON au lieu d’imprimer l’URL du serveur. Le JSON contient les instantanés d’état, de vérification, de commandes, de mise à jour, de skills, de revue documentaire et de préférences ; il omet la sortie brute des exécutions et enregistre les champs tronqués sous `limits`.
 
 L’API du tableau de bord utilise un jeton propre à la session et n’accepte que les mises à jour des champs de préférences et des transitions de revue exposés par la page. `git.auto_push` est affiché comme réglage verrouillé.
 

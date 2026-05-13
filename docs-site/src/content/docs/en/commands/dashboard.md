@@ -42,11 +42,17 @@ npx mf dashboard --port 4173
 npx mf dashboard --open
 npx mf dashboard --no-open
 npx mf dashboard --json
+npx mf dashboard --export .mustflow/state/artifacts/dashboard.html
+npx mf dashboard --export-json .mustflow/state/artifacts/dashboard.json
 ```
+
+Use `--export <path>` to write a static HTML dashboard snapshot without starting the local server. Use `--export-json <path>` to write the same bounded snapshot as structured JSON. Export paths must stay inside the current mustflow root. Export files do not contain the dashboard session token, API calls, preference-save controls, document-review mutation controls, raw command-output tails, or live-server assumptions.
 
 ## Structured Output
 
 With `--json`, the command prints the dashboard URL, mustflow root, and preferences path before keeping the local server running.
+
+With `--export-json`, the command writes a JSON file instead of printing the server URL. The JSON includes status, verification, command, update, skill, document-review, and preference snapshots with raw run output omitted and truncation metadata under `limits`.
 
 The dashboard API uses a per-session token. Status reads, preference updates, and document-review transitions all require that token. The API accepts updates only for the limited preference fields and document-review status transitions exposed by the page. Git preference toggles describe what an agent may do after an explicit user request; they do not make command-contract entries such as `git_commit` runnable. `git.auto_push` is displayed as a locked setting.
 
