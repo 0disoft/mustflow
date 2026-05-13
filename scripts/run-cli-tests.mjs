@@ -20,6 +20,7 @@ const fastTests = [
 	'router.test.js',
 	'security-fuzz.test.js',
 	'status.test.js',
+	'test-audit.test.js',
 	'version-sources.test.js',
 ];
 
@@ -65,6 +66,7 @@ const relatedRules = [
 	{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index.test.js', 'search.test.js'] },
 	{ match: /^src\/core\/source-anchors\.ts$/u, tests: ['check.test.js', 'explain.test.js', 'index.test.js', 'search.test.js'] },
 	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js', 'schema.test.js'] },
+	{ match: /^scripts\/audit-tests\.mjs$/u, tests: ['test-audit.test.js'] },
 	{ match: /^tests\/cli\/([^/]+\.test\.js)$/u, testsForMatch: ([, testName]) => [testName] },
 	{ match: /^\.mustflow\/config\/commands\.toml$/u, tests: ['run.test.js'] },
 	{ match: /^docs-site\//u, tests: ['docs.test.js'] },

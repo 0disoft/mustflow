@@ -87,7 +87,7 @@ npx mf check --strict
 
 इंटरैक्टिव टर्मिनल में `mf init` दस्तावेज़ भाषा, प्रोजेक्ट प्रोफ़ाइल और एजेंट रिपोर्ट भाषा चुनने देता है। बिना प्रश्नों के English डिफ़ॉल्ट इंस्टॉल करने के लिए `mf init --yes` का उपयोग करें।
 
-pnpm और Bun भी उसी npm पैकेज का उपयोग कर सकते हैं।
+pnpm और Bun भी उसी npm पैकेज का उपयोग कर सकते हैं। यहाँ Bun install/run विकल्प है, mustflow की अलग dependency नहीं।
 
 ```sh
 pnpm add -D mustflow
@@ -96,6 +96,18 @@ pnpm exec mf init --yes
 bun add -d mustflow
 bunx mf init --yes
 ```
+
+Project-local install में `npx mf`, `pnpm exec mf`, या `bunx mf` का उपयोग करें। Shell में `mf` सीधे चलाने के लिए mustflow को global install करें।
+
+```sh
+npm install -g mustflow
+mf version --check
+
+bun install -g mustflow
+mf version --check
+```
+
+अगर shell फिर भी `mf: command not found` दिखाती है, तो mustflow उस shell के लिए global install नहीं है, या package manager का global executable directory `PATH` में नहीं है। Bun के साथ, Bun का global executable directory, आम तौर पर `~/.bun/bin`, `PATH` में है या नहीं यह जाँचें।
 
 Deno के `npm:` निष्पादन को सत्यापित होने तक प्रयोगात्मक माना जाना चाहिए।
 
@@ -131,6 +143,8 @@ your-project/
       ├─ project-context-authoring/
       │  └─ SKILL.md
       ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-design-guard/
       │  └─ SKILL.md
       ├─ test-maintenance/
       │  └─ SKILL.md
@@ -217,6 +231,8 @@ mf run mustflow_update_apply
 | `mf update --apply`       | जब कोई अवरोध न हो, तब टेम्पलेट अपडेट लागू करता है।                                   |
 | `mf help <topic>`         | इंस्टॉल की गई mustflow सहायता प्रदर्शित करता है।                                       |
 | `mf dashboard`            | सुरक्षित mustflow प्रेफरेंस के लिए स्थानीय डैशबोर्ड शुरू करता है और इसे डिफ़ॉल्ट ब्राउज़र में खोलता है। Save करते समय यदि lock file मौजूद हो तो customized baseline रिफ्रेश होती है। |
+| `mf version`              | इंस्टॉल किए गए mustflow package version को दिखाता है।                                  |
+| `mf version --check`      | installed version को npm के latest published version से मिलाता है और update command दिखाता है। |
 | `mf version-sources`      | फ़ाइलें बदले बिना detected package, template, और declared version sources की जांच करता है। |
 | `mf explain authority [path]` | फ़ाइलें बदले बिना managed Markdown authority निर्णयों को समझाता है।               |
 

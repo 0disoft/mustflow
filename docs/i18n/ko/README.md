@@ -78,7 +78,7 @@ npx mf check --strict
 
 대화형 터미널에서 `mf init`을 실행하면 문서 언어, 프로젝트 성격, 에이전트 보고 언어를 선택할 수 있습니다. 스크립트에서 질문 없이 영어 기본값으로 설치하려면 `mf init --yes`를 사용하세요.
 
-pnpm과 Bun도 npm 패키지 설치 방식으로 사용할 수 있습니다.
+pnpm과 Bun도 같은 npm 패키지를 사용할 수 있습니다. 여기서 Bun은 설치/실행 선택지일 뿐 mustflow의 별도 의존성으로 추가하지 않습니다.
 
 ```sh
 pnpm add -D mustflow
@@ -87,6 +87,18 @@ pnpm exec mf init --yes
 bun add -d mustflow
 bunx mf init --yes
 ```
+
+프로젝트 안에 설치한 경우에는 `npx mf`, `pnpm exec mf`, `bunx mf`처럼 실행하세요. 셸에서 `mf`를 바로 실행하려면 mustflow를 전역으로 설치해야 합니다.
+
+```sh
+npm install -g mustflow
+mf version --check
+
+bun install -g mustflow
+mf version --check
+```
+
+그래도 셸이 `mf: command not found`를 출력하면, 그 셸에서 mustflow가 전역 설치되어 있지 않거나 패키지 관리자의 전역 실행 파일 폴더가 `PATH`에 없습니다. Bun을 사용할 때는 보통 `~/.bun/bin`인 Bun 전역 실행 파일 폴더가 `PATH`에 들어 있는지 확인하세요.
 
 Deno의 `npm:` 실행은 별도 검증 전까지 실험적 기능으로 간주합니다.
 
@@ -122,6 +134,8 @@ your-project/
       ├─ project-context-authoring/
       │  └─ SKILL.md
       ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-design-guard/
       │  └─ SKILL.md
       ├─ test-maintenance/
       │  └─ SKILL.md
@@ -194,6 +208,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | 차단 항목이 없을 때 템플릿 갱신을 적용합니다. |
 | `mf help <topic>` | 설치된 mustflow 도움말을 보여줍니다. |
 | `mf dashboard` | 안전한 mustflow 설정을 위한 로컬 대시보드를 실행하고 기본 브라우저에서 엽니다. 설정 저장 시 잠금 파일이 있으면 맞춤 기준선으로 갱신합니다. |
+| `mf version` | 설치된 mustflow 패키지 버전을 출력합니다. |
+| `mf version --check` | 설치된 버전을 npm 최신 게시 버전과 비교하고, 업데이트 명령을 출력합니다. |
 | `mf version-sources` | 감지된 패키지, 템플릿, 선언된 버전 기준 원본을 파일 수정 없이 확인합니다. |
 | `mf explain authority [path]` | 관리되는 마크다운 문서의 권한 결정을 파일 수정 없이 설명합니다. |
 

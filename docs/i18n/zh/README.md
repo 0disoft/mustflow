@@ -79,7 +79,7 @@ npx mf check --strict
 
 在交互式终端中，`mf init` 会引导你选择文档语言、项目配置档案和代理报告语言。若需无提示安装英文默认配置，请使用 `mf init --yes`。
 
-pnpm 和 Bun 同样支持该 npm 包。
+pnpm 和 Bun 同样支持该 npm 包。这里的 Bun 只是安装/运行选项，不是 mustflow 的额外依赖。
 
 ```sh
 pnpm add -D mustflow
@@ -88,6 +88,18 @@ pnpm exec mf init --yes
 bun add -d mustflow
 bunx mf init --yes
 ```
+
+项目本地安装时应使用 `npx mf`、`pnpm exec mf` 或 `bunx mf`。如果希望在 shell 中直接运行 `mf`，请全局安装 mustflow。
+
+```sh
+npm install -g mustflow
+mf version --check
+
+bun install -g mustflow
+mf version --check
+```
+
+如果 shell 仍然输出 `mf: command not found`，说明 mustflow 没有在该 shell 中全局安装，或包管理器的全局可执行文件目录不在 `PATH` 中。使用 Bun 时，请确认 Bun 的全局可执行文件目录，通常是 `~/.bun/bin`，已经加入 `PATH`。
 
 Deno 的 `npm:` 执行功能仍属实验性质，建议先单独验证。
 
@@ -123,6 +135,8 @@ your-project/
       ├─ project-context-authoring/
       │  └─ SKILL.md
       ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-design-guard/
       │  └─ SKILL.md
       ├─ test-maintenance/
       │  └─ SKILL.md
@@ -196,6 +210,8 @@ mf run mustflow_update_apply
 | `mf update --apply` | 在无阻塞项时应用模板更新。 |
 | `mf help <topic>` | 显示已安装的 mustflow 帮助。 |
 | `mf dashboard` | 启动本地 dashboard 管理安全偏好设置，并在默认浏览器打开。保存时若存在锁文件，会刷新自定义基线。 |
+| `mf version` | 显示已安装的 mustflow 包版本。 |
+| `mf version --check` | 将已安装版本与 npm 最新发布版本比较，并打印更新命令。 |
 | `mf version-sources` | 不修改文件的情况下检查检测到的 package、模板及声明的版本来源。 |
 | `mf explain authority [path]` | 不修改文件的情况下解释受管 Markdown 文档的权威决策。 |
 

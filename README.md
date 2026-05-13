@@ -71,7 +71,8 @@ In an interactive terminal, `mf init` prompts you to choose the document languag
 
 Run `mf init --dry-run` to preview the installation plan before writing files.
 
-pnpm and Bun can use the same npm package:
+pnpm and Bun can use the same npm package. Bun is an installer/runtime option here,
+not a separate mustflow dependency:
 
 ```sh
 pnpm add -D mustflow
@@ -80,6 +81,21 @@ pnpm exec mf init --yes
 bun add -d mustflow
 bunx mf init --yes
 ```
+
+Project-local installs should use `npx mf`, `pnpm exec mf`, or `bunx mf`. To make `mf`
+available as a direct shell command, install mustflow globally:
+
+```sh
+npm install -g mustflow
+mf version --check
+
+bun install -g mustflow
+mf version --check
+```
+
+If the shell still prints `mf: command not found`, mustflow is not installed globally
+for that shell, or the package manager's global binary directory is not on `PATH`.
+With Bun, make sure Bun's global binary directory, commonly `~/.bun/bin`, is on `PATH`.
 
 Deno `npm:` execution is experimental until separately verified.
 
@@ -186,6 +202,8 @@ your-project/
       ├─ security-regression-tests/
       │  └─ SKILL.md
       ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-design-guard/
       │  └─ SKILL.md
       ├─ test-maintenance/
       │  └─ SKILL.md

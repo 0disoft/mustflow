@@ -9,13 +9,31 @@ The command is quiet by default so scripts can read the version without triggeri
 
 ## Check npm
 
+Use the direct `mf` command when mustflow is installed globally:
+
+```sh
+mf version --check
+```
+
+From a project-local install, run it through the package manager:
+
 ```sh
 npx mf version --check
+bunx mf version --check
 ```
 
 `--check` contacts the npm registry, compares the installed version with the latest published version, and prints an update command when a newer version is available.
 
 It does not install packages or modify files.
+
+If the shell prints `mf: command not found`, the version command did not run. Install mustflow globally, or add the package manager's global binary directory to `PATH`.
+
+```sh
+npm install -g mustflow
+bun install -g mustflow
+```
+
+With Bun, make sure Bun's global binary directory, commonly `~/.bun/bin`, is on `PATH`.
 
 Example output:
 
@@ -26,6 +44,8 @@ latest 1.11.0 available
 Update command:
 npm install -g mustflow@latest
 ```
+
+Bun users can install or refresh the global command with `bun install -g mustflow`.
 
 ## Help and Exit Codes
 

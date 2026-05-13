@@ -56,12 +56,12 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 44
-translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
-translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
-translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
-translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
-translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 44, status = "needs_review" }
+revision = 45
+translations.ko = { path = "locales/ko/.mustflow/skills/INDEX.md", source_revision = 45, status = "needs_review" }
+translations.zh = { path = "locales/zh/.mustflow/skills/INDEX.md", source_revision = 45, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/INDEX.md", source_revision = 45, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/INDEX.md", source_revision = 45, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/INDEX.md", source_revision = 45, status = "needs_review" }
 
 [documents."skill.adapter-boundary"]
 source = "locales/en/.mustflow/skills/adapter-boundary/SKILL.md"
@@ -451,6 +451,16 @@ translations.zh = { path = "locales/zh/.mustflow/skills/skill-authoring/SKILL.md
 translations.es = { path = "locales/es/.mustflow/skills/skill-authoring/SKILL.md", source_revision = 5, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/skills/skill-authoring/SKILL.md", source_revision = 5, status = "needs_review" }
 translations.hi = { path = "locales/hi/.mustflow/skills/skill-authoring/SKILL.md", source_revision = 5, status = "needs_review" }
+
+[documents."skill.test-design-guard"]
+source = "locales/en/.mustflow/skills/test-design-guard/SKILL.md"
+source_locale = "en"
+revision = 1
+translations.ko = { path = "locales/ko/.mustflow/skills/test-design-guard/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.zh = { path = "locales/zh/.mustflow/skills/test-design-guard/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.es = { path = "locales/es/.mustflow/skills/test-design-guard/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.fr = { path = "locales/fr/.mustflow/skills/test-design-guard/SKILL.md", source_revision = 1, status = "needs_review" }
+translations.hi = { path = "locales/hi/.mustflow/skills/test-design-guard/SKILL.md", source_revision = 1, status = "needs_review" }
 
 [documents."skill.test-maintenance"]
 source = "locales/en/.mustflow/skills/test-maintenance/SKILL.md"

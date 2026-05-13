@@ -3,7 +3,7 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.18.0"
+version = "1.18.15"
 profile = "oss"
 locale = "en"
 
@@ -25,7 +25,7 @@ content_hash = "sha256:86566ddb4c86e53e4450aa06b1a26f4492a355cc43a97865201bd4dee
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:866539b4b46d13e3736be1e8ad9c36c15bbaacb103a1145a6078004d6510e0a2"
+content_hash = "sha256:9200d23925bd848530acbdd4d93806900c1ef830281f033b919f1b9901f1dc1a"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
@@ -97,6 +97,12 @@ content_hash = "sha256:38e5e118ee1908b0518ad22560c7d3f6e63b0ca1363ba2d2a4dffaad4
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:f1426cd709cdb02234ab3679c297e4c6435298f4896769102019bf1a05ed4ac3"
+
+[files.".mustflow/skills/test-design-guard/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:70658ba7dcea451addc9189a439cc83b78ec90a19367a487d898994281ccccc1"
+
 [files.".mustflow/skills/test-maintenance/SKILL.md"]
 source = "template_locale"
 last_action = "customized"

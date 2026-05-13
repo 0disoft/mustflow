@@ -88,6 +88,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-change-safety', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-design-guard', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'multi-agent-work-coordination', 'SKILL.md')), false);
@@ -149,6 +150,7 @@ test('copies the default agent workflow into an empty project', () => {
 		const skillsIndex = readText(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'));
 		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/docs-prose-review\/SKILL\.md/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/web-asset-optimization\/SKILL\.md/);
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));

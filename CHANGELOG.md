@@ -9,7 +9,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 ### Added
 
 - Profile-aware skill installation for `mf init` now lets the default `minimal` profile install only core everyday coding skills. Broader profiles can opt into maintainer, team, product, web, and library skill groups from the same packaged template.
+- The `test-design-guard` default skill so agents classify RED evidence, choose evidence-backed test shapes, and avoid speculative or mock-only test coverage.
 - A configured `test_audit` command intent backed by a read-only JSON test audit script for focused-test and empty-test-file signals.
+- Test audit warning signals for oversized mixed-surface test files and mock-only behavior candidates.
 - A configured `test_coverage` command intent backed by a fast CLI coverage run using Node's built-in coverage report, with no enforced thresholds and `MUSTFLOW_TEST_COVERAGE_CONCURRENCY` for tuning local worker count.
 - A shared command intent eligibility core decision so verification planning and `mf run` use the same configured, one-shot, agent-allowed, closed-stdin, timeout, and command-source checks.
 - A shared command cwd boundary resolver so `mf run` keeps command working directories inside the current mustflow root through a reusable core policy.

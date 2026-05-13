@@ -9,13 +9,31 @@ description: 설치된 mustflow 패키지 버전을 출력하고 필요하면 np
 
 ## npm 확인
 
+mustflow를 전역으로 설치했다면 `mf`를 바로 실행할 수 있습니다.
+
+```sh
+mf version --check
+```
+
+프로젝트 안에 설치한 경우에는 패키지 관리자를 거쳐 실행하세요.
+
 ```sh
 npx mf version --check
+bunx mf version --check
 ```
 
 `--check`는 npm 레지스트리에 접속해 설치된 버전과 최신 게시 버전을 비교하고, 새 버전이 있으면 업데이트 명령을 출력합니다.
 
 패키지를 설치하거나 파일을 수정하지 않습니다.
+
+셸이 `mf: command not found`를 출력했다면 `version` 명령이 실행된 것이 아니라 셸이 `mf` 실행 파일을 찾지 못한 것입니다. mustflow를 전역으로 설치하거나 패키지 관리자의 전역 실행 파일 폴더를 `PATH`에 추가하세요.
+
+```sh
+npm install -g mustflow
+bun install -g mustflow
+```
+
+Bun을 사용할 때는 보통 `~/.bun/bin`인 Bun 전역 실행 파일 폴더가 `PATH`에 들어 있는지 확인하세요.
 
 예시 출력:
 
@@ -26,6 +44,8 @@ mustflow 1.10.0
 업데이트 명령:
 npm install -g mustflow@latest
 ```
+
+Bun으로 전역 설치한 사용자는 `bun install -g mustflow`로 전역 명령을 설치하거나 갱신할 수 있습니다.
 
 ## 도움말과 종료 코드
 

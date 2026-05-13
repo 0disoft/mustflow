@@ -33,6 +33,7 @@ AGENTS.md
    ├─ readme-authoring/SKILL.md
    ├─ skill-authoring/SKILL.md
    ├─ security-regression-tests/SKILL.md
+   ├─ test-design-guard/SKILL.md
    ├─ test-maintenance/SKILL.md
    ├─ visual-review-artifact/SKILL.md
    └─ web-asset-optimization/SKILL.md

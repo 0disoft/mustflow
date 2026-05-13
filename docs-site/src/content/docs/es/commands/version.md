@@ -9,13 +9,31 @@ De forma predeterminada no hace llamadas de red, para que los scripts puedan lee
 
 ## Consultar npm
 
+Usa el comando directo `mf` cuando mustflow esté instalado globalmente.
+
+```sh
+mf version --check
+```
+
+Desde una instalación local del proyecto, ejecútalo mediante el gestor de paquetes.
+
 ```sh
 npx mf version --check
+bunx mf version --check
 ```
 
 `--check` consulta el registro de npm, compara la versión instalada con la última versión publicada e imprime un comando de actualización cuando existe una versión más nueva.
 
 No instala paquetes ni modifica archivos.
+
+Si la shell muestra `mf: command not found`, la orden `version` no llegó a ejecutarse: la shell no encontró el ejecutable `mf`. Instala mustflow globalmente o agrega el directorio global de ejecutables del gestor de paquetes a `PATH`.
+
+```sh
+npm install -g mustflow
+bun install -g mustflow
+```
+
+Con Bun, confirma que el directorio global de ejecutables de Bun, normalmente `~/.bun/bin`, esté en `PATH`.
 
 ## Ayuda y códigos de salida
 

@@ -43,7 +43,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.18.14');
+	assert.equal(packageJson.version, '1.18.15');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -198,6 +198,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('null-object-pattern'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('result-option'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
@@ -385,6 +386,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/instruction-conflict-scope-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/pure-core-imperative-shell/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/result-option/SKILL.md`));
+		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/test-design-guard/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/migration-safety-check/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/multi-agent-work-coordination/SKILL.md`));
 		assert.ok(files.has(`templates/default/locales/${locale}/.mustflow/skills/null-object-pattern/SKILL.md`));

@@ -2,7 +2,7 @@
 mustflow_doc: skills.index
 locale: zh
 canonical: false
-revision: 44
+revision: 45
 authority: router
 lifecycle: mustflow-owned
 ---
@@ -49,6 +49,7 @@ lifecycle: mustflow-owned
 | 核心或应用逻辑创建、导入、解析或隐藏外部依赖，如数据库、SDK、时钟、随机数生成器、配置、日志器、框架对象、文件系统、队列、AI 客户端或支付/邮件提供者 | `.mustflow/skills/dependency-injection/SKILL.md` | 目标代码区域，隐藏依赖，预期业务能力，层所有权，本地端口/适配器模式，变更文件及命令契约条目 | 核心逻辑签名，端口，适配器，组装根，测试及直接同步的文档或模板 | 隐藏全局状态，难测业务逻辑，提供者泄漏，生命周期漂移，服务定位器耦合 | `changes_status`, `changes_diff_summary`, `test_related`, `test`, `lint`, `build`, `docs_validate_fast`, `test_release`, `mustflow_check` | 依赖边界，发现直接依赖，注入风格，端口/适配器，组装边界，测试或替身，验证及剩余依赖泄漏 |
 | Git 报告 CRLF/LF 警告或跟踪文本文件可能需要行尾规范化 | `.mustflow/skills/line-ending-hygiene/SKILL.md` | 警告文本或变更文件证据，行尾策略，变更文件状态及命令契约条目 | 行尾策略文件，跟踪文本文件，命令元数据，测试及报告 | 静默工作树重写或策略漂移 | `line_endings_check`, `changes_status`, `mustflow_check` | 策略确认，漂移文件，规范化状态，验证及剩余行尾风险 |
 | 性能预算、包体积、页面大小、启动时间、命令时长、内存使用、资源大小、吞吐量、延迟、基准输出或性能声明被计划、编辑、评审或报告 | `.mustflow/skills/performance-budget-check/SKILL.md` | 性能表面，预算来源，测量方法，环境边界及命令契约条目 | 预算检查，阈值，测量，依赖权衡说明，测试，文档，包元数据及报告 | 虚构预算，陈旧测量，隐藏性能成本，未验证的速度声明 | `changes_status`, `changes_diff_summary`, `build`, `test_related`, `docs_validate_fast`, `test_release`, `mustflow_check` | 性能表面，预算来源，测量边界，同步声明，跳过测量及剩余性能风险 |
+| New tests or test cases are designed, TDD RED or GREEN evidence is reported, or test-case choices are made for requirements, bugs, refactors, security boundaries, schemas, templates, or public docs | `.mustflow/skills/test-design-guard/SKILL.md` | Contract source, existing coverage, intended RED evidence, candidate cases, baseline status, and command contract entries | Tests, fixtures, helpers, and directly synchronized contract docs | invalid RED, happy-path-only coverage, speculative edge cases, weak assertions, mock-only confidence, or implementation-detail coupling | `test_related`, `test_audit`, `test`, `lint`, `build`, `test_release`, `mustflow_check` | RED category, selected test shape, evidence-backed cases, rejected speculation, verification objective, commands, and remaining test-design risk |
 | 测试被添加、更新、删除或审计 | `.mustflow/skills/test-maintenance/SKILL.md` | 变更行为或陈旧测试证据 | 测试文件及相关源代码 | 合同漂移 | `test`, `test_related`, `test_audit`, `snapshot_update`, `lint`, `build` | 测试理由及验证 |
 
 | 代码、配置、文档、模板、日志、遥测、凭据或数据流涉及机密信息、个人数据、身份验证、授权、保留或外部披露 | `.mustflow/skills/security-privacy-review/SKILL.md` | 变更文件、敏感面、项目机密和隐私规则、公共或打包面以及命令契约条目 | 敏感数据处理、日志、收据、生成状态、文档、模板、包元数据和报告 | 机密泄露、个人数据暴露或误导性隐私声明 | `changes_status`、`changes_diff_summary`、`docs_validate_fast`、`test_release`、`mustflow_check` | 敏感面审查、披露路径检查、脱敏或省略变更、相关测试需求及剩余安全或隐私风险 |

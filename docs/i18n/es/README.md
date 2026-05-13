@@ -78,7 +78,7 @@ npx mf check --strict
 
 En una terminal interactiva, `mf init` permite elegir el idioma de los documentos, el perfil del proyecto y el idioma de los informes del agente. Usa `mf init --yes` para instalar valores predeterminados en inglés sin preguntas, ideal para scripts.
 
-pnpm y Bun pueden usar el mismo paquete npm.
+pnpm y Bun pueden usar el mismo paquete npm. Aquí, Bun es una opción de instalación/ejecución, no una dependencia adicional de mustflow.
 
 ```sh
 pnpm add -D mustflow
@@ -87,6 +87,18 @@ pnpm exec mf init --yes
 bun add -d mustflow
 bunx mf init --yes
 ```
+
+Las instalaciones locales del proyecto deben usar `npx mf`, `pnpm exec mf` o `bunx mf`. Para ejecutar `mf` directamente desde la shell, instala mustflow de forma global.
+
+```sh
+npm install -g mustflow
+mf version --check
+
+bun install -g mustflow
+mf version --check
+```
+
+Si la shell sigue mostrando `mf: command not found`, mustflow no está instalado globalmente para esa shell o el directorio global de ejecutables del gestor de paquetes no está en `PATH`. Con Bun, confirma que el directorio global de ejecutables de Bun, normalmente `~/.bun/bin`, esté en `PATH`.
 
 La ejecución con Deno usando `npm:` debe considerarse experimental hasta que se verifique por separado.
 
@@ -122,6 +134,8 @@ your-project/
       ├─ project-context-authoring/
       │  └─ SKILL.md
       ├─ skill-authoring/
+      │  └─ SKILL.md
+      ├─ test-design-guard/
       │  └─ SKILL.md
       ├─ test-maintenance/
       │  └─ SKILL.md
@@ -194,6 +208,8 @@ mf run mustflow_update_apply
 | `mf update --apply`         | Aplica actualizaciones de plantilla cuando no hay bloqueos.                                |
 | `mf help <topic>`           | Muestra la ayuda instalada de mustflow.                                                    |
 | `mf dashboard`              | Inicia un panel local para preferencias seguras y lo abre en el navegador predeterminado. Al guardar, actualiza la línea base personalizada si existe el archivo de bloqueo. |
+| `mf version`                | Imprime la versión instalada del paquete mustflow.                                         |
+| `mf version --check`        | Compara la versión instalada con la última versión publicada en npm e imprime un comando de actualización. |
 | `mf version-sources`        | Inspecciona fuentes de versión detectadas, de plantilla y declaradas sin modificar archivos. |
 | `mf explain authority [path]` | Explica decisiones de autoridad de Markdown gestionado sin modificar archivos.            |
 

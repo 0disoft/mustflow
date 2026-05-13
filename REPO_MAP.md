@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 79
-source_fingerprint: "sha256:9e94522dc5b0725636e5dc6903d8aa8f1be9d2792dfdaaf1bcf40a10226f60d7"
+anchor_count: 80
+source_fingerprint: "sha256:4cbba7d970cd11ab6039f726f512b1368fe842de754ba4dc6891670bf5749609"
 ---
 
 # REPO_MAP.md
@@ -198,6 +198,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/structure-discovery-gate/
 
 - `.mustflow/skills/structure-discovery-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/test-design-guard/
+
+- `.mustflow/skills/test-design-guard/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/test-maintenance/
 
