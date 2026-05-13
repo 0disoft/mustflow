@@ -828,12 +828,14 @@ Lee estos archivos antes de trabajar:
   "update.help.summary":
     "Previsualiza o aplica actualizaciones para el flujo de trabajo mustflow instalado.",
   "update.help.option.dryRun": "Imprime el plan de actualizacion sin escribir archivos",
+  "update.help.option.diff": "Incluye una vista previa limitada del diff con --dry-run",
   "update.help.option.apply":
     "Aplica actualizaciones seguras de plantilla cuando no hay cambios locales bloqueados",
   "update.help.exit.ok": "El plan se imprimio o se aplicaron actualizaciones seguras",
   "update.help.exit.fail":
     "El plan encontró cambios bloqueados, estado faltante o entrada no válida",
   "update.error.cannotCombineModes": "No se pueden combinar --dry-run y --apply.",
+  "update.error.diffRequiresDryRun": "Usa --diff con --dry-run.",
   "update.error.missingMode": "Especifica --dry-run o --apply.",
   "update.backup.files": "Se respaldaron {count} {fileWord} en {path}",
   "update.action.created": "Creado {path}",
@@ -850,6 +852,8 @@ Lee estos archivos antes de trabajar:
   "update.plan.wouldUpdate": "Se actualizaría",
   "update.plan.wouldCreate": "Se crearía",
   "update.plan.noUpdates": "No se necesitan actualizaciones de plantilla.",
+  "update.diff.title": "Vista previa del diff:",
+  "update.diff.unavailable": "vista previa del diff no disponible: {reason}",
   "update.plan.noFilesWritten": "No se escribieron archivos.",
   "update.complete":
     "mustflow update completo: {updated} actualizados, {created} creados.",

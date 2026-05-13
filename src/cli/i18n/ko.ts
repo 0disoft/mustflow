@@ -823,6 +823,7 @@ export const koMessages = {
   "update.help.summary":
     "설치된 mustflow 작업 흐름의 갱신을 미리 보거나 적용합니다.",
   "update.help.option.dryRun": "파일을 쓰지 않고 갱신 계획만 출력합니다",
+  "update.help.option.diff": "--dry-run과 함께 제한된 차이 미리보기를 출력합니다",
   "update.help.option.apply":
     "차단된 로컬 변경이 없을 때 안전한 템플릿 갱신을 적용합니다",
   "update.help.exit.ok": "계획을 출력했거나 안전한 갱신을 적용했습니다",
@@ -830,6 +831,7 @@ export const koMessages = {
     "차단된 변경, 누락된 상태, 또는 잘못된 입력이 있습니다",
   "update.error.cannotCombineModes":
     "--dry-run과 --apply는 함께 사용할 수 없습니다.",
+  "update.error.diffRequiresDryRun": "--diff는 --dry-run과 함께 사용하세요.",
   "update.error.missingMode": "--dry-run 또는 --apply를 지정하세요.",
   "update.backup.files": "{path}에 {count}개 파일을 백업했습니다",
   "update.action.created": "{path} 생성",
@@ -846,6 +848,8 @@ export const koMessages = {
   "update.plan.wouldUpdate": "갱신 예정",
   "update.plan.wouldCreate": "생성 예정",
   "update.plan.noUpdates": "필요한 템플릿 갱신이 없습니다.",
+  "update.diff.title": "차이 미리보기:",
+  "update.diff.unavailable": "차이 미리보기를 사용할 수 없습니다: {reason}",
   "update.plan.noFilesWritten": "파일을 쓰지 않았습니다.",
   "update.complete": "mustflow update 완료: 갱신 {updated}, 생성 {created}.",
 } satisfies Record<MessageKey, string>;

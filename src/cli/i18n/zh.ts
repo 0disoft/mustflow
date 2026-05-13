@@ -818,12 +818,14 @@ export const zhMessages = {
   "update.help.summary":
     "预览或应用已安装 mustflow 工作流的更新。",
   "update.help.option.dryRun": "输出更新计划但不写入文件",
+  "update.help.option.diff": "与 --dry-run 一起输出受限的 diff 预览",
   "update.help.option.apply":
     "在没有被阻止的本地更改时应用安全的模板更新",
   "update.help.exit.ok": "已输出计划或已应用安全更新",
   "update.help.exit.fail":
     "计划发现被阻止的更改、缺失状态或无效输入",
   "update.error.cannotCombineModes": "不能同时使用 --dry-run 和 --apply。",
+  "update.error.diffRequiresDryRun": "请将 --diff 与 --dry-run 一起使用。",
   "update.error.missingMode": "请指定 --dry-run 或 --apply。",
   "update.backup.files": "已将 {count} 个{fileWord}备份到 {path}",
   "update.action.created": "已创建 {path}",
@@ -840,6 +842,8 @@ export const zhMessages = {
   "update.plan.wouldUpdate": "将更新",
   "update.plan.wouldCreate": "将创建",
   "update.plan.noUpdates": "不需要模板更新。",
+  "update.diff.title": "Diff 预览：",
+  "update.diff.unavailable": "diff 预览不可用：{reason}",
   "update.plan.noFilesWritten": "未写入文件。",
   "update.complete":
     "mustflow update 完成：已更新 {updated}，已创建 {created}。",

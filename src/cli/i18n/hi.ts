@@ -828,12 +828,14 @@ export const hiMessages = {
   "update.help.summary":
     "इंस्टॉल किए गए mustflow वर्कफ़्लो के अपडेट का पूर्वावलोकन करें या लागू करें।",
   "update.help.option.dryRun": "फ़ाइलें लिखे बिना update plan प्रिंट करें",
+  "update.help.option.diff": "--dry-run के साथ bounded diff preview शामिल करें",
   "update.help.option.apply":
     "जब कोई local change blocked न हो, सुरक्षित template updates लागू करें",
   "update.help.exit.ok": "Plan प्रिंट हुआ या सुरक्षित updates लागू किए गए",
   "update.help.exit.fail":
     "Plan में blocked changes, missing state, या अमान्य input मिला",
   "update.error.cannotCombineModes": "--dry-run और --apply को साथ नहीं रखा जा सकता।",
+  "update.error.diffRequiresDryRun": "--diff को --dry-run के साथ उपयोग करें।",
   "update.error.missingMode": "--dry-run या --apply निर्दिष्ट करें।",
   "update.backup.files": "{count} {fileWord} का बैकअप {path} में लिया गया",
   "update.action.created": "{path} बनाया गया",
@@ -850,6 +852,8 @@ export const hiMessages = {
   "update.plan.wouldUpdate": "अपडेट किया जाएगा",
   "update.plan.wouldCreate": "बनाया जाएगा",
   "update.plan.noUpdates": "Template updates आवश्यक नहीं हैं।",
+  "update.diff.title": "Diff preview:",
+  "update.diff.unavailable": "diff preview उपलब्ध नहीं: {reason}",
   "update.plan.noFilesWritten": "कोई फ़ाइल नहीं लिखी गई।",
   "update.complete":
     "mustflow update पूरा: {updated} अपडेट किए गए, {created} बनाए गए।",

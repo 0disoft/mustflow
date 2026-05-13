@@ -231,6 +231,153 @@ test('detects bundled template changes without local file changes', () => {
 	}
 });
 
+test('prints bounded update diffs in text dry-run output without writing files', () => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		writeFileSync(
+			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
+			`${readFileSync(path.join(templatePath, 'locales', 'en', 'AGENTS.md'), 'utf8')}\n<!-- simulated template update -->\n`,
+		);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--diff'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+		});
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Would update: 1/);
+		assert.match(result.stdout, /Diff preview:/);
+		assert.match(result.stdout, /--- AGENTS\.md \(current\)/);
+		assert.match(result.stdout, /\+\+\+ AGENTS\.md \(template\)/);
+		assert.match(result.stdout, /\+<!-- simulated template update -->/);
+		assert.match(result.stdout, /No files were written/);
+		assert.equal(
+			readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8').includes('simulated template update'),
+			false,
+		);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('prints update dry-run diff previews as json for update and create actions', () => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		writeFileSync(
+			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
+			`${readFileSync(path.join(templatePath, 'locales', 'en', 'AGENTS.md'), 'utf8')}\n<!-- simulated template update -->\n`,
+		);
+		addTemplateCreate(templatePath, '.mustflow/docs/diff-added.md', '# Added\n');
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+		});
+		const plan = JSON.parse(result.stdout);
+		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
+		const createItem = plan.items.find((item) => item.relativePath === '.mustflow/docs/diff-added.md');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(plan.ok, true);
+		assert.equal(plan.wroteFiles, false);
+		assert.equal(plan.summary.wouldUpdate, 1);
+		assert.equal(plan.summary.wouldCreate, 1);
+		assert.equal(agentsItem.action, 'update');
+		assert.equal(agentsItem.diff_preview.format, 'unified');
+		assert.equal(agentsItem.diff_preview.available, true);
+		assert.equal(agentsItem.diff_preview.bounded, true);
+		assert.equal(agentsItem.diff_preview.truncated, false);
+		assert.equal(agentsItem.diff_preview.max_lines, 120);
+		assert.equal(agentsItem.diff_preview.max_line_bytes, 240);
+		assert.ok(agentsItem.diff_preview.lines.includes('+<!-- simulated template update -->'));
+		assert.equal(createItem.action, 'create');
+		assert.equal(createItem.diff_preview.from, 'missing_target');
+		assert.ok(createItem.diff_preview.lines.includes('+# Added'));
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'docs', 'diff-added.md')), false);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('truncates update diff previews with an explicit marker', () => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		const extraLines = Array.from({ length: 160 }, (_, index) => `generated line ${index}`).join('\n');
+		writeFileSync(
+			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
+			`${readFileSync(path.join(templatePath, 'locales', 'en', 'AGENTS.md'), 'utf8')}\n${extraLines}\n`,
+		);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+		});
+		const plan = JSON.parse(result.stdout);
+		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(agentsItem.diff_preview.available, true);
+		assert.equal(agentsItem.diff_preview.truncated, true);
+		assert.equal(agentsItem.diff_preview.lines.length, 120);
+		assert.ok(agentsItem.diff_preview.lines.includes('[... diff preview truncated ...]'));
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('includes diff previews for blocked local changes without applying them', () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json']);
+		const plan = JSON.parse(result.stdout);
+		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
+
+		assert.equal(result.status, 1);
+		assert.equal(plan.ok, false);
+		assert.equal(plan.summary.blockedLocalChanges, 1);
+		assert.equal(agentsItem.action, 'blocked-local-change');
+		assert.equal(agentsItem.diff_preview.available, true);
+		assert.ok(agentsItem.diff_preview.lines.includes('-# Changed rules'));
+		assert.equal(readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8'), '# Changed rules\n');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('omits diff previews for unchanged update items', () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+
+		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json']);
+		const plan = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(plan.ok, true);
+		assert.equal(plan.summary.unchanged, plan.items.length);
+		assert.equal(plan.items.every((item) => item.action === 'unchanged' && item.diff_preview === undefined), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps merged AGENTS.md under manual review until a block baseline exists', () => {
 	const projectPath = createTempProject();
 
@@ -240,7 +387,7 @@ test('keeps merged AGENTS.md under manual review until a block baseline exists',
 		assert.equal(runCli(projectPath, ['init', '--merge', '--yes']).status, 0);
 
 		const mergedAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
-		const result = runCli(projectPath, ['update', '--dry-run', '--json']);
+		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json']);
 		const plan = JSON.parse(result.stdout);
 		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
 
@@ -250,6 +397,8 @@ test('keeps merged AGENTS.md under manual review until a block baseline exists',
 		assert.equal(plan.summary.manualReview, 1);
 		assert.equal(agentsItem.action, 'manual-review');
 		assert.equal(agentsItem.reason, 'managed block requires a block-level manifest baseline');
+		assert.equal(agentsItem.diff_preview.available, true);
+		assert.equal(agentsItem.diff_preview.format, 'unified');
 		assert.equal(readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8'), mergedAgents);
 		assert.match(mergedAgents, /Keep this project rule/);
 		assert.match(mergedAgents, /mustflow:start/);
@@ -536,6 +685,22 @@ test('requires an explicit update mode', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Specify --dry-run or --apply/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('requires dry-run mode for update diff previews', () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+
+		const result = runCli(projectPath, ['update', '--apply', '--diff']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Use --diff with --dry-run/);
+		assert.equal(readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8').includes('diff preview'), false);
 	} finally {
 		removeTempProject(projectPath);
 	}

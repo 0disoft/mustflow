@@ -6,6 +6,7 @@ description: Previews or safely applies updates for an installed mustflow docume
 `mf update` compares the installed mustflow document flow against the current bundled template.
 
 `mf update --dry-run` reads `manifest.lock.toml`, verifies if the current files still match their installation hashes, and generates an update plan.
+`mf update --dry-run --diff` uses that same plan and adds a bounded unified diff preview without writing files.
 `mf update --apply` executes updates and creations only when no local changes are blocked and no items require manual review.
 Include the `--json` flag when automation or an agent needs to parse the plan.
 
@@ -37,6 +38,16 @@ The update command distinguishes between the following scenarios:
 - `Would create`: The file exists in the template but is not yet present in the current root.
 
 Files whose lock entry has `last_action = "customized"` are treated as unchanged while they still match their customized lock baseline, even when the bundled template differs.
+
+## Diff Preview
+
+```sh
+npx mf update --dry-run --diff
+```
+
+The diff preview compares the current target content with the bundled template content for affected files. It is available for items that would be created, updated, blocked by local changes, or routed to manual review.
+
+Diff preview output is bounded. When the preview reaches the limit, mustflow prints an explicit truncation marker. Paths under generated state, caches, backups, or sensitive-looking filenames are omitted from diff preview output rather than printed.
 
 ## Example
 
@@ -118,6 +129,7 @@ Nested fields use the following structures:
 - `items[].sourceKind` (`string`): The origin of the item from the template source.
 - `items[].action` (`string`): The planned action state.
 - `items[].reason` (`string`): The justification for the planned action.
+- `items[].diff_preview` (`object`): Present only when `--diff` is used and the item is affected. It contains a bounded unified diff preview, availability flag, truncation status, line limits, and omission reason when a preview is not safe to print.
 
 When the bundled template changed but the user did not edit the installed file, the file appears under `Would update` or `summary.wouldUpdate`.
 

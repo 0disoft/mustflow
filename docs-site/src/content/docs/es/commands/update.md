@@ -6,6 +6,7 @@ description: Previsualiza o aplica de forma segura actualizaciones para un flujo
 `mf update` compara el flujo de documentos mustflow instalado con la plantilla incluida actualmente.
 
 `mf update --dry-run` lee `manifest.lock.toml`, comprueba si los archivos actuales todavía coinciden con sus hashes de instalación y genera un plan de actualización.
+`mf update --dry-run --diff` usa ese mismo plan y añade una vista previa limitada en formato unified diff sin escribir archivos.
 `mf update --apply` ejecuta actualizaciones y creaciones solo cuando no hay cambios locales bloqueantes ni elementos que requieran revisión manual.
 Incluye la bandera `--json` cuando una automatización o un agente necesite analizar el plan.
 
@@ -37,6 +38,16 @@ El comando de actualización distingue estos escenarios:
 - `Would create`: el archivo existe en la plantilla pero todavía no está presente en la raíz actual.
 
 Los archivos cuyo lock tiene `last_action = "customized"` se tratan como sin cambios mientras sigan coincidiendo con su línea base personalizada, aunque la plantilla incluida sea diferente.
+
+## Vista previa de diff
+
+```sh
+npx mf update --dry-run --diff
+```
+
+La vista previa compara el contenido actual del destino con el contenido de la plantilla incluida para los archivos afectados. Puede aparecer en elementos que se crearían, actualizarían, bloquearían por cambios locales o requerirían revisión manual.
+
+La salida tiene límite de tamaño. Si se alcanza el límite, mustflow imprime un marcador de truncamiento explícito. Las rutas de estado generado, cachés, copias de seguridad o nombres que parecen sensibles se omiten en lugar de imprimirse.
 
 ## Ejemplo
 
@@ -118,6 +129,7 @@ Los campos anidados usan estas estructuras:
 - `items[].sourceKind` (`string`): origen del elemento dentro de la fuente de plantilla.
 - `items[].action` (`string`): estado de la acción planificada.
 - `items[].reason` (`string`): justificación de la acción planificada.
+- `items[].diff_preview` (`object`): aparece solo cuando se usa `--diff` y el elemento está afectado. Incluye la vista previa unified diff limitada, si está disponible, si fue truncada, sus límites de líneas y el motivo de omisión cuando no es seguro imprimirla.
 
 Cuando la plantilla incluida cambió pero el usuario no editó el archivo instalado, el archivo aparece en `Would update` o `summary.wouldUpdate`.
 

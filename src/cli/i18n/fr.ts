@@ -828,12 +828,14 @@ Lisez ces fichiers avant de travailler :
   "update.help.summary":
     "Prévisualise ou applique les mises à jour du flux de travail mustflow installé.",
   "update.help.option.dryRun": "Imprime le plan de mise à jour sans écrire de fichiers",
+  "update.help.option.diff": "Inclut un aperçu diff limité avec --dry-run",
   "update.help.option.apply":
     "Applique les mises à jour sûres du modèle lorsqu'aucun changement local n'est bloqué",
   "update.help.exit.ok": "Le plan a été imprimé ou des mises à jour sûres ont été appliquées",
   "update.help.exit.fail":
     "Le plan a trouvé des changements bloqués, un état manquant ou une entrée non valide",
   "update.error.cannotCombineModes": "Impossible de combiner --dry-run et --apply.",
+  "update.error.diffRequiresDryRun": "Utilisez --diff avec --dry-run.",
   "update.error.missingMode": "Spécifiez --dry-run ou --apply.",
   "update.backup.files": "{count} {fileWord} sauvegardés dans {path}",
   "update.action.created": "Créé {path}",
@@ -850,6 +852,8 @@ Lisez ces fichiers avant de travailler :
   "update.plan.wouldUpdate": "Mettrait à jour",
   "update.plan.wouldCreate": "Créerait",
   "update.plan.noUpdates": "Aucune mise à jour de modèle nécessaire.",
+  "update.diff.title": "Aperçu diff :",
+  "update.diff.unavailable": "aperçu diff indisponible : {reason}",
   "update.plan.noFilesWritten": "Aucun fichier n'a été écrit.",
   "update.complete":
     "mustflow update terminé : {updated} mis à jour, {created} créés.",

@@ -14,6 +14,7 @@ import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type TemplateFileSource } from '../lib/templates.js';
 import { readTomlFile, stringifyToml } from '../lib/toml.js';
+import { createUpdateDiffPreview, shouldPreviewUpdateDiff, type UpdateDiffPreview } from '../lib/update-diff-preview.js';
 
 const UPDATE_SCHEMA_VERSION = '1';
 const CUSTOMIZED_LOCK_ACTION = 'customized';
@@ -46,6 +47,7 @@ export interface UpdatePlanItem {
 	readonly sourceKind: TemplateFileSource['sourceKind'];
 	readonly action: UpdateAction;
 	readonly reason: string;
+	readonly diff_preview?: UpdateDiffPreview;
 }
 
 export interface UpdatePlanSummary {
@@ -74,6 +76,10 @@ interface ApplyResult {
 	readonly wroteFiles: boolean;
 }
 
+interface InternalUpdatePlanItem extends Omit<UpdatePlanItem, 'diff_preview'> {
+	readonly source: TemplateFileSource;
+}
+
 type MutableTomlTable = Record<string, unknown>;
 
 export function getUpdateHelp(lang: CliLang = 'en'): string {
@@ -83,6 +89,7 @@ export function getUpdateHelp(lang: CliLang = 'en'): string {
 			summary: t(lang, 'update.help.summary'),
 			options: [
 				{ label: '--dry-run', description: t(lang, 'update.help.option.dryRun') },
+				{ label: '--diff', description: t(lang, 'update.help.option.diff') },
 				{
 					label: '--apply',
 					description: t(lang, 'update.help.option.apply'),
@@ -90,7 +97,7 @@ export function getUpdateHelp(lang: CliLang = 'en'): string {
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf update --dry-run', 'mf update --dry-run --json', 'mf update --apply'],
+			examples: ['mf update --dry-run', 'mf update --dry-run --diff', 'mf update --dry-run --diff --json', 'mf update --apply'],
 			exitCodes: [
 				{
 					label: '0',
@@ -162,7 +169,30 @@ function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allo
 	}
 }
 
-export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
+function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason: string): InternalUpdatePlanItem {
+	return {
+		relativePath: source.relativePath,
+		sourceKind: source.sourceKind,
+		source,
+		action,
+		reason,
+	};
+}
+
+function publicPlanItem(item: InternalUpdatePlanItem): UpdatePlanItem {
+	return {
+		relativePath: item.relativePath,
+		sourceKind: item.sourceKind,
+		action: item.action,
+		reason: item.reason,
+	};
+}
+
+function publicPlanItems(items: readonly InternalUpdatePlanItem[]): UpdatePlanItem[] {
+	return items.map((item) => publicPlanItem(item));
+}
+
+function createUpdatePlan(projectRoot: string): { readonly items: readonly InternalUpdatePlanItem[]; readonly error?: string } {
 	const lockResult = readManifestLock(projectRoot);
 
 	if (lockResult.kind === 'missing') {
@@ -183,7 +213,7 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 
 	const templateFiles = getInstalledTemplateFiles(projectRoot, template, lockResult.lock);
 	const lockedFiles = byRelativePath(lockResult.lock.files);
-	const items: UpdatePlanItem[] = [];
+	const items: InternalUpdatePlanItem[] = [];
 
 	for (const source of templateFiles) {
 		const targetPath = path.join(projectRoot, source.relativePath);
@@ -194,32 +224,17 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 		const unsafeTargetReason = templateTargetSafetyIssue(projectRoot, targetPath, true);
 
 		if (unsafeTargetReason) {
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'blocked-local-change',
-				reason: unsafeTargetReason,
-			});
+			items.push(createPlanItem(source, 'blocked-local-change', unsafeTargetReason));
 			continue;
 		}
 
 		if (!existsSync(targetPath)) {
 			if (lockedFile) {
-				items.push({
-					relativePath: source.relativePath,
-					sourceKind: source.sourceKind,
-					action: 'blocked-local-change',
-					reason: 'target file is missing but tracked by the manifest lock',
-				});
+				items.push(createPlanItem(source, 'blocked-local-change', 'target file is missing but tracked by the manifest lock'));
 				continue;
 			}
 
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'create',
-				reason: 'target file is missing',
-			});
+			items.push(createPlanItem(source, 'create', 'target file is missing'));
 			continue;
 		}
 
@@ -227,64 +242,43 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 		const templateHash = templateFileHash(source);
 
 		if (!lockedFile && currentHash !== templateHash) {
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'blocked-local-change',
-				reason: 'target file exists but is not tracked by the manifest lock',
-			});
+			items.push(createPlanItem(source, 'blocked-local-change', 'target file exists but is not tracked by the manifest lock'));
 			continue;
 		}
 
 		if (lockedFile && currentHash !== lockedFile.contentHash) {
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'blocked-local-change',
-				reason: 'current file differs from the manifest lock baseline',
-			});
+			items.push(createPlanItem(source, 'blocked-local-change', 'current file differs from the manifest lock baseline'));
 			continue;
 		}
 
 		if (lockedFile?.lastAction === CUSTOMIZED_LOCK_ACTION && currentHash !== templateHash) {
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'unchanged',
-				reason: 'manifest lock marks this file as customized and current file matches that baseline',
-			});
+			items.push(createPlanItem(source, 'unchanged', 'manifest lock marks this file as customized and current file matches that baseline'));
 			continue;
 		}
 
 		if (lockedFile?.source === 'managed_block' && currentHash !== templateHash) {
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'manual-review',
-				reason: 'managed block requires a block-level manifest baseline',
-			});
+			items.push(createPlanItem(source, 'manual-review', 'managed block requires a block-level manifest baseline'));
 			continue;
 		}
 
 		if (currentHash !== templateHash) {
-			items.push({
-				relativePath: source.relativePath,
-				sourceKind: source.sourceKind,
-				action: 'update',
-				reason: 'template content differs from current file',
-			});
+			items.push(createPlanItem(source, 'update', 'template content differs from current file'));
 			continue;
 		}
 
-		items.push({
-			relativePath: source.relativePath,
-			sourceKind: source.sourceKind,
-			action: 'unchanged',
-			reason: 'current file matches the bundled template',
-		});
+		items.push(createPlanItem(source, 'unchanged', 'current file matches the bundled template'));
 	}
 
 	return { items };
+}
+
+export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
+	const plan = createUpdatePlan(projectRoot);
+
+	return {
+		items: publicPlanItems(plan.items),
+		...(plan.error ? { error: plan.error } : {}),
+	};
 }
 
 function printItems(title: string, items: readonly UpdatePlanItem[], reporter: Reporter): void {
@@ -293,6 +287,21 @@ function printItems(title: string, items: readonly UpdatePlanItem[], reporter: R
 	for (const item of items) {
 		reporter.stdout(`- ${item.relativePath} (${item.reason})`);
 	}
+}
+
+function withDiffPreviews(projectRoot: string, items: readonly InternalUpdatePlanItem[]): UpdatePlanItem[] {
+	return items.map((item) => {
+		const publicItem = publicPlanItem(item);
+
+		if (!shouldPreviewUpdateDiff(item.action)) {
+			return publicItem;
+		}
+
+		return {
+			...publicItem,
+			diff_preview: createUpdateDiffPreview(projectRoot, item),
+		};
+	});
 }
 
 export function summarizePlan(items: readonly UpdatePlanItem[]): UpdatePlanSummary {
@@ -505,17 +514,45 @@ function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang):
 	}
 }
 
+function printDiffPreviews(items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
+	const itemsWithDiff = items.filter((item) => item.diff_preview);
+
+	if (itemsWithDiff.length === 0) {
+		return;
+	}
+
+	reporter.stdout(t(lang, 'update.diff.title'));
+
+	for (const item of itemsWithDiff) {
+		const preview = item.diff_preview;
+
+		if (!preview) {
+			continue;
+		}
+
+		if (!preview.available) {
+			reporter.stdout(`# ${item.relativePath}: ${t(lang, 'update.diff.unavailable', { reason: preview.reason ?? 'unknown' })}`);
+			continue;
+		}
+
+		for (const line of preview.lines) {
+			reporter.stdout(line);
+		}
+	}
+}
+
 export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getUpdateHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--dry-run', '--apply', '--json']);
+	const supported = new Set(['--dry-run', '--apply', '--json', '--diff']);
 	const unsupported = args.filter((arg) => !supported.has(arg));
 	const wantsJson = args.includes('--json');
 	const wantsDryRun = args.includes('--dry-run');
 	const wantsApply = args.includes('--apply');
+	const wantsDiff = args.includes('--diff');
 	const requestedMode = getRequestedMode(wantsDryRun, wantsApply);
 
 	if (unsupported.length > 0) {
@@ -525,6 +562,18 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 
 	if (wantsDryRun && wantsApply) {
 		const error = t(lang, 'update.error.cannotCombineModes');
+
+		if (wantsJson) {
+			reporter.stdout(JSON.stringify(withMode(planOutput([], error, false), requestedMode), null, 2));
+			return 1;
+		}
+
+		printUsageError(reporter, error, 'mf update --help', getUpdateHelp(lang), lang);
+		return 1;
+	}
+
+	if (wantsDiff && !wantsDryRun) {
+		const error = t(lang, 'update.error.diffRequiresDryRun');
 
 		if (wantsJson) {
 			reporter.stdout(JSON.stringify(withMode(planOutput([], error, false), requestedMode), null, 2));
@@ -548,11 +597,11 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 	}
 
 	const projectRoot = resolveMustflowRoot();
-	const plan = planUpdate(projectRoot);
+	const plan = createUpdatePlan(projectRoot);
 
 	if (plan.error) {
 		if (wantsJson) {
-			reporter.stdout(JSON.stringify(withMode(planOutput(plan.items, plan.error, false), requestedMode), null, 2));
+			reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), plan.error, false), requestedMode), null, 2));
 			return 1;
 		}
 
@@ -560,7 +609,8 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 1;
 	}
 
-	const dryRunOutput = withMode(planOutput(plan.items, undefined, false), requestedMode);
+	const outputItems = wantsDiff ? withDiffPreviews(projectRoot, plan.items) : publicPlanItems(plan.items);
+	const dryRunOutput = withMode(planOutput(outputItems, undefined, false), requestedMode);
 
 	if (wantsDryRun) {
 		if (wantsJson) {
@@ -569,6 +619,9 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		printPlan(dryRunOutput, reporter, lang);
+		if (wantsDiff) {
+			printDiffPreviews(dryRunOutput.items, reporter, lang);
+		}
 		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
 		return dryRunOutput.ok ? 0 : 1;
 	}
@@ -590,7 +643,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 			stdout: () => undefined,
 			stderr: (message) => reporter.stderr(message),
 		}, lang);
-		reporter.stdout(JSON.stringify(withMode(planOutput(plan.items, undefined, applyResult.wroteFiles), 'apply'), null, 2));
+		reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), undefined, applyResult.wroteFiles), 'apply'), null, 2));
 		return 0;
 	}
 

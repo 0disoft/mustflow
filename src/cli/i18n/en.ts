@@ -826,12 +826,14 @@ Read these files before working:
   "update.help.summary":
     "Preview or apply updates for the installed mustflow workflow.",
   "update.help.option.dryRun": "Print the update plan without writing files",
+  "update.help.option.diff": "Include a bounded diff preview with --dry-run",
   "update.help.option.apply":
     "Apply safe template updates when no local changes are blocked",
   "update.help.exit.ok": "Plan was printed or safe updates were applied",
   "update.help.exit.fail":
     "Plan found blocked changes, missing state, or invalid input",
   "update.error.cannotCombineModes": "Cannot combine --dry-run and --apply.",
+  "update.error.diffRequiresDryRun": "Use --diff with --dry-run.",
   "update.error.missingMode": "Specify --dry-run or --apply.",
   "update.backup.files": "Backed up {count} {fileWord} to {path}",
   "update.action.created": "Created {path}",
@@ -848,6 +850,8 @@ Read these files before working:
   "update.plan.wouldUpdate": "Would update",
   "update.plan.wouldCreate": "Would create",
   "update.plan.noUpdates": "No template updates needed.",
+  "update.diff.title": "Diff preview:",
+  "update.diff.unavailable": "diff preview unavailable: {reason}",
   "update.plan.noFilesWritten": "No files were written.",
   "update.complete":
     "mustflow update complete: {updated} updated, {created} created.",

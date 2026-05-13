@@ -6,6 +6,7 @@ description: Prévisualise ou applique de façon sûre les mises à jour d’un 
 `mf update` compare le flux de documents mustflow installé avec le modèle groupé actuel.
 
 `mf update --dry-run` lit `manifest.lock.toml`, vérifie si les fichiers actuels correspondent encore à leurs hashes au moment de l’installation, puis imprime un plan de mise à jour.
+`mf update --dry-run --diff` utilise ce même plan et ajoute un aperçu unified diff limité sans écrire de fichiers.
 `mf update --apply` applique uniquement les éléments `update` et `create` lorsqu’il n’existe aucun changement local bloqué ni élément à examiner manuellement.
 Utilisez aussi `--json` lorsqu’une automatisation ou un agent doit analyser le plan.
 
@@ -38,6 +39,16 @@ La commande de mise à jour doit donc distinguer:
 - `Would create`: le fichier existe dans le modèle mais manque dans la racine actuelle.
 
 Les fichiers dont le verrou indique `last_action = "customized"` sont traités comme inchangés tant qu’ils correspondent encore à leur ligne de base personnalisée, même si le modèle groupé diffère.
+
+## Aperçu diff
+
+```sh
+npx mf update --dry-run --diff
+```
+
+L’aperçu compare le contenu cible actuel avec le contenu du modèle groupé pour les fichiers affectés. Il peut apparaître pour les éléments à créer, à mettre à jour, bloqués par des changements locaux ou envoyés en examen manuel.
+
+La sortie est limitée. Lorsque la limite est atteinte, mustflow imprime un marqueur de troncature explicite. Les chemins d’état généré, caches, sauvegardes ou noms qui semblent sensibles sont omis au lieu d’être imprimés.
 
 ## Exemple
 
@@ -119,6 +130,7 @@ Les champs imbriqués utilisent ces formes:
 - `items[].sourceKind` (`string`): origine de l’élément dans la source du modèle.
 - `items[].action` (`string`): état d’action prévu.
 - `items[].reason` (`string`): raison pour laquelle l’élément a été placé dans cet état.
+- `items[].diff_preview` (`object`): présent seulement avec `--diff` pour un élément affecté. Il contient l’aperçu unified diff limité, sa disponibilité, son état de troncature, ses limites de lignes et la raison d’omission lorsqu’il n’est pas sûr de l’imprimer.
 
 Lorsque le modèle groupé a changé mais que l’utilisateur n’a pas modifié le fichier installé, le fichier apparaît dans `Would update` ou `summary.wouldUpdate`.
 

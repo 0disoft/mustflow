@@ -6,6 +6,7 @@ description: स्थापित mustflow document flow की updates का 
 `mf update` installed mustflow document flow की current bundled template से तुलना करता है।
 
 `mf update --dry-run` `manifest.lock.toml` पढ़ता है, जांचता है कि current files अभी भी अपने install-time hashes से match करती हैं या नहीं, और update plan print करता है।
+`mf update --dry-run --diff` वही plan उपयोग करता है और files लिखे बिना bounded unified diff preview जोड़ता है।
 `mf update --apply` केवल `update` और `create` items apply करता है, जब कोई blocked local changes या manual-review items नहीं होते।
 जब automation या agent को plan parse करना हो, तब `--json` भी उपयोग करें।
 
@@ -37,6 +38,16 @@ mustflow files में agent rules और procedures होते हैं।
 - `Would create`: file template में मौजूद है लेकिन current root से missing है।
 
 जिन files के lock entry में `last_action = "customized"` है, वे customized baseline से match करती रहें तो unchanged मानी जाती हैं, भले bundled template अलग हो।
+
+## Diff preview
+
+```sh
+npx mf update --dry-run --diff
+```
+
+Diff preview affected files के current target content और bundled template content की तुलना करता है। यह create, update, blocked local changes, और manual-review items के लिए आ सकता है।
+
+Preview output size-limited है। limit hit होने पर mustflow explicit truncation marker print करता है। generated state, cache, backup, या sensitive-looking file names के paths को print करने के बजाय omit किया जाता है।
 
 ## उदाहरण
 
@@ -118,6 +129,7 @@ Nested fields ये shapes उपयोग करते हैं:
 - `items[].sourceKind` (`string`): item template source से कैसे आया।
 - `items[].action` (`string`): planned action state।
 - `items[].reason` (`string`): item को उस state में रखने का reason।
+- `items[].diff_preview` (`object`): केवल `--diff` के साथ affected item पर आता है। इसमें bounded unified diff preview, availability, truncation status, line limits, और unsafe होने पर omission reason शामिल होते हैं।
 
 जब bundled template बदल गया हो लेकिन user ने installed file edit न की हो, file `Would update` या `summary.wouldUpdate` में दिखती है।
 
