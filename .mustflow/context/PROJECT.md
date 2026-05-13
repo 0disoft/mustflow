@@ -23,7 +23,7 @@ If a field is unknown, leave it unset; do not assume or invent details.
 ## Authority Boundaries
 
 - This file may record supported context, unknowns, and conflicts.  
-- It must not grant command permissions, define file-edit prohibitions, override  
+- It must not grant command permissions, define file-edit restrictions, override  
   `AGENTS.md` or `.mustflow/config/*.toml`, or promise features not supported by  
   current sources.  
 - Move durable operating rules to `AGENTS.md`, `.mustflow/docs/agent-workflow.md`,  
@@ -31,18 +31,18 @@ If a field is unknown, leave it unset; do not assume or invent details.
 
 ## Current Goal
 
-Unset. Replace this with the current project goal when provided by the project owner.
+Unset. Replace this with the current project goal once provided by the project owner.
 
 ## Non-Goals
 
-Unset. List areas or objectives the agent should avoid or not pursue in unrelated tasks.
+Unset. List areas or objectives the agent should avoid pursuing in unrelated tasks.
 
 ## Core Promises
 
 - Follow `AGENTS.md` for mandatory operating rules.  
 - Treat `.mustflow/config/commands.toml` as the source of truth for commands.  
 - Treat `.mustflow/config/mustflow.toml` as the source of truth for workflow and document boundaries.  
-- Use `REPO_MAP.md` as a high-level navigation guide when a broader repository overview is needed.
+- Use `REPO_MAP.md` as a high-level navigation map when a broader repository overview is needed.
 
 ## Domain Terms
 
@@ -62,5 +62,5 @@ Unset. List paths, public APIs, generated files, migrations, secrets, or compati
 
 ## Staleness Check
 
-- If this file conflicts with current code, tests, command contracts, or user instructions, consider it stale and report the conflict.  
+- If this file conflicts with current code, tests, command contracts, or user instructions, treat it as stale and report the conflict.  
 - Update this file only when the project direction, non-goals, or repository-wide promises change.

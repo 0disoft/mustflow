@@ -12,7 +12,7 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
+import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type TemplateFileSource } from '../lib/templates.js';
 import { readTomlFile, stringifyToml } from '../lib/toml.js';
 
 const UPDATE_SCHEMA_VERSION = '1';
@@ -118,6 +118,30 @@ function templateFileHash(source: TemplateFileSource): string {
 	return source.content === undefined ? sha256File(source.sourcePath) : sha256Text(source.content);
 }
 
+function isTemplateManagedSource(source: string): boolean {
+	return source === 'template_locale' || source === 'template_common' || source === 'legacy';
+}
+
+function lockedTemplateSkillNames(files: readonly LockedFile[]): readonly string[] {
+	return [
+		...new Set(
+			files
+				.filter((file) => isTemplateManagedSource(file.source))
+				.map((file) => skillNameForTemplatePath(file.relativePath))
+				.filter((value): value is string => Boolean(value)),
+		),
+	];
+}
+
+function getInstalledTemplateFiles(projectRoot: string, template: ReturnType<typeof getDefaultTemplate>, lock: { readonly templateLocale?: string; readonly templateProfile?: string; readonly files: readonly LockedFile[] }): TemplateFileSource[] {
+	return getTemplateFiles(
+		template,
+		lock.templateLocale ?? template.manifest.defaultLocale,
+		lock.templateProfile ?? template.manifest.defaultProfile,
+		{ extraSkillNames: lockedTemplateSkillNames(lock.files) },
+	);
+}
+
 function writeTemplateFile(projectRoot: string, source: TemplateFileSource, targetPath: string): void {
 	if (source.content !== undefined) {
 		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
@@ -157,9 +181,7 @@ export function planUpdate(projectRoot: string): { readonly items: readonly Upda
 		return { items: [], error: error instanceof Error ? error.message : String(error) };
 	}
 
-	const selectedLocale = lockResult.lock.templateLocale ?? template.manifest.defaultLocale;
-	const selectedProfile = lockResult.lock.templateProfile ?? template.manifest.defaultProfile;
-	const templateFiles = getTemplateFiles(template, selectedLocale, selectedProfile);
+	const templateFiles = getInstalledTemplateFiles(projectRoot, template, lockResult.lock);
 	const lockedFiles = byRelativePath(lockResult.lock.files);
 	const items: UpdatePlanItem[] = [];
 
@@ -291,24 +313,12 @@ function fileActionToLockAction(action: UpdateAction): 'created' | 'updated' {
 	return action === 'create' ? 'created' : 'updated';
 }
 
-function readInstalledTemplateSelection(projectRoot: string): { readonly locale?: string; readonly profile?: string } {
-	const lockResult = readManifestLock(projectRoot);
-
-	return lockResult.kind === 'present'
-		? { locale: lockResult.lock.templateLocale, profile: lockResult.lock.templateProfile }
-		: {};
-}
-
 function copyTemplateFile(projectRoot: string, relativePath: string): void {
 	const template = getDefaultTemplate();
-	const selection = readInstalledTemplateSelection(projectRoot);
-	const source = getTemplateFiles(
-		template,
-		selection.locale ?? template.manifest.defaultLocale,
-		selection.profile ?? template.manifest.defaultProfile,
-	).find(
-		(file) => file.relativePath === relativePath,
-	);
+	const lockResult = readManifestLock(projectRoot);
+	const source = lockResult.kind === 'present'
+		? getInstalledTemplateFiles(projectRoot, template, lockResult.lock).find((file) => file.relativePath === relativePath)
+		: getTemplateFiles(template).find((file) => file.relativePath === relativePath);
 	const targetPath = path.join(projectRoot, relativePath);
 
 	if (!source) {

@@ -30,6 +30,10 @@ export interface TemplateFileSource {
 	readonly content?: string;
 }
 
+export interface TemplateFileSelectionOptions {
+	readonly extraSkillNames?: readonly string[];
+}
+
 interface RawManifest {
 	readonly id?: unknown;
 	readonly version?: unknown;
@@ -98,7 +102,7 @@ function normalizeTemplateTargetPath(relativePath: string): string {
 	return relativePath.replaceAll('\\', '/');
 }
 
-function skillNameForTemplatePath(relativePath: string): string | undefined {
+export function skillNameForTemplatePath(relativePath: string): string | undefined {
 	const match = /^\.mustflow\/skills\/([^/]+)\//u.exec(normalizeTemplateTargetPath(relativePath));
 
 	return match?.[1];
@@ -123,7 +127,15 @@ function resolveSkillProfileSkills(manifest: Pick<TemplateManifest, 'creates' | 
 	return manifest.skillProfiles[profile] ?? templateSkillNames(manifest.creates);
 }
 
-function shouldIncludeTemplatePath(manifest: Pick<TemplateManifest, 'creates' | 'skillProfiles'>, relativePath: string, profile: string): boolean {
+function selectedSkillNames(
+	manifest: Pick<TemplateManifest, 'creates' | 'skillProfiles'>,
+	profile: string,
+	options: TemplateFileSelectionOptions = {},
+): readonly string[] {
+	return [...new Set([...resolveSkillProfileSkills(manifest, profile), ...(options.extraSkillNames ?? [])])];
+}
+
+function shouldIncludeTemplatePath(relativePath: string, selectedSkills: readonly string[]): boolean {
 	const normalizedPath = normalizeTemplateTargetPath(relativePath);
 	const skillName = skillNameForTemplatePath(normalizedPath);
 
@@ -131,7 +143,7 @@ function shouldIncludeTemplatePath(manifest: Pick<TemplateManifest, 'creates' | 
 		return true;
 	}
 
-	return resolveSkillProfileSkills(manifest, profile).includes(skillName);
+	return selectedSkills.includes(skillName);
 }
 
 function filterSkillIndexContent(content: string, selectedSkills: readonly string[]): string {
@@ -257,12 +269,13 @@ export function getTemplateFiles(
 	template: TemplatePaths,
 	locale: string = template.manifest.defaultLocale,
 	profile: string = template.manifest.defaultProfile,
+	options: TemplateFileSelectionOptions = {},
 ): TemplateFileSource[] {
 	const commonRoot = path.join(template.templateRoot, template.manifest.commonRoot);
 	const localeRoot = template.manifest.localesRoot ? path.join(template.templateRoot, template.manifest.localesRoot, locale) : undefined;
-	const selectedSkills = resolveSkillProfileSkills(template.manifest, profile);
+	const selectedSkills = selectedSkillNames(template.manifest, profile, options);
 
-	return template.manifest.creates.filter((relativePath) => shouldIncludeTemplatePath(template.manifest, relativePath, profile)).map((relativePath) => {
+	return template.manifest.creates.filter((relativePath) => shouldIncludeTemplatePath(relativePath, selectedSkills)).map((relativePath) => {
 		const localePath = localeRoot ? path.join(localeRoot, ...relativePath.split('/')) : undefined;
 		const commonPath = path.join(commonRoot, ...relativePath.split('/'));
 		const content =

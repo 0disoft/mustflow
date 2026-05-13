@@ -3,29 +3,29 @@ generated_by = "mustflow"
 
 [template]
 id = "default"
-version = "1.18.15"
+version = "1.18.16"
 profile = "oss"
 locale = "en"
 
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:c985875bf8ae22a8c792c54bb4e9c68b5a2a6f45d2604b311e344d2a4ff4cd0d"
+content_hash = "sha256:1503c7578553a1cbafac0bc24344e26deed5243925bbd1b69e7010321a069380"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:cd2aceb68fd3c425154cf6b01e1ce9a574dc6ba5c2e3a800bff0692ff7276ccc"
+content_hash = "sha256:fc114cfc324dac4ba3055749706dc14dabfb4bc9e0245cc40d45f0e26df53286"
 
 [files.".mustflow/context/PROJECT.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:86566ddb4c86e53e4450aa06b1a26f4492a355cc43a97865201bd4dee722012f"
+content_hash = "sha256:259834228dc4f9d6936415f5b5bc7f7f1b6d3d582f423aa06eadcdd24613d9d9"
 
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:9200d23925bd848530acbdd4d93806900c1ef830281f033b919f1b9901f1dc1a"
+content_hash = "sha256:1e6dbb571319be6acdea773077579da08d60fc37b787493328fe7f41933bd3da"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
@@ -52,11 +52,11 @@ source = "template_locale"
 last_action = "created"
 content_hash = "sha256:0000036c72b773d5b6b6e44dbe342a14119b487ea9a64a2e9b092a9b22d51499"
 
-
 [files.".mustflow/skills/command-pattern/SKILL.md"]
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:750ce0eb61cd44c352cc726de9ea6b3630af3cfe75318231c9fa358e639f022b"
+
 [files.".mustflow/skills/composition-over-inheritance/SKILL.md"]
 source = "template_locale"
 last_action = "created"
@@ -86,7 +86,6 @@ content_hash = "sha256:72ae59e6b0d24a5792c547a5bf793aa550a130154aa64357296242a3c
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:718922ca23691624db2c33f0ce18fa05e5f1c7ba0292eb97cdf496c718a09595"
-
 
 [files.".mustflow/skills/pure-core-imperative-shell/SKILL.md"]
 source = "template_locale"
@@ -173,7 +172,6 @@ source = "template_locale"
 last_action = "created"
 content_hash = "sha256:a672e07e0014b82fe3eee46dd7804ae4d6585f30a2a838e0ce2410e44b243b42"
 
-
 [files.".mustflow/skills/state-machine-pattern/SKILL.md"]
 source = "template_locale"
 last_action = "created"
@@ -183,6 +181,7 @@ content_hash = "sha256:fb70a24182b6b326e7abe339798bf67465fa0b9728455968e60e990db
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:377250e13fe3182efe54633a428aff9ed75594b2cdc3a42bcfb5494c552fdaf3"
+
 [files.".mustflow/skills/structure-discovery-gate/SKILL.md"]
 source = "template_locale"
 last_action = "created"
@@ -256,7 +255,7 @@ content_hash = "sha256:2aac79982126b2ac4bf6de2194cb5e5b1373600b3288bba093b2b7a51
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:1b4b58113f9eea833ad95e36534d433d17875f671f10f065175e664c96414015"
+content_hash = "sha256:5467874e9f98c107c6194f0549055a013c1185d2f9306a7629524fab089b33dc"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
@@ -272,3 +271,8 @@ content_hash = "sha256:6613a30d1a33d55542983ec4d860b1181c1f0b9f4abb0268fff48bf05
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:2f5c7fb1551cd65e5670e8fff3a6e7776abfa8691f75e3f132a52a1ef8185100"
+
+[files.".mustflow/skills/database-change-safety/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:c55c33674abc6f7df0684b534aac3722da00779cc0a32d0a6ec7f031881788b8"

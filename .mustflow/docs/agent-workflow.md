@@ -9,30 +9,30 @@ authority: workflow-policy
 
 # Agent Workflow
 
-This document expands on the brief router in `AGENTS.md`.  
+This document expands on the brief overview in `AGENTS.md`.  
 It defines the default operating loop for agents working within a mustflow root.
 
 ## Orientation
 
 Review the files listed in `AGENTS.md` before making any edits. Use `mf doctor` for a quick, read-only health check of the installation status, configured command intents, and suggested next steps.
 
-Use `REPO_MAP.md` solely as a generated navigation map for the current mustflow root. It is not a comprehensive file listing and does not replace the need to read files relevant to the task.
+Use `REPO_MAP.md` solely as a generated navigation map for the current mustflow root. It is not a comprehensive file listing and does not replace reading files relevant to the task.
 
 ## Document Roles
 
-mustflow documents have specific roles. Do not move a rule into a lower-authority file simply for editing convenience.
+mustflow documents have specific, narrow roles. Do not move a rule into a lower-authority file simply for editing convenience.
 
 | Document | Role | Authority | Lifecycle |
 | --- | --- | --- | --- |
 | `AGENTS.md` | Primary entry point and binding short-form repository rules. | Highest repository-local instruction file, below direct user and host safety instructions. | User-editable, mustflow-managed or managed-block depending on installation mode. |
 | `.mustflow/docs/agent-workflow.md` | Shared workflow policy for reading, editing, verifying, reporting, and failure handling. | Expands `AGENTS.md`; does not define executable commands. | mustflow-owned Markdown. |
 | `.mustflow/config/mustflow.toml` | Machine-readable workflow configuration, document roots, protection, budget, approval, retention, and refresh settings. | Configuration source for mustflow behavior. | mustflow-owned TOML. |
-| `.mustflow/config/commands.toml` | Command intent contract. | Only source granting project command execution through configured intents. | Repository-local TOML, edited when command contracts change. |
+| `.mustflow/config/commands.toml` | Command intent contract. | Sole source granting project command execution through configured intents. | Repository-local TOML, edited when command contracts change. |
 | `.mustflow/config/preferences.toml` | Repository-level defaults for style, language, Git suggestions, testing tendency, verification selection, and version-impact handling. | Lower-authority preferences; not permissions. | Repository-local TOML, user-customizable. |
 | `.mustflow/context/INDEX.md` | Router for task-specific context files. | Selects optional context only; not a policy manual. | mustflow-owned Markdown. |
 | `.mustflow/context/PROJECT.md` | Cautious project facts, unknowns, and domain conventions. | Contextual reference below user instructions, code, tests, commands, and configured policies. | User-editable context. |
-| `.mustflow/skills/INDEX.md` | Router deciding which procedure document to read for a task. | Selection contract only; procedure details remain in `SKILL.md`. | mustflow-owned Markdown. |
-| `.mustflow/skills/<name>/SKILL.md` | Repeatable task procedure with inputs, allowed scope, checks, and reporting shape. | Procedure guidance only; cannot authorize commands or override rules. | mustflow-owned Markdown, optionally localized. |
+| `.mustflow/skills/INDEX.md` | Router that selects which procedure document to read for a task. | Selection contract only; procedure detail remains in `SKILL.md`. | mustflow-owned Markdown. |
+| `.mustflow/skills/<name>/SKILL.md` | Repeatable task procedure with inputs, allowed scope, checks, and reporting format. | Procedure guidance only; cannot authorize commands or override rules. | mustflow-owned Markdown, optionally localized. |
 | `REPO_MAP.md` | Generated anchor map for broad navigation and nested repository entry points. | Generated navigation aid below current files and instructions. | Generated; refresh with the configured `repo_map` intent or `mf map`. |
 
 ## Project Context
@@ -58,7 +58,7 @@ At task start and before the first edit:
 3. Read every matching `SKILL.md` before editing that part of the work.
 4. If no skill applies, proceed with the smallest safe change under `AGENTS.md` and `.mustflow/config/commands.toml`.
 
-Activate a skill later if new evidence changes the task type. For example, a failing configured command activates failure triage, a test contract change activates test maintenance, and a documentation or workflow change activates documentation update.
+Activate a skill later if new evidence changes the task type. For example, a failing configured command activates failure triage; a test contract change activates test maintenance; and a documentation or workflow change activates documentation update.
 
 When multiple skills apply, follow the most specific skill for each affected scope and combine only their declared command intents. Skills never authorize raw shell commands, long-running processes, or writes outside the task scope.
 
@@ -69,7 +69,7 @@ When a skill is used, report the skill name and selection reason briefly in the 
 Treat user instructions, local files, command contracts, and generated reports as distinct sources. Avoid conflating these sources.
 
 - Direct user instructions take priority.
-- The nearest `AGENTS.md` takes priority over broader parent rules.
+- The nearest `AGENTS.md` takes precedence over broader parent rules.
 - `.mustflow/config/preferences.toml` contains defaults, not mandatory requirements.
 - Generated files such as `REPO_MAP.md`, `.mustflow/cache/**`, and `.mustflow/state/**` may become stale.
 - Compacted summaries are derived representations of state. Current code, configuration, command records, and current user instructions override them.
@@ -78,12 +78,12 @@ When a generated file appears stale, refresh it using the matching `mf` command 
 
 ## Prompt Cache and Host Context Assembly
 
-Prompt caching is a performance optimization, not an authority source. A cached instruction block or cached summary never overrides direct user instructions, current files, current command contracts, host safety rules, or the nearest `AGENTS.md`.
+Prompt caching is a performance optimization, not an authority source. A cached instruction block or summary never overrides direct user instructions, current files, current command contracts, host safety rules, or the nearest `AGENTS.md`.
 
-Hosts and agent harnesses that assemble model input should keep context in this order:
+Hosts and agent harnesses assembling model input should keep context in this order:
 
 1. Stable prefix: repository rules and workflow files from `mf context --json --cache-profile stable`.
-2. Task context: selected context files, matching skills, repository-map anchors, relevant source files, and `mf search --json` results whose `cache_layer` is `task`.
+2. Task context: selected context files, matching skills, repository-map anchors, relevant source files, and `mf search --json` results with `cache_layer` set to `task`.
 3. Volatile suffix: current user request, changed-file lists, command output tails, latest run receipt metadata, timestamps, and any `mf search --json` result whose `volatile` field is `true`.
 
 Before reusing a stable prefix, compare the reported content hashes with the current files. If any stable document hash changes, reread the document instead of reusing cached text. Do not place absolute local paths, run receipt timestamps, command output, changed files, or current user task text before the stable prefix.
@@ -92,7 +92,7 @@ Before reusing a stable prefix, compare the reported content hashes with the cur
 
 ## Effective Rule Lanes
 
-Do not collapse every instruction into one priority list. Resolve conflicts by the kind of rule:
+Do not collapse every instruction into a single priority list. Resolve conflicts by rule type:
 
 - User goal: current direct user instructions define the task unless unsafe.
 - Host safety: host approval, sandbox, and execution gates remain binding when stricter.
@@ -106,7 +106,7 @@ Allowed action sets narrow by intersection. Denied actions, approval requirement
 
 ## Instruction Refresh
 
-Long sessions may lead to instruction drift. Treat instruction refresh as a mandatory checkpoint, not as a project-file counter.
+Long sessions may cause instruction drift. Treat instruction refresh as a mandatory checkpoint, not a project-file counter.
 
 Refresh mustflow instructions at these points:
 
@@ -120,7 +120,7 @@ Refresh mustflow instructions at these points:
 - before the final report
 - after the configured turn, tool-call, or output-size threshold
 
-Use `.mustflow/config/mustflow.toml` `[refresh]` to decide the refresh level:
+Use `.mustflow/config/mustflow.toml` `[refresh]` to determine the refresh level:
 
 - `light`: reread `AGENTS.md` and `.mustflow/docs/agent-workflow.md`
 - `command`: reread `AGENTS.md` and `.mustflow/config/commands.toml`
@@ -137,7 +137,7 @@ Do not write turn counters, message counts, or session activity into the reposit
 
 `compaction` is a future or host policy, not a default data collection feature. The default template keeps it disabled and declares only safety rules.
 
-Do not store hidden reasoning, secrets, full chat transcripts, full terminal output, raw event logs, or raw command logs in the project. If a host creates compacted summaries in the future, they must be source-linked and remain lower authority than current files and current user instructions.
+Do not store hidden reasoning, secrets, full chat transcripts, full terminal output, raw event logs, or raw command logs in the project. If a host creates compacted summaries in the future, they must be source-linked and remain lower authority than current files and direct user instructions.
 
 ## Harness Contract Boundary
 
@@ -155,7 +155,7 @@ For long-running or resumed tasks, separate these phases:
 
 1. Plan: read the task goal, repository rules, command contract, and acceptance criteria.
 2. Work: make the smallest safe change for the current unit.
-3. Verify: run only configured oneshot command intents, preferably through `mf run`.
+3. Verify: run only configured one-shot command intents, preferably through `mf run`.
 4. Judge: evaluate the result against the original acceptance criteria and run receipts.
 5. Handoff: leave a compact handoff when the task is incomplete, blocked, or needs continuation.
 
@@ -237,7 +237,7 @@ Use existing project style. If style is unclear, apply the defaults in `.mustflo
 
 When an agent creates or modifies user-facing, workflow, template, context, or skill documentation, record the touched document with `mf docs review add <path>` unless the user explicitly says not to track it. The queue is stored in `.mustflow/review/docs.toml` and is created only when needed.
 
-Review completion may come from a human, an LLM, a tool, or an external process. Record only the broad reviewer kind plus free-form identifiers such as reviewer id, provider, model, command intent, and summary. Do not maintain a fixed list of specific LLM products.
+Review completion may come from a human, an LLM, a tool, or an external process. Record only the broad reviewer kind plus free-form identifiers such as reviewer ID, provider, model, command intent, and summary. Do not maintain a fixed list of specific LLM products.
 
 Use `mf docs review approve <path> --reviewer-kind <kind> --reviewer-id <id>` to hide an approved document from the default review list while keeping the audit record. Use `needs-human` when the reviewer cannot confidently approve the document, and `ignore` only when skipping review is an intentional repository decision.
 
@@ -261,16 +261,16 @@ If an expected intent is missing, disabled, manual-only, or not configured, do n
 
 ## Verification Selection
 
-Use `.mustflow/config/preferences.toml` `[verification.selection]` to choose verification breadth. These preferences do not grant command execution permission. They only guide which configured command intents to consider.
+Use `.mustflow/config/preferences.toml` `[verification.selection]` to choose verification breadth. These preferences do not grant command execution permission; they only guide which configured command intents to consider.
 
-Verification should be proportional to risk. Prefer `test_related`, `test_fast`, `build`, or docs-specific checks when they are configured and cover the changed surface. Use broad full-suite tests for cross-cutting behavior, release risk, missing narrower coverage, or when the configured policy explicitly requires them. If a narrow intent would be appropriate but is `unknown`, `manual_only`, or absent, report that gap instead of silently treating the slowest suite as the default.
+Verification should be proportional to risk. Prefer `test_related`, `test_fast`, `build`, or docs-specific checks when configured and covering the changed surface. Use broad full-suite tests for cross-cutting behavior, release risk, missing narrower coverage, or when the configured policy explicitly requires them. If a narrow intent would be appropriate but is `unknown`, `manual_only`, or absent, report that gap instead of silently treating the slowest suite as the default.
 
-- `strategy = "risk_based"`: prefer the smallest configured checks that cover the changed behavior, public surface, command contract, and risk area.
+- `strategy = "risk_based"`: prefer the smallest configured checks covering the changed behavior, public surface, command contract, and risk area.
 - `strategy = "targeted"`: prefer directly related checks unless the user, skill, or policy requires broader coverage.
 - `strategy = "full"`: prefer the full applicable configured verification suite.
 - `prefer_related_tests = true`: look for a narrower relevant test intent before a broad test intent.
 - `skip_docs_only_full_test = true`: documentation-only changes may skip broad tests when docs validation covers the edited surface.
-- `skip_translation_only_full_test = true`: translation-only changes may skip broad tests when the source behavior did not change.
+- `skip_translation_only_full_test = true`: translation-only changes may skip broad tests when source behavior did not change.
 - `skip_copy_only_full_test = true`: copy-only wording changes may skip broad tests when no behavior, schema, template, or command contract changed.
 - `report_skipped = true`: final reports must name skipped checks and the reason.
 
@@ -285,7 +285,7 @@ Agents must not:
 - delete failing tests to make checks pass
 - loosen assertions without explanation
 - skip relevant command intents
-- mark command intents as `not_applicable` only to avoid failure
+- mark command intents as `not_applicable` solely to avoid failure
 - change acceptance criteria after implementation
 
 Agents may update tests when the intended behavior changed, the old test is incorrect, or new behavior requires new coverage. Explain such changes in the final report.
@@ -299,10 +299,10 @@ Use `.mustflow/config/preferences.toml` `[testing.authoring]` to guide how readi
 Agents must not:
 
 - reintroduce removed behavior solely because old tests expect it
-- preserve tests for features that were intentionally removed
-- delete failing tests merely to make validation pass
+- preserve tests for features intentionally removed
+- delete failing tests merely to pass validation
 - loosen assertions without explaining the behavior change
-- update snapshots merely to make tests pass
+- update snapshots merely to pass tests
 
 Agents may update or remove tests when the tested behavior was intentionally removed, the public contract changed, the test only encodes removed implementation details, coverage is duplicated by a stronger test, or a snapshot is obsolete.
 

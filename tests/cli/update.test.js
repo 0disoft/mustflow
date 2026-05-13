@@ -43,6 +43,18 @@ function markLockedFileCustomized(projectPath, relativePath, content) {
 	writeFileSync(lockPath, updatedLock);
 }
 
+function addLockedTemplateFile(projectPath, relativePath, content) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	const targetPath = path.join(projectPath, ...relativePath.split('/'));
+
+	mkdirSync(path.dirname(targetPath), { recursive: true });
+	writeFileSync(targetPath, content);
+	writeFileSync(
+		lockPath,
+		`${readFileSync(lockPath, 'utf8')}\n[files."${relativePath}"]\nsource = "template_locale"\nlast_action = "created"\ncontent_hash = "${sha256Text(content)}"\n`,
+	);
+}
+
 function addTemplateCreate(templatePath, relativePath, content) {
 	const manifestPath = path.join(templatePath, 'manifest.toml');
 
@@ -316,6 +328,34 @@ test('applies newly added template files when local files are clean', () => {
 	} finally {
 		removeTempProject(projectPath);
 		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('preserves lock-tracked template skills outside the selected profile during update', () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--profile', 'oss', '--yes']).status, 0);
+
+		const extraSkillPath = '.mustflow/skills/web-asset-optimization/SKILL.md';
+		const extraSkillContent = readFileSync(path.join(projectRoot, 'templates', 'default', 'locales', 'en', ...extraSkillPath.split('/')), 'utf8');
+		addLockedTemplateFile(projectPath, extraSkillPath, extraSkillContent);
+
+		const beforeIndex = readFileSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'), 'utf8');
+		assert.doesNotMatch(beforeIndex, /web-asset-optimization/);
+
+		const result = runCli(projectPath, ['update', '--apply', '--json']);
+		const output = JSON.parse(result.stdout);
+		const afterIndex = readFileSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'), 'utf8');
+		const check = runCli(projectPath, ['check', '--strict']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.ok, true);
+		assert.equal(output.wroteFiles, true);
+		assert.match(afterIndex, /web-asset-optimization\/SKILL\.md/);
+		assert.equal(check.status, 0, check.stderr || check.stdout);
+	} finally {
+		removeTempProject(projectPath);
 	}
 });
 

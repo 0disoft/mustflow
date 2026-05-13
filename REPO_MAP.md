@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 80
-source_fingerprint: "sha256:4cbba7d970cd11ab6039f726f512b1368fe842de754ba4dc6891670bf5749609"
+anchor_count: 81
+source_fingerprint: "sha256:4a40b562687a8cfe5fc40b20fa45afd90f313359df9e4e73f483c2ccb5e5eb6b"
 ---
 
 # REPO_MAP.md
@@ -78,6 +78,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/contract-sync-check/
 
 - `.mustflow/skills/contract-sync-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/database-change-safety/
+
+- `.mustflow/skills/database-change-safety/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/date-number-audit/
 
