@@ -760,6 +760,8 @@ export const koMessages = {
     "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",
   "verify.help.option.reason": "검증할 required_after 이유를 지정합니다",
   "verify.help.option.fromPlan": "이 저장소 안의 JSON 계획 파일에서 검증 이유를 읽습니다",
+  "verify.help.option.changed": "현재 Git 변경을 분류하고 맞는 검증 이유를 실행합니다",
+  "verify.help.option.writePlan": "변경 파일 분류 계획을 이 저장소 안에 씁니다",
   "verify.help.option.planOnly": "명령을 실행하지 않고 검증 계획만 출력합니다. --json이 필요합니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":
@@ -770,7 +772,8 @@ export const koMessages = {
   "verify.label.status": "상태",
   "verify.label.results": "결과",
   "verify.error.missingReason": "검증 이유가 없습니다",
-  "verify.error.conflictingInputs": "--reason과 --from-plan 중 하나만 사용하세요",
+  "verify.error.conflictingInputs": "--reason, --from-plan, --changed 중 하나만 사용하세요",
+  "verify.error.writePlanRequiresChanged": "--write-plan에는 --changed가 필요합니다",
   "verify.error.planOnlyJson": "--plan-only에는 --json이 필요합니다",
   "verify.error.invalid_plan_file": "검증 계획은 읽을 수 있는 JSON 파일이어야 합니다",
   "verify.error.missing_plan_reasons": "검증 계획에는 reason, reasons, validationReasons, summary.validationReasons, classification_summary.validationReasons 중 하나가 있어야 합니다",

@@ -65,6 +65,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
 				'mf impact --changed',
+				'mf verify --changed --plan-only --json',
 				'mf verify --reason code_change',
 				'mf line-endings check',
 				'mf version --check',

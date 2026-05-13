@@ -7,12 +7,16 @@ description: Runs configured verification intents selected by required_after met
 
 `mf verify --from-plan <path>` reads verification reasons from a JSON file inside the mustflow root. It accepts `reason`, `reasons`, `validationReasons`, `summary.validationReasons`, or `classification_summary.validationReasons`, so outputs from planning or classification commands can feed verification without copying each reason by hand.
 
+`mf verify --changed` classifies the current Git working tree with the same semantics as `mf classify --changed`, then feeds those validation reasons into the existing verification planner. Use `--write-plan <path>` to save the classification report inside the mustflow root while still using the in-memory plan for the current verification run.
+
 `mf verify --plan-only --json` prints the verification plan without running commands. When a fresh local index exists, each scheduled entry can include `effectGraph` details from `.mustflow/cache/mustflow.sqlite`, including write locks and lock conflicts. Requirements can also include `surfaceReadModels` metadata that explains which indexed path-surface rule matched the changed files. Missing or stale indexes show a refresh hint and never change command selection or execution authority.
 
 ## Selection Rules
 
 - Matching uses the exact `required_after` reason string.
 - Plan files must stay inside the mustflow root and must be JSON.
+- `--changed` uses current Git status paths; it does not make any command runnable.
+- `--write-plan` is available only with `--changed`, and the output path must stay inside the mustflow root.
 - Runnable intents are executed through the same safety path as `mf run <intent>`.
 - Unknown, manual-only, long-running, blocked, or incomplete intents are not guessed; they are reported as skipped.
 - If no intents match the reason, the result is `blocked`.
@@ -22,6 +26,8 @@ description: Runs configured verification intents selected by required_after met
 ```sh
 npx mf verify --reason code_change
 npx mf verify --reason docs_change --json
+npx mf verify --changed --plan-only --json
+npx mf verify --changed --write-plan .mustflow/state/change-plan.json --json
 npx mf verify --from-plan verify-plan.json --json
 ```
 
@@ -38,7 +44,7 @@ Machine-readable output uses these fields:
 - `mustflow_root` (`string`): Resolved mustflow root.
 - `reason` (`string`): Requested `required_after` reason, or a comma-separated summary of plan reasons.
 - `reasons` (`string[]`): Verification reasons used to select command intents.
-- `plan_source` (`string | null`): JSON plan path when `--from-plan` was used.
+- `plan_source` (`string | null`): JSON plan path when `--from-plan` was used, `changed` when `--changed` was used, or `null` for `--reason`.
 - `status` (`string`): `passed`, `partial`, `failed`, or `blocked`.
 - `summary` (`object`): Counts for matched, ran, passed, failed, and skipped intents.
 - `results` (`object[]`): Per-intent run or skip results.

@@ -35,6 +35,24 @@ function appendIntent(projectPath, text) {
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
 }
 
+function replaceCommands(projectPath, text) {
+	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+	writeFileSync(commandsPath, `${text.trim()}\n`);
+}
+
+function runGit(cwd, args) {
+	const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function commitProjectBaseline(projectPath) {
+	runGit(projectPath, ['init']);
+	runGit(projectPath, ['config', 'user.email', 'test@example.com']);
+	runGit(projectPath, ['config', 'user.name', 'Test User']);
+	runGit(projectPath, ['add', '.']);
+	runGit(projectPath, ['commit', '-m', 'init']);
+}
+
 test('runs configured verification intents for a reason', () => {
 	const projectPath = createTempProject();
 
@@ -80,6 +98,167 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].status, 'passed');
 		assert.equal(report.results[0].receipt.intent, 'verify_echo');
 		assert.match(report.results[0].receipt.stdout.tail, /verify ok/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('plans verification from current changed files', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
+	const planPath = path.join(projectPath, '.mustflow', 'state', 'change-plan.json');
+
+	try {
+		initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.verify_changed_fixture]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify changed fixture."
+argv = ['${process.execPath}', '-e', 'console.log("fixture ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["test_change"]
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const changedResult = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const classifyResult = runCli(projectPath, ['classify', '--changed', '--json']);
+		mkdirSync(path.dirname(planPath), { recursive: true });
+		writeFileSync(planPath, classifyResult.stdout);
+		const fromPlanResult = runCli(projectPath, [
+			'verify',
+			'--from-plan',
+			'.mustflow/state/change-plan.json',
+			'--plan-only',
+			'--json',
+		]);
+		const fromPlanReport = JSON.parse(fromPlanResult.stdout);
+		const changedReport = JSON.parse(changedResult.stdout);
+
+		assert.equal(classifyResult.status, 0, classifyResult.stderr || classifyResult.stdout);
+		assert.equal(fromPlanResult.status, 0, fromPlanResult.stderr || fromPlanResult.stdout);
+		assert.equal(changedResult.status, 0, changedResult.stderr || changedResult.stdout);
+		assert.equal(changedReport.source, 'changed');
+		assert.deepEqual(changedReport.files, ['tests/fixtures/verify-changed.txt']);
+		assert.deepEqual(changedReport.classification_summary, fromPlanReport.classification_summary);
+		assert.deepEqual(
+			changedReport.requirements.map((requirement) => requirement.reason),
+			fromPlanReport.requirements.map((requirement) => requirement.reason),
+		);
+		assert.deepEqual(changedReport.candidates, fromPlanReport.candidates);
+		assert.equal(changedReport.candidates[0].intent, 'verify_changed_fixture');
+		assert.equal(changedReport.candidates[0].status, 'runnable');
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('runs verification from current changed files', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
+	const markerPath = path.join(projectPath, 'executed.txt');
+
+	try {
+		initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.verify_changed_fixture]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify changed fixture."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync("executed.txt", "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["executed.txt"]
+network = false
+destructive = false
+required_after = ["test_change"]
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const result = runCli(projectPath, ['verify', '--changed', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.plan_source, 'changed');
+		assert.deepEqual(report.reasons, ['test_change']);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.summary.ran, 1);
+		assert.equal(report.results[0].intent, 'verify_changed_fixture');
+		assert.equal(existsSync(markerPath), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('writes changed-file classification plan before verifying', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
+	const planPath = path.join(projectPath, '.mustflow', 'state', 'change-plan.json');
+
+	try {
+		initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.verify_changed_fixture]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify changed fixture."
+argv = ['${process.execPath}', '-e', 'console.log("fixture ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["test_change"]
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const result = runCli(projectPath, [
+			'verify',
+			'--changed',
+			'--write-plan',
+			'.mustflow/state/change-plan.json',
+			'--plan-only',
+			'--json',
+		]);
+		const writtenPlan = JSON.parse(readFileSync(planPath, 'utf8'));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(writtenPlan.command, 'classify');
+		assert.equal(writtenPlan.source, 'changed');
+		assert.deepEqual(writtenPlan.files, ['tests/fixtures/verify-changed.txt']);
+		assert.deepEqual(writtenPlan.summary.validationReasons, ['test_change']);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -552,8 +731,45 @@ test('rejects conflicting verify reason inputs', () => {
 		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--from-plan', 'verify-plan.json']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Use either --reason or --from-plan, not both/);
+		assert.match(result.stderr, /Use only one of --reason, --from-plan, or --changed/);
 		assert.match(result.stdout, /Usage: mf verify/);
+
+		const changedResult = runCli(projectPath, ['verify', '--changed', '--reason', 'schema_verify', '--json']);
+
+		assert.equal(changedResult.status, 1);
+		assert.match(changedResult.stderr, /Use only one of --reason, --from-plan, or --changed/);
+		assert.match(changedResult.stdout, /Usage: mf verify/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects verify write-plan without changed mode', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--write-plan', 'change-plan.json', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /--write-plan requires --changed/);
+		assert.match(result.stdout, /Usage: mf verify/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects changed verify plan writes outside the mustflow root', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['verify', '--changed', '--write-plan', '../change-plan.json', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Verification plan path must stay inside the mustflow root/);
 	} finally {
 		removeTempProject(projectPath);
 	}

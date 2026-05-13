@@ -1,6 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { createClassifyOutput, type ClassifyOutput } from './classify.js';
 import { runRun } from './run.js';
 import {
 	createChangeVerificationReport,
@@ -112,11 +113,13 @@ function createBufferedOutput(): BufferedOutput {
 export function getVerifyHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf verify --reason <event> [options] | mf verify --from-plan <path> [options]',
+			usage: 'mf verify --reason <event> [options] | mf verify --from-plan <path> [options] | mf verify --changed [options]',
 			summary: t(lang, 'verify.help.summary'),
 			options: [
 				{ label: '--reason <event>', description: t(lang, 'verify.help.option.reason') },
 				{ label: '--from-plan <path>', description: t(lang, 'verify.help.option.fromPlan') },
+				{ label: '--changed', description: t(lang, 'verify.help.option.changed') },
+				{ label: '--write-plan <path>', description: t(lang, 'verify.help.option.writePlan') },
 				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
@@ -126,6 +129,8 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				'mf verify --reason docs_change --json',
 				'mf verify --reason docs_change --plan-only --json',
 				'mf verify --from-plan verify-plan.json --json',
+				'mf verify --changed --plan-only --json',
+				'mf verify --changed --write-plan .mustflow/state/change-plan.json --json',
 				'mf verify --reason mustflow_docs_change',
 			],
 			exitCodes: [
@@ -140,14 +145,18 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 function parseVerifyArgs(args: readonly string[]): {
 	json: boolean;
 	planOnly: boolean;
+	changed: boolean;
 	reason?: string;
 	fromPlan?: string;
+	writePlan?: string;
 	error?: string;
 } {
 	let reason: string | undefined;
 	let fromPlan: string | undefined;
+	let writePlan: string | undefined;
 	let json = false;
 	let planOnly = false;
+	let changed = false;
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -162,10 +171,15 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
+		if (arg === '--changed') {
+			changed = true;
+			continue;
+		}
+
 		if (arg === '--reason') {
 			const value = args[index + 1];
 			if (!value || value.startsWith('-')) {
-				return { json, planOnly, reason, error: 'missing_reason_value' };
+				return { json, planOnly, changed, reason, error: 'missing_reason_value' };
 			}
 
 			reason = value;
@@ -176,7 +190,7 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg === '--from-plan') {
 			const value = args[index + 1];
 			if (!value || value.startsWith('-')) {
-				return { json, planOnly, reason, fromPlan, error: 'missing_from_plan_value' };
+				return { json, planOnly, changed, reason, fromPlan, error: 'missing_from_plan_value' };
 			}
 
 			fromPlan = value;
@@ -184,10 +198,21 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
+		if (arg === '--write-plan') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return { json, planOnly, changed, reason, fromPlan, writePlan, error: 'missing_write_plan_value' };
+			}
+
+			writePlan = value;
+			index += 1;
+			continue;
+		}
+
 		if (arg.startsWith('--reason=')) {
 			const value = arg.slice('--reason='.length);
 			if (value.length === 0) {
-				return { json, planOnly, reason, error: 'missing_reason_value' };
+				return { json, planOnly, changed, reason, error: 'missing_reason_value' };
 			}
 
 			reason = value;
@@ -197,21 +222,31 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg.startsWith('--from-plan=')) {
 			const value = arg.slice('--from-plan='.length);
 			if (value.length === 0) {
-				return { json, planOnly, reason, fromPlan, error: 'missing_from_plan_value' };
+				return { json, planOnly, changed, reason, fromPlan, error: 'missing_from_plan_value' };
 			}
 
 			fromPlan = value;
 			continue;
 		}
 
-		if (arg.startsWith('-')) {
-			return { json, planOnly, reason, error: arg };
+		if (arg.startsWith('--write-plan=')) {
+			const value = arg.slice('--write-plan='.length);
+			if (value.length === 0) {
+				return { json, planOnly, changed, reason, fromPlan, writePlan, error: 'missing_write_plan_value' };
+			}
+
+			writePlan = value;
+			continue;
 		}
 
-		return { json, planOnly, reason, error: `unexpected:${arg}` };
+		if (arg.startsWith('-')) {
+			return { json, planOnly, changed, reason, fromPlan, writePlan, error: arg };
+		}
+
+		return { json, planOnly, changed, reason, fromPlan, writePlan, error: `unexpected:${arg}` };
 	}
 
-	return { json, planOnly, reason, fromPlan };
+	return { json, planOnly, changed, reason, fromPlan, writePlan };
 }
 
 function uniqueStrings(values: readonly string[]): string[] {
@@ -393,6 +428,23 @@ function readInputFromPlan(projectRoot: string, inputPath: string): VerifyInput 
 		reasons,
 		classificationReport: readClassificationReport(parsed, reasons),
 	};
+}
+
+function createInputFromChanged(projectRoot: string): { readonly input: VerifyInput; readonly plan: ClassifyOutput } {
+	const plan = createClassifyOutput(projectRoot, 'changed', []);
+	return {
+		plan,
+		input: {
+			reasons: plan.summary.validationReasons,
+			classificationReport: plan,
+		},
+	};
+}
+
+function writeChangedPlan(projectRoot: string, inputPath: string, plan: ClassifyOutput): void {
+	const planPath = resolvePlanPath(projectRoot, inputPath);
+	mkdirSync(path.dirname(planPath), { recursive: true });
+	writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
 }
 
 function planErrorMessageKey(code: string): MessageKey {
@@ -614,6 +666,8 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 				? t(lang, 'cli.error.missingValue', { option: '--reason' })
 				: parsed.error === 'missing_from_plan_value'
 					? t(lang, 'cli.error.missingValue', { option: '--from-plan' })
+				: parsed.error === 'missing_write_plan_value'
+					? t(lang, 'cli.error.missingValue', { option: '--write-plan' })
 				: parsed.error.startsWith('unexpected:')
 					? t(lang, 'cli.error.unexpectedArgument', { argument: parsed.error.slice('unexpected:'.length) })
 					: t(lang, 'cli.error.unknownOption', { option: parsed.error });
@@ -621,13 +675,20 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
-	if (parsed.reason && parsed.fromPlan) {
+	const selectedInputCount = [parsed.reason, parsed.fromPlan, parsed.changed ? 'changed' : undefined].filter(Boolean).length;
+
+	if (selectedInputCount > 1) {
 		printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf verify --help', getVerifyHelp(lang), lang);
 		return 1;
 	}
 
-	if (!parsed.reason && !parsed.fromPlan) {
+	if (selectedInputCount === 0) {
 		printUsageError(reporter, t(lang, 'verify.error.missingReason'), 'mf verify --help', getVerifyHelp(lang), lang);
+		return 1;
+	}
+
+	if (parsed.writePlan && !parsed.changed) {
+		printUsageError(reporter, t(lang, 'verify.error.writePlanRequiresChanged'), 'mf verify --help', getVerifyHelp(lang), lang);
 		return 1;
 	}
 
@@ -638,14 +699,25 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 
 	const projectRoot = resolveMustflowRoot();
 	let input: VerifyInput;
+	let changedPlan: ClassifyOutput | null = null;
 
 	try {
-		input = parsed.fromPlan
-			? readInputFromPlan(projectRoot, parsed.fromPlan)
-			: {
+		if (parsed.changed) {
+			const changedInput = createInputFromChanged(projectRoot);
+			input = changedInput.input;
+			changedPlan = changedInput.plan;
+		} else if (parsed.fromPlan) {
+			input = readInputFromPlan(projectRoot, parsed.fromPlan);
+		} else {
+			input = {
 					reasons: [parsed.reason as string],
 					classificationReport: createSyntheticClassificationReport([parsed.reason as string]),
 				};
+		}
+
+		if (parsed.writePlan && changedPlan) {
+			writeChangedPlan(projectRoot, parsed.writePlan, changedPlan);
+		}
 	} catch (error) {
 		const code = error instanceof Error ? error.message : 'invalid_plan_file';
 		printUsageError(reporter, t(lang, planErrorMessageKey(code)), 'mf verify --help', getVerifyHelp(lang), lang);
@@ -657,7 +729,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	}
 
-	const output = await createVerifyOutput(input.reasons, parsed.fromPlan ?? null, projectRoot, lang);
+	const output = await createVerifyOutput(input.reasons, parsed.fromPlan ?? (parsed.changed ? 'changed' : null), projectRoot, lang);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

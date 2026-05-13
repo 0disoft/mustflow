@@ -765,6 +765,8 @@ export const hiMessages = {
     "required_after metadata से चुने गए configured verification intents चलाएँ।",
   "verify.help.option.reason": "Verify करने के लिए required_after reason चुनें",
   "verify.help.option.fromPlan": "इस repository के अंदर JSON plan से verification reasons पढ़ें",
+  "verify.help.option.changed": "Current Git changes classify करके matching reasons verify करें",
+  "verify.help.option.writePlan": "Changed-file classification plan इस repository के अंदर लिखें",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
@@ -775,7 +777,8 @@ export const hiMessages = {
   "verify.label.status": "Status",
   "verify.label.results": "Results",
   "verify.error.missingReason": "Verification reason missing है",
-  "verify.error.conflictingInputs": "--reason या --from-plan में से एक ही इस्तेमाल करें",
+  "verify.error.conflictingInputs": "--reason, --from-plan, या --changed में से केवल एक इस्तेमाल करें",
+  "verify.error.writePlanRequiresChanged": "--write-plan के लिए --changed चाहिए",
   "verify.error.planOnlyJson": "--plan-only के लिए --json चाहिए",
   "verify.error.invalid_plan_file": "Verification plan readable JSON file होना चाहिए",
   "verify.error.missing_plan_reasons": "Verification plan में reason, reasons, validationReasons, summary.validationReasons, या classification_summary.validationReasons होना चाहिए",

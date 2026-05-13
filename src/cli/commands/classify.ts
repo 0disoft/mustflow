@@ -10,7 +10,7 @@ import type { Reporter } from '../lib/reporter.js';
 
 const CLASSIFY_SCHEMA_VERSION = '1';
 
-interface ClassifyOutput extends ChangeClassificationReport {
+export interface ClassifyOutput extends ChangeClassificationReport {
 	readonly schema_version: string;
 	readonly command: 'classify';
 	readonly mustflow_root: string;
@@ -69,9 +69,12 @@ function parseClassifyArgs(args: readonly string[]): ParsedClassifyArgs {
 	return { json, changed, paths };
 }
 
-function getClassifyOutput(projectRoot: string, parsed: ParsedClassifyArgs): ClassifyOutput {
-	const source = parsed.changed ? 'changed' : 'paths';
-	const files = parsed.changed ? readGitChangedFiles(projectRoot) : parsed.paths;
+export function createClassifyOutput(
+	projectRoot: string,
+	source: ClassifyOutput['source'],
+	paths: readonly string[],
+): ClassifyOutput {
+	const files = source === 'changed' ? readGitChangedFiles(projectRoot) : paths;
 
 	return {
 		schema_version: CLASSIFY_SCHEMA_VERSION,
@@ -153,7 +156,7 @@ export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 
 		return 1;
 	}
 
-	const output = getClassifyOutput(resolveMustflowRoot(), parsed);
+	const output = createClassifyOutput(resolveMustflowRoot(), parsed.changed ? 'changed' : 'paths', parsed.paths);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

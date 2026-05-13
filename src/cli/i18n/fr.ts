@@ -765,6 +765,8 @@ Lisez ces fichiers avant de travailler :
     "Exécute les intentions de vérification configurées sélectionnées par les métadonnées required_after.",
   "verify.help.option.reason": "Sélectionne la raison required_after à vérifier",
   "verify.help.option.fromPlan": "Lit les raisons de vérification depuis un plan JSON dans ce dépôt",
+  "verify.help.option.changed": "Classe les changements Git actuels et vérifie les raisons correspondantes",
+  "verify.help.option.writePlan": "Écrit le plan de classification des changements dans ce dépôt",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":
@@ -775,7 +777,8 @@ Lisez ces fichiers avant de travailler :
   "verify.label.status": "État",
   "verify.label.results": "Résultats",
   "verify.error.missingReason": "Raison de vérification manquante",
-  "verify.error.conflictingInputs": "Utilisez --reason ou --from-plan, pas les deux",
+  "verify.error.conflictingInputs": "Utilisez un seul de --reason, --from-plan ou --changed",
+  "verify.error.writePlanRequiresChanged": "--write-plan nécessite --changed",
   "verify.error.planOnlyJson": "--plan-only nécessite --json",
   "verify.error.invalid_plan_file": "Le plan de vérification doit être un fichier JSON lisible",
   "verify.error.missing_plan_reasons": "Le plan de vérification doit inclure reason, reasons, validationReasons, summary.validationReasons ou classification_summary.validationReasons",

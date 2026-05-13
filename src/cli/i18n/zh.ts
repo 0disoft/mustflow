@@ -755,6 +755,8 @@ export const zhMessages = {
     "运行由 required_after 元数据选出的已配置验证意图。",
   "verify.help.option.reason": "选择要验证的 required_after 原因",
   "verify.help.option.fromPlan": "从此仓库内的 JSON 计划读取验证原因",
+  "verify.help.option.changed": "分类当前 Git 变更并验证匹配的原因",
+  "verify.help.option.writePlan": "在此仓库内写入变更文件分类计划",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
@@ -765,7 +767,8 @@ export const zhMessages = {
   "verify.label.status": "状态",
   "verify.label.results": "结果",
   "verify.error.missingReason": "缺少验证原因",
-  "verify.error.conflictingInputs": "只能使用 --reason 或 --from-plan 其中之一",
+  "verify.error.conflictingInputs": "只能使用 --reason、--from-plan 或 --changed 其中之一",
+  "verify.error.writePlanRequiresChanged": "--write-plan 需要 --changed",
   "verify.error.planOnlyJson": "--plan-only 需要 --json",
   "verify.error.invalid_plan_file": "验证计划必须是可读取的 JSON 文件",
   "verify.error.missing_plan_reasons": "验证计划必须包含 reason、reasons、validationReasons、summary.validationReasons 或 classification_summary.validationReasons",
