@@ -54,6 +54,54 @@
         "sourceFiles": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "knownClassificationReasons",
+            "documentedVerificationReasons",
+            "requiredAfterReasons",
+            "runnableReasons",
+            "findings"
+          ],
+          "properties": {
+            "knownClassificationReasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "documentedVerificationReasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "requiredAfterReasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "runnableReasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "findings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["severity", "code", "reason", "intent", "intents", "message"],
+                "properties": {
+                  "severity": { "enum": ["error", "warning"] },
+                  "code": { "type": "string" },
+                  "reason": { "type": ["string", "null"] },
+                  "intent": { "type": ["string", "null"] },
+                  "intents": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "message": { "type": "string" }
+                }
+              }
+            }
+          }
         }
       }
     }

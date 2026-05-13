@@ -64,6 +64,7 @@ export const frMessages = {
 
   "contractLint.help.summary":
     "Inspecte .mustflow/config/commands.toml pour trouver les erreurs et avertissements du contrat de commandes.",
+  "contractLint.help.option.coverage": "Signale aussi la couverture required_after des raisons de classification",
   "contractLint.help.exit.ok": "Le contrat de commandes a été inspecté sans erreur bloquante",
   "contractLint.help.exit.fail": "Des erreurs de contrat de commandes ont été trouvées ou l'entrée est invalide",
   "contractLint.title": "mustflow contract-lint",
@@ -76,6 +77,11 @@ export const frMessages = {
   "contractLint.label.errors": "Erreurs",
   "contractLint.label.warnings": "Avertissements",
   "contractLint.label.sourceFiles": "Fichiers sources",
+  "contractLint.label.coverage": "Couverture",
+  "contractLint.label.classificationReasons": "Raisons de classification",
+  "contractLint.label.requiredAfterReasons": "Raisons required_after",
+  "contractLint.label.runnableReasons": "Raisons exécutables",
+  "contractLint.label.coverageFindings": "Constats de couverture",
   "contractLint.label.issues": "Problèmes",
 
   "context.help.summary":

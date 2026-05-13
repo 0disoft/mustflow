@@ -64,6 +64,7 @@ export const zhMessages = {
 
   "contractLint.help.summary":
     "检查 .mustflow/config/commands.toml 中的命令契约错误和警告。",
+  "contractLint.help.option.coverage": "同时报告变更分类原因的 required_after 覆盖情况",
   "contractLint.help.exit.ok": "命令契约已检查，未发现阻塞错误",
   "contractLint.help.exit.fail": "发现命令契约错误，或输入无效",
   "contractLint.title": "mustflow contract-lint",
@@ -76,6 +77,11 @@ export const zhMessages = {
   "contractLint.label.errors": "错误",
   "contractLint.label.warnings": "警告",
   "contractLint.label.sourceFiles": "来源文件",
+  "contractLint.label.coverage": "覆盖情况",
+  "contractLint.label.classificationReasons": "分类原因",
+  "contractLint.label.requiredAfterReasons": "required_after 原因",
+  "contractLint.label.runnableReasons": "可运行原因",
+  "contractLint.label.coverageFindings": "覆盖发现",
   "contractLint.label.issues": "问题",
 
   "context.help.summary":

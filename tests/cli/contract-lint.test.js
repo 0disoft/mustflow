@@ -33,6 +33,59 @@ function commandsPath(projectPath) {
 	return path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 }
 
+function writeCommands(projectPath, text) {
+	writeFileSync(commandsPath(projectPath), `${text.trim()}\n`);
+}
+
+function runnableIntent(name, reasons, extra = '') {
+	return `
+[intents.${name}]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Coverage test intent."
+argv = ['${process.execPath}', '-e', 'console.log("ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = [${reasons.map((reason) => `"${reason}"`).join(', ')}]
+${extra}
+`;
+}
+
+function manualOnlyIntent(name, reasons) {
+	return `
+[intents.${name}]
+status = "manual_only"
+description = "Manual coverage test intent."
+required_after = [${reasons.map((reason) => `"${reason}"`).join(', ')}]
+`;
+}
+
+function cleanCoverageCommands(options = {}) {
+	const implementationReasons = [
+		...(options.includeCodeChange === false ? [] : ['code_change']),
+		'copy_change',
+		'docs_change',
+		'i18n_change',
+		'mustflow_config_change',
+		'mustflow_docs_change',
+		'public_api_change',
+		'test_change',
+	];
+	const releaseReasons = ['package_metadata_change', 'packaging_change', 'release_risk', 'template_version_change'];
+
+	return [
+		runnableIntent('test_related', implementationReasons),
+		runnableIntent('test_release', releaseReasons),
+		options.extra ?? '',
+	].join('\n');
+}
+
 test('contract-lint reports command contract warnings without failing', () => {
 	const projectPath = createTempProject();
 
@@ -49,6 +102,196 @@ test('contract-lint reports command contract warnings without failing', () => {
 		assert.equal(report.report.summary.errors, 0);
 		assert.ok(report.report.summary.unknown > 0);
 		assert.ok(report.report.issues.some((issue) => issue.code === 'intent_unknown'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint coverage reports clean required_after coverage', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeCommands(projectPath, cleanCoverageCommands());
+
+		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.report.status, 'passed');
+		assert.deepEqual(report.report.issues, []);
+		assert.ok(report.report.coverage.knownClassificationReasons.includes('code_change'));
+		assert.ok(report.report.coverage.requiredAfterReasons.includes('code_change'));
+		assert.deepEqual(report.report.coverage.findings, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint coverage warns for uncovered classification reasons', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeCommands(projectPath, cleanCoverageCommands({ includeCodeChange: false }));
+
+		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.report.status, 'warning');
+		assert.ok(
+			report.report.coverage.findings.some(
+				(finding) =>
+					finding.code === 'coverage_uncovered_classification_reason' && finding.reason === 'code_change',
+			),
+		);
+		assert.ok(
+			report.report.issues.some(
+				(issue) => issue.code === 'coverage_uncovered_classification_reason' && issue.severity === 'warning',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint coverage warns for unknown required_after reasons', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeCommands(
+			projectPath,
+			cleanCoverageCommands({
+				extra: runnableIntent('custom_unknown_reason', ['typo_change_reason']),
+			}),
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			report.report.coverage.findings.some(
+				(finding) =>
+					finding.code === 'coverage_unknown_required_after' &&
+					finding.reason === 'typo_change_reason' &&
+					finding.intents.includes('custom_unknown_reason'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint coverage warns when a classification reason is not runnable', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeCommands(
+			projectPath,
+			cleanCoverageCommands({
+				includeCodeChange: false,
+				extra: manualOnlyIntent('manual_code_change', ['code_change']),
+			}),
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			report.report.coverage.findings.some(
+				(finding) =>
+					finding.code === 'coverage_reason_not_runnable' &&
+					finding.reason === 'code_change' &&
+					finding.intents.includes('manual_code_change'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint coverage warns for same-reason writers without explicit effects', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeCommands(
+			projectPath,
+			cleanCoverageCommands({
+				includeCodeChange: false,
+				extra: [
+					`
+[intents.writer_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Coverage writer A."
+argv = ['${process.execPath}', '-e', 'console.log("a")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+network = false
+destructive = false
+required_after = ["code_change"]
+`,
+					`
+[intents.writer_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Coverage writer B."
+argv = ['${process.execPath}', '-e', 'console.log("b")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+network = false
+destructive = false
+required_after = ["code_change"]
+`,
+				].join('\n'),
+			}),
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			report.report.coverage.findings.some(
+				(finding) =>
+					finding.code === 'coverage_conflicting_writes_without_effects' &&
+					finding.reason === 'code_change' &&
+					finding.intents.includes('writer_a') &&
+					finding.intents.includes('writer_b'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint coverage text output stays concise', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeCommands(projectPath, cleanCoverageCommands({ includeCodeChange: false }));
+
+		const result = runCli(projectPath, ['contract-lint', '--coverage']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Coverage/);
+		assert.match(result.stdout, /Coverage findings: 1/);
+		assert.match(result.stdout, /Classification reason "code_change"/);
 	} finally {
 		removeTempProject(projectPath);
 	}

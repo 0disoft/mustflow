@@ -7,11 +7,15 @@ description: Revisión de solo lectura del contrato de comandos en commands.toml
 
 Úsalo cuando necesites una vista enfocada de errores y advertencias del contrato de comandos. Es más estrecho que `mf check`: los intents `configured` mal formados son errores, mientras que los intents `unknown` y `manual_only` se muestran como advertencias.
 
+Agrega `--coverage` cuando también quieras ver si las razones de validación de la clasificación de cambios están conectadas con metadatos `required_after`. Los hallazgos de cobertura son advertencias y no cambian qué comandos son ejecutables.
+
 ## Ejemplo
 
 ```sh
 npx mf contract-lint
+npx mf contract-lint --coverage
 npx mf contract-lint --json
+npx mf contract-lint --coverage --json
 ```
 
 ## Campos JSON
@@ -27,6 +31,8 @@ npx mf contract-lint --json
 - `report.summary` (`object`): conteos de intents, ejecutables, errores y advertencias.
 - `report.issues` (`object[]`): problemas con `severity`, `code`, `intent` y `message`.
 - `report.sourceFiles` (`string[]`): archivos que definen las reglas del contrato.
+- `report.coverage` (`object`, opcional): aparece solo con `--coverage`. Incluye razones de clasificación conocidas, razones de verificación documentadas, razones `required_after`, razones ejecutables y hallazgos de cobertura.
+- `report.coverage.findings` (`object[]`): hallazgos de cobertura con `code`, `reason`, `intent`, `intents` y `message` estables.
 
 ## Ayuda y códigos de salida
 

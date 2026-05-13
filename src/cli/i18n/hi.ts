@@ -64,6 +64,7 @@ export const hiMessages = {
 
   "contractLint.help.summary":
     ".mustflow/config/commands.toml में command-contract errors और warnings जाँचें.",
+  "contractLint.help.option.coverage": "change-classification reasons के लिए required_after coverage भी report करें",
   "contractLint.help.exit.ok": "कमांड अनुबंध बिना blocking errors के जाँचा गया",
   "contractLint.help.exit.fail": "कमांड अनुबंध errors मिले या input अमान्य था",
   "contractLint.title": "mustflow contract-lint",
@@ -76,6 +77,11 @@ export const hiMessages = {
   "contractLint.label.errors": "Errors",
   "contractLint.label.warnings": "Warnings",
   "contractLint.label.sourceFiles": "Source files",
+  "contractLint.label.coverage": "Coverage",
+  "contractLint.label.classificationReasons": "Classification reasons",
+  "contractLint.label.requiredAfterReasons": "required_after reasons",
+  "contractLint.label.runnableReasons": "Runnable reasons",
+  "contractLint.label.coverageFindings": "Coverage findings",
   "contractLint.label.issues": "Issues",
 
   "context.help.summary":

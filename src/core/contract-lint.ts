@@ -5,6 +5,7 @@ import {
 	isRecord,
 	readPositiveInteger,
 	readString,
+	readStringArray,
 	type CommandContract,
 	type TomlTable,
 } from './config-loading.js';
@@ -14,6 +15,8 @@ import {
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
+import { commandEffectsConflict, normalizeCommandEffects } from './command-effects.js';
+import { listChangeClassificationValidationReasons } from './change-classification.js';
 
 export type ContractLintStatus = 'passed' | 'warning' | 'failed';
 export type ContractLintSeverity = 'error' | 'warning';
@@ -23,6 +26,23 @@ export interface ContractLintIssue {
 	readonly code: string;
 	readonly intent: string | null;
 	readonly message: string;
+}
+
+export interface ContractLintCoverageFinding {
+	readonly severity: ContractLintSeverity;
+	readonly code: string;
+	readonly reason: string | null;
+	readonly intent: string | null;
+	readonly intents: readonly string[];
+	readonly message: string;
+}
+
+export interface ContractLintCoverageReport {
+	readonly knownClassificationReasons: readonly string[];
+	readonly documentedVerificationReasons: readonly string[];
+	readonly requiredAfterReasons: readonly string[];
+	readonly runnableReasons: readonly string[];
+	readonly findings: readonly ContractLintCoverageFinding[];
 }
 
 export interface ContractLintSummary {
@@ -40,9 +60,65 @@ export interface ContractLintReport {
 	readonly summary: ContractLintSummary;
 	readonly issues: readonly ContractLintIssue[];
 	readonly sourceFiles: readonly string[];
+	readonly coverage?: ContractLintCoverageReport;
 }
 
-const CONTRACT_LINT_SOURCE_FILES = ['.mustflow/config/commands.toml', '.mustflow/docs/agent-workflow.md', 'AGENTS.md'];
+export interface ContractLintOptions {
+	readonly coverage?: boolean;
+	readonly projectRoot?: string;
+	readonly releaseVersioningEnabled?: boolean;
+}
+
+const CONTRACT_LINT_SOURCE_FILES = [
+	'.mustflow/config/commands.toml',
+	'.mustflow/docs/agent-workflow.md',
+	'AGENTS.md',
+	'src/core/change-classification.ts',
+];
+
+export const DOCUMENTED_VERIFICATION_REASONS = [
+	'before_publish',
+	'before_final_report',
+	'before_task',
+	'behavior_change',
+	'behavior_removed',
+	'build_config_change',
+	'clean_mustflow_update_plan',
+	'commit_message_suggestion',
+	'coverage_request',
+	'cross_cutting_code_change',
+	'directory_change',
+	'formatting_change',
+	'image_asset_change',
+	'line_ending_warning',
+	'low_risk_code_change',
+	'snapshot_change',
+	'structure_change',
+	'style_change',
+	'template_update_apply',
+	'template_update_check',
+	'test_policy_change',
+	'user_approved_snapshot_update',
+	'user_requested_line_ending_normalization',
+	'web_asset_change',
+] as const;
+
+const RELEASE_SENSITIVE_REASONS = new Set([
+	'package_metadata_change',
+	'packaging_change',
+	'release_risk',
+	'template_version_change',
+]);
+
+interface CoverageIntent {
+	readonly name: string;
+	readonly intent: TomlTable;
+	readonly runnable: boolean;
+}
+
+function uniqueSorted(values: Iterable<string>): string[] {
+	return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
 
 function readBoolean(intent: TomlTable, key: string): boolean | null {
 	const value = intent[key];
@@ -67,6 +143,27 @@ function pushIssue(
 	message: string,
 ): void {
 	issues.push({ severity, code, intent, message });
+}
+
+function pushCoverageFinding(
+	issues: ContractLintIssue[],
+	findings: ContractLintCoverageFinding[],
+	severity: ContractLintSeverity,
+	code: string,
+	reason: string | null,
+	intent: string | null,
+	intents: readonly string[],
+	message: string,
+): void {
+	findings.push({
+		severity,
+		code,
+		reason,
+		intent,
+		intents: [...intents].sort((left, right) => left.localeCompare(right)),
+		message,
+	});
+	pushIssue(issues, severity, code, intent, message);
 }
 
 function configuredIntentIsRunnable(intent: TomlTable): boolean {
@@ -163,6 +260,200 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 	return value;
 }
 
+function collectRequiredAfterReasons(contract: CommandContract): Map<string, CoverageIntent[]> {
+	const reasonToIntents = new Map<string, CoverageIntent[]>();
+
+	for (const [name, intent] of Object.entries(contract.intents)) {
+		if (!isRecord(intent)) {
+			continue;
+		}
+
+		for (const reason of readStringArray(intent, 'required_after') ?? []) {
+			reasonToIntents.set(reason, [
+				...(reasonToIntents.get(reason) ?? []),
+				{
+					name,
+					intent,
+					runnable: evaluateCommandIntentEligibility(name, intent).ok,
+				},
+			]);
+		}
+	}
+
+	return reasonToIntents;
+}
+
+function hasExplicitEffectMetadata(intent: TomlTable): boolean {
+	return Array.isArray(intent.effects) && intent.effects.some((effect) => isRecord(effect));
+}
+
+function intentLooksReleaseFocused(name: string, intent: TomlTable): boolean {
+	const text = `${name} ${readString(intent, 'description') ?? ''}`.toLowerCase();
+	return /(?:^|[_\W])(?:release|package|pack|packaging|publish)(?:$|[_\W])/u.test(text);
+}
+
+function addConflictingWriteCoverageWarnings(
+	contract: CommandContract,
+	projectRoot: string | undefined,
+	reason: string,
+	candidates: readonly CoverageIntent[],
+	issues: ContractLintIssue[],
+	findings: ContractLintCoverageFinding[],
+): void {
+	if (!projectRoot) {
+		return;
+	}
+
+	const runnableCandidates = candidates.filter((candidate) => candidate.runnable);
+
+	for (let leftIndex = 0; leftIndex < runnableCandidates.length; leftIndex += 1) {
+		const left = runnableCandidates[leftIndex];
+		const leftHasExplicitEffects = hasExplicitEffectMetadata(left.intent);
+		let leftEffects;
+
+		try {
+			leftEffects = normalizeCommandEffects(projectRoot, contract, left.name);
+		} catch {
+			continue;
+		}
+
+		for (let rightIndex = leftIndex + 1; rightIndex < runnableCandidates.length; rightIndex += 1) {
+			const right = runnableCandidates[rightIndex];
+			const rightHasExplicitEffects = hasExplicitEffectMetadata(right.intent);
+
+			if (leftHasExplicitEffects && rightHasExplicitEffects) {
+				continue;
+			}
+
+			let rightEffects;
+			try {
+				rightEffects = normalizeCommandEffects(projectRoot, contract, right.name);
+			} catch {
+				continue;
+			}
+
+			const conflicts = leftEffects.some((leftEffect) =>
+				rightEffects.some((rightEffect) => commandEffectsConflict(leftEffect, rightEffect)),
+			);
+
+			if (!conflicts) {
+				continue;
+			}
+
+			pushCoverageFinding(
+				issues,
+				findings,
+				'warning',
+				'coverage_conflicting_writes_without_effects',
+				reason,
+				null,
+				[left.name, right.name],
+				`Reason "${reason}" selects runnable intents ${left.name} and ${right.name} that share write effects without explicit effects or resource locks.`,
+			);
+		}
+	}
+}
+
+function lintCoverage(
+	contract: CommandContract,
+	options: ContractLintOptions,
+	issues: ContractLintIssue[],
+): ContractLintCoverageReport {
+	const findings: ContractLintCoverageFinding[] = [];
+	const knownClassificationReasons = listChangeClassificationValidationReasons();
+	const documentedVerificationReasons = [...DOCUMENTED_VERIFICATION_REASONS];
+	const knownReasons = new Set([...knownClassificationReasons, ...documentedVerificationReasons]);
+	const reasonToIntents = collectRequiredAfterReasons(contract);
+	const requiredAfterReasons = uniqueSorted(reasonToIntents.keys());
+	const runnableReasons = uniqueSorted(
+		[...reasonToIntents.entries()]
+			.filter(([, candidates]) => candidates.some((candidate) => candidate.runnable))
+			.map(([reason]) => reason),
+	);
+
+	for (const reason of knownClassificationReasons) {
+		const candidates = reasonToIntents.get(reason) ?? [];
+
+		if (candidates.length === 0) {
+			pushCoverageFinding(
+				issues,
+				findings,
+				'warning',
+				'coverage_uncovered_classification_reason',
+				reason,
+				null,
+				[],
+				`Classification reason "${reason}" has no matching required_after entry in commands.toml.`,
+			);
+			continue;
+		}
+
+		if (!candidates.some((candidate) => candidate.runnable)) {
+			pushCoverageFinding(
+				issues,
+				findings,
+				'warning',
+				'coverage_reason_not_runnable',
+				reason,
+				null,
+				candidates.map((candidate) => candidate.name),
+				`Reason "${reason}" is covered only by non-runnable intents: ${candidates
+					.map((candidate) => candidate.name)
+					.sort((left, right) => left.localeCompare(right))
+					.join(', ')}.`,
+			);
+		}
+
+		addConflictingWriteCoverageWarnings(contract, options.projectRoot, reason, candidates, issues, findings);
+	}
+
+	for (const [reason, candidates] of reasonToIntents) {
+		if (knownReasons.has(reason)) {
+			continue;
+		}
+
+		pushCoverageFinding(
+			issues,
+			findings,
+			'warning',
+			'coverage_unknown_required_after',
+			reason,
+			null,
+			candidates.map((candidate) => candidate.name),
+			`required_after reason "${reason}" is not emitted by change classification or listed as a documented verification reason.`,
+		);
+	}
+
+	if (options.releaseVersioningEnabled === true) {
+		const hasReleaseVerificationPath = [...reasonToIntents.entries()].some(
+			([reason, candidates]) =>
+				RELEASE_SENSITIVE_REASONS.has(reason) &&
+				candidates.some((candidate) => candidate.runnable && intentLooksReleaseFocused(candidate.name, candidate.intent)),
+		);
+
+		if (!hasReleaseVerificationPath) {
+			pushCoverageFinding(
+				issues,
+				findings,
+				'warning',
+				'coverage_release_path_missing',
+				null,
+				null,
+				[],
+				'Release versioning is enabled, but release-sensitive reasons have no runnable release or package verification intent.',
+			);
+		}
+	}
+
+	return {
+		knownClassificationReasons,
+		documentedVerificationReasons,
+		requiredAfterReasons,
+		runnableReasons,
+		findings,
+	};
+}
+
 function getStatus(errors: number, warnings: number): ContractLintStatus {
 	if (errors > 0) {
 		return 'failed';
@@ -171,12 +462,13 @@ function getStatus(errors: number, warnings: number): ContractLintStatus {
 	return warnings > 0 ? 'warning' : 'passed';
 }
 
-export function lintCommandContract(contract: CommandContract): ContractLintReport {
+export function lintCommandContract(contract: CommandContract, options: ContractLintOptions = {}): ContractLintReport {
 	const issues: ContractLintIssue[] = [];
 	const intentEntries = Object.entries(contract.intents);
 	const intentTables = intentEntries
 		.map(([name, value]) => lintIntent(name, value, issues))
 		.filter((intent): intent is TomlTable => intent !== null);
+	const coverage = options.coverage === true ? lintCoverage(contract, options, issues) : undefined;
 	const errors = issues.filter((issue) => issue.severity === 'error').length;
 	const warnings = issues.length - errors;
 
@@ -193,5 +485,6 @@ export function lintCommandContract(contract: CommandContract): ContractLintRepo
 		},
 		issues,
 		sourceFiles: CONTRACT_LINT_SOURCE_FILES,
+		coverage,
 	};
 }

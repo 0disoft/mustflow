@@ -306,6 +306,10 @@ export function listChangeClassificationRuleDescriptors(): readonly ChangeClassi
 	}));
 }
 
+export function listChangeClassificationValidationReasons(): readonly string[] {
+	return uniqueSorted(CHANGE_CLASSIFICATION_RULES.flatMap((classificationRule) => classificationRule.surface.validationReasons));
+}
+
 export function createChangeClassificationReport(
 	source: ChangeSource,
 	relativePaths: readonly string[],

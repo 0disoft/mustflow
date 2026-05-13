@@ -1,5 +1,10 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import { lintCommandContract, type ContractLintReport } from '../../core/contract-lint.js';
-import { readCommandContract } from '../../core/config-loading.js';
+import { readCommandContract, isRecord, type TomlTable } from '../../core/config-loading.js';
+import { readTomlFile } from '../../core/toml.js';
+import { releaseVersioningIsEnabled } from '../../core/version-sources.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
@@ -20,10 +25,11 @@ export function getContractLintHelp(lang: CliLang = 'en'): string {
 			usage: 'mf contract-lint [options]',
 			summary: t(lang, 'contractLint.help.summary'),
 			options: [
+				{ label: '--coverage', description: t(lang, 'contractLint.help.option.coverage') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf contract-lint', 'mf contract-lint --json'],
+			examples: ['mf contract-lint', 'mf contract-lint --coverage', 'mf contract-lint --coverage --json'],
 			exitCodes: [
 				{ label: '0', description: t(lang, 'contractLint.help.exit.ok') },
 				{ label: '1', description: t(lang, 'contractLint.help.exit.fail') },
@@ -33,12 +39,27 @@ export function getContractLintHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-function createContractLintOutput(projectRoot: string): ContractLintOutput {
+function readPreferences(projectRoot: string): TomlTable | undefined {
+	const preferencesPath = path.join(projectRoot, '.mustflow', 'config', 'preferences.toml');
+
+	if (!existsSync(preferencesPath)) {
+		return undefined;
+	}
+
+	const preferences = readTomlFile(preferencesPath);
+	return isRecord(preferences) ? preferences : undefined;
+}
+
+function createContractLintOutput(projectRoot: string, coverage: boolean): ContractLintOutput {
 	return {
 		schema_version: CONTRACT_LINT_SCHEMA_VERSION,
 		command: 'contract-lint',
 		mustflow_root: projectRoot,
-		report: lintCommandContract(readCommandContract(projectRoot)),
+		report: lintCommandContract(readCommandContract(projectRoot), {
+			coverage,
+			projectRoot,
+			releaseVersioningEnabled: releaseVersioningIsEnabled(readPreferences(projectRoot)),
+		}),
 	};
 }
 
@@ -59,6 +80,17 @@ function renderContractLintOutput(output: ContractLintOutput, lang: CliLang): st
 		...output.report.sourceFiles.map((sourceFile) => `- ${sourceFile}`),
 	];
 
+	if (output.report.coverage) {
+		lines.push(
+			'',
+			t(lang, 'contractLint.label.coverage'),
+			`${t(lang, 'contractLint.label.classificationReasons')}: ${output.report.coverage.knownClassificationReasons.length}`,
+			`${t(lang, 'contractLint.label.requiredAfterReasons')}: ${output.report.coverage.requiredAfterReasons.length}`,
+			`${t(lang, 'contractLint.label.runnableReasons')}: ${output.report.coverage.runnableReasons.length}`,
+			`${t(lang, 'contractLint.label.coverageFindings')}: ${output.report.coverage.findings.length}`,
+		);
+	}
+
 	if (output.report.issues.length > 0) {
 		lines.push('', t(lang, 'contractLint.label.issues'));
 		for (const issue of output.report.issues) {
@@ -76,7 +108,7 @@ export function runContractLint(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	}
 
-	const supported = new Set(['--json']);
+	const supported = new Set(['--coverage', '--json']);
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
@@ -90,7 +122,7 @@ export function runContractLint(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
-	const output = createContractLintOutput(resolveMustflowRoot());
+	const output = createContractLintOutput(resolveMustflowRoot(), args.includes('--coverage'));
 
 	if (args.includes('--json')) {
 		reporter.stdout(JSON.stringify(output, null, 2));

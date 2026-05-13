@@ -166,6 +166,20 @@ test('contract lint json output matches the published schema', () => {
 	}
 });
 
+test('contract lint coverage json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'contract-lint-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('version sources json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

@@ -7,11 +7,15 @@ description: commands.toml के command contract की read-only जाँच
 
 इसे command-contract errors और warnings की focused view के लिए उपयोग करें। यह `mf check` से संकरा है: गलत `configured` intents errors हैं, जबकि `unknown` और `manual_only` intents warnings के रूप में दिखते हैं।
 
+जब change-classification validation reasons का `required_after` metadata से जुड़ना भी देखना हो, तो `--coverage` जोड़ें। Coverage findings warnings हैं; वे किसी command को runnable नहीं बनाते।
+
 ## Example
 
 ```sh
 npx mf contract-lint
+npx mf contract-lint --coverage
 npx mf contract-lint --json
+npx mf contract-lint --coverage --json
 ```
 
 ## JSON Fields
@@ -27,6 +31,8 @@ npx mf contract-lint --json
 - `report.summary` (`object`): intent counts, runnable count, error count, और warning count.
 - `report.issues` (`object[]`): `severity`, `code`, `intent`, और `message` वाले issues.
 - `report.sourceFiles` (`string[]`): command-contract rules बताने वाली files.
+- `report.coverage` (`object`, optional): सिर्फ `--coverage` के साथ मौजूद होता है। इसमें known classification reasons, documented verification reasons, declared `required_after` reasons, runnable reasons, और coverage findings होते हैं.
+- `report.coverage.findings` (`object[]`): stable `code`, `reason`, `intent`, `intents`, और `message` fields वाले warning-first coverage findings.
 
 ## Help and Exit Codes
 

@@ -64,6 +64,7 @@ export const esMessages = {
 
   "contractLint.help.summary":
     "Inspecciona .mustflow/config/commands.toml para encontrar errores y advertencias del contrato de comandos.",
+  "contractLint.help.option.coverage": "También informa cobertura required_after para razones de clasificación de cambios",
   "contractLint.help.exit.ok": "El contrato de comandos se inspeccionó sin errores bloqueantes",
   "contractLint.help.exit.fail": "Se encontraron errores del contrato de comandos o la entrada no es válida",
   "contractLint.title": "mustflow contract-lint",
@@ -76,6 +77,11 @@ export const esMessages = {
   "contractLint.label.errors": "Errores",
   "contractLint.label.warnings": "Advertencias",
   "contractLint.label.sourceFiles": "Archivos fuente",
+  "contractLint.label.coverage": "Cobertura",
+  "contractLint.label.classificationReasons": "Razones de clasificación",
+  "contractLint.label.requiredAfterReasons": "Razones required_after",
+  "contractLint.label.runnableReasons": "Razones ejecutables",
+  "contractLint.label.coverageFindings": "Hallazgos de cobertura",
   "contractLint.label.issues": "Problemas",
 
   "context.help.summary":

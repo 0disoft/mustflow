@@ -63,6 +63,7 @@ export const koMessages = {
 
   "contractLint.help.summary":
     ".mustflow/config/commands.toml의 명령 계약 오류와 경고를 확인합니다.",
+  "contractLint.help.option.coverage": "변경 분류 이유에 대한 required_after 연결 상태도 보고합니다",
   "contractLint.help.exit.ok": "차단 오류 없이 명령 계약을 확인했습니다",
   "contractLint.help.exit.fail": "명령 계약 오류가 있거나 입력이 잘못되었습니다",
   "contractLint.title": "mustflow 명령 계약 점검",
@@ -75,6 +76,11 @@ export const koMessages = {
   "contractLint.label.errors": "오류",
   "contractLint.label.warnings": "경고",
   "contractLint.label.sourceFiles": "근거 파일",
+  "contractLint.label.coverage": "연결 상태",
+  "contractLint.label.classificationReasons": "변경 분류 이유",
+  "contractLint.label.requiredAfterReasons": "required_after 이유",
+  "contractLint.label.runnableReasons": "실행 가능한 이유",
+  "contractLint.label.coverageFindings": "연결 상태 발견 항목",
   "contractLint.label.issues": "문제",
 
   "context.help.summary":

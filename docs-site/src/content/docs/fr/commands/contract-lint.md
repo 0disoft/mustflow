@@ -7,11 +7,15 @@ description: Vérification en lecture seule du contrat de commandes dans command
 
 Utilisez-le pour obtenir une vue ciblée des erreurs et avertissements du contrat de commandes. La portée est plus étroite que `mf check` : les intentions `configured` mal formées sont des erreurs, tandis que les intentions `unknown` et `manual_only` restent des avertissements.
 
+Ajoutez `--coverage` pour vérifier aussi si les raisons de validation issues de la classification des changements sont reliées aux métadonnées `required_after`. Les constats de couverture restent des avertissements et ne rendent aucune commande exécutable.
+
 ## Exemple
 
 ```sh
 npx mf contract-lint
+npx mf contract-lint --coverage
 npx mf contract-lint --json
+npx mf contract-lint --coverage --json
 ```
 
 ## Champs JSON
@@ -27,6 +31,8 @@ npx mf contract-lint --json
 - `report.summary` (`object`) : nombres d'intentions, d'exécutables, d'erreurs et d'avertissements.
 - `report.issues` (`object[]`) : problèmes avec `severity`, `code`, `intent` et `message`.
 - `report.sourceFiles` (`string[]`) : fichiers qui définissent les règles du contrat.
+- `report.coverage` (`object`, facultatif) : présent seulement avec `--coverage`. Inclut les raisons de classification connues, les raisons de vérification documentées, les raisons `required_after`, les raisons exécutables et les constats de couverture.
+- `report.coverage.findings` (`object[]`) : constats de couverture avec des champs stables `code`, `reason`, `intent`, `intents` et `message`.
 
 ## Aide et codes de sortie
 
