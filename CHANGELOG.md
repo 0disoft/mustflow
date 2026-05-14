@@ -9,6 +9,17 @@ This file applies to the mustflow repository itself. It is not installed into us
 ### Added
 
 - Profile-aware skill installation for `mf init` now lets the default `minimal` profile install only core everyday coding skills. Broader profiles can opt into maintainer, team, product, web, and library skill groups from the same packaged template.
+- `mf check --strict` now validates optional candidate path-classification files at `.mustflow/config/changes.toml` and `.mustflow/config/surfaces.toml` without making them active command authority.
+- `mf handoff validate <path>` now validates restricted work-item or handoff JSON records without writing files, storing transcripts, or granting command authority.
+- Verification decision graph output for `mf verify --plan-only --json`, `mf explain verify --json`, and dashboard verification snapshots, linking changed surfaces, classification reasons, command candidates, eligibility, effects, and gaps in one machine-readable evidence model.
+- Command-effect graph JSON now marks local SQLite lock and conflict explanations as `explanation_only` with `.mustflow/config/commands.toml` as the only command-authority source.
+- `mf adapters status` now reports repository-visible host adapter files, command-authority boundaries, and required instruction-conflict fixes without generating adapter files.
+- The `architecture-deepening-review` profile skill so OSS, team, and library projects can rank structural improvement candidates before choosing a refactor or abstraction.
+- The `release-notes-authoring` profile skill so OSS and library projects can draft public notes from verified local evidence without inventing release history.
+- The `vertical-slice-tdd` default skill so explicit TDD requests stay in small observable RED/GREEN behavior slices without forcing test-first work on every task.
+- The `source-freshness-check` skill now covers external research intake so outside methodology notes are split into evidence, recommendations, executable instructions, and repository-native adoption targets.
+- The `external-skill-intake` skill now defers web-testing and session-handoff proposals unless they fit configured one-shot verification or restricted ledger boundaries.
+- The `date-number-audit` skill now classifies release version impact from explicit public-contract tags before choosing `major`, `minor`, `patch`, or `no_release`.
 - The `test-design-guard` default skill so agents classify RED evidence, choose evidence-backed test shapes, and avoid speculative or mock-only test coverage.
 - A configured `test_audit` command intent backed by a read-only JSON test audit script for focused-test and empty-test-file signals.
 - Test audit warning signals for oversized mixed-surface test files and mock-only behavior candidates.
@@ -60,9 +71,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 ### Changed
 
 - Reorganized README and documentation-site entry points around the no-guessing workflow contract, showing change classification, execution-free verification planning, command receipts, navigation-only source anchors, and dashboard non-execution boundaries before deeper reference material.
+- Strengthened the `ui-quality-gate` skill with task-essential control, keyboard and focus, accessible state, responsive text, localization, performance, and bounded visual-verification checks.
 
 ### Fixed
 
+- `mf search` now caps every returned `results[].match` preview so long queries or metadata matches cannot expand into unbounded output.
 - Strict validation now catches package and default-template manifest version drift when template version synchronization is enabled.
 - Source anchor validation prevents authority-like anchor text from claiming permission to skip validation or change command policy.
 - `mf dashboard` language switching now updates the current status tab content immediately without requiring a reload or tab switch.

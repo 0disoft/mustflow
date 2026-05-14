@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.20.0');
+	assert.equal(packageJson.version, '1.27.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -149,8 +149,11 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 
 	assert.match(explainSchema, /"effectGraph"/u);
 	assert.match(explainSchema, /"readModel"/u);
+	assert.match(explainSchema, /"decisionGraph"/u);
+	assert.match(changeVerificationSchema, /"decision_graph"/u);
 	assert.match(changeVerificationSchema, /"effectGraph"/u);
 	assert.match(changeVerificationSchema, /"surfaceReadModels"/u);
+	assert.match(readme, /verification decision graph/u);
 	assert.match(readme, /read-only local-index lock explanations/u);
 
 	for (const locale of supportedTemplateLocales) {
@@ -170,6 +173,8 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 		assert.match(searchCommand, /`skill_route`/u, `${locale} search command docs should document skill route results`);
 		assert.match(explainCommand, /decision\.effectGraph/u, `${locale} explain docs should document command graphs`);
 		assert.match(explainCommand, /decision\.readModel/u, `${locale} explain docs should document surface read models`);
+		assert.match(explainCommand, /decisionGraph/u, `${locale} explain docs should document verify decision graph`);
+		assert.match(verifyCommand, /decision_graph/u, `${locale} verify docs should document decision graph`);
 		assert.match(verifyCommand, /effectGraph/u, `${locale} verify docs should document command graphs`);
 		assert.match(verifyCommand, /surfaceReadModels/u, `${locale} verify docs should document surface read models`);
 		assert.match(localIndexDesign, /search_ngrams/u, `${locale} local index docs should document n-gram search rows`);
@@ -216,12 +221,26 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('result-option'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
+	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('external-skill-intake'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('release-notes-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
+	assert.equal(template.manifest.skillProfiles.product.includes('architecture-deepening-review'), false);
+	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
 	assert.ok(template.manifest.skillProfiles.product.includes('visual-review-artifact'));
+	assert.ok(template.manifest.skillProfiles.team.includes('architecture-deepening-review'));
+	assert.equal(template.manifest.skillProfiles.team.includes('release-notes-authoring'), false);
 	assert.ok(template.manifest.skillProfiles.team.includes('multi-agent-work-coordination'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('architecture-deepening-review'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('external-skill-intake'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('release-notes-authoring'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('skill-authoring'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('vertical-slice-tdd'));
+	assert.ok(template.manifest.skillProfiles.library.includes('architecture-deepening-review'));
 	assert.ok(template.manifest.skillProfiles.library.includes('migration-safety-check'));
+	assert.ok(template.manifest.skillProfiles.library.includes('release-notes-authoring'));
 });
 
 test('default template locales use localized workflow docs and canonical English skills', async () => {
@@ -361,6 +380,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	const files = new Set(pack.files.map((file) => file.path));
 
 	assert.ok(files.has('dist/cli/index.js'));
+	assert.ok(files.has('dist/cli/commands/adapters.js'));
 	assert.ok(files.has('dist/cli/commands/classify.js'));
 	assert.ok(files.has('dist/cli/commands/contract-lint.js'));
 	assert.ok(files.has('dist/cli/commands/init.js'));
@@ -368,15 +388,19 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/commands/index.js'));
 	assert.ok(files.has('dist/cli/commands/line-endings.js'));
 	assert.ok(files.has('dist/cli/commands/explain.js'));
+	assert.ok(files.has('dist/cli/commands/handoff.js'));
 	assert.ok(files.has('dist/core/line-endings.js'));
 	assert.ok(files.has('dist/core/source-anchor-explanation.js'));
 	assert.ok(files.has('dist/core/source-anchors.js'));
 	assert.ok(files.has('dist/cli/commands/impact.js'));
 	assert.ok(files.has('dist/cli/commands/search.js'));
 	assert.ok(files.has('dist/cli/commands/dashboard.js'));
+	assert.ok(files.has('dist/cli/commands/harness-scenarios.js'));
 	assert.ok(files.has('dist/cli/commands/update.js'));
 	assert.ok(files.has('dist/cli/commands/verify.js'));
 	assert.ok(files.has('dist/core/contract-models.js'));
+	assert.ok(files.has('dist/core/adapter-compatibility.js'));
+	assert.ok(files.has('dist/core/handoff-record.js'));
 	assert.ok(files.has('dist/core/doc-review-triage.js'));
 	assert.ok(files.has('dist/core/public-json-contracts.js'));
 	assert.ok(files.has('dist/core/surface-decision-model.js'));
@@ -386,6 +410,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('templates/default/common/.mustflow/config/commands.toml'));
 	assert.ok(files.has('templates/default/common/.mustflow/config/preferences.toml'));
 	assert.ok(files.has('schemas/doctor-report.schema.json'));
+	assert.ok(files.has('schemas/adapter-compatibility-report.schema.json'));
 	assert.ok(files.has('schemas/context-report.schema.json'));
 	assert.ok(files.has('schemas/run-receipt.schema.json'));
 	assert.ok(files.has('schemas/commands.schema.json'));
@@ -393,12 +418,15 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/classify-report.schema.json'));
 	assert.ok(files.has('schemas/docs-review-list.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));
+	assert.ok(files.has('schemas/harness-scenarios-report.schema.json'));
+	assert.ok(files.has('schemas/handoff-validation-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/line-endings-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const contract of publicJsonContracts) {
 		assert.ok(files.has(`schemas/${contract.schemaFile}`), `${contract.schemaFile} should be packaged`);
 	}
+	assert.ok(files.has('scripts/run-harness-scenarios.mjs'));
 	assert.ok(files.has('examples/README.md'));
 	assert.ok(files.has('examples/docs-only/README.md'));
 	assert.ok(files.has('examples/host-instruction-conflicts/README.md'));

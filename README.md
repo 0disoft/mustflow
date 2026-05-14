@@ -106,13 +106,17 @@ mustflow installs and validates an agent workflow for user projects.
 - Installs `AGENTS.md` and `.mustflow/**` workflow files.
 - Declares runnable command rules in `.mustflow/config/commands.toml`.
 - Checks installation health and configuration structure with `mf check` and `mf doctor`.
+- Reports host adapter compatibility with `mf adapters status` without generating host-specific files or treating them as command authority.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
-- Prints execution-free verification plans with `mf verify --plan-only --json`, including read-only local-index lock explanations when available.
+- Evaluates deterministic harness scenario fixtures with `mf harness-scenarios`.
+- Prints execution-free verification plans with `mf verify --plan-only --json`, including a machine-readable verification decision graph and read-only local-index lock explanations when available.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Writes command receipts to `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
-- Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, or source-content database.
+- Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, command-authority source, or source-content database.
 - Tracks agent-created or agent-modified documentation needing prose review with `mf docs review`.
+- Validates restricted work-item or handoff JSON records with `mf handoff validate` without creating backlog files, storing transcripts, or granting command authority.
+- Exports bounded static dashboard reports with `mf dashboard --export-json <path>` or `mf dashboard --export <path>` for pull requests and continuous integration artifacts. The export includes a `harness_report` summary for install state, changed surfaces, verification decisions, latest receipt metadata, document-review status, and remaining risks without raw command-output tails or mutation controls.
 - Previews and applies bundled template updates safely with `mf update`.
 - Publishes JSON Schemas for automation-facing reports and command contracts in `schemas/`.
 
@@ -173,6 +177,8 @@ your-project/
       │  └─ SKILL.md
       ├─ external-prompt-injection-defense/
       │  └─ SKILL.md
+      ├─ external-skill-intake/
+      │  └─ SKILL.md
       ├─ failure-triage/
       │  └─ SKILL.md
       ├─ instruction-conflict-scope-check/
@@ -206,6 +212,8 @@ your-project/
       ├─ test-design-guard/
       │  └─ SKILL.md
       ├─ test-maintenance/
+      │  └─ SKILL.md
+      ├─ vertical-slice-tdd/
       │  └─ SKILL.md
       ├─ ui-quality-gate/
       │  └─ SKILL.md
@@ -278,6 +286,7 @@ mf run mustflow_update_apply
 | `mf init --force` | Back up conflicting files, then overwrite them. |
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
 | `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
+| `mf adapters status` | Inspect existing host-specific instruction and adapter files without generating adapter files or granting command authority. |
 | `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons without modifying files. |
 | `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
@@ -285,6 +294,8 @@ mf run mustflow_update_apply
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
 | `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
 | `mf docs review approve <path>` | Mark review complete and hide the document from the default queue. |
+| `mf handoff validate <path>` | Validate a restricted work-item or handoff JSON record without writing files. |
+| `mf harness-scenarios --fixtures <path>` | Run deterministic harness scenario fixtures without live AI calls or external services. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
@@ -296,7 +307,7 @@ mf run mustflow_update_apply
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
 | `mf help <topic>` | Show installed mustflow help. |
-| `mf dashboard` | Start a local inspection dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. It does not execute commands or apply fixes. |
+| `mf dashboard` | Start a local inspection dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. Use `--export-json <path>` or `--export <path>` for a bounded static report. It does not execute commands or apply fixes. |
 | `mf version` | Print the installed mustflow package version. |
 | `mf version --check` | Compare the installed package version with the latest npm release and print an update command if a newer version exists. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
@@ -323,7 +334,7 @@ Runnable work is declared in `.mustflow/config/commands.toml` so agents do not g
 
 Development servers, watch modes, browser UIs, interactive commands, and background processes do not run directly.
 
-Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries include read-only `effectGraph` metadata for write locks and lock conflicts.
+Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
 
 Each executed command run writes the latest run record to `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
 
@@ -378,7 +389,7 @@ Versioned contract specifications live in `docs/spec/`. The documentation site l
 These are ideas not yet officially supported:
 
 - Community skill registry and skill pack installs
-- Optional `.mustflow/work-items/`
+- Optional `.mustflow/work-items/` writers and lifecycle commands
 - `mf orient`, `mf refresh`
 - Tool-specific adapters
 

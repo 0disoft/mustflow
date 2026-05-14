@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 81
-source_fingerprint: "sha256:4a40b562687a8cfe5fc40b20fa45afd90f313359df9e4e73f483c2ccb5e5eb6b"
+anchor_count: 85
+source_fingerprint: "sha256:977c41f61aa6ebc04fa2fe46f0f78aad237cefd7c0645fec4b676288464aeb09"
 ---
 
 # REPO_MAP.md
@@ -50,6 +50,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/adapter-boundary/
 
 - `.mustflow/skills/adapter-boundary/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/architecture-deepening-review/
+
+- `.mustflow/skills/architecture-deepening-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/artifact-integrity-check/
 
@@ -111,6 +115,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/external-prompt-injection-defense/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/external-skill-intake/
+
+- `.mustflow/skills/external-skill-intake/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/facade-pattern/
 
 - `.mustflow/skills/facade-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -158,6 +166,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/readme-authoring/
 
 - `.mustflow/skills/readme-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/release-notes-authoring/
+
+- `.mustflow/skills/release-notes-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/repo-improvement-loop/
 
@@ -214,6 +226,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/ui-quality-gate/
 
 - `.mustflow/skills/ui-quality-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/vertical-slice-tdd/
+
+- `.mustflow/skills/vertical-slice-tdd/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/visual-review-artifact/
 

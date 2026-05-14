@@ -36,6 +36,7 @@ AGENTS.md
    ├─ security-regression-tests/SKILL.md
    ├─ test-design-guard/SKILL.md
    ├─ test-maintenance/SKILL.md
+   ├─ vertical-slice-tdd/SKILL.md
    ├─ visual-review-artifact/SKILL.md
    └─ web-asset-optimization/SKILL.md
 ```
