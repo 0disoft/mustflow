@@ -62,7 +62,7 @@ const relatedRules = [
 	{ match: /^src\/cli\/lib\/npm-version-check\.ts$/u, tests: ['index.test.js', 'router.test.js'] },
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: ['index.test.js'] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: ['run.test.js', 'dashboard.test.js', 'router.test.js'] },
-	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: ['check.test.js', 'check-doc-authority.test.js', 'check-skill-contracts.test.js', 'check-source-anchors.test.js', 'check-versioning.test.js', 'schema.test.js'] },
+	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: ['check.test.js', 'check-command-contracts.test.js', 'check-doc-authority.test.js', 'check-skill-contracts.test.js', 'check-source-anchors.test.js', 'check-versioning.test.js', 'schema.test.js'] },
 	{ match: /^src\/cli\/lib\/template/u, tests: ['init.test.js', 'update.test.js'] },
 	{ match: /^src\/cli\/lib\/root/u, tests: ['root-discovery.test.js'] },
 	{ match: /^src\/cli\/lib\/schema/u, tests: ['schema.test.js'] },
@@ -73,7 +73,7 @@ const relatedRules = [
 	{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/command-cwd\.ts$/u, tests: ['run.test.js'] },
-	{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: ['check.test.js', 'run.test.js'] },
+	{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: ['check-command-contracts.test.js', 'run.test.js'] },
 	{ match: /^src\/core\/verification-plan\.ts$/u, tests: ['verify.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check-source-anchors.test.js', 'explain.test.js'] },
 	{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index.test.js', 'search.test.js'] },
@@ -232,6 +232,7 @@ function testDemand(testPath) {
 	if (
 		[
 			'check.test.js',
+			'check-command-contracts.test.js',
 			'check-doc-authority.test.js',
 			'check-skill-contracts.test.js',
 			'check-source-anchors.test.js',
