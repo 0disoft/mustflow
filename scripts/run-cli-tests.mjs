@@ -62,7 +62,7 @@ const relatedRules = [
 	{ match: /^src\/cli\/lib\/npm-version-check\.ts$/u, tests: ['index.test.js', 'router.test.js'] },
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: ['index.test.js'] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: ['run.test.js', 'dashboard.test.js', 'router.test.js'] },
-	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: ['check.test.js', 'check-skill-contracts.test.js', 'check-versioning.test.js', 'schema.test.js'] },
+	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: ['check.test.js', 'check-doc-authority.test.js', 'check-skill-contracts.test.js', 'check-versioning.test.js', 'schema.test.js'] },
 	{ match: /^src\/cli\/lib\/template/u, tests: ['init.test.js', 'update.test.js'] },
 	{ match: /^src\/cli\/lib\/root/u, tests: ['root-discovery.test.js'] },
 	{ match: /^src\/cli\/lib\/schema/u, tests: ['schema.test.js'] },
@@ -229,7 +229,17 @@ function testDemand(testPath) {
 		return { cpu: 1, io: 3, process: 2, sqlite: 1, git: 0, className: 'sqlite_io_heavy' };
 	}
 
-	if (['check.test.js', 'check-skill-contracts.test.js', 'check-versioning.test.js', 'run.test.js', 'update.test.js', 'package.test.js'].includes(name)) {
+	if (
+		[
+			'check.test.js',
+			'check-doc-authority.test.js',
+			'check-skill-contracts.test.js',
+			'check-versioning.test.js',
+			'run.test.js',
+			'update.test.js',
+			'package.test.js',
+		].includes(name)
+	) {
 		return { cpu: 1, io: 3, process: 3, sqlite: 0, git: name === 'check.test.js' ? 1 : 0, className: 'process_io_heavy' };
 	}
 
