@@ -174,6 +174,39 @@ test('classifies release-blocking documentation review entries as P0', () => {
 	}
 });
 
+test('classifies external skill intake review entries as release-blocking authority changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeDoc(projectPath, '.mustflow/skills/external-skill-intake/SKILL.md');
+
+		const addResult = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'.mustflow/skills/external-skill-intake/SKILL.md',
+			'--reason',
+			'llm_modified',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+		]);
+		const listResult = runCli(projectPath, ['docs', 'review', 'list', '--json']);
+		const output = JSON.parse(listResult.stdout);
+
+		assert.equal(addResult.status, 0, addResult.stderr || addResult.stdout);
+		assert.equal(listResult.status, 0, listResult.stderr || listResult.stdout);
+		assert.equal(output.documents[0].path, '.mustflow/skills/external-skill-intake/SKILL.md');
+		assert.equal(output.documents[0].review_priority, 'P0');
+		assert.equal(output.documents[0].release_blocking, true);
+		assert.equal(output.documents[0].triage_reason, 'authority_or_security_skill');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('classifies fixture documentation review entries as non-blocking P2', () => {
 	const projectPath = createTempProject();
 

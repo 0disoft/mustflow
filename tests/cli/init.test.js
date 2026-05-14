@@ -90,7 +90,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-change-safety', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-design-guard', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'vertical-slice-tdd', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'external-skill-intake', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'multi-agent-work-coordination', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'project-context-authoring', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'readme-authoring', 'SKILL.md')), false);
@@ -151,7 +153,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/vertical-slice-tdd\/SKILL\.md/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/docs-prose-review\/SKILL\.md/);
+		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/external-skill-intake\/SKILL\.md/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/web-asset-optimization\/SKILL\.md/);
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));
 		assert.match(mustflowConfig, /optional_read_order = \[\n  "\.mustflow\/context\/INDEX\.md",/);
@@ -593,6 +597,7 @@ test('interactive init applies selected locale profile and agent report language
 		assert.match(lock, /profile = "oss"/);
 		assert.match(lock, /locale = "ko"/);
 		assert.match(lock, /agent_lang = "ko"/);
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'external-skill-intake', 'SKILL.md')));
 	} finally {
 		removeTempProject(projectPath);
 	}

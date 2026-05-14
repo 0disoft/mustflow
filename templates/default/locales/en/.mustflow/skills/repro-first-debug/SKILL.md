@@ -2,7 +2,7 @@
 mustflow_doc: skill.repro-first-debug
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: repro-first-debug
@@ -23,7 +23,9 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Fix bugs from observed failure evidence instead of guessing at likely causes or adding broad tests before the issue is reproduced.
+Fix bugs through a tight diagnosis feedback loop instead of guessing at likely causes or adding broad tests before the issue is reproduced.
+
+This skill keeps debugging anchored to symptom evidence, deterministic reproduction, explicit hypotheses, observed confirmation or rejection, the smallest fix, and the original reproduction path.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -47,6 +49,7 @@ Fix bugs from observed failure evidence instead of guessing at likely causes or 
 - Any pasted error text, screenshot detail, failing command intent, route, or UI action.
 - Recently changed files or likely affected files.
 - Existing tests, command intents, or manual reproduction notes related to the failure.
+- Any known flakiness, environment dependency, timing dependency, or unavailable reproduction requirement.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -59,26 +62,33 @@ Fix bugs from observed failure evidence instead of guessing at likely causes or 
 ## Allowed Edits
 
 - Start with diagnostic reads, focused reproduction notes, or the smallest relevant test adjustment.
+- Add temporary diagnostic instrumentation only when it has a unique marker and can be removed before final verification.
 - After the failure is reproduced or isolated, edit only the likely cause and directly related verification surface.
 - Do not add broad defensive tests, unrelated refactors, or speculative abstractions just because a bug was reported.
+- Do not leave debug output, tracing probes, temporary logs, or diagnostic-only assertions in committed code unless the user explicitly asks for a durable diagnostic surface.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
 
 1. State the symptom in one sentence and separate expected behavior from observed behavior.
-2. Locate the smallest existing command intent, test file, route, UI action, or function boundary that could reproduce the symptom.
+2. Locate the smallest fast, deterministic reproduction path: an existing command intent, test file, route, UI action, fixture, or function boundary.
 3. Prefer existing targeted verification before adding a new test. If no targeted path exists, record the gap and create the smallest reproduction only when it is supported by the symptom.
 4. Keep the first reproduction focused on one failing condition. Avoid turning the reproduction into a broad regression suite.
-5. Inspect the source that controls the reproduced behavior and form one concrete cause hypothesis.
-6. Apply the smallest fix that addresses the reproduced cause.
-7. Re-run the reproduction path. If that path is unavailable or too broad, run the closest configured intent and report the limitation.
-8. Report whether the original symptom was reproduced, what changed, which checks ran, and what risk remains.
+5. If the cause is not obvious, list three to five plausible hypotheses. For each hypothesis, write the observation that would confirm or reject it before changing production code.
+6. Inspect the source that controls the reproduced behavior and gather the smallest observation needed to choose between hypotheses.
+7. If temporary instrumentation is needed, give every probe a unique marker, keep it local to the suspect boundary, and remove it before final verification.
+8. Apply the smallest fix that addresses the reproduced cause.
+9. Re-run the original reproduction path after the fix. If that path is unavailable or too broad, run the closest configured intent and report the limitation.
+10. Add or keep a regression guard only when it is tied to the reproduced symptom or a directly observed boundary condition.
+11. Report the symptom, reproduction, hypotheses considered, observations, fix, original reproduction rerun, checks, and remaining risk.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The final report distinguishes reproduced evidence from assumptions.
 - Any added test or reproduction note is tied to the reported failure, not to general coverage growth.
+- Cause hypotheses are confirmed, rejected, or left explicitly unresolved instead of being implied by a passing broad check.
+- Temporary instrumentation and debug output are removed before final verification unless intentionally retained.
 - Missing command intents, unavailable tools, or unsafe reproduction requirements are reported instead of hidden.
 
 <!-- mustflow-section: verification -->
@@ -96,6 +106,8 @@ Prefer the original failing intent when it is narrower than the defaults above.
 ## Failure Handling
 
 - If the symptom cannot be reproduced, stop speculative edits and report the closest evidence gathered.
+- If every hypothesis remains unconfirmed, stop and report the investigation boundary instead of shipping a speculative fix.
+- If temporary instrumentation is still needed to understand the failure, keep it uncommitted or clearly report why it cannot be removed yet.
 - If verification is too broad or slow for the change, use the narrowest configured intent and name the skipped broader check.
 - If output contains secrets or sensitive values, summarize the failure without copying the sensitive text.
 - If the root cause points outside the repository or requires operator access, report the environment gate clearly.
@@ -105,8 +117,10 @@ Prefer the original failing intent when it is narrower than the defaults above.
 
 - Symptom and expected behavior
 - Reproduction path or reproduction gap
-- Probable cause and evidence
+- Hypotheses considered and observations
+- Probable cause, confidence, and evidence
 - Fix applied
+- Original reproduction rerun result
 - Command intents run
 - Skipped checks and reasons
 - Remaining risk

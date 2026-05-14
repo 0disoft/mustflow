@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 45
+revision = 50
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -69,6 +69,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/artifact-integrity-check/SKILL.md"
 source_locale = "en"
 revision = 5
+translations = {}
+
+[documents."skill.architecture-deepening-review"]
+source = "locales/en/.mustflow/skills/architecture-deepening-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.behavior-preserving-refactor"]
@@ -92,7 +98,7 @@ translations = {}
 [documents."skill.date-number-audit"]
 source = "locales/en/.mustflow/skills/date-number-audit/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.database-change-safety"]
@@ -179,6 +185,12 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.external-skill-intake"]
+source = "locales/en/.mustflow/skills/external-skill-intake/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
 [documents."skill.facade-pattern"]
 source = "locales/en/.mustflow/skills/facade-pattern/SKILL.md"
 source_locale = "en"
@@ -253,13 +265,13 @@ translations = {}
 [documents."skill.repro-first-debug"]
 source = "locales/en/.mustflow/skills/repro-first-debug/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.source-freshness-check"]
 source = "locales/en/.mustflow/skills/source-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.project-context-authoring"]
@@ -270,6 +282,12 @@ translations = {}
 
 [documents."skill.readme-authoring"]
 source = "locales/en/.mustflow/skills/readme-authoring/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.release-notes-authoring"]
+source = "locales/en/.mustflow/skills/release-notes-authoring/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -304,10 +322,16 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.vertical-slice-tdd"]
+source = "locales/en/.mustflow/skills/vertical-slice-tdd/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.ui-quality-gate"]
 source = "locales/en/.mustflow/skills/ui-quality-gate/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.visual-review-artifact"]

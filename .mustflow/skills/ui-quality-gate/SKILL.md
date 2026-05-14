@@ -2,7 +2,7 @@
 mustflow_doc: skill.ui-quality-gate
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: ui-quality-gate
@@ -25,7 +25,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Keep user-facing interfaces usable, minimal, responsive, and verifiable instead of drifting into decorative demos or brittle screenshots.
+Keep user-facing interfaces usable, minimal, accessible, responsive, localization-safe, and verifiable instead of drifting into decorative demos or brittle screenshots.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -46,8 +46,9 @@ Keep user-facing interfaces usable, minimal, responsive, and verifiable instead 
 ## Required Inputs
 
 - The changed UI surface, user task, and expected interaction path.
-- Existing design patterns, labels, states, accessibility conventions, and localization rules in the same area.
+- Existing design patterns, task-essential controls, labels, states, accessibility conventions, and localization rules in the same area.
 - Viewports, themes, languages, and state combinations that need inspection.
+- Performance, asset-size, animation, or network constraints that affect the changed surface.
 - Relevant command-intent contract entries for status, diff, docs, build, release, or mustflow validation.
 
 <!-- mustflow-section: preconditions -->
@@ -70,20 +71,24 @@ Keep user-facing interfaces usable, minimal, responsive, and verifiable instead 
 
 1. Identify the real user task and the UI surface that supports it.
 2. Check nearby UI patterns before adding new layout, component, color, copy, or state conventions.
-3. Remove or avoid non-essential welcome text, feature summaries, decorative cards, fake metrics, marketing copy, and invented controls.
-4. Verify controls are understandable: icon buttons need accessible names or tooltips, destructive or state-changing actions need clear labels, and disabled states need a visible reason when useful.
-5. Check accessibility behavior before visual polish: native elements first, keyboard access, focus order and return, visible focus state, names for icon-only controls, form error linkage, live status announcements, reduced-motion handling, and sufficient contrast.
-6. Check localization-sensitive behavior: language switching, fallback text, placeholders, plural or formatted values, long translated labels, bidirectional text, logical spacing, and date, time, number, currency, or unit display where applicable.
-7. Check layout constraints: text should not overflow, overlap, resize fixed-format controls unexpectedly, or depend on viewport-width font scaling.
-8. Check state coverage: loading, empty, error, saved, changed, disabled, selected, focused, and language-switched states should update consistently where applicable.
-9. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
-10. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
+3. Keep task-essential controls only. Remove or avoid non-essential welcome text, feature summaries, decorative cards, fake metrics, marketing copy, invented filters, and controls that do not operate on real data.
+4. Verify controls are understandable and state-aware: icon buttons need accessible names or tooltips, destructive or state-changing actions need clear labels, selected or disabled states need clear visual treatment, and disabled states need a visible reason when useful.
+5. Check keyboard and focus behavior before visual polish: native elements first, tab order, focus order and return, visible focus state, names for icon-only controls, form error linkage, live status announcements, reduced-motion handling, and sufficient contrast.
+6. Check accessible names and states against the actual interaction model, not only the rendered text. Dynamic controls must expose the current expanded, selected, checked, invalid, busy, or disabled state when applicable.
+7. Check form error and empty-state behavior. Errors should point to the field or action that needs attention, and empty states should be short and action-oriented rather than explaining the product.
+8. Check localization-safe labels: language switching, fallback text, placeholders, plural or formatted values, long translated labels, bidirectional text, logical spacing, and date, time, number, currency, or unit display where applicable.
+9. Check responsive layout without text overlap: text should not overflow, clip, overlap, resize fixed-format controls unexpectedly, or depend on viewport-width font scaling.
+10. Check performance and asset-size awareness when the change adds images, icons, animation, third-party UI code, large client data, or extra network work. Prefer existing assets and bounded rendering cost.
+11. Check state coverage: loading, empty, error, saved, changed, disabled, selected, focused, and language-switched states should update consistently where applicable.
+12. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
+13. Use visual verification only when a configured one-shot command or approved browser workflow exists for the surface. Do not start development servers, watchers, or browser sessions directly from the skill.
+14. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The UI supports the user's task without unnecessary explanatory or decorative surface.
-- Important controls, labels, states, layout constraints, and localization updates are checked or reported as unverified.
+- Important controls, labels, states, keyboard and focus paths, layout constraints, localization updates, and performance-sensitive assets are checked or reported as unverified.
 - Final reports distinguish code-level verification from visual or interactive verification.
 
 <!-- mustflow-section: verification -->
@@ -104,6 +109,8 @@ Use a narrower configured test, build, browser, screenshot, or accessibility int
 
 - If visual inspection is unavailable, report the unverified viewport, state, or interaction instead of assuming it works.
 - If UI text overlaps, clips, or fails to update after a state or language change, fix the smallest owning component before adding broader layout changes.
+- If controls lack accessible names and states, fix the control contract before polishing color, spacing, or animation.
+- If a change adds large media, animation, or third-party UI code, verify the performance and asset-size impact or report the gap.
 - If a requested UI element conflicts with repository UI minimalism rules, implement the smallest task-focused control and report the omitted decorative content.
 - If verification requires an interactive server or browser command not declared by the command contract, stop at that boundary and report the skipped check.
 
@@ -112,7 +119,8 @@ Use a narrower configured test, build, browser, screenshot, or accessibility int
 
 - UI surface reviewed
 - User task and states checked
-- Layout, keyboard, focus, accessibility, and localization checks
+- Task-essential controls kept or removed
+- Layout, keyboard and focus, accessibility, localization, performance, and asset-size checks
 - Decorative or unnecessary UI avoided or removed
 - Command intents run
 - Skipped visual checks and reasons
