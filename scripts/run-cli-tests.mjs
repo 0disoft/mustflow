@@ -62,7 +62,7 @@ const relatedRules = [
 	{ match: /^src\/cli\/lib\/npm-version-check\.ts$/u, tests: ['index.test.js', 'router.test.js'] },
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: ['index.test.js'] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: ['run.test.js', 'dashboard.test.js', 'router.test.js'] },
-	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: ['check.test.js', 'check-command-contracts.test.js', 'check-doc-authority.test.js', 'check-skill-contracts.test.js', 'check-source-anchors.test.js', 'check-versioning.test.js', 'schema.test.js'] },
+	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: ['check.test.js', 'check-command-contracts.test.js', 'check-config-validation.test.js', 'check-doc-authority.test.js', 'check-skill-contracts.test.js', 'check-source-anchors.test.js', 'check-versioning.test.js', 'schema.test.js'] },
 	{ match: /^src\/cli\/lib\/template/u, tests: ['init.test.js', 'update.test.js'] },
 	{ match: /^src\/cli\/lib\/root/u, tests: ['root-discovery.test.js'] },
 	{ match: /^src\/cli\/lib\/schema/u, tests: ['schema.test.js'] },
@@ -233,6 +233,7 @@ function testDemand(testPath) {
 		[
 			'check.test.js',
 			'check-command-contracts.test.js',
+			'check-config-validation.test.js',
 			'check-doc-authority.test.js',
 			'check-skill-contracts.test.js',
 			'check-source-anchors.test.js',
