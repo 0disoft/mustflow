@@ -30,6 +30,7 @@
     "test": "bun run test:full",
     "test:fast": "bun run build && node scripts/run-cli-tests.mjs fast",
     "test:related": "bun run build && node scripts/run-cli-tests.mjs related",
+    "test:related:cached": "node scripts/run-cli-tests.mjs related-cached",
     "test:cli": "bun run build && node scripts/run-cli-tests.mjs cli",
     "test:coverage": "bun run build && node scripts/run-cli-tests.mjs coverage",
     "test:audit": "node scripts/audit-tests.mjs --json",

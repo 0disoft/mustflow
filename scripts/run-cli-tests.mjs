@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const testsRoot = path.join(repoRoot, 'tests', 'cli');
+const distCliEntrypoint = path.join(repoRoot, 'dist', 'cli', 'index.js');
 const allCliTests = readdirSync(testsRoot)
 	.filter((name) => name.endsWith('.test.js'))
 	.sort((left, right) => left.localeCompare(right));
@@ -109,6 +110,20 @@ function changedFiles() {
 	];
 }
 
+const currentChangedFiles = changedFiles();
+const cachedModeUnsafeRules = [
+	/^src\//u,
+	/^tsconfig(?:\..*)?\.json$/u,
+];
+
+function compiledOutputPathForSource(relativePath) {
+	if (!relativePath.startsWith('src/') || !relativePath.endsWith('.ts')) {
+		return undefined;
+	}
+
+	return path.join(repoRoot, ...relativePath.replace(/^src\//u, 'dist/').replace(/\.ts$/u, '.js').split('/'));
+}
+
 function uniqueExisting(testNames) {
 	return [...new Set(testNames)].filter((name) => commandTestNames.has(name));
 }
@@ -116,7 +131,7 @@ function uniqueExisting(testNames) {
 function relatedTests() {
 	const tests = new Set();
 
-	for (const file of changedFiles()) {
+	for (const file of currentChangedFiles) {
 		for (const rule of relatedRules) {
 			const match = rule.match.exec(file);
 			if (!match) {
@@ -136,12 +151,14 @@ function relatedTests() {
 }
 
 function hasRelatedReleaseChanges() {
-	return changedFiles().some((file) => relatedReleaseRules.some((rule) => rule.test(file)));
+	return currentChangedFiles.some((file) => relatedReleaseRules.some((rule) => rule.test(file)));
 }
 
 const suites = {
 	fast: fastTests,
+	'fast-cached': fastTests,
 	related: relatedTests(),
+	'related-cached': relatedTests(),
 	cli: cliTests,
 	coverage: coverageTests,
 	release: releaseTests,
@@ -173,11 +190,22 @@ function readPositiveIntegerEnv(name, fallback) {
 	return String(value);
 }
 
+function readRelatedConcurrency() {
+	if (process.env.MUSTFLOW_TEST_RELATED_CONCURRENCY) {
+		return readPositiveIntegerEnv('MUSTFLOW_TEST_RELATED_CONCURRENCY', '4');
+	}
+
+	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '4');
+}
+
 const testPaths = uniqueExisting(selected).map((name) => path.join('tests', 'cli', name));
+const baseMode = mode.endsWith('-cached') ? mode.slice(0, -'-cached'.length) : mode;
 const concurrency =
 	mode === 'coverage'
 		? readPositiveIntegerEnv('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4')
-		: mode === 'fast' || mode === 'related'
+		: baseMode === 'related'
+			? readRelatedConcurrency()
+		: baseMode === 'fast'
 			? readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '8')
 			: '1';
 const nodeTestArgs = ['--test', `--test-concurrency=${concurrency}`];
@@ -186,11 +214,47 @@ if (mode === 'coverage') {
 	nodeTestArgs.push('--experimental-test-coverage');
 }
 
+function assertCachedModeSafe() {
+	if (!mode.endsWith('-cached')) {
+		return;
+	}
+
+	if (!existsSync(distCliEntrypoint)) {
+		console.error('Cached test mode requires dist/cli/index.js. Run `mf run build` or `mf run test_related` first.');
+		process.exit(2);
+	}
+
+	const unsafeFiles = currentChangedFiles.filter((file) => cachedModeUnsafeRules.some((rule) => rule.test(file)));
+	const distMtimeMs = statSync(distCliEntrypoint).mtimeMs;
+	const staleFiles = unsafeFiles.filter((file) => {
+		const fullPath = path.join(repoRoot, ...file.split('/'));
+		if (!existsSync(fullPath)) {
+			const compiledOutputPath = compiledOutputPathForSource(file);
+			return !compiledOutputPath || existsSync(compiledOutputPath);
+		}
+
+		return statSync(fullPath).mtimeMs > distMtimeMs;
+	});
+
+	if (staleFiles.length > 0) {
+		console.error(
+			[
+				'Cached test mode cannot be used while dist/ is older than changed TypeScript source or compiler configuration.',
+				'Run `mf run test_related` so dist/ is rebuilt before tests.',
+				`Stale or deleted changed files: ${staleFiles.join(', ')}`,
+			].join('\n'),
+		);
+		process.exit(2);
+	}
+}
+
+assertCachedModeSafe();
+
 console.log(
 	`Running ${mode} CLI tests (${testPaths.length} files, concurrency ${concurrency}): ${testPaths.join(', ')}`,
 );
 
-if (mode === 'related' && hasRelatedReleaseChanges()) {
+if (baseMode === 'related' && hasRelatedReleaseChanges()) {
 	console.log('Release-sensitive files changed; run `mf run test_release` before publishing or committing release metadata.');
 }
 

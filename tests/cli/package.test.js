@@ -87,6 +87,7 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts.test, 'bun run test:full');
 	assert.equal(packageJson.scripts['test:fast'], 'bun run build && node scripts/run-cli-tests.mjs fast');
 	assert.equal(packageJson.scripts['test:related'], 'bun run build && node scripts/run-cli-tests.mjs related');
+	assert.equal(packageJson.scripts['test:related:cached'], 'node scripts/run-cli-tests.mjs related-cached');
 	assert.equal(packageJson.scripts['test:cli'], 'bun run build && node scripts/run-cli-tests.mjs cli');
 	assert.equal(packageJson.scripts['test:coverage'], 'bun run build && node scripts/run-cli-tests.mjs coverage');
 	assert.equal(packageJson.scripts['test:audit'], 'node scripts/audit-tests.mjs --json');
@@ -114,8 +115,15 @@ test('npm publish workflow uses trusted publisher identity', () => {
 test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_CONCURRENCY/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '8'\)/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_RELATED_CONCURRENCY/u);
+	assert.match(cliTestRunner, /function readRelatedConcurrency\(\)/u);
+	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '4'\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4'\)/u);
+	assert.match(cliTestRunner, /'related-cached': relatedTests\(\)/u);
+	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
+	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
+	assert.match(cliTestRunner, /dist\/ is older than changed TypeScript source/u);
 
 	const relatedResult = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related'], {
 		cwd: projectRoot,

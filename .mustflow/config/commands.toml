@@ -65,6 +65,21 @@ network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change"]
 
+[intents.test_related_cached]
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+status = "configured"
+description = "Run tests selected from changed files without rebuilding dist; fails when source changes require a fresh build."
+argv = ["bun", "run", "test:related:cached"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["explicit_cached_test_request"]
+
 [intents.test_fast]
 status = "configured"
 lifecycle = "oneshot"
