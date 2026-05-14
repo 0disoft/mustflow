@@ -41,8 +41,6 @@ export const esMessages = {
   "command.search.summary": "Busca en el índice SQLite local de mustflow",
   "command.dashboard.summary":
     "Inicia el dashboard local de mustflow",
-  "command.harnessScenarios.summary":
-    "Ejecuta fixtures deterministas de escenarios de harness",
   "command.version.summary": "Muestra la versión del paquete y el estado de actualización en npm",
   "command.versionSources.summary": "Muestra fuentes de versión detectadas",
   "command.verify.summary": "Ejecuta la verificación requerida para una razón",
@@ -148,13 +146,6 @@ export const esMessages = {
     "La ruta de exportación del dashboard debe quedar dentro de la raíz mustflow: {path}",
   "dashboard.export.wrote": "Exportación de dashboard escrita en {path} ({bytes} bytes)",
   "dashboard.listening": "mf dashboard escuchando en {url}",
-  "harnessScenarios.help.summary":
-    "Evalúa fixtures deterministas de escenarios de harness sin llamadas a IA en vivo ni servicios externos.",
-  "harnessScenarios.help.option.fixtures": "Lee archivos JSON de escenarios desde este directorio de fixtures",
-  "harnessScenarios.help.exit.ok": "Todos los escenarios de harness pasaron o se imprimió la ayuda",
-  "harnessScenarios.help.exit.fail": "Uno o más escenarios fallaron o la entrada no es válida",
-  "harnessScenarios.error.missingFixtures": "Falta --fixtures. Indica un directorio de fixtures de escenarios.",
-  "harnessScenarios.error.missingRunner": "El script de escenarios de harness no está incluido en esta instalación",
   "handoff.help.summary":
     "Valida un registro JSON restringido de trabajo o handoff sin escribir archivos.",
   "handoff.help.exit.ok": "El registro de handoff es válido",

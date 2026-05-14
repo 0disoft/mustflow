@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.27.0');
+	assert.equal(packageJson.version, '1.28.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -395,7 +395,6 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/commands/impact.js'));
 	assert.ok(files.has('dist/cli/commands/search.js'));
 	assert.ok(files.has('dist/cli/commands/dashboard.js'));
-	assert.ok(files.has('dist/cli/commands/harness-scenarios.js'));
 	assert.ok(files.has('dist/cli/commands/update.js'));
 	assert.ok(files.has('dist/cli/commands/verify.js'));
 	assert.ok(files.has('dist/core/contract-models.js'));
@@ -418,7 +417,6 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/classify-report.schema.json'));
 	assert.ok(files.has('schemas/docs-review-list.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));
-	assert.ok(files.has('schemas/harness-scenarios-report.schema.json'));
 	assert.ok(files.has('schemas/handoff-validation-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/line-endings-report.schema.json'));
@@ -426,7 +424,6 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	for (const contract of publicJsonContracts) {
 		assert.ok(files.has(`schemas/${contract.schemaFile}`), `${contract.schemaFile} should be packaged`);
 	}
-	assert.ok(files.has('scripts/run-harness-scenarios.mjs'));
 	assert.ok(files.has('examples/README.md'));
 	assert.ok(files.has('examples/docs-only/README.md'));
 	assert.ok(files.has('examples/host-instruction-conflicts/README.md'));

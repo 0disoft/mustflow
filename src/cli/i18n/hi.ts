@@ -41,8 +41,6 @@ export const hiMessages = {
   "command.search.summary": "स्थानीय mustflow SQLite इंडेक्स में खोजें",
   "command.dashboard.summary":
     "स्थानीय mustflow डैशबोर्ड शुरू करें",
-  "command.harnessScenarios.summary":
-    "निर्धारित harness scenario fixtures चलाएँ",
   "command.version.summary": "Package version और npm update status दिखाएँ",
   "command.versionSources.summary": "पहचाने गए संस्करण स्रोत दिखाएँ",
   "command.verify.summary": "किसी reason के लिए required verification चलाएँ",
@@ -148,13 +146,6 @@ export const hiMessages = {
     "Dashboard export path mustflow root के अंदर रहना चाहिए: {path}",
   "dashboard.export.wrote": "Dashboard export {path} में लिखा गया ({bytes} bytes)",
   "dashboard.listening": "mf dashboard {url} पर सुन रहा है",
-  "harnessScenarios.help.summary":
-    "Live AI calls या external services के बिना deterministic harness scenario fixtures जाँचें।",
-  "harnessScenarios.help.option.fixtures": "इस fixture directory से scenario JSON files पढ़ें",
-  "harnessScenarios.help.exit.ok": "सभी harness scenarios पास हुए या help print हुई",
-  "harnessScenarios.help.exit.fail": "एक या अधिक scenarios failed हुए या input invalid था",
-  "harnessScenarios.error.missingFixtures": "--fixtures missing है। Scenario fixture directory दें।",
-  "harnessScenarios.error.missingRunner": "इस install में harness scenario runner script packaged नहीं है",
   "handoff.help.summary":
     "फ़ाइलें लिखे बिना restricted work-item या handoff JSON record validate करें।",
   "handoff.help.exit.ok": "Handoff record valid है",

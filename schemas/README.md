@@ -17,8 +17,6 @@ Current schemas:
   `mf impact <path...> --json`
 - `line-endings-report.schema.json`: output of `mf line-endings check --json` and  
   `mf line-endings normalize --json`
-- `harness-scenarios-report.schema.json`: output of  
-  `mf harness-scenarios --fixtures <path> --json`
 - `handoff-validation-report.schema.json`: output of  
   `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: output of `mf version-sources --json`

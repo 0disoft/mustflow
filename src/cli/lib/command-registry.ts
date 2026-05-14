@@ -93,11 +93,6 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.dashboard.summary',
 	},
 	{
-		id: 'harness-scenarios',
-		usage: 'mf harness-scenarios',
-		summaryKey: 'command.harnessScenarios.summary',
-	},
-	{
 		id: 'version',
 		usage: 'mf version',
 		summaryKey: 'command.version.summary',

@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "1.27.0",
+  "version": "1.28.0",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -19,7 +19,6 @@
   },
   "files": [
     "dist/",
-    "scripts/run-harness-scenarios.mjs",
     "templates/",
     "schemas/",
     "examples/",

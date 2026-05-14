@@ -41,8 +41,6 @@ export const frMessages = {
   "command.search.summary": "Recherche dans l'index SQLite local de mustflow",
   "command.dashboard.summary":
     "Démarre le tableau de bord mustflow local",
-  "command.harnessScenarios.summary":
-    "Exécute les fixtures déterministes de scénarios de harness",
   "command.version.summary": "Affiche la version du paquet et l'état de mise à jour npm",
   "command.versionSources.summary": "Affiche les sources de version détectées",
   "command.verify.summary": "Exécute la vérification requise pour une raison",
@@ -148,13 +146,6 @@ export const frMessages = {
     "Le chemin d'export du tableau de bord doit rester dans la racine mustflow : {path}",
   "dashboard.export.wrote": "Export du tableau de bord écrit dans {path} ({bytes} octets)",
   "dashboard.listening": "mf dashboard écoute sur {url}",
-  "harnessScenarios.help.summary":
-    "Évalue des fixtures déterministes de scénarios de harness sans appels IA en direct ni services externes.",
-  "harnessScenarios.help.option.fixtures": "Lit les fichiers JSON de scénarios depuis ce répertoire de fixtures",
-  "harnessScenarios.help.exit.ok": "Tous les scénarios de harness ont réussi ou l'aide a été affichée",
-  "harnessScenarios.help.exit.fail": "Un ou plusieurs scénarios ont échoué ou l'entrée est invalide",
-  "harnessScenarios.error.missingFixtures": "--fixtures est manquant. Indiquez un répertoire de fixtures de scénarios.",
-  "harnessScenarios.error.missingRunner": "Le script de scénarios de harness n'est pas inclus dans cette installation",
   "handoff.help.summary":
     "Valide un enregistrement JSON restreint de travail ou de handoff sans écrire de fichiers.",
   "handoff.help.exit.ok": "L'enregistrement de handoff est valide",

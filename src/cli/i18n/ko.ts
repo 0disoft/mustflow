@@ -42,8 +42,6 @@ export const koMessages = {
   "command.search.summary": "로컬 mustflow SQLite 색인을 검색합니다",
   "command.dashboard.summary":
     "로컬 mustflow 대시보드를 시작합니다",
-  "command.harnessScenarios.summary":
-    "결정적인 하네스 시나리오 fixture를 실행합니다",
   "command.version.summary": "패키지 버전과 npm 업데이트 상태를 출력합니다",
   "command.versionSources.summary": "감지된 버전 기준 원본을 출력합니다",
   "command.verify.summary": "이유에 맞는 필수 검증을 실행합니다",
@@ -151,13 +149,6 @@ export const koMessages = {
     "대시보드 내보내기 경로는 mustflow 루트 안에 있어야 합니다: {path}",
   "dashboard.export.wrote": "대시보드 내보내기를 {path}에 썼습니다({bytes}바이트)",
   "dashboard.listening": "mf dashboard 실행 중: {url}",
-  "harnessScenarios.help.summary":
-    "실시간 AI 호출이나 외부 서비스 없이 결정적인 하네스 시나리오 fixture를 평가합니다.",
-  "harnessScenarios.help.option.fixtures": "시나리오 JSON 파일을 읽을 fixture 디렉터리입니다",
-  "harnessScenarios.help.exit.ok": "모든 하네스 시나리오가 통과했거나 도움말을 출력했습니다",
-  "harnessScenarios.help.exit.fail": "하나 이상의 시나리오가 실패했거나 입력이 잘못되었습니다",
-  "harnessScenarios.error.missingFixtures": "--fixtures가 없습니다. 시나리오 fixture 디렉터리를 지정하세요.",
-  "harnessScenarios.error.missingRunner": "이 설치본에 하네스 시나리오 실행 스크립트가 포함되어 있지 않습니다",
   "handoff.help.summary":
     "파일을 쓰지 않고 제한된 작업 항목 또는 인수인계 JSON 기록을 검증합니다.",
   "handoff.help.exit.ok": "인수인계 기록이 유효합니다",

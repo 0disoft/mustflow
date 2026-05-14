@@ -108,7 +108,6 @@ mustflow installs and validates an agent workflow for user projects.
 - Checks installation health and configuration structure with `mf check` and `mf doctor`.
 - Reports host adapter compatibility with `mf adapters status` without generating host-specific files or treating them as command authority.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
-- Evaluates deterministic harness scenario fixtures with `mf harness-scenarios`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a machine-readable verification decision graph and read-only local-index lock explanations when available.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Writes command receipts to `.mustflow/state/runs/latest.json`.
@@ -295,7 +294,6 @@ mf run mustflow_update_apply
 | `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
 | `mf docs review approve <path>` | Mark review complete and hide the document from the default queue. |
 | `mf handoff validate <path>` | Validate a restricted work-item or handoff JSON record without writing files. |
-| `mf harness-scenarios --fixtures <path>` | Run deterministic harness scenario fixtures without live AI calls or external services. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |

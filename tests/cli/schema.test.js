@@ -250,13 +250,6 @@ test('line-endings json output matches the published schema', () => {
 	}
 });
 
-test('harness scenarios json output matches the published schema', () => {
-	const result = runCli(projectRoot, ['harness-scenarios', '--fixtures', 'tests/fixtures/harness-scenarios', '--json']);
-
-	assert.equal(result.status, 0, result.stderr || result.stdout);
-	assertMatchesSchema(schemaRoot, 'harness-scenarios-report.schema.json', JSON.parse(result.stdout));
-});
-
 test('handoff validation json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

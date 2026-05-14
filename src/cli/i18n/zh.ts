@@ -41,8 +41,6 @@ export const zhMessages = {
   "command.search.summary": "搜索本地 mustflow SQLite 索引",
   "command.dashboard.summary":
     "启动本地 mustflow 仪表板",
-  "command.harnessScenarios.summary":
-    "运行确定性的 harness 场景 fixture",
   "command.version.summary": "显示包版本和 npm 更新状态",
   "command.versionSources.summary": "显示检测到的版本来源",
   "command.verify.summary": "按原因运行必需验证",
@@ -148,13 +146,6 @@ export const zhMessages = {
     "仪表板导出路径必须位于 mustflow 根目录内：{path}",
   "dashboard.export.wrote": "已将仪表板导出写入 {path}（{bytes} 字节）",
   "dashboard.listening": "mf dashboard 正在监听 {url}",
-  "harnessScenarios.help.summary":
-    "在不调用实时 AI 或外部服务的情况下评估确定性的 harness 场景 fixture。",
-  "harnessScenarios.help.option.fixtures": "从这个 fixture 目录读取场景 JSON 文件",
-  "harnessScenarios.help.exit.ok": "所有 harness 场景均通过，或已打印帮助信息",
-  "harnessScenarios.help.exit.fail": "一个或多个场景失败，或输入无效",
-  "harnessScenarios.error.missingFixtures": "缺少 --fixtures。请提供场景 fixture 目录。",
-  "harnessScenarios.error.missingRunner": "此安装包未包含 harness 场景运行脚本",
   "handoff.help.summary":
     "验证受限的工作项或交接 JSON 记录，不写入文件。",
   "handoff.help.exit.ok": "交接记录有效",

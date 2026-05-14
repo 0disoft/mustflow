@@ -15,7 +15,6 @@ import { runDocs } from './commands/docs.js';
 import { runExplain } from './commands/explain.js';
 import { runHelp } from './commands/help.js';
 import { runHandoff } from './commands/handoff.js';
-import { runHarnessScenarios } from './commands/harness-scenarios.js';
 import { runImpact } from './commands/impact.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index.js';
@@ -66,7 +65,6 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf classify --changed',
 				'mf contract-lint --json',
 				'mf context --json',
-				'mf harness-scenarios --fixtures tests/fixtures/harness-scenarios --json',
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
@@ -229,10 +227,6 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'version-sources') {
 		return runVersionSources(args, reporter, parsed.lang);
-	}
-
-	if (command === 'harness-scenarios') {
-		return runHarnessScenarios(args, reporter, parsed.lang);
 	}
 
 	if (command === 'verify') {

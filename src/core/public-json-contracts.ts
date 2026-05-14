@@ -82,14 +82,6 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
-		id: 'harness-scenarios-report',
-		schemaFile: 'harness-scenarios-report.schema.json',
-		producer: 'mf harness-scenarios --fixtures <path> --json',
-		packaged: true,
-		documented: true,
-		expectedExitCodes: [0, 1],
-	},
-	{
 		id: 'handoff-validation-report',
 		schemaFile: 'handoff-validation-report.schema.json',
 		producer: 'mf handoff validate <path> --json',

@@ -39,8 +39,6 @@ export const enMessages = {
   "command.search.summary": "Search the local mustflow SQLite index",
   "command.dashboard.summary":
     "Start the local mustflow dashboard",
-  "command.harnessScenarios.summary":
-    "Run deterministic harness scenario fixtures",
   "command.version.summary": "Show package version and optional npm update status",
   "command.versionSources.summary": "Show detected version sources",
   "command.verify.summary": "Run required verification for a reason",
@@ -146,13 +144,6 @@ export const enMessages = {
     "Dashboard export path must stay inside the mustflow root: {path}",
   "dashboard.export.wrote": "Wrote dashboard export to {path} ({bytes} bytes)",
   "dashboard.listening": "mf dashboard listening at {url}",
-  "harnessScenarios.help.summary":
-    "Evaluate deterministic harness scenario fixtures without live AI calls or external services.",
-  "harnessScenarios.help.option.fixtures": "Read scenario JSON files from this fixture directory",
-  "harnessScenarios.help.exit.ok": "All harness scenarios passed or help was printed",
-  "harnessScenarios.help.exit.fail": "One or more scenarios failed or input was invalid",
-  "harnessScenarios.error.missingFixtures": "Missing --fixtures. Provide a scenario fixture directory.",
-  "harnessScenarios.error.missingRunner": "Harness scenario runner script is not packaged with this install",
   "handoff.help.summary":
     "Validate a restricted work-item or handoff JSON record without writing files.",
   "handoff.help.exit.ok": "The handoff record is valid",
