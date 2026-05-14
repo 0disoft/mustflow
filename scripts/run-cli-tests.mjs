@@ -32,6 +32,7 @@ const fastTests = [
 const releaseTests = ['package.test.js'];
 const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
 const coverageTests = fastTests;
+const scheduler = process.env.MUSTFLOW_TEST_SCHEDULER ?? 'default';
 
 const commandTestNames = new Set(allCliTests);
 const commandRelatedTests = new Map([
@@ -411,8 +412,51 @@ function runProfiledTests() {
 	}
 }
 
+function runTestProcess(paths, testArgs, stdio = 'inherit') {
+	return spawnSync(process.execPath, [...testArgs, ...paths], {
+		cwd: repoRoot,
+		stdio,
+	});
+}
+
+function runScheduledTests() {
+	if (mode === 'coverage') {
+		console.error('MUSTFLOW_TEST_SCHEDULER=auto is not supported for coverage mode.');
+		process.exit(2);
+	}
+
+	const waves = planWaves(testPaths);
+	console.log(`Running ${mode} CLI tests with auto scheduler (${testPaths.length} files, ${waves.length} waves)`);
+
+	for (const [index, wave] of waves.entries()) {
+		const waveArgs = ['--test', `--test-concurrency=${wave.concurrency}`];
+		console.log(
+			`Wave ${index + 1}/${waves.length} (${wave.testPaths.length} files, concurrency ${wave.concurrency}, classes ${wave.classes.join(', ')}): ${wave.testPaths.join(', ')}`,
+		);
+		const result = runTestProcess(wave.testPaths, waveArgs);
+
+		if (result.error) {
+			console.error(result.error.message);
+			process.exit(1);
+		}
+
+		if (result.status !== 0) {
+			process.exit(result.status ?? 1);
+		}
+	}
+}
+
 if (profileMode) {
 	runProfiledTests();
+	process.exit(0);
+}
+
+if (baseMode === 'related' && hasRelatedReleaseChanges()) {
+	console.log('Release-sensitive files changed; run `mf run test_release` before publishing or committing release metadata.');
+}
+
+if (scheduler === 'auto') {
+	runScheduledTests();
 	process.exit(0);
 }
 
@@ -420,14 +464,7 @@ console.log(
 	`Running ${mode} CLI tests (${testPaths.length} files, concurrency ${concurrency}): ${testPaths.join(', ')}`,
 );
 
-if (baseMode === 'related' && hasRelatedReleaseChanges()) {
-	console.log('Release-sensitive files changed; run `mf run test_release` before publishing or committing release metadata.');
-}
-
-const result = spawnSync(process.execPath, [...nodeTestArgs, ...testPaths], {
-	cwd: repoRoot,
-	stdio: 'inherit',
-});
+const result = runTestProcess(testPaths, nodeTestArgs);
 
 if (result.error) {
 	console.error(result.error.message);
