@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "1.28.0"
+version = "1.29.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"

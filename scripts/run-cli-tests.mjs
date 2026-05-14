@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, statSync } from 'node:fs';
+import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -157,12 +158,15 @@ function hasRelatedReleaseChanges() {
 const suites = {
 	fast: fastTests,
 	'fast-cached': fastTests,
+	'fast-profile': fastTests,
 	related: relatedTests(),
 	'related-cached': relatedTests(),
+	'related-profile': relatedTests(),
 	cli: cliTests,
 	coverage: coverageTests,
 	release: releaseTests,
 	full: allCliTests,
+	'full-profile': allCliTests,
 };
 
 const mode = process.argv[2] ?? 'full';
@@ -198,8 +202,26 @@ function readRelatedConcurrency() {
 	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '4');
 }
 
+function readCliConcurrency() {
+	if (process.env.MUSTFLOW_TEST_CLI_CONCURRENCY) {
+		return readPositiveIntegerEnv('MUSTFLOW_TEST_CLI_CONCURRENCY', '4');
+	}
+
+	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '1');
+}
+
+function readFullConcurrency() {
+	if (process.env.MUSTFLOW_TEST_FULL_CONCURRENCY) {
+		return readPositiveIntegerEnv('MUSTFLOW_TEST_FULL_CONCURRENCY', '4');
+	}
+
+	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '1');
+}
+
 const testPaths = uniqueExisting(selected).map((name) => path.join('tests', 'cli', name));
-const baseMode = mode.endsWith('-cached') ? mode.slice(0, -'-cached'.length) : mode;
+const profileMode = mode.endsWith('-profile');
+const cachedMode = mode.endsWith('-cached');
+const baseMode = mode.replace(/-(?:cached|profile)$/u, '');
 const concurrency =
 	mode === 'coverage'
 		? readPositiveIntegerEnv('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4')
@@ -207,6 +229,10 @@ const concurrency =
 			? readRelatedConcurrency()
 		: baseMode === 'fast'
 			? readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '8')
+		: baseMode === 'cli'
+			? readCliConcurrency()
+		: baseMode === 'full'
+			? readFullConcurrency()
 			: '1';
 const nodeTestArgs = ['--test', `--test-concurrency=${concurrency}`];
 
@@ -215,7 +241,7 @@ if (mode === 'coverage') {
 }
 
 function assertCachedModeSafe() {
-	if (!mode.endsWith('-cached')) {
+	if (!cachedMode) {
 		return;
 	}
 
@@ -249,6 +275,46 @@ function assertCachedModeSafe() {
 }
 
 assertCachedModeSafe();
+
+function runProfiledTests() {
+	const timings = [];
+	const profileNodeArgs = ['--test', '--test-concurrency=1'];
+
+	for (const testPath of testPaths) {
+		const start = performance.now();
+		const result = spawnSync(process.execPath, [...profileNodeArgs, testPath], {
+			cwd: repoRoot,
+			encoding: 'utf8',
+		});
+		const durationMs = Math.round(performance.now() - start);
+		timings.push({ testPath, durationMs, status: result.status ?? 1 });
+
+		if (result.error) {
+			console.error(result.error.message);
+			process.exit(1);
+		}
+
+		if (result.status !== 0) {
+			process.stdout.write(result.stdout);
+			process.stderr.write(result.stderr);
+			console.error(`Profiled test failed: ${testPath}`);
+			process.exit(result.status ?? 1);
+		}
+	}
+
+	const totalMs = timings.reduce((sum, timing) => sum + timing.durationMs, 0);
+	const slowest = [...timings].sort((left, right) => right.durationMs - left.durationMs);
+
+	console.log(`Profiled ${mode} CLI tests (${timings.length} files, serial total ${totalMs} ms)`);
+	for (const timing of slowest) {
+		console.log(`${String(timing.durationMs).padStart(6, ' ')} ms  ${timing.testPath}`);
+	}
+}
+
+if (profileMode) {
+	runProfiledTests();
+	process.exit(0);
+}
 
 console.log(
 	`Running ${mode} CLI tests (${testPaths.length} files, concurrency ${concurrency}): ${testPaths.join(', ')}`,

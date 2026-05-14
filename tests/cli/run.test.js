@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const packageVersion = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8')).version;
+let initializedProjectFixture;
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-run-'));
@@ -30,6 +31,18 @@ function runCli(cwd, args, options = {}) {
 	});
 }
 
+before(() => {
+	initializedProjectFixture = createTempProject();
+	const result = runCli(initializedProjectFixture, ['init', '--yes']);
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
 function createEnvWithoutPathLookup() {
 	const env = { ...process.env };
 	const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
@@ -48,8 +61,8 @@ function createEnvWithLocalBinFirst(projectPath) {
 }
 
 function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0);
+	assert.ok(initializedProjectFixture, 'initialized project fixture should be ready');
+	cpSync(initializedProjectFixture, projectPath, { recursive: true });
 }
 
 function appendIntent(projectPath, text) {

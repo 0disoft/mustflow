@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "1.28.0",
+  "version": "1.29.0",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -31,6 +31,7 @@
     "test:fast": "bun run build && node scripts/run-cli-tests.mjs fast",
     "test:related": "bun run build && node scripts/run-cli-tests.mjs related",
     "test:related:cached": "node scripts/run-cli-tests.mjs related-cached",
+    "test:related:profile": "bun run build && node scripts/run-cli-tests.mjs related-profile",
     "test:cli": "bun run build && node scripts/run-cli-tests.mjs cli",
     "test:coverage": "bun run build && node scripts/run-cli-tests.mjs coverage",
     "test:audit": "node scripts/audit-tests.mjs --json",

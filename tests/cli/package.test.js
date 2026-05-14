@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.28.0');
+	assert.equal(packageJson.version, '1.29.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -88,6 +88,7 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts['test:fast'], 'bun run build && node scripts/run-cli-tests.mjs fast');
 	assert.equal(packageJson.scripts['test:related'], 'bun run build && node scripts/run-cli-tests.mjs related');
 	assert.equal(packageJson.scripts['test:related:cached'], 'node scripts/run-cli-tests.mjs related-cached');
+	assert.equal(packageJson.scripts['test:related:profile'], 'bun run build && node scripts/run-cli-tests.mjs related-profile');
 	assert.equal(packageJson.scripts['test:cli'], 'bun run build && node scripts/run-cli-tests.mjs cli');
 	assert.equal(packageJson.scripts['test:coverage'], 'bun run build && node scripts/run-cli-tests.mjs coverage');
 	assert.equal(packageJson.scripts['test:audit'], 'node scripts/audit-tests.mjs --json');
@@ -118,11 +119,18 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_RELATED_CONCURRENCY/u);
 	assert.match(cliTestRunner, /function readRelatedConcurrency\(\)/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '4'\)/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_CLI_CONCURRENCY/u);
+	assert.match(cliTestRunner, /function readCliConcurrency\(\)/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_FULL_CONCURRENCY/u);
+	assert.match(cliTestRunner, /function readFullConcurrency\(\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4'\)/u);
 	assert.match(cliTestRunner, /'related-cached': relatedTests\(\)/u);
+	assert.match(cliTestRunner, /'related-profile': relatedTests\(\)/u);
 	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
 	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
+	assert.match(cliTestRunner, /function runProfiledTests\(\)/u);
+	assert.match(cliTestRunner, /serial total/u);
 	assert.match(cliTestRunner, /dist\/ is older than changed TypeScript source/u);
 
 	const relatedResult = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related'], {

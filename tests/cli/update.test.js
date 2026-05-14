@@ -4,11 +4,12 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedProjectFixture;
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-update-'));
@@ -24,6 +25,23 @@ function runCli(cwd, args, env = {}) {
 		encoding: 'utf8',
 		env: { ...process.env, ...env },
 	});
+}
+
+before(() => {
+	initializedProjectFixture = createTempProject();
+	const result = runCli(initializedProjectFixture, ['init', '--yes']);
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function copyInitializedProject(projectPath) {
+	assert.ok(initializedProjectFixture, 'initialized project fixture should be ready');
+	cpSync(initializedProjectFixture, projectPath, { recursive: true });
 }
 
 function sha256Text(text) {
@@ -89,7 +107,7 @@ test('prints an update dry-run plan for an up-to-date project', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 
 		const result = runCli(projectPath, ['update', '--dry-run']);
 
@@ -109,7 +127,7 @@ test('blocks update dry-run when installed files have local changes', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		const originalAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
@@ -130,7 +148,7 @@ test('preserves customized files that still match their customized baseline', ()
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 		const customizedCommands = `${readFileSync(commandsPath, 'utf8')}\n# repository-specific command contract\n`;
 		writeFileSync(commandsPath, customizedCommands);
@@ -154,7 +172,7 @@ test('prints an update dry-run plan as json', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--json']);
@@ -184,7 +202,7 @@ test('blocks update when a locked installed file is missing', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		const projectContextPath = path.join(projectPath, '.mustflow', 'context', 'PROJECT.md');
 		rmSync(projectContextPath);
 
@@ -207,7 +225,7 @@ test('detects bundled template changes without local file changes', () => {
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		writeFileSync(
 			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
@@ -236,7 +254,7 @@ test('prints bounded update diffs in text dry-run output without writing files',
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		writeFileSync(
 			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
@@ -269,7 +287,7 @@ test('prints update dry-run diff previews as json for update and create actions'
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		writeFileSync(
 			path.join(templatePath, 'locales', 'en', 'AGENTS.md'),
@@ -312,7 +330,7 @@ test('truncates update diff previews with an explicit marker', () => {
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const extraLines = Array.from({ length: 160 }, (_, index) => `generated line ${index}`).join('\n');
 		writeFileSync(
@@ -341,7 +359,7 @@ test('includes diff previews for blocked local changes without applying them', (
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json']);
@@ -364,7 +382,7 @@ test('omits diff previews for unchanged update items', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json']);
 		const plan = JSON.parse(result.stdout);
@@ -412,7 +430,7 @@ test('applies safe template updates and refreshes the manifest lock', () => {
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const originalAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 		const updatedAgents = `${readFileSync(path.join(templatePath, 'locales', 'en', 'AGENTS.md'), 'utf8')}\n<!-- simulated template update -->\n`;
@@ -450,7 +468,7 @@ test('applies newly added template files when local files are clean', () => {
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const newRelativePath = '.mustflow/docs/new-guide.md';
 		const newContent = '# New Guide\n\nTemplate-added file.\n';
@@ -514,7 +532,7 @@ test('blocks template create through a symlink target', (t) => {
 	const outsidePath = path.join(tmpdir(), `mustflow-outside-${process.pid}-${Date.now()}.md`);
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const newRelativePath = '.mustflow/docs/symlink-create.md';
 		addTemplateCreate(templatePath, newRelativePath, '# Symlink Create\n');
@@ -548,7 +566,7 @@ test('blocks template update through a symlink target', (t) => {
 	const outsidePath = path.join(tmpdir(), `mustflow-outside-existing-${process.pid}-${Date.now()}.md`);
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const agentsPath = path.join(projectPath, 'AGENTS.md');
 		const originalAgents = readFileSync(agentsPath, 'utf8');
@@ -587,7 +605,7 @@ test('refuses template creates outside the mustflow install surface during updat
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		addTemplateCreate(
 			templatePath,
@@ -616,7 +634,7 @@ test('refuses apply when installed files have local changes', () => {
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const localChange = '# Local project rules\n';
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), localChange);
@@ -644,7 +662,7 @@ test('refuses apply when a new template file collides with an untracked local fi
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
 		const manifestPath = path.join(templatePath, 'manifest.toml');
 		const newRelativePath = '.mustflow/docs/local-only.md';
@@ -679,7 +697,7 @@ test('requires an explicit update mode', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 
 		const result = runCli(projectPath, ['update']);
 
@@ -694,7 +712,7 @@ test('requires dry-run mode for update diff previews', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		copyInitializedProject(projectPath);
 
 		const result = runCli(projectPath, ['update', '--apply', '--diff']);
 
