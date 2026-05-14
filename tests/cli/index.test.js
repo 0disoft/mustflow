@@ -1,65 +1,10 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
-const require = createRequire(import.meta.url);
-
-async function loadSqlJs() {
-	const wasmPath = require.resolve('sql.js/dist/sql-wasm.wasm');
-	const sqlJsModule = await import('sql.js');
-	const initSqlJs = sqlJsModule.default;
-
-	return initSqlJs({
-		locateFile(fileName) {
-			return fileName.endsWith('.wasm') ? wasmPath : fileName;
-		},
-	});
-}
-
-function queryRows(database, sql) {
-	const [result] = database.exec(sql);
-
-	if (!result) {
-		return [];
-	}
-
-	return result.values.map((values) => {
-		const row = {};
-
-		result.columns.forEach((column, index) => {
-			row[column] = values[index] ?? null;
-		});
-
-		return row;
-	});
-}
-
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-index-'));
-}
-
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
-}
-
-function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
-}
-
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
-}
+import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { createLocalIndexDirect } from './helpers/local-index-fixtures.js';
+import { loadSqlJsCached, queryRows } from './helpers/sqlite-assertions.js';
 
 function appendCommandGraphFixture(projectPath) {
 	appendFileSync(
@@ -161,11 +106,10 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'),
 			`# Project Context\n\n${'A'.repeat(3000)}\n${marker}\n`,
 		);
-		const result = runCli(projectPath, ['index', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await createLocalIndexDirect(projectPath);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const header = readFileSync(indexPath).subarray(0, 16).toString('utf8');
-		const SQL = await loadSqlJs();
+		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const metadata = Object.fromEntries(queryRows(database, 'SELECT key, value FROM metadata').map((row) => [row.key, row.value]));
 		const tableNames = queryRows(database, "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").map((row) => row.name);
@@ -186,7 +130,6 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.schema_version, '12');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
@@ -455,23 +398,19 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 	}
 });
 
-test('reuses a fresh sqlite local index in incremental mode', () => {
+test('reuses a fresh sqlite local index in incremental mode', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
-		const firstIndex = runCli(projectPath, ['index', '--json']);
-		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
-		const firstOutput = JSON.parse(firstIndex.stdout);
+		const firstOutput = await createLocalIndexDirect(projectPath);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const firstBytes = readFileSync(indexPath).toString('base64');
-		const secondIndex = runCli(projectPath, ['index', '--incremental', '--json']);
-		const secondOutput = JSON.parse(secondIndex.stdout);
+		const secondOutput = await createLocalIndexDirect(projectPath, { incremental: true });
 		const secondBytes = readFileSync(indexPath).toString('base64');
 
 		assert.equal(firstOutput.index_mode, 'full');
 		assert.equal(firstOutput.reused_existing, false);
-		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
 		assert.equal(secondOutput.index_mode, 'incremental');
 		assert.equal(secondOutput.reused_existing, true);
 		assert.equal(secondOutput.rebuild_reason, null);
@@ -488,8 +427,7 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 
 	try {
 		initProject(projectPath);
-		const firstIndex = runCli(projectPath, ['index', '--json']);
-		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
+		await createLocalIndexDirect(projectPath);
 
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'context', 'INDEX.md'),
@@ -498,10 +436,9 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 		writeFileSync(path.join(projectPath, '.mustflow', 'context', 'EXTRA.md'), '# Extra Context\n\nNew context file.\n');
 		rmSync(path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'), { force: true });
 
-		const secondIndex = runCli(projectPath, ['index', '--incremental', '--json']);
-		const output = JSON.parse(secondIndex.stdout);
+		const output = await createLocalIndexDirect(projectPath, { incremental: true });
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJs();
+		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const [contextIndex] = queryRows(
 			database,
@@ -521,7 +458,6 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 			'SELECT path FROM indexed_files WHERE path = ".mustflow/context/PROJECT.md"',
 		);
 
-		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
 		assert.equal(output.index_mode, 'incremental');
 		assert.equal(output.reused_existing, false);
 		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
@@ -591,7 +527,7 @@ class SessionStore {
 		const result = runCli(projectPath, ['index', '--source', '--json']);
 		const output = JSON.parse(result.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJs();
+		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const [anchor] = queryRows(database, 'SELECT * FROM source_anchors WHERE id = "auth.session.resolve"');
 		const [fingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.resolve"');
@@ -735,7 +671,7 @@ export const generatedFileAnchor = true;
 		const result = runCli(projectPath, ['index', '--json']);
 		const output = JSON.parse(result.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJs();
+		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const anchorRows = queryRows(database, 'SELECT id, path, navigation_only, can_instruct_agent FROM source_anchors ORDER BY id');
 
@@ -789,7 +725,7 @@ export const secretAnchor = true;
 		const indexResult = runCli(projectPath, ['index', '--source', '--json']);
 		const output = JSON.parse(indexResult.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJs();
+		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const [anchorCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchors');
 		const [statusCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchor_status');
@@ -907,7 +843,7 @@ export function movedTarget() {
 		const secondIndex = runCli(projectPath, ['index', '--source', '--incremental', '--json']);
 		const output = JSON.parse(secondIndex.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJs();
+		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const statuses = Object.fromEntries(
 			queryRows(database, 'SELECT anchor_id, status, confidence, risk_signal FROM source_anchor_status').map((row) => [

@@ -1,41 +1,16 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import { cloneProjectFixture, createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const expectedMaxSearchMatchSnippetChars = 240;
-
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-search-'));
-}
-
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
-}
-
-function runCli(cwd, args, options = {}) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-		env: options.env ?? process.env,
-	});
-}
-
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
-}
-
-function indexProject(projectPath, args = [], options = {}) {
-	const result = runCli(projectPath, ['index', ...args, '--json'], options);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
-	return JSON.parse(result.stdout);
-}
+let indexedProjectFixture;
+let sourceIndexedProjectFixture;
+let tableScanIndexedProjectFixture;
+let indexedProjectMetadata;
+let tableScanIndexedProjectMetadata;
 
 function writeSourceAnchor(projectPath) {
 	mkdirSync(path.join(projectPath, 'src'), { recursive: true });
@@ -55,6 +30,43 @@ export function resolveSessionUser() {
 	);
 }
 
+before(() => {
+	indexedProjectFixture = createTempProject('mustflow-search-fixture-');
+	initProject(indexedProjectFixture);
+	indexedProjectMetadata = indexProject(indexedProjectFixture);
+
+	sourceIndexedProjectFixture = createTempProject('mustflow-search-source-fixture-');
+	initProject(sourceIndexedProjectFixture);
+	writeSourceAnchor(sourceIndexedProjectFixture);
+	indexProject(sourceIndexedProjectFixture, ['--source']);
+
+	tableScanIndexedProjectFixture = createTempProject('mustflow-search-table-scan-fixture-');
+	initProject(tableScanIndexedProjectFixture);
+	tableScanIndexedProjectMetadata = indexProject(tableScanIndexedProjectFixture, [], {
+		env: { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' },
+	});
+});
+
+after(() => {
+	for (const fixture of [indexedProjectFixture, sourceIndexedProjectFixture, tableScanIndexedProjectFixture]) {
+		if (fixture) {
+			removeTempProject(fixture);
+		}
+	}
+});
+
+function cloneIndexedProject() {
+	return cloneProjectFixture(indexedProjectFixture, 'mustflow-search-indexed-');
+}
+
+function cloneSourceIndexedProject() {
+	return cloneProjectFixture(sourceIndexedProjectFixture, 'mustflow-search-source-indexed-');
+}
+
+function cloneTableScanIndexedProject() {
+	return cloneProjectFixture(tableScanIndexedProjectFixture, 'mustflow-search-table-scan-indexed-');
+}
+
 test('fails clearly when local index is missing', () => {
 	const projectPath = createTempProject();
 
@@ -72,11 +84,9 @@ test('fails clearly when local index is missing', () => {
 });
 
 test('prints matching documents skills and command intents from the local index', () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
 		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
 		const output = JSON.parse(result.stdout);
 
@@ -113,17 +123,13 @@ test('prints matching documents skills and command intents from the local index'
 	}
 });
 
-test('searches skill routes from the local index', () => {
-	const projectPath = createTempProject();
+test('searches skill routes from the local index', async () => {
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
-		const result = runCli(projectPath, ['search', 'Code changes need review', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'Code changes need review');
 		const codeReviewRoute = output.results.find((item) => item.kind === 'skill_route' && item.name === 'code-review');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.ok(codeReviewRoute);
 		assert.equal(codeReviewRoute.path, '.mustflow/skills/code-review/SKILL.md');
 		assert.match(codeReviewRoute.route_trigger, /Code changes need review/);
@@ -133,17 +139,13 @@ test('searches skill routes from the local index', () => {
 	}
 });
 
-test('searches command effect paths and locks from the local index', () => {
-	const projectPath = createTempProject();
+test('searches command effect paths and locks from the local index', async () => {
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
-		const result = runCli(projectPath, ['search', 'REPO_MAP.md', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'REPO_MAP.md');
 		const repoMapIntent = output.results.find((item) => item.kind === 'command_intent' && item.name === 'repo_map');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.ok(repoMapIntent);
 		assert.deepEqual(repoMapIntent.effect_paths, ['REPO_MAP.md']);
 		assert.deepEqual(repoMapIntent.effect_locks, ['path:REPO_MAP.md']);
@@ -153,23 +155,20 @@ test('searches command effect paths and locks from the local index', () => {
 	}
 });
 
-test('uses fts-backed token matching when the sqlite runtime supports it', () => {
-	const projectPath = createTempProject();
+test('uses fts-backed token matching when the sqlite runtime supports it', async () => {
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		const indexOutput = indexProject(projectPath);
+		const indexOutput = indexedProjectMetadata;
 
 		if (indexOutput.search_backend !== 'fts5') {
 			assert.equal(indexOutput.search_backend, 'table_scan');
 			return;
 		}
 
-		const result = runCli(projectPath, ['search', 'mustflow check', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'mustflow check');
 		const mustflowCheck = output.results.find((item) => item.kind === 'command_intent' && item.name === 'mustflow_check');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.search_backend, 'fts5');
 		assert.equal(output.search_fts5_available, true);
 		assert.ok(mustflowCheck);
@@ -178,20 +177,16 @@ test('uses fts-backed token matching when the sqlite runtime supports it', () =>
 	}
 });
 
-test('falls back to table scan search when fts is unavailable', () => {
-	const projectPath = createTempProject();
+test('falls back to table scan search when fts is unavailable', async () => {
+	const projectPath = cloneTableScanIndexedProject();
 
 	try {
-		initProject(projectPath);
-		const env = { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' };
-		const indexOutput = indexProject(projectPath, [], { env });
-		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
-		const output = JSON.parse(result.stdout);
+		const indexOutput = tableScanIndexedProjectMetadata;
+		const output = await searchLocalIndexDirect(projectPath, 'mustflow_check');
 		const mustflowCheck = output.results.find((item) => item.kind === 'command_intent' && item.name === 'mustflow_check');
 
 		assert.equal(indexOutput.search_backend, 'table_scan');
 		assert.equal(indexOutput.search_fts5_available, false);
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.search_backend, 'table_scan');
 		assert.equal(output.search_fts5_available, false);
 		assert.ok(mustflowCheck);
@@ -200,7 +195,7 @@ test('falls back to table scan search when fts is unavailable', () => {
 	}
 });
 
-test('uses n-gram fallback for multilingual queries when fts is unavailable', () => {
+test('uses n-gram fallback for multilingual queries when fts is unavailable', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -228,13 +223,11 @@ test('uses n-gram fallback for multilingual queries when fts is unavailable', ()
 		const env = { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' };
 		indexProject(projectPath, [], { env });
 
-		const result = runCli(projectPath, ['search', '검증 상태', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, '검증 상태');
 		const projectContext = output.results.find(
 			(item) => item.kind === 'document' && item.path === '.mustflow/context/PROJECT.md',
 		);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.search_backend, 'table_scan');
 		assert.ok(projectContext);
 		assert.match(projectContext.match, /검증상태/);
@@ -243,7 +236,7 @@ test('uses n-gram fallback for multilingual queries when fts is unavailable', ()
 	}
 });
 
-test('keeps search result match snippets bounded for long matching text', () => {
+test('keeps search result match snippets bounded for long matching text', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -272,13 +265,11 @@ test('keeps search result match snippets bounded for long matching text', () => 
 		);
 		indexProject(projectPath);
 
-		const result = runCli(projectPath, ['search', longToken, '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, longToken);
 		const projectContext = output.results.find(
 			(item) => item.kind === 'document' && item.path === '.mustflow/context/PROJECT.md',
 		);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.ok(projectContext);
 		assert.ok(projectContext.match.length <= expectedMaxSearchMatchSnippetChars);
 		assert.equal(projectContext.match.endsWith('...'), true);
@@ -289,17 +280,12 @@ test('keeps search result match snippets bounded for long matching text', () => 
 	}
 });
 
-test('keeps source anchors out of default workflow search results', () => {
-	const projectPath = createTempProject();
+test('keeps source anchors out of default workflow search results', async () => {
+	const projectPath = cloneSourceIndexedProject();
 
 	try {
-		initProject(projectPath);
-		writeSourceAnchor(projectPath);
-		indexProject(projectPath, ['--source']);
-		const result = runCli(projectPath, ['search', 'role mapping', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'role mapping');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.scope, 'workflow');
 		assert.equal(output.results.some((item) => item.kind === 'source_anchor'), false);
 	} finally {
@@ -307,18 +293,13 @@ test('keeps source anchors out of default workflow search results', () => {
 	}
 });
 
-test('searches source anchors only when source scope is requested', () => {
-	const projectPath = createTempProject();
+test('searches source anchors only when source scope is requested', async () => {
+	const projectPath = cloneSourceIndexedProject();
 
 	try {
-		initProject(projectPath);
-		writeSourceAnchor(projectPath);
-		indexProject(projectPath, ['--source']);
-		const result = runCli(projectPath, ['search', 'role mapping', '--scope', 'source', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'role mapping', { scope: 'source' });
 		const anchor = output.results.find((item) => item.kind === 'source_anchor');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.scope, 'source');
 		assert.equal(anchor.anchor_id, 'auth.session.resolve');
 		assert.equal(anchor.path, 'src/auth.ts');
@@ -337,15 +318,11 @@ test('searches source anchors only when source scope is requested', () => {
 	}
 });
 
-test('keeps workflow authority above source anchors in all-scope search results', () => {
-	const projectPath = createTempProject();
+test('keeps workflow authority above source anchors in all-scope search results', async () => {
+	const projectPath = cloneSourceIndexedProject();
 
 	try {
-		initProject(projectPath);
-		writeSourceAnchor(projectPath);
-		indexProject(projectPath, ['--source']);
-		const result = runCli(projectPath, ['search', 'mustflow_check', '--scope=all', '--limit', '50', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'mustflow_check', { scope: 'all', limit: 50 });
 		const commandIndex = output.results.findIndex(
 			(item) => item.kind === 'command_intent' && item.name === 'mustflow_check',
 		);
@@ -353,7 +330,6 @@ test('keeps workflow authority above source anchors in all-scope search results'
 			(item) => item.kind === 'source_anchor' && item.anchor_id === 'auth.session.resolve',
 		);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.scope, 'all');
 		assert.notEqual(commandIndex, -1);
 		assert.notEqual(anchorIndex, -1);
@@ -367,7 +343,7 @@ test('keeps workflow authority above source anchors in all-scope search results'
 	}
 });
 
-test('keeps command authority above a stronger source-anchor text match', () => {
+test('keeps command authority above a stronger source-anchor text match', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -392,8 +368,7 @@ export const priorityprobe = true;
 		);
 		indexProject(projectPath, ['--source']);
 
-		const result = runCli(projectPath, ['search', 'priorityprobe', '--scope=all', '--limit', '50', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'priorityprobe', { scope: 'all', limit: 50 });
 		const commandIndex = output.results.findIndex(
 			(item) => item.kind === 'command_intent' && item.name === 'mustflow_check',
 		);
@@ -401,7 +376,6 @@ export const priorityprobe = true;
 			(item) => item.kind === 'source_anchor' && item.anchor_id === 'priorityprobe',
 		);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.notEqual(commandIndex, -1);
 		assert.notEqual(anchorIndex, -1);
 		assert.ok(output.results[anchorIndex].score > output.results[commandIndex].score);
@@ -416,11 +390,9 @@ export const priorityprobe = true;
 });
 
 test('rejects unsupported search scope values', () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
 		const result = runCli(projectPath, ['search', 'mustflow_check', '--scope', 'source-code']);
 
 		assert.equal(result.status, 1);
@@ -430,17 +402,13 @@ test('rejects unsupported search scope values', () => {
 	}
 });
 
-test('prints cache-layer hints for task-scoped search results', () => {
-	const projectPath = createTempProject();
+test('prints cache-layer hints for task-scoped search results', async () => {
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
-		const result = runCli(projectPath, ['search', 'code-review', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = await searchLocalIndexDirect(projectPath, 'code-review');
 		const skill = output.results.find((item) => item.kind === 'skill' && item.name === 'code-review');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(skill.cache_layer, 'task');
 		assert.equal(skill.volatile, false);
 	} finally {
@@ -449,11 +417,9 @@ test('prints cache-layer hints for task-scoped search results', () => {
 });
 
 test('fails when indexed mustflow files changed after indexing', () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
 		appendFileSync(path.join(projectPath, 'AGENTS.md'), '\n추가 규칙\n');
 
 		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
@@ -470,11 +436,9 @@ test('fails when indexed mustflow files changed after indexing', () => {
 });
 
 test('prints human readable search results with a configurable limit', () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneIndexedProject();
 
 	try {
-		initProject(projectPath);
-		indexProject(projectPath);
 		const result = runCli(projectPath, ['search', 'code-review', '--limit', '2']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);

@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, statSync } from 'node:fs';
+import os from 'node:os';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,8 +68,10 @@ const relatedRules = [
 	{ match: /^src\/core\/change-(classification|verification)\.ts$/u, tests: ['classify.test.js', 'verify.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check.test.js', 'package.test.js'] },
+	{ match: /^src\/core\/(release-version-validation|version-impact|version-sources|version-sync-policy)\.ts$/u, tests: ['check-versioning.test.js', 'package.test.js'] },
 	{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/command-cwd\.ts$/u, tests: ['run.test.js'] },
 	{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: ['check.test.js', 'run.test.js'] },
 	{ match: /^src\/core\/verification-plan\.ts$/u, tests: ['verify.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check.test.js', 'explain.test.js'] },
@@ -216,6 +219,103 @@ function readFullConcurrency() {
 	}
 
 	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '1');
+}
+
+function testDemand(testPath) {
+	const name = path.basename(testPath);
+
+	if (['index.test.js', 'search.test.js'].includes(name)) {
+		return { cpu: 1, io: 3, process: 2, sqlite: 1, git: 0, className: 'sqlite_io_heavy' };
+	}
+
+	if (['check.test.js', 'run.test.js', 'update.test.js', 'package.test.js'].includes(name)) {
+		return { cpu: 1, io: 3, process: 3, sqlite: 0, git: name === 'check.test.js' ? 1 : 0, className: 'process_io_heavy' };
+	}
+
+	if (['root-discovery.test.js', 'init.test.js'].includes(name)) {
+		return { cpu: 1, io: 2, process: 2, sqlite: 0, git: 0, className: 'process_medium' };
+	}
+
+	return { cpu: 1, io: 1, process: 1, sqlite: 0, git: 0, className: 'light' };
+}
+
+function resourceCapacity() {
+	const cpuDefault = Math.max(1, (os.availableParallelism?.() ?? os.cpus().length) - 1);
+	return {
+		cpu: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_CPU_TOKENS', String(cpuDefault))),
+		io: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_IO_TOKENS', '4')),
+		process: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_PROCESS_TOKENS', '4')),
+		sqlite: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_SQLITE_TOKENS', '1')),
+		git: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_GIT_TOKENS', '1')),
+	};
+}
+
+function addDemand(left, right) {
+	return {
+		cpu: left.cpu + right.cpu,
+		io: left.io + right.io,
+		process: left.process + right.process,
+		sqlite: left.sqlite + right.sqlite,
+		git: left.git + right.git,
+	};
+}
+
+function emptyDemand() {
+	return { cpu: 0, io: 0, process: 0, sqlite: 0, git: 0 };
+}
+
+function demandFits(demand, capacity) {
+	return (
+		demand.cpu <= capacity.cpu &&
+		demand.io <= capacity.io &&
+		demand.process <= capacity.process &&
+		demand.sqlite <= capacity.sqlite &&
+		demand.git <= capacity.git
+	);
+}
+
+function dominantPressure(demand) {
+	return Math.max(demand.cpu, demand.io, demand.process, demand.sqlite * 4, demand.git * 4);
+}
+
+function planWaves(paths) {
+	const capacity = resourceCapacity();
+	const jobs = paths
+		.map((testPath) => ({ testPath, demand: testDemand(testPath) }))
+		.sort((left, right) => {
+			const pressureDiff = dominantPressure(right.demand) - dominantPressure(left.demand);
+			return pressureDiff === 0 ? right.testPath.localeCompare(left.testPath) : pressureDiff;
+		});
+	const waves = [];
+
+	for (const job of jobs) {
+		const candidate = waves.find((wave) => demandFits(addDemand(wave.demand, job.demand), capacity));
+		if (candidate) {
+			candidate.jobs.push(job);
+			candidate.demand = addDemand(candidate.demand, job.demand);
+			continue;
+		}
+
+		waves.push({ jobs: [job], demand: addDemand(emptyDemand(), job.demand) });
+	}
+
+	return waves.map((wave) => {
+		const fileCount = wave.jobs.length;
+		const concurrencyLimit =
+			wave.demand.sqlite > 0
+				? capacity.sqlite
+				: wave.demand.git > 0
+					? capacity.git
+					: wave.demand.io > capacity.io / 2
+						? Math.max(1, Math.min(fileCount, capacity.io))
+						: Math.max(1, Math.min(fileCount, capacity.cpu + 1));
+
+		return {
+			testPaths: wave.jobs.map((job) => job.testPath),
+			concurrency: String(Math.min(fileCount, concurrencyLimit)),
+			classes: [...new Set(wave.jobs.map((job) => job.demand.className))].sort(),
+		};
+	});
 }
 
 const testPaths = uniqueExisting(selected).map((name) => path.join('tests', 'cli', name));

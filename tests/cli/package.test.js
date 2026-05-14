@@ -130,6 +130,9 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
 	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
 	assert.match(cliTestRunner, /function runProfiledTests\(\)/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_SCHEDULER/u);
+	assert.match(cliTestRunner, /function planWaves\(/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_SQLITE_TOKENS/u);
 	assert.match(cliTestRunner, /serial total/u);
 	assert.match(cliTestRunner, /dist\/ is older than changed TypeScript source/u);
 
