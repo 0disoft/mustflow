@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
@@ -83,6 +83,24 @@ function createLocalBinShim(projectPath, name, marker) {
 	const shimPath = path.join(localBinPath, name);
 	writeFileSync(shimPath, `#!/bin/sh\necho ${marker} "$@"\nexit 0\n`);
 	chmodSync(shimPath, 0o755);
+}
+
+function trySymlink(target, linkPath, type) {
+	try {
+		symlinkSync(target, linkPath, type);
+		return true;
+	} catch (error) {
+		if (
+			error &&
+			typeof error === 'object' &&
+			'code' in error &&
+			['EPERM', 'ENOTSUP'].includes(error.code)
+		) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 test('runs a configured oneshot command intent', () => {
@@ -320,6 +338,98 @@ destructive = false
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 	} finally {
 		rmSync(markerPath, { force: true });
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews missing command intent cwd values as blocked without spawning or writing a receipt', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'missing-cwd-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.missing_cwd_preview]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run inside a missing working directory."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "missing-dir"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'missing_cwd_preview', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'cwd_outside_project');
+		assert.equal(preview.configured_cwd, 'missing-dir');
+		assert.equal(preview.resolved_cwd, null);
+		assert.match(preview.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews command intent cwd symlink escapes without spawning or writing a receipt', (t) => {
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-run-outside-'));
+	const markerPath = path.join(outsideRoot, 'cwd-symlink-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		const linkPath = path.join(projectPath, 'linked-outside');
+		const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+		if (!trySymlink(outsideRoot, linkPath, linkType)) {
+			t.skip('directory symlinks are not available in this environment');
+			return;
+		}
+		appendIntent(
+			projectPath,
+			`
+[intents.outside_cwd_symlink_preview]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run through a symlink that leaves the project root."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "linked-outside"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'outside_cwd_symlink_preview', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'cwd_outside_project');
+		assert.equal(preview.configured_cwd, 'linked-outside');
+		assert.equal(preview.resolved_cwd, null);
+		assert.match(preview.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		rmSync(outsideRoot, { recursive: true, force: true });
 		removeTempProject(projectPath);
 	}
 });

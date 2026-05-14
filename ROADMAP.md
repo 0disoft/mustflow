@@ -30,13 +30,6 @@ Goal: close the most realistic safety gaps before adding broader convenience fea
   - Verification: targeted `run` tests, schema tests, `lint`, `test_related`, and `mustflow_check`.
   - Do not: claim operating-system sandboxing or network isolation unless an actual isolation mechanism exists.
 
-- Harden command working-directory checks with real path resolution.
-  - Problem: string-based path checks can miss symlink or platform-specific path boundary surprises.
-  - Proposed shape: compare the real path of the mustflow root and command `cwd`; reject any resolved command directory outside the root.
-  - Completion criteria: Windows and POSIX-style fixtures cover normal cwd, nested cwd, symlink escape, missing cwd, and case/path normalization behavior.
-  - Verification: focused command eligibility tests plus `test_related`.
-  - Do not: break legitimate subdirectory command roots inside the current mustflow root.
-
 - Make actual `mf verify` execution follow the same schedule model as plan-only verification.
   - Problem: if `mf verify --plan-only` explains one order but actual execution uses another, lock and effect explanations lose trust.
   - Proposed shape: use `createVerificationSchedule` or the shared scheduling model for both plan-only output and execution order.
