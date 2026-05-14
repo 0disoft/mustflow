@@ -22,6 +22,10 @@ const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 const LOCAL_INDEX_STORE_FULL_CONTENT = false;
 const MAX_SNIPPET_BYTES_PER_DOCUMENT = 2048;
+const MAX_SEARCH_MATCH_SNIPPET_CHARS = 240;
+const SEARCH_MATCH_CONTEXT_BEFORE_CHARS = 48;
+const SEARCH_MATCH_CONTEXT_AFTER_CHARS = 96;
+const SEARCH_MATCH_TRUNCATION_MARKER = '...';
 const SEARCH_NGRAM_MIN_LENGTH = 2;
 const SEARCH_NGRAM_MAX_LENGTH = 3;
 const SEARCH_BACKEND_FTS5 = 'fts5';
@@ -237,6 +241,9 @@ export interface LocalCommandLockConflict {
 
 export interface LocalCommandEffectGraph {
 	readonly source: 'local_index';
+	readonly authority: 'explanation_only';
+	readonly commandAuthority: '.mustflow/config/commands.toml';
+	readonly grantsCommandAuthority: false;
 	readonly status: LocalCommandEffectGraphStatus;
 	readonly databasePath: string;
 	readonly indexFresh: boolean;
@@ -820,6 +827,9 @@ function createCommandEffectGraphStatus(
 ): LocalCommandEffectGraph {
 	return {
 		source: 'local_index',
+		authority: 'explanation_only',
+		commandAuthority: '.mustflow/config/commands.toml',
+		grantsCommandAuthority: false,
 		status,
 		databasePath,
 		indexFresh: status === 'fresh',
@@ -1049,19 +1059,27 @@ function getMatchSnippet(fields: readonly string[], query: string): string {
 		const [firstGram] = buildSearchNgrams([query]).filter((gram) => lower.includes(gram));
 
 		if (!firstGram) {
-			return normalized.slice(0, 160);
+			return truncateSearchMatchSnippet(normalized);
 		}
 
 		start = lower.indexOf(firstGram);
 		matchLength = firstGram.length;
 	}
 
-	const from = Math.max(0, start - 48);
-	const to = Math.min(normalized.length, start + matchLength + 96);
-	const prefix = from > 0 ? '...' : '';
-	const suffix = to < normalized.length ? '...' : '';
+	const from = Math.max(0, start - SEARCH_MATCH_CONTEXT_BEFORE_CHARS);
+	const to = Math.min(normalized.length, start + matchLength + SEARCH_MATCH_CONTEXT_AFTER_CHARS);
+	const prefix = from > 0 ? SEARCH_MATCH_TRUNCATION_MARKER : '';
+	const suffix = to < normalized.length ? SEARCH_MATCH_TRUNCATION_MARKER : '';
 
-	return `${prefix}${normalized.slice(from, to)}${suffix}`;
+	return truncateSearchMatchSnippet(`${prefix}${normalized.slice(from, to)}${suffix}`);
+}
+
+function truncateSearchMatchSnippet(value: string): string {
+	if (value.length <= MAX_SEARCH_MATCH_SNIPPET_CHARS) {
+		return value;
+	}
+
+	return `${value.slice(0, MAX_SEARCH_MATCH_SNIPPET_CHARS - SEARCH_MATCH_TRUNCATION_MARKER.length)}${SEARCH_MATCH_TRUNCATION_MARKER}`;
 }
 
 function scoreMatch(primaryFields: readonly string[], secondaryFields: readonly string[], query: string): number {
@@ -2047,6 +2065,9 @@ ORDER BY lock, left_intent, right_intent
 
 	return {
 		source: 'local_index',
+		authority: 'explanation_only',
+		commandAuthority: '.mustflow/config/commands.toml',
+		grantsCommandAuthority: false,
 		status: 'fresh',
 		databasePath,
 		indexFresh: true,

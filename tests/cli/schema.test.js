@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -72,6 +72,20 @@ test('doctor json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'doctor-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('adapter compatibility json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['adapters', 'status', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'adapter-compatibility-report.schema.json', JSON.parse(result.stdout));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -231,6 +245,48 @@ test('line-endings json output matches the published schema', () => {
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'line-endings-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('harness scenarios json output matches the published schema', () => {
+	const result = runCli(projectRoot, ['harness-scenarios', '--fixtures', 'tests/fixtures/harness-scenarios', '--json']);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assertMatchesSchema(schemaRoot, 'harness-scenarios-report.schema.json', JSON.parse(result.stdout));
+});
+
+test('handoff validation json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const workItemsPath = path.join(projectPath, '.mustflow', 'work-items');
+		const recordPath = path.join(workItemsPath, 'MF-0001.json');
+		mkdirSync(workItemsPath, { recursive: true });
+		writeFileSync(
+			recordPath,
+			JSON.stringify(
+				{
+					schema_version: '1',
+					kind: 'work_item',
+					task_id: 'MF-0001',
+					goal: 'Keep a bounded restart pointer.',
+					scope: ['Validate the record shape'],
+					acceptance_criteria: ['The record validates without writing files'],
+					source_refs: ['ROADMAP.md'],
+					next_restart_point: 'Continue from the next roadmap item.',
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['handoff', 'validate', '.mustflow/work-items/MF-0001.json', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'handoff-validation-report.schema.json', JSON.parse(result.stdout));
 	} finally {
 		removeTempProject(projectPath);
 	}

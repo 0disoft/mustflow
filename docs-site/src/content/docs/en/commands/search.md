@@ -96,7 +96,7 @@ Each result can include these fields:
 - `results[].route_trigger` (`string`): Trigger text for a matching skill route.
 - `results[].route_risk` (`string`): Risk text for a matching skill route.
 - `results[].verification_intents` (`string[]`): Verification intents listed by a matching skill route.
-- `results[].match` (`string`): Matching context snippet.
+- `results[].match` (`string`): Matching context snippet, bounded to 240 characters.
 - `results[].score` (`number`): Ranking score used for result order.
 
 ## Exit Codes

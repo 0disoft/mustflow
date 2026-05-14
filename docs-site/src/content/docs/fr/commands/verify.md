@@ -9,7 +9,7 @@ description: Exécute les intentions de vérification configurées sélectionné
 
 `mf verify --changed` classe l'arbre de travail Git actuel avec la même sémantique que `mf classify --changed`, puis transmet ces raisons au planificateur de vérification existant. Utilisez `--write-plan <path>` pour enregistrer le rapport de classification dans la racine mustflow tout en utilisant le plan en mémoire pour l'exécution courante.
 
-`mf verify --plan-only --json` imprime le plan de vérification sans exécuter de commande. Quand un index local à jour existe, chaque entrée planifiée peut inclure `effectGraph` lu depuis `.mustflow/cache/mustflow.sqlite`, avec les verrous d'écriture et les conflits de verrous. Les exigences peuvent aussi inclure les métadonnées `surfaceReadModels`, qui expliquent quelle règle chemin-surface a correspondu aux fichiers modifiés. Si l'index est absent ou obsolète, la sortie affiche une suggestion de reconstruction sans modifier la sélection ni l'autorité d'exécution.
+`mf verify --plan-only --json` imprime le plan de vérification sans exécuter de commande. La sortie inclut `decision_graph`, qui relie les surfaces modifiées, les raisons de classification, les commandes candidates, les contrôles d'éligibilité, les effets et les écarts restants. Quand un index local à jour existe, chaque entrée planifiée peut inclure `effectGraph` lu depuis `.mustflow/cache/mustflow.sqlite`, avec les verrous d'écriture et les conflits de verrous. Les exigences peuvent aussi inclure les métadonnées `surfaceReadModels`, qui expliquent quelle règle chemin-surface a correspondu aux fichiers modifiés. Si l'index est absent ou obsolète, la sortie affiche une suggestion de reconstruction sans modifier la sélection ni l'autorité d'exécution.
 
 ## Règles de sélection
 
@@ -50,7 +50,7 @@ La sortie lisible par machine utilise ces champs:
 - `summary` (`object`): nombres d'intentions trouvées, exécutées, réussies, échouées et ignorées.
 - `results` (`object[]`): résultat d'exécution ou d'ignorance par intention.
 
-Avec `--plan-only --json`, la sortie utilise le schéma de rapport de vérification des changements. Le champ `schedule.entries[].effectGraph`, s'il est présent, est une métadonnée d'index local en lecture seule pour expliquer les verrous et conflits. Le champ `requirements[].surfaceReadModels`, s'il est présent, est une métadonnée d'index local en lecture seule pour expliquer la règle chemin-surface derrière une raison de vérification.
+Avec `--plan-only --json`, la sortie utilise le schéma de rapport de vérification des changements. Le champ `decision_graph` est le modèle de preuves partagé pour les surfaces modifiées, les raisons de classification, les commandes candidates, l'éligibilité, les effets et les écarts. Le champ `schedule.entries[].effectGraph`, s'il est présent, est une métadonnée d'index local en lecture seule pour expliquer les verrous et conflits. Le champ `requirements[].surfaceReadModels`, s'il est présent, est une métadonnée d'index local en lecture seule pour expliquer la règle chemin-surface derrière une raison de vérification.
 
 ## Codes de sortie
 

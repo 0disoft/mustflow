@@ -9,7 +9,7 @@ description: required_after 메타데이터로 선택한 설정된 검증 의도
 
 `mf verify --changed`는 `mf classify --changed`와 같은 방식으로 현재 Git 작업 트리를 분류한 뒤, 나온 검증 이유를 기존 검증 계획에 전달합니다. `--write-plan <path>`를 함께 쓰면 현재 실행에는 메모리 안의 계획을 사용하면서, 분류 보고서를 mustflow 루트 안에 저장할 수 있습니다.
 
-`mf verify --plan-only --json`은 명령을 실행하지 않고 검증 계획만 출력합니다. 최신 로컬 색인이 있으면 각 예정 항목에 `.mustflow/cache/mustflow.sqlite`에서 읽은 `effectGraph` 설명이 붙을 수 있습니다. 이 설명에는 쓰기 잠금과 잠금 충돌이 들어갑니다. 각 요구사항에는 변경 파일과 맞은 경로-표면 규칙을 설명하는 `surfaceReadModels` 메타데이터도 붙을 수 있습니다. 로컬 색인이 없거나 오래되면 다시 색인하라는 안내만 표시하며, 명령 선택이나 실행 권한은 바꾸지 않습니다.
+`mf verify --plan-only --json`은 명령을 실행하지 않고 검증 계획만 출력합니다. 출력에는 변경된 표면, 분류 이유, 명령 후보, 실행 가능성 검사, 효과, 남은 공백을 연결하는 `decision_graph`가 들어갑니다. 최신 로컬 색인이 있으면 각 예정 항목에 `.mustflow/cache/mustflow.sqlite`에서 읽은 `effectGraph` 설명이 붙을 수 있습니다. 이 설명에는 쓰기 잠금과 잠금 충돌이 들어갑니다. 각 요구사항에는 변경 파일과 맞은 경로-표면 규칙을 설명하는 `surfaceReadModels` 메타데이터도 붙을 수 있습니다. 로컬 색인이 없거나 오래되면 다시 색인하라는 안내만 표시하며, 명령 선택이나 실행 권한은 바꾸지 않습니다.
 
 ## 선택 규칙
 
@@ -49,7 +49,7 @@ npx mf verify --reason code_change --json
 - `summary` (`object`): 일치, 실행, 통과, 실패, 건너뜀 개수입니다.
 - `results` (`object[]`): 의도별 실행 또는 건너뜀 결과입니다.
 
-`--plan-only --json` 출력은 변경 검증 보고서 스키마를 사용합니다. `schedule.entries[].effectGraph` 필드가 있으면 잠금과 충돌을 설명하기 위한 읽기 전용 로컬 색인 메타데이터입니다. `requirements[].surfaceReadModels` 필드가 있으면 검증 사유 뒤의 경로-표면 규칙을 설명하기 위한 읽기 전용 로컬 색인 메타데이터입니다.
+`--plan-only --json` 출력은 변경 검증 보고서 스키마를 사용합니다. `decision_graph` 필드는 변경된 표면, 분류 이유, 명령 후보, 실행 가능성, 효과, 남은 공백을 설명하는 공통 근거 모델입니다. `schedule.entries[].effectGraph` 필드가 있으면 잠금과 충돌을 설명하기 위한 읽기 전용 로컬 색인 메타데이터입니다. `requirements[].surfaceReadModels` 필드가 있으면 검증 사유 뒤의 경로-표면 규칙을 설명하기 위한 읽기 전용 로컬 색인 메타데이터입니다.
 
 ## 종료 코드
 

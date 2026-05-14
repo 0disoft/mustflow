@@ -218,6 +218,9 @@ test('explains configured agent-runnable command intents as json', () => {
 		assert.deepEqual(report.decision.intent.successExitCodes, [0]);
 		assert.deepEqual(report.decision.intent.requiredAfter, ['mustflow_config_change', 'mustflow_docs_change']);
 		assert.equal(report.decision.effectGraph.source, 'local_index');
+		assert.equal(report.decision.effectGraph.authority, 'explanation_only');
+		assert.equal(report.decision.effectGraph.commandAuthority, '.mustflow/config/commands.toml');
+		assert.equal(report.decision.effectGraph.grantsCommandAuthority, false);
 		assert.equal(report.decision.effectGraph.status, 'missing');
 		assert.equal(report.decision.effectGraph.indexFresh, false);
 		assert.deepEqual(report.decision.effectGraph.writeLocks, []);
@@ -242,6 +245,9 @@ test('explains command-effect graph rows from a fresh local index', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.decision.kind, 'allowed');
+		assert.equal(report.decision.effectGraph.authority, 'explanation_only');
+		assert.equal(report.decision.effectGraph.commandAuthority, '.mustflow/config/commands.toml');
+		assert.equal(report.decision.effectGraph.grantsCommandAuthority, false);
 		assert.equal(report.decision.effectGraph.status, 'fresh');
 		assert.equal(report.decision.effectGraph.indexFresh, true);
 		assert.deepEqual(report.decision.effectGraph.stalePaths, []);
@@ -315,7 +321,27 @@ required_after = ["custom_verify"]
 		assert.equal(report.decision.verification.requirements[0].candidates[0].status, 'runnable');
 		assert.equal(report.decision.verification.requirements[0].candidates[0].skipReason, null);
 		assert.deepEqual(report.decision.verification.requirements[0].candidates[0].requiredAfter, ['custom_verify']);
+		assert.equal(report.decision.verification.requirements[0].candidates[0].effectGraph.authority, 'explanation_only');
+		assert.equal(
+			report.decision.verification.requirements[0].candidates[0].effectGraph.commandAuthority,
+			'.mustflow/config/commands.toml',
+		);
+		assert.equal(report.decision.verification.requirements[0].candidates[0].effectGraph.grantsCommandAuthority, false);
 		assert.equal(report.decision.verification.requirements[0].candidates[0].effectGraph.status, 'missing');
+		assert.equal(report.decision.verification.decisionGraph.root, 'verification_decision');
+		assert.ok(
+			report.decision.verification.decisionGraph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_explain_fixture' &&
+					node.status === 'runnable',
+			),
+		);
+		assert.ok(
+			report.decision.verification.decisionGraph.edges.some(
+				(edge) => edge.kind === 'requires' && edge.to.includes('verify_explain_fixture'),
+			),
+		);
 		assert.equal(report.decision.countsAsMustflowVerification, false);
 		assert.equal(existsSync(markerPath), false);
 	} finally {
@@ -394,11 +420,24 @@ required_after = ["manual_verify"]
 		assert.equal(manualReport.decision.verification.requirements[0].candidates[0].skipReason, 'status_not_configured');
 		assert.equal(manualReport.decision.verification.requirements[0].candidates[0].detail, 'Needs a human.');
 		assert.match(manualReport.decision.verification.requirements[0].gap, /No runnable command intents/);
+		assert.ok(
+			manualReport.decision.verification.decisionGraph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_manual_fixture' &&
+					node.status === 'manual_only',
+			),
+		);
 
 		assert.equal(missingResult.status, 0, missingResult.stderr || missingResult.stdout);
 		assert.equal(missingReport.decision.verification.requirements[0].candidates[0].intent, null);
 		assert.equal(missingReport.decision.verification.requirements[0].candidates[0].skipReason, 'no_matching_intents');
 		assert.match(missingReport.decision.verification.requirements[0].gap, /No runnable command intents/);
+		assert.ok(
+			missingReport.decision.verification.decisionGraph.nodes.some(
+				(node) => node.kind === 'command_candidate' && node.intent === null && node.status === 'unknown',
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

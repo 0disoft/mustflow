@@ -12,10 +12,10 @@ Without a path, the command prints the authority model. With a path, it reports 
 `mf explain anchor <anchor_id>` explains a structured source-code anchor. Source anchors are navigation-only code coordinates: they can help agents find code, but they cannot define workflow rules, command permission, or verification authority.
 
 `mf explain command <intent>` explains whether a command intent in `.mustflow/config/commands.toml` is runnable through `mf run`, why it is allowed or blocked, and whether running it would count as mustflow verification.
-When a fresh local index exists, it also reads the derived command-effect graph so the report can show write locks and lock conflicts without changing command authority.
+When a fresh local index exists, it also reads the derived command-effect graph so the report can show write locks and lock conflicts without changing command authority. The graph is marked `explanation_only`, points back to `.mustflow/config/commands.toml`, and never grants runnable status by itself.
 
 `mf explain verify --reason <event>` and `mf explain verify --from-plan <path>` explain which verification candidates `mf verify` would select without running commands or writing receipts. They use the same `required_after` matching and command eligibility rules as `mf verify`, and show skipped candidates with stable reason codes.
-When a fresh local index exists, verify explanations also include read-only command-effect graph status for matching candidates. Missing or stale indexes show a rebuild hint and do not change command selection.
+Verify explanations include `decision.verification.decisionGraph`, the same decision model used by plan-only verification and dashboard snapshots. When a fresh local index exists, verify explanations also include read-only command-effect graph status for matching candidates. Missing or stale indexes show a rebuild hint and do not change command selection or command authority.
 
 `mf explain retention` explains the effective retention policy from `.mustflow/config/mustflow.toml`, including raw event storage, bounded run receipts, and context limits.
 
@@ -39,8 +39,8 @@ When a fresh local index exists, it also shows the derived path-surface rule tha
 - `Expected frontmatter`: Required `mustflow_doc`, `authority`, and `lifecycle` values when the path is recognized.
 - `Authority boundary`: What the authority lane may define and what it must leave to higher-authority files, current code, or `commands.toml`.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
-- `Command effect graph`: Fresh local-index write locks and lock conflicts when the `command` topic is used and `.mustflow/cache/mustflow.sqlite` is available. Missing or stale indexes show a rebuild hint instead of changing the command decision.
-- `Verification explanation`: Reasons, matching `required_after` intents, runnable candidates, skipped candidates, gaps, and local-index command-effect status when the `verify` topic is used.
+- `Command effect graph`: Fresh local-index write locks and lock conflicts when the `command` topic is used and `.mustflow/cache/mustflow.sqlite` is available. Missing or stale indexes show a rebuild hint instead of changing the command decision. Graph metadata is explanation-only and cannot make a command runnable.
+- `Verification explanation`: Reasons, matching `required_after` intents, runnable candidates, skipped candidates, gaps, `decisionGraph`, and local-index command-effect status when the `verify` topic is used.
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
 - `Skill route`: Trigger, scope, risk, checks, and expected output when the `skill` topic is used.
 - `Skill routes`: Strict skill index/body alignment status when the `skills` topic is used.
@@ -83,7 +83,7 @@ Machine-readable output uses these fields:
 - `command` (`string`): Always `explain`.
 - `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface`, or `verify`.
 - `mustflow_root` (`string`): Current mustflow root.
-- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, and refresh hints when an intent is declared. For `verify`, `decision.verification` contains selected reasons, matching candidates, skip reasons, gaps, and local-index command-effect status. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available.
+- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, refresh hints, and explanation-only command-authority fields when an intent is declared. For `verify`, `decision.verification` contains selected reasons, matching candidates, skip reasons, gaps, `decisionGraph`, and local-index command-effect status. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available.
 
 ## Help and Exit Codes
 

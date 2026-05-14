@@ -9,7 +9,7 @@ description: Runs configured verification intents selected by required_after met
 
 `mf verify --changed` classifies the current Git working tree with the same semantics as `mf classify --changed`, then feeds those validation reasons into the existing verification planner. Use `--write-plan <path>` to save the classification report inside the mustflow root while still using the in-memory plan for the current verification run.
 
-`mf verify --plan-only --json` prints the verification plan without running commands. When a fresh local index exists, each scheduled entry can include `effectGraph` details from `.mustflow/cache/mustflow.sqlite`, including write locks and lock conflicts. Requirements can also include `surfaceReadModels` metadata that explains which indexed path-surface rule matched the changed files. Missing or stale indexes show a refresh hint and never change command selection or execution authority.
+`mf verify --plan-only --json` prints the verification plan without running commands. The output includes a `decision_graph` that links changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When a fresh local index exists, each scheduled entry can include `effectGraph` details from `.mustflow/cache/mustflow.sqlite`, including write locks and lock conflicts. Each `effectGraph` is marked `authority: "explanation_only"` and `grantsCommandAuthority: false`. Requirements can also include `surfaceReadModels` metadata that explains which indexed path-surface rule matched the changed files. Missing or stale indexes show a refresh hint and never change command selection or execution authority.
 
 ## Selection Rules
 
@@ -49,7 +49,7 @@ Machine-readable output uses these fields:
 - `summary` (`object`): Counts for matched, ran, passed, failed, and skipped intents.
 - `results` (`object[]`): Per-intent run or skip results.
 
-For `--plan-only --json`, the output uses the change verification report schema. Its `schedule.entries[].effectGraph` field, when present, is read-only local-index metadata for explaining locks and conflicts. Its `requirements[].surfaceReadModels` field, when present, is read-only local-index metadata for explaining the path-surface rule behind a verification reason.
+For `--plan-only --json`, the output uses the change verification report schema. Its `decision_graph` field is the shared evidence model for changed surfaces, classification reasons, command candidates, eligibility, effects, and gaps. Its `schedule.entries[].effectGraph` field, when present, is read-only local-index metadata for explaining locks and conflicts. The graph includes `commandAuthority: ".mustflow/config/commands.toml"` to make clear that the index describes command effects but cannot make an intent runnable. Its `requirements[].surfaceReadModels` field, when present, is read-only local-index metadata for explaining the path-surface rule behind a verification reason.
 
 ## Exit Codes
 

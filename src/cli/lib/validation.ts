@@ -36,6 +36,10 @@ import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-op
 import { generateRepoMap } from './repo-map.js';
 import { readTomlFile } from './toml.js';
 import {
+	getContractModelDefinitions,
+	validateCandidateContractModelConfig,
+} from '../../core/contract-models.js';
+import {
 	VERSIONING_CONFIG_PATH,
 	VERSION_SOURCE_AUTHORITIES,
 	VERSION_SOURCE_KINDS,
@@ -1799,6 +1803,29 @@ function validateStrictVerificationSelectionAuthority(preferencesToml: TomlTable
 	}
 }
 
+function validateStrictCandidateContractModelConfigs(projectRoot: string, issues: CheckIssue[]): void {
+	for (const model of getContractModelDefinitions()) {
+		const configPath = path.join(projectRoot, ...model.filePath.split('/'));
+
+		if (!existsSync(configPath)) {
+			continue;
+		}
+
+		let parsed: unknown;
+		try {
+			parsed = readTomlFile(configPath);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			pushStrictIssue(issues, `Invalid TOML in ${model.filePath}: ${message}`);
+			continue;
+		}
+
+		for (const issue of validateCandidateContractModelConfig(model, parsed)) {
+			pushStrictIssue(issues, issue.message);
+		}
+	}
+}
+
 function validateStrictReleaseVersioningAuthority(preferencesToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!preferencesToml || !isRecord(preferencesToml.release)) {
 		return;
@@ -2339,6 +2366,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
 	validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
 	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
+	validateStrictCandidateContractModelConfigs(projectRoot, issues);
 	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);
 	validateStrictTemplateVersionSync(projectRoot, parsed.preferencesToml, issues);
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);

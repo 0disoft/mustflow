@@ -19,6 +19,10 @@ import {
 	type VerificationSkipReason,
 } from './verification-plan.js';
 import {
+	createVerificationDecisionGraph,
+	type VerificationDecisionGraph,
+} from './verification-decision-graph.js';
+import {
 	createVerificationSchedule,
 	type VerificationSchedule,
 } from './verification-scheduler.js';
@@ -61,6 +65,7 @@ export interface ChangeVerificationReport {
 	readonly candidates: readonly ChangeVerificationCandidate[];
 	readonly gaps: readonly ChangeVerificationGap[];
 	readonly schedule: VerificationSchedule;
+	readonly decision_graph: VerificationDecisionGraph;
 }
 
 function uniqueSorted(values: Iterable<string>): string[] {
@@ -157,15 +162,18 @@ export function createChangeVerificationReport(
 	const requirements = classificationReport.summary.validationReasons.map((reason) =>
 		createVerificationRequirement(classificationReport, reason),
 	);
-	const candidatePlans = requirements.flatMap((requirement) => createVerificationPlan(commandContract, requirement.reason).candidates);
-	const candidates = requirements.flatMap((requirement) =>
-		createVerificationPlan(commandContract, requirement.reason).candidates.map((candidate) =>
-			toChangeVerificationCandidate(requirement.reason, candidate),
-		),
+	const plans = requirements.map((requirement) => ({
+		requirement,
+		candidates: createVerificationPlan(commandContract, requirement.reason).candidates,
+	}));
+	const candidatePlans = plans.flatMap((plan) => plan.candidates);
+	const candidates = plans.flatMap((plan) =>
+		plan.candidates.map((candidate) => toChangeVerificationCandidate(plan.requirement.reason, candidate)),
 	);
 	const gaps = requirements
 		.map((requirement) => gapForRequirement(requirement, candidates))
 		.filter((gap): gap is ChangeVerificationGap => gap !== null);
+	const schedule = createVerificationSchedule(projectRoot, commandContract, candidatePlans);
 
 	return {
 		schema_version: CHANGE_VERIFICATION_SCHEMA_VERSION,
@@ -175,6 +183,7 @@ export function createChangeVerificationReport(
 		requirements,
 		candidates,
 		gaps,
-		schedule: createVerificationSchedule(projectRoot, commandContract, candidatePlans),
+		schedule,
+		decision_graph: createVerificationDecisionGraph(commandContract, requirements, candidates, gaps, schedule),
 	};
 }

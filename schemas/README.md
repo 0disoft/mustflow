@@ -6,6 +6,7 @@ mustflow files and command output.
 Current schemas:
 
 - `doctor-report.schema.json`: output of `mf doctor --json`
+- `adapter-compatibility-report.schema.json`: output of `mf adapters status --json`
 - `context-report.schema.json`: output of `mf context --json`
 - `run-receipt.schema.json`: output of `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
@@ -16,14 +17,20 @@ Current schemas:
   `mf impact <path...> --json`
 - `line-endings-report.schema.json`: output of `mf line-endings check --json` and  
   `mf line-endings normalize --json`
+- `harness-scenarios-report.schema.json`: output of  
+  `mf harness-scenarios --fixtures <path> --json`
+- `handoff-validation-report.schema.json`: output of  
+  `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
 - `docs-review-list.schema.json`: output of `mf docs review list --json`
 - `explain-report.schema.json`: output of `mf explain authority --json`, `mf explain command --json`,  
   `mf explain verify --reason <event> --json`, `mf explain retention --json`, `mf explain skills --json`,
-  and `mf explain surface --json`
+  and `mf explain surface --json`. Verify explanations include the shared `decisionGraph` evidence model.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
-  `mf verify --from-plan <path> --plan-only --json`
+  `mf verify --from-plan <path> --plan-only --json`, including the `decision_graph` that links
+  changed surfaces, classification reasons, command candidates, eligibility, effects, and gaps.
+  Local-index command-effect graphs are explanation-only and cannot grant command authority.
 
 These schemas define stable, automation-facing fields. Human-readable command  
 output is intentionally excluded.

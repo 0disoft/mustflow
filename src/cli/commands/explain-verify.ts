@@ -1,10 +1,15 @@
 import { explainCommandIntent, type CommandIntentSummary } from '../../core/command-explanation.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import {
+	createVerificationDecisionGraph,
+	type VerificationDecisionGraph,
+} from '../../core/verification-decision-graph.js';
+import {
 	createVerificationPlan,
 	type VerificationRunnableStatus,
 	type VerificationSkipReason,
 } from '../../core/verification-plan.js';
+import { createVerificationSchedule } from '../../core/verification-scheduler.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	readLocalCommandEffectGraphs,
@@ -47,6 +52,7 @@ export type ExplainVerificationDecision = {
 		readonly runnableCount: number;
 		readonly skippedCount: number;
 		readonly requirements: readonly ExplainVerificationRequirement[];
+		readonly decisionGraph: VerificationDecisionGraph;
 	};
 };
 
@@ -155,6 +161,36 @@ export async function getVerifyExplainOutput(
 ): Promise<ExplainVerifyOutput> {
 	const contract = readCommandContract(projectRoot);
 	const plans = reasons.map((reason) => createVerificationPlan(contract, reason));
+	const graphRequirements = reasons.map((reason) => ({
+		reason,
+		files: [],
+		surfaces: [],
+		affectedContracts: [],
+		driftChecks: [],
+		updatePolicies: [],
+		source: 'change_classification' as const,
+	}));
+	const graphCandidates = plans.flatMap((plan) =>
+		plan.candidates.map((candidate) => ({
+			reason: plan.reason,
+			intent: candidate.intent.length > 0 ? candidate.intent : null,
+			status: candidate.status,
+			skipReason: candidate.reason,
+			detail: candidate.detail,
+		})),
+	);
+	const graphGaps = graphRequirements
+		.filter((requirement) =>
+			graphCandidates.every((candidate) => candidate.reason !== requirement.reason || candidate.status !== 'runnable'),
+		)
+		.map((requirement) => ({
+			reason: requirement.reason,
+			files: requirement.files,
+			surfaces: requirement.surfaces,
+			detail: `No runnable command intents cover required_after = "${requirement.reason}".`,
+		}));
+	const schedule = createVerificationSchedule(projectRoot, contract, plans.flatMap((plan) => plan.candidates));
+	const decisionGraph = createVerificationDecisionGraph(contract, graphRequirements, graphCandidates, graphGaps, schedule);
 	const intentNames = [
 		...new Set(
 			plans.flatMap((plan) => plan.candidates.map((candidate) => candidate.intent).filter((intent) => intent.length > 0)),
@@ -230,6 +266,7 @@ export async function getVerifyExplainOutput(
 				runnableCount,
 				skippedCount,
 				requirements,
+				decisionGraph,
 			},
 		},
 	};
@@ -245,6 +282,8 @@ export function renderVerifyExplainDecision(decision: ExplainVerificationDecisio
 		`- candidates: ${verification.candidateCount}`,
 		`- runnable: ${verification.runnableCount}`,
 		`- skipped: ${verification.skippedCount}`,
+		`- decision_graph_nodes: ${verification.decisionGraph.summary.nodeCount}`,
+		`- decision_graph_gaps: ${verification.decisionGraph.summary.gapCount}`,
 	];
 
 	for (const requirement of verification.requirements) {

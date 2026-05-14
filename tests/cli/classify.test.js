@@ -115,6 +115,33 @@ test('classifies changed git status paths', () => {
 	}
 });
 
+test('classifies host-specific instruction files as workflow surfaces without command authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['classify', '.github/copilot-instructions.md', '--json']);
+		const report = JSON.parse(result.stdout);
+		const hostInstruction = report.classifications[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(report.summary.changeKinds, ['host_instruction', 'workflow']);
+		assert.deepEqual(report.summary.validationReasons, ['mustflow_docs_change']);
+		assert.deepEqual(report.summary.affectedContracts, [
+			'agent workflow contract',
+			'command contract boundary',
+			'host instruction compatibility',
+		]);
+		assert.equal(hostInstruction.surface.kind, 'host_instruction');
+		assert.equal(hostInstruction.surface.isPublicSurface, true);
+		assert.equal(hostInstruction.surface.updatePolicy, 'update_or_mark_stale');
+		assert.ok(hostInstruction.surface.driftChecks.includes('command contract boundary'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails classify without changed mode or explicit paths', () => {
 	const result = runCli(projectRoot, ['classify', '--json']);
 

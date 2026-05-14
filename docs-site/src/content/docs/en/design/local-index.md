@@ -58,6 +58,10 @@ content snippet per document, does not store full document bodies by default, an
 intent names and descriptions as derived document terms so `mf search` can still find the relevant
 configuration file.
 
+Search result `match` previews are also bounded. `mf search` derives them from indexed metadata and
+stored snippets, caps each preview at 240 characters, and does not expand a result back into a full
+document or source body.
+
 The `indexed_files` table stores derived fingerprints for each indexed workflow file and optional
 source-anchor file: path, source scope, size, modified time, content hash, indexed time, index mode,
 and parser version. `mf index --incremental` may reuse an existing SQLite file only when the schema,
@@ -84,8 +88,11 @@ document or source content and they do not change authority ordering.
 Command-effect rows from `.mustflow/config/commands.toml` are exposed through
 `command_write_locks` and `command_lock_conflicts` views. These views help
 read-only tools explain shared locks, exclusive effects, and recreated output
-paths. They remain derived cache data; `commands.toml` is still the only source
-that decides whether an intent is configured, runnable, or agent-allowed.
+paths. Every exported command-effect graph is marked `explanation_only`,
+`grantsCommandAuthority: false`, and
+`commandAuthority: ".mustflow/config/commands.toml"`. They remain derived cache
+data; `commands.toml` is still the only source that decides whether an intent is
+configured, runnable, or agent-allowed.
 
 Before searching, `mf search` compares stored content hashes with the current files and returns an
 error if the cache is stale. Last verification results and run analysis are reserved for future

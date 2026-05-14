@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+const expectedMaxSearchMatchSnippetChars = 240;
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-search-'));
@@ -237,6 +238,52 @@ test('uses n-gram fallback for multilingual queries when fts is unavailable', ()
 		assert.equal(output.search_backend, 'table_scan');
 		assert.ok(projectContext);
 		assert.match(projectContext.match, /검증상태/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps search result match snippets bounded for long matching text', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const longToken = `searchneedle${'x'.repeat(360)}`;
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'),
+			[
+				'---',
+				'mustflow_doc: context.project',
+				'kind: mustflow-context',
+				'locale: en',
+				'canonical: true',
+				'revision: 1',
+				'name: project',
+				'authority: contextual',
+				'lifecycle: user-editable',
+				'---',
+				'',
+				'# Project Context',
+				'',
+				`${'Before '.repeat(40)}${longToken}${' after'.repeat(80)}`,
+				'TAIL_MARKER_SHOULD_NOT_APPEAR_IN_SEARCH_MATCH',
+				'',
+			].join('\n'),
+		);
+		indexProject(projectPath);
+
+		const result = runCli(projectPath, ['search', longToken, '--json']);
+		const output = JSON.parse(result.stdout);
+		const projectContext = output.results.find(
+			(item) => item.kind === 'document' && item.path === '.mustflow/context/PROJECT.md',
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(projectContext);
+		assert.ok(projectContext.match.length <= expectedMaxSearchMatchSnippetChars);
+		assert.equal(projectContext.match.endsWith('...'), true);
+		assert.equal(projectContext.match.includes('TAIL_MARKER_SHOULD_NOT_APPEAR_IN_SEARCH_MATCH'), false);
+		assert.equal(output.results.every((item) => item.match.length <= expectedMaxSearchMatchSnippetChars), true);
 	} finally {
 		removeTempProject(projectPath);
 	}

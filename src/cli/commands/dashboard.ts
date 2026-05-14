@@ -466,6 +466,9 @@ function readDashboardCommandContract(projectRoot: string): CommandContract | nu
 function toDashboardCommandEffectGraphStatus(graph: LocalCommandEffectGraph): DashboardCommandEffectGraphStatus {
 	return {
 		source: graph.source,
+		authority: graph.authority,
+		command_authority: graph.commandAuthority,
+		grants_command_authority: graph.grantsCommandAuthority,
 		status: graph.status,
 		database_path: graph.databasePath,
 		index_fresh: graph.indexFresh,

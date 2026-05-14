@@ -41,6 +41,7 @@ npx mf check --strict
 - `metadata.command_intents` entries in skill frontmatter must reference command intents declared in `.mustflow/config/commands.toml`.
 - Command intents listed in `.mustflow/skills/INDEX.md` must be declared by the referenced skill frontmatter.
 - Skill bodies must not claim permission to run commands directly; command permissions stay in `.mustflow/config/commands.toml`.
+- Optional candidate path-classification files at `.mustflow/config/changes.toml` and `.mustflow/config/surfaces.toml`, when present, must stay narrow: `[[rules]]` entries may use only `exact`, `prefix`, or `glob` matches and may not define command authority. `.mustflow/config/policy.toml` remains deferred and fails strict validation if present.
 - When version-impact preferences are enabled, a declared version source or detectable package/template version source must exist.
 
 
@@ -76,6 +77,7 @@ For older installations, a missing `manifest.lock.toml` does not cause the check
 - Executable intents in `commands.toml` must declare `lifecycle`, `run_policy`, `timeout_seconds`, and `stdin`.
 - Intents with `lifecycle = "oneshot"` require `timeout_seconds` and `stdin = "closed"`.
 - `server`, `watch`, `interactive`, `browser`, and `background` intents must not be exposed as default agent-runnable commands.
+- Candidate path-classification rules in `changes.toml` or `surfaces.toml` may describe `id`, `match`, `change_kinds`, `surface_kind`, `category`, `is_public_surface`, `validation_reasons`, `affected_contracts`, `update_policy`, and `drift_checks`. They do not make any command runnable; command authority still comes only from configured intents in `commands.toml`.
 
 ## Standard Skill Section IDs
 

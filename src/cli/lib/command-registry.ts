@@ -8,6 +8,11 @@ export interface CommandDefinition {
 
 export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 	{
+		id: 'adapters',
+		usage: 'mf adapters',
+		summaryKey: 'command.adapters.summary',
+	},
+	{
 		id: 'init',
 		usage: 'mf init',
 		summaryKey: 'command.init.summary',
@@ -68,6 +73,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.docs.summary',
 	},
 	{
+		id: 'handoff',
+		usage: 'mf handoff',
+		summaryKey: 'command.handoff.summary',
+	},
+	{
 		id: 'index',
 		usage: 'mf index',
 		summaryKey: 'command.index.summary',
@@ -81,6 +91,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'dashboard',
 		usage: 'mf dashboard',
 		summaryKey: 'command.dashboard.summary',
+	},
+	{
+		id: 'harness-scenarios',
+		usage: 'mf harness-scenarios',
+		summaryKey: 'command.harnessScenarios.summary',
 	},
 	{
 		id: 'version',

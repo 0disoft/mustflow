@@ -5,6 +5,7 @@ import {
 	type VerificationRequirement,
 } from './change-verification.js';
 import type { CommandContract } from './config-loading.js';
+import type { VerificationDecisionGraph } from './verification-decision-graph.js';
 
 export const DASHBOARD_VERIFICATION_MAX_FILE_MATCHES = 8;
 
@@ -66,6 +67,7 @@ export interface DashboardVerificationSnapshot {
 	readonly recommendations: readonly DashboardVerificationRecommendation[];
 	readonly skipped: readonly DashboardSkippedVerification[];
 	readonly schedule: DashboardVerificationSchedule;
+	readonly decision_graph: VerificationDecisionGraph | null;
 }
 
 function toPosixChangedFiles(
@@ -173,6 +175,7 @@ function createEmptyDashboardVerificationSnapshot(changedFiles: readonly string[
 			entries: [],
 			notes: [],
 		},
+		decision_graph: null,
 	};
 }
 
@@ -251,5 +254,6 @@ export function createDashboardVerificationSnapshot(
 			})),
 			notes: verificationReport.schedule.notes,
 		},
+		decision_graph: verificationReport.decision_graph,
 	};
 }

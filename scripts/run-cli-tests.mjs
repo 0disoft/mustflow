@@ -10,11 +10,14 @@ const allCliTests = readdirSync(testsRoot)
 	.sort((left, right) => left.localeCompare(right));
 
 const fastTests = [
+	'adapters.test.js',
 	'docs.test.js',
 	'authoring-fixtures.test.js',
 	'classify.test.js',
 	'impact.test.js',
 	'i18n-architecture.test.js',
+	'harness-scenarios.test.js',
+	'handoff.test.js',
 	'index.test.js',
 	'pages-workflow.test.js',
 	'router.test.js',
@@ -30,9 +33,11 @@ const coverageTests = fastTests;
 
 const commandTestNames = new Set(allCliTests);
 const commandRelatedTests = new Map([
+	['adapters', ['adapters.test.js', 'router.test.js', 'schema.test.js']],
 	['classify', ['classify.test.js', 'router.test.js', 'schema.test.js']],
 	['dashboard', ['dashboard.test.js', 'router.test.js']],
 	['docs', ['docs.test.js', 'router.test.js']],
+	['handoff', ['handoff.test.js', 'router.test.js', 'schema.test.js']],
 	['impact', ['impact.test.js', 'router.test.js', 'schema.test.js']],
 	['version', ['index.test.js', 'router.test.js']],
 ]);
@@ -59,6 +64,9 @@ const relatedRules = [
 	{ match: /^src\/cli\/lib\/root/u, tests: ['root-discovery.test.js'] },
 	{ match: /^src\/cli\/lib\/schema/u, tests: ['schema.test.js'] },
 	{ match: /^src\/core\/change-(classification|verification)\.ts$/u, tests: ['classify.test.js', 'verify.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check.test.js', 'package.test.js'] },
+	{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: ['check.test.js', 'run.test.js'] },
 	{ match: /^src\/core\/verification-plan\.ts$/u, tests: ['verify.test.js', 'schema.test.js'] },
@@ -67,6 +75,8 @@ const relatedRules = [
 	{ match: /^src\/core\/source-anchors\.ts$/u, tests: ['check.test.js', 'explain.test.js', 'index.test.js', 'search.test.js'] },
 	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js', 'schema.test.js'] },
 	{ match: /^scripts\/audit-tests\.mjs$/u, tests: ['test-audit.test.js'] },
+	{ match: /^scripts\/run-harness-scenarios\.mjs$/u, tests: ['harness-scenarios.test.js'] },
+	{ match: /^tests\/fixtures\/harness-scenarios\//u, tests: ['harness-scenarios.test.js'] },
 	{ match: /^tests\/cli\/([^/]+\.test\.js)$/u, testsForMatch: ([, testName]) => [testName] },
 	{ match: /^\.mustflow\/config\/commands\.toml$/u, tests: ['run.test.js'] },
 	{ match: /^docs-site\//u, tests: ['docs.test.js'] },

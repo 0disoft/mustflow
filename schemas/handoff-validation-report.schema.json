@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/handoff-validation-report.schema.json",
+  "title": "mustflow handoff validation report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "mustflow_root",
+    "path",
+    "record_kind",
+    "task_id",
+    "summary",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "handoff_validate" },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "path": { "type": "string" },
+    "record_kind": {
+      "type": ["string", "null"],
+      "enum": ["work_item", "handoff", null]
+    },
+    "task_id": { "type": ["string", "null"] },
+    "summary": { "$ref": "#/$defs/summary" },
+    "issues": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/issue" }
+    }
+  },
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_count",
+        "acceptance_criteria_count",
+        "source_ref_count",
+        "verification_plan_count",
+        "coverage_count",
+        "remaining_risk_count"
+      ],
+      "properties": {
+        "scope_count": { "type": "integer", "minimum": 0 },
+        "acceptance_criteria_count": { "type": "integer", "minimum": 0 },
+        "source_ref_count": { "type": "integer", "minimum": 0 },
+        "verification_plan_count": { "type": "integer", "minimum": 0 },
+        "coverage_count": { "type": "integer", "minimum": 0 },
+        "remaining_risk_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "code", "path", "message"],
+      "properties": {
+        "severity": { "enum": ["error", "warning"] },
+        "code": { "type": "string" },
+        "path": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

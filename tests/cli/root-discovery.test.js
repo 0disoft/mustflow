@@ -67,6 +67,24 @@ function appendIntent(projectPath, text) {
 	updateManifestLockHash(projectPath, commandsRelativePath);
 }
 
+function printCwdIntent(name, description) {
+	return `
+[intents.${name}]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "${description}"
+argv = ['${process.execPath}', '-e', 'console.log(process.cwd())']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`;
+}
+
 test('installed mustflow commands resolve the nearest mustflow root from nested directories', () => {
 	const projectPath = createTempProject();
 
@@ -76,21 +94,7 @@ test('installed mustflow commands resolve the nearest mustflow root from nested 
 		mkdirSync(nestedPath, { recursive: true });
 		appendIntent(
 			projectPath,
-			`
-[intents.print_cwd]
-status = "configured"
-lifecycle = "oneshot"
-run_policy = "agent_allowed"
-description = "Print the process working directory."
-argv = ['${process.execPath}', '-e', 'console.log(process.cwd())']
-cwd = "."
-timeout_seconds = 10
-stdin = "closed"
-success_exit_codes = [0]
-writes = []
-network = false
-destructive = false
-`,
+			printCwdIntent('print_cwd', 'Print the process working directory.'),
 		);
 
 		const check = runCli(nestedPath, ['check', '--strict', '--json']);
@@ -126,5 +130,56 @@ destructive = false
 		assert.equal(existsSync(path.join(nestedPath, 'REPO_MAP.md')), false);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('installed mustflow commands prefer a child mustflow root inside a parent project', () => {
+	const parentPath = createTempProject();
+
+	try {
+		initProject(parentPath);
+		const childPath = path.join(parentPath, 'packages', 'child');
+		mkdirSync(childPath, { recursive: true });
+		initProject(childPath);
+		const childNestedPath = path.join(childPath, 'src', 'feature');
+		mkdirSync(childNestedPath, { recursive: true });
+
+		appendIntent(
+			parentPath,
+			printCwdIntent('print_parent_cwd', 'Print the parent process working directory.'),
+		);
+		appendIntent(
+			childPath,
+			printCwdIntent('print_child_cwd', 'Print the child process working directory.'),
+		);
+
+		const context = runCli(childNestedPath, ['context', '--json']);
+		const contextJson = JSON.parse(context.stdout);
+		assert.equal(context.status, 0, context.stderr || context.stdout);
+		assert.equal(path.resolve(contextJson.mustflow_root), path.resolve(childPath));
+
+		const commandsHelp = runCli(childNestedPath, ['help', 'commands']);
+		assert.equal(commandsHelp.status, 0, commandsHelp.stderr || commandsHelp.stdout);
+		assert.match(commandsHelp.stdout, /print_child_cwd: configured/);
+		assert.doesNotMatch(commandsHelp.stdout, /print_parent_cwd: configured/);
+
+		const run = runCli(childNestedPath, ['run', 'print_child_cwd', '--json']);
+		const receipt = JSON.parse(run.stdout);
+		assert.equal(run.status, 0, run.stderr || run.stdout);
+		assert.equal(receipt.cwd, '.');
+		assert.equal(path.resolve(receipt.stdout.tail.trim()), path.resolve(childPath));
+		assert.ok(existsSync(path.join(childPath, '.mustflow', 'state', 'runs', 'latest.json')));
+		assert.equal(existsSync(path.join(parentPath, '.mustflow', 'state', 'runs', 'latest.json')), false);
+
+		const parentOnlyIntent = runCli(childNestedPath, ['run', 'print_parent_cwd', '--json']);
+		assert.notEqual(parentOnlyIntent.status, 0);
+		assert.match(parentOnlyIntent.stderr, /print_parent_cwd/);
+
+		const map = runCli(childNestedPath, ['map', '--write']);
+		assert.equal(map.status, 0, map.stderr || map.stdout);
+		assert.ok(existsSync(path.join(childPath, 'REPO_MAP.md')));
+		assert.equal(existsSync(path.join(parentPath, 'REPO_MAP.md')), false);
+	} finally {
+		removeTempProject(parentPath);
 	}
 });

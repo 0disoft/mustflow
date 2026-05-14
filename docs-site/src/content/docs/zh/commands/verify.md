@@ -9,7 +9,7 @@ description: 运行由 required_after 元数据选出的已配置验证意图。
 
 `mf verify --changed` 使用与 `mf classify --changed` 相同的语义分类当前 Git 工作树，然后把这些验证原因交给现有验证计划器。使用 `--write-plan <path>` 可以把分类报告保存到 mustflow 根目录内，同时当前运行仍使用内存中的计划。
 
-`mf verify --plan-only --json` 只打印验证计划，不执行命令。存在最新本地索引时，每个计划条目可以包含从 `.mustflow/cache/mustflow.sqlite` 读取的 `effectGraph`，用于说明写入锁和锁冲突。要求项也可以包含 `surfaceReadModels` 元数据，用于说明哪些索引路径-表面规则匹配了变更文件。索引缺失或过期时只显示重建提示，不改变命令选择或执行权限。
+`mf verify --plan-only --json` 只打印验证计划，不执行命令。输出包含 `decision_graph`，用于连接变更表面、分类原因、命令候选、可运行性检查、效果和剩余缺口。存在最新本地索引时，每个计划条目可以包含从 `.mustflow/cache/mustflow.sqlite` 读取的 `effectGraph`，用于说明写入锁和锁冲突。要求项也可以包含 `surfaceReadModels` 元数据，用于说明哪些索引路径-表面规则匹配了变更文件。索引缺失或过期时只显示重建提示，不改变命令选择或执行权限。
 
 ## 选择规则
 
@@ -50,7 +50,7 @@ npx mf verify --reason code_change --json
 - `summary` (`object`)：匹配、运行、通过、失败和跳过的数量。
 - `results` (`object[]`)：每个意图的运行或跳过结果。
 
-使用 `--plan-only --json` 时，输出采用变更验证报告 schema。`schedule.entries[].effectGraph` 字段如果存在，就是只读本地索引元数据，用于说明锁和冲突。`requirements[].surfaceReadModels` 字段如果存在，就是只读本地索引元数据，用于说明验证原因背后的路径-表面规则。
+使用 `--plan-only --json` 时，输出采用变更验证报告 schema。`decision_graph` 字段是共享证据模型，用于说明变更表面、分类原因、命令候选、可运行性、效果和缺口。`schedule.entries[].effectGraph` 字段如果存在，就是只读本地索引元数据，用于说明锁和冲突。`requirements[].surfaceReadModels` 字段如果存在，就是只读本地索引元数据，用于说明验证原因背后的路径-表面规则。
 
 ## 退出码
 

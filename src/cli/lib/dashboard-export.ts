@@ -36,6 +36,80 @@ export interface DashboardExportSnapshot {
 	readonly preferences: unknown;
 	readonly status: unknown;
 	readonly docs_review: unknown;
+	readonly harness_report: DashboardHarnessReport;
+}
+
+export type DashboardHarnessGapKind = 'manual_only' | 'blocked' | 'unknown' | 'missing';
+export type DashboardHarnessRiskSeverity = 'info' | 'warning' | 'error';
+
+export interface DashboardHarnessDecisionGraphSummary {
+	readonly root: string;
+	readonly node_count: number;
+	readonly edge_count: number;
+	readonly runnable: number;
+	readonly skipped: number;
+	readonly blocked: number;
+	readonly manual_only: number;
+	readonly unknown: number;
+	readonly gap_count: number;
+}
+
+export interface DashboardHarnessVerificationGap {
+	readonly kind: DashboardHarnessGapKind;
+	readonly intent: string | null;
+	readonly reason: string | null;
+	readonly detail: string | null;
+	readonly files: readonly string[];
+	readonly surfaces: readonly string[];
+}
+
+export interface DashboardHarnessRisk {
+	readonly code: string;
+	readonly severity: DashboardHarnessRiskSeverity;
+	readonly detail: string;
+	readonly count?: number;
+	readonly paths?: readonly string[];
+}
+
+export interface DashboardHarnessReport {
+	readonly schema_version: '1';
+	readonly generated_from: 'dashboard_status_snapshot';
+	readonly install: {
+		readonly installed: boolean;
+		readonly manifest_lock: string;
+		readonly tracked_files: number;
+		readonly changed_files: number;
+		readonly missing_files: number;
+		readonly issues: number;
+	};
+	readonly verification: {
+		readonly changed_file_count: number;
+		readonly changed_surfaces: readonly string[];
+		readonly decision_graph_summary: DashboardHarnessDecisionGraphSummary | null;
+		readonly runnable_intents: readonly string[];
+		readonly skipped_intents: readonly {
+			readonly intent: string;
+			readonly reason_key: string;
+		}[];
+		readonly gaps: readonly DashboardHarnessVerificationGap[];
+	};
+	readonly run_history: {
+		readonly path: string;
+		readonly exists: boolean;
+		readonly valid: boolean;
+		readonly intent: string | null;
+		readonly status: string | null;
+		readonly exit_code: number | null;
+		readonly timed_out: boolean | null;
+		readonly finished_at: string | null;
+		readonly duration_ms: number | null;
+		readonly receipt_path: string | null;
+	};
+	readonly docs_review: {
+		readonly ledger_path: string;
+		readonly active_documents: number;
+	};
+	readonly remaining_risks: readonly DashboardHarnessRisk[];
 }
 
 export interface DashboardExportInput {
@@ -64,6 +138,8 @@ export class DashboardExportPathError extends Error {
 const DASHBOARD_EXPORT_MAX_STRING_BYTES = 8192;
 const DASHBOARD_EXPORT_MAX_ARRAY_ITEMS = 200;
 const DASHBOARD_EXPORT_MAX_DEPTH = 16;
+const DASHBOARD_HARNESS_MAX_ITEMS = 50;
+const DASHBOARD_HARNESS_MAX_PATHS = 8;
 const OMITTED_VALUE = '[omitted by mf dashboard export]';
 const TRUNCATION_SUFFIX = '\n[truncated by mf dashboard export]';
 const SENSITIVE_KEY_PATTERN = /(?:token|secret|password|credential|authorization|api[_-]?key)/iu;
@@ -187,6 +263,340 @@ function sanitizeValue(value: unknown, state: SanitizeState, pathSegments: reado
 	return String(value);
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+	return isRecord(value) ? value : {};
+}
+
+function asArray(value: unknown): readonly unknown[] {
+	return Array.isArray(value) ? value : [];
+}
+
+function text(value: unknown): string {
+	if (value === null || value === undefined || value === '') {
+		return 'none';
+	}
+	return String(value);
+}
+
+function booleanText(value: unknown): string {
+	return value === true ? 'yes' : value === false ? 'no' : text(value);
+}
+
+function stringOrNull(value: unknown): string | null {
+	return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function numberOrZero(value: unknown): number {
+	return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function numberOrNull(value: unknown): number | null {
+	return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function stringArray(value: unknown, maxItems = DASHBOARD_HARNESS_MAX_ITEMS): string[] {
+	return asArray(value)
+		.filter((item): item is string => typeof item === 'string')
+		.slice(0, maxItems);
+}
+
+function createDecisionGraphSummary(value: unknown): DashboardHarnessDecisionGraphSummary | null {
+	const graph = asRecord(value);
+	if (graph.root !== 'verification_decision') {
+		return null;
+	}
+
+	const summary = asRecord(graph.summary);
+	return {
+		root: String(graph.root),
+		node_count: numberOrZero(summary.nodeCount),
+		edge_count: numberOrZero(summary.edgeCount),
+		runnable: numberOrZero(summary.runnable),
+		skipped: numberOrZero(summary.skipped),
+		blocked: numberOrZero(summary.blocked),
+		manual_only: numberOrZero(summary.manual_only),
+		unknown: numberOrZero(summary.unknown),
+		gap_count: numberOrZero(summary.gapCount),
+	};
+}
+
+function createVerificationGap(node: Record<string, unknown>): DashboardHarnessVerificationGap | null {
+	const kind = stringOrNull(node.kind);
+	const status = stringOrNull(node.status);
+	const data = asRecord(node.data);
+	const gapKind: DashboardHarnessGapKind | null =
+		kind === 'gap'
+			? 'missing'
+			: kind === 'command_candidate' && status === 'manual_only'
+				? 'manual_only'
+				: kind === 'command_candidate' && status === 'blocked'
+					? 'blocked'
+					: kind === 'command_candidate' && status === 'unknown'
+						? 'unknown'
+						: null;
+
+	if (!gapKind) {
+		return null;
+	}
+
+	return {
+		kind: gapKind,
+		intent: stringOrNull(node.intent),
+		reason: stringOrNull(node.reason),
+		detail: stringOrNull(data.detail) ?? stringOrNull(data.skipReason),
+		files: stringArray(data.files, DASHBOARD_HARNESS_MAX_PATHS),
+		surfaces: stringArray(data.surfaces, DASHBOARD_HARNESS_MAX_PATHS),
+	};
+}
+
+function createVerificationGaps(decisionGraph: unknown): DashboardHarnessVerificationGap[] {
+	const graph = asRecord(decisionGraph);
+	const gaps: DashboardHarnessVerificationGap[] = [];
+	const seen = new Set<string>();
+
+	for (const entry of asArray(graph.nodes)) {
+		const gap = createVerificationGap(asRecord(entry));
+		if (!gap) {
+			continue;
+		}
+
+		const key = [gap.kind, gap.intent ?? '', gap.reason ?? '', gap.detail ?? ''].join('\0');
+		if (!seen.has(key)) {
+			seen.add(key);
+			gaps.push(gap);
+		}
+	}
+
+	return gaps.slice(0, DASHBOARD_HARNESS_MAX_ITEMS);
+}
+
+function createRunHistorySummary(status: Record<string, unknown>): DashboardHarnessReport['run_history'] {
+	const runHistory = asRecord(status.run_history);
+	const exists = runHistory.exists === true;
+	const valid = exists && runHistory.valid === true;
+
+	return {
+		path: stringOrNull(runHistory.path) ?? '.mustflow/state/runs/latest.json',
+		exists,
+		valid,
+		intent: valid ? stringOrNull(runHistory.intent) : null,
+		status: valid ? stringOrNull(runHistory.status) : null,
+		exit_code: valid ? numberOrNull(runHistory.exit_code) : null,
+		timed_out: valid ? runHistory.timed_out === true : null,
+		finished_at: valid ? stringOrNull(runHistory.finished_at) : null,
+		duration_ms: valid ? numberOrNull(runHistory.duration_ms) : null,
+		receipt_path: valid ? stringOrNull(runHistory.receipt_path) : null,
+	};
+}
+
+function addHarnessRisk(
+	risks: DashboardHarnessRisk[],
+	risk: DashboardHarnessRisk,
+): void {
+	if (risks.length < DASHBOARD_HARNESS_MAX_ITEMS) {
+		risks.push(risk);
+	}
+}
+
+function createRemainingRisks(
+	status: Record<string, unknown>,
+	docsReview: Record<string, unknown>,
+	decisionGraphSummary: DashboardHarnessDecisionGraphSummary | null,
+): DashboardHarnessRisk[] {
+	const release = asRecord(status.release);
+	const update = asRecord(status.update);
+	const verification = asRecord(status.verification);
+	const runHistory = createRunHistorySummary(status);
+	const risks: DashboardHarnessRisk[] = [];
+	const issues = stringArray(status.issues);
+	const changedFiles = stringArray(status.changed_files);
+	const missingFiles = stringArray(status.missing_files);
+	const releaseSensitiveFiles = stringArray(release.release_sensitive_changed_files);
+	const blockers = asArray(update.blockers);
+	const activeDocs = numberOrZero(docsReview.count);
+	const verificationChangedFiles = stringArray(verification.changed_files);
+	const runnableRecommendations = asArray(verification.recommendations).filter(
+		(entry) => asRecord(entry).runnable === true,
+	);
+
+	for (const issue of issues.slice(0, DASHBOARD_HARNESS_MAX_ITEMS)) {
+		addHarnessRisk(risks, { code: 'manifest_issue', severity: 'warning', detail: issue });
+	}
+
+	if (changedFiles.length > 0) {
+		addHarnessRisk(risks, {
+			code: 'tracked_file_changes',
+			severity: 'warning',
+			detail: 'Tracked mustflow files differ from the manifest lock.',
+			count: changedFiles.length,
+			paths: changedFiles.slice(0, DASHBOARD_HARNESS_MAX_PATHS),
+		});
+	}
+
+	if (missingFiles.length > 0) {
+		addHarnessRisk(risks, {
+			code: 'tracked_file_missing',
+			severity: 'error',
+			detail: 'Manifest-tracked mustflow files are missing.',
+			count: missingFiles.length,
+			paths: missingFiles.slice(0, DASHBOARD_HARNESS_MAX_PATHS),
+		});
+	}
+
+	if (releaseSensitiveFiles.length > 0) {
+		addHarnessRisk(risks, {
+			code: 'release_sensitive_changes',
+			severity: 'warning',
+			detail: 'Release-sensitive files changed and may need release verification.',
+			count: releaseSensitiveFiles.length,
+			paths: releaseSensitiveFiles.slice(0, DASHBOARD_HARNESS_MAX_PATHS),
+		});
+	}
+
+	if (update.ok === false) {
+		addHarnessRisk(risks, {
+			code: 'update_plan_unavailable',
+			severity: 'warning',
+			detail: stringOrNull(update.error) ?? 'Template update dry-run status is not available.',
+		});
+	}
+
+	if (blockers.length > 0) {
+		addHarnessRisk(risks, {
+			code: 'template_update_blockers',
+			severity: 'warning',
+			detail: 'The template update plan has blockers.',
+			count: blockers.length,
+		});
+	}
+
+	if (activeDocs > 0) {
+		addHarnessRisk(risks, {
+			code: 'docs_review_pending',
+			severity: 'warning',
+			detail: 'Documentation review entries are still active.',
+			count: activeDocs,
+		});
+	}
+
+	if (verificationChangedFiles.length > 0 && !decisionGraphSummary) {
+		addHarnessRisk(risks, {
+			code: 'verification_decision_graph_missing',
+			severity: 'warning',
+			detail: 'Changed files exist, but no verification decision graph is available.',
+			count: verificationChangedFiles.length,
+			paths: verificationChangedFiles.slice(0, DASHBOARD_HARNESS_MAX_PATHS),
+		});
+	}
+
+	if (verificationChangedFiles.length > 0 && runnableRecommendations.length === 0) {
+		addHarnessRisk(risks, {
+			code: 'no_runnable_verification_recommendation',
+			severity: 'warning',
+			detail: 'Changed files exist, but the dashboard report has no runnable verification recommendation.',
+			count: verificationChangedFiles.length,
+		});
+	}
+
+	if (decisionGraphSummary && decisionGraphSummary.manual_only > 0) {
+		addHarnessRisk(risks, {
+			code: 'manual_only_verification_gap',
+			severity: 'warning',
+			detail: 'Some matching verification intents require an explicit user request.',
+			count: decisionGraphSummary.manual_only,
+		});
+	}
+
+	if (decisionGraphSummary && decisionGraphSummary.blocked > 0) {
+		addHarnessRisk(risks, {
+			code: 'blocked_verification_gap',
+			severity: 'warning',
+			detail: 'Some matching verification intents are blocked by the command contract.',
+			count: decisionGraphSummary.blocked,
+		});
+	}
+
+	if (decisionGraphSummary && decisionGraphSummary.unknown > 0) {
+		addHarnessRisk(risks, {
+			code: 'unknown_verification_gap',
+			severity: 'warning',
+			detail: 'Some changed surfaces lack known runnable verification coverage.',
+			count: decisionGraphSummary.unknown,
+		});
+	}
+
+	if (decisionGraphSummary && decisionGraphSummary.gap_count > 0) {
+		addHarnessRisk(risks, {
+			code: 'missing_verification_gap',
+			severity: 'warning',
+			detail: 'The verification decision graph reports missing coverage gaps.',
+			count: decisionGraphSummary.gap_count,
+		});
+	}
+
+	if (!runHistory.exists) {
+		addHarnessRisk(risks, {
+			code: 'latest_run_missing',
+			severity: 'info',
+			detail: 'No latest mf run receipt is available.',
+		});
+	} else if (!runHistory.valid) {
+		addHarnessRisk(risks, {
+			code: 'latest_run_invalid',
+			severity: 'warning',
+			detail: 'The latest mf run receipt could not be read as a valid receipt.',
+		});
+	}
+
+	return risks;
+}
+
+function createDashboardHarnessReport(statusValue: unknown, docsReviewValue: unknown): DashboardHarnessReport {
+	const status = asRecord(statusValue);
+	const docsReview = asRecord(docsReviewValue);
+	const verification = asRecord(status.verification);
+	const decisionGraphSummary = createDecisionGraphSummary(verification.decision_graph);
+	const runnableIntents = asArray(verification.recommendations)
+		.map(asRecord)
+		.filter((entry) => entry.runnable === true)
+		.map((entry) => stringOrNull(entry.intent))
+		.filter((entry): entry is string => entry !== null)
+		.slice(0, DASHBOARD_HARNESS_MAX_ITEMS);
+
+	return {
+		schema_version: '1',
+		generated_from: 'dashboard_status_snapshot',
+		install: {
+			installed: status.installed === true,
+			manifest_lock: text(status.manifest_lock),
+			tracked_files: numberOrZero(status.tracked_files),
+			changed_files: stringArray(status.changed_files).length,
+			missing_files: stringArray(status.missing_files).length,
+			issues: stringArray(status.issues).length,
+		},
+		verification: {
+			changed_file_count: stringArray(verification.changed_files).length,
+			changed_surfaces: stringArray(verification.surfaces),
+			decision_graph_summary: decisionGraphSummary,
+			runnable_intents: runnableIntents,
+			skipped_intents: asArray(verification.skipped)
+				.map(asRecord)
+				.map((entry) => ({
+					intent: text(entry.intent),
+					reason_key: text(entry.reason_key),
+				}))
+				.slice(0, DASHBOARD_HARNESS_MAX_ITEMS),
+			gaps: createVerificationGaps(verification.decision_graph),
+		},
+		run_history: createRunHistorySummary(status),
+		docs_review: {
+			ledger_path: text(docsReview.ledger_path),
+			active_documents: numberOrZero(docsReview.count),
+		},
+		remaining_risks: createRemainingRisks(status, docsReview, decisionGraphSummary),
+	};
+}
+
 export function resolveDashboardExportPath(projectRoot: string, outputPath: string): string {
 	const targetPath = path.resolve(projectRoot, outputPath);
 
@@ -202,6 +612,9 @@ export function resolveDashboardExportPath(projectRoot: string, outputPath: stri
 
 export function createDashboardExportSnapshot(input: DashboardExportInput): DashboardExportSnapshot {
 	const state: SanitizeState = { truncatedFields: [], omittedFields: [] };
+	const preferences = sanitizeValue(input.preferences, state, ['preferences']);
+	const status = sanitizeStatus(input.status, state);
+	const docsReview = sanitizeValue(input.docsReview, state, ['docs_review']);
 	const snapshot = {
 		schema_version: '1',
 		command: 'dashboard export',
@@ -216,9 +629,10 @@ export function createDashboardExportSnapshot(input: DashboardExportInput): Dash
 			omits_dashboard_token: true,
 			omits_raw_run_output: true,
 		},
-		preferences: sanitizeValue(input.preferences, state, ['preferences']),
-		status: sanitizeStatus(input.status, state),
-		docs_review: sanitizeValue(input.docsReview, state, ['docs_review']),
+		preferences,
+		status,
+		docs_review: docsReview,
+		harness_report: createDashboardHarnessReport(status, docsReview),
 	} satisfies Omit<DashboardExportSnapshot, 'limits'>;
 
 	return {
@@ -240,25 +654,6 @@ function escapeHtml(value: string): string {
 		.replace(/>/gu, '&gt;')
 		.replace(/"/gu, '&quot;')
 		.replace(/'/gu, '&#39;');
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-	return isRecord(value) ? value : {};
-}
-
-function asArray(value: unknown): readonly unknown[] {
-	return Array.isArray(value) ? value : [];
-}
-
-function text(value: unknown): string {
-	if (value === null || value === undefined || value === '') {
-		return 'none';
-	}
-	return String(value);
-}
-
-function booleanText(value: unknown): string {
-	return value === true ? 'yes' : value === false ? 'no' : text(value);
 }
 
 function renderMetric(label: string, value: unknown): string {
@@ -305,6 +700,53 @@ function renderCommandIntents(intents: readonly unknown[]): string {
 	return `<table><thead><tr><th>Name</th><th>Status</th><th>Run policy</th><th>Runnable</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+function renderSkippedIntents(intents: readonly unknown[]): string {
+	if (intents.length === 0) {
+		return '<p class="empty">none</p>';
+	}
+
+	const rows = intents
+		.map((entry) => {
+			const intent = asRecord(entry);
+			return `<tr><td>${escapeHtml(text(intent.intent))}</td><td>${escapeHtml(text(intent.reason_key))}</td></tr>`;
+		})
+		.join('');
+	return `<table><thead><tr><th>Intent</th><th>Reason</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderVerificationGaps(gaps: readonly unknown[]): string {
+	if (gaps.length === 0) {
+		return '<p class="empty">none</p>';
+	}
+
+	const rows = gaps
+		.map((entry) => {
+			const gap = asRecord(entry);
+			return `<tr><td>${escapeHtml(text(gap.kind))}</td><td>${escapeHtml(text(gap.intent))}</td><td>${escapeHtml(
+				text(gap.reason),
+			)}</td><td>${escapeHtml(text(gap.detail))}</td></tr>`;
+		})
+		.join('');
+	return `<table><thead><tr><th>Kind</th><th>Intent</th><th>Reason</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderRemainingRisks(risks: readonly unknown[]): string {
+	if (risks.length === 0) {
+		return '<p class="empty">none</p>';
+	}
+
+	const rows = risks
+		.map((entry) => {
+			const risk = asRecord(entry);
+			const paths = asArray(risk.paths).map(text).join(', ');
+			return `<tr><td>${escapeHtml(text(risk.severity))}</td><td>${escapeHtml(text(risk.code))}</td><td>${escapeHtml(
+				text(risk.count),
+			)}</td><td>${escapeHtml(text(risk.detail))}${paths ? `<br>${escapeHtml(paths)}` : ''}</td></tr>`;
+		})
+		.join('');
+	return `<table><thead><tr><th>Severity</th><th>Code</th><th>Count</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
 function renderRunHistory(runHistory: Record<string, unknown>): string {
 	if (runHistory.exists !== true) {
 		return '<p class="empty">none</p>';
@@ -342,6 +784,12 @@ export function renderDashboardExportHtml(snapshot: DashboardExportSnapshot): st
 	const verification = asRecord(status.verification);
 	const commandContract = asRecord(status.command_contract);
 	const docsReview = asRecord(snapshot.docs_review);
+	const harnessReport = asRecord(snapshot.harness_report);
+	const harnessInstall = asRecord(harnessReport.install);
+	const harnessVerification = asRecord(harnessReport.verification);
+	const graphSummary = asRecord(harnessVerification.decision_graph_summary);
+	const harnessRunHistory = asRecord(harnessReport.run_history);
+	const harnessDocsReview = asRecord(harnessReport.docs_review);
 	const embeddedJson = JSON.stringify(snapshot).replace(/</gu, '\\u003c');
 
 	return `<!doctype html>
@@ -425,6 +873,33 @@ ul { margin: 0; padding-left: 22px; }
 		renderMetric('Runnable intents', asArray(status.runnable_intents).length),
 		renderMetric('Documents needing review', status.active_review_documents),
 	].join('')}</dl>
+</section>
+<section>
+<h2>Harness report</h2>
+<dl>${[
+		renderMetric('Installed', harnessInstall.installed),
+		renderMetric('Manifest lock', harnessInstall.manifest_lock),
+		renderMetric('Tracked files', harnessInstall.tracked_files),
+		renderMetric('Changed files', harnessVerification.changed_file_count),
+		renderMetric('Changed surfaces', asArray(harnessVerification.changed_surfaces).join(', ') || 'none'),
+		renderMetric('Runnable verification intents', asArray(harnessVerification.runnable_intents).length),
+		renderMetric('Skipped verification intents', asArray(harnessVerification.skipped_intents).length),
+		renderMetric('Verification gaps', asArray(harnessVerification.gaps).length),
+		renderMetric('Decision graph nodes', graphSummary.node_count),
+		renderMetric('Decision graph edges', graphSummary.edge_count),
+		renderMetric('Latest run intent', harnessRunHistory.intent),
+		renderMetric('Latest run status', harnessRunHistory.status),
+		renderMetric('Docs review entries', harnessDocsReview.active_documents),
+		renderMetric('Remaining risks', asArray(harnessReport.remaining_risks).length),
+	].join('')}</dl>
+<h3>Runnable verification intents</h3>
+${renderList(asArray(harnessVerification.runnable_intents))}
+<h3>Skipped verification intents</h3>
+${renderSkippedIntents(asArray(harnessVerification.skipped_intents))}
+<h3>Verification gaps</h3>
+${renderVerificationGaps(asArray(harnessVerification.gaps))}
+<h3>Remaining risks</h3>
+${renderRemainingRisks(asArray(harnessReport.remaining_risks))}
 </section>
 <section>
 <h2>Release</h2>

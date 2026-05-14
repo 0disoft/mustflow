@@ -4,6 +4,7 @@ import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { runAdapters } from './commands/adapters.js';
 import { runCheck } from './commands/check.js';
 import { runClassify } from './commands/classify.js';
 import { runContractLint } from './commands/contract-lint.js';
@@ -13,6 +14,8 @@ import { runDoctor } from './commands/doctor.js';
 import { runDocs } from './commands/docs.js';
 import { runExplain } from './commands/explain.js';
 import { runHelp } from './commands/help.js';
+import { runHandoff } from './commands/handoff.js';
+import { runHarnessScenarios } from './commands/harness-scenarios.js';
 import { runImpact } from './commands/impact.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index.js';
@@ -54,13 +57,16 @@ function getTopLevelHelp(lang: CliLang): string {
 			],
 			examples: [
 				'mf --lang ko help',
+				'mf adapters status --json',
 				'mf init --dry-run',
 				'mf doctor --json',
 				'mf docs review list',
+				'mf handoff validate .mustflow/work-items/MF-0001.json',
 				'mf check --json',
 				'mf classify --changed',
 				'mf contract-lint --json',
 				'mf context --json',
+				'mf harness-scenarios --fixtures tests/fixtures/harness-scenarios --json',
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
@@ -157,6 +163,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 		return runInit(args, reporter, parsed.lang);
 	}
 
+	if (command === 'adapters') {
+		return runAdapters(args, reporter, parsed.lang);
+	}
+
 	if (command === 'check') {
 		return runCheck(args, reporter, parsed.lang);
 	}
@@ -201,6 +211,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 		return runDocs(args, reporter, parsed.lang);
 	}
 
+	if (command === 'handoff') {
+		return runHandoff(args, reporter, parsed.lang);
+	}
+
 	if (command === 'index') {
 		return runIndex(args, reporter, parsed.lang);
 	}
@@ -215,6 +229,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'version-sources') {
 		return runVersionSources(args, reporter, parsed.lang);
+	}
+
+	if (command === 'harness-scenarios') {
+		return runHarnessScenarios(args, reporter, parsed.lang);
 	}
 
 	if (command === 'verify') {

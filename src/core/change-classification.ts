@@ -2,6 +2,12 @@ export type ChangeSource = 'changed' | 'paths';
 
 export type PublicSurfaceUpdatePolicy = 'update' | 'update_or_mark_stale' | 'not_applicable';
 
+export const PUBLIC_SURFACE_UPDATE_POLICIES = [
+	'update',
+	'update_or_mark_stale',
+	'not_applicable',
+] as const satisfies readonly PublicSurfaceUpdatePolicy[];
+
 export interface PublicSurfaceContract {
 	readonly kind: string;
 	readonly category: string;
@@ -172,6 +178,20 @@ const CHANGE_CLASSIFICATION_RULES: readonly ChangeClassificationRule[] = [
 			['agent workflow contract', 'command contract', 'installed workflow files'],
 			'update',
 			['strict workflow validation', 'installed template parity', 'skill route alignment'],
+		),
+	),
+	rule(
+		'host_instruction',
+		/^(CLAUDE\.md|GEMINI\.md|\.github\/copilot-instructions\.md|\.cursor\/rules\/[^/]+\.(?:md|mdc))$/u,
+		['workflow', 'host_instruction'],
+		surface(
+			'host_instruction',
+			'workflow',
+			true,
+			['mustflow_docs_change'],
+			['host instruction compatibility', 'agent workflow contract', 'command contract boundary'],
+			'update_or_mark_stale',
+			['host instruction conflicts', 'command contract boundary'],
 		),
 	),
 	rule(

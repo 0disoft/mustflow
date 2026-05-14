@@ -33,6 +33,7 @@ const P0_EXACT_PATHS = new Set([
 const AUTHORITY_OR_SECURITY_SKILLS = new Set([
 	'contract-sync-check',
 	'external-prompt-injection-defense',
+	'external-skill-intake',
 	'instruction-conflict-scope-check',
 	'migration-safety-check',
 	'multi-agent-work-coordination',

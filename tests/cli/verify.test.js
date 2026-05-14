@@ -304,6 +304,42 @@ required_after = ["custom_verify"]
 		assert.equal(report.candidates[0].status, 'runnable');
 		assert.equal(report.candidates[0].skipReason, null);
 		assert.deepEqual(report.gaps, []);
+		assert.equal(report.decision_graph.schema_version, '1');
+		assert.equal(report.decision_graph.root, 'verification_decision');
+		assert.equal(report.decision_graph.summary.runnable > 0, true);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) => node.kind === 'classification_reason' && node.reason === 'custom_verify',
+			),
+			true,
+		);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_plan_only' &&
+					node.status === 'runnable' &&
+					node.data.command.required_after.includes('custom_verify') &&
+					node.data.command.writes.includes('executed.txt'),
+			),
+			true,
+		);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) => node.kind === 'eligibility' && node.intent === 'verify_plan_only' && node.data.code === 'ok',
+			),
+			true,
+		);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) => node.kind === 'effect' && node.intent === 'verify_plan_only' && node.data.path === 'executed.txt',
+			),
+			true,
+		);
+		assert.equal(
+			report.decision_graph.edges.some((edge) => edge.kind === 'requires' && edge.to.includes('verify_plan_only')),
+			true,
+		);
 		assert.equal(existsSync(markerPath), false);
 	} finally {
 		removeTempProject(projectPath);
@@ -377,6 +413,9 @@ required_after = ["custom_verify"]
 		assert.equal(report.schedule.entries[0].locks[0], 'dist_build_output');
 		assert.equal(report.schedule.entries[0].effects[0].mode, 'delete_recreate');
 		assert.equal(report.schedule.entries[0].conflicts[0].conflictsWith, 'verify_build_b');
+		assert.equal(report.schedule.entries[0].effectGraph.authority, 'explanation_only');
+		assert.equal(report.schedule.entries[0].effectGraph.commandAuthority, '.mustflow/config/commands.toml');
+		assert.equal(report.schedule.entries[0].effectGraph.grantsCommandAuthority, false);
 		assert.equal(report.schedule.entries[0].effectGraph.status, 'fresh');
 		assert.equal(report.schedule.entries[0].effectGraph.indexFresh, true);
 		assert.equal(
@@ -422,6 +461,14 @@ required_after = ["custom_partial"]
 		assert.equal(report.candidates[0].detail, 'Needs a human.');
 		assert.equal(report.gaps[0].reason, 'custom_partial');
 		assert.match(report.gaps[0].detail, /No runnable command intents/);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) => node.kind === 'command_candidate' && node.intent === 'verify_manual' && node.status === 'manual_only',
+			),
+			true,
+		);
+		assert.equal(report.decision_graph.summary.manual_only, 2);
+		assert.equal(report.decision_graph.summary.gapCount, 1);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -442,6 +489,13 @@ test('reports plan-only gaps when no intents match the reason', () => {
 		assert.equal(report.candidates[0].status, 'skipped');
 		assert.equal(report.candidates[0].skipReason, 'no_matching_intents');
 		assert.equal(report.gaps[0].reason, 'missing_reason');
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) => node.kind === 'command_candidate' && node.intent === null && node.status === 'unknown',
+			),
+			true,
+		);
+		assert.equal(report.decision_graph.summary.unknown >= 2, true);
 	} finally {
 		removeTempProject(projectPath);
 	}

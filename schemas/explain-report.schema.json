@@ -363,6 +363,9 @@
       "additionalProperties": false,
       "required": [
         "source",
+        "authority",
+        "commandAuthority",
+        "grantsCommandAuthority",
         "status",
         "databasePath",
         "indexFresh",
@@ -373,6 +376,9 @@
       ],
       "properties": {
         "source": { "const": "local_index" },
+        "authority": { "const": "explanation_only" },
+        "commandAuthority": { "const": ".mustflow/config/commands.toml" },
+        "grantsCommandAuthority": { "const": false },
         "status": { "enum": ["fresh", "missing", "stale", "unreadable"] },
         "databasePath": { "type": "string" },
         "indexFresh": { "type": "boolean" },
@@ -499,7 +505,8 @@
             "candidateCount",
             "runnableCount",
             "skippedCount",
-            "requirements"
+            "requirements",
+            "decisionGraph"
           ],
           "properties": {
             "planSource": { "type": ["string", "null"] },
@@ -513,9 +520,94 @@
             "requirements": {
               "type": "array",
               "items": { "$ref": "#/$defs/verificationRequirement" }
+            },
+            "decisionGraph": {
+              "$ref": "#/$defs/verificationDecisionGraph"
             }
           }
         }
+      }
+    },
+    "verificationDecisionGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "root", "summary", "nodes", "edges"],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "root": { "const": "verification_decision" },
+        "summary": { "$ref": "#/$defs/verificationDecisionGraphSummary" },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verificationDecisionGraphNode" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verificationDecisionGraphEdge" }
+        }
+      }
+    },
+    "verificationDecisionGraphSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodeCount",
+        "edgeCount",
+        "runnable",
+        "skipped",
+        "blocked",
+        "manual_only",
+        "unknown",
+        "gapCount"
+      ],
+      "properties": {
+        "nodeCount": { "type": "integer" },
+        "edgeCount": { "type": "integer" },
+        "runnable": { "type": "integer" },
+        "skipped": { "type": "integer" },
+        "blocked": { "type": "integer" },
+        "manual_only": { "type": "integer" },
+        "unknown": { "type": "integer" },
+        "gapCount": { "type": "integer" }
+      }
+    },
+    "verificationDecisionGraphNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "label", "status", "reason", "intent", "data"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": {
+          "enum": [
+            "changed_surface",
+            "classification_reason",
+            "command_candidate",
+            "eligibility",
+            "effect",
+            "gap",
+            "receipt"
+          ]
+        },
+        "label": { "type": "string" },
+        "status": {
+          "type": ["string", "null"],
+          "enum": ["runnable", "skipped", "blocked", "manual_only", "unknown", "not_applicable", null]
+        },
+        "reason": { "type": ["string", "null"] },
+        "intent": { "type": ["string", "null"] },
+        "data": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "verificationDecisionGraphEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "kind"],
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "kind": { "enum": ["supports", "requires", "evaluates", "has_effect", "has_gap"] }
       }
     },
     "verificationRequirement": {

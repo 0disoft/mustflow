@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/adapter-compatibility-report.schema.json",
+  "title": "mustflow adapter compatibility report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "mustflow_root",
+    "agents_file",
+    "summary",
+    "host_files",
+    "adapter_surfaces",
+    "findings",
+    "compatibility_notes",
+    "required_changes",
+    "runtime_policy",
+    "boundaries"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "adapters_status" },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "agents_file": { "$ref": "#/$defs/agentsFile" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "host_files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hostFile" }
+    },
+    "adapter_surfaces": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adapterSurface" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "compatibility_notes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "required_changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "runtime_policy": { "$ref": "#/$defs/runtimePolicy" },
+    "boundaries": { "$ref": "#/$defs/boundaries" }
+  },
+  "$defs": {
+    "agentsFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "present", "authority", "lifecycle", "generated_by_mustflow"],
+      "properties": {
+        "path": { "const": "AGENTS.md" },
+        "present": { "type": "boolean" },
+        "authority": { "const": "binding" },
+        "lifecycle": { "const": "user_editable" },
+        "generated_by_mustflow": { "type": "boolean" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_instruction_files",
+        "adapter_surfaces_present",
+        "compatibility_notes",
+        "conflicts",
+        "required_changes"
+      ],
+      "properties": {
+        "host_instruction_files": { "type": "integer", "minimum": 0 },
+        "adapter_surfaces_present": { "type": "integer", "minimum": 0 },
+        "compatibility_notes": { "type": "integer", "minimum": 0 },
+        "conflicts": { "type": "integer", "minimum": 0 },
+        "required_changes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "hostFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "path",
+        "status",
+        "instruction_role",
+        "authority",
+        "mustflow_authority",
+        "lifecycle",
+        "generated_by_mustflow",
+        "binding_to_host",
+        "mustflow_command_authority"
+      ],
+      "properties": {
+        "host": { "enum": ["claude_code", "gemini_cli", "github_copilot", "cursor", "generic"] },
+        "path": { "type": "string" },
+        "status": { "enum": ["absent", "present", "unreadable", "symlink_not_read", "too_large_not_read"] },
+        "instruction_role": { "const": "host_instruction" },
+        "authority": { "const": "host_specific" },
+        "mustflow_authority": { "const": "advisory" },
+        "lifecycle": { "const": "user_editable" },
+        "generated_by_mustflow": { "const": false },
+        "binding_to_host": { "type": "boolean" },
+        "mustflow_command_authority": { "const": false }
+      }
+    },
+    "adapterSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "path",
+        "kind",
+        "present",
+        "generated_by_mustflow",
+        "generation_policy",
+        "mustflow_command_authority"
+      ],
+      "properties": {
+        "host": { "enum": ["claude_code", "gemini_cli", "github_copilot", "cursor", "generic"] },
+        "path": { "type": "string" },
+        "kind": {
+          "enum": [
+            "host_instruction_file",
+            "editor_settings",
+            "ci_configuration",
+            "command_adapter",
+            "package_manager_scripts"
+          ]
+        },
+        "present": { "type": "boolean" },
+        "generated_by_mustflow": { "const": false },
+        "generation_policy": { "const": "explicit_user_request_only" },
+        "mustflow_command_authority": { "const": false }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "code", "path", "message", "required_change"],
+      "properties": {
+        "severity": { "enum": ["info", "warning"] },
+        "code": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "message": { "type": "string" },
+        "required_change": { "type": "boolean" }
+      }
+    },
+    "runtimePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approval_policy", "sandbox_policy", "stricter_than_mustflow", "note"],
+      "properties": {
+        "approval_policy": { "const": "not_repo_visible" },
+        "sandbox_policy": { "const": "not_repo_visible" },
+        "stricter_than_mustflow": { "const": "unknown" },
+        "note": { "type": "string" }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_authority",
+        "host_files_are_command_authority",
+        "adapter_generation",
+        "does_not_generate"
+      ],
+      "properties": {
+        "command_authority": { "const": ".mustflow/config/commands.toml" },
+        "host_files_are_command_authority": { "const": false },
+        "adapter_generation": { "const": "explicit_user_request_only" },
+        "does_not_generate": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

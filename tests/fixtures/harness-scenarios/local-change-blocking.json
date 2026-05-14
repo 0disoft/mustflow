@@ -1,0 +1,38 @@
+{
+  "schema_version": "1",
+  "name": "local-change-blocking",
+  "kind": "update_plan",
+  "project": {
+    "init_args": ["--yes"],
+    "local_changes": [
+      {
+        "path": "AGENTS.md",
+        "content": "# Changed rules\n"
+      }
+    ]
+  },
+  "expect": {
+    "exit_status": 1,
+    "ok": false,
+    "wrote_files": false,
+    "summary": {
+      "blockedLocalChanges": 1,
+      "manualReview": 0,
+      "wouldUpdate": 0,
+      "wouldCreate": 0
+    },
+    "item_actions": [
+      {
+        "relativePath": "AGENTS.md",
+        "action": "blocked-local-change",
+        "reason": "current file differs from the manifest lock baseline"
+      }
+    ],
+    "measurements": {
+      "selected_intents": [],
+      "blocked_unsafe_actions": ["AGENTS.md"],
+      "missing_narrow_intents": [],
+      "explanation_complete": true
+    }
+  }
+}

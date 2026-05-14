@@ -10,6 +10,14 @@ export interface PublicJsonSchemaContract {
 
 const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 	{
+		id: 'adapter-compatibility-report',
+		schemaFile: 'adapter-compatibility-report.schema.json',
+		producer: 'mf adapters status --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'adapters', 'status', '--json'],
+	},
+	{
 		id: 'doctor-report',
 		schemaFile: 'doctor-report.schema.json',
 		producer: 'mf doctor --json',
@@ -71,6 +79,22 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		packaged: true,
 		documented: true,
 		installedCommand: ['mf', 'line-endings', 'check', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
+		id: 'harness-scenarios-report',
+		schemaFile: 'harness-scenarios-report.schema.json',
+		producer: 'mf harness-scenarios --fixtures <path> --json',
+		packaged: true,
+		documented: true,
+		expectedExitCodes: [0, 1],
+	},
+	{
+		id: 'handoff-validation-report',
+		schemaFile: 'handoff-validation-report.schema.json',
+		producer: 'mf handoff validate <path> --json',
+		packaged: true,
+		documented: true,
 		expectedExitCodes: [0, 1],
 	},
 	{

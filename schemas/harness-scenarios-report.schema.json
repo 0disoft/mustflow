@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/harness-scenarios-report.schema.json",
+  "title": "mustflow harness scenarios report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "summary",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "harness_scenarios" },
+    "ok": { "type": "boolean" },
+    "error": { "type": "string" },
+    "fixtures_root": { "type": "string" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name", "status", "expected", "actual"],
+      "properties": {
+        "name": { "type": "string" },
+        "status": { "enum": ["passed", "failed"] },
+        "expected": {},
+        "actual": {}
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_intents",
+        "blocked_unsafe_actions",
+        "missing_narrow_intents",
+        "explanation_complete"
+      ],
+      "properties": {
+        "selected_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blocked_unsafe_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missing_narrow_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "explanation_complete": { "type": "boolean" }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name", "status", "checks"],
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "type": "string" },
+        "status": { "enum": ["passed", "failed"] },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "measurements": { "$ref": "#/$defs/measurements" },
+        "checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/check" }
+        }
+      }
+    }
+  }
+}

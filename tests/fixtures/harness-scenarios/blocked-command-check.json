@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "name": "blocked-command-check",
+  "files": ["src/index.js"],
+  "command_contract": {
+    "intents": {
+      "test_related": {
+        "status": "configured",
+        "lifecycle": "oneshot",
+        "run_policy": "agent_allowed",
+        "description": "Run related tests, but this fixture leaves stdin open.",
+        "argv": ["bun", "test", "tests/cli/harness-scenarios.test.js"],
+        "cwd": ".",
+        "timeout_seconds": 30,
+        "stdin": "open",
+        "success_exit_codes": [0],
+        "writes": [],
+        "network": false,
+        "destructive": false,
+        "required_after": ["code_change"]
+      }
+    }
+  },
+  "expect": {
+    "validation_reasons": ["code_change"],
+    "runnable_intents": [],
+    "gap_reasons": ["code_change"],
+    "candidate_statuses": [
+      {
+        "reason": "code_change",
+        "intent": "test_related",
+        "status": "skipped",
+        "skip_reason": "stdin_not_closed"
+      }
+    ]
+  }
+}

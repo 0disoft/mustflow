@@ -61,6 +61,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /Usage:/);
 	assert.match(result.stdout, /Examples:/);
 	assert.match(result.stdout, /Exit codes:/);
+	assert.match(result.stdout, /mf adapters/);
 	assert.match(result.stdout, /mf init/);
 	assert.match(result.stdout, /mf check/);
 	assert.match(result.stdout, /mf classify/);
@@ -72,8 +73,10 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf run/);
 	assert.match(result.stdout, /mf context/);
 	assert.match(result.stdout, /mf doctor/);
+	assert.match(result.stdout, /mf handoff/);
 	assert.match(result.stdout, /mf index/);
 	assert.match(result.stdout, /mf search/);
+	assert.match(result.stdout, /mf harness-scenarios/);
 	assert.match(result.stdout, /mf dashboard/);
 	assert.match(result.stdout, /mf version/);
 	assert.match(result.stdout, /mf version-sources/);
@@ -206,7 +209,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 });
 
 test('routes command-specific help', () => {
-	for (const command of ['init', 'check', 'classify', 'contract-lint', 'status', 'update', 'map', 'line-endings', 'run', 'context', 'doctor', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
+	for (const command of ['adapters', 'init', 'check', 'classify', 'contract-lint', 'status', 'update', 'map', 'line-endings', 'run', 'context', 'doctor', 'handoff', 'index', 'search', 'dashboard', 'harness-scenarios', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
 		const result = runCli([command, '--help']);
 
 		assert.equal(result.status, 0);
@@ -219,6 +222,7 @@ test('routes command-specific help', () => {
 test('fails unknown command options with standardized guidance', () => {
 	const cases = [
 		['init', '--bad'],
+		['adapters', 'status', '--bad'],
 		['check', '--bad'],
 		['classify', '--bad'],
 		['contract-lint', '--bad'],
@@ -229,9 +233,11 @@ test('fails unknown command options with standardized guidance', () => {
 		['run', '--bad'],
 		['context', '--bad'],
 		['doctor', '--bad'],
+		['handoff', 'validate', '--bad'],
 		['index', '--bad'],
 		['search', '--bad'],
 		['dashboard', '--bad'],
+		['harness-scenarios', '--bad'],
 		['version', '--bad'],
 		['version-sources', '--bad'],
 		['verify', '--bad'],

@@ -162,6 +162,12 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		assert.equal(exportSnapshot.output_policy.starts_server, false);
 		assert.equal(exportSnapshot.output_policy.omits_dashboard_token, true);
 		assert.equal(exportSnapshot.output_policy.omits_raw_run_output, true);
+		assert.equal(exportSnapshot.harness_report.schema_version, '1');
+		assert.equal(exportSnapshot.harness_report.generated_from, 'dashboard_status_snapshot');
+		assert.equal(exportSnapshot.harness_report.install.installed, true);
+		assert.equal(exportSnapshot.harness_report.run_history.intent, 'test_related');
+		assert.equal(exportSnapshot.harness_report.run_history.receipt_path, '.mustflow/state/runs/latest.json');
+		assert.equal(exportSnapshot.harness_report.docs_review.active_documents, 0);
 		assert.equal(exportSnapshot.status.run_history.command_line_omitted, true);
 		assert.equal(exportSnapshot.status.run_history.stdout.tail_omitted, true);
 		assert.equal(exportSnapshot.status.run_history.stderr.tail_omitted, true);
@@ -175,6 +181,98 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		assert.doesNotMatch(serialized, /SECRET_ARG_VALUE/);
 		assert.doesNotMatch(serialized, /SECRET_STDOUT_VALUE/);
 		assert.doesNotMatch(serialized, /SECRET_STDERR_VALUE/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard JSON export includes harness verification gaps and remaining risks', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.verify_schema_contract]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify schema contract changes."
+argv = ['${process.execPath}', '-e', 'console.log("schema contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["public_api_change"]
+
+[intents.verify_schema_manual_review]
+status = "manual_only"
+description = "Manual schema verification review."
+reason = "Schema review requires explicit maintainer approval."
+agent_action = "do_not_run_report_gap"
+required_after = ["public_api_change"]
+
+[intents.verify_schema_unknown_tool]
+status = "unknown"
+description = "Unknown schema verification tool."
+reason = "No schema verification tool is configured."
+agent_action = "do_not_guess_report_missing"
+required_after = ["public_api_change"]
+`,
+		);
+		assert.equal(runGit(projectPath, ['init']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.email', 'mustflow@example.invalid']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.name', 'mustflow test']).status, 0);
+		assert.equal(runGit(projectPath, ['add', '.']).status, 0);
+		assert.equal(runGit(projectPath, ['commit', '-m', 'baseline']).status, 0);
+
+		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'docs'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'schemas', 'output.schema.json'), '{"type":"object"}\n');
+		writeFileSync(path.join(projectPath, 'docs', 'guide.md'), '# Guide\n');
+		const addReview = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'docs/guide.md',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+			'--comment',
+			'Check dashboard export wording.',
+		]);
+		assert.equal(addReview.status, 0, addReview.stderr || addReview.stdout);
+
+		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', 'reports/harness.json']);
+		assert.equal(jsonResult.status, 0, jsonResult.stderr || jsonResult.stdout);
+
+		const exportSnapshot = JSON.parse(readFileSync(path.join(projectPath, 'reports', 'harness.json'), 'utf8'));
+		const report = exportSnapshot.harness_report;
+		const gapKinds = report.verification.gaps.map((gap) => gap.kind);
+		const riskCodes = report.remaining_risks.map((risk) => risk.code);
+
+		assert.equal(report.schema_version, '1');
+		assert.equal(report.verification.changed_file_count > 0, true);
+		assert.ok(report.verification.changed_surfaces.includes('schema_contract'));
+		assert.equal(report.verification.decision_graph_summary.root, 'verification_decision');
+		assert.equal(report.verification.decision_graph_summary.runnable > 0, true);
+		assert.ok(report.verification.runnable_intents.includes('verify_schema_contract'));
+		assert.ok(report.verification.skipped_intents.some((intent) => intent.intent === 'verify_schema_manual_review'));
+		assert.ok(report.verification.skipped_intents.some((intent) => intent.intent === 'verify_schema_unknown_tool'));
+		assert.ok(gapKinds.includes('manual_only'));
+		assert.ok(gapKinds.includes('unknown'));
+		assert.equal(report.docs_review.active_documents, 1);
+		assert.ok(riskCodes.includes('docs_review_pending'));
+		assert.ok(riskCodes.includes('manual_only_verification_gap'));
+		assert.ok(riskCodes.includes('unknown_verification_gap'));
+		assert.doesNotMatch(JSON.stringify(report), /schema contract"\]/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -941,6 +1039,9 @@ required_after = ["public_api_change"]
 		assert.equal(status.command_contract.effect_graph_status.status, 'fresh');
 		const schemaIntent = status.command_contract.intents.find((intent) => intent.name === 'verify_schema_contract');
 		assert.ok(schemaIntent);
+		assert.equal(schemaIntent.effect_graph.authority, 'explanation_only');
+		assert.equal(schemaIntent.effect_graph.command_authority, '.mustflow/config/commands.toml');
+		assert.equal(schemaIntent.effect_graph.grants_command_authority, false);
 		assert.equal(schemaIntent.effect_graph.status, 'fresh');
 		assert.ok(
 			schemaIntent.effect_graph.write_locks.some(
@@ -957,6 +1058,23 @@ required_after = ["public_api_change"]
 				(entry) =>
 					entry.intent === 'verify_schema_contract' &&
 					entry.effects.some((effect) => effect.mode === 'delete_recreate' && effect.lock === 'schema_artifact'),
+			),
+		);
+		assert.equal(status.verification.decision_graph.root, 'verification_decision');
+		assert.ok(
+			status.verification.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_schema_contract' &&
+					node.status === 'runnable',
+			),
+		);
+		assert.ok(
+			status.verification.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'effect' &&
+					node.intent === 'verify_schema_contract' &&
+					node.data.lock === 'schema_artifact',
 			),
 		);
 		assert.equal(recommendedIntents.includes('test_release'), false);

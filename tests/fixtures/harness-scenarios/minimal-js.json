@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "name": "minimal-js",
+  "files": ["src/index.js"],
+  "command_contract": {
+    "intents": {
+      "test_related": {
+        "status": "configured",
+        "lifecycle": "oneshot",
+        "run_policy": "agent_allowed",
+        "description": "Run tests selected from changed files.",
+        "argv": ["node", "scripts/run-related-tests.mjs"],
+        "cwd": ".",
+        "timeout_seconds": 120,
+        "stdin": "closed",
+        "success_exit_codes": [0],
+        "writes": ["dist/"],
+        "network": false,
+        "destructive": false,
+        "required_after": ["code_change"]
+      }
+    }
+  },
+  "expect": {
+    "validation_reasons": ["code_change"],
+    "runnable_intents": ["test_related"],
+    "gap_reasons": [],
+    "candidate_statuses": [
+      {
+        "reason": "code_change",
+        "intent": "test_related",
+        "status": "runnable",
+        "skip_reason": null
+      }
+    ]
+  }
+}

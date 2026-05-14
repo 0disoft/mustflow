@@ -13,6 +13,9 @@ export type DashboardCommandEffectGraphStatusKind = 'fresh' | 'missing' | 'stale
 
 export interface DashboardCommandEffectGraphStatus {
 	readonly source: 'local_index';
+	readonly authority: 'explanation_only';
+	readonly command_authority: '.mustflow/config/commands.toml';
+	readonly grants_command_authority: false;
 	readonly status: DashboardCommandEffectGraphStatusKind;
 	readonly database_path: string;
 	readonly index_fresh: boolean;

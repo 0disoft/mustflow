@@ -15,7 +15,7 @@ Sans chemin, la commande affiche le modèle d'autorité. Avec un chemin, elle in
 Quand un index local à jour existe, il lit aussi le graphe dérivé des effets de commande afin d'afficher les verrous d'écriture et les conflits sans changer l'autorité de la commande.
 
 `mf explain verify --reason <event>` et `mf explain verify --from-plan <path>` expliquent quels candidats de vérification `mf verify` choisirait, sans exécuter de commande ni écrire de reçu. Ils utilisent la même correspondance `required_after` et les mêmes règles d'éligibilité de commande que `mf verify`, et affichent les candidats ignorés avec des codes de raison stables.
-Quand un index local à jour existe, les explications de vérification incluent aussi l'état en lecture seule du graphe d'effets de commande pour les candidats correspondants. Si l'index manque ou est obsolète, elles affichent une indication de reconstruction sans changer la sélection des commandes.
+Les explications de vérification incluent `decision.verification.decisionGraph`, le même modèle de décision que la vérification sans exécution et les instantanés du tableau de bord. Quand un index local à jour existe, les explications de vérification incluent aussi l'état en lecture seule du graphe d'effets de commande pour les candidats correspondants. Si l'index manque ou est obsolète, elles affichent une indication de reconstruction sans changer la sélection des commandes.
 
 `mf explain retention` explique la politique de rétention effective de `.mustflow/config/mustflow.toml`, notamment le stockage des événements bruts, les reçus d'exécution bornés et les limites de contexte.
 
@@ -39,7 +39,7 @@ Quand un index local à jour existe, les explications de vérification incluent 
 - `Authority boundary` : ce que cette autorité peut définir et ce qu'elle doit laisser aux fichiers de plus haute autorité, au code actuel ou à `commands.toml`.
 - `Command intent` : métadonnées du contrat de commande quand le sujet `command` est utilisé.
 - `Command effect graph` : verrous d'écriture et conflits lus depuis l'index local à jour quand le sujet `command` est utilisé. Si l'index est absent ou obsolète, la sortie affiche une suggestion de reconstruction sans changer la décision de commande.
-- `Verification explanation` : raisons, intentions `required_after` correspondantes, candidats exécutables, candidats ignorés, écarts et état du graphe d'effets de commande local quand le sujet `verify` est utilisé.
+- `Verification explanation` : raisons, intentions `required_after` correspondantes, candidats exécutables, candidats ignorés, écarts, `decisionGraph` et état du graphe d'effets de commande local quand le sujet `verify` est utilisé.
 - `Retention policy` : paramètres de rétention effectifs quand le sujet `retention` est utilisé.
 - `Skill route` : déclencheur, périmètre, risque, vérifications et sortie attendue quand le sujet `skill` est utilisé.
 - `Skill routes` : état strict d'alignement entre index et corps quand le sujet `skills` est utilisé.
@@ -82,7 +82,7 @@ La sortie lisible par machine utilise ces champs :
 - `command` (`string`) : toujours `explain`.
 - `topic` (`string`) : `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface` ou `verify`.
 - `mustflow_root` (`string`) : racine mustflow actuelle.
-- `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet. Pour `authority`, inclut `boundary.role`, `boundary.canDefine` et `boundary.cannotDefine`. Pour `command`, `decision.effectGraph` contient l'état du graphe d'effets de commande de l'index local, les verrous d'écriture, les conflits, les chemins obsolètes et les suggestions de reconstruction quand l'intention est déclarée. Pour `verify`, `decision.verification` contient les raisons choisies, les candidats correspondants, les raisons d'omission, les écarts et l'état du graphe d'effets de commande local. Pour `surface`, `decision.readModel` contient l'état chemin-surface de l'index local en lecture seule et les métadonnées de la règle correspondante quand elles sont disponibles.
+- `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet. Pour `authority`, inclut `boundary.role`, `boundary.canDefine` et `boundary.cannotDefine`. Pour `command`, `decision.effectGraph` contient l'état du graphe d'effets de commande de l'index local, les verrous d'écriture, les conflits, les chemins obsolètes et les suggestions de reconstruction quand l'intention est déclarée. Pour `verify`, `decision.verification` contient les raisons choisies, les candidats correspondants, les raisons d'omission, les écarts, `decisionGraph` et l'état du graphe d'effets de commande local. Pour `surface`, `decision.readModel` contient l'état chemin-surface de l'index local en lecture seule et les métadonnées de la règle correspondante quand elles sont disponibles.
 
 ## Aide et codes de sortie
 

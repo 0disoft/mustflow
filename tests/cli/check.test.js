@@ -2142,6 +2142,112 @@ test('strict check fails when verification preferences try to define command aut
 	}
 });
 
+test('strict check accepts narrow candidate path classification configs', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'surfaces.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[[rules]]',
+				'id = "docs_site"',
+				'match = { kind = "prefix", path = "docs-site/src/content/docs/" }',
+				'change_kinds = ["documentation"]',
+				'surface_kind = "docs_site_page"',
+				'category = "documentation"',
+				'is_public_surface = true',
+				'validation_reasons = ["docs_change"]',
+				'affected_contracts = ["documentation site"]',
+				'update_policy = "update"',
+				'drift_checks = ["navigation links"]',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'changes.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[[rules]]',
+				'id = "readme_exact"',
+				'match = { kind = "exact", path = "README.md" }',
+				'change_kinds = ["documentation"]',
+				'',
+				'[[rules]]',
+				'id = "markdown_glob"',
+				'match = { kind = "glob", path = "docs/**/*.md" }',
+				'validation_reasons = ["docs_change"]',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(check.ok, true);
+		assert.deepEqual(check.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check rejects candidate path classification command authority and deferred policy files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'surfaces.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[[rules]]',
+				'id = "docs_regex"',
+				'match = { kind = "regex", path = "docs/.*" }',
+				'validation_reasons = ["docs_change"]',
+				'run_policy = "agent_allowed"',
+				'required_after = ["docs_change"]',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'policy.toml'),
+			['schema_version = "1"', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.contract_model.command_authority_field',
+			'Strict: .mustflow/config/surfaces.toml rules[0].run_policy cannot define command authority; use .mustflow/config/commands.toml',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.contract_model.command_authority_field',
+			'Strict: .mustflow/config/surfaces.toml rules[0].required_after cannot define command authority; use .mustflow/config/commands.toml',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.contract_model.invalid_match_kind',
+			'Strict: .mustflow/config/surfaces.toml rules[0].match.kind must be "exact", "prefix", or "glob"; regular expressions are deferred',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.contract_model.deferred_policy',
+			'Strict: .mustflow/config/policy.toml is deferred; use narrow candidate contract files instead',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails when release versioning preferences define sources or release authority', () => {
 	const projectPath = createTempProject();
 

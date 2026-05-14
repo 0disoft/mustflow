@@ -52,7 +52,9 @@ Use `--export <path>` to write a static HTML dashboard snapshot without starting
 
 With `--json`, the command prints the dashboard URL, mustflow root, and preferences path before keeping the local server running.
 
-With `--export-json`, the command writes a JSON file instead of printing the server URL. The JSON includes status, verification, command, update, skill, document-review, and preference snapshots with raw run output omitted and truncation metadata under `limits`.
+With `--export-json`, the command writes a JSON file instead of printing the server URL. The JSON includes status, verification, command, update, skill, document-review, and preference snapshots with raw run output omitted and truncation metadata under `limits`. It also includes `harness_report`, a bounded read-only summary for pull request and continuous integration artifacts. That summary contains install and manifest status, changed surfaces, verification decision graph counts, runnable and skipped verification intents, manual-only or unavailable verification gaps, latest receipt metadata, document-review queue status, and remaining risks.
+
+The static HTML export is rendered from the same JSON snapshot. It does not contain separate decision logic or controls that run commands.
 
 The dashboard API uses a per-session token. Status reads, preference updates, and document-review transitions all require that token. The API accepts updates only for the limited preference fields and document-review status transitions exposed by the page. Git preference toggles describe what an agent may do after an explicit user request; they do not make command-contract entries such as `git_commit` runnable. `git.auto_push` is displayed as a locked setting.
 

@@ -20,6 +20,10 @@ export type CheckIssueId =
 	| 'mustflow.release.template_version_intentionally_unchanged'
 	| 'mustflow.preferences.release_versioning_contract_authority'
 	| 'mustflow.preferences.verification_selection_command_authority'
+	| 'mustflow.contract_model.deferred_policy'
+	| 'mustflow.contract_model.command_authority_field'
+	| 'mustflow.contract_model.invalid_match_kind'
+	| 'mustflow.contract_model.invalid_shape'
 	| 'mustflow.skill.procedure_only'
 	| 'mustflow.skill.raw_command_block'
 	| 'mustflow.skill.command_permission_claim'
@@ -71,6 +75,10 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.release.template_version_intentionally_unchanged', /^Strict warning: templates\/default\/manifest\.toml version "[^"]+" is older than package\.json version "[^"]+"; this is allowed only when the installed template surface is unchanged$/u],
 	['mustflow.preferences.release_versioning_contract_authority', /^Strict: \[preferences\.release\.versioning\]\.[a-z_]+ cannot define version sources or release authority; use \.mustflow\/config\/versioning\.toml or \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.preferences.verification_selection_command_authority', /^Strict: \[preferences\.verification\.selection\]\.[a-z_]+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
+	['mustflow.contract_model.deferred_policy', /^Strict: \.mustflow\/config\/policy\.toml is deferred; use narrow candidate contract files instead$/u],
+	['mustflow.contract_model.command_authority_field', /^Strict: \.mustflow\/config\/(?:changes|surfaces)\.toml .+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
+	['mustflow.contract_model.invalid_match_kind', /^Strict: \.mustflow\/config\/(?:changes|surfaces)\.toml rules\[\d+\]\.match\.kind must be "exact", "prefix", or "glob"; regular expressions are deferred$/u],
+	['mustflow.contract_model.invalid_shape', /^Strict: \.mustflow\/config\/(?:changes|surfaces)\.toml .+(?:must be|must define|is not allowed)/u],
 	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
 	['mustflow.skill.raw_command_block', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md contains a raw shell command block; reference command intents instead$/u],
 	['mustflow.skill.command_permission_claim', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md claims command execution permission; keep permissions in \.mustflow\/config\/commands\.toml$/u],
