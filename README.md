@@ -2,9 +2,9 @@
 
 Languages: [English](README.md) · [한국어](docs/i18n/ko/README.md) · [中文](docs/i18n/zh/README.md) · [Español](docs/i18n/es/README.md) · [Français](docs/i18n/fr/README.md) · [हिन्दी](docs/i18n/hi/README.md)
 
-mustflow is a workflow CLI designed for LLM coding agents. It guides agents to enter a repository, understand the correct operating context, run only authorized commands, and verify their work without guessing.
+mustflow is a repository-local work contract and verification CLI for LLM coding agents. It keeps agents inside explicit read, command, and verification boundaries without replacing the host agent's sandbox, approval, checkpoint, model, or tool policies.
 
-The core concept is straightforward: place `AGENTS.md` at the project root and keep detailed workflows under `.mustflow/`. Agents start from `AGENTS.md` and then follow the command contract, skills, project context, and verification rules in sequence.
+The core concept is straightforward: place `AGENTS.md` at the project root and keep detailed workflows under `.mustflow/`. Agents start from `AGENTS.md`, then follow the repository command contract, skills, project context, and verification rules in sequence.
 
 - Documentation site: <https://0disoft.github.io/mustflow/>
 - Human-readable project examples: [`examples/`](examples/)

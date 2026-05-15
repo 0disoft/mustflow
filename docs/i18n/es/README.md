@@ -2,9 +2,9 @@
 
 Idiomas: [Inglés](../../../README.md) · [Coreano](../ko/README.md) · [Chino](../zh/README.md) · [Español](README.md) · [Francés](../fr/README.md) · [Hindi](../hi/README.md)
 
-mustflow es una CLI para flujos de trabajo de agentes de codificación basados en LLM. Facilita que los agentes accedan a un repositorio, lean el contexto operativo adecuado, ejecuten únicamente comandos declarados y verifiquen su trabajo sin necesidad de adivinar.
+mustflow es una CLI de contrato de trabajo y verificación local del repositorio para agentes de codificación basados en LLM. No reemplaza la zona aislada, las aprobaciones, los puntos de control, el modelo ni las políticas de herramientas del agente anfitrión; ayuda a que los agentes respeten los límites explícitos de lectura, comandos y verificación del repositorio.
 
-El modelo central es sencillo: se coloca `AGENTS.md` en la raíz del proyecto y se guarda el flujo de trabajo detallado bajo `.mustflow/`. Los agentes comienzan en `AGENTS.md` y luego siguen, en orden, el contrato de comandos, las habilidades, el contexto del proyecto y las reglas de verificación.
+El modelo central es sencillo: se coloca `AGENTS.md` en la raíz del proyecto y se guarda el flujo de trabajo detallado bajo `.mustflow/`. Los agentes comienzan en `AGENTS.md` y luego siguen, en orden, el contrato de comandos del repositorio, las habilidades, el contexto del proyecto y las reglas de verificación.
 
 ## Flujo de lectura del agente
 

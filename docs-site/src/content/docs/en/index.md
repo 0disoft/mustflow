@@ -3,7 +3,7 @@ title: mustflow
 description: Technical documentation for the agent-readable workflow managed by mustflow.
 ---
 
-Mustflow keeps LLM coding agents from guessing inside a repository. It installs a required read order, a command contract, change classification, execution-free verification planning, and command receipts.
+mustflow is a repository-local work contract and verification layer for LLM coding agents. It installs a required read order, a command contract, change classification, execution-free verification planning, and command receipts without replacing the host agent's sandbox, approval, checkpoint, model, or tool policies.
 
 ## First Flow
 
