@@ -8,6 +8,19 @@ function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
 }
 
+function writeRouteShadowSkill(projectPath, skillName) {
+	const sourceSkillPath = path.join(projectPath, '.mustflow', 'skills', 'docs-update', 'SKILL.md');
+	const targetDir = path.join(projectPath, '.mustflow', 'skills', skillName);
+	const sourceSkill = readText(sourceSkillPath)
+		.replace('mustflow_doc: skill.docs-update', `mustflow_doc: skill.${skillName}`)
+		.replace('name: docs-update', `name: ${skillName}`)
+		.replace('skill_id: mustflow.core.docs-update', `skill_id: mustflow.core.${skillName}`)
+		.replace('# Docs Update', `# ${skillName}`);
+
+	mkdirSync(targetDir, { recursive: true });
+	writeFileSync(path.join(targetDir, 'SKILL.md'), sourceSkill);
+}
+
 function assertHasIssueDetail(check, expectedId, expectedMessage) {
 	assert.ok(
 		check.issueDetails.some(
@@ -45,6 +58,55 @@ test('strict check fails unknown skill command intent metadata references', () =
 			'mustflow.skill.unknown_command_intent',
 			'Strict: .mustflow/skills/code-review/SKILL.md metadata.command_intents references unknown command intent "deploy_prod"',
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check warns for conflicting skill index routes without failing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeRouteShadowSkill(projectPath, 'route-shadow');
+		writeRouteShadowSkill(projectPath, 'route-catch-all');
+		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const skillsIndex = `${readText(skillsIndexPath)}
+| Code changes need review before report | \`.mustflow/skills/route-shadow/SKILL.md\` | Duplicate trigger evidence | Documentation route surface | route overlap | \`docs_validate_fast\`, \`docs_validate\`, \`mustflow_check\` | Route overlap warning |
+| Any request | \`.mustflow/skills/route-catch-all/SKILL.md\` | Catch-all evidence | Documentation route surface | route overlap | \`docs_validate_fast\`, \`docs_validate\`, \`mustflow_check\` | Broad route warning |
+		`;
+		writeFileSync(skillsIndexPath, skillsIndex);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'pyproject.toml'),
+			['[project]', 'name = "example"', 'version = "0.1.0"', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+		const warningIds = new Set(
+			check.issueDetails.filter((issue) => issue.severity === 'warning').map((issue) => issue.id),
+		);
+
+		assert.equal(result.status, 0);
+		assert.equal(check.ok, true);
+		assert.deepEqual(check.issues, []);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes(
+					'.mustflow/skills/code-review/SKILL.md and .mustflow/skills/route-shadow/SKILL.md have identical skill route trigger text',
+				),
+			),
+		);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes(
+					'.mustflow/skills/route-catch-all/SKILL.md route uses broad catch-all trigger "Any request"',
+				),
+			),
+		);
+		assert.ok(warningIds.has('mustflow.skill.index_route_identical_trigger'));
+		assert.ok(warningIds.has('mustflow.skill.index_route_broad_catch_all'));
 	} finally {
 		removeTempProject(projectPath);
 	}

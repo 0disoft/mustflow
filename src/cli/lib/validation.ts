@@ -23,6 +23,7 @@ import {
 	SKILL_INDEX_ROUTE_COLUMN_COUNT,
 	SKILL_INDEX_ROUTE_COLUMNS,
 	SKILL_INDEX_SKILL_PATH_COLUMN_INDEX,
+	findSkillRouteConflictWarnings,
 	findSkillIndexRoutePathColumn,
 	parseSkillIndexRoutes,
 	readBacktickValues,
@@ -1613,6 +1614,10 @@ function validateSkillIndexRoutes(
 	const routedSkillPaths = new Set<string>();
 	const expectedSkillPaths = new Set(skillFiles.map((relativePath) => `.mustflow/skills/${relativePath}`));
 	const seenSkillPaths = new Set<string>();
+
+	for (const warning of findSkillRouteConflictWarnings(skillRoutes)) {
+		pushStrictWarning(issues, `${SKILL_INDEX_PATH} ${warning}`);
+	}
 
 	for (const route of skillRoutes) {
 		if (!route.skillPath.startsWith('.mustflow/skills/') || !route.skillPath.endsWith('/SKILL.md')) {

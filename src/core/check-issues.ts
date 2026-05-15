@@ -29,6 +29,9 @@ export type CheckIssueId =
 	| 'mustflow.skill.command_permission_claim'
 	| 'mustflow.skill.unknown_command_intent'
 	| 'mustflow.skill.index_route_unknown_command_intent'
+	| 'mustflow.skill.index_route_broad_catch_all'
+	| 'mustflow.skill.index_route_identical_trigger'
+	| 'mustflow.skill.index_route_duplicate_surface'
 	| 'mustflow.skill.resource_unknown_command_intent'
 	| 'mustflow.source_anchor.invalid_format'
 	| 'mustflow.source_anchor.duplicate_id'
@@ -84,6 +87,9 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.skill.command_permission_claim', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md claims command execution permission; keep permissions in \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.skill.unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.command_intents references unknown command intent "[^"]+"$/u],
 	['mustflow.skill.index_route_unknown_command_intent', /^Strict: \.mustflow\/skills\/INDEX\.md route \.mustflow\/skills\/[^/]+\/SKILL\.md references command intent "[^"]+" not declared by the skill frontmatter$/u],
+	['mustflow.skill.index_route_broad_catch_all', /^Strict warning: \.mustflow\/skills\/INDEX\.md \.mustflow\/skills\/[^/]+\/SKILL\.md route uses broad catch-all trigger ".+" that can shadow narrower skills$/u],
+	['mustflow.skill.index_route_identical_trigger', /^Strict warning: \.mustflow\/skills\/INDEX\.md \.mustflow\/skills\/[^/]+\/SKILL\.md and \.mustflow\/skills\/[^/]+\/SKILL\.md have identical skill route trigger text$/u],
+	['mustflow.skill.index_route_duplicate_surface', /^Strict warning: \.mustflow\/skills\/INDEX\.md \.mustflow\/skills\/[^/]+\/SKILL\.md and \.mustflow\/skills\/[^/]+\/SKILL\.md have duplicate edit scope, risk, and expected output route surface$/u],
 	['mustflow.skill.resource_unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/resources\.toml script [^\s]+ references unknown command intent "[^"]+"$/u],
 	['mustflow.source_anchor.invalid_format', /^Strict: source anchor .+ has invalid format:/u],
 	['mustflow.source_anchor.duplicate_id', /^Strict: source anchor id "[^"]+" is duplicated:/u],
