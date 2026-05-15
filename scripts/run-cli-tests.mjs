@@ -103,6 +103,7 @@ const commandRelatedTests = new Map([
 	['search', ['search.test.js', 'search-backends.test.js', 'search-index-state.test.js', 'search-output.test.js', 'search-source-scope.test.js']],
 	['status', ['status.test.js']],
 	['update', ['update.test.js']],
+	['upgrade', ['upgrade.test.js', 'update.test.js', ...routerSmokeTests]],
 	['verify', ['verify.test.js', 'explain-verify.test.js', ...schemaSmokeTests]],
 	['version', [...routerSmokeTests]],
 	['version-sources', ['version-sources.test.js', ...schemaSmokeTests]],

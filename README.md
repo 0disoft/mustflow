@@ -268,6 +268,14 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
+After updating the mustflow package, `mf upgrade` combines the package freshness check with the safe project-file update step. It does not install packages by itself; update npm, pnpm, or Bun first.
+
+```sh
+bun update -g mustflow
+mf upgrade --dry-run
+mf upgrade
+```
+
 Agents should prefer the configured update intents so the repository receives a run receipt.
 
 ```sh
@@ -304,6 +312,8 @@ mf run mustflow_update_apply
 | `mf status` | Inspect installed state and changed or missing files. |
 | `mf update --dry-run` | Calculate a template update plan without writing files. |
 | `mf update --apply` | Apply template updates when nothing is blocked. |
+| `mf upgrade` | Check package freshness, then apply safe bundled template updates when the package is current. |
+| `mf upgrade --dry-run` | Check package freshness and print the safe project update plan without writing files. |
 | `mf help <topic>` | Show installed mustflow help. |
 | `mf dashboard` | Start a local inspection dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. Use `--export-json <path>` or `--export <path>` for a bounded static report. It does not execute commands or apply fixes. |
 | `mf version` | Print the installed mustflow package version. |

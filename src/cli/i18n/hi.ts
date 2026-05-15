@@ -30,6 +30,7 @@ export const hiMessages = {
   "command.contractLint.summary": "कमांड अनुबंध की जाँच करें",
   "command.status.summary": "स्थानीय mustflow इंस्टॉल स्थिति दिखाएँ",
   "command.update.summary": "mustflow वर्कफ़्लो अपडेट का पूर्वावलोकन करें या लागू करें",
+  "command.upgrade.summary": "Package version जाँचें और installed workflow files सुरक्षित रूप से update करें",
   "command.map.summary": "REPO_MAP.md बनाएँ",
   "command.lineEndings.summary": "लाइन-एंडिंग नीति की जाँच और सामान्यीकरण करें",
   "command.run.summary": "कॉन्फ़िगर की गई एक-बार चलने वाली कमांड चलाएँ",
@@ -774,6 +775,19 @@ export const hiMessages = {
   "version.check.upToDate": "latest {version}; पहले से up to date",
   "version.check.updateCommand": "Update command:",
   "version.error.checkFailed": "npm पर नया version जाँचा नहीं जा सका: {message}",
+
+  "upgrade.help.summary":
+    "जाँचें कि installed mustflow package current है या नहीं, फिर संभव होने पर current CLI में bundled workflow template updates सुरक्षित रूप से लागू करें.",
+  "upgrade.help.option.dryRun": "Package status जाँचें और files लिखे बिना project update plan प्रिंट करें",
+  "upgrade.help.exit.ok": "Package current था और project update check पूरा हुआ",
+  "upgrade.help.exit.fail": "Package update चाहिए, project update blocker मिला, या input invalid है",
+  "upgrade.title": "mustflow upgrade",
+  "upgrade.packageSection": "Package:",
+  "upgrade.projectSection": "Project template:",
+  "upgrade.packageUpdateRequired": "पहले mustflow package update करें, फिर `mf upgrade` दोबारा चलाएँ.",
+  "upgrade.noFilesWritten": "कोई project file नहीं लिखी गई.",
+  "upgrade.warning.versionCheckFailed": "npm पर नया version जाँचा नहीं जा सका: {message}",
+  "upgrade.warning.continueWithBundledTemplate": "Current CLI में bundled template के साथ आगे बढ़ रहे हैं.",
 
   "classify.help.summary":
     "फ़ाइल बदले बिना बदले पथ, सार्वजनिक सतह और जरूरी सत्यापन कारण वर्गीकृत करें.",

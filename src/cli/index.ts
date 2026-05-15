@@ -24,6 +24,7 @@ import { runRun } from './commands/run.js';
 import { runSearch } from './commands/search.js';
 import { runStatus } from './commands/status.js';
 import { runUpdate } from './commands/update.js';
+import { runUpgrade } from './commands/upgrade.js';
 import { runVerify } from './commands/verify.js';
 import { runVersion } from './commands/version.js';
 import { runVersionSources } from './commands/version-sources.js';
@@ -69,6 +70,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
 				'mf impact --changed',
+				'mf upgrade --dry-run',
 				'mf verify --changed --plan-only --json',
 				'mf verify --reason code_change',
 				'mf line-endings check',
@@ -183,6 +185,10 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 
 	if (command === 'update') {
 		return runUpdate(args, reporter, parsed.lang);
+	}
+
+	if (command === 'upgrade') {
+		return runUpgrade(args, reporter, parsed.lang);
 	}
 
 	if (command === 'map') {

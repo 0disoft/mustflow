@@ -30,6 +30,7 @@ export const esMessages = {
   "command.contractLint.summary": "Revisa el contrato de comandos",
   "command.status.summary": "Muestra el estado de la instalación local de mustflow",
   "command.update.summary": "Previsualiza o aplica actualizaciones del flujo de trabajo mustflow",
+  "command.upgrade.summary": "Comprueba la versión del paquete y actualiza con seguridad los archivos de flujo instalados",
   "command.map.summary": "Genera REPO_MAP.md",
   "command.lineEndings.summary": "Inspecciona y normaliza la política de finales de línea",
   "command.run.summary": "Ejecuta un comando configurado de una sola ejecución",
@@ -774,6 +775,19 @@ Lee estos archivos antes de trabajar:
   "version.check.upToDate": "última versión {version}; ya está actualizado",
   "version.check.updateCommand": "Comando de actualización:",
   "version.error.checkFailed": "No se pudo consultar npm para una versión nueva: {message}",
+
+  "upgrade.help.summary":
+    "Comprueba si el paquete mustflow instalado está actualizado y luego aplica de forma segura las actualizaciones de la plantilla incluida cuando sea posible.",
+  "upgrade.help.option.dryRun": "Comprueba el estado del paquete e imprime el plan de actualización del proyecto sin escribir archivos",
+  "upgrade.help.exit.ok": "El paquete estaba actualizado y la comprobación de actualización del proyecto terminó",
+  "upgrade.help.exit.fail": "Hace falta actualizar el paquete, hay un bloqueo de actualización del proyecto o la entrada es inválida",
+  "upgrade.title": "mustflow upgrade",
+  "upgrade.packageSection": "Paquete:",
+  "upgrade.projectSection": "Plantilla del proyecto:",
+  "upgrade.packageUpdateRequired": "Actualiza primero el paquete mustflow y luego vuelve a ejecutar `mf upgrade`.",
+  "upgrade.noFilesWritten": "No se escribieron archivos del proyecto.",
+  "upgrade.warning.versionCheckFailed": "No se pudo consultar npm para una versión nueva: {message}",
+  "upgrade.warning.continueWithBundledTemplate": "Continuando con la plantilla incluida en el CLI actual.",
 
   "classify.help.summary":
     "Clasifica rutas cambiadas, superficies publicas y razones de verificacion sin modificar archivos.",

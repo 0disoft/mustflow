@@ -31,6 +31,7 @@ export const koMessages = {
   "command.contractLint.summary": "명령 계약을 점검합니다",
   "command.status.summary": "로컬 mustflow 설치 상태를 출력합니다",
   "command.update.summary": "mustflow 워크플로우 갱신을 미리 보거나 적용합니다",
+  "command.upgrade.summary": "패키지 버전을 확인하고 설치된 워크플로우 파일을 안전하게 갱신합니다",
   "command.map.summary": "REPO_MAP.md를 작성합니다",
   "command.lineEndings.summary": "줄바꿈 정책을 검사하고 정규화합니다",
   "command.run.summary": "설정된 일회성 명령을 실행합니다",
@@ -769,6 +770,19 @@ export const koMessages = {
   "version.check.upToDate": "최신 {version}; 이미 최신 상태입니다",
   "version.check.updateCommand": "업데이트 명령:",
   "version.error.checkFailed": "npm에서 새 버전을 확인하지 못했습니다: {message}",
+
+  "upgrade.help.summary":
+    "설치된 mustflow 패키지가 최신인지 확인한 뒤, 가능하면 현재 CLI에 포함된 워크플로우 템플릿 갱신을 안전하게 적용합니다.",
+  "upgrade.help.option.dryRun": "패키지 상태를 확인하고 파일을 쓰지 않은 채 프로젝트 갱신 계획을 출력합니다",
+  "upgrade.help.exit.ok": "패키지가 최신이고 프로젝트 갱신 확인이 완료되었습니다",
+  "upgrade.help.exit.fail": "패키지 업데이트가 필요하거나, 프로젝트 갱신 차단 항목이 있거나, 입력이 잘못되었습니다",
+  "upgrade.title": "mustflow upgrade",
+  "upgrade.packageSection": "패키지:",
+  "upgrade.projectSection": "프로젝트 템플릿:",
+  "upgrade.packageUpdateRequired": "mustflow 패키지를 먼저 업데이트한 뒤 `mf upgrade`를 다시 실행하세요.",
+  "upgrade.noFilesWritten": "프로젝트 파일은 쓰지 않았습니다.",
+  "upgrade.warning.versionCheckFailed": "npm에서 새 버전을 확인하지 못했습니다: {message}",
+  "upgrade.warning.continueWithBundledTemplate": "현재 CLI에 포함된 템플릿으로 계속 진행합니다.",
 
   "classify.help.summary":
     "파일을 수정하지 않고 변경 경로, 공개 표면, 필요한 검증 이유를 분류합니다.",

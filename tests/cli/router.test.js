@@ -85,6 +85,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf contract-lint/);
 	assert.match(result.stdout, /mf status/);
 	assert.match(result.stdout, /mf update/);
+	assert.match(result.stdout, /mf upgrade/);
 	assert.match(result.stdout, /mf map/);
 	assert.match(result.stdout, /mf line-endings/);
 	assert.match(result.stdout, /mf run/);
@@ -225,7 +226,7 @@ test('fails unknown commands with Korean guidance when --lang ko is set', async 
 });
 
 test('routes command-specific help', async () => {
-	for (const command of ['adapters', 'init', 'check', 'classify', 'contract-lint', 'status', 'update', 'map', 'line-endings', 'run', 'context', 'doctor', 'handoff', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
+	for (const command of ['adapters', 'init', 'check', 'classify', 'contract-lint', 'status', 'update', 'upgrade', 'map', 'line-endings', 'run', 'context', 'doctor', 'handoff', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
 		const result = await runCli([command, '--help']);
 
 		assert.equal(result.status, 0);

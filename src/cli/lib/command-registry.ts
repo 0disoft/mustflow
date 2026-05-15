@@ -43,6 +43,11 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		summaryKey: 'command.update.summary',
 	},
 	{
+		id: 'upgrade',
+		usage: 'mf upgrade',
+		summaryKey: 'command.upgrade.summary',
+	},
+	{
 		id: 'map',
 		usage: 'mf map',
 		summaryKey: 'command.map.summary',

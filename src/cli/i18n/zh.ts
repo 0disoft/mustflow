@@ -30,6 +30,7 @@ export const zhMessages = {
   "command.contractLint.summary": "检查命令契约",
   "command.status.summary": "显示本地 mustflow 安装状态",
   "command.update.summary": "预览或应用 mustflow 工作流更新",
+  "command.upgrade.summary": "检查包版本并安全更新已安装的工作流文件",
   "command.map.summary": "生成 REPO_MAP.md",
   "command.lineEndings.summary": "检查并规范化换行符策略",
   "command.run.summary": "运行已配置的一次性命令",
@@ -764,6 +765,19 @@ export const zhMessages = {
   "version.check.upToDate": "最新版本 {version}；已是最新",
   "version.check.updateCommand": "更新命令：",
   "version.error.checkFailed": "无法从 npm 检查新版本：{message}",
+
+  "upgrade.help.summary":
+    "检查已安装的 mustflow 包是否为最新，然后在可行时安全应用当前 CLI 捆绑的工作流模板更新。",
+  "upgrade.help.option.dryRun": "检查包状态并打印项目更新计划，不写入文件",
+  "upgrade.help.exit.ok": "包已是最新，项目更新检查已完成",
+  "upgrade.help.exit.fail": "需要先更新包、项目更新存在阻塞项，或输入无效",
+  "upgrade.title": "mustflow upgrade",
+  "upgrade.packageSection": "包：",
+  "upgrade.projectSection": "项目模板：",
+  "upgrade.packageUpdateRequired": "请先更新 mustflow 包，然后再次运行 `mf upgrade`。",
+  "upgrade.noFilesWritten": "未写入项目文件。",
+  "upgrade.warning.versionCheckFailed": "无法从 npm 检查新版本：{message}",
+  "upgrade.warning.continueWithBundledTemplate": "继续使用当前 CLI 捆绑的模板。",
 
   "classify.help.summary":
     "在不修改文件的情况下分类变更路径、公开表面和所需验证原因。",

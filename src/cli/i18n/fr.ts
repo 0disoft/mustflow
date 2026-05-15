@@ -30,6 +30,7 @@ export const frMessages = {
   "command.contractLint.summary": "Vérifie le contrat de commandes",
   "command.status.summary": "Affiche l'état de l'installation locale de mustflow",
   "command.update.summary": "Prévisualise ou applique les mises à jour du flux de travail mustflow",
+  "command.upgrade.summary": "Vérifie la version du paquet et met à jour en sécurité les fichiers de workflow installés",
   "command.map.summary": "Génère REPO_MAP.md",
   "command.lineEndings.summary": "Inspecte et normalise la politique de fins de ligne",
   "command.run.summary": "Exécute une commande configurée à exécution unique",
@@ -774,6 +775,19 @@ Lisez ces fichiers avant de travailler :
   "version.check.upToDate": "dernière version {version}; déjà à jour",
   "version.check.updateCommand": "Commande de mise à jour :",
   "version.error.checkFailed": "Impossible de vérifier une nouvelle version sur npm : {message}",
+
+  "upgrade.help.summary":
+    "Vérifie si le paquet mustflow installé est à jour, puis applique en sécurité les mises à jour du modèle inclus quand c'est possible.",
+  "upgrade.help.option.dryRun": "Vérifie l'état du paquet et affiche le plan de mise à jour du projet sans écrire de fichiers",
+  "upgrade.help.exit.ok": "Le paquet était à jour et la vérification de mise à jour du projet est terminée",
+  "upgrade.help.exit.fail": "Une mise à jour du paquet est requise, un blocage de mise à jour du projet existe, ou l'entrée est invalide",
+  "upgrade.title": "mustflow upgrade",
+  "upgrade.packageSection": "Paquet :",
+  "upgrade.projectSection": "Modèle de projet :",
+  "upgrade.packageUpdateRequired": "Mettez d'abord à jour le paquet mustflow, puis relancez `mf upgrade`.",
+  "upgrade.noFilesWritten": "Aucun fichier du projet n'a été écrit.",
+  "upgrade.warning.versionCheckFailed": "Impossible de vérifier une nouvelle version sur npm : {message}",
+  "upgrade.warning.continueWithBundledTemplate": "Poursuite avec le modèle inclus dans le CLI actuel.",
 
   "classify.help.summary":
     "Classe les chemins modifies, les surfaces publiques et les raisons de verification sans modifier les fichiers.",

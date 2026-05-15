@@ -28,6 +28,7 @@ export const enMessages = {
   "command.contractLint.summary": "Lint the command contract",
   "command.status.summary": "Show local mustflow install status",
   "command.update.summary": "Preview or apply mustflow workflow updates",
+  "command.upgrade.summary": "Check the package version and safely update installed workflow files",
   "command.map.summary": "Generate REPO_MAP.md",
   "command.lineEndings.summary": "Inspect and normalize line-ending policy",
   "command.run.summary": "Run a configured oneshot command",
@@ -772,6 +773,19 @@ Read these files before working:
   "version.check.upToDate": "latest {version}; already up to date",
   "version.check.updateCommand": "Update command:",
   "version.error.checkFailed": "Could not check npm for a newer version: {message}",
+
+  "upgrade.help.summary":
+    "Check whether the installed mustflow package is current, then safely apply bundled workflow template updates when possible.",
+  "upgrade.help.option.dryRun": "Check package status and print the project update plan without writing files",
+  "upgrade.help.exit.ok": "The package was current and the project update check completed",
+  "upgrade.help.exit.fail": "A package update is required, a project update blocker was found, or input was invalid",
+  "upgrade.title": "mustflow upgrade",
+  "upgrade.packageSection": "Package:",
+  "upgrade.projectSection": "Project template:",
+  "upgrade.packageUpdateRequired": "Update the mustflow package first, then run `mf upgrade` again.",
+  "upgrade.noFilesWritten": "No project files were written.",
+  "upgrade.warning.versionCheckFailed": "Could not check npm for a newer version: {message}",
+  "upgrade.warning.continueWithBundledTemplate": "Continuing with the bundled template in the current CLI.",
 
   "classify.help.summary":
     "Classify changed paths, public surfaces, and required validation reasons without modifying files.",
