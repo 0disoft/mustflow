@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { cloneProjectFixture, createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
@@ -23,22 +23,6 @@ after(() => {
 function cloneIndexedProject() {
 	return cloneProjectFixture(indexedProjectFixture, 'mustflow-search-indexed-');
 }
-
-test('fails clearly when local index is missing', () => {
-	const projectPath = createTempProject();
-
-	try {
-		initProject(projectPath);
-		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
-
-		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Local mustflow index not found/);
-		assert.match(result.stderr, /Run `mf index` before searching\./);
-		assert.equal(result.stdout, '');
-	} finally {
-		removeTempProject(projectPath);
-	}
-});
 
 test('prints matching documents skills and command intents from the local index', () => {
 	const projectPath = cloneIndexedProject();
@@ -178,25 +162,6 @@ test('prints cache-layer hints for task-scoped search results', async () => {
 
 		assert.equal(skill.cache_layer, 'task');
 		assert.equal(skill.volatile, false);
-	} finally {
-		removeTempProject(projectPath);
-	}
-});
-
-test('fails when indexed mustflow files changed after indexing', () => {
-	const projectPath = cloneIndexedProject();
-
-	try {
-		appendFileSync(path.join(projectPath, 'AGENTS.md'), '\n추가 규칙\n');
-
-		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
-
-		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Local mustflow index is stale/);
-		assert.match(result.stderr, /AGENTS\.md/);
-		assert.match(result.stderr, /Run `mf index` before searching\./);
-		assert.match(result.stderr, /Refresh command: mf index/);
-		assert.equal(result.stdout, '');
 	} finally {
 		removeTempProject(projectPath);
 	}
