@@ -818,7 +818,9 @@ export const zhMessages = {
   "verify.error.writePlanRequiresChanged": "--write-plan 需要 --changed",
   "verify.error.planOnlyJson": "--plan-only 需要 --json",
   "verify.error.invalid_plan_file": "验证计划必须是可读取的 JSON 文件",
-  "verify.error.missing_plan_reasons": "验证计划必须包含 reason、reasons、validationReasons、summary.validationReasons 或 classification_summary.validationReasons",
+  "verify.error.unsupported_plan_source": "验证计划必须由 mf classify --json 生成",
+  "verify.error.plan_root_mismatch": "验证计划必须来自当前 mustflow 根目录",
+  "verify.error.missing_plan_reasons": "验证计划必须包含 summary.validationReasons",
   "verify.error.plan_path_outside_root": "验证计划路径必须位于 mustflow 根目录内",
 
   "explain.help.summary":

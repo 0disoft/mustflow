@@ -34,7 +34,9 @@
         "stdin": { "enum": ["closed"] },
         "max_output_bytes": { "type": "integer" },
         "on_timeout": { "type": "string" },
-        "kill_after_seconds": { "type": "integer" }
+        "kill_after_seconds": { "type": "integer" },
+        "env_policy": { "$ref": "#/$defs/envPolicy" },
+        "env_allowlist": { "$ref": "#/$defs/stringArray" }
       }
     },
     "intents": {
@@ -50,6 +52,9 @@
     "stringArray": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "envPolicy": {
+      "enum": ["inherit", "minimal", "allowlist"]
     },
     "resource": {
       "type": "object",
@@ -98,6 +103,8 @@
         "writes": {
           "$ref": "#/$defs/stringArray"
         },
+        "env_policy": { "$ref": "#/$defs/envPolicy" },
+        "env_allowlist": { "$ref": "#/$defs/stringArray" },
         "effects": {
           "type": "array",
           "items": { "$ref": "#/$defs/effect" }

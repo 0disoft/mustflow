@@ -119,8 +119,22 @@ export interface DashboardStatusSnapshot {
 				readonly error: string | null;
 				readonly kill_method: string | null;
 				readonly receipt_path: string;
-				readonly stdout: { readonly bytes: number; readonly truncated: boolean; readonly tail: string };
-				readonly stderr: { readonly bytes: number; readonly truncated: boolean; readonly tail: string };
+				readonly stdout: {
+					readonly bytes: number;
+					readonly truncated: boolean;
+					readonly tail: string;
+					readonly redacted: boolean;
+					readonly redaction_count: number;
+					readonly redaction_kinds: readonly string[];
+				};
+				readonly stderr: {
+					readonly bytes: number;
+					readonly truncated: boolean;
+					readonly tail: string;
+					readonly redacted: boolean;
+					readonly redaction_count: number;
+					readonly redaction_kinds: readonly string[];
+				};
 		  };
 	readonly skills: {
 		readonly index_path: string;

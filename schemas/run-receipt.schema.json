@@ -17,6 +17,8 @@
     "lifecycle",
     "run_policy",
     "mode",
+    "env_policy",
+    "env_allowlist",
     "timeout_seconds",
     "max_output_bytes",
     "success_exit_codes",
@@ -26,6 +28,7 @@
     "kill_method",
     "stdout",
     "stderr",
+    "write_drift",
     "receipt_path"
   ],
   "properties": {
@@ -41,6 +44,11 @@
     "lifecycle": { "type": "string" },
     "run_policy": { "type": "string" },
     "mode": { "enum": ["argv", "shell"] },
+    "env_policy": { "enum": ["inherit", "minimal", "allowlist"] },
+    "env_allowlist": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "argv": {
       "type": "array",
       "items": { "type": "string" }
@@ -58,6 +66,8 @@
     "kill_method": { "type": ["string", "null"] },
     "stdout": { "$ref": "#/$defs/output" },
     "stderr": { "$ref": "#/$defs/output" },
+    "write_drift": { "$ref": "#/$defs/writeDrift" },
+    "redaction": { "$ref": "#/$defs/redaction" },
     "receipt_path": { "type": "string" }
   },
   "$defs": {
@@ -68,7 +78,70 @@
       "properties": {
         "bytes": { "type": "integer" },
         "truncated": { "type": "boolean" },
-        "tail": { "type": "string" }
+        "tail": { "type": "string" },
+        "redacted": { "type": "boolean" },
+        "redaction_count": { "type": "integer" },
+        "redaction_kinds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["redacted", "redaction_count", "redaction_kinds", "fields"],
+      "properties": {
+        "redacted": { "type": "boolean" },
+        "redaction_count": { "type": "integer" },
+        "redaction_kinds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "writeDrift": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "declared_paths",
+        "observed_paths",
+        "declared_observed_paths",
+        "undeclared_paths",
+        "observed_count",
+        "undeclared_count",
+        "has_undeclared_changes",
+        "truncated",
+        "reason"
+      ],
+      "properties": {
+        "status": { "enum": ["checked", "unavailable"] },
+        "declared_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "observed_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "declared_observed_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "undeclared_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "observed_count": { "type": "integer" },
+        "undeclared_count": { "type": "integer" },
+        "has_undeclared_changes": { "type": "boolean" },
+        "truncated": { "type": "boolean" },
+        "reason": { "type": ["string", "null"] }
       }
     }
   }

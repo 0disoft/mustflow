@@ -29,6 +29,8 @@ deny_unmanaged_long_running = true
 max_output_bytes = 1048576
 on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
+env_policy = "minimal"
+env_allowlist = []
 
 [intents.test]
 status = "unknown"
@@ -52,6 +54,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.max_output_bytes`: Default output limit accepted by the runner.
 - `defaults.on_timeout`: Timeout handling policy.
 - `defaults.kill_after_seconds`: Extra wait time available to process cleanup.
+- `defaults.env_policy`: Environment policy for command execution when an intent does not override it.
+- `defaults.env_allowlist`: Extra environment variable names passed when the effective policy is `allowlist`.
 
 ## Intent Status
 
@@ -79,6 +83,8 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `timeout_seconds`: Command timeout.
 - `stdin`: Standard input behavior. Agent-runnable intents must use `closed`.
 - `success_exit_codes`: Exit codes considered successful.
+- `env_policy`: Optional override for command environment handling. Use `minimal`, `allowlist`, or explicit `inherit`.
+- `env_allowlist`: Extra variable names allowed when `env_policy = "allowlist"`.
 - `writes`: Paths the command may modify.
 - `resources`: Optional top-level resource declarations for shared outputs such as build directories.
 - `effects`: Optional per-intent side-effect declarations used to explain resource locks and safe verification order. When absent, `writes` is treated as a conservative exclusive write lock.
@@ -104,6 +110,16 @@ writes = []
 network = false
 destructive = false
 ```
+
+## Environment Policy
+
+`mf run` records the effective environment policy in previews and run receipts, but it never prints environment variable values.
+
+- `minimal`: pass only basic process-launch variables such as `PATH`, home and temp-directory variables, terminal color flags, language settings, and Windows process essentials. The project-local `node_modules/.bin` path is still removed from `PATH`.
+- `allowlist`: start from the minimal environment, then add names from `defaults.env_allowlist` and the intent's `env_allowlist`.
+- `inherit`: pass the host process environment after removing the project-local `node_modules/.bin` path from `PATH`. Use this only when a command truly needs broad host state.
+
+Installed templates use `env_policy = "minimal"` by default. Existing configs without an environment policy keep the older inheritance behavior for compatibility, but new runnable intents should prefer `minimal` or `allowlist`.
 
 If a shell is required, set `mode = "shell"` and `cmd`, then declare the command impact and write paths.
 

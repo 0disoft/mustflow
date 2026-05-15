@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import path from 'node:path';
 
 import { runCheck } from './check.js';
 import { runClassify } from './classify.js';
@@ -13,6 +12,7 @@ import { runStatus } from './status.js';
 import { runUpdate } from './update.js';
 import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
+import { createCommandEnv } from '../../core/command-env.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
@@ -30,6 +30,7 @@ import {
 	type RunPreviewMode,
 } from '../lib/run-plan.js';
 import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../../core/run-receipt.js';
+import { finishRunWriteTracking, startRunWriteTracking } from '../../core/run-write-drift.js';
 
 interface CommandResult {
 	readonly status: number | null;
@@ -86,35 +87,6 @@ function terminateProcessTree(pid: number | undefined): void {
 
 function getKillMethod(): string {
 	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
-}
-
-function getPathEnvKey(env: NodeJS.ProcessEnv): string {
-	return Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
-}
-
-function sameResolvedPath(left: string, right: string): boolean {
-	const resolvedLeft = path.resolve(left);
-	const resolvedRight = path.resolve(right);
-
-	return process.platform === 'win32'
-		? resolvedLeft.toLowerCase() === resolvedRight.toLowerCase()
-		: resolvedLeft === resolvedRight;
-}
-
-function createCommandEnv(projectRoot: string): NodeJS.ProcessEnv {
-	const env = { ...process.env };
-	const pathKey = getPathEnvKey(env);
-	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
-	const currentPath = env[pathKey];
-
-	if (currentPath) {
-		env[pathKey] = currentPath
-			.split(path.delimiter)
-			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath))
-			.join(path.delimiter);
-	}
-
-	return env;
 }
 
 function createBufferedReporter(): BufferedReporter {
@@ -449,9 +421,10 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 	}
 
 	const runReceiptPolicy = resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot));
-	const env = createCommandEnv(projectRoot);
+	const env = createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist });
 	const lifecycleValue = plan.lifecycle ?? 'oneshot';
 	const runPolicyValue = plan.runPolicy ?? 'agent_allowed';
+	const writeTracker = startRunWriteTracking(projectRoot, contract, intentName);
 
 	const startedAt = new Date();
 	const result =
@@ -462,6 +435,7 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 			? runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds)
 			: runShellCommand(plan.shellCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
 	const finishedAt = new Date();
+	const writeDrift = finishRunWriteTracking(writeTracker);
 	const exitCode = typeof result.status === 'number' ? result.status : null;
 	const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
 	let killMethod: string | null = null;
@@ -484,6 +458,8 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		mode: plan.mode,
 		argv: plan.commandArgv,
 		cmd: plan.shellCommand,
+		envPolicy: plan.envPolicy,
+		envAllowlist: plan.envAllowlist,
 		timeoutSeconds: plan.timeoutSeconds,
 		maxOutputBytes: plan.maxOutputBytes,
 		successExitCodes: plan.successExitCodes,
@@ -493,6 +469,7 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		killMethod,
 		stdout: result.stdout,
 		stderr: result.stderr,
+		writeDrift,
 		stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
 		stderrTailBytes: runReceiptPolicy.stderrTailBytes,
 	});

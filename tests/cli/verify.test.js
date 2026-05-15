@@ -53,6 +53,40 @@ function commitProjectBaseline(projectPath) {
 	runGit(projectPath, ['commit', '-m', 'init']);
 }
 
+function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
+	return {
+		schema_version: '1',
+		command: 'classify',
+		mustflow_root: projectPath,
+		source: 'paths',
+		files: [filePath],
+		classifications: [
+			{
+				path: filePath,
+				changeKinds: ['documentation'],
+				surface: {
+					kind: 'readme_page',
+					category: 'documentation',
+					isPublicSurface: true,
+					validationReasons: [reason],
+					affectedContracts: ['public documentation'],
+					updatePolicy: 'update',
+					driftChecks: ['command examples'],
+				},
+			},
+		],
+		summary: {
+			fileCount: 1,
+			publicSurfaceCount: 1,
+			changeKinds: ['documentation'],
+			validationReasons: [reason],
+			updatePolicies: ['update'],
+			driftChecks: ['command examples'],
+			affectedContracts: ['public documentation'],
+		},
+	};
+}
+
 test('runs configured verification intents for a reason', () => {
 	const projectPath = createTempProject();
 
@@ -435,6 +469,77 @@ required_after = ["custom_verify"]
 	}
 });
 
+test('runs verification intents in the plan schedule order', () => {
+	const projectPath = createTempProject();
+	const orderPath = path.join(projectPath, 'order.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[resources.verify_order_log]
+type = "path"
+paths = ["order.txt"]
+concurrency = "exclusive_writer"
+description = "Verification order log."
+
+[intents.verify_schedule_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Append schedule marker A."
+argv = ['${process.execPath}', '-e', 'require("node:fs").appendFileSync("order.txt", "verify_schedule_a\\n")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["order.txt"]
+effects = [
+  { type = "write", mode = "append", path = "order.txt", lock = "verify_order_log", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["custom_verify"]
+
+[intents.verify_schedule_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Append schedule marker B."
+argv = ['${process.execPath}', '-e', 'require("node:fs").appendFileSync("order.txt", "verify_schedule_b\\n")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["order.txt"]
+effects = [
+  { type = "write", mode = "append", path = "order.txt", lock = "verify_order_log", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["custom_verify"]
+`,
+		);
+
+		const planResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
+		const runResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json']);
+		const planReport = JSON.parse(planResult.stdout);
+		const runReport = JSON.parse(runResult.stdout);
+		const scheduledIntents = planReport.schedule.entries.map((entry) => entry.intent);
+
+		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+		assert.equal(runResult.status, 0, runResult.stderr || runResult.stdout);
+		assert.deepEqual(
+			runReport.results.filter((result) => !result.skipped).map((result) => result.intent),
+			scheduledIntents,
+		);
+		assert.deepEqual(readFileSync(orderPath, 'utf8').trim().split(/\r?\n/), scheduledIntents);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps manual-only plan candidates as skipped and reports gaps', () => {
 	const projectPath = createTempProject();
 
@@ -543,38 +648,7 @@ required_after = ["docs_change"]
 		);
 		writeFileSync(
 			path.join(projectPath, 'verify-plan.json'),
-			JSON.stringify(
-				{
-					source: 'paths',
-					files: ['README.md'],
-					classifications: [
-						{
-							path: 'README.md',
-							changeKinds: ['documentation'],
-							surface: {
-								kind: 'readme_page',
-								category: 'documentation',
-								isPublicSurface: true,
-								validationReasons: ['docs_change'],
-								affectedContracts: ['public documentation'],
-								updatePolicy: 'update',
-								driftChecks: ['command examples'],
-							},
-						},
-					],
-					classification_summary: {
-						fileCount: 1,
-						publicSurfaceCount: 1,
-						changeKinds: ['documentation'],
-						validationReasons: ['docs_change'],
-						updatePolicies: ['update'],
-						driftChecks: ['command examples'],
-						affectedContracts: ['public documentation'],
-					},
-				},
-				null,
-				2,
-			),
+			JSON.stringify(createClassifyPlan(projectPath, 'docs_change'), null, 2),
 		);
 
 		const indexResult = runCli(projectPath, ['index', '--json']);
@@ -630,7 +704,7 @@ required_after = ["schema_verify"]
 		);
 		writeFileSync(
 			path.join(projectPath, 'verify-plan.json'),
-			JSON.stringify({ classification_summary: { validationReasons: ['schema_verify'] } }, null, 2),
+			JSON.stringify(createClassifyPlan(projectPath, 'schema_verify', 'schemas/classify-report.schema.json'), null, 2),
 		);
 
 		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
@@ -643,6 +717,46 @@ required_after = ["schema_verify"]
 		assert.equal(report.status, 'passed');
 		assert.equal(report.summary.ran, 1);
 		assert.equal(report.results[0].intent, 'verify_from_plan');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects loose verification plans that are not classify output', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'verify-plan.json'),
+			JSON.stringify({ classification_summary: { validationReasons: ['schema_verify'] } }, null, 2),
+		);
+
+		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Verification plan must be produced by mf classify --json/);
+		assert.match(result.stdout, /Usage: mf verify/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects classify plans from a different mustflow root', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'verify-plan.json'),
+			JSON.stringify({ ...createClassifyPlan(projectPath, 'schema_verify'), mustflow_root: path.join(projectPath, 'other') }, null, 2),
+		);
+
+		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Verification plan must come from this mustflow root/);
+		assert.match(result.stdout, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}

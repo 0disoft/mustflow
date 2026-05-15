@@ -22,6 +22,7 @@ import {
 	DASHBOARD_VERIFICATION_MAX_FILE_MATCHES,
 	createDashboardVerificationSnapshot,
 } from '../../core/dashboard-verification.js';
+import { redactSecretLikeText } from '../../core/secret-redaction.js';
 import { parseSkillIndexRoutes } from '../../core/skill-route-alignment.js';
 import { getAgentContext } from '../lib/agent-context.js';
 import { readGitChangedFiles } from '../lib/git-changes.js';
@@ -686,15 +687,33 @@ function renderUpdateResponse(projectRoot: string): DashboardStatusSnapshot['upd
 	};
 }
 
-function readRunOutput(value: unknown): { readonly bytes: number; readonly truncated: boolean; readonly tail: string } {
+function readRunOutput(value: unknown): {
+	readonly bytes: number;
+	readonly truncated: boolean;
+	readonly tail: string;
+	readonly redacted: boolean;
+	readonly redaction_count: number;
+	readonly redaction_kinds: readonly string[];
+} {
 	if (!isRecord(value)) {
-		return { bytes: 0, truncated: false, tail: '' };
+		return { bytes: 0, truncated: false, tail: '', redacted: false, redaction_count: 0, redaction_kinds: [] };
 	}
+
+	const rawTail = typeof value.tail === 'string' ? value.tail : '';
+	const tailRedaction = redactSecretLikeText(rawTail);
+	const storedKinds = Array.isArray(value.redaction_kinds)
+		? value.redaction_kinds.filter((entry): entry is string => typeof entry === 'string')
+		: [];
+	const redactionKinds = [...new Set([...storedKinds, ...tailRedaction.redactionKinds])].sort();
+	const storedRedactionCount = typeof value.redaction_count === 'number' ? value.redaction_count : 0;
 
 	return {
 		bytes: typeof value.bytes === 'number' ? value.bytes : 0,
 		truncated: value.truncated === true,
-		tail: typeof value.tail === 'string' ? value.tail : '',
+		tail: tailRedaction.text,
+		redacted: value.redacted === true || tailRedaction.redacted,
+		redaction_count: storedRedactionCount + tailRedaction.redactionCount,
+		redaction_kinds: redactionKinds,
 	};
 }
 
@@ -720,6 +739,7 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 		const mode = typeof receipt.mode === 'string' ? receipt.mode : '';
 		const argv = Array.isArray(receipt.argv) ? receipt.argv.filter((entry): entry is string => typeof entry === 'string') : [];
 		const cmd = typeof receipt.cmd === 'string' && receipt.cmd.length > 0 ? [receipt.cmd] : [];
+		const commandLine = (mode === 'shell' ? cmd : argv).map((entry) => redactSecretLikeText(entry).text);
 
 		return {
 			path: LATEST_RUN_RELATIVE_PATH,
@@ -735,7 +755,7 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 			lifecycle: typeof receipt.lifecycle === 'string' ? receipt.lifecycle : '',
 			run_policy: typeof receipt.run_policy === 'string' ? receipt.run_policy : '',
 			mode,
-			command_line: mode === 'shell' ? cmd : argv,
+			command_line: commandLine,
 			timeout_seconds: typeof receipt.timeout_seconds === 'number' ? receipt.timeout_seconds : 0,
 			max_output_bytes: typeof receipt.max_output_bytes === 'number' ? receipt.max_output_bytes : 0,
 			success_exit_codes: readNumberArray(receipt.success_exit_codes),

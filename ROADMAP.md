@@ -22,48 +22,6 @@ Strong product framing to preserve:
 - SQLite, dashboard exports, run receipts, handoff records, and evidence artifacts may explain current state; they must not become project truth or hidden memory.
 - Convenience must follow explanation. A feature that makes work faster is only acceptable after it preserves authority, safety, and verification evidence.
 
-## Current Priority: Command Execution Safety
-
-Goal: close the most realistic safety gaps before adding broader convenience features. These are high-priority because they protect the core promise that agents cannot safely guess or overclaim command execution.
-
-- Add an explicit command environment policy for `mf run` and `mf verify`.
-  - Problem: inherited process environment can expose secrets, personal settings, or host-specific state to repository commands.
-  - Proposed shape: support a narrow policy such as `env_policy = "minimal" | "inherit" | "allowlist"` and an explicit allowlist for variables needed by package managers and continuous integration.
-  - Default direction: prefer minimal or allowlist behavior for new command contracts; require explicit opt-in for broad inheritance.
-  - Completion criteria: command planning output, run receipts, docs, tests, and schema descriptions all state the effective environment policy without printing secret values.
-  - Verification: targeted `run` tests, schema tests, `lint`, `test_related`, and `mustflow_check`.
-  - Do not: claim operating-system sandboxing or network isolation unless an actual isolation mechanism exists.
-
-- Make actual `mf verify` execution follow the same schedule model as plan-only verification.
-  - Problem: if `mf verify --plan-only` explains one order but actual execution uses another, lock and effect explanations lose trust.
-  - Proposed shape: use `createVerificationSchedule` or the shared scheduling model for both plan-only output and execution order.
-  - Completion criteria: plan-only schedule and actual execution order share one source of truth, including command-effect lock ordering and skipped candidates.
-  - Verification: fixtures with conflicting writes, manual-only candidates, unknown candidates, and multiple runnable intents.
-  - Do not: introduce parallel execution. `mf run` command intents should remain serial unless a future explicit scheduler contract is designed.
-
-- Tighten `--from-plan` input validation.
-  - Problem: flexible external JSON plans can inject validation reasons that lead to misleading verification candidates.
-  - Proposed shape: introduce strict plan validation for `mf verify --from-plan`, requiring expected `schema_version`, producer identity, supported report kind, and path/hash evidence where available.
-  - Migration approach: start with warning or `--strict-plan` if needed, then move to default strictness in a compatible release plan.
-  - Completion criteria: invalid or hand-written loose plans cannot silently produce runnable verification claims; valid `mf classify` and `mf verify --changed --write-plan` outputs continue to work.
-  - Verification: valid plan fixtures, invalid producer fixtures, stale-source fixtures, schema tests, and `test_related`.
-  - Do not: remove useful plan-based workflows without a compatibility path.
-
-- Detect declared-write drift in run receipts.
-  - Problem: a command with `writes = []` can still modify files; today the command contract explains intended effects but does not prove actual write behavior.
-  - Proposed shape: record a bounded before/after changed-file summary for command runs, then warn when observed writes do not match declared `writes` or `effects`.
-  - First version: receipt warning only. Do not block execution until warning quality is proven.
-  - Completion criteria: receipts distinguish declared writes, observed writes, undeclared writes, and unreadable status without storing raw command output beyond current limits.
-  - Verification: temp-project fixtures with no write, declared write, undeclared write, and generated `dist/` write.
-  - Do not: make mustflow a filesystem sandbox or store full file diffs in receipts.
-
-- Redact or warn on secret-like values in run receipts and static exports.
-  - Problem: bounded stdout/stderr tails can still contain secrets or personal data.
-  - Proposed shape: add conservative secret-like detection and redaction metadata for receipts, dashboard exports, and other bounded static reports.
-  - Completion criteria: receipt/output consumers can tell that redaction happened, but the sensitive value is not stored.
-  - Verification: fixtures for token-like strings, false-positive-tolerant redaction, dashboard export sanitization, and schema validation.
-  - Do not: promise perfect secret detection.
-
 ## Current Priority: Evidence and Contract Coverage
 
 Goal: turn existing plans, receipts, schemas, and dashboard snapshots into compact evidence surfaces that reviewers and continuous integration jobs can trust.

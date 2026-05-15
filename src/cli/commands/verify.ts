@@ -5,6 +5,7 @@ import { createClassifyOutput, type ClassifyOutput } from './classify.js';
 import { runRun } from './run.js';
 import {
 	createChangeVerificationReport,
+	type ChangeVerificationCandidate,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
 import type {
@@ -14,7 +15,7 @@ import type {
 	ChangeSource,
 	PublicSurfaceUpdatePolicy,
 } from '../../core/change-classification.js';
-import { createVerificationPlan, type VerificationCandidate } from '../../core/verification-plan.js';
+import type { VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
@@ -261,18 +262,141 @@ function readStringArray(value: unknown): string[] {
 	return value.filter((item): item is string => typeof item === 'string');
 }
 
-function readNumber(value: unknown): number | null {
-	return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : null;
+function isStringArray(value: unknown): value is readonly string[] {
+	return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
-function readUpdatePolicies(value: unknown): PublicSurfaceUpdatePolicy[] {
-	return readStringArray(value).filter((item): item is PublicSurfaceUpdatePolicy =>
-		item === 'update' || item === 'update_or_mark_stale' || item === 'not_applicable',
-	);
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-function readChangeSource(value: unknown): ChangeSource {
-	return value === 'changed' || value === 'paths' ? value : 'paths';
+function isUpdatePolicy(value: unknown): value is PublicSurfaceUpdatePolicy {
+	return value === 'update' || value === 'update_or_mark_stale' || value === 'not_applicable';
+}
+
+function isUpdatePolicyArray(value: unknown): value is readonly PublicSurfaceUpdatePolicy[] {
+	return Array.isArray(value) && value.every((item): item is PublicSurfaceUpdatePolicy => isUpdatePolicy(item));
+}
+
+function readPlanRoot(value: unknown): string | null {
+	if (!isPlainRecord(value)) {
+		return null;
+	}
+
+	const root = value.mustflow_root;
+	return typeof root === 'string' && root.length > 0 ? root : null;
+}
+
+function readStrictClassificationSummary(value: unknown): ChangeClassificationSummary | null {
+	if (!isPlainRecord(value)) {
+		return null;
+	}
+
+	if (
+		!Number.isInteger(value.fileCount) ||
+		Number(value.fileCount) < 0 ||
+		!Number.isInteger(value.publicSurfaceCount) ||
+		Number(value.publicSurfaceCount) < 0 ||
+		!isStringArray(value.changeKinds) ||
+		!isStringArray(value.validationReasons) ||
+		!isUpdatePolicyArray(value.updatePolicies) ||
+		!isStringArray(value.driftChecks) ||
+		!isStringArray(value.affectedContracts)
+	) {
+		return null;
+	}
+
+	return {
+		fileCount: Number(value.fileCount),
+		publicSurfaceCount: Number(value.publicSurfaceCount),
+		changeKinds: [...value.changeKinds],
+		validationReasons: uniqueStrings(value.validationReasons),
+		updatePolicies: [...value.updatePolicies],
+		driftChecks: [...value.driftChecks],
+		affectedContracts: [...value.affectedContracts],
+	};
+}
+
+function readStrictClassification(value: unknown): ChangeClassification | null {
+	if (!isPlainRecord(value) || typeof value.path !== 'string' || !isStringArray(value.changeKinds)) {
+		return null;
+	}
+
+	const surface = value.surface;
+	if (!isPlainRecord(surface)) {
+		return null;
+	}
+
+	if (
+		typeof surface.kind !== 'string' ||
+		typeof surface.category !== 'string' ||
+		typeof surface.isPublicSurface !== 'boolean' ||
+		!isStringArray(surface.validationReasons) ||
+		!isStringArray(surface.affectedContracts) ||
+		!isUpdatePolicy(surface.updatePolicy) ||
+		!isStringArray(surface.driftChecks)
+	) {
+		return null;
+	}
+
+	return {
+		path: value.path,
+		changeKinds: [...value.changeKinds],
+		surface: {
+			kind: surface.kind,
+			category: surface.category,
+			isPublicSurface: surface.isPublicSurface,
+			validationReasons: [...surface.validationReasons],
+			affectedContracts: [...surface.affectedContracts],
+			updatePolicy: surface.updatePolicy,
+			driftChecks: [...surface.driftChecks],
+		},
+	};
+}
+
+function readStrictClassifications(value: unknown): ChangeClassification[] | null {
+	if (!Array.isArray(value)) {
+		return null;
+	}
+
+	const classifications = value.map(readStrictClassification);
+	return classifications.every((classification): classification is ChangeClassification => classification !== null)
+		? classifications
+		: null;
+}
+
+function readStrictClassifyPlan(projectRoot: string, plan: unknown): ChangeClassificationReport {
+	if (!isPlainRecord(plan)) {
+		throw new Error('unsupported_plan_source');
+	}
+
+	if (plan.schema_version !== '1' || plan.command !== 'classify') {
+		throw new Error('unsupported_plan_source');
+	}
+
+	if (readPlanRoot(plan) !== projectRoot) {
+		throw new Error('plan_root_mismatch');
+	}
+
+	const source = plan.source;
+	const files = plan.files;
+	const classifications = readStrictClassifications(plan.classifications);
+	const summary = readStrictClassificationSummary(plan.summary);
+
+	if ((source !== 'changed' && source !== 'paths') || !isStringArray(files) || !classifications || !summary) {
+		throw new Error('invalid_plan_file');
+	}
+
+	if (summary.validationReasons.length === 0) {
+		throw new Error('missing_plan_reasons');
+	}
+
+	return {
+		source,
+		files: [...files],
+		classifications,
+		summary,
+	};
 }
 
 function emptyClassificationSummary(validationReasons: readonly string[]): ChangeClassificationSummary {
@@ -287,59 +411,6 @@ function emptyClassificationSummary(validationReasons: readonly string[]): Chang
 	};
 }
 
-function readClassificationSummary(value: unknown, fallbackReasons: readonly string[]): ChangeClassificationSummary {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		return emptyClassificationSummary(fallbackReasons);
-	}
-
-	const record = value as Record<string, unknown>;
-	const validationReasons = uniqueStrings([...fallbackReasons, ...readStringArray(record.validationReasons)]);
-
-	return {
-		fileCount: readNumber(record.fileCount) ?? 0,
-		publicSurfaceCount: readNumber(record.publicSurfaceCount) ?? 0,
-		changeKinds: readStringArray(record.changeKinds),
-		validationReasons,
-		updatePolicies: readUpdatePolicies(record.updatePolicies),
-		driftChecks: readStringArray(record.driftChecks),
-		affectedContracts: readStringArray(record.affectedContracts),
-	};
-}
-
-function readClassifications(value: unknown): ChangeClassification[] {
-	if (!Array.isArray(value)) {
-		return [];
-	}
-
-	return value.filter((item): item is ChangeClassification => {
-		if (!item || typeof item !== 'object' || Array.isArray(item)) {
-			return false;
-		}
-
-		const record = item as Record<string, unknown>;
-		const surface = record.surface;
-		const surfaceRecord = surface as Record<string, unknown>;
-		return (
-			typeof record.path === 'string' &&
-			Array.isArray(record.changeKinds) &&
-			readStringArray(record.changeKinds).length === record.changeKinds.length &&
-			surface !== null &&
-			typeof surface === 'object' &&
-			!Array.isArray(surface) &&
-			typeof surfaceRecord.kind === 'string' &&
-			typeof surfaceRecord.category === 'string' &&
-			typeof surfaceRecord.isPublicSurface === 'boolean' &&
-			Array.isArray(surfaceRecord.validationReasons) &&
-			readStringArray(surfaceRecord.validationReasons).length === surfaceRecord.validationReasons.length &&
-			Array.isArray(surfaceRecord.affectedContracts) &&
-			readStringArray(surfaceRecord.affectedContracts).length === surfaceRecord.affectedContracts.length &&
-			readUpdatePolicies([surfaceRecord.updatePolicy]).length === 1 &&
-			Array.isArray(surfaceRecord.driftChecks) &&
-			readStringArray(surfaceRecord.driftChecks).length === surfaceRecord.driftChecks.length
-		);
-	});
-}
-
 function createSyntheticClassificationReport(
 	reasons: readonly string[],
 	source: ChangeSource = 'paths',
@@ -351,51 +422,6 @@ function createSyntheticClassificationReport(
 		classifications: [],
 		summary: emptyClassificationSummary(reasons),
 	};
-}
-
-function readClassificationReport(plan: unknown, fallbackReasons: readonly string[]): ChangeClassificationReport {
-	if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
-		return createSyntheticClassificationReport(fallbackReasons);
-	}
-
-	const record = plan as Record<string, unknown>;
-	const summary = readClassificationSummary(record.classification_summary ?? record.summary, fallbackReasons);
-	const files = readStringArray(record.files);
-	const classifications = readClassifications(record.classifications);
-
-	return {
-		source: readChangeSource(record.source),
-		files,
-		classifications,
-		summary,
-	};
-}
-
-function readPlanReasons(plan: unknown): string[] {
-	if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
-		return [];
-	}
-
-	const record = plan as Record<string, unknown>;
-	const summary = record.summary;
-	const classificationSummary = record.classification_summary;
-	const verification = record.verification;
-	const reasons = [
-		typeof record.reason === 'string' ? record.reason : '',
-		...readStringArray(record.reasons),
-		...readStringArray(record.validationReasons),
-		...(summary && typeof summary === 'object' && !Array.isArray(summary)
-			? readStringArray((summary as Record<string, unknown>).validationReasons)
-			: []),
-		...(classificationSummary && typeof classificationSummary === 'object' && !Array.isArray(classificationSummary)
-			? readStringArray((classificationSummary as Record<string, unknown>).validationReasons)
-			: []),
-		...(verification && typeof verification === 'object' && !Array.isArray(verification)
-			? readStringArray((verification as Record<string, unknown>).reasons)
-			: []),
-	];
-
-	return uniqueStrings(reasons);
 }
 
 function resolvePlanPath(projectRoot: string, inputPath: string): string {
@@ -419,14 +445,11 @@ export function readInputFromPlan(projectRoot: string, inputPath: string): Verif
 		throw new Error('invalid_plan_file');
 	}
 
-	const reasons = readPlanReasons(parsed);
-	if (reasons.length === 0) {
-		throw new Error('missing_plan_reasons');
-	}
+	const classificationReport = readStrictClassifyPlan(projectRoot, parsed);
 
 	return {
-		reasons,
-		classificationReport: readClassificationReport(parsed, reasons),
+		reasons: classificationReport.summary.validationReasons,
+		classificationReport,
 	};
 }
 
@@ -453,12 +476,16 @@ export function planErrorMessageKey(code: string): MessageKey {
 			return 'verify.error.plan_path_outside_root';
 		case 'missing_plan_reasons':
 			return 'verify.error.missing_plan_reasons';
+		case 'unsupported_plan_source':
+			return 'verify.error.unsupported_plan_source';
+		case 'plan_root_mismatch':
+			return 'verify.error.plan_root_mismatch';
 		default:
 			return 'verify.error.invalid_plan_file';
 	}
 }
 
-function skippedResult(candidate: VerificationCandidate): VerificationResult {
+function skippedResult(candidate: Pick<VerificationCandidate, 'intent' | 'reason' | 'detail'>): VerificationResult {
 	return {
 		intent: candidate.intent || null,
 		status: 'skipped',
@@ -468,6 +495,42 @@ function skippedResult(candidate: VerificationCandidate): VerificationResult {
 		exit_code: null,
 		receipt: null,
 	};
+}
+
+function candidateResultKey(candidate: ChangeVerificationCandidate): string {
+	return candidate.intent
+		? `intent:${candidate.intent}`
+		: `missing:${candidate.reason}:${candidate.skipReason ?? ''}:${candidate.detail ?? ''}`;
+}
+
+function createSkippedResults(
+	candidates: readonly ChangeVerificationCandidate[],
+	scheduledIntents: ReadonlySet<string>,
+): VerificationResult[] {
+	const seen = new Set<string>();
+	const results: VerificationResult[] = [];
+
+	for (const candidate of candidates) {
+		if (candidate.status === 'runnable' || (candidate.intent && scheduledIntents.has(candidate.intent))) {
+			continue;
+		}
+
+		const key = candidateResultKey(candidate);
+		if (seen.has(key)) {
+			continue;
+		}
+
+		seen.add(key);
+		results.push(
+			skippedResult({
+				intent: candidate.intent ?? '',
+				reason: candidate.skipReason,
+				detail: candidate.detail,
+			}),
+		);
+	}
+
+	return results;
 }
 
 async function runVerificationIntent(intent: string, lang: CliLang): Promise<VerificationResult> {
@@ -540,45 +603,29 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 }
 
 async function createVerifyOutput(
-	reasons: readonly string[],
+	input: VerifyInput,
 	planSource: string | null,
 	projectRoot: string,
 	lang: CliLang,
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
-	const candidatesByIntent = new Map<string, VerificationCandidate>();
-	const unmatchedCandidates: VerificationCandidate[] = [];
-
-	for (const reason of reasons) {
-		const plan = createVerificationPlan(contract, reason);
-		for (const candidate of plan.candidates) {
-			if (!candidate.intent) {
-				unmatchedCandidates.push(candidate);
-				continue;
-			}
-
-			if (!candidatesByIntent.has(candidate.intent)) {
-				candidatesByIntent.set(candidate.intent, candidate);
-			}
-		}
-	}
-
-	const candidates = [...candidatesByIntent.values(), ...unmatchedCandidates].sort((left, right) =>
-		left.intent.localeCompare(right.intent),
-	);
+	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const scheduledIntents = new Set(report.schedule.entries.map((entry) => entry.intent));
 	const results: VerificationResult[] = [];
 
-	for (const candidate of candidates) {
-		results.push(candidate.status === 'runnable' ? await runVerificationIntent(candidate.intent, lang) : skippedResult(candidate));
+	for (const entry of report.schedule.entries) {
+		results.push(await runVerificationIntent(entry.intent, lang));
 	}
+
+	results.push(...createSkippedResults(report.candidates, scheduledIntents));
 	const summary = summarizeResults(results);
 
 	return {
 		schema_version: VERIFY_SCHEMA_VERSION,
 		command: 'verify',
 		mustflow_root: projectRoot,
-		reason: reasons.join(', '),
-		reasons,
+		reason: input.reasons.join(', '),
+		reasons: input.reasons,
 		plan_source: planSource,
 		status: getVerificationStatus(summary),
 		summary,
@@ -729,7 +776,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	}
 
-	const output = await createVerifyOutput(input.reasons, parsed.fromPlan ?? (parsed.changed ? 'changed' : null), projectRoot, lang);
+	const output = await createVerifyOutput(input, parsed.fromPlan ?? (parsed.changed ? 'changed' : null), projectRoot, lang);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

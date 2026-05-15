@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { isMustflowBinName } from '../../core/command-classification.js';
 import { resolveSafeProjectCwd } from '../../core/command-cwd.js';
+import { resolveCommandEnv, type CommandEnvPolicy } from '../../core/command-env.js';
 import {
 	evaluateCommandIntentEligibility,
 	type CommandIntentEligibilityCode,
@@ -42,6 +43,8 @@ interface RunIntentMetadata {
 	readonly effects: readonly unknown[] | undefined;
 	readonly network: boolean | undefined;
 	readonly destructive: boolean | undefined;
+	readonly envPolicy: CommandEnvPolicy;
+	readonly envAllowlist: readonly string[];
 }
 
 interface RunPlanBase {
@@ -69,6 +72,8 @@ interface RunPlanBase {
 	readonly effects: readonly unknown[] | undefined;
 	readonly network: boolean | undefined;
 	readonly destructive: boolean | undefined;
+	readonly envPolicy: CommandEnvPolicy | null;
+	readonly envAllowlist: readonly string[];
 }
 
 export interface BlockedRunPlan extends RunPlanBase {
@@ -87,6 +92,8 @@ export interface RunnableRunPlan extends RunPlanBase {
 	readonly maxOutputBytes: number;
 	readonly successExitCodes: readonly number[];
 	readonly mode: RunCommandMode;
+	readonly envPolicy: CommandEnvPolicy;
+	readonly envAllowlist: readonly string[];
 }
 
 export type RunPlan = BlockedRunPlan | RunnableRunPlan;
@@ -171,6 +178,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 	const configuredCwd = readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd') ?? '.';
 	const commandArgv = readStringArray(intent, 'argv');
 	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
+	const env = resolveCommandEnv(contract, intent);
 
 	return {
 		intentStatus: readString(intent, 'status') ?? 'unknown',
@@ -189,6 +197,8 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		effects: readArray(intent, 'effects'),
 		network: readBoolean(intent, 'network'),
 		destructive: readBoolean(intent, 'destructive'),
+		envPolicy: env.policy,
+		envAllowlist: env.allowlist,
 	};
 }
 
@@ -227,6 +237,8 @@ function createBlockedRunPlan(
 		effects: metadata?.effects,
 		network: metadata?.network,
 		destructive: metadata?.destructive,
+		envPolicy: metadata?.envPolicy ?? null,
+		envAllowlist: metadata?.envAllowlist ?? [],
 	};
 }
 
@@ -294,6 +306,8 @@ export function createRunPlan(projectRoot: string, contract: CommandContract, in
 		effects: metadata.effects,
 		network: metadata.network,
 		destructive: metadata.destructive,
+		envPolicy: metadata.envPolicy,
+		envAllowlist: metadata.envAllowlist,
 	};
 }
 
@@ -325,6 +339,8 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		effects: plan.effects,
 		network: plan.network,
 		destructive: plan.destructive,
+		env_policy: plan.envPolicy,
+		env_allowlist: plan.envAllowlist,
 		success_exit_codes: plan.successExitCodes,
 	};
 }
@@ -344,6 +360,7 @@ export function renderRunPreviewText(plan: RunPlan, previewMode: RunPreviewMode)
 	lines.push(`Mode: ${plan.mode}`);
 	lines.push(`Cwd: ${plan.relativeCwd}`);
 	lines.push(`Timeout: ${plan.timeoutSeconds}s`);
+	lines.push(`Environment: ${plan.envPolicy}${plan.envAllowlist.length > 0 ? ` (${plan.envAllowlist.join(', ')})` : ''}`);
 
 	if (plan.commandArgv) {
 		lines.push(`Argv: ${plan.commandArgv.join(' ')}`);

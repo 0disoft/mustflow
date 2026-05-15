@@ -16,6 +16,8 @@ stdin = "closed"
 max_output_bytes = 1048576
 on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
+env_policy = "minimal"
+env_allowlist = []
 
 [resources.dist_build_output]
 type = "path"

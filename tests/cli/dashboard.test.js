@@ -50,6 +50,9 @@ function sha256Text(text) {
 
 function writeLatestRunReceipt(projectPath) {
 	const statePath = path.join(projectPath, '.mustflow', 'state', 'runs');
+	const stdoutToken = 'sk-abcdefghijklmnop';
+	const stderrToken = 'ghp_1234567890abcdefghij';
+	const argvToken = 'password=supersecretvalue';
 	mkdirSync(statePath, { recursive: true });
 	writeFileSync(
 		path.join(statePath, 'latest.json'),
@@ -67,7 +70,7 @@ function writeLatestRunReceipt(projectPath) {
 				lifecycle: 'oneshot',
 				run_policy: 'agent_allowed',
 				mode: 'argv',
-				argv: [process.execPath, '-e', 'console.log("SECRET_ARG_VALUE")'],
+				argv: [process.execPath, '-e', `console.log("${stdoutToken}")`, argvToken],
 				timeout_seconds: 10,
 				max_output_bytes: 1024,
 				success_exit_codes: [0],
@@ -76,8 +79,8 @@ function writeLatestRunReceipt(projectPath) {
 				error: null,
 				kill_method: null,
 				receipt_path: '.mustflow/state/runs/latest.json',
-				stdout: { bytes: 19, truncated: false, tail: 'SECRET_STDOUT_VALUE' },
-				stderr: { bytes: 19, truncated: false, tail: 'SECRET_STDERR_VALUE' },
+				stdout: { bytes: 22, truncated: false, tail: `token ${stdoutToken}` },
+				stderr: { bytes: 32, truncated: false, tail: `api_key=${stderrToken}` },
 			},
 			null,
 			2,
@@ -144,9 +147,9 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		assert.doesNotMatch(html, /navigator\.clipboard/);
 		assert.doesNotMatch(html, /id="open-mustflow"/);
 		assert.doesNotMatch(html, /<button\b/);
-		assert.doesNotMatch(html, /SECRET_ARG_VALUE/);
-		assert.doesNotMatch(html, /SECRET_STDOUT_VALUE/);
-		assert.doesNotMatch(html, /SECRET_STDERR_VALUE/);
+		assert.doesNotMatch(html, /supersecretvalue/);
+		assert.doesNotMatch(html, /sk-abcdefghijklmnop/);
+		assert.doesNotMatch(html, /ghp_1234567890abcdefghij/);
 
 		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', 'reports/dashboard.json']);
 		assert.equal(jsonResult.status, 0, jsonResult.stderr || jsonResult.stdout);
@@ -162,6 +165,7 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		assert.equal(exportSnapshot.output_policy.starts_server, false);
 		assert.equal(exportSnapshot.output_policy.omits_dashboard_token, true);
 		assert.equal(exportSnapshot.output_policy.omits_raw_run_output, true);
+		assert.equal(exportSnapshot.output_policy.redacts_secret_like_values, true);
 		assert.equal(exportSnapshot.harness_report.schema_version, '1');
 		assert.equal(exportSnapshot.harness_report.generated_from, 'dashboard_status_snapshot');
 		assert.equal(exportSnapshot.harness_report.install.installed, true);
@@ -171,16 +175,23 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		assert.equal(exportSnapshot.status.run_history.command_line_omitted, true);
 		assert.equal(exportSnapshot.status.run_history.stdout.tail_omitted, true);
 		assert.equal(exportSnapshot.status.run_history.stderr.tail_omitted, true);
+		assert.equal(exportSnapshot.status.run_history.stdout.redacted, true);
+		assert.equal(exportSnapshot.status.run_history.stderr.redacted, true);
+		assert.ok(exportSnapshot.status.run_history.stdout.redaction_count > 0);
+		assert.ok(exportSnapshot.status.run_history.stderr.redaction_count > 0);
 		assert.ok(exportSnapshot.limits.omitted_fields.includes('status.run_history.command_line'));
 		assert.ok(exportSnapshot.limits.omitted_fields.includes('status.run_history.stdout.tail'));
 		assert.equal(typeof exportSnapshot.limits.max_string_bytes, 'number');
 		assert.equal(typeof exportSnapshot.limits.max_array_items, 'number');
+		assert.equal(typeof exportSnapshot.limits.redaction_count, 'number');
+		assert.ok(Array.isArray(exportSnapshot.limits.redacted_fields));
+		assert.ok(Array.isArray(exportSnapshot.limits.redaction_kinds));
 		assert.ok(Array.isArray(exportSnapshot.limits.truncated_fields));
 		const serialized = JSON.stringify(exportSnapshot);
 		assert.doesNotMatch(serialized, /dashboardToken/);
-		assert.doesNotMatch(serialized, /SECRET_ARG_VALUE/);
-		assert.doesNotMatch(serialized, /SECRET_STDOUT_VALUE/);
-		assert.doesNotMatch(serialized, /SECRET_STDERR_VALUE/);
+		assert.doesNotMatch(serialized, /supersecretvalue/);
+		assert.doesNotMatch(serialized, /sk-abcdefghijklmnop/);
+		assert.doesNotMatch(serialized, /ghp_1234567890abcdefghij/);
 	} finally {
 		removeTempProject(projectPath);
 	}

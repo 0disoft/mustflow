@@ -5,6 +5,7 @@ import {
 	isRecord,
 	type TomlTable,
 } from './config-loading.js';
+import { COMMAND_ENV_POLICIES } from './command-env.js';
 import {
 	COMMAND_EFFECT_CONCURRENCY,
 	COMMAND_EFFECT_MODES,
@@ -72,6 +73,22 @@ function validateStringField(
 	}
 }
 
+function validateStringArrayField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	const value = table[key];
+	if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+		issues.push(commandContractIssue(`${label} must be a string array`));
+	}
+}
+
 function validatePositiveIntegerField(
 	table: TomlTable,
 	key: string,
@@ -123,6 +140,8 @@ function validateCommandDefaults(commandsToml: TomlTable, issues: CommandContrac
 	validateStringField(defaults, 'default_cwd', '[commands.defaults].default_cwd', issues);
 	validateStringField(defaults, 'stdin', '[commands.defaults].stdin', issues);
 	validateStringField(defaults, 'on_timeout', '[commands.defaults].on_timeout', issues);
+	validateAllowedStringField(defaults, 'env_policy', '[commands.defaults].env_policy', COMMAND_ENV_POLICIES, issues);
+	validateStringArrayField(defaults, 'env_allowlist', '[commands.defaults].env_allowlist', issues);
 	validatePositiveIntegerField(defaults, 'default_timeout_seconds', '[commands.defaults].default_timeout_seconds', issues);
 	validatePositiveIntegerField(defaults, 'max_output_bytes', '[commands.defaults].max_output_bytes', issues);
 	validatePositiveIntegerField(defaults, 'kill_after_seconds', '[commands.defaults].kill_after_seconds', issues);
@@ -228,6 +247,14 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		COMMAND_RUN_POLICIES,
 		issues,
 	);
+	validateAllowedStringField(
+		intent,
+		'env_policy',
+		`[commands.intents.${intentName}].env_policy`,
+		COMMAND_ENV_POLICIES,
+		issues,
+	);
+	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
 
 	if (intent.status !== 'configured') {
 		return;

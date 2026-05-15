@@ -29,7 +29,7 @@ The release tab is read-only. It uses local version-source detection and command
 
 The update tab is read-only. It uses the same planner as `mf update --dry-run` and shows whether `mf update --apply` is currently safe, which files block the update, and which template files would be created or updated. The tab offers copyable commands only; it does not apply updates.
 
-The run history tab is read-only. It shows only the latest run receipt kept by mustflow, including retained stdout and stderr tails from the receipt. It does not rerun commands or read raw terminal history.
+The run history tab is read-only. It shows only the latest run receipt kept by mustflow, including retained stdout and stderr tails from the receipt. Secret-like text in retained tails or command strings is redacted before display. It does not rerun commands or read raw terminal history.
 
 The skills tab is read-only. It shows the installed skill routes from `.mustflow/skills/INDEX.md`, the matching `SKILL.md` path, required input, edit scope, risk, verification intents, and whether the route agrees with the skill frontmatter.
 
@@ -52,9 +52,9 @@ Use `--export <path>` to write a static HTML dashboard snapshot without starting
 
 With `--json`, the command prints the dashboard URL, mustflow root, and preferences path before keeping the local server running.
 
-With `--export-json`, the command writes a JSON file instead of printing the server URL. The JSON includes status, verification, command, update, skill, document-review, and preference snapshots with raw run output omitted and truncation metadata under `limits`. It also includes `harness_report`, a bounded read-only summary for pull request and continuous integration artifacts. That summary contains install and manifest status, changed surfaces, verification decision graph counts, runnable and skipped verification intents, manual-only or unavailable verification gaps, latest receipt metadata, document-review queue status, and remaining risks.
+With `--export-json`, the command writes a JSON file instead of printing the server URL. The JSON includes status, verification, command, update, skill, document-review, and preference snapshots with raw run output omitted and truncation plus redaction metadata under `limits`. It also includes `harness_report`, a bounded read-only summary for pull request and continuous integration artifacts. That summary contains install and manifest status, changed surfaces, verification decision graph counts, runnable and skipped verification intents, manual-only or unavailable verification gaps, latest receipt metadata, document-review queue status, and remaining risks.
 
-The static HTML export is rendered from the same JSON snapshot. It does not contain separate decision logic or controls that run commands.
+The static HTML export is rendered from the same JSON snapshot. It does not contain separate decision logic or controls that run commands. Export redaction is conservative and does not promise complete secret detection.
 
 The dashboard API uses a per-session token. Status reads, preference updates, and document-review transitions all require that token. The API accepts updates only for the limited preference fields and document-review status transitions exposed by the page. Git preference toggles describe what an agent may do after an explicit user request; they do not make command-contract entries such as `git_commit` runnable. `git.auto_push` is displayed as a locked setting.
 

@@ -153,6 +153,63 @@ test('check json includes stable command-boundary issue ids', () => {
 	}
 });
 
+test('fails invalid command environment policy fields', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				'schema_version = "1"',
+				'',
+				'[defaults]',
+				'missing_behavior = "do_not_guess"',
+				'allow_inferred_commands = false',
+				'require_lifecycle = true',
+				'require_timeout_for_oneshot = true',
+				'deny_unmanaged_long_running = true',
+				'default_cwd = "."',
+				'default_timeout_seconds = 600',
+				'stdin = "closed"',
+				'max_output_bytes = 1048576',
+				'on_timeout = "terminate_process_tree"',
+				'kill_after_seconds = 5',
+				'env_policy = "wide_open"',
+				'env_allowlist = "TOKEN"',
+				'',
+				'[intents.test]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run tests."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'env_policy = "everything"',
+				'env_allowlist = [1]',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /\[commands.defaults\]\.env_policy must be "inherit" or "minimal" or "allowlist"/);
+		assert.match(result.stderr, /\[commands.defaults\]\.env_allowlist must be a string array/);
+		assert.match(result.stderr, /\[commands.intents.test\]\.env_policy must be "inherit" or "minimal" or "allowlist"/);
+		assert.match(result.stderr, /\[commands.intents.test\]\.env_allowlist must be a string array/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check warns when configured intents share writes without effects', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 

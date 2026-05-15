@@ -826,7 +826,9 @@ Read these files before working:
   "verify.error.writePlanRequiresChanged": "--write-plan requires --changed",
   "verify.error.planOnlyJson": "--plan-only requires --json",
   "verify.error.invalid_plan_file": "Verification plan must be a readable JSON file",
-  "verify.error.missing_plan_reasons": "Verification plan must include reason, reasons, validationReasons, summary.validationReasons, or classification_summary.validationReasons",
+  "verify.error.unsupported_plan_source": "Verification plan must be produced by mf classify --json",
+  "verify.error.plan_root_mismatch": "Verification plan must come from this mustflow root",
+  "verify.error.missing_plan_reasons": "Verification plan must include summary.validationReasons",
   "verify.error.plan_path_outside_root": "Verification plan path must stay inside the mustflow root",
 
   "explain.help.summary":

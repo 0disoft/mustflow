@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
+import { SECRET_LIKE_PATTERNS, textContainsSecretLike } from './secret-redaction.js';
+
 export const SOURCE_ANCHOR_EXTENSIONS = new Set(['.cjs', '.go', '.js', '.jsx', '.mjs', '.py', '.rs', '.ts', '.tsx']);
 export const SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS = new Set([
 	'.git',
@@ -45,10 +47,7 @@ export const SOURCE_ANCHOR_ALLOWED_RISKS = new Set([
 	'xss',
 ]);
 export const SOURCE_ANCHOR_ID_PATTERN = /^[a-z0-9][a-z0-9.-]{0,95}$/u;
-export const SOURCE_ANCHOR_SECRET_LIKE_PATTERNS = [
-	/\b(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=:-]{8,}/iu,
-	/\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/u,
-] as const;
+export const SOURCE_ANCHOR_SECRET_LIKE_PATTERNS = SECRET_LIKE_PATTERNS;
 
 export interface SourceAnchorSummary {
 	readonly id: string;
@@ -264,7 +263,7 @@ export function sourceAnchorPathIsGeneratedOrVendor(relativePath: string): boole
 }
 
 export function sourceAnchorTextContainsSecretLike(value: string): boolean {
-	return SOURCE_ANCHOR_SECRET_LIKE_PATTERNS.some((pattern) => pattern.test(value));
+	return textContainsSecretLike(value);
 }
 
 export function parseSourceAnchorsInContent(relativePath: string, content: string): ParsedSourceAnchor[] {

@@ -8,6 +8,40 @@ function appendIntent(projectPath, text) {
 	appendFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), `\n${text.trim()}\n`);
 }
 
+function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
+	return {
+		schema_version: '1',
+		command: 'classify',
+		mustflow_root: projectPath,
+		source: 'paths',
+		files: [filePath],
+		classifications: [
+			{
+				path: filePath,
+				changeKinds: ['documentation'],
+				surface: {
+					kind: 'readme_page',
+					category: 'documentation',
+					isPublicSurface: true,
+					validationReasons: [reason],
+					affectedContracts: ['public documentation'],
+					updatePolicy: 'update',
+					driftChecks: ['command examples'],
+				},
+			},
+		],
+		summary: {
+			fileCount: 1,
+			publicSurfaceCount: 1,
+			changeKinds: ['documentation'],
+			validationReasons: [reason],
+			updatePolicies: ['update'],
+			driftChecks: ['command examples'],
+			affectedContracts: ['public documentation'],
+		},
+	};
+}
+
 test('explains verification candidates for a reason without running commands', () => {
 	const projectPath = createTempProject('mustflow-explain-verify-');
 	const markerPath = path.join(projectPath, 'executed.txt');
@@ -105,7 +139,7 @@ required_after = ["plan_verify"]
 		);
 		writeFileSync(
 			path.join(projectPath, 'verify-plan.json'),
-			JSON.stringify({ classification_summary: { validationReasons: ['plan_verify'] } }, null, 2),
+			JSON.stringify(createClassifyPlan(projectPath, 'plan_verify'), null, 2),
 		);
 
 		const result = runCli(projectPath, ['explain', 'verify', '--from-plan', 'verify-plan.json', '--json']);
@@ -179,9 +213,14 @@ test('reports invalid verification plan inputs for explain verify', () => {
 	try {
 		initProject(projectPath);
 		writeFileSync(path.join(projectPath, 'invalid-plan.json'), '{');
+		writeFileSync(
+			path.join(projectPath, 'loose-plan.json'),
+			JSON.stringify({ classification_summary: { validationReasons: ['plan_verify'] } }, null, 2),
+		);
 
 		const missingResult = runCli(projectPath, ['explain', 'verify', '--from-plan', 'missing-plan.json']);
 		const invalidResult = runCli(projectPath, ['explain', 'verify', '--from-plan', 'invalid-plan.json']);
+		const looseResult = runCli(projectPath, ['explain', 'verify', '--from-plan', 'loose-plan.json']);
 
 		assert.equal(missingResult.status, 1);
 		assert.match(missingResult.stderr, /Verification plan must be a readable JSON file/);
@@ -189,6 +228,9 @@ test('reports invalid verification plan inputs for explain verify', () => {
 		assert.equal(invalidResult.status, 1);
 		assert.match(invalidResult.stderr, /Verification plan must be a readable JSON file/);
 		assert.match(invalidResult.stdout, /Usage: mf explain/);
+		assert.equal(looseResult.status, 1);
+		assert.match(looseResult.stderr, /Verification plan must be produced by mf classify --json/);
+		assert.match(looseResult.stdout, /Usage: mf explain/);
 	} finally {
 		removeTempProject(projectPath);
 	}

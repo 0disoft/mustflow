@@ -5,16 +5,18 @@ description: Runs configured verification intents selected by required_after met
 
 `mf verify --reason <event>` looks at `.mustflow/config/commands.toml`, finds command intents whose `required_after` list contains the given reason, and runs only the intents that are configured, one-shot, agent-allowed, closed-stdin commands.
 
-`mf verify --from-plan <path>` reads verification reasons from a JSON file inside the mustflow root. It accepts `reason`, `reasons`, `validationReasons`, `summary.validationReasons`, or `classification_summary.validationReasons`, so outputs from planning or classification commands can feed verification without copying each reason by hand.
+`mf verify --from-plan <path>` reads verification reasons from a JSON file inside the mustflow root. The file must be a mustflow classify report with `schema_version: "1"`, `command: "classify"`, the current `mustflow_root`, and `summary.validationReasons`. This keeps hand-written loose JSON from silently selecting runnable verification commands.
 
 `mf verify --changed` classifies the current Git working tree with the same semantics as `mf classify --changed`, then feeds those validation reasons into the existing verification planner. Use `--write-plan <path>` to save the classification report inside the mustflow root while still using the in-memory plan for the current verification run.
 
 `mf verify --plan-only --json` prints the verification plan without running commands. The output includes a `decision_graph` that links changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When a fresh local index exists, each scheduled entry can include `effectGraph` details from `.mustflow/cache/mustflow.sqlite`, including write locks and lock conflicts. Each `effectGraph` is marked `authority: "explanation_only"` and `grantsCommandAuthority: false`. Requirements can also include `surfaceReadModels` metadata that explains which indexed path-surface rule matched the changed files. Missing or stale indexes show a refresh hint and never change command selection or execution authority.
 
+When `mf verify` actually runs commands, it uses the same schedule model as plan-only output and executes `schedule.entries` serially through `mf run` receipts.
+
 ## Selection Rules
 
 - Matching uses the exact `required_after` reason string.
-- Plan files must stay inside the mustflow root and must be JSON.
+- Plan files must stay inside the mustflow root, must be JSON, and must use the supported `mf classify --json` report shape.
 - `--changed` uses current Git status paths; it does not make any command runnable.
 - `--write-plan` is available only with `--changed`, and the output path must stay inside the mustflow root.
 - Runnable intents are executed through the same safety path as `mf run <intent>`.

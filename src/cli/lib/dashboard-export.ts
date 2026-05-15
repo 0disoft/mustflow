@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
 
+import { redactSecretLikeText } from '../../core/secret-redaction.js';
 import type { DashboardDocReviewSnapshot, DashboardStatusSnapshot } from './dashboard-html.js';
 import type { DashboardPreferencesSnapshot } from './dashboard-preferences.js';
 import {
@@ -25,6 +26,7 @@ export interface DashboardExportSnapshot {
 		readonly contains_mutation_controls: false;
 		readonly omits_dashboard_token: true;
 		readonly omits_raw_run_output: true;
+		readonly redacts_secret_like_values: true;
 	};
 	readonly limits: {
 		readonly max_string_bytes: number;
@@ -32,6 +34,9 @@ export interface DashboardExportSnapshot {
 		readonly max_depth: number;
 		readonly truncated_fields: readonly string[];
 		readonly omitted_fields: readonly string[];
+		readonly redacted_fields: readonly string[];
+		readonly redaction_count: number;
+		readonly redaction_kinds: readonly string[];
 	};
 	readonly preferences: unknown;
 	readonly status: unknown;
@@ -147,6 +152,9 @@ const SENSITIVE_KEY_PATTERN = /(?:token|secret|password|credential|authorization
 interface SanitizeState {
 	readonly truncatedFields: string[];
 	readonly omittedFields: string[];
+	readonly redactedFields: string[];
+	readonly redactionKinds: Set<string>;
+	redactionCount: number;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -174,16 +182,33 @@ function sanitizeRunOutput(
 	value: unknown,
 	state: SanitizeState,
 	pathSegments: readonly string[],
-): { readonly bytes: number; readonly truncated: boolean; readonly tail_omitted: true } {
+): {
+	readonly bytes: number;
+	readonly truncated: boolean;
+	readonly tail_omitted: true;
+	readonly redacted: boolean;
+	readonly redaction_count: number;
+	readonly redaction_kinds: readonly string[];
+} {
 	state.omittedFields.push(`${fieldPath(pathSegments)}.tail`);
 	if (!isRecord(value)) {
-		return { bytes: 0, truncated: false, tail_omitted: true };
+		return {
+			bytes: 0,
+			truncated: false,
+			tail_omitted: true,
+			redacted: false,
+			redaction_count: 0,
+			redaction_kinds: [],
+		};
 	}
 
 	return {
 		bytes: typeof value.bytes === 'number' ? value.bytes : 0,
 		truncated: value.truncated === true,
 		tail_omitted: true,
+		redacted: value.redacted === true,
+		redaction_count: typeof value.redaction_count === 'number' ? value.redaction_count : 0,
+		redaction_kinds: stringArray(value.redaction_kinds),
 	};
 }
 
@@ -226,8 +251,16 @@ function sanitizeValue(value: unknown, state: SanitizeState, pathSegments: reado
 	}
 
 	if (typeof value === 'string') {
-		const truncated = truncateUtf8(value, DASHBOARD_EXPORT_MAX_STRING_BYTES);
-		if (truncated !== value) {
+		const redaction = redactSecretLikeText(value);
+		if (redaction.redacted) {
+			state.redactedFields.push(fieldPath(pathSegments));
+			state.redactionCount += redaction.redactionCount;
+			for (const kind of redaction.redactionKinds) {
+				state.redactionKinds.add(kind);
+			}
+		}
+		const truncated = truncateUtf8(redaction.text, DASHBOARD_EXPORT_MAX_STRING_BYTES);
+		if (truncated !== redaction.text) {
 			state.truncatedFields.push(fieldPath(pathSegments));
 		}
 		return truncated;
@@ -611,7 +644,13 @@ export function resolveDashboardExportPath(projectRoot: string, outputPath: stri
 }
 
 export function createDashboardExportSnapshot(input: DashboardExportInput): DashboardExportSnapshot {
-	const state: SanitizeState = { truncatedFields: [], omittedFields: [] };
+	const state: SanitizeState = {
+		truncatedFields: [],
+		omittedFields: [],
+		redactedFields: [],
+		redactionKinds: new Set(),
+		redactionCount: 0,
+	};
 	const preferences = sanitizeValue(input.preferences, state, ['preferences']);
 	const status = sanitizeStatus(input.status, state);
 	const docsReview = sanitizeValue(input.docsReview, state, ['docs_review']);
@@ -628,6 +667,7 @@ export function createDashboardExportSnapshot(input: DashboardExportInput): Dash
 			contains_mutation_controls: false,
 			omits_dashboard_token: true,
 			omits_raw_run_output: true,
+			redacts_secret_like_values: true,
 		},
 		preferences,
 		status,
@@ -643,6 +683,9 @@ export function createDashboardExportSnapshot(input: DashboardExportInput): Dash
 			max_depth: DASHBOARD_EXPORT_MAX_DEPTH,
 			truncated_fields: [...new Set(state.truncatedFields)].sort(),
 			omitted_fields: [...new Set(state.omittedFields)].sort(),
+			redacted_fields: [...new Set(state.redactedFields)].sort(),
+			redaction_count: state.redactionCount,
+			redaction_kinds: [...state.redactionKinds].sort(),
 		},
 	};
 }

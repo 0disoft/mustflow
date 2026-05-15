@@ -828,7 +828,9 @@ export const hiMessages = {
   "verify.error.writePlanRequiresChanged": "--write-plan के लिए --changed चाहिए",
   "verify.error.planOnlyJson": "--plan-only के लिए --json चाहिए",
   "verify.error.invalid_plan_file": "Verification plan readable JSON file होना चाहिए",
-  "verify.error.missing_plan_reasons": "Verification plan में reason, reasons, validationReasons, summary.validationReasons, या classification_summary.validationReasons होना चाहिए",
+  "verify.error.unsupported_plan_source": "Verification plan mf classify --json से बना होना चाहिए",
+  "verify.error.plan_root_mismatch": "Verification plan इसी mustflow root से आना चाहिए",
+  "verify.error.missing_plan_reasons": "Verification plan में summary.validationReasons होना चाहिए",
   "verify.error.plan_path_outside_root": "Verification plan path mustflow root के अंदर रहना चाहिए",
 
   "explain.help.summary":

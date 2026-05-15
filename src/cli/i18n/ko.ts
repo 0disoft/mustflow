@@ -823,7 +823,9 @@ export const koMessages = {
   "verify.error.writePlanRequiresChanged": "--write-plan에는 --changed가 필요합니다",
   "verify.error.planOnlyJson": "--plan-only에는 --json이 필요합니다",
   "verify.error.invalid_plan_file": "검증 계획은 읽을 수 있는 JSON 파일이어야 합니다",
-  "verify.error.missing_plan_reasons": "검증 계획에는 reason, reasons, validationReasons, summary.validationReasons, classification_summary.validationReasons 중 하나가 있어야 합니다",
+  "verify.error.unsupported_plan_source": "검증 계획은 mf classify --json이 만든 산출물이어야 합니다",
+  "verify.error.plan_root_mismatch": "검증 계획은 현재 mustflow 루트에서 나온 것이어야 합니다",
+  "verify.error.missing_plan_reasons": "검증 계획에는 summary.validationReasons가 있어야 합니다",
   "verify.error.plan_path_outside_root": "검증 계획 경로는 mustflow 루트 안에 있어야 합니다",
 
   "explain.help.summary":
