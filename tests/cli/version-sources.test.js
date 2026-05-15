@@ -1,41 +1,42 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import { runVersionSources } from '../../dist/cli/commands/version-sources.js';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProject,
+	removeTempProject,
+	runCliCommand,
+} from './helpers/cli-harness.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedProjectFixture;
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-version-sources-'));
-}
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-version-sources-fixture-');
+	initProject(initializedProjectFixture);
+});
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createVersionSourcesProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-version-sources-');
 }
 
 function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
+	return runCliCommand(cwd, args, runVersionSources);
 }
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0);
-}
-
-test('prints detected template version source as json', () => {
-	const projectPath = createTempProject();
+test('prints detected template version source as json', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['version-sources', '--json']);
+		const result = await runCli(projectPath, ['version-sources', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0);
@@ -53,18 +54,17 @@ test('prints detected template version source as json', () => {
 	}
 });
 
-test('prints package manifest version sources without assuming package json only', () => {
-	const projectPath = createTempProject();
+test('prints package manifest version sources without assuming package json only', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(
 			path.join(projectPath, 'pyproject.toml'),
 			['[project]', 'name = "example"', 'version = "0.1.0"', ''].join('\n'),
 		);
 
-		const result = runCli(projectPath, ['version-sources', '--json']);
+		const result = await runCli(projectPath, ['version-sources', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0);
@@ -79,11 +79,10 @@ test('prints package manifest version sources without assuming package json only
 	}
 });
 
-test('detects multi-language package version sources and ignores duplicate prose versions', () => {
-	const projectPath = createTempProject();
+test('detects multi-language package version sources and ignores duplicate prose versions', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(path.join(projectPath, 'README.md'), 'Current version: 9.9.9\n');
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
@@ -93,7 +92,7 @@ test('detects multi-language package version sources and ignores duplicate prose
 		writeFileSync(path.join(projectPath, 'Example.csproj'), '<Project><PropertyGroup><Version>0.4.0</Version></PropertyGroup></Project>\n');
 		writeFileSync(path.join(projectPath, 'example.gemspec'), 'Gem::Specification.new { |spec| spec.version = "0.5.0" }\n');
 
-		const result = runCli(projectPath, ['version-sources', '--json']);
+		const result = await runCli(projectPath, ['version-sources', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0);
@@ -108,15 +107,14 @@ test('detects multi-language package version sources and ignores duplicate prose
 	}
 });
 
-test('detects Go module version source only with a semver release tag', () => {
-	const projectPath = createTempProject();
+test('detects Go module version source only with a semver release tag', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(path.join(projectPath, 'go.mod'), 'module example.com/app\n\ngo 1.22\n');
 
-		const withoutTag = runCli(projectPath, ['version-sources', '--json']);
+		const withoutTag = await runCli(projectPath, ['version-sources', '--json']);
 		assert.equal(withoutTag.status, 0);
 		assert.deepEqual(JSON.parse(withoutTag.stdout).sources, []);
 
@@ -124,7 +122,7 @@ test('detects Go module version source only with a semver release tag', () => {
 		mkdirSync(tagDir, { recursive: true });
 		writeFileSync(path.join(tagDir, 'v1.2.3'), '0000000000000000000000000000000000000000\n');
 
-		const withTag = runCli(projectPath, ['version-sources', '--json']);
+		const withTag = await runCli(projectPath, ['version-sources', '--json']);
 		const report = JSON.parse(withTag.stdout);
 
 		assert.equal(withTag.status, 0);
@@ -139,18 +137,17 @@ test('detects Go module version source only with a semver release tag', () => {
 	}
 });
 
-test('ignores package lockfiles unless a repository declares them as version sources', () => {
-	const projectPath = createTempProject();
+test('ignores package lockfiles unless a repository declares them as version sources', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(
 			path.join(projectPath, 'package-lock.json'),
 			JSON.stringify({ name: 'example', version: '1.0.0', lockfileVersion: 3 }, null, 2),
 		);
 
-		const automatic = runCli(projectPath, ['version-sources', '--json']);
+		const automatic = await runCli(projectPath, ['version-sources', '--json']);
 		assert.equal(automatic.status, 0);
 		assert.deepEqual(JSON.parse(automatic.stdout).sources, []);
 
@@ -167,7 +164,7 @@ test('ignores package lockfiles unless a repository declares them as version sou
 			].join('\n'),
 		);
 
-		const declared = runCli(projectPath, ['version-sources', '--json']);
+		const declared = await runCli(projectPath, ['version-sources', '--json']);
 		const report = JSON.parse(declared.stdout);
 
 		assert.equal(declared.status, 0);
@@ -184,11 +181,10 @@ test('ignores package lockfiles unless a repository declares them as version sou
 	}
 });
 
-test('prints declared version sources from versioning config', () => {
-	const projectPath = createTempProject();
+test('prints declared version sources from versioning config', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(
 			path.join(projectPath, 'pyproject.toml'),
@@ -207,7 +203,7 @@ test('prints declared version sources from versioning config', () => {
 			].join('\n'),
 		);
 
-		const result = runCli(projectPath, ['version-sources', '--json']);
+		const result = await runCli(projectPath, ['version-sources', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0);
@@ -224,14 +220,13 @@ test('prints declared version sources from versioning config', () => {
 	}
 });
 
-test('prints human readable output when no version source is detected', () => {
-	const projectPath = createTempProject();
+test('prints human readable output when no version source is detected', async () => {
+	const projectPath = createVersionSourcesProject();
 
 	try {
-		initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['version-sources']);
+		const result = await runCli(projectPath, ['version-sources']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /mustflow version sources/);

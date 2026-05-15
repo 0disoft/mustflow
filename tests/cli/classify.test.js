@@ -1,32 +1,37 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import { runClassify } from '../../dist/cli/commands/classify.js';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProject,
+	projectRoot,
+	removeTempProject,
+	runCliCommand,
+} from './helpers/cli-harness.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedProjectFixture;
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-classify-'));
-}
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-classify-fixture-');
+	initProject(initializedProjectFixture);
+});
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createClassifyProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-classify-');
 }
 
 function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
-}
-
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
+	return runCliCommand(cwd, args, runClassify);
 }
 
 function runGit(cwd, args) {
@@ -34,13 +39,11 @@ function runGit(cwd, args) {
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
-test('classifies explicit paths with public surface contracts as json', () => {
-	const projectPath = createTempProject();
+test('classifies explicit paths with public surface contracts as json', async () => {
+	const projectPath = createClassifyProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, [
+		const result = await runCli(projectPath, [
 			'classify',
 			'README.md',
 			'docs-site/src/content/docs/ko/commands/classify.md',
@@ -87,11 +90,10 @@ test('classifies explicit paths with public surface contracts as json', () => {
 	}
 });
 
-test('classifies changed git status paths', () => {
-	const projectPath = createTempProject();
+test('classifies changed git status paths', async () => {
+	const projectPath = createClassifyProject();
 
 	try {
-		initProject(projectPath);
 		runGit(projectPath, ['init']);
 		runGit(projectPath, ['config', 'user.email', 'test@example.com']);
 		runGit(projectPath, ['config', 'user.name', 'Test User']);
@@ -102,7 +104,7 @@ test('classifies changed git status paths', () => {
 		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
 		writeFileSync(path.join(projectPath, 'schemas', 'example.schema.json'), '{}\n');
 
-		const result = runCli(projectPath, ['classify', '--changed', '--json']);
+		const result = await runCli(projectPath, ['classify', '--changed', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -115,13 +117,11 @@ test('classifies changed git status paths', () => {
 	}
 });
 
-test('classifies host-specific instruction files as workflow surfaces without command authority', () => {
-	const projectPath = createTempProject();
+test('classifies host-specific instruction files as workflow surfaces without command authority', async () => {
+	const projectPath = createClassifyProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['classify', '.github/copilot-instructions.md', '--json']);
+		const result = await runCli(projectPath, ['classify', '.github/copilot-instructions.md', '--json']);
 		const report = JSON.parse(result.stdout);
 		const hostInstruction = report.classifications[0];
 
@@ -142,8 +142,8 @@ test('classifies host-specific instruction files as workflow surfaces without co
 	}
 });
 
-test('fails classify without changed mode or explicit paths', () => {
-	const result = runCli(projectRoot, ['classify', '--json']);
+test('fails classify without changed mode or explicit paths', async () => {
+	const result = await runCli(projectRoot, ['classify', '--json']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Specify --changed or at least one path/);

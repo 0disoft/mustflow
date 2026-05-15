@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { removeTempProject, runCli } from './helpers/cli-harness.js';
+import { createTempProject, removeTempProject, runCli } from './helpers/cli-harness.js';
 import { cloneCachedIndexedProjectFixture, createLocalIndexDirect, getCachedIndexedProjectFixture } from './helpers/local-index-fixtures.js';
 import { loadSqlJsCached, queryRows } from './helpers/sqlite-assertions.js';
 
@@ -76,6 +76,54 @@ function cloneGraphIndexedProject() {
 
 function cloneWorkflowIndexedProject() {
 	return cloneCachedIndexedProjectFixture({ variant: 'workflow' }, 'mustflow-index-workflow-');
+}
+
+function createMinimalWorkflowProject(prefix = 'mustflow-index-minimal-') {
+	const projectPath = createTempProject(prefix);
+
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	mkdirSync(path.join(projectPath, '.mustflow', 'context'), { recursive: true });
+	mkdirSync(path.join(projectPath, '.mustflow', 'docs'), { recursive: true });
+	mkdirSync(path.join(projectPath, '.mustflow', 'skills', 'code-review'), { recursive: true });
+	writeFileSync(path.join(projectPath, 'AGENTS.md'), '# AGENTS.md\n\nMinimal workflow root.\n');
+	writeFileSync(path.join(projectPath, '.mustflow', 'docs', 'agent-workflow.md'), '# Agent Workflow\n\nMinimal workflow doc.\n');
+	writeFileSync(path.join(projectPath, '.mustflow', 'context', 'INDEX.md'), '# Context Index\n\nMinimal context index.\n');
+	writeFileSync(path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'), '# Project Context\n\nMinimal project context.\n');
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'),
+		[
+			'# Skills Index',
+			'',
+			'| Trigger | Skill Document | Required Input | Edit Scope | Risk | Verification Intents | Expected Output |',
+			'| --- | --- | --- | --- | --- | --- | --- |',
+			'| Code changes need review | `.mustflow/skills/code-review/SKILL.md` | Diff | Changed files | regression | `test_related` | Review note |',
+			'',
+		].join('\n'),
+	);
+	writeFileSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md'), '# Code Review\n\nReview code changes.\n');
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+		[
+			'[intents.mustflow_check]',
+			'status = "configured"',
+			'lifecycle = "oneshot"',
+			'run_policy = "agent_allowed"',
+			'description = "Minimal mustflow check."',
+			'argv = ["node", "-e", ""]',
+			'cwd = "."',
+			'timeout_seconds = 10',
+			'stdin = "closed"',
+			'success_exit_codes = [0]',
+			'writes = []',
+			'effects = []',
+			'network = false',
+			'destructive = false',
+			'required_after = ["workflow_change"]',
+			'',
+		].join('\n'),
+	);
+
+	return projectPath;
 }
 
 function prepareSourceAnchorProject(projectPath) {
@@ -273,18 +321,6 @@ function cloneInvalidSourceAnchorProject() {
 function prepareSourceAnchorStatusProject(projectPath) {
 	mkdirSync(path.join(projectPath, 'src'));
 	writeFileSync(path.join(projectPath, 'src', 'anchors.ts'), sourceAnchorStatusInitialSource());
-}
-
-function cloneSourceAnchorStatusProject() {
-	return cloneCachedIndexedProjectFixture(
-		{
-			variant: 'source-anchor-status',
-			indexArgs: ['--source'],
-			prepare: prepareSourceAnchorStatusProject,
-			prepareKey: 'source-anchor-status-v1',
-		},
-		'mustflow-index-source-status-',
-	);
 }
 
 function sourceAnchorStatusInitialSource() {
@@ -689,9 +725,10 @@ test('reuses a fresh sqlite local index in incremental mode', async () => {
 });
 
 test('incremental mode rebuilds when indexed workflow files change', async () => {
-	const projectPath = cloneWorkflowIndexedProject();
+	const projectPath = createMinimalWorkflowProject();
 
 	try {
+		await createLocalIndexDirect(projectPath);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'context', 'INDEX.md'),
 			'# Context Index\n\nChanged incremental marker.\n',
@@ -868,14 +905,15 @@ test('does not index invalid source anchors and leaves them to strict validation
 });
 
 test('compares source anchor status against the previous fingerprint snapshot', async () => {
-	const projectPath = cloneSourceAnchorStatusProject();
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-status-');
 
 	try {
+		prepareSourceAnchorStatusProject(projectPath);
+		await createLocalIndexDirect(projectPath, { includeSource: true });
 		const sourcePath = path.join(projectPath, 'src', 'anchors.ts');
 		writeFileSync(sourcePath, sourceAnchorStatusChangedSource());
 
-		const secondIndex = runCli(projectPath, ['index', '--source', '--incremental', '--json']);
-		const output = JSON.parse(secondIndex.stdout);
+		const output = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
@@ -886,7 +924,6 @@ test('compares source anchor status against the previous fingerprint snapshot', 
 			]),
 		);
 
-		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
 		assert.equal(output.index_mode, 'incremental');
 		assert.equal(output.reused_existing, false);
 		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');

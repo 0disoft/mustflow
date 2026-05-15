@@ -48,6 +48,49 @@ export function runCliJson(cwd, args, options = {}) {
 	return JSON.parse(result.stdout);
 }
 
+export async function runCliCommand(cwd, args, commandRunner, options = {}) {
+	const stdout = [];
+	const stderr = [];
+	const previousCwd = process.cwd();
+	const previousExitCode = process.exitCode;
+	const env = options.env ?? {};
+	const previousEnv = new Map(Object.keys(env).map((key) => [key, process.env[key]]));
+
+	try {
+		process.chdir(cwd);
+		for (const [key, value] of Object.entries(env)) {
+			process.env[key] = value;
+		}
+
+		try {
+			const status = await commandRunner(args.slice(1), {
+				stdout(message) {
+					stdout.push(`${message}\n`);
+				},
+				stderr(message) {
+					stderr.push(`${message}\n`);
+				},
+			});
+
+			return { status, signal: null, stdout: stdout.join(''), stderr: stderr.join('') };
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			stderr.push(`Error: ${message}\n`);
+			return { status: 1, signal: null, stdout: stdout.join(''), stderr: stderr.join('') };
+		}
+	} finally {
+		process.chdir(previousCwd);
+		process.exitCode = previousExitCode;
+		for (const [key, value] of previousEnv) {
+			if (value === undefined) {
+				delete process.env[key];
+			} else {
+				process.env[key] = value;
+			}
+		}
+	}
+}
+
 export function initProject(projectPath, args = ['init', '--yes']) {
 	return profileOperation('fixture_init', { projectPath, args }, () => {
 		const result = runCli(projectPath, args);

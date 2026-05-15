@@ -2,33 +2,40 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { runHandoff } from '../../dist/cli/commands/handoff.js';
 import { assertMatchesSchema } from '../helpers/json-schema.js';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProject,
+	removeTempProject,
+	runCliCommand,
+} from './helpers/cli-harness.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const schemaRoot = path.join(projectRoot, 'schemas');
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-handoff-'));
-}
+let initializedProjectFixture;
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-handoff-fixture-');
+	initProject(initializedProjectFixture);
+});
+
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createHandoffProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-handoff-');
 }
 
 function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
-}
-
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
+	return runCliCommand(cwd, args, runHandoff);
 }
 
 function writeRecord(projectPath, fileName, record) {
@@ -75,14 +82,13 @@ function validRecord() {
 	};
 }
 
-test('validates a restricted handoff record without writing files', () => {
-	const projectPath = createTempProject();
+test('validates a restricted handoff record without writing files', async () => {
+	const projectPath = createHandoffProject();
 
 	try {
-		initProject(projectPath);
 		writeRecord(projectPath, 'MF-0001.json', validRecord());
 
-		const result = runCli(projectPath, ['handoff', 'validate', '.mustflow/work-items/MF-0001.json', '--json']);
+		const result = await runCli(projectPath, ['handoff', 'validate', '.mustflow/work-items/MF-0001.json', '--json']);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 
 		const report = JSON.parse(result.stdout);
@@ -98,11 +104,10 @@ test('validates a restricted handoff record without writing files', () => {
 	}
 });
 
-test('rejects transcripts, command authority fields, and unrun receipt claims', () => {
-	const projectPath = createTempProject();
+test('rejects transcripts, command authority fields, and unrun receipt claims', async () => {
+	const projectPath = createHandoffProject();
 
 	try {
-		initProject(projectPath);
 		const invalid = {
 			...validRecord(),
 			transcript: 'user and assistant chat history',
@@ -121,7 +126,7 @@ test('rejects transcripts, command authority fields, and unrun receipt claims', 
 		};
 		writeRecord(projectPath, 'MF-0002.json', invalid);
 
-		const result = runCli(projectPath, ['handoff', 'validate', '.mustflow/work-items/MF-0002.json', '--json']);
+		const result = await runCli(projectPath, ['handoff', 'validate', '.mustflow/work-items/MF-0002.json', '--json']);
 		assert.equal(result.status, 1);
 
 		const report = JSON.parse(result.stdout);
@@ -138,16 +143,15 @@ test('rejects transcripts, command authority fields, and unrun receipt claims', 
 	}
 });
 
-test('rejects handoff paths outside the mustflow root', () => {
-	const projectPath = createTempProject();
+test('rejects handoff paths outside the mustflow root', async () => {
+	const projectPath = createHandoffProject();
 	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-handoff-outside-'));
 
 	try {
-		initProject(projectPath);
 		const outsidePath = path.join(outsideRoot, 'record.json');
 		writeFileSync(outsidePath, JSON.stringify(validRecord()));
 
-		const result = runCli(projectPath, ['handoff', 'validate', outsidePath, '--json']);
+		const result = await runCli(projectPath, ['handoff', 'validate', outsidePath, '--json']);
 		assert.equal(result.status, 1);
 
 		const report = JSON.parse(result.stdout);

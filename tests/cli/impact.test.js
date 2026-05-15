@@ -1,32 +1,37 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import { runImpact } from '../../dist/cli/commands/impact.js';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProject,
+	projectRoot,
+	removeTempProject,
+	runCliCommand,
+} from './helpers/cli-harness.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedProjectFixture;
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-impact-'));
-}
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-impact-fixture-');
+	initProject(initializedProjectFixture);
+});
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createImpactProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-impact-');
 }
 
 function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
-}
-
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
+	return runCliCommand(cwd, args, runImpact);
 }
 
 function runGit(cwd, args) {
@@ -34,14 +39,13 @@ function runGit(cwd, args) {
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
-test('reports version impact for release-sensitive explicit paths', () => {
-	const projectPath = createTempProject();
+test('reports version impact for release-sensitive explicit paths', async () => {
+	const projectPath = createImpactProject();
 
 	try {
-		initProject(projectPath);
 		writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify({ name: 'example', version: '1.0.0' }, null, 2));
 
-		const result = runCli(projectPath, ['impact', 'package.json', 'schemas/impact-report.schema.json', '--json']);
+		const result = await runCli(projectPath, ['impact', 'package.json', 'schemas/impact-report.schema.json', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -62,13 +66,11 @@ test('reports version impact for release-sensitive explicit paths', () => {
 	}
 });
 
-test('does not require a version decision for documentation-only paths', () => {
-	const projectPath = createTempProject();
+test('does not require a version decision for documentation-only paths', async () => {
+	const projectPath = createImpactProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['impact', 'README.md', '--json']);
+		const result = await runCli(projectPath, ['impact', 'README.md', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -83,11 +85,10 @@ test('does not require a version decision for documentation-only paths', () => {
 	}
 });
 
-test('reports changed version source impact from git status', () => {
-	const projectPath = createTempProject();
+test('reports changed version source impact from git status', async () => {
+	const projectPath = createImpactProject();
 
 	try {
-		initProject(projectPath);
 		runGit(projectPath, ['init']);
 		runGit(projectPath, ['config', 'user.email', 'test@example.com']);
 		runGit(projectPath, ['config', 'user.name', 'Test User']);
@@ -98,7 +99,7 @@ test('reports changed version source impact from git status', () => {
 		const manifestLock = readFileSync(manifestLockPath, 'utf8').replace(/version = "[^"]+"/u, 'version = "9.9.9"');
 		writeFileSync(manifestLockPath, manifestLock);
 
-		const result = runCli(projectPath, ['impact', '--changed', '--json']);
+		const result = await runCli(projectPath, ['impact', '--changed', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -114,8 +115,8 @@ test('reports changed version source impact from git status', () => {
 	}
 });
 
-test('fails impact without changed mode or explicit paths', () => {
-	const result = runCli(projectRoot, ['impact', '--json']);
+test('fails impact without changed mode or explicit paths', async () => {
+	const result = await runCli(projectRoot, ['impact', '--json']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Specify --changed or at least one path/);

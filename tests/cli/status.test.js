@@ -1,36 +1,42 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import { runStatus } from '../../dist/cli/commands/status.js';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProject,
+	removeTempProject,
+	runCliCommand,
+} from './helpers/cli-harness.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedProjectFixture;
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-status-'));
-}
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-status-fixture-');
+	initProject(initializedProjectFixture);
+});
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createStatusProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-status-');
 }
 
 function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
+	return runCliCommand(cwd, args, runStatus);
 }
 
-test('prints status for a freshly initialized mustflow project', () => {
-	const projectPath = createTempProject();
+test('prints status for a freshly initialized mustflow project', async () => {
+	const projectPath = createStatusProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
-
-		const result = runCli(projectPath, ['status']);
+		const result = await runCli(projectPath, ['status']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /mustflow status/);
@@ -44,14 +50,13 @@ test('prints status for a freshly initialized mustflow project', () => {
 	}
 });
 
-test('reports changed files without failing the status command', () => {
-	const projectPath = createTempProject();
+test('reports changed files without failing the status command', async () => {
+	const projectPath = createStatusProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
-		const result = runCli(projectPath, ['status']);
+		const result = await runCli(projectPath, ['status']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Changed files: 1/);
@@ -61,14 +66,13 @@ test('reports changed files without failing the status command', () => {
 	}
 });
 
-test('prints machine-readable status as json', () => {
-	const projectPath = createTempProject();
+test('prints machine-readable status as json', async () => {
+	const projectPath = createStatusProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
-		const result = runCli(projectPath, ['status', '--json']);
+		const result = await runCli(projectPath, ['status', '--json']);
 		const status = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0);
