@@ -10,7 +10,7 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 
 function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-explain-'));
+	return mkdtempSync(path.join(tmpdir(), 'mustflow-explain-retention-asset-'));
 }
 
 function removeTempProject(projectPath) {
