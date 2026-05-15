@@ -6,6 +6,201 @@ import { createTempProject, removeTempProject, runCli } from './helpers/cli-harn
 import { cloneCachedIndexedProjectFixture, createLocalIndexDirect, getCachedIndexedProjectFixture } from './helpers/local-index-fixtures.js';
 import { loadSqlJsCached, queryRows } from './helpers/sqlite-assertions.js';
 
+const LOCAL_INDEX_BASE_TABLES = new Set([
+	'command_effects',
+	'command_intents',
+	'document_terms',
+	'documents',
+	'indexed_files',
+	'metadata',
+	'path_surface_reasons',
+	'path_surfaces',
+	'search_ngrams',
+	'sections',
+	'skill_routes',
+	'skills',
+	'source_anchor_fingerprints',
+	'source_anchor_status',
+	'source_anchors',
+]);
+
+const LOCAL_INDEX_VIRTUAL_FTS_TABLES = new Set([
+	'search_command_intents_fts',
+	'search_documents_fts',
+	'search_skill_routes_fts',
+	'search_skills_fts',
+	'search_source_anchors_fts',
+]);
+
+const LOCAL_INDEX_VIEWS = new Set(['command_lock_conflicts', 'command_write_locks']);
+
+const LOCAL_INDEX_METADATA_KEYS = [
+	'content_mode',
+	'index_mode',
+	'max_snippet_bytes_per_document',
+	'parser_version',
+	'schema_version',
+	'search_backend',
+	'search_fts5_available',
+	'source_index_enabled',
+	'source_scope_hash',
+	'store_full_content',
+];
+
+const LOCAL_INDEX_ALLOWED_COLUMNS = {
+	command_effects: ['intent', 'source', 'access', 'mode', 'path', 'lock', 'concurrency'],
+	command_intents: ['name', 'status', 'lifecycle', 'run_policy', 'description'],
+	command_lock_conflicts: [
+		'left_intent',
+		'right_intent',
+		'lock',
+		'left_paths',
+		'right_paths',
+		'left_modes',
+		'right_modes',
+		'left_concurrencies',
+		'right_concurrencies',
+	],
+	command_write_locks: ['intent', 'lock', 'paths', 'modes', 'sources', 'concurrencies', 'effect_count'],
+	document_terms: ['document_path', 'term', 'source'],
+	documents: ['path', 'type', 'title', 'locale', 'revision', 'content_hash', 'content_snippet'],
+	indexed_files: ['path', 'source_scope', 'size_bytes', 'mtime_ms', 'content_hash', 'indexed_at', 'index_mode', 'parser_version'],
+	metadata: ['key', 'value'],
+	path_surface_reasons: ['rule_id', 'reason_kind', 'reason', 'ordinal'],
+	path_surfaces: ['rule_id', 'pattern_kind', 'pattern', 'pattern_flags', 'surface_kind', 'category', 'is_public_surface', 'update_policy'],
+	search_command_intents_fts: ['name', 'status', 'lifecycle', 'run_policy', 'description', 'effects'],
+	search_documents_fts: ['path', 'type', 'title', 'sections', 'terms', 'snippet'],
+	search_ngrams: ['target_kind', 'target_key', 'gram', 'source'],
+	search_skill_routes_fts: [
+		'route_key',
+		'skill_name',
+		'skill_path',
+		'trigger',
+		'required_input',
+		'edit_scope',
+		'risk',
+		'verification_intents',
+		'expected_output',
+	],
+	search_skills_fts: ['name', 'path', 'title'],
+	search_source_anchors_fts: ['id', 'path', 'purpose', 'search_terms', 'invariant', 'risk'],
+	sections: ['document_path', 'ordinal', 'heading'],
+	skill_routes: ['skill_name', 'skill_path', 'trigger', 'required_input', 'edit_scope', 'risk', 'verification_intents', 'expected_output'],
+	skills: ['name', 'path', 'title'],
+	source_anchor_fingerprints: [
+		'anchor_id',
+		'path',
+		'line_start',
+		'anchor_metadata_hash',
+		'anchor_text_hash',
+		'context_hash',
+		'search_terms_hash',
+		'invariant_hash',
+		'risk_hash',
+		'symbol_kind',
+		'symbol_name',
+		'symbol_exported',
+		'signature_hash',
+		'body_hash',
+		'symbol_start_line',
+		'symbol_end_line',
+	],
+	source_anchor_status: [
+		'anchor_id',
+		'status',
+		'confidence',
+		'identity_signal',
+		'location_signal',
+		'symbol_signal',
+		'body_signal',
+		'metadata_signal',
+		'semantic_signal',
+		'risk_signal',
+		'navigation_only',
+		'can_instruct_agent',
+	],
+	source_anchors: ['id', 'path', 'line_start', 'purpose', 'search_terms', 'invariant', 'risk', 'navigation_only', 'can_instruct_agent'],
+};
+
+const LOCAL_INDEX_FORBIDDEN_STORAGE_NAMES = [
+	/^api_?key$/u,
+	/^chain_of_thought$/u,
+	/^chat_?(history|message|messages|transcript)$/u,
+	/^command_?(log|logs|output|outputs|transcript|transcripts)$/u,
+	/^conversation$/u,
+	/^conversation_(history|message|messages|transcript)$/u,
+	/^document_content$/u,
+	/^env$/u,
+	/^env_(value|values|vars?)$/u,
+	/^environment$/u,
+	/^environment_(value|values|vars?)$/u,
+	/^full_(content|source)$/u,
+	/^hidden_reasoning$/u,
+	/^message$/u,
+	/^messages$/u,
+	/^password$/u,
+	/^raw_(log|logs|stdout|stderr)$/u,
+	/^reasoning$/u,
+	/^secret$/u,
+	/^secrets$/u,
+	/^source_(body|content)$/u,
+	/^stderr$/u,
+	/^stdout$/u,
+	/^terminal_(output|transcript)$/u,
+	/^token$/u,
+	/^tokens$/u,
+	/^transcript$/u,
+	/^transcripts$/u,
+];
+
+function isFtsShadowTableName(tableName) {
+	return /^search_(?:command_intents|documents|skill_routes|skills|source_anchors)_fts_(?:data|idx|content|docsize|config)$/u.test(
+		tableName,
+	);
+}
+
+function assertNoForbiddenStorageName(name, context) {
+	for (const pattern of LOCAL_INDEX_FORBIDDEN_STORAGE_NAMES) {
+		assert.equal(pattern.test(name), false, `${context} must not use forbidden local-index storage name "${name}"`);
+	}
+}
+
+function assertLocalIndexStorageBoundary(database, tableNames, viewNames) {
+	const metadataKeys = queryRows(database, 'SELECT key FROM metadata ORDER BY key').map((row) => row.key);
+	assert.deepEqual(metadataKeys, LOCAL_INDEX_METADATA_KEYS, 'metadata keys should stay allowlisted');
+
+	for (const key of metadataKeys) {
+		assertNoForbiddenStorageName(key, 'metadata key');
+	}
+
+	for (const tableName of tableNames) {
+		assert.equal(
+			LOCAL_INDEX_BASE_TABLES.has(tableName) || LOCAL_INDEX_VIRTUAL_FTS_TABLES.has(tableName) || isFtsShadowTableName(tableName),
+			true,
+			`unexpected local-index table "${tableName}"`,
+		);
+		assertNoForbiddenStorageName(tableName, 'table');
+	}
+
+	for (const viewName of viewNames) {
+		assert.equal(LOCAL_INDEX_VIEWS.has(viewName), true, `unexpected local-index view "${viewName}"`);
+		assertNoForbiddenStorageName(viewName, 'view');
+	}
+
+	for (const tableOrViewName of [...LOCAL_INDEX_BASE_TABLES, ...LOCAL_INDEX_VIRTUAL_FTS_TABLES, ...LOCAL_INDEX_VIEWS]) {
+		if (!tableNames.includes(tableOrViewName) && !viewNames.includes(tableOrViewName)) {
+			continue;
+		}
+
+		const actualColumns = queryRows(database, `PRAGMA table_info(${tableOrViewName})`).map((row) => row.name);
+		assert.deepEqual(actualColumns, LOCAL_INDEX_ALLOWED_COLUMNS[tableOrViewName], `${tableOrViewName} columns should stay allowlisted`);
+
+		for (const columnName of actualColumns) {
+			assertNoForbiddenStorageName(columnName, `${tableOrViewName} column`);
+		}
+	}
+}
+
 function appendCommandGraphFixture(projectPath) {
 	appendFileSync(
 		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
@@ -456,6 +651,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(header, 'SQLite format 3\0');
+		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
 		assert.equal(metadata.schema_version, '12');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
