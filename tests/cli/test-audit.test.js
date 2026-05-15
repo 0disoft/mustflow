@@ -13,24 +13,25 @@ function runAudit() {
 	});
 }
 
-test('test audit reports review-only god file candidates without failing the audit', () => {
+test('test audit accepts the split check suite without stale god-file expectations', () => {
 	const result = runAudit();
 	const report = JSON.parse(result.stdout);
-	const issue = report.issues.find((candidate) => candidate.code === 'test_god_file_candidate');
 	const checkSummary = report.files.find((candidate) => candidate.path === 'tests/cli/check.test.js');
+	const staleCheckIssue = report.issues.find(
+		(candidate) => candidate.code === 'test_god_file_candidate' && candidate.path === 'tests/cli/check.test.js',
+	);
 
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 	assert.equal(report.ok, true);
-	assert.ok(issue, 'expected at least one god file review candidate');
-	assert.equal(issue.severity, 'warning');
-	assert.equal(issue.path, 'tests/cli/check.test.js');
-	assert.ok(issue.score >= 50);
-	assert.ok(issue.signals.bytes >= 64 * 1024);
-	assert.ok(issue.signals.test_count >= 40);
-	assert.ok(issue.signals.domain_cluster_count >= 4);
-	assert.ok(issue.signals.source_surface_count >= 5);
-	assert.ok(checkSummary.domain_clusters.includes('skill_contracts'));
-	assert.ok(checkSummary.source_surfaces.includes('mustflow'));
+	assert.equal(staleCheckIssue, undefined);
+	assert.ok(checkSummary, 'expected check.test.js to be summarized');
+	assert.ok(checkSummary.bytes < 64 * 1024);
+	assert.ok(checkSummary.test_count < 40);
+	assert.ok(checkSummary.domain_clusters.includes('command_contract'));
+	const skillContractSummary = report.files.find((candidate) => candidate.path === 'tests/cli/check-skill-contracts.test.js');
+	assert.ok(skillContractSummary.domain_clusters.includes('skill_contracts'));
+	assert.ok(report.files.some((candidate) => candidate.path === 'tests/cli/check-command-contracts.test.js'));
+	assert.ok(report.files.some((candidate) => candidate.path === 'tests/cli/check-versioning.test.js'));
 });
 
 test('test audit includes mock and behavior assertion signals for every test file', () => {
