@@ -59,7 +59,7 @@ const relatedRules = [
 	},
 	{ match: /^src\/cli\/lib\/dashboard/u, tests: ['dashboard.test.js'] },
 	{ match: /^src\/cli\/lib\/doc-review-ledger\.ts$/u, tests: ['docs.test.js', 'dashboard.test.js'] },
-	{ match: /^src\/cli\/lib\/local-index\.ts$/u, tests: ['index.test.js', 'search.test.js', 'explain-command.test.js', 'explain-surface.test.js'] },
+	{ match: /^src\/cli\/lib\/local-index\.ts$/u, tests: ['index.test.js', 'search.test.js', 'search-source-scope.test.js', 'explain-command.test.js', 'explain-surface.test.js'] },
 	{ match: /^src\/cli\/lib\/npm-version-check\.ts$/u, tests: ['index.test.js', 'router.test.js'] },
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: ['index.test.js'] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: ['run.test.js', 'dashboard.test.js', 'router.test.js'] },
@@ -83,8 +83,8 @@ const relatedRules = [
 	{ match: /^src\/core\/verification-plan\.ts$/u, tests: ['verify.test.js', 'explain-verify.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
 	{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js'] },
-	{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index.test.js', 'search.test.js'] },
-	{ match: /^src\/core\/source-anchors\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js', 'index.test.js', 'search.test.js'] },
+	{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index.test.js', 'search-source-scope.test.js'] },
+	{ match: /^src\/core\/source-anchors\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js', 'index.test.js', 'search-source-scope.test.js'] },
 	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js', 'schema.test.js'] },
 	{ match: /^scripts\/audit-tests\.mjs$/u, tests: ['test-audit.test.js'] },
 	{ match: /^tests\/cli\/([^/]+\.test\.js)$/u, testsForMatch: ([, testName]) => [testName] },
@@ -232,7 +232,7 @@ function readFullConcurrency() {
 function testDemand(testPath) {
 	const name = path.basename(testPath);
 
-	if (['index.test.js', 'search.test.js'].includes(name)) {
+	if (['index.test.js', 'search.test.js', 'search-source-scope.test.js'].includes(name)) {
 		return { cpu: 1, io: 3, process: 2, sqlite: 1, git: 0, className: 'sqlite_io_heavy' };
 	}
 
