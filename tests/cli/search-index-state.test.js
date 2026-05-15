@@ -1,26 +1,12 @@
 import assert from 'node:assert/strict';
 import { appendFileSync } from 'node:fs';
 import path from 'node:path';
-import { after, before, test } from 'node:test';
-import { cloneProjectFixture, createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
-import { indexProject } from './helpers/local-index-fixtures.js';
-
-let indexedProjectFixture;
-
-before(() => {
-	indexedProjectFixture = createTempProject('mustflow-search-index-state-fixture-');
-	initProject(indexedProjectFixture);
-	indexProject(indexedProjectFixture);
-});
-
-after(() => {
-	if (indexedProjectFixture) {
-		removeTempProject(indexedProjectFixture);
-	}
-});
+import { test } from 'node:test';
+import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { cloneCachedIndexedProjectFixture } from './helpers/local-index-fixtures.js';
 
 function cloneIndexedProject() {
-	return cloneProjectFixture(indexedProjectFixture, 'mustflow-search-index-state-indexed-');
+	return cloneCachedIndexedProjectFixture({ variant: 'workflow' }, 'mustflow-search-index-state-indexed-');
 }
 
 test('fails clearly when local index is missing', () => {

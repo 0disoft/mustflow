@@ -1,24 +1,10 @@
 import assert from 'node:assert/strict';
-import { after, before, test } from 'node:test';
-import { cloneProjectFixture, createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
-import { indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
-
-let indexedProjectFixture;
-
-before(() => {
-	indexedProjectFixture = createTempProject('mustflow-search-fixture-');
-	initProject(indexedProjectFixture);
-	indexProject(indexedProjectFixture);
-});
-
-after(() => {
-	if (indexedProjectFixture) {
-		removeTempProject(indexedProjectFixture);
-	}
-});
+import { test } from 'node:test';
+import { removeTempProject, runCli } from './helpers/cli-harness.js';
+import { cloneCachedIndexedProjectFixture, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
 function cloneIndexedProject() {
-	return cloneProjectFixture(indexedProjectFixture, 'mustflow-search-indexed-');
+	return cloneCachedIndexedProjectFixture({ variant: 'workflow' }, 'mustflow-search-indexed-');
 }
 
 test('prints matching documents skills and command intents from the local index', () => {

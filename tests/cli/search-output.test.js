@@ -1,27 +1,14 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { after, before, test } from 'node:test';
-import { cloneProjectFixture, createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
-import { indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
+import { test } from 'node:test';
+import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { cloneCachedIndexedProjectFixture, indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
 const expectedMaxSearchMatchSnippetChars = 240;
-let indexedProjectFixture;
-
-before(() => {
-	indexedProjectFixture = createTempProject('mustflow-search-output-fixture-');
-	initProject(indexedProjectFixture);
-	indexProject(indexedProjectFixture);
-});
-
-after(() => {
-	if (indexedProjectFixture) {
-		removeTempProject(indexedProjectFixture);
-	}
-});
 
 function cloneIndexedProject() {
-	return cloneProjectFixture(indexedProjectFixture, 'mustflow-search-output-indexed-');
+	return cloneCachedIndexedProjectFixture({ variant: 'workflow' }, 'mustflow-search-output-indexed-');
 }
 
 test('keeps search result match snippets bounded for long matching text', async () => {

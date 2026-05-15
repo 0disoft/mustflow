@@ -1,41 +1,33 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { after, before, test } from 'node:test';
-import { cloneProjectFixture, createTempProject, initProject, removeTempProject } from './helpers/cli-harness.js';
-import { indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
+import { before, test } from 'node:test';
+import { createTempProject, initProject, removeTempProject } from './helpers/cli-harness.js';
+import { cloneCachedIndexedProjectFixture, getCachedIndexedProjectFixture, indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
-let indexedProjectFixture;
-let tableScanIndexedProjectFixture;
 let indexedProjectMetadata;
 let tableScanIndexedProjectMetadata;
 
 before(() => {
-	indexedProjectFixture = createTempProject('mustflow-search-backend-fixture-');
-	initProject(indexedProjectFixture);
-	indexedProjectMetadata = indexProject(indexedProjectFixture);
-
-	tableScanIndexedProjectFixture = createTempProject('mustflow-search-backend-table-scan-fixture-');
-	initProject(tableScanIndexedProjectFixture);
-	tableScanIndexedProjectMetadata = indexProject(tableScanIndexedProjectFixture, [], {
-		env: { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' },
-	});
-});
-
-after(() => {
-	for (const fixture of [indexedProjectFixture, tableScanIndexedProjectFixture]) {
-		if (fixture) {
-			removeTempProject(fixture);
-		}
-	}
+	indexedProjectMetadata = getCachedIndexedProjectFixture({ variant: 'workflow' }).indexOutput;
+	tableScanIndexedProjectMetadata = getCachedIndexedProjectFixture({
+		variant: 'workflow-table-scan',
+		indexOptions: { env: { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' } },
+	}).indexOutput;
 });
 
 function cloneIndexedProject() {
-	return cloneProjectFixture(indexedProjectFixture, 'mustflow-search-backend-indexed-');
+	return cloneCachedIndexedProjectFixture({ variant: 'workflow' }, 'mustflow-search-backend-indexed-');
 }
 
 function cloneTableScanIndexedProject() {
-	return cloneProjectFixture(tableScanIndexedProjectFixture, 'mustflow-search-backend-table-scan-indexed-');
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'workflow-table-scan',
+			indexOptions: { env: { ...process.env, MUSTFLOW_TEST_DISABLE_FTS5: '1' } },
+		},
+		'mustflow-search-backend-table-scan-indexed-',
+	);
 }
 
 test('uses fts-backed token matching when the sqlite runtime supports it', async () => {

@@ -1,11 +1,9 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { after, before, test } from 'node:test';
-import { cloneProjectFixture, createTempProject, initProject, removeTempProject } from './helpers/cli-harness.js';
-import { indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
-
-let sourceIndexedProjectFixture;
+import { test } from 'node:test';
+import { createTempProject, initProject, removeTempProject } from './helpers/cli-harness.js';
+import { cloneCachedIndexedProjectFixture, indexProject, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
 function writeSourceAnchor(projectPath) {
 	mkdirSync(path.join(projectPath, 'src'), { recursive: true });
@@ -25,21 +23,16 @@ export function resolveSessionUser() {
 	);
 }
 
-before(() => {
-	sourceIndexedProjectFixture = createTempProject('mustflow-search-source-fixture-');
-	initProject(sourceIndexedProjectFixture);
-	writeSourceAnchor(sourceIndexedProjectFixture);
-	indexProject(sourceIndexedProjectFixture, ['--source']);
-});
-
-after(() => {
-	if (sourceIndexedProjectFixture) {
-		removeTempProject(sourceIndexedProjectFixture);
-	}
-});
-
 function cloneSourceIndexedProject() {
-	return cloneProjectFixture(sourceIndexedProjectFixture, 'mustflow-search-source-indexed-');
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'source-anchor-v1',
+			indexArgs: ['--source'],
+			prepareKey: 'auth-session-source-anchor-v1',
+			prepare: writeSourceAnchor,
+		},
+		'mustflow-search-source-indexed-',
+	);
 }
 
 test('keeps source anchors out of default workflow search results', async () => {
