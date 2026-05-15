@@ -48,24 +48,32 @@ const sourceAnchorTests = ['check-source-anchors.test.js', 'explain-source-ancho
 const schemaSmokeTests = ['schema.test.js'];
 const routerSmokeTests = ['router.test.js'];
 
-const fastTests = [
+const fastCommandSurfaceTests = [
 	'adapters.test.js',
-	'docs.test.js',
-	'authoring-fixtures.test.js',
 	'classify.test.js',
 	'impact.test.js',
-	'i18n-architecture.test.js',
 	'handoff.test.js',
-	'index-dry-run.test.js',
-	'index.test.js',
-	'pages-workflow.test.js',
 	'router.test.js',
-	'security-fuzz.test.js',
 	'status.test.js',
-	'test-audit.test.js',
-	'test-selection.test.js',
 	'version-sources.test.js',
 ];
+
+const fastWorkflowContractTests = [
+	'docs.test.js',
+	'authoring-fixtures.test.js',
+	'i18n-architecture.test.js',
+	'pages-workflow.test.js',
+];
+
+const fastHarnessSafetyTests = [
+	'index-dry-run.test.js',
+	'index.test.js',
+	'security-fuzz.test.js',
+	'test-audit.test.js',
+	'test-selection.test.js',
+];
+
+const fastTests = [...fastCommandSurfaceTests, ...fastWorkflowContractTests, ...fastHarnessSafetyTests];
 
 const releaseTests = ['package.test.js'];
 const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));

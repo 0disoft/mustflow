@@ -7,7 +7,11 @@ import { fileURLToPath } from 'node:url';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 function selectRelated(changedFiles) {
-	const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related', '--list'], {
+	return listSuite('related', changedFiles);
+}
+
+function listSuite(mode, changedFiles = []) {
+	const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', mode, '--list'], {
 		cwd: projectRoot,
 		encoding: 'utf8',
 		env: {
@@ -60,4 +64,36 @@ test('related selection reports release-sensitive template changes', () => {
 
 	assert.equal(report.release_sensitive, true);
 	assert.deepEqual(report.selected.sort(), ['docs.test.js', 'init.test.js', 'update.test.js']);
+});
+
+test('fast baseline keeps lightweight command and workflow contracts', () => {
+	const report = listSuite('fast');
+
+	assert.deepEqual(report.selected.slice(0, 7), [
+		'adapters.test.js',
+		'classify.test.js',
+		'impact.test.js',
+		'handoff.test.js',
+		'router.test.js',
+		'status.test.js',
+		'version-sources.test.js',
+	]);
+	assert.equal(report.selected.includes('docs.test.js'), true);
+	assert.equal(report.selected.includes('authoring-fixtures.test.js'), true);
+	assert.equal(report.selected.includes('i18n-architecture.test.js'), true);
+	assert.equal(report.selected.includes('pages-workflow.test.js'), true);
+});
+
+test('fast baseline keeps harness safety checks but excludes heavier feature suites', () => {
+	const report = listSuite('fast');
+
+	assert.equal(report.selected.includes('index-dry-run.test.js'), true);
+	assert.equal(report.selected.includes('index.test.js'), true);
+	assert.equal(report.selected.includes('security-fuzz.test.js'), true);
+	assert.equal(report.selected.includes('test-audit.test.js'), true);
+	assert.equal(report.selected.includes('test-selection.test.js'), true);
+	assert.equal(report.selected.includes('search.test.js'), false);
+	assert.equal(report.selected.includes('run.test.js'), false);
+	assert.equal(report.selected.includes('update.test.js'), false);
+	assert.equal(report.selected.includes('package.test.js'), false);
 });

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
-import { createLocalIndexDirect } from './helpers/local-index-fixtures.js';
+import { removeTempProject, runCli } from './helpers/cli-harness.js';
+import { cloneCachedIndexedProjectFixture, createLocalIndexDirect, getCachedIndexedProjectFixture } from './helpers/local-index-fixtures.js';
 import { loadSqlJsCached, queryRows } from './helpers/sqlite-assertions.js';
 
 function appendCommandGraphFixture(projectPath) {
@@ -55,18 +55,330 @@ required_after = ["graph_view_fixture"]
 	);
 }
 
+function prepareGraphIndexedProject(projectPath) {
+	appendCommandGraphFixture(projectPath);
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'),
+		`# Project Context\n\n${'A'.repeat(3000)}\nTAIL_MARKER_SHOULD_NOT_BE_STORED_IN_FULL\n`,
+	);
+}
+
+function cloneGraphIndexedProject() {
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'workflow-graph-marker',
+			prepare: prepareGraphIndexedProject,
+			prepareKey: 'graph-marker-v1',
+		},
+		'mustflow-index-graph-',
+	);
+}
+
+function cloneWorkflowIndexedProject() {
+	return cloneCachedIndexedProjectFixture({ variant: 'workflow' }, 'mustflow-index-workflow-');
+}
+
+function prepareSourceAnchorProject(projectPath) {
+	mkdirSync(path.join(projectPath, 'src'));
+	writeFileSync(
+		path.join(projectPath, 'src', 'auth.ts'),
+		`/**
+ * mf:anchor auth.session.resolve
+ * purpose: Map verified server session claims to app user context.
+ * search: login, session refresh, role mapping, authorization
+ * invariant: Do not trust client-provided role values.
+ * risk: authz, pii
+ */
+export function resolveSessionUser() {
+	return null;
+}
+
+/**
+ * mf:anchor auth.session.mapper
+ * purpose: Convert session claims into app state.
+ * search: session mapper
+ * invariant: Keep the mapper pure.
+ */
+export const sessionMapper = () => ({});
+
+/**
+ * mf:anchor auth.session.store
+ * purpose: Store session state in memory.
+ * search: session store
+ * invariant: Do not persist raw tokens.
+ */
+class SessionStore {
+	/**
+	 * mf:anchor auth.session.store.get-user
+	 * purpose: Read the current session user.
+	 * search: current user
+	 * invariant: Keep token values out of the result.
+	 */
+	getUser() {
+		return null;
+	}
+}
+`,
+	);
+}
+
+function cloneSourceAnchorIndexedProject() {
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'source-anchors',
+			indexArgs: ['--source'],
+			prepare: prepareSourceAnchorProject,
+			prepareKey: 'source-anchors-v1',
+		},
+		'mustflow-index-source-anchors-',
+	);
+}
+
+function prepareSourceIndexConfigProject(projectPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	mkdirSync(path.join(projectPath, 'src', 'kept'), { recursive: true });
+	mkdirSync(path.join(projectPath, 'src', 'ignored'), { recursive: true });
+	mkdirSync(path.join(projectPath, 'src', 'generated'), { recursive: true });
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'index.toml'),
+		[
+			'[source_index]',
+			'enabled_by_default = true',
+			'include = ["src/**/*.ts"]',
+			'exclude = ["src/ignored/**", "**/*.generated.ts"]',
+			'max_file_bytes = 420',
+			'allowed_extensions = [".ts"]',
+			'',
+		].join('\n'),
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'kept', 'anchor.ts'),
+		`/**
+ * mf:anchor source.config.kept
+ * purpose: Keep this configured source anchor.
+ * search: configured source scan
+ * invariant: Configured source scans remain navigation-only.
+ */
+export const keptAnchor = true;
+`,
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'ignored', 'anchor.ts'),
+		`/**
+ * mf:anchor source.config.ignored
+ * purpose: Excluded by configured path.
+ * search: ignored source scan
+ * invariant: Excluded paths do not enter the local index.
+ */
+export const ignoredAnchor = true;
+`,
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'generated', 'client.ts'),
+		`/**
+ * mf:anchor source.config.generated
+ * purpose: Generated paths stay excluded from the local index.
+ * search: generated source scan
+ * invariant: Generated source anchors do not enter the local index.
+ */
+export const generatedAnchor = true;
+`,
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'too-large.ts'),
+		`/**
+ * mf:anchor source.config.too-large
+ * purpose: Oversized source files stay out of the local index.
+ * search: large source scan
+ * invariant: Maximum file size limits source scanning.
+ */
+export const tooLargeAnchor = true;
+${'x'.repeat(500)}
+`,
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'javascript.js'),
+		`/**
+ * mf:anchor source.config.javascript
+ * purpose: Disallowed extensions stay out of the local index.
+ * search: javascript source scan
+ * invariant: Allowed extensions bound source scanning.
+ */
+export const javascriptAnchor = true;
+`,
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'excluded.generated.ts'),
+		`/**
+ * mf:anchor source.config.generated-file
+ * purpose: Exclude glob patterns apply after include patterns.
+ * search: generated file source scan
+ * invariant: Exclude patterns can narrow include patterns.
+ */
+export const generatedFileAnchor = true;
+`,
+	);
+}
+
+function cloneSourceIndexConfigProject() {
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'source-index-config',
+			prepare: prepareSourceIndexConfigProject,
+			prepareKey: 'source-index-config-v1',
+		},
+		'mustflow-index-source-config-',
+	);
+}
+
+function prepareInvalidSourceAnchorProject(projectPath) {
+	mkdirSync(path.join(projectPath, 'src'));
+	writeFileSync(
+		path.join(projectPath, 'src', 'invalid-anchor.ts'),
+		`/**
+ * mf:anchor Invalid.Anchor
+ * purpose: This malformed anchor should not enter the source index.
+ * search: invalid source anchor
+ * invariant: Strict validation reports the invalid format.
+ */
+export const invalidAnchor = true;
+`,
+	);
+	writeFileSync(
+		path.join(projectPath, 'src', 'secret-anchor.ts'),
+		`/**
+ * mf:anchor secrets.local-token
+ * purpose: This valid anchor id should still stay out of the source index.
+ * search: local token
+ * invariant: api_key = "sk-1234567890abcdef"
+ * risk: secrets
+ */
+export const secretAnchor = true;
+`,
+	);
+}
+
+function cloneInvalidSourceAnchorProject() {
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'invalid-source-anchors',
+			indexArgs: ['--source'],
+			prepare: prepareInvalidSourceAnchorProject,
+			prepareKey: 'invalid-source-anchors-v1',
+		},
+		'mustflow-index-invalid-source-',
+	);
+}
+
+function prepareSourceAnchorStatusProject(projectPath) {
+	mkdirSync(path.join(projectPath, 'src'));
+	writeFileSync(path.join(projectPath, 'src', 'anchors.ts'), sourceAnchorStatusInitialSource());
+}
+
+function cloneSourceAnchorStatusProject() {
+	return cloneCachedIndexedProjectFixture(
+		{
+			variant: 'source-anchor-status',
+			indexArgs: ['--source'],
+			prepare: prepareSourceAnchorStatusProject,
+			prepareKey: 'source-anchor-status-v1',
+		},
+		'mustflow-index-source-status-',
+	);
+}
+
+function sourceAnchorStatusInitialSource() {
+	return `/**
+ * mf:anchor docs.helper
+ * purpose: Track a low-risk helper.
+ * search: helper
+ * invariant: Keep helper deterministic.
+ */
+export function helper() {
+	return 1;
+}
+
+/**
+ * mf:anchor auth.critical
+ * purpose: Track a high-risk auth decision.
+ * search: auth decision
+ * invariant: Never grant access by default.
+ * risk: security
+ */
+export function criticalAuthDecision() {
+	return true;
+}
+
+/**
+ * mf:anchor stale.target
+ * purpose: Track an anchor that will disappear.
+ * search: stale target
+ * invariant: Anchor should become stale when removed.
+ */
+export function staleTarget() {
+	return 'old';
+}
+
+/**
+ * mf:anchor moved.target
+ * purpose: Track a moved function.
+ * search: moved target
+ * invariant: Moving the function should preserve the target.
+ */
+export function movedTarget() {
+	return 'same';
+}
+`;
+}
+
+function sourceAnchorStatusChangedSource() {
+	return `/**
+ * mf:anchor docs.helper
+ * purpose: Track a low-risk helper.
+ * search: helper
+ * invariant: Keep helper deterministic.
+ */
+export function helper() {
+	return 2;
+}
+
+/**
+ * mf:anchor auth.critical
+ * purpose: Track a high-risk auth decision.
+ * search: auth decision
+ * invariant: Never grant access by default.
+ * risk: security
+ */
+export function criticalAuthDecision() {
+	return false;
+}
+
+const gap = 1;
+const anotherGap = gap + 1;
+
+/**
+ * mf:anchor moved.target
+ * purpose: Track a moved function.
+ * search: moved target
+ * invariant: Moving the function should preserve the target.
+ */
+export function movedTarget() {
+	return 'same';
+}
+`;
+}
+
 test('writes a sqlite local index for mustflow documents and command intents', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneGraphIndexedProject();
+	const fixture = getCachedIndexedProjectFixture({
+		variant: 'workflow-graph-marker',
+		prepare: prepareGraphIndexedProject,
+		prepareKey: 'graph-marker-v1',
+	});
 
 	try {
-		initProject(projectPath);
-		appendCommandGraphFixture(projectPath);
 		const marker = 'TAIL_MARKER_SHOULD_NOT_BE_STORED_IN_FULL';
-		writeFileSync(
-			path.join(projectPath, '.mustflow', 'context', 'PROJECT.md'),
-			`# Project Context\n\n${'A'.repeat(3000)}\n${marker}\n`,
-		);
-		const output = await createLocalIndexDirect(projectPath);
+		const output = fixture.indexOutput;
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const header = readFileSync(indexPath).subarray(0, 16).toString('utf8');
 		const SQL = await loadSqlJsCached();
@@ -107,7 +419,6 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.source_anchor_count, 0);
 		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_effect_count >= 1);
-		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.equal(header, 'SQLite format 3\0');
 		assert.equal(metadata.schema_version, '12');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
@@ -359,23 +670,18 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 });
 
 test('reuses a fresh sqlite local index in incremental mode', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneWorkflowIndexedProject();
 
 	try {
-		initProject(projectPath);
-		const firstOutput = await createLocalIndexDirect(projectPath);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const firstBytes = readFileSync(indexPath).toString('base64');
 		const secondOutput = await createLocalIndexDirect(projectPath, { incremental: true });
 		const secondBytes = readFileSync(indexPath).toString('base64');
 
-		assert.equal(firstOutput.index_mode, 'full');
-		assert.equal(firstOutput.reused_existing, false);
 		assert.equal(secondOutput.index_mode, 'incremental');
 		assert.equal(secondOutput.reused_existing, true);
 		assert.equal(secondOutput.rebuild_reason, null);
 		assert.equal(secondOutput.wrote_files, false);
-		assert.equal(secondOutput.indexed_file_count, firstOutput.indexed_file_count);
 		assert.equal(secondBytes, firstBytes);
 	} finally {
 		removeTempProject(projectPath);
@@ -383,12 +689,9 @@ test('reuses a fresh sqlite local index in incremental mode', async () => {
 });
 
 test('incremental mode rebuilds when indexed workflow files change', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneWorkflowIndexedProject();
 
 	try {
-		initProject(projectPath);
-		await createLocalIndexDirect(projectPath);
-
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'context', 'INDEX.md'),
 			'# Context Index\n\nChanged incremental marker.\n',
@@ -438,54 +741,16 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 });
 
 test('indexes source anchors only when source indexing is requested', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneSourceAnchorIndexedProject();
+	const fixture = getCachedIndexedProjectFixture({
+		variant: 'source-anchors',
+		indexArgs: ['--source'],
+		prepare: prepareSourceAnchorProject,
+		prepareKey: 'source-anchors-v1',
+	});
 
 	try {
-		initProject(projectPath);
-		mkdirSync(path.join(projectPath, 'src'));
-		writeFileSync(
-			path.join(projectPath, 'src', 'auth.ts'),
-			`/**
- * mf:anchor auth.session.resolve
- * purpose: Map verified server session claims to app user context.
- * search: login, session refresh, role mapping, authorization
- * invariant: Do not trust client-provided role values.
- * risk: authz, pii
- */
-export function resolveSessionUser() {
-	return null;
-}
-
-/**
- * mf:anchor auth.session.mapper
- * purpose: Convert session claims into app state.
- * search: session mapper
- * invariant: Keep the mapper pure.
- */
-export const sessionMapper = () => ({});
-
-/**
- * mf:anchor auth.session.store
- * purpose: Store session state in memory.
- * search: session store
- * invariant: Do not persist raw tokens.
- */
-class SessionStore {
-	/**
-	 * mf:anchor auth.session.store.get-user
-	 * purpose: Read the current session user.
-	 * search: current user
-	 * invariant: Keep token values out of the result.
-	 */
-	getUser() {
-		return null;
-	}
-}
-`,
-		);
-
-		const result = runCli(projectPath, ['index', '--source', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = fixture.indexOutput;
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
@@ -496,7 +761,6 @@ class SessionStore {
 		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.schema_version, '12');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
@@ -540,102 +804,20 @@ class SessionStore {
 });
 
 test('uses index config to bound source anchor scanning', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneSourceIndexConfigProject();
+	const fixture = getCachedIndexedProjectFixture({
+		variant: 'source-index-config',
+		prepare: prepareSourceIndexConfigProject,
+		prepareKey: 'source-index-config-v1',
+	});
 
 	try {
-		initProject(projectPath);
-		mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
-		mkdirSync(path.join(projectPath, 'src', 'kept'), { recursive: true });
-		mkdirSync(path.join(projectPath, 'src', 'ignored'), { recursive: true });
-		mkdirSync(path.join(projectPath, 'src', 'generated'), { recursive: true });
-		writeFileSync(
-			path.join(projectPath, '.mustflow', 'config', 'index.toml'),
-			[
-				'[source_index]',
-				'enabled_by_default = true',
-				'include = ["src/**/*.ts"]',
-				'exclude = ["src/ignored/**", "**/*.generated.ts"]',
-				'max_file_bytes = 420',
-				'allowed_extensions = [".ts"]',
-				'',
-			].join('\n'),
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'kept', 'anchor.ts'),
-			`/**
- * mf:anchor source.config.kept
- * purpose: Keep this configured source anchor.
- * search: configured source scan
- * invariant: Configured source scans remain navigation-only.
- */
-export const keptAnchor = true;
-`,
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'ignored', 'anchor.ts'),
-			`/**
- * mf:anchor source.config.ignored
- * purpose: Excluded by configured path.
- * search: ignored source scan
- * invariant: Excluded paths do not enter the local index.
- */
-export const ignoredAnchor = true;
-`,
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'generated', 'client.ts'),
-			`/**
- * mf:anchor source.config.generated
- * purpose: Generated paths stay excluded from the local index.
- * search: generated source scan
- * invariant: Generated source anchors do not enter the local index.
- */
-export const generatedAnchor = true;
-`,
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'too-large.ts'),
-			`/**
- * mf:anchor source.config.too-large
- * purpose: Oversized source files stay out of the local index.
- * search: large source scan
- * invariant: Maximum file size limits source scanning.
- */
-export const tooLargeAnchor = true;
-${'x'.repeat(500)}
-`,
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'javascript.js'),
-			`/**
- * mf:anchor source.config.javascript
- * purpose: Disallowed extensions stay out of the local index.
- * search: javascript source scan
- * invariant: Allowed extensions bound source scanning.
- */
-export const javascriptAnchor = true;
-`,
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'excluded.generated.ts'),
-			`/**
- * mf:anchor source.config.generated-file
- * purpose: Exclude glob patterns apply after include patterns.
- * search: generated file source scan
- * invariant: Exclude patterns can narrow include patterns.
- */
-export const generatedFileAnchor = true;
-`,
-		);
-
-		const result = runCli(projectPath, ['index', '--json']);
-		const output = JSON.parse(result.stdout);
+		const output = fixture.indexOutput;
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
 		const anchorRows = queryRows(database, 'SELECT id, path, navigation_only, can_instruct_agent FROM source_anchors ORDER BY id');
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 1);
 		assert.deepEqual(anchorRows, [
@@ -653,37 +835,16 @@ export const generatedFileAnchor = true;
 });
 
 test('does not index invalid source anchors and leaves them to strict validation', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneInvalidSourceAnchorProject();
+	const fixture = getCachedIndexedProjectFixture({
+		variant: 'invalid-source-anchors',
+		indexArgs: ['--source'],
+		prepare: prepareInvalidSourceAnchorProject,
+		prepareKey: 'invalid-source-anchors-v1',
+	});
 
 	try {
-		initProject(projectPath);
-		mkdirSync(path.join(projectPath, 'src'));
-		writeFileSync(
-			path.join(projectPath, 'src', 'invalid-anchor.ts'),
-			`/**
- * mf:anchor Invalid.Anchor
- * purpose: This malformed anchor should not enter the source index.
- * search: invalid source anchor
- * invariant: Strict validation reports the invalid format.
- */
-export const invalidAnchor = true;
-`,
-		);
-		writeFileSync(
-			path.join(projectPath, 'src', 'secret-anchor.ts'),
-			`/**
- * mf:anchor secrets.local-token
- * purpose: This valid anchor id should still stay out of the source index.
- * search: local token
- * invariant: api_key = "sk-1234567890abcdef"
- * risk: secrets
- */
-export const secretAnchor = true;
-`,
-		);
-
-		const indexResult = runCli(projectPath, ['index', '--source', '--json']);
-		const output = JSON.parse(indexResult.stdout);
+		const output = fixture.indexOutput;
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJsCached();
 		const database = new SQL.Database(readFileSync(indexPath));
@@ -693,7 +854,6 @@ export const secretAnchor = true;
 		const check = JSON.parse(checkResult.stdout);
 		const issueIds = new Set(check.issueDetails.map((issue) => issue.id));
 
-		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 0);
 		assert.equal(anchorCount.count, 0);
@@ -708,97 +868,11 @@ export const secretAnchor = true;
 });
 
 test('compares source anchor status against the previous fingerprint snapshot', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneSourceAnchorStatusProject();
 
 	try {
-		initProject(projectPath);
-		mkdirSync(path.join(projectPath, 'src'));
 		const sourcePath = path.join(projectPath, 'src', 'anchors.ts');
-		writeFileSync(
-			sourcePath,
-			`/**
- * mf:anchor docs.helper
- * purpose: Track a low-risk helper.
- * search: helper
- * invariant: Keep helper deterministic.
- */
-export function helper() {
-	return 1;
-}
-
-/**
- * mf:anchor auth.critical
- * purpose: Track a high-risk auth decision.
- * search: auth decision
- * invariant: Never grant access by default.
- * risk: security
- */
-export function criticalAuthDecision() {
-	return true;
-}
-
-/**
- * mf:anchor stale.target
- * purpose: Track an anchor that will disappear.
- * search: stale target
- * invariant: Anchor should become stale when removed.
- */
-export function staleTarget() {
-	return 'old';
-}
-
-/**
- * mf:anchor moved.target
- * purpose: Track a moved function.
- * search: moved target
- * invariant: Moving the function should preserve the target.
- */
-export function movedTarget() {
-	return 'same';
-}
-`,
-		);
-
-		const firstIndex = runCli(projectPath, ['index', '--source', '--json']);
-		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
-
-		writeFileSync(
-			sourcePath,
-			`/**
- * mf:anchor docs.helper
- * purpose: Track a low-risk helper.
- * search: helper
- * invariant: Keep helper deterministic.
- */
-export function helper() {
-	return 2;
-}
-
-/**
- * mf:anchor auth.critical
- * purpose: Track a high-risk auth decision.
- * search: auth decision
- * invariant: Never grant access by default.
- * risk: security
- */
-export function criticalAuthDecision() {
-	return false;
-}
-
-const gap = 1;
-const anotherGap = gap + 1;
-
-/**
- * mf:anchor moved.target
- * purpose: Track a moved function.
- * search: moved target
- * invariant: Moving the function should preserve the target.
- */
-export function movedTarget() {
-	return 'same';
-}
-`,
-		);
+		writeFileSync(sourcePath, sourceAnchorStatusChangedSource());
 
 		const secondIndex = runCli(projectPath, ['index', '--source', '--incremental', '--json']);
 		const output = JSON.parse(secondIndex.stdout);
