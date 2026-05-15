@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/dashboard-export.schema.json",
+  "title": "mustflow dashboard export",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "format",
+    "generated_at",
+    "mustflow_root",
+    "output_policy",
+    "limits",
+    "preferences",
+    "status",
+    "docs_review",
+    "harness_report"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "dashboard export" },
+    "format": { "enum": ["html", "json"] },
+    "generated_at": { "type": "string" },
+    "mustflow_root": { "type": "string" },
+    "output_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bounded_to_mustflow_root",
+        "starts_server",
+        "static_html",
+        "contains_mutation_controls",
+        "omits_dashboard_token",
+        "omits_raw_run_output",
+        "redacts_secret_like_values"
+      ],
+      "properties": {
+        "bounded_to_mustflow_root": { "const": true },
+        "starts_server": { "const": false },
+        "static_html": { "type": "boolean" },
+        "contains_mutation_controls": { "const": false },
+        "omits_dashboard_token": { "const": true },
+        "omits_raw_run_output": { "const": true },
+        "redacts_secret_like_values": { "const": true }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_string_bytes",
+        "max_array_items",
+        "max_depth",
+        "truncated_fields",
+        "omitted_fields",
+        "redacted_fields",
+        "redaction_count",
+        "redaction_kinds"
+      ],
+      "properties": {
+        "max_string_bytes": { "type": "integer" },
+        "max_array_items": { "type": "integer" },
+        "max_depth": { "type": "integer" },
+        "truncated_fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "omitted_fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "redacted_fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "redaction_count": { "type": "integer" },
+        "redaction_kinds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "docs_review": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "harness_report": { "$ref": "#/$defs/harnessReport" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "decisionGraphSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "node_count",
+        "edge_count",
+        "runnable",
+        "skipped",
+        "blocked",
+        "manual_only",
+        "unknown",
+        "gap_count"
+      ],
+      "properties": {
+        "root": { "const": "verification_decision" },
+        "node_count": { "type": "integer" },
+        "edge_count": { "type": "integer" },
+        "runnable": { "type": "integer" },
+        "skipped": { "type": "integer" },
+        "blocked": { "type": "integer" },
+        "manual_only": { "type": "integer" },
+        "unknown": { "type": "integer" },
+        "gap_count": { "type": "integer" }
+      }
+    },
+    "verificationGap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "intent", "reason", "detail", "files", "surfaces"],
+      "properties": {
+        "kind": { "enum": ["manual_only", "blocked", "unknown", "missing"] },
+        "intent": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "remainingRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "detail"],
+      "properties": {
+        "code": { "type": "string" },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "detail": { "type": "string" },
+        "count": { "type": "integer" },
+        "paths": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "harnessReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "generated_from",
+        "install",
+        "verification",
+        "run_history",
+        "docs_review",
+        "remaining_risks"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "generated_from": { "const": "dashboard_status_snapshot" },
+        "install": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["installed", "manifest_lock", "tracked_files", "changed_files", "missing_files", "issues"],
+          "properties": {
+            "installed": { "type": "boolean" },
+            "manifest_lock": { "type": "string" },
+            "tracked_files": { "type": "integer" },
+            "changed_files": { "type": "integer" },
+            "missing_files": { "type": "integer" },
+            "issues": { "type": "integer" }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "changed_file_count",
+            "changed_surfaces",
+            "decision_graph_summary",
+            "runnable_intents",
+            "skipped_intents",
+            "gaps"
+          ],
+          "properties": {
+            "changed_file_count": { "type": "integer" },
+            "changed_surfaces": { "$ref": "#/$defs/stringArray" },
+            "decision_graph_summary": {
+              "type": ["object", "null"],
+              "properties": {
+                "root": { "const": "verification_decision" },
+                "node_count": { "type": "integer" },
+                "edge_count": { "type": "integer" },
+                "runnable": { "type": "integer" },
+                "skipped": { "type": "integer" },
+                "blocked": { "type": "integer" },
+                "manual_only": { "type": "integer" },
+                "unknown": { "type": "integer" },
+                "gap_count": { "type": "integer" }
+              }
+            },
+            "runnable_intents": { "$ref": "#/$defs/stringArray" },
+            "skipped_intents": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["intent", "reason_key"],
+                "properties": {
+                  "intent": { "type": "string" },
+                  "reason_key": { "type": "string" }
+                }
+              }
+            },
+            "gaps": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/verificationGap" }
+            }
+          }
+        },
+        "run_history": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "exists",
+            "valid",
+            "intent",
+            "status",
+            "exit_code",
+            "timed_out",
+            "finished_at",
+            "duration_ms",
+            "receipt_path"
+          ],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "type": "boolean" },
+            "valid": { "type": "boolean" },
+            "intent": { "type": ["string", "null"] },
+            "status": { "type": ["string", "null"] },
+            "exit_code": { "type": ["integer", "null"] },
+            "timed_out": { "type": ["boolean", "null"] },
+            "finished_at": { "type": ["string", "null"] },
+            "duration_ms": { "type": ["number", "null"] },
+            "receipt_path": { "type": ["string", "null"] }
+          }
+        },
+        "docs_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ledger_path", "active_documents"],
+          "properties": {
+            "ledger_path": { "type": "string" },
+            "active_documents": { "type": "integer" }
+          }
+        },
+        "remaining_risks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/remainingRisk" }
+        }
+      }
+    }
+  }
+}

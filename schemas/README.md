@@ -12,6 +12,8 @@ Current schemas:
   including bounded declared-write drift metadata
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 - `contract-lint-report.schema.json`: output of `mf contract-lint --json`
+- `dashboard-export.schema.json`: bounded static export written by `mf dashboard --export-json <path>`,
+  including output policy, redaction and truncation metadata, and the dashboard harness report
 - `classify-report.schema.json`: output of `mf classify --changed --json` and  
   `mf classify <path...> --json`
 - `impact-report.schema.json`: output of `mf impact --changed --json` and  

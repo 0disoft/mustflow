@@ -1,0 +1,798 @@
+{
+  "fixture_version": "1.30.0",
+  "schema_version": "1",
+  "fixtures": [
+    {
+      "id": "adapter-compatibility-report",
+      "schema_file": "adapter-compatibility-report.schema.json",
+      "producer": "mf adapters status --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "adapters_status",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "agents_file": {
+          "path": "AGENTS.md",
+          "present": true,
+          "authority": "binding",
+          "lifecycle": "user_editable",
+          "generated_by_mustflow": false
+        },
+        "summary": {
+          "host_instruction_files": 0,
+          "adapter_surfaces_present": 0,
+          "compatibility_notes": 0,
+          "conflicts": 0,
+          "required_changes": 0
+        },
+        "host_files": [],
+        "adapter_surfaces": [],
+        "findings": [],
+        "compatibility_notes": [],
+        "required_changes": [],
+        "runtime_policy": {
+          "approval_policy": "not_repo_visible",
+          "sandbox_policy": "not_repo_visible",
+          "stricter_than_mustflow": "unknown",
+          "note": "Host policies remain external to mustflow."
+        },
+        "boundaries": {
+          "command_authority": ".mustflow/config/commands.toml",
+          "host_files_are_command_authority": false,
+          "adapter_generation": "explicit_user_request_only",
+          "does_not_generate": []
+        }
+      }
+    },
+    {
+      "id": "change-verification-report",
+      "schema_file": "change-verification-report.schema.json",
+      "producer": "mf verify --reason <event> --plan-only --json",
+      "fixture": {
+        "schema_version": "1",
+        "source": "paths",
+        "files": ["README.md"],
+        "classification_summary": {
+          "fileCount": 1,
+          "publicSurfaceCount": 1,
+          "changeKinds": ["docs"],
+          "validationReasons": ["docs_change"],
+          "updatePolicies": ["update"],
+          "driftChecks": ["docs_validate"],
+          "affectedContracts": ["public_docs"]
+        },
+        "requirements": [
+          {
+            "reason": "docs_change",
+            "files": ["README.md"],
+            "surfaces": ["docs"],
+            "affectedContracts": ["public_docs"],
+            "driftChecks": ["docs_validate"],
+            "updatePolicies": ["update"],
+            "source": "change_classification"
+          }
+        ],
+        "candidates": [
+          {
+            "reason": "docs_change",
+            "intent": "docs_validate_fast",
+            "status": "runnable",
+            "skipReason": null,
+            "detail": null
+          }
+        ],
+        "gaps": [],
+        "schedule": {
+          "runner": "serial_mf_run_receipts",
+          "batches": [
+            {
+              "index": 0,
+              "intents": ["docs_validate_fast"],
+              "locks": []
+            }
+          ],
+          "entries": [
+            {
+              "intent": "docs_validate_fast",
+              "status": "runnable",
+              "effects": [],
+              "locks": [],
+              "conflicts": [],
+              "effectGraph": {
+                "source": "local_index",
+                "authority": "explanation_only",
+                "commandAuthority": ".mustflow/config/commands.toml",
+                "grantsCommandAuthority": false,
+                "status": "missing",
+                "databasePath": ".mustflow/cache/mustflow.sqlite",
+                "indexFresh": false,
+                "stalePaths": [],
+                "writeLocks": [],
+                "lockConflicts": [],
+                "refreshHint": "Run mf index to refresh local explanations."
+              }
+            }
+          ],
+          "notes": []
+        },
+        "decision_graph": {
+          "schema_version": "1",
+          "root": "verification_decision",
+          "summary": {
+            "nodeCount": 3,
+            "edgeCount": 2,
+            "runnable": 1,
+            "skipped": 0,
+            "blocked": 0,
+            "manual_only": 0,
+            "unknown": 0,
+            "gapCount": 0
+          },
+          "nodes": [
+            {
+              "id": "surface:README.md",
+              "kind": "changed_surface",
+              "label": "README.md",
+              "status": "not_applicable",
+              "reason": null,
+              "intent": null,
+              "data": { "path": "README.md" }
+            },
+            {
+              "id": "reason:docs_change",
+              "kind": "classification_reason",
+              "label": "docs_change",
+              "status": "not_applicable",
+              "reason": "docs_change",
+              "intent": null,
+              "data": {}
+            },
+            {
+              "id": "intent:docs_validate_fast",
+              "kind": "command_candidate",
+              "label": "docs_validate_fast",
+              "status": "runnable",
+              "reason": "docs_change",
+              "intent": "docs_validate_fast",
+              "data": {}
+            }
+          ],
+          "edges": [
+            {
+              "from": "surface:README.md",
+              "to": "reason:docs_change",
+              "kind": "supports"
+            },
+            {
+              "from": "reason:docs_change",
+              "to": "intent:docs_validate_fast",
+              "kind": "requires"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "classify-report",
+      "schema_file": "classify-report.schema.json",
+      "producer": "mf classify <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "classify",
+        "mustflow_root": "C:/repo",
+        "source": "paths",
+        "files": ["schemas/verify-report.schema.json"],
+        "classifications": [
+          {
+            "path": "schemas/verify-report.schema.json",
+            "changeKinds": ["schema"],
+            "surface": {
+              "kind": "json_schema",
+              "category": "public_contract",
+              "isPublicSurface": true,
+              "validationReasons": ["schema_change"],
+              "affectedContracts": ["public_json_schema"],
+              "updatePolicy": "update",
+              "driftChecks": ["schema_contract"]
+            }
+          }
+        ],
+        "summary": {
+          "fileCount": 1,
+          "publicSurfaceCount": 1,
+          "changeKinds": ["schema"],
+          "validationReasons": ["schema_change"],
+          "updatePolicies": ["update"],
+          "driftChecks": ["schema_contract"],
+          "affectedContracts": ["public_json_schema"]
+        }
+      }
+    },
+    {
+      "id": "commands",
+      "schema_file": "commands.schema.json",
+      "producer": "parsed .mustflow/config/commands.toml",
+      "fixture": {
+        "schema_version": "1",
+        "defaults": {
+          "missing_behavior": "error",
+          "allow_inferred_commands": false,
+          "require_lifecycle": true,
+          "require_timeout_for_oneshot": true,
+          "deny_unmanaged_long_running": true,
+          "default_cwd": ".",
+          "default_timeout_seconds": 60,
+          "stdin": "closed",
+          "max_output_bytes": 200000,
+          "on_timeout": "terminate",
+          "kill_after_seconds": 5,
+          "env_policy": "minimal",
+          "env_allowlist": ["PATH"]
+        },
+        "intents": {
+          "mustflow_check": {
+            "status": "configured",
+            "lifecycle": "oneshot",
+            "run_policy": "agent_allowed",
+            "description": "Validate mustflow project files.",
+            "argv": ["mf", "check", "--strict"],
+            "cwd": ".",
+            "timeout_seconds": 60,
+            "stdin": "closed",
+            "success_exit_codes": [0],
+            "writes": [],
+            "env_policy": "minimal",
+            "env_allowlist": ["PATH"],
+            "effects": [
+              {
+                "type": "read",
+                "mode": "read",
+                "path": ".mustflow/",
+                "lock": "mustflow-config",
+                "concurrency": "shared"
+              }
+            ],
+            "network": false,
+            "destructive": false,
+            "required_after": ["workflow_change"]
+          }
+        },
+        "resources": {
+          "mustflow_config": {
+            "type": "path",
+            "paths": [".mustflow/config/"],
+            "concurrency": "shared_reader",
+            "description": "mustflow configuration files"
+          }
+        }
+      }
+    },
+    {
+      "id": "context-report",
+      "schema_file": "context-report.schema.json",
+      "producer": "mf context --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "context",
+        "mustflow_root": "C:/repo",
+        "installed": true,
+        "manifest_lock": "present",
+        "template": {
+          "id": "mustflow.default",
+          "version": "1.30.0"
+        },
+        "authority": {},
+        "capabilities": {},
+        "read_order": [
+          {
+            "path": "AGENTS.md",
+            "exists": true
+          }
+        ],
+        "optional_read_order": [
+          {
+            "path": ".mustflow/context/INDEX.md",
+            "exists": true
+          }
+        ],
+        "command_contract": {
+          "path": ".mustflow/config/commands.toml",
+          "exists": true,
+          "intents": [
+            {
+              "name": "mustflow_check",
+              "status": "configured",
+              "lifecycle": "oneshot",
+              "run_policy": "agent_allowed",
+              "description": "Validate mustflow project files."
+            }
+          ],
+          "runnable_intents": ["mustflow_check"]
+        },
+        "effective_policy": {
+          "entrypoint": "AGENTS.md",
+          "nearest_agents": "AGENTS.md",
+          "command_contract": ".mustflow/config/commands.toml",
+          "project_commands_require_mf_run": true,
+          "allow_inferred_commands": false,
+          "auto_stage": false,
+          "auto_commit": false,
+          "auto_push": false,
+          "state_is_versioned": false,
+          "raw_logs_allowed": false
+        },
+        "state_policy": {
+          "cache_path": ".mustflow/cache/",
+          "state_path": ".mustflow/state/",
+          "versioned": false,
+          "safe_to_delete": true,
+          "stores_raw_conversation": false,
+          "stores_full_terminal_output": false,
+          "stores_hidden_chain_of_thought": false
+        },
+        "blocked_actions": [],
+        "latest_run": {
+          "path": ".mustflow/state/runs/latest.json",
+          "exists": false
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "contract-lint-report",
+      "schema_file": "contract-lint-report.schema.json",
+      "producer": "mf contract-lint --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "contract-lint",
+        "mustflow_root": "C:/repo",
+        "report": {
+          "status": "warning",
+          "summary": {
+            "totalIntents": 2,
+            "configured": 1,
+            "runnable": 1,
+            "manualOnly": 1,
+            "unknown": 0,
+            "errors": 0,
+            "warnings": 1
+          },
+          "issues": [
+            {
+              "severity": "warning",
+              "code": "manual_only_after_reason",
+              "intent": "snapshot_update",
+              "message": "Manual review is required before running this intent."
+            }
+          ],
+          "sourceFiles": [".mustflow/config/commands.toml"],
+          "coverage": {
+            "knownClassificationReasons": ["docs_change"],
+            "documentedVerificationReasons": ["docs_change"],
+            "requiredAfterReasons": ["docs_change"],
+            "runnableReasons": ["docs_change"],
+            "findings": [
+              {
+                "severity": "warning",
+                "code": "manual_only_reason",
+                "reason": "snapshot_change",
+                "intent": "snapshot_update",
+                "intents": ["snapshot_update"],
+                "message": "The reason is covered only by a manual-only intent."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "docs-review-list",
+      "schema_file": "docs-review-list.schema.json",
+      "producer": "mf docs review list --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "docs review list",
+        "ledger_path": ".mustflow/review/docs.toml",
+        "count": 0,
+        "documents": []
+      }
+    },
+    {
+      "id": "dashboard-export",
+      "schema_file": "dashboard-export.schema.json",
+      "producer": "mf dashboard --export-json <path>",
+      "fixture": {
+        "schema_version": "1",
+        "command": "dashboard export",
+        "format": "json",
+        "generated_at": "2026-05-14T00:00:00.000Z",
+        "mustflow_root": "C:/repo",
+        "output_policy": {
+          "bounded_to_mustflow_root": true,
+          "starts_server": false,
+          "static_html": false,
+          "contains_mutation_controls": false,
+          "omits_dashboard_token": true,
+          "omits_raw_run_output": true,
+          "redacts_secret_like_values": true
+        },
+        "limits": {
+          "max_string_bytes": 8192,
+          "max_array_items": 200,
+          "max_depth": 16,
+          "truncated_fields": [],
+          "omitted_fields": [
+            "status.run_history.command_line",
+            "status.run_history.stdout.tail",
+            "status.run_history.stderr.tail"
+          ],
+          "redacted_fields": [],
+          "redaction_count": 0,
+          "redaction_kinds": []
+        },
+        "preferences": {
+          "preferencesPath": ".mustflow/config/preferences.toml",
+          "settings": []
+        },
+        "status": {
+          "schema_version": "1",
+          "command": "dashboard status",
+          "installed": true,
+          "manifest_lock": "present"
+        },
+        "docs_review": {
+          "schema_version": "1",
+          "command": "docs review list",
+          "ledger_path": ".mustflow/review/docs.toml",
+          "count": 0,
+          "documents": []
+        },
+        "harness_report": {
+          "schema_version": "1",
+          "generated_from": "dashboard_status_snapshot",
+          "install": {
+            "installed": true,
+            "manifest_lock": "present",
+            "tracked_files": 10,
+            "changed_files": 0,
+            "missing_files": 0,
+            "issues": 0
+          },
+          "verification": {
+            "changed_file_count": 1,
+            "changed_surfaces": ["docs"],
+            "decision_graph_summary": {
+              "root": "verification_decision",
+              "node_count": 3,
+              "edge_count": 2,
+              "runnable": 1,
+              "skipped": 0,
+              "blocked": 0,
+              "manual_only": 0,
+              "unknown": 0,
+              "gap_count": 0
+            },
+            "runnable_intents": ["docs_validate_fast"],
+            "skipped_intents": [],
+            "gaps": []
+          },
+          "run_history": {
+            "path": ".mustflow/state/runs/latest.json",
+            "exists": false,
+            "valid": false,
+            "intent": null,
+            "status": null,
+            "exit_code": null,
+            "timed_out": null,
+            "finished_at": null,
+            "duration_ms": null,
+            "receipt_path": null
+          },
+          "docs_review": {
+            "ledger_path": ".mustflow/review/docs.toml",
+            "active_documents": 0
+          },
+          "remaining_risks": [
+            {
+              "code": "latest_run_missing",
+              "severity": "info",
+              "detail": "No latest mf run receipt is available."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "doctor-report",
+      "schema_file": "doctor-report.schema.json",
+      "producer": "mf doctor --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "doctor",
+        "mustflow_root": "C:/repo",
+        "installed": true,
+        "strict": false,
+        "ok": true,
+        "check": {
+          "ok": true,
+          "issue_count": 0,
+          "issues": []
+        },
+        "context": {
+          "manifest_lock": "present",
+          "template": {
+            "id": "mustflow.default",
+            "version": "1.30.0"
+          },
+          "command_contract_exists": true,
+          "runnable_intents": ["mustflow_check"],
+          "missing_read_order": [],
+          "missing_optional_read_order": [],
+          "latest_run_exists": false
+        },
+        "effective_policy": {
+          "entrypoint": "AGENTS.md",
+          "nearest_agents": "AGENTS.md",
+          "command_contract": ".mustflow/config/commands.toml",
+          "project_commands_require_mf_run": true,
+          "allow_inferred_commands": false,
+          "auto_stage": false,
+          "auto_commit": false,
+          "auto_push": false,
+          "state_is_versioned": false,
+          "raw_logs_allowed": false
+        },
+        "state_policy": {
+          "cache_path": ".mustflow/cache/",
+          "state_path": ".mustflow/state/",
+          "versioned": false,
+          "safe_to_delete": true,
+          "stores_raw_conversation": false,
+          "stores_full_terminal_output": false,
+          "stores_hidden_chain_of_thought": false
+        },
+        "blocked_actions": [],
+        "diagnostics": [
+          {
+            "id": "install",
+            "status": "ok",
+            "summary": "mustflow files are installed.",
+            "action": null
+          }
+        ],
+        "next_steps": []
+      }
+    },
+    {
+      "id": "explain-report",
+      "schema_file": "explain-report.schema.json",
+      "producer": "mf explain <topic> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "explain",
+        "topic": "command",
+        "mustflow_root": "C:/repo",
+        "decision": {
+          "kind": "allowed",
+          "inputCommand": "mustflow_check",
+          "decision": "Command intent is configured and agent-runnable.",
+          "reason": "The intent satisfies mustflow command eligibility checks.",
+          "effectiveAction": "Run through mf run mustflow_check.",
+          "countsAsMustflowVerification": true,
+          "sourceFiles": [".mustflow/config/commands.toml"],
+          "intent": {
+            "name": "mustflow_check",
+            "status": "configured",
+            "lifecycle": "oneshot",
+            "runPolicy": "agent_allowed",
+            "stdin": "closed",
+            "timeoutSeconds": 60,
+            "mode": "argv",
+            "cwd": ".",
+            "writes": [],
+            "network": false,
+            "destructive": false,
+            "successExitCodes": [0],
+            "requiredAfter": ["workflow_change"]
+          }
+        }
+      }
+    },
+    {
+      "id": "handoff-validation-report",
+      "schema_file": "handoff-validation-report.schema.json",
+      "producer": "mf handoff validate <path> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "handoff_validate",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "path": ".mustflow/work-items/MF-0001.json",
+        "record_kind": "work_item",
+        "task_id": "MF-0001",
+        "summary": {
+          "scope_count": 1,
+          "acceptance_criteria_count": 1,
+          "source_ref_count": 1,
+          "verification_plan_count": 0,
+          "coverage_count": 0,
+          "remaining_risk_count": 0
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "impact-report",
+      "schema_file": "impact-report.schema.json",
+      "producer": "mf impact <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "impact",
+        "mustflow_root": "C:/repo",
+        "source": "paths",
+        "files": ["package.json"],
+        "versioning_enabled": true,
+        "version_sources": [
+          {
+            "path": "package.json",
+            "kind": "package_manifest"
+          }
+        ],
+        "classification_summary": {
+          "fileCount": 1,
+          "publicSurfaceCount": 1,
+          "changeKinds": ["package_metadata"],
+          "validationReasons": ["release_surface"],
+          "updatePolicies": ["update"],
+          "driftChecks": ["package_metadata"],
+          "affectedContracts": ["npm_package"]
+        },
+        "version_impact": {
+          "requiresVersionDecision": true,
+          "severity": "metadata",
+          "suggestedBump": "minor",
+          "reasons": ["package metadata changed"],
+          "affectedVersionSources": ["package.json"],
+          "affectedSurfaces": ["npm_package"]
+        }
+      }
+    },
+    {
+      "id": "line-endings-report",
+      "schema_file": "line-endings-report.schema.json",
+      "producer": "mf line-endings check --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "line-endings",
+        "mode": "check",
+        "scope": "tracked",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": "lf",
+        "policy_path": ".gitattributes",
+        "git_tracked": true,
+        "checked_files": 2,
+        "non_compliant_files": [],
+        "changed_files": [],
+        "dry_run": true,
+        "wrote_files": false,
+        "issues": []
+      }
+    },
+    {
+      "id": "run-receipt",
+      "schema_file": "run-receipt.schema.json",
+      "producer": "mf run <intent> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "run",
+        "intent": "mustflow_check",
+        "status": "passed",
+        "timed_out": false,
+        "started_at": "2026-05-14T00:00:00.000Z",
+        "finished_at": "2026-05-14T00:00:01.000Z",
+        "duration_ms": 1000,
+        "cwd": "C:/repo",
+        "lifecycle": "oneshot",
+        "run_policy": "agent_allowed",
+        "mode": "argv",
+        "env_policy": "minimal",
+        "env_allowlist": ["PATH"],
+        "argv": ["node", "dist/cli/index.js", "check", "--strict"],
+        "timeout_seconds": 60,
+        "max_output_bytes": 200000,
+        "success_exit_codes": [0],
+        "exit_code": 0,
+        "signal": null,
+        "error": null,
+        "kill_method": null,
+        "stdout": {
+          "bytes": 20,
+          "truncated": false,
+          "tail": "mustflow check ok",
+          "redacted": false,
+          "redaction_count": 0,
+          "redaction_kinds": []
+        },
+        "stderr": {
+          "bytes": 0,
+          "truncated": false,
+          "tail": "",
+          "redacted": false,
+          "redaction_count": 0,
+          "redaction_kinds": []
+        },
+        "write_drift": {
+          "status": "checked",
+          "declared_paths": [],
+          "observed_paths": [],
+          "declared_observed_paths": [],
+          "undeclared_paths": [],
+          "observed_count": 0,
+          "undeclared_count": 0,
+          "has_undeclared_changes": false,
+          "truncated": false,
+          "reason": null
+        },
+        "redaction": {
+          "redacted": false,
+          "redaction_count": 0,
+          "redaction_kinds": [],
+          "fields": []
+        },
+        "receipt_path": ".mustflow/state/runs/latest.json"
+      }
+    },
+    {
+      "id": "verify-report",
+      "schema_file": "verify-report.schema.json",
+      "producer": "mf verify --reason <event> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "verify",
+        "mustflow_root": "C:/repo",
+        "reason": "docs_change",
+        "reasons": ["docs_change"],
+        "plan_source": null,
+        "status": "passed",
+        "summary": {
+          "matched": 1,
+          "ran": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "results": [
+          {
+            "intent": "docs_validate_fast",
+            "status": "passed",
+            "skipped": false,
+            "reason": "docs_change",
+            "detail": null,
+            "exit_code": 0,
+            "receipt": {
+              "path": ".mustflow/state/runs/latest.json"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "version-sources-report",
+      "schema_file": "version-sources-report.schema.json",
+      "producer": "mf version-sources --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "version-sources",
+        "mustflow_root": "C:/repo",
+        "versioning_enabled": true,
+        "sources": [
+          {
+            "path": "package.json",
+            "kind": "package_manifest"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -57,6 +57,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		installedCommand: ['mf', 'contract-lint', '--json'],
 	},
 	{
+		id: 'dashboard-export',
+		schemaFile: 'dashboard-export.schema.json',
+		producer: 'mf dashboard --export-json <path>',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'classify-report',
 		schemaFile: 'classify-report.schema.json',
 		producer: 'mf classify <path...> --json',

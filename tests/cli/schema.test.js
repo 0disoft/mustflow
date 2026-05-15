@@ -11,6 +11,7 @@ import { assertMatchesSchema } from '../helpers/json-schema.js';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const schemaRoot = path.join(projectRoot, 'schemas');
+const schemaBackcompatRoot = path.join(projectRoot, 'tests', 'fixtures', 'schema-backcompat');
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-schema-'));
@@ -45,6 +46,21 @@ async function readPublicJsonContracts() {
 	return contractsModule.getPublicJsonSchemaContracts();
 }
 
+function compareSemver(left, right) {
+	const leftParts = left.split('.').map((part) => Number.parseInt(part, 10));
+	const rightParts = right.split('.').map((part) => Number.parseInt(part, 10));
+
+	for (const index of [0, 1, 2]) {
+		const diff = leftParts[index] - rightParts[index];
+
+		if (diff !== 0) {
+			return diff;
+		}
+	}
+
+	return 0;
+}
+
 test('public json schema manifest covers schema files and documentation', async () => {
 	const contracts = await readPublicJsonContracts();
 	const contractFiles = contracts.map((contract) => contract.schemaFile).sort((left, right) => left.localeCompare(right));
@@ -61,6 +77,52 @@ test('public json schema manifest covers schema files and documentation', async 
 		assert.ok(contract.producer.length > 0, `${contract.schemaFile} should declare a producer`);
 		assert.match(readme, new RegExp(`\`${contract.schemaFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\``));
 	}
+});
+
+test('public json schema backward-compatibility fixtures match current schemas', async () => {
+	const contracts = await readPublicJsonContracts();
+	const contractsBySchemaFile = new Map(contracts.map((contract) => [contract.schemaFile, contract]));
+	const fixtureVersions = readdirSync(schemaBackcompatRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.sort(compareSemver);
+
+	assert.ok(fixtureVersions.length > 0, 'at least one schema backcompat fixture version should exist');
+
+	let newestFixtureSchemas = [];
+
+	for (const fixtureVersion of fixtureVersions) {
+		assert.match(fixtureVersion, /^\d+\.\d+\.\d+$/, `${fixtureVersion} should be a semantic version`);
+
+		const fixturePath = path.join(schemaBackcompatRoot, fixtureVersion, 'public-json-fixtures.json');
+		const fixtureSet = JSON.parse(readFileSync(fixturePath, 'utf8'));
+		const seenSchemaFiles = new Set();
+
+		assert.equal(fixtureSet.fixture_version, fixtureVersion);
+		assert.equal(fixtureSet.schema_version, '1');
+		assert.ok(Array.isArray(fixtureSet.fixtures), `${fixturePath} should contain fixtures`);
+
+		for (const entry of fixtureSet.fixtures) {
+			assert.equal(typeof entry.id, 'string', 'backcompat fixture id should be a string');
+			assert.equal(typeof entry.schema_file, 'string', `${entry.id} should declare schema_file`);
+			assert.equal(typeof entry.producer, 'string', `${entry.id} should declare producer`);
+			assert.ok(Object.hasOwn(entry, 'fixture'), `${entry.id} should include a fixture object`);
+			assert.equal(seenSchemaFiles.has(entry.schema_file), false, `${entry.schema_file} fixture should not be duplicated`);
+
+			const currentContract = contractsBySchemaFile.get(entry.schema_file);
+			assert.ok(currentContract, `${entry.schema_file} should still be a public JSON schema contract`);
+			assert.equal(entry.id, currentContract.id, `${entry.schema_file} fixture id should match the public contract`);
+			assert.equal(entry.producer, currentContract.producer, `${entry.schema_file} fixture producer should match the public contract`);
+
+			assertMatchesSchema(schemaRoot, entry.schema_file, entry.fixture);
+			seenSchemaFiles.add(entry.schema_file);
+		}
+
+		newestFixtureSchemas = [...seenSchemaFiles].sort((left, right) => left.localeCompare(right));
+	}
+
+	const currentSchemaFiles = contracts.map((contract) => contract.schemaFile).sort((left, right) => left.localeCompare(right));
+	assert.deepEqual(newestFixtureSchemas, currentSchemaFiles);
 });
 
 test('doctor json output matches the published schema', () => {
@@ -189,6 +251,21 @@ test('contract lint coverage json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'contract-lint-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard export json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['dashboard', '--export-json', '.mustflow/state/artifacts/dashboard.json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const exportPath = path.join(projectPath, '.mustflow', 'state', 'artifacts', 'dashboard.json');
+		assertMatchesSchema(schemaRoot, 'dashboard-export.schema.json', JSON.parse(readFileSync(exportPath, 'utf8')));
 	} finally {
 		removeTempProject(projectPath);
 	}
