@@ -59,7 +59,7 @@ const relatedRules = [
 	},
 	{ match: /^src\/cli\/lib\/dashboard/u, tests: ['dashboard.test.js'] },
 	{ match: /^src\/cli\/lib\/doc-review-ledger\.ts$/u, tests: ['docs.test.js', 'dashboard.test.js'] },
-	{ match: /^src\/cli\/lib\/local-index\.ts$/u, tests: ['index.test.js', 'search.test.js', 'search-source-scope.test.js', 'explain-command.test.js', 'explain-surface.test.js'] },
+	{ match: /^src\/cli\/lib\/local-index\.ts$/u, tests: ['index.test.js', 'search.test.js', 'search-backends.test.js', 'search-source-scope.test.js', 'explain-command.test.js', 'explain-surface.test.js'] },
 	{ match: /^src\/cli\/lib\/npm-version-check\.ts$/u, tests: ['index.test.js', 'router.test.js'] },
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: ['index.test.js'] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: ['run.test.js', 'dashboard.test.js', 'router.test.js'] },
@@ -232,7 +232,7 @@ function readFullConcurrency() {
 function testDemand(testPath) {
 	const name = path.basename(testPath);
 
-	if (['index.test.js', 'search.test.js', 'search-source-scope.test.js'].includes(name)) {
+	if (['index.test.js', 'search.test.js', 'search-backends.test.js', 'search-source-scope.test.js'].includes(name)) {
 		return { cpu: 1, io: 3, process: 2, sqlite: 1, git: 0, className: 'sqlite_io_heavy' };
 	}
 
