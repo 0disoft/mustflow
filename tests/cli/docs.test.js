@@ -1,32 +1,53 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import { runDocs } from '../../dist/cli/commands/docs.js';
+import { cloneProjectFixture, createTempProject, initProject, removeTempProject } from './helpers/cli-harness.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedProjectFixture;
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-docs-'));
-}
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-docs-fixture-');
+	initProject(initializedProjectFixture);
+});
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+after(() => {
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createDocsProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-docs-');
 }
 
 function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
-}
+	const stdout = [];
+	const stderr = [];
+	const previousCwd = process.cwd();
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
+	try {
+		process.chdir(cwd);
+		try {
+			const status = runDocs(args.slice(1), {
+				stdout(message) {
+					stdout.push(`${message}\n`);
+				},
+				stderr(message) {
+					stderr.push(`${message}\n`);
+				},
+			});
+
+			return { status, stdout: stdout.join(''), stderr: stderr.join('') };
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			stderr.push(`Error: ${message}\n`);
+			return { status: 1, stdout: stdout.join(''), stderr: stderr.join('') };
+		}
+	} finally {
+		process.chdir(previousCwd);
+	}
 }
 
 function writeDoc(projectPath, relativePath) {
@@ -49,11 +70,9 @@ function trySymlink(target, linkPath, type) {
 }
 
 test('lists an empty documentation review queue without creating a ledger', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['docs', 'review', 'list', '--json']);
 		const output = JSON.parse(result.stdout);
 
@@ -68,10 +87,9 @@ test('lists an empty documentation review queue without creating a ledger', () =
 });
 
 test('adds LLM-modified documentation to the review queue', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 
 		const result = runCli(projectPath, [
@@ -108,11 +126,10 @@ test('adds LLM-modified documentation to the review queue', () => {
 });
 
 test('rejects a documentation review ledger path that traverses a symlink', (t) => {
-	const projectPath = createTempProject();
-	const outsidePath = mkdtempSync(path.join(tmpdir(), 'mustflow-docs-outside-'));
+	const projectPath = createDocsProject();
+	const outsidePath = createTempProject('mustflow-docs-outside-');
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		if (!trySymlink(outsidePath, path.join(projectPath, '.mustflow', 'review'), 'dir')) {
 			t.skip('symlinks are unavailable in this environment');
@@ -142,10 +159,9 @@ test('rejects a documentation review ledger path that traverses a symlink', (t) 
 });
 
 test('classifies release-blocking documentation review entries as P0', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'README.md');
 
 		const addResult = runCli(projectPath, [
@@ -175,10 +191,9 @@ test('classifies release-blocking documentation review entries as P0', () => {
 });
 
 test('classifies external skill intake review entries as release-blocking authority changes', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, '.mustflow/skills/external-skill-intake/SKILL.md');
 
 		const addResult = runCli(projectPath, [
@@ -208,10 +223,9 @@ test('classifies external skill intake review entries as release-blocking author
 });
 
 test('classifies fixture documentation review entries as non-blocking P2', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'tests/fixtures/broken-doc.md');
 
 		const addResult = runCli(projectPath, ['docs', 'review', 'add', 'tests/fixtures/broken-doc.md']);
@@ -230,10 +244,9 @@ test('classifies fixture documentation review entries as non-blocking P2', () =>
 });
 
 test('records multiline review comments from a file', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		writeFileSync(
 			path.join(projectPath, 'review-note.md'),
@@ -272,11 +285,11 @@ test('records multiline review comments from a file', () => {
 });
 
 test('rejects comment files that resolve through a symlink', (t) => {
-	const projectPath = createTempProject();
-	const secretPath = path.join(tmpdir(), `mustflow-docs-secret-${process.pid}-${Date.now()}.txt`);
+	const projectPath = createDocsProject();
+	const secretRoot = createTempProject('mustflow-docs-secret-');
+	const secretPath = path.join(secretRoot, 'secret.txt');
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		writeFileSync(secretPath, 'TOP_SECRET_TOKEN=abc123\n');
 		if (!trySymlink(secretPath, path.join(projectPath, 'review-note.md'), 'file')) {
@@ -304,15 +317,14 @@ test('rejects comment files that resolve through a symlink', (t) => {
 		assert.equal(existsSync(path.join(projectPath, 'review-note.md')), true);
 	} finally {
 		removeTempProject(projectPath);
-		rmSync(secretPath, { force: true });
+		removeTempProject(secretRoot);
 	}
 });
 
 test('adds a document with a review comment imported from a file and removes the source file', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		writeFileSync(path.join(projectPath, 'review-note.md'), 'Rewrite the literal translation in the introduction.\n');
 
@@ -341,10 +353,9 @@ test('adds a document with a review comment imported from a file and removes the
 });
 
 test('rejects using the reviewed document as the comment file', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		assert.equal(runCli(projectPath, ['docs', 'review', 'add', 'docs/guide.md']).status, 0);
 
@@ -366,10 +377,9 @@ test('rejects using the reviewed document as the comment file', () => {
 });
 
 test('adds a document with an inline review comment', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 
 		const result = runCli(projectPath, [
@@ -397,10 +407,9 @@ test('adds a document with an inline review comment', () => {
 });
 
 test('allows any named LLM reviewer to approve and hide a reviewed document', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		assert.equal(runCli(projectPath, ['docs', 'review', 'add', 'docs/guide.md']).status, 0);
 
@@ -440,10 +449,9 @@ test('allows any named LLM reviewer to approve and hide a reviewed document', ()
 });
 
 test('rejects concrete reviewer names as reviewer kinds', () => {
-	const projectPath = createTempProject();
+	const projectPath = createDocsProject();
 
 	try {
-		initProject(projectPath);
 		writeDoc(projectPath, 'docs/guide.md');
 		assert.equal(runCli(projectPath, ['docs', 'review', 'add', 'docs/guide.md']).status, 0);
 

@@ -1,17 +1,18 @@
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { runCli as runCliInProcess } from '../../dist/cli/index.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 
-function runCli(args, cwd = projectRoot, env = {}) {
+function runCliSubprocess(args, cwd = projectRoot, env = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
@@ -19,24 +20,40 @@ function runCli(args, cwd = projectRoot, env = {}) {
 	});
 }
 
-function runCliAsync(args, cwd = projectRoot, env = {}) {
-	return new Promise((resolve) => {
-		const child = spawn(process.execPath, [cliPath, ...args], {
-			cwd,
-			env: { ...process.env, ...env },
-			stdio: ['ignore', 'pipe', 'pipe'],
-		});
-		const stdout = [];
-		const stderr = [];
+async function runCli(args, cwd = projectRoot, env = {}) {
+	const stdout = [];
+	const stderr = [];
+	const previousCwd = process.cwd();
+	const previousExitCode = process.exitCode;
+	const previousEnv = new Map(Object.keys(env).map((key) => [key, process.env[key]]));
 
-		child.stdout.setEncoding('utf8');
-		child.stderr.setEncoding('utf8');
-		child.stdout.on('data', (chunk) => stdout.push(chunk));
-		child.stderr.on('data', (chunk) => stderr.push(chunk));
-		child.on('close', (status, signal) => {
-			resolve({ status, signal, stdout: stdout.join(''), stderr: stderr.join('') });
+	try {
+		process.chdir(cwd);
+		for (const [key, value] of Object.entries(env)) {
+			process.env[key] = value;
+		}
+
+		const status = await runCliInProcess(args, {
+			stdout(message) {
+				stdout.push(`${message}\n`);
+			},
+			stderr(message) {
+				stderr.push(`${message}\n`);
+			},
 		});
-	});
+
+		return { status, signal: null, stdout: stdout.join(''), stderr: stderr.join('') };
+	} finally {
+		process.chdir(previousCwd);
+		process.exitCode = previousExitCode;
+		for (const [key, value] of previousEnv) {
+			if (value === undefined) {
+				delete process.env[key];
+			} else {
+				process.env[key] = value;
+			}
+		}
+	}
 }
 
 function listen(server) {
@@ -55,7 +72,7 @@ function closeServer(server) {
 }
 
 test('prints top-level help', () => {
-	const result = runCli(['--help']);
+	const result = runCliSubprocess(['--help']);
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /Usage:/);
@@ -103,8 +120,8 @@ test('runs when invoked through a linked package path', () => {
 	}
 });
 
-test('prints Korean top-level help with --lang', () => {
-	const result = runCli(['--lang', 'ko', '--help']);
+test('prints Korean top-level help with --lang', async () => {
+	const result = await runCli(['--lang', 'ko', '--help']);
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /사용법:/);
@@ -116,8 +133,8 @@ test('prints Korean top-level help with --lang', () => {
 	assert.doesNotMatch(result.stdout, /Usage:/);
 });
 
-test('prints Korean command help with --lang', () => {
-	const result = runCli(['--lang=ko', 'init', '--help']);
+test('prints Korean command help with --lang', async () => {
+	const result = await runCli(['--lang=ko', 'init', '--help']);
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /사용법: mf init/);
@@ -125,7 +142,7 @@ test('prints Korean command help with --lang', () => {
 	assert.match(result.stdout, /설치할 mustflow 문서 언어를 설정합니다/);
 });
 
-test('prints localized top-level help for all README languages', () => {
+test('prints localized top-level help for all README languages', async () => {
 	const cases = [
 		['zh', /用法:/, /选项:/, /未知命令/],
 		['es', /Uso:/, /Opciones:/, /Comando desconocido/],
@@ -134,25 +151,25 @@ test('prints localized top-level help for all README languages', () => {
 	];
 
 	for (const [lang, usagePattern, optionsPattern, unknownCommandPattern] of cases) {
-		const help = runCli(['--lang', lang, '--help']);
+		const help = await runCli(['--lang', lang, '--help']);
 		assert.equal(help.status, 0);
 		assert.match(help.stdout, usagePattern);
 		assert.match(help.stdout, optionsPattern);
 		assert.doesNotMatch(help.stdout, /Usage:/);
 
-		const unknown = runCli(['--lang', lang, 'unknown']);
+		const unknown = await runCli(['--lang', lang, 'unknown']);
 		assert.equal(unknown.status, 1);
 		assert.match(unknown.stderr, unknownCommandPattern);
 	}
 });
 
-test('prints package version', () => {
-	const result = runCli(['--version']);
+test('prints package version', async () => {
+	const result = await runCli(['--version']);
 
 	assert.equal(result.status, 0);
 	assert.equal(result.stdout.trim(), packageJson.version);
 
-	const commandResult = runCli(['version']);
+	const commandResult = await runCli(['version']);
 	assert.equal(commandResult.status, 0);
 	assert.equal(commandResult.stdout.trim(), packageJson.version);
 });
@@ -167,7 +184,7 @@ test('checks npm for a newer package version when requested', async () => {
 	const address = await listen(server);
 
 	try {
-		const result = await runCliAsync(['version', '--check'], projectRoot, {
+		const result = await runCli(['version', '--check'], projectRoot, {
 			MUSTFLOW_NPM_REGISTRY_URL: `http://127.0.0.1:${address.port}`,
 		});
 
@@ -181,16 +198,16 @@ test('checks npm for a newer package version when requested', async () => {
 	}
 });
 
-test('fails unsupported CLI language before command routing', () => {
-	const result = runCli(['--lang', 'ja', 'help']);
+test('fails unsupported CLI language before command routing', async () => {
+	const result = await runCli(['--lang', 'ja', 'help']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Unsupported CLI language: ja/);
 	assert.match(result.stdout, /Usage:/);
 });
 
-test('fails unknown commands with help', () => {
-	const result = runCli(['unknown']);
+test('fails unknown commands with help', async () => {
+	const result = await runCli(['unknown']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Error: Unknown command: unknown/);
@@ -198,8 +215,8 @@ test('fails unknown commands with help', () => {
 	assert.match(result.stdout, /Usage:/);
 });
 
-test('fails unknown commands with Korean guidance when --lang ko is set', () => {
-	const result = runCli(['--lang', 'ko', 'unknown']);
+test('fails unknown commands with Korean guidance when --lang ko is set', async () => {
+	const result = await runCli(['--lang', 'ko', 'unknown']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /오류: 알 수 없는 명령: unknown/);
@@ -207,9 +224,9 @@ test('fails unknown commands with Korean guidance when --lang ko is set', () => 
 	assert.match(result.stdout, /사용법:/);
 });
 
-test('routes command-specific help', () => {
+test('routes command-specific help', async () => {
 	for (const command of ['adapters', 'init', 'check', 'classify', 'contract-lint', 'status', 'update', 'map', 'line-endings', 'run', 'context', 'doctor', 'handoff', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
-		const result = runCli([command, '--help']);
+		const result = await runCli([command, '--help']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, new RegExp(`mf ${command}`));
@@ -218,7 +235,7 @@ test('routes command-specific help', () => {
 	}
 });
 
-test('fails unknown command options with standardized guidance', () => {
+test('fails unknown command options with standardized guidance', async () => {
 	const cases = [
 		['init', '--bad'],
 		['adapters', 'status', '--bad'],
@@ -245,7 +262,7 @@ test('fails unknown command options with standardized guidance', () => {
 	];
 
 	for (const args of cases) {
-		const result = runCli(args);
+		const result = await runCli(args);
 		const command = args[0];
 
 		assert.equal(result.status, 1);
@@ -255,8 +272,8 @@ test('fails unknown command options with standardized guidance', () => {
 	}
 });
 
-test('dashboard help reports the implemented local server command', () => {
-	const result = runCli(['dashboard', '--help']);
+test('dashboard help reports the implemented local server command', async () => {
+	const result = await runCli(['dashboard', '--help']);
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /Start a local dashboard/);
@@ -267,8 +284,8 @@ test('dashboard help reports the implemented local server command', () => {
 	assert.equal(result.stderr, '');
 });
 
-test('dashboard help reports the implemented command in Korean', () => {
-	const result = runCli(['--lang', 'ko', 'dashboard', '--help']);
+test('dashboard help reports the implemented command in Korean', async () => {
+	const result = await runCli(['--lang', 'ko', 'dashboard', '--help']);
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /로컬 대시보드를 시작합니다/);
@@ -279,11 +296,11 @@ test('dashboard help reports the implemented command in Korean', () => {
 	assert.equal(result.stderr, '');
 });
 
-test('prints installed mustflow help views', () => {
+test('prints installed mustflow help views', async () => {
 	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-help-'));
 
 	try {
-		const result = runCli(['help', 'preferences'], root);
+		const result = await runCli(['help', 'preferences'], root);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Preferences/);
@@ -293,11 +310,11 @@ test('prints installed mustflow help views', () => {
 	}
 });
 
-test('prints installed mustflow help views in Korean shell labels', () => {
+test('prints installed mustflow help views in Korean shell labels', async () => {
 	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-help-ko-'));
 
 	try {
-		const result = runCli(['--lang', 'ko', 'help', 'preferences'], root);
+		const result = await runCli(['--lang', 'ko', 'help', 'preferences'], root);
 
 		assert.equal(result.status, 0);
 		assert.doesNotMatch(result.stdout, /Preferences/);

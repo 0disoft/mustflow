@@ -28,13 +28,13 @@ function selectedFor(changedFiles) {
 	return new Set(selectRelated(changedFiles).selected);
 }
 
-test('related selection uses explicit command test contracts', () => {
+test('related selection uses explicit command test contracts without router fallback', () => {
 	const selected = selectedFor(['src/cli/commands/verify.ts']);
 
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('explain-verify.test.js'), true);
-	assert.equal(selected.has('router.test.js'), true);
 	assert.equal(selected.has('schema.test.js'), true);
+	assert.equal(selected.has('router.test.js'), false);
 	assert.equal(selected.has('check.test.js'), false);
 });
 
@@ -51,6 +51,35 @@ test('related selection covers shared command eligibility behavior', () => {
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('security-fuzz.test.js'), true);
 	assert.equal(selected.has('schema.test.js'), true);
+});
+
+test('related selection keeps package surface checks release-sensitive instead of running package suite', () => {
+	const report = selectRelated(['src/core/public-json-contracts.ts']);
+
+	assert.equal(report.release_sensitive, true);
+	assert.deepEqual(report.selected, ['schema.test.js']);
+});
+
+test('related selection maps command config changes to contract surfaces', () => {
+	const report = selectRelated(['.mustflow/config/commands.toml']);
+	const selected = new Set(report.selected);
+
+	assert.equal(report.release_sensitive, true);
+	assert.equal(selected.has('check-command-contracts.test.js'), true);
+	assert.equal(selected.has('explain-command.test.js'), true);
+	assert.equal(selected.has('index.test.js'), true);
+	assert.equal(selected.has('run.test.js'), true);
+	assert.equal(selected.has('verify.test.js'), true);
+	assert.equal(selected.has('package.test.js'), false);
+});
+
+test('related selection maps package metadata helper changes to command consumers', () => {
+	const selected = selectedFor(['src/cli/lib/package-info.ts']);
+
+	assert.equal(selected.has('dashboard.test.js'), true);
+	assert.equal(selected.has('router.test.js'), true);
+	assert.equal(selected.has('run.test.js'), true);
+	assert.equal(selected.has('index.test.js'), false);
 });
 
 test('related selection covers the selector script itself', () => {
