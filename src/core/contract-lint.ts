@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import {
 	COMMAND_LIFECYCLES,
 	COMMAND_RUN_POLICIES,
@@ -9,7 +12,10 @@ import {
 	type CommandContract,
 	type TomlTable,
 } from './config-loading.js';
-import { evaluateCommandIntentEligibility } from './command-intent-eligibility.js';
+import {
+	evaluateCommandIntentEligibility,
+	type CommandIntentEligibilityCode,
+} from './command-intent-eligibility.js';
 import {
 	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
@@ -17,6 +23,7 @@ import {
 } from './command-contract-rules.js';
 import { commandEffectsConflict, normalizeCommandEffects } from './command-effects.js';
 import { listChangeClassificationValidationReasons } from './change-classification.js';
+import { parseSkillIndexRoutes } from './skill-route-alignment.js';
 
 export type ContractLintStatus = 'passed' | 'warning' | 'failed';
 export type ContractLintSeverity = 'error' | 'warning';
@@ -37,11 +44,30 @@ export interface ContractLintCoverageFinding {
 	readonly message: string;
 }
 
+export type ContractLintCoverageReasonSource = 'classification' | 'documented' | 'required_after';
+
+export interface ContractLintCoverageMatrixIntent {
+	readonly intent: string;
+	readonly status: CommandIntentEligibilityCode;
+	readonly runnable: boolean;
+	readonly detail: string | null;
+}
+
+export interface ContractLintCoverageMatrixEntry {
+	readonly reason: string;
+	readonly source: ContractLintCoverageReasonSource;
+	readonly intents: readonly ContractLintCoverageMatrixIntent[];
+	readonly gaps: readonly string[];
+	readonly relatedSkills: readonly string[];
+	readonly relatedDocs: readonly string[];
+}
+
 export interface ContractLintCoverageReport {
 	readonly knownClassificationReasons: readonly string[];
 	readonly documentedVerificationReasons: readonly string[];
 	readonly requiredAfterReasons: readonly string[];
 	readonly runnableReasons: readonly string[];
+	readonly matrix: readonly ContractLintCoverageMatrixEntry[];
 	readonly findings: readonly ContractLintCoverageFinding[];
 }
 
@@ -109,6 +135,10 @@ const RELEASE_SENSITIVE_REASONS = new Set([
 	'release_risk',
 	'template_version_change',
 ]);
+const COMMANDS_CONFIG_PATH = '.mustflow/config/commands.toml';
+const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
+const CHANGE_CLASSIFICATION_SOURCE_PATH = 'src/core/change-classification.ts';
+const AGENT_WORKFLOW_PATH = '.mustflow/docs/agent-workflow.md';
 
 interface CoverageIntent {
 	readonly name: string;
@@ -118,6 +148,11 @@ interface CoverageIntent {
 
 function uniqueSorted(values: Iterable<string>): string[] {
 	return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+function intersectSorted(left: readonly string[], right: readonly string[]): string[] {
+	const rightSet = new Set(right);
+	return uniqueSorted(left.filter((value) => rightSet.has(value)));
 }
 
 function readBoolean(intent: TomlTable, key: string): boolean | null {
@@ -283,6 +318,120 @@ function collectRequiredAfterReasons(contract: CommandContract): Map<string, Cov
 	return reasonToIntents;
 }
 
+function readSkillPathsByIntent(projectRoot: string | undefined): Map<string, string[]> {
+	const skillPathsByIntent = new Map<string, string[]>();
+
+	if (!projectRoot) {
+		return skillPathsByIntent;
+	}
+
+	const skillIndexPath = path.join(projectRoot, ...SKILL_INDEX_PATH.split('/'));
+	if (!existsSync(skillIndexPath)) {
+		return skillPathsByIntent;
+	}
+
+	const routes = parseSkillIndexRoutes(readFileSync(skillIndexPath, 'utf8'));
+
+	for (const route of routes) {
+		for (const intent of route.commandIntents) {
+			skillPathsByIntent.set(intent, [...(skillPathsByIntent.get(intent) ?? []), route.skillPath]);
+		}
+	}
+
+	return skillPathsByIntent;
+}
+
+function classifyReasonSource(
+	reason: string,
+	knownClassificationReasons: readonly string[],
+	documentedVerificationReasons: readonly string[],
+): ContractLintCoverageReasonSource {
+	if (knownClassificationReasons.includes(reason)) {
+		return 'classification';
+	}
+
+	if (documentedVerificationReasons.includes(reason)) {
+		return 'documented';
+	}
+
+	return 'required_after';
+}
+
+function buildRelatedDocs(
+	source: ContractLintCoverageReasonSource,
+	relatedSkills: readonly string[],
+): readonly string[] {
+	const docs = [COMMANDS_CONFIG_PATH];
+
+	if (source === 'classification') {
+		docs.push(CHANGE_CLASSIFICATION_SOURCE_PATH);
+	}
+
+	if (source === 'documented') {
+		docs.push(AGENT_WORKFLOW_PATH);
+	}
+
+	if (relatedSkills.length > 0) {
+		docs.push(SKILL_INDEX_PATH);
+	}
+
+	return uniqueSorted(docs);
+}
+
+function buildCoverageMatrix(
+	reasonToIntents: ReadonlyMap<string, readonly CoverageIntent[]>,
+	knownClassificationReasons: readonly string[],
+	documentedVerificationReasons: readonly string[],
+	skillPathsByIntent: ReadonlyMap<string, readonly string[]>,
+): readonly ContractLintCoverageMatrixEntry[] {
+	const matrixReasons = uniqueSorted([
+		...knownClassificationReasons,
+		...documentedVerificationReasons,
+		...reasonToIntents.keys(),
+	]);
+
+	return matrixReasons.map((reason) => {
+		const candidates = [...(reasonToIntents.get(reason) ?? [])].sort((left, right) =>
+			left.name.localeCompare(right.name),
+		);
+		const source = classifyReasonSource(reason, knownClassificationReasons, documentedVerificationReasons);
+		const intentNames = candidates.map((candidate) => candidate.name);
+		const relatedSkills = uniqueSorted(intentNames.flatMap((intent) => skillPathsByIntent.get(intent) ?? []));
+		const gaps: string[] = [];
+
+		if (candidates.length === 0) {
+			gaps.push('missing_required_after');
+		} else if (!candidates.some((candidate) => candidate.runnable)) {
+			gaps.push('no_runnable_intent');
+		}
+
+		if (source === 'required_after') {
+			gaps.push('unknown_reason');
+		}
+
+		if (intentNames.length > 0 && intersectSorted(intentNames, [...skillPathsByIntent.keys()]).length === 0) {
+			gaps.push('no_related_skill_route');
+		}
+
+		return {
+			reason,
+			source,
+			intents: candidates.map((candidate) => {
+				const eligibility = evaluateCommandIntentEligibility(candidate.name, candidate.intent);
+				return {
+					intent: candidate.name,
+					status: eligibility.code,
+					runnable: eligibility.ok,
+					detail: eligibility.detail,
+				};
+			}),
+			gaps: uniqueSorted(gaps),
+			relatedSkills,
+			relatedDocs: buildRelatedDocs(source, relatedSkills),
+		};
+	});
+}
+
 function hasExplicitEffectMetadata(intent: TomlTable): boolean {
 	return Array.isArray(intent.effects) && intent.effects.some((effect) => isRecord(effect));
 }
@@ -364,6 +513,7 @@ function lintCoverage(
 	const documentedVerificationReasons = [...DOCUMENTED_VERIFICATION_REASONS];
 	const knownReasons = new Set([...knownClassificationReasons, ...documentedVerificationReasons]);
 	const reasonToIntents = collectRequiredAfterReasons(contract);
+	const skillPathsByIntent = readSkillPathsByIntent(options.projectRoot);
 	const requiredAfterReasons = uniqueSorted(reasonToIntents.keys());
 	const runnableReasons = uniqueSorted(
 		[...reasonToIntents.entries()]
@@ -450,6 +600,7 @@ function lintCoverage(
 		documentedVerificationReasons,
 		requiredAfterReasons,
 		runnableReasons,
+		matrix: buildCoverageMatrix(reasonToIntents, knownClassificationReasons, documentedVerificationReasons, skillPathsByIntent),
 		findings,
 	};
 }

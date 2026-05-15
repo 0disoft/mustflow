@@ -122,6 +122,18 @@ test('contract-lint coverage reports clean required_after coverage', () => {
 		assert.deepEqual(report.report.issues, []);
 		assert.ok(report.report.coverage.knownClassificationReasons.includes('code_change'));
 		assert.ok(report.report.coverage.requiredAfterReasons.includes('code_change'));
+		const codeChangeCoverage = report.report.coverage.matrix.find((entry) => entry.reason === 'code_change');
+		assert.ok(codeChangeCoverage);
+		assert.equal(codeChangeCoverage.source, 'classification');
+		assert.deepEqual(
+			codeChangeCoverage.intents.map((intent) => `${intent.intent}:${intent.status}`),
+			['test_related:ok'],
+		);
+		assert.deepEqual(codeChangeCoverage.gaps, []);
+		assert.ok(codeChangeCoverage.relatedDocs.includes('.mustflow/config/commands.toml'));
+		assert.ok(codeChangeCoverage.relatedDocs.includes('src/core/change-classification.ts'));
+		assert.ok(codeChangeCoverage.relatedDocs.includes('.mustflow/skills/INDEX.md'));
+		assert.ok(codeChangeCoverage.relatedSkills.some((skillPath) => skillPath.endsWith('/test-maintenance/SKILL.md')));
 		assert.deepEqual(report.report.coverage.findings, []);
 	} finally {
 		removeTempProject(projectPath);
@@ -180,6 +192,12 @@ test('contract-lint coverage warns for unknown required_after reasons', () => {
 					finding.intents.includes('custom_unknown_reason'),
 			),
 		);
+		const unknownReasonCoverage = report.report.coverage.matrix.find(
+			(entry) => entry.reason === 'typo_change_reason',
+		);
+		assert.ok(unknownReasonCoverage);
+		assert.equal(unknownReasonCoverage.source, 'required_after');
+		assert.ok(unknownReasonCoverage.gaps.includes('unknown_reason'));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -210,6 +228,13 @@ test('contract-lint coverage warns when a classification reason is not runnable'
 					finding.intents.includes('manual_code_change'),
 			),
 		);
+		const codeChangeCoverage = report.report.coverage.matrix.find((entry) => entry.reason === 'code_change');
+		assert.ok(codeChangeCoverage);
+		assert.deepEqual(
+			codeChangeCoverage.intents.map((intent) => `${intent.intent}:${intent.status}`),
+			['manual_code_change:status_not_configured'],
+		);
+		assert.ok(codeChangeCoverage.gaps.includes('no_runnable_intent'));
 	} finally {
 		removeTempProject(projectPath);
 	}

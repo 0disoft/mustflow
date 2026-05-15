@@ -82,6 +82,57 @@
               "type": "array",
               "items": { "type": "string" }
             },
+            "matrix": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["reason", "source", "intents", "gaps", "relatedSkills", "relatedDocs"],
+                "properties": {
+                  "reason": { "type": "string" },
+                  "source": { "enum": ["classification", "documented", "required_after"] },
+                  "intents": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["intent", "status", "runnable", "detail"],
+                      "properties": {
+                        "intent": { "type": "string" },
+                        "status": {
+                          "enum": [
+                            "ok",
+                            "intent_not_table",
+                            "status_not_configured",
+                            "lifecycle_not_oneshot",
+                            "run_policy_not_agent_allowed",
+                            "stdin_not_closed",
+                            "missing_timeout",
+                            "missing_command_source",
+                            "unsafe_intent_name",
+                            "blocked_shell_background_pattern"
+                          ]
+                        },
+                        "runnable": { "type": "boolean" },
+                        "detail": { "type": ["string", "null"] }
+                      }
+                    }
+                  },
+                  "gaps": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "relatedSkills": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "relatedDocs": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            },
             "findings": {
               "type": "array",
               "items": {
