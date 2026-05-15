@@ -16,6 +16,7 @@ import { assertMatchesSchema } from '../helpers/json-schema.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+const PACKAGE_INSTALL_PROCESS_BUFFER_BYTES = 16 * 1024 * 1024;
 
 function createTempRoot(prefix) {
 	return mkdtempSync(path.join(tmpdir(), prefix));
@@ -28,17 +29,19 @@ function removeTempRoot(rootPath) {
 function run(command, args, options = {}) {
 	return spawnSync(command, args, {
 		encoding: 'utf8',
+		maxBuffer: PACKAGE_INSTALL_PROCESS_BUFFER_BYTES,
 		windowsHide: true,
 		...options,
 	});
 }
 
-function npmCommand() {
-	return process.platform === 'win32' ? 'npm.cmd' : 'npm';
-}
+function runPackageManagerTool(name, args, options = {}) {
+	if (process.platform !== 'win32') {
+		return run(name, args, options);
+	}
 
-function npxCommand() {
-	return process.platform === 'win32' ? 'npx.cmd' : 'npx';
+	const cliPath = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', `${name}-cli.js`);
+	return run(process.execPath, [cliPath, ...args], options);
 }
 
 function parsePackResult(stdout) {
@@ -52,7 +55,7 @@ function hasBinShim(projectPath, name) {
 }
 
 function packRepository(packRoot) {
-	const pack = run(npmCommand(), ['pack', '--json', '--dry-run=false', '--pack-destination', packRoot], {
+	const pack = runPackageManagerTool('npm', ['pack', '--json', '--dry-run=false', '--pack-destination', packRoot], {
 		cwd: projectRoot,
 	});
 
@@ -66,8 +69,8 @@ function packRepository(packRoot) {
 function installPackedPackage(projectPath, tarballPath) {
 	writeFileSync(path.join(projectPath, 'package.json'), '{"private":true,"type":"module"}\n');
 
-	const install = run(
-		npmCommand(),
+	const install = runPackageManagerTool(
+		'npm',
 		['install', '--dry-run=false', '--no-audit', '--no-fund', '--ignore-scripts', '--save-dev', tarballPath],
 		{
 			cwd: projectPath,
@@ -94,11 +97,11 @@ function assertInstalledPackageSurface(projectPath) {
 }
 
 function assertInstalledCliVersions(projectPath) {
-	const mfVersion = run(npxCommand(), ['mf', '--version'], { cwd: projectPath });
+	const mfVersion = runPackageManagerTool('npx', ['mf', '--version'], { cwd: projectPath });
 	assert.equal(mfVersion.status, 0, mfVersion.stderr || mfVersion.stdout);
 	assert.equal(mfVersion.stdout.trim(), packageJson.version);
 
-	const mustflowVersion = run(npxCommand(), ['mustflow', '--version'], { cwd: projectPath });
+	const mustflowVersion = runPackageManagerTool('npx', ['mustflow', '--version'], { cwd: projectPath });
 	assert.equal(mustflowVersion.status, 0, mustflowVersion.stderr || mustflowVersion.stdout);
 	assert.equal(mustflowVersion.stdout.trim(), packageJson.version);
 }
@@ -113,8 +116,8 @@ test('packed npm package installs and runs the public mf workflow', async () => 
 		assertInstalledPackageSurface(projectPath);
 		assertInstalledCliVersions(projectPath);
 
-		const dryRun = run(
-			npxCommand(),
+		const dryRun = runPackageManagerTool(
+			'npx',
 			[
 				'mf',
 				'init',
@@ -135,8 +138,8 @@ test('packed npm package installs and runs the public mf workflow', async () => 
 		assert.equal(dryRun.status, 0, dryRun.stderr || dryRun.stdout);
 		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
 
-		const init = run(
-			npxCommand(),
+		const init = runPackageManagerTool(
+			'npx',
 			[
 				'mf',
 				'init',
@@ -216,7 +219,7 @@ required_after = ["schema_verify"]
 				ensureSchemaVerifyIntent();
 			}
 
-			const jsonCommand = run(npxCommand(), contract.installedCommand, { cwd: projectPath });
+			const jsonCommand = runPackageManagerTool('npx', contract.installedCommand, { cwd: projectPath });
 			const expectedExitCodes = contract.expectedExitCodes ?? [0];
 
 			assert.ok(
@@ -230,13 +233,13 @@ required_after = ["schema_verify"]
 			writeFileSync(commandsPath, originalCommands);
 		}
 
-		const check = run(npxCommand(), ['mf', 'check', '--strict', '--json'], { cwd: projectPath });
+		const check = runPackageManagerTool('npx', ['mf', 'check', '--strict', '--json'], { cwd: projectPath });
 		assert.equal(check.status, 0, check.stderr || check.stdout);
 		const checkJson = JSON.parse(check.stdout);
 		assert.equal(checkJson.ok, true);
 		assert.equal(checkJson.strict, true);
 
-		const doctor = run(npxCommand(), ['mf', 'doctor', '--strict', '--json'], { cwd: projectPath });
+		const doctor = runPackageManagerTool('npx', ['mf', 'doctor', '--strict', '--json'], { cwd: projectPath });
 		assert.equal(doctor.status, 0, doctor.stderr || doctor.stdout);
 		const doctorJson = JSON.parse(doctor.stdout);
 		assert.equal(doctorJson.ok, true);
@@ -246,33 +249,33 @@ required_after = ["schema_verify"]
 		const nestedPath = path.join(projectPath, 'src', 'feature', 'deep');
 		mkdirSync(nestedPath, { recursive: true });
 
-		const nestedContext = run(npxCommand(), ['mf', 'context', '--json'], { cwd: nestedPath });
+		const nestedContext = runPackageManagerTool('npx', ['mf', 'context', '--json'], { cwd: nestedPath });
 		assert.equal(nestedContext.status, 0, nestedContext.stderr || nestedContext.stdout);
 		const nestedContextJson = JSON.parse(nestedContext.stdout);
 		assert.equal(path.resolve(nestedContextJson.mustflow_root), path.resolve(projectPath));
 
-		const runCheck = run(npxCommand(), ['mf', 'run', 'mustflow_check', '--json'], { cwd: nestedPath });
+		const runCheck = runPackageManagerTool('npx', ['mf', 'run', 'mustflow_check', '--json'], { cwd: nestedPath });
 		assert.equal(runCheck.status, 0, runCheck.stderr || runCheck.stdout);
 		const runCheckJson = JSON.parse(runCheck.stdout);
 		assert.equal(runCheckJson.intent, 'mustflow_check');
 		assert.equal(runCheckJson.status, 'passed');
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json')), true);
 
-		const status = run(npxCommand(), ['mf', 'status', '--json'], { cwd: projectPath });
+		const status = runPackageManagerTool('npx', ['mf', 'status', '--json'], { cwd: projectPath });
 		assert.equal(status.status, 0, status.stderr || status.stdout);
 		const statusJson = JSON.parse(status.stdout);
 		assert.equal(statusJson.installed, true);
 		assert.equal(statusJson.manifestLock, 'present');
 		assert.equal(statusJson.changedFiles.length, 0);
 
-		const context = run(npxCommand(), ['mf', 'context', '--json'], { cwd: projectPath });
+		const context = runPackageManagerTool('npx', ['mf', 'context', '--json'], { cwd: projectPath });
 		assert.equal(context.status, 0, context.stderr || context.stdout);
 		const contextJson = JSON.parse(context.stdout);
 		assert.equal(contextJson.installed, true);
 		assert.equal(contextJson.command_contract.exists, true);
 		assert.ok(contextJson.command_contract.runnable_intents.includes('mustflow_check'));
 
-		const index = run(npxCommand(), ['mf', 'index', '--json'], { cwd: projectPath });
+		const index = runPackageManagerTool('npx', ['mf', 'index', '--json'], { cwd: projectPath });
 		assert.equal(index.status, 0, index.stderr || index.stdout);
 		const indexJson = JSON.parse(index.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
@@ -280,19 +283,19 @@ required_after = ["schema_verify"]
 		assert.equal(indexJson.wrote_files, true);
 		assert.equal(readFileSync(indexPath).subarray(0, 16).toString('utf8'), 'SQLite format 3\0');
 
-		const search = run(npxCommand(), ['mf', 'search', 'mustflow_check', '--json'], { cwd: projectPath });
+		const search = runPackageManagerTool('npx', ['mf', 'search', 'mustflow_check', '--json'], { cwd: projectPath });
 		assert.equal(search.status, 0, search.stderr || search.stdout);
 		const searchJson = JSON.parse(search.stdout);
 		assert.equal(searchJson.ok, true);
 		assert.ok(searchJson.results.some((item) => item.kind === 'command_intent' && item.name === 'mustflow_check'));
 
-		const update = run(npxCommand(), ['mf', 'update', '--dry-run', '--json'], { cwd: projectPath });
+		const update = runPackageManagerTool('npx', ['mf', 'update', '--dry-run', '--json'], { cwd: projectPath });
 		assert.equal(update.status, 0, update.stderr || update.stdout);
 		const updateJson = JSON.parse(update.stdout);
 		assert.equal(updateJson.ok, true);
 		assert.equal(updateJson.wroteFiles, false);
 
-		const map = run(npxCommand(), ['mf', 'map', '--write'], { cwd: projectPath });
+		const map = runPackageManagerTool('npx', ['mf', 'map', '--write'], { cwd: projectPath });
 		assert.equal(map.status, 0, map.stderr || map.stdout);
 		assert.match(readFileSync(path.join(projectPath, 'REPO_MAP.md'), 'utf8'), /Priority Anchors/);
 	} finally {
