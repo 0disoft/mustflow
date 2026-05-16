@@ -1,6 +1,6 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-14
+Last reviewed: 2026-05-16
 
 This roadmap lists only remaining work. Completed items are removed after verification so agents can focus on upcoming decisions instead of reviewing project history.
 
@@ -22,16 +22,23 @@ Strong product framing to preserve:
 - SQLite, dashboard exports, run receipts, handoff records, and evidence artifacts may explain current state; they must not become project truth or hidden memory.
 - Convenience must follow explanation. A feature that makes work faster is only acceptable after it preserves authority, safety, and verification evidence.
 
-## Deferred Milestone: Local Index and Search Read Model
+## Deferred Milestone: User Project Verification Performance
 
-Goal: evolve the local SQLite cache from a simple table-backed lookup store into a safer, faster read model for search, classification explanations, verification planning, and dashboard inspection.
+Goal: make mustflow feel faster in user repositories without guessing commands, weakening verification, or turning local state into a memory or surveillance log.
 
-This remains useful, but it should support the verification decision graph instead of becoming its own product center.
+This milestone is about choosing, explaining, and running already-declared command intents more intelligently. It must not make mustflow a test runner, a hidden dependency graph engine, or a source of command authority outside `.mustflow/config/commands.toml`.
 
-- Keep source anchors opt-in for indexing and navigation-only in results.
-- Preserve `authority_rank`, `authority_label`, `navigation_only`, `can_instruct_agent`, `cache_layer`, and `volatile` semantics in every search-result path.
-- Keep local-index command-effect graphs marked as explanation-only.
-- Keep path classification rules canonical in TypeScript until a narrow, validated configuration contract exists.
+### Project-Declared Test Selection
+
+User-project related-test selection should be driven by the optional `.mustflow/config/test-selection.toml`
+contract instead of inferred by mustflow from conventions.
+
+mustflow may use local index data and performance history only as additive suggestions:
+
+- add suspected missing tests or warn about stale selection rules.
+- never remove manifest-selected tests.
+- never treat "no past failures" as evidence that a test can be omitted.
+- report when no manifest exists instead of inventing a subset from `package.json`, `Makefile`, framework defaults, or filename conventions.
 
 ## Non-Goals
 
@@ -42,6 +49,7 @@ This remains useful, but it should support the verification decision graph inste
 - Do not treat `.mustflow/cache/` or `.mustflow/state/` as versioned project truth.
 - Do not make SQLite a memory store, audit log, command transcript store, source-content database, or hidden reasoning store.
 - Do not add broad memory storage, full transcript storage, raw event logs, or personal productivity tracking.
+- Do not store performance history as raw run receipts, command transcripts, log tails, stack traces, environment values, absolute paths, or test-name histories.
 - Do not add dashboard controls that execute commands, apply fixes, start agents, merge branches, push changes, or update files automatically.
 - Do not introduce a broad `policy.toml` that weakens built-in rules, grants command permission, skips validation, or instructs agents.
 - Do not add a public skill marketplace or community registry until trust, packaging, provenance, and review boundaries are explicit.
@@ -51,6 +59,9 @@ This remains useful, but it should support the verification decision graph inste
 - Do not make live AI evaluation, network access, or external service credentials required for the default quality gate.
 - Do not require host-specific agent features, overwrite host-specific instruction files, or assume one coding
   agent's sandbox, approval, memory, or tool model is the mustflow default.
+- Do not let performance history, local indexes, cache hits, or historical failure absence authorize command execution or prove that verification can be skipped.
+- Do not infer user-project test subsets from package-manager scripts, framework conventions, filenames, or generic mustflow heuristics unless the project has declared that selection contract.
+- Do not run commands in parallel merely because `writes = []`; require explicit effects and non-conflicting resource locks.
 
 ## Decision Notes
 
@@ -62,6 +73,8 @@ This remains useful, but it should support the verification decision graph inste
 - A future path-classification config may add validation reasons, but `commands.toml` remains the sole source of runnable command authority.
 - Verification explanation should come before convenience commands. Convenience must not outrun safety.
 - Static reports should read the decision model; they should not define their own command-selection logic.
+- Verification performance work should optimize the selected set, startup responsiveness, and safe scheduling in that order. It should not hide uncertainty behind faster-looking defaults.
+- Runtime and performance history may influence ordering and recommendations among already-authorized commands, but never command authority.
 - Host compatibility is a product requirement, not an adapter marketplace promise. Prefer neutral repository
   contracts that Codex, Claude Code, OpenClaw, Hermes Agent, and similar tools can read without extra setup.
 - External harness-engineering resources can inspire direction, but mustflow's source of truth remains repository-local contracts, tests, templates, and current files.
