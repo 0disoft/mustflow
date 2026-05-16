@@ -288,6 +288,11 @@ export function renderDashboardHtml(
 	--accent: #8fb4ff;
 	--danger: #ff9a9a;
 	--ok: #9be7ba;
+	--row-bg: rgba(255, 255, 255, 0.018);
+	--row-bg-alt: rgba(255, 255, 255, 0.035);
+	--status-neutral-bg: rgba(174, 182, 197, 0.1);
+	--status-ok-bg: rgba(155, 231, 186, 0.1);
+	--status-warn-bg: rgba(255, 154, 154, 0.1);
 	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
@@ -361,6 +366,12 @@ main {
 .tab-panel[hidden] {
 	display: none;
 }
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
 .language-picker {
 	align-items: center;
 	display: inline-flex;
@@ -382,6 +393,11 @@ main {
 }
 .status.ok { color: var(--ok); }
 .status.error { color: var(--danger); }
+.last-updated {
+	color: var(--muted);
+	font-size: 13px;
+	white-space: nowrap;
+}
 button, select, input {
 	background: #11141a;
 	border: 1px solid var(--line);
@@ -417,6 +433,34 @@ h2 {
 	min-height: 48px;
 	padding: 6px 0;
 }
+.settings-pending {
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	margin-bottom: 14px;
+	padding: 10px 12px;
+}
+.settings-pending[hidden] {
+	display: none;
+}
+.settings-pending-header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: space-between;
+}
+.settings-pending-title {
+	color: var(--text);
+	font-size: 15px;
+	font-weight: 650;
+}
+.settings-pending-list {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.45;
+	margin: 8px 0 0;
+	padding-left: 18px;
+}
 .label {
 	font-size: 16px;
 }
@@ -447,11 +491,61 @@ h2 {
 	font-size: 13px;
 }
 .status-value {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
 	font-size: 15px;
 	overflow-wrap: anywhere;
 }
 .status-value.ok { color: var(--ok); }
 .status-value.warn { color: var(--danger); }
+.status-badge {
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--text);
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 650;
+	line-height: 1;
+	padding: 3px 7px;
+	white-space: nowrap;
+}
+.status-badge.ok {
+	border-color: rgba(155, 231, 186, 0.55);
+	color: var(--ok);
+}
+.status-badge.warn {
+	border-color: rgba(255, 154, 154, 0.55);
+	color: var(--danger);
+}
+.next-actions {
+	display: grid;
+	gap: 0;
+}
+.next-action-row {
+	align-items: center;
+	border-bottom: 1px solid var(--line);
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	padding: 8px 0;
+}
+.next-action-title {
+	font-size: 15px;
+	font-weight: 650;
+	overflow-wrap: anywhere;
+}
+.next-action-meta {
+	color: var(--muted);
+	font-size: 13px;
+	margin-top: 2px;
+	overflow-wrap: anywhere;
+}
+.next-action-row button {
+	min-height: 34px;
+	padding: 0 10px;
+}
 .issue-list {
 	margin: 0;
 	padding-left: 18px;
@@ -461,23 +555,47 @@ h2 {
 	overflow-wrap: anywhere;
 }
 .command-row {
+	align-items: start;
+	background: var(--row-bg);
 	border-bottom: 1px solid var(--line);
+	border-radius: 6px;
 	display: grid;
 	gap: 10px;
 	grid-template-columns: minmax(160px, 220px) 1fr;
-	padding: 10px 0;
+	margin-bottom: 6px;
+	padding: 10px;
+}
+.command-row:nth-of-type(even) {
+	background: var(--row-bg-alt);
 }
 .command-name {
 	font-weight: 650;
 	overflow-wrap: anywhere;
 }
 .command-state {
+	align-items: center;
+	background: var(--status-neutral-bg);
+	border: 1px solid var(--line);
+	border-radius: 999px;
 	color: var(--muted);
+	display: inline-flex;
 	font-size: 13px;
+	font-weight: 650;
+	line-height: 1;
 	margin-top: 4px;
+	padding: 4px 7px;
+	white-space: nowrap;
 }
-.command-state.ok { color: var(--ok); }
-.command-state.warn { color: var(--danger); }
+.command-state.ok {
+	background: var(--status-ok-bg);
+	border-color: rgba(155, 231, 186, 0.55);
+	color: var(--ok);
+}
+.command-state.warn {
+	background: var(--status-warn-bg);
+	border-color: rgba(255, 154, 154, 0.55);
+	color: var(--danger);
+}
 .command-description {
 	font-size: 15px;
 	overflow-wrap: anywhere;
@@ -496,12 +614,38 @@ h2 {
 	margin-top: 6px;
 	overflow-wrap: anywhere;
 }
+.collapsible-details {
+	border-top: 1px solid var(--line);
+	padding: 10px 0;
+}
+.collapsible-details > summary {
+	color: var(--muted);
+	cursor: pointer;
+	font-size: 15px;
+	font-weight: 650;
+	overflow-wrap: anywhere;
+}
+.collapsible-details > summary:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+.collapsible-details[open] > summary {
+	color: var(--text);
+	margin-bottom: 8px;
+}
 .verification-row {
+	align-items: start;
+	background: var(--row-bg);
 	border-bottom: 1px solid var(--line);
+	border-radius: 6px;
 	display: grid;
 	gap: 10px;
 	grid-template-columns: minmax(160px, 220px) 1fr auto;
-	padding: 10px 0;
+	margin-bottom: 6px;
+	padding: 10px;
+}
+.verification-row:nth-of-type(even) {
+	background: var(--row-bg-alt);
 }
 .verification-command {
 	font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
@@ -517,6 +661,21 @@ h2 {
 .verification-copy {
 	min-height: 34px;
 	padding: 0 10px;
+}
+.list-filters {
+	align-items: end;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(180px, 1fr) minmax(130px, 190px);
+	margin: 0 0 12px;
+}
+.list-filters label {
+	display: grid;
+	gap: 5px;
+}
+.list-filters span {
+	color: var(--muted);
+	font-size: 13px;
 }
 .doc-controls {
 	display: grid;
@@ -545,16 +704,30 @@ h2 {
 	color: var(--muted);
 	font-size: 13px;
 }
+.doc-reviewer-state {
+	color: var(--muted);
+	font-size: 13px;
+	margin-bottom: 10px;
+}
+.doc-reviewer-state.warn {
+	color: var(--danger);
+}
 .doc-list {
 	border-top: 1px solid var(--line);
 }
 .doc-row {
-	align-items: center;
+	align-items: start;
+	background: var(--row-bg);
 	border-bottom: 1px solid var(--line);
+	border-radius: 6px;
 	display: grid;
 	gap: 12px;
 	grid-template-columns: minmax(0, 1fr) minmax(90px, auto) auto;
-	padding: 10px 0;
+	margin-bottom: 6px;
+	padding: 10px;
+}
+.doc-row:nth-of-type(even) {
+	background: var(--row-bg-alt);
 }
 .doc-path {
 	font-size: 15px;
@@ -581,9 +754,27 @@ h2 {
 	white-space: pre-wrap;
 }
 .doc-status {
+	align-items: center;
+	background: var(--status-neutral-bg);
+	border: 1px solid var(--line);
+	border-radius: 999px;
 	color: var(--muted);
+	display: inline-flex;
 	font-size: 13px;
+	font-weight: 650;
+	line-height: 1;
+	padding: 4px 7px;
 	white-space: nowrap;
+}
+.doc-status.approved {
+	background: var(--status-ok-bg);
+	border-color: rgba(155, 231, 186, 0.55);
+	color: var(--ok);
+}
+.doc-status.needs_human {
+	background: var(--status-warn-bg);
+	border-color: rgba(255, 154, 154, 0.55);
+	color: var(--danger);
 }
 .doc-actions {
 	display: flex;
@@ -647,6 +838,7 @@ input[type="checkbox"] {
 	.doc-controls,
 	.doc-filter-controls,
 	.doc-review-controls,
+	.list-filters,
 	.doc-row,
 	.verification-row,
 	.status-grid {
@@ -672,19 +864,20 @@ input[type="checkbox"] {
 	<div class="path">${preferencesPath}</div>
 </header>
 <main>
-	<nav class="tabs" aria-label="Dashboard sections">
-		<button id="tab-status" class="tab" type="button" data-tab="status" aria-controls="panel-status" aria-selected="true">Status</button>
-		<button id="tab-verification" class="tab" type="button" data-tab="verification" aria-controls="panel-verification" aria-selected="false">Verification</button>
-		<button id="tab-commands" class="tab" type="button" data-tab="commands" aria-controls="panel-commands" aria-selected="false">Commands</button>
-		<button id="tab-release" class="tab" type="button" data-tab="release" aria-controls="panel-release" aria-selected="false">Release</button>
-		<button id="tab-update" class="tab" type="button" data-tab="update" aria-controls="panel-update" aria-selected="false">Update</button>
-		<button id="tab-runs" class="tab" type="button" data-tab="runs" aria-controls="panel-runs" aria-selected="false">Runs</button>
-		<button id="tab-skills" class="tab" type="button" data-tab="skills" aria-controls="panel-skills" aria-selected="false">Skills</button>
-		<button id="tab-settings" class="tab" type="button" data-tab="settings" aria-controls="panel-settings" aria-selected="false">Settings</button>
-		<button id="tab-documents" class="tab" type="button" data-tab="documents" aria-controls="panel-documents" aria-selected="false">Documents</button>
+	<nav class="tabs" role="tablist" aria-label="Dashboard sections">
+		<button id="tab-status" class="tab" type="button" role="tab" data-tab="status" aria-controls="panel-status" aria-selected="true" tabindex="0">Status</button>
+		<button id="tab-verification" class="tab" type="button" role="tab" data-tab="verification" aria-controls="panel-verification" aria-selected="false" tabindex="-1">Verification</button>
+		<button id="tab-commands" class="tab" type="button" role="tab" data-tab="commands" aria-controls="panel-commands" aria-selected="false" tabindex="-1">Commands</button>
+		<button id="tab-release" class="tab" type="button" role="tab" data-tab="release" aria-controls="panel-release" aria-selected="false" tabindex="-1">Release</button>
+		<button id="tab-update" class="tab" type="button" role="tab" data-tab="update" aria-controls="panel-update" aria-selected="false" tabindex="-1">Update</button>
+		<button id="tab-runs" class="tab" type="button" role="tab" data-tab="runs" aria-controls="panel-runs" aria-selected="false" tabindex="-1">Runs</button>
+		<button id="tab-skills" class="tab" type="button" role="tab" data-tab="skills" aria-controls="panel-skills" aria-selected="false" tabindex="-1">Skills</button>
+		<button id="tab-settings" class="tab" type="button" role="tab" data-tab="settings" aria-controls="panel-settings" aria-selected="false" tabindex="-1">Settings</button>
+		<button id="tab-documents" class="tab" type="button" role="tab" data-tab="documents" aria-controls="panel-documents" aria-selected="false" tabindex="-1">Documents</button>
 	</nav>
 	<div class="toolbar">
-		<div id="status" class="status">No changes</div>
+		<div id="status" class="status" role="status" aria-live="polite">No changes</div>
+		<div id="last-updated" class="last-updated" aria-live="polite"></div>
 		<label class="language-picker" for="dashboard-language">
 			<span id="dashboard-language-label">Language</span>
 			<select id="dashboard-language" name="dashboard-language"></select>
@@ -692,31 +885,32 @@ input[type="checkbox"] {
 		<button id="reload" type="button">Reload</button>
 		<button id="save" type="button" disabled>Save</button>
 	</div>
-	<div id="panel-status" class="tab-panel">
+	<div id="panel-status" class="tab-panel" role="tabpanel" aria-labelledby="tab-status">
 		<div id="dashboard-status"></div>
 	</div>
-	<div id="panel-verification" class="tab-panel" hidden>
+	<div id="panel-verification" class="tab-panel" role="tabpanel" aria-labelledby="tab-verification" hidden>
 		<div id="dashboard-verification"></div>
 	</div>
-	<div id="panel-commands" class="tab-panel" hidden>
+	<div id="panel-commands" class="tab-panel" role="tabpanel" aria-labelledby="tab-commands" hidden>
 		<div id="dashboard-commands"></div>
 	</div>
-	<div id="panel-release" class="tab-panel" hidden>
+	<div id="panel-release" class="tab-panel" role="tabpanel" aria-labelledby="tab-release" hidden>
 		<div id="dashboard-release"></div>
 	</div>
-	<div id="panel-update" class="tab-panel" hidden>
+	<div id="panel-update" class="tab-panel" role="tabpanel" aria-labelledby="tab-update" hidden>
 		<div id="dashboard-update"></div>
 	</div>
-	<div id="panel-runs" class="tab-panel" hidden>
+	<div id="panel-runs" class="tab-panel" role="tabpanel" aria-labelledby="tab-runs" hidden>
 		<div id="dashboard-runs"></div>
 	</div>
-	<div id="panel-skills" class="tab-panel" hidden>
+	<div id="panel-skills" class="tab-panel" role="tabpanel" aria-labelledby="tab-skills" hidden>
 		<div id="dashboard-skills"></div>
 	</div>
-	<div id="panel-settings" class="tab-panel" hidden>
+	<div id="panel-settings" class="tab-panel" role="tabpanel" aria-labelledby="tab-settings" hidden>
+		<div id="settings-pending-summary" class="settings-pending" aria-live="polite" hidden></div>
 		<div id="settings"></div>
 	</div>
-	<div id="panel-documents" class="tab-panel" hidden>
+	<div id="panel-documents" class="tab-panel" role="tabpanel" aria-labelledby="tab-documents" hidden>
 		<div class="doc-controls">
 			<div class="doc-filter-controls">
 				<label for="doc-status-filter">
@@ -744,6 +938,7 @@ input[type="checkbox"] {
 				</label>
 			</div>
 		</div>
+		<div id="doc-reviewer-state" class="doc-reviewer-state" aria-live="polite"></div>
 		<div id="docs-review-list" class="doc-list"></div>
 	</div>
 </main>
@@ -761,6 +956,13 @@ let statusState = { key: "dashboard.ui.noChanges", text: "", type: "" };
 let currentTab = "status";
 let dashboardStatus = initialStatusSnapshot;
 let docReview = initialDocReview;
+let lastUpdatedAt = new Date();
+let loadingCount = 0;
+const listFilters = {
+	verification: { query: "", state: "all" },
+	commands: { query: "", state: "all" },
+	skills: { query: "", state: "all" }
+};
 
 const groups = [
 	["dashboard.group.git", ["git.auto_stage", "git.auto_commit", "git.auto_push"]],
@@ -772,6 +974,7 @@ const groups = [
 	["dashboard.group.refactoring", "refactoring.hotspots."],
 	["dashboard.group.versioning", "release.versioning."]
 ];
+const copyFeedbackMs = 1500;
 const docStatusFilters = ["active", "pending", "in_review", "changes_made", "needs_human", "approved", "ignored", "all"];
 const reviewerKinds = ["human", "llm", "tool", "external"];
 
@@ -784,6 +987,22 @@ function resolveInitialLocale() {
 
 function message(key) {
 	return dashboardLocales.messages[currentLocale]?.[key] ?? dashboardLocales.messages.en[key] ?? key;
+}
+
+function messageWithTime(key, time) {
+	return messageFormat(key, { time });
+}
+
+function messageWithCount(key, count) {
+	return messageFormat(key, { count });
+}
+
+function messageFormat(key, values) {
+	let text = message(key);
+	for (const [name, value] of Object.entries(values)) {
+		text = text.replaceAll("{" + name + "}", String(value));
+	}
+	return text;
 }
 
 function messageExists(key) {
@@ -805,6 +1024,31 @@ function renderStatus() {
 	const text = statusState.key ? message(statusState.key) : statusState.text;
 	element.textContent = text;
 	element.className = statusState.type ? "status " + statusState.type : "status";
+}
+
+function renderLastUpdated() {
+	const element = document.getElementById("last-updated");
+	const formatted = new Intl.DateTimeFormat(currentLocale, {
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit"
+	}).format(lastUpdatedAt);
+	element.textContent = messageWithTime("dashboard.ui.lastUpdated", formatted);
+}
+
+function setLoading(loading) {
+	loadingCount = Math.max(0, loadingCount + (loading ? 1 : -1));
+	const isLoading = loadingCount > 0;
+	const reload = document.getElementById("reload");
+	document.body.setAttribute("aria-busy", isLoading ? "true" : "false");
+	reload.disabled = isLoading;
+	reload.setAttribute("aria-disabled", isLoading ? "true" : "false");
+	if (isLoading) statusKey("dashboard.ui.loading");
+}
+
+function markDataUpdated() {
+	lastUpdatedAt = new Date();
+	renderLastUpdated();
 }
 
 function settingValue(id) {
@@ -830,6 +1074,21 @@ function updateSettingDescription(id) {
 	if (element) element.textContent = settingDescription(setting);
 }
 
+function formatSettingValue(value) {
+	if (typeof value === "boolean") {
+		return message(value ? "dashboard.status.yes" : "dashboard.status.no");
+	}
+	return String(value);
+}
+
+function settingDisplayName(setting) {
+	return message("dashboard.setting." + setting.id) || setting.label;
+}
+
+function updateSaveState() {
+	document.getElementById("save").disabled = pending.size === 0;
+}
+
 function setPending(id, value) {
 	const original = snapshot.settings.find((setting) => setting.id === id)?.value;
 	if (Object.is(original, value)) {
@@ -837,9 +1096,10 @@ function setPending(id, value) {
 	} else {
 		pending.set(id, value);
 	}
-	document.getElementById("save").disabled = pending.size === 0;
+	updateSaveState();
 	statusKey(pending.size === 0 ? "dashboard.ui.noChanges" : "dashboard.ui.unsavedChanges");
 	updateSettingDescription(id);
+	renderSettingsPendingSummary();
 }
 
 function controlId(setting) {
@@ -959,6 +1219,7 @@ function renderInput(setting) {
 function render() {
 	const root = document.getElementById("settings");
 	root.textContent = "";
+	renderSettingsPendingSummary();
 	for (const [titleKey, matcher] of groups) {
 		const settings = Array.isArray(matcher)
 			? snapshot.settings.filter((setting) => matcher.includes(setting.id))
@@ -976,7 +1237,7 @@ function render() {
 			const labelText = document.createElement("div");
 			labelText.className = "label";
 			const labelName = document.createElement("span");
-			labelName.textContent = message("dashboard.setting." + setting.id) || setting.label;
+			labelName.textContent = settingDisplayName(setting);
 			labelText.appendChild(labelName);
 			const descriptionText = settingDescription(setting);
 			if (descriptionText) {
@@ -1001,6 +1262,52 @@ function render() {
 		}
 		root.appendChild(section);
 	}
+}
+
+function renderSettingsPendingSummary() {
+	const root = document.getElementById("settings-pending-summary");
+	if (!root) return;
+	root.textContent = "";
+	if (pending.size === 0) {
+		root.hidden = true;
+		return;
+	}
+	root.hidden = false;
+
+	const header = document.createElement("div");
+	header.className = "settings-pending-header";
+	const title = document.createElement("div");
+	title.className = "settings-pending-title";
+	title.textContent = messageWithCount("dashboard.settings.pendingHeading", String(pending.size));
+	const reset = document.createElement("button");
+	reset.type = "button";
+	reset.textContent = message("dashboard.settings.resetChanges");
+	reset.addEventListener("click", resetPendingSettings);
+	header.appendChild(title);
+	header.appendChild(reset);
+	root.appendChild(header);
+
+	const list = document.createElement("ul");
+	list.className = "settings-pending-list";
+	for (const [id, value] of pending) {
+		const setting = snapshot.settings.find((item) => item.id === id);
+		if (!setting) continue;
+		const item = document.createElement("li");
+		item.textContent = messageFormat("dashboard.settings.pendingItem", {
+			name: settingDisplayName(setting),
+			from: formatSettingValue(setting.value),
+			to: formatSettingValue(value),
+		});
+		list.appendChild(item);
+	}
+	root.appendChild(list);
+}
+
+function resetPendingSettings() {
+	pending = new Map();
+	updateSaveState();
+	statusKey("dashboard.ui.noChanges");
+	render();
 }
 
 function renderLocaleSelector() {
@@ -1044,12 +1351,15 @@ function renderChrome() {
 	document.getElementById("doc-reviewer-id").placeholder = message("dashboard.docs.reviewerIdPlaceholder");
 	document.getElementById("doc-review-summary").placeholder = message("dashboard.docs.summaryPlaceholder");
 	renderStatus();
+	renderLastUpdated();
+	renderDocumentReviewerState();
 }
 
 function renderTabState() {
 	for (const tab of document.querySelectorAll(".tab")) {
 		const selected = tab.dataset.tab === currentTab;
 		tab.setAttribute("aria-selected", selected ? "true" : "false");
+		tab.setAttribute("tabindex", selected ? "0" : "-1");
 	}
 	document.getElementById("panel-status").hidden = currentTab !== "status";
 	document.getElementById("panel-verification").hidden = currentTab !== "verification";
@@ -1063,6 +1373,48 @@ function renderTabState() {
 	renderChrome();
 }
 
+function loadCurrentTabData() {
+	if (currentTab === "documents") return loadDocuments();
+	if (currentTab === "settings") return Promise.resolve();
+	return loadStatus();
+}
+
+function reloadCurrentTabData() {
+	if (currentTab === "settings") return loadSnapshot();
+	return loadCurrentTabData();
+}
+
+function activateTab(tabName, options = {}) {
+	currentTab = tabName;
+	renderTabState();
+	if (options.focus) {
+		const selectedTab = Array.from(document.querySelectorAll(".tab")).find((tab) => tab.dataset.tab === currentTab);
+		if (selectedTab) selectedTab.focus();
+	}
+	loadCurrentTabData().catch((error) => statusText(error.message, "error"));
+}
+
+function handleTabKeydown(event) {
+	const tabs = Array.from(document.querySelectorAll(".tab"));
+	const currentIndex = tabs.findIndex((tab) => tab === event.currentTarget);
+	if (currentIndex < 0) return;
+
+	let nextIndex = null;
+	if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+		nextIndex = (currentIndex + 1) % tabs.length;
+	} else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+		nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+	} else if (event.key === "Home") {
+		nextIndex = 0;
+	} else if (event.key === "End") {
+		nextIndex = tabs.length - 1;
+	}
+
+	if (nextIndex === null) return;
+	event.preventDefault();
+	activateTab(tabs[nextIndex].dataset.tab, { focus: true });
+}
+
 async function openMustflowFolder() {
 	const response = await fetch("/api/open-mustflow", {
 		method: "POST",
@@ -1073,46 +1425,58 @@ async function openMustflowFolder() {
 }
 
 async function loadSnapshot() {
-	const response = await fetch("/api/preferences", {
-		headers: { "x-mustflow-dashboard-token": dashboardToken }
-	});
-	if (!response.ok) throw new Error(await response.text());
-	snapshot = await response.json();
-	pending = new Map();
-	document.getElementById("save").disabled = true;
-	statusKey("dashboard.ui.reloaded", "ok");
-	render();
+	setLoading(true);
+	try {
+		const response = await fetch("/api/preferences", {
+			headers: { "x-mustflow-dashboard-token": dashboardToken }
+		});
+		if (!response.ok) throw new Error(await response.text());
+		snapshot = await response.json();
+		pending = new Map();
+		updateSaveState();
+		markDataUpdated();
+		statusKey("dashboard.ui.reloaded", "ok");
+		render();
+	} finally {
+		setLoading(false);
+	}
 }
 
 async function loadStatus() {
-	const response = await fetch("/api/status", {
-		headers: { "x-mustflow-dashboard-token": dashboardToken }
-	});
-	if (!response.ok) throw new Error(await response.text());
-	dashboardStatus = await response.json();
-	statusKey(
-		currentTab === "commands"
-			? "dashboard.commands.reloaded"
-			: currentTab === "verification"
-				? "dashboard.verification.reloaded"
-			: currentTab === "release"
-				? "dashboard.release.reloaded"
-			: currentTab === "update"
-				? "dashboard.update.reloaded"
-			: currentTab === "runs"
-				? "dashboard.runs.reloaded"
-				: currentTab === "skills"
-					? "dashboard.skills.reloaded"
-					: "dashboard.status.reloaded",
-		"ok"
-	);
-	renderStatusPanel();
-	renderVerificationPanel();
-	renderCommandPanel();
-	renderReleasePanel();
-	renderUpdatePanel();
-	renderRunsPanel();
-	renderSkillsPanel();
+	setLoading(true);
+	try {
+		const response = await fetch("/api/status", {
+			headers: { "x-mustflow-dashboard-token": dashboardToken }
+		});
+		if (!response.ok) throw new Error(await response.text());
+		dashboardStatus = await response.json();
+		markDataUpdated();
+		statusKey(
+			currentTab === "commands"
+				? "dashboard.commands.reloaded"
+				: currentTab === "verification"
+					? "dashboard.verification.reloaded"
+				: currentTab === "release"
+					? "dashboard.release.reloaded"
+				: currentTab === "update"
+					? "dashboard.update.reloaded"
+				: currentTab === "runs"
+					? "dashboard.runs.reloaded"
+					: currentTab === "skills"
+						? "dashboard.skills.reloaded"
+						: "dashboard.status.reloaded",
+			"ok"
+		);
+		renderStatusPanel();
+		renderVerificationPanel();
+		renderCommandPanel();
+		renderReleasePanel();
+		renderUpdatePanel();
+		renderRunsPanel();
+		renderSkillsPanel();
+	} finally {
+		setLoading(false);
+	}
 }
 
 function docStatusQuery() {
@@ -1135,6 +1499,12 @@ function formatLatestRun(latestRun) {
 	return parts.join(" / ");
 }
 
+function statusStateLabel(tone) {
+	if (tone === "ok") return message("dashboard.a11y.state.ok");
+	if (tone === "warn") return message("dashboard.a11y.state.warn");
+	return message("dashboard.a11y.state.neutral");
+}
+
 function appendStatusItem(root, labelKey, value, tone = "") {
 	const item = document.createElement("div");
 	item.className = "status-item";
@@ -1143,15 +1513,130 @@ function appendStatusItem(root, labelKey, value, tone = "") {
 	label.textContent = message(labelKey);
 	const content = document.createElement("div");
 	content.className = tone ? "status-value " + tone : "status-value";
-	content.textContent = value;
+	if (tone) {
+		const badge = document.createElement("span");
+		badge.className = "status-badge " + tone;
+		badge.textContent = statusStateLabel(tone);
+		content.appendChild(badge);
+		content.appendChild(document.createTextNode(value));
+	} else {
+		content.textContent = value;
+	}
+	content.setAttribute(
+		"aria-label",
+		message(labelKey) + ": " + value + " (" + statusStateLabel(tone) + ")"
+	);
 	item.appendChild(label);
 	item.appendChild(content);
 	root.appendChild(item);
 }
 
+function latestRunNeedsAttention(latestRun) {
+	if (!latestRun.exists) return false;
+	if (!latestRun.valid) return true;
+	return latestRun.status !== "passed" || latestRun.timed_out;
+}
+
+function deriveDashboardActions() {
+	const actions = [];
+	if (dashboardStatus.missing_files.length > 0) {
+		actions.push({
+			title: messageWithCount("dashboard.actions.missingFiles", dashboardStatus.missing_files.length),
+			meta: dashboardStatus.missing_files.slice(0, 2).join(", "),
+			tab: "status",
+			buttonKey: "dashboard.actions.openStatus"
+		});
+	}
+	if (dashboardStatus.issues.length > 0) {
+		actions.push({
+			title: messageWithCount("dashboard.actions.manifestIssues", dashboardStatus.issues.length),
+			meta: dashboardStatus.issues[0],
+			tab: "status",
+			buttonKey: "dashboard.actions.openStatus"
+		});
+	}
+	if (latestRunNeedsAttention(dashboardStatus.latest_run)) {
+		actions.push({
+			title: message("dashboard.actions.latestRun"),
+			meta: formatLatestRun(dashboardStatus.latest_run),
+			tab: "runs",
+			buttonKey: "dashboard.actions.openRuns"
+		});
+	}
+	if (dashboardStatus.update.blockers.length > 0) {
+		actions.push({
+			title: messageWithCount("dashboard.actions.updateBlockers", dashboardStatus.update.blockers.length),
+			meta: dashboardStatus.update.blockers[0].relativePath,
+			tab: "update",
+			buttonKey: "dashboard.actions.openUpdate"
+		});
+	}
+	if (dashboardStatus.verification.recommendations.length > 0) {
+		actions.push({
+			title: messageWithCount("dashboard.actions.verification", dashboardStatus.verification.recommendations.length),
+			meta: dashboardStatus.verification.recommendations.map((recommendation) => recommendation.intent).slice(0, 3).join(", "),
+			tab: "verification",
+			buttonKey: "dashboard.actions.openVerification"
+		});
+	}
+	if (dashboardStatus.active_review_documents > 0 || docReview.count > 0) {
+		const count = Math.max(dashboardStatus.active_review_documents, docReview.count);
+		actions.push({
+			title: messageWithCount("dashboard.actions.documents", count),
+			meta: docReview.items?.[0]?.path || "",
+			tab: "documents",
+			buttonKey: "dashboard.actions.openDocuments"
+		});
+	}
+	return actions.slice(0, 5);
+}
+
+function renderNextActions(root) {
+	const section = document.createElement("section");
+	const heading = document.createElement("h2");
+	heading.textContent = message("dashboard.actions.heading");
+	section.appendChild(heading);
+	const actions = deriveDashboardActions();
+	if (actions.length === 0) {
+		const empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = message("dashboard.actions.empty");
+		section.appendChild(empty);
+		root.appendChild(section);
+		return;
+	}
+	const list = document.createElement("div");
+	list.className = "next-actions";
+	for (const action of actions) {
+		const row = document.createElement("div");
+		row.className = "next-action-row";
+		const body = document.createElement("div");
+		const title = document.createElement("div");
+		title.className = "next-action-title";
+		title.textContent = action.title;
+		body.appendChild(title);
+		if (action.meta) {
+			const meta = document.createElement("div");
+			meta.className = "next-action-meta";
+			meta.textContent = action.meta;
+			body.appendChild(meta);
+		}
+		const button = document.createElement("button");
+		button.type = "button";
+		button.textContent = message(action.buttonKey);
+		button.addEventListener("click", () => activateTab(action.tab, { focus: true }));
+		row.appendChild(body);
+		row.appendChild(button);
+		list.appendChild(row);
+	}
+	section.appendChild(list);
+	root.appendChild(section);
+}
+
 function renderStatusPanel() {
 	const root = document.getElementById("dashboard-status");
 	root.textContent = "";
+	renderNextActions(root);
 	const section = document.createElement("section");
 	const heading = document.createElement("h2");
 	heading.textContent = message("dashboard.status.overview");
@@ -1223,12 +1708,128 @@ async function copyUpdateCommand(command) {
 	statusKey("dashboard.update.copied", "ok");
 }
 
+function setButtonAccessibleLabel(button, label) {
+	button.textContent = label;
+	button.title = label;
+	button.setAttribute("aria-label", label);
+}
+
+function copyCommandLabel(command) {
+	return messageFormat("dashboard.a11y.copyCommand", { command });
+}
+
+function showCopyButtonFeedback(button, restoreLabel) {
+	if (button.copyFeedbackTimeout) window.clearTimeout(button.copyFeedbackTimeout);
+	const originalDisabled = button.disabled;
+	setButtonAccessibleLabel(button, message("dashboard.ui.copied"));
+	button.disabled = true;
+	button.copyFeedbackTimeout = window.setTimeout(() => {
+		setButtonAccessibleLabel(button, restoreLabel);
+		button.disabled = originalDisabled;
+		button.copyFeedbackTimeout = null;
+	}, copyFeedbackMs);
+}
+
 function appendVerificationFiles(root, files) {
 	if (files.length === 0) return;
 	const details = document.createElement("div");
 	details.className = "verification-files";
 	details.textContent = message("dashboard.verification.files") + ": " + files.join(", ");
 	root.appendChild(details);
+}
+
+function normalizeFilterText(value) {
+	return String(value || "").toLowerCase();
+}
+
+function filterTextMatches(query, values) {
+	const normalizedQuery = normalizeFilterText(query).trim();
+	if (!normalizedQuery) return true;
+	return values.some((value) => normalizeFilterText(value).includes(normalizedQuery));
+}
+
+function renderListFilters(kind, stateOptions, rerender) {
+	const filter = listFilters[kind];
+	const wrapper = document.createElement("div");
+	wrapper.className = "list-filters";
+
+	const searchLabel = document.createElement("label");
+	const searchText = document.createElement("span");
+	searchText.textContent = message("dashboard.filter.search");
+	const search = document.createElement("input");
+	const searchId = "dashboard-" + kind + "-filter-search";
+	search.id = searchId;
+	search.type = "text";
+	search.autocomplete = "off";
+	search.spellcheck = false;
+	search.value = filter.query;
+	search.placeholder = message("dashboard.filter.searchPlaceholder");
+	search.addEventListener("input", () => {
+		const cursor = search.selectionStart;
+		filter.query = search.value;
+		rerender();
+		const nextSearch = document.getElementById(searchId);
+		if (nextSearch) {
+			nextSearch.focus();
+			if (cursor !== null) nextSearch.setSelectionRange(cursor, cursor);
+		}
+	});
+	searchLabel.appendChild(searchText);
+	searchLabel.appendChild(search);
+	wrapper.appendChild(searchLabel);
+
+	const stateLabel = document.createElement("label");
+	const stateText = document.createElement("span");
+	stateText.textContent = message("dashboard.filter.state");
+	const state = document.createElement("select");
+	const stateId = "dashboard-" + kind + "-filter-state";
+	state.id = stateId;
+	for (const option of stateOptions) {
+		const child = document.createElement("option");
+		child.value = option;
+		child.textContent = message("dashboard.filter." + option);
+		child.selected = option === filter.state;
+		state.appendChild(child);
+	}
+	state.addEventListener("change", () => {
+		filter.state = state.value;
+		rerender();
+		const nextState = document.getElementById(stateId);
+		if (nextState) nextState.focus();
+	});
+	stateLabel.appendChild(stateText);
+	stateLabel.appendChild(state);
+	wrapper.appendChild(stateLabel);
+	return wrapper;
+}
+
+function verificationStateMatches(recommendation) {
+	const state = listFilters.verification.state;
+	return state === "all" || (state === "runnable" && recommendation.runnable) || (state === "unavailable" && !recommendation.runnable);
+}
+
+function commandStateMatches(intent) {
+	const state = listFilters.commands.state;
+	return state === "all" || (state === "runnable" && intent.runnable) || (state === "unavailable" && !intent.runnable);
+}
+
+function skillRouteState(route) {
+	if (!route.exists) return "missing";
+	return route.aligned ? "aligned" : "mismatch";
+}
+
+function skillStateMatches(route) {
+	const state = listFilters.skills.state;
+	return state === "all" || skillRouteState(route) === state;
+}
+
+function createCollapsibleDetails(titleKey) {
+	const details = document.createElement("details");
+	details.className = "collapsible-details";
+	const summary = document.createElement("summary");
+	summary.textContent = message(titleKey);
+	details.appendChild(summary);
+	return details;
 }
 
 function renderVerificationPanel() {
@@ -1259,7 +1860,27 @@ function renderVerificationPanel() {
 		return;
 	}
 
-	for (const recommendation of verification.recommendations) {
+	section.appendChild(renderListFilters("verification", ["all", "runnable", "unavailable"], renderVerificationPanel));
+	const recommendations = verification.recommendations.filter((recommendation) =>
+		verificationStateMatches(recommendation) &&
+		filterTextMatches(listFilters.verification.query, [
+			recommendation.intent,
+			recommendation.command,
+			message(recommendation.reason_key),
+			recommendation.files.join(" "),
+		]),
+	);
+
+	if (recommendations.length === 0) {
+		const empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = message("dashboard.filter.noMatches");
+		section.appendChild(empty);
+		root.appendChild(section);
+		return;
+	}
+
+	for (const recommendation of recommendations) {
 		const row = document.createElement("div");
 		row.className = "verification-row";
 		const summary = document.createElement("div");
@@ -1286,12 +1907,14 @@ function renderVerificationPanel() {
 		const copy = document.createElement("button");
 		copy.type = "button";
 		copy.className = "verification-copy";
-		copy.textContent = message("dashboard.verification.copy");
-		copy.title = message("dashboard.verification.copy");
-		copy.setAttribute("aria-label", message("dashboard.verification.copy"));
+		const copyLabel = copyCommandLabel(recommendation.command);
+		setButtonAccessibleLabel(copy, copyLabel);
 		copy.disabled = !recommendation.runnable;
+		copy.setAttribute("aria-disabled", copy.disabled ? "true" : "false");
 		copy.addEventListener("click", () => {
-			copyVerificationCommand(recommendation.command).catch((error) => statusText(error.message, "error"));
+			copyVerificationCommand(recommendation.command)
+				.then(() => showCopyButtonFeedback(copy, copyLabel))
+				.catch((error) => statusText(error.message, "error"));
 		});
 
 		row.appendChild(summary);
@@ -1308,8 +1931,16 @@ function renderVerificationPanel() {
 		scheduleHeading.textContent = message("dashboard.verification.schedule");
 		scheduleSection.appendChild(scheduleHeading);
 		const entriesByIntent = new Map(verification.schedule.entries.map((entry) => [entry.intent, entry]));
-		const planCommands = verification.schedule.batches.flatMap((batch) => batch.commands);
-		for (const batch of verification.schedule.batches) {
+		const recommendedIntents = new Set(recommendations.map((recommendation) => recommendation.intent));
+		const scheduleBatches = verification.schedule.batches
+			.map((batch) => ({
+				...batch,
+				intents: batch.intents.filter((intent) => recommendedIntents.has(intent)),
+				commands: batch.commands.filter((command) => recommendations.some((recommendation) => recommendation.command === command)),
+			}))
+			.filter((batch) => batch.intents.length > 0 || batch.commands.length > 0);
+		const planCommands = scheduleBatches.flatMap((batch) => batch.commands);
+		for (const batch of scheduleBatches) {
 			const row = document.createElement("div");
 			row.className = "verification-row";
 			const summary = document.createElement("div");
@@ -1345,12 +1976,14 @@ function renderVerificationPanel() {
 			const copy = document.createElement("button");
 			copy.type = "button";
 			copy.className = "verification-copy";
-			copy.textContent = message("dashboard.verification.copyPlan");
-			copy.title = message("dashboard.verification.copyPlan");
-			copy.setAttribute("aria-label", message("dashboard.verification.copyPlan"));
+			const copyLabel = message("dashboard.a11y.copyVerificationPlan");
+			setButtonAccessibleLabel(copy, copyLabel);
 			copy.disabled = planCommands.length === 0;
+			copy.setAttribute("aria-disabled", copy.disabled ? "true" : "false");
 			copy.addEventListener("click", () => {
-				copyVerificationPlan(planCommands).catch((error) => statusText(error.message, "error"));
+				copyVerificationPlan(planCommands)
+					.then(() => showCopyButtonFeedback(copy, copyLabel))
+					.catch((error) => statusText(error.message, "error"));
 			});
 
 			row.appendChild(summary);
@@ -1362,10 +1995,7 @@ function renderVerificationPanel() {
 	}
 
 	if (verification.skipped.length > 0) {
-		const skippedSection = document.createElement("section");
-		const skippedHeading = document.createElement("h2");
-		skippedHeading.textContent = message("dashboard.verification.skipped");
-		skippedSection.appendChild(skippedHeading);
+		const skippedSection = createCollapsibleDetails("dashboard.verification.skipped");
 		for (const skipped of verification.skipped) {
 			const row = document.createElement("div");
 			row.className = "command-note";
@@ -1407,20 +2037,25 @@ function formatCommandLockConflict(conflict) {
 function appendCommandEffectGraph(root, intent) {
 	const graph = intent.effect_graph;
 	if (!graph || graph.status !== "fresh") return;
+	if (graph.write_locks.length === 0 && graph.lock_conflicts.length === 0) return;
+
+	const details = createCollapsibleDetails("dashboard.commands.effectGraph");
 
 	if (graph.write_locks.length > 0) {
 		const locks = document.createElement("div");
 		locks.className = "verification-files";
 		locks.textContent = message("dashboard.commands.effectGraph") + ": " + graph.write_locks.map(formatCommandWriteLock).join(", ");
-		root.appendChild(locks);
+		details.appendChild(locks);
 	}
 
 	if (graph.lock_conflicts.length > 0) {
 		const conflicts = document.createElement("div");
 		conflicts.className = "command-note";
 		conflicts.textContent = message("dashboard.verification.conflicts") + ": " + graph.lock_conflicts.map(formatCommandLockConflict).join(", ");
-		root.appendChild(conflicts);
+		details.appendChild(conflicts);
 	}
+
+	root.appendChild(details);
 }
 
 function renderCommandPanel() {
@@ -1451,7 +2086,34 @@ function renderCommandPanel() {
 		section.appendChild(note);
 	}
 
-	for (const intent of dashboardStatus.command_contract.intents) {
+	section.appendChild(renderListFilters("commands", ["all", "runnable", "unavailable"], renderCommandPanel));
+	const intents = dashboardStatus.command_contract.intents.filter((intent) =>
+		commandStateMatches(intent) &&
+		filterTextMatches(listFilters.commands.query, [
+			intent.name,
+			intent.description,
+			intent.status,
+			intent.lifecycle,
+			intent.run_policy,
+			intent.stdin,
+			intent.cwd,
+			intent.reason,
+			intent.agent_action,
+			intent.writes.join(" "),
+			intent.required_after.join(" "),
+		]),
+	);
+
+	if (intents.length === 0) {
+		const empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = message("dashboard.filter.noMatches");
+		section.appendChild(empty);
+		root.appendChild(section);
+		return;
+	}
+
+	for (const intent of intents) {
 		const row = document.createElement("div");
 		row.className = "command-row";
 		const summary = document.createElement("div");
@@ -1533,12 +2195,14 @@ function renderReleaseCommand(root, intentName, fallbackCommand, reasonKey) {
 	const copy = document.createElement("button");
 	copy.type = "button";
 	copy.className = "verification-copy";
-	copy.textContent = message("dashboard.verification.copy");
-	copy.title = message("dashboard.verification.copy");
-	copy.setAttribute("aria-label", message("dashboard.verification.copy"));
+	const copyLabel = copyCommandLabel(fallbackCommand);
+	setButtonAccessibleLabel(copy, copyLabel);
 	copy.disabled = !runnable;
+	copy.setAttribute("aria-disabled", copy.disabled ? "true" : "false");
 	copy.addEventListener("click", () => {
-		copyReleaseCommand(fallbackCommand).catch((error) => statusText(error.message, "error"));
+		copyReleaseCommand(fallbackCommand)
+			.then(() => showCopyButtonFeedback(copy, copyLabel))
+			.catch((error) => statusText(error.message, "error"));
 	});
 
 	row.appendChild(summary);
@@ -1656,12 +2320,14 @@ function renderUpdateCommand(root, command, labelKey, reasonKey, enabled = true)
 	const copy = document.createElement("button");
 	copy.type = "button";
 	copy.className = "verification-copy";
-	copy.textContent = message("dashboard.verification.copy");
-	copy.title = message("dashboard.verification.copy");
-	copy.setAttribute("aria-label", message("dashboard.verification.copy"));
+	const copyLabel = copyCommandLabel(command);
+	setButtonAccessibleLabel(copy, copyLabel);
 	copy.disabled = !enabled;
+	copy.setAttribute("aria-disabled", copy.disabled ? "true" : "false");
 	copy.addEventListener("click", () => {
-		copyUpdateCommand(command).catch((error) => statusText(error.message, "error"));
+		copyUpdateCommand(command)
+			.then(() => showCopyButtonFeedback(copy, copyLabel))
+			.catch((error) => statusText(error.message, "error"));
 	});
 
 	row.appendChild(summary);
@@ -1760,10 +2426,7 @@ function formatDuration(value) {
 }
 
 function renderRunOutput(root, titleKey, output) {
-	const section = document.createElement("section");
-	const heading = document.createElement("h2");
-	heading.textContent = message(titleKey);
-	section.appendChild(heading);
+	const section = createCollapsibleDetails(titleKey);
 	const meta = document.createElement("div");
 	meta.className = "command-meta";
 	appendCommandMeta(meta, "dashboard.runs.bytes", output.bytes);
@@ -1887,7 +2550,32 @@ function renderSkillsPanel() {
 		return;
 	}
 
-	for (const route of dashboardStatus.skills.routes) {
+	section.appendChild(renderListFilters("skills", ["all", "aligned", "mismatch", "missing"], renderSkillsPanel));
+	const routes = dashboardStatus.skills.routes.filter((route) =>
+		skillStateMatches(route) &&
+		filterTextMatches(listFilters.skills.query, [
+			route.skill,
+			route.trigger,
+			route.skill_path,
+			route.required_input,
+			route.edit_scope,
+			route.risk,
+			route.expected_output,
+			route.verification_intents.join(" "),
+			route.declared_command_intents.join(" "),
+		]),
+	);
+
+	if (routes.length === 0) {
+		const empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = message("dashboard.filter.noMatches");
+		section.appendChild(empty);
+		root.appendChild(section);
+		return;
+	}
+
+	for (const route of routes) {
 		const row = document.createElement("div");
 		row.className = "command-row";
 		const summary = document.createElement("div");
@@ -1930,14 +2618,20 @@ function renderSkillsPanel() {
 }
 
 async function loadDocuments() {
-	const response = await fetch("/api/docs/review" + docStatusQuery(), {
-		headers: { "x-mustflow-dashboard-token": dashboardToken }
-	});
-	if (!response.ok) throw new Error(await response.text());
-	docReview = await response.json();
-	statusKey("dashboard.docs.reloaded", "ok");
-	renderChrome();
-	renderDocuments();
+	setLoading(true);
+	try {
+		const response = await fetch("/api/docs/review" + docStatusQuery(), {
+			headers: { "x-mustflow-dashboard-token": dashboardToken }
+		});
+		if (!response.ok) throw new Error(await response.text());
+		docReview = await response.json();
+		markDataUpdated();
+		statusKey("dashboard.docs.reloaded", "ok");
+		renderChrome();
+		renderDocuments();
+	} finally {
+		setLoading(false);
+	}
 }
 
 async function save() {
@@ -1953,7 +2647,8 @@ async function save() {
 	if (!response.ok) throw new Error(await response.text());
 	snapshot = await response.json();
 	pending = new Map();
-	document.getElementById("save").disabled = true;
+	updateSaveState();
+	markDataUpdated();
 	statusKey("dashboard.ui.saved", "ok");
 	render();
 }
@@ -1981,6 +2676,7 @@ async function markDocument(path, status) {
 	});
 	if (!response.ok) throw new Error(await response.text());
 	docReview = await response.json();
+	markDataUpdated();
 	statusKey("dashboard.docs.updated", "ok");
 	renderChrome();
 	renderDocuments();
@@ -2022,9 +2718,31 @@ function currentReviewerId() {
 	return document.getElementById("doc-reviewer-id").value.trim();
 }
 
+function currentReviewerKind() {
+	const value = document.getElementById("doc-reviewer-kind").value;
+	return value || "human";
+}
+
+function renderDocumentReviewerState() {
+	const element = document.getElementById("doc-reviewer-state");
+	if (!element) return;
+	const reviewerId = currentReviewerId();
+	if (!reviewerId) {
+		element.className = "doc-reviewer-state warn";
+		element.textContent = message("dashboard.docs.reviewerStateMissing");
+		return;
+	}
+	element.className = "doc-reviewer-state";
+	element.textContent = messageFormat("dashboard.docs.reviewerState", {
+		kind: message("dashboard.docs.reviewerKind." + currentReviewerKind()),
+		id: reviewerId,
+	});
+}
+
 function renderDocuments() {
 	const root = document.getElementById("docs-review-list");
 	root.textContent = "";
+	renderDocumentReviewerState();
 
 	if (docReview.documents.length === 0) {
 		const empty = document.createElement("div");
@@ -2064,7 +2782,7 @@ function renderDocuments() {
 		}
 
 		const status = document.createElement("div");
-		status.className = "doc-status";
+		status.className = "doc-status " + entry.status;
 		status.textContent = message("dashboard.docs.status." + entry.status);
 
 		const actions = document.createElement("div");
@@ -2078,10 +2796,16 @@ function renderDocuments() {
 			const button = document.createElement("button");
 			button.type = "button";
 			button.textContent = message(labelKey);
-			const actionLabel = reviewerIdMissing ? message("dashboard.docs.missingReviewerId") : message(tooltipKey);
+			const alreadySelected = entry.status === nextStatus;
+			const actionLabel = reviewerIdMissing
+				? message("dashboard.docs.missingReviewerId")
+				: alreadySelected
+					? messageFormat("dashboard.docs.action.currentStatus", { status: message("dashboard.docs.status." + nextStatus) })
+					: message(tooltipKey);
 			button.title = actionLabel;
 			button.setAttribute("aria-label", actionLabel);
-			button.disabled = reviewerIdMissing || entry.status === nextStatus;
+			button.disabled = reviewerIdMissing || alreadySelected;
+			button.setAttribute("aria-disabled", button.disabled ? "true" : "false");
 			button.addEventListener("click", () => {
 				markDocument(entry.path, nextStatus).catch((error) => statusText(error.message, "error"));
 			});
@@ -2113,8 +2837,7 @@ document.getElementById("dashboard-language").addEventListener("change", (event)
 });
 
 document.getElementById("reload").addEventListener("click", () => {
-	const action = currentTab === "documents" ? loadDocuments() : currentTab === "settings" ? loadSnapshot() : loadStatus();
-	action.catch((error) => statusText(error.message, "error"));
+	reloadCurrentTabData().catch((error) => statusText(error.message, "error"));
 });
 document.getElementById("save").addEventListener("click", () => {
 	save().catch((error) => statusText(error.message, "error"));
@@ -2131,16 +2854,14 @@ document.getElementById("doc-path-filter").addEventListener("input", () => {
 document.getElementById("doc-reviewer-id").addEventListener("input", () => {
 	renderDocuments();
 });
+document.getElementById("doc-reviewer-kind").addEventListener("change", () => {
+	renderDocuments();
+});
 for (const tab of document.querySelectorAll(".tab")) {
 	tab.addEventListener("click", () => {
-		currentTab = tab.dataset.tab;
-		renderTabState();
-		if (currentTab === "documents") {
-			loadDocuments().catch((error) => statusText(error.message, "error"));
-		} else if (currentTab === "status" || currentTab === "verification" || currentTab === "commands" || currentTab === "release" || currentTab === "update" || currentTab === "runs" || currentTab === "skills") {
-			loadStatus().catch((error) => statusText(error.message, "error"));
-		}
+		activateTab(tab.dataset.tab);
 	});
+	tab.addEventListener("keydown", handleTabKeydown);
 }
 renderLocaleSelector();
 renderDocFilters();

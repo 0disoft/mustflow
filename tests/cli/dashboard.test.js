@@ -391,7 +391,11 @@ test('dashboard serves and updates safe preferences', async () => {
 		const html = await fetch(info.url).then((response) => response.text());
 		assert.match(html, /mustflow dashboard/);
 		assert.match(html, /font-size: 17px;/);
+		assert.match(html, /button:focus-visible,\nselect:focus-visible,\ninput:focus-visible/);
 		assert.match(html, /id="open-mustflow"/);
+		assert.match(html, /id="status" class="status" role="status" aria-live="polite"/);
+		assert.match(html, /id="last-updated" class="last-updated" aria-live="polite"/);
+		assert.match(html, /<nav class="tabs" role="tablist" aria-label="Dashboard sections">/);
 		assert.match(html, /id="tab-status"/);
 		assert.match(html, /id="tab-verification"/);
 		assert.match(html, /id="tab-commands"/);
@@ -401,6 +405,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /id="tab-skills"/);
 		assert.match(html, /id="tab-settings"/);
 		assert.match(html, /id="tab-documents"/);
+		assert.match(html, /id="tab-status"[^>]*role="tab"[^>]*aria-controls="panel-status"[^>]*aria-selected="true"[^>]*tabindex="0"/);
+		assert.match(html, /id="tab-verification"[^>]*role="tab"[^>]*aria-controls="panel-verification"[^>]*aria-selected="false"[^>]*tabindex="-1"/);
 		assert.match(html, /id="panel-status"/);
 		assert.match(html, /id="panel-verification"/);
 		assert.match(html, /id="panel-commands"/);
@@ -410,6 +416,78 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /id="panel-skills"/);
 		assert.match(html, /id="panel-settings"/);
 		assert.match(html, /id="panel-documents"/);
+		assert.match(html, /id="panel-status" class="tab-panel" role="tabpanel" aria-labelledby="tab-status"/);
+		assert.match(html, /id="panel-documents" class="tab-panel" role="tabpanel" aria-labelledby="tab-documents"/);
+		assert.match(html, /tab\.setAttribute\("tabindex", selected \? "0" : "-1"\)/);
+		assert.match(html, /tab\.addEventListener\("keydown", handleTabKeydown\)/);
+		assert.match(html, /dashboard\.ui\.loading":"불러오는 중/);
+		assert.match(html, /dashboard\.ui\.lastUpdated":"마지막 갱신: \{time\}/);
+		assert.match(html, /dashboard\.ui\.copied":"복사됨/);
+		assert.match(html, /dashboard\.settings\.pendingHeading":"저장 전 설정 \(\{count\}\)/);
+		assert.match(html, /dashboard\.settings\.resetChanges":"변경 되돌리기/);
+		assert.match(html, /dashboard\.filter\.search":"검색/);
+		assert.match(html, /dashboard\.filter\.noMatches":"일치하는 항목이 없습니다/);
+		assert.match(html, /dashboard\.actions\.heading":"다음 작업/);
+		assert.match(html, /dashboard\.actions\.empty":"처리할 항목 없음/);
+		assert.match(html, /dashboard\.a11y\.state\.warn":"확인 필요/);
+		assert.match(html, /dashboard\.a11y\.copyCommand":"명령 복사: \{command\}/);
+		assert.match(html, /dashboard\.docs\.reviewerState":"현재 검수자: \{kind\} \/ \{id\}/);
+		assert.match(html, /dashboard\.docs\.reviewerStateMissing":"검수 작업 버튼을 쓰려면 검수자 ID를 입력하세요/);
+		assert.match(html, /dashboard\.docs\.action\.currentStatus":"이미 \{status\} 상태입니다/);
+		assert.match(html, /function setLoading\(loading\)/);
+		assert.match(html, /document\.body\.setAttribute\("aria-busy", isLoading \? "true" : "false"\)/);
+		assert.match(html, /const reload = document\.getElementById\("reload"\)/);
+		assert.match(html, /reload\.disabled = isLoading/);
+		assert.match(html, /reload\.setAttribute\("aria-disabled", isLoading \? "true" : "false"\)/);
+		assert.match(html, /markDataUpdated\(\);/);
+		assert.match(html, /const copyFeedbackMs = 1500/);
+		assert.match(html, /function deriveDashboardActions\(\)/);
+		assert.match(html, /function renderNextActions\(root\)/);
+		assert.match(html, /return actions\.slice\(0, 5\)/);
+		assert.match(html, /activateTab\(action\.tab, \{ focus: true \}\)/);
+		assert.match(html, /id="settings-pending-summary" class="settings-pending" aria-live="polite" hidden/);
+		assert.match(html, /function renderSettingsPendingSummary\(\)/);
+		assert.match(html, /function resetPendingSettings\(\)/);
+		assert.match(html, /messageWithCount\("dashboard\.settings\.pendingHeading", String\(pending\.size\)\)/);
+		assert.match(html, /messageFormat\("dashboard\.settings\.pendingItem"/);
+		assert.match(html, /reset\.addEventListener\("click", resetPendingSettings\)/);
+		assert.match(html, /id="doc-reviewer-state" class="doc-reviewer-state" aria-live="polite"/);
+		assert.match(html, /function renderDocumentReviewerState\(\)/);
+		assert.match(html, /messageFormat\("dashboard\.docs\.reviewerState"/);
+		assert.match(html, /document\.getElementById\("doc-reviewer-kind"\)\.addEventListener\("change"/);
+		assert.match(html, /function renderListFilters\(kind, stateOptions, rerender\)/);
+		assert.match(html, /const listFilters = \{/);
+		assert.match(html, /const searchId = "dashboard-" \+ kind \+ "-filter-search"/);
+		assert.match(html, /search\.id = searchId/);
+		assert.match(html, /renderListFilters\("verification", \["all", "runnable", "unavailable"\], renderVerificationPanel\)/);
+		assert.match(html, /renderListFilters\("commands", \["all", "runnable", "unavailable"\], renderCommandPanel\)/);
+		assert.match(html, /renderListFilters\("skills", \["all", "aligned", "mismatch", "missing"\], renderSkillsPanel\)/);
+		assert.match(html, /filterTextMatches\(listFilters\.commands\.query/);
+		assert.match(html, /filterTextMatches\(listFilters\.skills\.query/);
+		assert.match(html, /\.collapsible-details \{/);
+		assert.match(html, /function createCollapsibleDetails\(titleKey\)/);
+		assert.match(html, /document\.createElement\("details"\)/);
+		assert.match(html, /createCollapsibleDetails\("dashboard\.verification\.skipped"\)/);
+		assert.match(html, /createCollapsibleDetails\("dashboard\.commands\.effectGraph"\)/);
+		assert.match(html, /createCollapsibleDetails\(titleKey\)/);
+		assert.match(html, /--row-bg:/);
+		assert.match(html, /\.command-row:nth-of-type\(even\)/);
+		assert.match(html, /\.verification-row:nth-of-type\(even\)/);
+		assert.match(html, /\.doc-row:nth-of-type\(even\)/);
+		assert.match(html, /\.command-state\.ok \{/);
+		assert.match(html, /\.doc-status\.approved \{/);
+		assert.match(html, /status\.className = "doc-status " \+ entry\.status/);
+		assert.match(html, /function statusStateLabel\(tone\)/);
+		assert.match(html, /\.status-badge \{/);
+		assert.match(html, /badge\.className = "status-badge " \+ tone/);
+		assert.match(html, /badge\.textContent = statusStateLabel\(tone\)/);
+		assert.match(html, /content\.setAttribute\(\s*"aria-label",\s*message\(labelKey\) \+ ": " \+ value \+ " \(" \+ statusStateLabel\(tone\) \+ "\)"/);
+		assert.match(html, /function setButtonAccessibleLabel\(button, label\)/);
+		assert.match(html, /function showCopyButtonFeedback\(button, restoreLabel\)/);
+		assert.match(html, /setButtonAccessibleLabel\(button, message\("dashboard\.ui\.copied"\)\)/);
+		assert.match(html, /copyCommandLabel\(recommendation\.command\)/);
+		assert.match(html, /showCopyButtonFeedback\(copy, copyLabel\)/);
+		assert.match(html, /button\.setAttribute\("aria-disabled", button\.disabled \? "true" : "false"\)/);
 		assert.match(html, /fetch\("\/api\/status"/);
 		assert.match(html, /fetch\("\/api\/docs\/review"/);
 		assert.match(html, /const initialStatusSnapshot = \{"schema_version":"1","command":"dashboard status"/);
@@ -493,7 +571,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /Rewrite the introduction\./);
 		assert.match(html, /button\.title = actionLabel;/);
 		assert.match(html, /button\.setAttribute\("aria-label", actionLabel\);/);
-		assert.match(html, /button\.disabled = reviewerIdMissing \|\| entry\.status === nextStatus;/);
+		assert.match(html, /const alreadySelected = entry\.status === nextStatus;/);
+		assert.match(html, /button\.disabled = reviewerIdMissing \|\| alreadySelected;/);
 		assert.match(html, /function documentMatchesPathFilter\(entry, query\)/);
 		assert.match(html, /function currentReviewerId\(\)/);
 		assert.match(html, /docReview\.documents\.filter\(\(entry\) => documentMatchesPathFilter\(entry, pathFilter\)\)/);
@@ -750,6 +829,29 @@ test('dashboard serves and updates safe preferences', async () => {
 		});
 		assert.equal(invalidDocReviewUpdate.status, 400);
 		assert.equal(await invalidDocReviewUpdate.text(), 'Bad request');
+
+		const bulkDocReviewUpdate = await fetch(new URL('/api/docs/review', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({
+				path: 'docs/guide.md',
+				paths: ['docs/guide.md', 'docs/other.md'],
+				status: 'approved',
+				reviewerKind: 'llm',
+				reviewerId: 'opencode',
+			}),
+		});
+		assert.equal(bulkDocReviewUpdate.status, 400);
+		assert.equal(await bulkDocReviewUpdate.text(), 'Bad request');
+
+		const unchangedDocsReview = await fetch(new URL('/api/docs/review', info.url), {
+			headers: { 'x-mustflow-dashboard-token': token },
+		}).then((response) => response.json());
+		assert.equal(unchangedDocsReview.count, 1);
+		assert.equal(unchangedDocsReview.documents[0].status, 'pending');
 
 		const approvedDocReview = await fetch(new URL('/api/docs/review', info.url), {
 			method: 'POST',

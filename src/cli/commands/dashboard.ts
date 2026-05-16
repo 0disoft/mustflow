@@ -70,6 +70,7 @@ const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
 const DEFAULT_DASHBOARD_PORT = 0;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+const DOC_REVIEW_BULK_PAYLOAD_FIELDS = ['paths', 'documents', 'entries'] as const;
 
 const RELEASE_FILE_PATTERNS = [
 	/^package\.json$/u,
@@ -407,6 +408,12 @@ function readDocReviewPayload(value: unknown): {
 	}
 
 	const payload = value as Record<string, unknown>;
+	for (const field of DOC_REVIEW_BULK_PAYLOAD_FIELDS) {
+		if (field in payload) {
+			throw new Error('Bulk documentation review updates require a separate confirmed flow.');
+		}
+	}
+
 	const status = readRequiredStringField(payload, 'status');
 	if (status !== 'approved' && status !== 'needs_human' && status !== 'ignored') {
 		throw new Error('status must be approved, needs_human, or ignored.');
