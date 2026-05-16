@@ -16,6 +16,8 @@ import {
 } from './verification-plan.js';
 
 export const TEST_SELECTION_CONFIG_RELATIVE_PATH = '.mustflow/config/test-selection.toml';
+const STALE_OR_MISSING_RULES_NOTE =
+	'Project-declared test selection rules did not cover the current changed files; review .mustflow/config/test-selection.toml for stale or missing rules.';
 
 export type TestSelectionStatus = 'missing' | 'matched' | 'unmatched' | 'invalid';
 export type TestSelectionCandidateRole = 'primary' | 'fallback';
@@ -336,7 +338,9 @@ export function createProjectTestSelectionPlan(
 		matches.length > 0
 			? 'Matched project-declared test selection rules are treated as a minimum selected set.'
 			: 'No project-declared test selection rules matched the current changed files.',
+		...(matches.length > 0 ? [] : [STALE_OR_MISSING_RULES_NOTE]),
 		'Local index data and performance history may add suggestions later, but must not remove manifest-selected tests.',
+		'Absence of historical failures is not evidence that a test can be omitted.',
 		'Test targets are passed only when the selected command intent declares selection.accepts_test_targets = true.',
 	];
 

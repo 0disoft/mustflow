@@ -220,6 +220,79 @@ required_after = ["test_change"]
 	}
 });
 
+test('reports missing project-declared test selection without inferring a subset', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-missing.txt');
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.test_selection.status, 'missing');
+		assert.equal(report.test_selection.authority, '.mustflow/config/test-selection.toml');
+		assert.equal(report.test_selection.commandAuthority, '.mustflow/config/commands.toml');
+		assert.equal(report.test_selection.grantsCommandAuthority, false);
+		assert.deepEqual(report.test_selection.matches, []);
+		assert.deepEqual(report.test_selection.selected, []);
+		assert.ok(
+			report.test_selection.notes.includes(
+				'No project-declared test selection manifest exists; mustflow will not infer a user-project test subset.',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('warns when project-declared test selection rules do not match changed files', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-unmatched.txt');
+	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			selectionPath,
+			`
+schema_version = "1"
+
+[[rules]]
+id = "source-only"
+risk = "medium"
+reason = "Source changes use declared source tests."
+match = { paths = ["src/**"], surfaces = ["implementation"] }
+select = { intent = "source_related", fallback_intent = "source_fast" }
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.test_selection.status, 'unmatched');
+		assert.deepEqual(report.test_selection.matches, []);
+		assert.deepEqual(report.test_selection.selected, []);
+		assert.ok(
+			report.test_selection.notes.includes(
+				'Project-declared test selection rules did not cover the current changed files; review .mustflow/config/test-selection.toml for stale or missing rules.',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('treats project-declared test selection matches as a minimum selected set', () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-manifest.txt');
@@ -257,6 +330,24 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
+
+[intents.manifest_broad]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run broader verification."
+argv = ['${process.execPath}', '-e', 'console.log("manifest broad")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["test_change"]
+
+[intents.manifest_broad.relations]
+subsumes = ["manifest_related"]
 `,
 		);
 		writeFileSync(
@@ -285,6 +376,12 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 		assert.equal(report.test_selection.status, 'matched');
 		assert.equal(report.test_selection.grantsCommandAuthority, false);
 		assert.equal(report.test_selection.commandAuthority, '.mustflow/config/commands.toml');
+		assert.ok(
+			report.test_selection.notes.includes(
+				'Local index data and performance history may add suggestions later, but must not remove manifest-selected tests.',
+			),
+		);
+		assert.ok(report.test_selection.notes.includes('Absence of historical failures is not evidence that a test can be omitted.'));
 		assert.deepEqual(report.test_selection.matches[0], {
 			ruleId: 'fixture-selection',
 			risk: 'medium',
@@ -312,7 +409,7 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 		assert.deepEqual(report.gaps, []);
 		assert.deepEqual(
 			report.schedule.entries.map((entry) => entry.intent),
-			['manifest_related'],
+			['manifest_broad', 'manifest_related'],
 		);
 	} finally {
 		removeTempProject(projectPath);
