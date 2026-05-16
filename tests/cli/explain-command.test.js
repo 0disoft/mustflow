@@ -53,6 +53,15 @@ required_after = ["graph_view_fixture"]
 	);
 }
 
+function assertExplanationOnlyEffectGraph(effectGraph, status) {
+	assert.equal(effectGraph.source, 'local_index');
+	assert.equal(effectGraph.authority, 'explanation_only');
+	assert.equal(effectGraph.commandAuthority, '.mustflow/config/commands.toml');
+	assert.equal(effectGraph.grantsCommandAuthority, false);
+	assert.equal(effectGraph.status, status);
+	assert.equal(effectGraph.indexFresh, status === 'fresh');
+}
+
 test('explains configured agent-runnable command intents as json', () => {
 	const projectPath = createTempProject('mustflow-explain-command-');
 
@@ -77,12 +86,7 @@ test('explains configured agent-runnable command intents as json', () => {
 		assert.equal(report.decision.intent.destructive, false);
 		assert.deepEqual(report.decision.intent.successExitCodes, [0]);
 		assert.deepEqual(report.decision.intent.requiredAfter, ['mustflow_config_change', 'mustflow_docs_change']);
-		assert.equal(report.decision.effectGraph.source, 'local_index');
-		assert.equal(report.decision.effectGraph.authority, 'explanation_only');
-		assert.equal(report.decision.effectGraph.commandAuthority, '.mustflow/config/commands.toml');
-		assert.equal(report.decision.effectGraph.grantsCommandAuthority, false);
-		assert.equal(report.decision.effectGraph.status, 'missing');
-		assert.equal(report.decision.effectGraph.indexFresh, false);
+		assertExplanationOnlyEffectGraph(report.decision.effectGraph, 'missing');
 		assert.deepEqual(report.decision.effectGraph.writeLocks, []);
 		assert.deepEqual(report.decision.effectGraph.lockConflicts, []);
 	} finally {
@@ -105,11 +109,7 @@ test('explains command-effect graph rows from a fresh local index', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.decision.kind, 'allowed');
-		assert.equal(report.decision.effectGraph.authority, 'explanation_only');
-		assert.equal(report.decision.effectGraph.commandAuthority, '.mustflow/config/commands.toml');
-		assert.equal(report.decision.effectGraph.grantsCommandAuthority, false);
-		assert.equal(report.decision.effectGraph.status, 'fresh');
-		assert.equal(report.decision.effectGraph.indexFresh, true);
+		assertExplanationOnlyEffectGraph(report.decision.effectGraph, 'fresh');
 		assert.deepEqual(report.decision.effectGraph.stalePaths, []);
 		assert.deepEqual(report.decision.effectGraph.writeLocks, [
 			{
@@ -133,6 +133,31 @@ test('explains command-effect graph rows from a fresh local index', () => {
 				conflictingConcurrencies: ['exclusive'],
 			},
 		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps stale command-effect graph context explanation-only', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+		appendCommandGraphFixture(projectPath);
+
+		const indexResult = runCli(projectPath, ['index', '--json']);
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+		appendFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), '\n# stale graph marker\n');
+
+		const result = runCli(projectPath, ['explain', 'command', 'graph_writer_a', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.decision.kind, 'allowed');
+		assertExplanationOnlyEffectGraph(report.decision.effectGraph, 'stale');
+		assert.deepEqual(report.decision.effectGraph.stalePaths, ['.mustflow/config/commands.toml']);
+		assert.deepEqual(report.decision.effectGraph.writeLocks, []);
+		assert.deepEqual(report.decision.effectGraph.lockConflicts, []);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -4,6 +4,7 @@ description: 변경 경로, 공개 표면, 검증 이유를 분류하는 읽기 
 ---
 
 `mf classify --changed`는 `git status --short --untracked-files=all`을 읽고 변경된 경로를 분류한 뒤, 어떤 공개 표면과 검증 이유가 영향을 받는지 보고합니다.
+알려진 분류 규칙과 맞지 않는 경로도 `surface.kind: "unclassified_path"`와 `unknown_change`로 보고합니다. 그래서 검증 계획이 빈 상태로 끝나지 않고 보수적인 검증이나 명시적인 빈틈으로 드러납니다.
 
 수정 전 계획 단계에서 경로만 확인하려면 명시 경로를 전달합니다.
 

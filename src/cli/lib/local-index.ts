@@ -16,7 +16,7 @@ import {
 import { normalizeCommandEffects, type NormalizedCommandEffect } from '../../core/command-effects.js';
 import { listChangeClassificationRuleDescriptors } from '../../core/change-classification.js';
 
-const LOCAL_INDEX_SCHEMA_VERSION = '12';
+const LOCAL_INDEX_SCHEMA_VERSION = '13';
 const LOCAL_INDEX_PARSER_VERSION = '1';
 const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
@@ -1189,10 +1189,9 @@ CREATE TABLE command_effects (
   source TEXT NOT NULL,
   access TEXT NOT NULL,
   mode TEXT NOT NULL,
-  path TEXT NOT NULL,
+  path TEXT,
   lock TEXT NOT NULL,
-  concurrency TEXT NOT NULL,
-  PRIMARY KEY (intent, source, access, mode, path, lock, concurrency)
+  concurrency TEXT NOT NULL
 );
 
 CREATE VIEW command_write_locks AS
@@ -1513,7 +1512,7 @@ function populateSearchTables(
 
 	for (const intent of commandIntents) {
 		const effects = intent.effects
-			.flatMap((effect) => [effect.lock, effect.path, effect.mode, effect.access, effect.concurrency])
+			.flatMap((effect) => [effect.lock, effect.path ?? '', effect.mode, effect.access, effect.concurrency])
 			.join(' ');
 		insertSearchNgrams(
 			database,
@@ -1680,7 +1679,9 @@ function populateDatabase(
 				'INSERT INTO command_effects (intent, source, access, mode, path, lock, concurrency) VALUES (?, ?, ?, ?, ?, ?, ?)',
 				[effect.intent, effect.source, effect.access, effect.mode, effect.path, effect.lock, effect.concurrency],
 			);
-			insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.path, 'command_effect_path');
+			if (effect.path !== null) {
+				insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.path, 'command_effect_path');
+			}
 			insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.lock, 'command_effect_lock');
 			insertDocumentTerm(database, '.mustflow/config/commands.toml', effect.mode, 'command_effect_mode');
 		}
@@ -2353,7 +2354,7 @@ function getCommandEffects(database: SqlJsDatabase, intent: string): NormalizedC
 		source: toSearchString(row.source) as NormalizedCommandEffect['source'],
 		access: toSearchString(row.access) as NormalizedCommandEffect['access'],
 		mode: toSearchString(row.mode) as NormalizedCommandEffect['mode'],
-		path: toSearchString(row.path),
+		path: row.path === null || row.path === undefined ? null : toSearchString(row.path),
 		lock: toSearchString(row.lock),
 		concurrency: toSearchString(row.concurrency) as NormalizedCommandEffect['concurrency'],
 	}));
@@ -2685,9 +2686,9 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				const effectLocks = [...new Set(effects.map((effect) => effect.lock))].sort((left, right) =>
 					left.localeCompare(right),
 				);
-				const effectPaths = [...new Set(effects.map((effect) => effect.path))].sort((left, right) =>
-					left.localeCompare(right),
-				);
+				const effectPaths = [
+					...new Set(effects.map((effect) => effect.path).filter((effectPath): effectPath is string => effectPath !== null)),
+				].sort((left, right) => left.localeCompare(right));
 				const effectModes = [...new Set(effects.map((effect) => effect.mode))].sort((left, right) =>
 					left.localeCompare(right),
 				);

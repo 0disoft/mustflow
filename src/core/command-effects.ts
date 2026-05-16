@@ -23,7 +23,7 @@ export interface NormalizedCommandEffect {
 	readonly source: CommandEffectSource;
 	readonly access: CommandEffectAccess;
 	readonly mode: CommandEffectMode;
-	readonly path: string;
+	readonly path: string | null;
 	readonly lock: string;
 	readonly concurrency: CommandEffectConcurrency;
 }
@@ -120,6 +120,20 @@ function normalizeDeclaredEffect(
 
 	if (!lock && paths.length === 0) {
 		throw new Error(`Command effect for intent ${intentName} must define path, paths, or lock`);
+	}
+
+	if (paths.length === 0) {
+		return [
+			{
+				intent: intentName,
+				source: 'effects',
+				access,
+				mode,
+				path: null,
+				lock: lock as string,
+				concurrency,
+			},
+		];
 	}
 
 	return paths.map((rawPath) => {

@@ -227,6 +227,53 @@ function validateCommandIntentEffects(intentName: string, intent: TomlTable, iss
 	}
 }
 
+function validateCommandIntentSelection(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
+	if (!hasOwn(intent, 'selection')) {
+		return;
+	}
+
+	if (!isRecord(intent.selection)) {
+		issues.push(commandContractIssue(`[commands.intents.${intentName}.selection] must be a TOML table`));
+		return;
+	}
+
+	const selection = intent.selection;
+	validateStringField(selection, 'coverage_level', `[commands.intents.${intentName}.selection].coverage_level`, issues);
+	validateStringField(
+		selection,
+		'coverage_confidence',
+		`[commands.intents.${intentName}.selection].coverage_confidence`,
+		issues,
+	);
+	validateStringField(
+		selection,
+		'accepts_changed_files',
+		`[commands.intents.${intentName}.selection].accepts_changed_files`,
+		issues,
+	);
+	validateStringArrayField(
+		selection,
+		'fallback_intents',
+		`[commands.intents.${intentName}.selection].fallback_intents`,
+		issues,
+	);
+	validateStringArrayField(selection, 'escalate_to', `[commands.intents.${intentName}.selection].escalate_to`, issues);
+	validateBooleanField(
+		selection,
+		'accepts_test_targets',
+		`[commands.intents.${intentName}.selection].accepts_test_targets`,
+		issues,
+	);
+
+	if (selection.accepts_test_targets === true && intent.status === 'configured' && !Array.isArray(intent.argv)) {
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}.selection].accepts_test_targets requires argv command mode`,
+			),
+		);
+	}
+}
+
 function validateCommandIntent(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
 	if (!commandIntentNameIsSafe(intentName)) {
 		issues.push(commandContractIssue(`Intent ${intentName} name must contain only letters, numbers, underscores, and hyphens`));
@@ -255,6 +302,7 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		issues,
 	);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
+	validateCommandIntentSelection(intentName, intent, issues);
 
 	if (intent.status !== 'configured') {
 		return;

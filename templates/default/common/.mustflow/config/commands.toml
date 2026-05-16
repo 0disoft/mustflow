@@ -38,7 +38,7 @@ status = "unknown"
 description = "Run the fast test baseline."
 reason = "This repository has not declared its fast-test command yet."
 agent_action = "do_not_guess_report_missing"
-required_after = ["low_risk_code_change", "copy_change", "i18n_change"]
+required_after = ["low_risk_code_change", "copy_change", "i18n_change", "unknown_change"]
 
 [intents.test_coverage]
 status = "manual_only"

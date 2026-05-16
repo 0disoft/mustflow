@@ -76,6 +76,7 @@ function cleanCoverageCommands(options = {}) {
 		'mustflow_docs_change',
 		'public_api_change',
 		'test_change',
+		'unknown_change',
 	];
 	const releaseReasons = ['package_metadata_change', 'packaging_change', 'release_risk', 'template_version_change'];
 

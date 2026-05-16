@@ -76,7 +76,17 @@ function surface(
 	};
 }
 
-const UNKNOWN_SURFACE = surface('unclassified_path', 'unknown', false, [], [], 'not_applicable', []);
+const UNKNOWN_CHANGE_REASON = 'unknown_change';
+
+const UNKNOWN_SURFACE = surface(
+	'unclassified_path',
+	'unknown',
+	false,
+	[UNKNOWN_CHANGE_REASON],
+	['unclassified repository path'],
+	'not_applicable',
+	['classification rule coverage'],
+);
 
 function rule(
 	id: string,
@@ -327,7 +337,10 @@ export function listChangeClassificationRuleDescriptors(): readonly ChangeClassi
 }
 
 export function listChangeClassificationValidationReasons(): readonly string[] {
-	return uniqueSorted(CHANGE_CLASSIFICATION_RULES.flatMap((classificationRule) => classificationRule.surface.validationReasons));
+	return uniqueSorted([
+		...CHANGE_CLASSIFICATION_RULES.flatMap((classificationRule) => classificationRule.surface.validationReasons),
+		...UNKNOWN_SURFACE.validationReasons,
+	]);
 }
 
 export function createChangeClassificationReport(

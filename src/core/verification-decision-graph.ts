@@ -47,6 +47,9 @@ export interface VerificationDecisionCandidateInput {
 	readonly status: VerificationRunnableStatus;
 	readonly skipReason: VerificationSkipReason | null;
 	readonly detail: string | null;
+	readonly candidateState?: string;
+	readonly eligibilityState?: string;
+	readonly selectionState?: string;
 }
 
 export interface VerificationDecisionGapInput {
@@ -65,6 +68,35 @@ export interface VerificationDecisionCommandEffectMetadata {
 	readonly concurrency: string | null;
 }
 
+export interface VerificationDecisionCoverageHints {
+	readonly reasons: readonly string[];
+	readonly surfaces: readonly string[];
+	readonly paths: readonly string[];
+	readonly contracts: readonly string[];
+}
+
+export interface VerificationDecisionSelectionHints {
+	readonly coverage_level: string | null;
+	readonly coverage_confidence: string | null;
+	readonly accepts_changed_files: string | null;
+	readonly fallback_intents: readonly string[];
+	readonly escalate_to: readonly string[];
+}
+
+export interface VerificationDecisionCostHints {
+	readonly expected_seconds: number | null;
+	readonly cold_start_seconds: number | null;
+	readonly timeout_ratio_expectation: number | null;
+	readonly cost_tier: string | null;
+}
+
+export interface VerificationDecisionRelationHints {
+	readonly subsumes: readonly string[];
+	readonly subsumed_by: readonly string[];
+	readonly requires_with: readonly string[];
+	readonly escalate_to: readonly string[];
+}
+
 export interface VerificationDecisionCommandMetadata {
 	readonly status: string | null;
 	readonly lifecycle: string | null;
@@ -76,6 +108,10 @@ export interface VerificationDecisionCommandMetadata {
 	readonly required_after: readonly string[];
 	readonly network: boolean | null;
 	readonly destructive: boolean | null;
+	readonly covers: VerificationDecisionCoverageHints | null;
+	readonly selection: VerificationDecisionSelectionHints | null;
+	readonly cost: VerificationDecisionCostHints | null;
+	readonly relations: VerificationDecisionRelationHints | null;
 }
 
 export interface VerificationDecisionGraphNode {
@@ -102,6 +138,8 @@ export interface VerificationDecisionGraphSummary {
 	readonly blocked: number;
 	readonly manual_only: number;
 	readonly unknown: number;
+	readonly selected: number;
+	readonly not_selected: number;
 	readonly gapCount: number;
 }
 
@@ -144,6 +182,73 @@ function readCommandEffects(rawIntent: TomlTable): VerificationDecisionCommandEf
 	}));
 }
 
+function readNonNegativeNumber(table: TomlTable, key: string): number | null {
+	const value = table[key];
+	return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function readNonNegativeInteger(table: TomlTable, key: string): number | null {
+	const value = table[key];
+	return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : null;
+}
+
+function readCoverageHints(rawIntent: TomlTable): VerificationDecisionCoverageHints | null {
+	const covers = rawIntent.covers;
+	if (!isRecord(covers)) {
+		return null;
+	}
+
+	return {
+		reasons: readStringArray(covers, 'reasons') ?? [],
+		surfaces: readStringArray(covers, 'surfaces') ?? [],
+		paths: readStringArray(covers, 'paths') ?? [],
+		contracts: readStringArray(covers, 'contracts') ?? [],
+	};
+}
+
+function readSelectionHints(rawIntent: TomlTable): VerificationDecisionSelectionHints | null {
+	const selection = rawIntent.selection;
+	if (!isRecord(selection)) {
+		return null;
+	}
+
+	return {
+		coverage_level: readString(selection, 'coverage_level') ?? null,
+		coverage_confidence: readString(selection, 'coverage_confidence') ?? null,
+		accepts_changed_files: readString(selection, 'accepts_changed_files') ?? null,
+		fallback_intents: readStringArray(selection, 'fallback_intents') ?? [],
+		escalate_to: readStringArray(selection, 'escalate_to') ?? [],
+	};
+}
+
+function readCostHints(rawIntent: TomlTable): VerificationDecisionCostHints | null {
+	const cost = rawIntent.cost;
+	if (!isRecord(cost)) {
+		return null;
+	}
+
+	return {
+		expected_seconds: readNonNegativeInteger(cost, 'expected_seconds'),
+		cold_start_seconds: readNonNegativeInteger(cost, 'cold_start_seconds'),
+		timeout_ratio_expectation: readNonNegativeNumber(cost, 'timeout_ratio_expectation'),
+		cost_tier: readString(cost, 'cost_tier') ?? null,
+	};
+}
+
+function readRelationHints(rawIntent: TomlTable): VerificationDecisionRelationHints | null {
+	const relations = rawIntent.relations;
+	if (!isRecord(relations)) {
+		return null;
+	}
+
+	return {
+		subsumes: readStringArray(relations, 'subsumes') ?? [],
+		subsumed_by: readStringArray(relations, 'subsumed_by') ?? [],
+		requires_with: readStringArray(relations, 'requires_with') ?? [],
+		escalate_to: readStringArray(relations, 'escalate_to') ?? [],
+	};
+}
+
 function readCommandMetadata(commandContract: CommandContract, intent: string | null): VerificationDecisionCommandMetadata | null {
 	if (!intent) {
 		return null;
@@ -165,6 +270,10 @@ function readCommandMetadata(commandContract: CommandContract, intent: string | 
 		required_after: readStringArray(rawIntent, 'required_after') ?? [],
 		network: readBoolean(rawIntent, 'network'),
 		destructive: readBoolean(rawIntent, 'destructive'),
+		covers: readCoverageHints(rawIntent),
+		selection: readSelectionHints(rawIntent),
+		cost: readCostHints(rawIntent),
+		relations: readRelationHints(rawIntent),
 	};
 }
 
@@ -218,6 +327,9 @@ function summarize(nodes: readonly VerificationDecisionGraphNode[], edgeCount: n
 		blocked: nodes.filter((node) => node.status === 'blocked').length,
 		manual_only: nodes.filter((node) => node.status === 'manual_only').length,
 		unknown: nodes.filter((node) => node.status === 'unknown').length,
+		selected: nodes.filter((node) => node.kind === 'command_candidate' && node.data.selectionState === 'selected').length,
+		not_selected: nodes.filter((node) => node.kind === 'command_candidate' && node.data.selectionState === 'not_selected')
+			.length,
 		gapCount: nodes.filter((node) => node.kind === 'gap').length,
 	};
 }
@@ -290,6 +402,9 @@ export function createVerificationDecisionGraph(
 				candidateStatus: candidate.status,
 				skipReason: candidate.skipReason,
 				detail: candidate.detail,
+				candidateState: candidate.candidateState ?? null,
+				eligibilityState: candidate.eligibilityState ?? null,
+				selectionState: candidate.selectionState ?? null,
 				command,
 			},
 		});

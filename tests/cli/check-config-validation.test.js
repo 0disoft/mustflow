@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
@@ -602,6 +602,118 @@ test('fails when preferences configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.source_locale must be a string/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.target_locales must be a string array/);
 		assert.match(result.stderr, /\[preferences\.product_i18n\]\.translation_policy must be/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('validates project-declared test selection manifest intent references', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+[intents.project_related_tests]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared related tests."
+argv = ["node", "-e", "console.log('related')"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+
+[intents.project_fast_tests]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared fast fallback tests."
+argv = ["node", "-e", "console.log('fast')"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+`,
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', version: '1.2.3' }, null, 2)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'test-selection.toml'),
+			`
+schema_version = "1"
+
+[[rules]]
+id = "source-related"
+risk = "medium"
+reason = "Source changes use the project-declared related-test command."
+match = { paths = ["src/**"], surfaces = ["source"] }
+select = { intent = "project_related_tests", fallback_intent = "project_fast_tests", test_targets = ["src"] }
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(check.ok, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects test selection manifests that guess commands or reference unavailable intents', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'test-selection.toml'),
+			`
+schema_version = "1"
+run_policy = "agent_allowed"
+
+[[rules]]
+id = "source-related"
+risk = "medium"
+reason = "This tries to select undeclared tests."
+match = { paths = ["src/**"], surfaces = ["source"] }
+select = { intent = "missing_related", fallback_intent = "test_fast", cmd = "npm test" }
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.test_selection.command_authority_field',
+			'Strict: .mustflow/config/test-selection.toml root.run_policy cannot define command authority; use .mustflow/config/commands.toml',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.test_selection.command_authority_field',
+			'Strict: .mustflow/config/test-selection.toml rules[0].select.cmd cannot define command authority; use .mustflow/config/commands.toml',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.test_selection.unknown_command_intent',
+			'Strict: .mustflow/config/test-selection.toml rules[0].select.intent references unknown command intent "missing_related"',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.test_selection.invalid_shape',
+			'Strict: .mustflow/config/test-selection.toml rules[0].select.fallback_intent references command intent "test_fast" that is not configured',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

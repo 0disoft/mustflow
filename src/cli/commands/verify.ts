@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
@@ -29,6 +29,8 @@ import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
 const VERIFY_SCHEMA_VERSION = '1';
+const VERIFY_RUN_DIR = path.join('.mustflow', 'state', 'runs', 'verify-latest');
+const LATEST_RUN_RECEIPT_PATH = path.join('.mustflow', 'state', 'runs', 'latest.json');
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
 type VerificationResultStatus = 'passed' | 'failed' | 'timed_out' | 'start_failed' | 'skipped';
@@ -67,6 +69,37 @@ interface VerificationOutput {
 	readonly status: VerificationStatus;
 	readonly summary: VerificationSummary;
 	readonly results: readonly VerificationResult[];
+}
+
+interface VerifyRunReceiptManifestEntry {
+	readonly intent: string | null;
+	readonly status: VerificationResultStatus;
+	readonly skipped: boolean;
+	readonly receipt_path: string | null;
+}
+
+interface VerifyRunReceiptManifest {
+	readonly schema_version: string;
+	readonly command: 'verify';
+	readonly reason: string;
+	readonly reasons: readonly string[];
+	readonly plan_source: string | null;
+	readonly status: VerificationStatus;
+	readonly summary: VerificationSummary;
+	readonly receipts: readonly VerifyRunReceiptManifestEntry[];
+}
+
+interface VerifyLatestRunPointer {
+	readonly schema_version: string;
+	readonly command: 'verify';
+	readonly kind: 'verify_run_summary';
+	readonly reason: string;
+	readonly reasons: readonly string[];
+	readonly plan_source: string | null;
+	readonly status: VerificationStatus;
+	readonly summary: VerificationSummary;
+	readonly run_dir: string;
+	readonly manifest_path: string;
 }
 
 export interface VerifyInput {
@@ -252,6 +285,15 @@ function parseVerifyArgs(args: readonly string[]): {
 
 function uniqueStrings(values: readonly string[]): string[] {
 	return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))];
+}
+
+function toPosixPath(value: string): string {
+	return value.split(path.sep).join('/');
+}
+
+function sanitizeIntentFilePart(value: string): string {
+	const sanitized = value.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '');
+	return sanitized.length > 0 ? sanitized.slice(0, 80) : 'intent';
 }
 
 function readStringArray(value: unknown): string[] {
@@ -506,12 +548,18 @@ function candidateResultKey(candidate: ChangeVerificationCandidate): string {
 function createSkippedResults(
 	candidates: readonly ChangeVerificationCandidate[],
 	scheduledIntents: ReadonlySet<string>,
+	gaps: readonly ChangeVerificationReport['gaps'][number][],
 ): VerificationResult[] {
 	const seen = new Set<string>();
 	const results: VerificationResult[] = [];
+	const activeGapReasons = new Set(gaps.map((gap) => gap.reason));
 
 	for (const candidate of candidates) {
 		if (candidate.status === 'runnable' || (candidate.intent && scheduledIntents.has(candidate.intent))) {
+			continue;
+		}
+
+		if (candidate.candidateState === 'gap' && !activeGapReasons.has(candidate.reason)) {
 			continue;
 		}
 
@@ -533,9 +581,29 @@ function createSkippedResults(
 	return results;
 }
 
-async function runVerificationIntent(intent: string, lang: CliLang): Promise<VerificationResult> {
+function testTargetsByScheduledIntent(report: ChangeVerificationReport): ReadonlyMap<string, readonly string[]> {
+	return new Map(
+		report.test_selection.selected
+			.filter(
+				(candidate) =>
+					candidate.status === 'runnable' &&
+					candidate.testTargetsApplied &&
+					candidate.appliedTestTargets.length > 0,
+			)
+			.map((candidate) => [candidate.intent, candidate.appliedTestTargets] as const),
+	);
+}
+
+async function runVerificationIntent(
+	intent: string,
+	lang: CliLang,
+	testTargets: readonly string[] = [],
+): Promise<VerificationResult> {
 	const output = createBufferedOutput();
-	const exitCode = await runRun([intent, '--json'], output.reporter, lang);
+	const exitCode = await runRun([intent, '--json'], output.reporter, lang, {
+		writeLatestReceipt: false,
+		testTargets,
+	});
 	const rawStdout = output.stdout().trim();
 	let receipt: Record<string, unknown> | null = null;
 	let status: VerificationResultStatus = exitCode === 0 ? 'passed' : 'failed';
@@ -602,6 +670,65 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 	return 'passed';
 }
 
+function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput): void {
+	const runDir = path.join(projectRoot, VERIFY_RUN_DIR);
+	const intentDir = path.join(runDir, 'intents');
+	const receipts: VerifyRunReceiptManifestEntry[] = [];
+
+	rmSync(runDir, { recursive: true, force: true });
+	mkdirSync(intentDir, { recursive: true });
+
+	for (const [index, result] of output.results.entries()) {
+		let receiptPath: string | null = null;
+
+		if (result.intent && result.receipt) {
+			const fileName = `${String(index + 1).padStart(3, '0')}-${sanitizeIntentFilePart(result.intent)}.json`;
+			const absoluteReceiptPath = path.join(intentDir, fileName);
+			receiptPath = toPosixPath(path.join(VERIFY_RUN_DIR, 'intents', fileName));
+			writeFileSync(
+				absoluteReceiptPath,
+				`${JSON.stringify({ ...result.receipt, receipt_path: receiptPath }, null, 2)}\n`,
+				'utf8',
+			);
+		}
+
+		receipts.push({
+			intent: result.intent,
+			status: result.status,
+			skipped: result.skipped,
+			receipt_path: receiptPath,
+		});
+	}
+
+	const manifest: VerifyRunReceiptManifest = {
+		schema_version: '1',
+		command: 'verify',
+		reason: output.reason,
+		reasons: output.reasons,
+		plan_source: output.plan_source,
+		status: output.status,
+		summary: output.summary,
+		receipts,
+	};
+
+	writeFileSync(path.join(runDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+
+	const latest: VerifyLatestRunPointer = {
+		schema_version: '1',
+		command: 'verify',
+		kind: 'verify_run_summary',
+		reason: output.reason,
+		reasons: output.reasons,
+		plan_source: output.plan_source,
+		status: output.status,
+		summary: output.summary,
+		run_dir: toPosixPath(VERIFY_RUN_DIR),
+		manifest_path: toPosixPath(path.join(VERIFY_RUN_DIR, 'manifest.json')),
+	};
+
+	writeFileSync(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), `${JSON.stringify(latest, null, 2)}\n`, 'utf8');
+}
+
 async function createVerifyOutput(
 	input: VerifyInput,
 	planSource: string | null,
@@ -611,16 +738,17 @@ async function createVerifyOutput(
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
 	const scheduledIntents = new Set(report.schedule.entries.map((entry) => entry.intent));
+	const scheduledTestTargets = testTargetsByScheduledIntent(report);
 	const results: VerificationResult[] = [];
 
 	for (const entry of report.schedule.entries) {
-		results.push(await runVerificationIntent(entry.intent, lang));
+		results.push(await runVerificationIntent(entry.intent, lang, scheduledTestTargets.get(entry.intent) ?? []));
 	}
 
-	results.push(...createSkippedResults(report.candidates, scheduledIntents));
+	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
 
-	return {
+	const output: VerificationOutput = {
 		schema_version: VERIFY_SCHEMA_VERSION,
 		command: 'verify',
 		mustflow_root: projectRoot,
@@ -631,6 +759,9 @@ async function createVerifyOutput(
 		summary,
 		results,
 	};
+
+	writeVerifyRunReceipts(projectRoot, output);
+	return output;
 }
 
 async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Promise<PlanOnlyOutput> {

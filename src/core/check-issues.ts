@@ -24,6 +24,9 @@ export type CheckIssueId =
 	| 'mustflow.contract_model.command_authority_field'
 	| 'mustflow.contract_model.invalid_match_kind'
 	| 'mustflow.contract_model.invalid_shape'
+	| 'mustflow.test_selection.command_authority_field'
+	| 'mustflow.test_selection.invalid_shape'
+	| 'mustflow.test_selection.unknown_command_intent'
 	| 'mustflow.skill.procedure_only'
 	| 'mustflow.skill.raw_command_block'
 	| 'mustflow.skill.command_permission_claim'
@@ -82,6 +85,9 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.contract_model.command_authority_field', /^Strict: \.mustflow\/config\/(?:changes|surfaces)\.toml .+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.contract_model.invalid_match_kind', /^Strict: \.mustflow\/config\/(?:changes|surfaces)\.toml rules\[\d+\]\.match\.kind must be "exact", "prefix", or "glob"; regular expressions are deferred$/u],
 	['mustflow.contract_model.invalid_shape', /^Strict: \.mustflow\/config\/(?:changes|surfaces)\.toml .+(?:must be|must define|is not allowed)/u],
+	['mustflow.test_selection.command_authority_field', /^Strict: \.mustflow\/config\/test-selection\.toml .+ cannot define command authority; use \.mustflow\/config\/commands\.toml$/u],
+	['mustflow.test_selection.unknown_command_intent', /^Strict: \.mustflow\/config\/test-selection\.toml .+ references unknown command intent "[^"]+"$/u],
+	['mustflow.test_selection.invalid_shape', /^Strict: \.mustflow\/config\/test-selection\.toml .+(?:must be|must define|is not allowed|references command intent "[^"]+" that is not configured)/u],
 	['mustflow.skill.procedure_only', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md metadata\.mustflow_kind must be "procedure"$/u],
 	['mustflow.skill.raw_command_block', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md contains a raw shell command block; reference command intents instead$/u],
 	['mustflow.skill.command_permission_claim', /^Strict: \.mustflow\/skills\/[^/]+\/SKILL\.md claims command execution permission; keep permissions in \.mustflow\/config\/commands\.toml$/u],

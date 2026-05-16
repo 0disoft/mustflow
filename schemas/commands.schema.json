@@ -60,7 +60,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "type": { "enum": ["path"] },
+        "type": { "enum": ["path", "cache", "database", "service", "port", "gpu", "resource"] },
         "paths": { "$ref": "#/$defs/stringArray" },
         "concurrency": { "enum": ["shared_reader", "exclusive_writer", "exclusive"] },
         "description": { "type": "string" }
@@ -76,6 +76,48 @@
         "paths": { "$ref": "#/$defs/stringArray" },
         "lock": { "type": "string" },
         "concurrency": { "enum": ["shared", "exclusive"] }
+      }
+    },
+    "coverageHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reasons": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "paths": { "$ref": "#/$defs/stringArray" },
+        "contracts": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "selectionHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coverage_level": { "type": "string" },
+        "coverage_confidence": { "type": "string" },
+        "accepts_changed_files": { "type": "string" },
+        "accepts_test_targets": { "type": "boolean" },
+        "fallback_intents": { "$ref": "#/$defs/stringArray" },
+        "escalate_to": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "costHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expected_seconds": { "type": "integer", "minimum": 0 },
+        "cold_start_seconds": { "type": "integer", "minimum": 0 },
+        "timeout_ratio_expectation": { "type": "number", "minimum": 0 },
+        "cost_tier": { "type": "string" }
+      }
+    },
+    "relationHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subsumes": { "$ref": "#/$defs/stringArray" },
+        "subsumed_by": { "$ref": "#/$defs/stringArray" },
+        "requires_with": { "$ref": "#/$defs/stringArray" },
+        "escalate_to": { "$ref": "#/$defs/stringArray" }
       }
     },
     "intent": {
@@ -115,6 +157,10 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "covers": { "$ref": "#/$defs/coverageHints" },
+        "selection": { "$ref": "#/$defs/selectionHints" },
+        "cost": { "$ref": "#/$defs/costHints" },
+        "relations": { "$ref": "#/$defs/relationHints" },
         "reason": { "type": "string" },
         "agent_action": { "type": "string" }
       }

@@ -116,7 +116,7 @@ effects = [
 ]
 network = false
 destructive = false
-required_after = ["low_risk_code_change", "copy_change", "i18n_change"]
+required_after = ["low_risk_code_change", "copy_change", "i18n_change", "unknown_change"]
 
 [intents.test_coverage]
 status = "configured"

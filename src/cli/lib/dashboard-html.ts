@@ -196,6 +196,11 @@ export interface DashboardStatusSnapshot {
 		}[];
 		readonly schedule: {
 			readonly runner: string;
+			readonly failurePolicy: {
+				readonly mode: string;
+				readonly startedBatch: string;
+				readonly nextBatch: string;
+			};
 			readonly batches: readonly {
 				readonly index: number;
 				readonly intents: readonly string[];
@@ -205,11 +210,13 @@ export interface DashboardStatusSnapshot {
 			readonly entries: readonly {
 				readonly intent: string;
 				readonly command: string;
+				readonly parallelEligible: boolean;
+				readonly parallelReason: string;
 				readonly locks: readonly string[];
 				readonly effects: readonly {
 					readonly access: string;
 					readonly mode: string;
-					readonly path: string;
+					readonly path: string | null;
 					readonly lock: string;
 					readonly concurrency: string;
 				}[];
@@ -1325,7 +1332,7 @@ function renderVerificationPanel() {
 				if (!entry) continue;
 				const effects = document.createElement("div");
 				effects.className = "verification-files";
-				effects.textContent = message("dashboard.verification.effects") + ": " + entry.effects.map((effect) => effect.mode + " " + effect.path + " [" + effect.lock + "]").join(", ");
+				effects.textContent = message("dashboard.verification.effects") + ": " + entry.effects.map((effect) => effect.mode + " " + (effect.path || effect.lock) + " [" + effect.lock + "]").join(", ");
 				details.appendChild(effects);
 				if (entry.conflicts.length > 0) {
 					const conflicts = document.createElement("div");

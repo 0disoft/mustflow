@@ -567,6 +567,8 @@
         "blocked": { "type": "integer" },
         "manual_only": { "type": "integer" },
         "unknown": { "type": "integer" },
+        "selected": { "type": "integer" },
+        "not_selected": { "type": "integer" },
         "gapCount": { "type": "integer" }
       }
     },

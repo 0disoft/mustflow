@@ -51,6 +51,9 @@
     },
     "decision_graph": {
       "$ref": "#/$defs/verificationDecisionGraph"
+    },
+    "test_selection": {
+      "$ref": "#/$defs/testSelectionReport"
     }
   },
   "$defs": {
@@ -272,6 +275,15 @@
         },
         "detail": {
           "type": ["string", "null"]
+        },
+        "candidateState": {
+          "enum": ["candidate", "gap"]
+        },
+        "eligibilityState": {
+          "enum": ["eligible", "ineligible", "missing"]
+        },
+        "selectionState": {
+          "enum": ["selected", "not_selected", "not_applicable"]
         }
       }
     },
@@ -294,6 +306,113 @@
         }
       }
     },
+    "testSelectionReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "status",
+        "configPath",
+        "authority",
+        "commandAuthority",
+        "grantsCommandAuthority",
+        "matches",
+        "selected",
+        "notes"
+      ],
+      "properties": {
+        "source": {
+          "const": "test-selection.toml"
+        },
+        "status": {
+          "enum": ["missing", "matched", "unmatched", "invalid"]
+        },
+        "configPath": {
+          "const": ".mustflow/config/test-selection.toml"
+        },
+        "authority": {
+          "const": ".mustflow/config/test-selection.toml"
+        },
+        "commandAuthority": {
+          "const": ".mustflow/config/commands.toml"
+        },
+        "grantsCommandAuthority": {
+          "const": false
+        },
+        "matches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/testSelectionRuleMatch"
+          }
+        },
+        "selected": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/testSelectionCandidate"
+          }
+        },
+        "notes": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "testSelectionRuleMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "risk",
+        "reason",
+        "files",
+        "surfaces",
+        "intent",
+        "fallbackIntent",
+        "testTargets"
+      ],
+      "properties": {
+        "ruleId": { "type": "string" },
+        "risk": { "type": "string" },
+        "reason": { "type": "string" },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "intent": { "type": "string" },
+        "fallbackIntent": { "type": "string" },
+        "testTargets": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "testSelectionCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "reason",
+        "intent",
+        "role",
+        "status",
+        "skipReason",
+        "detail",
+        "testTargets",
+        "appliedTestTargets",
+        "testTargetsApplied"
+      ],
+      "properties": {
+        "ruleId": { "type": "string" },
+        "reason": { "type": "string" },
+        "intent": { "type": "string" },
+        "role": { "enum": ["primary", "fallback"] },
+        "status": { "enum": ["runnable", "skipped"] },
+        "skipReason": {
+          "anyOf": [
+            { "$ref": "#/$defs/skipReason" },
+            { "type": "null" }
+          ]
+        },
+        "detail": { "type": ["string", "null"] },
+        "testTargets": { "$ref": "#/$defs/stringArray" },
+        "appliedTestTargets": { "$ref": "#/$defs/stringArray" },
+        "testTargetsApplied": { "type": "boolean" }
+      }
+    },
     "verificationScheduleEffect": {
       "type": "object",
       "additionalProperties": false,
@@ -312,7 +431,7 @@
           "enum": ["read", "write", "append", "replace", "delete_recreate"]
         },
         "path": {
-          "type": "string"
+          "type": ["string", "null"]
         },
         "lock": {
           "type": "string"
@@ -344,13 +463,19 @@
     "verificationScheduleEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["intent", "status", "effects", "locks", "conflicts"],
+      "required": ["intent", "status", "parallelEligible", "parallelReason", "effects", "locks", "conflicts"],
       "properties": {
         "intent": {
           "type": "string"
         },
         "status": {
           "const": "runnable"
+        },
+        "parallelEligible": {
+          "type": "boolean"
+        },
+        "parallelReason": {
+          "enum": ["explicit_effects", "missing_explicit_effects", "undeclared_write_drift"]
         },
         "effects": {
           "type": "array",
@@ -497,10 +622,13 @@
     "verificationSchedule": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["runner", "batches", "entries", "notes"],
+      "required": ["runner", "failurePolicy", "batches", "entries", "notes"],
       "properties": {
         "runner": {
           "const": "serial_mf_run_receipts"
+        },
+        "failurePolicy": {
+          "$ref": "#/$defs/verificationScheduleFailurePolicy"
         },
         "batches": {
           "type": "array",
@@ -516,6 +644,22 @@
         },
         "notes": {
           "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "verificationScheduleFailurePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "startedBatch", "nextBatch"],
+      "properties": {
+        "mode": {
+          "const": "batch_boundary"
+        },
+        "startedBatch": {
+          "const": "wait_for_completion"
+        },
+        "nextBatch": {
+          "const": "stop_on_failure"
         }
       }
     },
@@ -580,6 +724,12 @@
           "type": "integer"
         },
         "unknown": {
+          "type": "integer"
+        },
+        "selected": {
+          "type": "integer"
+        },
+        "not_selected": {
           "type": "integer"
         },
         "gapCount": {

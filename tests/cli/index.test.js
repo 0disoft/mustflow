@@ -633,7 +633,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(output.schema_version, '12');
+		assert.equal(output.schema_version, '13');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -652,7 +652,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(header, 'SQLite format 3\0');
 		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
-		assert.equal(metadata.schema_version, '12');
+		assert.equal(metadata.schema_version, '13');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
@@ -973,6 +973,32 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 	}
 });
 
+test('does not index source anchors unless source indexing is requested', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-opt-in-');
+
+	try {
+		prepareSourceAnchorProject(projectPath);
+
+		const output = await createLocalIndexDirect(projectPath);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [anchorCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchors');
+		const [sourceIndexedFileCount] = queryRows(
+			database,
+			'SELECT COUNT(*) AS count FROM indexed_files WHERE source_scope = "source_anchor"',
+		);
+
+		assert.equal(output.source_index_enabled, false);
+		assert.equal(output.source_anchor_count, 0);
+		assert.equal(anchorCount.count, 0);
+		assert.equal(sourceIndexedFileCount.count, 0);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('indexes source anchors only when source indexing is requested', async () => {
 	const projectPath = cloneSourceAnchorIndexedProject();
 	const fixture = getCachedIndexedProjectFixture({
@@ -994,7 +1020,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-		assert.equal(output.schema_version, '12');
+		assert.equal(output.schema_version, '13');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');

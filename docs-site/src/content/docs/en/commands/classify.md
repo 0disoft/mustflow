@@ -4,6 +4,7 @@ description: Read-only command that classifies changed paths, public surfaces, a
 ---
 
 `mf classify --changed` reads `git status --short --untracked-files=all`, classifies the changed paths, and reports which public surfaces and validation reasons are affected.
+Paths that do not match a known classification rule are still reported with `surface.kind: "unclassified_path"` and `unknown_change` so verification planning can surface a conservative check or an explicit gap instead of producing an empty plan.
 
 Use explicit paths when you want to inspect a planned change before editing files:
 

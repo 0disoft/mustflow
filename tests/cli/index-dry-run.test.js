@@ -14,7 +14,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '12');
+		assert.equal(output.schema_version, '13');
 		assert.equal(output.command, 'index');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');

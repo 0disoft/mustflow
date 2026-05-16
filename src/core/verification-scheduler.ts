@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import {
 	commandEffectsConflict,
 	normalizeCommandEffects,
@@ -11,7 +14,7 @@ export interface VerificationScheduleEffect {
 	readonly source: NormalizedCommandEffect['source'];
 	readonly access: NormalizedCommandEffect['access'];
 	readonly mode: NormalizedCommandEffect['mode'];
-	readonly path: string;
+	readonly path: NormalizedCommandEffect['path'];
 	readonly lock: string;
 	readonly concurrency: NormalizedCommandEffect['concurrency'];
 }
@@ -26,6 +29,8 @@ export interface VerificationScheduleConflict {
 export interface VerificationScheduleEntry {
 	readonly intent: string;
 	readonly status: 'runnable';
+	readonly parallelEligible: boolean;
+	readonly parallelReason: 'explicit_effects' | 'missing_explicit_effects' | 'undeclared_write_drift';
 	readonly effects: readonly VerificationScheduleEffect[];
 	readonly locks: readonly string[];
 	readonly conflicts: readonly VerificationScheduleConflict[];
@@ -37,8 +42,15 @@ export interface VerificationScheduleBatch {
 	readonly locks: readonly string[];
 }
 
+export interface VerificationScheduleFailurePolicy {
+	readonly mode: 'batch_boundary';
+	readonly startedBatch: 'wait_for_completion';
+	readonly nextBatch: 'stop_on_failure';
+}
+
 export interface VerificationSchedule {
 	readonly runner: 'serial_mf_run_receipts';
+	readonly failurePolicy: VerificationScheduleFailurePolicy;
 	readonly batches: readonly VerificationScheduleBatch[];
 	readonly entries: readonly VerificationScheduleEntry[];
 	readonly notes: readonly string[];
@@ -58,6 +70,97 @@ function toScheduleEffect(effect: NormalizedCommandEffect): VerificationSchedule
 		lock: effect.lock,
 		concurrency: effect.concurrency,
 	};
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+	return !!value && typeof value === 'object';
+}
+
+function readJsonFile(filePath: string): unknown {
+	try {
+		return JSON.parse(readFileSync(filePath, 'utf8'));
+	} catch {
+		return null;
+	}
+}
+
+function getUndeclaredWriteIntent(value: unknown): string | null {
+	if (!isObject(value) || typeof value.intent !== 'string') {
+		return null;
+	}
+
+	const writeDrift = value.write_drift;
+	if (!isObject(writeDrift) || writeDrift.has_undeclared_changes !== true) {
+		return null;
+	}
+
+	return value.intent;
+}
+
+function resolveStateRelativePath(projectRoot: string, relativePath: unknown): string | null {
+	if (typeof relativePath !== 'string' || relativePath.length === 0 || path.isAbsolute(relativePath)) {
+		return null;
+	}
+
+	const normalized = relativePath.replaceAll('\\', '/');
+	if (!normalized.startsWith('.mustflow/state/runs/')) {
+		return null;
+	}
+
+	const resolved = path.resolve(projectRoot, normalized);
+	const relative = path.relative(projectRoot, resolved);
+	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+		return null;
+	}
+
+	return resolved;
+}
+
+function readVerifyManifestUndeclaredWriteIntents(projectRoot: string, latest: Record<string, unknown>): ReadonlySet<string> {
+	const manifestPath = resolveStateRelativePath(projectRoot, latest.manifest_path);
+	if (!manifestPath) {
+		return new Set();
+	}
+
+	const manifest = readJsonFile(manifestPath);
+	if (!isObject(manifest) || manifest.command !== 'verify' || !Array.isArray(manifest.receipts)) {
+		return new Set();
+	}
+
+	const intents = new Set<string>();
+	for (const entry of manifest.receipts) {
+		if (!isObject(entry)) {
+			continue;
+		}
+
+		const receiptPath = resolveStateRelativePath(projectRoot, entry.receipt_path);
+		if (!receiptPath) {
+			continue;
+		}
+
+		const intent = getUndeclaredWriteIntent(readJsonFile(receiptPath));
+		if (intent) {
+			intents.add(intent);
+		}
+	}
+
+	return intents;
+}
+
+function readLatestUndeclaredWriteIntents(projectRoot: string): ReadonlySet<string> {
+	const latestPath = path.join(projectRoot, '.mustflow', 'state', 'runs', 'latest.json');
+	const parsed = readJsonFile(latestPath);
+	const directIntent = getUndeclaredWriteIntent(parsed);
+
+	if (directIntent) {
+		return new Set([directIntent]);
+	}
+
+	if (!isObject(parsed) || parsed.command !== 'verify') {
+		return new Set();
+	}
+
+	return readVerifyManifestUndeclaredWriteIntents(projectRoot, parsed);
 }
 
 function entriesConflict(left: VerificationScheduleEntry, right: VerificationScheduleEntry): VerificationScheduleConflict[] {
@@ -88,7 +191,9 @@ function addEntryToBatches(
 ): void {
 	for (let batchIndex = 0; batchIndex < batchEntries.length; batchIndex += 1) {
 		const existingEntries = batchEntries[batchIndex] ?? [];
-		const hasConflict = existingEntries.some((existing) => entriesConflict(entry, existing).length > 0);
+		const hasConflict =
+			!entry.parallelEligible ||
+			existingEntries.some((existing) => !existing.parallelEligible || entriesConflict(entry, existing).length > 0);
 
 		if (hasConflict) {
 			continue;
@@ -118,6 +223,7 @@ export function createVerificationSchedule(
 	commandContract: CommandContract,
 	candidates: readonly VerificationCandidate[],
 ): VerificationSchedule {
+	const latestUndeclaredWriteIntents = readLatestUndeclaredWriteIntents(projectRoot);
 	const runnableIntents = uniqueSorted(
 		candidates
 			.filter((candidate) => candidate.status === 'runnable' && candidate.intent.length > 0)
@@ -125,9 +231,18 @@ export function createVerificationSchedule(
 	);
 	const baseEntries = runnableIntents.map((intent) => {
 		const effects = normalizeCommandEffects(projectRoot, commandContract, intent).map(toScheduleEffect);
+		const hasExplicitEffects = effects.length > 0 && effects.every((effect) => effect.source === 'effects');
+		const hasUndeclaredWriteDrift = latestUndeclaredWriteIntents.has(intent);
+		const parallelEligible = hasExplicitEffects && !hasUndeclaredWriteDrift;
 		return {
 			intent,
 			status: 'runnable' as const,
+			parallelEligible,
+			parallelReason: hasUndeclaredWriteDrift
+				? ('undeclared_write_drift' as const)
+				: hasExplicitEffects
+					? ('explicit_effects' as const)
+					: ('missing_explicit_effects' as const),
 			effects,
 			locks: uniqueSorted(effects.map((effect) => effect.lock)),
 			conflicts: [] as VerificationScheduleConflict[],
@@ -149,11 +264,21 @@ export function createVerificationSchedule(
 
 	return {
 		runner: 'serial_mf_run_receipts',
+		failurePolicy: {
+			mode: 'batch_boundary',
+			startedBatch: 'wait_for_completion',
+			nextBatch: 'stop_on_failure',
+		},
 		batches,
 		entries,
 		notes: [
 			'Batches explain resource compatibility for planning only.',
-			'mf run still writes the latest receipt to a single path, so execute copied commands serially.',
+			'Only entries backed by explicit effects are marked parallel eligible; writes fallback remains serial-only.',
+			...uniqueSorted(latestUndeclaredWriteIntents).map(
+				(intent) => `Latest receipt for ${intent} reported undeclared writes; it is not parallel eligible.`,
+			),
+			'If a future parallel batch has already started, let it finish and stop before the next batch on failure.',
+			'mf verify still executes copied commands serially and writes the latest run summary after the batch completes.',
 		],
 	};
 }

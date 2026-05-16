@@ -49,6 +49,7 @@ test('classifies explicit paths with public surface contracts as json', async ()
 			'docs-site/src/content/docs/ko/commands/classify.md',
 			'schemas/classify-report.schema.json',
 			'tests/fixtures/authoring/readme-only/README.md',
+			'unmapped/custom.file',
 			'--json',
 		]);
 		const report = JSON.parse(result.stdout);
@@ -57,9 +58,10 @@ test('classifies explicit paths with public surface contracts as json', async ()
 		assert.equal(report.schema_version, '1');
 		assert.equal(report.command, 'classify');
 		assert.equal(report.source, 'paths');
-		assert.deepEqual(report.summary.changeKinds, ['documentation', 'schema', 'test_fixture', 'translation']);
+		assert.deepEqual(report.summary.changeKinds, ['documentation', 'schema', 'test_fixture', 'translation', 'unknown']);
 		assert.ok(report.summary.validationReasons.includes('docs_change'));
 		assert.ok(report.summary.validationReasons.includes('public_api_change'));
+		assert.ok(report.summary.validationReasons.includes('unknown_change'));
 		assert.deepEqual(report.summary.updatePolicies, ['update', 'update_or_mark_stale']);
 		assert.ok(report.summary.driftChecks.includes('command examples'));
 		assert.ok(report.summary.driftChecks.includes('source page parity'));
@@ -85,6 +87,50 @@ test('classifies explicit paths with public surface contracts as json', async ()
 		assert.equal(fixture.surface.kind, 'test_fixture');
 		assert.equal(fixture.surface.isPublicSurface, false);
 		assert.deepEqual(fixture.surface.validationReasons, ['test_change']);
+
+		const unknown = report.classifications.find((entry) => entry.path === 'unmapped/custom.file');
+		assert.equal(unknown.surface.kind, 'unclassified_path');
+		assert.equal(unknown.surface.isPublicSurface, false);
+		assert.deepEqual(unknown.surface.validationReasons, ['unknown_change']);
+		assert.deepEqual(unknown.surface.affectedContracts, ['unclassified repository path']);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps path classification rules canonical in TypeScript', async () => {
+	const projectPath = createClassifyProject();
+
+	try {
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'path-classification.toml'),
+			`
+[[rules]]
+id = "attempted_readme_override"
+pattern = "^README\\\\.md$"
+change_kinds = ["unknown"]
+validation_reasons = ["unknown_change"]
+`,
+		);
+
+		const result = await runCli(projectPath, [
+			'classify',
+			'README.md',
+			'.mustflow/config/path-classification.toml',
+			'--json',
+		]);
+		const report = JSON.parse(result.stdout);
+		const readme = report.classifications.find((entry) => entry.path === 'README.md');
+		const localConfig = report.classifications.find(
+			(entry) => entry.path === '.mustflow/config/path-classification.toml',
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(readme.surface.kind, 'readme_page');
+		assert.deepEqual(readme.changeKinds, ['documentation']);
+		assert.deepEqual(readme.surface.validationReasons, ['docs_change', 'copy_change']);
+		assert.equal(localConfig.surface.kind, 'workflow_root');
+		assert.deepEqual(localConfig.surface.validationReasons, ['mustflow_docs_change', 'mustflow_config_change']);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -132,6 +132,25 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].status, 'passed');
 		assert.equal(report.results[0].receipt.intent, 'verify_echo');
 		assert.match(report.results[0].receipt.stdout.tail, /verify ok/);
+		const manifestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-latest', 'manifest.json');
+		const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+		const receiptPath = path.join(projectPath, manifest.receipts[0].receipt_path);
+		const perIntentReceipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
+
+		assert.equal(manifest.command, 'verify');
+		assert.equal(manifest.status, 'passed');
+		assert.deepEqual(manifest.reasons, ['custom_verify']);
+		assert.equal(manifest.receipts[0].intent, 'verify_echo');
+		assert.equal(manifest.receipts[0].status, 'passed');
+		assert.match(manifest.receipts[0].receipt_path, /\.mustflow\/state\/runs\/verify-latest\/intents\/001-verify_echo\.json/u);
+		assert.equal(perIntentReceipt.intent, 'verify_echo');
+		assert.equal(perIntentReceipt.receipt_path, manifest.receipts[0].receipt_path);
+		assert.match(perIntentReceipt.stdout.tail, /verify ok/);
+		assert.equal(latest.command, 'verify');
+		assert.equal(latest.kind, 'verify_run_summary');
+		assert.equal(latest.status, 'passed');
+		assert.equal(latest.manifest_path, '.mustflow/state/runs/verify-latest/manifest.json');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -201,6 +220,185 @@ required_after = ["test_change"]
 	}
 });
 
+test('treats project-declared test selection matches as a minimum selected set', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-manifest.txt');
+	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
+
+	try {
+		initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.manifest_related]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared related tests."
+argv = ['${process.execPath}', '-e', 'console.log("manifest related")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.manifest_fast]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared fast fallback."
+argv = ['${process.execPath}', '-e', 'console.log("manifest fast")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		writeFileSync(
+			selectionPath,
+			`
+schema_version = "1"
+
+[[rules]]
+id = "fixture-selection"
+risk = "medium"
+reason = "Fixture changes use the project-declared related tests."
+match = { paths = ["tests/fixtures/**"], surfaces = ["test_fixture"] }
+select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_targets = ["tests/fixtures"] }
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const candidate = report.candidates.find((item) => item.intent === 'manifest_related');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.test_selection.status, 'matched');
+		assert.equal(report.test_selection.grantsCommandAuthority, false);
+		assert.equal(report.test_selection.commandAuthority, '.mustflow/config/commands.toml');
+		assert.deepEqual(report.test_selection.matches[0], {
+			ruleId: 'fixture-selection',
+			risk: 'medium',
+			reason: 'Fixture changes use the project-declared related tests.',
+			files: ['tests/fixtures/selection-manifest.txt'],
+			surfaces: ['test_fixture'],
+			intent: 'manifest_related',
+			fallbackIntent: 'manifest_fast',
+			testTargets: ['tests/fixtures'],
+		});
+		assert.deepEqual(report.test_selection.selected[0], {
+			ruleId: 'fixture-selection',
+			reason: 'test_change',
+			intent: 'manifest_related',
+			role: 'primary',
+			status: 'runnable',
+			skipReason: null,
+			detail: 'Project-declared test selection rule "fixture-selection".',
+			testTargets: ['tests/fixtures'],
+			appliedTestTargets: [],
+			testTargetsApplied: false,
+		});
+		assert.equal(candidate.status, 'runnable');
+		assert.equal(candidate.selectionState, 'selected');
+		assert.deepEqual(report.gaps, []);
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent),
+			['manifest_related'],
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('passes project-declared test targets only when selected intent opts in', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-targets.txt');
+	const targetsPath = path.join(projectPath, 'targets.json');
+	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
+
+	try {
+		initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.manifest_related]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared related tests with targets."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync("targets.json", JSON.stringify(process.argv.slice(1)))']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["targets.json"]
+network = false
+destructive = false
+
+[intents.manifest_related.selection]
+accepts_test_targets = true
+
+[intents.manifest_fast]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared fast fallback."
+argv = ['${process.execPath}', '-e', 'console.log("manifest fast")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		writeFileSync(
+			selectionPath,
+			`
+schema_version = "1"
+
+[[rules]]
+id = "fixture-selection"
+risk = "medium"
+reason = "Fixture changes use the project-declared related tests."
+match = { paths = ["tests/fixtures/**"], surfaces = ["test_fixture"] }
+select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_targets = ["tests/fixtures"] }
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const planResult = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const planReport = JSON.parse(planResult.stdout);
+		const result = runCli(projectPath, ['verify', '--changed', '--json']);
+		const report = JSON.parse(result.stdout);
+		const targets = JSON.parse(readFileSync(targetsPath, 'utf8'));
+
+		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(targets, ['tests/fixtures']);
+		assert.deepEqual(planReport.test_selection.selected[0].appliedTestTargets, ['tests/fixtures']);
+		assert.equal(planReport.test_selection.selected[0].testTargetsApplied, true);
+		assert.equal(report.results[0].receipt.performance.selection.strategy, 'project_test_selection');
+		assert.equal(report.results[0].receipt.performance.selection.selected_target_count, 1);
+		assert.ok(report.results[0].receipt.argv.includes('tests/fixtures'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('runs verification from current changed files', () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
@@ -242,6 +440,56 @@ required_after = ["test_change"]
 		assert.equal(report.summary.ran, 1);
 		assert.equal(report.results[0].intent, 'verify_changed_fixture');
 		assert.equal(existsSync(markerPath), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('plans verification for unclassified changed files with unknown_change', () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'unmapped', 'verify-changed.custom');
+
+	try {
+		initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.verify_unknown_change]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify unclassified changed paths."
+argv = ['${process.execPath}', '-e', 'console.log("unknown ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["unknown_change"]
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.source, 'changed');
+		assert.deepEqual(report.files, ['unmapped/verify-changed.custom']);
+		assert.deepEqual(report.classification_summary.validationReasons, ['unknown_change']);
+		assert.equal(report.requirements[0].reason, 'unknown_change');
+		assert.deepEqual(report.requirements[0].files, ['unmapped/verify-changed.custom']);
+		assert.deepEqual(report.requirements[0].surfaces, ['unclassified_path']);
+		assert.deepEqual(report.requirements[0].affectedContracts, ['unclassified repository path']);
+		assert.deepEqual(report.requirements[0].driftChecks, ['classification rule coverage']);
+		assert.equal(report.candidates[0].intent, 'verify_unknown_change');
+		assert.equal(report.candidates[0].status, 'runnable');
+		assert.deepEqual(report.gaps, []);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -321,6 +569,31 @@ writes = ["executed.txt"]
 network = false
 destructive = false
 required_after = ["custom_verify"]
+
+[intents.verify_plan_only.covers]
+reasons = ["custom_verify"]
+surfaces = ["readme_page"]
+paths = ["README.md"]
+contracts = ["public documentation"]
+
+[intents.verify_plan_only.selection]
+coverage_level = "targeted"
+coverage_confidence = "medium"
+accepts_changed_files = "git_status"
+fallback_intents = ["test_fast"]
+escalate_to = ["test"]
+
+[intents.verify_plan_only.cost]
+expected_seconds = 42
+cold_start_seconds = 3
+timeout_ratio_expectation = 0.25
+cost_tier = "medium"
+
+[intents.verify_plan_only.relations]
+subsumes = ["verify_docs_smoke"]
+subsumed_by = ["test"]
+requires_with = ["lint"]
+escalate_to = ["test"]
 `,
 		);
 
@@ -337,10 +610,15 @@ required_after = ["custom_verify"]
 		assert.equal(report.candidates[0].intent, 'verify_plan_only');
 		assert.equal(report.candidates[0].status, 'runnable');
 		assert.equal(report.candidates[0].skipReason, null);
+		assert.equal(report.candidates[0].candidateState, 'candidate');
+		assert.equal(report.candidates[0].eligibilityState, 'eligible');
+		assert.equal(report.candidates[0].selectionState, 'selected');
 		assert.deepEqual(report.gaps, []);
 		assert.equal(report.decision_graph.schema_version, '1');
 		assert.equal(report.decision_graph.root, 'verification_decision');
 		assert.equal(report.decision_graph.summary.runnable > 0, true);
+		assert.equal(report.decision_graph.summary.selected, 1);
+		assert.equal(report.decision_graph.summary.not_selected, 0);
 		assert.equal(
 			report.decision_graph.nodes.some(
 				(node) => node.kind === 'classification_reason' && node.reason === 'custom_verify',
@@ -353,11 +631,40 @@ required_after = ["custom_verify"]
 					node.kind === 'command_candidate' &&
 					node.intent === 'verify_plan_only' &&
 					node.status === 'runnable' &&
+					node.data.selectionState === 'selected' &&
 					node.data.command.required_after.includes('custom_verify') &&
 					node.data.command.writes.includes('executed.txt'),
 			),
 			true,
 		);
+		const commandCandidate = report.decision_graph.nodes.find(
+			(node) => node.kind === 'command_candidate' && node.intent === 'verify_plan_only',
+		);
+		assert.deepEqual(commandCandidate.data.command.covers, {
+			reasons: ['custom_verify'],
+			surfaces: ['readme_page'],
+			paths: ['README.md'],
+			contracts: ['public documentation'],
+		});
+		assert.deepEqual(commandCandidate.data.command.selection, {
+			coverage_level: 'targeted',
+			coverage_confidence: 'medium',
+			accepts_changed_files: 'git_status',
+			fallback_intents: ['test_fast'],
+			escalate_to: ['test'],
+		});
+		assert.deepEqual(commandCandidate.data.command.cost, {
+			expected_seconds: 42,
+			cold_start_seconds: 3,
+			timeout_ratio_expectation: 0.25,
+			cost_tier: 'medium',
+		});
+		assert.deepEqual(commandCandidate.data.command.relations, {
+			subsumes: ['verify_docs_smoke'],
+			subsumed_by: ['test'],
+			requires_with: ['lint'],
+			escalate_to: ['test'],
+		});
 		assert.equal(
 			report.decision_graph.nodes.some(
 				(node) => node.kind === 'eligibility' && node.intent === 'verify_plan_only' && node.data.code === 'ok',
@@ -439,12 +746,19 @@ required_after = ["custom_verify"]
 		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.schedule.runner, 'serial_mf_run_receipts');
+		assert.deepEqual(report.schedule.failurePolicy, {
+			mode: 'batch_boundary',
+			startedBatch: 'wait_for_completion',
+			nextBatch: 'stop_on_failure',
+		});
 		assert.deepEqual(
 			report.schedule.entries.map((entry) => entry.intent),
 			['verify_build_a', 'verify_build_b'],
 		);
 		assert.deepEqual(report.schedule.batches.map((batch) => batch.intents), [['verify_build_a'], ['verify_build_b']]);
 		assert.equal(report.schedule.entries[0].locks[0], 'dist_build_output');
+		assert.equal(report.schedule.entries[0].parallelEligible, true);
+		assert.equal(report.schedule.entries[0].parallelReason, 'explicit_effects');
 		assert.equal(report.schedule.entries[0].effects[0].mode, 'delete_recreate');
 		assert.equal(report.schedule.entries[0].conflicts[0].conflictsWith, 'verify_build_b');
 		assert.equal(report.schedule.entries[0].effectGraph.authority, 'explanation_only');
@@ -462,6 +776,458 @@ required_after = ["custom_verify"]
 			report.schedule.entries[0].effectGraph.lockConflicts.some(
 				(conflict) => conflict.intent === 'verify_build_b' && conflict.lock === 'dist_build_output',
 			),
+			true,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not select a narrower runnable intent when a selected runnable intent explicitly subsumes it', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_docs_full]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Full documentation verification."
+argv = ['${process.execPath}', '-e', 'console.log("full docs")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["docs_verify"]
+
+[intents.verify_docs_full.relations]
+subsumes = ["verify_docs_smoke"]
+
+[intents.verify_docs_smoke]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Narrow documentation smoke verification."
+argv = ['${process.execPath}', '-e', 'console.log("smoke docs")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["docs_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'docs_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const fullCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_docs_full');
+		const smokeCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_docs_smoke');
+		const fullNode = report.decision_graph.nodes.find(
+			(node) => node.kind === 'command_candidate' && node.intent === 'verify_docs_full',
+		);
+		const smokeNode = report.decision_graph.nodes.find(
+			(node) => node.kind === 'command_candidate' && node.intent === 'verify_docs_smoke',
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(fullCandidate.status, 'runnable');
+		assert.equal(fullCandidate.selectionState, 'selected');
+		assert.equal(smokeCandidate.status, 'runnable');
+		assert.equal(smokeCandidate.selectionState, 'not_selected');
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent),
+			['verify_docs_full'],
+		);
+		assert.equal(report.decision_graph.summary.selected, 1);
+		assert.equal(report.decision_graph.summary.not_selected, 1);
+		assert.equal(fullNode.data.selectionState, 'selected');
+		assert.equal(smokeNode.data.selectionState, 'not_selected');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('selects the lowest-cost runnable intent only when coverage hints are equivalent', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_fast_equivalent]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Fast equivalent verification."
+argv = ['${process.execPath}', '-e', 'console.log("fast")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["cost_verify"]
+
+[intents.verify_fast_equivalent.covers]
+reasons = ["cost_verify"]
+surfaces = ["readme_page"]
+paths = ["README.md"]
+contracts = ["public documentation"]
+
+[intents.verify_fast_equivalent.cost]
+expected_seconds = 5
+
+[intents.verify_slow_equivalent]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Slow equivalent verification."
+argv = ['${process.execPath}', '-e', 'console.log("slow")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["cost_verify"]
+
+[intents.verify_slow_equivalent.covers]
+contracts = ["public documentation"]
+paths = ["README.md"]
+reasons = ["cost_verify"]
+surfaces = ["readme_page"]
+
+[intents.verify_slow_equivalent.cost]
+expected_seconds = 60
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'cost_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const fastCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_fast_equivalent');
+		const slowCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_slow_equivalent');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(fastCandidate.status, 'runnable');
+		assert.equal(fastCandidate.selectionState, 'selected');
+		assert.equal(slowCandidate.status, 'runnable');
+		assert.equal(slowCandidate.selectionState, 'not_selected');
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent),
+			['verify_fast_equivalent'],
+		);
+		assert.equal(report.decision_graph.summary.selected, 1);
+		assert.equal(report.decision_graph.summary.not_selected, 1);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps writes-only verification intents serial-only in the schedule model', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_effect_lock]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Explicit effect check."
+argv = ['${process.execPath}', '-e', 'console.log("effect")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [
+  { type = "write", mode = "replace", path = "effect.txt", lock = "effect_artifact", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_verify"]
+
+[intents.verify_writes_only]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Writes-only check."
+argv = ['${process.execPath}', '-e', 'console.log("writes")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["writes-only.txt"]
+network = false
+destructive = false
+required_after = ["parallel_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const explicitEntry = report.schedule.entries.find((entry) => entry.intent === 'verify_effect_lock');
+		const writesOnlyEntry = report.schedule.entries.find((entry) => entry.intent === 'verify_writes_only');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(explicitEntry);
+		assert.ok(writesOnlyEntry);
+		assert.equal(explicitEntry.parallelEligible, true);
+		assert.equal(explicitEntry.parallelReason, 'explicit_effects');
+		assert.equal(writesOnlyEntry.parallelEligible, false);
+		assert.equal(writesOnlyEntry.parallelReason, 'missing_explicit_effects');
+		assert.deepEqual(report.schedule.batches.map((batch) => batch.intents), [['verify_effect_lock'], ['verify_writes_only']]);
+		assert.equal(
+			report.schedule.notes.some((note) => note.includes('writes fallback remains serial-only')),
+			true,
+		);
+		assert.equal(
+			report.schedule.notes.some((note) => note.includes('stop before the next batch on failure')),
+			true,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps lock-only resources as first-class schedule effects', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[resources.test_database]
+type = "database"
+concurrency = "exclusive"
+description = "Shared test database."
+
+[intents.verify_database_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Database check A."
+argv = ['${process.execPath}', '-e', 'console.log("database a")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [
+  { type = "write", mode = "replace", lock = "db:test_database", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["database_verify"]
+
+[intents.verify_database_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Database check B."
+argv = ['${process.execPath}', '-e', 'console.log("database b")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [
+  { type = "write", mode = "replace", lock = "db:test_database", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["database_verify"]
+`,
+		);
+
+		const indexResult = runCli(projectPath, ['index', '--json']);
+		const result = runCli(projectPath, ['verify', '--reason', 'database_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const firstEntry = report.schedule.entries.find((entry) => entry.intent === 'verify_database_a');
+
+		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(firstEntry);
+		assert.deepEqual(report.schedule.entries.map((entry) => entry.intent), ['verify_database_a', 'verify_database_b']);
+		assert.deepEqual(report.schedule.batches.map((batch) => batch.intents), [['verify_database_a'], ['verify_database_b']]);
+		assert.equal(firstEntry.effects[0].path, null);
+		assert.equal(firstEntry.effects[0].lock, 'db:test_database');
+		assert.equal(firstEntry.parallelEligible, true);
+		assert.equal(firstEntry.parallelReason, 'explicit_effects');
+		assert.equal(firstEntry.locks[0], 'db:test_database');
+		assert.equal(firstEntry.conflicts[0].conflictsWith, 'verify_database_b');
+		assert.equal(
+			firstEntry.effectGraph.writeLocks.some(
+				(lock) => lock.lock === 'db:test_database' && lock.paths.length === 0 && lock.effectCount === 1,
+			),
+			true,
+		);
+		assert.equal(
+			firstEntry.effectGraph.lockConflicts.some(
+				(conflict) =>
+					conflict.intent === 'verify_database_b' &&
+					conflict.lock === 'db:test_database' &&
+					conflict.paths.length === 0 &&
+					conflict.conflictingPaths.length === 0,
+			),
+			true,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('removes parallel eligibility after latest receipt reports undeclared writes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[resources.output_cache]
+type = "cache"
+description = "Output cache touched by verification."
+
+[intents.verify_declared_effect_drift]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Effect-backed check with previous drift."
+argv = ['${process.execPath}', '-e', 'console.log("drift")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["parallel_verify"]
+effects = [
+  { type = "write", mode = "replace", lock = "cache:output_cache", concurrency = "exclusive" }
+]
+`,
+		);
+		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
+		mkdirSync(runsDir, { recursive: true });
+		writeFileSync(
+			path.join(runsDir, 'latest.json'),
+			`${JSON.stringify({
+				intent: 'verify_declared_effect_drift',
+				write_drift: {
+					has_undeclared_changes: true,
+				},
+			})}\n`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const entry = report.schedule.entries.find((scheduleEntry) => scheduleEntry.intent === 'verify_declared_effect_drift');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(entry);
+		assert.equal(entry.parallelEligible, false);
+		assert.equal(entry.parallelReason, 'undeclared_write_drift');
+		assert.equal(entry.effects[0].source, 'effects');
+		assert.equal(
+			report.schedule.notes.some((note) => note.includes('reported undeclared writes')),
+			true,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('removes parallel eligibility from per-intent receipt referenced by verify latest pointer', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[resources.output_cache]
+type = "cache"
+description = "Output cache touched by verification."
+
+[intents.verify_declared_effect_drift]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Effect-backed check with previous verify drift."
+argv = ['${process.execPath}', '-e', 'console.log("drift")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["parallel_verify"]
+effects = [
+  { type = "write", mode = "replace", lock = "cache:output_cache", concurrency = "exclusive" }
+]
+`,
+		);
+		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
+		const verifyDir = path.join(runsDir, 'verify-latest');
+		const intentsDir = path.join(verifyDir, 'intents');
+		const receiptRelativePath = '.mustflow/state/runs/verify-latest/intents/001-verify_declared_effect_drift.json';
+		mkdirSync(intentsDir, { recursive: true });
+		writeFileSync(
+			path.join(projectPath, receiptRelativePath),
+			`${JSON.stringify({
+				intent: 'verify_declared_effect_drift',
+				write_drift: {
+					has_undeclared_changes: true,
+				},
+			})}\n`,
+		);
+		writeFileSync(
+			path.join(verifyDir, 'manifest.json'),
+			`${JSON.stringify({
+				command: 'verify',
+				receipts: [
+					{
+						intent: 'verify_declared_effect_drift',
+						receipt_path: receiptRelativePath,
+					},
+				],
+			})}\n`,
+		);
+		writeFileSync(
+			path.join(runsDir, 'latest.json'),
+			`${JSON.stringify({
+				command: 'verify',
+				kind: 'verify_run_summary',
+				manifest_path: '.mustflow/state/runs/verify-latest/manifest.json',
+			})}\n`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const entry = report.schedule.entries.find((scheduleEntry) => scheduleEntry.intent === 'verify_declared_effect_drift');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(entry);
+		assert.equal(entry.parallelEligible, false);
+		assert.equal(entry.parallelReason, 'undeclared_write_drift');
+		assert.equal(
+			report.schedule.notes.some((note) => note.includes('reported undeclared writes')),
 			true,
 		);
 	} finally {
@@ -564,6 +1330,9 @@ required_after = ["custom_partial"]
 		assert.equal(report.candidates[0].status, 'skipped');
 		assert.equal(report.candidates[0].skipReason, 'status_not_configured');
 		assert.equal(report.candidates[0].detail, 'Needs a human.');
+		assert.equal(report.candidates[0].candidateState, 'candidate');
+		assert.equal(report.candidates[0].eligibilityState, 'ineligible');
+		assert.equal(report.candidates[0].selectionState, 'not_applicable');
 		assert.equal(report.gaps[0].reason, 'custom_partial');
 		assert.match(report.gaps[0].detail, /No runnable command intents/);
 		assert.equal(
@@ -573,6 +1342,237 @@ required_after = ["custom_partial"]
 			true,
 		);
 		assert.equal(report.decision_graph.summary.manual_only, 2);
+		assert.equal(report.decision_graph.summary.gapCount, 1);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('escalates to a declared fallback intent when targeted verification is unavailable', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_manual_with_fallback]
+status = "manual_only"
+description = "Manual targeted verification."
+reason = "Needs a human."
+required_after = ["custom_escalate"]
+
+[intents.verify_manual_with_fallback.selection]
+fallback_intents = ["verify_broad_fallback"]
+
+[intents.verify_broad_fallback]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Broad fallback verification."
+argv = ['${process.execPath}', '-e', 'console.log("fallback ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason=custom_escalate', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const targeted = report.candidates.find((candidate) => candidate.intent === 'verify_manual_with_fallback');
+		const fallback = report.candidates.find((candidate) => candidate.intent === 'verify_broad_fallback');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(targeted.status, 'skipped');
+		assert.equal(targeted.skipReason, 'status_not_configured');
+		assert.equal(targeted.selectionState, 'not_applicable');
+		assert.equal(fallback.status, 'runnable');
+		assert.equal(fallback.skipReason, null);
+		assert.equal(fallback.detail, 'Declared fallback for unavailable verification intent.');
+		assert.equal(fallback.selectionState, 'selected');
+		assert.deepEqual(report.gaps, []);
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent),
+			['verify_broad_fallback'],
+		);
+		assert.equal(report.decision_graph.summary.selected, 1);
+		assert.equal(report.decision_graph.summary.gapCount, 0);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_broad_fallback' &&
+					node.data.selectionState === 'selected',
+			),
+			true,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('adds declared escalation intents for high-risk runnable verification requirements', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_schema_targeted]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Targeted schema verification."
+argv = ['${process.execPath}', '-e', 'console.log("schema targeted")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["release_risk"]
+
+[intents.verify_schema_targeted.selection]
+escalate_to = ["verify_release_gate"]
+
+[intents.verify_release_gate]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Release gate verification."
+argv = ['${process.execPath}', '-e', 'console.log("release gate")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason=release_risk', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const targeted = report.candidates.find((candidate) => candidate.intent === 'verify_schema_targeted');
+		const escalation = report.candidates.find((candidate) => candidate.intent === 'verify_release_gate');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(targeted.status, 'runnable');
+		assert.equal(targeted.selectionState, 'selected');
+		assert.equal(escalation.status, 'runnable');
+		assert.equal(escalation.detail, 'Declared escalation for a high-risk verification requirement.');
+		assert.equal(escalation.selectionState, 'selected');
+		assert.deepEqual(report.gaps, []);
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent).sort(),
+			['verify_release_gate', 'verify_schema_targeted'],
+		);
+		assert.equal(report.decision_graph.summary.selected, 2);
+		assert.equal(
+			report.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_release_gate' &&
+					node.data.selectionState === 'selected',
+			),
+			true,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not use performance history or cache files as verification authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const perfDir = path.join(projectPath, '.mustflow', 'state', 'perf');
+		const cacheDir = path.join(projectPath, '.mustflow', 'cache');
+
+		mkdirSync(perfDir, { recursive: true });
+		mkdirSync(cacheDir, { recursive: true });
+		writeFileSync(
+			path.join(perfDir, 'samples.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					samples: [
+						{
+							observed_day: '2026-05-16',
+							intent: 'verify_history_only',
+							intent_fingerprint: 'sha256:history',
+							command_fingerprint: 'sha256:command',
+							contract_fingerprint: 'sha256:contract',
+							runner_bucket: 'local/windows/x64/node@24',
+							duration_ms: 1,
+							timeout_ratio: 0,
+							status: 'passed',
+							exit_code_class: 'success',
+							timed_out: false,
+							error_kind: null,
+							stdout_bytes: 0,
+							stderr_bytes: 0,
+						},
+					],
+				},
+				null,
+				2,
+			),
+		);
+		writeFileSync(
+			path.join(perfDir, 'summary.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					generated_day: '2026-05-16',
+					intents: {
+						verify_history_only: {
+							fingerprints: {
+								'sha256:history': {
+									sample_count: 1,
+									success_count: 1,
+									timeout_count: 0,
+									failure_count: 0,
+									p50_duration_ms: 1,
+									p75_duration_ms: 1,
+									p95_duration_ms: 1,
+									min_duration_ms: 1,
+									max_duration_ms: 1,
+									ewma_duration_ms: 1,
+									last_success_duration_ms: 1,
+									last_observed_day: '2026-05-16',
+									runner_buckets: {},
+								},
+							},
+						},
+					},
+				},
+				null,
+				2,
+			),
+		);
+		writeFileSync(path.join(cacheDir, 'mustflow.sqlite'), 'not a real authority database');
+
+		const result = runCli(projectPath, ['verify', '--reason=history_only', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.candidates[0].intent, null);
+		assert.equal(report.candidates[0].status, 'skipped');
+		assert.equal(report.candidates[0].skipReason, 'no_matching_intents');
+		assert.equal(report.candidates[0].candidateState, 'gap');
+		assert.equal(report.candidates[0].eligibilityState, 'missing');
+		assert.equal(report.candidates[0].selectionState, 'not_applicable');
+		assert.equal(report.gaps[0].reason, 'history_only');
+		assert.deepEqual(report.schedule.entries, []);
+		assert.equal(report.decision_graph.summary.selected, 0);
 		assert.equal(report.decision_graph.summary.gapCount, 1);
 	} finally {
 		removeTempProject(projectPath);
@@ -593,6 +1593,9 @@ test('reports plan-only gaps when no intents match the reason', () => {
 		assert.equal(report.candidates[0].intent, null);
 		assert.equal(report.candidates[0].status, 'skipped');
 		assert.equal(report.candidates[0].skipReason, 'no_matching_intents');
+		assert.equal(report.candidates[0].candidateState, 'gap');
+		assert.equal(report.candidates[0].eligibilityState, 'missing');
+		assert.equal(report.candidates[0].selectionState, 'not_applicable');
 		assert.equal(report.gaps[0].reason, 'missing_reason');
 		assert.equal(
 			report.decision_graph.nodes.some(

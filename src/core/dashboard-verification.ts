@@ -30,7 +30,7 @@ export interface DashboardSkippedVerification {
 export interface DashboardVerificationScheduleEffect {
 	readonly access: string;
 	readonly mode: string;
-	readonly path: string;
+	readonly path: string | null;
 	readonly lock: string;
 	readonly concurrency: string;
 }
@@ -38,6 +38,8 @@ export interface DashboardVerificationScheduleEffect {
 export interface DashboardVerificationScheduleEntry {
 	readonly intent: string;
 	readonly command: string;
+	readonly parallelEligible: boolean;
+	readonly parallelReason: string;
 	readonly locks: readonly string[];
 	readonly effects: readonly DashboardVerificationScheduleEffect[];
 	readonly conflicts: readonly {
@@ -56,6 +58,11 @@ export interface DashboardVerificationScheduleBatch {
 
 export interface DashboardVerificationSchedule {
 	readonly runner: string;
+	readonly failurePolicy: {
+		readonly mode: string;
+		readonly startedBatch: string;
+		readonly nextBatch: string;
+	};
 	readonly batches: readonly DashboardVerificationScheduleBatch[];
 	readonly entries: readonly DashboardVerificationScheduleEntry[];
 	readonly notes: readonly string[];
@@ -171,6 +178,11 @@ function createEmptyDashboardVerificationSnapshot(changedFiles: readonly string[
 		skipped: [],
 		schedule: {
 			runner: 'serial_mf_run_receipts',
+			failurePolicy: {
+				mode: 'batch_boundary',
+				startedBatch: 'wait_for_completion',
+				nextBatch: 'stop_on_failure',
+			},
 			batches: [],
 			entries: [],
 			notes: [],
@@ -229,6 +241,7 @@ export function createDashboardVerificationSnapshot(
 		skipped,
 		schedule: {
 			runner: verificationReport.schedule.runner,
+			failurePolicy: verificationReport.schedule.failurePolicy,
 			batches: verificationReport.schedule.batches.map((batch) => ({
 				index: batch.index,
 				intents: batch.intents,
@@ -238,6 +251,8 @@ export function createDashboardVerificationSnapshot(
 			entries: verificationReport.schedule.entries.map((entry) => ({
 				intent: entry.intent,
 				command: `mf run ${entry.intent}`,
+				parallelEligible: entry.parallelEligible,
+				parallelReason: entry.parallelReason,
 				locks: entry.locks,
 				effects: entry.effects.map((effect) => ({
 					access: effect.access,

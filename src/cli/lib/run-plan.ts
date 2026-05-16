@@ -24,6 +24,10 @@ export interface ResolvedArgvCommand {
 	readonly shell: boolean;
 }
 
+export interface RunPlanOptions {
+	readonly testTargets?: readonly string[];
+}
+
 export type RunPreviewMode = 'dry-run' | 'plan-only';
 export type RunPlanReasonCode = Exclude<CommandIntentEligibilityCode, 'ok'> | 'cwd_outside_project';
 
@@ -45,6 +49,7 @@ interface RunIntentMetadata {
 	readonly destructive: boolean | undefined;
 	readonly envPolicy: CommandEnvPolicy;
 	readonly envAllowlist: readonly string[];
+	readonly testTargets: readonly string[];
 }
 
 interface RunPlanBase {
@@ -74,6 +79,7 @@ interface RunPlanBase {
 	readonly destructive: boolean | undefined;
 	readonly envPolicy: CommandEnvPolicy | null;
 	readonly envAllowlist: readonly string[];
+	readonly testTargets: readonly string[];
 }
 
 export interface BlockedRunPlan extends RunPlanBase {
@@ -128,6 +134,21 @@ function getRelativeProjectPath(projectRoot: string, targetPath: string): string
 	const relativePath = path.relative(projectRoot, targetPath);
 
 	return relativePath.length > 0 ? toPosixPath(relativePath) : '.';
+}
+
+function normalizeTestTargets(values: readonly string[] | undefined): string[] {
+	return [
+		...new Set(
+			(values ?? [])
+				.map((value) => value.trim().replace(/\\/g, '/'))
+				.filter((value) => value.length > 0 && !path.posix.isAbsolute(value) && !path.win32.isAbsolute(value))
+				.filter((value) => value.split('/').every((segment) => segment.length > 0 && segment !== '.' && segment !== '..')),
+		),
+	].sort((left, right) => left.localeCompare(right));
+}
+
+function commandAcceptsTestTargets(intent: TomlTable): boolean {
+	return isRecord(intent.selection) && intent.selection.accepts_test_targets === true;
 }
 
 function shouldUseShellForArgvExecutable(executablePath: string): boolean {
@@ -199,6 +220,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		destructive: readBoolean(intent, 'destructive'),
 		envPolicy: env.policy,
 		envAllowlist: env.allowlist,
+		testTargets: [],
 	};
 }
 
@@ -239,10 +261,16 @@ function createBlockedRunPlan(
 		destructive: metadata?.destructive,
 		envPolicy: metadata?.envPolicy ?? null,
 		envAllowlist: metadata?.envAllowlist ?? [],
+		testTargets: [],
 	};
 }
 
-export function createRunPlan(projectRoot: string, contract: CommandContract, intentName: string): RunPlan {
+export function createRunPlan(
+	projectRoot: string,
+	contract: CommandContract,
+	intentName: string,
+	options: RunPlanOptions = {},
+): RunPlan {
 	const rawIntent = contract.intents[intentName];
 	const eligibility = evaluateCommandIntentEligibility(intentName, rawIntent);
 
@@ -269,6 +297,9 @@ export function createRunPlan(projectRoot: string, contract: CommandContract, in
 			error instanceof Error ? error.message : String(error),
 		);
 	}
+
+	const testTargets = commandAcceptsTestTargets(rawIntent) ? normalizeTestTargets(options.testTargets) : [];
+	const commandArgv = metadata.commandArgv && testTargets.length > 0 ? [...metadata.commandArgv, ...testTargets] : metadata.commandArgv;
 
 	if (!metadata.timeoutSeconds || !metadata.mode) {
 		return createBlockedRunPlan(
@@ -298,16 +329,17 @@ export function createRunPlan(projectRoot: string, contract: CommandContract, in
 		timeoutSeconds: metadata.timeoutSeconds,
 		maxOutputBytes: metadata.maxOutputBytes,
 		successExitCodes: metadata.successExitCodes,
-		commandArgv: metadata.commandArgv,
+		commandArgv,
 		shellCommand: metadata.shellCommand,
 		mode: metadata.mode,
-		argvCommand: metadata.commandArgv ? resolveArgvCommand(rawIntent, metadata.commandArgv) : undefined,
+		argvCommand: commandArgv ? resolveArgvCommand(rawIntent, commandArgv) : undefined,
 		writes: metadata.writes,
 		effects: metadata.effects,
 		network: metadata.network,
 		destructive: metadata.destructive,
 		envPolicy: metadata.envPolicy,
 		envAllowlist: metadata.envAllowlist,
+		testTargets,
 	};
 }
 
@@ -341,6 +373,7 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		destructive: plan.destructive,
 		env_policy: plan.envPolicy,
 		env_allowlist: plan.envAllowlist,
+		test_targets: plan.testTargets,
 		success_exit_codes: plan.successExitCodes,
 	};
 }
