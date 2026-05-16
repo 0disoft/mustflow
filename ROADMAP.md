@@ -33,12 +33,7 @@ This milestone is about choosing, explaining, and running already-declared comma
 User-project related-test selection should be driven by the optional `.mustflow/config/test-selection.toml`
 contract instead of inferred by mustflow from conventions.
 
-mustflow may use local index data and performance history only as additive suggestions:
-
-- add suspected missing tests or warn about stale selection rules.
-- never remove manifest-selected tests.
-- never treat "no past failures" as evidence that a test can be omitted.
-- report when no manifest exists instead of inventing a subset from `package.json`, `Makefile`, framework defaults, or filename conventions.
+mustflow may use local index data and performance history only as additive suggestions.
 
 ## Non-Goals
 
