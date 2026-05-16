@@ -84,6 +84,11 @@
         "gaps": [],
         "schedule": {
           "runner": "serial_mf_run_receipts",
+          "failurePolicy": {
+            "mode": "batch_boundary",
+            "startedBatch": "wait_for_completion",
+            "nextBatch": "stop_on_failure"
+          },
           "batches": [
             {
               "index": 0,
@@ -95,6 +100,8 @@
             {
               "intent": "docs_validate_fast",
               "status": "runnable",
+              "parallelEligible": false,
+              "parallelReason": "missing_explicit_effects",
               "effects": [],
               "locks": [],
               "conflicts": [],

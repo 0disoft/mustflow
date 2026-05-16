@@ -46,7 +46,7 @@ With `--json`, the same receipt is printed to standard output. Automation and ag
 
 Machine-readable output uses these fields:
 
-- `schema_version` (`number`): Run receipt format version.
+- `schema_version` (`string`): Run receipt format version.
 - `command` (`string`): Always `run`.
 - `intent` (`string`): Command intent name.
 - `status` (`string`): Run result. One of `passed`, `failed`, `timed_out`, or `start_failed`.
@@ -72,6 +72,7 @@ Machine-readable output uses these fields:
 - `stdout` (`object`): Standard output summary.
 - `stderr` (`object`): Standard error summary.
 - `write_drift` (`object`): Bounded comparison between declared write paths and files changed during the command.
+- `performance` (`object`): Safe performance summary for the latest execution.
 - `redaction` (`object`): Secret-like redaction metadata for the receipt.
 - `receipt_path` (`string`): Saved run receipt path.
 
@@ -103,6 +104,24 @@ Write drift objects use these fields:
 - `write_drift.truncated` (`boolean`): Whether one or more path lists were truncated.
 - `write_drift.reason` (`string | null`): Why write drift could not be checked, when unavailable.
 
+Performance summary objects use safe metadata only:
+
+- `performance.duration_ms` (`number`): Same wall-clock duration as the top-level `duration_ms`.
+- `performance.executor_overhead_ms` (`number`): Time spent by the `mf run` executor outside the measured child command runtime, when measured separately.
+- `performance.phases` (`object[]`): Optional structured phase timings from an opt-in profile source. mustflow never derives this field by parsing raw command output.
+- `performance.timeout_ratio` (`number`): Fraction of the configured timeout used by the run.
+- `performance.command_fingerprint` (`string`): Hash of the normalized redacted command identity.
+- `performance.intent_fingerprint` (`string`): Hash of the intent and execution contract identity.
+- `performance.contract_fingerprint` (`string`): Hash of the execution contract identity.
+- `performance.runner` (`object`): Coarse local runner metadata such as platform family, architecture family, runtime, and runtime major version.
+- `performance.output_summary` (`object`): Output byte counts and truncation flags only.
+- `performance.result_summary` (`object`): Status, exit-code class, timeout flag, and coarse error kind.
+- `performance.quality` (`object`): Whether optional phase or target timing sources were present and whether the sample is usable as a performance hint.
+
+Performance summaries do not include command output, environment values, absolute paths, hostnames, branch names, raw commit hashes, or test names. They are local timing hints for already-authorized commands, not command authority and not proof that a verification step can be skipped.
+
+`mf run` also writes bounded local performance hints to `.mustflow/state/perf/samples.json` and `.mustflow/state/perf/summary.json`. These files copy only the safe `performance` metadata from the receipt, use day-level timestamps, and enforce small retention limits. When structured phase timings exist, the sample stores phase names and durations only. It does not copy raw receipts, command output, command lines, environment values, absolute paths, or test names.
+
 Redaction metadata uses these fields:
 
 - `redaction.redacted` (`boolean`): Whether any receipt field was redacted.
@@ -112,11 +131,19 @@ Redaction metadata uses these fields:
 
 The receipt serves as a record of a single execution. The source of truth for command contracts remains `.mustflow/config/commands.toml`.
 
+## Opt-In Profiling
+
+Set `MUSTFLOW_RUN_PROFILE=1` to write `.mustflow/state/runs/latest.profile.json` for the current `mf run` invocation. The profile records bounded phase durations such as root detection, command contract loading, plan creation, environment preparation, write-drift checks, child command runtime, and receipt writing.
+
+The profile is local generated state for diagnosing the latest run path. It does not include command output, environment values, absolute paths, or historical samples, and it does not grant command authority or prove that a verification step can be skipped.
+
 `mf run` does not store environment variable values in the receipt. The environment fields report only the selected policy and allowed variable names so agents can explain the execution boundary without exposing secrets.
 
 `mf run` also scans command strings, retained output tails, and runtime error text for conservative secret-like patterns such as token-shaped values or `password = ...` assignments. Matching values are replaced with `[REDACTED_SECRET]`, and the receipt records redaction metadata. This is a safety net, not a complete secret scanner.
 
 `write_drift` stores path metadata only. It does not store file contents or diffs, and it does not make mustflow a filesystem sandbox. Undeclared changes are warning evidence for review, not an execution blocker.
+
+Write-drift tracking uses `git status` when it is available. If the project is not a Git worktree, mustflow does not recursively snapshot the whole repository by default; set `MUSTFLOW_WRITE_DRIFT_SNAPSHOT=1` only when you explicitly want that local fallback for the current run.
 
 ## Exit Codes
 

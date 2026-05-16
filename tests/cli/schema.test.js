@@ -228,6 +228,64 @@ test('command contract toml parse result matches the published schema', () => {
 	}
 });
 
+test('command contract schema accepts non-authorizing selection metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.metadata_selection_probe]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe command-selection metadata."
+argv = ['${process.execPath}', '-e', 'console.log("metadata")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["metadata_probe"]
+
+[intents.metadata_selection_probe.covers]
+reasons = ["metadata_probe"]
+surfaces = ["source"]
+paths = ["src/**"]
+contracts = ["runtime_behavior"]
+
+[intents.metadata_selection_probe.selection]
+coverage_level = "targeted"
+coverage_confidence = "medium"
+accepts_changed_files = "git_status"
+fallback_intents = ["test_fast"]
+escalate_to = ["test"]
+
+[intents.metadata_selection_probe.cost]
+expected_seconds = 42
+cold_start_seconds = 3
+timeout_ratio_expectation = 0.25
+cost_tier = "medium"
+
+[intents.metadata_selection_probe.relations]
+subsumes = ["test_unit"]
+subsumed_by = ["test"]
+requires_with = ["lint"]
+escalate_to = ["test"]
+`,
+		);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commands = parse(readFileSync(commandsPath, 'utf8'));
+
+		assertMatchesSchema(schemaRoot, 'commands.schema.json', commands);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('contract lint json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

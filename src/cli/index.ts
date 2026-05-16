@@ -4,30 +4,6 @@ import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { runAdapters } from './commands/adapters.js';
-import { runCheck } from './commands/check.js';
-import { runClassify } from './commands/classify.js';
-import { runContractLint } from './commands/contract-lint.js';
-import { runContext } from './commands/context.js';
-import { runDashboard } from './commands/dashboard.js';
-import { runDoctor } from './commands/doctor.js';
-import { runDocs } from './commands/docs.js';
-import { runExplain } from './commands/explain.js';
-import { runHelp } from './commands/help.js';
-import { runHandoff } from './commands/handoff.js';
-import { runImpact } from './commands/impact.js';
-import { runInit } from './commands/init.js';
-import { runIndex } from './commands/index.js';
-import { runLineEndings } from './commands/line-endings.js';
-import { runMap } from './commands/map.js';
-import { runRun } from './commands/run.js';
-import { runSearch } from './commands/search.js';
-import { runStatus } from './commands/status.js';
-import { runUpdate } from './commands/update.js';
-import { runUpgrade } from './commands/upgrade.js';
-import { runVerify } from './commands/verify.js';
-import { runVersion } from './commands/version.js';
-import { runVersionSources } from './commands/version-sources.js';
 import { COMMAND_DEFINITIONS } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
 import { DEFAULT_CLI_LANG, SUPPORTED_CLI_LANGS, isCliLang, t, type CliLang } from './lib/i18n.js';
@@ -156,99 +132,99 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 	}
 
 	if (command === '--version' || command === '-v' || command === 'version') {
-		return runVersion(args, reporter, parsed.lang);
+		return (await import('./commands/version.js')).runVersion(args, reporter, parsed.lang);
 	}
 
 	if (command === 'init') {
-		return runInit(args, reporter, parsed.lang);
+		return (await import('./commands/init.js')).runInit(args, reporter, parsed.lang);
 	}
 
 	if (command === 'adapters') {
-		return runAdapters(args, reporter, parsed.lang);
+		return (await import('./commands/adapters.js')).runAdapters(args, reporter, parsed.lang);
 	}
 
 	if (command === 'check') {
-		return runCheck(args, reporter, parsed.lang);
+		return (await import('./commands/check.js')).runCheck(args, reporter, parsed.lang);
 	}
 
 	if (command === 'classify') {
-		return runClassify(args, reporter, parsed.lang);
+		return (await import('./commands/classify.js')).runClassify(args, reporter, parsed.lang);
 	}
 
 	if (command === 'contract-lint') {
-		return runContractLint(args, reporter, parsed.lang);
+		return (await import('./commands/contract-lint.js')).runContractLint(args, reporter, parsed.lang);
 	}
 
 	if (command === 'status') {
-		return runStatus(args, reporter, parsed.lang);
+		return (await import('./commands/status.js')).runStatus(args, reporter, parsed.lang);
 	}
 
 	if (command === 'update') {
-		return runUpdate(args, reporter, parsed.lang);
+		return (await import('./commands/update.js')).runUpdate(args, reporter, parsed.lang);
 	}
 
 	if (command === 'upgrade') {
-		return runUpgrade(args, reporter, parsed.lang);
+		return (await import('./commands/upgrade.js')).runUpgrade(args, reporter, parsed.lang);
 	}
 
 	if (command === 'map') {
-		return runMap(args, reporter, parsed.lang);
+		return (await import('./commands/map.js')).runMap(args, reporter, parsed.lang);
 	}
 
 	if (command === 'line-endings') {
-		return runLineEndings(args, reporter, parsed.lang);
+		return (await import('./commands/line-endings.js')).runLineEndings(args, reporter, parsed.lang);
 	}
 
 	if (command === 'run') {
-		return runRun(args, reporter, parsed.lang);
+		return (await import('./commands/run.js')).runRun(args, reporter, parsed.lang);
 	}
 
 	if (command === 'context') {
-		return runContext(args, reporter, parsed.lang);
+		return (await import('./commands/context.js')).runContext(args, reporter, parsed.lang);
 	}
 
 	if (command === 'doctor') {
-		return runDoctor(args, reporter, parsed.lang);
+		return (await import('./commands/doctor.js')).runDoctor(args, reporter, parsed.lang);
 	}
 
 	if (command === 'docs') {
-		return runDocs(args, reporter, parsed.lang);
+		return (await import('./commands/docs.js')).runDocs(args, reporter, parsed.lang);
 	}
 
 	if (command === 'handoff') {
-		return runHandoff(args, reporter, parsed.lang);
+		return (await import('./commands/handoff.js')).runHandoff(args, reporter, parsed.lang);
 	}
 
 	if (command === 'index') {
-		return runIndex(args, reporter, parsed.lang);
+		return (await import('./commands/index.js')).runIndex(args, reporter, parsed.lang);
 	}
 
 	if (command === 'search') {
-		return runSearch(args, reporter, parsed.lang);
+		return (await import('./commands/search.js')).runSearch(args, reporter, parsed.lang);
 	}
 
 	if (command === 'dashboard') {
-		return runDashboard(args, reporter, parsed.lang);
+		return (await import('./commands/dashboard.js')).runDashboard(args, reporter, parsed.lang);
 	}
 
 	if (command === 'version-sources') {
-		return runVersionSources(args, reporter, parsed.lang);
+		return (await import('./commands/version-sources.js')).runVersionSources(args, reporter, parsed.lang);
 	}
 
 	if (command === 'verify') {
-		return runVerify(args, reporter, parsed.lang);
+		return (await import('./commands/verify.js')).runVerify(args, reporter, parsed.lang);
 	}
 
 	if (command === 'explain') {
-		return runExplain(args, reporter, parsed.lang);
+		return (await import('./commands/explain.js')).runExplain(args, reporter, parsed.lang);
 	}
 
 	if (command === 'impact') {
-		return runImpact(args, reporter, parsed.lang);
+		return (await import('./commands/impact.js')).runImpact(args, reporter, parsed.lang);
 	}
 
 	if (command === 'help') {
-		return runHelp(args, reporter, parsed.lang);
+		return (await import('./commands/help.js')).runHelp(args, reporter, parsed.lang);
 	}
 
 	reporter.stderr(renderCliError(t(parsed.lang, 'cli.error.unknownCommand', { command }), 'mf --help', parsed.lang));

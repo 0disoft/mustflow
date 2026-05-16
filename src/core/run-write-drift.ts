@@ -7,6 +7,7 @@ import type { CommandContract } from './config-loading.js';
 
 const MAX_SNAPSHOT_FILES = 20_000;
 const MAX_REPORTED_PATHS = 200;
+const RECURSIVE_SNAPSHOT_ENV = 'MUSTFLOW_WRITE_DRIFT_SNAPSHOT';
 const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
 const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/runs']);
 
@@ -16,6 +17,7 @@ interface SnapshotResult {
 	readonly ok: boolean;
 	readonly entries: ReadonlyMap<string, FileSignature>;
 	readonly reason: string | null;
+	readonly source: 'git_status' | 'recursive_snapshot' | 'unavailable';
 }
 
 export type RunWriteDriftStatus = 'checked' | 'unavailable';
@@ -37,6 +39,12 @@ export interface RunWriteTracker {
 	readonly projectRoot: string;
 	readonly declaredPaths: readonly string[];
 	readonly before: SnapshotResult;
+}
+
+function isRecursiveSnapshotEnabled(): boolean {
+	const value = process.env[RECURSIVE_SNAPSHOT_ENV];
+
+	return value === '1' || value?.toLowerCase() === 'true';
 }
 
 function toPosixPath(value: string): string {
@@ -99,15 +107,25 @@ function captureSnapshot(projectRoot: string): SnapshotResult {
 		return gitSnapshot;
 	}
 
+	if (!isRecursiveSnapshotEnabled()) {
+		return {
+			ok: false,
+			entries: new Map<string, FileSignature>(),
+			reason: 'git_status_unavailable_recursive_snapshot_disabled',
+			source: 'unavailable',
+		};
+	}
+
 	try {
 		const entries = new Map<string, FileSignature>();
 		collectSnapshotEntries(projectRoot, projectRoot, entries);
-		return { ok: true, entries, reason: null };
+		return { ok: true, entries, reason: null, source: 'recursive_snapshot' };
 	} catch (error) {
 		return {
 			ok: false,
 			entries: new Map<string, FileSignature>(),
 			reason: error instanceof Error && error.message.length > 0 ? error.message : 'snapshot_unavailable',
+			source: 'unavailable',
 		};
 	}
 }
@@ -147,13 +165,15 @@ function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
 		ok: true,
 		entries,
 		reason: null,
+		source: 'git_status',
 	};
 }
 
 function listDeclaredWritePaths(projectRoot: string, contract: CommandContract, intentName: string): string[] {
 	const paths = normalizeCommandEffects(projectRoot, contract, intentName)
 		.filter((effect) => effect.access === 'write')
-		.map((effect) => effect.path);
+		.map((effect) => effect.path)
+		.filter((effectPath): effectPath is string => typeof effectPath === 'string');
 
 	return [...new Set(paths.map(normalizeRelativePath))].sort((left, right) => left.localeCompare(right));
 }

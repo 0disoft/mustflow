@@ -67,6 +67,7 @@
     "stdout": { "$ref": "#/$defs/output" },
     "stderr": { "$ref": "#/$defs/output" },
     "write_drift": { "$ref": "#/$defs/writeDrift" },
+    "performance": { "$ref": "#/$defs/performance" },
     "redaction": { "$ref": "#/$defs/redaction" },
     "receipt_path": { "type": "string" }
   },
@@ -84,6 +85,114 @@
         "redaction_kinds": {
           "type": "array",
           "items": { "type": "string" }
+        }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "measurement",
+        "duration_ms",
+        "timeout_ratio",
+        "command_fingerprint",
+        "intent_fingerprint",
+        "contract_fingerprint",
+        "runner",
+        "output_summary",
+        "result_summary",
+        "quality"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "measurement": { "const": "wall_clock" },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "executor_overhead_ms": { "type": "number", "minimum": 0 },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "duration_ms"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+              "duration_ms": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "strategy",
+            "changed_file_count",
+            "changed_surface_counts",
+            "selected_target_count",
+            "fallback_used"
+          ],
+          "properties": {
+            "strategy": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+            "changed_file_count": { "type": "integer", "minimum": 0 },
+            "changed_surface_counts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" }
+            },
+            "selected_target_count": { "type": "integer", "minimum": 0 },
+            "fallback_used": { "type": "boolean" }
+          }
+        },
+        "timeout_ratio": { "type": "number", "minimum": 0 },
+        "command_fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "intent_fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "contract_fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "runner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "platform_family", "arch_family", "runtime", "runtime_major"],
+          "properties": {
+            "kind": { "const": "local" },
+            "platform_family": { "type": "string" },
+            "arch_family": { "type": "string" },
+            "runtime": { "enum": ["node", "bun"] },
+            "runtime_major": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "output_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stdout_bytes", "stderr_bytes", "stdout_truncated", "stderr_truncated"],
+          "properties": {
+            "stdout_bytes": { "type": "integer", "minimum": 0 },
+            "stderr_bytes": { "type": "integer", "minimum": 0 },
+            "stdout_truncated": { "type": "boolean" },
+            "stderr_truncated": { "type": "boolean" }
+          }
+        },
+        "result_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "exit_code_class", "timed_out", "error_kind"],
+          "properties": {
+            "status": { "enum": ["passed", "failed", "timed_out", "start_failed"] },
+            "exit_code_class": { "enum": ["success", "failure", "no_exit_code"] },
+            "timed_out": { "type": "boolean" },
+            "error_kind": { "enum": ["timeout", "start_failed", "exit_code", null] }
+          }
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["phase_timings_source", "target_timings_source", "usable_for_history"],
+          "properties": {
+            "phase_timings_source": { "enum": ["none", "structured_report"] },
+            "target_timings_source": { "const": "none" },
+            "usable_for_history": { "type": "boolean" }
+          }
         }
       }
     },

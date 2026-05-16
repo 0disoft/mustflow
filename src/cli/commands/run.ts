@@ -1,18 +1,9 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { performance } from 'node:perf_hooks';
 
-import { runCheck } from './check.js';
-import { runClassify } from './classify.js';
-import { runContext } from './context.js';
-import { runDoctor } from './doctor.js';
-import { runHelp } from './help.js';
-import { runImpact } from './impact.js';
-import { runLineEndings } from './line-endings.js';
-import { runMap } from './map.js';
-import { runStatus } from './status.js';
-import { runUpdate } from './update.js';
-import { runVersionSources } from './version-sources.js';
 import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
 import { createCommandEnv } from '../../core/command-env.js';
+import { BoundedOutputBuffer, type BoundedOutputSnapshot } from '../../core/bounded-output.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
@@ -30,14 +21,16 @@ import {
 	type RunPreviewMode,
 } from '../lib/run-plan.js';
 import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../../core/run-receipt.js';
+import { recordRunPerformanceHistory } from '../../core/run-performance-history.js';
+import { RunProfiler } from '../../core/run-profile.js';
 import { finishRunWriteTracking, startRunWriteTracking } from '../../core/run-write-drift.js';
 
 interface CommandResult {
 	readonly status: number | null;
 	readonly signal: string | null;
 	readonly error?: Error;
-	readonly stdout: string;
-	readonly stderr: string;
+	readonly stdout: string | Buffer | BoundedOutputSnapshot | null;
+	readonly stderr: string | Buffer | BoundedOutputSnapshot | null;
 	readonly pid?: number;
 }
 
@@ -47,12 +40,21 @@ interface BufferedReporter {
 	readonly stderr: () => string;
 }
 
-function emitOutput(reporter: Reporter, output: string | Buffer | null, stream: 'stdout' | 'stderr'): void {
+export interface RunCommandOptions {
+	readonly writeLatestReceipt?: boolean;
+	readonly testTargets?: readonly string[];
+}
+
+function emitOutput(
+	reporter: Reporter,
+	output: string | Buffer | BoundedOutputSnapshot | null,
+	stream: 'stdout' | 'stderr',
+): void {
 	if (!output) {
 		return;
 	}
 
-	const text = output.toString().trimEnd();
+	const text = (typeof output === 'object' && 'tail' in output ? output.tail : output.toString()).trimEnd();
 
 	if (text.length === 0) {
 		return;
@@ -131,47 +133,47 @@ async function runKnownBuiltinCommand(args: readonly string[], reporter: Reporte
 	}
 
 	if (command === 'check') {
-		return runCheck(commandArgs, reporter, lang);
+		return (await import('./check.js')).runCheck(commandArgs, reporter, lang);
 	}
 
 	if (command === 'classify') {
-		return runClassify(commandArgs, reporter, lang);
+		return (await import('./classify.js')).runClassify(commandArgs, reporter, lang);
 	}
 
 	if (command === 'context') {
-		return runContext(commandArgs, reporter, lang);
+		return (await import('./context.js')).runContext(commandArgs, reporter, lang);
 	}
 
 	if (command === 'doctor') {
-		return runDoctor(commandArgs, reporter, lang);
+		return (await import('./doctor.js')).runDoctor(commandArgs, reporter, lang);
 	}
 
 	if (command === 'help') {
-		return runHelp(commandArgs, reporter, lang);
+		return (await import('./help.js')).runHelp(commandArgs, reporter, lang);
 	}
 
 	if (command === 'impact') {
-		return runImpact(commandArgs, reporter, lang);
+		return (await import('./impact.js')).runImpact(commandArgs, reporter, lang);
 	}
 
 	if (command === 'line-endings') {
-		return runLineEndings(commandArgs, reporter, lang);
+		return (await import('./line-endings.js')).runLineEndings(commandArgs, reporter, lang);
 	}
 
 	if (command === 'map') {
-		return runMap(commandArgs, reporter, lang);
+		return (await import('./map.js')).runMap(commandArgs, reporter, lang);
 	}
 
 	if (command === 'status') {
-		return runStatus(commandArgs, reporter, lang);
+		return (await import('./status.js')).runStatus(commandArgs, reporter, lang);
 	}
 
 	if (command === 'update') {
-		return runUpdate(commandArgs, reporter, lang);
+		return (await import('./update.js')).runUpdate(commandArgs, reporter, lang);
 	}
 
 	if (command === 'version-sources') {
-		return runVersionSources(commandArgs, reporter, lang);
+		return (await import('./version-sources.js')).runVersionSources(commandArgs, reporter, lang);
 	}
 
 	return undefined;
@@ -243,6 +245,96 @@ function runArgvCommand(
 	});
 }
 
+function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr', chunk: Buffer): void {
+	if (stream === 'stdout') {
+		if (reporter.writeStdout) {
+			reporter.writeStdout(chunk);
+			return;
+		}
+
+		reporter.stdout(chunk.toString().trimEnd());
+		return;
+	}
+
+	if (reporter.writeStderr) {
+		reporter.writeStderr(chunk);
+		return;
+	}
+
+	reporter.stderr(chunk.toString().trimEnd());
+}
+
+function runArgvCommandStreaming(
+	command: ResolvedArgvCommand | undefined,
+	cwd: string,
+	env: NodeJS.ProcessEnv,
+	timeoutSeconds: number,
+	stdoutTailBytes: number,
+	stderrTailBytes: number,
+	reporter: Reporter,
+): Promise<CommandResult> {
+	return new Promise((resolve) => {
+		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
+		const stderr = new BoundedOutputBuffer(stderrTailBytes);
+		let settled = false;
+		let timedOut = false;
+		let childError: Error | undefined;
+		let childPid: number | undefined;
+		let timeout: NodeJS.Timeout | undefined;
+
+		const child = spawn(command?.executable ?? '', command?.args ?? [], {
+			cwd,
+			env,
+			shell: command?.shell ?? false,
+			stdio: ['ignore', 'pipe', 'pipe'],
+			windowsHide: true,
+			detached: process.platform !== 'win32',
+		});
+		childPid = child.pid;
+
+		const finish = (status: number | null, signal: string | null): void => {
+			if (settled) {
+				return;
+			}
+
+			settled = true;
+
+			if (timeout) {
+				clearTimeout(timeout);
+			}
+
+			resolve({
+				status,
+				signal,
+				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
+				stdout: stdout.toSnapshot(),
+				stderr: stderr.toSnapshot(),
+				pid: childPid,
+			});
+		};
+
+		child.stdout?.on('data', (chunk: Buffer) => {
+			stdout.append(chunk);
+			writeStreamChunk(reporter, 'stdout', chunk);
+		});
+		child.stderr?.on('data', (chunk: Buffer) => {
+			stderr.append(chunk);
+			writeStreamChunk(reporter, 'stderr', chunk);
+		});
+		child.once('error', (error) => {
+			childError = error;
+		});
+		child.once('close', (status, signal) => {
+			finish(status, signal);
+		});
+
+		timeout = setTimeout(() => {
+			timedOut = true;
+			terminateProcessTree(childPid);
+		}, timeoutSeconds * 1000);
+	});
+}
+
 function runShellCommand(
 	command: string | undefined,
 	cwd: string,
@@ -260,6 +352,77 @@ function runShellCommand(
 		stdio: ['ignore', 'pipe', 'pipe'],
 		timeout: timeoutSeconds * 1000,
 		windowsHide: true,
+	});
+}
+
+function runShellCommandStreaming(
+	command: string | undefined,
+	cwd: string,
+	env: NodeJS.ProcessEnv,
+	timeoutSeconds: number,
+	stdoutTailBytes: number,
+	stderrTailBytes: number,
+	reporter: Reporter,
+): Promise<CommandResult> {
+	return new Promise((resolve) => {
+		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
+		const stderr = new BoundedOutputBuffer(stderrTailBytes);
+		let settled = false;
+		let timedOut = false;
+		let childError: Error | undefined;
+		let childPid: number | undefined;
+		let timeout: NodeJS.Timeout | undefined;
+
+		const child = spawn(command ?? '', {
+			cwd,
+			env,
+			shell: true,
+			stdio: ['ignore', 'pipe', 'pipe'],
+			windowsHide: true,
+			detached: process.platform !== 'win32',
+		});
+		childPid = child.pid;
+
+		const finish = (status: number | null, signal: string | null): void => {
+			if (settled) {
+				return;
+			}
+
+			settled = true;
+
+			if (timeout) {
+				clearTimeout(timeout);
+			}
+
+			resolve({
+				status,
+				signal,
+				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
+				stdout: stdout.toSnapshot(),
+				stderr: stderr.toSnapshot(),
+				pid: childPid,
+			});
+		};
+
+		child.stdout?.on('data', (chunk: Buffer) => {
+			stdout.append(chunk);
+			writeStreamChunk(reporter, 'stdout', chunk);
+		});
+		child.stderr?.on('data', (chunk: Buffer) => {
+			stderr.append(chunk);
+			writeStreamChunk(reporter, 'stderr', chunk);
+		});
+		child.once('error', (error) => {
+			childError = error;
+		});
+		child.once('close', (status, signal) => {
+			finish(status, signal);
+		});
+
+		timeout = setTimeout(() => {
+			timedOut = true;
+			terminateProcessTree(childPid);
+		}, timeoutSeconds * 1000);
 	});
 }
 
@@ -364,7 +527,15 @@ export function getRunHelp(lang: CliLang = 'en'): string {
  * invariant: Execution requires configured status, oneshot lifecycle, agent_allowed policy, and closed stdin.
  * risk: config, security, state
  */
-export async function runRun(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runRun(
+	args: string[],
+	reporter: Reporter,
+	lang: CliLang = 'en',
+	options: RunCommandOptions = {},
+): Promise<number> {
+	const executorStartedAtMs = performance.now();
+	const profiler = new RunProfiler();
+
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getRunHelp(lang));
 		return 0;
@@ -401,41 +572,100 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		return 1;
 	}
 
-	const projectRoot = resolveMustflowRoot();
-	const contract = readCommandContract(projectRoot);
-	const plan = createRunPlan(projectRoot, contract, intentName);
+	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
+	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
+	const plan = profiler.measure('plan_creation', () =>
+		createRunPlan(projectRoot, contract, intentName, { testTargets: options.testTargets }),
+	);
 
 	if (previewMode) {
-		if (json) {
-			reporter.stdout(JSON.stringify(createRunPreview(plan, previewMode), null, 2));
-		} else {
-			reporter.stdout(renderRunPreviewText(plan, previewMode));
-		}
+		profiler.measure('preview_render', () => {
+			if (json) {
+				reporter.stdout(JSON.stringify(createRunPreview(plan, previewMode), null, 2));
+			} else {
+				reporter.stdout(renderRunPreviewText(plan, previewMode));
+			}
+		});
+		profiler.writeLatest({
+			projectRoot,
+			intent: intentName,
+			status: plan.ok ? 'previewed' : 'blocked',
+			previewMode,
+		});
 
 		return plan.ok ? 0 : 1;
 	}
 
 	if (!plan.ok) {
 		reportRunPlanFailure(plan, reporter, lang);
+		profiler.writeLatest({
+			projectRoot,
+			intent: intentName,
+			status: 'blocked',
+			previewMode: null,
+		});
 		return 1;
 	}
 
-	const runReceiptPolicy = resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot));
-	const env = createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist });
+	const runReceiptPolicy = profiler.measure('retention_policy', () =>
+		resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot)),
+	);
+	const env = profiler.measure('environment', () =>
+		createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
+	);
 	const lifecycleValue = plan.lifecycle ?? 'oneshot';
 	const runPolicyValue = plan.runPolicy ?? 'agent_allowed';
-	const writeTracker = startRunWriteTracking(projectRoot, contract, intentName);
+	const writeTracker = profiler.measure('write_drift_before', () => startRunWriteTracking(projectRoot, contract, intentName));
+	const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);
+	const stderrTailBytes = Math.min(runReceiptPolicy.stderrTailBytes, plan.maxOutputBytes);
+	let streamedOutput = false;
 
+	const childStartedAtMs = performance.now();
 	const startedAt = new Date();
-	const result =
-		plan.commandArgv && isMustflowBuiltinIntent(plan.intent)
-			? ((await runBuiltinArgvInProcess(plan.commandArgv, plan.cwd, lang)) ??
-				runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds))
-		: plan.commandArgv
-			? runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds)
-			: runShellCommand(plan.shellCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
+	const result = await profiler.measureAsync('child_command', async () => {
+		if (plan.commandArgv && isMustflowBuiltinIntent(plan.intent)) {
+			const builtinResult = await runBuiltinArgvInProcess(plan.commandArgv, plan.cwd, lang);
+
+			if (builtinResult) {
+				return builtinResult;
+			}
+		}
+
+		if (plan.commandArgv) {
+			if (!json) {
+				streamedOutput = true;
+				return runArgvCommandStreaming(
+					plan.argvCommand,
+					plan.cwd,
+					env,
+					plan.timeoutSeconds,
+					stdoutTailBytes,
+					stderrTailBytes,
+					reporter,
+				);
+			}
+
+			return runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
+		}
+
+		if (!json) {
+			streamedOutput = true;
+			return runShellCommandStreaming(
+				plan.shellCommand,
+				plan.cwd,
+				env,
+				plan.timeoutSeconds,
+				stdoutTailBytes,
+				stderrTailBytes,
+				reporter,
+			);
+		}
+
+		return runShellCommand(plan.shellCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
+	});
+	const childDurationMs = performance.now() - childStartedAtMs;
 	const finishedAt = new Date();
-	const writeDrift = finishRunWriteTracking(writeTracker);
+	const writeDrift = profiler.measure('write_drift_after', () => finishRunWriteTracking(writeTracker));
 	const exitCode = typeof result.status === 'number' ? result.status : null;
 	const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
 	let killMethod: string | null = null;
@@ -445,7 +675,7 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		terminateProcessTree(result.pid);
 	}
 
-	const receipt = createRunReceipt({
+	const receipt = profiler.measure('receipt_create', () => createRunReceipt({
 		intent: intentName,
 		status: runStatus,
 		timedOut: runStatus === 'timed_out',
@@ -470,19 +700,39 @@ export async function runRun(args: string[], reporter: Reporter, lang: CliLang =
 		stdout: result.stdout,
 		stderr: result.stderr,
 		writeDrift,
+		executorOverheadMs: Math.max(0, Math.round((performance.now() - executorStartedAtMs - childDurationMs) * 1000) / 1000),
+		phaseTimings: profiler.getReceiptPhases(),
+		selectionSummary: {
+			strategy: plan.testTargets.length > 0 ? 'project_test_selection' : 'direct_intent',
+			changed_file_count: 0,
+			changed_surface_counts: {},
+			selected_target_count: Math.max(1, plan.testTargets.length),
+			fallback_used: false,
+		},
 		stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
 		stderrTailBytes: runReceiptPolicy.stderrTailBytes,
-	});
+	}));
 
-	writeRunReceipt(projectRoot, receipt);
+	if (options.writeLatestReceipt !== false) {
+		profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt));
+	}
+	profiler.measure('performance_history_write', () => recordRunPerformanceHistory(projectRoot, receipt));
+	profiler.writeLatest({
+		projectRoot,
+		intent: intentName,
+		status: runStatus,
+		previewMode: null,
+	});
 
 	if (json) {
 		reporter.stdout(JSON.stringify(receipt, null, 2));
 		return runStatus === 'passed' ? 0 : 1;
 	}
 
-	emitOutput(reporter, result.stdout, 'stdout');
-	emitOutput(reporter, result.stderr, 'stderr');
+	if (!streamedOutput) {
+		emitOutput(reporter, result.stdout, 'stdout');
+		emitOutput(reporter, result.stderr, 'stderr');
+	}
 
 	if (result.error) {
 		const errorWithCode = result.error as NodeJS.ErrnoException;
