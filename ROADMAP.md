@@ -22,37 +22,6 @@ Strong product framing to preserve:
 - SQLite, dashboard exports, run receipts, handoff records, and evidence artifacts may explain current state; they must not become project truth or hidden memory.
 - Convenience must follow explanation. A feature that makes work faster is only acceptable after it preserves authority, safety, and verification evidence.
 
-## Near-Term Improvement Backlog
-
-These items are ordered by current leverage. They are candidates, not committed release promises. Before starting an item, re-check the current README, documentation site, command contract, schemas, tests, and templates.
-
-### 1. Split Large Internal Files With Behavior-Preserving Facades
-
-Goal: reduce maintenance cost without changing public behavior.
-
-Candidate order:
-
-1. Split `src/cli/lib/validation.ts` by validation domain: primitives, mustflow config, preferences, versioning, skills, skill resources, context docs, strict policies, and test selection.
-
-Constraints:
-
-- Keep the existing import path as a facade during the first split.
-- Avoid behavior changes in the same change set.
-- Use related tests and type checks after each split.
-
-## Deferred Milestone: User Project Verification Performance
-
-Goal: make mustflow feel faster in user repositories without guessing commands, weakening verification, or turning local state into a memory or surveillance log.
-
-This milestone is about choosing, explaining, and running already-declared command intents more intelligently. It must not make mustflow a test runner, a hidden dependency graph engine, or a source of command authority outside `.mustflow/config/commands.toml`.
-
-### Project-Declared Test Selection
-
-User-project related-test selection should be driven by the optional `.mustflow/config/test-selection.toml`
-contract instead of inferred by mustflow from conventions.
-
-mustflow may use local index data and performance history only as additive suggestions.
-
 ## Non-Goals
 
 - Do not make mustflow an autonomous agent runtime.
