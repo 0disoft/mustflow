@@ -147,6 +147,7 @@ function cachedIndexedProjectKey(descriptor) {
 	hashPath(hash, path.join(projectRoot, 'dist', 'cli', 'commands', 'init.js'));
 	hashPath(hash, path.join(projectRoot, 'dist', 'cli', 'commands', 'index.js'));
 	hashPath(hash, path.join(projectRoot, 'dist', 'cli', 'lib', 'local-index.js'));
+	hashDirectory(hash, path.join(projectRoot, 'dist', 'cli', 'lib', 'local-index'));
 	hashDirectory(hash, path.join(projectRoot, 'templates', 'default'));
 
 	return hash.digest('hex').slice(0, 24);

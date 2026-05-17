@@ -1,6 +1,6 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-16
+Last reviewed: 2026-05-17
 
 This roadmap lists only remaining work. Completed items are removed after verification so agents can focus on upcoming decisions instead of reviewing project history.
 
@@ -21,6 +21,24 @@ Strong product framing to preserve:
   model, or tool policies.
 - SQLite, dashboard exports, run receipts, handoff records, and evidence artifacts may explain current state; they must not become project truth or hidden memory.
 - Convenience must follow explanation. A feature that makes work faster is only acceptable after it preserves authority, safety, and verification evidence.
+
+## Near-Term Improvement Backlog
+
+These items are ordered by current leverage. They are candidates, not committed release promises. Before starting an item, re-check the current README, documentation site, command contract, schemas, tests, and templates.
+
+### 1. Split Large Internal Files With Behavior-Preserving Facades
+
+Goal: reduce maintenance cost without changing public behavior.
+
+Candidate order:
+
+1. Split `src/cli/lib/validation.ts` by validation domain: primitives, mustflow config, preferences, versioning, skills, skill resources, context docs, strict policies, and test selection.
+
+Constraints:
+
+- Keep the existing import path as a facade during the first split.
+- Avoid behavior changes in the same change set.
+- Use related tests and type checks after each split.
 
 ## Deferred Milestone: User Project Verification Performance
 
