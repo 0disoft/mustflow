@@ -9,9 +9,9 @@
         "sql.js": "^1.14.1",
       },
       "devDependencies": {
-        "@types/node": "^25.6.2",
+        "@types/node": "^25.8.0",
         "@types/sql.js": "^1.4.11",
-        "fast-check": "^4.7.0",
+        "fast-check": "^4.8.0",
         "typescript": "^6.0.3",
       },
     },
