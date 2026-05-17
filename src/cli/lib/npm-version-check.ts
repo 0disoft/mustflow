@@ -2,6 +2,45 @@ import type { PackageMetadata } from './package-info.js';
 
 const DEFAULT_NPM_REGISTRY_URL = 'https://registry.npmjs.org';
 const DEFAULT_VERSION_CHECK_TIMEOUT_MS = 3_000;
+const PACKAGE_MANAGER_COMMANDS = [
+	{
+		id: 'npm',
+		label: 'npm',
+		command(packageName: string) {
+			return `npm install -g ${packageName}@latest`;
+		},
+	},
+	{
+		id: 'bun',
+		label: 'bun',
+		command(packageName: string) {
+			return `bun add -g ${packageName}@latest`;
+		},
+	},
+	{
+		id: 'pnpm',
+		label: 'pnpm',
+		command(packageName: string) {
+			return `pnpm add -g ${packageName}@latest`;
+		},
+	},
+	{
+		id: 'yarn',
+		label: 'yarn',
+		command(packageName: string) {
+			return `yarn global add ${packageName}@latest`;
+		},
+	},
+	{
+		id: 'deno',
+		label: 'deno',
+		command(packageName: string) {
+			return `deno install -g -A -n mf npm:${packageName}@latest`;
+		},
+	},
+] as const;
+
+type PackageManagerId = (typeof PACKAGE_MANAGER_COMMANDS)[number]['id'];
 
 export interface PackageVersionCheck {
 	readonly packageName: string;
@@ -10,6 +49,13 @@ export interface PackageVersionCheck {
 	readonly updateAvailable: boolean;
 	readonly registryUrl: string;
 	readonly updateCommand: string;
+	readonly updateCommands: readonly PackageInstallCommand[];
+}
+
+export interface PackageInstallCommand {
+	readonly manager: string;
+	readonly command: string;
+	readonly recommended: boolean;
 }
 
 interface ParsedSemver {
@@ -92,6 +138,43 @@ function getTimeoutMs(): number {
 	return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : DEFAULT_VERSION_CHECK_TIMEOUT_MS;
 }
 
+function detectPackageManagerId(): PackageManagerId | null {
+	const signals = [
+		process.env.npm_config_user_agent,
+		process.env.npm_execpath,
+		process.execPath,
+		process.argv[1],
+		import.meta.url,
+	]
+		.filter((signal): signal is string => typeof signal === 'string' && signal.length > 0)
+		.map((signal) => signal.toLowerCase());
+
+	for (const id of ['bun', 'pnpm', 'yarn', 'deno', 'npm'] as const) {
+		if (signals.some((signal) => signal.includes(id))) {
+			return id;
+		}
+	}
+
+	return null;
+}
+
+function getPackageInstallCommands(packageName: string): PackageInstallCommand[] {
+	const detectedId = detectPackageManagerId();
+	const commands = [...PACKAGE_MANAGER_COMMANDS];
+	const recommendedIndex = detectedId ? commands.findIndex((entry) => entry.id === detectedId) : -1;
+
+	if (recommendedIndex > 0) {
+		const [recommended] = commands.splice(recommendedIndex, 1);
+		commands.unshift(recommended);
+	}
+
+	return commands.map((entry, index) => ({
+		manager: entry.label,
+		command: entry.command(packageName),
+		recommended: index === 0 && detectedId === entry.id,
+	}));
+}
+
 function buildLatestPackageUrl(registryUrl: string, packageName: string): string {
 	const trimmedRegistryUrl = registryUrl.replace(/\/+$/u, '');
 	const encodedPackageName = packageName.startsWith('@')
@@ -119,12 +202,15 @@ export async function checkNpmLatestVersion(metadata: PackageMetadata): Promise<
 		throw new Error('npm registry response did not include a version');
 	}
 
+	const updateCommands = getPackageInstallCommands(metadata.name);
+
 	return {
 		packageName: metadata.name,
 		currentVersion: metadata.version,
 		latestVersion,
 		updateAvailable: comparePackageVersions(metadata.version, latestVersion) < 0,
 		registryUrl,
-		updateCommand: `npm install -g ${metadata.name}@latest`,
+		updateCommand: updateCommands[0]?.command ?? `npm install -g ${metadata.name}@latest`,
+		updateCommands,
 	};
 }

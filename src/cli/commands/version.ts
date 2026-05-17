@@ -32,7 +32,11 @@ function renderVersionCheck(check: PackageVersionCheck, lang: CliLang): string {
 	];
 
 	if (check.updateAvailable) {
-		lines.push('', t(lang, 'version.check.updateCommand'), check.updateCommand);
+		lines.push(
+			'',
+			t(lang, 'version.check.updateCommand'),
+			...check.updateCommands.map((entry) => `${entry.manager}: ${entry.command}`),
+		);
 	}
 
 	return lines.join('\n');

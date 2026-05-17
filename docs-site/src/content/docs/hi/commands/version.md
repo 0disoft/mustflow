@@ -22,7 +22,7 @@ npx mf version --check
 bunx mf version --check
 ```
 
-`--check` npm registry से latest published version पढ़ता है, उसे installed version से मिलाता है, और नया version मिलने पर update command प्रिंट करता है।
+`--check` npm registry से latest published version पढ़ता है, उसे installed version से मिलाता है, और नया version मिलने पर npm, Bun, pnpm, Yarn, और Deno के update commands प्रिंट करता है।
 
 यह packages install नहीं करता और files नहीं बदलता।
 
@@ -30,7 +30,7 @@ bunx mf version --check
 
 ```sh
 npm install -g mustflow
-bun install -g mustflow
+bun add -g mustflow@latest
 ```
 
 Bun के साथ, Bun का global executable directory, आम तौर पर `~/.bun/bin`, `PATH` में है या नहीं यह जाँचें।

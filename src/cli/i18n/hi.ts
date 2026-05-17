@@ -813,7 +813,7 @@ export const hiMessages = {
   "version.help.exit.ok": "Version जानकारी प्रिंट की गई",
   "version.check.latestAvailable": "latest {version} उपलब्ध है",
   "version.check.upToDate": "latest {version}; पहले से up to date",
-  "version.check.updateCommand": "Update command:",
+  "version.check.updateCommand": "Update commands:",
   "version.error.checkFailed": "npm पर नया version जाँचा नहीं जा सका: {message}",
 
   "upgrade.help.summary":

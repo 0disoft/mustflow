@@ -813,7 +813,7 @@ Lee estos archivos antes de trabajar:
   "version.help.exit.ok": "Se imprimió la información de versión",
   "version.check.latestAvailable": "última versión {version} disponible",
   "version.check.upToDate": "última versión {version}; ya está actualizado",
-  "version.check.updateCommand": "Comando de actualización:",
+  "version.check.updateCommand": "Comandos de actualización:",
   "version.error.checkFailed": "No se pudo consultar npm para una versión nueva: {message}",
 
   "upgrade.help.summary":

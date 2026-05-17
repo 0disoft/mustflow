@@ -22,7 +22,7 @@ npx mf version --check
 bunx mf version --check
 ```
 
-`--check`는 npm 레지스트리에 접속해 설치된 버전과 최신 게시 버전을 비교하고, 새 버전이 있으면 업데이트 명령을 출력합니다.
+`--check`는 npm 레지스트리에 접속해 설치된 버전과 최신 게시 버전을 비교하고, 새 버전이 있으면 npm, Bun, pnpm, Yarn, Deno용 업데이트 명령을 출력합니다. 현재 실행 환경에서 패키지 관리자를 추정할 수 있으면 그 명령을 먼저 보여줍니다.
 
 패키지를 설치하거나 파일을 수정하지 않습니다.
 
@@ -30,7 +30,7 @@ bunx mf version --check
 
 ```sh
 npm install -g mustflow
-bun install -g mustflow
+bun add -g mustflow@latest
 ```
 
 Bun을 사용할 때는 보통 `~/.bun/bin`인 Bun 전역 실행 파일 폴더가 `PATH`에 들어 있는지 확인하세요.
@@ -42,10 +42,14 @@ mustflow 1.10.0
 최신 1.11.0 사용 가능
 
 업데이트 명령:
-npm install -g mustflow@latest
+npm: npm install -g mustflow@latest
+bun: bun add -g mustflow@latest
+pnpm: pnpm add -g mustflow@latest
+yarn: yarn global add mustflow@latest
+deno: deno install -g -A -n mf npm:mustflow@latest
 ```
 
-Bun으로 전역 설치한 사용자는 `bun install -g mustflow`로 전역 명령을 설치하거나 갱신할 수 있습니다.
+Bun으로 전역 설치한 사용자는 `bun add -g mustflow@latest`로 전역 명령을 설치하거나 갱신할 수 있습니다.
 
 ## 도움말과 종료 코드
 

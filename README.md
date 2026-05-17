@@ -103,7 +103,7 @@ available as a direct shell command, install mustflow globally:
 npm install -g mustflow
 mf version --check
 
-bun install -g mustflow
+bun add -g mustflow@latest
 mf version --check
 ```
 
@@ -282,10 +282,10 @@ npx mf update --dry-run
 npx mf update --apply
 ```
 
-After updating the mustflow package, `mf upgrade` combines the package freshness check with the safe project-file update step. It does not install packages by itself; update npm, pnpm, or Bun first.
+After updating the mustflow package, `mf upgrade` combines the package freshness check with the safe project-file update step. It does not install packages by itself; refresh mustflow with the package manager you used first. When a newer release exists, `mf version --check` and `mf upgrade` print update commands for npm, Bun, pnpm, Yarn, and Deno.
 
 ```sh
-bun update -g mustflow
+bun add -g mustflow@latest
 mf upgrade --dry-run
 mf upgrade
 ```
@@ -331,7 +331,7 @@ mf run mustflow_update_apply
 | `mf help <topic>` | Show installed mustflow help. |
 | `mf dashboard` | Start a local inspection dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. Use `--export-json <path>` or `--export <path>` for a bounded static report. It does not execute commands or apply fixes. |
 | `mf version` | Print the installed mustflow package version. |
-| `mf version --check` | Compare the installed package version with the latest npm release and print an update command if a newer version exists. |
+| `mf version --check` | Compare the installed package version with the latest npm release and print package-manager update commands if a newer version exists. |
 | `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
 | `mf impact --changed` | Report whether changed paths require a package or template version decision. |
 | `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |

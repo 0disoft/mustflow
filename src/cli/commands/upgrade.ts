@@ -35,7 +35,9 @@ function printPackageCheck(check: PackageVersionCheck, reporter: Reporter, lang:
 	if (check.updateAvailable) {
 		reporter.stdout('');
 		reporter.stdout(t(lang, 'version.check.updateCommand'));
-		reporter.stdout(check.updateCommand);
+		for (const entry of check.updateCommands) {
+			reporter.stdout(`${entry.manager}: ${entry.command}`);
+		}
 	}
 }
 

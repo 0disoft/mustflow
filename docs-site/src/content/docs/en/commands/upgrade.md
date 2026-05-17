@@ -7,16 +7,16 @@ description: Checks the package version and safely updates installed mustflow wo
 
 It checks whether the current CLI package is up to date on npm. If the package is current, it runs the same safe project-file update policy as `mf update --apply`.
 
-It does not install npm, pnpm, or Bun packages. Package manager updates stay outside mustflow so repositories are not modified by package installation side effects.
+It does not install packages. Package manager updates stay outside mustflow so repositories are not modified by package installation side effects.
 
 ## Typical Flow
 
 ```sh
-bun update -g mustflow
+bun add -g mustflow@latest
 mf upgrade
 ```
 
-For npm or pnpm users, update the package with the package manager first, then run `mf upgrade` inside each mustflow project.
+Use the package manager that installed mustflow. `mf upgrade` prints npm, Bun, pnpm, Yarn, and Deno update commands when the installed package is behind, then stops before touching project files.
 
 ## Safety Rules
 
@@ -27,7 +27,7 @@ For npm or pnpm users, update the package with the package manager first, then r
 - Only `update` and `create` items from the template manifest can be written.
 - Existing files are backed up under `.mustflow/backups/<timestamp>/` before replacement.
 
-If a newer mustflow package exists on npm, `mf upgrade` stops before touching project files and prints the package update command. Run the package update first, then run `mf upgrade` again.
+If a newer mustflow package exists on npm, `mf upgrade` stops before touching project files and prints package-manager update commands. Run the package update first, then run `mf upgrade` again.
 
 ## Dry Run
 

@@ -22,7 +22,7 @@ npx mf version --check
 bunx mf version --check
 ```
 
-`--check` 会访问 npm registry，将已安装版本与最新发布版本比较；如果有更新版本，就打印更新命令。
+`--check` 会访问 npm registry，将已安装版本与最新发布版本比较；如果有更新版本，就打印 npm、Bun、pnpm、Yarn 和 Deno 的更新命令。
 
 它不会安装包，也不会修改文件。
 
@@ -30,7 +30,7 @@ bunx mf version --check
 
 ```sh
 npm install -g mustflow
-bun install -g mustflow
+bun add -g mustflow@latest
 ```
 
 使用 Bun 时，请确认 Bun 的全局可执行文件目录，通常是 `~/.bun/bin`，已经加入 `PATH`。

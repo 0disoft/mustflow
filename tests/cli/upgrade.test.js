@@ -174,9 +174,39 @@ test('upgrade stops before project writes when a newer package is available', as
 
 		assert.equal(result.status, 1);
 		assert.match(result.stdout, /latest 999\.0\.0 available/);
-		assert.match(result.stdout, /Update command:/);
+		assert.match(result.stdout, /Update commands:/);
+		assert.match(result.stdout, /npm: npm install -g mustflow@latest/);
+		assert.match(result.stdout, /bun: bun add -g mustflow@latest/);
+		assert.match(result.stdout, /pnpm: pnpm add -g mustflow@latest/);
+		assert.match(result.stdout, /yarn: yarn global add mustflow@latest/);
+		assert.match(result.stdout, /deno: deno install -g -A -n mf npm:mustflow@latest/);
 		assert.match(result.stdout, /No project files were written/);
 		assert.equal(readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8'), originalAgents);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(templatePath);
+	}
+});
+
+test('upgrade prefers the detected install manager in update guidance', async () => {
+	const projectPath = createTempProject();
+	const { templatePath } = createTemplateWithAgentsUpdate();
+
+	try {
+		copyInitializedProject(projectPath);
+		const result = await withPackageVersion('999.0.0', (registryUrl) =>
+			runCliAsync(projectPath, ['upgrade'], {
+				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
+				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				npm_config_user_agent: 'bun/1.3.14 node/v24.0.0 win32 x64',
+				npm_execpath: '',
+			}),
+		);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stdout, /Update commands:\r?\nbun: bun add -g mustflow@latest/);
+		assert.match(result.stdout, /npm: npm install -g mustflow@latest/);
+		assert.match(result.stdout, /No project files were written/);
 	} finally {
 		removeTempProject(projectPath);
 		removeTempProject(templatePath);

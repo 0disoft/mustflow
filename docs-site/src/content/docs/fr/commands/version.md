@@ -22,7 +22,7 @@ npx mf version --check
 bunx mf version --check
 ```
 
-`--check` contacte le registre npm, compare la version installée avec la dernière version publiée et affiche une commande de mise à jour lorsqu'une version plus récente existe.
+`--check` contacte le registre npm, compare la version installée avec la dernière version publiée et affiche des commandes de mise à jour pour npm, Bun, pnpm, Yarn et Deno lorsqu'une version plus récente existe.
 
 La commande n'installe aucun paquet et ne modifie aucun fichier.
 
@@ -30,7 +30,7 @@ Si le shell affiche `mf: command not found`, la commande `version` n'a pas encor
 
 ```sh
 npm install -g mustflow
-bun install -g mustflow
+bun add -g mustflow@latest
 ```
 
 Avec Bun, vérifiez que le dossier global des exécutables de Bun, généralement `~/.bun/bin`, est dans `PATH`.

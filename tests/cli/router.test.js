@@ -192,7 +192,12 @@ test('checks npm for a newer package version when requested', async () => {
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, new RegExp(`mustflow ${packageJson.version}`));
 		assert.match(result.stdout, /latest 99\.0\.0 available/);
+		assert.match(result.stdout, /Update commands:/);
 		assert.match(result.stdout, /npm install -g mustflow@latest/);
+		assert.match(result.stdout, /bun add -g mustflow@latest/);
+		assert.match(result.stdout, /pnpm add -g mustflow@latest/);
+		assert.match(result.stdout, /yarn global add mustflow@latest/);
+		assert.match(result.stdout, /deno install -g -A -n mf npm:mustflow@latest/);
 		assert.equal(result.stderr, '');
 	} finally {
 		await closeServer(server);

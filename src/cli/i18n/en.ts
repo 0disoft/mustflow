@@ -811,7 +811,7 @@ Read these files before working:
   "version.help.exit.ok": "Version information was printed",
   "version.check.latestAvailable": "latest {version} available",
   "version.check.upToDate": "latest {version}; already up to date",
-  "version.check.updateCommand": "Update command:",
+  "version.check.updateCommand": "Update commands:",
   "version.error.checkFailed": "Could not check npm for a newer version: {message}",
 
   "upgrade.help.summary":
