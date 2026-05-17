@@ -9,11 +9,16 @@ description: commands.toml के command contract की read-only जाँच
 
 जब change-classification validation reasons का `required_after` metadata से जुड़ना भी देखना हो, तो `--coverage` जोड़ें। Coverage findings warnings हैं; वे किसी command को runnable नहीं बनाते।
 
+जब कोई intent `bun run <script>` जैसे package script form का उपयोग करता है, तो `mf contract-lint` उस intent के `cwd` में मौजूद `package.json` भी जांचता है। Referenced script न मिले तो यह केवल warning है; इससे command authority infer नहीं होती और automatic fix नहीं लगाया जाता।
+
+Root `package.json`, Makefile, या justfile entries पढ़कर review-only intent snippets प्रिंट करने के लिए `--suggest` जोड़ें। Suggested snippets `status = "unknown"` इस्तेमाल करते हैं और `argv`, `lifecycle`, `run_policy` जैसे runnable fields छोड़ते हैं, इसलिए user द्वारा `.mustflow/config/commands.toml` में edit किए बिना वे command execution authorize नहीं करते।
+
 ## Example
 
 ```sh
 npx mf contract-lint
 npx mf contract-lint --coverage
+npx mf contract-lint --suggest
 npx mf contract-lint --json
 npx mf contract-lint --coverage --json
 ```
@@ -31,6 +36,7 @@ npx mf contract-lint --json
 - `report.summary` (`object`): intent counts, runnable count, error count, और warning count.
 - `report.issues` (`object[]`): `severity`, `code`, `intent`, और `message` वाले issues.
 - `report.sourceFiles` (`string[]`): command-contract rules बताने वाली files.
+- `report.suggestions` (`object[]`, optional): सिर्फ `--suggest` के साथ मौजूद होता है। इसमें source file, source entry, command hint, suggested intent name, `status = "unknown"`, reason, और review-only TOML snippet होता है.
 - `report.coverage` (`object`, optional): सिर्फ `--coverage` के साथ मौजूद होता है। इसमें known classification reasons, documented verification reasons, declared `required_after` reasons, runnable reasons, और coverage findings होते हैं.
 - `report.coverage.findings` (`object[]`): stable `code`, `reason`, `intent`, `intents`, और `message` fields वाले warning-first coverage findings.
 

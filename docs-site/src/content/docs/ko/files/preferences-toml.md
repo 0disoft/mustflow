@@ -93,7 +93,7 @@ require_new_test_rationale = true
 
 ## profile과 locale
 
-`project.profile`은 국가나 언어가 아니라 프로젝트 성격입니다. 기본값은 `minimal`이고, 기본 프로필은 `minimal`, `oss`, `team`, `product`, `library`입니다.
+`project.profile`은 국가나 언어가 아니라 프로젝트 성격입니다. 기본값은 `minimal`이고, 기본 프로필은 `minimal`, `patterns`, `oss`, `team`, `product`, `library`입니다.
 
 `language.agent_response`는 에이전트 최종 보고 언어입니다.
 

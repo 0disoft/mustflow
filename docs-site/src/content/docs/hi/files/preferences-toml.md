@@ -93,7 +93,7 @@ require_new_test_rationale = true
 
 ## Profile और locale
 
-`project.profile` project type है, country या language नहीं। default `minimal` है, और built-in profiles `minimal`, `oss`, `team`, `product`, और `library` हैं।
+`project.profile` project type है, country या language नहीं। default `minimal` है, और built-in profiles `minimal`, `patterns`, `oss`, `team`, `product`, और `library` हैं।
 
 `language.agent_response` agent final reports की default language है।
 

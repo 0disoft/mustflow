@@ -17,6 +17,8 @@ intent को ये सभी conditions पूरी करनी होंग
 
 यदि कोई भी condition पूरी नहीं होती, command नहीं चलता और reason report होता है।
 
+Blocked या unknown intents के लिए `mf run` एक copyable `status = "manual_only"` intent snippet print करता है। यह snippet `.mustflow/config/commands.toml` के लिए proposal है; जब तक कोई व्यक्ति review करके enable नहीं करता, यह command authority नहीं देता। `--dry-run` और `--plan-only` JSON में यही proposal `suggested_intent_snippet` में आता है।
+
 ## बाहर रखे गए जीवनचक्र
 
 `mf run` इन lifecycles वाले intents execute नहीं करता:

@@ -33,13 +33,16 @@ building automation around `--json` output.
   `mf impact <path...> --json`
 - `line-endings-report.schema.json`: `mf line-endings check --json` and
   `mf line-endings normalize --json`
+- `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify`
+  writes a pointer to the latest verify run bundle
 - `handoff-validation-report.schema.json`: `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `explain-report.schema.json`: `mf explain <topic> --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`
 - `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
-  and `mf verify --from-plan <path> --plan-only --json`; command-effect graph fields are
+  and `mf verify --from-classification <path> --plan-only --json`; command-effect graph fields are
   explanation-only and point back to `.mustflow/config/commands.toml` for runnable authority
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`

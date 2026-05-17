@@ -73,7 +73,7 @@ Los perfiles describen el tipo de proyecto, no el país ni el idioma.
 ```toml
 [profiles]
 default = "minimal"
-available = ["minimal", "oss", "team", "product", "library"]
+available = ["minimal", "patterns", "oss", "team", "product", "library"]
 
 [locales]
 default = "en"

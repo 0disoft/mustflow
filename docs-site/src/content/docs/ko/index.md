@@ -16,9 +16,9 @@ npx mf check --strict
 코드, 템플릿, 스키마, 문서를 바꾼 뒤에는 명령을 실행하기 전에 필요한 검증을 먼저 확인합니다.
 
 ```sh
-npx mf classify --changed --json > .mustflow/state/change-plan.json
-npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
-npx mf verify --from-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
+npx mf verify --from-classification .mustflow/state/change-classification.json --plan-only --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 `mf classify`는 변경된 경로를 공개 표면과 검증 사유로 분류합니다. `mf verify --plan-only --json`은 그 사유를 `.mustflow/config/commands.toml`의 `required_after` 메타데이터와 연결하되 명령은 실행하지 않습니다. 실제로 실행 가능한 명령은 여전히 선언된 명령 계약을 통과해야 합니다. 즉 구성 완료 상태(`configured`), 일회성 실행(`oneshot`), 에이전트 실행 허용(`agent_allowed`), 닫힌 표준 입력(`stdin = "closed"`), 제한 시간, 명시적인 명령 소스가 필요합니다.

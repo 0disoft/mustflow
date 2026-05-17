@@ -29,7 +29,10 @@ schémas du paquet installé ou ceux du dépôt mustflow.
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` quand `mf verify`
+  écrit un pointeur vers le dernier ensemble de vérification
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`
 - `run-receipt.schema.json`: `mf run <intent> --json` et `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: `.mustflow/config/commands.toml` analysé
 

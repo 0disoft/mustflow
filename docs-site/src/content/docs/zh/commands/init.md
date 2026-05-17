@@ -165,6 +165,7 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 内置支持的 profiles：
 
 - `minimal`
+- `patterns`
 - `oss`
 - `team`
 - `product`

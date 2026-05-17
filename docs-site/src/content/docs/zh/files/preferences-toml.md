@@ -93,7 +93,7 @@ require_new_test_rationale = true
 
 ## 项目类型与语言
 
-`project.profile` 是项目类型，不是国家或语言。默认值为 `minimal`，内置 profile 包括 `minimal`、`oss`、`team`、`product` 和 `library`。
+`project.profile` 是项目类型，不是国家或语言。默认值为 `minimal`，内置 profile 包括 `minimal`、`patterns`、`oss`、`team`、`product` 和 `library`。
 
 `language.agent_response` 是 agent 最终报告的默认语言。
 

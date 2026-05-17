@@ -17,6 +17,8 @@ description: 运行 commands.toml 中声明的有限 command intent。
 
 如果任一条件不满足，命令不会运行，并会报告原因。
 
+对于被阻止或未知的意图，`mf run` 会打印可复制的 `status = "manual_only"` 意图片段。该片段只是写入 `.mustflow/config/commands.toml` 的建议；在人为审阅并启用之前，它不会授予命令执行权限。`--dry-run` 和 `--plan-only` 的 JSON 会在 `suggested_intent_snippet` 中包含同一建议。
+
 ## 排除的生命周期
 
 `mf run` 不执行这些生命周期的 intents：

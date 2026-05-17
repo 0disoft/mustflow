@@ -9,11 +9,16 @@ Use it when you need a focused view of command-contract errors and warnings. It 
 
 Add `--coverage` when you also want to see whether change-classification validation reasons are connected to `required_after` metadata. Coverage findings are warning-oriented: they make gaps visible without changing which commands are runnable.
 
+When an intent uses a package script form such as `bun run <script>`, `mf contract-lint` also checks the `package.json` in that intent's `cwd` when it exists. Missing referenced scripts are warnings, not inferred command authority or automatic fixes.
+
+Add `--suggest` to read root `package.json`, Makefile, or justfile entries and print review-only intent snippets. Suggested snippets use `status = "unknown"` and omit runnable fields such as `argv`, `lifecycle`, and `run_policy`, so they cannot authorize command execution until a user edits them into `.mustflow/config/commands.toml`.
+
 ## Example
 
 ```sh
 npx mf contract-lint
 npx mf contract-lint --coverage
+npx mf contract-lint --suggest
 npx mf contract-lint --json
 npx mf contract-lint --coverage --json
 ```
@@ -31,6 +36,7 @@ npx mf contract-lint --json
 - `report.summary` (`object`): Intent counts, runnable count, error count, and warning count.
 - `report.issues` (`object[]`): Command-contract issues with `severity`, `code`, `intent`, and `message`.
 - `report.sourceFiles` (`string[]`): Files that define the command-contract rules.
+- `report.suggestions` (`object[]`, optional): Present only with `--suggest`. Includes source file, source entry, command hint, suggested intent name, `status = "unknown"`, reason, and a review-only TOML snippet.
 - `report.coverage` (`object`, optional): Present only with `--coverage`. Includes known classification reasons, documented verification-only reasons, declared `required_after` reasons, runnable reasons, and coverage findings.
 - `report.coverage.findings` (`object[]`): Warning-first coverage findings with stable `code`, `reason`, `intent`, `intents`, and `message` fields.
 

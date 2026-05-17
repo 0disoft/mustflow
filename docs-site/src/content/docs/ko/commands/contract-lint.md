@@ -9,11 +9,16 @@ description: commands.toml 명령 계약을 읽기 전용으로 점검하는 명
 
 `--coverage`를 추가하면 변경 분류에서 나오는 검증 이유가 `required_after` 메타데이터와 연결되어 있는지도 볼 수 있습니다. 연결 상태 발견 항목은 기본적으로 경고이며, 어떤 명령을 실행 가능하게 만들지는 않습니다.
 
+명령 의도가 `bun run <script>` 같은 패키지 스크립트 형식을 쓰면, `mf contract-lint`는 해당 의도의 `cwd`에 있는 `package.json`도 확인합니다. 참조한 스크립트가 없으면 경고로만 표시하며, 이 검사는 명령 실행 권한을 추론하거나 자동으로 고치지 않습니다.
+
+`--suggest`를 추가하면 루트 `package.json`, Makefile, justfile 항목을 읽고 검토 전용 명령 의도 조각을 출력합니다. 제안 조각은 `status = "unknown"`을 사용하고 `argv`, `lifecycle`, `run_policy` 같은 실행 가능 필드를 넣지 않으므로, 사용자가 `.mustflow/config/commands.toml`에 편집해 넣기 전에는 명령 실행 권한을 만들지 않습니다.
+
 ## 예시
 
 ```sh
 npx mf contract-lint
 npx mf contract-lint --coverage
+npx mf contract-lint --suggest
 npx mf contract-lint --json
 npx mf contract-lint --coverage --json
 ```
@@ -31,6 +36,7 @@ npx mf contract-lint --json
 - `report.summary` (`object`): 명령 의도 수, 실행 가능 수, 오류 수, 경고 수입니다.
 - `report.issues` (`object[]`): `severity`, `code`, `intent`, `message`를 포함한 명령 계약 문제입니다.
 - `report.sourceFiles` (`string[]`): 명령 계약 규칙의 근거 파일입니다.
+- `report.suggestions` (`object[]`, 선택): `--suggest`를 사용할 때만 있습니다. 근거 파일, 근거 항목, 명령 힌트, 제안된 명령 의도 이름, `status = "unknown"`, 이유, 검토 전용 TOML 조각을 담습니다.
 - `report.coverage` (`object`, 선택): `--coverage`를 사용할 때만 있습니다. 알려진 변경 분류 이유, 문서화된 검증 전용 이유, 선언된 `required_after` 이유, 실행 가능한 이유, 연결 상태 발견 항목을 담습니다.
 - `report.coverage.findings` (`object[]`): 안정적인 `code`, `reason`, `intent`, `intents`, `message` 필드가 있는 경고 중심의 연결 상태 발견 항목입니다.
 

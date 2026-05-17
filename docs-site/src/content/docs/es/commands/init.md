@@ -165,6 +165,7 @@ instalación:
 Los perfiles integrados admitidos son:
 
 - `minimal`
+- `patterns`
 - `oss`
 - `team`
 - `product`

@@ -9,11 +9,16 @@ description: Revisión de solo lectura del contrato de comandos en commands.toml
 
 Agrega `--coverage` cuando también quieras ver si las razones de validación de la clasificación de cambios están conectadas con metadatos `required_after`. Los hallazgos de cobertura son advertencias y no cambian qué comandos son ejecutables.
 
+Cuando un intent usa un script de paquete como `bun run <script>`, `mf contract-lint` también revisa el `package.json` en el `cwd` de ese intent si existe. Los scripts referenciados pero ausentes son advertencias; no otorgan autoridad de ejecución ni aplican correcciones automáticas.
+
+Agrega `--suggest` para leer entradas del `package.json` raíz, Makefile o justfile e imprimir fragmentos de intent solo para revisión. Los fragmentos sugeridos usan `status = "unknown"` y omiten campos ejecutables como `argv`, `lifecycle` y `run_policy`, así que no autorizan ejecución hasta que una persona los edite en `.mustflow/config/commands.toml`.
+
 ## Ejemplo
 
 ```sh
 npx mf contract-lint
 npx mf contract-lint --coverage
+npx mf contract-lint --suggest
 npx mf contract-lint --json
 npx mf contract-lint --coverage --json
 ```
@@ -31,6 +36,7 @@ npx mf contract-lint --json
 - `report.summary` (`object`): conteos de intents, ejecutables, errores y advertencias.
 - `report.issues` (`object[]`): problemas con `severity`, `code`, `intent` y `message`.
 - `report.sourceFiles` (`string[]`): archivos que definen las reglas del contrato.
+- `report.suggestions` (`object[]`, opcional): aparece solo con `--suggest`. Incluye archivo fuente, entrada fuente, sugerencia de comando, nombre de intent sugerido, `status = "unknown"`, razón y un fragmento TOML solo para revisión.
 - `report.coverage` (`object`, opcional): aparece solo con `--coverage`. Incluye razones de clasificación conocidas, razones de verificación documentadas, razones `required_after`, razones ejecutables y hallazgos de cobertura.
 - `report.coverage.findings` (`object[]`): hallazgos de cobertura con `code`, `reason`, `intent`, `intents` y `message` estables.
 

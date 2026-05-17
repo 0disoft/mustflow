@@ -29,7 +29,10 @@ mustflow repository के schemas का उपयोग करें।
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json`, जब `mf verify`
+  latest verify run bundle का pointer लिखता है
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`
 - `run-receipt.schema.json`: `mf run <intent> --json` और `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 

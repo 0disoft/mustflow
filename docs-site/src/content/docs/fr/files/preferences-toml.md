@@ -93,7 +93,7 @@ require_new_test_rationale = true
 
 ## Profil et locale
 
-`project.profile` est le type de projet, pas un pays ni une langue. La valeur par défaut est `minimal`, et les profils intégrés sont `minimal`, `oss`, `team`, `product` et `library`.
+`project.profile` est le type de projet, pas un pays ni une langue. La valeur par défaut est `minimal`, et les profils intégrés sont `minimal`, `patterns`, `oss`, `team`, `product` et `library`.
 
 `language.agent_response` est la langue par défaut des rapports finaux des agents.
 

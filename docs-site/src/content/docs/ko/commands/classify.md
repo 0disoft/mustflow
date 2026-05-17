@@ -1,6 +1,6 @@
 ---
 title: mf classify
-description: 변경 경로, 공개 표면, 검증 이유를 분류하는 읽기 전용 명령입니다.
+description: 변경 경로, 공개 표면, 검증 이유를 분류하는 명령입니다.
 ---
 
 `mf classify --changed`는 `git status --short --untracked-files=all`을 읽고 변경된 경로를 분류한 뒤, 어떤 공개 표면과 검증 이유가 영향을 받는지 보고합니다.
@@ -11,6 +11,14 @@ description: 변경 경로, 공개 표면, 검증 이유를 분류하는 읽기 
 ```sh
 npx mf classify README.md schemas/classify-report.schema.json --json
 ```
+
+다른 도구가 분류 보고서를 파일로 읽어야 한다면 `--write <path>`를 사용합니다.
+
+```sh
+npx mf classify --changed --write .mustflow/state/change-classification.json
+```
+
+출력 경로는 현재 mustflow 루트 안에 있어야 합니다.
 
 ## 출력
 

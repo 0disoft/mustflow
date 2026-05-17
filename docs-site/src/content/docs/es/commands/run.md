@@ -17,6 +17,8 @@ La intención debe cumplir todas estas condiciones:
 
 Si alguna condición no se cumple, el comando no se ejecuta e informa el motivo.
 
+Para intenciones bloqueadas o desconocidas, `mf run` imprime un snippet copiable con `status = "manual_only"`. El snippet es una propuesta para `.mustflow/config/commands.toml`; no concede autoridad de ejecución hasta que una persona lo revise y lo habilite. El JSON de `--dry-run` y `--plan-only` incluye la misma propuesta en `suggested_intent_snippet`.
+
 ## Ciclos de vida excluidos
 
 `mf run` no ejecuta intenciones con estos ciclos de vida:

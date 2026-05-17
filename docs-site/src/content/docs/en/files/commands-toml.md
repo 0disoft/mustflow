@@ -85,6 +85,10 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `success_exit_codes`: Exit codes considered successful.
 - `env_policy`: Optional override for command environment handling. Use `minimal`, `allowlist`, or explicit `inherit`.
 - `env_allowlist`: Extra variable names allowed when `env_policy = "allowlist"`.
+- `manual_start_hint`: Optional human-facing hint for starting a long-running command outside agent execution.
+- `health_check_url`: Optional URL a human can use to inspect a manually started long-running process.
+- `stop_instruction`: Optional human-facing instruction for stopping a manually started long-running process.
+- `related_oneshot_checks`: Optional one-shot intent names that can verify or inspect the same surface without starting the long-running process.
 - `writes`: Paths the command may modify.
 - `resources`: Optional top-level resource declarations for shared outputs such as build directories.
 - `effects`: Optional per-intent side-effect declarations used to explain resource locks and safe verification order. When absent, `writes` is treated as a conservative exclusive write lock.
@@ -206,6 +210,25 @@ Agents should use this intent name when a skill or task needs image compression,
 - `background`: A process intended to remain in the background.
 
 Agents may run only `oneshot` intents by default. `server`, `watch`, `interactive`, `browser`, and `background` must not use `run_policy = "agent_allowed"`.
+
+Long-running intents may carry manual guidance metadata, but that metadata is informational only and does not make the intent runnable by agents.
+
+```toml
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "Start a development server for manual inspection."
+argv = ["pnpm", "dev"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+writes = []
+manual_start_hint = "Start this in a human-controlled terminal."
+health_check_url = "http://127.0.0.1:3000/health"
+stop_instruction = "Stop the terminal process with Ctrl-C."
+related_oneshot_checks = ["test_fast"]
+```
 
 `mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` is a positive integer, a command is declared through `argv` or `mode = "shell"` plus `cmd`, and `cwd` stays inside the current mustflow root.
 Upon completion, it logs the latest run record to `.mustflow/state/runs/latest.json`; when run with `--json`, it also outputs the same record to standard output.

@@ -16,9 +16,9 @@ npx mf check --strict
 After changing code, templates, schemas, or documentation, inspect the required verification before running commands.
 
 ```sh
-npx mf classify --changed --json > .mustflow/state/change-plan.json
-npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
-npx mf verify --from-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
+npx mf verify --from-classification .mustflow/state/change-classification.json --plan-only --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 `mf classify` maps changed paths to public surfaces and validation reasons. `mf verify --plan-only --json` joins those reasons to `.mustflow/config/commands.toml` `required_after` metadata without executing commands. Runnable commands still need the declared command contract: configured, one-shot, agent-allowed, closed stdin, timeout, and an explicit command source.

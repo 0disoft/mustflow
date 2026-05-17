@@ -73,7 +73,7 @@ Profiles project type बताते हैं, country या language नह�
 ```toml
 [profiles]
 default = "minimal"
-available = ["minimal", "oss", "team", "product", "library"]
+available = ["minimal", "patterns", "oss", "team", "product", "library"]
 
 [locales]
 default = "en"

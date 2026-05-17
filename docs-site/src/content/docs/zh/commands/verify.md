@@ -5,11 +5,13 @@ description: 运行由 required_after 元数据选出的已配置验证意图。
 
 `mf verify --reason <event>` 会读取 `.mustflow/config/commands.toml`，找出 `required_after` 列表包含指定原因的命令意图，并且只运行已配置、单次执行、允许代理运行、stdin 已关闭的意图。
 
-`mf verify --from-plan <path>` 会从 mustflow 根目录内的 JSON 文件读取验证原因。它识别 `reason`、`reasons`、`validationReasons`、`summary.validationReasons` 和 `classification_summary.validationReasons`。
+`mf verify --from-classification <path>` 会从 mustflow 根目录内的 `mf classify` JSON 报告读取验证原因。`--from-plan` 在命名过渡期间仍作为兼容别名可用。
 
-`mf verify --changed` 使用与 `mf classify --changed` 相同的语义分类当前 Git 工作树，然后把这些验证原因交给现有验证计划器。使用 `--write-plan <path>` 可以把分类报告保存到 mustflow 根目录内，同时当前运行仍使用内存中的计划。
+`mf verify --changed` 使用与 `mf classify --changed` 相同的语义分类当前 Git 工作树，然后把这些验证原因交给验证选择模型。使用 `--write-plan <path>` 可以把分类报告保存到 mustflow 根目录内，同时当前运行仍使用内存中的选择模型。
 
-`mf verify --plan-only --json` 只打印验证计划，不执行命令。输出包含 `decision_graph`，用于连接变更表面、分类原因、命令候选、可运行性检查、效果和剩余缺口。存在最新本地索引时，每个计划条目可以包含从 `.mustflow/cache/mustflow.sqlite` 读取的 `effectGraph`，用于说明写入锁和锁冲突。要求项也可以包含 `surfaceReadModels` 元数据，用于说明哪些索引路径-表面规则匹配了变更文件。索引缺失或过期时只显示重建提示，不改变命令选择或执行权限。
+`mf verify --plan-only --json` 只打印验证计划，不执行命令。输出包含稳定的 `verification_plan_id` 和 `decision_graph`，用于连接变更表面、分类原因、命令候选、可运行性检查、效果和剩余缺口。存在最新本地索引时，每个计划条目可以包含从 `.mustflow/cache/mustflow.sqlite` 读取的 `effectGraph`，用于说明写入锁和锁冲突。要求项也可以包含 `surfaceReadModels` 元数据，用于说明哪些索引路径-表面规则匹配了变更文件。索引缺失或过期时只显示重建提示，不改变命令选择或执行权限。
+
+`mf verify` 实际执行命令时，会使用与 plan-only 输出相同的计划模型，并通过 `mf run` 收据串行执行 `schedule.entries`。verify 输出、验证包清单、latest 指针和各意图收据共享同一个 `verification_plan_id`。
 
 ## 选择规则
 
@@ -27,9 +29,9 @@ description: 运行由 required_after 元数据选出的已配置验证意图。
 npx mf verify --reason code_change
 npx mf verify --reason docs_change --json
 npx mf verify --changed --plan-only --json
-npx mf verify --changed --write-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
 npx mf verify --reason docs_change --plan-only --json
-npx mf verify --from-plan verify-plan.json --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 ## JSON 字段
@@ -45,12 +47,18 @@ npx mf verify --reason code_change --json
 - `mustflow_root` (`string`)：解析出的 mustflow 根目录。
 - `reason` (`string`)：请求的 `required_after` 原因；使用计划文件时为逗号分隔的摘要。
 - `reasons` (`string[]`)：用于选择命令意图的验证原因。
-- `plan_source` (`string | null`)：使用 `--from-plan` 时的 JSON 计划路径，使用 `--changed` 时为 `changed`，只使用 `--reason` 时为 `null`。
+- `plan_source` (`string | null`)：使用 `--from-classification` 或 `--from-plan` 时的 JSON 分类报告路径，使用 `--changed` 时为 `changed`，只使用 `--reason` 时为 `null`。
+- `verification_plan_id` (`string`)：选择本次运行的验证计划的稳定 SHA-256 标识符。
 - `status` (`string`)：`passed`、`partial`、`failed` 或 `blocked`。
 - `summary` (`object`)：匹配、运行、通过、失败和跳过的数量。
+- `run_dir` (`string`)：包含清单和各意图收据的验证包目录。
+- `manifest_path` (`string`)：验证包清单路径。
 - `results` (`object[]`)：每个意图的运行或跳过结果。
+- `results[].verification_plan_id` (`string | null`)：运行结果的计划标识符；跳过结果为 `null`。
+- `results[].receipt_path` (`string | null`)：结果已运行并生成收据时的各意图收据路径。
+- `results[].receipt_sha256` (`string | null`)：已写入各意图收据的 SHA-256 哈希。
 
-使用 `--plan-only --json` 时，输出采用变更验证报告 schema。`decision_graph` 字段是共享证据模型，用于说明变更表面、分类原因、命令候选、可运行性、效果和缺口。`schedule.entries[].effectGraph` 字段如果存在，就是只读本地索引元数据，用于说明锁和冲突。`requirements[].surfaceReadModels` 字段如果存在，就是只读本地索引元数据，用于说明验证原因背后的路径-表面规则。
+使用 `--plan-only --json` 时，输出采用变更验证报告 schema。`verification_plan_id` 根据变更文件分类、选定的验证模型、相关命令契约条目、计划策略和测试选择报告计算。`decision_graph` 字段是共享证据模型，用于说明变更表面、分类原因、命令候选、可运行性、效果和缺口。`schedule.entries[].effectGraph` 字段如果存在，就是只读本地索引元数据，用于说明锁和冲突。`requirements[].surfaceReadModels` 字段如果存在，就是只读本地索引元数据，用于说明验证原因背后的路径-表面规则。
 
 ## 退出码
 

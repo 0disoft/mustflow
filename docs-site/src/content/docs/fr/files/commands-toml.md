@@ -79,6 +79,10 @@ Les agents ne peuvent exécuter que les intentions avec `status = "configured"`.
 - `timeout_seconds`: délai d’expiration de la commande.
 - `stdin`: comportement de l’entrée standard. Les intentions exécutables par les agents doivent utiliser `closed`.
 - `success_exit_codes`: codes de sortie considérés comme réussis.
+- `manual_start_hint`: indication optionnelle pour qu’une personne démarre une commande longue durée hors exécution agent.
+- `health_check_url`: URL optionnelle permettant d’inspecter un processus longue durée démarré manuellement.
+- `stop_instruction`: instruction optionnelle pour arrêter un processus longue durée démarré manuellement.
+- `related_oneshot_checks`: noms optionnels d’intentions finies pouvant vérifier la même surface sans démarrer le processus longue durée.
 - `writes`: chemins que la commande peut modifier.
 - `network`: indique si la commande utilise le réseau.
 - `destructive`: indique si la commande peut être destructive.
@@ -140,6 +144,25 @@ Les agents doivent utiliser ces noms d’intentions lors de la maintenance des t
 - `background`: processus destiné à rester en arrière-plan.
 
 Par défaut, les agents ne peuvent exécuter que les intentions `oneshot`. `server`, `watch`, `interactive`, `browser` et `background` ne doivent pas utiliser `run_policy = "agent_allowed"`.
+
+Les intentions longue durée peuvent porter des métadonnées de guidage manuel, mais ces métadonnées sont seulement informatives et ne rendent pas l’intention exécutable par les agents.
+
+```toml
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "Démarrer un serveur de développement pour inspection manuelle."
+argv = ["pnpm", "dev"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+writes = []
+manual_start_hint = "Démarrez-le dans un terminal contrôlé par une personne."
+health_check_url = "http://127.0.0.1:3000/health"
+stop_instruction = "Arrêtez le processus du terminal avec Ctrl-C."
+related_oneshot_checks = ["test_fast"]
+```
 
 `mf run <intent>` exécute uniquement les intentions où `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` est un entier positif, une commande est déclarée via `argv` ou `mode = "shell"` plus `cmd`, et `cwd` reste dans la racine mustflow actuelle.
 Après exécution, il écrit le dernier reçu d’exécution dans `.mustflow/state/runs/latest.json`; avec `--json`, il imprime aussi le même reçu sur la sortie standard.

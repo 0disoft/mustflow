@@ -93,7 +93,7 @@ require_new_test_rationale = true
 
 ## Profile and Locale
 
-The `project.profile` field specifies the project type rather than a country or language. The default is `minimal`; built-in profiles include `minimal`, `oss`, `team`, `product`, and `library`.
+The `project.profile` field specifies the project type rather than a country or language. The default is `minimal`; built-in profiles include `minimal`, `patterns`, `oss`, `team`, `product`, and `library`.
 
 `language.agent_response` is the default language for agent final reports.
 

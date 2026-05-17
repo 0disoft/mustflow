@@ -166,6 +166,7 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 지원하는 기본 프로필 목록은 다음과 같습니다.
 
 - `minimal`
+- `patterns`
 - `oss`
 - `team`
 - `product`

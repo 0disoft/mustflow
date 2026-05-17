@@ -14,9 +14,23 @@ The core concept is straightforward: place `AGENTS.md` at the project root and k
 - Security: [SECURITY.md](https://github.com/0disoft/mustflow/blob/main/SECURITY.md)
 - Changelog: [CHANGELOG.md](https://github.com/0disoft/mustflow/blob/main/CHANGELOG.md)
 
+## Choose your path
+
+- Use mustflow in your repository: start with [Quick start](#quick-start), then review the [no-guessing workflow](#no-guessing-workflow) and [`examples/minimal-js/`](examples/minimal-js/).
+- Contribute to mustflow: read [CONTRIBUTING.md](CONTRIBUTING.md), then run only configured command intents from [`.mustflow/config/commands.toml`](.mustflow/config/commands.toml).
+- Build an AI coding tool or agent harness: use `AGENTS.md` and `mf context --json` for repository context, then consume JSON output and schemas from `mf classify`, `mf verify`, `mf run`, `mf dashboard`, and [`schemas/`](schemas/).
+
 ## No-guessing workflow
 
 The initial mustflow path is deliberately narrow.
+
+Authority stays narrow:
+
+- Current user instructions define the task goal unless they are unsafe.
+- Host safety, sandbox, and approval gates still apply.
+- Repository work rules come from the nearest `AGENTS.md` and `.mustflow/config/*.toml`.
+- Command execution authority comes only from `.mustflow/config/commands.toml`.
+- Skills, context files, preferences, generated maps, search results, cache, and state files guide or explain work. They do not grant command permission.
 
 ```sh
 npm install -D mustflow
@@ -27,9 +41,9 @@ npx mf check --strict
 After changes to code, templates, schemas, or documentation, classify the changed paths and review the verification plan before running any commands.
 
 ```sh
-npx mf classify --changed --json > .mustflow/state/change-plan.json
-npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
-npx mf verify --from-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
+npx mf verify --from-classification .mustflow/state/change-classification.json --plan-only --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 The plan is based on change classification and the `required_after` metadata in `.mustflow/config/commands.toml`. A command runs only if its declared intent is configured, one-shot, agent-allowed, closed-stdin, bounded by a timeout, and backed by an explicit command source.
@@ -239,9 +253,9 @@ If a project already has optional root Markdown files such as `README.md`, `PROJ
 npx mf init --yes
 npx mf doctor
 npx mf check --strict
-npx mf classify --changed --json > .mustflow/state/change-plan.json
-npx mf verify --from-plan .mustflow/state/change-plan.json --plan-only --json
-npx mf verify --from-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
+npx mf verify --from-classification .mustflow/state/change-classification.json --plan-only --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 Create the optional local search index if search capabilities are needed. Run the normal command
@@ -294,8 +308,8 @@ mf run mustflow_update_apply
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
 | `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
 | `mf adapters status` | Inspect existing host-specific instruction and adapter files without generating adapter files or granting command authority. |
-| `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons without modifying files. |
-| `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. |
+| `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons. Add `--write <path>` to save the classification report. |
+| `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. Add `--suggest` to print non-runnable candidate snippets from existing command files. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
@@ -356,7 +370,7 @@ npx mf init --product-source-locale en --product-locale ko-KR
 npx mf init --set git.auto_commit=true
 ```
 
-- `--profile`: Project profile. The default is `minimal`. Profiles also select the installed skill surface: `minimal` installs core everyday coding skills, while `oss`, `team`, `product`, and `library` add opt-in skill groups without removing optional skill files from the package.
+- `--profile`: Project profile. The default is `minimal`. Profiles also select the installed skill surface: `minimal` installs core everyday coding skills, `patterns` adds architecture-pattern procedures, and `oss`, `team`, `product`, and `library` add opt-in skill groups without removing optional skill files from the package.
 - `--locale`: Installed mustflow document language. The default template currently supports `en`, `ko`, `zh`, `es`, `fr`, and `hi`. The default template includes localized documents for all these locales.
 - `--agent-lang`: Default language for final agent reports.
 - `--interactive`: Choose init settings via prompts.

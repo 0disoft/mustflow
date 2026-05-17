@@ -5,11 +5,13 @@ description: Ejecuta intenciones de verificación configuradas seleccionadas por
 
 `mf verify --reason <event>` lee `.mustflow/config/commands.toml`, encuentra intenciones cuyo `required_after` contiene la razón indicada y ejecuta solo las que están configuradas, son de una sola ejecución, permiten ejecución por agente y tienen stdin cerrado.
 
-`mf verify --from-plan <path>` lee razones de verificación desde un archivo JSON dentro de la raíz mustflow. Reconoce `reason`, `reasons`, `validationReasons`, `summary.validationReasons` y `classification_summary.validationReasons`.
+`mf verify --from-classification <path>` lee razones de verificación desde un informe JSON de `mf classify` dentro de la raíz mustflow. `--from-plan` sigue disponible como alias de compatibilidad.
 
-`mf verify --changed` clasifica el árbol de trabajo Git actual con la misma semántica que `mf classify --changed` y entrega esas razones al planificador de verificación existente. Usa `--write-plan <path>` para guardar el informe de clasificación dentro de la raíz mustflow sin dejar de usar el plan en memoria para la ejecución actual.
+`mf verify --changed` clasifica el árbol de trabajo Git actual con la misma semántica que `mf classify --changed` y entrega esas razones al modelo de selección de verificación. Usa `--write-plan <path>` para guardar el informe de clasificación dentro de la raíz mustflow sin dejar de usar el modelo en memoria para la ejecución actual.
 
-`mf verify --plan-only --json` imprime el plan de verificación sin ejecutar comandos. La salida incluye `decision_graph`, que conecta superficies cambiadas, razones de clasificación, candidatos de comando, comprobaciones de elegibilidad, efectos y brechas. Cuando existe un índice local actualizado, cada entrada planificada puede incluir `effectGraph` leído desde `.mustflow/cache/mustflow.sqlite`, con bloqueos de escritura y conflictos de bloqueo. Los requisitos también pueden incluir metadatos `surfaceReadModels` que explican qué regla de ruta-superficie coincidió con los archivos cambiados. Si el índice falta o está obsoleto, muestra una sugerencia de reconstrucción y no cambia la selección ni la autoridad de ejecución.
+`mf verify --plan-only --json` imprime el plan de verificación sin ejecutar comandos. La salida incluye un `verification_plan_id` estable y `decision_graph`, que conecta superficies cambiadas, razones de clasificación, candidatos de comando, comprobaciones de elegibilidad, efectos y brechas. Cuando existe un índice local actualizado, cada entrada planificada puede incluir `effectGraph` leído desde `.mustflow/cache/mustflow.sqlite`, con bloqueos de escritura y conflictos de bloqueo. Los requisitos también pueden incluir metadatos `surfaceReadModels` que explican qué regla de ruta-superficie coincidió con los archivos cambiados. Si el índice falta o está obsoleto, muestra una sugerencia de reconstrucción y no cambia la selección ni la autoridad de ejecución.
+
+Cuando `mf verify` ejecuta comandos, usa el mismo modelo de planificación que la salida plan-only y ejecuta `schedule.entries` en serie mediante recibos de `mf run`. La salida de verify, el manifiesto del paquete de verificación, el puntero latest y los recibos por intención comparten el mismo `verification_plan_id`.
 
 ## Reglas de selección
 
@@ -27,9 +29,9 @@ description: Ejecuta intenciones de verificación configuradas seleccionadas por
 npx mf verify --reason code_change
 npx mf verify --reason docs_change --json
 npx mf verify --changed --plan-only --json
-npx mf verify --changed --write-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
 npx mf verify --reason docs_change --plan-only --json
-npx mf verify --from-plan verify-plan.json --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 ## Campos JSON
@@ -45,12 +47,18 @@ La salida legible por máquinas usa estos campos:
 - `mustflow_root` (`string`): raíz mustflow resuelta.
 - `reason` (`string`): razón `required_after` solicitada, o resumen separado por comas cuando se usa un plan.
 - `reasons` (`string[]`): razones usadas para seleccionar intenciones.
-- `plan_source` (`string | null`): ruta del plan JSON cuando se usó `--from-plan`, `changed` cuando se usó `--changed`, o `null` con solo `--reason`.
+- `plan_source` (`string | null`): ruta del informe de clasificación JSON cuando se usó `--from-classification` o `--from-plan`, `changed` cuando se usó `--changed`, o `null` con solo `--reason`.
+- `verification_plan_id` (`string`): identificador SHA-256 estable del plan de verificación que seleccionó la ejecución.
 - `status` (`string`): `passed`, `partial`, `failed` o `blocked`.
 - `summary` (`object`): conteos de intenciones encontradas, ejecutadas, aprobadas, fallidas y omitidas.
+- `run_dir` (`string`): directorio del paquete de verificación con el manifiesto y los recibos por intención.
+- `manifest_path` (`string`): ruta del manifiesto del paquete de verificación.
 - `results` (`object[]`): resultado de ejecución u omisión por intención.
+- `results[].verification_plan_id` (`string | null`): identificador del plan para un resultado ejecutado, o `null` para resultados omitidos.
+- `results[].receipt_path` (`string | null`): ruta del recibo por intención cuando el resultado se ejecutó y produjo un recibo.
+- `results[].receipt_sha256` (`string | null`): hash SHA-256 del recibo por intención escrito.
 
-Con `--plan-only --json`, la salida usa el esquema de informe de verificación de cambios. El campo `decision_graph` es el modelo de evidencia compartido para superficies cambiadas, razones de clasificación, candidatos de comando, elegibilidad, efectos y brechas. El campo `schedule.entries[].effectGraph`, cuando aparece, es metadato de índice local de solo lectura para explicar bloqueos y conflictos. El campo `requirements[].surfaceReadModels`, cuando aparece, es metadato de índice local de solo lectura para explicar la regla de ruta-superficie detrás de un motivo de verificación.
+Con `--plan-only --json`, la salida usa el esquema de informe de verificación de cambios. `verification_plan_id` se calcula desde la clasificación de cambios, el modelo de verificación seleccionado, las entradas relacionadas del contrato de comandos, la política de planificación y el informe de selección de pruebas. El campo `decision_graph` es el modelo de evidencia compartido para superficies cambiadas, razones de clasificación, candidatos de comando, elegibilidad, efectos y brechas. El campo `schedule.entries[].effectGraph`, cuando aparece, es metadato de índice local de solo lectura para explicar bloqueos y conflictos. El campo `requirements[].surfaceReadModels`, cuando aparece, es metadato de índice local de solo lectura para explicar la regla de ruta-superficie detrás de un motivo de verificación.
 
 ## Códigos de salida
 

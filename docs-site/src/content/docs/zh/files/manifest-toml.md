@@ -73,7 +73,7 @@ profile 描述项目类型，不描述国家或语言。
 ```toml
 [profiles]
 default = "minimal"
-available = ["minimal", "oss", "team", "product", "library"]
+available = ["minimal", "patterns", "oss", "team", "product", "library"]
 
 [locales]
 default = "en"

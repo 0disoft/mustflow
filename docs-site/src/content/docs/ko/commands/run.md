@@ -17,6 +17,8 @@ description: commands.toml에 정의된 단발성 명령 의도를 실행하는 
 
 위 조건을 하나라도 만족하지 않으면 실행을 거부하고 이유를 출력합니다.
 
+차단되었거나 알 수 없는 명령 의도에 대해 `mf run`은 복사해서 붙여 넣을 수 있는 `status = "manual_only"` 명령 의도 조각을 출력합니다. 이 조각은 `.mustflow/config/commands.toml`에 넣을 제안일 뿐이며, 사람이 검토하고 활성화하기 전까지 실행 권한을 주지 않습니다. `--dry-run`과 `--plan-only` JSON에는 같은 제안이 `suggested_intent_snippet` 필드로 포함됩니다.
+
 ## 실행 제한 대상
 
 `mf run`은 다음 생명주기를 가진 의도는 실행하지 않습니다.

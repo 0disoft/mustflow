@@ -5,11 +5,13 @@ description: required_after metadata से चुने गए configured verif
 
 `mf verify --reason <event>` `.mustflow/config/commands.toml` पढ़ता है, उस reason को `required_after` में रखने वाले command intents ढूँढता है, और केवल configured, one-shot, agent-allowed, closed-stdin intents चलाता है।
 
-`mf verify --from-plan <path>` mustflow root के अंदर मौजूद JSON file से verification reasons पढ़ता है। यह `reason`, `reasons`, `validationReasons`, `summary.validationReasons`, और `classification_summary.validationReasons` पहचानता है।
+`mf verify --from-classification <path>` mustflow root के अंदर मौजूद `mf classify` JSON report से verification reasons पढ़ता है। `--from-plan` compatibility alias के रूप में available रहता है।
 
-`mf verify --changed` current Git working tree को `mf classify --changed` जैसी semantics से classify करता है, फिर उन verification reasons को existing verification planner में देता है। `--write-plan <path>` से classification report mustflow root के अंदर save किया जा सकता है, जबकि current run in-memory plan ही use करता है।
+`mf verify --changed` current Git working tree को `mf classify --changed` जैसी semantics से classify करता है, फिर उन verification reasons को verification selection model में देता है। `--write-plan <path>` से classification report mustflow root के अंदर save किया जा सकता है, जबकि current run in-memory selection model ही use करता है।
 
-`mf verify --plan-only --json` commands चलाए बिना verification plan print करता है। Output में `decision_graph` होता है, जो changed surfaces, classification reasons, command candidates, eligibility checks, effects, और gaps को जोड़ता है। Fresh local index होने पर हर scheduled entry में `.mustflow/cache/mustflow.sqlite` से पढ़ा गया `effectGraph` आ सकता है, जिसमें write locks और lock conflicts होते हैं। Requirements में `surfaceReadModels` metadata भी आ सकता है, जो बताता है कि changed files से कौन सा indexed path-surface rule match हुआ। Index missing या stale हो तो output rebuild hint दिखाता है और command selection या execution authority नहीं बदलता।
+`mf verify --plan-only --json` commands चलाए बिना verification plan print करता है। Output में stable `verification_plan_id` और `decision_graph` होता है, जो changed surfaces, classification reasons, command candidates, eligibility checks, effects, और gaps को जोड़ता है। Fresh local index होने पर हर scheduled entry में `.mustflow/cache/mustflow.sqlite` से पढ़ा गया `effectGraph` आ सकता है, जिसमें write locks और lock conflicts होते हैं। Requirements में `surfaceReadModels` metadata भी आ सकता है, जो बताता है कि changed files से कौन सा indexed path-surface rule match हुआ। Index missing या stale हो तो output rebuild hint दिखाता है और command selection या execution authority नहीं बदलता।
+
+जब `mf verify` commands चलाता है, तो वह plan-only output वाला same schedule model use करता है और `schedule.entries` को `mf run` receipts के through serially चलाता है। Verify output, verify bundle manifest, latest pointer, और per-intent receipts same `verification_plan_id` share करते हैं।
 
 ## Selection rules
 
@@ -27,9 +29,9 @@ description: required_after metadata से चुने गए configured verif
 npx mf verify --reason code_change
 npx mf verify --reason docs_change --json
 npx mf verify --changed --plan-only --json
-npx mf verify --changed --write-plan .mustflow/state/change-plan.json --json
+npx mf classify --changed --write .mustflow/state/change-classification.json
 npx mf verify --reason docs_change --plan-only --json
-npx mf verify --from-plan verify-plan.json --json
+npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
 ## JSON fields
@@ -45,12 +47,18 @@ Machine-readable output ये fields उपयोग करता है:
 - `mustflow_root` (`string`): resolved mustflow root।
 - `reason` (`string`): requested `required_after` reason, या plan use होने पर comma-separated summary।
 - `reasons` (`string[]`): command intents select करने के लिए used verification reasons।
-- `plan_source` (`string | null`): `--from-plan` use होने पर JSON plan path, `--changed` use होने पर `changed`, या केवल `--reason` के लिए `null`।
+- `plan_source` (`string | null`): `--from-classification` या `--from-plan` use होने पर JSON classification path, `--changed` use होने पर `changed`, या केवल `--reason` के लिए `null`।
+- `verification_plan_id` (`string`): जिस verification plan ने run select किया, उसका stable SHA-256 identifier।
 - `status` (`string`): `passed`, `partial`, `failed`, या `blocked`।
 - `summary` (`object`): matched, ran, passed, failed, skipped counts।
+- `run_dir` (`string`): verification bundle directory, जिसमें manifest और per-intent receipts होते हैं।
+- `manifest_path` (`string`): verification bundle manifest path।
 - `results` (`object[]`): हर intent का run या skip result।
+- `results[].verification_plan_id` (`string | null`): run result का plan identifier, या skipped result के लिए `null`।
+- `results[].receipt_path` (`string | null`): जब result चला और receipt बना, तब per-intent receipt path।
+- `results[].receipt_sha256` (`string | null`): लिखे गए per-intent receipt का SHA-256 hash।
 
-`--plan-only --json` के साथ output change verification report schema use करता है। `decision_graph` field changed surfaces, classification reasons, command candidates, eligibility, effects, और gaps के लिए shared evidence model है। `schedule.entries[].effectGraph` field, जब present हो, locks और conflicts explain करने के लिए read-only local-index metadata होता है। `requirements[].surfaceReadModels` field, जब present हो, verification reason के पीछे path-surface rule explain करने के लिए read-only local-index metadata होता है।
+`--plan-only --json` के साथ output change verification report schema use करता है। `verification_plan_id` changed-file classification, selected verification model, related command contract entries, schedule policy, और test-selection report से calculate होता है। `decision_graph` field changed surfaces, classification reasons, command candidates, eligibility, effects, और gaps के लिए shared evidence model है। `schedule.entries[].effectGraph` field, जब present हो, locks और conflicts explain करने के लिए read-only local-index metadata होता है। `requirements[].surfaceReadModels` field, जब present हो, verification reason के पीछे path-surface rule explain करने के लिए read-only local-index metadata होता है।
 
 ## Exit codes
 

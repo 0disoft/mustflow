@@ -30,7 +30,10 @@ instalado o los del repositorio de mustflow.
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` cuando `mf verify`
+  escribe un puntero al último paquete de verificación
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`
 - `run-receipt.schema.json`: `mf run <intent> --json` y `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: `.mustflow/config/commands.toml` analizado
 

@@ -79,6 +79,10 @@ required_after = ["code_change", "behavior_change"]
 - `timeout_seconds`: 명령 제한 시간입니다.
 - `stdin`: 표준 입력 처리 방식입니다. 자동 실행 가능한 의도는 `closed`여야 합니다.
 - `success_exit_codes`: 성공으로 볼 종료 코드 목록입니다.
+- `manual_start_hint`: 장기 실행 명령을 에이전트가 아니라 사람이 직접 시작할 때 참고할 안내입니다.
+- `health_check_url`: 사람이 직접 시작한 장기 실행 프로세스를 확인할 수 있는 선택 URL입니다.
+- `stop_instruction`: 사람이 직접 시작한 장기 실행 프로세스를 멈추는 방법입니다.
+- `related_oneshot_checks`: 같은 표면을 확인할 수 있는 단발성 명령 의도 이름 목록입니다.
 - `writes`: 명령이 수정할 수 있는 경로 목록입니다.
 - `resources`: 빌드 출력 디렉터리처럼 여러 명령이 공유하는 자원을 선언하는 선택 필드입니다.
 - `effects`: 명령별 부수 효과를 선언하는 선택 필드입니다. 검증 계획에서 자원 잠금과 안전한 실행 순서를 설명할 때 씁니다. 이 필드가 없으면 `writes` 항목을 보수적인 독점 쓰기 잠금으로 봅니다.
@@ -189,6 +193,25 @@ required_after = ["image_asset_change", "web_asset_change"]
 - `background`: 백그라운드에 남는 명령입니다.
 
 에이전트가 기본으로 실행할 수 있는 생명주기는 `oneshot`뿐입니다. `server`, `watch`, `interactive`, `browser`, `background`는 `run_policy = "agent_allowed"`로 열면 안 됩니다.
+
+장기 실행 의도에는 사람이 직접 시작하고 확인하고 멈추는 방법을 설명하는 메타데이터를 둘 수 있습니다. 이 메타데이터는 설명용일 뿐이며, 에이전트 실행 권한을 만들지 않습니다.
+
+```toml
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "수동 점검용 개발 서버를 시작합니다."
+argv = ["pnpm", "dev"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+writes = []
+manual_start_hint = "사람이 제어하는 터미널에서 시작하세요."
+health_check_url = "http://127.0.0.1:3000/health"
+stop_instruction = "Ctrl-C로 터미널 프로세스를 중지하세요."
+related_oneshot_checks = ["test_fast"]
+```
 
 `mf run <intent>`는 `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, 양의 정수 `timeout_seconds`, `argv` 또는 `mode = "shell"`과 `cmd`로 선언된 명령, 현재 mustflow 루트 안의 `cwd`를 모두 만족하는 의도만 실행합니다.
 실행 뒤에는 `.mustflow/state/runs/latest.json`에 마지막 실행 기록을 남기고, `--json`을 쓰면 같은 내용을 표준 출력으로 내보냅니다.

@@ -93,7 +93,7 @@ require_new_test_rationale = true
 
 ## Perfil e idioma
 
-`project.profile` es el tipo de proyecto, no un país ni un idioma. El valor predeterminado es `minimal`, y los perfiles integrados son `minimal`, `oss`, `team`, `product` y `library`.
+`project.profile` es el tipo de proyecto, no un país ni un idioma. El valor predeterminado es `minimal`, y los perfiles integrados son `minimal`, `patterns`, `oss`, `team`, `product` y `library`.
 
 `language.agent_response` es el idioma predeterminado para los informes finales del agente.
 

@@ -1,6 +1,6 @@
 ---
 title: mf classify
-description: Read-only command that classifies changed paths, public surfaces, and validation reasons.
+description: Command that classifies changed paths, public surfaces, and validation reasons.
 ---
 
 `mf classify --changed` reads `git status --short --untracked-files=all`, classifies the changed paths, and reports which public surfaces and validation reasons are affected.
@@ -11,6 +11,14 @@ Use explicit paths when you want to inspect a planned change before editing file
 ```sh
 npx mf classify README.md schemas/classify-report.schema.json --json
 ```
+
+Use `--write <path>` when another tool should consume the classification report from a file:
+
+```sh
+npx mf classify --changed --write .mustflow/state/change-classification.json
+```
+
+The output path must stay inside the current mustflow root.
 
 ## Output
 

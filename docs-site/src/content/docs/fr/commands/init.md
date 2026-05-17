@@ -169,6 +169,7 @@ l’installation:
 Les profils intégrés pris en charge sont:
 
 - `minimal`
+- `patterns`
 - `oss`
 - `team`
 - `product`

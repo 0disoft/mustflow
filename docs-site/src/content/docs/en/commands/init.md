@@ -167,6 +167,7 @@ defaults. `--yes` installs the default English settings without prompts.
 Supported built-in profiles are:
 
 - `minimal`
+- `patterns`
 - `oss`
 - `team`
 - `product`
@@ -174,8 +175,9 @@ Supported built-in profiles are:
 
 Profiles also select the installed skill surface. The default `minimal` profile
 installs the core skills that apply to ordinary coding work in most
-repositories. Broader profiles add opt-in skill groups for open source
-maintenance, team coordination, product and web work, or library maintenance.
+repositories. The `patterns` profile adds architecture-pattern procedures.
+Broader profiles add opt-in skill groups for open source maintenance, team
+coordination, product and web work, or library maintenance.
 Packaged templates still include the optional skill files so a later profile or
 template update can install them without making every new project start with the
 full skill set.
