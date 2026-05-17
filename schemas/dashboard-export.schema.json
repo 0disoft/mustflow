@@ -326,6 +326,7 @@
             "source",
             "verification_plan_id",
             "changed_file_count",
+            "criteria",
             "matched_intents",
             "ran_intents",
             "passed_intents",
@@ -337,6 +338,14 @@
             "scope_diff_risk_count",
             "repeated_failure_count",
             "validation_ratchet_risk_count",
+            "repro_evidence_risk_count",
+            "external_evidence_risk_count",
+            "write_drift_risk_count",
+            "receipt_binding_risk_count",
+            "stale_receipt_count",
+            "plan_mismatch_count",
+            "risks",
+            "receipt_binding",
             "latest_run_status"
           ],
           "properties": {
@@ -346,6 +355,7 @@
               "pattern": "^sha256:[0-9a-f]{64}$"
             },
             "changed_file_count": { "type": ["integer", "null"] },
+            "criteria": { "$ref": "#/$defs/completionVerdictCriteria" },
             "matched_intents": { "type": "integer" },
             "ran_intents": { "type": "integer" },
             "passed_intents": { "type": "integer" },
@@ -357,6 +367,14 @@
             "scope_diff_risk_count": { "type": "integer" },
             "repeated_failure_count": { "type": "integer" },
             "validation_ratchet_risk_count": { "type": "integer" },
+            "repro_evidence_risk_count": { "type": "integer" },
+            "external_evidence_risk_count": { "type": "integer" },
+            "write_drift_risk_count": { "type": "integer" },
+            "receipt_binding_risk_count": { "type": "integer" },
+            "stale_receipt_count": { "type": "integer" },
+            "plan_mismatch_count": { "type": "integer" },
+            "risks": { "$ref": "#/$defs/completionVerdictRisks" },
+            "receipt_binding": { "$ref": "#/$defs/completionVerdictReceiptBinding" },
             "latest_run_status": { "type": ["string", "null"] }
           }
         },
@@ -372,6 +390,71 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "completionVerdictCriteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "covered", "partially_covered", "uncovered", "blocked", "contradicted"],
+      "properties": {
+        "total": { "type": "integer" },
+        "covered": { "type": "integer" },
+        "partially_covered": { "type": "integer" },
+        "uncovered": { "type": "integer" },
+        "blocked": { "type": "integer" },
+        "contradicted": { "type": "integer" }
+      }
+    },
+    "completionVerdictRisks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_anchor",
+        "scope_diff",
+        "repeated_failure",
+        "validation_ratchet",
+        "repro_evidence",
+        "external_evidence",
+        "write_drift",
+        "receipt_binding",
+        "stale_receipt",
+        "plan_mismatch"
+      ],
+      "properties": {
+        "source_anchor": { "type": "integer" },
+        "scope_diff": { "type": "integer" },
+        "repeated_failure": { "type": "integer" },
+        "validation_ratchet": { "type": "integer" },
+        "repro_evidence": { "type": "integer" },
+        "external_evidence": { "type": "integer" },
+        "write_drift": { "type": "integer" },
+        "receipt_binding": { "type": "integer" },
+        "stale_receipt": { "type": "integer" },
+        "plan_mismatch": { "type": "integer" }
+      }
+    },
+    "completionVerdictReceiptBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan_bound_count",
+        "plan_unbound_count",
+        "fingerprint_bound_count",
+        "fingerprint_unbound_count",
+        "current_state_bound_count",
+        "current_state_unavailable_count",
+        "stale_count",
+        "plan_mismatch_count"
+      ],
+      "properties": {
+        "plan_bound_count": { "type": "integer" },
+        "plan_unbound_count": { "type": "integer" },
+        "fingerprint_bound_count": { "type": "integer" },
+        "fingerprint_unbound_count": { "type": "integer" },
+        "current_state_bound_count": { "type": "integer" },
+        "current_state_unavailable_count": { "type": "integer" },
+        "stale_count": { "type": "integer" },
+        "plan_mismatch_count": { "type": "integer" }
       }
     },
     "harnessReport": {

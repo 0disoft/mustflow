@@ -506,7 +506,8 @@
             "runnableCount",
             "skippedCount",
             "requirements",
-            "decisionGraph"
+            "decisionGraph",
+            "readModel"
           ],
           "properties": {
             "planSource": { "type": ["string", "null"] },
@@ -523,9 +524,180 @@
             },
             "decisionGraph": {
               "$ref": "#/$defs/verificationDecisionGraph"
+            },
+            "readModel": {
+              "$ref": "#/$defs/localVerificationReadModel"
             }
           }
         }
+      }
+    },
+    "localVerificationReadModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "authority",
+        "commandAuthority",
+        "grantsCommandAuthority",
+        "status",
+        "databasePath",
+        "indexFresh",
+        "stalePaths",
+        "planId",
+        "uncoveredCriteria",
+        "severeRisks",
+        "nonPassingReceipts",
+        "repeatedFailureFingerprints",
+        "validationWeakeningSignals",
+        "refreshHint"
+      ],
+      "properties": {
+        "source": { "const": "local_index" },
+        "authority": { "const": "evidence_only" },
+        "commandAuthority": { "const": ".mustflow/config/commands.toml" },
+        "grantsCommandAuthority": { "const": false },
+        "status": { "enum": ["fresh", "missing", "stale", "unreadable"] },
+        "databasePath": { "type": "string" },
+        "indexFresh": { "type": "boolean" },
+        "stalePaths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "planId": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "uncoveredCriteria": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/localUncoveredCriterion" }
+        },
+        "severeRisks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/localSevereVerificationRisk" }
+        },
+        "nonPassingReceipts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/localNonPassingVerificationReceipt" }
+        },
+        "repeatedFailureFingerprints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/localRepeatedFailureFingerprint" }
+        },
+        "validationWeakeningSignals": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/localValidationWeakeningSignal" }
+        },
+        "refreshHint": { "type": ["string", "null"] }
+      }
+    },
+    "localUncoveredCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criterionId",
+        "source",
+        "reason",
+        "surface",
+        "pathHash",
+        "coverageStatus",
+        "receiptCount",
+        "gapCount",
+        "riskCount"
+      ],
+      "properties": {
+        "criterionId": { "type": "string" },
+        "source": { "type": "string" },
+        "reason": { "type": ["string", "null"] },
+        "surface": { "type": ["string", "null"] },
+        "pathHash": { "type": ["string", "null"] },
+        "coverageStatus": { "type": ["string", "null"] },
+        "receiptCount": { "type": "integer" },
+        "gapCount": { "type": "integer" },
+        "riskCount": { "type": "integer" }
+      }
+    },
+    "localSevereVerificationRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourcePath", "ordinal", "code", "severity", "detailHash"],
+      "properties": {
+        "sourcePath": { "type": "string" },
+        "ordinal": { "type": "integer" },
+        "code": { "type": "string" },
+        "severity": { "type": "string" },
+        "detailHash": { "type": "string" }
+      }
+    },
+    "localNonPassingVerificationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receiptHash",
+        "planId",
+        "intent",
+        "status",
+        "commandFingerprint",
+        "contractFingerprint",
+        "currentStateHash",
+        "writeDriftStatus"
+      ],
+      "properties": {
+        "receiptHash": { "type": "string" },
+        "planId": { "type": "string" },
+        "intent": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "commandFingerprint": { "type": ["string", "null"] },
+        "contractFingerprint": { "type": ["string", "null"] },
+        "currentStateHash": { "type": ["string", "null"] },
+        "writeDriftStatus": { "type": ["string", "null"] }
+      }
+    },
+    "localRepeatedFailureFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePath",
+        "fingerprint",
+        "verificationPlanId",
+        "status",
+        "failedIntents",
+        "primaryReason",
+        "failedIntentsHash",
+        "riskCodesHash",
+        "affectedSurfacesHash",
+        "seenCount",
+        "requiresNewEvidence"
+      ],
+      "properties": {
+        "sourcePath": { "type": "string" },
+        "fingerprint": { "type": "string" },
+        "verificationPlanId": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "failedIntents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "primaryReason": { "type": ["string", "null"] },
+        "failedIntentsHash": { "type": ["string", "null"] },
+        "riskCodesHash": { "type": ["string", "null"] },
+        "affectedSurfacesHash": { "type": ["string", "null"] },
+        "seenCount": { "type": "integer" },
+        "requiresNewEvidence": { "type": "boolean" }
+      }
+    },
+    "localValidationWeakeningSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signalId", "planId", "code", "severity", "pathHash", "beforeHash", "afterHash"],
+      "properties": {
+        "signalId": { "type": "string" },
+        "planId": { "type": ["string", "null"] },
+        "code": { "type": "string" },
+        "severity": { "type": "string" },
+        "pathHash": { "type": "string" },
+        "beforeHash": { "type": ["string", "null"] },
+        "afterHash": { "type": ["string", "null"] }
       }
     },
     "verificationDecisionGraph": {

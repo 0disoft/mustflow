@@ -92,6 +92,11 @@ required_after = ["custom_verify"]
 		);
 		assert.equal(report.decision.verification.requirements[0].candidates[0].effectGraph.grantsCommandAuthority, false);
 		assert.equal(report.decision.verification.requirements[0].candidates[0].effectGraph.status, 'missing');
+		assert.equal(report.decision.verification.readModel.authority, 'evidence_only');
+		assert.equal(report.decision.verification.readModel.commandAuthority, '.mustflow/config/commands.toml');
+		assert.equal(report.decision.verification.readModel.grantsCommandAuthority, false);
+		assert.equal(report.decision.verification.readModel.status, 'missing');
+		assert.equal(report.decision.verification.readModel.planId, null);
 		assert.equal(report.decision.verification.decisionGraph.root, 'verification_decision');
 		assert.ok(
 			report.decision.verification.decisionGraph.nodes.some(
@@ -275,6 +280,10 @@ required_after = ["stale_verify"]
 		assert.equal(candidate.effectGraph.indexFresh, false);
 		assert.ok(candidate.effectGraph.stalePaths.includes('.mustflow/config/commands.toml'));
 		assert.match(candidate.effectGraph.refreshHint, /mf index/);
+		assert.equal(report.decision.verification.readModel.status, 'stale');
+		assert.equal(report.decision.verification.readModel.indexFresh, false);
+		assert.ok(report.decision.verification.readModel.stalePaths.includes('.mustflow/config/commands.toml'));
+		assert.match(report.decision.verification.readModel.refreshHint, /mf index/);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -12,8 +12,10 @@ import {
 import { createVerificationSchedule } from '../../core/verification-scheduler.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
+	readLatestLocalVerificationReadModelQueries,
 	readLocalCommandEffectGraphs,
 	type LocalCommandEffectGraph,
+	type LocalVerificationReadModelQueries,
 } from '../lib/local-index.js';
 import { planErrorMessageKey, readInputFromPlan } from './verify.js';
 
@@ -53,6 +55,7 @@ export type ExplainVerificationDecision = {
 		readonly skippedCount: number;
 		readonly requirements: readonly ExplainVerificationRequirement[];
 		readonly decisionGraph: VerificationDecisionGraph;
+		readonly readModel: LocalVerificationReadModelQueries;
 	};
 };
 
@@ -198,6 +201,7 @@ export async function getVerifyExplainOutput(
 	];
 	const graphsByIntent =
 		intentNames.length > 0 ? await readLocalCommandEffectGraphs(projectRoot, intentNames) : new Map<string, LocalCommandEffectGraph>();
+	const readModel = await readLatestLocalVerificationReadModelQueries(projectRoot);
 
 	const requirements = plans.map((plan): ExplainVerificationRequirement => {
 		const candidates = plan.candidates.map((candidate): ExplainVerificationCandidate => {
@@ -267,6 +271,7 @@ export async function getVerifyExplainOutput(
 				skippedCount,
 				requirements,
 				decisionGraph,
+				readModel,
 			},
 		},
 	};
@@ -284,7 +289,23 @@ export function renderVerifyExplainDecision(decision: ExplainVerificationDecisio
 		`- skipped: ${verification.skippedCount}`,
 		`- decision_graph_nodes: ${verification.decisionGraph.summary.nodeCount}`,
 		`- decision_graph_gaps: ${verification.decisionGraph.summary.gapCount}`,
+		`- read_model: ${verification.readModel.status}`,
+		`- read_model_plan_id: ${verification.readModel.planId ?? t(lang, 'value.none')}`,
 	];
+
+	if (verification.readModel.refreshHint) {
+		lines.push(`- read_model_refresh_hint: ${verification.readModel.refreshHint}`);
+	}
+
+	if (verification.readModel.status === 'fresh') {
+		lines.push(
+			`- uncovered_criteria: ${verification.readModel.uncoveredCriteria.length}`,
+			`- severe_risks: ${verification.readModel.severeRisks.length}`,
+			`- non_passing_receipts: ${verification.readModel.nonPassingReceipts.length}`,
+			`- repeated_failures_requiring_new_evidence: ${verification.readModel.repeatedFailureFingerprints.length}`,
+			`- validation_weakening_signals: ${verification.readModel.validationWeakeningSignals.length}`,
+		);
+	}
 
 	for (const requirement of verification.requirements) {
 		lines.push(`- required_after: ${requirement.reason}`);

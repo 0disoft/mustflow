@@ -51,24 +51,46 @@
       "fixture": {
         "schema_version": "1",
         "source": "paths",
-        "files": ["README.md"],
+        "files": [
+          "README.md"
+        ],
         "classification_summary": {
           "fileCount": 1,
           "publicSurfaceCount": 1,
-          "changeKinds": ["docs"],
-          "validationReasons": ["docs_change"],
-          "updatePolicies": ["update"],
-          "driftChecks": ["docs_validate"],
-          "affectedContracts": ["public_docs"]
+          "changeKinds": [
+            "docs"
+          ],
+          "validationReasons": [
+            "docs_change"
+          ],
+          "updatePolicies": [
+            "update"
+          ],
+          "driftChecks": [
+            "docs_validate"
+          ],
+          "affectedContracts": [
+            "public_docs"
+          ]
         },
         "requirements": [
           {
             "reason": "docs_change",
-            "files": ["README.md"],
-            "surfaces": ["docs"],
-            "affectedContracts": ["public_docs"],
-            "driftChecks": ["docs_validate"],
-            "updatePolicies": ["update"],
+            "files": [
+              "README.md"
+            ],
+            "surfaces": [
+              "docs"
+            ],
+            "affectedContracts": [
+              "public_docs"
+            ],
+            "driftChecks": [
+              "docs_validate"
+            ],
+            "updatePolicies": [
+              "update"
+            ],
             "source": "change_classification"
           }
         ],
@@ -95,7 +117,9 @@
           "batches": [
             {
               "index": 0,
-              "intents": ["docs_validate_fast"],
+              "intents": [
+                "docs_validate_fast"
+              ],
               "locks": []
             }
           ],
@@ -146,7 +170,9 @@
               "status": "not_applicable",
               "reason": null,
               "intent": null,
-              "data": { "path": "README.md" }
+              "data": {
+                "path": "README.md"
+              }
             },
             {
               "id": "reason:docs_change",
@@ -189,7 +215,9 @@
           "grantsCommandAuthority": false,
           "matches": [],
           "selected": [],
-          "notes": ["No project-declared test selection manifest exists; mustflow will not infer a user-project test subset."]
+          "notes": [
+            "No project-declared test selection manifest exists; mustflow will not infer a user-project test subset."
+          ]
         }
       }
     },
@@ -202,30 +230,50 @@
         "command": "classify",
         "mustflow_root": "C:/repo",
         "source": "paths",
-        "files": ["schemas/verify-report.schema.json"],
+        "files": [
+          "schemas/verify-report.schema.json"
+        ],
         "classifications": [
           {
             "path": "schemas/verify-report.schema.json",
-            "changeKinds": ["schema"],
+            "changeKinds": [
+              "schema"
+            ],
             "surface": {
               "kind": "json_schema",
               "category": "public_contract",
               "isPublicSurface": true,
-              "validationReasons": ["schema_change"],
-              "affectedContracts": ["public_json_schema"],
+              "validationReasons": [
+                "schema_change"
+              ],
+              "affectedContracts": [
+                "public_json_schema"
+              ],
               "updatePolicy": "update",
-              "driftChecks": ["schema_contract"]
+              "driftChecks": [
+                "schema_contract"
+              ]
             }
           }
         ],
         "summary": {
           "fileCount": 1,
           "publicSurfaceCount": 1,
-          "changeKinds": ["schema"],
-          "validationReasons": ["schema_change"],
-          "updatePolicies": ["update"],
-          "driftChecks": ["schema_contract"],
-          "affectedContracts": ["public_json_schema"]
+          "changeKinds": [
+            "schema"
+          ],
+          "validationReasons": [
+            "schema_change"
+          ],
+          "updatePolicies": [
+            "update"
+          ],
+          "driftChecks": [
+            "schema_contract"
+          ],
+          "affectedContracts": [
+            "public_json_schema"
+          ]
         }
       }
     },
@@ -248,7 +296,9 @@
           "on_timeout": "terminate",
           "kill_after_seconds": 5,
           "env_policy": "minimal",
-          "env_allowlist": ["PATH"]
+          "env_allowlist": [
+            "PATH"
+          ]
         },
         "intents": {
           "mustflow_check": {
@@ -256,14 +306,22 @@
             "lifecycle": "oneshot",
             "run_policy": "agent_allowed",
             "description": "Validate mustflow project files.",
-            "argv": ["mf", "check", "--strict"],
+            "argv": [
+              "mf",
+              "check",
+              "--strict"
+            ],
             "cwd": ".",
             "timeout_seconds": 60,
             "stdin": "closed",
-            "success_exit_codes": [0],
+            "success_exit_codes": [
+              0
+            ],
             "writes": [],
             "env_policy": "minimal",
-            "env_allowlist": ["PATH"],
+            "env_allowlist": [
+              "PATH"
+            ],
             "effects": [
               {
                 "type": "read",
@@ -275,13 +333,17 @@
             ],
             "network": false,
             "destructive": false,
-            "required_after": ["workflow_change"]
+            "required_after": [
+              "workflow_change"
+            ]
           }
         },
         "resources": {
           "mustflow_config": {
             "type": "path",
-            "paths": [".mustflow/config/"],
+            "paths": [
+              ".mustflow/config/"
+            ],
             "concurrency": "shared_reader",
             "description": "mustflow configuration files"
           }
@@ -300,13 +362,19 @@
             "reason": "Source changes use the declared related-test intent.",
             "risk": "medium",
             "match": {
-              "paths": ["src/**"],
-              "surfaces": ["implementation"]
+              "paths": [
+                "src/**"
+              ],
+              "surfaces": [
+                "implementation"
+              ]
             },
             "select": {
               "intent": "test_related",
               "fallback_intent": "test_fast",
-              "test_targets": ["tests/unit"]
+              "test_targets": [
+                "tests/unit"
+              ]
             }
           }
         ]
@@ -352,7 +420,9 @@
               "description": "Validate mustflow project files."
             }
           ],
-          "runnable_intents": ["mustflow_check"]
+          "runnable_intents": [
+            "mustflow_check"
+          ]
         },
         "effective_policy": {
           "entrypoint": "AGENTS.md",
@@ -410,19 +480,31 @@
               "message": "Manual review is required before running this intent."
             }
           ],
-          "sourceFiles": [".mustflow/config/commands.toml"],
+          "sourceFiles": [
+            ".mustflow/config/commands.toml"
+          ],
           "coverage": {
-            "knownClassificationReasons": ["docs_change"],
-            "documentedVerificationReasons": ["docs_change"],
-            "requiredAfterReasons": ["docs_change"],
-            "runnableReasons": ["docs_change"],
+            "knownClassificationReasons": [
+              "docs_change"
+            ],
+            "documentedVerificationReasons": [
+              "docs_change"
+            ],
+            "requiredAfterReasons": [
+              "docs_change"
+            ],
+            "runnableReasons": [
+              "docs_change"
+            ],
             "findings": [
               {
                 "severity": "warning",
                 "code": "manual_only_reason",
                 "reason": "snapshot_change",
                 "intent": "snapshot_update",
-                "intents": ["snapshot_update"],
+                "intents": [
+                  "snapshot_update"
+                ],
                 "message": "The reason is covered only by a manual-only intent."
               }
             ]
@@ -466,7 +548,11 @@
           "max_array_items": 200,
           "max_depth": 16,
           "truncated_fields": [],
-          "omitted_fields": ["status.run_history.command_line", "status.run_history.stdout.tail", "status.run_history.stderr.tail"],
+          "omitted_fields": [
+            "status.run_history.command_line",
+            "status.run_history.stdout.tail",
+            "status.run_history.stderr.tail"
+          ],
           "redacted_fields": [],
           "redaction_count": 0,
           "redaction_kinds": []
@@ -501,7 +587,9 @@
           },
           "verification": {
             "changed_file_count": 1,
-            "changed_surfaces": ["docs"],
+            "changed_surfaces": [
+              "docs"
+            ],
             "decision_graph_summary": {
               "root": "verification_decision",
               "node_count": 3,
@@ -513,7 +601,9 @@
               "unknown": 0,
               "gap_count": 0
             },
-            "runnable_intents": ["docs_validate_fast"],
+            "runnable_intents": [
+              "docs_validate_fast"
+            ],
             "skipped_intents": [],
             "gaps": [],
             "completion_verdict": {
@@ -535,11 +625,50 @@
                 "source_anchor_risk_count": 0,
                 "scope_diff_risk_count": 0,
                 "repeated_failure_count": 0,
-              "validation_ratchet_risk_count": 0
+                "validation_ratchet_risk_count": 0,
+                "repro_evidence_risk_count": 0,
+                "external_evidence_risk_count": 0,
+                "write_drift_risk_count": 0,
+                "receipt_binding_risk_count": 0,
+                "stale_receipt_count": 0,
+                "plan_mismatch_count": 0,
+                "risks": {
+                  "source_anchor": 0,
+                  "scope_diff": 0,
+                  "repeated_failure": 0,
+                  "validation_ratchet": 0,
+                  "repro_evidence": 0,
+                  "external_evidence": 0,
+                  "write_drift": 0,
+                  "receipt_binding": 0,
+                  "stale_receipt": 0,
+                  "plan_mismatch": 0
+                },
+                "receipt_binding": {
+                  "plan_bound_count": 0,
+                  "plan_unbound_count": 0,
+                  "fingerprint_bound_count": 0,
+                  "fingerprint_unbound_count": 0,
+                  "current_state_bound_count": 0,
+                  "current_state_unavailable_count": 0,
+                  "stale_count": 0,
+                  "plan_mismatch_count": 0
+                },
+                "criteria": {
+                  "total": 1,
+                  "covered": 0,
+                  "partially_covered": 0,
+                  "uncovered": 1,
+                  "blocked": 0,
+                  "contradicted": 0
+                }
               },
               "blockers": [],
               "contradictions": [],
-              "limitations": ["dashboard_export_is_read_only", "no_latest_run_receipt"]
+              "limitations": [
+                "dashboard_export_is_read_only",
+                "no_latest_run_receipt"
+              ]
             },
             "evidence_model": {
               "schema_version": "1",
@@ -549,8 +678,12 @@
                 {
                   "reason": "dashboard_snapshot",
                   "files": [],
-                  "surfaces": ["docs"],
-                  "candidate_intents": ["docs_validate_fast"],
+                  "surfaces": [
+                    "docs"
+                  ],
+                  "candidate_intents": [
+                    "docs_validate_fast"
+                  ],
                   "selected_intents": [],
                   "skipped_intents": [],
                   "gap_count": 0,
@@ -584,7 +717,10 @@
               ],
               "explanation": {
                 "verified_by": [],
-                "downgraded_by": ["dashboard_export_is_read_only", "no_latest_run_receipt"],
+                "downgraded_by": [
+                  "dashboard_export_is_read_only",
+                  "no_latest_run_receipt"
+                ],
                 "blocked_by": [],
                 "contradicted_by": []
               }
@@ -639,7 +775,9 @@
             "version": "1.30.0"
           },
           "command_contract_exists": true,
-          "runnable_intents": ["mustflow_check"],
+          "runnable_intents": [
+            "mustflow_check"
+          ],
           "missing_read_order": [],
           "missing_optional_read_order": [],
           "latest_run_exists": false
@@ -693,7 +831,9 @@
           "reason": "The intent satisfies mustflow command eligibility checks.",
           "effectiveAction": "Run through mf run mustflow_check.",
           "countsAsMustflowVerification": true,
-          "sourceFiles": [".mustflow/config/commands.toml"],
+          "sourceFiles": [
+            ".mustflow/config/commands.toml"
+          ],
           "intent": {
             "name": "mustflow_check",
             "status": "configured",
@@ -706,8 +846,12 @@
             "writes": [],
             "network": false,
             "destructive": false,
-            "successExitCodes": [0],
-            "requiredAfter": ["workflow_change"]
+            "successExitCodes": [
+              0
+            ],
+            "requiredAfter": [
+              "workflow_change"
+            ]
           }
         }
       }
@@ -744,7 +888,9 @@
         "command": "impact",
         "mustflow_root": "C:/repo",
         "source": "paths",
-        "files": ["package.json"],
+        "files": [
+          "package.json"
+        ],
         "versioning_enabled": true,
         "version_sources": [
           {
@@ -755,19 +901,35 @@
         "classification_summary": {
           "fileCount": 1,
           "publicSurfaceCount": 1,
-          "changeKinds": ["package_metadata"],
-          "validationReasons": ["release_surface"],
-          "updatePolicies": ["update"],
-          "driftChecks": ["package_metadata"],
-          "affectedContracts": ["npm_package"]
+          "changeKinds": [
+            "package_metadata"
+          ],
+          "validationReasons": [
+            "release_surface"
+          ],
+          "updatePolicies": [
+            "update"
+          ],
+          "driftChecks": [
+            "package_metadata"
+          ],
+          "affectedContracts": [
+            "npm_package"
+          ]
         },
         "version_impact": {
           "requiresVersionDecision": true,
           "severity": "metadata",
           "suggestedBump": "minor",
-          "reasons": ["package metadata changed"],
-          "affectedVersionSources": ["package.json"],
-          "affectedSurfaces": ["npm_package"]
+          "reasons": [
+            "package metadata changed"
+          ],
+          "affectedVersionSources": [
+            "package.json"
+          ],
+          "affectedSurfaces": [
+            "npm_package"
+          ]
         }
       }
     },
@@ -802,7 +964,9 @@
         "command": "verify",
         "kind": "verify_run_summary",
         "reason": "docs_change",
-        "reasons": ["docs_change"],
+        "reasons": [
+          "docs_change"
+        ],
         "plan_source": null,
         "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "status": "passed",
@@ -834,7 +998,43 @@
             "source_anchor_risk_count": 0,
             "scope_diff_risk_count": 0,
             "repeated_failure_count": 0,
-          "validation_ratchet_risk_count": 0
+            "validation_ratchet_risk_count": 0,
+            "repro_evidence_risk_count": 0,
+            "external_evidence_risk_count": 0,
+            "write_drift_risk_count": 0,
+            "receipt_binding_risk_count": 0,
+            "stale_receipt_count": 0,
+            "plan_mismatch_count": 0,
+            "risks": {
+              "source_anchor": 0,
+              "scope_diff": 0,
+              "repeated_failure": 0,
+              "validation_ratchet": 0,
+              "repro_evidence": 0,
+              "external_evidence": 0,
+              "write_drift": 0,
+              "receipt_binding": 0,
+              "stale_receipt": 0,
+              "plan_mismatch": 0
+            },
+            "receipt_binding": {
+              "plan_bound_count": 1,
+              "plan_unbound_count": 0,
+              "fingerprint_bound_count": 1,
+              "fingerprint_unbound_count": 0,
+              "current_state_bound_count": 0,
+              "current_state_unavailable_count": 1,
+              "stale_count": 0,
+              "plan_mismatch_count": 0
+            },
+            "criteria": {
+              "total": 1,
+              "covered": 1,
+              "partially_covered": 0,
+              "uncovered": 0,
+              "blocked": 0,
+              "contradicted": 0
+            }
           },
           "blockers": [],
           "contradictions": [],
@@ -847,10 +1047,18 @@
           "requirements": [
             {
               "reason": "docs_change",
-              "files": ["README.md"],
-              "surfaces": ["docs"],
-              "candidate_intents": ["docs_validate_fast"],
-              "selected_intents": ["docs_validate_fast"],
+              "files": [
+                "README.md"
+              ],
+              "surfaces": [
+                "docs"
+              ],
+              "candidate_intents": [
+                "docs_validate_fast"
+              ],
+              "selected_intents": [
+                "docs_validate_fast"
+              ],
               "skipped_intents": [],
               "gap_count": 0,
               "outcome": "verified"
@@ -864,8 +1072,12 @@
               "status": "covered",
               "requirement_reason": "docs_change",
               "evidence": {
-                "intents": ["docs_validate_fast"],
-                "receipt_paths": [".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"],
+                "intents": [
+                  "docs_validate_fast"
+                ],
+                "receipt_paths": [
+                  ".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"
+                ],
                 "gap_reasons": [],
                 "source_anchor_ids": []
               }
@@ -885,7 +1097,9 @@
           "gaps": [],
           "remaining_risks": [],
           "explanation": {
-            "verified_by": ["all_selected_verification_passed"],
+            "verified_by": [
+              "all_selected_verification_passed"
+            ],
             "downgraded_by": [],
             "blocked_by": [],
             "contradicted_by": []
@@ -911,11 +1125,20 @@
         "run_policy": "agent_allowed",
         "mode": "argv",
         "env_policy": "minimal",
-        "env_allowlist": ["PATH"],
-        "argv": ["node", "dist/cli/index.js", "check", "--strict"],
+        "env_allowlist": [
+          "PATH"
+        ],
+        "argv": [
+          "node",
+          "dist/cli/index.js",
+          "check",
+          "--strict"
+        ],
         "timeout_seconds": 60,
         "max_output_bytes": 200000,
-        "success_exit_codes": [0],
+        "success_exit_codes": [
+          0
+        ],
         "exit_code": 0,
         "signal": null,
         "error": null,
@@ -966,7 +1189,9 @@
         "command": "verify",
         "mustflow_root": "C:/repo",
         "reason": "docs_change",
-        "reasons": ["docs_change"],
+        "reasons": [
+          "docs_change"
+        ],
         "plan_source": null,
         "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "status": "passed",
@@ -998,7 +1223,43 @@
             "source_anchor_risk_count": 0,
             "scope_diff_risk_count": 0,
             "repeated_failure_count": 0,
-          "validation_ratchet_risk_count": 0
+            "validation_ratchet_risk_count": 0,
+            "repro_evidence_risk_count": 0,
+            "external_evidence_risk_count": 0,
+            "write_drift_risk_count": 0,
+            "receipt_binding_risk_count": 0,
+            "stale_receipt_count": 0,
+            "plan_mismatch_count": 0,
+            "risks": {
+              "source_anchor": 0,
+              "scope_diff": 0,
+              "repeated_failure": 0,
+              "validation_ratchet": 0,
+              "repro_evidence": 0,
+              "external_evidence": 0,
+              "write_drift": 0,
+              "receipt_binding": 0,
+              "stale_receipt": 0,
+              "plan_mismatch": 0
+            },
+            "receipt_binding": {
+              "plan_bound_count": 1,
+              "plan_unbound_count": 0,
+              "fingerprint_bound_count": 1,
+              "fingerprint_unbound_count": 0,
+              "current_state_bound_count": 0,
+              "current_state_unavailable_count": 1,
+              "stale_count": 0,
+              "plan_mismatch_count": 0
+            },
+            "criteria": {
+              "total": 1,
+              "covered": 1,
+              "partially_covered": 0,
+              "uncovered": 0,
+              "blocked": 0,
+              "contradicted": 0
+            }
           },
           "blockers": [],
           "contradictions": [],
@@ -1011,10 +1272,18 @@
           "requirements": [
             {
               "reason": "docs_change",
-              "files": ["README.md"],
-              "surfaces": ["docs"],
-              "candidate_intents": ["docs_validate_fast"],
-              "selected_intents": ["docs_validate_fast"],
+              "files": [
+                "README.md"
+              ],
+              "surfaces": [
+                "docs"
+              ],
+              "candidate_intents": [
+                "docs_validate_fast"
+              ],
+              "selected_intents": [
+                "docs_validate_fast"
+              ],
               "skipped_intents": [],
               "gap_count": 0,
               "outcome": "verified"
@@ -1028,8 +1297,12 @@
               "status": "covered",
               "requirement_reason": "docs_change",
               "evidence": {
-                "intents": ["docs_validate_fast"],
-                "receipt_paths": [".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"],
+                "intents": [
+                  "docs_validate_fast"
+                ],
+                "receipt_paths": [
+                  ".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"
+                ],
                 "gap_reasons": [],
                 "source_anchor_ids": []
               }
@@ -1049,7 +1322,9 @@
           "gaps": [],
           "remaining_risks": [],
           "explanation": {
-            "verified_by": ["all_selected_verification_passed"],
+            "verified_by": [
+              "all_selected_verification_passed"
+            ],
             "downgraded_by": [],
             "blocked_by": [],
             "contradicted_by": []
@@ -1080,11 +1355,20 @@
               "run_policy": "agent_allowed",
               "mode": "argv",
               "env_policy": "minimal",
-              "env_allowlist": ["PATH"],
-              "argv": ["node", "dist/cli/index.js", "run", "docs_validate_fast"],
+              "env_allowlist": [
+                "PATH"
+              ],
+              "argv": [
+                "node",
+                "dist/cli/index.js",
+                "run",
+                "docs_validate_fast"
+              ],
               "timeout_seconds": 60,
               "max_output_bytes": 200000,
-              "success_exit_codes": [0],
+              "success_exit_codes": [
+                0
+              ],
               "exit_code": 0,
               "signal": null,
               "error": null,
@@ -1138,7 +1422,9 @@
         "schema_version": "1",
         "command": "verify",
         "reason": "docs_change",
-        "reasons": ["docs_change"],
+        "reasons": [
+          "docs_change"
+        ],
         "plan_source": null,
         "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "status": "passed",
@@ -1168,7 +1454,43 @@
             "source_anchor_risk_count": 0,
             "scope_diff_risk_count": 0,
             "repeated_failure_count": 0,
-          "validation_ratchet_risk_count": 0
+            "validation_ratchet_risk_count": 0,
+            "repro_evidence_risk_count": 0,
+            "external_evidence_risk_count": 0,
+            "write_drift_risk_count": 0,
+            "receipt_binding_risk_count": 0,
+            "stale_receipt_count": 0,
+            "plan_mismatch_count": 0,
+            "risks": {
+              "source_anchor": 0,
+              "scope_diff": 0,
+              "repeated_failure": 0,
+              "validation_ratchet": 0,
+              "repro_evidence": 0,
+              "external_evidence": 0,
+              "write_drift": 0,
+              "receipt_binding": 0,
+              "stale_receipt": 0,
+              "plan_mismatch": 0
+            },
+            "receipt_binding": {
+              "plan_bound_count": 1,
+              "plan_unbound_count": 0,
+              "fingerprint_bound_count": 1,
+              "fingerprint_unbound_count": 0,
+              "current_state_bound_count": 0,
+              "current_state_unavailable_count": 1,
+              "stale_count": 0,
+              "plan_mismatch_count": 0
+            },
+            "criteria": {
+              "total": 1,
+              "covered": 1,
+              "partially_covered": 0,
+              "uncovered": 0,
+              "blocked": 0,
+              "contradicted": 0
+            }
           },
           "blockers": [],
           "contradictions": [],
@@ -1181,10 +1503,18 @@
           "requirements": [
             {
               "reason": "docs_change",
-              "files": ["README.md"],
-              "surfaces": ["docs"],
-              "candidate_intents": ["docs_validate_fast"],
-              "selected_intents": ["docs_validate_fast"],
+              "files": [
+                "README.md"
+              ],
+              "surfaces": [
+                "docs"
+              ],
+              "candidate_intents": [
+                "docs_validate_fast"
+              ],
+              "selected_intents": [
+                "docs_validate_fast"
+              ],
               "skipped_intents": [],
               "gap_count": 0,
               "outcome": "verified"
@@ -1198,8 +1528,12 @@
               "status": "covered",
               "requirement_reason": "docs_change",
               "evidence": {
-                "intents": ["docs_validate_fast"],
-                "receipt_paths": [".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"],
+                "intents": [
+                  "docs_validate_fast"
+                ],
+                "receipt_paths": [
+                  ".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"
+                ],
                 "gap_reasons": [],
                 "source_anchor_ids": []
               }
@@ -1219,7 +1553,9 @@
           "gaps": [],
           "remaining_risks": [],
           "explanation": {
-            "verified_by": ["all_selected_verification_passed"],
+            "verified_by": [
+              "all_selected_verification_passed"
+            ],
             "downgraded_by": [],
             "blocked_by": [],
             "contradicted_by": []

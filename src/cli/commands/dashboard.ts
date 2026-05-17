@@ -49,7 +49,12 @@ import {
 	type ReviewerKind,
 } from '../lib/doc-review-ledger.js';
 import { inspectManifestLock } from '../lib/manifest-lock.js';
-import { readLocalCommandEffectGraphs, type LocalCommandEffectGraph } from '../lib/local-index.js';
+import {
+	readLatestLocalVerificationReadModelQueries,
+	readLocalCommandEffectGraphs,
+	type LocalCommandEffectGraph,
+	type LocalVerificationReadModelQueries,
+} from '../lib/local-index.js';
 import { readPackageMetadata } from '../lib/package-info.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
@@ -509,6 +514,71 @@ function toDashboardCommandEffectGraph(graph: LocalCommandEffectGraph): Dashboar
 	};
 }
 
+function toDashboardVerificationReadModel(readModel: LocalVerificationReadModelQueries): unknown {
+	return {
+		source: readModel.source,
+		authority: readModel.authority,
+		command_authority: readModel.commandAuthority,
+		grants_command_authority: readModel.grantsCommandAuthority,
+		status: readModel.status,
+		database_path: readModel.databasePath,
+		index_fresh: readModel.indexFresh,
+		stale_paths: readModel.stalePaths,
+		plan_id: readModel.planId,
+		refresh_hint: readModel.refreshHint,
+		uncovered_criteria: readModel.uncoveredCriteria.map((criterion) => ({
+			criterion_id: criterion.criterionId,
+			source: criterion.source,
+			reason: criterion.reason,
+			surface: criterion.surface,
+			path_hash: criterion.pathHash,
+			coverage_status: criterion.coverageStatus,
+			receipt_count: criterion.receiptCount,
+			gap_count: criterion.gapCount,
+			risk_count: criterion.riskCount,
+		})),
+		severe_risks: readModel.severeRisks.map((risk) => ({
+			source_path: risk.sourcePath,
+			ordinal: risk.ordinal,
+			code: risk.code,
+			severity: risk.severity,
+			detail_hash: risk.detailHash,
+		})),
+		non_passing_receipts: readModel.nonPassingReceipts.map((receipt) => ({
+			receipt_hash: receipt.receiptHash,
+			plan_id: receipt.planId,
+			intent: receipt.intent,
+			status: receipt.status,
+			command_fingerprint: receipt.commandFingerprint,
+			contract_fingerprint: receipt.contractFingerprint,
+			current_state_hash: receipt.currentStateHash,
+			write_drift_status: receipt.writeDriftStatus,
+		})),
+		repeated_failure_fingerprints: readModel.repeatedFailureFingerprints.map((fingerprint) => ({
+			source_path: fingerprint.sourcePath,
+			fingerprint: fingerprint.fingerprint,
+			verification_plan_id: fingerprint.verificationPlanId,
+			status: fingerprint.status,
+			failed_intents: fingerprint.failedIntents,
+			primary_reason: fingerprint.primaryReason,
+			failed_intents_hash: fingerprint.failedIntentsHash,
+			risk_codes_hash: fingerprint.riskCodesHash,
+			affected_surfaces_hash: fingerprint.affectedSurfacesHash,
+			seen_count: fingerprint.seenCount,
+			requires_new_evidence: fingerprint.requiresNewEvidence,
+		})),
+		validation_weakening_signals: readModel.validationWeakeningSignals.map((signal) => ({
+			signal_id: signal.signalId,
+			plan_id: signal.planId,
+			code: signal.code,
+			severity: signal.severity,
+			path_hash: signal.pathHash,
+			before_hash: signal.beforeHash,
+			after_hash: signal.afterHash,
+		})),
+	};
+}
+
 async function readCommandEffectGraphMap(
 	projectRoot: string,
 	intentNames: readonly string[],
@@ -793,6 +863,15 @@ async function renderStatusResponse(projectRoot: string): Promise<DashboardStatu
 	const commandContract = await renderCommandContractResponse(projectRoot, rawCommandContract);
 	const gitChangedFiles = readGitChangedFiles(projectRoot);
 	const packageMetadata = readPackageMetadata();
+	const verification = createDashboardVerificationSnapshot(
+		projectRoot,
+		rawCommandContract,
+		commandContract.intents,
+		gitChangedFiles,
+		manifest.changedFiles,
+		manifest.missingFiles,
+	);
+	const readModel = await readLatestLocalVerificationReadModelQueries(projectRoot);
 
 	return {
 		schema_version: '1',
@@ -815,14 +894,10 @@ async function renderStatusResponse(projectRoot: string): Promise<DashboardStatu
 		issues: manifest.issues,
 		runnable_intents: context.command_contract.runnable_intents,
 		command_contract: commandContract,
-		verification: createDashboardVerificationSnapshot(
-			projectRoot,
-			rawCommandContract,
-			commandContract.intents,
-			gitChangedFiles,
-			manifest.changedFiles,
-			manifest.missingFiles,
-		),
+		verification: {
+			...verification,
+			read_model: toDashboardVerificationReadModel(readModel),
+		},
 		latest_run: context.latest_run,
 		active_review_documents: activeDocuments.length,
 	};

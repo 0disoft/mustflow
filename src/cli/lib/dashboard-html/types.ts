@@ -191,6 +191,7 @@ export interface DashboardStatusSnapshot {
 			readonly intent: string;
 			readonly reason_key: string;
 		}[];
+		readonly read_model: unknown;
 		readonly schedule: {
 			readonly runner: string;
 			readonly failurePolicy: {
