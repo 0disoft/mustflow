@@ -159,6 +159,25 @@ function filterSkillIndexContent(content: string, selectedSkills: readonly strin
 		.join('\n');
 }
 
+function filterSkillRouteMetadataContent(content: string, selectedSkills: readonly string[]): string {
+	const selectedSkillSet = new Set(selectedSkills);
+	let keepCurrentRoute = true;
+
+	return content
+		.split(/\r?\n/u)
+		.filter((line) => {
+			const match = /^\[routes\."([^"]+)"\]\s*$/u.exec(line.trim());
+
+			if (match) {
+				keepCurrentRoute = selectedSkillSet.has(match[1] ?? '');
+				return keepCurrentRoute;
+			}
+
+			return keepCurrentRoute;
+		})
+		.join('\n');
+}
+
 function isAllowedTemplateCreateTarget(relativePath: string): boolean {
 	const normalizedPath = normalizeTemplateTargetPath(relativePath);
 
@@ -292,7 +311,12 @@ export function getTemplateFiles(
 						readFileSync(indexSourcePath, 'utf8'),
 						selectedSkills,
 					)
-				: undefined;
+				: relativePath === '.mustflow/skills/routes.toml'
+					? filterSkillRouteMetadataContent(
+							readFileSync(indexSourcePath, 'utf8'),
+							selectedSkills,
+						)
+					: undefined;
 
 		if (localizedPath) {
 			return {

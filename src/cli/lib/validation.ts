@@ -23,6 +23,7 @@ import {
 	SKILL_INDEX_ROUTE_COLUMN_COUNT,
 	SKILL_INDEX_ROUTE_COLUMNS,
 	SKILL_INDEX_SKILL_PATH_COLUMN_INDEX,
+	SKILL_ROUTE_CATEGORY_LABELS,
 	findSkillRouteConflictWarnings,
 	findSkillIndexRoutePathColumn,
 	parseSkillIndexRoutes,
@@ -88,7 +89,7 @@ const CAPABILITY_BOOLEAN_FIELDS = ['workflow', 'command_contract', 'skills'] as 
 const ALLOWED_CAPABILITY_STATES = new Set(['disabled', 'optional', 'required', 'generated_optional']);
 const REQUIRED_AGENT_LOOP_PHASES = ['orient', 'plan', 'act', 'verify', 'report', 'handoff'] as const;
 const ALLOWED_HANDOFF_MODES = new Set(['report_only', 'work_item_optional']);
-const ALLOWED_PROJECT_PROFILES = new Set(['minimal', 'oss', 'team', 'product', 'library']);
+const ALLOWED_PROJECT_PROFILES = new Set(['minimal', 'patterns', 'oss', 'team', 'product', 'library']);
 const RELEASE_VERSIONING_BOOLEAN_FIELDS = [
 	'impact_check',
 	'suggest_bump',
@@ -237,8 +238,12 @@ const ROUTER_INDEX_PROCEDURE_SECTION_PATTERN =
 	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Preconditions|Allowed Edits|Procedure|Postconditions|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|사전 조건|허용 수정 범위|절차|사후 조건|검증|실패 대응|출력 형식)\s*$/imu;
 const ROUTER_INDEX_FILES = ['.mustflow/skills/INDEX.md', '.mustflow/context/INDEX.md'] as const;
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
+const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
 const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
 const SKILL_PACK_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;
+const ALLOWED_SKILL_ROUTE_CATEGORIES = new Set(Object.keys(SKILL_ROUTE_CATEGORY_LABELS));
+const ALLOWED_SKILL_ROUTE_TYPES = new Set(['primary', 'adjunct', 'event', 'authoring']);
+const ALLOWED_SKILL_ROUTE_PROFILES = new Set(['minimal', 'patterns', 'oss', 'team', 'product', 'library']);
 const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
 	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,
 	/\b(?:must not|do not|never)\s+(?:edit|modify|write|delete)\s+(?:files?\s+)?(?:outside|under|inside|in)\b/iu,
@@ -292,6 +297,14 @@ const LOCAL_TASK_STATE_ROOTS = new Set(['worklogs', 'plans', 'tasks', 'work-item
 interface CheckIssue {
 	readonly message: string;
 	readonly severity?: 'error' | 'warning';
+}
+
+interface SkillRouteMetadata {
+	readonly skillName: string;
+	readonly category?: keyof typeof SKILL_ROUTE_CATEGORY_LABELS;
+	readonly routeType?: string;
+	readonly priority?: unknown;
+	readonly mutuallyExclusiveWith: readonly string[];
 }
 
 export interface CheckOptions {
@@ -1612,6 +1625,163 @@ function validateSkillIndexRouteShape(content: string, issues: CheckIssue[]): vo
 	}
 }
 
+function skillRouteName(skillPath: string): string | undefined {
+	return /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(skillPath)?.[1];
+}
+
+function readOptionalStringArray(value: unknown, label: string, issues: CheckIssue[]): string[] {
+	if (value === undefined) {
+		return [];
+	}
+
+	if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+		pushStrictIssue(issues, `${label} must be a string array`);
+		return [];
+	}
+
+	return value.map((entry) => entry.trim());
+}
+
+function validateSkillRouteMetadataTable(
+	skillName: string,
+	route: TomlTable,
+	issues: CheckIssue[],
+): SkillRouteMetadata {
+	const label = `${SKILL_ROUTES_METADATA_PATH} routes.${skillName}`;
+	const rawCategory = typeof route.category === 'string' ? route.category : undefined;
+	const category = rawCategory && ALLOWED_SKILL_ROUTE_CATEGORIES.has(rawCategory)
+		? (rawCategory as keyof typeof SKILL_ROUTE_CATEGORY_LABELS)
+		: undefined;
+	const routeType = typeof route.route_type === 'string' ? route.route_type : undefined;
+	const profiles = readOptionalStringArray(route.profiles, `${label}.profiles`, issues);
+	const appliesToReasons = readOptionalStringArray(route.applies_to_reasons, `${label}.applies_to_reasons`, issues);
+	const mutuallyExclusiveWith = readOptionalStringArray(
+		route.mutually_exclusive_with,
+		`${label}.mutually_exclusive_with`,
+		issues,
+	);
+
+	if (!category) {
+		pushStrictIssue(issues, `${label}.category must be one of ${[...ALLOWED_SKILL_ROUTE_CATEGORIES].join(', ')}`);
+	}
+
+	if (!routeType || !ALLOWED_SKILL_ROUTE_TYPES.has(routeType)) {
+		pushStrictIssue(issues, `${label}.route_type must be one of ${[...ALLOWED_SKILL_ROUTE_TYPES].join(', ')}`);
+	}
+
+	if (!isPositiveInteger(route.priority)) {
+		pushStrictIssue(issues, `${label}.priority must be a positive integer`);
+	}
+
+	for (const profile of profiles) {
+		if (!ALLOWED_SKILL_ROUTE_PROFILES.has(profile)) {
+			pushStrictIssue(issues, `${label}.profiles references unknown profile "${profile}"`);
+		}
+	}
+
+	for (const reason of appliesToReasons) {
+		if (!/^[a-z][a-z0-9_]*$/u.test(reason)) {
+			pushStrictIssue(issues, `${label}.applies_to_reasons entry "${reason}" must use snake_case`);
+		}
+	}
+
+	return {
+		skillName,
+		category,
+		routeType,
+		priority: route.priority,
+		mutuallyExclusiveWith,
+	};
+}
+
+function readSkillRouteMetadata(projectRoot: string, issues: CheckIssue[]): Map<string, SkillRouteMetadata> | undefined {
+	const metadataPath = path.join(projectRoot, ...SKILL_ROUTES_METADATA_PATH.split('/'));
+
+	if (!existsSync(metadataPath)) {
+		return undefined;
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = readTomlFile(metadataPath);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		pushStrictIssue(issues, `Invalid TOML in ${SKILL_ROUTES_METADATA_PATH}: ${message}`);
+		return new Map();
+	}
+
+	if (!isRecord(parsed)) {
+		pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} must contain a TOML table`);
+		return new Map();
+	}
+
+	if (parsed.schema_version !== '1') {
+		pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} schema_version must be "1"`);
+	}
+
+	if (!isRecord(parsed.routes)) {
+		pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} must define a [routes] table`);
+		return new Map();
+	}
+
+	const metadata = new Map<string, SkillRouteMetadata>();
+
+	for (const [skillName, route] of Object.entries(parsed.routes)) {
+		if (!/^[a-z][a-z0-9-]*$/u.test(skillName)) {
+			pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route key "${skillName}" must be a skill folder name`);
+			continue;
+		}
+
+		if (!isRecord(route)) {
+			pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} routes.${skillName} must be a TOML table`);
+			continue;
+		}
+
+		metadata.set(skillName, validateSkillRouteMetadataTable(skillName, route, issues));
+	}
+
+	return metadata;
+}
+
+function validateSkillRouteMetadataAlignment(
+	metadata: Map<string, SkillRouteMetadata>,
+	routeSkillNames: ReadonlySet<string>,
+	expectedSkillNames: ReadonlySet<string>,
+	issues: CheckIssue[],
+): void {
+	for (const skillName of routeSkillNames) {
+		if (!metadata.has(skillName)) {
+			pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} is missing metadata for route "${skillName}"`);
+		}
+	}
+
+	for (const [skillName, route] of metadata.entries()) {
+		if (!routeSkillNames.has(skillName)) {
+			pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" is not listed in ${SKILL_INDEX_PATH}`);
+		}
+
+		if (!expectedSkillNames.has(skillName)) {
+			pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" points to a missing skill document`);
+		}
+
+		for (const otherSkillName of route.mutuallyExclusiveWith) {
+			if (otherSkillName === skillName) {
+				pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" cannot be mutually exclusive with itself`);
+			} else if (!metadata.has(otherSkillName)) {
+				pushStrictIssue(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" references unknown mutually exclusive route "${otherSkillName}"`,
+				);
+			} else if (!metadata.get(otherSkillName)?.mutuallyExclusiveWith.includes(skillName)) {
+				pushStrictWarning(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" lists "${otherSkillName}" as mutually exclusive but the reverse route does not`,
+				);
+			}
+		}
+	}
+}
+
 function validateSkillIndexRoutes(
 	projectRoot: string,
 	commandsToml: TomlTable | undefined,
@@ -1630,7 +1800,14 @@ function validateSkillIndexRoutes(
 	const skillRoutes = parseSkillIndexRoutes(skillIndexContent);
 	const routedSkillPaths = new Set<string>();
 	const expectedSkillPaths = new Set(skillFiles.map((relativePath) => `.mustflow/skills/${relativePath}`));
+	const expectedSkillNames = new Set(
+		skillFiles
+			.map((relativePath) => toPosixPath(relativePath).split('/')[0])
+			.filter((value): value is string => Boolean(value)),
+	);
+	const routedSkillNames = new Set<string>();
 	const seenSkillPaths = new Set<string>();
+	const routeMetadata = readSkillRouteMetadata(projectRoot, issues);
 
 	for (const warning of findSkillRouteConflictWarnings(skillRoutes)) {
 		pushStrictWarning(issues, `${SKILL_INDEX_PATH} ${warning}`);
@@ -1648,6 +1825,17 @@ function validateSkillIndexRoutes(
 
 		seenSkillPaths.add(route.skillPath);
 		routedSkillPaths.add(route.skillPath);
+		const routeSkillName = skillRouteName(route.skillPath);
+		if (routeSkillName) {
+			routedSkillNames.add(routeSkillName);
+		}
+		const metadata = routeSkillName ? routeMetadata?.get(routeSkillName) : undefined;
+		if (metadata?.category && route.category !== metadata.category) {
+			pushStrictIssue(
+				issues,
+				`${SKILL_INDEX_PATH} route "${routeSkillName}" must appear under the ${SKILL_ROUTE_CATEGORY_LABELS[metadata.category]} category section from ${SKILL_ROUTES_METADATA_PATH}`,
+			);
+		}
 
 		const absoluteSkillPath = path.join(projectRoot, ...route.skillPath.split('/'));
 		if (!existsSync(absoluteSkillPath)) {
@@ -1675,6 +1863,10 @@ function validateSkillIndexRoutes(
 		if (!routedSkillPaths.has(skillPath)) {
 			pushStrictIssue(issues, `${skillPath} is not listed in ${SKILL_INDEX_PATH}`);
 		}
+	}
+
+	if (routeMetadata) {
+		validateSkillRouteMetadataAlignment(routeMetadata, routedSkillNames, expectedSkillNames, issues);
 	}
 }
 

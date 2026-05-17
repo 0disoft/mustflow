@@ -26,6 +26,7 @@ export interface SkillIndexRoute {
 	readonly risk: string;
 	readonly commandIntents: readonly string[];
 	readonly expectedOutput: string;
+	readonly category?: SkillRouteCategory;
 }
 
 interface RoutePair {
@@ -35,6 +36,7 @@ interface RoutePair {
 
 const SKILL_ROUTE_SOURCE_FILES = [
 	'.mustflow/skills/INDEX.md',
+	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/*/SKILL.md',
 	'.mustflow/config/commands.toml',
 	'.mustflow/docs/agent-workflow.md',
@@ -56,6 +58,23 @@ export const SKILL_INDEX_SKILL_PATH_COLUMN_INDEX = 1;
 export const SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX = 5;
 export const SKILL_INDEX_ROUTE_COLUMNS =
 	'Trigger, Skill Document, Required Input, Edit Scope, Risk, Verification Intents, Expected Output';
+export const SKILL_ROUTE_CATEGORY_LABELS = {
+	bug_failure: 'Bug and Failure',
+	general_code: 'General Code Change',
+	tests: 'Tests and Regression',
+	docs_release: 'Documentation and Release',
+	security_privacy: 'Security and Privacy',
+	data_external: 'Data and External Systems',
+	ui_assets: 'UI and Assets',
+	architecture_patterns: 'Architecture Patterns',
+	workflow_contracts: 'Workflow and Contract Maintenance',
+} as const;
+
+export type SkillRouteCategory = keyof typeof SKILL_ROUTE_CATEGORY_LABELS;
+
+const SKILL_ROUTE_CATEGORY_BY_HEADING: ReadonlyMap<string, SkillRouteCategory> = new Map(
+	Object.entries(SKILL_ROUTE_CATEGORY_LABELS).map(([category, label]) => [label, category as SkillRouteCategory]),
+);
 
 function splitMarkdownTableRow(line: string): string[] {
 	return line
@@ -82,8 +101,16 @@ export function findSkillIndexRoutePathColumn(cells: readonly string[]): number 
 
 export function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
 	const routes: SkillIndexRoute[] = [];
+	let currentCategory: SkillRouteCategory | undefined;
 
 	for (const line of content.split(/\r?\n/u)) {
+		const categoryHeading = /^###\s+(.+?)\s*$/u.exec(line.trim())?.[1];
+
+		if (categoryHeading) {
+			currentCategory = SKILL_ROUTE_CATEGORY_BY_HEADING.get(categoryHeading);
+			continue;
+		}
+
 		if (!line.trim().startsWith('|')) {
 			continue;
 		}
@@ -111,6 +138,7 @@ export function parseSkillIndexRoutes(content: string): SkillIndexRoute[] {
 			risk: cells[4] ?? '',
 			commandIntents: readBacktickValues(cells[SKILL_INDEX_VERIFICATION_INTENTS_COLUMN_INDEX] ?? ''),
 			expectedOutput: cells[6] ?? '',
+			category: currentCategory,
 		});
 	}
 

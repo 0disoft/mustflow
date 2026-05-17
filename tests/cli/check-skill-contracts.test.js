@@ -71,11 +71,28 @@ test('strict check warns for conflicting skill index routes without failing', ()
 		writeRouteShadowSkill(projectPath, 'route-shadow');
 		writeRouteShadowSkill(projectPath, 'route-catch-all');
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
-		const skillsIndex = `${readText(skillsIndexPath)}
+		const shadowRoutes = `
 | Code changes need review before report | \`.mustflow/skills/route-shadow/SKILL.md\` | Duplicate trigger evidence | Documentation route surface | route overlap | \`docs_validate_fast\`, \`docs_validate\`, \`mustflow_check\` | Route overlap warning |
 | Any request | \`.mustflow/skills/route-catch-all/SKILL.md\` | Catch-all evidence | Documentation route surface | route overlap | \`docs_validate_fast\`, \`docs_validate\`, \`mustflow_check\` | Broad route warning |
 		`;
+		const skillsIndex = readText(skillsIndexPath).replace(
+			/(### Documentation and Release\r?\n\r?\n\| Trigger \| Skill Document \| Required Input \| Edit Scope \| Risk \| Verification Intents \| Expected Output \|\r?\n\| --- \| --- \| --- \| --- \| --- \| --- \| --- \|\r?\n)/u,
+			`$1${shadowRoutes}`,
+		);
 		writeFileSync(skillsIndexPath, skillsIndex);
+		const skillRoutesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		const skillRoutes = `${readText(skillRoutesPath)}
+[routes."route-shadow"]
+category = "docs_release"
+route_type = "primary"
+priority = 90
+
+[routes."route-catch-all"]
+category = "docs_release"
+route_type = "primary"
+priority = 95
+		`;
+		writeFileSync(skillRoutesPath, skillRoutes);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(
 			path.join(projectPath, 'pyproject.toml'),
@@ -155,6 +172,93 @@ test('strict check fails skill index route drift', () => {
 			'mustflow.skill.index_route_unknown_command_intent',
 			'Strict: .mustflow/skills/INDEX.md route .mustflow/skills/docs-update/SKILL.md references command intent "lint" not declared by the skill frontmatter',
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill route metadata drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		const routes = readText(routesPath)
+			.replace(/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\napplies_to_reasons = \["code_change", "behavior_change"\]\n/u, '\n')
+			.concat(
+				[
+					'',
+					'[routes."metadata-shadow"]',
+					'category = "general_code"',
+					'route_type = "primary"',
+					'priority = 10',
+					'mutually_exclusive_with = ["missing-route"]',
+					'',
+				].join('\n'),
+			);
+		writeFileSync(routesPath, routes);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: .mustflow/skills/routes.toml is missing metadata for route "code-review"',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: .mustflow/skills/routes.toml route "metadata-shadow" is not listed in .mustflow/skills/INDEX.md',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) => issue === 'Strict: .mustflow/skills/routes.toml route "metadata-shadow" points to a missing skill document',
+			),
+		);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/routes.toml route "metadata-shadow" references unknown mutually exclusive route "missing-route"',
+			),
+		);
+		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_missing');
+		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_unlisted');
+		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_missing_document');
+		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_unknown_reference');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails skill route category section drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		const routes = readText(routesPath).replace(
+			/(\[routes\."code-review"\]\n)category = "general_code"/u,
+			'$1category = "docs_release"',
+		);
+		writeFileSync(routesPath, routes);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/INDEX.md route "code-review" must appear under the Documentation and Release category section from .mustflow/skills/routes.toml',
+			),
+		);
+		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_category_mismatch');
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 50
+revision = 54
 translations = {}
 
 [documents."skill.adapter-boundary"]

@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '1.31.0');
+	assert.equal(packageJson.version, '2.5.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -228,23 +228,37 @@ test('default template declares profile-specific skill surfaces', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
 	const template = templatesModule.getDefaultTemplate();
 
-	assert.deepEqual(template.manifest.profiles, ['minimal', 'oss', 'team', 'product', 'library']);
+	assert.deepEqual(template.manifest.profiles, ['minimal', 'patterns', 'oss', 'team', 'product', 'library']);
 	assert.equal(template.manifest.defaultProfile, 'minimal');
 	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('composition-over-inheritance'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-injection'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('null-object-pattern'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('result-option'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('command-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('composition-over-inheritance'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('dependency-injection'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('external-skill-intake'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('facade-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('null-object-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('release-notes-authoring'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('result-option'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('state-machine-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('strategy-pattern'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
+	assert.ok(template.manifest.skillProfiles.patterns.includes('architecture-deepening-review'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('command-pattern'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('composition-over-inheritance'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('dependency-injection'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('facade-pattern'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('null-object-pattern'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('pure-core-imperative-shell'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('result-option'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('state-machine-pattern'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('strategy-pattern'));
 	assert.equal(template.manifest.skillProfiles.product.includes('architecture-deepening-review'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));

@@ -150,6 +150,10 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(commands, /\[intents\.git_commit\]/);
 		assert.match(commands, /status = "manual_only"/);
 		const skillsIndex = readText(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'));
+		assert.match(skillsIndex, /## Route Category Gate/);
+		assert.match(skillsIndex, /### General Code Change/);
+		assert.match(skillsIndex, /### Tests and Regression/);
+		assert.match(skillsIndex, /### Architecture Patterns/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
@@ -157,6 +161,11 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/docs-prose-review\/SKILL\.md/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/external-skill-intake\/SKILL\.md/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/web-asset-optimization\/SKILL\.md/);
+		const skillRoutes = readText(path.join(projectPath, '.mustflow', 'skills', 'routes.toml'));
+		assert.match(skillRoutes, /\[routes\."code-review"\]/);
+		assert.match(skillRoutes, /category = "general_code"/);
+		assert.doesNotMatch(skillRoutes, /\[routes\."architecture-deepening-review"\]/);
+		assert.doesNotMatch(skillRoutes, /\[routes\."web-asset-optimization"\]/);
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));
 		assert.match(mustflowConfig, /optional_read_order = \[\n  "\.mustflow\/context\/INDEX\.md",/);
 		assert.match(mustflowConfig, /\[context\]/);
@@ -577,7 +586,7 @@ test('interactive init applies selected locale profile and agent report language
 
 	try {
 		const result = runInit(projectPath, ['--interactive'], {
-			input: '2\n2\n1\n',
+			input: '2\n3\n1\n',
 		});
 
 		assert.equal(result.status, 0);

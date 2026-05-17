@@ -9,8 +9,8 @@ locale = "en"
 
 [files."AGENTS.md"]
 source = "template_locale"
-last_action = "updated"
-content_hash = "sha256:1503c7578553a1cbafac0bc24344e26deed5243925bbd1b69e7010321a069380"
+last_action = "customized"
+content_hash = "sha256:98d9a89e2f2ac9f99cde4c3d20b973ac47814c60b5e4cb7b208df224938b9f0e"
 
 [files.".mustflow/context/INDEX.md"]
 source = "template_locale"
@@ -25,7 +25,12 @@ content_hash = "sha256:259834228dc4f9d6936415f5b5bc7f7f1b6d3d582f423aa06eadcdd24
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:8998480a11360e81467b76eabfcfa0317ce836fb85be51c852eacffe541e2dcf"
+content_hash = "sha256:322c53053a364a8b53faac43a2021362e15de6f593736a1777d1f757653ccb7e"
+
+[files.".mustflow/skills/routes.toml"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:24dde0c3eca966e4c31df76c9bb28ae93c338545f1c7523043c4ea71defecefe"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
