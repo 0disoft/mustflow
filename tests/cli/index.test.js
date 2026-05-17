@@ -3,14 +3,24 @@ import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from '
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, removeTempProject, runCli } from './helpers/cli-harness.js';
-import { cloneCachedIndexedProjectFixture, createLocalIndexDirect, getCachedIndexedProjectFixture } from './helpers/local-index-fixtures.js';
+import {
+	cloneCachedIndexedProjectFixture,
+	createLocalIndexDirect,
+	getCachedIndexedProjectFixture,
+	readLatestLocalVerificationReadModelQueriesDirect,
+} from './helpers/local-index-fixtures.js';
 import { loadSqlJsCached, queryRows } from './helpers/sqlite-assertions.js';
 
 const LOCAL_INDEX_BASE_TABLES = new Set([
+	'acceptance_criteria',
 	'command_effects',
 	'command_intents',
+	'command_receipt_summaries',
+	'completion_verdict_summaries',
+	'criterion_coverage',
 	'document_terms',
 	'documents',
+	'failure_fingerprints',
 	'indexed_files',
 	'metadata',
 	'path_surface_reasons',
@@ -20,13 +30,18 @@ const LOCAL_INDEX_BASE_TABLES = new Set([
 	'skill_routes',
 	'skills',
 	'source_anchor_fingerprints',
+	'source_anchor_risk_signals',
 	'source_anchor_status',
 	'source_anchors',
+	'repro_observations',
+	'repro_routes',
 	'verification_coverage_states',
 	'verification_evidence_summaries',
 	'verification_failure_fingerprints',
+	'verification_plans',
 	'verification_receipt_summaries',
 	'verification_risk_signals',
+	'validation_ratchet_signals',
 ]);
 
 const LOCAL_INDEX_VIRTUAL_FTS_TABLES = new Set([
@@ -66,8 +81,19 @@ const LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS = [
 ];
 
 const LOCAL_INDEX_ALLOWED_COLUMNS = {
+	acceptance_criteria: ['criterion_id', 'plan_id', 'source', 'statement_hash', 'reason', 'surface', 'path_hash'],
 	command_effects: ['intent', 'source', 'access', 'mode', 'path', 'lock', 'concurrency'],
 	command_intents: ['name', 'status', 'lifecycle', 'run_policy', 'description'],
+	command_receipt_summaries: [
+		'receipt_hash',
+		'plan_id',
+		'intent',
+		'status',
+		'command_fingerprint',
+		'contract_fingerprint',
+		'current_state_hash',
+		'write_drift_status',
+	],
 	command_lock_conflicts: [
 		'left_intent',
 		'right_intent',
@@ -80,8 +106,27 @@ const LOCAL_INDEX_ALLOWED_COLUMNS = {
 		'right_concurrencies',
 	],
 	command_write_locks: ['intent', 'lock', 'paths', 'modes', 'sources', 'concurrencies', 'effect_count'],
+	completion_verdict_summaries: [
+		'claim_id',
+		'plan_id',
+		'status',
+		'primary_reason',
+		'risk_count',
+		'contradiction_count',
+		'blocker_count',
+	],
+	criterion_coverage: ['criterion_id', 'plan_id', 'status', 'receipt_count', 'gap_count', 'risk_count'],
 	document_terms: ['document_path', 'term', 'source'],
 	documents: ['path', 'type', 'title', 'locale', 'revision', 'content_hash', 'content_snippet'],
+	failure_fingerprints: [
+		'fingerprint',
+		'plan_id',
+		'failed_intents_hash',
+		'risk_codes_hash',
+		'seen_count',
+		'first_seen_at',
+		'last_seen_at',
+	],
 	indexed_files: ['path', 'source_scope', 'size_bytes', 'mtime_ms', 'content_hash', 'indexed_at', 'index_mode', 'parser_version'],
 	metadata: ['key', 'value'],
 	path_surface_reasons: ['rule_id', 'reason_kind', 'reason', 'ordinal'],
@@ -103,6 +148,8 @@ const LOCAL_INDEX_ALLOWED_COLUMNS = {
 	search_skills_fts: ['name', 'path', 'title'],
 	search_source_anchors_fts: ['id', 'path', 'purpose', 'search_terms', 'invariant', 'risk'],
 	sections: ['document_path', 'ordinal', 'heading'],
+	repro_observations: ['route_id', 'phase', 'outcome', 'receipt_hash', 'diagnostic_fingerprint'],
+	repro_routes: ['route_id', 'task_hash', 'route_digest', 'route_kind', 'failure_oracle_hash'],
 	skill_routes: ['skill_name', 'skill_path', 'trigger', 'required_input', 'edit_scope', 'risk', 'verification_intents', 'expected_output'],
 	skills: ['name', 'path', 'title'],
 	source_anchor_fingerprints: [
@@ -122,6 +169,15 @@ const LOCAL_INDEX_ALLOWED_COLUMNS = {
 		'body_hash',
 		'symbol_start_line',
 		'symbol_end_line',
+	],
+	source_anchor_risk_signals: [
+		'anchor_id',
+		'path_hash',
+		'status',
+		'risk_signal',
+		'confidence',
+		'navigation_only',
+		'can_instruct_agent',
 	],
 	source_anchor_status: [
 		'anchor_id',
@@ -177,6 +233,22 @@ const LOCAL_INDEX_ALLOWED_COLUMNS = {
 		'status',
 		'failed_intents',
 		'primary_reason',
+		'failed_intents_hash',
+		'risk_codes_hash',
+		'affected_surfaces_hash',
+		'first_seen_at',
+		'last_seen_at',
+		'seen_count',
+		'requires_new_evidence',
+	],
+	verification_plans: [
+		'plan_id',
+		'source_path',
+		'classification_hash',
+		'command_contract_hash',
+		'selected_intents_hash',
+		'created_at',
+		'source_hash',
 	],
 	verification_receipt_summaries: [
 		'source_path',
@@ -189,6 +261,7 @@ const LOCAL_INDEX_ALLOWED_COLUMNS = {
 		'receipt_sha256',
 	],
 	verification_risk_signals: ['source_path', 'ordinal', 'code', 'severity', 'detail_hash'],
+	validation_ratchet_signals: ['signal_id', 'plan_id', 'code', 'severity', 'path_hash', 'before_hash', 'after_hash'],
 };
 
 const LOCAL_INDEX_FORBIDDEN_STORAGE_NAMES = [
@@ -702,7 +775,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(output.schema_version, '15');
+		assert.equal(output.schema_version, '19');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -721,13 +794,22 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(output.verification_evidence_summary_count, 0);
+		assert.equal(output.verification_plan_count, 0);
+		assert.equal(output.acceptance_criteria_count, 0);
+		assert.equal(output.criterion_coverage_count, 0);
 		assert.equal(output.verification_receipt_summary_count, 0);
+		assert.equal(output.command_receipt_summary_count, 0);
 		assert.equal(output.verification_coverage_state_count, 0);
 		assert.equal(output.verification_risk_signal_count, 0);
+		assert.equal(output.validation_ratchet_signal_count, 0);
+		assert.equal(output.completion_verdict_summary_count, 0);
+		assert.equal(output.repro_route_count, 0);
+		assert.equal(output.repro_observation_count, 0);
 		assert.equal(output.failure_fingerprint_count, 0);
+		assert.equal(output.source_anchor_risk_signal_count, 0);
 		assert.equal(header, 'SQLite format 3\0');
 		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
-		assert.equal(metadata.schema_version, '15');
+		assert.equal(metadata.schema_version, '19');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
@@ -739,10 +821,15 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(metadata.source_index_enabled, 'false');
 		assert.equal(metadata.index_mode, 'full');
 		for (const tableName of [
+			'acceptance_criteria',
 			'command_effects',
 			'command_intents',
+			'command_receipt_summaries',
+			'completion_verdict_summaries',
+			'criterion_coverage',
 			'document_terms',
 			'documents',
+			'failure_fingerprints',
 			'indexed_files',
 			'metadata',
 			'path_surface_reasons',
@@ -752,13 +839,18 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'skill_routes',
 			'skills',
 			'source_anchor_fingerprints',
+			'source_anchor_risk_signals',
 			'source_anchor_status',
 			'source_anchors',
+			'repro_observations',
+			'repro_routes',
 			'verification_coverage_states',
 			'verification_evidence_summaries',
 			'verification_failure_fingerprints',
+			'verification_plans',
 			'verification_receipt_summaries',
 			'verification_risk_signals',
+			'validation_ratchet_signals',
 		]) {
 			assert.ok(tableNames.includes(tableName), `${tableName} should exist`);
 		}
@@ -1089,12 +1181,118 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 							source_anchor_risk_count: 1,
 							scope_diff_risk_count: 0,
 							repeated_failure_count: 1,
-							validation_ratchet_risk_count: 0,
+							validation_ratchet_risk_count: 1,
+							repro_evidence_risk_count: 0,
+							external_evidence_risk_count: 0,
+							write_drift_risk_count: 0,
+							receipt_binding_risk_count: 0,
+							stale_receipt_count: 0,
+							plan_mismatch_count: 0,
+							risks: {
+								source_anchor: 1,
+								scope_diff: 0,
+								repeated_failure: 1,
+								validation_ratchet: 1,
+								repro_evidence: 0,
+								external_evidence: 0,
+								write_drift: 0,
+								receipt_binding: 0,
+								stale_receipt: 0,
+								plan_mismatch: 0,
+							},
+							receipt_binding: {
+								plan_bound_count: 1,
+								plan_unbound_count: 0,
+								fingerprint_bound_count: 1,
+								fingerprint_unbound_count: 0,
+								current_state_bound_count: 0,
+								current_state_unavailable_count: 1,
+								stale_count: 0,
+								plan_mismatch_count: 0,
+							},
 							latest_run_status: 'failed',
 						},
 						blockers: [],
 						contradictions: ['one_or_more_selected_verification_intents_failed'],
 						limitations: [],
+					},
+					failure_fingerprint: {
+						schema_version: '1',
+						fingerprint: `sha256:${'f'.repeat(64)}`,
+						verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+						failed_intents_hash: `sha256:${'c'.repeat(64)}`,
+						exit_code_classes_hash: `sha256:${'1'.repeat(64)}`,
+						timeout_flags_hash: `sha256:${'2'.repeat(64)}`,
+						error_kinds_hash: `sha256:${'3'.repeat(64)}`,
+						diagnostic_hash: `sha256:${'4'.repeat(64)}`,
+						risk_codes_hash: `sha256:${'d'.repeat(64)}`,
+						affected_surfaces_hash: `sha256:${'e'.repeat(64)}`,
+						command_fingerprints_hash: `sha256:${'5'.repeat(64)}`,
+					},
+					repeated_failure_summary: {
+						schema_version: '1',
+						fingerprint: `sha256:${'f'.repeat(64)}`,
+						verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+						status: 'failed',
+						failed_intents_hash: `sha256:${'c'.repeat(64)}`,
+						risk_codes_hash: `sha256:${'d'.repeat(64)}`,
+						affected_surfaces_hash: `sha256:${'e'.repeat(64)}`,
+						first_seen_at: '2026-05-17T00:00:00.000Z',
+						last_seen_at: '2026-05-17T00:01:00.000Z',
+						seen_count: 2,
+						requires_new_evidence: true,
+					},
+					repro_evidence: {
+						source: 'repro_first_debug',
+						authority: 'claim_evidence',
+						reported_symptom: 'RAW_REPRO_SYMPTOM_SHOULD_NOT_BE_STORED',
+						expected_behavior: 'RAW_REPRO_EXPECTED_SHOULD_NOT_BE_STORED',
+						observed_behavior: 'RAW_REPRO_OBSERVED_SHOULD_NOT_BE_STORED',
+						reproduction_route: {
+							route_id: 'route:index-repro',
+							route_kind: 'cli',
+							route_digest: `sha256:${'6'.repeat(64)}`,
+							failure_oracle_hash: `sha256:${'7'.repeat(64)}`,
+							steps: [
+								{
+									ordinal: 1,
+									action: 'RAW_REPRO_ACTION_SHOULD_NOT_BE_STORED',
+									target: 'verify fixture',
+									input_digest: `sha256:${'8'.repeat(64)}`,
+									observation_digest: `sha256:${'9'.repeat(64)}`,
+									summary: 'RAW_REPRO_STEP_SHOULD_NOT_BE_STORED',
+								},
+							],
+						},
+						before_fix: {
+							status: 'reproduced',
+							outcome: 'failed_as_expected',
+							receipt_path: '.mustflow/state/runs/verify-latest/test_related.json',
+							receipt_sha256: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+							verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+							summary: 'RAW_BEFORE_FIX_SUMMARY_SHOULD_NOT_BE_STORED',
+							reason: null,
+						},
+						after_fix: {
+							status: 'passed',
+							outcome: 'passed_expected_behavior',
+							same_route_as: 'route:index-repro',
+							receipt_path: '.mustflow/state/runs/verify-latest/test_related.json',
+							receipt_sha256: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+							verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+							summary: 'RAW_AFTER_FIX_SUMMARY_SHOULD_NOT_BE_STORED',
+							reason: null,
+						},
+						regression_guard: {
+							status: 'passed',
+							intent: 'test_related',
+							test_path: null,
+							receipt_path: '.mustflow/state/runs/verify-latest/test_related.json',
+							receipt_sha256: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+							verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+							summary: 'RAW_GUARD_SUMMARY_SHOULD_NOT_BE_STORED',
+							reason: null,
+						},
 					},
 					evidence_model: {
 						schema_version: '1',
@@ -1124,6 +1322,10 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 								verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
 								receipt_path: '.mustflow/state/runs/verify-latest/test_related.json',
 								receipt_sha256: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+								command_fingerprint: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+								contract_fingerprint: 'sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+								head_tree_hash: 'sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+								write_drift_status: 'clean',
 							},
 						],
 						skipped_checks: [],
@@ -1133,6 +1335,14 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 								code: 'source_anchor_invariant_review_required',
 								severity: 'high',
 								detail: 'RAW_RISK_MARKER_SHOULD_NOT_BE_STORED',
+							},
+							{
+								code: 'assertion_count_decreased',
+								severity: 'high',
+								path: 'tests/auth.test.ts',
+								before_hash: `sha256:${'a'.repeat(64)}`,
+								after_hash: `sha256:${'b'.repeat(64)}`,
+								detail: 'RAW_VALIDATION_RATCHET_DETAIL_SHOULD_NOT_BE_STORED',
 							},
 						],
 						explanation: {
@@ -1168,14 +1378,31 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 		const [receipt] = queryRows(database, 'SELECT * FROM verification_receipt_summaries');
 		const [coverage] = queryRows(database, 'SELECT * FROM verification_coverage_states');
 		const [risk] = queryRows(database, 'SELECT * FROM verification_risk_signals');
+		const [validationRatchetSignal] = queryRows(database, 'SELECT * FROM validation_ratchet_signals');
 		const [fingerprint] = queryRows(database, 'SELECT * FROM verification_failure_fingerprints');
+		const [plan] = queryRows(database, 'SELECT * FROM verification_plans');
+		const [criterion] = queryRows(database, 'SELECT * FROM acceptance_criteria');
+		const [criterionReadModelCoverage] = queryRows(database, 'SELECT * FROM criterion_coverage');
+		const [commandReceipt] = queryRows(database, 'SELECT * FROM command_receipt_summaries');
+		const [verdictSummary] = queryRows(database, 'SELECT * FROM completion_verdict_summaries');
+		const [reproRoute] = queryRows(database, 'SELECT * FROM repro_routes');
+		const reproObservations = queryRows(database, 'SELECT * FROM repro_observations ORDER BY phase');
+		const [failureReadModel] = queryRows(database, 'SELECT * FROM failure_fingerprints');
 		const databaseText = Buffer.from(database.export()).toString('utf8');
 
-		assert.equal(output.schema_version, '15');
+		assert.equal(output.schema_version, '19');
 		assert.equal(output.verification_evidence_summary_count, 1);
+		assert.equal(output.verification_plan_count, 1);
+		assert.equal(output.acceptance_criteria_count, 1);
+		assert.equal(output.criterion_coverage_count, 1);
 		assert.equal(output.verification_receipt_summary_count, 1);
+		assert.equal(output.command_receipt_summary_count, 1);
 		assert.equal(output.verification_coverage_state_count, 1);
-		assert.equal(output.verification_risk_signal_count, 1);
+		assert.equal(output.verification_risk_signal_count, 2);
+		assert.equal(output.validation_ratchet_signal_count, 1);
+		assert.equal(output.completion_verdict_summary_count, 1);
+		assert.equal(output.repro_route_count, 1);
+		assert.equal(output.repro_observation_count, 3);
 		assert.equal(output.failure_fingerprint_count, 1);
 		assert.equal(summary.source_path, '.mustflow/state/runs/latest.json');
 		assert.match(summary.source_hash, /^sha256:/);
@@ -1198,10 +1425,166 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 		assert.equal(risk.severity, 'high');
 		assert.match(risk.detail_hash, /^sha256:/);
 		assert.equal(fingerprint.failed_intents, 'test_related');
+		assert.equal(fingerprint.failed_intents_hash, `sha256:${'c'.repeat(64)}`);
+		assert.equal(fingerprint.risk_codes_hash, `sha256:${'d'.repeat(64)}`);
+		assert.equal(fingerprint.affected_surfaces_hash, `sha256:${'e'.repeat(64)}`);
+		assert.equal(fingerprint.first_seen_at, '2026-05-17T00:00:00.000Z');
+		assert.equal(fingerprint.last_seen_at, '2026-05-17T00:01:00.000Z');
+		assert.equal(fingerprint.seen_count, 2);
+		assert.equal(fingerprint.requires_new_evidence, 1);
+		assert.equal(plan.plan_id, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.equal(plan.source_path, '.mustflow/state/runs/latest.json');
+		assert.match(plan.classification_hash, /^sha256:/);
+		assert.match(plan.command_contract_hash, /^sha256:/);
+		assert.match(plan.selected_intents_hash, /^sha256:/);
+		assert.match(plan.source_hash, /^sha256:/);
+		assert.equal(criterion.criterion_id, 'verification_requirement:1:code_change');
+		assert.equal(criterion.plan_id, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.equal(criterion.source, 'verification_requirement');
+		assert.match(criterion.statement_hash, /^sha256:/);
+		assert.notEqual(criterion.statement_hash, 'RAW_STATEMENT_MARKER_SHOULD_NOT_BE_STORED');
+		assert.equal(criterion.reason, 'code_change');
+		assert.match(criterion.path_hash, /^sha256:/);
+		assert.equal(criterionReadModelCoverage.criterion_id, 'verification_requirement:1:code_change');
+		assert.equal(criterionReadModelCoverage.status, 'contradicted');
+		assert.equal(criterionReadModelCoverage.receipt_count, 1);
+		assert.equal(criterionReadModelCoverage.gap_count, 1);
+		assert.equal(criterionReadModelCoverage.risk_count, 1);
+		assert.equal(commandReceipt.receipt_hash, 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+		assert.equal(commandReceipt.plan_id, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.equal(commandReceipt.intent, 'test_related');
+		assert.equal(commandReceipt.status, 'failed');
+		assert.equal(commandReceipt.command_fingerprint, 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc');
+		assert.equal(commandReceipt.contract_fingerprint, 'sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd');
+		assert.equal(commandReceipt.current_state_hash, 'sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
+		assert.equal(commandReceipt.write_drift_status, 'clean');
+		assert.match(verdictSummary.claim_id, /^sha256:/);
+		assert.equal(verdictSummary.plan_id, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.equal(verdictSummary.status, 'contradicted');
+		assert.equal(verdictSummary.primary_reason, 'one_or_more_selected_verification_intents_failed');
+		assert.equal(verdictSummary.risk_count, 2);
+		assert.equal(verdictSummary.contradiction_count, 1);
+		assert.equal(verdictSummary.blocker_count, 0);
+		assert.equal(reproRoute.route_id, 'route:index-repro');
+		assert.match(reproRoute.task_hash, /^sha256:/);
+		assert.equal(reproRoute.route_digest, `sha256:${'6'.repeat(64)}`);
+		assert.equal(reproRoute.route_kind, 'cli');
+		assert.equal(reproRoute.failure_oracle_hash, `sha256:${'7'.repeat(64)}`);
+		assert.deepEqual(
+			reproObservations.map((observation) => ({
+				phase: observation.phase,
+				outcome: observation.outcome,
+				receipt_hash: observation.receipt_hash,
+				diagnostic_fingerprint_matches: /^sha256:/u.test(observation.diagnostic_fingerprint),
+			})),
+			[
+				{
+					phase: 'after_fix',
+					outcome: 'passed_expected_behavior',
+					receipt_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+					diagnostic_fingerprint_matches: true,
+				},
+				{
+					phase: 'before_fix',
+					outcome: 'failed_as_expected',
+					receipt_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+					diagnostic_fingerprint_matches: true,
+				},
+				{
+					phase: 'regression_guard',
+					outcome: 'passed',
+					receipt_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+					diagnostic_fingerprint_matches: true,
+				},
+			],
+		);
+		assert.equal(failureReadModel.fingerprint, `sha256:${'f'.repeat(64)}`);
+		assert.equal(failureReadModel.plan_id, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.equal(failureReadModel.failed_intents_hash, `sha256:${'c'.repeat(64)}`);
+		assert.equal(failureReadModel.risk_codes_hash, `sha256:${'d'.repeat(64)}`);
+		assert.equal(failureReadModel.seen_count, 2);
+		assert.equal(failureReadModel.first_seen_at, '2026-05-17T00:00:00.000Z');
+		assert.equal(failureReadModel.last_seen_at, '2026-05-17T00:01:00.000Z');
+		assert.match(validationRatchetSignal.signal_id, /^sha256:/);
+		assert.equal(validationRatchetSignal.plan_id, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.equal(validationRatchetSignal.code, 'assertion_count_decreased');
+		assert.equal(validationRatchetSignal.severity, 'high');
+		assert.match(validationRatchetSignal.path_hash, /^sha256:/);
+		assert.equal(validationRatchetSignal.before_hash, `sha256:${'a'.repeat(64)}`);
+		assert.equal(validationRatchetSignal.after_hash, `sha256:${'b'.repeat(64)}`);
+		const readModel = await readLatestLocalVerificationReadModelQueriesDirect(projectPath);
+		assert.equal(readModel.authority, 'evidence_only');
+		assert.equal(readModel.commandAuthority, '.mustflow/config/commands.toml');
+		assert.equal(readModel.grantsCommandAuthority, false);
+		assert.equal(readModel.status, 'fresh');
+		assert.equal(readModel.planId, 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+		assert.deepEqual(
+			readModel.uncoveredCriteria.map((criterion) => ({
+				criterionId: criterion.criterionId,
+				coverageStatus: criterion.coverageStatus,
+				gapCount: criterion.gapCount,
+				riskCount: criterion.riskCount,
+			})),
+			[
+				{
+					criterionId: 'verification_requirement:1:code_change',
+					coverageStatus: 'contradicted',
+					gapCount: 1,
+					riskCount: 1,
+				},
+			],
+		);
+		assert.deepEqual(
+			readModel.severeRisks.map((risk) => risk.code).sort(),
+			['assertion_count_decreased', 'source_anchor_invariant_review_required'],
+		);
+		assert.deepEqual(
+			readModel.nonPassingReceipts.map((receipt) => ({
+				intent: receipt.intent,
+				status: receipt.status,
+				writeDriftStatus: receipt.writeDriftStatus,
+			})),
+			[{ intent: 'test_related', status: 'failed', writeDriftStatus: 'clean' }],
+		);
+		assert.deepEqual(
+			readModel.repeatedFailureFingerprints.map((fingerprint) => ({
+				failedIntents: fingerprint.failedIntents,
+				seenCount: fingerprint.seenCount,
+				requiresNewEvidence: fingerprint.requiresNewEvidence,
+			})),
+			[{ failedIntents: ['test_related'], seenCount: 2, requiresNewEvidence: true }],
+		);
+		assert.deepEqual(
+			readModel.validationWeakeningSignals.map((signal) => ({
+				code: signal.code,
+				severity: signal.severity,
+				beforeHash: signal.beforeHash,
+				afterHash: signal.afterHash,
+			})),
+			[
+				{
+					code: 'assertion_count_decreased',
+					severity: 'high',
+					beforeHash: `sha256:${'a'.repeat(64)}`,
+					afterHash: `sha256:${'b'.repeat(64)}`,
+				},
+			],
+		);
+		const readModelText = JSON.stringify(readModel);
+		assert.equal(readModelText.includes('RAW_RISK_MARKER_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(readModelText.includes('RAW_VALIDATION_RATCHET_DETAIL_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(readModelText.includes('tests/auth.test.ts'), false);
 		assert.equal(databaseText.includes('RAW_STDOUT_MARKER_SHOULD_NOT_BE_STORED'), false);
 		assert.equal(databaseText.includes('RAW_GAP_MARKER_SHOULD_NOT_BE_STORED'), false);
 		assert.equal(databaseText.includes('RAW_RISK_MARKER_SHOULD_NOT_BE_STORED'), false);
 		assert.equal(databaseText.includes('RAW_STATEMENT_MARKER_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_REPRO_SYMPTOM_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_REPRO_ACTION_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_BEFORE_FIX_SUMMARY_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_AFTER_FIX_SUMMARY_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_GUARD_SUMMARY_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_VALIDATION_RATCHET_DETAIL_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('tests/auth.test.ts'), false);
 		database.close();
 	} finally {
 		removeTempProject(projectPath);
@@ -1255,7 +1638,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-		assert.equal(output.schema_version, '15');
+		assert.equal(output.schema_version, '19');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');
@@ -1380,17 +1763,55 @@ test('compares source anchor status against the previous fingerprint snapshot', 
 				row,
 			]),
 		);
+		const riskSignals = queryRows(database, 'SELECT * FROM source_anchor_risk_signals ORDER BY anchor_id');
 
 		assert.equal(output.index_mode, 'incremental');
 		assert.equal(output.reused_existing, false);
 		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
 		assert.equal(output.source_anchor_count, 4);
+		assert.equal(output.source_anchor_risk_signal_count, 3);
 		assert.equal(statuses['docs.helper'].status, 'changed');
 		assert.equal(statuses['auth.critical'].status, 'review');
 		assert.equal(statuses['auth.critical'].risk_signal, 'high_risk_anchor_requires_review_after_change');
 		assert.equal(statuses['moved.target'].status, 'moved');
 		assert.equal(statuses['stale.target'].status, 'stale');
 		assert.ok(statuses['stale.target'].confidence < 0.5);
+		assert.deepEqual(
+			riskSignals.map((signal) => ({
+				anchor_id: signal.anchor_id,
+				status: signal.status,
+				risk_signal: signal.risk_signal,
+				path_hash_matches: /^sha256:/u.test(signal.path_hash),
+				navigation_only: signal.navigation_only,
+				can_instruct_agent: signal.can_instruct_agent,
+			})),
+			[
+				{
+					anchor_id: 'auth.critical',
+					status: 'review',
+					risk_signal: 'high_risk_anchor_requires_review_after_change',
+					path_hash_matches: true,
+					navigation_only: 1,
+					can_instruct_agent: 0,
+				},
+				{
+					anchor_id: 'docs.helper',
+					status: 'changed',
+					risk_signal: 'no_risk_tags',
+					path_hash_matches: true,
+					navigation_only: 1,
+					can_instruct_agent: 0,
+				},
+				{
+					anchor_id: 'stale.target',
+					status: 'stale',
+					risk_signal: 'previous_risk_tags_only',
+					path_hash_matches: true,
+					navigation_only: 1,
+					can_instruct_agent: 0,
+				},
+			],
+		);
 		database.close();
 	} finally {
 		removeTempProject(projectPath);

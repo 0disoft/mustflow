@@ -94,9 +94,30 @@ paths. Every exported command-effect graph is marked `explanation_only`,
 data; `commands.toml` is still the only source that decides whether an intent is
 configured, runnable, or agent-allowed.
 
+When `.mustflow/state/runs/latest.json` contains a verify summary, `mf index` also writes bounded
+verdict read-model rows such as `verification_plans`, `acceptance_criteria`, `criterion_coverage`,
+`command_receipt_summaries`, `completion_verdict_summaries`, `repro_routes`,
+`repro_observations`, `failure_fingerprints`, and `validation_ratchet_signals`. These rows store
+hashes, status values, counts, receipt references, and fingerprints only. Validation-ratchet rows
+keep the risk code, severity, path hash, and optional before/after digests so dashboard and explain
+surfaces can find weakened-validation signals without storing raw diffs. They do not store raw
+acceptance statements, raw reproduction steps, raw diffs, raw logs, full receipt output, or terminal
+tails.
+
+`mf dashboard` and `mf explain verify` use a bounded verification read-model query over those rows
+to list uncovered criteria, severe risks, non-passing receipts, repeated failures requiring new
+evidence, and validation-weakening signals for the indexed plan. The query result is evidence only:
+it can lower or explain a completion verdict, but it cannot authorize commands or replace
+`.mustflow/config/commands.toml`.
+
+When source indexing is enabled, changed, stale, or review-needed anchors are also copied into
+`source_anchor_risk_signals`. These rows keep the anchor id, source path hash, current anchor status,
+derived risk signal, confidence, and navigation-only authority flags. They are explanation rows only:
+they do not grant command permission, instruct agents, or replace the current source file and
+`source_anchor_status` read model.
+
 Before searching, `mf search` compares stored content hashes with the current files and returns an
-error if the cache is stale. Last verification results and run analysis are reserved for future
-features.
+error if the cache is stale.
 
 ## Write rules
 

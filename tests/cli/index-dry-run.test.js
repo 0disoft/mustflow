@@ -14,7 +14,7 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '15');
+		assert.equal(output.schema_version, '19');
 		assert.equal(output.command, 'index');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
@@ -46,12 +46,21 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		assert.ok(output.command_intent_count >= 8);
 		assert.ok(output.command_effect_count >= 1);
 		assert.equal(output.verification_evidence_summary_count, 0);
+		assert.equal(output.verification_plan_count, 0);
+		assert.equal(output.acceptance_criteria_count, 0);
+		assert.equal(output.criterion_coverage_count, 0);
 		assert.equal(output.verification_receipt_summary_count, 0);
+		assert.equal(output.command_receipt_summary_count, 0);
 		assert.equal(output.verification_coverage_state_count, 0);
 		assert.equal(output.verification_risk_signal_count, 0);
+		assert.equal(output.validation_ratchet_signal_count, 0);
+		assert.equal(output.completion_verdict_summary_count, 0);
+		assert.equal(output.repro_route_count, 0);
+		assert.equal(output.repro_observation_count, 0);
 		assert.equal(output.failure_fingerprint_count, 0);
 		assert.equal(output.source_index_enabled, false);
 		assert.equal(output.source_anchor_count, 0);
+		assert.equal(output.source_anchor_risk_signal_count, 0);
 		assert.ok(output.indexed_paths.includes('.mustflow/context/INDEX.md'));
 		assert.ok(output.indexed_paths.includes('.mustflow/context/PROJECT.md'));
 		assert.equal(existsSync(indexPath), false);

@@ -55,13 +55,20 @@ import type {
 	LocalIndexPromptContextStatus,
 	LocalIndexResult,
 	LocalIndexSourceConfig,
+	LocalNonPassingVerificationReceipt,
 	LocalPathSurfaceReadModel,
 	LocalPathSurfaceReadModelStatus,
 	LocalPathSurfaceRuleMatch,
+	LocalRepeatedFailureFingerprint,
 	LocalSearchItem,
 	LocalSearchOptions,
 	LocalSearchResult,
+	LocalSevereVerificationRisk,
 	LocalSourceAnchorVerdictRisk,
+	LocalUncoveredCriterion,
+	LocalValidationWeakeningSignal,
+	LocalVerificationReadModelQueries,
+	LocalVerificationReadModelStatus,
 	SearchBackendKind,
 	SearchNgramTargetKind,
 } from './types.js';
@@ -74,14 +81,21 @@ export type {
 	LocalIndexPromptContext,
 	LocalIndexPromptContextStatus,
 	LocalIndexResult,
+	LocalNonPassingVerificationReceipt,
 	LocalPathSurfaceReadModel,
 	LocalPathSurfaceReadModelStatus,
 	LocalPathSurfaceRuleMatch,
+	LocalRepeatedFailureFingerprint,
 	LocalSearchItem,
 	LocalSearchOptions,
 	LocalSearchResult,
 	LocalSearchScope,
+	LocalSevereVerificationRisk,
 	LocalSourceAnchorVerdictRisk,
+	LocalUncoveredCriterion,
+	LocalValidationWeakeningSignal,
+	LocalVerificationReadModelQueries,
+	LocalVerificationReadModelStatus,
 	SearchBackendKind,
 } from './types.js';
 
@@ -571,6 +585,10 @@ interface VerificationReceiptSummary {
 	readonly verificationPlanId: string | null;
 	readonly receiptPath: string | null;
 	readonly receiptSha256: string | null;
+	readonly commandFingerprint: string | null;
+	readonly contractFingerprint: string | null;
+	readonly currentStateHash: string | null;
+	readonly writeDriftStatus: string | null;
 }
 
 interface VerificationCoverageState {
@@ -593,6 +611,26 @@ interface VerificationRiskSignal {
 	readonly detailHash: string;
 }
 
+interface ValidationRatchetSignalReadModel {
+	readonly signalId: string;
+	readonly planId: string | null;
+	readonly code: string;
+	readonly severity: string;
+	readonly pathHash: string;
+	readonly beforeHash: string | null;
+	readonly afterHash: string | null;
+}
+
+interface SourceAnchorRiskSignalReadModel {
+	readonly anchorId: string;
+	readonly pathHash: string;
+	readonly status: SourceAnchorStatus;
+	readonly riskSignal: string;
+	readonly confidence: number;
+	readonly navigationOnly: boolean;
+	readonly canInstructAgent: boolean;
+}
+
 interface VerificationFailureFingerprint {
 	readonly sourcePath: string;
 	readonly fingerprint: string;
@@ -600,15 +638,127 @@ interface VerificationFailureFingerprint {
 	readonly status: string;
 	readonly failedIntents: readonly string[];
 	readonly primaryReason: string | null;
+	readonly failedIntentsHash: string | null;
+	readonly riskCodesHash: string | null;
+	readonly affectedSurfacesHash: string | null;
+	readonly firstSeenAt: string | null;
+	readonly lastSeenAt: string | null;
+	readonly seenCount: number;
+	readonly requiresNewEvidence: boolean;
+}
+
+interface VerificationPlanReadModel {
+	readonly planId: string;
+	readonly sourcePath: string;
+	readonly classificationHash: string | null;
+	readonly commandContractHash: string | null;
+	readonly selectedIntentsHash: string | null;
+	readonly createdAt: string | null;
+	readonly sourceHash: string;
+}
+
+interface AcceptanceCriterionReadModel {
+	readonly criterionId: string;
+	readonly planId: string;
+	readonly source: string;
+	readonly statementHash: string | null;
+	readonly reason: string | null;
+	readonly surface: string | null;
+	readonly pathHash: string | null;
+}
+
+interface CriterionCoverageReadModel {
+	readonly criterionId: string;
+	readonly planId: string;
+	readonly status: string;
+	readonly receiptCount: number;
+	readonly gapCount: number;
+	readonly riskCount: number;
+}
+
+interface CommandReceiptReadModel {
+	readonly receiptHash: string;
+	readonly planId: string;
+	readonly intent: string | null;
+	readonly status: string;
+	readonly commandFingerprint: string | null;
+	readonly contractFingerprint: string | null;
+	readonly currentStateHash: string | null;
+	readonly writeDriftStatus: string | null;
+}
+
+interface CompletionVerdictSummaryReadModel {
+	readonly claimId: string;
+	readonly planId: string;
+	readonly status: string;
+	readonly primaryReason: string | null;
+	readonly riskCount: number;
+	readonly contradictionCount: number;
+	readonly blockerCount: number;
+}
+
+interface ReproRouteReadModel {
+	readonly routeId: string;
+	readonly taskHash: string;
+	readonly routeDigest: string | null;
+	readonly routeKind: string | null;
+	readonly failureOracleHash: string | null;
+}
+
+interface ReproObservationReadModel {
+	readonly routeId: string;
+	readonly phase: 'before_fix' | 'after_fix' | 'regression_guard';
+	readonly outcome: string | null;
+	readonly receiptHash: string | null;
+	readonly diagnosticFingerprint: string;
+}
+
+interface FailureFingerprintReadModel {
+	readonly fingerprint: string;
+	readonly planId: string | null;
+	readonly failedIntentsHash: string | null;
+	readonly riskCodesHash: string | null;
+	readonly seenCount: number;
+	readonly firstSeenAt: string | null;
+	readonly lastSeenAt: string | null;
 }
 
 interface VerificationEvidenceIndex {
 	readonly summaries: readonly VerificationEvidenceSummary[];
+	readonly verificationPlans: readonly VerificationPlanReadModel[];
+	readonly acceptanceCriteria: readonly AcceptanceCriterionReadModel[];
+	readonly criterionCoverage: readonly CriterionCoverageReadModel[];
 	readonly receipts: readonly VerificationReceiptSummary[];
+	readonly commandReceiptSummaries: readonly CommandReceiptReadModel[];
 	readonly coverageStates: readonly VerificationCoverageState[];
 	readonly riskSignals: readonly VerificationRiskSignal[];
+	readonly validationRatchetSignals: readonly ValidationRatchetSignalReadModel[];
+	readonly completionVerdictSummaries: readonly CompletionVerdictSummaryReadModel[];
 	readonly failureFingerprints: readonly VerificationFailureFingerprint[];
+	readonly reproRoutes: readonly ReproRouteReadModel[];
+	readonly reproObservations: readonly ReproObservationReadModel[];
+	readonly failureFingerprintReadModels: readonly FailureFingerprintReadModel[];
 }
+
+const VALIDATION_RATCHET_RISK_CODES = new Set([
+	'related_test_deleted',
+	'skip_or_only_marker_present',
+	'todo_or_pending_marker_added',
+	'assertion_count_decreased',
+	'assertion_matcher_weakened',
+	'negative_assertion_removed',
+	'exception_assertion_removed',
+	'snapshot_mass_updated',
+	'golden_output_replaced',
+	'verification_intent_disabled',
+	'verification_required_after_removed',
+	'success_exit_codes_widened',
+	'command_allows_no_tests',
+	'command_forces_snapshot_update',
+	'command_hides_failure',
+	'coverage_threshold_lowered',
+	'test_selection_narrowed',
+]);
 
 function searchCapabilities(fts5Available: boolean): LocalSearchCapabilities {
 	return {
@@ -677,6 +827,43 @@ function joinedList(values: readonly string[]): string {
 	return [...values].sort((left, right) => left.localeCompare(right)).join(', ');
 }
 
+function hashJson(value: unknown): string {
+	return sha256Text(JSON.stringify(value));
+}
+
+function stringListHash(values: readonly (string | null)[]): string | null {
+	const normalized = values.filter((value): value is string => typeof value === 'string' && value.length > 0);
+	return normalized.length > 0 ? hashJson([...normalized].sort((left, right) => left.localeCompare(right))) : null;
+}
+
+function reproObservation(
+	routeId: string,
+	phase: ReproObservationReadModel['phase'],
+	evidence: Record<string, unknown> | null,
+): ReproObservationReadModel {
+	const status = stringField(evidence, 'status');
+	const outcome = stringField(evidence, 'outcome') ?? status;
+	const receiptHash = stringField(evidence, 'receipt_sha256');
+	const diagnosticFingerprint =
+		stringField(evidence, 'diagnostic_fingerprint') ??
+		stringField(evidence, 'diagnostic_hash') ??
+		hashJson({
+			phase,
+			status,
+			outcome,
+			summary: stringField(evidence, 'summary'),
+			reason: stringField(evidence, 'reason'),
+		});
+
+	return {
+		routeId,
+		phase,
+		outcome,
+		receiptHash,
+		diagnosticFingerprint,
+	};
+}
+
 function evidenceStatusForRunReceipt(latest: Record<string, unknown>): string {
 	return stringField(latest, 'status') ?? (booleanField(latest, 'timed_out') ? 'timed_out' : 'unknown');
 }
@@ -731,10 +918,19 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 	if (!existsSync(latestPath)) {
 		return {
 			summaries: [],
+			verificationPlans: [],
+			acceptanceCriteria: [],
+			criterionCoverage: [],
 			receipts: [],
+			commandReceiptSummaries: [],
 			coverageStates: [],
 			riskSignals: [],
+			validationRatchetSignals: [],
+			completionVerdictSummaries: [],
 			failureFingerprints: [],
+			reproRoutes: [],
+			reproObservations: [],
+			failureFingerprintReadModels: [],
 		};
 	}
 
@@ -743,10 +939,19 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 	if (!latest) {
 		return {
 			summaries: [],
+			verificationPlans: [],
+			acceptanceCriteria: [],
+			criterionCoverage: [],
 			receipts: [],
+			commandReceiptSummaries: [],
 			coverageStates: [],
 			riskSignals: [],
+			validationRatchetSignals: [],
+			completionVerdictSummaries: [],
 			failureFingerprints: [],
+			reproRoutes: [],
+			reproObservations: [],
+			failureFingerprintReadModels: [],
 		};
 	}
 
@@ -762,7 +967,13 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 	const completionStatus = stringField(completionVerdict, 'status');
 	const rawReceipts = recordArrayField(evidenceModel, 'receipts');
 	const rawCoverage = recordArrayField(evidenceModel, 'coverage_matrix');
+	const rawRequirements = recordArrayField(evidenceModel, 'requirements');
 	const rawRisks = recordArrayField(evidenceModel, 'remaining_risks');
+	const recordedFailureFingerprintRecord = recordField(latest, 'failure_fingerprint');
+	const repeatedFailureSummary = recordField(latest, 'repeated_failure_summary');
+	const reproEvidence = recordField(latest, 'repro_evidence') ?? recordField(evidenceModel, 'repro_evidence');
+	const reproductionRoute = recordField(reproEvidence, 'reproduction_route');
+	const recordedFailureFingerprint = stringField(recordedFailureFingerprintRecord, 'fingerprint');
 	const receipts: VerificationReceiptSummary[] =
 		rawReceipts.length > 0
 			? rawReceipts.map((receipt, index) => ({
@@ -774,6 +985,13 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 					verificationPlanId: stringField(receipt, 'verification_plan_id'),
 					receiptPath: stringField(receipt, 'receipt_path'),
 					receiptSha256: stringField(receipt, 'receipt_sha256'),
+					commandFingerprint: stringField(receipt, 'command_fingerprint'),
+					contractFingerprint: stringField(receipt, 'contract_fingerprint'),
+					currentStateHash:
+						stringField(receipt, 'head_tree_hash') ??
+						stringField(receipt, 'changed_files_hash') ??
+						stringField(receipt, 'changed_file_hash'),
+					writeDriftStatus: stringField(receipt, 'write_drift_status'),
 				}))
 			: [
 					{
@@ -785,6 +1003,10 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 						verificationPlanId: null,
 						receiptPath: stringField(latest, 'receipt_path') ?? LATEST_RUN_STATE_RELATIVE_PATH,
 						receiptSha256: sourceHash,
+						commandFingerprint: stringField(recordField(latest, 'performance'), 'command_fingerprint'),
+						contractFingerprint: stringField(recordField(latest, 'performance'), 'contract_fingerprint'),
+						currentStateHash: stringField(latest, 'head_tree_hash') ?? stringField(latest, 'changed_files_hash'),
+						writeDriftStatus: stringField(recordField(latest, 'write_drift'), 'status'),
 					},
 				];
 	const coverageStates = rawCoverage.map((coverage): VerificationCoverageState => {
@@ -809,19 +1031,157 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 		severity: stringField(risk, 'severity') ?? 'unknown',
 		detailHash: sha256Text(stringField(risk, 'detail') ?? ''),
 	}));
+	const validationRatchetSignals = rawRisks
+		.map((risk, index): ValidationRatchetSignalReadModel | null => {
+			const code = stringField(risk, 'code') ?? 'unknown';
+			if (!VALIDATION_RATCHET_RISK_CODES.has(code)) {
+				return null;
+			}
+
+			const severity = stringField(risk, 'severity') ?? 'unknown';
+			const pathValue = stringField(risk, 'path');
+			const detailHash = sha256Text(stringField(risk, 'detail') ?? '');
+			const pathHash = pathValue === null ? hashJson({ code, detailHash }) : sha256Text(pathValue);
+			const beforeHash = stringField(risk, 'before_hash') ?? stringField(risk, 'before_digest');
+			const afterHash = stringField(risk, 'after_hash') ?? stringField(risk, 'after_digest');
+
+			return {
+				signalId: hashJson({
+					sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+					ordinal: index + 1,
+					planId: verificationPlanId,
+					code,
+					pathHash,
+					beforeHash,
+					afterHash,
+				}),
+				planId: verificationPlanId,
+				code,
+				severity,
+				pathHash,
+				beforeHash,
+				afterHash,
+			};
+		})
+		.filter((signal): signal is ValidationRatchetSignalReadModel => signal !== null);
+	const verificationPlans: VerificationPlanReadModel[] =
+		verificationPlanId === null
+			? []
+			: [
+					{
+						planId: verificationPlanId,
+						sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+						classificationHash:
+							rawRequirements.length > 0 || rawCoverage.length > 0
+								? hashJson({
+										requirements: rawRequirements.map((requirement) => ({
+											id: stringField(requirement, 'requirement_id') ?? stringField(requirement, 'id'),
+											reason: stringField(requirement, 'reason'),
+											source: stringField(requirement, 'source'),
+										})),
+										coverage: rawCoverage.map((coverage) => ({
+											id: stringField(coverage, 'criterion_id'),
+											reason: stringField(coverage, 'requirement_reason'),
+											source: stringField(coverage, 'source'),
+											status: stringField(coverage, 'status'),
+										})),
+									})
+								: null,
+						commandContractHash: stringListHash(receipts.map((receipt) => receipt.contractFingerprint)),
+						selectedIntentsHash: stringListHash(receipts.map((receipt) => receipt.intent)),
+						createdAt: stringField(latest, 'started_at') ?? stringField(latest, 'created_at'),
+						sourceHash,
+					},
+				];
+	const acceptanceCriteria =
+		verificationPlanId === null
+			? []
+			: rawCoverage.map((coverage): AcceptanceCriterionReadModel => {
+					const evidence = recordField(coverage, 'evidence');
+					const pathRefs = [
+						...stringArrayField(evidence, 'paths'),
+						...stringArrayField(evidence, 'changed_paths'),
+						...stringArrayField(evidence, 'source_anchor_ids'),
+					];
+
+					return {
+						criterionId: stringField(coverage, 'criterion_id') ?? 'unknown',
+						planId: verificationPlanId,
+						source: stringField(coverage, 'source') ?? 'unknown',
+						statementHash: stringField(coverage, 'statement') ? sha256Text(stringField(coverage, 'statement') ?? '') : null,
+						reason: stringField(coverage, 'requirement_reason'),
+						surface: stringField(coverage, 'surface'),
+						pathHash: pathRefs.length > 0 ? stringListHash(pathRefs) : null,
+					};
+				});
+	const criterionCoverage =
+		verificationPlanId === null
+			? []
+			: coverageStates.map((coverage): CriterionCoverageReadModel => ({
+					criterionId: coverage.criterionId,
+					planId: verificationPlanId,
+					status: coverage.status,
+					receiptCount: coverage.receiptCount,
+					gapCount: coverage.gapCount,
+					riskCount: coverage.sourceAnchorCount,
+				}));
+	const commandReceiptSummaries =
+		verificationPlanId === null
+			? []
+			: receipts
+					.filter((receipt) => receipt.verificationPlanId === verificationPlanId || receipt.verificationPlanId === null)
+					.map((receipt): CommandReceiptReadModel => ({
+						receiptHash:
+							receipt.receiptSha256 ??
+							hashJson({
+								sourcePath: receipt.sourcePath,
+								ordinal: receipt.ordinal,
+								intent: receipt.intent,
+								status: receipt.status,
+								verificationPlanId,
+							}),
+						planId: verificationPlanId,
+						intent: receipt.intent,
+						status: receipt.status,
+						commandFingerprint: receipt.commandFingerprint,
+						contractFingerprint: receipt.contractFingerprint,
+						currentStateHash: receipt.currentStateHash,
+						writeDriftStatus: receipt.writeDriftStatus,
+					}));
+	const completionVerdictSummaries =
+		verificationPlanId === null || completionStatus === null
+			? []
+			: [
+					{
+						claimId: hashJson({
+							sourceHash,
+							verificationPlanId,
+							completionStatus,
+							primaryReason,
+						}),
+						planId: verificationPlanId,
+						status: completionStatus,
+						primaryReason,
+						riskCount: riskSignals.length,
+						contradictionCount: stringArrayField(completionVerdict, 'contradictions').length,
+						blockerCount: stringArrayField(completionVerdict, 'blockers').length,
+					},
+				];
 	const failedIntents = failedIntentsFromReceipts(receipts);
-	const failureFingerprint = createFailureFingerprint({
-		command,
-		status: completionStatus ?? status,
-		verificationPlanId,
-		primaryReason,
-		failedIntents,
-		riskCodes: riskSignals.map((risk) => risk.code),
-		runIntent: stringField(latest, 'intent'),
-		timedOut: booleanField(latest, 'timed_out'),
-		exitCodeClass: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'exit_code_class'),
-		errorKind: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'error_kind'),
-	});
+	const failureFingerprint =
+		recordedFailureFingerprint ??
+		createFailureFingerprint({
+			command,
+			status: completionStatus ?? status,
+			verificationPlanId,
+			primaryReason,
+			failedIntents,
+			riskCodes: riskSignals.map((risk) => risk.code),
+			runIntent: stringField(latest, 'intent'),
+			timedOut: booleanField(latest, 'timed_out'),
+			exitCodeClass: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'exit_code_class'),
+			errorKind: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'error_kind'),
+		});
 	const failureFingerprints =
 		failureFingerprint === null
 			? []
@@ -833,8 +1193,55 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 						status: completionStatus ?? status,
 						failedIntents,
 						primaryReason,
+						failedIntentsHash:
+							stringField(recordedFailureFingerprintRecord, 'failed_intents_hash') ??
+							stringField(repeatedFailureSummary, 'failed_intents_hash'),
+						riskCodesHash:
+							stringField(recordedFailureFingerprintRecord, 'risk_codes_hash') ??
+							stringField(repeatedFailureSummary, 'risk_codes_hash'),
+						affectedSurfacesHash:
+							stringField(recordedFailureFingerprintRecord, 'affected_surfaces_hash') ??
+							stringField(repeatedFailureSummary, 'affected_surfaces_hash'),
+						firstSeenAt: stringField(repeatedFailureSummary, 'first_seen_at'),
+						lastSeenAt: stringField(repeatedFailureSummary, 'last_seen_at'),
+						seenCount: Math.max(1, numberField(repeatedFailureSummary, 'seen_count')),
+						requiresNewEvidence: booleanField(repeatedFailureSummary, 'requires_new_evidence'),
 					},
 				];
+	const routeId = stringField(reproductionRoute, 'route_id');
+	const reproRoutes =
+		routeId === null || reproEvidence === null
+			? []
+			: [
+					{
+						routeId,
+						taskHash: hashJson({
+							reported_symptom: stringField(reproEvidence, 'reported_symptom'),
+							expected_behavior: stringField(reproEvidence, 'expected_behavior'),
+							observed_behavior: stringField(reproEvidence, 'observed_behavior'),
+						}),
+						routeDigest: stringField(reproductionRoute, 'route_digest'),
+						routeKind: stringField(reproductionRoute, 'route_kind'),
+						failureOracleHash: stringField(reproductionRoute, 'failure_oracle_hash'),
+					},
+				];
+	const reproObservations =
+		routeId === null || reproEvidence === null
+			? []
+			: [
+					reproObservation(routeId, 'before_fix', recordField(reproEvidence, 'before_fix')),
+					reproObservation(routeId, 'after_fix', recordField(reproEvidence, 'after_fix')),
+					reproObservation(routeId, 'regression_guard', recordField(reproEvidence, 'regression_guard')),
+				];
+	const failureFingerprintReadModels = failureFingerprints.map((fingerprint): FailureFingerprintReadModel => ({
+		fingerprint: fingerprint.fingerprint,
+		planId: fingerprint.verificationPlanId,
+		failedIntentsHash: fingerprint.failedIntentsHash ?? stringListHash(fingerprint.failedIntents),
+		riskCodesHash: fingerprint.riskCodesHash,
+		seenCount: fingerprint.seenCount,
+		firstSeenAt: fingerprint.firstSeenAt,
+		lastSeenAt: fingerprint.lastSeenAt,
+	}));
 
 	return {
 		summaries: [
@@ -860,10 +1267,19 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 				failureFingerprint,
 			},
 		],
+		verificationPlans,
+		acceptanceCriteria,
+		criterionCoverage,
 		receipts,
+		commandReceiptSummaries,
 		coverageStates,
 		riskSignals,
+		validationRatchetSignals,
+		completionVerdictSummaries,
 		failureFingerprints,
+		reproRoutes,
+		reproObservations,
+		failureFingerprintReadModels,
 	};
 }
 
@@ -1400,6 +1816,37 @@ CREATE TABLE verification_evidence_summaries (
   failure_fingerprint TEXT
 );
 
+CREATE TABLE verification_plans (
+  plan_id TEXT PRIMARY KEY,
+  source_path TEXT NOT NULL,
+  classification_hash TEXT,
+  command_contract_hash TEXT,
+  selected_intents_hash TEXT,
+  created_at TEXT,
+  source_hash TEXT NOT NULL
+);
+
+CREATE TABLE acceptance_criteria (
+  criterion_id TEXT NOT NULL,
+  plan_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  statement_hash TEXT,
+  reason TEXT,
+  surface TEXT,
+  path_hash TEXT,
+  PRIMARY KEY (plan_id, criterion_id)
+);
+
+CREATE TABLE criterion_coverage (
+  criterion_id TEXT NOT NULL,
+  plan_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  receipt_count INTEGER NOT NULL,
+  gap_count INTEGER NOT NULL,
+  risk_count INTEGER NOT NULL,
+  PRIMARY KEY (plan_id, criterion_id)
+);
+
 CREATE TABLE verification_receipt_summaries (
   source_path TEXT NOT NULL,
   ordinal INTEGER NOT NULL,
@@ -1410,6 +1857,18 @@ CREATE TABLE verification_receipt_summaries (
   receipt_path TEXT,
   receipt_sha256 TEXT,
   PRIMARY KEY (source_path, ordinal)
+);
+
+CREATE TABLE command_receipt_summaries (
+  receipt_hash TEXT NOT NULL,
+  plan_id TEXT NOT NULL,
+  intent TEXT,
+  status TEXT NOT NULL,
+  command_fingerprint TEXT,
+  contract_fingerprint TEXT,
+  current_state_hash TEXT,
+  write_drift_status TEXT,
+  PRIMARY KEY (plan_id, receipt_hash)
 );
 
 CREATE TABLE verification_coverage_states (
@@ -1434,6 +1893,53 @@ CREATE TABLE verification_risk_signals (
   PRIMARY KEY (source_path, ordinal)
 );
 
+CREATE TABLE validation_ratchet_signals (
+  signal_id TEXT PRIMARY KEY,
+  plan_id TEXT,
+  code TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  path_hash TEXT NOT NULL,
+  before_hash TEXT,
+  after_hash TEXT
+);
+
+CREATE TABLE completion_verdict_summaries (
+  claim_id TEXT PRIMARY KEY,
+  plan_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  primary_reason TEXT,
+  risk_count INTEGER NOT NULL,
+  contradiction_count INTEGER NOT NULL,
+  blocker_count INTEGER NOT NULL
+);
+
+CREATE TABLE repro_routes (
+  route_id TEXT PRIMARY KEY,
+  task_hash TEXT NOT NULL,
+  route_digest TEXT,
+  route_kind TEXT,
+  failure_oracle_hash TEXT
+);
+
+CREATE TABLE repro_observations (
+  route_id TEXT NOT NULL,
+  phase TEXT NOT NULL,
+  outcome TEXT,
+  receipt_hash TEXT,
+  diagnostic_fingerprint TEXT NOT NULL,
+  PRIMARY KEY (route_id, phase)
+);
+
+CREATE TABLE failure_fingerprints (
+  fingerprint TEXT PRIMARY KEY,
+  plan_id TEXT,
+  failed_intents_hash TEXT,
+  risk_codes_hash TEXT,
+  seen_count INTEGER NOT NULL,
+  first_seen_at TEXT,
+  last_seen_at TEXT
+);
+
 CREATE TABLE verification_failure_fingerprints (
   source_path TEXT NOT NULL,
   fingerprint TEXT NOT NULL,
@@ -1441,7 +1947,24 @@ CREATE TABLE verification_failure_fingerprints (
   status TEXT NOT NULL,
   failed_intents TEXT NOT NULL,
   primary_reason TEXT,
+  failed_intents_hash TEXT,
+  risk_codes_hash TEXT,
+  affected_surfaces_hash TEXT,
+  first_seen_at TEXT,
+  last_seen_at TEXT,
+  seen_count INTEGER NOT NULL,
+  requires_new_evidence INTEGER NOT NULL,
   PRIMARY KEY (source_path, fingerprint)
+);
+
+CREATE TABLE source_anchor_risk_signals (
+  anchor_id TEXT PRIMARY KEY,
+  path_hash TEXT NOT NULL,
+  status TEXT NOT NULL,
+  risk_signal TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  navigation_only INTEGER NOT NULL,
+  can_instruct_agent INTEGER NOT NULL
 );
 `);
 
@@ -1710,6 +2233,20 @@ function populateSearchTables(
 	}
 }
 
+function createSourceAnchorRiskSignals(sourceAnchors: readonly SourceAnchorIndexRecord[]): readonly SourceAnchorRiskSignalReadModel[] {
+	return sourceAnchors
+		.filter((anchor) => ['changed', 'review', 'stale'].includes(anchor.status))
+		.map((anchor): SourceAnchorRiskSignalReadModel => ({
+			anchorId: anchor.id,
+			pathHash: sha256Text(anchor.path),
+			status: anchor.status,
+			riskSignal: anchor.signals.risk,
+			confidence: anchor.confidence,
+			navigationOnly: anchor.navigationOnly,
+			canInstructAgent: anchor.canInstructAgent,
+		}));
+}
+
 function populateDatabase(
 	database: SqlJsDatabase,
 	capabilities: LocalSearchCapabilities,
@@ -1725,6 +2262,8 @@ function populateDatabase(
 	sourceIndexEnabled: boolean,
 	indexedAt: string,
 ): void {
+	const sourceAnchorRiskSignals = createSourceAnchorRiskSignals(sourceAnchors);
+
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['schema_version', LOCAL_INDEX_SCHEMA_VERSION]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['parser_version', LOCAL_INDEX_PARSER_VERSION]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['content_mode', LOCAL_INDEX_CONTENT_MODE]);
@@ -1922,6 +2461,43 @@ function populateDatabase(
 		);
 	}
 
+	for (const plan of verificationEvidence.verificationPlans) {
+		database.run(
+			'INSERT INTO verification_plans (plan_id, source_path, classification_hash, command_contract_hash, selected_intents_hash, created_at, source_hash) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[
+				plan.planId,
+				plan.sourcePath,
+				plan.classificationHash,
+				plan.commandContractHash,
+				plan.selectedIntentsHash,
+				plan.createdAt,
+				plan.sourceHash,
+			],
+		);
+	}
+
+	for (const criterion of verificationEvidence.acceptanceCriteria) {
+		database.run(
+			'INSERT INTO acceptance_criteria (criterion_id, plan_id, source, statement_hash, reason, surface, path_hash) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[
+				criterion.criterionId,
+				criterion.planId,
+				criterion.source,
+				criterion.statementHash,
+				criterion.reason,
+				criterion.surface,
+				criterion.pathHash,
+			],
+		);
+	}
+
+	for (const coverage of verificationEvidence.criterionCoverage) {
+		database.run(
+			'INSERT INTO criterion_coverage (criterion_id, plan_id, status, receipt_count, gap_count, risk_count) VALUES (?, ?, ?, ?, ?, ?)',
+			[coverage.criterionId, coverage.planId, coverage.status, coverage.receiptCount, coverage.gapCount, coverage.riskCount],
+		);
+	}
+
 	for (const receipt of verificationEvidence.receipts) {
 		database.run(
 			'INSERT INTO verification_receipt_summaries (source_path, ordinal, intent, status, skipped, verification_plan_id, receipt_path, receipt_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -1934,6 +2510,22 @@ function populateDatabase(
 				receipt.verificationPlanId,
 				receipt.receiptPath,
 				receipt.receiptSha256,
+			],
+		);
+	}
+
+	for (const receipt of verificationEvidence.commandReceiptSummaries) {
+		database.run(
+			'INSERT INTO command_receipt_summaries (receipt_hash, plan_id, intent, status, command_fingerprint, contract_fingerprint, current_state_hash, write_drift_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				receipt.receiptHash,
+				receipt.planId,
+				receipt.intent,
+				receipt.status,
+				receipt.commandFingerprint,
+				receipt.contractFingerprint,
+				receipt.currentStateHash,
+				receipt.writeDriftStatus,
 			],
 		);
 	}
@@ -1962,9 +2554,66 @@ function populateDatabase(
 		);
 	}
 
+	for (const signal of verificationEvidence.validationRatchetSignals) {
+		database.run(
+			'INSERT INTO validation_ratchet_signals (signal_id, plan_id, code, severity, path_hash, before_hash, after_hash) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[signal.signalId, signal.planId, signal.code, signal.severity, signal.pathHash, signal.beforeHash, signal.afterHash],
+		);
+	}
+
+	for (const verdict of verificationEvidence.completionVerdictSummaries) {
+		database.run(
+			'INSERT INTO completion_verdict_summaries (claim_id, plan_id, status, primary_reason, risk_count, contradiction_count, blocker_count) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[
+				verdict.claimId,
+				verdict.planId,
+				verdict.status,
+				verdict.primaryReason,
+				verdict.riskCount,
+				verdict.contradictionCount,
+				verdict.blockerCount,
+			],
+		);
+	}
+
+	for (const route of verificationEvidence.reproRoutes) {
+		database.run(
+			'INSERT INTO repro_routes (route_id, task_hash, route_digest, route_kind, failure_oracle_hash) VALUES (?, ?, ?, ?, ?)',
+			[route.routeId, route.taskHash, route.routeDigest, route.routeKind, route.failureOracleHash],
+		);
+	}
+
+	for (const observation of verificationEvidence.reproObservations) {
+		database.run(
+			'INSERT INTO repro_observations (route_id, phase, outcome, receipt_hash, diagnostic_fingerprint) VALUES (?, ?, ?, ?, ?)',
+			[
+				observation.routeId,
+				observation.phase,
+				observation.outcome,
+				observation.receiptHash,
+				observation.diagnosticFingerprint,
+			],
+		);
+	}
+
+	for (const fingerprint of verificationEvidence.failureFingerprintReadModels) {
+		database.run(
+			'INSERT INTO failure_fingerprints (fingerprint, plan_id, failed_intents_hash, risk_codes_hash, seen_count, first_seen_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[
+				fingerprint.fingerprint,
+				fingerprint.planId,
+				fingerprint.failedIntentsHash,
+				fingerprint.riskCodesHash,
+				fingerprint.seenCount,
+				fingerprint.firstSeenAt,
+				fingerprint.lastSeenAt,
+			],
+		);
+	}
+
 	for (const fingerprint of verificationEvidence.failureFingerprints) {
 		database.run(
-			'INSERT INTO verification_failure_fingerprints (source_path, fingerprint, verification_plan_id, status, failed_intents, primary_reason) VALUES (?, ?, ?, ?, ?, ?)',
+			'INSERT INTO verification_failure_fingerprints (source_path, fingerprint, verification_plan_id, status, failed_intents, primary_reason, failed_intents_hash, risk_codes_hash, affected_surfaces_hash, first_seen_at, last_seen_at, seen_count, requires_new_evidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 			[
 				fingerprint.sourcePath,
 				fingerprint.fingerprint,
@@ -1972,6 +2621,28 @@ function populateDatabase(
 				fingerprint.status,
 				joinedList(fingerprint.failedIntents),
 				fingerprint.primaryReason,
+				fingerprint.failedIntentsHash,
+				fingerprint.riskCodesHash,
+				fingerprint.affectedSurfacesHash,
+				fingerprint.firstSeenAt,
+				fingerprint.lastSeenAt,
+				fingerprint.seenCount,
+				fingerprint.requiresNewEvidence ? 1 : 0,
+			],
+		);
+	}
+
+	for (const signal of sourceAnchorRiskSignals) {
+		database.run(
+			'INSERT INTO source_anchor_risk_signals (anchor_id, path_hash, status, risk_signal, confidence, navigation_only, can_instruct_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			[
+				signal.anchorId,
+				signal.pathHash,
+				signal.status,
+				signal.riskSignal,
+				signal.confidence,
+				signal.navigationOnly ? 1 : 0,
+				signal.canInstructAgent ? 1 : 0,
 			],
 		);
 	}
@@ -2161,12 +2832,21 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		command_intent_count: commandIntents.length,
 		command_effect_count: commandIntents.reduce((count, intent) => count + intent.effects.length, 0),
 		verification_evidence_summary_count: verificationEvidence.summaries.length,
+		verification_plan_count: verificationEvidence.verificationPlans.length,
+		acceptance_criteria_count: verificationEvidence.acceptanceCriteria.length,
+		criterion_coverage_count: verificationEvidence.criterionCoverage.length,
 		verification_receipt_summary_count: verificationEvidence.receipts.length,
+		command_receipt_summary_count: verificationEvidence.commandReceiptSummaries.length,
 		verification_coverage_state_count: verificationEvidence.coverageStates.length,
 		verification_risk_signal_count: verificationEvidence.riskSignals.length,
+		validation_ratchet_signal_count: verificationEvidence.validationRatchetSignals.length,
+		completion_verdict_summary_count: verificationEvidence.completionVerdictSummaries.length,
+		repro_route_count: verificationEvidence.reproRoutes.length,
+		repro_observation_count: verificationEvidence.reproObservations.length,
 		failure_fingerprint_count: verificationEvidence.failureFingerprints.length,
 		source_index_enabled: includeSource,
 		source_anchor_count: sourceAnchors.length,
+		source_anchor_risk_signal_count: createSourceAnchorRiskSignals(sourceAnchors).length,
 		search_backend: capabilities.backend,
 		search_fts5_available: capabilities.fts5Available,
 		content_mode: LOCAL_INDEX_CONTENT_MODE,
@@ -2418,6 +3098,285 @@ export async function readLocalIndexPromptContext(projectRoot: string): Promise<
 	} finally {
 		database?.close();
 	}
+}
+
+function createVerificationReadModelQueryStatus(
+	databasePath: string,
+	status: LocalVerificationReadModelStatus,
+	planId: string | null,
+	stalePaths: readonly string[] = [],
+): LocalVerificationReadModelQueries {
+	return {
+		source: 'local_index',
+		authority: 'evidence_only',
+		commandAuthority: '.mustflow/config/commands.toml',
+		grantsCommandAuthority: false,
+		status,
+		databasePath,
+		indexFresh: status === 'fresh',
+		stalePaths,
+		planId,
+		uncoveredCriteria: [],
+		severeRisks: [],
+		nonPassingReceipts: [],
+		repeatedFailureFingerprints: [],
+		validationWeakeningSignals: [],
+		refreshHint: status === 'fresh' ? null : 'Run `mf index` to refresh verification read-model evidence.',
+	};
+}
+
+function readLatestVerificationPlanId(database: SqlJsDatabase): string | null {
+	const row = queryRows(
+		database,
+		`
+SELECT plan_id
+FROM verification_plans
+ORDER BY COALESCE(created_at, '') DESC, source_path DESC, plan_id DESC
+LIMIT 1
+`,
+	)[0];
+
+	return toSearchString(row?.plan_id) || null;
+}
+
+function readUncoveredCriteria(database: SqlJsDatabase, planId: string): readonly LocalUncoveredCriterion[] {
+	return queryRows(
+		database,
+		`
+SELECT
+  acceptance_criteria.criterion_id,
+  acceptance_criteria.source,
+  acceptance_criteria.reason,
+  acceptance_criteria.surface,
+  acceptance_criteria.path_hash,
+  criterion_coverage.status AS coverage_status,
+  criterion_coverage.receipt_count,
+  criterion_coverage.gap_count,
+  criterion_coverage.risk_count
+FROM acceptance_criteria
+LEFT JOIN criterion_coverage
+  ON criterion_coverage.plan_id = acceptance_criteria.plan_id
+ AND criterion_coverage.criterion_id = acceptance_criteria.criterion_id
+WHERE acceptance_criteria.plan_id = ?
+  AND (criterion_coverage.status IS NULL OR criterion_coverage.status != 'covered')
+ORDER BY acceptance_criteria.criterion_id
+`,
+		[planId],
+	).map((row) => ({
+		criterionId: toSearchString(row.criterion_id),
+		source: toSearchString(row.source),
+		reason: toSearchString(row.reason) || null,
+		surface: toSearchString(row.surface) || null,
+		pathHash: toSearchString(row.path_hash) || null,
+		coverageStatus: toSearchString(row.coverage_status) || null,
+		receiptCount: toNullableNumber(row.receipt_count) ?? 0,
+		gapCount: toNullableNumber(row.gap_count) ?? 0,
+		riskCount: toNullableNumber(row.risk_count) ?? 0,
+	}));
+}
+
+function readSevereVerificationRisks(database: SqlJsDatabase, planId: string): readonly LocalSevereVerificationRisk[] {
+	return queryRows(
+		database,
+		`
+SELECT
+  verification_risk_signals.source_path,
+  verification_risk_signals.ordinal,
+  verification_risk_signals.code,
+  verification_risk_signals.severity,
+  verification_risk_signals.detail_hash
+FROM verification_risk_signals
+JOIN verification_evidence_summaries
+  ON verification_evidence_summaries.source_path = verification_risk_signals.source_path
+WHERE verification_evidence_summaries.verification_plan_id = ?
+  AND verification_risk_signals.severity IN ('high', 'critical')
+ORDER BY verification_risk_signals.source_path, verification_risk_signals.ordinal
+`,
+		[planId],
+	).map((row) => ({
+		sourcePath: toSearchString(row.source_path),
+		ordinal: toNullableNumber(row.ordinal) ?? 0,
+		code: toSearchString(row.code),
+		severity: toSearchString(row.severity),
+		detailHash: toSearchString(row.detail_hash),
+	}));
+}
+
+function readNonPassingReceipts(database: SqlJsDatabase, planId: string): readonly LocalNonPassingVerificationReceipt[] {
+	return queryRows(
+		database,
+		`
+SELECT
+  receipt_hash,
+  plan_id,
+  intent,
+  status,
+  command_fingerprint,
+  contract_fingerprint,
+  current_state_hash,
+  write_drift_status
+FROM command_receipt_summaries
+WHERE plan_id = ?
+  AND (
+    status != 'passed'
+    OR write_drift_status IS NULL
+    OR write_drift_status NOT IN ('clean', 'none')
+  )
+ORDER BY intent, receipt_hash
+`,
+		[planId],
+	).map((row) => ({
+		receiptHash: toSearchString(row.receipt_hash),
+		planId: toSearchString(row.plan_id),
+		intent: toSearchString(row.intent) || null,
+		status: toSearchString(row.status),
+		commandFingerprint: toSearchString(row.command_fingerprint) || null,
+		contractFingerprint: toSearchString(row.contract_fingerprint) || null,
+		currentStateHash: toSearchString(row.current_state_hash) || null,
+		writeDriftStatus: toSearchString(row.write_drift_status) || null,
+	}));
+}
+
+function readRepeatedFailureFingerprints(
+	database: SqlJsDatabase,
+	planId: string,
+): readonly LocalRepeatedFailureFingerprint[] {
+	return queryRows(
+		database,
+		`
+SELECT
+  source_path,
+  fingerprint,
+  verification_plan_id,
+  status,
+  failed_intents,
+  primary_reason,
+  failed_intents_hash,
+  risk_codes_hash,
+  affected_surfaces_hash,
+  seen_count,
+  requires_new_evidence
+FROM verification_failure_fingerprints
+WHERE verification_plan_id = ?
+  AND requires_new_evidence = 1
+ORDER BY fingerprint
+`,
+		[planId],
+	).map((row) => ({
+		sourcePath: toSearchString(row.source_path),
+		fingerprint: toSearchString(row.fingerprint),
+		verificationPlanId: toSearchString(row.verification_plan_id) || null,
+		status: toSearchString(row.status),
+		failedIntents: splitIndexedList(row.failed_intents),
+		primaryReason: toSearchString(row.primary_reason) || null,
+		failedIntentsHash: toSearchString(row.failed_intents_hash) || null,
+		riskCodesHash: toSearchString(row.risk_codes_hash) || null,
+		affectedSurfacesHash: toSearchString(row.affected_surfaces_hash) || null,
+		seenCount: toNullableNumber(row.seen_count) ?? 0,
+		requiresNewEvidence: Number(row.requires_new_evidence) === 1,
+	}));
+}
+
+function readValidationWeakeningSignals(
+	database: SqlJsDatabase,
+	planId: string,
+): readonly LocalValidationWeakeningSignal[] {
+	return queryRows(
+		database,
+		`
+SELECT signal_id, plan_id, code, severity, path_hash, before_hash, after_hash
+FROM validation_ratchet_signals
+WHERE plan_id = ?
+ORDER BY severity DESC, code, signal_id
+`,
+		[planId],
+	).map((row) => ({
+		signalId: toSearchString(row.signal_id),
+		planId: toSearchString(row.plan_id) || null,
+		code: toSearchString(row.code),
+		severity: toSearchString(row.severity),
+		pathHash: toSearchString(row.path_hash),
+		beforeHash: toSearchString(row.before_hash) || null,
+		afterHash: toSearchString(row.after_hash) || null,
+	}));
+}
+
+function queryLocalVerificationReadModel(
+	databasePath: string,
+	database: SqlJsDatabase,
+	planId: string | null,
+): LocalVerificationReadModelQueries {
+	const selectedPlanId = planId ?? readLatestVerificationPlanId(database);
+	const base = createVerificationReadModelQueryStatus(databasePath, 'fresh', selectedPlanId);
+
+	if (!selectedPlanId) {
+		return base;
+	}
+
+	return {
+		...base,
+		uncoveredCriteria: readUncoveredCriteria(database, selectedPlanId),
+		severeRisks: readSevereVerificationRisks(database, selectedPlanId),
+		nonPassingReceipts: readNonPassingReceipts(database, selectedPlanId),
+		repeatedFailureFingerprints: readRepeatedFailureFingerprints(database, selectedPlanId),
+		validationWeakeningSignals: readValidationWeakeningSignals(database, selectedPlanId),
+	};
+}
+
+export async function readLocalVerificationReadModelQueries(
+	projectRoot: string,
+	planId: string,
+): Promise<LocalVerificationReadModelQueries> {
+	return readLocalVerificationReadModelQueriesForPlan(projectRoot, planId);
+}
+
+export async function readLocalVerificationReadModelQueriesForPlan(
+	projectRoot: string,
+	planId: string | null,
+): Promise<LocalVerificationReadModelQueries> {
+	const databasePath = getLocalIndexDatabasePath(projectRoot);
+
+	if (!existsSync(databasePath)) {
+		return createVerificationReadModelQueryStatus(databasePath, 'missing', planId);
+	}
+
+	const SQL = await loadSqlJs();
+	const database = new SQL.Database(readFileSync(databasePath));
+
+	try {
+		const requiredTables = [
+			'acceptance_criteria',
+			'criterion_coverage',
+			'verification_evidence_summaries',
+			'verification_plans',
+			'verification_risk_signals',
+			'command_receipt_summaries',
+			'verification_failure_fingerprints',
+			'validation_ratchet_signals',
+		];
+
+		if (requiredTables.some((tableName) => !hasTable(database, tableName))) {
+			return createVerificationReadModelQueryStatus(databasePath, 'unreadable', planId);
+		}
+
+		const stalePaths = getStalePaths(projectRoot, database);
+
+		if (stalePaths.length > 0) {
+			return createVerificationReadModelQueryStatus(databasePath, 'stale', planId, stalePaths);
+		}
+
+		return queryLocalVerificationReadModel(databasePath, database, planId);
+	} catch {
+		return createVerificationReadModelQueryStatus(databasePath, 'unreadable', planId);
+	} finally {
+		database.close();
+	}
+}
+
+export async function readLatestLocalVerificationReadModelQueries(
+	projectRoot: string,
+): Promise<LocalVerificationReadModelQueries> {
+	return readLocalVerificationReadModelQueriesForPlan(projectRoot, null);
 }
 
 function pathSurfaceReadModelWithMatch(

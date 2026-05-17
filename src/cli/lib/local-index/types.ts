@@ -84,12 +84,21 @@ export interface LocalIndexResult {
 	readonly command_intent_count: number;
 	readonly command_effect_count: number;
 	readonly verification_evidence_summary_count: number;
+	readonly verification_plan_count: number;
+	readonly acceptance_criteria_count: number;
+	readonly criterion_coverage_count: number;
 	readonly verification_receipt_summary_count: number;
+	readonly command_receipt_summary_count: number;
 	readonly verification_coverage_state_count: number;
 	readonly verification_risk_signal_count: number;
+	readonly validation_ratchet_signal_count: number;
+	readonly completion_verdict_summary_count: number;
+	readonly repro_route_count: number;
+	readonly repro_observation_count: number;
 	readonly failure_fingerprint_count: number;
 	readonly source_index_enabled: boolean;
 	readonly source_anchor_count: number;
+	readonly source_anchor_risk_signal_count: number;
 	readonly search_backend: SearchBackendKind;
 	readonly search_fts5_available: boolean;
 	readonly content_mode: LocalIndexContentMode;
@@ -159,6 +168,7 @@ export interface LocalSearchResult {
 export type LocalCommandEffectGraphStatus = 'fresh' | 'missing' | 'stale' | 'unreadable';
 export type LocalPathSurfaceReadModelStatus = 'fresh' | 'missing' | 'stale' | 'unreadable';
 export type LocalIndexPromptContextStatus = 'fresh' | 'missing' | 'stale' | 'unreadable';
+export type LocalVerificationReadModelStatus = 'fresh' | 'missing' | 'stale' | 'unreadable';
 
 export interface LocalCommandWriteLock {
 	readonly lock: string;
@@ -230,6 +240,79 @@ export interface LocalIndexPromptContext {
 	readonly stalePaths: readonly string[];
 	readonly searchBackend: SearchBackendKind | null;
 	readonly searchFts5Available: boolean | null;
+	readonly refreshHint: string | null;
+}
+
+export interface LocalUncoveredCriterion {
+	readonly criterionId: string;
+	readonly source: string;
+	readonly reason: string | null;
+	readonly surface: string | null;
+	readonly pathHash: string | null;
+	readonly coverageStatus: string | null;
+	readonly receiptCount: number;
+	readonly gapCount: number;
+	readonly riskCount: number;
+}
+
+export interface LocalSevereVerificationRisk {
+	readonly sourcePath: string;
+	readonly ordinal: number;
+	readonly code: string;
+	readonly severity: string;
+	readonly detailHash: string;
+}
+
+export interface LocalNonPassingVerificationReceipt {
+	readonly receiptHash: string;
+	readonly planId: string;
+	readonly intent: string | null;
+	readonly status: string;
+	readonly commandFingerprint: string | null;
+	readonly contractFingerprint: string | null;
+	readonly currentStateHash: string | null;
+	readonly writeDriftStatus: string | null;
+}
+
+export interface LocalRepeatedFailureFingerprint {
+	readonly sourcePath: string;
+	readonly fingerprint: string;
+	readonly verificationPlanId: string | null;
+	readonly status: string;
+	readonly failedIntents: readonly string[];
+	readonly primaryReason: string | null;
+	readonly failedIntentsHash: string | null;
+	readonly riskCodesHash: string | null;
+	readonly affectedSurfacesHash: string | null;
+	readonly seenCount: number;
+	readonly requiresNewEvidence: boolean;
+}
+
+export interface LocalValidationWeakeningSignal {
+	readonly signalId: string;
+	readonly planId: string | null;
+	readonly code: string;
+	readonly severity: string;
+	readonly pathHash: string;
+	readonly beforeHash: string | null;
+	readonly afterHash: string | null;
+}
+
+export interface LocalVerificationReadModelQueries {
+	readonly source: 'local_index';
+	readonly authority: 'evidence_only';
+	readonly commandAuthority: '.mustflow/config/commands.toml';
+	readonly grantsCommandAuthority: false;
+	readonly status: LocalVerificationReadModelStatus;
+	readonly databasePath: string;
+	readonly indexFresh: boolean;
+	readonly stalePaths: readonly string[];
+	readonly planId: string | null;
+	readonly uncoveredCriteria: readonly LocalUncoveredCriterion[];
+	readonly severeRisks: readonly LocalSevereVerificationRisk[];
+	readonly nonPassingReceipts: readonly LocalNonPassingVerificationReceipt[];
+	readonly repeatedFailureFingerprints: readonly LocalRepeatedFailureFingerprint[];
+	readonly validationWeakeningSignals: readonly LocalValidationWeakeningSignal[];
 	readonly refreshHint: string | null;
 }
 

@@ -39,6 +39,13 @@ export async function searchLocalIndexDirect(projectPath, query, options = {}) {
 	});
 }
 
+export async function readLatestLocalVerificationReadModelQueriesDirect(projectPath) {
+	return profileOperationAsync('local_index_verification_read_model_latest', { projectPath }, async () => {
+		const { readLatestLocalVerificationReadModelQueries } = await importDistModule('cli/lib/local-index.js');
+		return readLatestLocalVerificationReadModelQueries(projectPath);
+	});
+}
+
 export function indexProject(projectPath, args = [], options = {}) {
 	const result = runCli(projectPath, ['index', ...args, '--json'], options);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
