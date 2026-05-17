@@ -185,6 +185,12 @@ agent_action = "do_not_update_snapshots_without_approval"
 Agents should use these intent names when maintaining tests, but must still resolve each one through
 `commands.toml`. A missing related-test or audit command is reported; it is not guessed.
 
+Projects that want changed-file test targeting may add `.mustflow/config/test-selection.toml`.
+That optional file can match classified paths and surfaces to already-declared command intents and
+optional test targets. It does not grant command authority. The selected intent must still be
+declared in `commands.toml`, and test targets are passed only when the intent declares
+`[intents.<name>.selection] accepts_test_targets = true`.
+
 ## Asset Optimization Intent
 
 The default template includes `asset_optimize` as an unknown intent for repository-specific web image optimization pipelines.

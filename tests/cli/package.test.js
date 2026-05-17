@@ -185,6 +185,7 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 
 		assert.match(commandIndex, /`search_backend`/u, `${locale} index command docs should document search_backend`);
 		assert.match(commandIndex, /`search_fts5_available`/u, `${locale} index command docs should document FTS5 status`);
+		assert.match(commandIndex, /`excluded_raw_data_kinds`/u, `${locale} index command docs should document excluded raw data kinds`);
 		assert.match(commandIndex, /--incremental/u, `${locale} index command docs should document incremental mode`);
 		assert.match(commandIndex, /`indexed_file_count`/u, `${locale} index command docs should document indexed_file_count`);
 		assert.match(searchCommand, /`search_backend`/u, `${locale} search command docs should document search_backend`);

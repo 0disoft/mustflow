@@ -228,6 +228,32 @@ test('command contract toml parse result matches the published schema', () => {
 	}
 });
 
+test('test selection toml parse result matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'test-selection.toml'),
+			`
+schema_version = "1"
+
+[[rules]]
+id = "source-related"
+reason = "Source changes use the declared related-test intent."
+risk = "medium"
+match = { paths = ["src/**"], surfaces = ["implementation"] }
+select = { intent = "test_related", fallback_intent = "test_fast", test_targets = ["tests/unit"] }
+`,
+		);
+		const selection = parse(readFileSync(path.join(projectPath, '.mustflow', 'config', 'test-selection.toml'), 'utf8'));
+
+		assertMatchesSchema(schemaRoot, 'test-selection.schema.json', selection);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('command contract schema accepts non-authorizing selection metadata', () => {
 	const projectPath = createTempProject();
 

@@ -104,6 +104,10 @@ npx mf index --json
 - `source_anchor_count` (`number`): 색인한 구조화된 소스 앵커 수입니다.
 - `search_backend` (`string`): 이 색인에 선택된 검색 방식입니다. `fts5` 또는 `table_scan` 중 하나입니다.
 - `search_fts5_available` (`boolean`): 색인을 만들 때 SQLite 실행 환경이 FTS5 지원을 보고했는지 나타냅니다.
+- `content_mode` (`string`): 저장할 본문 정책입니다. 현재 값은 `metadata_and_snippets`입니다.
+- `store_full_content` (`boolean`): 로컬 색인 읽기 모델에서는 항상 `false`입니다.
+- `max_snippet_bytes_per_document` (`number`): 문서마다 저장할 수 있는 짧은 발췌의 최대 바이트 수입니다.
+- `excluded_raw_data_kinds` (`string[]`): SQLite 색인이 저장하면 안 되는 원본 데이터 종류입니다.
 - `indexed_file_count` (`number`): `indexed_files`에 기록된 파일 지문 수입니다.
 - `indexed_paths` (`string[]`): 문서 색인에 포함된 파일 경로 목록입니다.
 

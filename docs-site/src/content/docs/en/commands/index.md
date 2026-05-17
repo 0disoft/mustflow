@@ -19,6 +19,8 @@ Use `--source` to include structured source-code anchors. Source indexing is opt
 - Skill route metadata from `.mustflow/skills/INDEX.md`
 - Command intents and command-effect metadata from `.mustflow/config/commands.toml`
 - Derived path-surface rules from the built-in change classification model
+- The latest run or verify summary from `.mustflow/state/runs/latest.json`, when present,
+  as bounded receipt, coverage, risk, and failure-fingerprint metadata
 - Structured source-code anchors only when `--source` is provided or `.mustflow/config/index.toml` enables them
 
 The default command does not index arbitrary project source files; it is scoped exclusively to mustflow workflow files. With `--source` or an explicit source-index setting, it scans source files for structured `mf:anchor` comments and writes only anchor fields such as id, path, line, purpose, search terms, invariant, and risk.
@@ -37,10 +39,13 @@ whether an existing cache is still safe to reuse.
 
 The index is a lookup cache, not a memory store or audit log. It stores metadata,
 hashes, short document snippets, command contract summaries, skill route rows,
-and source-anchor navigation metadata. It does not store full source files, raw
-diffs, raw terminal logs, environment variables, secrets, customer data, chat
-history, hidden reasoning, browser tokens, remote document bodies, or long-term
-memory summaries.
+source-anchor navigation metadata, and current verification evidence summaries.
+For verification evidence, it stores bounded fields such as receipt status,
+receipt hashes, verification plan identifiers, coverage states, risk codes,
+risk-detail hashes, and failure fingerprints. It does not store full source files,
+raw diffs, raw terminal logs, stdout or stderr tails, risk details, coverage
+statements, environment variables, secrets, customer data, chat history, hidden
+reasoning, browser tokens, remote document bodies, or long-term memory summaries.
 
 When the bundled SQLite runtime supports FTS5, `mf index` records derived FTS
 tables for faster token matching. When FTS5 is unavailable, the index keeps the
@@ -59,6 +64,23 @@ Command effects are also exposed through read-only graph views. The
 `command_lock_conflicts` lists intent pairs that share a lock, exclusive effect,
 or delete-and-recreate output. These views explain configured command effects;
 they do not authorize commands or change run eligibility.
+
+## Verification Evidence Read Model
+
+When `.mustflow/state/runs/latest.json` exists, `mf index` extracts only bounded,
+derived evidence metadata into read-model tables:
+
+- `verification_evidence_summaries`
+- `verification_receipt_summaries`
+- `verification_coverage_states`
+- `verification_risk_signals`
+- `verification_failure_fingerprints`
+
+These rows let tools ask what the current run or verify summary says about
+receipts, plan identifiers, coverage states, remaining risk codes, and repeated
+failure fingerprints. They are evidence metadata only. They do not grant command
+authority, prove verification by themselves, store raw output, or replace the
+current state file and receipts on disk.
 
 ## Dry Run
 
@@ -131,10 +153,19 @@ The machine-readable output uses the following fields:
 - `skill_route_count` (`number`): Number of indexed skill route rows from `.mustflow/skills/INDEX.md`.
 - `command_intent_count` (`number`): Number of indexed command intents.
 - `command_effect_count` (`number`): Number of indexed command effect rows derived from `effects` or `writes`.
+- `verification_evidence_summary_count` (`number`): Number of indexed latest-run evidence summary rows.
+- `verification_receipt_summary_count` (`number`): Number of indexed bounded receipt summary rows.
+- `verification_coverage_state_count` (`number`): Number of indexed coverage-state rows.
+- `verification_risk_signal_count` (`number`): Number of indexed derived risk-signal rows.
+- `failure_fingerprint_count` (`number`): Number of indexed failure-fingerprint rows.
 - `source_index_enabled` (`boolean`): Whether source-anchor indexing was enabled by `--source` or local index configuration.
 - `source_anchor_count` (`number`): Number of indexed structured source anchors.
 - `search_backend` (`string`): Search backend selected for this index. One of `fts5` or `table_scan`.
 - `search_fts5_available` (`boolean`): Whether the SQLite runtime reported FTS5 support while building the index.
+- `content_mode` (`string`): The stored content policy. Currently `metadata_and_snippets`.
+- `store_full_content` (`boolean`): Always `false` for the local index read model.
+- `max_snippet_bytes_per_document` (`number`): Maximum stored document snippet size in bytes.
+- `excluded_raw_data_kinds` (`string[]`): Raw data categories that the SQLite index must not store.
 - `indexed_file_count` (`number`): Number of file fingerprints recorded in `indexed_files`.
 - `indexed_paths` (`string[]`): Paths included in the document index.
 

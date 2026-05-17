@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.dev/schemas/test-selection.schema.json",
+  "title": "mustflow test selection contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rules"],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risk": {
+      "enum": ["low", "medium", "high", "release_sensitive", "security_sensitive"]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "risk", "match", "select"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/risk"
+        },
+        "match": {
+          "$ref": "#/$defs/match"
+        },
+        "select": {
+          "$ref": "#/$defs/select"
+        }
+      }
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths", "surfaces"],
+      "properties": {
+        "paths": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "surfaces": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "select": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "fallback_intent"],
+      "properties": {
+        "intent": {
+          "type": "string"
+        },
+        "fallback_intent": {
+          "type": "string"
+        },
+        "test_targets": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    }
+  }
+}

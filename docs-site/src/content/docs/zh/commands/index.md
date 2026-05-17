@@ -101,6 +101,10 @@ npx mf index --json
 - `source_anchor_count` (`number`)：已索引的结构化源码锚点数量。
 - `search_backend` (`string`)：此索引选择的搜索后端，取值为 `fts5` 或 `table_scan`。
 - `search_fts5_available` (`boolean`)：构建索引时 SQLite 运行时是否报告支持 FTS5。
+- `content_mode` (`string`)：存储内容策略。当前为 `metadata_and_snippets`。
+- `store_full_content` (`boolean`)：本地索引读取模型中始终为 `false`。
+- `max_snippet_bytes_per_document` (`number`)：每个文档可存储的最大摘录字节数。
+- `excluded_raw_data_kinds` (`string[]`)：SQLite 索引不得存储的原始数据类别。
 - `indexed_file_count` (`number`)：记录在 `indexed_files` 中的文件指纹数量。
 - `indexed_paths` (`string[]`)：包含在文档索引中的路径。
 

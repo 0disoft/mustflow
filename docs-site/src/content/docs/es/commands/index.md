@@ -101,6 +101,10 @@ La salida legible por máquinas usa estos campos:
 - `source_anchor_count` (`number`): número de anclas estructuradas de código fuente indexadas.
 - `search_backend` (`string`): backend de búsqueda seleccionado para este índice. Uno de `fts5` o `table_scan`.
 - `search_fts5_available` (`boolean`): si el runtime SQLite informó soporte FTS5 al construir el índice.
+- `content_mode` (`string`): política de contenido almacenado. Actualmente `metadata_and_snippets`.
+- `store_full_content` (`boolean`): siempre `false` para el modelo de lectura del índice local.
+- `max_snippet_bytes_per_document` (`number`): tamaño máximo, en bytes, del fragmento guardado por documento.
+- `excluded_raw_data_kinds` (`string[]`): categorías de datos sin procesar que el índice SQLite no debe almacenar.
 - `indexed_file_count` (`number`): número de huellas de archivo registradas en `indexed_files`.
 - `indexed_paths` (`string[]`): rutas incluidas en el índice de documentos.
 
