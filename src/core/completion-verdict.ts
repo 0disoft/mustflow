@@ -1,9 +1,43 @@
 export type CompletionVerdictStatus = 'verified' | 'partially_verified' | 'unverified' | 'blocked' | 'contradicted';
 
+export interface CompletionVerdictRiskEvidence {
+	readonly source_anchor: number;
+	readonly scope_diff: number;
+	readonly repeated_failure: number;
+	readonly validation_ratchet: number;
+	readonly repro_evidence: number;
+	readonly external_evidence: number;
+	readonly write_drift: number;
+	readonly receipt_binding: number;
+	readonly stale_receipt: number;
+	readonly plan_mismatch: number;
+}
+
+export interface CompletionVerdictReceiptBindingEvidence {
+	readonly plan_bound_count: number;
+	readonly plan_unbound_count: number;
+	readonly fingerprint_bound_count: number;
+	readonly fingerprint_unbound_count: number;
+	readonly current_state_bound_count: number;
+	readonly current_state_unavailable_count: number;
+	readonly stale_count: number;
+	readonly plan_mismatch_count: number;
+}
+
+export interface CompletionVerdictCriteriaEvidence {
+	readonly total: number;
+	readonly covered: number;
+	readonly partially_covered: number;
+	readonly uncovered: number;
+	readonly blocked: number;
+	readonly contradicted: number;
+}
+
 export interface CompletionVerdictEvidence {
 	readonly source: 'mf_verify' | 'dashboard_export';
 	readonly verification_plan_id: string | null;
 	readonly changed_file_count: number | null;
+	readonly criteria: CompletionVerdictCriteriaEvidence;
 	readonly matched_intents: number;
 	readonly ran_intents: number;
 	readonly passed_intents: number;
@@ -15,6 +49,14 @@ export interface CompletionVerdictEvidence {
 	readonly scope_diff_risk_count: number;
 	readonly repeated_failure_count: number;
 	readonly validation_ratchet_risk_count: number;
+	readonly repro_evidence_risk_count: number;
+	readonly external_evidence_risk_count: number;
+	readonly write_drift_risk_count: number;
+	readonly receipt_binding_risk_count: number;
+	readonly stale_receipt_count: number;
+	readonly plan_mismatch_count: number;
+	readonly risks: CompletionVerdictRiskEvidence;
+	readonly receipt_binding: CompletionVerdictReceiptBindingEvidence;
 	readonly latest_run_status: string | null;
 }
 
@@ -39,9 +81,19 @@ export interface VerifyCompletionVerdictInput {
 	readonly sourceAnchorRiskCount?: number;
 	readonly scopeDiffRiskCount?: number;
 	readonly repeatedFailureCount?: number;
+	readonly repeatedFailureBlockerCount?: number;
 	readonly validationRatchetRiskCount?: number;
+	readonly validationRatchetContradictionCount?: number;
 	readonly reproEvidenceRiskCount?: number;
+	readonly reproEvidenceContradictionCount?: number;
+	readonly reproEvidenceUnverifiedCount?: number;
 	readonly externalEvidenceRiskCount?: number;
+	readonly writeDriftRiskCount?: number;
+	readonly receiptBindingRiskCount?: number;
+	readonly staleReceiptCount?: number;
+	readonly planMismatchCount?: number;
+	readonly criteria?: CompletionVerdictCriteriaEvidence;
+	readonly receiptBinding?: CompletionVerdictReceiptBindingEvidence;
 }
 
 export interface DashboardCompletionVerdictInput {
@@ -55,7 +107,82 @@ export interface DashboardCompletionVerdictInput {
 	readonly sourceAnchorRiskCount?: number;
 	readonly scopeDiffRiskCount?: number;
 	readonly repeatedFailureCount?: number;
+	readonly repeatedFailureBlockerCount?: number;
 	readonly validationRatchetRiskCount?: number;
+	readonly validationRatchetContradictionCount?: number;
+	readonly reproEvidenceRiskCount?: number;
+	readonly reproEvidenceContradictionCount?: number;
+	readonly reproEvidenceUnverifiedCount?: number;
+	readonly externalEvidenceRiskCount?: number;
+	readonly writeDriftRiskCount?: number;
+	readonly receiptBindingRiskCount?: number;
+	readonly staleReceiptCount?: number;
+	readonly planMismatchCount?: number;
+	readonly criteria?: CompletionVerdictCriteriaEvidence;
+	readonly receiptBinding?: CompletionVerdictReceiptBindingEvidence;
+}
+
+function createRiskEvidence(input: {
+	readonly sourceAnchorRiskCount?: number;
+	readonly scopeDiffRiskCount?: number;
+	readonly repeatedFailureCount?: number;
+	readonly validationRatchetRiskCount?: number;
+	readonly reproEvidenceRiskCount?: number;
+	readonly externalEvidenceRiskCount?: number;
+	readonly writeDriftRiskCount?: number;
+	readonly receiptBindingRiskCount?: number;
+	readonly staleReceiptCount?: number;
+	readonly planMismatchCount?: number;
+}): CompletionVerdictRiskEvidence {
+	return {
+		source_anchor: input.sourceAnchorRiskCount ?? 0,
+		scope_diff: input.scopeDiffRiskCount ?? 0,
+		repeated_failure: input.repeatedFailureCount ?? 0,
+		validation_ratchet: input.validationRatchetRiskCount ?? 0,
+		repro_evidence: input.reproEvidenceRiskCount ?? 0,
+		external_evidence: input.externalEvidenceRiskCount ?? 0,
+		write_drift: input.writeDriftRiskCount ?? 0,
+		receipt_binding: input.receiptBindingRiskCount ?? 0,
+		stale_receipt: input.staleReceiptCount ?? 0,
+		plan_mismatch: input.planMismatchCount ?? 0,
+	};
+}
+
+function emptyReceiptBindingEvidence(): CompletionVerdictReceiptBindingEvidence {
+	return {
+		plan_bound_count: 0,
+		plan_unbound_count: 0,
+		fingerprint_bound_count: 0,
+		fingerprint_unbound_count: 0,
+		current_state_bound_count: 0,
+		current_state_unavailable_count: 0,
+		stale_count: 0,
+		plan_mismatch_count: 0,
+	};
+}
+
+function emptyCriteriaEvidence(): CompletionVerdictCriteriaEvidence {
+	return {
+		total: 0,
+		covered: 0,
+		partially_covered: 0,
+		uncovered: 0,
+		blocked: 0,
+		contradicted: 0,
+	};
+}
+
+function normalizeVerifyCompletionInput(input: VerifyCompletionVerdictInput): VerifyCompletionVerdictInput {
+	const missingReceiptCount = Math.max(0, input.ranIntents - input.receiptCount);
+
+	if (missingReceiptCount === 0) {
+		return input;
+	}
+
+	return {
+		...input,
+		receiptBindingRiskCount: (input.receiptBindingRiskCount ?? 0) + missingReceiptCount,
+	};
 }
 
 function verifyStatus(input: VerifyCompletionVerdictInput): {
@@ -65,17 +192,51 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 	readonly contradictions: readonly string[];
 	readonly limitations: readonly string[];
 } {
+	const contradictions: string[] = [];
+
 	if (input.failedIntents > 0) {
-		const contradictions = ['one_or_more_selected_verification_intents_failed'];
-		if ((input.repeatedFailureCount ?? 0) > 0) {
+		contradictions.push('one_or_more_selected_verification_intents_failed');
+	}
+
+	if ((input.planMismatchCount ?? 0) > 0) {
+		contradictions.push('plan_receipt_mismatch');
+	}
+
+	if ((input.reproEvidenceContradictionCount ?? 0) > 0) {
+		contradictions.push('repro_evidence_contradicted');
+	}
+
+	if ((input.validationRatchetContradictionCount ?? 0) > 0) {
+		contradictions.push('validation_ratchet_contradicted');
+	}
+
+	if (contradictions.length > 0) {
+		if (input.failedIntents > 0 && (input.repeatedFailureCount ?? 0) > 0) {
 			contradictions.push('repeated_verification_failure');
 		}
 
 		return {
 			status: 'contradicted',
-			primaryReason: 'verification_failed',
+			primaryReason:
+				input.failedIntents > 0
+					? 'verification_failed'
+					: (input.planMismatchCount ?? 0) > 0
+						? 'plan_receipt_mismatch'
+						: (input.reproEvidenceContradictionCount ?? 0) > 0
+							? 'repro_evidence_contradicted'
+							: 'validation_ratchet_contradicted',
 			blockers: [],
 			contradictions,
+			limitations: [],
+		};
+	}
+
+	if ((input.repeatedFailureBlockerCount ?? 0) > 0) {
+		return {
+			status: 'blocked',
+			primaryReason: 'repeated_failure_requires_new_evidence',
+			blockers: ['repeated_failure_requires_new_evidence'],
+			contradictions: [],
 			limitations: [],
 		};
 	}
@@ -125,6 +286,16 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 		};
 	}
 
+	if ((input.reproEvidenceUnverifiedCount ?? 0) > 0) {
+		return {
+			status: 'unverified',
+			primaryReason: 'repro_evidence_unverified',
+			blockers: [],
+			contradictions: [],
+			limitations: ['repro_evidence_missing'],
+		};
+	}
+
 	const downgradeLimitations: string[] = [];
 	if ((input.sourceAnchorRiskCount ?? 0) > 0) {
 		downgradeLimitations.push('high_risk_source_anchor_requires_review');
@@ -134,6 +305,15 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 	}
 	if ((input.validationRatchetRiskCount ?? 0) > 0) {
 		downgradeLimitations.push('validation_ratchet_risk_requires_review');
+	}
+	if ((input.writeDriftRiskCount ?? 0) > 0) {
+		downgradeLimitations.push('write_drift_requires_review');
+	}
+	if ((input.receiptBindingRiskCount ?? 0) > 0) {
+		downgradeLimitations.push('receipt_binding_requires_review');
+	}
+	if ((input.staleReceiptCount ?? 0) > 0) {
+		downgradeLimitations.push('stale_receipt_requires_review');
 	}
 	if ((input.reproEvidenceRiskCount ?? 0) > 0) {
 		downgradeLimitations.push('repro_evidence_missing');
@@ -152,9 +332,15 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 						? 'scope_diff_review_required'
 						: (input.validationRatchetRiskCount ?? 0) > 0
 							? 'validation_ratchet_review_required'
-							: (input.reproEvidenceRiskCount ?? 0) > 0
-								? 'repro_evidence_missing'
-								: 'external_evidence_review_required',
+							: (input.writeDriftRiskCount ?? 0) > 0
+								? 'write_drift_review_required'
+								: (input.receiptBindingRiskCount ?? 0) > 0
+									? 'receipt_binding_review_required'
+									: (input.staleReceiptCount ?? 0) > 0
+										? 'stale_receipt_review_required'
+										: (input.reproEvidenceRiskCount ?? 0) > 0
+											? 'repro_evidence_missing'
+											: 'external_evidence_review_required',
 			blockers: [],
 			contradictions: [],
 			limitations: downgradeLimitations,
@@ -181,26 +367,39 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 }
 
 export function createVerifyCompletionVerdict(input: VerifyCompletionVerdictInput): CompletionVerdict {
-	const result = verifyStatus(input);
+	const normalizedInput = normalizeVerifyCompletionInput(input);
+	const result = verifyStatus(normalizedInput);
+	const risks = createRiskEvidence(normalizedInput);
+	const receiptBinding = normalizedInput.receiptBinding ?? emptyReceiptBindingEvidence();
+	const criteria = normalizedInput.criteria ?? emptyCriteriaEvidence();
 	return {
 		schema_version: '1',
 		status: result.status,
 		primary_reason: result.primaryReason,
 		evidence: {
 			source: 'mf_verify',
-			verification_plan_id: input.verificationPlanId,
+			verification_plan_id: normalizedInput.verificationPlanId,
 			changed_file_count: null,
-			matched_intents: input.matchedIntents,
-			ran_intents: input.ranIntents,
-			passed_intents: input.passedIntents,
-			failed_intents: input.failedIntents,
-			skipped_intents: input.skippedIntents,
-			receipt_count: input.receiptCount,
-			gap_count: input.skippedIntents,
-			source_anchor_risk_count: input.sourceAnchorRiskCount ?? 0,
-			scope_diff_risk_count: input.scopeDiffRiskCount ?? 0,
-			repeated_failure_count: input.repeatedFailureCount ?? 0,
-			validation_ratchet_risk_count: input.validationRatchetRiskCount ?? 0,
+			criteria,
+			matched_intents: normalizedInput.matchedIntents,
+			ran_intents: normalizedInput.ranIntents,
+			passed_intents: normalizedInput.passedIntents,
+			failed_intents: normalizedInput.failedIntents,
+			skipped_intents: normalizedInput.skippedIntents,
+			receipt_count: normalizedInput.receiptCount,
+			gap_count: normalizedInput.skippedIntents,
+			source_anchor_risk_count: normalizedInput.sourceAnchorRiskCount ?? 0,
+			scope_diff_risk_count: normalizedInput.scopeDiffRiskCount ?? 0,
+			repeated_failure_count: normalizedInput.repeatedFailureCount ?? 0,
+			validation_ratchet_risk_count: normalizedInput.validationRatchetRiskCount ?? 0,
+			repro_evidence_risk_count: normalizedInput.reproEvidenceRiskCount ?? 0,
+			external_evidence_risk_count: normalizedInput.externalEvidenceRiskCount ?? 0,
+			write_drift_risk_count: normalizedInput.writeDriftRiskCount ?? 0,
+			receipt_binding_risk_count: normalizedInput.receiptBindingRiskCount ?? 0,
+			stale_receipt_count: normalizedInput.staleReceiptCount ?? 0,
+			plan_mismatch_count: normalizedInput.planMismatchCount ?? 0,
+			risks,
+			receipt_binding: receiptBinding,
 			latest_run_status: null,
 		},
 		blockers: result.blockers,
@@ -210,6 +409,8 @@ export function createVerifyCompletionVerdict(input: VerifyCompletionVerdictInpu
 }
 
 export function createDashboardCompletionVerdict(input: DashboardCompletionVerdictInput): CompletionVerdict {
+	const risks = createRiskEvidence(input);
+	const receiptBinding = input.receiptBinding ?? emptyReceiptBindingEvidence();
 	const latestRunFailed =
 		input.latestRunStatus === 'failed' ||
 		input.latestRunStatus === 'timed_out' ||
@@ -258,6 +459,19 @@ export function createDashboardCompletionVerdict(input: DashboardCompletionVerdi
 		limitations.push('latest_run_is_not_bound_to_a_current_completion_claim');
 	}
 
+	const criteria =
+		input.criteria ??
+		(input.changedFileCount > 0 || input.runnableIntentCount > 0 || input.skippedIntentCount > 0 || input.gapCount > 0
+			? {
+					total: 1,
+					covered: 0,
+					partially_covered: status === 'partially_verified' ? 1 : 0,
+					uncovered: status === 'unverified' ? 1 : 0,
+					blocked: status === 'blocked' ? 1 : 0,
+					contradicted: status === 'contradicted' ? 1 : 0,
+				}
+			: emptyCriteriaEvidence());
+
 	return {
 		schema_version: '1',
 		status,
@@ -266,6 +480,7 @@ export function createDashboardCompletionVerdict(input: DashboardCompletionVerdi
 			source: 'dashboard_export',
 			verification_plan_id: null,
 			changed_file_count: input.changedFileCount,
+			criteria,
 			matched_intents: input.runnableIntentCount + input.skippedIntentCount,
 			ran_intents: 0,
 			passed_intents: 0,
@@ -277,6 +492,14 @@ export function createDashboardCompletionVerdict(input: DashboardCompletionVerdi
 			scope_diff_risk_count: input.scopeDiffRiskCount ?? 0,
 			repeated_failure_count: input.repeatedFailureCount ?? 0,
 			validation_ratchet_risk_count: input.validationRatchetRiskCount ?? 0,
+			repro_evidence_risk_count: input.reproEvidenceRiskCount ?? 0,
+			external_evidence_risk_count: input.externalEvidenceRiskCount ?? 0,
+			write_drift_risk_count: input.writeDriftRiskCount ?? 0,
+			receipt_binding_risk_count: input.receiptBindingRiskCount ?? 0,
+			stale_receipt_count: input.staleReceiptCount ?? 0,
+			plan_mismatch_count: input.planMismatchCount ?? 0,
+			risks,
+			receipt_binding: receiptBinding,
 			latest_run_status: input.latestRunStatus,
 		},
 		blockers,

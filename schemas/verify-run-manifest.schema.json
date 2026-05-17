@@ -33,6 +33,18 @@
     "status": { "enum": ["passed", "partial", "failed", "blocked"] },
     "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
     "evidence_model": { "$ref": "#/$defs/evidenceModel" },
+    "failure_fingerprint": {
+      "anyOf": [
+        { "$ref": "#/$defs/failureFingerprint" },
+        { "type": "null" }
+      ]
+    },
+    "repeated_failure_summary": {
+      "anyOf": [
+        { "$ref": "#/$defs/repeatedFailureSummary" },
+        { "type": "null" }
+      ]
+    },
     "summary": { "$ref": "#/$defs/summary" },
     "repro_evidence": { "$ref": "#/$defs/reproEvidence" },
     "external_checks": {
@@ -45,6 +57,66 @@
     }
   },
   "$defs": {
+    "failureFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "fingerprint",
+        "verification_plan_id",
+        "failed_intents_hash",
+        "exit_code_classes_hash",
+        "timeout_flags_hash",
+        "error_kinds_hash",
+        "diagnostic_hash",
+        "risk_codes_hash",
+        "affected_surfaces_hash",
+        "command_fingerprints_hash"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "verification_plan_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "failed_intents_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "exit_code_classes_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "timeout_flags_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "error_kinds_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "diagnostic_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "risk_codes_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "affected_surfaces_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "command_fingerprints_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "repeatedFailureSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "fingerprint",
+        "verification_plan_id",
+        "status",
+        "failed_intents_hash",
+        "risk_codes_hash",
+        "affected_surfaces_hash",
+        "first_seen_at",
+        "last_seen_at",
+        "seen_count",
+        "requires_new_evidence"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "verification_plan_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "status": { "type": "string" },
+        "failed_intents_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "risk_codes_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "affected_surfaces_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "first_seen_at": { "type": "string" },
+        "last_seen_at": { "type": "string" },
+        "seen_count": { "type": "integer", "minimum": 1 },
+        "requires_new_evidence": { "type": "boolean" }
+      }
+    },
     "completionVerdict": {
       "type": "object",
       "additionalProperties": false,
@@ -60,6 +132,7 @@
             "source",
             "verification_plan_id",
             "changed_file_count",
+            "criteria",
             "matched_intents",
             "ran_intents",
             "passed_intents",
@@ -71,6 +144,14 @@
             "scope_diff_risk_count",
             "repeated_failure_count",
             "validation_ratchet_risk_count",
+            "repro_evidence_risk_count",
+            "external_evidence_risk_count",
+            "write_drift_risk_count",
+            "receipt_binding_risk_count",
+            "stale_receipt_count",
+            "plan_mismatch_count",
+            "risks",
+            "receipt_binding",
             "latest_run_status"
           ],
           "properties": {
@@ -80,6 +161,7 @@
               "pattern": "^sha256:[0-9a-f]{64}$"
             },
             "changed_file_count": { "type": ["integer", "null"] },
+            "criteria": { "$ref": "#/$defs/completionVerdictCriteria" },
             "matched_intents": { "type": "integer" },
             "ran_intents": { "type": "integer" },
             "passed_intents": { "type": "integer" },
@@ -91,6 +173,14 @@
             "scope_diff_risk_count": { "type": "integer" },
             "repeated_failure_count": { "type": "integer" },
             "validation_ratchet_risk_count": { "type": "integer" },
+            "repro_evidence_risk_count": { "type": "integer" },
+            "external_evidence_risk_count": { "type": "integer" },
+            "write_drift_risk_count": { "type": "integer" },
+            "receipt_binding_risk_count": { "type": "integer" },
+            "stale_receipt_count": { "type": "integer" },
+            "plan_mismatch_count": { "type": "integer" },
+            "risks": { "$ref": "#/$defs/completionVerdictRisks" },
+            "receipt_binding": { "$ref": "#/$defs/completionVerdictReceiptBinding" },
             "latest_run_status": { "type": ["string", "null"] }
           }
         },
@@ -106,6 +196,47 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "completionVerdictCriteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "covered", "partially_covered", "uncovered", "blocked", "contradicted"],
+      "properties": {
+        "total": { "type": "integer" },
+        "covered": { "type": "integer" },
+        "partially_covered": { "type": "integer" },
+        "uncovered": { "type": "integer" },
+        "blocked": { "type": "integer" },
+        "contradicted": { "type": "integer" }
+      }
+    },
+    "completionVerdictRisks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_anchor",
+        "scope_diff",
+        "repeated_failure",
+        "validation_ratchet",
+        "repro_evidence",
+        "external_evidence",
+        "write_drift",
+        "receipt_binding",
+        "stale_receipt",
+        "plan_mismatch"
+      ],
+      "properties": {
+        "source_anchor": { "type": "integer" },
+        "scope_diff": { "type": "integer" },
+        "repeated_failure": { "type": "integer" },
+        "validation_ratchet": { "type": "integer" },
+        "repro_evidence": { "type": "integer" },
+        "external_evidence": { "type": "integer" },
+        "write_drift": { "type": "integer" },
+        "receipt_binding": { "type": "integer" },
+        "stale_receipt": { "type": "integer" },
+        "plan_mismatch": { "type": "integer" }
       }
     },
     "summary": {
@@ -144,6 +275,30 @@
           "type": ["string", "null"],
           "pattern": "^sha256:[0-9a-f]{64}$"
         }
+      }
+    },
+    "completionVerdictReceiptBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan_bound_count",
+        "plan_unbound_count",
+        "fingerprint_bound_count",
+        "fingerprint_unbound_count",
+        "current_state_bound_count",
+        "current_state_unavailable_count",
+        "stale_count",
+        "plan_mismatch_count"
+      ],
+      "properties": {
+        "plan_bound_count": { "type": "integer" },
+        "plan_unbound_count": { "type": "integer" },
+        "fingerprint_bound_count": { "type": "integer" },
+        "fingerprint_unbound_count": { "type": "integer" },
+        "current_state_bound_count": { "type": "integer" },
+        "current_state_unavailable_count": { "type": "integer" },
+        "stale_count": { "type": "integer" },
+        "plan_mismatch_count": { "type": "integer" }
       }
     },
     "evidenceModel": {
@@ -342,9 +497,9 @@
         "reported_symptom",
         "expected_behavior",
         "observed_behavior",
-        "original_reproduction",
-        "evidence_before_fix",
-        "evidence_after_fix",
+        "reproduction_route",
+        "before_fix",
+        "after_fix",
         "regression_guard"
       ],
       "properties": {
@@ -353,18 +508,80 @@
         "reported_symptom": { "type": ["string", "null"] },
         "expected_behavior": { "type": ["string", "null"] },
         "observed_behavior": { "type": ["string", "null"] },
-        "original_reproduction": { "$ref": "#/$defs/reproEvidenceItem" },
-        "evidence_before_fix": { "$ref": "#/$defs/reproEvidenceItem" },
-        "evidence_after_fix": { "$ref": "#/$defs/reproEvidenceItem" },
-        "regression_guard": { "$ref": "#/$defs/reproEvidenceItem" }
+        "reproduction_route": { "$ref": "#/$defs/reproRouteIdentity" },
+        "before_fix": { "$ref": "#/$defs/reproBeforeFixEvidence" },
+        "after_fix": { "$ref": "#/$defs/reproAfterFixEvidence" },
+        "regression_guard": { "$ref": "#/$defs/reproRegressionGuardEvidence" }
       }
     },
-    "reproEvidenceItem": {
+    "reproRouteIdentity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "summary", "reason"],
+      "required": ["route_id", "route_kind", "route_digest", "failure_oracle_hash", "steps"],
       "properties": {
-        "status": { "enum": ["present", "unavailable", "missing"] },
+        "route_id": { "type": ["string", "null"] },
+        "route_kind": { "enum": ["test", "cli", "browser", "api", "manual", "unknown", null] },
+        "route_digest": { "type": ["string", "null"] },
+        "failure_oracle_hash": { "type": ["string", "null"] },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reproRouteStep" }
+        }
+      }
+    },
+    "reproRouteStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "action", "target", "input_digest", "observation_digest", "summary"],
+      "properties": {
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "action": { "type": ["string", "null"] },
+        "target": { "type": ["string", "null"] },
+        "input_digest": { "type": ["string", "null"] },
+        "observation_digest": { "type": ["string", "null"] },
+        "summary": { "type": ["string", "null"] }
+      }
+    },
+    "reproBeforeFixEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "outcome", "receipt_path", "receipt_sha256", "verification_plan_id", "summary", "reason"],
+      "properties": {
+        "status": { "enum": ["reproduced", "unavailable", "missing"] },
+        "outcome": { "enum": ["failed_as_expected", "failed_differently", "passed_unexpectedly", null] },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": { "type": ["string", "null"] },
+        "verification_plan_id": { "type": ["string", "null"] },
+        "summary": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "reproAfterFixEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "outcome", "same_route_as", "receipt_path", "receipt_sha256", "verification_plan_id", "summary", "reason"],
+      "properties": {
+        "status": { "enum": ["passed", "failed", "unavailable", "missing"] },
+        "outcome": { "enum": ["passed_expected_behavior", "failed_same_route", "failed_differently", null] },
+        "same_route_as": { "type": ["string", "null"] },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": { "type": ["string", "null"] },
+        "verification_plan_id": { "type": ["string", "null"] },
+        "summary": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "reproRegressionGuardEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "intent", "test_path", "receipt_path", "receipt_sha256", "verification_plan_id", "summary", "reason"],
+      "properties": {
+        "status": { "enum": ["passed", "failed", "unavailable", "missing"] },
+        "intent": { "type": ["string", "null"] },
+        "test_path": { "type": ["string", "null"] },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": { "type": ["string", "null"] },
+        "verification_plan_id": { "type": ["string", "null"] },
         "summary": { "type": ["string", "null"] },
         "reason": { "type": ["string", "null"] }
       }

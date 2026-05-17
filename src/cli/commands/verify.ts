@@ -9,22 +9,43 @@ import {
 	type ChangeVerificationCandidate,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
-import { createVerifyCompletionVerdict, type CompletionVerdict } from '../../core/completion-verdict.js';
+import {
+	createVerifyCompletionVerdict,
+	type CompletionVerdict,
+	type CompletionVerdictCriteriaEvidence,
+	type CompletionVerdictReceiptBindingEvidence,
+} from '../../core/completion-verdict.js';
 import {
 	createExternalEvidenceRisks,
 	type ExternalEvidenceCheck,
 	type ExternalEvidenceStatus,
 } from '../../core/external-evidence.js';
-import { createRepeatedFailureRisk, type RepeatedFailureRisk } from '../../core/repeated-failure.js';
 import {
+	createRepeatedFailureRisks,
+	createVerificationFailureFingerprint,
+	updateRepeatedFailureState,
+	type RepeatedFailureSummary,
+	type RepeatedFailureRisk,
+	type VerificationFailureFingerprint,
+} from '../../core/repeated-failure.js';
+import {
+	countReproEvidenceVerdictEffects,
 	createReproEvidenceRisks,
-	type ReproEvidenceItem,
+	type ReproAfterFixEvidence,
+	type ReproBeforeFixEvidence,
 	type ReproEvidenceReport,
-	type ReproEvidenceStatus,
+	type ReproRouteIdentity,
+	type ReproRouteKind,
+	type ReproRouteStep,
+	type ReproRegressionGuardEvidence,
 } from '../../core/repro-evidence.js';
 import { createVerifyEvidenceModel, type VerificationEvidenceModel } from '../../core/verification-evidence.js';
 import { createScopeDiffRisks, type ScopeDiffRisk } from '../../core/scope-risk.js';
-import { createValidationRatchetRisks, type ValidationRatchetRisk } from '../../core/validation-ratchet.js';
+import {
+	countValidationRatchetVerdictEffects,
+	createValidationRatchetRisks,
+	type ValidationRatchetRisk,
+} from '../../core/validation-ratchet.js';
 import type {
 	ChangeClassification,
 	ChangeClassificationReport,
@@ -93,6 +114,8 @@ interface VerificationOutput {
 	readonly status: VerificationStatus;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
+	readonly failure_fingerprint: VerificationFailureFingerprint | null;
+	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
@@ -120,6 +143,8 @@ interface VerifyRunReceiptManifest {
 	readonly status: VerificationStatus;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
+	readonly failure_fingerprint: VerificationFailureFingerprint | null;
+	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
@@ -137,6 +162,8 @@ interface VerifyLatestRunPointer {
 	readonly status: VerificationStatus;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
+	readonly failure_fingerprint: VerificationFailureFingerprint | null;
+	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
@@ -147,6 +174,7 @@ interface VerifyLatestRunPointer {
 interface PreviousVerifyLatestSummary {
 	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
+	readonly failure_fingerprint: VerificationFailureFingerprint | null;
 }
 
 export interface VerifyInput {
@@ -707,15 +735,104 @@ function isExternalEvidenceStatus(value: unknown): value is ExternalEvidenceStat
 	return value === 'passed' || value === 'failed' || value === 'cancelled' || value === 'unknown';
 }
 
-function isReproEvidenceStatus(value: unknown): value is ReproEvidenceStatus {
+type LegacyReproEvidenceStatus = 'present' | 'unavailable' | 'missing';
+
+interface LegacyReproEvidenceItem {
+	readonly status: LegacyReproEvidenceStatus;
+	readonly summary: string | null;
+	readonly reason: string | null;
+}
+
+function isLegacyReproEvidenceStatus(value: unknown): value is LegacyReproEvidenceStatus {
 	return value === 'present' || value === 'unavailable' || value === 'missing';
+}
+
+function isReproBeforeFixStatus(value: unknown): value is ReproBeforeFixEvidence['status'] {
+	return value === 'reproduced' || value === 'unavailable' || value === 'missing';
+}
+
+function isReproBeforeFixOutcome(value: unknown): value is ReproBeforeFixEvidence['outcome'] {
+	return value === 'failed_as_expected' || value === 'failed_differently' || value === 'passed_unexpectedly' || value === null;
+}
+
+function isReproAfterFixStatus(value: unknown): value is ReproAfterFixEvidence['status'] {
+	return value === 'passed' || value === 'failed' || value === 'unavailable' || value === 'missing';
+}
+
+function isReproAfterFixOutcome(value: unknown): value is ReproAfterFixEvidence['outcome'] {
+	return value === 'passed_expected_behavior' || value === 'failed_same_route' || value === 'failed_differently' || value === null;
+}
+
+function isReproRegressionGuardStatus(value: unknown): value is ReproRegressionGuardEvidence['status'] {
+	return value === 'passed' || value === 'failed' || value === 'unavailable' || value === 'missing';
+}
+
+function isReproRouteKind(value: unknown): value is ReproRouteKind {
+	return (
+		value === 'test' ||
+		value === 'cli' ||
+		value === 'browser' ||
+		value === 'api' ||
+		value === 'manual' ||
+		value === 'unknown' ||
+		value === null
+	);
 }
 
 function readOptionalString(value: unknown): string | null {
 	return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function readReproEvidenceItem(value: unknown): ReproEvidenceItem {
+function readRouteStep(value: unknown, index: number): ReproRouteStep {
+	if (!isPlainRecord(value)) {
+		return {
+			ordinal: index + 1,
+			action: null,
+			target: null,
+			input_digest: null,
+			observation_digest: null,
+			summary: null,
+		};
+	}
+
+	const ordinal = typeof value.ordinal === 'number' && Number.isInteger(value.ordinal) && value.ordinal > 0 ? value.ordinal : index + 1;
+	return {
+		ordinal,
+		action: readOptionalString(value.action),
+		target: readOptionalString(value.target),
+		input_digest: readOptionalString(value.input_digest),
+		observation_digest: readOptionalString(value.observation_digest),
+		summary: readOptionalString(value.summary),
+	};
+}
+
+function readReproductionRoute(value: unknown): ReproRouteIdentity {
+	if (!isPlainRecord(value)) {
+		return {
+			route_id: null,
+			route_kind: null,
+			route_digest: null,
+			failure_oracle_hash: null,
+			steps: [],
+		};
+	}
+
+	const routeKind = value.route_kind ?? null;
+	if (!isReproRouteKind(routeKind)) {
+		throw new Error('invalid_repro_evidence_file');
+	}
+
+	const rawSteps = Array.isArray(value.steps) ? value.steps : [];
+	return {
+		route_id: readOptionalString(value.route_id),
+		route_kind: routeKind,
+		route_digest: readOptionalString(value.route_digest),
+		failure_oracle_hash: readOptionalString(value.failure_oracle_hash),
+		steps: rawSteps.map((step, index) => readRouteStep(step, index)),
+	};
+}
+
+function readLegacyReproEvidenceItem(value: unknown): LegacyReproEvidenceItem {
 	if (!isPlainRecord(value)) {
 		return {
 			status: 'missing',
@@ -724,12 +841,143 @@ function readReproEvidenceItem(value: unknown): ReproEvidenceItem {
 		};
 	}
 
-	if (!isReproEvidenceStatus(value.status)) {
+	if (!isLegacyReproEvidenceStatus(value.status)) {
 		throw new Error('invalid_repro_evidence_file');
 	}
 
 	return {
 		status: value.status,
+		summary: readOptionalString(value.summary),
+		reason: readOptionalString(value.reason),
+	};
+}
+
+function legacyBeforeFixEvidence(value: unknown): ReproBeforeFixEvidence {
+	const item = readLegacyReproEvidenceItem(value);
+	return {
+		status: item.status === 'present' ? 'reproduced' : item.status,
+		outcome: item.status === 'present' ? 'failed_as_expected' : null,
+		receipt_path: null,
+		receipt_sha256: null,
+		verification_plan_id: null,
+		summary: item.summary,
+		reason: item.reason,
+	};
+}
+
+function legacyAfterFixEvidence(value: unknown): ReproAfterFixEvidence {
+	const item = readLegacyReproEvidenceItem(value);
+	return {
+		status: item.status === 'present' ? 'passed' : item.status,
+		outcome: item.status === 'present' ? 'passed_expected_behavior' : null,
+		same_route_as: null,
+		receipt_path: null,
+		receipt_sha256: null,
+		verification_plan_id: null,
+		summary: item.summary,
+		reason: item.reason,
+	};
+}
+
+function legacyRegressionGuardEvidence(value: unknown): ReproRegressionGuardEvidence {
+	const item = readLegacyReproEvidenceItem(value);
+	return {
+		status: item.status === 'present' ? 'passed' : item.status,
+		intent: null,
+		test_path: null,
+		receipt_path: null,
+		receipt_sha256: null,
+		verification_plan_id: null,
+		summary: item.summary,
+		reason: item.reason,
+	};
+}
+
+function readBeforeFixEvidence(value: unknown): ReproBeforeFixEvidence {
+	if (!isPlainRecord(value)) {
+		return {
+			status: 'missing',
+			outcome: null,
+			receipt_path: null,
+			receipt_sha256: null,
+			verification_plan_id: null,
+			summary: null,
+			reason: null,
+		};
+	}
+
+	const outcome = value.outcome ?? null;
+	if (!isReproBeforeFixStatus(value.status) || !isReproBeforeFixOutcome(outcome)) {
+		throw new Error('invalid_repro_evidence_file');
+	}
+
+	return {
+		status: value.status,
+		outcome,
+		receipt_path: readOptionalString(value.receipt_path),
+		receipt_sha256: readOptionalString(value.receipt_sha256),
+		verification_plan_id: readOptionalString(value.verification_plan_id),
+		summary: readOptionalString(value.summary),
+		reason: readOptionalString(value.reason),
+	};
+}
+
+function readAfterFixEvidence(value: unknown): ReproAfterFixEvidence {
+	if (!isPlainRecord(value)) {
+		return {
+			status: 'missing',
+			outcome: null,
+			same_route_as: null,
+			receipt_path: null,
+			receipt_sha256: null,
+			verification_plan_id: null,
+			summary: null,
+			reason: null,
+		};
+	}
+
+	const outcome = value.outcome ?? null;
+	if (!isReproAfterFixStatus(value.status) || !isReproAfterFixOutcome(outcome)) {
+		throw new Error('invalid_repro_evidence_file');
+	}
+
+	return {
+		status: value.status,
+		outcome,
+		same_route_as: readOptionalString(value.same_route_as),
+		receipt_path: readOptionalString(value.receipt_path),
+		receipt_sha256: readOptionalString(value.receipt_sha256),
+		verification_plan_id: readOptionalString(value.verification_plan_id),
+		summary: readOptionalString(value.summary),
+		reason: readOptionalString(value.reason),
+	};
+}
+
+function readRegressionGuardEvidence(value: unknown): ReproRegressionGuardEvidence {
+	if (!isPlainRecord(value)) {
+		return {
+			status: 'missing',
+			intent: null,
+			test_path: null,
+			receipt_path: null,
+			receipt_sha256: null,
+			verification_plan_id: null,
+			summary: null,
+			reason: null,
+		};
+	}
+
+	if (!isReproRegressionGuardStatus(value.status)) {
+		throw new Error('invalid_repro_evidence_file');
+	}
+
+	return {
+		status: value.status,
+		intent: readOptionalString(value.intent),
+		test_path: readOptionalString(value.test_path),
+		receipt_path: readOptionalString(value.receipt_path),
+		receipt_sha256: readOptionalString(value.receipt_sha256),
+		verification_plan_id: readOptionalString(value.verification_plan_id),
 		summary: readOptionalString(value.summary),
 		reason: readOptionalString(value.reason),
 	};
@@ -749,16 +997,25 @@ function readReproEvidenceFile(projectRoot: string, inputPath: string): ReproEvi
 		throw new Error('unsupported_repro_evidence_source');
 	}
 
+	const regressionGuard =
+		isPlainRecord(parsed.regression_guard) && isReproRegressionGuardStatus(parsed.regression_guard.status)
+			? readRegressionGuardEvidence(parsed.regression_guard)
+			: legacyRegressionGuardEvidence(parsed.regression_guard);
+
 	return {
 		source: 'repro_first_debug',
 		authority: 'claim_evidence',
 		reported_symptom: readOptionalString(parsed.reported_symptom),
 		expected_behavior: readOptionalString(parsed.expected_behavior),
 		observed_behavior: readOptionalString(parsed.observed_behavior),
-		original_reproduction: readReproEvidenceItem(parsed.original_reproduction),
-		evidence_before_fix: readReproEvidenceItem(parsed.evidence_before_fix),
-		evidence_after_fix: readReproEvidenceItem(parsed.evidence_after_fix),
-		regression_guard: readReproEvidenceItem(parsed.regression_guard),
+		reproduction_route: readReproductionRoute(parsed.reproduction_route),
+		before_fix: isPlainRecord(parsed.before_fix)
+			? readBeforeFixEvidence(parsed.before_fix)
+			: legacyBeforeFixEvidence(parsed.evidence_before_fix),
+		after_fix: isPlainRecord(parsed.after_fix)
+			? readAfterFixEvidence(parsed.after_fix)
+			: legacyAfterFixEvidence(parsed.evidence_after_fix),
+		regression_guard: regressionGuard,
 	};
 }
 
@@ -970,6 +1227,283 @@ function summarizeResults(results: readonly VerificationResult[]): VerificationS
 	};
 }
 
+function countUndeclaredWriteDrift(results: readonly VerificationResult[]): number {
+	return results.filter((result) => {
+		const writeDrift = result.receipt?.write_drift;
+		if (typeof writeDrift !== 'object' || writeDrift === null) {
+			return false;
+		}
+		return (writeDrift as { readonly has_undeclared_changes?: unknown }).has_undeclared_changes === true;
+	}).length;
+}
+
+function stringField(value: unknown): string | null {
+	return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function objectField(value: unknown): Record<string, unknown> | null {
+	return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function performanceForResult(result: VerificationResult): Record<string, unknown> | null {
+	return objectField(result.receipt?.performance);
+}
+
+function resultSummaryForResult(result: VerificationResult): Record<string, unknown> | null {
+	return objectField(performanceForResult(result)?.result_summary);
+}
+
+function commandFingerprintForResult(result: VerificationResult): string | null {
+	return stringField(performanceForResult(result)?.command_fingerprint);
+}
+
+function exitCodeClassForResult(result: VerificationResult): string | null {
+	const resultSummary = resultSummaryForResult(result);
+	const explicitClass = stringField(resultSummary?.exit_code_class);
+	if (explicitClass) {
+		return explicitClass;
+	}
+
+	if (result.exit_code === null) {
+		return 'no_exit_code';
+	}
+
+	return result.exit_code === 0 ? 'success' : 'failure';
+}
+
+function timedOutForResult(result: VerificationResult): boolean {
+	const resultSummary = resultSummaryForResult(result);
+	return result.status === 'timed_out' || resultSummary?.timed_out === true;
+}
+
+function errorKindForResult(result: VerificationResult): string | null {
+	return stringField(resultSummaryForResult(result)?.error_kind) ?? (result.status === 'start_failed' ? 'start_failed' : null);
+}
+
+function failedResults(results: readonly VerificationResult[]): readonly VerificationResult[] {
+	return results.filter(
+		(result) =>
+			!result.skipped &&
+			(result.status === 'failed' || result.status === 'timed_out' || result.status === 'start_failed'),
+	);
+}
+
+function createFailureFingerprintForVerify(input: {
+	readonly verificationPlanId: string;
+	readonly report: ChangeVerificationReport;
+	readonly results: readonly VerificationResult[];
+	readonly riskCodes: readonly string[];
+}): VerificationFailureFingerprint | null {
+	const failures = failedResults(input.results);
+
+	return createVerificationFailureFingerprint({
+		verificationPlanId: input.verificationPlanId,
+		failedIntents: failures.map((result) => result.intent).filter((intent): intent is string => intent !== null),
+		exitCodeClasses: failures.map(exitCodeClassForResult).filter((value): value is string => value !== null),
+		timeoutFlags: failures.map(timedOutForResult),
+		errorKinds: failures.map(errorKindForResult).filter((value): value is string => value !== null),
+		riskCodes: input.riskCodes,
+		affectedSurfaces: input.report.requirements.flatMap((requirement) => requirement.surfaces),
+		commandFingerprints: failures.map(commandFingerprintForResult).filter((value): value is string => value !== null),
+	});
+}
+
+function riskCodesForFailureFingerprint(input: {
+	readonly sourceAnchorRisks: readonly LocalSourceAnchorVerdictRisk[];
+	readonly scopeDiffRisks: readonly ScopeDiffRisk[];
+	readonly validationRatchetRisks: readonly ValidationRatchetRisk[];
+	readonly reproEvidenceRisks: readonly { readonly code: string }[];
+	readonly externalEvidenceRisks: readonly { readonly code: string }[];
+	readonly results: readonly VerificationResult[];
+}): readonly string[] {
+	const writeDriftRiskCodes =
+		countUndeclaredWriteDrift(input.results) > 0 ? ['undeclared_write_drift'] : [];
+
+	return [
+		...input.sourceAnchorRisks.map(() => 'source_anchor_invariant_review_required'),
+		...input.scopeDiffRisks.map((risk) => risk.code),
+		...input.validationRatchetRisks.map((risk) => risk.code),
+		...input.reproEvidenceRisks.map((risk) => risk.code),
+		...input.externalEvidenceRisks.map((risk) => risk.code),
+		...writeDriftRiskCodes,
+	];
+}
+
+function createReceiptBindingEvidence(
+	results: readonly VerificationResult[],
+	verificationPlanId: string,
+): CompletionVerdictReceiptBindingEvidence {
+	let planBoundCount = 0;
+	let planUnboundCount = 0;
+	let fingerprintBoundCount = 0;
+	let fingerprintUnboundCount = 0;
+	let currentStateBoundCount = 0;
+	let currentStateUnavailableCount = 0;
+	let staleCount = 0;
+	let planMismatchCount = 0;
+
+	for (const result of results) {
+		if (!result.receipt) {
+			continue;
+		}
+
+		const receiptPlanId = stringField(result.receipt.verification_plan_id);
+		const resultPlanId = result.verification_plan_id;
+		const resultPlanMatches = resultPlanId === verificationPlanId;
+		const receiptPlanMatches = receiptPlanId === verificationPlanId;
+		if (resultPlanMatches && receiptPlanMatches) {
+			planBoundCount += 1;
+		} else if (
+			(typeof resultPlanId === 'string' && resultPlanId !== verificationPlanId) ||
+			(receiptPlanId !== null && receiptPlanId !== verificationPlanId)
+		) {
+			planMismatchCount += 1;
+		} else {
+			planUnboundCount += 1;
+		}
+
+		const performance = objectField(result.receipt.performance);
+		const hasFingerprints =
+			performance !== null &&
+			stringField(performance.command_fingerprint) !== null &&
+			stringField(performance.intent_fingerprint) !== null &&
+			stringField(performance.contract_fingerprint) !== null;
+		if (hasFingerprints) {
+			fingerprintBoundCount += 1;
+		} else {
+			fingerprintUnboundCount += 1;
+		}
+
+		const currentStateBinding =
+			stringField(result.receipt.head_tree_hash) ??
+			stringField(result.receipt.changed_files_hash) ??
+			stringField(result.receipt.current_state_hash);
+		if (currentStateBinding !== null) {
+			currentStateBoundCount += 1;
+		} else {
+			currentStateUnavailableCount += 1;
+		}
+
+		if (!result.receipt_path || !result.receipt_sha256) {
+			staleCount += 1;
+		}
+	}
+
+	return {
+		plan_bound_count: planBoundCount,
+		plan_unbound_count: planUnboundCount,
+		fingerprint_bound_count: fingerprintBoundCount,
+		fingerprint_unbound_count: fingerprintUnboundCount,
+		current_state_bound_count: currentStateBoundCount,
+		current_state_unavailable_count: currentStateUnavailableCount,
+		stale_count: staleCount,
+		plan_mismatch_count: planMismatchCount,
+	};
+}
+
+function resultForSelectedIntent(results: readonly VerificationResult[], intent: string): VerificationResult | null {
+	return results.find((result) => result.intent === intent && result.status !== 'skipped') ?? null;
+}
+
+function createCriteriaEvidence(
+	report: ChangeVerificationReport,
+	results: readonly VerificationResult[],
+): CompletionVerdictCriteriaEvidence {
+	const evidence: CompletionVerdictCriteriaEvidence = {
+		total: report.requirements.length,
+		covered: 0,
+		partially_covered: 0,
+		uncovered: 0,
+		blocked: 0,
+		contradicted: 0,
+	};
+
+	return report.requirements.reduce((current, requirement) => {
+		const candidates = report.candidates.filter((candidate) => candidate.reason === requirement.reason);
+		const selectedIntents = candidates
+			.filter((candidate) => candidate.selectionState === 'selected')
+			.map((candidate) => candidate.intent)
+			.filter((intent): intent is string => intent !== null);
+		const skippedIntents = candidates
+			.filter((candidate) => candidate.status !== 'runnable')
+			.map((candidate) => candidate.intent)
+			.filter((intent): intent is string => intent !== null);
+		const gapCount = report.gaps.filter((gap) => gap.reason === requirement.reason).length;
+		const selectedResults = selectedIntents.map((intent) => resultForSelectedIntent(results, intent));
+
+		if (
+			selectedResults.some(
+				(result) => result?.status === 'failed' || result?.status === 'timed_out' || result?.status === 'start_failed',
+			)
+		) {
+			return { ...current, contradicted: current.contradicted + 1 };
+		}
+
+		if (gapCount > 0 || (selectedIntents.length === 0 && skippedIntents.length > 0)) {
+			return { ...current, blocked: current.blocked + 1 };
+		}
+
+		if (selectedIntents.length === 0) {
+			return { ...current, uncovered: current.uncovered + 1 };
+		}
+
+		if (skippedIntents.length > 0) {
+			return { ...current, partially_covered: current.partially_covered + 1 };
+		}
+
+		if (selectedResults.every((result) => result?.status === 'passed')) {
+			return { ...current, covered: current.covered + 1 };
+		}
+
+		return { ...current, uncovered: current.uncovered + 1 };
+	}, evidence);
+}
+
+function createCompletionVerdictForResults(input: {
+	readonly report: ChangeVerificationReport;
+	readonly verificationPlanId: string;
+	readonly summary: VerificationSummary;
+	readonly results: readonly VerificationResult[];
+	readonly sourceAnchorRiskCount: number;
+	readonly scopeDiffRiskCount: number;
+	readonly repeatedFailureRisks: readonly RepeatedFailureRisk[];
+	readonly validationRatchetRiskCount: number;
+	readonly validationRatchetContradictionCount: number;
+	readonly reproEvidenceRiskCount: number;
+	readonly reproEvidenceContradictionCount: number;
+	readonly reproEvidenceUnverifiedCount: number;
+	readonly externalEvidenceRiskCount: number;
+}): CompletionVerdict {
+	const receiptBinding = createReceiptBindingEvidence(input.results, input.verificationPlanId);
+	const receiptBindingRiskCount = receiptBinding.plan_unbound_count + receiptBinding.fingerprint_unbound_count;
+	const repeatedFailureBlockerCount = input.repeatedFailureRisks.filter((risk) => risk.verdict_effect === 'blocker').length;
+	return createVerifyCompletionVerdict({
+		verificationPlanId: input.verificationPlanId,
+		matchedIntents: input.summary.matched,
+		ranIntents: input.summary.ran,
+		passedIntents: input.summary.passed,
+		failedIntents: input.summary.failed,
+		skippedIntents: input.summary.skipped,
+		receiptCount: input.results.filter((result) => result.receipt !== null).length,
+		sourceAnchorRiskCount: input.sourceAnchorRiskCount,
+		scopeDiffRiskCount: input.scopeDiffRiskCount,
+		repeatedFailureCount: input.repeatedFailureRisks.length,
+		repeatedFailureBlockerCount,
+		validationRatchetRiskCount: input.validationRatchetRiskCount,
+		validationRatchetContradictionCount: input.validationRatchetContradictionCount,
+		reproEvidenceRiskCount: input.reproEvidenceRiskCount,
+		reproEvidenceContradictionCount: input.reproEvidenceContradictionCount,
+		reproEvidenceUnverifiedCount: input.reproEvidenceUnverifiedCount,
+		externalEvidenceRiskCount: input.externalEvidenceRiskCount,
+		writeDriftRiskCount: countUndeclaredWriteDrift(input.results),
+		receiptBindingRiskCount,
+		staleReceiptCount: receiptBinding.stale_count,
+		planMismatchCount: receiptBinding.plan_mismatch_count,
+		criteria: createCriteriaEvidence(input.report, input.results),
+		receiptBinding,
+	});
+}
+
 function getVerificationStatus(summary: VerificationSummary): VerificationStatus {
 	if (summary.failed > 0) {
 		return 'failed';
@@ -988,6 +1522,40 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 
 function isVerificationStatus(value: unknown): value is VerificationStatus {
 	return value === 'passed' || value === 'partial' || value === 'failed' || value === 'blocked';
+}
+
+function readVerificationFailureFingerprint(value: unknown): VerificationFailureFingerprint | null {
+	const record = objectField(value);
+
+	if (
+		record?.schema_version !== '1' ||
+		typeof record.fingerprint !== 'string' ||
+		typeof record.verification_plan_id !== 'string' ||
+		typeof record.failed_intents_hash !== 'string' ||
+		typeof record.exit_code_classes_hash !== 'string' ||
+		typeof record.timeout_flags_hash !== 'string' ||
+		typeof record.error_kinds_hash !== 'string' ||
+		typeof record.diagnostic_hash !== 'string' ||
+		typeof record.risk_codes_hash !== 'string' ||
+		typeof record.affected_surfaces_hash !== 'string' ||
+		typeof record.command_fingerprints_hash !== 'string'
+	) {
+		return null;
+	}
+
+	return {
+		schema_version: '1',
+		fingerprint: record.fingerprint,
+		verification_plan_id: record.verification_plan_id,
+		failed_intents_hash: record.failed_intents_hash,
+		exit_code_classes_hash: record.exit_code_classes_hash,
+		timeout_flags_hash: record.timeout_flags_hash,
+		error_kinds_hash: record.error_kinds_hash,
+		diagnostic_hash: record.diagnostic_hash,
+		risk_codes_hash: record.risk_codes_hash,
+		affected_surfaces_hash: record.affected_surfaces_hash,
+		command_fingerprints_hash: record.command_fingerprints_hash,
+	};
 }
 
 function readPreviousVerifyLatestSummary(projectRoot: string): PreviousVerifyLatestSummary | null {
@@ -1009,6 +1577,7 @@ function readPreviousVerifyLatestSummary(projectRoot: string): PreviousVerifyLat
 		return {
 			verification_plan_id: parsed.verification_plan_id,
 			status: parsed.status,
+			failure_fingerprint: readVerificationFailureFingerprint(parsed.failure_fingerprint),
 		};
 	} catch {
 		return null;
@@ -1073,7 +1642,6 @@ function writeVerifyRunReceipts(
 	report: ChangeVerificationReport,
 	sourceAnchorRisks: readonly LocalSourceAnchorVerdictRisk[],
 	scopeDiffRisks: readonly ScopeDiffRisk[],
-	repeatedFailureRisks: readonly RepeatedFailureRisk[],
 	validationRatchetRisks: readonly ValidationRatchetRisk[],
 	reproEvidence: ReproEvidenceReport | null,
 	externalChecks: readonly ExternalEvidenceCheck[],
@@ -1122,22 +1690,72 @@ function writeVerifyRunReceipts(
 		});
 	}
 
+	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, {
+		verificationPlanId: output.verification_plan_id,
+	});
+	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
+	const validationRatchetVerdictEffects = countValidationRatchetVerdictEffects(validationRatchetRisks);
+	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
+	const failureFingerprint = createFailureFingerprintForVerify({
+		verificationPlanId: output.verification_plan_id,
+		report,
+		results,
+		riskCodes: riskCodesForFailureFingerprint({
+			sourceAnchorRisks,
+			scopeDiffRisks,
+			validationRatchetRisks,
+			reproEvidenceRisks,
+			externalEvidenceRisks,
+			results,
+		}),
+	});
+	const repeatedFailureSummary = updateRepeatedFailureState({
+		projectRoot,
+		failureFingerprint,
+		status: output.status,
+	});
+	const previousVerifyLatest = readPreviousVerifyLatestSummary(projectRoot);
+	const finalRepeatedFailureRisks = createRepeatedFailureRisks({
+		previousFailureFingerprint: previousVerifyLatest?.failure_fingerprint ?? null,
+		previousStatus: previousVerifyLatest?.status ?? null,
+		currentFailureFingerprint: failureFingerprint,
+		currentStatus: output.status,
+		currentSummary: repeatedFailureSummary,
+	});
+	const completionVerdict = createCompletionVerdictForResults({
+		report,
+		verificationPlanId: output.verification_plan_id,
+		summary: output.summary,
+		results,
+		sourceAnchorRiskCount: sourceAnchorRisks.length,
+		scopeDiffRiskCount: scopeDiffRisks.length,
+		repeatedFailureRisks: finalRepeatedFailureRisks,
+		validationRatchetRiskCount: validationRatchetRisks.length,
+		validationRatchetContradictionCount: validationRatchetVerdictEffects.contradicted,
+		reproEvidenceRiskCount: reproEvidenceRisks.length,
+		reproEvidenceContradictionCount: reproEvidenceVerdictEffects.contradicted,
+		reproEvidenceUnverifiedCount: reproEvidenceVerdictEffects.unverified,
+		externalEvidenceRiskCount: externalEvidenceRisks.length,
+	});
 	const outputWithReceiptPaths: VerificationOutput = {
 		...output,
+		completion_verdict: completionVerdict,
+		failure_fingerprint: failureFingerprint,
+		repeated_failure_summary: repeatedFailureSummary,
 		results,
 		evidence_model: createVerifyEvidenceModel({
 			report,
 			results,
 			verificationPlanId: output.verification_plan_id,
-			verdict: output.completion_verdict,
+			verdict: completionVerdict,
 			sourceAnchorRisks,
 			scopeDiffRisks,
-			repeatedFailureRisks,
+			repeatedFailureRisks: finalRepeatedFailureRisks,
 			validationRatchetRisks,
 			reproEvidence,
-			reproEvidenceRisks: createReproEvidenceRisks(reproEvidence),
+			reproEvidenceRisks,
 			externalChecks,
-			externalEvidenceRisks: createExternalEvidenceRisks(externalChecks),
+			externalEvidenceRisks,
 		}),
 	};
 
@@ -1151,6 +1769,8 @@ function writeVerifyRunReceipts(
 		status: outputWithReceiptPaths.status,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
+		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
+		repeated_failure_summary: outputWithReceiptPaths.repeated_failure_summary,
 		summary: outputWithReceiptPaths.summary,
 		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
 		...(outputWithReceiptPaths.external_checks ? { external_checks: outputWithReceiptPaths.external_checks } : {}),
@@ -1170,6 +1790,8 @@ function writeVerifyRunReceipts(
 		status: outputWithReceiptPaths.status,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
+		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
+		repeated_failure_summary: outputWithReceiptPaths.repeated_failure_summary,
 		summary: outputWithReceiptPaths.summary,
 		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
 		...(outputWithReceiptPaths.external_checks ? { external_checks: outputWithReceiptPaths.external_checks } : {}),
@@ -1197,7 +1819,9 @@ async function createVerifyOutput(
 	const sourceAnchorRisks = await readLocalSourceAnchorVerdictRisks(projectRoot, report.files);
 	const scopeDiffRisks = createScopeDiffRisks(input.classificationReport);
 	const validationRatchetRisks = createValidationRatchetRisks(input.classificationReport, projectRoot);
-	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence);
+	const validationRatchetVerdictEffects = countValidationRatchetVerdictEffects(validationRatchetRisks);
+	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, { verificationPlanId });
+	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
 	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
 	const results: VerificationResult[] = [];
 
@@ -1209,26 +1833,38 @@ async function createVerifyOutput(
 	const summary = summarizeResults(results);
 	const status = getVerificationStatus(summary);
 	const previousVerifyLatest = readPreviousVerifyLatestSummary(projectRoot);
-	const repeatedFailureRisk = createRepeatedFailureRisk({
-		previousVerificationPlanId: previousVerifyLatest?.verification_plan_id ?? null,
+	const failureFingerprint = createFailureFingerprintForVerify({
+		verificationPlanId,
+		report,
+		results,
+		riskCodes: riskCodesForFailureFingerprint({
+			sourceAnchorRisks,
+			scopeDiffRisks,
+			validationRatchetRisks,
+			reproEvidenceRisks,
+			externalEvidenceRisks,
+			results,
+		}),
+	});
+	const repeatedFailureRisks = createRepeatedFailureRisks({
+		previousFailureFingerprint: previousVerifyLatest?.failure_fingerprint ?? null,
 		previousStatus: previousVerifyLatest?.status ?? null,
-		currentVerificationPlanId: verificationPlanId,
+		currentFailureFingerprint: failureFingerprint,
 		currentStatus: status,
 	});
-	const repeatedFailureRisks = repeatedFailureRisk ? [repeatedFailureRisk] : [];
-	const completionVerdict = createVerifyCompletionVerdict({
+	const completionVerdict = createCompletionVerdictForResults({
+		report,
 		verificationPlanId,
-		matchedIntents: summary.matched,
-		ranIntents: summary.ran,
-		passedIntents: summary.passed,
-		failedIntents: summary.failed,
-		skippedIntents: summary.skipped,
-		receiptCount: results.filter((result) => result.receipt !== null).length,
+		summary,
+		results,
 		sourceAnchorRiskCount: sourceAnchorRisks.length,
 		scopeDiffRiskCount: scopeDiffRisks.length,
-		repeatedFailureCount: repeatedFailureRisks.length,
+		repeatedFailureRisks,
 		validationRatchetRiskCount: validationRatchetRisks.length,
+		validationRatchetContradictionCount: validationRatchetVerdictEffects.contradicted,
 		reproEvidenceRiskCount: reproEvidenceRisks.length,
+		reproEvidenceContradictionCount: reproEvidenceVerdictEffects.contradicted,
+		reproEvidenceUnverifiedCount: reproEvidenceVerdictEffects.unverified,
 		externalEvidenceRiskCount: externalEvidenceRisks.length,
 	});
 	const evidenceModel = createVerifyEvidenceModel({
@@ -1257,6 +1893,8 @@ async function createVerifyOutput(
 		status,
 		completion_verdict: completionVerdict,
 		evidence_model: evidenceModel,
+		failure_fingerprint: failureFingerprint,
+		repeated_failure_summary: null,
 		summary,
 		...(reproEvidence ? { repro_evidence: reproEvidence } : {}),
 		...(externalChecks.length > 0 ? { external_checks: externalChecks } : {}),
@@ -1271,7 +1909,6 @@ async function createVerifyOutput(
 		report,
 		sourceAnchorRisks,
 		scopeDiffRisks,
-		repeatedFailureRisks,
 		validationRatchetRisks,
 		reproEvidence,
 		externalChecks,
