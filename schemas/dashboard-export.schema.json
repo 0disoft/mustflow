@@ -151,6 +151,229 @@
         "paths": { "$ref": "#/$defs/stringArray" }
       }
     },
+    "evidenceModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "verification_plan_id",
+        "requirements",
+        "coverage_matrix",
+        "receipts",
+        "skipped_checks",
+        "gaps",
+        "remaining_risks",
+        "explanation"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "source": { "enum": ["mf_verify", "dashboard_export"] },
+        "verification_plan_id": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceRequirement" }
+        },
+        "coverage_matrix": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceCoverageCriterion" }
+        },
+        "receipts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceReceipt" }
+        },
+        "skipped_checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceSkippedCheck" }
+        },
+        "gaps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceGap" }
+        },
+        "remaining_risks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceRemainingRisk" }
+        },
+        "explanation": { "$ref": "#/$defs/evidenceExplanation" }
+      }
+    },
+    "evidenceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "files",
+        "surfaces",
+        "candidate_intents",
+        "selected_intents",
+        "skipped_intents",
+        "gap_count",
+        "outcome"
+      ],
+      "properties": {
+        "reason": { "type": "string" },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "candidate_intents": { "$ref": "#/$defs/stringArray" },
+        "selected_intents": { "$ref": "#/$defs/stringArray" },
+        "skipped_intents": { "$ref": "#/$defs/stringArray" },
+        "gap_count": { "type": "integer" },
+        "outcome": { "enum": ["verified", "partially_verified", "unverified", "blocked", "contradicted"] }
+      }
+    },
+    "evidenceCoverageCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criterion_id", "source", "statement", "status", "requirement_reason", "evidence"],
+      "properties": {
+        "criterion_id": { "type": "string" },
+        "source": { "enum": ["verification_requirement", "dashboard_snapshot"] },
+        "statement": { "type": "string" },
+        "status": { "enum": ["covered", "partially_covered", "uncovered", "blocked", "contradicted"] },
+        "requirement_reason": { "type": ["string", "null"] },
+        "evidence": { "$ref": "#/$defs/evidenceCoverageLinks" }
+      }
+    },
+    "evidenceCoverageLinks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intents", "receipt_paths", "gap_reasons", "source_anchor_ids"],
+      "properties": {
+        "intents": { "$ref": "#/$defs/stringArray" },
+        "receipt_paths": { "$ref": "#/$defs/stringArray" },
+        "gap_reasons": { "$ref": "#/$defs/stringArray" },
+        "source_anchor_ids": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "evidenceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "status", "skipped", "verification_plan_id", "receipt_path", "receipt_sha256"],
+      "properties": {
+        "intent": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "skipped": { "type": "boolean" },
+        "verification_plan_id": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "evidenceSkippedCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "reason", "detail"],
+      "properties": {
+        "intent": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceGap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "intent", "status", "detail", "files", "surfaces"],
+      "properties": {
+        "reason": { "type": ["string", "null"] },
+        "intent": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "evidenceRemainingRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "detail"],
+      "properties": {
+        "code": { "type": "string" },
+        "severity": { "type": "string" },
+        "detail": { "type": "string" }
+      }
+    },
+    "evidenceExplanation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verified_by", "downgraded_by", "blocked_by", "contradicted_by"],
+      "properties": {
+        "verified_by": { "$ref": "#/$defs/stringArray" },
+        "downgraded_by": { "$ref": "#/$defs/stringArray" },
+        "blocked_by": { "$ref": "#/$defs/stringArray" },
+        "contradicted_by": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "completionVerdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "status", "primary_reason", "evidence", "blockers", "contradictions", "limitations"],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "status": { "enum": ["verified", "partially_verified", "unverified", "blocked", "contradicted"] },
+        "primary_reason": { "type": "string" },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "verification_plan_id",
+            "changed_file_count",
+            "matched_intents",
+            "ran_intents",
+            "passed_intents",
+            "failed_intents",
+            "skipped_intents",
+            "receipt_count",
+            "gap_count",
+            "source_anchor_risk_count",
+            "scope_diff_risk_count",
+            "repeated_failure_count",
+            "validation_ratchet_risk_count",
+            "latest_run_status"
+          ],
+          "properties": {
+            "source": { "enum": ["mf_verify", "dashboard_export"] },
+            "verification_plan_id": {
+              "type": ["string", "null"],
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "changed_file_count": { "type": ["integer", "null"] },
+            "matched_intents": { "type": "integer" },
+            "ran_intents": { "type": "integer" },
+            "passed_intents": { "type": "integer" },
+            "failed_intents": { "type": "integer" },
+            "skipped_intents": { "type": "integer" },
+            "receipt_count": { "type": "integer" },
+            "gap_count": { "type": "integer" },
+            "source_anchor_risk_count": { "type": "integer" },
+            "scope_diff_risk_count": { "type": "integer" },
+            "repeated_failure_count": { "type": "integer" },
+            "validation_ratchet_risk_count": { "type": "integer" },
+            "latest_run_status": { "type": ["string", "null"] }
+          }
+        },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "contradictions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "limitations": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "harnessReport": {
       "type": "object",
       "additionalProperties": false,
@@ -183,6 +406,8 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
+            "completion_verdict",
+            "evidence_model",
             "changed_file_count",
             "changed_surfaces",
             "decision_graph_summary",
@@ -191,6 +416,8 @@
             "gaps"
           ],
           "properties": {
+            "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
+            "evidence_model": { "$ref": "#/$defs/evidenceModel" },
             "changed_file_count": { "type": "integer" },
             "changed_surfaces": { "$ref": "#/$defs/stringArray" },
             "decision_graph_summary": {

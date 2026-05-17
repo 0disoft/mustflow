@@ -871,6 +871,8 @@ export const hiMessages = {
   "verify.help.option.fromPlan": "--from-classification का compatibility alias",
   "verify.help.option.changed": "Current Git changes classify करके matching reasons verify करें",
   "verify.help.option.writePlan": "Changed-file classification report लिखने वाला compatibility option",
+  "verify.help.option.reproEvidence": "Repository-local JSON summary से structured bug reproduction evidence पढ़ें",
+  "verify.help.option.externalEvidence": "Repository-local JSON summary से lower-authority external CI evidence पढ़ें",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
@@ -884,11 +886,17 @@ export const hiMessages = {
   "verify.error.conflictingInputs": "--reason, --from-classification, --from-plan, या --changed में से केवल एक इस्तेमाल करें",
   "verify.error.writePlanRequiresChanged": "--write-plan के लिए --changed चाहिए",
   "verify.error.planOnlyJson": "--plan-only के लिए --json चाहिए",
+  "verify.error.reproEvidenceRequiresRun": "--repro-evidence को --plan-only के साथ इस्तेमाल नहीं किया जा सकता",
+  "verify.error.externalEvidenceRequiresRun": "--external-evidence को --plan-only के साथ इस्तेमाल नहीं किया जा सकता",
   "verify.error.invalid_plan_file": "Classification report readable JSON file होना चाहिए",
   "verify.error.unsupported_plan_source": "Verification input mf classify report होना चाहिए",
   "verify.error.plan_root_mismatch": "Classification report इसी mustflow root से आना चाहिए",
   "verify.error.missing_plan_reasons": "Classification report में summary.validationReasons होना चाहिए",
   "verify.error.plan_path_outside_root": "Classification report path mustflow root के अंदर रहना चाहिए",
+  "verify.error.invalid_repro_evidence_file": "Repro evidence structured evidence fields वाला readable JSON summary होना चाहिए",
+  "verify.error.unsupported_repro_evidence_source": "Repro evidence input को command repro-evidence इस्तेमाल करना चाहिए",
+  "verify.error.invalid_external_evidence_file": "External evidence checks वाला readable JSON summary होना चाहिए",
+  "verify.error.unsupported_external_evidence_source": "External evidence input को command external-evidence इस्तेमाल करना चाहिए",
 
   "explain.help.summary":
     "फ़ाइलें बदले बिना समझाएँ कि mustflow policy decision क्यों लागू होता है।",

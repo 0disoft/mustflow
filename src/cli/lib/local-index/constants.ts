@@ -1,9 +1,21 @@
-export const LOCAL_INDEX_SCHEMA_VERSION = '13';
+export const LOCAL_INDEX_SCHEMA_VERSION = '15';
 export const LOCAL_INDEX_PARSER_VERSION = '1';
 export const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
+export const LATEST_RUN_STATE_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 export const LOCAL_INDEX_CONTENT_MODE = 'metadata_and_snippets';
 export const LOCAL_INDEX_STORE_FULL_CONTENT = false;
 export const MAX_SNIPPET_BYTES_PER_DOCUMENT = 2048;
+export const LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS = [
+	'full_source_text',
+	'raw_diffs',
+	'raw_terminal_logs',
+	'full_transcripts',
+	'hidden_reasoning',
+	'environment_values',
+	'secrets',
+	'personal_data',
+	'long_term_memory_summaries',
+] as const;
 export const MAX_SEARCH_MATCH_SNIPPET_CHARS = 240;
 export const SEARCH_MATCH_CONTEXT_BEFORE_CHARS = 48;
 export const SEARCH_MATCH_CONTEXT_AFTER_CHARS = 96;
@@ -38,4 +50,5 @@ export const DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES = [
 export type LocalIndexContentMode = typeof LOCAL_INDEX_CONTENT_MODE;
 export type LocalIndexStoreFullContent = typeof LOCAL_INDEX_STORE_FULL_CONTENT;
 export type MaxSnippetBytesPerDocument = typeof MAX_SNIPPET_BYTES_PER_DOCUMENT;
+export type LocalIndexExcludedRawDataKind = (typeof LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS)[number];
 export type SearchBackendKind = typeof SEARCH_BACKEND_FTS5 | typeof SEARCH_BACKEND_TABLE_SCAN;

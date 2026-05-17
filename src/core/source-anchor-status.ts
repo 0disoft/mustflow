@@ -68,6 +68,10 @@ const HIGH_RISK_SOURCE_ANCHOR_TAGS = new Set([
 	'xss',
 ]);
 
+export function hasHighRiskSourceAnchorRiskTags(risk: readonly string[]): boolean {
+	return risk.some((tag) => HIGH_RISK_SOURCE_ANCHOR_TAGS.has(tag));
+}
+
 function sha256(value: string): string {
 	return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
@@ -127,7 +131,7 @@ function currentAnchorSignals(risk: readonly string[]): SourceAnchorStatusSignal
 }
 
 function hasHighRisk(risk: readonly string[]): boolean {
-	return risk.some((tag) => HIGH_RISK_SOURCE_ANCHOR_TAGS.has(tag));
+	return hasHighRiskSourceAnchorRiskTags(risk);
 }
 
 function sameSymbolIdentity(left: SourceAnchorSymbol, right: SourceAnchorSymbol): boolean {

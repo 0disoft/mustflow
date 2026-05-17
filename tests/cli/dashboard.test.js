@@ -169,6 +169,24 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		assert.equal(exportSnapshot.harness_report.schema_version, '1');
 		assert.equal(exportSnapshot.harness_report.generated_from, 'dashboard_status_snapshot');
 		assert.equal(exportSnapshot.harness_report.install.installed, true);
+		assert.equal(exportSnapshot.harness_report.verification.completion_verdict.schema_version, '1');
+		assert.equal(exportSnapshot.harness_report.verification.completion_verdict.status, 'partially_verified');
+		assert.equal(
+			exportSnapshot.harness_report.verification.completion_verdict.primary_reason,
+			'latest_run_passed_without_current_claim_binding',
+		);
+		assert.equal(exportSnapshot.harness_report.verification.completion_verdict.evidence.source, 'dashboard_export');
+		assert.equal(exportSnapshot.harness_report.verification.evidence_model.source, 'dashboard_export');
+		assert.deepEqual(exportSnapshot.harness_report.verification.evidence_model.coverage_matrix, []);
+		assert.equal(exportSnapshot.harness_report.verification.evidence_model.receipts[0].intent, 'test_related');
+		assert.equal(
+			exportSnapshot.harness_report.verification.evidence_model.receipts[0].receipt_path,
+			'.mustflow/state/runs/latest.json',
+		);
+		assert.deepEqual(
+			exportSnapshot.harness_report.verification.evidence_model.explanation.downgraded_by,
+			['dashboard_export_is_read_only', 'latest_run_is_not_bound_to_a_current_completion_claim'],
+		);
 		assert.equal(exportSnapshot.harness_report.run_history.intent, 'test_related');
 		assert.equal(exportSnapshot.harness_report.run_history.receipt_path, '.mustflow/state/runs/latest.json');
 		assert.equal(exportSnapshot.harness_report.docs_review.active_documents, 0);
@@ -270,6 +288,19 @@ required_after = ["public_api_change"]
 		const riskCodes = report.remaining_risks.map((risk) => risk.code);
 
 		assert.equal(report.schema_version, '1');
+		assert.equal(report.verification.completion_verdict.status, 'blocked');
+		assert.equal(report.verification.completion_verdict.primary_reason, 'verification_gaps_present');
+		assert.equal(report.verification.evidence_model.source, 'dashboard_export');
+		assert.equal(report.verification.evidence_model.requirements[0].reason, 'dashboard_snapshot');
+		assert.equal(report.verification.evidence_model.coverage_matrix[0].status, 'blocked');
+		assert.ok(
+			report.verification.evidence_model.coverage_matrix[0].evidence.gap_reasons.includes(
+				'Schema review requires explicit maintainer approval.',
+			),
+		);
+		assert.equal(report.verification.evidence_model.coverage_matrix[0].evidence.gap_reasons.length > 1, true);
+		assert.ok(report.verification.evidence_model.gaps.some((gap) => gap.status === 'manual_only'));
+		assert.ok(report.verification.evidence_model.remaining_risks.some((risk) => risk.code === 'docs_review_pending'));
 		assert.equal(report.verification.changed_file_count > 0, true);
 		assert.ok(report.verification.changed_surfaces.includes('schema_contract'));
 		assert.equal(report.verification.decision_graph_summary.root, 'verification_decision');

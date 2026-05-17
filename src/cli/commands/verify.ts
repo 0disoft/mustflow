@@ -9,6 +9,22 @@ import {
 	type ChangeVerificationCandidate,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
+import { createVerifyCompletionVerdict, type CompletionVerdict } from '../../core/completion-verdict.js';
+import {
+	createExternalEvidenceRisks,
+	type ExternalEvidenceCheck,
+	type ExternalEvidenceStatus,
+} from '../../core/external-evidence.js';
+import { createRepeatedFailureRisk, type RepeatedFailureRisk } from '../../core/repeated-failure.js';
+import {
+	createReproEvidenceRisks,
+	type ReproEvidenceItem,
+	type ReproEvidenceReport,
+	type ReproEvidenceStatus,
+} from '../../core/repro-evidence.js';
+import { createVerifyEvidenceModel, type VerificationEvidenceModel } from '../../core/verification-evidence.js';
+import { createScopeDiffRisks, type ScopeDiffRisk } from '../../core/scope-risk.js';
+import { createValidationRatchetRisks, type ValidationRatchetRisk } from '../../core/validation-ratchet.js';
 import type {
 	ChangeClassification,
 	ChangeClassificationReport,
@@ -23,8 +39,10 @@ import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
 import {
 	readLocalCommandEffectGraph,
 	readLocalPathSurfaces,
+	readLocalSourceAnchorVerdictRisks,
 	type LocalCommandEffectGraph,
 	type LocalPathSurfaceReadModel,
+	type LocalSourceAnchorVerdictRisk,
 } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -73,7 +91,11 @@ interface VerificationOutput {
 	readonly plan_source: string | null;
 	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
+	readonly completion_verdict: CompletionVerdict;
+	readonly evidence_model: VerificationEvidenceModel;
 	readonly summary: VerificationSummary;
+	readonly repro_evidence?: ReproEvidenceReport;
+	readonly external_checks?: readonly ExternalEvidenceCheck[];
 	readonly run_dir: string;
 	readonly manifest_path: string;
 	readonly results: readonly VerificationResult[];
@@ -96,7 +118,11 @@ interface VerifyRunReceiptManifest {
 	readonly plan_source: string | null;
 	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
+	readonly completion_verdict: CompletionVerdict;
+	readonly evidence_model: VerificationEvidenceModel;
 	readonly summary: VerificationSummary;
+	readonly repro_evidence?: ReproEvidenceReport;
+	readonly external_checks?: readonly ExternalEvidenceCheck[];
 	readonly receipts: readonly VerifyRunReceiptManifestEntry[];
 }
 
@@ -109,9 +135,18 @@ interface VerifyLatestRunPointer {
 	readonly plan_source: string | null;
 	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
+	readonly completion_verdict: CompletionVerdict;
+	readonly evidence_model: VerificationEvidenceModel;
 	readonly summary: VerificationSummary;
+	readonly repro_evidence?: ReproEvidenceReport;
+	readonly external_checks?: readonly ExternalEvidenceCheck[];
 	readonly run_dir: string;
 	readonly manifest_path: string;
+}
+
+interface PreviousVerifyLatestSummary {
+	readonly verification_plan_id: string;
+	readonly status: VerificationStatus;
 }
 
 export interface VerifyInput {
@@ -169,6 +204,8 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				{ label: '--from-plan <path>', description: t(lang, 'verify.help.option.fromPlan') },
 				{ label: '--changed', description: t(lang, 'verify.help.option.changed') },
 				{ label: '--write-plan <path>', description: t(lang, 'verify.help.option.writePlan') },
+				{ label: '--repro-evidence <path>', description: t(lang, 'verify.help.option.reproEvidence') },
+				{ label: '--external-evidence <path>', description: t(lang, 'verify.help.option.externalEvidence') },
 				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
@@ -178,6 +215,7 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				'mf verify --reason docs_change --json',
 				'mf verify --reason docs_change --plan-only --json',
 				'mf verify --from-classification .mustflow/state/change-classification.json --json',
+				'mf verify --reason bug_fix --repro-evidence repro-evidence.json --json',
 				'mf verify --changed --plan-only --json',
 				'mf verify --reason mustflow_docs_change',
 			],
@@ -198,12 +236,16 @@ function parseVerifyArgs(args: readonly string[]): {
 	fromClassification?: string;
 	fromPlan?: string;
 	writePlan?: string;
+	reproEvidence?: string;
+	externalEvidence?: string;
 	error?: string;
 } {
 	let reason: string | undefined;
 	let fromClassification: string | undefined;
 	let fromPlan: string | undefined;
 	let writePlan: string | undefined;
+	let reproEvidence: string | undefined;
+	let externalEvidence: string | undefined;
 	let json = false;
 	let planOnly = false;
 	let changed = false;
@@ -287,6 +329,49 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
+		if (arg === '--external-evidence') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					writePlan,
+					externalEvidence,
+					error: 'missing_external_evidence_value',
+				};
+			}
+
+			externalEvidence = value;
+			index += 1;
+			continue;
+		}
+
+		if (arg === '--repro-evidence') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					writePlan,
+					reproEvidence,
+					externalEvidence,
+					error: 'missing_repro_evidence_value',
+				};
+			}
+
+			reproEvidence = value;
+			index += 1;
+			continue;
+		}
+
 		if (arg.startsWith('--reason=')) {
 			const value = arg.slice('--reason='.length);
 			if (value.length === 0) {
@@ -344,14 +429,66 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
-		if (arg.startsWith('-')) {
-			return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, error: arg };
+		if (arg.startsWith('--external-evidence=')) {
+			const value = arg.slice('--external-evidence='.length);
+			if (value.length === 0) {
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					writePlan,
+					externalEvidence,
+					error: 'missing_external_evidence_value',
+				};
+			}
+
+			externalEvidence = value;
+			continue;
 		}
 
-		return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, error: `unexpected:${arg}` };
+		if (arg.startsWith('--repro-evidence=')) {
+			const value = arg.slice('--repro-evidence='.length);
+			if (value.length === 0) {
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					writePlan,
+					reproEvidence,
+					externalEvidence,
+					error: 'missing_repro_evidence_value',
+				};
+			}
+
+			reproEvidence = value;
+			continue;
+		}
+
+		if (arg.startsWith('-')) {
+			return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, reproEvidence, externalEvidence, error: arg };
+		}
+
+		return {
+			json,
+			planOnly,
+			changed,
+			reason,
+			fromClassification,
+			fromPlan,
+			writePlan,
+			reproEvidence,
+			externalEvidence,
+			error: `unexpected:${arg}`,
+		};
 	}
 
-	return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan };
+	return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, reproEvidence, externalEvidence };
 }
 
 function uniqueStrings(values: readonly string[]): string[] {
@@ -566,6 +703,107 @@ export function readInputFromPlan(projectRoot: string, inputPath: string): Verif
 	};
 }
 
+function isExternalEvidenceStatus(value: unknown): value is ExternalEvidenceStatus {
+	return value === 'passed' || value === 'failed' || value === 'cancelled' || value === 'unknown';
+}
+
+function isReproEvidenceStatus(value: unknown): value is ReproEvidenceStatus {
+	return value === 'present' || value === 'unavailable' || value === 'missing';
+}
+
+function readOptionalString(value: unknown): string | null {
+	return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function readReproEvidenceItem(value: unknown): ReproEvidenceItem {
+	if (!isPlainRecord(value)) {
+		return {
+			status: 'missing',
+			summary: null,
+			reason: null,
+		};
+	}
+
+	if (!isReproEvidenceStatus(value.status)) {
+		throw new Error('invalid_repro_evidence_file');
+	}
+
+	return {
+		status: value.status,
+		summary: readOptionalString(value.summary),
+		reason: readOptionalString(value.reason),
+	};
+}
+
+function readReproEvidenceFile(projectRoot: string, inputPath: string): ReproEvidenceReport {
+	let parsed: unknown;
+	const evidencePath = resolvePlanPath(projectRoot, inputPath);
+
+	try {
+		parsed = JSON.parse(readFileSync(evidencePath, 'utf8'));
+	} catch {
+		throw new Error('invalid_repro_evidence_file');
+	}
+
+	if (!isPlainRecord(parsed) || parsed.schema_version !== '1' || parsed.command !== 'repro-evidence') {
+		throw new Error('unsupported_repro_evidence_source');
+	}
+
+	return {
+		source: 'repro_first_debug',
+		authority: 'claim_evidence',
+		reported_symptom: readOptionalString(parsed.reported_symptom),
+		expected_behavior: readOptionalString(parsed.expected_behavior),
+		observed_behavior: readOptionalString(parsed.observed_behavior),
+		original_reproduction: readReproEvidenceItem(parsed.original_reproduction),
+		evidence_before_fix: readReproEvidenceItem(parsed.evidence_before_fix),
+		evidence_after_fix: readReproEvidenceItem(parsed.evidence_after_fix),
+		regression_guard: readReproEvidenceItem(parsed.regression_guard),
+	};
+}
+
+function readExternalEvidenceFile(projectRoot: string, inputPath: string): readonly ExternalEvidenceCheck[] {
+	let parsed: unknown;
+	const evidencePath = resolvePlanPath(projectRoot, inputPath);
+
+	try {
+		parsed = JSON.parse(readFileSync(evidencePath, 'utf8'));
+	} catch {
+		throw new Error('invalid_external_evidence_file');
+	}
+
+	if (!isPlainRecord(parsed) || parsed.schema_version !== '1' || parsed.command !== 'external-evidence') {
+		throw new Error('unsupported_external_evidence_source');
+	}
+
+	if (!Array.isArray(parsed.checks)) {
+		throw new Error('invalid_external_evidence_file');
+	}
+
+	return parsed.checks.map((check) => {
+		if (
+			!isPlainRecord(check) ||
+			typeof check.provider !== 'string' ||
+			check.provider.length === 0 ||
+			typeof check.name !== 'string' ||
+			check.name.length === 0 ||
+			!isExternalEvidenceStatus(check.status)
+		) {
+			throw new Error('invalid_external_evidence_file');
+		}
+
+		return {
+			source: 'external_ci',
+			authority: 'supporting_only',
+			provider: check.provider,
+			name: check.name,
+			status: check.status,
+			url: readOptionalString(check.url),
+			summary: readOptionalString(check.summary),
+		};
+	});
+}
+
 function createInputFromChanged(projectRoot: string): { readonly input: VerifyInput; readonly plan: ClassifyOutput } {
 	const plan = createClassifyOutput(projectRoot, 'changed', []);
 	return {
@@ -748,6 +986,35 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 	return 'passed';
 }
 
+function isVerificationStatus(value: unknown): value is VerificationStatus {
+	return value === 'passed' || value === 'partial' || value === 'failed' || value === 'blocked';
+}
+
+function readPreviousVerifyLatestSummary(projectRoot: string): PreviousVerifyLatestSummary | null {
+	try {
+		const parsed = JSON.parse(readFileSync(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), 'utf8')) as Record<
+			string,
+			unknown
+		>;
+
+		if (
+			parsed.command !== 'verify' ||
+			parsed.kind !== 'verify_run_summary' ||
+			typeof parsed.verification_plan_id !== 'string' ||
+			!isVerificationStatus(parsed.status)
+		) {
+			return null;
+		}
+
+		return {
+			verification_plan_id: parsed.verification_plan_id,
+			status: parsed.status,
+		};
+	} catch {
+		return null;
+	}
+}
+
 function hashTextSha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
@@ -800,7 +1067,17 @@ function createVerificationPlanId(report: ChangeVerificationReport, contract: Re
 	return hashTextSha256(stableJson(fingerprintSource));
 }
 
-function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput): VerificationOutput {
+function writeVerifyRunReceipts(
+	projectRoot: string,
+	output: VerificationOutput,
+	report: ChangeVerificationReport,
+	sourceAnchorRisks: readonly LocalSourceAnchorVerdictRisk[],
+	scopeDiffRisks: readonly ScopeDiffRisk[],
+	repeatedFailureRisks: readonly RepeatedFailureRisk[],
+	validationRatchetRisks: readonly ValidationRatchetRisk[],
+	reproEvidence: ReproEvidenceReport | null,
+	externalChecks: readonly ExternalEvidenceCheck[],
+): VerificationOutput {
 	const runDir = path.join(projectRoot, VERIFY_RUN_DIR);
 	const intentDir = path.join(runDir, 'intents');
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
@@ -848,6 +1125,20 @@ function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput)
 	const outputWithReceiptPaths: VerificationOutput = {
 		...output,
 		results,
+		evidence_model: createVerifyEvidenceModel({
+			report,
+			results,
+			verificationPlanId: output.verification_plan_id,
+			verdict: output.completion_verdict,
+			sourceAnchorRisks,
+			scopeDiffRisks,
+			repeatedFailureRisks,
+			validationRatchetRisks,
+			reproEvidence,
+			reproEvidenceRisks: createReproEvidenceRisks(reproEvidence),
+			externalChecks,
+			externalEvidenceRisks: createExternalEvidenceRisks(externalChecks),
+		}),
 	};
 
 	const manifest: VerifyRunReceiptManifest = {
@@ -858,7 +1149,11 @@ function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput)
 		plan_source: outputWithReceiptPaths.plan_source,
 		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
 		status: outputWithReceiptPaths.status,
+		completion_verdict: outputWithReceiptPaths.completion_verdict,
+		evidence_model: outputWithReceiptPaths.evidence_model,
 		summary: outputWithReceiptPaths.summary,
+		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
+		...(outputWithReceiptPaths.external_checks ? { external_checks: outputWithReceiptPaths.external_checks } : {}),
 		receipts,
 	};
 
@@ -873,7 +1168,11 @@ function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput)
 		plan_source: outputWithReceiptPaths.plan_source,
 		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
 		status: outputWithReceiptPaths.status,
+		completion_verdict: outputWithReceiptPaths.completion_verdict,
+		evidence_model: outputWithReceiptPaths.evidence_model,
 		summary: outputWithReceiptPaths.summary,
+		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
+		...(outputWithReceiptPaths.external_checks ? { external_checks: outputWithReceiptPaths.external_checks } : {}),
 		run_dir: toPosixPath(VERIFY_RUN_DIR),
 		manifest_path: toPosixPath(VERIFY_MANIFEST_PATH),
 	};
@@ -887,12 +1186,19 @@ async function createVerifyOutput(
 	planSource: string | null,
 	projectRoot: string,
 	lang: CliLang,
+	reproEvidence: ReproEvidenceReport | null = null,
+	externalChecks: readonly ExternalEvidenceCheck[] = [],
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
 	const verificationPlanId = createVerificationPlanId(report, contract);
 	const scheduledIntents = new Set(report.schedule.entries.map((entry) => entry.intent));
 	const scheduledTestTargets = testTargetsByScheduledIntent(report);
+	const sourceAnchorRisks = await readLocalSourceAnchorVerdictRisks(projectRoot, report.files);
+	const scopeDiffRisks = createScopeDiffRisks(input.classificationReport);
+	const validationRatchetRisks = createValidationRatchetRisks(input.classificationReport, projectRoot);
+	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence);
+	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
 	const results: VerificationResult[] = [];
 
 	for (const entry of report.schedule.entries) {
@@ -901,6 +1207,44 @@ async function createVerifyOutput(
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
+	const status = getVerificationStatus(summary);
+	const previousVerifyLatest = readPreviousVerifyLatestSummary(projectRoot);
+	const repeatedFailureRisk = createRepeatedFailureRisk({
+		previousVerificationPlanId: previousVerifyLatest?.verification_plan_id ?? null,
+		previousStatus: previousVerifyLatest?.status ?? null,
+		currentVerificationPlanId: verificationPlanId,
+		currentStatus: status,
+	});
+	const repeatedFailureRisks = repeatedFailureRisk ? [repeatedFailureRisk] : [];
+	const completionVerdict = createVerifyCompletionVerdict({
+		verificationPlanId,
+		matchedIntents: summary.matched,
+		ranIntents: summary.ran,
+		passedIntents: summary.passed,
+		failedIntents: summary.failed,
+		skippedIntents: summary.skipped,
+		receiptCount: results.filter((result) => result.receipt !== null).length,
+		sourceAnchorRiskCount: sourceAnchorRisks.length,
+		scopeDiffRiskCount: scopeDiffRisks.length,
+		repeatedFailureCount: repeatedFailureRisks.length,
+		validationRatchetRiskCount: validationRatchetRisks.length,
+		reproEvidenceRiskCount: reproEvidenceRisks.length,
+		externalEvidenceRiskCount: externalEvidenceRisks.length,
+	});
+	const evidenceModel = createVerifyEvidenceModel({
+		report,
+		results,
+		verificationPlanId,
+		verdict: completionVerdict,
+		sourceAnchorRisks,
+		scopeDiffRisks,
+		repeatedFailureRisks,
+		validationRatchetRisks,
+		reproEvidence,
+		reproEvidenceRisks,
+		externalChecks,
+		externalEvidenceRisks,
+	});
 
 	const output: VerificationOutput = {
 		schema_version: VERIFY_SCHEMA_VERSION,
@@ -910,14 +1254,28 @@ async function createVerifyOutput(
 		reasons: input.reasons,
 		plan_source: planSource,
 		verification_plan_id: verificationPlanId,
-		status: getVerificationStatus(summary),
+		status,
+		completion_verdict: completionVerdict,
+		evidence_model: evidenceModel,
 		summary,
+		...(reproEvidence ? { repro_evidence: reproEvidence } : {}),
+		...(externalChecks.length > 0 ? { external_checks: externalChecks } : {}),
 		run_dir: toPosixPath(VERIFY_RUN_DIR),
 		manifest_path: toPosixPath(VERIFY_MANIFEST_PATH),
 		results,
 	};
 
-	return writeVerifyRunReceipts(projectRoot, output);
+	return writeVerifyRunReceipts(
+		projectRoot,
+		output,
+		report,
+		sourceAnchorRisks,
+		scopeDiffRisks,
+		repeatedFailureRisks,
+		validationRatchetRisks,
+		reproEvidence,
+		externalChecks,
+	);
 }
 
 async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Promise<PlanOnlyOutput> {
@@ -970,6 +1328,7 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 		`${t(lang, 'verify.label.reason')}: ${output.reason}`,
 		`${t(lang, 'verify.label.planSource')}: ${output.plan_source ?? t(lang, 'value.none')}`,
 		`${t(lang, 'verify.label.status')}: ${output.status}`,
+		`completion verdict: ${output.completion_verdict.status} (${output.completion_verdict.primary_reason})`,
 		`matched: ${output.summary.matched}`,
 		`ran: ${output.summary.ran}`,
 		`passed: ${output.summary.passed}`,
@@ -1006,6 +1365,10 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 					? t(lang, 'cli.error.missingValue', { option: '--from-plan' })
 				: parsed.error === 'missing_write_plan_value'
 					? t(lang, 'cli.error.missingValue', { option: '--write-plan' })
+				: parsed.error === 'missing_repro_evidence_value'
+					? t(lang, 'cli.error.missingValue', { option: '--repro-evidence' })
+				: parsed.error === 'missing_external_evidence_value'
+					? t(lang, 'cli.error.missingValue', { option: '--external-evidence' })
 				: parsed.error.startsWith('unexpected:')
 					? t(lang, 'cli.error.unexpectedArgument', { argument: parsed.error.slice('unexpected:'.length) })
 					: t(lang, 'cli.error.unknownOption', { option: parsed.error });
@@ -1040,9 +1403,21 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
+	if (parsed.planOnly && parsed.reproEvidence) {
+		printUsageError(reporter, t(lang, 'verify.error.reproEvidenceRequiresRun'), 'mf verify --help', getVerifyHelp(lang), lang);
+		return 1;
+	}
+
+	if (parsed.planOnly && parsed.externalEvidence) {
+		printUsageError(reporter, t(lang, 'verify.error.externalEvidenceRequiresRun'), 'mf verify --help', getVerifyHelp(lang), lang);
+		return 1;
+	}
+
 	const projectRoot = resolveMustflowRoot();
 	let input: VerifyInput;
 	let changedPlan: ClassifyOutput | null = null;
+	let reproEvidence: ReproEvidenceReport | null = null;
+	let externalChecks: readonly ExternalEvidenceCheck[] = [];
 
 	try {
 		if (parsed.changed) {
@@ -1053,17 +1428,35 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 			input = readInputFromPlan(projectRoot, (parsed.fromClassification ?? parsed.fromPlan) as string);
 		} else {
 			input = {
-					reasons: [parsed.reason as string],
-					classificationReport: createSyntheticClassificationReport([parsed.reason as string]),
-				};
+				reasons: [parsed.reason as string],
+				classificationReport: createSyntheticClassificationReport([parsed.reason as string]),
+			};
 		}
 
 		if (parsed.writePlan && changedPlan) {
 			writeChangedPlan(projectRoot, parsed.writePlan, changedPlan);
 		}
+
+		if (parsed.reproEvidence) {
+			reproEvidence = readReproEvidenceFile(projectRoot, parsed.reproEvidence);
+		}
+
+		if (parsed.externalEvidence) {
+			externalChecks = readExternalEvidenceFile(projectRoot, parsed.externalEvidence);
+		}
 	} catch (error) {
 		const code = error instanceof Error ? error.message : 'invalid_plan_file';
-		printUsageError(reporter, t(lang, planErrorMessageKey(code)), 'mf verify --help', getVerifyHelp(lang), lang);
+		const message =
+			code === 'invalid_repro_evidence_file'
+				? t(lang, 'verify.error.invalid_repro_evidence_file')
+				: code === 'unsupported_repro_evidence_source'
+					? t(lang, 'verify.error.unsupported_repro_evidence_source')
+					: code === 'invalid_external_evidence_file'
+						? t(lang, 'verify.error.invalid_external_evidence_file')
+						: code === 'unsupported_external_evidence_source'
+							? t(lang, 'verify.error.unsupported_external_evidence_source')
+							: t(lang, planErrorMessageKey(code));
+		printUsageError(reporter, message, 'mf verify --help', getVerifyHelp(lang), lang);
 		return 1;
 	}
 
@@ -1077,6 +1470,8 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		parsed.fromClassification ?? parsed.fromPlan ?? (parsed.changed ? 'changed' : null),
 		projectRoot,
 		lang,
+		reproEvidence,
+		externalChecks,
 	);
 
 	if (parsed.json) {

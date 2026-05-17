@@ -123,6 +123,31 @@ required_after = ["custom_verify"]
 		assert.equal(report.plan_source, null);
 		assert.match(report.verification_plan_id, /^sha256:[0-9a-f]{64}$/u);
 		assert.equal(report.status, 'passed');
+		assert.deepEqual(report.completion_verdict, {
+			schema_version: '1',
+			status: 'verified',
+			primary_reason: 'all_selected_verification_passed',
+			evidence: {
+				source: 'mf_verify',
+				verification_plan_id: report.verification_plan_id,
+				changed_file_count: null,
+				matched_intents: 1,
+				ran_intents: 1,
+				passed_intents: 1,
+				failed_intents: 0,
+				skipped_intents: 0,
+				receipt_count: 1,
+				gap_count: 0,
+				source_anchor_risk_count: 0,
+				scope_diff_risk_count: 0,
+				repeated_failure_count: 0,
+				validation_ratchet_risk_count: 0,
+				latest_run_status: null,
+			},
+			blockers: [],
+			contradictions: [],
+			limitations: [],
+		});
 		assert.deepEqual(report.summary, {
 			matched: 1,
 			ran: 1,
@@ -149,6 +174,7 @@ required_after = ["custom_verify"]
 		assert.equal(manifest.command, 'verify');
 		assert.equal(manifest.verification_plan_id, report.verification_plan_id);
 		assert.equal(manifest.status, 'passed');
+		assert.deepEqual(manifest.completion_verdict, report.completion_verdict);
 		assert.deepEqual(manifest.reasons, ['custom_verify']);
 		assert.equal(manifest.receipts[0].intent, 'verify_echo');
 		assert.equal(manifest.receipts[0].status, 'passed');
@@ -158,6 +184,29 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].receipt_path, manifest.receipts[0].receipt_path);
 		assert.equal(report.results[0].receipt_sha256, receiptSha256);
 		assert.equal(report.results[0].receipt.receipt_path, manifest.receipts[0].receipt_path);
+		assert.equal(report.evidence_model.source, 'mf_verify');
+		assert.equal(report.evidence_model.verification_plan_id, report.verification_plan_id);
+		assert.equal(report.evidence_model.requirements[0].reason, 'custom_verify');
+		assert.deepEqual(report.evidence_model.requirements[0].candidate_intents, ['verify_echo']);
+		assert.deepEqual(report.evidence_model.requirements[0].selected_intents, ['verify_echo']);
+		assert.equal(report.evidence_model.requirements[0].outcome, 'verified');
+		assert.deepEqual(report.evidence_model.coverage_matrix[0], {
+			criterion_id: 'verification_requirement:1:custom_verify',
+			source: 'verification_requirement',
+			statement: 'Verification requirement: custom_verify',
+			status: 'covered',
+			requirement_reason: 'custom_verify',
+			evidence: {
+				intents: ['verify_echo'],
+				receipt_paths: [manifest.receipts[0].receipt_path],
+				gap_reasons: [],
+				source_anchor_ids: [],
+			},
+		});
+		assert.equal(report.evidence_model.receipts[0].intent, 'verify_echo');
+		assert.equal(report.evidence_model.receipts[0].receipt_path, manifest.receipts[0].receipt_path);
+		assert.equal(report.evidence_model.receipts[0].receipt_sha256, receiptSha256);
+		assert.deepEqual(report.evidence_model.explanation.verified_by, ['all_selected_verification_passed']);
 		assert.equal(perIntentReceipt.intent, 'verify_echo');
 		assert.equal(perIntentReceipt.verification_plan_id, report.verification_plan_id);
 		assert.equal(perIntentReceipt.receipt_path, manifest.receipts[0].receipt_path);
@@ -166,7 +215,561 @@ required_after = ["custom_verify"]
 		assert.equal(latest.kind, 'verify_run_summary');
 		assert.equal(latest.verification_plan_id, report.verification_plan_id);
 		assert.equal(latest.status, 'passed');
+		assert.deepEqual(latest.completion_verdict, report.completion_verdict);
+		assert.deepEqual(manifest.evidence_model, report.evidence_model);
+		assert.deepEqual(latest.evidence_model, report.evidence_model);
 		assert.equal(latest.manifest_path, '.mustflow/state/runs/verify-latest/manifest.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('downgrades verified verdicts when high-risk source anchors need invariant review', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		const sourcePath = path.join(projectPath, 'src', 'auth.ts');
+		writeFileSync(
+			sourcePath,
+			`
+/**
+ * mf:anchor auth.permission.resolve
+ * purpose: Resolve authorization permission.
+ * search: authorization, permission
+ * invariant: deny by default when role is unknown
+ * risk: authz
+ */
+export function canAccess(role) {
+	return role === 'admin';
+}
+`,
+		);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_auth]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify authorization behavior."
+argv = ['${process.execPath}', '-e', 'process.exit(0)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["auth_change"]
+`,
+		);
+		const firstIndex = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
+
+		writeFileSync(
+			sourcePath,
+			`
+/**
+ * mf:anchor auth.permission.resolve
+ * purpose: Resolve authorization permission.
+ * search: authorization, permission
+ * invariant: allow known roles after policy lookup
+ * risk: authz
+ */
+export function canAccess(role) {
+	return role === 'admin' || role === 'support';
+}
+`,
+		);
+
+		const secondIndex = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
+		const plan = path.join(projectPath, 'auth-plan.json');
+		writeFileSync(plan, JSON.stringify(createClassifyPlan(projectPath, 'auth_change', 'src/auth.ts'), null, 2));
+
+		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.completion_verdict.status, 'partially_verified');
+		assert.equal(report.completion_verdict.primary_reason, 'source_anchor_invariant_review_required');
+		assert.equal(report.completion_verdict.evidence.source_anchor_risk_count, 1);
+		assert.deepEqual(report.completion_verdict.limitations, ['high_risk_source_anchor_requires_review']);
+		assert.equal(report.evidence_model.coverage_matrix[0].status, 'partially_covered');
+		assert.deepEqual(report.evidence_model.coverage_matrix[0].evidence.source_anchor_ids, [
+			'auth.permission.resolve',
+		]);
+		assert.deepEqual(report.evidence_model.remaining_risks, [
+			{
+				code: 'source_anchor_invariant_review_required',
+				severity: 'high',
+				detail:
+					'auth.permission.resolve in src/auth.ts:3 is review; review its invariant before marking the task verified.',
+			},
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('downgrades verified verdicts when changed files exceed the scope diff budget', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_scope]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify broad scope behavior."
+argv = ['${process.execPath}', '-e', 'process.exit(0)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["scope_change"]
+`,
+		);
+
+		const files = Array.from({ length: 9 }, (_, index) => `src/scope-${index + 1}.ts`);
+		const plan = path.join(projectPath, 'scope-plan.json');
+		writeFileSync(
+			plan,
+			JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'classify',
+					mustflow_root: projectPath,
+					source: 'paths',
+					files,
+					classifications: files.map((filePath) => ({
+						path: filePath,
+						changeKinds: ['implementation'],
+						surface: {
+							kind: 'implementation',
+							category: 'code',
+							isPublicSurface: false,
+							validationReasons: ['scope_change'],
+							affectedContracts: ['runtime behavior when exported through CLI or package output'],
+							updatePolicy: 'not_applicable',
+							driftChecks: ['related tests', 'build output'],
+						},
+					})),
+					summary: {
+						fileCount: files.length,
+						publicSurfaceCount: 0,
+						changeKinds: ['implementation'],
+						validationReasons: ['scope_change'],
+						updatePolicies: [],
+						driftChecks: ['build output', 'related tests'],
+						affectedContracts: ['runtime behavior when exported through CLI or package output'],
+					},
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.completion_verdict.status, 'partially_verified');
+		assert.equal(report.completion_verdict.primary_reason, 'scope_diff_review_required');
+		assert.equal(report.completion_verdict.evidence.scope_diff_risk_count, 1);
+		assert.deepEqual(report.completion_verdict.limitations, ['scope_diff_risk_requires_review']);
+		assert.deepEqual(report.evidence_model.remaining_risks, [
+			{
+				code: 'diff_budget_exceeded',
+				severity: 'high',
+				detail: 'Changed file count 9 exceeds the conservative completion budget of 8.',
+			},
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('flags repeated unresolved verification failures for the same plan', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_repeat_failure]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Fail repeat verification."
+argv = ['${process.execPath}', '-e', 'process.exit(1)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["repeat_failure"]
+`,
+		);
+		const plan = path.join(projectPath, 'repeat-plan.json');
+		writeFileSync(plan, JSON.stringify(createClassifyPlan(projectPath, 'repeat_failure'), null, 2));
+
+		const firstResult = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const firstReport = JSON.parse(firstResult.stdout);
+		const secondResult = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const secondReport = JSON.parse(secondResult.stdout);
+
+		assert.equal(firstResult.status, 1);
+		assert.equal(firstReport.status, 'failed');
+		assert.equal(firstReport.completion_verdict.status, 'contradicted');
+		assert.equal(firstReport.completion_verdict.evidence.repeated_failure_count, 0);
+		assert.deepEqual(firstReport.completion_verdict.contradictions, ['one_or_more_selected_verification_intents_failed']);
+		assert.equal(secondResult.status, 1);
+		assert.equal(secondReport.status, 'failed');
+		assert.equal(secondReport.verification_plan_id, firstReport.verification_plan_id);
+		assert.equal(secondReport.completion_verdict.status, 'contradicted');
+		assert.equal(secondReport.completion_verdict.evidence.repeated_failure_count, 1);
+		assert.deepEqual(secondReport.completion_verdict.contradictions, [
+			'one_or_more_selected_verification_intents_failed',
+			'repeated_verification_failure',
+		]);
+		assert.deepEqual(secondReport.evidence_model.remaining_risks, [
+			{
+				code: 'repeated_verification_failure',
+				severity: 'high',
+				detail:
+					'The previous verify summary has the same verification_plan_id and an unresolved status; provide new evidence or a narrower hypothesis before marking the task complete.',
+			},
+		]);
+		assert.deepEqual(secondReport.evidence_model.explanation.contradicted_by, [
+			'one_or_more_selected_verification_intents_failed',
+			'repeated_verification_failure',
+		]);
+
+		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
+		assert.equal(latest.verification_plan_id, secondReport.verification_plan_id);
+		assert.equal(latest.completion_verdict.evidence.repeated_failure_count, 1);
+		assert.deepEqual(latest.evidence_model.remaining_risks, secondReport.evidence_model.remaining_risks);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('downgrades verified verdicts when changed tests carry validation ratchet risk', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_ratchet]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify validation ratchet risk."
+argv = ['${process.execPath}', '-e', 'process.exit(0)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["ratchet_change"]
+`,
+		);
+		const testFilePath = path.join(projectPath, 'tests', 'ratchet.test.js');
+		mkdirSync(path.dirname(testFilePath), { recursive: true });
+		const focusedMarker = 'test' + '.only';
+		writeFileSync(
+			testFilePath,
+			`
+import { test } from 'node:test';
+
+${focusedMarker}('focused test should be reviewed', () => {});
+`,
+		);
+		const plan = path.join(projectPath, 'ratchet-plan.json');
+		writeFileSync(
+			plan,
+			JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'classify',
+					mustflow_root: projectPath,
+					source: 'paths',
+					files: ['tests/ratchet.test.js'],
+					classifications: [
+						{
+							path: 'tests/ratchet.test.js',
+							changeKinds: ['test'],
+							surface: {
+								kind: 'test_contract',
+								category: 'test',
+								isPublicSurface: false,
+								validationReasons: ['ratchet_change'],
+								affectedContracts: ['test behavior contract'],
+								updatePolicy: 'not_applicable',
+								driftChecks: ['related test selection'],
+							},
+						},
+					],
+					summary: {
+						fileCount: 1,
+						publicSurfaceCount: 0,
+						changeKinds: ['test'],
+						validationReasons: ['ratchet_change'],
+						updatePolicies: [],
+						driftChecks: ['related test selection'],
+						affectedContracts: ['test behavior contract'],
+					},
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.completion_verdict.status, 'partially_verified');
+		assert.equal(report.completion_verdict.primary_reason, 'validation_ratchet_review_required');
+		assert.equal(report.completion_verdict.evidence.validation_ratchet_risk_count, 1);
+		assert.deepEqual(report.completion_verdict.limitations, ['validation_ratchet_risk_requires_review']);
+		assert.deepEqual(report.evidence_model.remaining_risks, [
+			{
+				code: 'skip_or_only_marker_present',
+				severity: 'medium',
+				detail:
+					'Changed test path tests/ratchet.test.js contains a .skip or .only marker; review whether validation was weakened before marking the task verified.',
+			},
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('treats external CI evidence as lower-authority verdict support', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_external]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify local behavior before reading external evidence."
+argv = ['${process.execPath}', '-e', 'process.exit(0)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["external_ci_change"]
+`,
+		);
+		const evidencePath = path.join(projectPath, 'external-evidence.json');
+		writeFileSync(
+			evidencePath,
+			JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'external-evidence',
+					checks: [
+						{
+							provider: 'github_actions',
+							name: 'ci',
+							status: 'failed',
+							url: 'https://example.invalid/actions/runs/1',
+							summary: 'Hosted check failed after local verification.',
+						},
+					],
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, [
+			'verify',
+			'--reason',
+			'external_ci_change',
+			'--external-evidence',
+			'external-evidence.json',
+			'--json',
+		]);
+		const report = JSON.parse(result.stdout);
+		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.completion_verdict.status, 'partially_verified');
+		assert.equal(report.completion_verdict.primary_reason, 'external_evidence_review_required');
+		assert.deepEqual(report.completion_verdict.limitations, ['external_evidence_requires_review']);
+		assert.deepEqual(report.external_checks, [
+			{
+				source: 'external_ci',
+				authority: 'supporting_only',
+				provider: 'github_actions',
+				name: 'ci',
+				status: 'failed',
+				url: 'https://example.invalid/actions/runs/1',
+				summary: 'Hosted check failed after local verification.',
+			},
+		]);
+		assert.deepEqual(report.evidence_model.external_checks, report.external_checks);
+		assert.deepEqual(report.evidence_model.remaining_risks, [
+			{
+				code: 'external_evidence_requires_review',
+				severity: 'medium',
+				detail:
+					'External github_actions check ci reported failed; review it as supporting evidence, not command authority.',
+			},
+		]);
+		assert.deepEqual(latest.external_checks, report.external_checks);
+		assert.deepEqual(latest.evidence_model.external_checks, report.external_checks);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('uses structured repro evidence to gate bug-fix completion verdicts', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_repro]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify bug-fix behavior before reading repro evidence."
+argv = ['${process.execPath}', '-e', 'process.exit(0)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["bug_fix"]
+`,
+		);
+
+		const completeEvidence = {
+			schema_version: '1',
+			command: 'repro-evidence',
+			reported_symptom: 'CLI reported success after the original failing path.',
+			expected_behavior: 'The original failing path should pass after the fix.',
+			observed_behavior: 'The original failing path no longer fails.',
+			original_reproduction: {
+				status: 'unavailable',
+				summary: null,
+				reason: 'The user provided only a historical failure transcript.',
+			},
+			evidence_before_fix: {
+				status: 'present',
+				summary: 'The saved transcript captured the failure before the fix.',
+				reason: null,
+			},
+			evidence_after_fix: {
+				status: 'present',
+				summary: 'The same behavior is covered by the local verify_repro intent.',
+				reason: null,
+			},
+			regression_guard: {
+				status: 'present',
+				summary: 'The verify_repro intent remains the regression guard for this bug.',
+				reason: null,
+			},
+		};
+		writeFileSync(path.join(projectPath, 'repro-evidence-complete.json'), JSON.stringify(completeEvidence, null, 2));
+
+		const verifiedResult = runCli(projectPath, [
+			'verify',
+			'--reason',
+			'bug_fix',
+			'--repro-evidence',
+			'repro-evidence-complete.json',
+			'--json',
+		]);
+		const verifiedReport = JSON.parse(verifiedResult.stdout);
+
+		assert.equal(verifiedResult.status, 0, verifiedResult.stderr || verifiedResult.stdout);
+		assert.equal(verifiedReport.status, 'passed');
+		assert.equal(verifiedReport.completion_verdict.status, 'verified');
+		assert.deepEqual(verifiedReport.repro_evidence, {
+			source: 'repro_first_debug',
+			authority: 'claim_evidence',
+			reported_symptom: completeEvidence.reported_symptom,
+			expected_behavior: completeEvidence.expected_behavior,
+			observed_behavior: completeEvidence.observed_behavior,
+			original_reproduction: completeEvidence.original_reproduction,
+			evidence_before_fix: completeEvidence.evidence_before_fix,
+			evidence_after_fix: completeEvidence.evidence_after_fix,
+			regression_guard: completeEvidence.regression_guard,
+		});
+
+		const missingEvidence = {
+			...completeEvidence,
+			evidence_before_fix: {
+				status: 'missing',
+				summary: null,
+				reason: null,
+			},
+		};
+		writeFileSync(path.join(projectPath, 'repro-evidence-missing.json'), JSON.stringify(missingEvidence, null, 2));
+
+		const partialResult = runCli(projectPath, [
+			'verify',
+			'--reason',
+			'bug_fix',
+			'--repro-evidence',
+			'repro-evidence-missing.json',
+			'--json',
+		]);
+		const partialReport = JSON.parse(partialResult.stdout);
+		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
+
+		assert.equal(partialResult.status, 0, partialResult.stderr || partialResult.stdout);
+		assert.equal(partialReport.status, 'passed');
+		assert.equal(partialReport.completion_verdict.status, 'partially_verified');
+		assert.equal(partialReport.completion_verdict.primary_reason, 'repro_evidence_missing');
+		assert.deepEqual(partialReport.completion_verdict.limitations, ['repro_evidence_missing']);
+		assert.deepEqual(partialReport.evidence_model.repro_evidence, partialReport.repro_evidence);
+		assert.deepEqual(partialReport.evidence_model.remaining_risks, [
+			{
+				code: 'repro_evidence_missing',
+				severity: 'high',
+				detail:
+					'Bug-fix repro evidence is missing before-fix evidence; rerun or explicitly mark it unavailable before claiming verification.',
+			},
+		]);
+		assert.deepEqual(latest.repro_evidence, partialReport.repro_evidence);
+		assert.deepEqual(latest.evidence_model.repro_evidence, partialReport.repro_evidence);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1906,6 +2509,9 @@ required_after = ["custom_partial"]
 
 		assert.equal(result.status, 1);
 		assert.equal(report.status, 'blocked');
+		assert.equal(report.completion_verdict.status, 'blocked');
+		assert.equal(report.completion_verdict.primary_reason, 'no_runnable_verification_intents');
+		assert.deepEqual(report.completion_verdict.blockers, ['all_matching_verification_intents_were_skipped']);
 		assert.equal(report.summary.matched, 1);
 		assert.equal(report.summary.ran, 0);
 		assert.equal(report.summary.skipped, 1);
@@ -1929,6 +2535,8 @@ test('reports blocked verification when no intents match the reason', () => {
 
 		assert.equal(result.status, 1);
 		assert.equal(report.status, 'blocked');
+		assert.equal(report.completion_verdict.status, 'blocked');
+		assert.equal(report.completion_verdict.primary_reason, 'no_runnable_verification_intents');
 		assert.equal(report.summary.matched, 0);
 		assert.equal(report.summary.ran, 0);
 		assert.equal(report.results[0].intent, null);

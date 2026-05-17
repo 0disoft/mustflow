@@ -49,6 +49,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		documented: true,
 	},
 	{
+		id: 'test-selection',
+		schemaFile: 'test-selection.schema.json',
+		producer: 'parsed .mustflow/config/test-selection.toml',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'contract-lint-report',
 		schemaFile: 'contract-lint-report.schema.json',
 		producer: 'mf contract-lint --json',

@@ -869,6 +869,8 @@ Read these files before working:
   "verify.help.option.fromPlan": "Compatibility alias for --from-classification",
   "verify.help.option.changed": "Classify current Git changes and verify the matching reasons",
   "verify.help.option.writePlan": "Compatibility option that writes the changed-file classification report",
+  "verify.help.option.reproEvidence": "Read structured bug-fix reproduction evidence from a repository-local JSON summary",
+  "verify.help.option.externalEvidence": "Read lower-authority external CI evidence from a repository-local JSON summary",
   "verify.help.option.planOnly": "Print the verification plan without running commands; requires --json",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
@@ -882,11 +884,17 @@ Read these files before working:
   "verify.error.conflictingInputs": "Use only one of --reason, --from-classification, --from-plan, or --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan requires --changed",
   "verify.error.planOnlyJson": "--plan-only requires --json",
+  "verify.error.reproEvidenceRequiresRun": "--repro-evidence cannot be used with --plan-only",
+  "verify.error.externalEvidenceRequiresRun": "--external-evidence cannot be used with --plan-only",
   "verify.error.invalid_plan_file": "Classification report must be a readable JSON file",
   "verify.error.unsupported_plan_source": "Verification input must be an mf classify report",
   "verify.error.plan_root_mismatch": "Classification report must come from this mustflow root",
   "verify.error.missing_plan_reasons": "Classification report must include summary.validationReasons",
   "verify.error.plan_path_outside_root": "Classification report path must stay inside the mustflow root",
+  "verify.error.invalid_repro_evidence_file": "Repro evidence must be a readable JSON summary with structured evidence fields",
+  "verify.error.unsupported_repro_evidence_source": "Repro evidence input must use command repro-evidence",
+  "verify.error.invalid_external_evidence_file": "External evidence must be a readable JSON summary with checks",
+  "verify.error.unsupported_external_evidence_source": "External evidence input must use command external-evidence",
 
   "explain.help.summary":
     "Explain why a mustflow policy decision applies without modifying files.",

@@ -1,6 +1,8 @@
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
 
+import { createDashboardCompletionVerdict, type CompletionVerdict } from '../../core/completion-verdict.js';
+import { createDashboardEvidenceModel, type VerificationEvidenceModel } from '../../core/verification-evidence.js';
 import { redactSecretLikeText } from '../../core/secret-redaction.js';
 import type { DashboardDocReviewSnapshot, DashboardStatusSnapshot } from './dashboard-html.js';
 import type { DashboardPreferencesSnapshot } from './dashboard-preferences.js';
@@ -88,6 +90,8 @@ export interface DashboardHarnessReport {
 		readonly issues: number;
 	};
 	readonly verification: {
+		readonly completion_verdict: CompletionVerdict;
+		readonly evidence_model: VerificationEvidenceModel;
 		readonly changed_file_count: number;
 		readonly changed_surfaces: readonly string[];
 		readonly decision_graph_summary: DashboardHarnessDecisionGraphSummary | null;
@@ -595,6 +599,57 @@ function createDashboardHarnessReport(statusValue: unknown, docsReviewValue: unk
 		.map((entry) => stringOrNull(entry.intent))
 		.filter((entry): entry is string => entry !== null)
 		.slice(0, DASHBOARD_HARNESS_MAX_ITEMS);
+	const skippedIntents = asArray(verification.skipped)
+		.map(asRecord)
+		.map((entry) => ({
+			intent: text(entry.intent),
+			reason_key: text(entry.reason_key),
+		}))
+		.slice(0, DASHBOARD_HARNESS_MAX_ITEMS);
+	const verificationGaps = createVerificationGaps(verification.decision_graph);
+	const runHistory = createRunHistorySummary(status);
+	const changedFileCount = stringArray(verification.changed_files).length;
+	const changedSurfaces = stringArray(verification.surfaces);
+	const remainingRisks = createRemainingRisks(status, docsReview, decisionGraphSummary);
+	const completionVerdict = createDashboardCompletionVerdict({
+		changedFileCount,
+		runnableIntentCount: runnableIntents.length,
+		skippedIntentCount: skippedIntents.length,
+		gapCount: verificationGaps.length,
+		latestRunExists: runHistory.exists,
+		latestRunValid: runHistory.valid,
+		latestRunStatus: runHistory.status,
+	});
+	const evidenceModel = createDashboardEvidenceModel({
+		changedSurfaces,
+		runnableIntents,
+		skippedChecks: skippedIntents.map((entry) => ({
+			intent: entry.intent || null,
+			reason: entry.reason_key || null,
+			detail: null,
+		})),
+		gaps: verificationGaps.map((gap) => ({
+			reason: gap.reason,
+			intent: gap.intent,
+			status: gap.kind,
+			detail: gap.detail,
+			files: gap.files,
+			surfaces: gap.surfaces,
+		})),
+		latestReceipt:
+			runHistory.exists && runHistory.valid
+				? {
+						intent: runHistory.intent,
+						status: runHistory.status ?? 'unknown',
+						skipped: false,
+						verification_plan_id: null,
+						receipt_path: runHistory.receipt_path,
+						receipt_sha256: null,
+					}
+				: null,
+		remainingRisks,
+		verdict: completionVerdict,
+	});
 
 	return {
 		schema_version: '1',
@@ -608,25 +663,21 @@ function createDashboardHarnessReport(statusValue: unknown, docsReviewValue: unk
 			issues: stringArray(status.issues).length,
 		},
 		verification: {
-			changed_file_count: stringArray(verification.changed_files).length,
-			changed_surfaces: stringArray(verification.surfaces),
+			completion_verdict: completionVerdict,
+			evidence_model: evidenceModel,
+			changed_file_count: changedFileCount,
+			changed_surfaces: changedSurfaces,
 			decision_graph_summary: decisionGraphSummary,
 			runnable_intents: runnableIntents,
-			skipped_intents: asArray(verification.skipped)
-				.map(asRecord)
-				.map((entry) => ({
-					intent: text(entry.intent),
-					reason_key: text(entry.reason_key),
-				}))
-				.slice(0, DASHBOARD_HARNESS_MAX_ITEMS),
-			gaps: createVerificationGaps(verification.decision_graph),
+			skipped_intents: skippedIntents,
+			gaps: verificationGaps,
 		},
-		run_history: createRunHistorySummary(status),
+		run_history: runHistory,
 		docs_review: {
 			ledger_path: text(docsReview.ledger_path),
 			active_documents: numberOrZero(docsReview.count),
 		},
-		remaining_risks: createRemainingRisks(status, docsReview, decisionGraphSummary),
+		remaining_risks: remainingRisks,
 	};
 }
 
@@ -830,6 +881,7 @@ export function renderDashboardExportHtml(snapshot: DashboardExportSnapshot): st
 	const harnessReport = asRecord(snapshot.harness_report);
 	const harnessInstall = asRecord(harnessReport.install);
 	const harnessVerification = asRecord(harnessReport.verification);
+	const completionVerdict = asRecord(harnessVerification.completion_verdict);
 	const graphSummary = asRecord(harnessVerification.decision_graph_summary);
 	const harnessRunHistory = asRecord(harnessReport.run_history);
 	const harnessDocsReview = asRecord(harnessReport.docs_review);
@@ -925,6 +977,7 @@ ul { margin: 0; padding-left: 22px; }
 		renderMetric('Tracked files', harnessInstall.tracked_files),
 		renderMetric('Changed files', harnessVerification.changed_file_count),
 		renderMetric('Changed surfaces', asArray(harnessVerification.changed_surfaces).join(', ') || 'none'),
+		renderMetric('Completion verdict', completionVerdict.status),
 		renderMetric('Runnable verification intents', asArray(harnessVerification.runnable_intents).length),
 		renderMetric('Skipped verification intents', asArray(harnessVerification.skipped_intents).length),
 		renderMetric('Verification gaps', asArray(harnessVerification.gaps).length),

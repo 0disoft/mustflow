@@ -22,6 +22,11 @@ const LOCAL_INDEX_BASE_TABLES = new Set([
 	'source_anchor_fingerprints',
 	'source_anchor_status',
 	'source_anchors',
+	'verification_coverage_states',
+	'verification_evidence_summaries',
+	'verification_failure_fingerprints',
+	'verification_receipt_summaries',
+	'verification_risk_signals',
 ]);
 
 const LOCAL_INDEX_VIRTUAL_FTS_TABLES = new Set([
@@ -36,6 +41,7 @@ const LOCAL_INDEX_VIEWS = new Set(['command_lock_conflicts', 'command_write_lock
 
 const LOCAL_INDEX_METADATA_KEYS = [
 	'content_mode',
+	'excluded_raw_data_kinds',
 	'index_mode',
 	'max_snippet_bytes_per_document',
 	'parser_version',
@@ -45,6 +51,18 @@ const LOCAL_INDEX_METADATA_KEYS = [
 	'source_index_enabled',
 	'source_scope_hash',
 	'store_full_content',
+];
+
+const LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS = [
+	'full_source_text',
+	'raw_diffs',
+	'raw_terminal_logs',
+	'full_transcripts',
+	'hidden_reasoning',
+	'environment_values',
+	'secrets',
+	'personal_data',
+	'long_term_memory_summaries',
 ];
 
 const LOCAL_INDEX_ALLOWED_COLUMNS = {
@@ -120,6 +138,57 @@ const LOCAL_INDEX_ALLOWED_COLUMNS = {
 		'can_instruct_agent',
 	],
 	source_anchors: ['id', 'path', 'line_start', 'purpose', 'search_terms', 'invariant', 'risk', 'navigation_only', 'can_instruct_agent'],
+	verification_coverage_states: [
+		'source_path',
+		'criterion_id',
+		'source',
+		'status',
+		'requirement_reason',
+		'intents',
+		'receipt_count',
+		'gap_count',
+		'source_anchor_count',
+	],
+	verification_evidence_summaries: [
+		'source_path',
+		'source_hash',
+		'command',
+		'kind',
+		'status',
+		'run_dir',
+		'manifest_path',
+		'verification_plan_id',
+		'completion_status',
+		'primary_reason',
+		'matched_intents',
+		'ran_intents',
+		'passed_intents',
+		'failed_intents',
+		'skipped_intents',
+		'receipt_count',
+		'coverage_count',
+		'remaining_risk_count',
+		'failure_fingerprint',
+	],
+	verification_failure_fingerprints: [
+		'source_path',
+		'fingerprint',
+		'verification_plan_id',
+		'status',
+		'failed_intents',
+		'primary_reason',
+	],
+	verification_receipt_summaries: [
+		'source_path',
+		'ordinal',
+		'intent',
+		'status',
+		'skipped',
+		'verification_plan_id',
+		'receipt_path',
+		'receipt_sha256',
+	],
+	verification_risk_signals: ['source_path', 'ordinal', 'code', 'severity', 'detail_hash'],
 };
 
 const LOCAL_INDEX_FORBIDDEN_STORAGE_NAMES = [
@@ -633,11 +702,12 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(output.schema_version, '13');
+		assert.equal(output.schema_version, '15');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
 		assert.equal(output.max_snippet_bytes_per_document, 2048);
+		assert.deepEqual(output.excluded_raw_data_kinds, LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS);
 		assert.ok(['fts5', 'table_scan'].includes(output.search_backend));
 		assert.equal(typeof output.search_fts5_available, 'boolean');
 		assert.equal(output.dry_run, false);
@@ -650,12 +720,18 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.source_anchor_count, 0);
 		assert.ok(output.skill_route_count >= 4);
 		assert.ok(output.command_effect_count >= 1);
+		assert.equal(output.verification_evidence_summary_count, 0);
+		assert.equal(output.verification_receipt_summary_count, 0);
+		assert.equal(output.verification_coverage_state_count, 0);
+		assert.equal(output.verification_risk_signal_count, 0);
+		assert.equal(output.failure_fingerprint_count, 0);
 		assert.equal(header, 'SQLite format 3\0');
 		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
-		assert.equal(metadata.schema_version, '13');
+		assert.equal(metadata.schema_version, '15');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
+		assert.equal(metadata.excluded_raw_data_kinds, LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS.join(','));
 		assert.equal(metadata.search_backend, output.search_backend);
 		assert.equal(metadata.search_fts5_available, String(output.search_fts5_available));
 		assert.equal(metadata.parser_version, '1');
@@ -678,6 +754,11 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'source_anchor_fingerprints',
 			'source_anchor_status',
 			'source_anchors',
+			'verification_coverage_states',
+			'verification_evidence_summaries',
+			'verification_failure_fingerprints',
+			'verification_receipt_summaries',
+			'verification_risk_signals',
 		]) {
 			assert.ok(tableNames.includes(tableName), `${tableName} should exist`);
 		}
@@ -973,6 +1054,160 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 	}
 });
 
+test('indexes latest verification evidence as bounded read-model summaries', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-verdict-evidence-');
+
+	try {
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'runs'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'verify',
+					kind: 'verify_run_summary',
+					reason: 'code_change',
+					reasons: ['code_change'],
+					plan_source: null,
+					verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+					status: 'failed',
+					completion_verdict: {
+						schema_version: '1',
+						status: 'contradicted',
+						primary_reason: 'one_or_more_selected_verification_intents_failed',
+						evidence: {
+							source: 'mf_verify',
+							verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+							changed_file_count: 1,
+							matched_intents: 1,
+							ran_intents: 1,
+							passed_intents: 0,
+							failed_intents: 1,
+							skipped_intents: 0,
+							receipt_count: 1,
+							gap_count: 0,
+							source_anchor_risk_count: 1,
+							scope_diff_risk_count: 0,
+							repeated_failure_count: 1,
+							validation_ratchet_risk_count: 0,
+							latest_run_status: 'failed',
+						},
+						blockers: [],
+						contradictions: ['one_or_more_selected_verification_intents_failed'],
+						limitations: [],
+					},
+					evidence_model: {
+						schema_version: '1',
+						source: 'mf_verify',
+						verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+						requirements: [],
+						coverage_matrix: [
+							{
+								criterion_id: 'verification_requirement:1:code_change',
+								source: 'verification_requirement',
+								statement: 'RAW_STATEMENT_MARKER_SHOULD_NOT_BE_STORED',
+								status: 'contradicted',
+								requirement_reason: 'code_change',
+								evidence: {
+									intents: ['test_related'],
+									receipt_paths: ['.mustflow/state/runs/verify-latest/test_related.json'],
+									gap_reasons: ['RAW_GAP_MARKER_SHOULD_NOT_BE_STORED'],
+									source_anchor_ids: ['auth.critical'],
+								},
+							},
+						],
+						receipts: [
+							{
+								intent: 'test_related',
+								status: 'failed',
+								skipped: false,
+								verification_plan_id: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+								receipt_path: '.mustflow/state/runs/verify-latest/test_related.json',
+								receipt_sha256: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+							},
+						],
+						skipped_checks: [],
+						gaps: [],
+						remaining_risks: [
+							{
+								code: 'source_anchor_invariant_review_required',
+								severity: 'high',
+								detail: 'RAW_RISK_MARKER_SHOULD_NOT_BE_STORED',
+							},
+						],
+						explanation: {
+							verified_by: [],
+							downgraded_by: [],
+							blocked_by: [],
+							contradicted_by: ['one_or_more_selected_verification_intents_failed'],
+						},
+					},
+					summary: {
+						matched: 1,
+						ran: 1,
+						passed: 0,
+						failed: 1,
+						skipped: 0,
+					},
+					run_dir: '.mustflow/state/runs/verify-latest',
+					manifest_path: '.mustflow/state/runs/verify-latest/manifest.json',
+					stdout: {
+						tail: 'RAW_STDOUT_MARKER_SHOULD_NOT_BE_STORED',
+					},
+				},
+				null,
+				2,
+			),
+		);
+
+		const output = await createLocalIndexDirect(projectPath);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [summary] = queryRows(database, 'SELECT * FROM verification_evidence_summaries');
+		const [receipt] = queryRows(database, 'SELECT * FROM verification_receipt_summaries');
+		const [coverage] = queryRows(database, 'SELECT * FROM verification_coverage_states');
+		const [risk] = queryRows(database, 'SELECT * FROM verification_risk_signals');
+		const [fingerprint] = queryRows(database, 'SELECT * FROM verification_failure_fingerprints');
+		const databaseText = Buffer.from(database.export()).toString('utf8');
+
+		assert.equal(output.schema_version, '15');
+		assert.equal(output.verification_evidence_summary_count, 1);
+		assert.equal(output.verification_receipt_summary_count, 1);
+		assert.equal(output.verification_coverage_state_count, 1);
+		assert.equal(output.verification_risk_signal_count, 1);
+		assert.equal(output.failure_fingerprint_count, 1);
+		assert.equal(summary.source_path, '.mustflow/state/runs/latest.json');
+		assert.match(summary.source_hash, /^sha256:/);
+		assert.equal(summary.command, 'verify');
+		assert.equal(summary.kind, 'verify_run_summary');
+		assert.equal(summary.completion_status, 'contradicted');
+		assert.equal(summary.primary_reason, 'one_or_more_selected_verification_intents_failed');
+		assert.equal(summary.failed_intents, 1);
+		assert.match(summary.failure_fingerprint, /^sha256:/);
+		assert.equal(receipt.intent, 'test_related');
+		assert.equal(receipt.status, 'failed');
+		assert.equal(receipt.skipped, 0);
+		assert.equal(receipt.receipt_path, '.mustflow/state/runs/verify-latest/test_related.json');
+		assert.equal(coverage.status, 'contradicted');
+		assert.equal(coverage.intents, 'test_related');
+		assert.equal(coverage.receipt_count, 1);
+		assert.equal(coverage.gap_count, 1);
+		assert.equal(coverage.source_anchor_count, 1);
+		assert.equal(risk.code, 'source_anchor_invariant_review_required');
+		assert.equal(risk.severity, 'high');
+		assert.match(risk.detail_hash, /^sha256:/);
+		assert.equal(fingerprint.failed_intents, 'test_related');
+		assert.equal(databaseText.includes('RAW_STDOUT_MARKER_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_GAP_MARKER_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_RISK_MARKER_SHOULD_NOT_BE_STORED'), false);
+		assert.equal(databaseText.includes('RAW_STATEMENT_MARKER_SHOULD_NOT_BE_STORED'), false);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('does not index source anchors unless source indexing is requested', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-source-opt-in-');
 
@@ -1020,7 +1255,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-		assert.equal(output.schema_version, '13');
+		assert.equal(output.schema_version, '15');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');

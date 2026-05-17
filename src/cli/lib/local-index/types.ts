@@ -2,6 +2,7 @@ import type { NormalizedCommandEffect } from '../../../core/command-effects.js';
 import type { SourceAnchorStatus } from '../../../core/source-anchor-status.js';
 import type {
 	LocalIndexContentMode,
+	LocalIndexExcludedRawDataKind,
 	LocalIndexStoreFullContent,
 	MaxSnippetBytesPerDocument,
 	SearchBackendKind,
@@ -82,6 +83,11 @@ export interface LocalIndexResult {
 	readonly skill_route_count: number;
 	readonly command_intent_count: number;
 	readonly command_effect_count: number;
+	readonly verification_evidence_summary_count: number;
+	readonly verification_receipt_summary_count: number;
+	readonly verification_coverage_state_count: number;
+	readonly verification_risk_signal_count: number;
+	readonly failure_fingerprint_count: number;
 	readonly source_index_enabled: boolean;
 	readonly source_anchor_count: number;
 	readonly search_backend: SearchBackendKind;
@@ -89,6 +95,7 @@ export interface LocalIndexResult {
 	readonly content_mode: LocalIndexContentMode;
 	readonly store_full_content: LocalIndexStoreFullContent;
 	readonly max_snippet_bytes_per_document: MaxSnippetBytesPerDocument;
+	readonly excluded_raw_data_kinds: readonly LocalIndexExcludedRawDataKind[];
 	readonly indexed_file_count: number;
 	readonly indexed_paths: readonly string[];
 }
@@ -224,4 +231,15 @@ export interface LocalIndexPromptContext {
 	readonly searchBackend: SearchBackendKind | null;
 	readonly searchFts5Available: boolean | null;
 	readonly refreshHint: string | null;
+}
+
+export interface LocalSourceAnchorVerdictRisk {
+	readonly source: 'local_index';
+	readonly authority: 'evidence_only';
+	readonly anchorId: string;
+	readonly path: string;
+	readonly lineStart: number;
+	readonly status: 'changed' | 'review' | 'stale';
+	readonly riskTags: readonly string[];
+	readonly invariant: string | null;
 }

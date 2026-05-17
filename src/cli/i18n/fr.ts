@@ -871,6 +871,8 @@ Lisez ces fichiers avant de travailler :
   "verify.help.option.fromPlan": "Alias de compatibilité pour --from-classification",
   "verify.help.option.changed": "Classe les changements Git actuels et vérifie les raisons correspondantes",
   "verify.help.option.writePlan": "Option de compatibilité qui écrit le rapport de classification des changements",
+  "verify.help.option.reproEvidence": "Lit une preuve structurée de reproduction de bogue depuis un résumé JSON local au dépôt",
+  "verify.help.option.externalEvidence": "Lit une preuve CI externe de moindre autorité depuis un résumé JSON local au dépôt",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":
@@ -884,11 +886,17 @@ Lisez ces fichiers avant de travailler :
   "verify.error.conflictingInputs": "Utilisez un seul de --reason, --from-classification, --from-plan ou --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan nécessite --changed",
   "verify.error.planOnlyJson": "--plan-only nécessite --json",
+  "verify.error.reproEvidenceRequiresRun": "--repro-evidence ne peut pas être utilisé avec --plan-only",
+  "verify.error.externalEvidenceRequiresRun": "--external-evidence ne peut pas être utilisé avec --plan-only",
   "verify.error.invalid_plan_file": "Le rapport de classification doit être un fichier JSON lisible",
   "verify.error.unsupported_plan_source": "L'entrée de vérification doit être un rapport mf classify",
   "verify.error.plan_root_mismatch": "Le rapport de classification doit venir de cette racine mustflow",
   "verify.error.missing_plan_reasons": "Le rapport de classification doit inclure summary.validationReasons",
   "verify.error.plan_path_outside_root": "Le chemin du rapport de classification doit rester dans la racine mustflow",
+  "verify.error.invalid_repro_evidence_file": "La preuve de reproduction doit être un résumé JSON lisible avec des champs de preuve structurés",
+  "verify.error.unsupported_repro_evidence_source": "L'entrée de preuve de reproduction doit utiliser command repro-evidence",
+  "verify.error.invalid_external_evidence_file": "La preuve externe doit être un résumé JSON lisible avec checks",
+  "verify.error.unsupported_external_evidence_source": "L'entrée de preuve externe doit utiliser command external-evidence",
 
   "explain.help.summary":
     "Explique pourquoi une décision de politique mustflow s'applique sans modifier de fichiers.",

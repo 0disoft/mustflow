@@ -861,6 +861,8 @@ export const zhMessages = {
   "verify.help.option.fromPlan": "--from-classification 的兼容别名",
   "verify.help.option.changed": "分类当前 Git 变更并验证匹配的原因",
   "verify.help.option.writePlan": "写入变更文件分类报告的兼容选项",
+  "verify.help.option.reproEvidence": "从仓库本地 JSON 摘要读取结构化的 bug 复现证据",
+  "verify.help.option.externalEvidence": "从仓库本地 JSON 摘要读取低权限外部 CI 证据",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
@@ -874,11 +876,17 @@ export const zhMessages = {
   "verify.error.conflictingInputs": "只能使用 --reason、--from-classification、--from-plan 或 --changed 其中之一",
   "verify.error.writePlanRequiresChanged": "--write-plan 需要 --changed",
   "verify.error.planOnlyJson": "--plan-only 需要 --json",
+  "verify.error.reproEvidenceRequiresRun": "--repro-evidence 不能与 --plan-only 一起使用",
+  "verify.error.externalEvidenceRequiresRun": "--external-evidence 不能与 --plan-only 一起使用",
   "verify.error.invalid_plan_file": "分类报告必须是可读取的 JSON 文件",
   "verify.error.unsupported_plan_source": "验证输入必须是 mf classify 报告",
   "verify.error.plan_root_mismatch": "分类报告必须来自当前 mustflow 根目录",
   "verify.error.missing_plan_reasons": "分类报告必须包含 summary.validationReasons",
   "verify.error.plan_path_outside_root": "分类报告路径必须位于 mustflow 根目录内",
+  "verify.error.invalid_repro_evidence_file": "复现证据必须是包含结构化证据字段的可读取 JSON 摘要",
+  "verify.error.unsupported_repro_evidence_source": "复现证据输入必须使用 command repro-evidence",
+  "verify.error.invalid_external_evidence_file": "外部证据必须是包含 checks 的可读取 JSON 摘要",
+  "verify.error.unsupported_external_evidence_source": "外部证据输入必须使用 command external-evidence",
 
   "explain.help.summary":
     "在不修改文件的情况下解释 mustflow 策略决策为何适用。",

@@ -7,6 +7,7 @@ import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readTomlFile } from '../toml.js';
 import {
 	collectSourceAnchorIndexRecords,
+	hasHighRiskSourceAnchorRiskTags,
 	type SourceAnchorIndexRecord,
 	type SourceAnchorSnapshot,
 	type SourceAnchorStatus,
@@ -21,9 +22,11 @@ import {
 	DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES,
 	INDEX_CONFIG_RELATIVE_PATH,
 	LOCAL_INDEX_CONTENT_MODE,
+	LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS,
 	LOCAL_INDEX_PARSER_VERSION,
 	LOCAL_INDEX_SCHEMA_VERSION,
 	LOCAL_INDEX_STORE_FULL_CONTENT,
+	LATEST_RUN_STATE_RELATIVE_PATH,
 	MAX_SEARCH_MATCH_SNIPPET_CHARS,
 	MAX_SNIPPET_BYTES_PER_DOCUMENT,
 	MUSTFLOW_RELATIVE_PATH,
@@ -58,6 +61,7 @@ import type {
 	LocalSearchItem,
 	LocalSearchOptions,
 	LocalSearchResult,
+	LocalSourceAnchorVerdictRisk,
 	SearchBackendKind,
 	SearchNgramTargetKind,
 } from './types.js';
@@ -77,6 +81,7 @@ export type {
 	LocalSearchOptions,
 	LocalSearchResult,
 	LocalSearchScope,
+	LocalSourceAnchorVerdictRisk,
 	SearchBackendKind,
 } from './types.js';
 
@@ -535,6 +540,76 @@ interface LocalSearchCapabilities {
 	readonly fts5Available: boolean;
 }
 
+interface VerificationEvidenceSummary {
+	readonly sourcePath: string;
+	readonly sourceHash: string;
+	readonly command: string;
+	readonly kind: string;
+	readonly status: string;
+	readonly runDir: string | null;
+	readonly manifestPath: string | null;
+	readonly verificationPlanId: string | null;
+	readonly completionStatus: string | null;
+	readonly primaryReason: string | null;
+	readonly matchedIntents: number;
+	readonly ranIntents: number;
+	readonly passedIntents: number;
+	readonly failedIntents: number;
+	readonly skippedIntents: number;
+	readonly receiptCount: number;
+	readonly coverageCount: number;
+	readonly remainingRiskCount: number;
+	readonly failureFingerprint: string | null;
+}
+
+interface VerificationReceiptSummary {
+	readonly sourcePath: string;
+	readonly ordinal: number;
+	readonly intent: string | null;
+	readonly status: string;
+	readonly skipped: boolean;
+	readonly verificationPlanId: string | null;
+	readonly receiptPath: string | null;
+	readonly receiptSha256: string | null;
+}
+
+interface VerificationCoverageState {
+	readonly sourcePath: string;
+	readonly criterionId: string;
+	readonly source: string;
+	readonly status: string;
+	readonly requirementReason: string | null;
+	readonly intents: readonly string[];
+	readonly receiptCount: number;
+	readonly gapCount: number;
+	readonly sourceAnchorCount: number;
+}
+
+interface VerificationRiskSignal {
+	readonly sourcePath: string;
+	readonly ordinal: number;
+	readonly code: string;
+	readonly severity: string;
+	readonly detailHash: string;
+}
+
+interface VerificationFailureFingerprint {
+	readonly sourcePath: string;
+	readonly fingerprint: string;
+	readonly verificationPlanId: string | null;
+	readonly status: string;
+	readonly failedIntents: readonly string[];
+	readonly primaryReason: string | null;
+}
+
+interface VerificationEvidenceIndex {
+	readonly summaries: readonly VerificationEvidenceSummary[];
+	readonly receipts: readonly VerificationReceiptSummary[];
+	readonly coverageStates: readonly VerificationCoverageState[];
+	readonly riskSignals: readonly VerificationRiskSignal[];
+	readonly failureFingerprints: readonly VerificationFailureFingerprint[];
+}
+
 function searchCapabilities(fts5Available: boolean): LocalSearchCapabilities {
 	return {
 		backend: fts5Available ? SEARCH_BACKEND_FTS5 : SEARCH_BACKEND_TABLE_SCAN,
@@ -554,6 +629,242 @@ function detectLocalSearchCapabilities(database: SqlJsDatabase): LocalSearchCapa
 	} catch {
 		return searchCapabilities(false);
 	}
+}
+
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readJsonRecord(filePath: string): Record<string, unknown> | null {
+	try {
+		const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as unknown;
+		return isJsonRecord(parsed) ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+function stringField(record: Record<string, unknown> | null | undefined, key: string): string | null {
+	const value = record?.[key];
+	return typeof value === 'string' ? value : null;
+}
+
+function booleanField(record: Record<string, unknown> | null | undefined, key: string): boolean {
+	return record?.[key] === true;
+}
+
+function numberField(record: Record<string, unknown> | null | undefined, key: string): number {
+	const value = record?.[key];
+	return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function recordField(record: Record<string, unknown> | null | undefined, key: string): Record<string, unknown> | null {
+	const value = record?.[key];
+	return isJsonRecord(value) ? value : null;
+}
+
+function recordArrayField(record: Record<string, unknown> | null | undefined, key: string): readonly Record<string, unknown>[] {
+	const value = record?.[key];
+	return Array.isArray(value) ? value.filter(isJsonRecord) : [];
+}
+
+function stringArrayField(record: Record<string, unknown> | null | undefined, key: string): readonly string[] {
+	const value = record?.[key];
+	return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function joinedList(values: readonly string[]): string {
+	return [...values].sort((left, right) => left.localeCompare(right)).join(', ');
+}
+
+function evidenceStatusForRunReceipt(latest: Record<string, unknown>): string {
+	return stringField(latest, 'status') ?? (booleanField(latest, 'timed_out') ? 'timed_out' : 'unknown');
+}
+
+function failedIntentsFromReceipts(receipts: readonly VerificationReceiptSummary[]): readonly string[] {
+	return receipts
+		.filter((receipt) => ['failed', 'timed_out', 'start_failed'].includes(receipt.status))
+		.map((receipt) => receipt.intent)
+		.filter((intent): intent is string => typeof intent === 'string' && intent.length > 0)
+		.sort((left, right) => left.localeCompare(right));
+}
+
+function createFailureFingerprint(input: {
+	readonly command: string;
+	readonly status: string;
+	readonly verificationPlanId: string | null;
+	readonly primaryReason: string | null;
+	readonly failedIntents: readonly string[];
+	readonly riskCodes: readonly string[];
+	readonly runIntent?: string | null;
+	readonly timedOut?: boolean;
+	readonly exitCodeClass?: string | null;
+	readonly errorKind?: string | null;
+}): string | null {
+	if (
+		input.status === 'passed' ||
+		input.status === 'verified' ||
+		(input.failedIntents.length === 0 && input.riskCodes.length === 0 && input.timedOut !== true && !input.errorKind)
+	) {
+		return null;
+	}
+
+	return sha256Text(
+		JSON.stringify({
+			command: input.command,
+			status: input.status,
+			verificationPlanId: input.verificationPlanId,
+			primaryReason: input.primaryReason,
+			failedIntents: [...input.failedIntents].sort((left, right) => left.localeCompare(right)),
+			riskCodes: [...input.riskCodes].sort((left, right) => left.localeCompare(right)),
+			runIntent: input.runIntent ?? null,
+			timedOut: input.timedOut === true,
+			exitCodeClass: input.exitCodeClass ?? null,
+			errorKind: input.errorKind ?? null,
+		}),
+	);
+}
+
+function createVerificationEvidenceIndex(projectRoot: string): VerificationEvidenceIndex {
+	const latestPath = path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/'));
+
+	if (!existsSync(latestPath)) {
+		return {
+			summaries: [],
+			receipts: [],
+			coverageStates: [],
+			riskSignals: [],
+			failureFingerprints: [],
+		};
+	}
+
+	const latest = readJsonRecord(latestPath);
+
+	if (!latest) {
+		return {
+			summaries: [],
+			receipts: [],
+			coverageStates: [],
+			riskSignals: [],
+			failureFingerprints: [],
+		};
+	}
+
+	const sourceHash = sha256Bytes(readFileSync(latestPath));
+	const command = stringField(latest, 'command') ?? 'unknown';
+	const kind = stringField(latest, 'kind') ?? (command === 'verify' ? 'verify_run_summary' : 'run_receipt');
+	const evidenceModel = recordField(latest, 'evidence_model');
+	const completionVerdict = recordField(latest, 'completion_verdict');
+	const completionEvidence = recordField(completionVerdict, 'evidence');
+	const verificationPlanId = stringField(latest, 'verification_plan_id') ?? stringField(evidenceModel, 'verification_plan_id');
+	const primaryReason = stringField(completionVerdict, 'primary_reason');
+	const status = stringField(latest, 'status') ?? stringField(completionVerdict, 'status') ?? 'unknown';
+	const completionStatus = stringField(completionVerdict, 'status');
+	const rawReceipts = recordArrayField(evidenceModel, 'receipts');
+	const rawCoverage = recordArrayField(evidenceModel, 'coverage_matrix');
+	const rawRisks = recordArrayField(evidenceModel, 'remaining_risks');
+	const receipts: VerificationReceiptSummary[] =
+		rawReceipts.length > 0
+			? rawReceipts.map((receipt, index) => ({
+					sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+					ordinal: index + 1,
+					intent: stringField(receipt, 'intent'),
+					status: stringField(receipt, 'status') ?? 'unknown',
+					skipped: booleanField(receipt, 'skipped'),
+					verificationPlanId: stringField(receipt, 'verification_plan_id'),
+					receiptPath: stringField(receipt, 'receipt_path'),
+					receiptSha256: stringField(receipt, 'receipt_sha256'),
+				}))
+			: [
+					{
+						sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+						ordinal: 1,
+						intent: stringField(latest, 'intent'),
+						status: evidenceStatusForRunReceipt(latest),
+						skipped: false,
+						verificationPlanId: null,
+						receiptPath: stringField(latest, 'receipt_path') ?? LATEST_RUN_STATE_RELATIVE_PATH,
+						receiptSha256: sourceHash,
+					},
+				];
+	const coverageStates = rawCoverage.map((coverage): VerificationCoverageState => {
+		const evidence = recordField(coverage, 'evidence');
+
+		return {
+			sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+			criterionId: stringField(coverage, 'criterion_id') ?? 'unknown',
+			source: stringField(coverage, 'source') ?? 'unknown',
+			status: stringField(coverage, 'status') ?? 'unknown',
+			requirementReason: stringField(coverage, 'requirement_reason'),
+			intents: stringArrayField(evidence, 'intents'),
+			receiptCount: stringArrayField(evidence, 'receipt_paths').length,
+			gapCount: stringArrayField(evidence, 'gap_reasons').length,
+			sourceAnchorCount: stringArrayField(evidence, 'source_anchor_ids').length,
+		};
+	});
+	const riskSignals = rawRisks.map((risk, index): VerificationRiskSignal => ({
+		sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+		ordinal: index + 1,
+		code: stringField(risk, 'code') ?? 'unknown',
+		severity: stringField(risk, 'severity') ?? 'unknown',
+		detailHash: sha256Text(stringField(risk, 'detail') ?? ''),
+	}));
+	const failedIntents = failedIntentsFromReceipts(receipts);
+	const failureFingerprint = createFailureFingerprint({
+		command,
+		status: completionStatus ?? status,
+		verificationPlanId,
+		primaryReason,
+		failedIntents,
+		riskCodes: riskSignals.map((risk) => risk.code),
+		runIntent: stringField(latest, 'intent'),
+		timedOut: booleanField(latest, 'timed_out'),
+		exitCodeClass: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'exit_code_class'),
+		errorKind: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'error_kind'),
+	});
+	const failureFingerprints =
+		failureFingerprint === null
+			? []
+			: [
+					{
+						sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+						fingerprint: failureFingerprint,
+						verificationPlanId,
+						status: completionStatus ?? status,
+						failedIntents,
+						primaryReason,
+					},
+				];
+
+	return {
+		summaries: [
+			{
+				sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
+				sourceHash,
+				command,
+				kind,
+				status,
+				runDir: stringField(latest, 'run_dir'),
+				manifestPath: stringField(latest, 'manifest_path'),
+				verificationPlanId,
+				completionStatus,
+				primaryReason,
+				matchedIntents: numberField(completionEvidence, 'matched_intents'),
+				ranIntents: numberField(completionEvidence, 'ran_intents'),
+				passedIntents: numberField(completionEvidence, 'passed_intents'),
+				failedIntents: numberField(completionEvidence, 'failed_intents'),
+				skippedIntents: numberField(completionEvidence, 'skipped_intents'),
+				receiptCount: receipts.length,
+				coverageCount: coverageStates.length,
+				remainingRiskCount: riskSignals.length,
+				failureFingerprint,
+			},
+		],
+		receipts,
+		coverageStates,
+		riskSignals,
+		failureFingerprints,
+	};
 }
 
 function readMetadataValue(database: SqlJsDatabase, key: string): string | undefined {
@@ -1066,6 +1377,72 @@ CREATE TABLE source_anchor_status (
   navigation_only INTEGER NOT NULL,
   can_instruct_agent INTEGER NOT NULL
 );
+
+CREATE TABLE verification_evidence_summaries (
+  source_path TEXT PRIMARY KEY,
+  source_hash TEXT NOT NULL,
+  command TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  status TEXT NOT NULL,
+  run_dir TEXT,
+  manifest_path TEXT,
+  verification_plan_id TEXT,
+  completion_status TEXT,
+  primary_reason TEXT,
+  matched_intents INTEGER NOT NULL,
+  ran_intents INTEGER NOT NULL,
+  passed_intents INTEGER NOT NULL,
+  failed_intents INTEGER NOT NULL,
+  skipped_intents INTEGER NOT NULL,
+  receipt_count INTEGER NOT NULL,
+  coverage_count INTEGER NOT NULL,
+  remaining_risk_count INTEGER NOT NULL,
+  failure_fingerprint TEXT
+);
+
+CREATE TABLE verification_receipt_summaries (
+  source_path TEXT NOT NULL,
+  ordinal INTEGER NOT NULL,
+  intent TEXT,
+  status TEXT NOT NULL,
+  skipped INTEGER NOT NULL,
+  verification_plan_id TEXT,
+  receipt_path TEXT,
+  receipt_sha256 TEXT,
+  PRIMARY KEY (source_path, ordinal)
+);
+
+CREATE TABLE verification_coverage_states (
+  source_path TEXT NOT NULL,
+  criterion_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  status TEXT NOT NULL,
+  requirement_reason TEXT,
+  intents TEXT NOT NULL,
+  receipt_count INTEGER NOT NULL,
+  gap_count INTEGER NOT NULL,
+  source_anchor_count INTEGER NOT NULL,
+  PRIMARY KEY (source_path, criterion_id)
+);
+
+CREATE TABLE verification_risk_signals (
+  source_path TEXT NOT NULL,
+  ordinal INTEGER NOT NULL,
+  code TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  detail_hash TEXT NOT NULL,
+  PRIMARY KEY (source_path, ordinal)
+);
+
+CREATE TABLE verification_failure_fingerprints (
+  source_path TEXT NOT NULL,
+  fingerprint TEXT NOT NULL,
+  verification_plan_id TEXT,
+  status TEXT NOT NULL,
+  failed_intents TEXT NOT NULL,
+  primary_reason TEXT,
+  PRIMARY KEY (source_path, fingerprint)
+);
 `);
 
 	if (capabilities.backend === SEARCH_BACKEND_FTS5) {
@@ -1342,6 +1719,7 @@ function populateDatabase(
 	commandIntents: readonly IndexCommandIntent[],
 	sourceAnchors: readonly SourceAnchorIndexRecord[],
 	indexedFiles: readonly IndexedFileRecord[],
+	verificationEvidence: VerificationEvidenceIndex,
 	indexMode: LocalIndexResult['index_mode'],
 	sourceScopeHash: string,
 	sourceIndexEnabled: boolean,
@@ -1357,6 +1735,10 @@ function populateDatabase(
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
 		'max_snippet_bytes_per_document',
 		String(MAX_SNIPPET_BYTES_PER_DOCUMENT),
+	]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
+		'excluded_raw_data_kinds',
+		LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS.join(','),
 	]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['search_backend', capabilities.backend]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
@@ -1513,6 +1895,87 @@ function populateDatabase(
 		);
 	}
 
+	for (const summary of verificationEvidence.summaries) {
+		database.run(
+			'INSERT INTO verification_evidence_summaries (source_path, source_hash, command, kind, status, run_dir, manifest_path, verification_plan_id, completion_status, primary_reason, matched_intents, ran_intents, passed_intents, failed_intents, skipped_intents, receipt_count, coverage_count, remaining_risk_count, failure_fingerprint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				summary.sourcePath,
+				summary.sourceHash,
+				summary.command,
+				summary.kind,
+				summary.status,
+				summary.runDir,
+				summary.manifestPath,
+				summary.verificationPlanId,
+				summary.completionStatus,
+				summary.primaryReason,
+				summary.matchedIntents,
+				summary.ranIntents,
+				summary.passedIntents,
+				summary.failedIntents,
+				summary.skippedIntents,
+				summary.receiptCount,
+				summary.coverageCount,
+				summary.remainingRiskCount,
+				summary.failureFingerprint,
+			],
+		);
+	}
+
+	for (const receipt of verificationEvidence.receipts) {
+		database.run(
+			'INSERT INTO verification_receipt_summaries (source_path, ordinal, intent, status, skipped, verification_plan_id, receipt_path, receipt_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				receipt.sourcePath,
+				receipt.ordinal,
+				receipt.intent,
+				receipt.status,
+				receipt.skipped ? 1 : 0,
+				receipt.verificationPlanId,
+				receipt.receiptPath,
+				receipt.receiptSha256,
+			],
+		);
+	}
+
+	for (const coverage of verificationEvidence.coverageStates) {
+		database.run(
+			'INSERT INTO verification_coverage_states (source_path, criterion_id, source, status, requirement_reason, intents, receipt_count, gap_count, source_anchor_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				coverage.sourcePath,
+				coverage.criterionId,
+				coverage.source,
+				coverage.status,
+				coverage.requirementReason,
+				joinedList(coverage.intents),
+				coverage.receiptCount,
+				coverage.gapCount,
+				coverage.sourceAnchorCount,
+			],
+		);
+	}
+
+	for (const risk of verificationEvidence.riskSignals) {
+		database.run(
+			'INSERT INTO verification_risk_signals (source_path, ordinal, code, severity, detail_hash) VALUES (?, ?, ?, ?, ?)',
+			[risk.sourcePath, risk.ordinal, risk.code, risk.severity, risk.detailHash],
+		);
+	}
+
+	for (const fingerprint of verificationEvidence.failureFingerprints) {
+		database.run(
+			'INSERT INTO verification_failure_fingerprints (source_path, fingerprint, verification_plan_id, status, failed_intents, primary_reason) VALUES (?, ?, ?, ?, ?, ?)',
+			[
+				fingerprint.sourcePath,
+				fingerprint.fingerprint,
+				fingerprint.verificationPlanId,
+				fingerprint.status,
+				joinedList(fingerprint.failedIntents),
+				fingerprint.primaryReason,
+			],
+		);
+	}
+
 	populatePathSurfaceReadModel(database);
 	populateSearchTables(database, capabilities, documents, skills, skillRoutes, commandIntents, sourceAnchors);
 }
@@ -1639,6 +2102,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 				excludeGeneratedOrVendor: true,
 			})
 		: [];
+	const verificationEvidence = createVerificationEvidenceIndex(projectRoot);
 	const indexedFiles = collectIndexedFileRecords(projectRoot, documents, sourceAnchors);
 	let capabilities = searchCapabilities(false);
 	let reusedExisting = false;
@@ -1669,6 +2133,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 			commandIntents,
 			sourceAnchors,
 			indexedFiles,
+			verificationEvidence,
 			indexMode,
 			sourceScopeHash,
 			includeSource,
@@ -1695,6 +2160,11 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		skill_route_count: skillRoutes.length,
 		command_intent_count: commandIntents.length,
 		command_effect_count: commandIntents.reduce((count, intent) => count + intent.effects.length, 0),
+		verification_evidence_summary_count: verificationEvidence.summaries.length,
+		verification_receipt_summary_count: verificationEvidence.receipts.length,
+		verification_coverage_state_count: verificationEvidence.coverageStates.length,
+		verification_risk_signal_count: verificationEvidence.riskSignals.length,
+		failure_fingerprint_count: verificationEvidence.failureFingerprints.length,
 		source_index_enabled: includeSource,
 		source_anchor_count: sourceAnchors.length,
 		search_backend: capabilities.backend,
@@ -1702,6 +2172,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		content_mode: LOCAL_INDEX_CONTENT_MODE,
 		store_full_content: LOCAL_INDEX_STORE_FULL_CONTENT,
 		max_snippet_bytes_per_document: MAX_SNIPPET_BYTES_PER_DOCUMENT,
+		excluded_raw_data_kinds: [...LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS],
 		indexed_file_count: indexedFiles.length,
 		indexed_paths: documents.map((document) => document.path),
 	};
@@ -2101,6 +2572,77 @@ export async function readLocalPathSurface(
 
 	const surfaces = await readLocalPathSurfaces(projectRoot, [inputPath]);
 	return surfaces.get(inputPath) ?? createPathSurfaceReadModelStatus(databasePath, 'unreadable', inputPath);
+}
+
+export async function readLocalSourceAnchorVerdictRisks(
+	projectRoot: string,
+	relativePaths: readonly string[],
+): Promise<readonly LocalSourceAnchorVerdictRisk[]> {
+	const databasePath = getLocalIndexDatabasePath(projectRoot);
+	const normalizedPaths = new Set(relativePaths.map((relativePath) => toPosixPath(relativePath)).filter(Boolean));
+
+	if (!existsSync(databasePath) || normalizedPaths.size === 0) {
+		return [];
+	}
+
+	const SQL = await loadSqlJs();
+	const database = new SQL.Database(readFileSync(databasePath));
+
+	try {
+		const stalePaths = getStalePaths(projectRoot, database);
+
+		if (stalePaths.length > 0 || !hasTable(database, 'source_anchors') || !hasTable(database, 'source_anchor_status')) {
+			return [];
+		}
+
+		const rows = queryRows(
+			database,
+			`
+SELECT
+  source_anchors.id,
+  source_anchors.path,
+  source_anchors.line_start,
+  source_anchors.invariant,
+  source_anchors.risk,
+  source_anchor_status.status
+FROM source_anchors
+JOIN source_anchor_status ON source_anchor_status.anchor_id = source_anchors.id
+WHERE source_anchor_status.status IN ('changed', 'review', 'stale')
+ORDER BY source_anchors.id
+`,
+		);
+
+		return rows
+			.map((row): LocalSourceAnchorVerdictRisk | null => {
+				const relativePath = toSearchString(row.path);
+				const riskTags = splitIndexedList(row.risk);
+				const status = toSearchString(row.status);
+
+				if (
+					!normalizedPaths.has(relativePath) ||
+					!hasHighRiskSourceAnchorRiskTags(riskTags) ||
+					(status !== 'changed' && status !== 'review' && status !== 'stale')
+				) {
+					return null;
+				}
+
+				return {
+					source: 'local_index',
+					authority: 'evidence_only',
+					anchorId: toSearchString(row.id),
+					path: relativePath,
+					lineStart: Number(row.line_start),
+					status,
+					riskTags,
+					invariant: toSearchString(row.invariant) || null,
+				};
+			})
+			.filter((risk): risk is LocalSourceAnchorVerdictRisk => risk !== null);
+	} catch {
+		return [];
+	} finally {
+		database.close();
+	}
 }
 
 function getSectionHeadings(database: SqlJsDatabase, documentPath: string): string[] {

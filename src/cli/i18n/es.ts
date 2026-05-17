@@ -871,6 +871,8 @@ Lee estos archivos antes de trabajar:
   "verify.help.option.fromPlan": "Alias de compatibilidad para --from-classification",
   "verify.help.option.changed": "Clasifica los cambios actuales de Git y verifica las razones correspondientes",
   "verify.help.option.writePlan": "Opción de compatibilidad que escribe el informe de clasificación de cambios",
+  "verify.help.option.reproEvidence": "Lee evidencia estructurada de reproducción de errores desde un resumen JSON local del repositorio",
+  "verify.help.option.externalEvidence": "Lee evidencia de CI externa de menor autoridad desde un resumen JSON local del repositorio",
   "verify.help.option.planOnly": "Imprime el plan de verificación sin ejecutar comandos; requiere --json",
   "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
   "verify.help.exit.fail":
@@ -884,11 +886,17 @@ Lee estos archivos antes de trabajar:
   "verify.error.conflictingInputs": "Usa solo uno de --reason, --from-classification, --from-plan o --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan requiere --changed",
   "verify.error.planOnlyJson": "--plan-only requiere --json",
+  "verify.error.reproEvidenceRequiresRun": "--repro-evidence no se puede usar con --plan-only",
+  "verify.error.externalEvidenceRequiresRun": "--external-evidence no se puede usar con --plan-only",
   "verify.error.invalid_plan_file": "El informe de clasificación debe ser un archivo JSON legible",
   "verify.error.unsupported_plan_source": "La entrada de verificación debe ser un informe de mf classify",
   "verify.error.plan_root_mismatch": "El informe de clasificación debe provenir de esta raíz mustflow",
   "verify.error.missing_plan_reasons": "El informe de clasificación debe incluir summary.validationReasons",
   "verify.error.plan_path_outside_root": "La ruta del informe de clasificación debe permanecer dentro de la raíz mustflow",
+  "verify.error.invalid_repro_evidence_file": "La evidencia de reproducción debe ser un resumen JSON legible con campos de evidencia estructurados",
+  "verify.error.unsupported_repro_evidence_source": "La entrada de evidencia de reproducción debe usar command repro-evidence",
+  "verify.error.invalid_external_evidence_file": "La evidencia externa debe ser un resumen JSON legible con checks",
+  "verify.error.unsupported_external_evidence_source": "La entrada de evidencia externa debe usar command external-evidence",
 
   "explain.help.summary":
     "Explica por qué se aplica una decisión de política de mustflow sin modificar archivos.",
