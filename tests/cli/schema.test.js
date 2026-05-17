@@ -286,6 +286,42 @@ escalate_to = ["test"]
 	}
 });
 
+test('command contract schema accepts non-authorizing long-running intent hints', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "Start a development server for manual inspection."
+argv = ['${process.execPath}', '-e', 'setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+manual_start_hint = "Start this server in a human-controlled terminal."
+health_check_url = "http://127.0.0.1:3000/health"
+stop_instruction = "Stop the terminal process with Ctrl-C."
+related_oneshot_checks = ["test_fast"]
+`,
+		);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commands = parse(readFileSync(commandsPath, 'utf8'));
+
+		assertMatchesSchema(schemaRoot, 'commands.schema.json', commands);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('contract lint json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
@@ -306,6 +342,24 @@ test('contract lint coverage json output matches the published schema', () => {
 	try {
 		initProject(projectPath);
 		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'contract-lint-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract lint suggestion json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', scripts: { test: 'node --test' } }, null, 2)}\n`,
+		);
+		const result = runCli(projectPath, ['contract-lint', '--suggest', '--json']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'contract-lint-report.schema.json', JSON.parse(result.stdout));
@@ -589,6 +643,78 @@ required_after = ["schema_verify"]
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'verify-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('verify run manifest json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_schema_manifest]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a verify schema manifest test message."
+argv = ['${process.execPath}', '-e', 'console.log("verify schema manifest")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--json']);
+		const manifestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-latest', 'manifest.json');
+		const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'verify-run-manifest.schema.json', manifest);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('latest verify pointer json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_schema_latest_pointer]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a latest verify pointer schema test message."
+argv = ['${process.execPath}', '-e', 'console.log("latest verify pointer schema")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--json']);
+		const latestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
+		const latestPointer = JSON.parse(readFileSync(latestPath, 'utf8'));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'latest-run-pointer.schema.json', latestPointer);
 	} finally {
 		removeTempProject(projectPath);
 	}

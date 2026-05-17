@@ -89,6 +89,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'latest-run-pointer',
+		schemaFile: 'latest-run-pointer.schema.json',
+		producer: '.mustflow/state/runs/latest.json when written by mf verify',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'handoff-validation-report',
 		schemaFile: 'handoff-validation-report.schema.json',
 		producer: 'mf handoff validate <path> --json',
@@ -127,6 +134,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		packaged: true,
 		documented: true,
 		installedCommand: ['mf', 'verify', '--reason', 'schema_verify', '--json'],
+	},
+	{
+		id: 'verify-run-manifest',
+		schemaFile: 'verify-run-manifest.schema.json',
+		producer: '.mustflow/state/runs/verify-latest/manifest.json',
+		packaged: true,
+		documented: true,
 	},
 	{
 		id: 'change-verification-report',

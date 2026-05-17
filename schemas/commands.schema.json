@@ -147,6 +147,10 @@
         },
         "env_policy": { "$ref": "#/$defs/envPolicy" },
         "env_allowlist": { "$ref": "#/$defs/stringArray" },
+        "manual_start_hint": { "type": "string" },
+        "health_check_url": { "type": "string" },
+        "stop_instruction": { "type": "string" },
+        "related_oneshot_checks": { "$ref": "#/$defs/stringArray" },
         "effects": {
           "type": "array",
           "items": { "$ref": "#/$defs/effect" }

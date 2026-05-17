@@ -304,6 +304,10 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
+manual_start_hint = "Start this server in a human-controlled terminal."
+health_check_url = "http://127.0.0.1:3000/health"
+stop_instruction = "Stop the terminal process with Ctrl-C."
+related_oneshot_checks = ["test_fast"]
 `,
 		);
 
@@ -314,6 +318,9 @@ destructive = false
 		assert.equal(manualOnlyPreview.runnable, false);
 		assert.equal(manualOnlyPreview.status, 'manual_only');
 		assert.equal(manualOnlyPreview.reason_code, 'status_not_configured');
+		assert.match(manualOnlyPreview.suggested_intent_snippet, /\[intents\.snapshot_update\]/);
+		assert.match(manualOnlyPreview.suggested_intent_snippet, /status = "manual_only"/);
+		assert.match(manualOnlyPreview.suggested_intent_snippet, /agent_action = "do_not_guess_report_missing"/);
 
 		const longRunningResult = runCli(projectPath, ['run', 'dev_server', '--dry-run', '--json']);
 		const longRunningPreview = JSON.parse(longRunningResult.stdout);
@@ -322,6 +329,14 @@ destructive = false
 		assert.equal(longRunningPreview.runnable, false);
 		assert.equal(longRunningPreview.lifecycle, 'server');
 		assert.equal(longRunningPreview.reason_code, 'lifecycle_not_oneshot');
+		assert.match(longRunningPreview.suggested_intent_snippet, /\[intents\.dev_server\]/);
+		assert.match(longRunningPreview.suggested_intent_snippet, /lifecycle = "server"/);
+		assert.match(longRunningPreview.suggested_intent_snippet, /run_policy = "requires_explicit_user_request"/);
+		assert.match(longRunningPreview.suggested_intent_snippet, /argv = \[/);
+		assert.equal(longRunningPreview.manual_start_hint, 'Start this server in a human-controlled terminal.');
+		assert.equal(longRunningPreview.health_check_url, 'http://127.0.0.1:3000/health');
+		assert.equal(longRunningPreview.stop_instruction, 'Stop the terminal process with Ctrl-C.');
+		assert.deepEqual(longRunningPreview.related_oneshot_checks, ['test_fast']);
 
 		const unknownResult = runCli(projectPath, ['run', 'does_not_exist', '--plan-only', '--json']);
 		const unknownPreview = JSON.parse(unknownResult.stdout);
@@ -331,6 +346,8 @@ destructive = false
 		assert.equal(unknownPreview.runnable, false);
 		assert.equal(unknownPreview.reason_code, 'intent_not_table');
 		assert.equal(unknownPreview.status, null);
+		assert.match(unknownPreview.suggested_intent_snippet, /\[intents\.does_not_exist\]/);
+		assert.match(unknownPreview.suggested_intent_snippet, /"TODO_REPLACE_WITH_COMMAND"/);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 	} finally {
 		removeTempProject(projectPath);
@@ -1531,6 +1548,8 @@ destructive = false
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /dev_server/);
 		assert.match(result.stderr, /lifecycle = "server"/);
+		assert.match(result.stderr, /Suggested command contract snippet/);
+		assert.match(result.stderr, /\[intents\.dev_server\]/);
 		assert.match(result.stderr, /mf run/);
 	} finally {
 		removeTempProject(projectPath);

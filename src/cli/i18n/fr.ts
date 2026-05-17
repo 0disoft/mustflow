@@ -68,6 +68,7 @@ export const frMessages = {
   "contractLint.help.summary":
     "Inspecte .mustflow/config/commands.toml pour trouver les erreurs et avertissements du contrat de commandes.",
   "contractLint.help.option.coverage": "Signale aussi la couverture required_after des raisons de classification",
+  "contractLint.help.option.suggest": "Suggère des fragments d'intent non exécutables depuis package.json, Makefile ou justfile",
   "contractLint.help.exit.ok": "Le contrat de commandes a été inspecté sans erreur bloquante",
   "contractLint.help.exit.fail": "Des erreurs de contrat de commandes ont été trouvées ou l'entrée est invalide",
   "contractLint.title": "mustflow contract-lint",
@@ -85,6 +86,7 @@ export const frMessages = {
   "contractLint.label.requiredAfterReasons": "Raisons required_after",
   "contractLint.label.runnableReasons": "Raisons exécutables",
   "contractLint.label.coverageFindings": "Constats de couverture",
+  "contractLint.label.suggestions": "Suggestions",
   "contractLint.label.issues": "Problèmes",
 
   "context.help.summary":
@@ -636,7 +638,7 @@ Lisez ces fichiers avant de travailler :
     "Fusionne un bloc géré par mustflow dans un AGENTS.md existant",
   "init.help.option.force": "Sauvegarde les fichiers en conflit et les écrase",
   "init.help.option.profile":
-    "Définit le profil du projet : minimal, oss, team, product ou library",
+    "Définit le profil du projet : minimal, patterns, oss, team, product ou library",
   "init.help.option.locale": "Définit la langue des documents mustflow installés",
   "init.help.option.agentLang": "Définit la langue de réponse préférée de l'agent",
   "init.help.option.set":
@@ -745,6 +747,7 @@ Lisez ces fichiers avant de travailler :
   "run.help.option.json": "Imprime l'enregistrement d'exécution ou le plan de commande en JSON",
   "run.help.exit.ok": "La commande s'est terminée avec un code de sortie autorisé",
   "run.help.exit.fail": "La commande était non valide, refusée, expirée ou a échoué",
+  "run.label.suggestedIntentSnippet": "Extrait suggéré de contrat de commande",
   "run.error.missingIntent": "Nom de commande manquant",
   "run.error.unknownIntent": "Commande inconnue : {intent}",
   "run.error.statusNotConfigured":
@@ -827,8 +830,9 @@ Lisez ces fichiers avant de travailler :
   "upgrade.warning.continueWithBundledTemplate": "Poursuite avec le modèle inclus dans le CLI actuel.",
 
   "classify.help.summary":
-    "Classe les chemins modifies, les surfaces publiques et les raisons de verification sans modifier les fichiers.",
+    "Classe les chemins modifies, les surfaces publiques et les raisons de verification.",
   "classify.help.option.changed": "Lire les chemins depuis git status --short --untracked-files=all",
+  "classify.help.option.write": "Ecrit le rapport de classification dans un fichier JSON dans ce depot",
   "classify.help.exit.ok": "La classification des changements a ete inspectee et affichee",
   "classify.title": "mustflow classify",
   "classify.label.source": "Source",
@@ -843,6 +847,7 @@ Lisez ces fichiers avant de travailler :
   "classify.source.changed": "fichiers modifies",
   "classify.source.paths": "chemins explicites",
   "classify.error.missingInput": "Indiquez --changed ou au moins un chemin",
+  "classify.error.write_path_outside_root": "Le chemin du rapport de classification doit rester dans la racine mustflow",
 
   "impact.help.summary":
     "Signale si les chemins modifies exigent une decision de version de paquet ou de modele sans modifier les fichiers.",
@@ -862,9 +867,10 @@ Lisez ces fichiers avant de travailler :
   "verify.help.summary":
     "Exécute les intentions de vérification configurées sélectionnées par les métadonnées required_after.",
   "verify.help.option.reason": "Sélectionne la raison required_after à vérifier",
-  "verify.help.option.fromPlan": "Lit les raisons de vérification depuis un plan JSON dans ce dépôt",
+  "verify.help.option.fromClassification": "Lit les raisons de vérification depuis un rapport mf classify dans ce dépôt",
+  "verify.help.option.fromPlan": "Alias de compatibilité pour --from-classification",
   "verify.help.option.changed": "Classe les changements Git actuels et vérifie les raisons correspondantes",
-  "verify.help.option.writePlan": "Écrit le plan de classification des changements dans ce dépôt",
+  "verify.help.option.writePlan": "Option de compatibilité qui écrit le rapport de classification des changements",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":
@@ -875,14 +881,14 @@ Lisez ces fichiers avant de travailler :
   "verify.label.status": "État",
   "verify.label.results": "Résultats",
   "verify.error.missingReason": "Raison de vérification manquante",
-  "verify.error.conflictingInputs": "Utilisez un seul de --reason, --from-plan ou --changed",
+  "verify.error.conflictingInputs": "Utilisez un seul de --reason, --from-classification, --from-plan ou --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan nécessite --changed",
   "verify.error.planOnlyJson": "--plan-only nécessite --json",
-  "verify.error.invalid_plan_file": "Le plan de vérification doit être un fichier JSON lisible",
-  "verify.error.unsupported_plan_source": "Le plan de vérification doit être produit par mf classify --json",
-  "verify.error.plan_root_mismatch": "Le plan de vérification doit venir de cette racine mustflow",
-  "verify.error.missing_plan_reasons": "Le plan de vérification doit inclure summary.validationReasons",
-  "verify.error.plan_path_outside_root": "Le chemin du plan de vérification doit rester dans la racine mustflow",
+  "verify.error.invalid_plan_file": "Le rapport de classification doit être un fichier JSON lisible",
+  "verify.error.unsupported_plan_source": "L'entrée de vérification doit être un rapport mf classify",
+  "verify.error.plan_root_mismatch": "Le rapport de classification doit venir de cette racine mustflow",
+  "verify.error.missing_plan_reasons": "Le rapport de classification doit inclure summary.validationReasons",
+  "verify.error.plan_path_outside_root": "Le chemin du rapport de classification doit rester dans la racine mustflow",
 
   "explain.help.summary":
     "Explique pourquoi une décision de politique mustflow s'applique sans modifier de fichiers.",

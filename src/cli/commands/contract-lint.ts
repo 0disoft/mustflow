@@ -26,10 +26,11 @@ export function getContractLintHelp(lang: CliLang = 'en'): string {
 			summary: t(lang, 'contractLint.help.summary'),
 			options: [
 				{ label: '--coverage', description: t(lang, 'contractLint.help.option.coverage') },
+				{ label: '--suggest', description: t(lang, 'contractLint.help.option.suggest') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf contract-lint', 'mf contract-lint --coverage', 'mf contract-lint --coverage --json'],
+			examples: ['mf contract-lint', 'mf contract-lint --coverage', 'mf contract-lint --suggest', 'mf contract-lint --coverage --json'],
 			exitCodes: [
 				{ label: '0', description: t(lang, 'contractLint.help.exit.ok') },
 				{ label: '1', description: t(lang, 'contractLint.help.exit.fail') },
@@ -50,13 +51,14 @@ function readPreferences(projectRoot: string): TomlTable | undefined {
 	return isRecord(preferences) ? preferences : undefined;
 }
 
-function createContractLintOutput(projectRoot: string, coverage: boolean): ContractLintOutput {
+function createContractLintOutput(projectRoot: string, coverage: boolean, suggest: boolean): ContractLintOutput {
 	return {
 		schema_version: CONTRACT_LINT_SCHEMA_VERSION,
 		command: 'contract-lint',
 		mustflow_root: projectRoot,
 		report: lintCommandContract(readCommandContract(projectRoot), {
 			coverage,
+			suggest,
 			projectRoot,
 			releaseVersioningEnabled: releaseVersioningIsEnabled(readPreferences(projectRoot)),
 		}),
@@ -91,6 +93,14 @@ function renderContractLintOutput(output: ContractLintOutput, lang: CliLang): st
 		);
 	}
 
+	if (output.report.suggestions) {
+		lines.push('', t(lang, 'contractLint.label.suggestions'));
+		for (const suggestion of output.report.suggestions) {
+			lines.push(`- ${suggestion.sourceFile}:${suggestion.sourceName} -> ${suggestion.suggestedIntent}`);
+			lines.push(...suggestion.snippet.split('\n').map((line) => `  ${line}`));
+		}
+	}
+
 	if (output.report.issues.length > 0) {
 		lines.push('', t(lang, 'contractLint.label.issues'));
 		for (const issue of output.report.issues) {
@@ -108,7 +118,7 @@ export function runContractLint(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	}
 
-	const supported = new Set(['--coverage', '--json']);
+	const supported = new Set(['--coverage', '--suggest', '--json']);
 	const unsupported = args.filter((arg) => !supported.has(arg));
 
 	if (unsupported.length > 0) {
@@ -122,7 +132,7 @@ export function runContractLint(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
-	const output = createContractLintOutput(resolveMustflowRoot(), args.includes('--coverage'));
+	const output = createContractLintOutput(resolveMustflowRoot(), args.includes('--coverage'), args.includes('--suggest'));
 
 	if (args.includes('--json')) {
 		reporter.stdout(JSON.stringify(output, null, 2));

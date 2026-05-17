@@ -35,6 +35,12 @@ export type CheckIssueId =
 	| 'mustflow.skill.index_route_broad_catch_all'
 	| 'mustflow.skill.index_route_identical_trigger'
 	| 'mustflow.skill.index_route_duplicate_surface'
+	| 'mustflow.skill.route_metadata_missing'
+	| 'mustflow.skill.route_metadata_unlisted'
+	| 'mustflow.skill.route_metadata_missing_document'
+	| 'mustflow.skill.route_metadata_category_mismatch'
+	| 'mustflow.skill.route_metadata_unknown_reference'
+	| 'mustflow.skill.route_metadata_asymmetric_exclusion'
 	| 'mustflow.skill.resource_unknown_command_intent'
 	| 'mustflow.source_anchor.invalid_format'
 	| 'mustflow.source_anchor.duplicate_id'
@@ -96,6 +102,12 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.skill.index_route_broad_catch_all', /^Strict warning: \.mustflow\/skills\/INDEX\.md \.mustflow\/skills\/[^/]+\/SKILL\.md route uses broad catch-all trigger ".+" that can shadow narrower skills$/u],
 	['mustflow.skill.index_route_identical_trigger', /^Strict warning: \.mustflow\/skills\/INDEX\.md \.mustflow\/skills\/[^/]+\/SKILL\.md and \.mustflow\/skills\/[^/]+\/SKILL\.md have identical skill route trigger text$/u],
 	['mustflow.skill.index_route_duplicate_surface', /^Strict warning: \.mustflow\/skills\/INDEX\.md \.mustflow\/skills\/[^/]+\/SKILL\.md and \.mustflow\/skills\/[^/]+\/SKILL\.md have duplicate edit scope, risk, and expected output route surface$/u],
+	['mustflow.skill.route_metadata_missing', /^Strict: \.mustflow\/skills\/routes\.toml is missing metadata for route "[^"]+"$/u],
+	['mustflow.skill.route_metadata_unlisted', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" is not listed in \.mustflow\/skills\/INDEX\.md$/u],
+	['mustflow.skill.route_metadata_missing_document', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" points to a missing skill document$/u],
+	['mustflow.skill.route_metadata_category_mismatch', /^Strict: \.mustflow\/skills\/INDEX\.md route "[^"]+" must appear under the .+ category section from \.mustflow\/skills\/routes\.toml$/u],
+	['mustflow.skill.route_metadata_unknown_reference', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" references unknown mutually exclusive route "[^"]+"$/u],
+	['mustflow.skill.route_metadata_asymmetric_exclusion', /^Strict warning: \.mustflow\/skills\/routes\.toml route "[^"]+" lists "[^"]+" as mutually exclusive but the reverse route does not$/u],
 	['mustflow.skill.resource_unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/resources\.toml script [^\s]+ references unknown command intent "[^"]+"$/u],
 	['mustflow.source_anchor.invalid_format', /^Strict: source anchor .+ has invalid format:/u],
 	['mustflow.source_anchor.duplicate_id', /^Strict: source anchor id "[^"]+" is duplicated:/u],

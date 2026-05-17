@@ -11,7 +11,10 @@
     "reason",
     "reasons",
     "plan_source",
+    "verification_plan_id",
     "status",
+    "run_dir",
+    "manifest_path",
     "summary",
     "results"
   ],
@@ -25,7 +28,13 @@
       "items": { "type": "string" }
     },
     "plan_source": { "type": ["string", "null"] },
+    "verification_plan_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "status": { "enum": ["passed", "partial", "failed", "blocked"] },
+    "run_dir": { "type": "string" },
+    "manifest_path": { "type": "string" },
     "summary": {
       "type": "object",
       "additionalProperties": false,
@@ -50,6 +59,9 @@
           "reason",
           "detail",
           "exit_code",
+          "verification_plan_id",
+          "receipt_path",
+          "receipt_sha256",
           "receipt"
         ],
         "properties": {
@@ -59,7 +71,21 @@
           "reason": { "type": ["string", "null"] },
           "detail": { "type": ["string", "null"] },
           "exit_code": { "type": ["integer", "null"] },
-          "receipt": { "type": ["object", "null"] }
+          "verification_plan_id": {
+            "type": ["string", "null"],
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "receipt_path": { "type": ["string", "null"] },
+          "receipt_sha256": {
+            "type": ["string", "null"],
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "receipt": {
+            "anyOf": [
+              { "$ref": "run-receipt.schema.json" },
+              { "type": "null" }
+            ]
+          }
         }
       }
     }

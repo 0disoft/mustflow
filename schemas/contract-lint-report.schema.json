@@ -55,6 +55,35 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sourceFile",
+              "sourceKind",
+              "sourceName",
+              "commandHint",
+              "suggestedIntent",
+              "status",
+              "reason",
+              "snippet"
+            ],
+            "properties": {
+              "sourceFile": { "type": "string" },
+              "sourceKind": {
+                "enum": ["package_script", "make_target", "just_recipe"]
+              },
+              "sourceName": { "type": "string" },
+              "commandHint": { "type": "string" },
+              "suggestedIntent": { "type": "string" },
+              "status": { "const": "unknown" },
+              "reason": { "type": "string" },
+              "snippet": { "type": "string" }
+            }
+          }
+        },
         "coverage": {
           "type": "object",
           "additionalProperties": false,

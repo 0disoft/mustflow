@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/verify-run-manifest.schema.json",
+  "title": "mustflow verify run manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "reason",
+    "reasons",
+    "plan_source",
+    "verification_plan_id",
+    "status",
+    "summary",
+    "receipts"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "verify" },
+    "reason": { "type": "string" },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "plan_source": { "type": ["string", "null"] },
+    "verification_plan_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "status": { "enum": ["passed", "partial", "failed", "blocked"] },
+    "summary": { "$ref": "#/$defs/summary" },
+    "receipts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/receiptEntry" }
+    }
+  },
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["matched", "ran", "passed", "failed", "skipped"],
+      "properties": {
+        "matched": { "type": "integer" },
+        "ran": { "type": "integer" },
+        "passed": { "type": "integer" },
+        "failed": { "type": "integer" },
+        "skipped": { "type": "integer" }
+      }
+    },
+    "receiptEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "status",
+        "skipped",
+        "verification_plan_id",
+        "receipt_path",
+        "receipt_sha256"
+      ],
+      "properties": {
+        "intent": { "type": ["string", "null"] },
+        "status": { "enum": ["passed", "failed", "timed_out", "start_failed", "skipped"] },
+        "skipped": { "type": "boolean" },
+        "verification_plan_id": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

@@ -66,6 +66,7 @@ export const enMessages = {
   "contractLint.help.summary":
     "Inspect .mustflow/config/commands.toml for command-contract errors and warnings.",
   "contractLint.help.option.coverage": "Also report required_after coverage for change-classification reasons",
+  "contractLint.help.option.suggest": "Suggest non-runnable intent snippets from package.json, Makefile, or justfile",
   "contractLint.help.exit.ok": "The command contract was inspected without blocking errors",
   "contractLint.help.exit.fail": "Command-contract errors were found or input was invalid",
   "contractLint.title": "mustflow contract-lint",
@@ -83,6 +84,7 @@ export const enMessages = {
   "contractLint.label.requiredAfterReasons": "required_after reasons",
   "contractLint.label.runnableReasons": "Runnable reasons",
   "contractLint.label.coverageFindings": "Coverage findings",
+  "contractLint.label.suggestions": "Suggestions",
   "contractLint.label.issues": "Issues",
 
   "context.help.summary":
@@ -634,7 +636,7 @@ Read these files before working:
     "Merge a mustflow managed block into an existing AGENTS.md",
   "init.help.option.force": "Back up conflicting files and overwrite them",
   "init.help.option.profile":
-    "Set project profile: minimal, oss, team, product, or library",
+    "Set project profile: minimal, patterns, oss, team, product, or library",
   "init.help.option.locale": "Set installed mustflow document locale",
   "init.help.option.agentLang": "Set the preferred agent response language",
   "init.help.option.set":
@@ -743,6 +745,7 @@ Read these files before working:
   "run.help.option.json": "Print the run record or command plan as JSON",
   "run.help.exit.ok": "The command completed with an allowed exit code",
   "run.help.exit.fail": "The command was invalid, refused, timed out, or failed",
+  "run.label.suggestedIntentSnippet": "Suggested command contract snippet",
   "run.error.missingIntent": "Missing command name",
   "run.error.unknownIntent": "Unknown command: {intent}",
   "run.error.statusNotConfigured":
@@ -825,8 +828,9 @@ Read these files before working:
   "upgrade.warning.continueWithBundledTemplate": "Continuing with the bundled template in the current CLI.",
 
   "classify.help.summary":
-    "Classify changed paths, public surfaces, and required validation reasons without modifying files.",
+    "Classify changed paths, public surfaces, and required validation reasons.",
   "classify.help.option.changed": "Read paths from git status --short --untracked-files=all",
+  "classify.help.option.write": "Write the classification report to a JSON file inside this repository",
   "classify.help.exit.ok": "Change classification was inspected and printed",
   "classify.title": "mustflow classify",
   "classify.label.source": "Source",
@@ -841,6 +845,7 @@ Read these files before working:
   "classify.source.changed": "changed files",
   "classify.source.paths": "explicit paths",
   "classify.error.missingInput": "Specify --changed or at least one path",
+  "classify.error.write_path_outside_root": "Classification report path must stay inside the mustflow root",
 
   "impact.help.summary":
     "Report whether changed paths require a package or template version decision without modifying files.",
@@ -860,9 +865,10 @@ Read these files before working:
   "verify.help.summary":
     "Run configured verification intents selected by required_after metadata.",
   "verify.help.option.reason": "Select the required_after reason to verify",
-  "verify.help.option.fromPlan": "Read verification reasons from a JSON plan inside this repository",
+  "verify.help.option.fromClassification": "Read verification reasons from an mf classify report inside this repository",
+  "verify.help.option.fromPlan": "Compatibility alias for --from-classification",
   "verify.help.option.changed": "Classify current Git changes and verify the matching reasons",
-  "verify.help.option.writePlan": "Write the changed-file classification plan inside this repository",
+  "verify.help.option.writePlan": "Compatibility option that writes the changed-file classification report",
   "verify.help.option.planOnly": "Print the verification plan without running commands; requires --json",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
@@ -873,14 +879,14 @@ Read these files before working:
   "verify.label.status": "Status",
   "verify.label.results": "Results",
   "verify.error.missingReason": "Missing verification reason",
-  "verify.error.conflictingInputs": "Use only one of --reason, --from-plan, or --changed",
+  "verify.error.conflictingInputs": "Use only one of --reason, --from-classification, --from-plan, or --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan requires --changed",
   "verify.error.planOnlyJson": "--plan-only requires --json",
-  "verify.error.invalid_plan_file": "Verification plan must be a readable JSON file",
-  "verify.error.unsupported_plan_source": "Verification plan must be produced by mf classify --json",
-  "verify.error.plan_root_mismatch": "Verification plan must come from this mustflow root",
-  "verify.error.missing_plan_reasons": "Verification plan must include summary.validationReasons",
-  "verify.error.plan_path_outside_root": "Verification plan path must stay inside the mustflow root",
+  "verify.error.invalid_plan_file": "Classification report must be a readable JSON file",
+  "verify.error.unsupported_plan_source": "Verification input must be an mf classify report",
+  "verify.error.plan_root_mismatch": "Classification report must come from this mustflow root",
+  "verify.error.missing_plan_reasons": "Classification report must include summary.validationReasons",
+  "verify.error.plan_path_outside_root": "Classification report path must stay inside the mustflow root",
 
   "explain.help.summary":
     "Explain why a mustflow policy decision applies without modifying files.",

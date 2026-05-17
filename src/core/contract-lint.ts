@@ -71,6 +71,19 @@ export interface ContractLintCoverageReport {
 	readonly findings: readonly ContractLintCoverageFinding[];
 }
 
+export type ContractLintSuggestionSourceKind = 'package_script' | 'make_target' | 'just_recipe';
+
+export interface ContractLintSuggestion {
+	readonly sourceFile: string;
+	readonly sourceKind: ContractLintSuggestionSourceKind;
+	readonly sourceName: string;
+	readonly commandHint: string;
+	readonly suggestedIntent: string;
+	readonly status: 'unknown';
+	readonly reason: string;
+	readonly snippet: string;
+}
+
 export interface ContractLintSummary {
 	readonly totalIntents: number;
 	readonly configured: number;
@@ -87,10 +100,12 @@ export interface ContractLintReport {
 	readonly issues: readonly ContractLintIssue[];
 	readonly sourceFiles: readonly string[];
 	readonly coverage?: ContractLintCoverageReport;
+	readonly suggestions?: readonly ContractLintSuggestion[];
 }
 
 export interface ContractLintOptions {
 	readonly coverage?: boolean;
+	readonly suggest?: boolean;
 	readonly projectRoot?: string;
 	readonly releaseVersioningEnabled?: boolean;
 }
@@ -139,11 +154,19 @@ const COMMANDS_CONFIG_PATH = '.mustflow/config/commands.toml';
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
 const CHANGE_CLASSIFICATION_SOURCE_PATH = 'src/core/change-classification.ts';
 const AGENT_WORKFLOW_PATH = '.mustflow/docs/agent-workflow.md';
+const PACKAGE_SCRIPT_RUNNERS = new Set(['bun', 'npm', 'pnpm', 'yarn']);
+const MAKEFILE_CANDIDATES = ['Makefile', 'makefile'];
+const JUSTFILE_CANDIDATES = ['justfile', 'Justfile'];
 
 interface CoverageIntent {
 	readonly name: string;
 	readonly intent: TomlTable;
 	readonly runnable: boolean;
+}
+
+interface PackageScripts {
+	readonly relativePath: string;
+	readonly scripts: ReadonlySet<string>;
 }
 
 function uniqueSorted(values: Iterable<string>): string[] {
@@ -168,6 +191,247 @@ function successExitCodesAreValid(intent: TomlTable): boolean {
 function writesAreValid(intent: TomlTable): boolean {
 	const value = intent.writes;
 	return value === undefined || (Array.isArray(value) && value.every((entry) => typeof entry === 'string'));
+}
+
+function readStringList(value: unknown): string[] | null {
+	if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+		return null;
+	}
+
+	return [...value];
+}
+
+function normalizeCommandName(value: string): string {
+	return path.basename(value).replace(/\.(?:cmd|exe)$/iu, '').toLowerCase();
+}
+
+function readPackageScriptReference(intent: TomlTable): string | null {
+	const argv = readStringList(intent.argv);
+	if (!argv || argv.length < 3) {
+		return null;
+	}
+
+	const runner = normalizeCommandName(argv[0]);
+	if (!PACKAGE_SCRIPT_RUNNERS.has(runner) || argv[1] !== 'run') {
+		return null;
+	}
+
+	const scriptName = argv[2];
+	return scriptName && !scriptName.startsWith('-') ? scriptName : null;
+}
+
+function resolveIntentCwd(projectRoot: string, intent: TomlTable): string | null {
+	const cwd = readString(intent, 'cwd') ?? '.';
+	const root = path.resolve(projectRoot);
+	const resolved = path.resolve(root, cwd);
+
+	if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) {
+		return null;
+	}
+
+	return resolved;
+}
+
+function toProjectRelativePath(projectRoot: string, absolutePath: string): string {
+	const relativePath = path.relative(projectRoot, absolutePath) || '.';
+	return relativePath.split(path.sep).join('/');
+}
+
+function readPackageScripts(projectRoot: string, intent: TomlTable): PackageScripts | null {
+	const intentCwd = resolveIntentCwd(projectRoot, intent);
+	if (!intentCwd) {
+		return null;
+	}
+
+	const packagePath = path.join(intentCwd, 'package.json');
+	if (!existsSync(packagePath)) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(readFileSync(packagePath, 'utf8')) as unknown;
+		if (!isRecord(parsed) || !isRecord(parsed.scripts)) {
+			return {
+				relativePath: toProjectRelativePath(projectRoot, packagePath),
+				scripts: new Set(),
+			};
+		}
+
+		return {
+			relativePath: toProjectRelativePath(projectRoot, packagePath),
+			scripts: new Set(Object.keys(parsed.scripts)),
+		};
+	} catch {
+		return null;
+	}
+}
+
+function readRootPackageScripts(projectRoot: string): readonly [string, string][] {
+	const packagePath = path.join(projectRoot, 'package.json');
+	if (!existsSync(packagePath)) {
+		return [];
+	}
+
+	try {
+		const parsed = JSON.parse(readFileSync(packagePath, 'utf8')) as unknown;
+		if (!isRecord(parsed) || !isRecord(parsed.scripts)) {
+			return [];
+		}
+
+		return Object.entries(parsed.scripts)
+			.filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+			.sort((left, right) => left[0].localeCompare(right[0]));
+	} catch {
+		return [];
+	}
+}
+
+function readFirstExistingFile(projectRoot: string, candidates: readonly string[]): string | null {
+	for (const candidate of candidates) {
+		if (existsSync(path.join(projectRoot, candidate))) {
+			return candidate;
+		}
+	}
+
+	return null;
+}
+
+function readMakeTargets(projectRoot: string): readonly string[] {
+	const relativePath = readFirstExistingFile(projectRoot, MAKEFILE_CANDIDATES);
+	if (!relativePath) {
+		return [];
+	}
+
+	const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
+	const targets: string[] = [];
+
+	for (const line of content.split(/\r?\n/u)) {
+		if (/^\s/u.test(line) || line.startsWith('#') || line.includes(':=')) {
+			continue;
+		}
+
+		const match = /^([A-Za-z0-9][A-Za-z0-9_-]*)\s*:/u.exec(line);
+		if (match) {
+			targets.push(match[1]);
+		}
+	}
+
+	return uniqueSorted(targets);
+}
+
+function readJustRecipes(projectRoot: string): readonly string[] {
+	const relativePath = readFirstExistingFile(projectRoot, JUSTFILE_CANDIDATES);
+	if (!relativePath) {
+		return [];
+	}
+
+	const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
+	const recipes: string[] = [];
+
+	for (const line of content.split(/\r?\n/u)) {
+		if (/^\s/u.test(line) || line.startsWith('#') || line.startsWith('set ') || line.includes(' := ')) {
+			continue;
+		}
+
+		const match = /^([A-Za-z0-9][A-Za-z0-9_-]*)(?:\s+[^:]*)?:\s*(?:#.*)?$/u.exec(line);
+		if (match) {
+			recipes.push(match[1]);
+		}
+	}
+
+	return uniqueSorted(recipes);
+}
+
+function toTomlString(value: string): string {
+	return JSON.stringify(value);
+}
+
+function normalizeIntentSegment(value: string): string {
+	return value
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/gu, '_')
+		.replace(/^_+|_+$/gu, '');
+}
+
+function uniqueSuggestionIntentName(baseName: string, usedIntentNames: Set<string>): string {
+	let candidate = baseName;
+	let suffix = 2;
+
+	while (usedIntentNames.has(candidate)) {
+		candidate = `${baseName}_${suffix}`;
+		suffix += 1;
+	}
+
+	usedIntentNames.add(candidate);
+	return candidate;
+}
+
+function createUnknownIntentSnippet(intentName: string, description: string, reason: string): string {
+	return [
+		`[intents.${intentName}]`,
+		'status = "unknown"',
+		`description = ${toTomlString(description)}`,
+		`reason = ${toTomlString(reason)}`,
+		'agent_action = "review_and_configure_before_run"',
+	].join('\n');
+}
+
+function createSuggestion(
+	usedIntentNames: Set<string>,
+	sourceFile: string,
+	sourceKind: ContractLintSuggestionSourceKind,
+	sourceName: string,
+	commandHint: string,
+): ContractLintSuggestion {
+	const sourcePrefix = sourceKind.replace(/_script$/u, '').replace(/_target$/u, '').replace(/_recipe$/u, '');
+	const intentName = uniqueSuggestionIntentName(
+		`suggest_${sourcePrefix}_${normalizeIntentSegment(sourceName) || 'command'}`,
+		usedIntentNames,
+	);
+	const reason = `Suggested from ${sourceFile} entry "${sourceName}". Review before adding runnable command fields.`;
+	const description = `Review ${commandHint} for a possible command intent.`;
+
+	return {
+		sourceFile,
+		sourceKind,
+		sourceName,
+		commandHint,
+		suggestedIntent: intentName,
+		status: 'unknown',
+		reason,
+		snippet: createUnknownIntentSnippet(intentName, description, reason),
+	};
+}
+
+function suggestCommandContracts(projectRoot: string | undefined, existingIntentNames: readonly string[]): readonly ContractLintSuggestion[] {
+	if (!projectRoot) {
+		return [];
+	}
+
+	const usedIntentNames = new Set(existingIntentNames);
+	const suggestions: ContractLintSuggestion[] = [];
+
+	for (const [scriptName] of readRootPackageScripts(projectRoot)) {
+		suggestions.push(
+			createSuggestion(usedIntentNames, 'package.json', 'package_script', scriptName, `npm run ${scriptName}`),
+		);
+	}
+
+	const makefilePath = readFirstExistingFile(projectRoot, MAKEFILE_CANDIDATES);
+	if (makefilePath) {
+		for (const target of readMakeTargets(projectRoot)) {
+			suggestions.push(createSuggestion(usedIntentNames, makefilePath, 'make_target', target, `make ${target}`));
+		}
+	}
+
+	const justfilePath = readFirstExistingFile(projectRoot, JUSTFILE_CANDIDATES);
+	if (justfilePath) {
+		for (const recipe of readJustRecipes(projectRoot)) {
+			suggestions.push(createSuggestion(usedIntentNames, justfilePath, 'just_recipe', recipe, `just ${recipe}`));
+		}
+	}
+
+	return suggestions;
 }
 
 function pushIssue(
@@ -293,6 +557,40 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 	}
 
 	return value;
+}
+
+function lintReferencedPackageScripts(
+	projectRoot: string | undefined,
+	intents: readonly (readonly [string, TomlTable])[],
+	issues: ContractLintIssue[],
+): void {
+	if (!projectRoot) {
+		return;
+	}
+
+	for (const [name, intent] of intents) {
+		if (readString(intent, 'status') !== 'configured') {
+			continue;
+		}
+
+		const scriptName = readPackageScriptReference(intent);
+		if (!scriptName) {
+			continue;
+		}
+
+		const packageScripts = readPackageScripts(projectRoot, intent);
+		if (!packageScripts || packageScripts.scripts.has(scriptName)) {
+			continue;
+		}
+
+		pushIssue(
+			issues,
+			'warning',
+			'referenced_package_script_missing',
+			name,
+			`Intent ${name} references package script "${scriptName}" in ${packageScripts.relativePath}, but that script is not declared.`,
+		);
+	}
 }
 
 function collectRequiredAfterReasons(contract: CommandContract): Map<string, CoverageIntent[]> {
@@ -617,9 +915,13 @@ export function lintCommandContract(contract: CommandContract, options: Contract
 	const issues: ContractLintIssue[] = [];
 	const intentEntries = Object.entries(contract.intents);
 	const intentTables = intentEntries
-		.map(([name, value]) => lintIntent(name, value, issues))
-		.filter((intent): intent is TomlTable => intent !== null);
+		.map(([name, value]) => [name, lintIntent(name, value, issues)] as const)
+		.filter((entry): entry is readonly [string, TomlTable] => entry[1] !== null);
+	lintReferencedPackageScripts(options.projectRoot, intentTables, issues);
+	const validIntents = intentTables.map(([, intent]) => intent);
 	const coverage = options.coverage === true ? lintCoverage(contract, options, issues) : undefined;
+	const suggestions =
+		options.suggest === true ? suggestCommandContracts(options.projectRoot, intentEntries.map(([name]) => name)) : undefined;
 	const errors = issues.filter((issue) => issue.severity === 'error').length;
 	const warnings = issues.length - errors;
 
@@ -627,15 +929,16 @@ export function lintCommandContract(contract: CommandContract, options: Contract
 		status: getStatus(errors, warnings),
 		summary: {
 			totalIntents: intentEntries.length,
-			configured: intentTables.filter((intent) => readString(intent, 'status') === 'configured').length,
-			runnable: intentTables.filter(configuredIntentIsRunnable).length,
-			manualOnly: intentTables.filter((intent) => readString(intent, 'status') === 'manual_only').length,
-			unknown: intentTables.filter((intent) => readString(intent, 'status') === 'unknown').length,
+			configured: validIntents.filter((intent) => readString(intent, 'status') === 'configured').length,
+			runnable: validIntents.filter(configuredIntentIsRunnable).length,
+			manualOnly: validIntents.filter((intent) => readString(intent, 'status') === 'manual_only').length,
+			unknown: validIntents.filter((intent) => readString(intent, 'status') === 'unknown').length,
 			errors,
 			warnings,
 		},
 		issues,
 		sourceFiles: CONTRACT_LINT_SOURCE_FILES,
 		coverage,
+		suggestions,
 	};
 }

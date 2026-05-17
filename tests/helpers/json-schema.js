@@ -37,26 +37,44 @@ function typeMatches(expected, value) {
 	return typeof value === expected;
 }
 
-function resolveRef(rootSchema, ref) {
+function resolveLocalRef(rootSchema, ref) {
 	const parts = ref.split('/');
 	assert.equal(parts[0], '#', `only local refs are supported in tests: ${ref}`);
 
 	return parts.slice(1).reduce((current, part) => current?.[part], rootSchema);
 }
 
-export function validateJsonSchema(rootSchema, value) {
+function resolveRef(schemaRoot, currentRootSchema, ref) {
+	if (ref.startsWith('#')) {
+		return {
+			rootSchema: currentRootSchema,
+			schema: resolveLocalRef(currentRootSchema, ref),
+		};
+	}
+
+	const [fileName, fragment = ''] = ref.split('#');
+	const rootSchema = readJsonSchema(schemaRoot, fileName);
+
+	return {
+		rootSchema,
+		schema: fragment === '' ? rootSchema : resolveLocalRef(rootSchema, `#${fragment}`),
+	};
+}
+
+export function validateJsonSchema(rootSchema, value, schemaRoot = null) {
 	const errors = [];
 
-	function validate(schema, candidate, pointer) {
+	function validate(schema, candidate, pointer, currentRootSchema) {
 		if (schema.$ref) {
-			validate(resolveRef(rootSchema, schema.$ref), candidate, pointer);
+			const resolved = resolveRef(schemaRoot, currentRootSchema, schema.$ref);
+			validate(resolved.schema, candidate, pointer, resolved.rootSchema);
 			return;
 		}
 
 		if (schema.anyOf) {
 			const matched = schema.anyOf.some((option) => {
 				const before = errors.length;
-				validate(option, candidate, pointer);
+				validate(option, candidate, pointer, currentRootSchema);
 				const ok = errors.length === before;
 				errors.length = before;
 				return ok;
@@ -71,7 +89,7 @@ export function validateJsonSchema(rootSchema, value) {
 		if (schema.oneOf) {
 			const matchCount = schema.oneOf.filter((option) => {
 				const before = errors.length;
-				validate(option, candidate, pointer);
+				validate(option, candidate, pointer, currentRootSchema);
 				const ok = errors.length === before;
 				errors.length = before;
 				return ok;
@@ -111,13 +129,13 @@ export function validateJsonSchema(rootSchema, value) {
 		if (schema.properties && typeMatches('object', candidate)) {
 			for (const [key, propertySchema] of Object.entries(schema.properties)) {
 				if (Object.hasOwn(candidate, key)) {
-					validate(propertySchema, candidate[key], `${pointer}.${key}`);
+					validate(propertySchema, candidate[key], `${pointer}.${key}`, currentRootSchema);
 				}
 			}
 		}
 
 		if (schema.items && Array.isArray(candidate)) {
-			candidate.forEach((item, index) => validate(schema.items, item, `${pointer}[${index}]`));
+			candidate.forEach((item, index) => validate(schema.items, item, `${pointer}[${index}]`, currentRootSchema));
 		}
 
 		if (typeMatches('object', candidate)) {
@@ -134,26 +152,26 @@ export function validateJsonSchema(rootSchema, value) {
 
 				const patternMatch = patternEntries.find((entry) => entry.pattern.test(key));
 				if (patternMatch) {
-					validate(patternMatch.propertySchema, nestedValue, `${pointer}.${key}`);
+					validate(patternMatch.propertySchema, nestedValue, `${pointer}.${key}`, currentRootSchema);
 					continue;
 				}
 
 				if (schema.additionalProperties === false) {
 					errors.push(`${pointer}.${key} is not allowed`);
 				} else if (typeMatches('object', schema.additionalProperties)) {
-					validate(schema.additionalProperties, nestedValue, `${pointer}.${key}`);
+					validate(schema.additionalProperties, nestedValue, `${pointer}.${key}`, currentRootSchema);
 				}
 			}
 		}
 	}
 
-	validate(rootSchema, value, '$');
+	validate(rootSchema, value, '$', rootSchema);
 	return errors;
 }
 
 export function assertMatchesSchema(schemaRoot, fileName, value) {
 	const schema = readJsonSchema(schemaRoot, fileName);
-	const errors = validateJsonSchema(schema, value);
+	const errors = validateJsonSchema(schema, value, schemaRoot);
 
 	assert.deepEqual(errors, []);
 }

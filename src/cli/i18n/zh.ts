@@ -68,6 +68,7 @@ export const zhMessages = {
   "contractLint.help.summary":
     "检查 .mustflow/config/commands.toml 中的命令契约错误和警告。",
   "contractLint.help.option.coverage": "同时报告变更分类原因的 required_after 覆盖情况",
+  "contractLint.help.option.suggest": "从 package.json、Makefile 或 justfile 建议不可运行的 intent 片段",
   "contractLint.help.exit.ok": "命令契约已检查，未发现阻塞错误",
   "contractLint.help.exit.fail": "发现命令契约错误，或输入无效",
   "contractLint.title": "mustflow contract-lint",
@@ -85,6 +86,7 @@ export const zhMessages = {
   "contractLint.label.requiredAfterReasons": "required_after 原因",
   "contractLint.label.runnableReasons": "可运行原因",
   "contractLint.label.coverageFindings": "覆盖发现",
+  "contractLint.label.suggestions": "建议",
   "contractLint.label.issues": "问题",
 
   "context.help.summary":
@@ -626,7 +628,7 @@ export const zhMessages = {
     "将 mustflow 管理块合并到现有 AGENTS.md",
   "init.help.option.force": "备份冲突文件并覆盖它们",
   "init.help.option.profile":
-    "设置项目配置：minimal、oss、team、product 或 library",
+    "设置项目配置：minimal、patterns、oss、team、product 或 library",
   "init.help.option.locale": "设置已安装 mustflow 文档的语言",
   "init.help.option.agentLang": "设置首选代理响应语言",
   "init.help.option.set":
@@ -735,6 +737,7 @@ export const zhMessages = {
   "run.help.option.json": "将运行记录或命令计划输出为 JSON",
   "run.help.exit.ok": "命令已以允许的退出码完成",
   "run.help.exit.fail": "命令无效、被拒绝、超时或失败",
+  "run.label.suggestedIntentSnippet": "建议的命令契约片段",
   "run.error.missingIntent": "缺少命令名称",
   "run.error.unknownIntent": "未知命令：{intent}",
   "run.error.statusNotConfigured":
@@ -817,8 +820,9 @@ export const zhMessages = {
   "upgrade.warning.continueWithBundledTemplate": "继续使用当前 CLI 捆绑的模板。",
 
   "classify.help.summary":
-    "在不修改文件的情况下分类变更路径、公开表面和所需验证原因。",
+    "分类变更路径、公开表面和所需验证原因。",
   "classify.help.option.changed": "从 git status --short --untracked-files=all 读取路径",
+  "classify.help.option.write": "将分类报告写入此仓库内的 JSON 文件",
   "classify.help.exit.ok": "已检查并输出变更分类",
   "classify.title": "mustflow classify",
   "classify.label.source": "来源",
@@ -833,6 +837,7 @@ export const zhMessages = {
   "classify.source.changed": "变更文件",
   "classify.source.paths": "指定路径",
   "classify.error.missingInput": "请指定 --changed 或至少一个路径",
+  "classify.error.write_path_outside_root": "分类报告路径必须位于 mustflow 根目录内",
 
   "impact.help.summary":
     "在不修改文件的情况下报告变更路径是否需要包或模板版本决策。",
@@ -852,9 +857,10 @@ export const zhMessages = {
   "verify.help.summary":
     "运行由 required_after 元数据选出的已配置验证意图。",
   "verify.help.option.reason": "选择要验证的 required_after 原因",
-  "verify.help.option.fromPlan": "从此仓库内的 JSON 计划读取验证原因",
+  "verify.help.option.fromClassification": "从此仓库内的 mf classify 报告读取验证原因",
+  "verify.help.option.fromPlan": "--from-classification 的兼容别名",
   "verify.help.option.changed": "分类当前 Git 变更并验证匹配的原因",
-  "verify.help.option.writePlan": "在此仓库内写入变更文件分类计划",
+  "verify.help.option.writePlan": "写入变更文件分类报告的兼容选项",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
@@ -865,14 +871,14 @@ export const zhMessages = {
   "verify.label.status": "状态",
   "verify.label.results": "结果",
   "verify.error.missingReason": "缺少验证原因",
-  "verify.error.conflictingInputs": "只能使用 --reason、--from-plan 或 --changed 其中之一",
+  "verify.error.conflictingInputs": "只能使用 --reason、--from-classification、--from-plan 或 --changed 其中之一",
   "verify.error.writePlanRequiresChanged": "--write-plan 需要 --changed",
   "verify.error.planOnlyJson": "--plan-only 需要 --json",
-  "verify.error.invalid_plan_file": "验证计划必须是可读取的 JSON 文件",
-  "verify.error.unsupported_plan_source": "验证计划必须由 mf classify --json 生成",
-  "verify.error.plan_root_mismatch": "验证计划必须来自当前 mustflow 根目录",
-  "verify.error.missing_plan_reasons": "验证计划必须包含 summary.validationReasons",
-  "verify.error.plan_path_outside_root": "验证计划路径必须位于 mustflow 根目录内",
+  "verify.error.invalid_plan_file": "分类报告必须是可读取的 JSON 文件",
+  "verify.error.unsupported_plan_source": "验证输入必须是 mf classify 报告",
+  "verify.error.plan_root_mismatch": "分类报告必须来自当前 mustflow 根目录",
+  "verify.error.missing_plan_reasons": "分类报告必须包含 summary.validationReasons",
+  "verify.error.plan_path_outside_root": "分类报告路径必须位于 mustflow 根目录内",
 
   "explain.help.summary":
     "在不修改文件的情况下解释 mustflow 策略决策为何适用。",

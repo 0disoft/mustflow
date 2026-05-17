@@ -78,7 +78,10 @@
             "intent": "docs_validate_fast",
             "status": "runnable",
             "skipReason": null,
-            "detail": null
+            "detail": null,
+            "candidateState": "candidate",
+            "eligibilityState": "eligible",
+            "selectionState": "selected"
           }
         ],
         "gaps": [],
@@ -175,6 +178,19 @@
               "to": "intent:docs_validate_fast",
               "kind": "requires"
             }
+          ]
+        },
+        "test_selection": {
+          "source": "test-selection.toml",
+          "status": "missing",
+          "configPath": ".mustflow/config/test-selection.toml",
+          "authority": ".mustflow/config/test-selection.toml",
+          "commandAuthority": ".mustflow/config/commands.toml",
+          "grantsCommandAuthority": false,
+          "matches": [],
+          "selected": [],
+          "notes": [
+            "No project-declared test selection manifest exists; mustflow will not infer a user-project test subset."
           ]
         }
       }
@@ -687,6 +703,30 @@
       }
     },
     {
+      "id": "latest-run-pointer",
+      "schema_file": "latest-run-pointer.schema.json",
+      "producer": ".mustflow/state/runs/latest.json when written by mf verify",
+      "fixture": {
+        "schema_version": "1",
+        "command": "verify",
+        "kind": "verify_run_summary",
+        "reason": "docs_change",
+        "reasons": ["docs_change"],
+        "plan_source": null,
+        "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "status": "passed",
+        "summary": {
+          "matched": 1,
+          "ran": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "run_dir": ".mustflow/state/runs/verify-latest",
+        "manifest_path": ".mustflow/state/runs/verify-latest/manifest.json"
+      }
+    },
+    {
       "id": "run-receipt",
       "schema_file": "run-receipt.schema.json",
       "producer": "mf run <intent> --json",
@@ -761,7 +801,10 @@
         "reason": "docs_change",
         "reasons": ["docs_change"],
         "plan_source": null,
+        "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "status": "passed",
+        "run_dir": ".mustflow/state/runs/verify-latest",
+        "manifest_path": ".mustflow/state/runs/verify-latest/manifest.json",
         "summary": {
           "matched": 1,
           "ran": 1,
@@ -777,9 +820,100 @@
             "reason": "docs_change",
             "detail": null,
             "exit_code": 0,
+            "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "receipt_path": ".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json",
+            "receipt_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "receipt": {
-              "path": ".mustflow/state/runs/latest.json"
+              "schema_version": "1",
+              "command": "run",
+              "intent": "docs_validate_fast",
+              "status": "passed",
+              "timed_out": false,
+              "started_at": "2026-05-14T00:00:00.000Z",
+              "finished_at": "2026-05-14T00:00:01.000Z",
+              "duration_ms": 1000,
+              "cwd": "C:/repo",
+              "lifecycle": "oneshot",
+              "run_policy": "agent_allowed",
+              "mode": "argv",
+              "env_policy": "minimal",
+              "env_allowlist": ["PATH"],
+              "argv": ["node", "dist/cli/index.js", "run", "docs_validate_fast"],
+              "timeout_seconds": 60,
+              "max_output_bytes": 200000,
+              "success_exit_codes": [0],
+              "exit_code": 0,
+              "signal": null,
+              "error": null,
+              "kill_method": null,
+              "stdout": {
+                "bytes": 20,
+                "truncated": false,
+                "tail": "docs check ok",
+                "redacted": false,
+                "redaction_count": 0,
+                "redaction_kinds": []
+              },
+              "stderr": {
+                "bytes": 0,
+                "truncated": false,
+                "tail": "",
+                "redacted": false,
+                "redaction_count": 0,
+                "redaction_kinds": []
+              },
+              "write_drift": {
+                "status": "checked",
+                "declared_paths": [],
+                "observed_paths": [],
+                "declared_observed_paths": [],
+                "undeclared_paths": [],
+                "observed_count": 0,
+                "undeclared_count": 0,
+                "has_undeclared_changes": false,
+                "truncated": false,
+                "reason": null
+              },
+              "redaction": {
+                "redacted": false,
+                "redaction_count": 0,
+                "redaction_kinds": [],
+                "fields": []
+              },
+              "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "receipt_path": ".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json"
             }
+          }
+        ]
+      }
+    },
+    {
+      "id": "verify-run-manifest",
+      "schema_file": "verify-run-manifest.schema.json",
+      "producer": ".mustflow/state/runs/verify-latest/manifest.json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "verify",
+        "reason": "docs_change",
+        "reasons": ["docs_change"],
+        "plan_source": null,
+        "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "status": "passed",
+        "summary": {
+          "matched": 1,
+          "ran": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "receipts": [
+          {
+            "intent": "docs_validate_fast",
+            "status": "passed",
+            "skipped": false,
+            "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "receipt_path": ".mustflow/state/runs/verify-latest/intents/001-docs_validate_fast.json",
+            "receipt_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
           }
         ]
       }

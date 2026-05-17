@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -103,6 +103,158 @@ test('contract-lint reports command contract warnings without failing', () => {
 		assert.equal(report.report.summary.errors, 0);
 		assert.ok(report.report.summary.unknown > 0);
 		assert.ok(report.report.issues.some((issue) => issue.code === 'intent_unknown'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint warns when a package script referenced by an intent is missing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', version: '1.0.0', scripts: { test: 'node --version' } }, null, 2)}\n`,
+		);
+		mkdirSync(path.join(projectPath, 'docs-site'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'docs-site', 'package.json'),
+			`${JSON.stringify({ name: 'docs-site', scripts: { check: 'node --version' } }, null, 2)}\n`,
+		);
+		writeCommands(
+			projectPath,
+			[
+				`
+[intents.root_existing_script]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run an existing root package script."
+argv = ["bun", "run", "test"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["code_change"]
+`,
+				`
+[intents.root_missing_script]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a missing root package script."
+argv = ["bun", "run", "missing"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["code_change"]
+`,
+				`
+[intents.nested_existing_script]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run an existing nested package script."
+argv = ["bun", "run", "check"]
+cwd = "docs-site"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["docs_change"]
+`,
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.report.status, 'warning');
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.code === 'referenced_package_script_missing' &&
+					issue.intent === 'root_missing_script' &&
+					issue.message ===
+						'Intent root_missing_script references package script "missing" in package.json, but that script is not declared.',
+			),
+		);
+		assert.ok(
+			!report.report.issues.some(
+				(issue) =>
+					issue.code === 'referenced_package_script_missing' &&
+					(issue.intent === 'root_existing_script' || issue.intent === 'nested_existing_script'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint suggests non-runnable intent snippets from existing command files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', version: '1.0.0', scripts: { test: 'node --test' } }, null, 2)}\n`,
+		);
+		writeFileSync(path.join(projectPath, 'Makefile'), 'build:\n\t@echo build\n');
+		writeFileSync(path.join(projectPath, 'justfile'), 'lint:\n\tnode --check index.js\n');
+
+		const result = runCli(projectPath, ['contract-lint', '--suggest', '--json']);
+		const report = JSON.parse(result.stdout);
+		const suggestions = report.report.suggestions;
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(Array.isArray(suggestions));
+		assert.deepEqual(
+			suggestions.map((suggestion) => `${suggestion.sourceKind}:${suggestion.sourceName}`).sort(),
+			['just_recipe:lint', 'make_target:build', 'package_script:test'],
+		);
+
+		for (const suggestion of suggestions) {
+			assert.equal(suggestion.status, 'unknown');
+			assert.match(suggestion.suggestedIntent, /^suggest_/u);
+			assert.match(suggestion.snippet, /status = "unknown"/u);
+			assert.doesNotMatch(suggestion.snippet, /^argv\s*=/mu);
+			assert.doesNotMatch(suggestion.snippet, /^run_policy\s*=/mu);
+			assert.doesNotMatch(suggestion.snippet, /^lifecycle\s*=/mu);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint suggestion text output includes review-only snippets', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', scripts: { test: 'node --test' } }, null, 2)}\n`,
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--suggest']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Suggestions/);
+		assert.match(result.stdout, /\[intents\.suggest_package_test\]/);
+		assert.match(result.stdout, /status = "unknown"/);
+		assert.doesNotMatch(result.stdout, /^  argv\s*=/mu);
 	} finally {
 		removeTempProject(projectPath);
 	}

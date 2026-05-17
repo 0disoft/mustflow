@@ -207,7 +207,7 @@ required_after = ["manual_verify"]
 	}
 });
 
-test('reports invalid verification plan inputs for explain verify', () => {
+test('reports invalid classification report inputs for explain verify', () => {
 	const projectPath = createTempProject('mustflow-explain-verify-');
 
 	try {
@@ -223,13 +223,13 @@ test('reports invalid verification plan inputs for explain verify', () => {
 		const looseResult = runCli(projectPath, ['explain', 'verify', '--from-plan', 'loose-plan.json']);
 
 		assert.equal(missingResult.status, 1);
-		assert.match(missingResult.stderr, /Verification plan must be a readable JSON file/);
+		assert.match(missingResult.stderr, /Classification report must be a readable JSON file/);
 		assert.match(missingResult.stdout, /Usage: mf explain/);
 		assert.equal(invalidResult.status, 1);
-		assert.match(invalidResult.stderr, /Verification plan must be a readable JSON file/);
+		assert.match(invalidResult.stderr, /Classification report must be a readable JSON file/);
 		assert.match(invalidResult.stdout, /Usage: mf explain/);
 		assert.equal(looseResult.status, 1);
-		assert.match(looseResult.stderr, /Verification plan must be produced by mf classify --json/);
+		assert.match(looseResult.stderr, /Verification input must be an mf classify report/);
 		assert.match(looseResult.stdout, /Usage: mf explain/);
 	} finally {
 		removeTempProject(projectPath);

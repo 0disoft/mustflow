@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
@@ -163,6 +163,40 @@ test('classifies changed git status paths', async () => {
 	}
 });
 
+test('writes changed-file classification reports to repository-local paths', async () => {
+	const projectPath = createClassifyProject();
+	const reportPath = path.join(projectPath, '.mustflow', 'state', 'change-classification.json');
+
+	try {
+		runGit(projectPath, ['init']);
+		runGit(projectPath, ['config', 'user.email', 'test@example.com']);
+		runGit(projectPath, ['config', 'user.name', 'Test User']);
+		runGit(projectPath, ['add', '.']);
+		runGit(projectPath, ['commit', '-m', 'init']);
+
+		writeFileSync(path.join(projectPath, 'README.md'), '# Changed\n');
+
+		const result = await runCli(projectPath, [
+			'classify',
+			'--changed',
+			'--write',
+			'.mustflow/state/change-classification.json',
+			'--json',
+		]);
+		const printedReport = JSON.parse(result.stdout);
+		const writtenReport = JSON.parse(readFileSync(reportPath, 'utf8'));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(existsSync(reportPath), true);
+		assert.deepEqual(writtenReport, printedReport);
+		assert.equal(writtenReport.command, 'classify');
+		assert.equal(writtenReport.source, 'changed');
+		assert.deepEqual(writtenReport.files, ['README.md']);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('classifies host-specific instruction files as workflow surfaces without command authority', async () => {
 	const projectPath = createClassifyProject();
 
@@ -186,6 +220,14 @@ test('classifies host-specific instruction files as workflow surfaces without co
 	} finally {
 		removeTempProject(projectPath);
 	}
+});
+
+test('rejects classification report writes outside the mustflow root', async () => {
+	const result = await runCli(projectRoot, ['classify', 'README.md', '--write', '../change-classification.json']);
+
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
+	assert.match(result.stdout, /Usage: mf classify/);
 });
 
 test('fails classify without changed mode or explicit paths', async () => {

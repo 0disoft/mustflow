@@ -69,6 +69,10 @@
     "write_drift": { "$ref": "#/$defs/writeDrift" },
     "performance": { "$ref": "#/$defs/performance" },
     "redaction": { "$ref": "#/$defs/redaction" },
+    "verification_plan_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "receipt_path": { "type": "string" }
   },
   "$defs": {

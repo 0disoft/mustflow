@@ -21,6 +21,8 @@ Current schemas:
   `mf impact <path...> --json`
 - `line-endings-report.schema.json`: output of `mf line-endings check --json` and  
   `mf line-endings normalize --json`
+- `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a
+  pointer to the latest verify run bundle
 - `handoff-validation-report.schema.json`: output of  
   `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
@@ -29,8 +31,9 @@ Current schemas:
   `mf explain verify --reason <event> --json`, `mf explain retention --json`, `mf explain skills --json`,
   and `mf explain surface --json`. Verify explanations include the shared `decisionGraph` evidence model.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
-  `mf verify --from-plan <classify-report.json> --plan-only --json`, including the `decision_graph` that links
+  `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links
   changed surfaces, classification reasons, command candidates, eligibility, selected or not-selected state,
   effects, and gaps.
   Local-index command-effect graphs are explanation-only and cannot grant command authority.

@@ -1,3 +1,6 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+
 import {
 	createChangeClassificationReport,
 	type ChangeClassificationReport,
@@ -19,6 +22,7 @@ export interface ClassifyOutput extends ChangeClassificationReport {
 interface ParsedClassifyArgs {
 	readonly json: boolean;
 	readonly changed: boolean;
+	readonly writePath?: string;
 	readonly paths: readonly string[];
 	readonly error?: string;
 }
@@ -30,10 +34,15 @@ export function getClassifyHelp(lang: CliLang = 'en'): string {
 			summary: t(lang, 'classify.help.summary'),
 			options: [
 				{ label: '--changed', description: t(lang, 'classify.help.option.changed') },
+				{ label: '--write <path>', description: t(lang, 'classify.help.option.write') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf classify --changed', 'mf classify README.md schemas/verify-report.schema.json --json'],
+			examples: [
+				'mf classify --changed',
+				'mf classify --changed --write .mustflow/state/change-classification.json',
+				'mf classify README.md schemas/verify-report.schema.json --json',
+			],
 			exitCodes: [
 				{ label: '0', description: t(lang, 'classify.help.exit.ok') },
 				{ label: '1', description: t(lang, 'cli.common.invalidInput') },
@@ -47,8 +56,11 @@ function parseClassifyArgs(args: readonly string[]): ParsedClassifyArgs {
 	const paths: string[] = [];
 	let json = false;
 	let changed = false;
+	let writePath: string | undefined;
 
-	for (const arg of args) {
+	for (let index = 0; index < args.length; index += 1) {
+		const arg = args[index];
+
 		if (arg === '--json') {
 			json = true;
 			continue;
@@ -59,14 +71,35 @@ function parseClassifyArgs(args: readonly string[]): ParsedClassifyArgs {
 			continue;
 		}
 
+		if (arg === '--write') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return { json, changed, writePath, paths, error: 'missing_write_value' };
+			}
+
+			writePath = value;
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith('--write=')) {
+			const value = arg.slice('--write='.length);
+			if (value.length === 0) {
+				return { json, changed, writePath, paths, error: 'missing_write_value' };
+			}
+
+			writePath = value;
+			continue;
+		}
+
 		if (arg.startsWith('-')) {
-			return { json, changed, paths, error: arg };
+			return { json, changed, writePath, paths, error: arg };
 		}
 
 		paths.push(arg);
 	}
 
-	return { json, changed, paths };
+	return { json, changed, writePath, paths };
 }
 
 export function createClassifyOutput(
@@ -121,6 +154,23 @@ function renderClassifyOutput(output: ClassifyOutput, lang: CliLang): string {
 	return lines.join('\n');
 }
 
+function resolveWritePath(projectRoot: string, inputPath: string): string {
+	const resolved = path.resolve(projectRoot, inputPath);
+	const relative = path.relative(projectRoot, resolved);
+
+	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+		throw new Error('write_path_outside_root');
+	}
+
+	return resolved;
+}
+
+function writeClassifyOutput(projectRoot: string, inputPath: string, output: ClassifyOutput): void {
+	const outputPath = resolveWritePath(projectRoot, inputPath);
+	mkdirSync(path.dirname(outputPath), { recursive: true });
+	writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+}
+
 export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getClassifyHelp(lang));
@@ -130,9 +180,13 @@ export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 
 	const parsed = parseClassifyArgs(args);
 
 	if (parsed.error) {
+		const message =
+			parsed.error === 'missing_write_value'
+				? t(lang, 'cli.error.missingValue', { option: '--write' })
+				: t(lang, 'cli.error.unknownOption', { option: parsed.error });
 		printUsageError(
 			reporter,
-			t(lang, 'cli.error.unknownOption', { option: parsed.error }),
+			message,
 			'mf classify --help',
 			getClassifyHelp(lang),
 			lang,
@@ -156,7 +210,21 @@ export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 
 		return 1;
 	}
 
-	const output = createClassifyOutput(resolveMustflowRoot(), parsed.changed ? 'changed' : 'paths', parsed.paths);
+	const projectRoot = resolveMustflowRoot();
+	const output = createClassifyOutput(projectRoot, parsed.changed ? 'changed' : 'paths', parsed.paths);
+
+	if (parsed.writePath) {
+		try {
+			writeClassifyOutput(projectRoot, parsed.writePath, output);
+		} catch (error) {
+			const message =
+				error instanceof Error && error.message === 'write_path_outside_root'
+					? t(lang, 'classify.error.write_path_outside_root')
+					: t(lang, 'cli.common.invalidInput');
+			printUsageError(reporter, message, 'mf classify --help', getClassifyHelp(lang), lang);
+			return 1;
+		}
+	}
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

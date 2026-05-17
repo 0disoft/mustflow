@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -120,6 +121,7 @@ required_after = ["custom_verify"]
 		assert.equal(report.reason, 'custom_verify');
 		assert.deepEqual(report.reasons, ['custom_verify']);
 		assert.equal(report.plan_source, null);
+		assert.match(report.verification_plan_id, /^sha256:[0-9a-f]{64}$/u);
 		assert.equal(report.status, 'passed');
 		assert.deepEqual(report.summary, {
 			matched: 1,
@@ -130,25 +132,39 @@ required_after = ["custom_verify"]
 		});
 		assert.equal(report.results[0].intent, 'verify_echo');
 		assert.equal(report.results[0].status, 'passed');
+		assert.equal(report.results[0].verification_plan_id, report.verification_plan_id);
 		assert.equal(report.results[0].receipt.intent, 'verify_echo');
+		assert.equal(report.results[0].receipt.verification_plan_id, report.verification_plan_id);
 		assert.match(report.results[0].receipt.stdout.tail, /verify ok/);
+		assert.equal(report.run_dir, '.mustflow/state/runs/verify-latest');
+		assert.equal(report.manifest_path, '.mustflow/state/runs/verify-latest/manifest.json');
 		const manifestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-latest', 'manifest.json');
 		const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 		const receiptPath = path.join(projectPath, manifest.receipts[0].receipt_path);
-		const perIntentReceipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+		const receiptContent = readFileSync(receiptPath, 'utf8');
+		const perIntentReceipt = JSON.parse(receiptContent);
+		const receiptSha256 = `sha256:${createHash('sha256').update(receiptContent).digest('hex')}`;
 		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
 
 		assert.equal(manifest.command, 'verify');
+		assert.equal(manifest.verification_plan_id, report.verification_plan_id);
 		assert.equal(manifest.status, 'passed');
 		assert.deepEqual(manifest.reasons, ['custom_verify']);
 		assert.equal(manifest.receipts[0].intent, 'verify_echo');
 		assert.equal(manifest.receipts[0].status, 'passed');
+		assert.equal(manifest.receipts[0].verification_plan_id, report.verification_plan_id);
 		assert.match(manifest.receipts[0].receipt_path, /\.mustflow\/state\/runs\/verify-latest\/intents\/001-verify_echo\.json/u);
+		assert.equal(manifest.receipts[0].receipt_sha256, receiptSha256);
+		assert.equal(report.results[0].receipt_path, manifest.receipts[0].receipt_path);
+		assert.equal(report.results[0].receipt_sha256, receiptSha256);
+		assert.equal(report.results[0].receipt.receipt_path, manifest.receipts[0].receipt_path);
 		assert.equal(perIntentReceipt.intent, 'verify_echo');
+		assert.equal(perIntentReceipt.verification_plan_id, report.verification_plan_id);
 		assert.equal(perIntentReceipt.receipt_path, manifest.receipts[0].receipt_path);
 		assert.match(perIntentReceipt.stdout.tail, /verify ok/);
 		assert.equal(latest.command, 'verify');
 		assert.equal(latest.kind, 'verify_run_summary');
+		assert.equal(latest.verification_plan_id, report.verification_plan_id);
 		assert.equal(latest.status, 'passed');
 		assert.equal(latest.manifest_path, '.mustflow/state/runs/verify-latest/manifest.json');
 	} finally {
@@ -159,7 +175,6 @@ required_after = ["custom_verify"]
 test('plans verification from current changed files', () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
-	const planPath = path.join(projectPath, '.mustflow', 'state', 'change-plan.json');
 
 	try {
 		initProject(projectPath);
@@ -188,30 +203,35 @@ required_after = ["test_change"]
 		writeFileSync(fixturePath, 'after\n');
 
 		const changedResult = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
-		const classifyResult = runCli(projectPath, ['classify', '--changed', '--json']);
-		mkdirSync(path.dirname(planPath), { recursive: true });
-		writeFileSync(planPath, classifyResult.stdout);
-		const fromPlanResult = runCli(projectPath, [
+		const classifyResult = runCli(projectPath, [
+			'classify',
+			'--changed',
+			'--write',
+			'.mustflow/state/change-classification.json',
+			'--json',
+		]);
+		const fromClassificationResult = runCli(projectPath, [
 			'verify',
-			'--from-plan',
-			'.mustflow/state/change-plan.json',
+			'--from-classification',
+			'.mustflow/state/change-classification.json',
 			'--plan-only',
 			'--json',
 		]);
-		const fromPlanReport = JSON.parse(fromPlanResult.stdout);
+		const fromClassificationReport = JSON.parse(fromClassificationResult.stdout);
 		const changedReport = JSON.parse(changedResult.stdout);
 
 		assert.equal(classifyResult.status, 0, classifyResult.stderr || classifyResult.stdout);
-		assert.equal(fromPlanResult.status, 0, fromPlanResult.stderr || fromPlanResult.stdout);
+		assert.equal(fromClassificationResult.status, 0, fromClassificationResult.stderr || fromClassificationResult.stdout);
 		assert.equal(changedResult.status, 0, changedResult.stderr || changedResult.stdout);
+		assert.equal(fromClassificationReport.verification_plan_id, changedReport.verification_plan_id);
 		assert.equal(changedReport.source, 'changed');
 		assert.deepEqual(changedReport.files, ['tests/fixtures/verify-changed.txt']);
-		assert.deepEqual(changedReport.classification_summary, fromPlanReport.classification_summary);
+		assert.deepEqual(changedReport.classification_summary, fromClassificationReport.classification_summary);
 		assert.deepEqual(
 			changedReport.requirements.map((requirement) => requirement.reason),
-			fromPlanReport.requirements.map((requirement) => requirement.reason),
+			fromClassificationReport.requirements.map((requirement) => requirement.reason),
 		);
-		assert.deepEqual(changedReport.candidates, fromPlanReport.candidates);
+		assert.deepEqual(changedReport.candidates, fromClassificationReport.candidates);
 		assert.equal(changedReport.candidates[0].intent, 'verify_changed_fixture');
 		assert.equal(changedReport.candidates[0].status, 'runnable');
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json')), false);
@@ -699,6 +719,7 @@ escalate_to = ["test"]
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.schema_version, '1');
+		assert.match(report.verification_plan_id, /^sha256:[0-9a-f]{64}$/u);
 		assert.equal(report.source, 'paths');
 		assert.deepEqual(report.files, []);
 		assert.deepEqual(report.classification_summary.validationReasons, ['custom_verify']);
@@ -1393,6 +1414,8 @@ required_after = ["custom_verify"]
 
 		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
 		assert.equal(runResult.status, 0, runResult.stderr || runResult.stdout);
+		assert.equal(runReport.verification_plan_id, planReport.verification_plan_id);
+		assert.ok(runReport.results.every((result) => result.verification_plan_id === runReport.verification_plan_id));
 		assert.deepEqual(
 			runReport.results.filter((result) => !result.skipped).map((result) => result.intent),
 			scheduledIntents,
@@ -1822,7 +1845,7 @@ required_after = ["schema_verify"]
 	}
 });
 
-test('rejects loose verification plans that are not classify output', () => {
+test('rejects loose classification report inputs that are not classify output', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -1835,7 +1858,7 @@ test('rejects loose verification plans that are not classify output', () => {
 		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Verification plan must be produced by mf classify --json/);
+		assert.match(result.stderr, /Verification input must be an mf classify report/);
 		assert.match(result.stdout, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
@@ -1855,7 +1878,7 @@ test('rejects classify plans from a different mustflow root', () => {
 		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Verification plan must come from this mustflow root/);
+		assert.match(result.stderr, /Classification report must come from this mustflow root/);
 		assert.match(result.stdout, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
@@ -1999,13 +2022,13 @@ test('rejects conflicting verify reason inputs', () => {
 		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--from-plan', 'verify-plan.json']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Use only one of --reason, --from-plan, or --changed/);
+		assert.match(result.stderr, /Use only one of --reason, --from-classification, --from-plan, or --changed/);
 		assert.match(result.stdout, /Usage: mf verify/);
 
 		const changedResult = runCli(projectPath, ['verify', '--changed', '--reason', 'schema_verify', '--json']);
 
 		assert.equal(changedResult.status, 1);
-		assert.match(changedResult.stderr, /Use only one of --reason, --from-plan, or --changed/);
+		assert.match(changedResult.stderr, /Use only one of --reason, --from-classification, --from-plan, or --changed/);
 		assert.match(changedResult.stdout, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
@@ -2037,7 +2060,7 @@ test('rejects changed verify plan writes outside the mustflow root', () => {
 		const result = runCli(projectPath, ['verify', '--changed', '--write-plan', '../change-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Verification plan path must stay inside the mustflow root/);
+		assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -2062,7 +2085,7 @@ test('rejects verify plans outside the mustflow root', () => {
 		const result = runCli(projectPath, ['verify', '--from-plan', outsidePlanPath]);
 
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /Verification plan path must stay inside the mustflow root/);
+		assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
 	} finally {
 		rmSync(outsidePlanPath, { force: true });
 		removeTempProject(projectPath);

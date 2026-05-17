@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -30,6 +31,7 @@ import type { Reporter } from '../lib/reporter.js';
 
 const VERIFY_SCHEMA_VERSION = '1';
 const VERIFY_RUN_DIR = path.join('.mustflow', 'state', 'runs', 'verify-latest');
+const VERIFY_MANIFEST_PATH = path.join(VERIFY_RUN_DIR, 'manifest.json');
 const LATEST_RUN_RECEIPT_PATH = path.join('.mustflow', 'state', 'runs', 'latest.json');
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
@@ -48,6 +50,9 @@ interface VerificationResult {
 	readonly reason: string | null;
 	readonly detail: string | null;
 	readonly exit_code: number | null;
+	readonly verification_plan_id: string | null;
+	readonly receipt_path: string | null;
+	readonly receipt_sha256: string | null;
 	readonly receipt: Record<string, unknown> | null;
 }
 
@@ -66,8 +71,11 @@ interface VerificationOutput {
 	readonly reason: string;
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
+	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
 	readonly summary: VerificationSummary;
+	readonly run_dir: string;
+	readonly manifest_path: string;
 	readonly results: readonly VerificationResult[];
 }
 
@@ -75,7 +83,9 @@ interface VerifyRunReceiptManifestEntry {
 	readonly intent: string | null;
 	readonly status: VerificationResultStatus;
 	readonly skipped: boolean;
+	readonly verification_plan_id: string | null;
 	readonly receipt_path: string | null;
+	readonly receipt_sha256: string | null;
 }
 
 interface VerifyRunReceiptManifest {
@@ -84,6 +94,7 @@ interface VerifyRunReceiptManifest {
 	readonly reason: string;
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
+	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
 	readonly summary: VerificationSummary;
 	readonly receipts: readonly VerifyRunReceiptManifestEntry[];
@@ -96,6 +107,7 @@ interface VerifyLatestRunPointer {
 	readonly reason: string;
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
+	readonly verification_plan_id: string;
 	readonly status: VerificationStatus;
 	readonly summary: VerificationSummary;
 	readonly run_dir: string;
@@ -116,6 +128,7 @@ type PlanOnlyRequirement = ChangeVerificationReport['requirements'][number] & {
 };
 
 type PlanOnlyOutput = ChangeVerificationReport & {
+	readonly verification_plan_id: string;
 	readonly requirements: readonly PlanOnlyRequirement[];
 	readonly schedule: Omit<ChangeVerificationReport['schedule'], 'entries'> & {
 		readonly entries: readonly PlanOnlyScheduleEntry[];
@@ -147,10 +160,12 @@ function createBufferedOutput(): BufferedOutput {
 export function getVerifyHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf verify --reason <event> [options] | mf verify --from-plan <path> [options] | mf verify --changed [options]',
+			usage:
+				'mf verify --reason <event> [options] | mf verify --from-classification <path> [options] | mf verify --changed [options]',
 			summary: t(lang, 'verify.help.summary'),
 			options: [
 				{ label: '--reason <event>', description: t(lang, 'verify.help.option.reason') },
+				{ label: '--from-classification <path>', description: t(lang, 'verify.help.option.fromClassification') },
 				{ label: '--from-plan <path>', description: t(lang, 'verify.help.option.fromPlan') },
 				{ label: '--changed', description: t(lang, 'verify.help.option.changed') },
 				{ label: '--write-plan <path>', description: t(lang, 'verify.help.option.writePlan') },
@@ -162,9 +177,8 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				'mf verify --reason code_change',
 				'mf verify --reason docs_change --json',
 				'mf verify --reason docs_change --plan-only --json',
-				'mf verify --from-plan verify-plan.json --json',
+				'mf verify --from-classification .mustflow/state/change-classification.json --json',
 				'mf verify --changed --plan-only --json',
-				'mf verify --changed --write-plan .mustflow/state/change-plan.json --json',
 				'mf verify --reason mustflow_docs_change',
 			],
 			exitCodes: [
@@ -181,11 +195,13 @@ function parseVerifyArgs(args: readonly string[]): {
 	planOnly: boolean;
 	changed: boolean;
 	reason?: string;
+	fromClassification?: string;
 	fromPlan?: string;
 	writePlan?: string;
 	error?: string;
 } {
 	let reason: string | undefined;
+	let fromClassification: string | undefined;
 	let fromPlan: string | undefined;
 	let writePlan: string | undefined;
 	let json = false;
@@ -224,7 +240,7 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg === '--from-plan') {
 			const value = args[index + 1];
 			if (!value || value.startsWith('-')) {
-				return { json, planOnly, changed, reason, fromPlan, error: 'missing_from_plan_value' };
+				return { json, planOnly, changed, reason, fromClassification, fromPlan, error: 'missing_from_plan_value' };
 			}
 
 			fromPlan = value;
@@ -232,10 +248,38 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
+		if (arg === '--from-classification') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					error: 'missing_from_classification_value',
+				};
+			}
+
+			fromClassification = value;
+			index += 1;
+			continue;
+		}
+
 		if (arg === '--write-plan') {
 			const value = args[index + 1];
 			if (!value || value.startsWith('-')) {
-				return { json, planOnly, changed, reason, fromPlan, writePlan, error: 'missing_write_plan_value' };
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					writePlan,
+					error: 'missing_write_plan_value',
+				};
 			}
 
 			writePlan = value;
@@ -256,17 +300,44 @@ function parseVerifyArgs(args: readonly string[]): {
 		if (arg.startsWith('--from-plan=')) {
 			const value = arg.slice('--from-plan='.length);
 			if (value.length === 0) {
-				return { json, planOnly, changed, reason, fromPlan, error: 'missing_from_plan_value' };
+				return { json, planOnly, changed, reason, fromClassification, fromPlan, error: 'missing_from_plan_value' };
 			}
 
 			fromPlan = value;
 			continue;
 		}
 
+		if (arg.startsWith('--from-classification=')) {
+			const value = arg.slice('--from-classification='.length);
+			if (value.length === 0) {
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					error: 'missing_from_classification_value',
+				};
+			}
+
+			fromClassification = value;
+			continue;
+		}
+
 		if (arg.startsWith('--write-plan=')) {
 			const value = arg.slice('--write-plan='.length);
 			if (value.length === 0) {
-				return { json, planOnly, changed, reason, fromPlan, writePlan, error: 'missing_write_plan_value' };
+				return {
+					json,
+					planOnly,
+					changed,
+					reason,
+					fromClassification,
+					fromPlan,
+					writePlan,
+					error: 'missing_write_plan_value',
+				};
 			}
 
 			writePlan = value;
@@ -274,13 +345,13 @@ function parseVerifyArgs(args: readonly string[]): {
 		}
 
 		if (arg.startsWith('-')) {
-			return { json, planOnly, changed, reason, fromPlan, writePlan, error: arg };
+			return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, error: arg };
 		}
 
-		return { json, planOnly, changed, reason, fromPlan, writePlan, error: `unexpected:${arg}` };
+		return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, error: `unexpected:${arg}` };
 	}
 
-	return { json, planOnly, changed, reason, fromPlan, writePlan };
+	return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan };
 }
 
 function uniqueStrings(values: readonly string[]): string[] {
@@ -535,6 +606,9 @@ function skippedResult(candidate: Pick<VerificationCandidate, 'intent' | 'reason
 		reason: candidate.reason,
 		detail: candidate.detail,
 		exit_code: null,
+		verification_plan_id: null,
+		receipt_path: null,
+		receipt_sha256: null,
 		receipt: null,
 	};
 }
@@ -597,6 +671,7 @@ function testTargetsByScheduledIntent(report: ChangeVerificationReport): Readonl
 async function runVerificationIntent(
 	intent: string,
 	lang: CliLang,
+	verificationPlanId: string,
 	testTargets: readonly string[] = [],
 ): Promise<VerificationResult> {
 	const output = createBufferedOutput();
@@ -631,6 +706,9 @@ async function runVerificationIntent(
 		reason: exitCode === 0 ? null : 'run_failed',
 		detail: output.stderr().trim() || null,
 		exit_code: exitCode,
+		verification_plan_id: verificationPlanId,
+		receipt_path: null,
+		receipt_sha256: null,
 		receipt,
 	};
 }
@@ -670,44 +748,117 @@ function getVerificationStatus(summary: VerificationSummary): VerificationStatus
 	return 'passed';
 }
 
-function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput): void {
+function hashTextSha256(content: string): string {
+	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function stableJson(value: unknown): string {
+	if (Array.isArray(value)) {
+		return `[${value.map((entry) => stableJson(entry)).join(',')}]`;
+	}
+
+	if (value && typeof value === 'object') {
+		const record = value as Record<string, unknown>;
+		return `{${Object.keys(record)
+			.sort((left, right) => left.localeCompare(right))
+			.map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`)
+			.join(',')}}`;
+	}
+
+	return JSON.stringify(value) ?? 'null';
+}
+
+function getCandidateIntentNames(report: ChangeVerificationReport): string[] {
+	return [...new Set(report.candidates.map((candidate) => candidate.intent).filter((intent): intent is string => Boolean(intent)))]
+		.sort((left, right) => left.localeCompare(right));
+}
+
+function createVerificationPlanId(report: ChangeVerificationReport, contract: ReturnType<typeof readCommandContract>): string {
+	const relatedIntents = Object.fromEntries(
+		getCandidateIntentNames(report).map((intent) => [intent, contract.intents[intent] ?? null]),
+	);
+	const fingerprintSource = {
+		schema_version: '1',
+		algorithm: 'mustflow.verify_plan_id.v1',
+		report: {
+			source: report.source,
+			files: report.files,
+			classification_summary: report.classification_summary,
+			requirements: report.requirements,
+			candidates: report.candidates,
+			gaps: report.gaps,
+			schedule: report.schedule,
+			test_selection: report.test_selection,
+		},
+		command_contract: {
+			defaults: contract.defaults,
+			resources: contract.resources,
+			intents: relatedIntents,
+		},
+	};
+
+	return hashTextSha256(stableJson(fingerprintSource));
+}
+
+function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput): VerificationOutput {
 	const runDir = path.join(projectRoot, VERIFY_RUN_DIR);
 	const intentDir = path.join(runDir, 'intents');
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
+	const results: VerificationResult[] = [];
 
 	rmSync(runDir, { recursive: true, force: true });
 	mkdirSync(intentDir, { recursive: true });
 
 	for (const [index, result] of output.results.entries()) {
 		let receiptPath: string | null = null;
+		let receiptSha256: string | null = null;
+		let receipt = result.receipt;
 
 		if (result.intent && result.receipt) {
 			const fileName = `${String(index + 1).padStart(3, '0')}-${sanitizeIntentFilePart(result.intent)}.json`;
 			const absoluteReceiptPath = path.join(intentDir, fileName);
 			receiptPath = toPosixPath(path.join(VERIFY_RUN_DIR, 'intents', fileName));
-			writeFileSync(
-				absoluteReceiptPath,
-				`${JSON.stringify({ ...result.receipt, receipt_path: receiptPath }, null, 2)}\n`,
-				'utf8',
-			);
+			receipt = {
+				...result.receipt,
+				verification_plan_id: output.verification_plan_id,
+				receipt_path: receiptPath,
+			};
+			const receiptContent = `${JSON.stringify(receipt, null, 2)}\n`;
+			receiptSha256 = hashTextSha256(receiptContent);
+			writeFileSync(absoluteReceiptPath, receiptContent, 'utf8');
 		}
 
 		receipts.push({
 			intent: result.intent,
 			status: result.status,
 			skipped: result.skipped,
+			verification_plan_id: result.skipped ? null : output.verification_plan_id,
 			receipt_path: receiptPath,
+			receipt_sha256: receiptSha256,
+		});
+		results.push({
+			...result,
+			verification_plan_id: result.skipped ? null : output.verification_plan_id,
+			receipt_path: receiptPath,
+			receipt_sha256: receiptSha256,
+			receipt,
 		});
 	}
+
+	const outputWithReceiptPaths: VerificationOutput = {
+		...output,
+		results,
+	};
 
 	const manifest: VerifyRunReceiptManifest = {
 		schema_version: '1',
 		command: 'verify',
-		reason: output.reason,
-		reasons: output.reasons,
-		plan_source: output.plan_source,
-		status: output.status,
-		summary: output.summary,
+		reason: outputWithReceiptPaths.reason,
+		reasons: outputWithReceiptPaths.reasons,
+		plan_source: outputWithReceiptPaths.plan_source,
+		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
+		status: outputWithReceiptPaths.status,
+		summary: outputWithReceiptPaths.summary,
 		receipts,
 	};
 
@@ -717,16 +868,18 @@ function writeVerifyRunReceipts(projectRoot: string, output: VerificationOutput)
 		schema_version: '1',
 		command: 'verify',
 		kind: 'verify_run_summary',
-		reason: output.reason,
-		reasons: output.reasons,
-		plan_source: output.plan_source,
-		status: output.status,
-		summary: output.summary,
+		reason: outputWithReceiptPaths.reason,
+		reasons: outputWithReceiptPaths.reasons,
+		plan_source: outputWithReceiptPaths.plan_source,
+		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
+		status: outputWithReceiptPaths.status,
+		summary: outputWithReceiptPaths.summary,
 		run_dir: toPosixPath(VERIFY_RUN_DIR),
-		manifest_path: toPosixPath(path.join(VERIFY_RUN_DIR, 'manifest.json')),
+		manifest_path: toPosixPath(VERIFY_MANIFEST_PATH),
 	};
 
 	writeFileSync(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), `${JSON.stringify(latest, null, 2)}\n`, 'utf8');
+	return outputWithReceiptPaths;
 }
 
 async function createVerifyOutput(
@@ -737,12 +890,13 @@ async function createVerifyOutput(
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const verificationPlanId = createVerificationPlanId(report, contract);
 	const scheduledIntents = new Set(report.schedule.entries.map((entry) => entry.intent));
 	const scheduledTestTargets = testTargetsByScheduledIntent(report);
 	const results: VerificationResult[] = [];
 
 	for (const entry of report.schedule.entries) {
-		results.push(await runVerificationIntent(entry.intent, lang, scheduledTestTargets.get(entry.intent) ?? []));
+		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, scheduledTestTargets.get(entry.intent) ?? []));
 	}
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
@@ -755,18 +909,21 @@ async function createVerifyOutput(
 		reason: input.reasons.join(', '),
 		reasons: input.reasons,
 		plan_source: planSource,
+		verification_plan_id: verificationPlanId,
 		status: getVerificationStatus(summary),
 		summary,
+		run_dir: toPosixPath(VERIFY_RUN_DIR),
+		manifest_path: toPosixPath(VERIFY_MANIFEST_PATH),
 		results,
 	};
 
-	writeVerifyRunReceipts(projectRoot, output);
-	return output;
+	return writeVerifyRunReceipts(projectRoot, output);
 }
 
 async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Promise<PlanOnlyOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const verificationPlanId = createVerificationPlanId(report, contract);
 	const localSurfaceReadModels = await readLocalPathSurfaces(projectRoot, report.files);
 	const [firstEntry] = report.schedule.entries;
 	const requirements = report.requirements.map((requirement) => {
@@ -778,7 +935,7 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 	});
 
 	if (!firstEntry) {
-		return { ...report, requirements };
+		return { ...report, verification_plan_id: verificationPlanId, requirements };
 	}
 
 	const firstGraph = await readLocalCommandEffectGraph(projectRoot, firstEntry.intent);
@@ -794,6 +951,7 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 
 	return {
 		...report,
+		verification_plan_id: verificationPlanId,
 		requirements,
 		schedule: {
 			...report.schedule,
@@ -842,6 +1000,8 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		const message =
 			parsed.error === 'missing_reason_value'
 				? t(lang, 'cli.error.missingValue', { option: '--reason' })
+				: parsed.error === 'missing_from_classification_value'
+					? t(lang, 'cli.error.missingValue', { option: '--from-classification' })
 				: parsed.error === 'missing_from_plan_value'
 					? t(lang, 'cli.error.missingValue', { option: '--from-plan' })
 				: parsed.error === 'missing_write_plan_value'
@@ -853,7 +1013,12 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
-	const selectedInputCount = [parsed.reason, parsed.fromPlan, parsed.changed ? 'changed' : undefined].filter(Boolean).length;
+	const selectedInputCount = [
+		parsed.reason,
+		parsed.fromClassification,
+		parsed.fromPlan,
+		parsed.changed ? 'changed' : undefined,
+	].filter(Boolean).length;
 
 	if (selectedInputCount > 1) {
 		printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf verify --help', getVerifyHelp(lang), lang);
@@ -884,8 +1049,8 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 			const changedInput = createInputFromChanged(projectRoot);
 			input = changedInput.input;
 			changedPlan = changedInput.plan;
-		} else if (parsed.fromPlan) {
-			input = readInputFromPlan(projectRoot, parsed.fromPlan);
+		} else if (parsed.fromClassification || parsed.fromPlan) {
+			input = readInputFromPlan(projectRoot, (parsed.fromClassification ?? parsed.fromPlan) as string);
 		} else {
 			input = {
 					reasons: [parsed.reason as string],
@@ -907,7 +1072,12 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	}
 
-	const output = await createVerifyOutput(input, parsed.fromPlan ?? (parsed.changed ? 'changed' : null), projectRoot, lang);
+	const output = await createVerifyOutput(
+		input,
+		parsed.fromClassification ?? parsed.fromPlan ?? (parsed.changed ? 'changed' : null),
+		projectRoot,
+		lang,
+	);
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));

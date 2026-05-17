@@ -17,6 +17,7 @@ import {
 	type TomlTable,
 } from '../../core/config-loading.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
+import { t, type CliLang } from './i18n.js';
 
 export interface ResolvedArgvCommand {
 	readonly executable: string;
@@ -50,6 +51,10 @@ interface RunIntentMetadata {
 	readonly envPolicy: CommandEnvPolicy;
 	readonly envAllowlist: readonly string[];
 	readonly testTargets: readonly string[];
+	readonly manualStartHint: string | null;
+	readonly healthCheckUrl: string | null;
+	readonly stopInstruction: string | null;
+	readonly relatedOneshotChecks: readonly string[];
 }
 
 interface RunPlanBase {
@@ -80,6 +85,11 @@ interface RunPlanBase {
 	readonly envPolicy: CommandEnvPolicy | null;
 	readonly envAllowlist: readonly string[];
 	readonly testTargets: readonly string[];
+	readonly suggestedIntentSnippet: string | null;
+	readonly manualStartHint: string | null;
+	readonly healthCheckUrl: string | null;
+	readonly stopInstruction: string | null;
+	readonly relatedOneshotChecks: readonly string[];
 }
 
 export interface BlockedRunPlan extends RunPlanBase {
@@ -221,6 +231,10 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		envPolicy: env.policy,
 		envAllowlist: env.allowlist,
 		testTargets: [],
+		manualStartHint: readString(intent, 'manual_start_hint') ?? null,
+		healthCheckUrl: readString(intent, 'health_check_url') ?? null,
+		stopInstruction: readString(intent, 'stop_instruction') ?? null,
+		relatedOneshotChecks: readStringArray(intent, 'related_oneshot_checks') ?? [],
 	};
 }
 
@@ -262,6 +276,11 @@ function createBlockedRunPlan(
 		envPolicy: metadata?.envPolicy ?? null,
 		envAllowlist: metadata?.envAllowlist ?? [],
 		testTargets: [],
+		suggestedIntentSnippet: createSuggestedIntentSnippet(intentName, metadata, reasonCode),
+		manualStartHint: metadata?.manualStartHint ?? null,
+		healthCheckUrl: metadata?.healthCheckUrl ?? null,
+		stopInstruction: metadata?.stopInstruction ?? null,
+		relatedOneshotChecks: metadata?.relatedOneshotChecks ?? [],
 	};
 }
 
@@ -340,7 +359,59 @@ export function createRunPlan(
 		envPolicy: metadata.envPolicy,
 		envAllowlist: metadata.envAllowlist,
 		testTargets,
+		suggestedIntentSnippet: null,
+		manualStartHint: metadata.manualStartHint,
+		healthCheckUrl: metadata.healthCheckUrl,
+		stopInstruction: metadata.stopInstruction,
+		relatedOneshotChecks: metadata.relatedOneshotChecks,
 	};
+}
+
+function formatTomlString(value: string): string {
+	return JSON.stringify(value);
+}
+
+function formatTomlStringArray(values: readonly string[]): string {
+	return `[${values.map(formatTomlString).join(', ')}]`;
+}
+
+function createSuggestedIntentSnippet(
+	intentName: string,
+	metadata: RunIntentMetadata | null,
+	reasonCode: RunPlanReasonCode,
+): string | null {
+	if (!/^[A-Za-z0-9_-]+$/u.test(intentName)) {
+		return null;
+	}
+
+	let commandLines: readonly string[];
+	if (reasonCode === 'blocked_shell_background_pattern') {
+		commandLines = [`argv = ${formatTomlStringArray(['TODO_REPLACE_WITH_FINITE_COMMAND'])}`];
+	} else if (metadata?.shellCommand) {
+		commandLines = [`mode = "shell"`, `cmd = ${formatTomlString(metadata.shellCommand)}`];
+	} else {
+		commandLines = [`argv = ${formatTomlStringArray(metadata?.commandArgv ?? ['TODO_REPLACE_WITH_COMMAND'])}`];
+	}
+	const lifecycle = metadata?.lifecycle && metadata.lifecycle !== 'oneshot' ? metadata.lifecycle : 'oneshot';
+	const configuredCwd = reasonCode === 'cwd_outside_project' ? '.' : metadata?.configuredCwd ?? '.';
+
+	return [
+		`[intents.${intentName}]`,
+		`status = "manual_only"`,
+		`lifecycle = ${formatTomlString(lifecycle)}`,
+		`run_policy = "requires_explicit_user_request"`,
+		`description = "TODO: describe when this intent should run."`,
+		...commandLines,
+		`cwd = ${formatTomlString(configuredCwd)}`,
+		`timeout_seconds = ${metadata?.timeoutSeconds ?? 600}`,
+		`stdin = "closed"`,
+		`success_exit_codes = ${metadata?.successExitCodes ? `[${metadata.successExitCodes.join(', ')}]` : '[0]'}`,
+		`writes = ${metadata?.writes ? formatTomlStringArray(metadata.writes) : '[]'}`,
+		`network = ${metadata?.network ?? false}`,
+		`destructive = ${metadata?.destructive ?? false}`,
+		`reason = "Review this suggested intent before enabling agent execution."`,
+		`agent_action = "do_not_guess_report_missing"`,
+	].join('\n');
 }
 
 export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Record<string, unknown> {
@@ -375,10 +446,15 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		env_allowlist: plan.envAllowlist,
 		test_targets: plan.testTargets,
 		success_exit_codes: plan.successExitCodes,
+		suggested_intent_snippet: plan.suggestedIntentSnippet,
+		manual_start_hint: plan.manualStartHint,
+		health_check_url: plan.healthCheckUrl,
+		stop_instruction: plan.stopInstruction,
+		related_oneshot_checks: plan.relatedOneshotChecks,
 	};
 }
 
-export function renderRunPreviewText(plan: RunPlan, previewMode: RunPreviewMode): string {
+export function renderRunPreviewText(plan: RunPlan, previewMode: RunPreviewMode, lang: CliLang = 'en'): string {
 	const lines = [
 		`mf run ${previewMode}`,
 		`Intent: ${plan.intentName}`,
@@ -387,6 +463,21 @@ export function renderRunPreviewText(plan: RunPlan, previewMode: RunPreviewMode)
 
 	if (!plan.ok) {
 		lines.push(`Reason: ${plan.reasonCode}${plan.detail ? ` (${plan.detail})` : ''}`);
+		if (plan.suggestedIntentSnippet) {
+			lines.push('', `${t(lang, 'run.label.suggestedIntentSnippet')}:`, plan.suggestedIntentSnippet);
+		}
+		if (plan.manualStartHint) {
+			lines.push('', `Manual start: ${plan.manualStartHint}`);
+		}
+		if (plan.healthCheckUrl) {
+			lines.push(`Health check: ${plan.healthCheckUrl}`);
+		}
+		if (plan.stopInstruction) {
+			lines.push(`Stop: ${plan.stopInstruction}`);
+		}
+		if (plan.relatedOneshotChecks.length > 0) {
+			lines.push(`Related oneshot checks: ${plan.relatedOneshotChecks.join(', ')}`);
+		}
 		return lines.join('\n');
 	}
 

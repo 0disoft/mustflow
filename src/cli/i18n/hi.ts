@@ -68,6 +68,7 @@ export const hiMessages = {
   "contractLint.help.summary":
     ".mustflow/config/commands.toml में command-contract errors और warnings जाँचें.",
   "contractLint.help.option.coverage": "change-classification reasons के लिए required_after coverage भी report करें",
+  "contractLint.help.option.suggest": "package.json, Makefile, या justfile से non-runnable intent snippets सुझाएँ",
   "contractLint.help.exit.ok": "कमांड अनुबंध बिना blocking errors के जाँचा गया",
   "contractLint.help.exit.fail": "कमांड अनुबंध errors मिले या input अमान्य था",
   "contractLint.title": "mustflow contract-lint",
@@ -85,6 +86,7 @@ export const hiMessages = {
   "contractLint.label.requiredAfterReasons": "required_after reasons",
   "contractLint.label.runnableReasons": "Runnable reasons",
   "contractLint.label.coverageFindings": "Coverage findings",
+  "contractLint.label.suggestions": "Suggestions",
   "contractLint.label.issues": "Issues",
 
   "context.help.summary":
@@ -636,7 +638,7 @@ export const hiMessages = {
     "मौजूदा AGENTS.md में mustflow प्रबंधित ब्लॉक मिलाएँ",
   "init.help.option.force": "टकराती फ़ाइलों का बैकअप लेकर उन्हें overwrite करें",
   "init.help.option.profile":
-    "प्रोजेक्ट profile सेट करें: minimal, oss, team, product या library",
+    "प्रोजेक्ट profile सेट करें: minimal, patterns, oss, team, product या library",
   "init.help.option.locale": "इंस्टॉल किए गए mustflow दस्तावेज़ों की भाषा सेट करें",
   "init.help.option.agentLang": "पसंदीदा एजेंट प्रतिक्रिया भाषा सेट करें",
   "init.help.option.set":
@@ -745,6 +747,7 @@ export const hiMessages = {
   "run.help.option.json": "Run record या command plan को JSON के रूप में प्रिंट करें",
   "run.help.exit.ok": "कमांड अनुमत exit code के साथ पूरी हुई",
   "run.help.exit.fail": "कमांड अमान्य थी, अस्वीकार हुई, timed out हुई या विफल हुई",
+  "run.label.suggestedIntentSnippet": "Suggested command contract snippet",
   "run.error.missingIntent": "कमांड नाम नहीं दिया गया",
   "run.error.unknownIntent": "अज्ञात कमांड: {intent}",
   "run.error.statusNotConfigured":
@@ -827,8 +830,9 @@ export const hiMessages = {
   "upgrade.warning.continueWithBundledTemplate": "Current CLI में bundled template के साथ आगे बढ़ रहे हैं.",
 
   "classify.help.summary":
-    "फ़ाइल बदले बिना बदले पथ, सार्वजनिक सतह और जरूरी सत्यापन कारण वर्गीकृत करें.",
+    "बदले पथ, सार्वजनिक सतह और जरूरी सत्यापन कारण वर्गीकृत करें.",
   "classify.help.option.changed": "git status --short --untracked-files=all से पथ पढ़ें",
+  "classify.help.option.write": "Classification report को इस repository के अंदर JSON file में लिखें",
   "classify.help.exit.ok": "बदलाव वर्गीकरण जांचकर प्रिंट किया गया",
   "classify.title": "mustflow classify",
   "classify.label.source": "स्रोत",
@@ -843,6 +847,7 @@ export const hiMessages = {
   "classify.source.changed": "बदली फ़ाइलें",
   "classify.source.paths": "दिए गए पथ",
   "classify.error.missingInput": "--changed या कम से कम एक पथ दें",
+  "classify.error.write_path_outside_root": "Classification report path mustflow root के अंदर रहना चाहिए",
 
   "impact.help.summary":
     "फ़ाइल बदले बिना बताएं कि बदले पथ package या template version decision मांगते हैं या नहीं.",
@@ -862,9 +867,10 @@ export const hiMessages = {
   "verify.help.summary":
     "required_after metadata से चुने गए configured verification intents चलाएँ।",
   "verify.help.option.reason": "Verify करने के लिए required_after reason चुनें",
-  "verify.help.option.fromPlan": "इस repository के अंदर JSON plan से verification reasons पढ़ें",
+  "verify.help.option.fromClassification": "इस repository के अंदर mf classify report से verification reasons पढ़ें",
+  "verify.help.option.fromPlan": "--from-classification का compatibility alias",
   "verify.help.option.changed": "Current Git changes classify करके matching reasons verify करें",
-  "verify.help.option.writePlan": "Changed-file classification plan इस repository के अंदर लिखें",
+  "verify.help.option.writePlan": "Changed-file classification report लिखने वाला compatibility option",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
@@ -875,14 +881,14 @@ export const hiMessages = {
   "verify.label.status": "Status",
   "verify.label.results": "Results",
   "verify.error.missingReason": "Verification reason missing है",
-  "verify.error.conflictingInputs": "--reason, --from-plan, या --changed में से केवल एक इस्तेमाल करें",
+  "verify.error.conflictingInputs": "--reason, --from-classification, --from-plan, या --changed में से केवल एक इस्तेमाल करें",
   "verify.error.writePlanRequiresChanged": "--write-plan के लिए --changed चाहिए",
   "verify.error.planOnlyJson": "--plan-only के लिए --json चाहिए",
-  "verify.error.invalid_plan_file": "Verification plan readable JSON file होना चाहिए",
-  "verify.error.unsupported_plan_source": "Verification plan mf classify --json से बना होना चाहिए",
-  "verify.error.plan_root_mismatch": "Verification plan इसी mustflow root से आना चाहिए",
-  "verify.error.missing_plan_reasons": "Verification plan में summary.validationReasons होना चाहिए",
-  "verify.error.plan_path_outside_root": "Verification plan path mustflow root के अंदर रहना चाहिए",
+  "verify.error.invalid_plan_file": "Classification report readable JSON file होना चाहिए",
+  "verify.error.unsupported_plan_source": "Verification input mf classify report होना चाहिए",
+  "verify.error.plan_root_mismatch": "Classification report इसी mustflow root से आना चाहिए",
+  "verify.error.missing_plan_reasons": "Classification report में summary.validationReasons होना चाहिए",
+  "verify.error.plan_path_outside_root": "Classification report path mustflow root के अंदर रहना चाहिए",
 
   "explain.help.summary":
     "फ़ाइलें बदले बिना समझाएँ कि mustflow policy decision क्यों लागू होता है।",

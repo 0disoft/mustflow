@@ -13,7 +13,8 @@
     "candidates",
     "gaps",
     "schedule",
-    "decision_graph"
+    "decision_graph",
+    "test_selection"
   ],
   "properties": {
     "schema_version": {
@@ -27,6 +28,10 @@
     },
     "classification_summary": {
       "$ref": "#/$defs/classificationSummary"
+    },
+    "verification_plan_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
     },
     "requirements": {
       "type": "array",
@@ -252,7 +257,16 @@
     "verificationCandidate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reason", "intent", "status", "skipReason", "detail"],
+      "required": [
+        "reason",
+        "intent",
+        "status",
+        "skipReason",
+        "detail",
+        "candidateState",
+        "eligibilityState",
+        "selectionState"
+      ],
       "properties": {
         "reason": {
           "type": "string"

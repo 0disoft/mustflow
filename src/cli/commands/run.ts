@@ -490,6 +490,10 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 			break;
 	}
 
+	if (plan.suggestedIntentSnippet) {
+		message = `${message}\n\n${t(lang, 'run.label.suggestedIntentSnippet')}:\n${plan.suggestedIntentSnippet}`;
+	}
+
 	reporter.stderr(renderCliError(message, 'mf help commands', lang));
 }
 
@@ -583,7 +587,7 @@ export async function runRun(
 			if (json) {
 				reporter.stdout(JSON.stringify(createRunPreview(plan, previewMode), null, 2));
 			} else {
-				reporter.stdout(renderRunPreviewText(plan, previewMode));
+				reporter.stdout(renderRunPreviewText(plan, previewMode, lang));
 			}
 		});
 		profiler.writeLatest({

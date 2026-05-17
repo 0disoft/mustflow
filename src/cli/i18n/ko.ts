@@ -67,6 +67,7 @@ export const koMessages = {
   "contractLint.help.summary":
     ".mustflow/config/commands.toml의 명령 계약 오류와 경고를 확인합니다.",
   "contractLint.help.option.coverage": "변경 분류 이유에 대한 required_after 연결 상태도 보고합니다",
+  "contractLint.help.option.suggest": "package.json, Makefile, justfile에서 실행 불가 후보 조각을 제안합니다",
   "contractLint.help.exit.ok": "차단 오류 없이 명령 계약을 확인했습니다",
   "contractLint.help.exit.fail": "명령 계약 오류가 있거나 입력이 잘못되었습니다",
   "contractLint.title": "mustflow 명령 계약 점검",
@@ -84,6 +85,7 @@ export const koMessages = {
   "contractLint.label.requiredAfterReasons": "required_after 이유",
   "contractLint.label.runnableReasons": "실행 가능한 이유",
   "contractLint.label.coverageFindings": "연결 상태 발견 항목",
+  "contractLint.label.suggestions": "제안",
   "contractLint.label.issues": "문제",
 
   "context.help.summary":
@@ -637,7 +639,7 @@ export const koMessages = {
   "init.help.option.merge": "기존 AGENTS.md에 mustflow 관리 블록만 병합합니다",
   "init.help.option.force": "충돌 파일을 백업한 뒤 덮어씁니다",
   "init.help.option.profile":
-    "프로젝트 유형을 설정합니다: minimal, oss, team, product, library",
+    "프로젝트 유형을 설정합니다: minimal, patterns, oss, team, product, library",
   "init.help.option.locale": "설치할 mustflow 문서 언어를 설정합니다",
   "init.help.option.agentLang": "에이전트 응답 언어를 설정합니다",
   "init.help.option.set":
@@ -740,6 +742,7 @@ export const koMessages = {
   "run.help.exit.ok": "명령이 허용된 종료 코드로 완료되었습니다",
   "run.help.exit.fail":
     "명령이 잘못되었거나, 거부되었거나, 시간 초과되었거나, 실패했습니다",
+  "run.label.suggestedIntentSnippet": "제안 명령 계약 조각",
   "run.error.missingIntent": "명령 이름이 없습니다",
   "run.error.unknownIntent": "알 수 없는 명령: {intent}",
   "run.error.statusNotConfigured":
@@ -822,8 +825,9 @@ export const koMessages = {
   "upgrade.warning.continueWithBundledTemplate": "현재 CLI에 포함된 템플릿으로 계속 진행합니다.",
 
   "classify.help.summary":
-    "파일을 수정하지 않고 변경 경로, 공개 표면, 필요한 검증 이유를 분류합니다.",
+    "변경 경로, 공개 표면, 필요한 검증 이유를 분류합니다.",
   "classify.help.option.changed": "git status --short --untracked-files=all에서 경로를 읽습니다",
+  "classify.help.option.write": "분류 보고서를 이 저장소 안의 JSON 파일로 씁니다",
   "classify.help.exit.ok": "변경 분류를 확인하고 출력했습니다",
   "classify.title": "mustflow 변경 분류",
   "classify.label.source": "입력",
@@ -838,6 +842,7 @@ export const koMessages = {
   "classify.source.changed": "변경 파일",
   "classify.source.paths": "지정한 경로",
   "classify.error.missingInput": "--changed 또는 하나 이상의 경로를 지정하세요",
+  "classify.error.write_path_outside_root": "분류 보고서 경로는 mustflow 루트 안에 있어야 합니다",
 
   "impact.help.summary":
     "파일을 수정하지 않고 변경 경로가 패키지나 템플릿 버전 결정을 요구하는지 보고합니다.",
@@ -857,9 +862,10 @@ export const koMessages = {
   "verify.help.summary":
     "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",
   "verify.help.option.reason": "검증할 required_after 이유를 지정합니다",
-  "verify.help.option.fromPlan": "이 저장소 안의 JSON 계획 파일에서 검증 이유를 읽습니다",
+  "verify.help.option.fromClassification": "이 저장소 안의 mf classify 보고서에서 검증 이유를 읽습니다",
+  "verify.help.option.fromPlan": "--from-classification과 같은 호환 옵션입니다",
   "verify.help.option.changed": "현재 Git 변경을 분류하고 맞는 검증 이유를 실행합니다",
-  "verify.help.option.writePlan": "변경 파일 분류 계획을 이 저장소 안에 씁니다",
+  "verify.help.option.writePlan": "변경 파일 분류 보고서를 쓰는 호환 옵션입니다",
   "verify.help.option.planOnly": "명령을 실행하지 않고 검증 계획만 출력합니다. --json이 필요합니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":
@@ -870,14 +876,14 @@ export const koMessages = {
   "verify.label.status": "상태",
   "verify.label.results": "결과",
   "verify.error.missingReason": "검증 이유가 없습니다",
-  "verify.error.conflictingInputs": "--reason, --from-plan, --changed 중 하나만 사용하세요",
+  "verify.error.conflictingInputs": "--reason, --from-classification, --from-plan, --changed 중 하나만 사용하세요",
   "verify.error.writePlanRequiresChanged": "--write-plan에는 --changed가 필요합니다",
   "verify.error.planOnlyJson": "--plan-only에는 --json이 필요합니다",
-  "verify.error.invalid_plan_file": "검증 계획은 읽을 수 있는 JSON 파일이어야 합니다",
-  "verify.error.unsupported_plan_source": "검증 계획은 mf classify --json이 만든 산출물이어야 합니다",
-  "verify.error.plan_root_mismatch": "검증 계획은 현재 mustflow 루트에서 나온 것이어야 합니다",
-  "verify.error.missing_plan_reasons": "검증 계획에는 summary.validationReasons가 있어야 합니다",
-  "verify.error.plan_path_outside_root": "검증 계획 경로는 mustflow 루트 안에 있어야 합니다",
+  "verify.error.invalid_plan_file": "분류 보고서는 읽을 수 있는 JSON 파일이어야 합니다",
+  "verify.error.unsupported_plan_source": "검증 입력은 mf classify 보고서여야 합니다",
+  "verify.error.plan_root_mismatch": "분류 보고서는 현재 mustflow 루트에서 나온 것이어야 합니다",
+  "verify.error.missing_plan_reasons": "분류 보고서에는 summary.validationReasons가 있어야 합니다",
+  "verify.error.plan_path_outside_root": "분류 보고서 경로는 mustflow 루트 안에 있어야 합니다",
 
   "explain.help.summary":
     "파일을 수정하지 않고 mustflow 정책 결정이 왜 적용되는지 설명합니다.",
