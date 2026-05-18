@@ -30,6 +30,7 @@
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
+    "execution_status": { "enum": ["passed", "partial", "failed", "blocked"] },
     "status": { "enum": ["passed", "partial", "failed", "blocked"] },
     "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
     "evidence_model": { "$ref": "#/$defs/evidenceModel" },

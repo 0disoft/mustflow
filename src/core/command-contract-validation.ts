@@ -14,10 +14,12 @@ import {
 	validateCommandEffects,
 } from './command-effects.js';
 import {
+	commandIntentBlockedCommandPattern,
 	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
+import { MAX_COMMAND_OUTPUT_BYTES, commandMaxOutputBytesLimitMessage } from './command-output-limits.js';
 
 export interface CommandContractValidationIssue {
 	readonly message: string;
@@ -100,6 +102,19 @@ function validatePositiveIntegerField(
 	}
 }
 
+function validateMaxOutputBytesField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+): void {
+	validatePositiveIntegerField(table, key, label, issues);
+
+	if (isPositiveInteger(table[key]) && Number(table[key]) > MAX_COMMAND_OUTPUT_BYTES) {
+		issues.push(commandContractIssue(commandMaxOutputBytesLimitMessage(label)));
+	}
+}
+
 function validateAllowedStringField(
 	table: TomlTable,
 	key: string,
@@ -143,7 +158,7 @@ function validateCommandDefaults(commandsToml: TomlTable, issues: CommandContrac
 	validateAllowedStringField(defaults, 'env_policy', '[commands.defaults].env_policy', COMMAND_ENV_POLICIES, issues);
 	validateStringArrayField(defaults, 'env_allowlist', '[commands.defaults].env_allowlist', issues);
 	validatePositiveIntegerField(defaults, 'default_timeout_seconds', '[commands.defaults].default_timeout_seconds', issues);
-	validatePositiveIntegerField(defaults, 'max_output_bytes', '[commands.defaults].max_output_bytes', issues);
+	validateMaxOutputBytesField(defaults, 'max_output_bytes', '[commands.defaults].max_output_bytes', issues);
 	validatePositiveIntegerField(defaults, 'kill_after_seconds', '[commands.defaults].kill_after_seconds', issues);
 }
 
@@ -302,6 +317,7 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		issues,
 	);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
+	validateMaxOutputBytesField(intent, 'max_output_bytes', `[commands.intents.${intentName}].max_output_bytes`, issues);
 	validateCommandIntentSelection(intentName, intent, issues);
 
 	if (intent.status !== 'configured') {
@@ -341,6 +357,11 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 
 	if (commandIntentHasBlockedShellBackgroundPattern(intent)) {
 		issues.push(commandContractIssue(`Shell intent ${intentName} contains a blocked long-running or background pattern`));
+	}
+
+	const blockedCommandPattern = commandIntentBlockedCommandPattern(intent);
+	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
+		issues.push(commandContractIssue(`Intent ${intentName} contains a blocked long-running or background command pattern`));
 	}
 
 	if (hasOwn(intent, 'success_exit_codes')) {

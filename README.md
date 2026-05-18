@@ -354,7 +354,7 @@ Runnable work is declared in `.mustflow/config/commands.toml` so agents do not g
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
 
-Development servers, watch modes, browser UIs, interactive commands, and background processes do not run directly.
+Development servers, watch modes, browser UIs, interactive commands, and background processes do not run directly. `mf run` also rejects obvious long-running `argv` shapes, such as shell-wrapper background payloads, interpreter loops, package-manager development scripts, watchers, and development servers declared as one-shot commands.
 
 Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
 

@@ -35,8 +35,11 @@ import {
 	SEARCH_MATCH_CONTEXT_AFTER_CHARS,
 	SEARCH_MATCH_CONTEXT_BEFORE_CHARS,
 	SEARCH_MATCH_TRUNCATION_MARKER,
+	SEARCH_NGRAM_MAX_GRAMS_PER_TARGET,
 	SEARCH_NGRAM_MAX_LENGTH,
+	SEARCH_NGRAM_MAX_TOKEN_CHARS,
 	SEARCH_NGRAM_MIN_LENGTH,
+	SOURCE_INDEX_MAX_FILE_BYTES,
 	TEST_DISABLE_FTS5_ENV,
 } from './constants.js';
 import { loadSqlJs, type SqlJsDatabase, type SqlJsStatic, type SqlValue } from './sql.js';
@@ -195,12 +198,13 @@ function readPositiveInteger(table: TomlTable | undefined, key: string): number 
 
 function readLocalIndexSourceConfig(projectRoot: string): LocalIndexSourceConfig {
 	const sourceIndexTable = readNestedTable(readIndexToml(projectRoot), 'source_index');
+	const configuredMaxFileBytes = readPositiveInteger(sourceIndexTable, 'max_file_bytes');
 
 	return {
 		enabledByDefault: readBoolean(sourceIndexTable, 'enabled_by_default') === true,
 		include: readOptionalStringArray(sourceIndexTable, 'include') ?? [],
 		exclude: readOptionalStringArray(sourceIndexTable, 'exclude') ?? [],
-		maxFileBytes: readPositiveInteger(sourceIndexTable, 'max_file_bytes'),
+		maxFileBytes: Math.min(configuredMaxFileBytes ?? SOURCE_INDEX_MAX_FILE_BYTES, SOURCE_INDEX_MAX_FILE_BYTES),
 		allowedExtensions: readOptionalStringArray(sourceIndexTable, 'allowed_extensions') ?? [],
 	};
 }
@@ -506,11 +510,16 @@ function buildSearchNgrams(values: readonly string[]): string[] {
 
 	for (const value of values) {
 		for (const token of extractSearchTokens(value)) {
-			const maxLength = Math.min(SEARCH_NGRAM_MAX_LENGTH, token.length);
+			const boundedToken = token.slice(0, SEARCH_NGRAM_MAX_TOKEN_CHARS);
+			const maxLength = Math.min(SEARCH_NGRAM_MAX_LENGTH, boundedToken.length);
 
 			for (let length = SEARCH_NGRAM_MIN_LENGTH; length <= maxLength; length += 1) {
-				for (let index = 0; index <= token.length - length; index += 1) {
-					grams.add(token.slice(index, index + length));
+				for (let index = 0; index <= boundedToken.length - length; index += 1) {
+					grams.add(boundedToken.slice(index, index + length));
+
+					if (grams.size >= SEARCH_NGRAM_MAX_GRAMS_PER_TARGET) {
+						return [...grams].sort((left, right) => left.localeCompare(right));
+					}
 				}
 			}
 		}
@@ -2274,6 +2283,18 @@ function populateDatabase(
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
 		'max_snippet_bytes_per_document',
 		String(MAX_SNIPPET_BYTES_PER_DOCUMENT),
+	]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
+		'search_ngram_max_token_chars',
+		String(SEARCH_NGRAM_MAX_TOKEN_CHARS),
+	]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
+		'search_ngram_max_grams_per_target',
+		String(SEARCH_NGRAM_MAX_GRAMS_PER_TARGET),
+	]);
+	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
+		'source_index_max_file_bytes',
+		String(SOURCE_INDEX_MAX_FILE_BYTES),
 	]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', [
 		'excluded_raw_data_kinds',

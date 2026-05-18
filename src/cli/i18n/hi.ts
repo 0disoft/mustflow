@@ -767,10 +767,18 @@ export const hiMessages = {
     'इंटेंट "{intent}" अवरुद्ध है। {detail}',
   "run.error.blockedShellBackgroundDetail":
     "Shell commands background work शुरू नहीं कर सकतीं।",
+  "run.error.blockedLongRunningCommand":
+    'इंटेंट "{intent}" अवरुद्ध है। {detail}',
+  "run.error.blockedLongRunningCommandDetail":
+    "argv में finite one-shot command होना चाहिए, development server, watcher, shell wrapper, interpreter loop, या background process नहीं।",
   "run.error.cwdOutsideProject":
     'कमांड "{intent}" का cwd अमान्य है: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "Intent cwd current root के अंदर रहना चाहिए।",
+  "run.error.maxOutputBytes":
+    'कमांड "{intent}" में max_output_bytes अमान्य है। {detail}',
+  "run.error.maxOutputBytesDetail":
+    "Output limit अनुमत maximum के अंदर रहनी चाहिए।",
   "run.error.conflictingPreviewModes":
     "--dry-run या --plan-only में से एक इस्तेमाल करें, दोनों नहीं",
   "run.error.timedOut": 'कमांड "{intent}" {seconds} सेकंड बाद time out हुई',
@@ -847,6 +855,7 @@ export const hiMessages = {
   "classify.source.changed": "बदली फ़ाइलें",
   "classify.source.paths": "दिए गए पथ",
   "classify.error.missingInput": "--changed या कम से कम एक पथ दें",
+  "classify.error.changed_files_unavailable": "git status से बदली फ़ाइलें नहीं पढ़ी जा सकीं",
   "classify.error.write_path_outside_root": "Classification report path mustflow root के अंदर रहना चाहिए",
 
   "impact.help.summary":
@@ -863,6 +872,7 @@ export const hiMessages = {
   "impact.label.affectedVersionSources": "Affected version sources",
   "impact.label.affectedSurfaces": "Affected surfaces",
   "impact.error.missingInput": "--changed या कम से कम एक पथ दें",
+  "impact.error.changed_files_unavailable": "git status से बदली फ़ाइलें नहीं पढ़ी जा सकीं",
 
   "verify.help.summary":
     "required_after metadata से चुने गए configured verification intents चलाएँ।",
@@ -893,6 +903,7 @@ export const hiMessages = {
   "verify.error.plan_root_mismatch": "Classification report इसी mustflow root से आना चाहिए",
   "verify.error.missing_plan_reasons": "Classification report में summary.validationReasons होना चाहिए",
   "verify.error.plan_path_outside_root": "Classification report path mustflow root के अंदर रहना चाहिए",
+  "verify.error.changed_files_unavailable": "git status से बदली फ़ाइलें नहीं पढ़ी जा सकीं",
   "verify.error.invalid_repro_evidence_file": "Repro evidence structured evidence fields वाला readable JSON summary होना चाहिए",
   "verify.error.unsupported_repro_evidence_source": "Repro evidence input को command repro-evidence इस्तेमाल करना चाहिए",
   "verify.error.invalid_external_evidence_file": "External evidence checks वाला readable JSON summary होना चाहिए",

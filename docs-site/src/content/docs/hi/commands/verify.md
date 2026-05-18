@@ -13,6 +13,8 @@ description: required_after metadata से चुने गए configured verif
 
 जब `mf verify` commands चलाता है, तो वह plan-only output वाला same schedule model use करता है और `schedule.entries` को `mf run` receipts के through serially चलाता है। Verify output, verify bundle manifest, latest pointer, और per-intent receipts same `verification_plan_id` share करते हैं।
 
+JSON में `execution_status` command execution का aggregate status है। पुराने consumers के लिए `status` वही aggregate compatibility alias के रूप में रखा गया है। Automation को requested work fully verified है या नहीं तय करने के लिए `completion_verdict.status` पढ़ना चाहिए; सिर्फ `verified` complete verification claim है।
+
 ## Selection rules
 
 - Match exact `required_after` reason string से होता है।
@@ -49,7 +51,9 @@ Machine-readable output ये fields उपयोग करता है:
 - `reasons` (`string[]`): command intents select करने के लिए used verification reasons।
 - `plan_source` (`string | null`): `--from-classification` या `--from-plan` use होने पर JSON classification path, `--changed` use होने पर `changed`, या केवल `--reason` के लिए `null`।
 - `verification_plan_id` (`string`): जिस verification plan ने run select किया, उसका stable SHA-256 identifier।
-- `status` (`string`): `passed`, `partial`, `failed`, या `blocked`।
+- `execution_status` (`string`): command execution का aggregate status: `passed`, `partial`, `failed`, या `blocked`।
+- `status` (`string`): compatibility के लिए रखा गया `execution_status` का पुराना alias।
+- `completion_verdict` (`object`): evidence-based completion verdict। Final automation decisions के लिए `completion_verdict.status` use करें; सिर्फ `verified` complete verification बताता है।
 - `summary` (`object`): matched, ran, passed, failed, skipped counts।
 - `run_dir` (`string`): verification bundle directory, जिसमें manifest और per-intent receipts होते हैं।
 - `manifest_path` (`string`): verification bundle manifest path।
@@ -62,5 +66,5 @@ Machine-readable output ये fields उपयोग करता है:
 
 ## Exit codes
 
-- `0`: सभी selected runnable intents pass हुए और कोई selected intent skipped नहीं हुआ।
-- `1`: verification failed, partial, blocked, या input invalid था।
+- `0`: `completion_verdict.status` `verified` है।
+- `1`: verdict partial, unverified, blocked, contradicted है, या input invalid है।

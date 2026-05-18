@@ -52,7 +52,7 @@ local_index = "generated_optional"
 
 `indexed_files` table हर indexed workflow file और optional source-anchor file के लिए derived fingerprints रखती है: path, source scope, size, modified time, content hash, indexed time, index mode, और parser version। `mf index --incremental` existing SQLite file सिर्फ तब reuse कर सकता है जब schema, parser version, source-scope settings, और file fingerprints compatible रहें; नहीं तो यह full rebuild करता है।
 
-Search metadata `search_ngrams` table में भी लिखी जाती है। ये rows छोटे derived term fragments हैं, जो spaces या SQLite tokenization कमजोर होने पर multilingual search को सहारा देते हैं। वे documents, skills, skill routes, command intents, और source anchors की ओर point करते हैं; full documents या full source content store नहीं करते और authority ordering नहीं बदलते।
+Search metadata `search_ngrams` table में भी लिखी जाती है। ये rows छोटे derived term fragments हैं, जो spaces या SQLite tokenization कमजोर होने पर multilingual search को सहारा देते हैं। वे documents, skills, skill routes, command intents, और source anchors की ओर point करते हैं; full documents या full source content store नहीं करते और authority ordering नहीं बदलते। N-gram generation hard limits use करता है: हर token के पहले 64 characters और हर indexed target पर अधिकतम 512 n-gram rows।
 
 Search से पहले `mf search` stored hashes की तुलना current files से करता है और cache stale होने पर error लौटाता है। Last verification results और run analysis future features के लिए reserved हैं।
 

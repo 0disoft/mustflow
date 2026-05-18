@@ -111,6 +111,7 @@ interface VerificationOutput {
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
 	readonly verification_plan_id: string;
+	readonly execution_status: VerificationStatus;
 	readonly status: VerificationStatus;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
@@ -140,6 +141,7 @@ interface VerifyRunReceiptManifest {
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
 	readonly verification_plan_id: string;
+	readonly execution_status: VerificationStatus;
 	readonly status: VerificationStatus;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
@@ -159,6 +161,7 @@ interface VerifyLatestRunPointer {
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
 	readonly verification_plan_id: string;
+	readonly execution_status: VerificationStatus;
 	readonly status: VerificationStatus;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
@@ -1088,6 +1091,8 @@ export function planErrorMessageKey(code: string): MessageKey {
 			return 'verify.error.unsupported_plan_source';
 		case 'plan_root_mismatch':
 			return 'verify.error.plan_root_mismatch';
+		case 'git_changed_files_unavailable':
+			return 'verify.error.changed_files_unavailable';
 		default:
 			return 'verify.error.invalid_plan_file';
 	}
@@ -1766,6 +1771,7 @@ function writeVerifyRunReceipts(
 		reasons: outputWithReceiptPaths.reasons,
 		plan_source: outputWithReceiptPaths.plan_source,
 		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
+		execution_status: outputWithReceiptPaths.execution_status,
 		status: outputWithReceiptPaths.status,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
@@ -1787,6 +1793,7 @@ function writeVerifyRunReceipts(
 		reasons: outputWithReceiptPaths.reasons,
 		plan_source: outputWithReceiptPaths.plan_source,
 		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
+		execution_status: outputWithReceiptPaths.execution_status,
 		status: outputWithReceiptPaths.status,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
@@ -1890,6 +1897,7 @@ async function createVerifyOutput(
 		reasons: input.reasons,
 		plan_source: planSource,
 		verification_plan_id: verificationPlanId,
+		execution_status: status,
 		status,
 		completion_verdict: completionVerdict,
 		evidence_model: evidenceModel,
@@ -2057,6 +2065,10 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 	let externalChecks: readonly ExternalEvidenceCheck[] = [];
 
 	try {
+		if (parsed.writePlan) {
+			resolvePlanPath(projectRoot, parsed.writePlan);
+		}
+
 		if (parsed.changed) {
 			const changedInput = createInputFromChanged(projectRoot);
 			input = changedInput.input;
@@ -2117,5 +2129,5 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		reporter.stdout(renderVerifyOutput(output, lang));
 	}
 
-	return output.status === 'passed' ? 0 : 1;
+	return output.completion_verdict.status === 'verified' ? 0 : 1;
 }

@@ -1,4 +1,4 @@
-export const LOCAL_INDEX_SCHEMA_VERSION = '19';
+export const LOCAL_INDEX_SCHEMA_VERSION = '20';
 export const LOCAL_INDEX_PARSER_VERSION = '1';
 export const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 export const LATEST_RUN_STATE_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
@@ -22,6 +22,9 @@ export const SEARCH_MATCH_CONTEXT_AFTER_CHARS = 96;
 export const SEARCH_MATCH_TRUNCATION_MARKER = '...';
 export const SEARCH_NGRAM_MIN_LENGTH = 2;
 export const SEARCH_NGRAM_MAX_LENGTH = 3;
+export const SEARCH_NGRAM_MAX_TOKEN_CHARS = 64;
+export const SEARCH_NGRAM_MAX_GRAMS_PER_TARGET = 512;
+export const SOURCE_INDEX_MAX_FILE_BYTES = 262144;
 export const SEARCH_BACKEND_FTS5 = 'fts5';
 export const SEARCH_BACKEND_TABLE_SCAN = 'table_scan';
 export const TEST_DISABLE_FTS5_ENV = 'MUSTFLOW_TEST_DISABLE_FTS5';

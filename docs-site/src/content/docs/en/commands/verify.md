@@ -13,6 +13,8 @@ description: Runs configured verification intents selected by required_after met
 
 When `mf verify` actually runs commands, it uses the same schedule model as plan-only output and executes `schedule.entries` serially through `mf run` receipts. The verify output, verify bundle manifest, latest pointer, and per-intent receipts share the same `verification_plan_id`.
 
+The JSON `execution_status` field is the aggregate command execution result. The legacy `status` field is kept as the same execution aggregate for existing consumers. Automation that needs to decide whether the requested work is fully verified should read `completion_verdict.status`; only `verified` represents a complete verification claim.
+
 Before writing the latest pointer, `mf verify` compares the previous verify summary with the current plan. If the previous summary has the same `verification_plan_id` and both runs are still unresolved (`failed`, `blocked`, or `partial`), the completion verdict records a repeated failure risk instead of letting the new run look like a fresh completion claim.
 
 ## Selection Rules
@@ -55,10 +57,12 @@ Machine-readable output uses these fields:
 - `reasons` (`string[]`): Verification reasons used to select command intents.
 - `plan_source` (`string | null`): JSON classification path when `--from-classification` or `--from-plan` was used, `changed` when `--changed` was used, or `null` for `--reason`.
 - `verification_plan_id` (`string`): Stable SHA-256 identifier for the verification plan that selected the run.
-- `status` (`string`): `passed`, `partial`, `failed`, or `blocked`.
+- `execution_status` (`string`): Aggregate command execution status: `passed`, `partial`, `failed`, or `blocked`.
+- `status` (`string`): Legacy alias for `execution_status`, kept for compatibility.
 - `completion_verdict` (`object`): Evidence-based completion verdict. It grades the inspected
   verify evidence as `verified`, `partially_verified`, `unverified`, `blocked`, or `contradicted`;
-  it does not prove semantic completion beyond selected receipts, skipped checks, and gaps.
+  it is the field automation should use for final verification decisions. It does not prove semantic
+  completion beyond selected receipts, skipped checks, and gaps.
 - `evidence_model` (`object`): Machine-readable links among requirements, candidate intents,
   selected run receipts, skipped checks, gaps, remaining risks, and the verdict explanation. Its
   `coverage_matrix` conservatively maps each requirement-like criterion to `covered`,
@@ -96,5 +100,5 @@ For `--plan-only --json`, the output uses the change verification report schema.
 
 ## Exit Codes
 
-- `0`: All selected runnable intents passed and no selected intents were skipped.
-- `1`: Verification failed, was partial, was blocked, or input was invalid.
+- `0`: `completion_verdict.status` is `verified`.
+- `1`: The completion verdict is partial, unverified, blocked, contradicted, or input was invalid.

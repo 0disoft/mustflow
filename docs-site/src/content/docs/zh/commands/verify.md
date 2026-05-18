@@ -13,6 +13,8 @@ description: 运行由 required_after 元数据选出的已配置验证意图。
 
 `mf verify` 实际执行命令时，会使用与 plan-only 输出相同的计划模型，并通过 `mf run` 收据串行执行 `schedule.entries`。verify 输出、验证包清单、latest 指针和各意图收据共享同一个 `verification_plan_id`。
 
+JSON 中的 `execution_status` 是命令执行的汇总状态。为了兼容旧消费者，`status` 保留为同一执行汇总状态的旧别名。需要判断请求的工作是否已完整验证的自动化，应读取 `completion_verdict.status`；只有 `verified` 表示完整验证。
+
 ## 选择规则
 
 - 原因字符串必须与 `required_after` 精确匹配。
@@ -49,7 +51,9 @@ npx mf verify --reason code_change --json
 - `reasons` (`string[]`)：用于选择命令意图的验证原因。
 - `plan_source` (`string | null`)：使用 `--from-classification` 或 `--from-plan` 时的 JSON 分类报告路径，使用 `--changed` 时为 `changed`，只使用 `--reason` 时为 `null`。
 - `verification_plan_id` (`string`)：选择本次运行的验证计划的稳定 SHA-256 标识符。
-- `status` (`string`)：`passed`、`partial`、`failed` 或 `blocked`。
+- `execution_status` (`string`)：命令执行的汇总状态：`passed`、`partial`、`failed` 或 `blocked`。
+- `status` (`string`)：为兼容保留的 `execution_status` 旧别名。
+- `completion_verdict` (`object`)：基于证据的完成裁定。自动化做最终判断时应使用 `completion_verdict.status`；只有 `verified` 表示完整验证。
 - `summary` (`object`)：匹配、运行、通过、失败和跳过的数量。
 - `run_dir` (`string`)：包含清单和各意图收据的验证包目录。
 - `manifest_path` (`string`)：验证包清单路径。
@@ -62,5 +66,5 @@ npx mf verify --reason code_change --json
 
 ## 退出码
 
-- `0`：选中的可运行意图全部通过，且没有选中意图被跳过。
-- `1`：验证失败、部分完成、被阻止，或输入无效。
+- `0`：`completion_verdict.status` 为 `verified`。
+- `1`：完成裁定为部分验证、未验证、被阻止、相互矛盾，或输入无效。

@@ -543,6 +543,66 @@ stdin = "closed"
 	}
 });
 
+test('contract-lint rejects argv commands with long-running patterns', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const current = readFileSync(commandsPath(projectPath), 'utf8');
+		writeFileSync(
+			commandsPath(projectPath),
+			`${current}
+
+[intents.argv_dev_server]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Blocked argv intent."
+argv = ["npm", "run", "dev"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+
+[intents.argv_safe_exec]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Safe package-manager one-shot command."
+argv = ["npm", "exec", "eslint", "--", "src/index.ts"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.report.status, 'failed');
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'argv_dev_server' &&
+					issue.severity === 'error' &&
+					issue.code === 'long_running_command_pattern',
+			),
+		);
+		assert.equal(
+			report.report.issues.some((issue) => issue.intent === 'argv_safe_exec' && issue.code === 'long_running_command_pattern'),
+			false,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('contract-lint rejects unsafe intent names', () => {
 	const projectPath = createTempProject();
 

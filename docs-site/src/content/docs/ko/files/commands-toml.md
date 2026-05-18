@@ -49,7 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: 실행 의도에 명령 생명주기를 요구할지 정합니다.
 - `defaults.require_timeout_for_oneshot`: 단발성 명령에 제한 시간을 요구할지 정합니다.
 - `defaults.deny_unmanaged_long_running`: 관리되지 않는 장기 실행 명령을 차단할지 정합니다.
-- `defaults.max_output_bytes`: 실행기가 받을 수 있는 출력의 기본 상한입니다.
+- `defaults.max_output_bytes`: 실행기가 받을 수 있는 출력의 기본 상한입니다. 16 MiB
+  (16,777,216바이트)를 넘는 값은 거부됩니다.
 - `defaults.on_timeout`: 제한 시간을 넘겼을 때의 처리 방식입니다.
 - `defaults.kill_after_seconds`: 프로세스 정리 단계에서 사용할 수 있는 추가 대기 시간입니다.
 
@@ -72,7 +73,9 @@ required_after = ["code_change", "behavior_change"]
 - `kind`: mustflow 내장 의도인지, 저장소 명령인지 같은 분류입니다.
 - `lifecycle`: 명령이 단발성 명령인지, 서버나 감시 모드처럼 계속 떠 있는 명령인지 나타냅니다.
 - `run_policy`: 에이전트가 실행할 수 있는지, 명시 요청이 필요한지 나타냅니다. 새 설정은 `agent_allowed` 또는 `requires_explicit_user_request`를 사용해야 하며, `run_policy = "manual_only"`는 기존 설정 호환용으로만 허용됩니다.
-- `argv`: 셸 해석 없이 실행할 명령과 인자 배열입니다.
+- `argv`: 셸 해석 없이 실행할 명령과 인자 배열입니다. 셸 래퍼, 인터프리터 반복 실행,
+  패키지 관리자 개발 스크립트, 감시 명령, 개발 서버처럼 명확한 장기 실행 형태는
+  에이전트가 실행하는 단발성 의도에서 거부됩니다.
 - `mode`: `argv`가 아니라 셸 문법을 써야 할 때 `shell`로 둡니다.
 - `cmd`: `mode = "shell"`일 때 실행할 셸 명령 문자열입니다.
 - `cwd`: 명령을 실행할 작업 디렉터리입니다.

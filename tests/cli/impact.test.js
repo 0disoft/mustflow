@@ -115,6 +115,20 @@ test('reports changed version source impact from git status', async () => {
 	}
 });
 
+test('fails changed impact when git status cannot be read', async () => {
+	const projectPath = createImpactProject();
+
+	try {
+		const result = await runCli(projectPath, ['impact', '--changed', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unable to inspect changed files with git status/);
+		assert.match(result.stdout, /Usage: mf impact/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails impact without changed mode or explicit paths', async () => {
 	const result = await runCli(projectRoot, ['impact', '--json']);
 

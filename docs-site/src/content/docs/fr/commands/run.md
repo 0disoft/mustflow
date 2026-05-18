@@ -31,6 +31,8 @@ Pour les intentions bloquées ou inconnues, `mf run` imprime un extrait copiable
 
 Les serveurs de développement, le mode observateur, l’interface de navigateur et les processus en arrière-plan ne sont pas des commandes finies de validation.
 
+Même si une intention déclare `lifecycle = "oneshot"`, `mf run` refuse aussi les formes manifestement longues dans `argv`, comme les payloads de wrapper shell, les boucles d'interpréteur, `npm run dev`, `vite --host`, `next dev` ou `webpack --watch`.
+
 ## Exemples
 
 ```sh
@@ -63,7 +65,8 @@ La sortie lisible par machine utilise ces champs:
 - `argv` (`string[]`): commande et arguments lorsque le mode shell n’est pas utilisé.
 - `cmd` (`string`): chaîne de commande shell lorsque le mode shell est utilisé.
 - `timeout_seconds` (`number`): délai d’expiration appliqué.
-- `max_output_bytes` (`number`): taille maximale de sortie conservée.
+- `max_output_bytes` (`number`): taille maximale de sortie conservée. Les valeurs supérieures à
+  16 Mio (16,777,216 octets) sont refusées avant l’exécution.
 - `success_exit_codes` (`number[]`): codes de sortie traités comme succès.
 - `exit_code` (`number | null`): code de sortie du processus.
 - `signal` (`string | null`): nom du signal lorsque le processus s’est terminé par un signal.

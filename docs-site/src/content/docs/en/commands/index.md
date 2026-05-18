@@ -52,6 +52,8 @@ tables for faster token matching. When FTS5 is unavailable, the index keeps the
 same base tables and `mf search` falls back to bounded table scanning. In both
 backends, the index stores short n-gram rows for searchable metadata so
 multilingual queries can still match terms when spacing or tokenization differs.
+N-gram generation is bounded per indexed target: only the first 64 characters
+of each token are considered, and each target writes at most 512 n-gram rows.
 
 The index also records `path_surfaces` and `path_surface_reasons` rows derived
 from the same TypeScript classification rules used by `mf classify`. These rows
@@ -128,7 +130,7 @@ max_file_bytes = 262144
 allowed_extensions = [".ts", ".tsx", ".js", ".py", ".rs", ".go"]
 ```
 
-`enabled_by_default = true` lets `mf index` include source anchors without `--source`. Include and exclude patterns only bound the scan. Generated, dependency, and vendor paths remain excluded from the local source index even when an include pattern matches them.
+`enabled_by_default = true` lets `mf index` include source anchors without `--source`. Include and exclude patterns only bound the scan. Generated, dependency, and vendor paths remain excluded from the local source index even when an include pattern matches them. Source files are capped at 262144 bytes by default, and `max_file_bytes` can lower that ceiling but cannot raise it.
 
 ## JSON Fields
 

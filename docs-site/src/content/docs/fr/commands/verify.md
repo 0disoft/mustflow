@@ -13,6 +13,8 @@ description: Exécute les intentions de vérification configurées sélectionné
 
 Quand `mf verify` exécute réellement des commandes, il utilise le même modèle de planification que la sortie plan-only et exécute `schedule.entries` en série via les reçus `mf run`. La sortie verify, le manifeste du lot de vérification, le pointeur latest et les reçus par intention partagent le même `verification_plan_id`.
 
+Dans le JSON, `execution_status` est l'état agrégé de l'exécution des commandes. Le champ historique `status` reste le même agrégat pour compatibilité. Les automatisations qui doivent décider si le travail demandé est entièrement vérifié doivent lire `completion_verdict.status`; seul `verified` représente une vérification complète.
+
 ## Règles de sélection
 
 - La raison doit correspondre exactement à la chaîne `required_after`.
@@ -49,7 +51,9 @@ La sortie lisible par machine utilise ces champs:
 - `reasons` (`string[]`): raisons utilisées pour sélectionner les intentions.
 - `plan_source` (`string | null`): chemin du rapport de classification JSON quand `--from-classification` ou `--from-plan` est utilisé, `changed` quand `--changed` est utilisé, ou `null` avec seulement `--reason`.
 - `verification_plan_id` (`string`): identifiant SHA-256 stable du plan de vérification qui a sélectionné l'exécution.
-- `status` (`string`): `passed`, `partial`, `failed` ou `blocked`.
+- `execution_status` (`string`): état agrégé de l'exécution: `passed`, `partial`, `failed` ou `blocked`.
+- `status` (`string`): alias historique de `execution_status`, conservé pour compatibilité.
+- `completion_verdict` (`object`): verdict de finalisation fondé sur les preuves. Pour les décisions finales d'automatisation, utilisez `completion_verdict.status`; `verified` est le seul état qui indique une vérification complète.
 - `summary` (`object`): nombres d'intentions trouvées, exécutées, réussies, échouées et ignorées.
 - `run_dir` (`string`): répertoire du lot de vérification contenant le manifeste et les reçus par intention.
 - `manifest_path` (`string`): chemin du manifeste du lot de vérification.
@@ -62,5 +66,5 @@ Avec `--plan-only --json`, la sortie utilise le schéma de rapport de vérificat
 
 ## Codes de sortie
 
-- `0`: toutes les intentions exécutables sélectionnées ont réussi et aucune n'a été ignorée.
-- `1`: la vérification a échoué, est partielle, est bloquée ou l'entrée est invalide.
+- `0`: `completion_verdict.status` vaut `verified`.
+- `1`: le verdict est partiel, non vérifié, bloqué, contradictoire, ou l'entrée est invalide.

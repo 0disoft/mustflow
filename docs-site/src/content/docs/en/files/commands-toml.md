@@ -51,7 +51,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: Whether executable intents must declare a command lifecycle.
 - `defaults.require_timeout_for_oneshot`: Specifies whether oneshot commands are required to declare a timeout.
 - `defaults.deny_unmanaged_long_running`: Whether unmanaged long-running commands are blocked.
-- `defaults.max_output_bytes`: Default output limit accepted by the runner.
+- `defaults.max_output_bytes`: Default output limit accepted by the runner. Values above 16 MiB
+  (16,777,216 bytes) are rejected.
 - `defaults.on_timeout`: Timeout handling policy.
 - `defaults.kill_after_seconds`: Extra wait time available to process cleanup.
 - `defaults.env_policy`: Environment policy for command execution when an intent does not override it.
@@ -76,7 +77,9 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `kind`: Classification such as mustflow builtin or repository command.
 - `lifecycle`: Specifies whether the command is oneshot or long-running.
 - `run_policy`: Whether agents may run the intent or explicit approval is required. New configurations should use `agent_allowed` or `requires_explicit_user_request`; `run_policy = "manual_only"` is accepted only for older config compatibility.
-- `argv`: Command and arguments executed without shell interpretation.
+- `argv`: Command and arguments executed without shell interpretation. Obvious long-running forms
+  such as shell wrappers, interpreter loops, package-manager development scripts, watchers, and
+  development servers are rejected for agent-runnable one-shot intents.
 - `mode`: Set to `shell` only when shell syntax is required.
 - `cmd`: Shell command string used when `mode = "shell"`.
 - `cwd`: Working directory for the command.

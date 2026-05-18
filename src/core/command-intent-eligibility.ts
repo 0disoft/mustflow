@@ -1,5 +1,6 @@
 import { isRecord, readString, type TomlTable } from './config-loading.js';
 import {
+	commandIntentBlockedCommandPattern,
 	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
@@ -15,7 +16,8 @@ export type CommandIntentEligibilityCode =
 	| 'missing_timeout'
 	| 'missing_command_source'
 	| 'unsafe_intent_name'
-	| 'blocked_shell_background_pattern';
+	| 'blocked_shell_background_pattern'
+	| 'blocked_long_running_command_pattern';
 
 export type CommandIntentEligibilityResult =
 	| {
@@ -106,6 +108,15 @@ export function evaluateCommandIntentEligibility(
 			ok: false,
 			code: 'blocked_shell_background_pattern',
 			detail: 'Shell command contains a blocked long-running or background pattern.',
+		};
+	}
+
+	const blockedPattern = commandIntentBlockedCommandPattern(rawIntent);
+	if (blockedPattern?.code === 'long_running_command_pattern') {
+		return {
+			ok: false,
+			code: 'blocked_long_running_command_pattern',
+			detail: blockedPattern.detail,
 		};
 	}
 

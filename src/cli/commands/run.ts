@@ -63,7 +63,7 @@ function emitOutput(
 	reporter[stream](text);
 }
 
-function terminateProcessTree(pid: number | undefined): void {
+function signalProcessTree(pid: number | undefined, signal: NodeJS.Signals): void {
 	if (!pid || pid <= 0) {
 		return;
 	}
@@ -73,18 +73,75 @@ function terminateProcessTree(pid: number | undefined): void {
 			stdio: 'ignore',
 			windowsHide: true,
 		});
+		if (signal === 'SIGKILL') {
+			try {
+				process.kill(pid, signal);
+			} catch {
+				// taskkill may already have terminated the direct child.
+			}
+		}
 		return;
 	}
 
 	try {
-		process.kill(-pid, 'SIGTERM');
+		process.kill(-pid, signal);
 	} catch {
 		try {
-			process.kill(pid, 'SIGTERM');
+			process.kill(pid, signal);
 		} catch {
 			// The child may already be gone after Node's spawn timeout handling.
 		}
 	}
+}
+
+function signalProcessTreeNonBlocking(pid: number | undefined, signal: NodeJS.Signals): void {
+	if (!pid || pid <= 0) {
+		return;
+	}
+
+	if (process.platform === 'win32') {
+		const killer = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
+			stdio: 'ignore',
+			windowsHide: true,
+			detached: true,
+		});
+		killer.unref();
+
+		if (signal === 'SIGKILL') {
+			try {
+				process.kill(pid, signal);
+			} catch {
+				// taskkill may already have terminated the direct child.
+			}
+		}
+		return;
+	}
+
+	try {
+		process.kill(-pid, signal);
+	} catch {
+		try {
+			process.kill(pid, signal);
+		} catch {
+			// The child may already be gone after the timeout fired.
+		}
+	}
+}
+
+function terminateProcessTree(pid: number | undefined): void {
+	signalProcessTree(pid, 'SIGTERM');
+}
+
+function forceTerminateProcessTree(pid: number | undefined): void {
+	signalProcessTree(pid, 'SIGKILL');
+}
+
+function terminateProcessTreeNonBlocking(pid: number | undefined): void {
+	signalProcessTreeNonBlocking(pid, 'SIGTERM');
+}
+
+function forceTerminateProcessTreeNonBlocking(pid: number | undefined): void {
+	signalProcessTreeNonBlocking(pid, 'SIGKILL');
 }
 
 function getKillMethod(): string {
@@ -252,7 +309,7 @@ function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr', chunk
 			return;
 		}
 
-		reporter.stdout(chunk.toString().trimEnd());
+		reporter.stdout(chunk.toString());
 		return;
 	}
 
@@ -261,7 +318,7 @@ function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr', chunk
 		return;
 	}
 
-	reporter.stderr(chunk.toString().trimEnd());
+	reporter.stderr(chunk.toString());
 }
 
 function runArgvCommandStreaming(
@@ -302,10 +359,9 @@ function runArgvCommandStreaming(
 			if (timeout) {
 				clearTimeout(timeout);
 			}
-
 			resolve({
-				status,
-				signal,
+				status: timedOut ? null : status,
+				signal: timedOut ? null : signal,
 				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
 				stdout: stdout.toSnapshot(),
 				stderr: stderr.toSnapshot(),
@@ -330,7 +386,12 @@ function runArgvCommandStreaming(
 
 		timeout = setTimeout(() => {
 			timedOut = true;
-			terminateProcessTree(childPid);
+			child.stdout?.destroy();
+			child.stderr?.destroy();
+			child.unref();
+			terminateProcessTreeNonBlocking(childPid);
+			forceTerminateProcessTreeNonBlocking(childPid);
+			finish(null, null);
 		}, timeoutSeconds * 1000);
 	});
 }
@@ -393,10 +454,9 @@ function runShellCommandStreaming(
 			if (timeout) {
 				clearTimeout(timeout);
 			}
-
 			resolve({
-				status,
-				signal,
+				status: timedOut ? null : status,
+				signal: timedOut ? null : signal,
 				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
 				stdout: stdout.toSnapshot(),
 				stderr: stderr.toSnapshot(),
@@ -421,7 +481,12 @@ function runShellCommandStreaming(
 
 		timeout = setTimeout(() => {
 			timedOut = true;
-			terminateProcessTree(childPid);
+			child.stdout?.destroy();
+			child.stderr?.destroy();
+			child.unref();
+			terminateProcessTreeNonBlocking(childPid);
+			forceTerminateProcessTreeNonBlocking(childPid);
+			finish(null, null);
 		}, timeoutSeconds * 1000);
 	});
 }
@@ -478,10 +543,22 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 				detail: getRunPlanDetail(plan, lang, 'run.error.blockedShellBackgroundDetail'),
 			});
 			break;
+		case 'blocked_long_running_command_pattern':
+			message = t(lang, 'run.error.blockedLongRunningCommand', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.blockedLongRunningCommandDetail'),
+			});
+			break;
 		case 'cwd_outside_project':
 			message = t(lang, 'run.error.cwdOutsideProject', {
 				intent: plan.intentName,
 				detail: getRunPlanDetail(plan, lang, 'run.error.cwdOutsideProjectDetail'),
+			});
+			break;
+		case 'max_output_bytes_exceeds_limit':
+			message = t(lang, 'run.error.maxOutputBytes', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.maxOutputBytesDetail'),
 			});
 			break;
 		case 'intent_not_table':

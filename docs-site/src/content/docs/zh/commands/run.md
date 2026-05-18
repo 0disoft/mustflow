@@ -31,6 +31,8 @@ description: 运行 commands.toml 中声明的有限 command intent。
 
 开发服务器、watch 模式、浏览器 UI 与后台进程不是有限验证命令。
 
+即使意图声明了 `lifecycle = "oneshot"`，只要 `argv` 中出现明显的长时运行形态，`mf run` 也会拒绝执行，例如 shell 包装器载荷、解释器循环、`npm run dev`、`vite --host`、`next dev` 或 `webpack --watch`。
+
 ## 示例
 
 ```sh
@@ -63,7 +65,7 @@ npx mf run test --json
 - `argv` (`string[]`)：未使用 shell 模式时的命令与参数。
 - `cmd` (`string`)：使用 shell 模式时的 shell 命令字符串。
 - `timeout_seconds` (`number`)：应用的超时时间。
-- `max_output_bytes` (`number`)：保留输出的最大字节数。
+- `max_output_bytes` (`number`)：保留输出的最大字节数。超过 16 MiB（16,777,216 字节）的值会在执行前被拒绝。
 - `success_exit_codes` (`number[]`)：被视为成功的退出码。
 - `exit_code` (`number | null`)：进程退出码。
 - `signal` (`string | null`)：进程因 signal 结束时的 signal 名称。

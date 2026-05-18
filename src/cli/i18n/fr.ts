@@ -767,10 +767,18 @@ Lisez ces fichiers avant de travailler :
     'L’intention "{intent}" est bloquée. {detail}',
   "run.error.blockedShellBackgroundDetail":
     "Les commandes shell ne doivent pas lancer de travail en arrière-plan.",
+  "run.error.blockedLongRunningCommand":
+    'L’intention "{intent}" est bloquée. {detail}',
+  "run.error.blockedLongRunningCommandDetail":
+    "argv doit décrire une commande ponctuelle finie, pas un serveur de développement, un watcher, un wrapper shell, une boucle d'interpréteur ou un processus en arrière-plan.",
   "run.error.cwdOutsideProject":
     'La commande "{intent}" a un cwd non valide : {detail}',
   "run.error.cwdOutsideProjectDetail":
     "Le cwd de l’intention doit rester dans la racine actuelle.",
+  "run.error.maxOutputBytes":
+    'La commande "{intent}" a une valeur max_output_bytes non valide. {detail}',
+  "run.error.maxOutputBytesDetail":
+    "La limite de sortie doit rester dans le maximum autorisé.",
   "run.error.conflictingPreviewModes":
     "Utilisez --dry-run ou --plan-only, pas les deux",
   "run.error.timedOut": 'La commande "{intent}" a expiré après {seconds} secondes',
@@ -847,6 +855,7 @@ Lisez ces fichiers avant de travailler :
   "classify.source.changed": "fichiers modifies",
   "classify.source.paths": "chemins explicites",
   "classify.error.missingInput": "Indiquez --changed ou au moins un chemin",
+  "classify.error.changed_files_unavailable": "Impossible d'inspecter les fichiers modifies avec git status",
   "classify.error.write_path_outside_root": "Le chemin du rapport de classification doit rester dans la racine mustflow",
 
   "impact.help.summary":
@@ -863,6 +872,7 @@ Lisez ces fichiers avant de travailler :
   "impact.label.affectedVersionSources": "Sources de version affectees",
   "impact.label.affectedSurfaces": "Surfaces affectees",
   "impact.error.missingInput": "Indiquez --changed ou au moins un chemin",
+  "impact.error.changed_files_unavailable": "Impossible d'inspecter les fichiers modifies avec git status",
 
   "verify.help.summary":
     "Exécute les intentions de vérification configurées sélectionnées par les métadonnées required_after.",
@@ -893,6 +903,7 @@ Lisez ces fichiers avant de travailler :
   "verify.error.plan_root_mismatch": "Le rapport de classification doit venir de cette racine mustflow",
   "verify.error.missing_plan_reasons": "Le rapport de classification doit inclure summary.validationReasons",
   "verify.error.plan_path_outside_root": "Le chemin du rapport de classification doit rester dans la racine mustflow",
+  "verify.error.changed_files_unavailable": "Impossible d'inspecter les fichiers modifies avec git status",
   "verify.error.invalid_repro_evidence_file": "La preuve de reproduction doit être un résumé JSON lisible avec des champs de preuve structurés",
   "verify.error.unsupported_repro_evidence_source": "L'entrée de preuve de reproduction doit utiliser command repro-evidence",
   "verify.error.invalid_external_evidence_file": "La preuve externe doit être un résumé JSON lisible avec checks",

@@ -35,10 +35,10 @@ Current schemas:
   `mf explain verify --reason <event> --json`, `mf explain retention --json`, `mf explain skills --json`,
   and `mf explain surface --json`. Verify explanations include the shared `decisionGraph` evidence model.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`, including an
-  evidence-based completion verdict and evidence model with a conservative coverage matrix for the
-  selected receipts and skipped checks
+  explicit execution aggregate, evidence-based completion verdict, and evidence model with a
+  conservative coverage matrix for the selected receipts and skipped checks
 - `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`, including
-  the same completion verdict, evidence model, and coverage matrix as the verify report
+  the same execution aggregate, completion verdict, evidence model, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
   `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links
   changed surfaces, classification reasons, command candidates, eligibility, selected or not-selected state,

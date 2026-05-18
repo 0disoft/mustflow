@@ -49,7 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: indique si les intentions exécutables doivent déclarer un cycle de vie de commande.
 - `defaults.require_timeout_for_oneshot`: indique si les commandes finies doivent déclarer un délai d’expiration.
 - `defaults.deny_unmanaged_long_running`: indique si les commandes longue durée non gérées sont bloquées.
-- `defaults.max_output_bytes`: limite de sortie par défaut acceptée par l’exécuteur.
+- `defaults.max_output_bytes`: limite de sortie par défaut acceptée par l’exécuteur. Les valeurs
+  supérieures à 16 Mio (16,777,216 octets) sont refusées.
 - `defaults.on_timeout`: politique de gestion des expirations.
 - `defaults.kill_after_seconds`: temps d’attente supplémentaire disponible pour le nettoyage des processus.
 
@@ -72,7 +73,10 @@ Les agents ne peuvent exécuter que les intentions avec `status = "configured"`.
 - `kind`: classification, par exemple commande intégrée mustflow ou commande du dépôt.
 - `lifecycle`: indique si la commande est finie ou longue durée.
 - `run_policy`: indique si les agents peuvent exécuter l’intention ou si une approbation explicite est requise. Les nouvelles configurations doivent utiliser `agent_allowed` ou `requires_explicit_user_request`; `run_policy = "manual_only"` est accepté uniquement pour compatibilité avec les anciennes configurations.
-- `argv`: commande et arguments exécutés sans interprétation shell.
+- `argv`: commande et arguments exécutés sans interprétation shell. Les formes manifestement longues,
+  comme les wrappers shell, les boucles d'interpréteur, les scripts de développement du gestionnaire de
+  paquets, les watchers et les serveurs de développement, sont refusées pour les intentions ponctuelles
+  exécutables par agent.
 - `mode`: définir à `shell` uniquement lorsque la syntaxe shell est requise.
 - `cmd`: chaîne de commande shell utilisée lorsque `mode = "shell"`.
 - `cwd`: répertoire de travail de la commande.

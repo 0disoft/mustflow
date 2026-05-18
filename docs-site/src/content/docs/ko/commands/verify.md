@@ -13,6 +13,8 @@ description: required_after 메타데이터로 선택한 설정된 검증 의도
 
 `mf verify`가 실제로 명령을 실행할 때는 plan-only 출력과 같은 예정 실행 모델을 사용하고, `schedule.entries`를 `mf run` 영수증으로 순서대로 실행합니다. verify 출력, 검증 묶음 매니페스트, latest 포인터, 의도별 영수증은 같은 `verification_plan_id`를 공유합니다.
 
+JSON의 `execution_status` 필드는 명령 실행 결과를 합산한 상태입니다. 기존 소비자를 위해 `status` 필드는 같은 실행 합산 상태를 가리키는 호환 별칭으로 유지됩니다. 요청한 작업이 완전히 검증됐는지 판단해야 하는 자동화는 `completion_verdict.status`를 읽어야 하며, 이 값이 `verified`일 때만 완료 검증 주장으로 취급해야 합니다.
+
 ## 선택 규칙
 
 - `required_after`의 이유 문자열이 정확히 일치해야 선택됩니다.
@@ -48,7 +50,9 @@ npx mf verify --reason code_change --json
 - `reasons` (`string[]`): 명령 의도 선택에 사용한 검증 이유 목록입니다.
 - `plan_source` (`string | null`): `--from-classification` 또는 `--from-plan`을 사용했을 때의 JSON 분류 경로, `--changed`를 사용했을 때의 `changed`, 또는 `--reason`만 사용했을 때의 `null`입니다.
 - `verification_plan_id` (`string`): 해당 실행을 선택한 검증 계획의 안정적인 SHA-256 식별자입니다.
-- `status` (`string`): `passed`, `partial`, `failed`, `blocked` 중 하나입니다.
+- `execution_status` (`string`): 명령 실행 결과를 합산한 상태입니다. `passed`, `partial`, `failed`, `blocked` 중 하나입니다.
+- `status` (`string`): 기존 소비자를 위해 남겨 둔 `execution_status` 호환 별칭입니다.
+- `completion_verdict` (`object`): 근거 기반 완료 판정입니다. 자동화가 최종 검증 여부를 판단할 때는 이 객체의 `status`를 사용해야 합니다. `verified`일 때만 요청한 작업이 선택된 영수증, 건너뛴 검사, 남은 공백 기준으로 완료 검증됐다는 뜻입니다.
 - `summary` (`object`): 일치, 실행, 통과, 실패, 건너뜀 개수입니다.
 - `run_dir` (`string`): 매니페스트와 의도별 영수증을 담은 검증 묶음 디렉터리입니다.
 - `manifest_path` (`string`): 검증 묶음 매니페스트 경로입니다.
@@ -61,5 +65,5 @@ npx mf verify --reason code_change --json
 
 ## 종료 코드
 
-- `0`: 선택된 실행 가능 의도가 모두 통과했고 건너뛴 의도가 없습니다.
-- `1`: 검증 실패, 부분 실행, 차단, 또는 잘못된 입력입니다.
+- `0`: `completion_verdict.status`가 `verified`입니다.
+- `1`: 완료 판정이 부분 검증, 미검증, 차단, 모순 상태이거나 입력이 잘못됐습니다.

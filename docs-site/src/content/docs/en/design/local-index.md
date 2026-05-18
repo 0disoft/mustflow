@@ -83,7 +83,9 @@ authority.
 Search metadata is also written to a `search_ngrams` table. These rows are short derived term
 fragments used as a multilingual fallback when spacing or SQLite tokenization is weak. They point
 back to documents, skills, skill routes, command intents, and source anchors; they do not store full
-document or source content and they do not change authority ordering.
+document or source content and they do not change authority ordering. N-gram generation uses hard
+limits: at most the first 64 characters of each token are considered, and each indexed target can
+write at most 512 n-gram rows.
 
 Command-effect rows from `.mustflow/config/commands.toml` are exposed through
 `command_write_locks` and `command_lock_conflicts` views. These views help

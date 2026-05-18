@@ -31,7 +31,7 @@ Este archivo se genera y puede eliminarse y reconstruirse en cualquier momento.
 El índice almacena hashes de contenido de los archivos indexados, lo que permite a `mf search` detectar una caché obsoleta.
 También registra una tabla `indexed_files` con ruta, alcance de origen, tamaño, hora de modificación, hash de contenido, hora de indexación, modo de índice y versión del parser para decidir si una ejecución incremental puede reutilizar la caché existente de forma segura.
 
-Cuando el runtime SQLite incluido admite FTS5, `mf index` registra tablas derivadas de búsqueda de texto para coincidencias de tokens más rápidas. Si FTS5 no está disponible, conserva las mismas tablas base y `mf search` usa un escaneo acotado. Ambos caminos guardan también filas n-gram cortas para metadatos buscables, de modo que las consultas multilingües puedan coincidir aunque cambien los espacios o la tokenización.
+Cuando el runtime SQLite incluido admite FTS5, `mf index` registra tablas derivadas de búsqueda de texto para coincidencias de tokens más rápidas. Si FTS5 no está disponible, conserva las mismas tablas base y `mf search` usa un escaneo acotado. Ambos caminos guardan también filas n-gram cortas para metadatos buscables, de modo que las consultas multilingües puedan coincidir aunque cambien los espacios o la tokenización. La generación n-gram está acotada por destino indexado: usa solo los primeros 64 caracteres de cada token y escribe como máximo 512 filas n-gram por destino.
 
 ## Simulación
 
@@ -72,7 +72,7 @@ max_file_bytes = 262144
 allowed_extensions = [".ts", ".tsx", ".js", ".py", ".rs", ".go"]
 ```
 
-`enabled_by_default = true` hace que `mf index` incluya anclas de fuente sin `--source`. Los patrones de inclusión y exclusión solo limitan el escaneo. Las rutas generadas, de dependencias y de proveedor siguen excluidas del índice local de fuente aunque coincidan con un patrón de inclusión.
+`enabled_by_default = true` hace que `mf index` incluya anclas de fuente sin `--source`. Los patrones de inclusión y exclusión solo limitan el escaneo. Las rutas generadas, de dependencias y de proveedor siguen excluidas del índice local de fuente aunque coincidan con un patrón de inclusión. Los archivos de fuente están limitados a 262144 bytes de forma predeterminada; `max_file_bytes` puede bajar ese techo, pero no subirlo.
 
 ## Campos JSON
 

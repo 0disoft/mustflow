@@ -31,7 +31,7 @@ Ce fichier est généré. Il peut être supprimé et reconstruit.
 L’index stocke les hashes de contenu des fichiers indexés afin que `mf search` puisse détecter les données de cache obsolètes.
 Il écrit aussi une table `indexed_files` avec le chemin, la portée source, la taille, l’heure de modification, le hash de contenu, l’heure d’indexation, le mode d’index et la version du parser pour décider si une exécution incrémentale peut réutiliser le cache existant en sécurité.
 
-Quand le runtime SQLite inclus prend en charge FTS5, `mf index` écrit des tables dérivées de recherche textuelle pour accélérer les correspondances de tokens. Si FTS5 n’est pas disponible, il conserve les mêmes tables de base et `mf search` utilise un scan borné. Les deux chemins écrivent aussi de courtes lignes n-gram pour les métadonnées recherchables, afin que les requêtes multilingues puissent correspondre malgré des différences d’espaces ou de tokenisation.
+Quand le runtime SQLite inclus prend en charge FTS5, `mf index` écrit des tables dérivées de recherche textuelle pour accélérer les correspondances de tokens. Si FTS5 n’est pas disponible, il conserve les mêmes tables de base et `mf search` utilise un scan borné. Les deux chemins écrivent aussi de courtes lignes n-gram pour les métadonnées recherchables, afin que les requêtes multilingues puissent correspondre malgré des différences d’espaces ou de tokenisation. La génération n-gram est bornée par cible indexée : seuls les 64 premiers caractères de chaque token sont considérés, et chaque cible écrit au plus 512 lignes n-gram.
 
 ## Simulation
 
@@ -72,7 +72,7 @@ max_file_bytes = 262144
 allowed_extensions = [".ts", ".tsx", ".js", ".py", ".rs", ".go"]
 ```
 
-`enabled_by_default = true` permet à `mf index` d’inclure les ancres source sans `--source`. Les motifs d’inclusion et d’exclusion ne font que borner le scan. Les chemins générés, de dépendances et de vendor restent exclus de l’index source local même s’ils correspondent à un motif d’inclusion.
+`enabled_by_default = true` permet à `mf index` d’inclure les ancres source sans `--source`. Les motifs d’inclusion et d’exclusion ne font que borner le scan. Les chemins générés, de dépendances et de vendor restent exclus de l’index source local même s’ils correspondent à un motif d’inclusion. Les fichiers source sont plafonnés à 262144 octets par défaut ; `max_file_bytes` peut abaisser ce plafond, mais pas l’augmenter.
 
 ## Champs JSON
 

@@ -757,10 +757,18 @@ export const zhMessages = {
     '意图 "{intent}" 已被阻止。{detail}',
   "run.error.blockedShellBackgroundDetail":
     "Shell 命令不得启动后台工作。",
+  "run.error.blockedLongRunningCommand":
+    '意图 "{intent}" 已被阻止。{detail}',
+  "run.error.blockedLongRunningCommandDetail":
+    "argv 必须描述会结束的单次命令，而不是开发服务器、监听命令、shell 包装器、解释器循环或后台进程。",
   "run.error.cwdOutsideProject":
     '命令 "{intent}" 的 cwd 无效：{detail}',
   "run.error.cwdOutsideProjectDetail":
     "意图 cwd 必须位于当前根目录内。",
+  "run.error.maxOutputBytes":
+    '命令 "{intent}" 的 max_output_bytes 无效。{detail}',
+  "run.error.maxOutputBytesDetail":
+    "输出限制必须保持在允许的最大值内。",
   "run.error.conflictingPreviewModes":
     "只能使用 --dry-run 或 --plan-only，不能同时使用",
   "run.error.timedOut": '命令 "{intent}" 在 {seconds} 秒后超时',
@@ -837,6 +845,7 @@ export const zhMessages = {
   "classify.source.changed": "变更文件",
   "classify.source.paths": "指定路径",
   "classify.error.missingInput": "请指定 --changed 或至少一个路径",
+  "classify.error.changed_files_unavailable": "无法通过 git status 检查变更文件",
   "classify.error.write_path_outside_root": "分类报告路径必须位于 mustflow 根目录内",
 
   "impact.help.summary":
@@ -853,6 +862,7 @@ export const zhMessages = {
   "impact.label.affectedVersionSources": "受影响的版本来源",
   "impact.label.affectedSurfaces": "受影响的公开表面",
   "impact.error.missingInput": "请指定 --changed 或至少一个路径",
+  "impact.error.changed_files_unavailable": "无法通过 git status 检查变更文件",
 
   "verify.help.summary":
     "运行由 required_after 元数据选出的已配置验证意图。",
@@ -883,6 +893,7 @@ export const zhMessages = {
   "verify.error.plan_root_mismatch": "分类报告必须来自当前 mustflow 根目录",
   "verify.error.missing_plan_reasons": "分类报告必须包含 summary.validationReasons",
   "verify.error.plan_path_outside_root": "分类报告路径必须位于 mustflow 根目录内",
+  "verify.error.changed_files_unavailable": "无法通过 git status 检查变更文件",
   "verify.error.invalid_repro_evidence_file": "复现证据必须是包含结构化证据字段的可读取 JSON 摘要",
   "verify.error.unsupported_repro_evidence_source": "复现证据输入必须使用 command repro-evidence",
   "verify.error.invalid_external_evidence_file": "外部证据必须是包含 checks 的可读取 JSON 摘要",

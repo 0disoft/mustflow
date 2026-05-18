@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { listFilesRecursive, toPosixPath } from './filesystem.js';
+import { toPosixPath } from './filesystem.js';
 import { readTomlFile } from './toml.js';
 
 const DEFAULT_DEPTH = 3;
@@ -254,6 +254,11 @@ interface RepoMapConfig {
 	readonly workspace: WorkspaceConfig;
 }
 
+interface SafeDirectoryTarget {
+	readonly logicalPath: string;
+	readonly realPath: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -309,8 +314,8 @@ function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 	};
 }
 
-function getGitFiles(projectRoot: string): string[] {
-	const result = spawnSync('git', ['ls-files'], {
+function getGitFiles(projectRoot: string): readonly string[] {
+	const result = spawnSync('git', ['ls-files', '-z'], {
 		cwd: projectRoot,
 		encoding: 'utf8',
 	});
@@ -320,19 +325,58 @@ function getGitFiles(projectRoot: string): string[] {
 	}
 
 	return result.stdout
-		.split(/\r?\n/)
-		.map((line) => line.trim())
+		.split('\0')
+		.map((line) => toPosixPath(line))
 		.filter(Boolean);
 }
 
-function getRepositoryFiles(projectRoot: string): string[] {
+function isAnchorCandidatePath(relativePath: string, priorityPaths: ReadonlySet<string>): boolean {
+	return priorityPaths.has(relativePath) || Boolean(getAnchorDescription(relativePath));
+}
+
+function listAnchorCandidateFilesRecursive(
+	rootPath: string,
+	depth: number,
+	priorityPaths: ReadonlySet<string>,
+): string[] {
+	const results: string[] = [];
+
+	function visit(currentPath: string, directoryDepth: number): void {
+		for (const entry of readdirSync(currentPath, { withFileTypes: true })) {
+			const entryPath = path.join(currentPath, entry.name);
+			const relativePath = toPosixPath(path.relative(rootPath, entryPath));
+
+			if (entry.isDirectory()) {
+				if (EXCLUDED_SEGMENTS.has(entry.name) || directoryDepth >= depth) {
+					continue;
+				}
+
+				visit(entryPath, directoryDepth + 1);
+				continue;
+			}
+
+			if (entry.isFile() && isAnchorCandidatePath(relativePath, priorityPaths)) {
+				results.push(relativePath);
+			}
+		}
+	}
+
+	if (!existsSync(rootPath) || !statSync(rootPath).isDirectory()) {
+		return [];
+	}
+
+	visit(rootPath, 0);
+	return results.sort();
+}
+
+function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: ReadonlySet<string>): string[] {
 	const files = new Set<string>();
 
 	for (const relativePath of getGitFiles(projectRoot)) {
 		files.add(relativePath);
 	}
 
-	for (const relativePath of listFilesRecursive(projectRoot, { ignoredDirectoryNames: EXCLUDED_SEGMENTS })) {
+	for (const relativePath of listAnchorCandidateFilesRecursive(projectRoot, depth, priorityPaths)) {
 		files.add(relativePath);
 	}
 
@@ -402,7 +446,7 @@ function discoverAnchors(
 	nestedRepositories: readonly NestedRepository[],
 	excludedPrefixes: readonly string[],
 ): AnchorFile[] {
-	return getRepositoryFiles(projectRoot)
+	return getRepositoryFiles(projectRoot, depth, priorityPaths)
 		.filter(shouldIncludePath)
 		.filter((relativePath) => !isUnderNestedRepository(relativePath, nestedRepositories))
 		.filter((relativePath) => !isUnderExcludedPrefix(relativePath, excludedPrefixes))
@@ -456,12 +500,9 @@ function hasGitMarker(directoryPath: string): boolean {
 	return existsSync(path.join(directoryPath, '.git'));
 }
 
-function isDirectory(directoryPath: string): boolean {
-	try {
-		return statSync(directoryPath).isDirectory();
-	} catch {
-		return false;
-	}
+function isRealPathInside(parentRealPath: string, childRealPath: string): boolean {
+	const relative = path.relative(parentRealPath, childRealPath);
+	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 function isSafeWorkspaceRoot(projectRoot: string, workspaceRoot: string): boolean {
@@ -478,6 +519,44 @@ function getWorkspaceRootPrefixes(projectRoot: string, workspaceConfig: Workspac
 	return workspaceConfig.roots
 		.filter((workspaceRoot) => isSafeWorkspaceRoot(projectRoot, workspaceRoot))
 		.map((workspaceRoot) => `${toPosixPath(workspaceRoot).replace(/\/+$/, '')}/`);
+}
+
+function resolveSafeDirectoryTarget(
+	projectRootRealPath: string,
+	logicalPath: string,
+	followSymlinks: boolean,
+): SafeDirectoryTarget | undefined {
+	try {
+		const stats = lstatSync(logicalPath);
+
+		if (stats.isSymbolicLink()) {
+			if (!followSymlinks) {
+				return undefined;
+			}
+
+			const realPath = realpathSync(logicalPath);
+
+			if (!isRealPathInside(projectRootRealPath, realPath) || !statSync(realPath).isDirectory()) {
+				return undefined;
+			}
+
+			return { logicalPath, realPath };
+		}
+
+		if (!stats.isDirectory()) {
+			return undefined;
+		}
+
+		const realPath = realpathSync(logicalPath);
+
+		if (!isRealPathInside(projectRootRealPath, realPath)) {
+			return undefined;
+		}
+
+		return { logicalPath, realPath };
+	} catch {
+		return undefined;
+	}
 }
 
 function collectNestedRepository(
@@ -545,18 +624,26 @@ function discoverNestedRepositories(
 
 	const repositories: NestedRepository[] = [];
 	const seenRepositoryPaths = new Set<string>();
+	const seenDirectoryPaths = new Set<string>();
+	const projectRootRealPath = realpathSync(projectRoot);
 
-	function visit(directoryPath: string, depth: number): void {
+	function visit(directoryTarget: SafeDirectoryTarget, depth: number): void {
 		if (repositories.length >= workspaceConfig.maxRepositories || depth > workspaceConfig.maxDepth) {
 			return;
 		}
 
-		if (hasGitMarker(directoryPath)) {
-			const resolvedRepositoryPath = path.resolve(directoryPath);
+		if (seenDirectoryPaths.has(directoryTarget.realPath)) {
+			return;
+		}
+
+		seenDirectoryPaths.add(directoryTarget.realPath);
+
+		if (hasGitMarker(directoryTarget.logicalPath)) {
+			const resolvedRepositoryPath = directoryTarget.realPath;
 
 			if (!seenRepositoryPaths.has(resolvedRepositoryPath)) {
 				seenRepositoryPaths.add(resolvedRepositoryPath);
-				repositories.push(collectNestedRepository(projectRoot, resolvedRepositoryPath, mapConfig.anchorFiles));
+				repositories.push(collectNestedRepository(projectRoot, directoryTarget.logicalPath, mapConfig.anchorFiles));
 			}
 
 			if (workspaceConfig.stopAtRepositoryRoot) {
@@ -564,20 +651,20 @@ function discoverNestedRepositories(
 			}
 		}
 
-		for (const entry of readdirSync(directoryPath, { withFileTypes: true })) {
-			if (!entry.isDirectory()) {
-				continue;
-			}
-
+		for (const entry of readdirSync(directoryTarget.logicalPath, { withFileTypes: true })) {
 			if (EXCLUDED_SEGMENTS.has(entry.name)) {
 				continue;
 			}
 
-			if (entry.isSymbolicLink() && !workspaceConfig.followSymlinks) {
-				continue;
-			}
+			const childDirectoryTarget = resolveSafeDirectoryTarget(
+				projectRootRealPath,
+				path.join(directoryTarget.logicalPath, entry.name),
+				workspaceConfig.followSymlinks,
+			);
 
-			visit(path.join(directoryPath, entry.name), depth + 1);
+			if (childDirectoryTarget) {
+				visit(childDirectoryTarget, depth + 1);
+			}
 		}
 	}
 
@@ -587,12 +674,17 @@ function discoverNestedRepositories(
 		}
 
 		const absoluteWorkspaceRoot = path.resolve(projectRoot, workspaceRoot);
+		const workspaceTarget = resolveSafeDirectoryTarget(
+			projectRootRealPath,
+			absoluteWorkspaceRoot,
+			workspaceConfig.followSymlinks,
+		);
 
-		if (!isDirectory(absoluteWorkspaceRoot)) {
+		if (!workspaceTarget) {
 			continue;
 		}
 
-		visit(absoluteWorkspaceRoot, 0);
+		visit(workspaceTarget, 0);
 	}
 
 	return repositories.sort((left, right) => left.relativePath.localeCompare(right.relativePath));

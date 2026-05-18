@@ -762,10 +762,18 @@ export const koMessages = {
     '명령 의도 "{intent}"가 차단되었습니다. {detail}',
   "run.error.blockedShellBackgroundDetail":
     "셸 명령은 백그라운드 작업을 시작하면 안 됩니다.",
+  "run.error.blockedLongRunningCommand":
+    '명령 의도 "{intent}"가 차단되었습니다. {detail}',
+  "run.error.blockedLongRunningCommandDetail":
+    "argv는 개발 서버, 감시 명령, 셸 래퍼, 인터프리터 반복 작업, 백그라운드 프로세스가 아니라 끝나는 단발성 명령이어야 합니다.",
   "run.error.cwdOutsideProject":
     '명령 "{intent}"의 실행 위치(cwd)가 올바르지 않습니다: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "명령 실행 위치(cwd)는 현재 루트 안에 있어야 합니다.",
+  "run.error.maxOutputBytes":
+    '명령 "{intent}"의 max_output_bytes 값이 올바르지 않습니다. {detail}',
+  "run.error.maxOutputBytesDetail":
+    "출력 상한은 허용된 최댓값 안에 있어야 합니다.",
   "run.error.conflictingPreviewModes":
     "--dry-run과 --plan-only 중 하나만 사용하세요",
   "run.error.timedOut": '명령 "{intent}"가 {seconds}초 뒤 시간 초과되었습니다',
@@ -842,6 +850,7 @@ export const koMessages = {
   "classify.source.changed": "변경 파일",
   "classify.source.paths": "지정한 경로",
   "classify.error.missingInput": "--changed 또는 하나 이상의 경로를 지정하세요",
+  "classify.error.changed_files_unavailable": "git status로 변경 파일을 확인할 수 없습니다",
   "classify.error.write_path_outside_root": "분류 보고서 경로는 mustflow 루트 안에 있어야 합니다",
 
   "impact.help.summary":
@@ -858,6 +867,7 @@ export const koMessages = {
   "impact.label.affectedVersionSources": "영향받은 버전 기준 원본",
   "impact.label.affectedSurfaces": "영향받은 공개 표면",
   "impact.error.missingInput": "--changed 또는 하나 이상의 경로를 지정하세요",
+  "impact.error.changed_files_unavailable": "git status로 변경 파일을 확인할 수 없습니다",
 
   "verify.help.summary":
     "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",
@@ -888,6 +898,7 @@ export const koMessages = {
   "verify.error.plan_root_mismatch": "분류 보고서는 현재 mustflow 루트에서 나온 것이어야 합니다",
   "verify.error.missing_plan_reasons": "분류 보고서에는 summary.validationReasons가 있어야 합니다",
   "verify.error.plan_path_outside_root": "분류 보고서 경로는 mustflow 루트 안에 있어야 합니다",
+  "verify.error.changed_files_unavailable": "git status로 변경 파일을 확인할 수 없습니다",
   "verify.error.invalid_repro_evidence_file": "재현 증거는 구조화된 증거 필드를 포함한 읽을 수 있는 JSON 요약이어야 합니다",
   "verify.error.unsupported_repro_evidence_source": "재현 증거 입력은 command repro-evidence를 사용해야 합니다",
   "verify.error.invalid_external_evidence_file": "외부 증거는 checks를 포함한 읽을 수 있는 JSON 요약이어야 합니다",

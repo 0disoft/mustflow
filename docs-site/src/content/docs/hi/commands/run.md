@@ -31,6 +31,8 @@ Blocked या unknown intents के लिए `mf run` एक copyable `status
 
 development servers, watch mode, browser UI और background processes finite validation commands नहीं हैं।
 
+यदि intent `lifecycle = "oneshot"` declare करे, तब भी `argv` में साफ long-running shape दिखने पर `mf run` उसे reject करता है, जैसे shell-wrapper payloads, interpreter loops, `npm run dev`, `vite --host`, `next dev`, या `webpack --watch`।
+
 ## उदाहरण
 
 ```sh
@@ -63,7 +65,8 @@ Machine-readable output ये फ़ील्ड उपयोग करता �
 - `argv` (`string[]`): shell mode न होने पर command और arguments।
 - `cmd` (`string`): shell mode में shell command string।
 - `timeout_seconds` (`number`): applied timeout।
-- `max_output_bytes` (`number`): अधिकतम retained output size।
+- `max_output_bytes` (`number`): अधिकतम retained output size। 16 MiB (16,777,216 bytes) से बड़े मान
+  execution से पहले अस्वीकार किए जाते हैं।
 - `success_exit_codes` (`number[]`): success माने जाने वाले exit codes।
 - `exit_code` (`number | null`): प्रक्रिया निकास कोड।
 - `signal` (`string | null`): signal से process समाप्त होने पर signal name।

@@ -31,6 +31,8 @@ description: commands.toml에 정의된 단발성 명령 의도를 실행하는 
 
 개발 서버 실행, 감시 모드, 사용자 화면 테스트 도구, 백그라운드 프로세스 등은 검증용 단발성 명령으로 보지 않습니다.
 
+의도가 `lifecycle = "oneshot"`을 선언했더라도 `argv` 안에 장기 실행 형태가 명확히 보이면 `mf run`은 실행을 거부합니다. 예를 들어 `sh -c "nohup ... &"` 같은 셸 래퍼, `node -e "setInterval(...)"` 같은 인터프리터 반복 실행, `npm run dev`, `vite --host`, `next dev`, `webpack --watch` 같은 개발 서버나 감시 명령이 여기에 해당합니다.
+
 ## 예시
 
 ```sh
@@ -63,7 +65,8 @@ npx mf run test --json
 - `argv` (`string[]`): 실행된 명령 및 인수 목록 (`exec` 모드).
 - `cmd` (`string`): 실행된 전체 셸 명령 문자열 (`shell` 모드).
 - `timeout_seconds` (`number`): 적용된 제한 시간(초)입니다.
-- `max_output_bytes` (`number`): 캡처 및 보존되는 최대 출력 바이트 수입니다.
+- `max_output_bytes` (`number`): 캡처 및 보존되는 최대 출력 바이트 수입니다. 16 MiB
+  (16,777,216바이트)를 넘는 값은 실행 전에 거부됩니다.
 - `success_exit_codes` (`number[]`): 성공으로 간주되는 종료 코드 목록입니다.
 - `exit_code` (`number | null`): 프로세스의 종료 코드입니다.
 - `signal` (`string | null`): 프로세스가 신호(Signal)로 종료됐을 때 신호 이름입니다.

@@ -41,10 +41,10 @@ building automation around `--json` output.
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `explain-report.schema.json`: `mf explain <topic> --json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, including an evidence-based
-  completion verdict and evidence model with a conservative coverage matrix for selected receipts,
-  skipped checks, and gaps
+  completion verdict, explicit execution aggregate, and evidence model with a conservative coverage
+  matrix for selected receipts, skipped checks, and gaps
 - `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`, including
-  the same completion verdict, evidence model, and coverage matrix as the verify report
+  the same execution aggregate, completion verdict, evidence model, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
   and `mf verify --from-classification <path> --plan-only --json`; command-effect graph fields are
   explanation-only and point back to `.mustflow/config/commands.toml` for runnable authority

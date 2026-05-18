@@ -861,7 +861,8 @@ async function renderStatusResponse(projectRoot: string): Promise<DashboardStatu
 	const activeDocuments = listDocReviewEntries(projectRoot);
 	const rawCommandContract = readDashboardCommandContract(projectRoot);
 	const commandContract = await renderCommandContractResponse(projectRoot, rawCommandContract);
-	const gitChangedFiles = readGitChangedFiles(projectRoot);
+	const gitChangedFilesResult = readGitChangedFiles(projectRoot);
+	const gitChangedFiles = gitChangedFilesResult.ok ? gitChangedFilesResult.files : [];
 	const packageMetadata = readPackageMetadata();
 	const verification = createDashboardVerificationSnapshot(
 		projectRoot,

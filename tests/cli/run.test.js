@@ -9,6 +9,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const packageVersion = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8')).version;
+const TEMP_REMOVE_RETRY_COUNT = 30;
+const TEMP_REMOVE_RETRY_DELAY_MS = 100;
 let initializedProjectFixture;
 
 function createTempProject() {
@@ -16,7 +18,18 @@ function createTempProject() {
 }
 
 function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+	for (let attempt = 0; attempt < TEMP_REMOVE_RETRY_COUNT; attempt += 1) {
+		try {
+			rmSync(projectPath, { recursive: true, force: true });
+			return;
+		} catch (error) {
+			if (attempt === TEMP_REMOVE_RETRY_COUNT - 1 || !['EBUSY', 'ENOTEMPTY', 'EPERM'].includes(error?.code)) {
+				throw error;
+			}
+
+			Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, TEMP_REMOVE_RETRY_DELAY_MS);
+		}
+	}
 }
 
 function latestRunReceiptPath(projectPath) {
@@ -349,6 +362,104 @@ related_oneshot_checks = ["test_fast"]
 		assert.match(unknownPreview.suggested_intent_snippet, /\[intents\.does_not_exist\]/);
 		assert.match(unknownPreview.suggested_intent_snippet, /"TODO_REPLACE_WITH_COMMAND"/);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses command plans with oversized output buffers', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.too_much_output]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Request too much output buffering."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+timeout_seconds = 10
+max_output_bytes = 16777217
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'too_much_output', '--plan-only', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'max_output_bytes_exceeds_limit');
+		assert.match(preview.detail, /16777216/);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses argv commands with long-running or background patterns before execution', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'argv-bg-ran.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.argv_bg]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide background work in argv shell wrapper."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran"); setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_safe_exec]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Safe package-manager one-shot command."
+argv = ["npm", "exec", "eslint", "--", "src/index.ts"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'argv_bg', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+		const safeResult = runCli(projectPath, ['run', 'argv_safe_exec', '--dry-run', '--json']);
+		const safePreview = JSON.parse(safeResult.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'blocked_long_running_command_pattern');
+		assert.match(preview.detail, /interpreter evaluation payload/);
+		assert.match(preview.suggested_intent_snippet, /TODO_REPLACE_WITH_FINITE_COMMAND/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+		assert.equal(safeResult.status, 0);
+		assert.equal(safePreview.runnable, true);
+		assert.equal(safePreview.reason_code, null);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1080,6 +1191,59 @@ writes = []
 	}
 });
 
+test('preserves streamed chunks for custom reporters without raw write methods', async () => {
+	const projectPath = createTempProject();
+	const previousCwd = process.cwd();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.stream_chunks]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print whitespace-sensitive chunks."
+argv = ['${process.execPath}', '-e', 'process.stdout.write("stdout  \\n"); process.stderr.write("stderr  \\n")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const { runRun } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run.js')).href);
+		const stdout = [];
+		const stderr = [];
+
+		process.chdir(projectPath);
+
+		const status = await runRun(
+			['stream_chunks'],
+			{
+				stdout(message) {
+					stdout.push(message);
+				},
+				stderr(message) {
+					stderr.push(message);
+				},
+			},
+			'en',
+		);
+
+		assert.equal(status, 0);
+		assert.equal(stdout.join(''), 'stdout  \n');
+		assert.equal(stderr.join(''), 'stderr  \n');
+	} finally {
+		process.chdir(previousCwd);
+		removeTempProject(projectPath);
+	}
+});
+
 test('writes an opt-in run profile without command output or environment values', () => {
 	const projectPath = createTempProject();
 	const envSecret = 'profile-secret-value';
@@ -1514,6 +1678,48 @@ destructive = false
 		assert.equal(receipt.timeout_seconds, 1);
 		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
 		assert.deepEqual(latest, receipt);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('settles streamed command intents when the timeout is reached', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.slow_streaming_command]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Ignore normal termination after the configured timeout."
+argv = ['${process.execPath}', '-e', 'process.on("SIGTERM", () => {}); setTimeout(() => {}, 10000)']
+cwd = "."
+timeout_seconds = 1
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const startedAt = Date.now();
+		const result = runCli(projectPath, ['run', 'slow_streaming_command'], { timeout: 6000 });
+		const elapsedMs = Date.now() - startedAt;
+		const receipt = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
+
+		assert.equal(result.error, undefined);
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.ok(elapsedMs < 5900, `streaming timeout should settle before the parent guard, elapsed ${elapsedMs}ms`);
+		assert.equal(receipt.status, 'timed_out');
+		assert.equal(receipt.timed_out, true);
+		assert.equal(receipt.exit_code, null);
+		assert.equal(receipt.timeout_seconds, 1);
+		assert.match(result.stderr, /timed out/i);
 	} finally {
 		removeTempProject(projectPath);
 	}

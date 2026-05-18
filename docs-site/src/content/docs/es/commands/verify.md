@@ -13,6 +13,8 @@ description: Ejecuta intenciones de verificación configuradas seleccionadas por
 
 Cuando `mf verify` ejecuta comandos, usa el mismo modelo de planificación que la salida plan-only y ejecuta `schedule.entries` en serie mediante recibos de `mf run`. La salida de verify, el manifiesto del paquete de verificación, el puntero latest y los recibos por intención comparten el mismo `verification_plan_id`.
 
+En JSON, `execution_status` es el estado agregado de ejecución de comandos. El campo heredado `status` se conserva como el mismo agregado para compatibilidad. La automatización que deba decidir si el trabajo pedido está completamente verificado debe leer `completion_verdict.status`; solo `verified` representa una verificación completa.
+
 ## Reglas de selección
 
 - La razón debe coincidir exactamente con el texto de `required_after`.
@@ -49,7 +51,9 @@ La salida legible por máquinas usa estos campos:
 - `reasons` (`string[]`): razones usadas para seleccionar intenciones.
 - `plan_source` (`string | null`): ruta del informe de clasificación JSON cuando se usó `--from-classification` o `--from-plan`, `changed` cuando se usó `--changed`, o `null` con solo `--reason`.
 - `verification_plan_id` (`string`): identificador SHA-256 estable del plan de verificación que seleccionó la ejecución.
-- `status` (`string`): `passed`, `partial`, `failed` o `blocked`.
+- `execution_status` (`string`): estado agregado de ejecución: `passed`, `partial`, `failed` o `blocked`.
+- `status` (`string`): alias heredado de `execution_status`, conservado por compatibilidad.
+- `completion_verdict` (`object`): veredicto de finalización basado en evidencia. Para decisiones finales de automatización, usa `completion_verdict.status`; `verified` es el único estado que indica verificación completa.
 - `summary` (`object`): conteos de intenciones encontradas, ejecutadas, aprobadas, fallidas y omitidas.
 - `run_dir` (`string`): directorio del paquete de verificación con el manifiesto y los recibos por intención.
 - `manifest_path` (`string`): ruta del manifiesto del paquete de verificación.
@@ -62,5 +66,5 @@ Con `--plan-only --json`, la salida usa el esquema de informe de verificación d
 
 ## Códigos de salida
 
-- `0`: todas las intenciones ejecutables seleccionadas pasaron y ninguna se omitió.
-- `1`: la verificación falló, fue parcial, quedó bloqueada o la entrada no fue válida.
+- `0`: `completion_verdict.status` es `verified`.
+- `1`: el veredicto es parcial, no verificado, bloqueado, contradictorio, o la entrada no fue válida.

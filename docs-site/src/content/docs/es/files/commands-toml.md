@@ -49,7 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: indica si las intenciones ejecutables deben declarar un ciclo de vida de comando.
 - `defaults.require_timeout_for_oneshot`: indica si los comandos finitos deben declarar un tiempo de espera.
 - `defaults.deny_unmanaged_long_running`: indica si se bloquean comandos largos no gestionados.
-- `defaults.max_output_bytes`: límite de salida predeterminado aceptado por el ejecutor.
+- `defaults.max_output_bytes`: límite de salida predeterminado aceptado por el ejecutor. Se rechazan
+  valores superiores a 16 MiB (16,777,216 bytes).
 - `defaults.on_timeout`: política de manejo de tiempo agotado.
 - `defaults.kill_after_seconds`: espera adicional disponible para limpiar procesos.
 
@@ -72,7 +73,9 @@ Los agentes solo pueden ejecutar intenciones con `status = "configured"`.
 - `kind`: clasificación, como comando integrado de mustflow o comando del repositorio.
 - `lifecycle`: indica si el comando es finito o de larga duración.
 - `run_policy`: indica si los agentes pueden ejecutar la intención o si se requiere aprobación explícita. Las configuraciones nuevas deben usar `agent_allowed` o `requires_explicit_user_request`; `run_policy = "manual_only"` se acepta solo por compatibilidad con configuraciones antiguas.
-- `argv`: comando y argumentos ejecutados sin interpretación de shell.
+- `argv`: comando y argumentos ejecutados sin interpretación de shell. Las formas claramente largas,
+  como wrappers de shell, bucles de intérprete, scripts de desarrollo del gestor de paquetes,
+  watchers y servidores de desarrollo, se rechazan en intenciones one-shot ejecutables por agentes.
 - `mode`: establecer en `shell` solo cuando se requiere sintaxis de shell.
 - `cmd`: cadena de comando de shell usada cuando `mode = "shell"`.
 - `cwd`: directorio de trabajo del comando.

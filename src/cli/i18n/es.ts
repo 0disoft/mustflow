@@ -767,10 +767,18 @@ Lee estos archivos antes de trabajar:
     'La intención "{intent}" está bloqueada. {detail}',
   "run.error.blockedShellBackgroundDetail":
     "Los comandos de shell no deben iniciar trabajo en segundo plano.",
+  "run.error.blockedLongRunningCommand":
+    'La intención "{intent}" está bloqueada. {detail}',
+  "run.error.blockedLongRunningCommandDetail":
+    "argv debe describir un comando finito de una sola ejecución, no un servidor de desarrollo, watcher, envoltorio de shell, bucle de intérprete o proceso en segundo plano.",
   "run.error.cwdOutsideProject":
     'El comando "{intent}" tiene un cwd no válido: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "El cwd de la intención debe permanecer dentro de la raíz actual.",
+  "run.error.maxOutputBytes":
+    'El comando "{intent}" tiene max_output_bytes no válido. {detail}',
+  "run.error.maxOutputBytesDetail":
+    "El límite de salida debe permanecer dentro del máximo permitido.",
   "run.error.conflictingPreviewModes":
     "Usa --dry-run o --plan-only, no ambos",
   "run.error.timedOut": 'El comando "{intent}" agotó el tiempo después de {seconds} segundos',
@@ -847,6 +855,7 @@ Lee estos archivos antes de trabajar:
   "classify.source.changed": "archivos cambiados",
   "classify.source.paths": "rutas explicitas",
   "classify.error.missingInput": "Indica --changed o al menos una ruta",
+  "classify.error.changed_files_unavailable": "No se pudieron inspeccionar los archivos cambiados con git status",
   "classify.error.write_path_outside_root": "La ruta del informe de clasificacion debe permanecer dentro de la raiz mustflow",
 
   "impact.help.summary":
@@ -863,6 +872,7 @@ Lee estos archivos antes de trabajar:
   "impact.label.affectedVersionSources": "Fuentes de version afectadas",
   "impact.label.affectedSurfaces": "Superficies afectadas",
   "impact.error.missingInput": "Indica --changed o al menos una ruta",
+  "impact.error.changed_files_unavailable": "No se pudieron inspeccionar los archivos cambiados con git status",
 
   "verify.help.summary":
     "Ejecuta intenciones de verificación configuradas seleccionadas por metadatos required_after.",
@@ -893,6 +903,7 @@ Lee estos archivos antes de trabajar:
   "verify.error.plan_root_mismatch": "El informe de clasificación debe provenir de esta raíz mustflow",
   "verify.error.missing_plan_reasons": "El informe de clasificación debe incluir summary.validationReasons",
   "verify.error.plan_path_outside_root": "La ruta del informe de clasificación debe permanecer dentro de la raíz mustflow",
+  "verify.error.changed_files_unavailable": "No se pudieron inspeccionar los archivos cambiados con git status",
   "verify.error.invalid_repro_evidence_file": "La evidencia de reproducción debe ser un resumen JSON legible con campos de evidencia estructurados",
   "verify.error.unsupported_repro_evidence_source": "La entrada de evidencia de reproducción debe usar command repro-evidence",
   "verify.error.invalid_external_evidence_file": "La evidencia externa debe ser un resumen JSON legible con checks",

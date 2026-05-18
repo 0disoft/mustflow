@@ -1120,7 +1120,8 @@ function validateStrictTemplateVersionSync(
 	preferencesToml: TomlTable | undefined,
 	issues: CheckIssue[],
 ): void {
-	const changedPaths = existsSync(path.join(projectRoot, '.git')) ? readGitChangedFiles(projectRoot) : undefined;
+	const changedPathResult = existsSync(path.join(projectRoot, '.git')) ? readGitChangedFiles(projectRoot) : undefined;
+	const changedPaths = changedPathResult?.ok ? changedPathResult.files : undefined;
 
 	for (const issue of validateTemplateVersionSync(projectRoot, preferencesToml, changedPaths)) {
 		if (issue.severity === 'warning') {

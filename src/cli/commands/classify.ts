@@ -6,7 +6,7 @@ import {
 	type ChangeClassificationReport,
 } from '../../core/change-classification.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { readGitChangedFiles } from '../lib/git-changes.js';
+import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -107,7 +107,7 @@ export function createClassifyOutput(
 	source: ClassifyOutput['source'],
 	paths: readonly string[],
 ): ClassifyOutput {
-	const files = source === 'changed' ? readGitChangedFiles(projectRoot) : paths;
+	const files = source === 'changed' ? requireGitChangedFiles(projectRoot) : paths;
 
 	return {
 		schema_version: CLASSIFY_SCHEMA_VERSION,
@@ -211,7 +211,18 @@ export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 
 	}
 
 	const projectRoot = resolveMustflowRoot();
-	const output = createClassifyOutput(projectRoot, parsed.changed ? 'changed' : 'paths', parsed.paths);
+	let output: ClassifyOutput;
+
+	try {
+		output = createClassifyOutput(projectRoot, parsed.changed ? 'changed' : 'paths', parsed.paths);
+	} catch (error) {
+		const message =
+			error instanceof Error && error.message === 'git_changed_files_unavailable'
+				? t(lang, 'classify.error.changed_files_unavailable')
+				: t(lang, 'cli.common.invalidInput');
+		printUsageError(reporter, message, 'mf classify --help', getClassifyHelp(lang), lang);
+		return 1;
+	}
 
 	if (parsed.writePath) {
 		try {

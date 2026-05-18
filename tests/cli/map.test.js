@@ -6,6 +6,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -68,6 +69,7 @@ function createTempProject() {
 
 function writeWorkspaceMapConfig(projectPath, options = {}) {
 	const includeNested = options.includeNested ?? true;
+	const followSymlinks = options.followSymlinks ?? false;
 	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
 	writeFileSync(
 		path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'),
@@ -83,7 +85,7 @@ function writeWorkspaceMapConfig(projectPath, options = {}) {
 			'roots = ["projects"]',
 			'max_depth = 4',
 			'max_repositories = 10',
-			'follow_symlinks = false',
+			`follow_symlinks = ${followSymlinks ? 'true' : 'false'}`,
 			'stop_at_repository_root = true',
 			'',
 		].join('\n'),
@@ -123,6 +125,22 @@ function createMinimalNestedRepository(projectPath) {
 	writeFileSync(path.join(nestedPath, 'AGENTS.md'), '# Foo rules\n');
 	writeFileSync(path.join(nestedPath, '.mustflow', 'config', 'commands.toml'), 'version = 1\n');
 	return nestedPath;
+}
+
+function createMinimalRepositoryAt(repositoryPath, name) {
+	mkdirSync(path.join(repositoryPath, '.git'), { recursive: true });
+	mkdirSync(path.join(repositoryPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(repositoryPath, 'AGENTS.md'), `# ${name} rules\n`);
+	writeFileSync(path.join(repositoryPath, '.mustflow', 'config', 'commands.toml'), 'version = 1\n');
+}
+
+function trySymlink(target, linkPath) {
+	try {
+		symlinkSync(target, linkPath, process.platform === 'win32' ? 'junction' : 'dir');
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 function removeTempProject(projectPath) {
@@ -330,5 +348,67 @@ test('detects a minimal workspace repository fixture', () => {
 		assert.doesNotMatch(result.stdout, /projects\/foo\/package\.json/);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('limits untracked filesystem discovery to anchor candidates', (t) => {
+	const projectPath = createTempProject();
+
+	try {
+		rmSync(path.join(projectPath, '.git'), { recursive: true, force: true });
+		const initResult = spawnSync('git', ['init'], { cwd: projectPath, encoding: 'utf8' });
+
+		if (initResult.status !== 0) {
+			t.skip('git is unavailable in this environment');
+			return;
+		}
+
+		writeFileSync(path.join(projectPath, 'src', 'README.md'), '# Source notes\n');
+		writeFileSync(path.join(projectPath, 'src', 'untracked-implementation.ts'), 'export {};\n');
+		spawnSync('git', ['add', 'AGENTS.md', 'src/README.md'], { cwd: projectPath, encoding: 'utf8' });
+
+		const result = runMap(projectPath, ['--stdout']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /src\/README\.md/);
+		assert.match(result.stdout, /\.mustflow\/context\/PROJECT\.md/);
+		assert.doesNotMatch(result.stdout, /src\/untracked-implementation\.ts/);
+		assert.doesNotMatch(result.stdout, /src\/index\.ts/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('follows only in-root workspace symlinks when enabled', (t) => {
+	const projectPath = createTempProject();
+	const outsidePath = mkdtempSync(path.join(tmpdir(), 'mustflow-map-outside-'));
+
+	try {
+		writeWorkspaceMapConfig(projectPath, { followSymlinks: true });
+		const inRootTarget = path.join(projectPath, 'shared', 'linked');
+		const outsideTarget = path.join(outsidePath, 'external');
+		createMinimalRepositoryAt(inRootTarget, 'Linked');
+		createMinimalRepositoryAt(outsideTarget, 'External');
+		mkdirSync(path.join(projectPath, 'projects'), { recursive: true });
+
+		if (!trySymlink(inRootTarget, path.join(projectPath, 'projects', 'linked'))) {
+			t.skip('directory symlinks are unavailable in this environment');
+			return;
+		}
+
+		if (!trySymlink(outsideTarget, path.join(projectPath, 'projects', 'external'))) {
+			t.skip('directory symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runMap(projectPath, ['--stdout']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /### `projects\/linked\/`/);
+		assert.match(result.stdout, /agent rules: `projects\/linked\/AGENTS\.md`/);
+		assert.doesNotMatch(result.stdout, /projects\/external/);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(outsidePath, { recursive: true, force: true });
 	}
 });

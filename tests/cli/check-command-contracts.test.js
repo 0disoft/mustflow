@@ -70,6 +70,20 @@ test('fails unsafe command lifecycle contracts', () => {
 				'network = false',
 				'destructive = false',
 				'',
+				'[intents.argv_bg]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Background argv shell wrapper."',
+				'argv = ["sh", "-c", "nohup npm run dev >/dev/null 2>&1 &"]',
+				'cwd = "."',
+				'timeout_seconds = 30',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
 				'[intents.shell_bg]',
 				'status = "configured"',
 				'lifecycle = "oneshot"',
@@ -93,6 +107,7 @@ test('fails unsafe command lifecycle contracts', () => {
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Oneshot intent test must define timeout_seconds/);
 		assert.match(result.stderr, /Long-running intent dev must not use run_policy = "agent_allowed"/);
+		assert.match(result.stderr, /Intent argv_bg contains a blocked long-running or background command pattern/);
 		assert.match(result.stderr, /Shell intent shell_bg contains a blocked long-running or background pattern/);
 	} finally {
 		removeTempProject(projectPath);
@@ -136,6 +151,20 @@ test('check json includes stable command-boundary issue ids', () => {
 				'network = false',
 				'destructive = false',
 				'',
+				'[intents.argv_bg]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Background argv shell wrapper."',
+				'argv = ["sh", "-c", "nohup npm run dev >/dev/null 2>&1 &"]',
+				'cwd = "."',
+				'timeout_seconds = 30',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
 			].join('\n'),
 		);
 
@@ -147,6 +176,11 @@ test('check json includes stable command-boundary issue ids', () => {
 			check,
 			'mustflow.command_contract.oneshot_missing_timeout',
 			'Oneshot intent test must define timeout_seconds',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.long_running_command_pattern',
+			'Intent argv_bg contains a blocked long-running or background command pattern',
 		);
 	} finally {
 		removeTempProject(projectPath);
@@ -205,6 +239,68 @@ test('fails invalid command environment policy fields', () => {
 		assert.match(result.stderr, /\[commands.defaults\]\.env_allowlist must be a string array/);
 		assert.match(result.stderr, /\[commands.intents.test\]\.env_policy must be "inherit" or "minimal" or "allowlist"/);
 		assert.match(result.stderr, /\[commands.intents.test\]\.env_allowlist must be a string array/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails oversized command output limits', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				'schema_version = "1"',
+				'',
+				'[defaults]',
+				'missing_behavior = "do_not_guess"',
+				'allow_inferred_commands = false',
+				'require_lifecycle = true',
+				'require_timeout_for_oneshot = true',
+				'deny_unmanaged_long_running = true',
+				'default_cwd = "."',
+				'default_timeout_seconds = 600',
+				'stdin = "closed"',
+				'max_output_bytes = 16777217',
+				'on_timeout = "terminate_process_tree"',
+				'kill_after_seconds = 5',
+				'',
+				'[intents.too_large]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run with too much output budget."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'max_output_bytes = 16777217',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue === '[commands.defaults].max_output_bytes must be less than or equal to 16777216',
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue === '[commands.intents.too_large].max_output_bytes must be less than or equal to 16777216',
+			),
+		);
+		assertHasIssueDetail(check, 'mustflow.command_contract.max_output_bytes_exceeds_limit');
 	} finally {
 		removeTempProject(projectPath);
 	}

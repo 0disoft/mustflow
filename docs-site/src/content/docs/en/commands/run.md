@@ -31,6 +31,8 @@ For blocked or unknown intents, `mf run` prints a copyable `manual_only` intent 
 
 Development servers, watch mode, browser UI, and background processes are not finite validation commands.
 
+Even when an intent declares `lifecycle = "oneshot"`, `mf run` also refuses obvious long-running command shapes in `argv`, such as shell-wrapper payloads (`sh -c "nohup ... &"`), interpreter loops (`node -e "setInterval(...)"`), package scripts like `npm run dev`, and watcher or server commands such as `vite --host`, `next dev`, or `webpack --watch`.
+
 ## Examples
 
 ```sh
@@ -65,7 +67,8 @@ Machine-readable output uses these fields:
 - `argv` (`string[]`): Command and arguments when not using shell mode.
 - `cmd` (`string`): Shell command string when using shell mode.
 - `timeout_seconds` (`number`): Applied timeout.
-- `max_output_bytes` (`number`): Maximum retained output size.
+- `max_output_bytes` (`number`): Maximum retained output size. Values above 16 MiB
+  (16,777,216 bytes) are rejected before execution.
 - `success_exit_codes` (`number[]`): Exit codes treated as success.
 - `exit_code` (`number | null`): Process exit code.
 - `signal` (`string | null`): Signal name when the process ended by signal.

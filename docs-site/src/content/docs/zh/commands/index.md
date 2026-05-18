@@ -31,7 +31,7 @@ description: 为 mustflow 文档构建本地 SQLite 索引。
 索引会保存被索引文件的 content hash，使 `mf search` 能检测过期缓存数据。
 它还会写入 `indexed_files` 表，记录路径、来源范围、文件大小、修改时间、内容哈希、索引时间、索引模式和解析器版本，用于判断增量运行是否可以安全复用现有缓存。
 
-当内置 SQLite 运行时支持 FTS5 时，`mf index` 会写入派生文本搜索表，以加快词元匹配。FTS5 不可用时，索引仍保留相同基础表，`mf search` 会执行有界表扫描。两条路径还会为可搜索元数据保存短 n-gram 行，让多语言查询在空格或分词方式不完全一致时也能匹配已索引术语。
+当内置 SQLite 运行时支持 FTS5 时，`mf index` 会写入派生文本搜索表，以加快词元匹配。FTS5 不可用时，索引仍保留相同基础表，`mf search` 会执行有界表扫描。两条路径还会为可搜索元数据保存短 n-gram 行，让多语言查询在空格或分词方式不完全一致时也能匹配已索引术语。N-gram 生成按索引目标设有硬性边界：每个词元只考虑前 64 个字符，每个目标最多写入 512 行 n-gram。
 
 ## Dry Run
 
@@ -72,7 +72,7 @@ max_file_bytes = 262144
 allowed_extensions = [".ts", ".tsx", ".js", ".py", ".rs", ".go"]
 ```
 
-`enabled_by_default = true` 会让 `mf index` 在没有 `--source` 时也包含源码锚点。include 和 exclude 模式只限制扫描范围。生成文件、依赖和 vendor 路径即使匹配 include 模式，也仍会从本地源码索引中排除。
+`enabled_by_default = true` 会让 `mf index` 在没有 `--source` 时也包含源码锚点。include 和 exclude 模式只限制扫描范围。生成文件、依赖和 vendor 路径即使匹配 include 模式，也仍会从本地源码索引中排除。源码文件默认限制为 262144 字节；`max_file_bytes` 可以降低这个上限，但不能提高它。
 
 ## JSON 字段
 

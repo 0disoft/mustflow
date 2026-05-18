@@ -163,6 +163,20 @@ test('classifies changed git status paths', async () => {
 	}
 });
 
+test('fails changed classification when git status cannot be read', async () => {
+	const projectPath = createClassifyProject();
+
+	try {
+		const result = await runCli(projectPath, ['classify', '--changed', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unable to inspect changed files with git status/);
+		assert.match(result.stdout, /Usage: mf classify/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('writes changed-file classification reports to repository-local paths', async () => {
 	const projectPath = createClassifyProject();
 	const reportPath = path.join(projectPath, '.mustflow', 'state', 'change-classification.json');

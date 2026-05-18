@@ -17,10 +17,12 @@ import {
 	type CommandIntentEligibilityCode,
 } from './command-intent-eligibility.js';
 import {
+	commandIntentBlockedCommandPattern,
 	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
+import { MAX_COMMAND_OUTPUT_BYTES } from './command-output-limits.js';
 import { commandEffectsConflict, normalizeCommandEffects } from './command-effects.js';
 import { listChangeClassificationValidationReasons } from './change-classification.js';
 import { parseSkillIndexRoutes } from './skill-route-alignment.js';
@@ -518,6 +520,17 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 		pushIssue(issues, 'error', 'oneshot_missing_timeout', name, `Oneshot intent ${name} must define timeout_seconds.`);
 	}
 
+	const maxOutputBytes = readPositiveInteger(value, 'max_output_bytes');
+	if (maxOutputBytes !== undefined && maxOutputBytes > MAX_COMMAND_OUTPUT_BYTES) {
+		pushIssue(
+			issues,
+			'error',
+			'max_output_bytes_exceeds_limit',
+			name,
+			`Intent ${name} max_output_bytes must be less than or equal to ${MAX_COMMAND_OUTPUT_BYTES}.`,
+		);
+	}
+
 	if (lifecycle === 'oneshot' && readString(value, 'stdin') !== 'closed') {
 		pushIssue(issues, 'error', 'oneshot_stdin_not_closed', name, `Oneshot intent ${name} must set stdin to closed.`);
 	}
@@ -537,6 +550,17 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 			'shell_background_pattern',
 			name,
 			`Shell intent ${name} contains a blocked long-running or background pattern.`,
+		);
+	}
+
+	const blockedCommandPattern = commandIntentBlockedCommandPattern(value);
+	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
+		pushIssue(
+			issues,
+			'error',
+			'long_running_command_pattern',
+			name,
+			`Intent ${name} contains a blocked long-running or background command pattern.`,
 		);
 	}
 

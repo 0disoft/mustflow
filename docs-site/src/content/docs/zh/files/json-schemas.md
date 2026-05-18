@@ -31,8 +31,10 @@ JSON Schema 合同。
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `latest-run-pointer.schema.json`: `mf verify` 写入最新 verify 运行包指针时的
   `.mustflow/state/runs/latest.json`
-- `verify-report.schema.json`: `mf verify --reason <event> --json`
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`
+- `verify-report.schema.json`: `mf verify --reason <event> --json`，包含执行汇总状态和
+  基于证据的完成裁定
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`，
+  包含与 verify 报告相同的执行汇总状态和完成裁定
 - `run-receipt.schema.json`: `mf run <intent> --json` 和 `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: 已解析的 `.mustflow/config/commands.toml`
 

@@ -4,10 +4,12 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.configured_missing_lifecycle'
 	| 'mustflow.command_contract.configured_missing_run_policy'
 	| 'mustflow.command_contract.oneshot_missing_timeout'
+	| 'mustflow.command_contract.max_output_bytes_exceeds_limit'
 	| 'mustflow.command_contract.oneshot_stdin_not_closed'
 	| 'mustflow.command_contract.long_running_agent_allowed'
 	| 'mustflow.command_contract.executable_source_missing'
 	| 'mustflow.command_contract.shell_background_pattern'
+	| 'mustflow.command_contract.long_running_command_pattern'
 	| 'mustflow.command_contract.success_exit_codes_invalid'
 	| 'mustflow.command_contract.effects_invalid'
 	| 'mustflow.command_contract.effect_path_escape'
@@ -71,10 +73,12 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.configured_missing_lifecycle', /^Configured intent [^\s]+ must define lifecycle$/u],
 	['mustflow.command_contract.configured_missing_run_policy', /^Configured intent [^\s]+ must define run_policy$/u],
 	['mustflow.command_contract.oneshot_missing_timeout', /^Oneshot intent [^\s]+ must define timeout_seconds$/u],
+	['mustflow.command_contract.max_output_bytes_exceeds_limit', /^\[commands\.(?:defaults|intents\.[^\]]+)\]\.max_output_bytes must be less than or equal to \d+$/u],
 	['mustflow.command_contract.oneshot_stdin_not_closed', /^Oneshot intent [^\s]+ must set stdin = "closed"$/u],
 	['mustflow.command_contract.long_running_agent_allowed', /^Long-running intent [^\s]+ must not use run_policy = "agent_allowed"$/u],
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
 	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
+	['mustflow.command_contract.long_running_command_pattern', /^Intent [^\s]+ contains a blocked long-running or background command pattern$/u],
 	['mustflow.command_contract.success_exit_codes_invalid', /^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be an integer array$/u],
 	['mustflow.command_contract.effects_invalid', /^(?:Strict: )?(?:\[commands\.(?:resources|intents\.[^\]]+\.effects)[^\]]*\]|Command effect for intent [^\s]+ must define path, paths, or lock)/u],
 	['mustflow.command_contract.effect_path_escape', /^Strict: Command effect path must stay inside the current root:/u],

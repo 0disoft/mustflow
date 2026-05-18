@@ -765,10 +765,18 @@ Read these files before working:
     'Intent "{intent}" is blocked. {detail}',
   "run.error.blockedShellBackgroundDetail":
     "Shell commands must not spawn background work.",
+  "run.error.blockedLongRunningCommand":
+    'Intent "{intent}" is blocked. {detail}',
+  "run.error.blockedLongRunningCommandDetail":
+    "Command argv must describe a finite one-shot command, not a development server, watcher, shell wrapper, interpreter loop, or background process.",
   "run.error.cwdOutsideProject":
     'Command "{intent}" has an invalid cwd: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "Intent cwd must stay inside the current root.",
+  "run.error.maxOutputBytes":
+    'Command "{intent}" has invalid max_output_bytes. {detail}',
+  "run.error.maxOutputBytesDetail":
+    "The output limit must stay within the allowed maximum.",
   "run.error.conflictingPreviewModes":
     "Use either --dry-run or --plan-only, not both",
   "run.error.timedOut": 'Command "{intent}" timed out after {seconds} seconds',
@@ -845,6 +853,7 @@ Read these files before working:
   "classify.source.changed": "changed files",
   "classify.source.paths": "explicit paths",
   "classify.error.missingInput": "Specify --changed or at least one path",
+  "classify.error.changed_files_unavailable": "Unable to inspect changed files with git status",
   "classify.error.write_path_outside_root": "Classification report path must stay inside the mustflow root",
 
   "impact.help.summary":
@@ -861,6 +870,7 @@ Read these files before working:
   "impact.label.affectedVersionSources": "Affected version sources",
   "impact.label.affectedSurfaces": "Affected surfaces",
   "impact.error.missingInput": "Specify --changed or at least one path",
+  "impact.error.changed_files_unavailable": "Unable to inspect changed files with git status",
 
   "verify.help.summary":
     "Run configured verification intents selected by required_after metadata.",
@@ -891,6 +901,7 @@ Read these files before working:
   "verify.error.plan_root_mismatch": "Classification report must come from this mustflow root",
   "verify.error.missing_plan_reasons": "Classification report must include summary.validationReasons",
   "verify.error.plan_path_outside_root": "Classification report path must stay inside the mustflow root",
+  "verify.error.changed_files_unavailable": "Unable to inspect changed files with git status",
   "verify.error.invalid_repro_evidence_file": "Repro evidence must be a readable JSON summary with structured evidence fields",
   "verify.error.unsupported_repro_evidence_source": "Repro evidence input must use command repro-evidence",
   "verify.error.invalid_external_evidence_file": "External evidence must be a readable JSON summary with checks",

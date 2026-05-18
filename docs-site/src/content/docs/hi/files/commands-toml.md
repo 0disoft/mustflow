@@ -49,7 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: क्या executable intents को command lifecycle declare करना होगा।
 - `defaults.require_timeout_for_oneshot`: क्या finite commands को timeout declare करना होगा।
 - `defaults.deny_unmanaged_long_running`: क्या unmanaged long-running commands block होंगी।
-- `defaults.max_output_bytes`: runner द्वारा स्वीकार किया जाने वाला default output limit।
+- `defaults.max_output_bytes`: runner द्वारा स्वीकार किया जाने वाला default output limit। 16 MiB
+  (16,777,216 bytes) से बड़े मान अस्वीकार किए जाते हैं।
 - `defaults.on_timeout`: timeout handling policy।
 - `defaults.kill_after_seconds`: process cleanup के लिए अतिरिक्त wait time।
 
@@ -72,7 +73,9 @@ Agents केवल `status = "configured"` वाले intents चला स�
 - `kind`: mustflow builtin या repository command जैसी classification।
 - `lifecycle`: command finite है या long-running।
 - `run_policy`: agents intent चला सकते हैं या explicit approval चाहिए। नई configurations को `agent_allowed` या `requires_explicit_user_request` उपयोग करना चाहिए; `run_policy = "manual_only"` केवल पुराने configs की compatibility के लिए accepted है।
-- `argv`: shell interpretation के बिना चलने वाली command और arguments।
+- `argv`: shell interpretation के बिना चलने वाली command और arguments। Shell wrappers, interpreter
+  loops, package-manager development scripts, watchers, और development servers जैसे स्पष्ट
+  long-running रूप agent-runnable one-shot intents में reject होते हैं।
 - `mode`: केवल shell syntax चाहिए होने पर `shell` सेट करें।
 - `cmd`: `mode = "shell"` होने पर उपयोग होने वाली shell command string।
 - `cwd`: command का working directory।

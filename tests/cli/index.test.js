@@ -63,7 +63,10 @@ const LOCAL_INDEX_METADATA_KEYS = [
 	'schema_version',
 	'search_backend',
 	'search_fts5_available',
+	'search_ngram_max_grams_per_target',
+	'search_ngram_max_token_chars',
 	'source_index_enabled',
+	'source_index_max_file_bytes',
 	'source_scope_hash',
 	'store_full_content',
 ];
@@ -775,7 +778,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(output.schema_version, '19');
+		assert.equal(output.schema_version, '20');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -809,10 +812,13 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.source_anchor_risk_signal_count, 0);
 		assert.equal(header, 'SQLite format 3\0');
 		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
-		assert.equal(metadata.schema_version, '19');
+		assert.equal(metadata.schema_version, '20');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
+		assert.equal(metadata.search_ngram_max_grams_per_target, '512');
+		assert.equal(metadata.search_ngram_max_token_chars, '64');
+		assert.equal(metadata.source_index_max_file_bytes, '262144');
 		assert.equal(metadata.excluded_raw_data_kinds, LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS.join(','));
 		assert.equal(metadata.search_backend, output.search_backend);
 		assert.equal(metadata.search_fts5_available, String(output.search_fts5_available));
@@ -1088,6 +1094,47 @@ test('reuses a fresh sqlite local index in incremental mode', async () => {
 		assert.equal(secondOutput.rebuild_reason, null);
 		assert.equal(secondOutput.wrote_files, false);
 		assert.equal(secondBytes, firstBytes);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('bounds search n-grams for unusually long tokens', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-ngram-limits-');
+	const alphabet = 'abcdefghijklmnopqrstuvwxy0123456789';
+	const prefixToken = `${'a'.repeat(64)}zzzzzzzzzzzzzzzz`;
+	const longTokens = [
+		prefixToken,
+		...Array.from({ length: 12 }, (_, tokenIndex) =>
+			Array.from({ length: 120 }, (_, charIndex) => alphabet[(tokenIndex * 11 + charIndex * 7) % alphabet.length]).join(''),
+		),
+	];
+
+	try {
+		writeFileSync(path.join(projectPath, 'AGENTS.md'), `# AGENTS.md\n\n${longTokens.join(' ')}\n`);
+
+		const result = runCli(projectPath, ['index', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [ngramCount] = queryRows(
+			database,
+			'SELECT COUNT(*) AS count FROM search_ngrams WHERE target_kind = "document" AND target_key = "AGENTS.md"',
+		);
+		const [lateGram] = queryRows(
+			database,
+			'SELECT gram FROM search_ngrams WHERE target_kind = "document" AND target_key = "AGENTS.md" AND gram = ?',
+			['zz'],
+		);
+		const metadata = Object.fromEntries(queryRows(database, 'SELECT key, value FROM metadata').map((row) => [row.key, row.value]));
+
+		assert.ok(ngramCount.count <= 512);
+		assert.equal(metadata.search_ngram_max_grams_per_target, '512');
+		assert.equal(metadata.search_ngram_max_token_chars, '64');
+		assert.equal(lateGram, undefined);
+		database.close();
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1390,7 +1437,7 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 		const [failureReadModel] = queryRows(database, 'SELECT * FROM failure_fingerprints');
 		const databaseText = Buffer.from(database.export()).toString('utf8');
 
-		assert.equal(output.schema_version, '19');
+		assert.equal(output.schema_version, '20');
 		assert.equal(output.verification_evidence_summary_count, 1);
 		assert.equal(output.verification_plan_count, 1);
 		assert.equal(output.acceptance_criteria_count, 1);
@@ -1638,7 +1685,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-		assert.equal(output.schema_version, '19');
+		assert.equal(output.schema_version, '20');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
 		assert.equal(anchor.path, 'src/auth.ts');
@@ -1705,6 +1752,56 @@ test('uses index config to bound source anchor scanning', async () => {
 				can_instruct_agent: 0,
 			},
 		]);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('applies the default source index file-size ceiling', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-hard-limit-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'index.toml'),
+			['[source_index]', 'enabled_by_default = true', 'include = ["src/**/*.ts"]', 'allowed_extensions = [".ts"]', ''].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'small.ts'),
+			`/**
+ * mf:anchor source.default.small
+ * purpose: Keep this bounded source anchor.
+ * search: default source limit
+ * invariant: Default source indexing can read small source files.
+ */
+export const smallAnchor = true;
+`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'large.ts'),
+			`/**
+ * mf:anchor source.default.large
+ * purpose: This oversized source anchor should be skipped by the default source limit.
+ * search: oversized source limit
+ * invariant: Default source indexing skips oversized source files.
+ */
+export const largeAnchor = true;
+${'x'.repeat(270000)}
+`,
+		);
+
+		const result = runCli(projectPath, ['index', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
+		const [metadataLimit] = queryRows(database, 'SELECT value FROM metadata WHERE key = "source_index_max_file_bytes"');
+
+		assert.deepEqual(anchorRows, [{ id: 'source.default.small', path: 'src/small.ts' }]);
+		assert.equal(metadataLimit.value, '262144');
 		database.close();
 	} finally {
 		removeTempProject(projectPath);

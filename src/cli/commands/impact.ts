@@ -4,7 +4,7 @@ import { createChangeClassificationReport, type ChangeClassificationReport } fro
 import { summarizeVersionImpact, type VersionImpactSummary } from '../../core/version-impact.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { isRecord, type TomlTable } from '../lib/command-contract.js';
-import { readGitChangedFiles } from '../lib/git-changes.js';
+import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -93,7 +93,7 @@ function readPreferences(projectRoot: string): TomlTable | undefined {
 
 function createImpactOutput(projectRoot: string, parsed: ParsedImpactArgs): ImpactOutput {
 	const source = parsed.changed ? 'changed' : 'paths';
-	const files = parsed.changed ? readGitChangedFiles(projectRoot) : parsed.paths;
+	const files = parsed.changed ? requireGitChangedFiles(projectRoot) : parsed.paths;
 	const classificationReport = createChangeClassificationReport(source, files);
 	const versionSources = detectVersionSources(projectRoot);
 
@@ -169,7 +169,18 @@ export function runImpact(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 1;
 	}
 
-	const output = createImpactOutput(resolveMustflowRoot(), parsed);
+	let output: ImpactOutput;
+
+	try {
+		output = createImpactOutput(resolveMustflowRoot(), parsed);
+	} catch (error) {
+		const message =
+			error instanceof Error && error.message === 'git_changed_files_unavailable'
+				? t(lang, 'impact.error.changed_files_unavailable')
+				: t(lang, 'cli.common.invalidInput');
+		printUsageError(reporter, message, 'mf impact --help', getImpactHelp(lang), lang);
+		return 1;
+	}
 
 	if (parsed.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));
