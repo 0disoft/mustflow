@@ -18,7 +18,6 @@ import {
 } from './command-intent-eligibility.js';
 import {
 	commandIntentBlockedCommandPattern,
-	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
@@ -543,7 +542,8 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 		pushIssue(issues, 'error', 'executable_source_missing', name, `Configured intent ${name} must define argv or shell cmd.`);
 	}
 
-	if (commandIntentHasBlockedShellBackgroundPattern(value)) {
+	const blockedCommandPattern = commandIntentBlockedCommandPattern(value);
+	if (blockedCommandPattern?.code === 'shell_background_pattern') {
 		pushIssue(
 			issues,
 			'error',
@@ -553,7 +553,6 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 		);
 	}
 
-	const blockedCommandPattern = commandIntentBlockedCommandPattern(value);
 	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
 		pushIssue(
 			issues,

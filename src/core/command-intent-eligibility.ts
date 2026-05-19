@@ -1,7 +1,6 @@
 import { isRecord, readString, type TomlTable } from './config-loading.js';
 import {
 	commandIntentBlockedCommandPattern,
-	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
@@ -103,15 +102,15 @@ export function evaluateCommandIntentEligibility(
 		};
 	}
 
-	if (commandIntentHasBlockedShellBackgroundPattern(rawIntent)) {
+	const blockedPattern = commandIntentBlockedCommandPattern(rawIntent);
+	if (blockedPattern?.code === 'shell_background_pattern') {
 		return {
 			ok: false,
 			code: 'blocked_shell_background_pattern',
-			detail: 'Shell command contains a blocked long-running or background pattern.',
+			detail: blockedPattern.detail,
 		};
 	}
 
-	const blockedPattern = commandIntentBlockedCommandPattern(rawIntent);
 	if (blockedPattern?.code === 'long_running_command_pattern') {
 		return {
 			ok: false,

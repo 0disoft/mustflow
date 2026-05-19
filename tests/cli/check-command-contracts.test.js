@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
@@ -310,6 +310,73 @@ test('strict check warns on broad command environment inheritance', () => {
 			),
 		);
 		assertHasIssueDetail(check, 'mustflow.command_contract.broad_env_inheritance');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check warns when bare argv executable resolves only through project-local bin', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const localBinPath = path.join(projectPath, 'node_modules', '.bin');
+		mkdirSync(localBinPath, { recursive: true });
+		writeFileSync(path.join(localBinPath, process.platform === 'win32' ? 'eslint.cmd' : 'eslint'), '');
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				readText(commandsPath),
+				'[intents.bare_eslint]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run a bare local tool name."',
+				'argv = ["eslint", "src/index.ts"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.package_manager_exec]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run a local tool through a package manager."',
+				'argv = ["npm", "exec", "eslint", "--", "src/index.ts"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', version: '1.0.0' }, null, 2)}\n`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes(
+					'bare_eslint uses bare executable "eslint" that matches project-local node_modules/.bin; use a package-manager mediated command',
+				),
+			),
+		);
+		assert.ok(!check.warnings.some((warning) => warning.includes('package_manager_exec uses bare executable')));
+		assertHasIssueDetail(check, 'mustflow.command_contract.project_local_bin_bare_executable');
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -128,6 +128,8 @@ destructive = false
 
 Installed templates use `env_policy = "minimal"` by default. Existing configs without an environment policy keep the older inheritance behavior for compatibility, but new runnable intents should prefer `minimal` or `allowlist`. `mf check --strict` warns when a configured agent-runnable intent effectively uses `inherit`, and calls out the higher-risk case where that intent also has `network = true`.
 
+Because the project-local `node_modules/.bin` path is removed from `PATH`, do not declare bare local tool names such as `eslint`, `tsc`, or `vitest` as the executable. Use a package-manager mediated command instead, for example `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, or `yarn exec eslint ...`. `mf check --strict` warns when an agent-runnable intent uses a bare executable name that matches a file under the project-local `.bin` directory.
+
 If a shell is required, set `mode = "shell"` and `cmd`, then declare the command impact and write paths.
 
 For `unknown`, `not_applicable`, `manual_only`, and `disabled`, agents must not infer a replacement command.

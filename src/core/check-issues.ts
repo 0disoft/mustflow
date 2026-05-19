@@ -15,6 +15,7 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.effect_path_escape'
 	| 'mustflow.command_contract.shared_writes_without_effects'
 	| 'mustflow.command_contract.broad_env_inheritance'
+	| 'mustflow.command_contract.project_local_bin_bare_executable'
 	| 'mustflow.prompt_cache.required'
 	| 'mustflow.prompt_cache.volatile_in_stable'
 	| 'mustflow.refresh.hash_method_required'
@@ -85,6 +86,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.effect_path_escape', /^Strict: Command effect path must stay inside the current root:/u],
 	['mustflow.command_contract.shared_writes_without_effects', /^Strict warning: configured agent-runnable intents .+ share path:.+ through writes without explicit effects or resource locks$/u],
 	['mustflow.command_contract.broad_env_inheritance', /^Strict warning: configured agent-runnable intent [^\s]+ (?:implicitly inherits the host environment|uses env_policy = "inherit")/u],
+	['mustflow.command_contract.project_local_bin_bare_executable', /^Strict warning: configured agent-runnable intent [^\s]+ uses bare executable "[^"]+" that matches project-local node_modules\/\.bin/u],
 	['mustflow.prompt_cache.required', /^Strict: \[prompt_cache\] table is required$/u],
 	['mustflow.prompt_cache.volatile_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include volatile path /u],
 	['mustflow.refresh.hash_method_required', /^Strict: \[refresh\]\.default_method should be "hash_check" for cache-friendly refresh$/u],

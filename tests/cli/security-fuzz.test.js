@@ -88,3 +88,22 @@ test('property: blocked background shell patterns never become runnable', async 
 	);
 });
 
+test('package-manager one-shot commands remain runnable', async () => {
+	const { evaluateCommandIntentEligibility } = await import(commandIntentEligibilityModuleUrl);
+	const packageManagerOneShotIntents = [
+		['npm', 'exec', 'eslint', '--', 'src/index.ts'],
+		['pnpm', 'exec', 'tsc', '--', '--noEmit'],
+		['bun', 'x', 'eslint', 'src/index.ts'],
+		['yarn', 'exec', 'eslint', 'src/index.ts'],
+	];
+
+	for (const argv of packageManagerOneShotIntents) {
+		const result = evaluateCommandIntentEligibility('safe_package_manager_intent', {
+			...runnableArgvIntent(),
+			argv,
+		});
+
+		assert.equal(result.ok, true, `${argv.join(' ')} should remain runnable`);
+		assert.equal(result.code, 'ok');
+	}
+});

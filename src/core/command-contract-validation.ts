@@ -1,8 +1,12 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import {
 	COMMAND_LIFECYCLES,
 	COMMAND_RUN_POLICIES,
 	LONG_RUNNING_LIFECYCLES,
 	isRecord,
+	readStringArray,
 	type TomlTable,
 } from './config-loading.js';
 import { COMMAND_ENV_POLICIES, DEFAULT_COMMAND_ENV_POLICY, type CommandEnvPolicy } from './command-env.js';
@@ -15,7 +19,6 @@ import {
 } from './command-effects.js';
 import {
 	commandIntentBlockedCommandPattern,
-	commandIntentHasBlockedShellBackgroundPattern,
 	commandIntentHasCommandSource,
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
@@ -359,11 +362,11 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		issues.push(commandContractIssue(`Configured intent ${intentName} must define argv or mode = "shell" with cmd`));
 	}
 
-	if (commandIntentHasBlockedShellBackgroundPattern(intent)) {
+	const blockedCommandPattern = commandIntentBlockedCommandPattern(intent);
+	if (blockedCommandPattern?.code === 'shell_background_pattern') {
 		issues.push(commandContractIssue(`Shell intent ${intentName} contains a blocked long-running or background pattern`));
 	}
 
-	const blockedCommandPattern = commandIntentBlockedCommandPattern(intent);
 	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
 		issues.push(commandContractIssue(`Intent ${intentName} contains a blocked long-running or background command pattern`));
 	}
@@ -447,6 +450,55 @@ function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefin
 	return issues;
 }
 
+function projectLocalBinExecutableExists(projectRoot: string, executable: string): boolean {
+	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
+	const executableName = path.basename(executable).replace(/\.(?:cmd|exe|ps1)$/iu, '');
+	const candidates = [
+		executableName,
+		`${executableName}.cmd`,
+		`${executableName}.exe`,
+		`${executableName}.ps1`,
+	];
+
+	return candidates.some((candidate) => existsSync(path.join(localBinPath, candidate)));
+}
+
+function validateProjectLocalBinWarnings(projectRoot: string, commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
+	const issues: CommandContractValidationIssue[] = [];
+
+	if (!isRecord(commandsToml?.intents)) {
+		return issues;
+	}
+
+	for (const [intentName, intent] of Object.entries(commandsToml.intents)) {
+		if (!isRecord(intent)) {
+			continue;
+		}
+
+		if (intent.status !== 'configured' || intent.lifecycle !== 'oneshot' || intent.run_policy !== 'agent_allowed') {
+			continue;
+		}
+
+		const argv = readStringArray(intent, 'argv');
+		const executable = argv?.[0];
+		if (!executable || executable.includes('/') || executable.includes('\\')) {
+			continue;
+		}
+
+		if (!projectLocalBinExecutableExists(projectRoot, executable)) {
+			continue;
+		}
+
+		issues.push(
+			commandContractWarning(
+				`configured agent-runnable intent ${intentName} uses bare executable "${executable}" that matches project-local node_modules/.bin; use a package-manager mediated command such as npm exec, pnpm exec, bun x, or yarn exec`,
+			),
+		);
+	}
+
+	return issues;
+}
+
 /**
  * mf:anchor core.command-contract-validation
  * purpose: Validate command intent declarations that gate agent-executable repository commands.
@@ -503,6 +555,7 @@ export function validateCommandContractStrictDefaults(
 	}
 
 	issues.push(...validateCommandEnvInheritanceWarnings(commandsToml));
+	issues.push(...validateProjectLocalBinWarnings(projectRoot, commandsToml));
 	issues.push(...validateCommandEffects(projectRoot, commandsToml));
 	issues.push(...validateCommandEffectLockWarnings(commandsToml));
 

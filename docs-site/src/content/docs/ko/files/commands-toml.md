@@ -128,6 +128,8 @@ destructive = false
 
 설치 템플릿은 기본적으로 `env_policy = "minimal"`을 사용합니다. 환경 변수 정책이 없는 기존 설정은 호환성을 위해 예전처럼 전체 상속으로 동작하지만, 새 자동 실행 의도는 `minimal` 또는 `allowlist`로 옮기는 것이 좋습니다. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 결과적으로 `inherit`를 사용할 때 경고하며, 같은 의도에 `network = true`가 있으면 더 위험한 조합으로 함께 표시합니다.
 
+프로젝트 안의 `node_modules/.bin` 경로는 `PATH`에서 제거되므로, `eslint`, `tsc`, `vitest`처럼 로컬 의존성 실행 파일 이름만 `argv`의 첫 값으로 적지 마세요. 대신 `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, `yarn exec eslint ...`처럼 패키지 관리자를 거쳐 실행하도록 선언합니다. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 프로젝트 로컬 `.bin` 디렉터리에 있는 실행 파일 이름을 그대로 사용할 때 경고합니다.
+
 복잡한 셸 기능이 필요하면 `mode = "shell"`과 `cmd`를 명시하고, 실행 영향과 쓰기 경로를 함께 적습니다.
 
 `unknown`, `not_applicable`, `manual_only`, `disabled` 상태에서는 대체 명령을 추측하지 않습니다.

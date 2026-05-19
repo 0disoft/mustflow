@@ -61,10 +61,6 @@ export function shellCommandHasBlockedBackgroundPattern(command: string): boolea
 	return BACKGROUND_SHELL_PATTERNS.some((pattern) => pattern.test(command));
 }
 
-export function commandIntentHasBlockedShellBackgroundPattern(intent: TomlTable): boolean {
-	return intent.mode === 'shell' && typeof intent.cmd === 'string' && shellCommandHasBlockedBackgroundPattern(intent.cmd);
-}
-
 function normalizeExecutableName(value: string): string {
 	return path.basename(value).replace(/\.(?:cmd|exe|ps1)$/iu, '').toLowerCase();
 }
