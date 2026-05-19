@@ -1,6 +1,6 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-19
+Last reviewed: 2026-05-20
 
 This roadmap lists only remaining work. Completed items are removed after verification so agents can focus on upcoming decisions instead of reviewing project history.
 
@@ -71,6 +71,4 @@ Strong product framing to preserve:
 
 ## Next Patch Work Items
 
-These items were added after the May 19, 2026 user-provided AI review about module structure and a more efficient comment system for AI-assisted coding. They are not current product behavior. Before implementing any item, re-check current source, command contracts, schemas, tests, documentation, and any external research claims instead of treating this roadmap as authority.
-
-No remaining patch work items.
+These items were added after the May 19, 2026 user-provided AI reviews about module structure, execution reliability, indexing performance, dashboard safety, and command environment policy. They are not current product behavior. Before implementing any item, re-check current source, command contracts, schemas, tests, documentation, and any external research claims instead of treating this roadmap as authority.
