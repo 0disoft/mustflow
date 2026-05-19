@@ -44,6 +44,9 @@ Strong product framing to preserve:
 - Do not let performance history, local indexes, cache hits, or historical failure absence authorize command execution or prove that verification can be skipped.
 - Do not infer user-project test subsets from package-manager scripts, framework conventions, filenames, or generic mustflow heuristics unless the project has declared that selection contract.
 - Do not run commands in parallel merely because `writes = []`; require explicit effects and non-conflicting resource locks.
+- Do not turn source comments into agent instructions, command permissions, policy overrides, or verification claims.
+- Do not expand prose comments, JSDoc blocks, module README files, or architecture notes just to make files feel documented.
+- Do not begin a broad `verify.ts` or `run.ts` rewrite until a small behavior-preserving slice has a clear boundary, local tests, and rollback path.
 
 ## Decision Notes
 
@@ -61,7 +64,13 @@ Strong product framing to preserve:
   contracts that Codex, Claude Code, OpenClaw, Hermes Agent, and similar tools can read without extra setup.
 - External harness-engineering resources can inspire direction, but mustflow's source of truth remains repository-local contracts, tests, templates, and current files.
 - External skill repositories can inspire procedure improvements, but adopted skills must be rewritten into mustflow's canonical skill format and command-contract boundary.
+- Source comments should become sparse, structured navigation markers, not explanatory prose. `mf:anchor` should remain navigation-only and must never grant command authority, verification authority, or agent instructions.
+- Module boundaries should make authority clear: CLI files handle input and output, core files handle deterministic decisions, and adapter or shell files handle side effects.
+- Split large files when they mix parser, validation, planning, execution, receipt writing, rendering, or external-system responsibilities, not merely because a line count feels high.
+- Future source-anchor work should treat user-provided AI review notes and external research links as reference material until checked against current source, docs, tests, schemas, and command contracts.
 
 ## Next Patch Work Items
+
+These items were added after the May 19, 2026 user-provided AI review about module structure and a more efficient comment system for AI-assisted coding. They are not current product behavior. Before implementing any item, re-check current source, command contracts, schemas, tests, documentation, and any external research claims instead of treating this roadmap as authority.
 
 No remaining patch work items.
