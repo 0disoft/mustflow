@@ -18,6 +18,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const browserOpenModuleUrl = pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'browser-open.js')).href;
+const dashboardHtmlModuleUrl = pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'dashboard-html.js')).href;
 
 function createTempProject() {
 	const projectPath = mkdtempSync(path.join(tmpdir(), 'mustflow-dashboard-'));
@@ -120,6 +121,45 @@ test('dashboard browser opener uses platform-native commands', async () => {
 		args: [folderPath],
 	});
 	assert.equal(getFileManagerOpenCommand(folderPath, 'aix'), undefined);
+});
+
+test('dashboard HTML escapes inline JSON for script context', async () => {
+	const { renderDashboardHtml } = await import(dashboardHtmlModuleUrl);
+	const injected = '</script><script>window.__mustflowInjected=1</script>&\u2028\u2029';
+	const html = renderDashboardHtml(
+		{
+			projectRoot: injected,
+			preferencesPath: injected,
+			settings: [],
+			lockedSettings: [],
+			groups: [],
+			metadata: { generatedAt: injected },
+		},
+		injected,
+		{
+			schema_version: '1',
+			command: 'dashboard status',
+			mustflow_root: injected,
+			preferences: { marker: injected },
+			command_contract: { intents: [{ name: 'malicious', description: injected }] },
+		},
+		{
+			schema_version: '1',
+			command: 'dashboard docs status',
+			documents: [{ path: injected, review_summary: injected }],
+		},
+	);
+	const scriptBody = /<script>\n([\s\S]*?)\n<\/script>/u.exec(html)?.[1] ?? '';
+
+	assert.equal([...html.matchAll(/<\/script>/gu)].length, 1);
+	assert.doesNotMatch(html, /<\/script><script>/u);
+	assert.doesNotMatch(html, /<script>window\.__mustflowInjected/u);
+	assert.doesNotMatch(scriptBody, /\u2028/u);
+	assert.doesNotMatch(scriptBody, /\u2029/u);
+	assert.match(
+		scriptBody,
+		/\\u003C\/script\\u003E\\u003Cscript\\u003Ewindow\.__mustflowInjected=1\\u003C\/script\\u003E\\u0026\\u2028\\u2029/u,
+	);
 });
 
 test('dashboard exports static HTML and redacted JSON without starting a server', () => {

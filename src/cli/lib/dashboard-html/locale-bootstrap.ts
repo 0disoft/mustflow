@@ -1,4 +1,5 @@
 import { getDashboardLocaleBundle } from '../dashboard-locale.js';
+import { safeJsonForInlineScript } from '../html-json.js';
 
 export interface DashboardLocaleBootstrap {
 	readonly serializedLocaleBundle: string;
@@ -9,7 +10,7 @@ export function createDashboardLocaleBootstrap(): DashboardLocaleBootstrap {
 	const localeBundle = getDashboardLocaleBundle();
 
 	return {
-		serializedLocaleBundle: JSON.stringify(localeBundle),
-		serializedAvailableLocales: JSON.stringify(localeBundle.locales),
+		serializedLocaleBundle: safeJsonForInlineScript(localeBundle),
+		serializedAvailableLocales: safeJsonForInlineScript(localeBundle.locales),
 	};
 }

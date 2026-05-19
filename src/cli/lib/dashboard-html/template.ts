@@ -1,4 +1,5 @@
 import type { DashboardPreferencesSnapshot } from '../dashboard-preferences.js';
+import { safeJsonForInlineScript } from '../html-json.js';
 import { renderDashboardClientScript } from './client-script.js';
 import { createDashboardLocaleBootstrap } from './locale-bootstrap.js';
 import { renderDashboardStyles } from './styles.js';
@@ -21,10 +22,10 @@ export function renderDashboardHtml(
 ): string {
 	const root = escapeHtml(snapshot.projectRoot);
 	const preferencesPath = escapeHtml(snapshot.preferencesPath);
-	const serializedSnapshot = JSON.stringify(snapshot);
-	const serializedStatusSnapshot = JSON.stringify(statusSnapshot);
-	const serializedDocReviewSnapshot = JSON.stringify(docReviewSnapshot);
-	const serializedToken = JSON.stringify(token);
+	const serializedSnapshot = safeJsonForInlineScript(snapshot);
+	const serializedStatusSnapshot = safeJsonForInlineScript(statusSnapshot);
+	const serializedDocReviewSnapshot = safeJsonForInlineScript(docReviewSnapshot);
+	const serializedToken = safeJsonForInlineScript(token);
 	const { serializedLocaleBundle, serializedAvailableLocales } = createDashboardLocaleBootstrap();
 
 	return `<!doctype html>

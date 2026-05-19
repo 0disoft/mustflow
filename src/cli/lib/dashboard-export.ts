@@ -12,6 +12,7 @@ import {
 	toPosixPath,
 	writeUtf8FileInsideWithoutSymlinks,
 } from './filesystem.js';
+import { safeJsonForInlineScript } from './html-json.js';
 
 export type DashboardExportFormat = 'html' | 'json';
 
@@ -885,7 +886,7 @@ export function renderDashboardExportHtml(snapshot: DashboardExportSnapshot): st
 	const graphSummary = asRecord(harnessVerification.decision_graph_summary);
 	const harnessRunHistory = asRecord(harnessReport.run_history);
 	const harnessDocsReview = asRecord(harnessReport.docs_review);
-	const embeddedJson = JSON.stringify(snapshot).replace(/</gu, '\\u003c');
+	const embeddedJson = safeJsonForInlineScript(snapshot);
 
 	return `<!doctype html>
 <html lang="en">
