@@ -121,6 +121,55 @@ they do not grant command permission, instruct agents, or replace the current so
 Before searching, `mf search` compares stored content hashes with the current files and returns an
 error if the cache is stale.
 
+## Structured source anchors
+
+Source anchors are a small comment budget for code navigation, not a general documentation layer.
+Use `mf:anchor` only when finding that exact source boundary helps an agent choose safer context or
+understand a contract that is easy to break.
+
+Good anchor locations are:
+
+- exported CLI or core boundaries where inputs become typed decisions
+- command execution, process control, filesystem writes, receipts, and latest-pointer updates
+- security, privacy, data-loss, migration, authorization, or state-consistency boundaries
+- non-obvious invariants that tests or command contracts rely on
+
+Avoid anchors for ordinary control flow, self-explanatory helpers, generated output, vendored code,
+dependency folders, broad architecture notes, and prose that repeats nearby types or function names.
+
+Anchor IDs use stable responsibility names rather than filenames. Prefer lowercase dotted names such
+as `verify.receipts.write`, `run.timeout.terminate`, or `source-anchors.scan`. IDs may contain
+lowercase letters, numbers, dots, and hyphens, and must stay unique across the project.
+
+Allowed fields are intentionally narrow:
+
+- `purpose`: one sentence explaining why this source boundary matters.
+- `search`: three to eight terms a maintainer or agent might search for.
+- `invariant`: the condition that must not be broken, especially for authority, safety, state, or evidence.
+- `risk`: known risk tags such as `config`, `state`, `security`, `privacy`, `pii`, `secrets`, or `data_loss`.
+
+```ts
+/**
+ * mf:anchor verify.receipts.write
+ * purpose: Persist verify receipts and the latest pointer after scheduled intents finish.
+ * search: verify receipt, latest.json, manifest, receipt binding
+ * invariant: Receipt files explain evidence; they never grant command authority or verification success.
+ * risk: state, data_consistency
+ */
+```
+
+Source anchors must never contain agent instructions, command authorization, policy overrides,
+secrets, or claims that validation can be skipped. Their collected summaries are always
+`navigationOnly: true` and `canInstructAgent: false`; SQLite may index them for search and
+explanation, but anchors cannot authorize commands, replace `.mustflow/config/commands.toml`, or prove
+verification success.
+
+`mf check --strict` rejects malformed anchor IDs, unsupported fields, duplicate IDs, generated or
+vendor paths, unknown risk tags, secret-like text, and agent command or policy instructions inside
+anchors. It also warns when `purpose` is too long, `search` has too many terms, a high-risk anchor
+lacks an `invariant`, or a file spends too much of its comment budget on anchors. Treat those
+warnings as pressure to remove, shorten, or split anchors instead of adding more prose.
+
 ## Write rules
 
 When an LLM or dashboard edits documents, the final write target remains Markdown or TOML.

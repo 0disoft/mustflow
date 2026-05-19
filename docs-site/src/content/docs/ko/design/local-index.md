@@ -56,6 +56,56 @@ local_index = "generated_optional"
 
 검색 전 `mf search`는 저장된 본문 해시와 현재 파일을 비교하고, 캐시가 오래되었으면 오류를 반환합니다. 마지막 검증 결과와 실행 분석은 향후 기능으로 남겨둡니다.
 
+## 구조화 소스 앵커
+
+소스 앵커는 코드 탐색을 위한 작은 주석 예산이지, 일반 설명 문서 계층이 아닙니다.
+`mf:anchor`는 에이전트가 더 안전한 문맥을 고르거나 깨지기 쉬운 계약을 이해하는 데
+정확한 코드 경계가 도움이 되는 곳에만 둡니다.
+
+앵커를 둘 만한 곳은 다음과 같습니다.
+
+- 명령줄 입력이나 핵심 입력이 타입 있는 판단으로 바뀌는 공개 경계
+- 명령 실행, 프로세스 제어, 파일 쓰기, 실행 기록, 최신 포인터 갱신
+- 보안, 개인정보, 데이터 손실, 마이그레이션, 권한 부여, 상태 일관성 경계
+- 테스트나 명령 계약이 의존하는, 겉으로 잘 드러나지 않는 불변 조건
+
+일반 제어 흐름, 자명한 보조 함수, 생성물, 외부 제공 코드, 의존성 폴더, 넓은 구조 설명,
+주변 타입이나 함수 이름을 반복하는 설명에는 앵커를 붙이지 않습니다.
+
+앵커 ID는 파일명보다 안정적인 책임 이름을 사용합니다. `verify.receipts.write`,
+`run.timeout.terminate`, `source-anchors.scan`처럼 소문자 점 구분 이름을 선호합니다. ID에는
+소문자, 숫자, 점, 하이픈만 사용할 수 있고, 프로젝트 전체에서 고유해야 합니다.
+
+허용 필드는 의도적으로 좁습니다.
+
+- `purpose`: 이 코드 경계가 왜 중요한지 한 문장으로 설명합니다.
+- `search`: 유지보수자나 에이전트가 검색할 법한 용어 3~8개를 적습니다.
+- `invariant`: 권한, 안전, 상태, 증거와 관련해 깨지면 안 되는 조건을 적습니다.
+- `risk`: `config`, `state`, `security`, `privacy`, `pii`, `secrets`, `data_loss` 같은 알려진 위험 태그를 적습니다.
+
+```ts
+/**
+ * mf:anchor verify.receipts.write
+ * purpose: Persist verify receipts and the latest pointer after scheduled intents finish.
+ * search: verify receipt, latest.json, manifest, receipt binding
+ * invariant: Receipt files explain evidence; they never grant command authority or verification success.
+ * risk: state, data_consistency
+ */
+```
+
+소스 앵커에는 에이전트 지시, 명령 실행 권한, 정책 우회, 비밀정보, 검증을 생략해도 된다는
+주장을 넣을 수 없습니다. 수집된 요약은 항상 `navigationOnly: true`와
+`canInstructAgent: false`를 유지합니다. SQLite가 앵커를 검색과 설명용으로 색인할 수는
+있지만, 앵커는 명령을 허가하거나 `.mustflow/config/commands.toml`을 대체하거나 검증 성공을
+증명하지 못합니다.
+
+`mf check --strict`는 잘못된 앵커 ID, 지원하지 않는 필드, 중복 ID, 생성물이나 외부 제공 코드
+경로, 알 수 없는 위험 태그, 비밀정보처럼 보이는 텍스트, 앵커 안의 에이전트 명령이나 정책
+지시를 오류로 처리합니다. 또한 `purpose`가 너무 길거나, `search` 용어가 너무 많거나,
+고위험 앵커에 `invariant`가 없거나, 한 파일이 앵커 예산을 과하게 쓰면 경고합니다. 이런
+경고는 주석을 더 늘리라는 신호가 아니라 앵커를 줄이거나 짧게 만들거나 나누라는 신호로
+취급해야 합니다.
+
 ## 쓰기 규칙
 
 LLM이나 대시보드가 문서를 수정하더라도 최종 쓰기 대상은 Markdown이나 TOML이어야 합니다.

@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.18.2"
+version = "2.18.3"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -48,6 +48,7 @@ creates = [
   ".mustflow/skills/readme-authoring/SKILL.md",
   ".mustflow/skills/requirement-regression-guard/SKILL.md",
   ".mustflow/skills/repro-first-debug/SKILL.md",
+  ".mustflow/skills/source-anchor-authoring/SKILL.md",
   ".mustflow/skills/source-freshness-check/SKILL.md",
   ".mustflow/skills/state-machine-pattern/SKILL.md",
   ".mustflow/skills/strategy-pattern/SKILL.md",
@@ -103,6 +104,7 @@ minimal = [
   "requirement-regression-guard",
   "repro-first-debug",
   "security-privacy-review",
+  "source-anchor-authoring",
   "source-freshness-check",
   "structure-discovery-gate",
   "test-design-guard",
@@ -136,6 +138,7 @@ patterns = [
   "requirement-regression-guard",
   "repro-first-debug",
   "security-privacy-review",
+  "source-anchor-authoring",
   "source-freshness-check",
   "state-machine-pattern",
   "strategy-pattern",
@@ -181,6 +184,7 @@ oss = [
   "security-privacy-review",
   "security-regression-tests",
   "skill-authoring",
+  "source-anchor-authoring",
   "source-freshness-check",
   "state-machine-pattern",
   "strategy-pattern",
@@ -216,6 +220,7 @@ team = [
   "requirement-regression-guard",
   "repro-first-debug",
   "security-privacy-review",
+  "source-anchor-authoring",
   "source-freshness-check",
   "state-machine-pattern",
   "strategy-pattern",
@@ -250,6 +255,7 @@ product = [
   "requirement-regression-guard",
   "repro-first-debug",
   "security-privacy-review",
+  "source-anchor-authoring",
   "source-freshness-check",
   "state-machine-pattern",
   "strategy-pattern",
@@ -295,6 +301,7 @@ library = [
   "repro-first-debug",
   "security-privacy-review",
   "security-regression-tests",
+  "source-anchor-authoring",
   "source-freshness-check",
   "state-machine-pattern",
   "strategy-pattern",

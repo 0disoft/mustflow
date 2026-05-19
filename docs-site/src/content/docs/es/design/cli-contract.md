@@ -39,6 +39,33 @@ Esta regla se aplica a:
 Por ejemplo, cuando un usuario ejecuta `mf check --strict` desde `src/feature/deep`, el comando sigue validando la raíz ancestral que contiene `.mustflow/config/mustflow.toml`.
 `mf map --write` y `mf run <intent> --json` también escriben `REPO_MAP.md` y `.mustflow/state/runs/latest.json` en esa misma raíz.
 
+## Límites de módulos de comando
+
+Los archivos grandes de comando deben dividirse por responsabilidad, no por número de líneas. Un
+comando necesita un nuevo límite de módulo cuando un archivo mezcla parseo de argumentos, validación,
+planificación, ejecución, escritura de recibos, renderizado de salida y adaptadores de sistemas externos.
+
+Usa estos nombres de responsabilidad al dividir código de comando:
+
+- Parser: convierte argumentos de CLI, archivos JSON y flags en entrada tipada.
+- Validator: comprueba que la entrada siga el contrato mustflow y devuelve errores para el usuario.
+- Planner: decide qué trabajo debe ocurrir sin escribir archivos ni ejecutar comandos.
+- Executor: ejecuta comandos, lee o escribe archivos, controla procesos u otros efectos secundarios.
+- Recorder: persiste recibos, manifests, punteros latest y referencias de evidencia.
+- Renderer: convierte resultados internos en texto humano o JSON.
+
+La dirección de dependencias debe mantenerse simple:
+
+- `src/cli/commands/<name>.ts` o `src/cli/commands/<name>/command.ts` controla entrada CLI y salida final.
+- `src/core/**` controla decisiones deterministas, identificadores, resúmenes, cálculo de estado y validaciones de contrato.
+- Los módulos adapter o shell controlan ejecución de procesos, escrituras de archivos, SQLite, relojes y comportamiento de plataforma.
+
+Los módulos core no deben importar reporters CLI, process handles, estado global mutable ni escritores
+de filesystem. Los módulos CLI pueden llamar a core y adapters, pero no deben ocultar decisiones de
+negocio dentro del renderizado o la escritura de recibos. Cuando un refactor toque JSON público, exit
+codes, recibos o scheduling de comandos, conserva el wrapper anterior y extrae primero la porción más
+pequeña que preserve comportamiento.
+
 ## Idioma de salida de la CLI
 
 `--lang` es una opción global que selecciona el idioma del texto fijo de la CLI.

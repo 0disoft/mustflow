@@ -39,6 +39,29 @@ description: 说明 mf 命令应如何格式化帮助、错误和退出码。
 例如，当用户在 `src/feature/deep` 中运行 `mf check --strict` 时，该命令仍会验证包含 `.mustflow/config/mustflow.toml` 的上级 root。
 `mf map --write` 与 `mf run <intent> --json` 也会在同一 root 中写入 `REPO_MAP.md` 和 `.mustflow/state/runs/latest.json`。
 
+## 命令模块边界
+
+大型命令文件应按职责拆分，而不是按行数拆分。当一个文件开始混合参数解析、校验、计划、执行、运行记录写入、输出渲染和外部系统适配器时，这个命令就需要新的模块边界。
+
+拆分命令代码时使用这些职责名称：
+
+- Parser：把 CLI 参数、JSON 文件和 flags 转成类型化输入。
+- Validator：检查输入是否符合 mustflow 合同，并返回面向用户的错误。
+- Planner：在不写文件、不执行命令的情况下决定应该做什么。
+- Executor：执行命令、读取或写入文件、控制进程，或执行其他副作用。
+- Recorder：持久化运行记录、manifest、latest 指针和证据引用。
+- Renderer：把内部结果转成人类可读文本或 JSON。
+
+依赖方向应保持简单：
+
+- `src/cli/commands/<name>.ts` 或 `src/cli/commands/<name>/command.ts` 负责 CLI 输入和最终输出。
+- `src/core/**` 负责确定性决策、标识符、摘要、状态计算和合同检查。
+- adapter 或 shell 模块负责进程执行、文件写入、SQLite 访问、时钟和平台行为。
+
+Core 模块不得导入 CLI reporter、进程句柄、可变全局状态或文件系统写入器。CLI 模块可以调用
+core 模块和 adapters，但不应把业务决策藏在渲染或运行记录写入代码里。当重构触及公开
+JSON、退出码、运行记录或命令调度时，保留旧 wrapper，并先抽出最小的行为保持切片。
+
 ## CLI 输出语言
 
 `--lang` 是选择固定 CLI 文本语言的全局选项。

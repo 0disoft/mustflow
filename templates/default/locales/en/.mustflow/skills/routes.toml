@@ -90,6 +90,12 @@ route_type = "primary"
 priority = 20
 applies_to_reasons = ["unknown_change", "code_change"]
 
+[routes."source-anchor-authoring"]
+category = "general_code"
+route_type = "primary"
+priority = 60
+applies_to_reasons = ["code_change", "mustflow_docs_change"]
+
 [routes."repo-improvement-loop"]
 category = "workflow_contracts"
 route_type = "primary"

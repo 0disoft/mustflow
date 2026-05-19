@@ -39,6 +39,33 @@ This rule applies to:
 For example, when a user runs `mf check --strict` from `src/feature/deep`, the command still validates the ancestor root that contains `.mustflow/config/mustflow.toml`.
 `mf map --write` and `mf run <intent> --json` also write `REPO_MAP.md` and `.mustflow/state/runs/latest.json` in that same root.
 
+## Command Module Boundaries
+
+Large command files should be split by responsibility, not by line count. A command needs a new
+module boundary when one file starts mixing argument parsing, validation, planning, execution,
+receipt writing, output rendering, and external-system adapters.
+
+Use these responsibility names when splitting command code:
+
+- Parser: turns CLI arguments, JSON files, and flags into typed input.
+- Validator: checks that input follows the mustflow contract and returns user-facing errors.
+- Planner: decides what work should happen without writing files or running commands.
+- Executor: performs command execution, filesystem reads or writes, process control, or other side effects.
+- Recorder: persists run receipts, manifests, latest pointers, and evidence references.
+- Renderer: turns internal results into human text or JSON.
+
+Dependency direction should stay simple:
+
+- `src/cli/commands/<name>.ts` or `src/cli/commands/<name>/command.ts` owns CLI input and final output.
+- `src/core/**` owns deterministic decisions, identifiers, summaries, status calculation, and contract checks.
+- adapter or shell modules own process execution, filesystem writes, SQLite access, clocks, and platform behavior.
+
+Core modules must not import CLI reporters, process handles, mutable global state, or filesystem
+writers. CLI modules may call core modules and adapters, but they should not hide business decisions
+inside rendering or receipt-writing code. When a refactor touches public JSON, exit codes, receipts,
+or command scheduling, keep the old wrapper in place and extract the smallest behavior-preserving
+slice first.
+
 ## CLI Output Language
 
 `--lang` is a global option that selects the language for fixed CLI text.

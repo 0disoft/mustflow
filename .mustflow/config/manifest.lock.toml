@@ -25,12 +25,12 @@ content_hash = "sha256:259834228dc4f9d6936415f5b5bc7f7f1b6d3d582f423aa06eadcdd24
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:322c53053a364a8b53faac43a2021362e15de6f593736a1777d1f757653ccb7e"
+content_hash = "sha256:2a70d566d8d30d49bbce3e71039cd50f903f92eb9b04560319a558bcffc5a727"
 
 [files.".mustflow/skills/routes.toml"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:24dde0c3eca966e4c31df76c9bb28ae93c338545f1c7523043c4ea71defecefe"
+content_hash = "sha256:b111a2cb05689eeec81037b5ad0e4cab325baf5e5f5c100461efc44eba1a6ceb"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
@@ -216,6 +216,11 @@ content_hash = "sha256:09ecad732e4b8f38657f113ab7c6866bf8866dc9537e159a36b7d1478
 source = "template_locale"
 last_action = "created"
 content_hash = "sha256:20fc571edde5c49755ccf0c0cd88dfd7a5c84ea0009aea1ed75f16a2115b8698"
+
+[files.".mustflow/skills/source-anchor-authoring/SKILL.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:e5b81fc9d9c909c3c87d119dec3742fdf0182618c5930f92a6dac60d66db050f"
 
 [files.".mustflow/skills/source-freshness-check/SKILL.md"]
 source = "template_locale"

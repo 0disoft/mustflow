@@ -39,6 +39,32 @@ description: बताता है कि mf कमांड सहायता
 उदाहरण के लिए, यदि उपयोगकर्ता `src/feature/deep` से `mf check --strict` चलाता है, तब भी कमांड उस ऊपर वाले रूट को सत्यापित करती है जिसमें `.mustflow/config/mustflow.toml` मौजूद है।
 `mf map --write` और `mf run <intent> --json` भी उसी रूट में `REPO_MAP.md` और `.mustflow/state/runs/latest.json` लिखते हैं।
 
+## Command module boundaries
+
+बड़े command files को line count से नहीं, responsibility से split करें। जब एक file argument parsing,
+validation, planning, execution, receipt writing, output rendering, और external-system adapters मिलाने लगे,
+तब command को नया module boundary चाहिए।
+
+Command code split करते समय ये responsibility names उपयोग करें:
+
+- Parser: CLI arguments, JSON files, और flags को typed input में बदलता है।
+- Validator: input mustflow contract follow करता है या नहीं यह check करता है और user-facing errors देता है।
+- Planner: files लिखे या commands चलाए बिना तय करता है कि कौन सा work होना चाहिए।
+- Executor: command execution, filesystem reads या writes, process control, या दूसरे side effects करता है।
+- Recorder: run receipts, manifests, latest pointers, और evidence references persist करता है।
+- Renderer: internal results को human text या JSON में बदलता है।
+
+Dependency direction simple रहनी चाहिए:
+
+- `src/cli/commands/<name>.ts` या `src/cli/commands/<name>/command.ts` CLI input और final output own करता है।
+- `src/core/**` deterministic decisions, identifiers, summaries, status calculation, और contract checks own करता है।
+- Adapter या shell modules process execution, filesystem writes, SQLite access, clocks, और platform behavior own करते हैं।
+
+Core modules CLI reporters, process handles, mutable global state, या filesystem writers import न करें।
+CLI modules core modules और adapters call कर सकते हैं, लेकिन rendering या receipt-writing code में
+business decisions नहीं छिपाने चाहिए। जब refactor public JSON, exit codes, receipts, या command
+scheduling को छुए, पुराना wrapper रखें और सबसे छोटा behavior-preserving slice पहले extract करें।
+
 ## CLI आउटपुट भाषा
 
 `--lang` एक वैश्विक विकल्प है जो CLI के स्थिर पाठ की भाषा चुनता है।

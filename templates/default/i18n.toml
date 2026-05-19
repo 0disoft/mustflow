@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 54
+revision = 55
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -272,6 +272,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/source-freshness-check/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.source-anchor-authoring"]
+source = "locales/en/.mustflow/skills/source-anchor-authoring/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.project-context-authoring"]

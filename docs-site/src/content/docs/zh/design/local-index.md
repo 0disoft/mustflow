@@ -56,6 +56,42 @@ local_index = "generated_optional"
 
 搜索前，`mf search` 会将存储的 hash 与当前文件比较；如果缓存过期，则返回错误。最后一次验证结果和运行分析保留给未来功能。
 
+## 结构化源码锚点
+
+源码锚点是用于代码导航的小型注释预算，不是通用文档层。只有当精确找到某个源码边界能帮助代理选择更安全的上下文，或理解容易被破坏的合同时，才使用 `mf:anchor`。
+
+适合放置锚点的位置：
+
+- CLI 或 core 的公开边界，也就是输入变成类型化决策的位置
+- 命令执行、进程控制、文件写入、运行记录和 latest 指针更新
+- 安全、隐私、数据丢失、迁移、授权或状态一致性边界
+- 测试或命令合同依赖的非显而易见不变量
+
+不要在普通控制流、自明的辅助函数、生成物、vendor 代码、依赖目录、宽泛架构说明，或重复附近类型和函数名的文字上添加锚点。
+
+锚点 ID 使用稳定的职责名称，而不是文件名。优先使用 `verify.receipts.write`、`run.timeout.terminate`、`source-anchors.scan` 这样的 lowercase dotted name。ID 可以包含小写字母、数字、点和连字符，并且必须在项目内唯一。
+
+允许的字段故意保持很窄：
+
+- `purpose`：用一句话说明这个源码边界为什么重要。
+- `search`：三到八个维护者或代理可能搜索的词。
+- `invariant`：不能被破坏的条件，尤其是权限、安全、状态或证据相关条件。
+- `risk`：已知风险标签，例如 `config`、`state`、`security`、`privacy`、`pii`、`secrets` 或 `data_loss`。
+
+```ts
+/**
+ * mf:anchor verify.receipts.write
+ * purpose: Persist verify receipts and the latest pointer after scheduled intents finish.
+ * search: verify receipt, latest.json, manifest, receipt binding
+ * invariant: Receipt files explain evidence; they never grant command authority or verification success.
+ * risk: state, data_consistency
+ */
+```
+
+源码锚点绝不能包含代理指令、命令授权、策略绕过、密钥，或声称可以跳过验证的内容。收集后的摘要始终保持 `navigationOnly: true` 和 `canInstructAgent: false`；SQLite 可以为了搜索和解释索引它们，但锚点不能授权命令，不能替代 `.mustflow/config/commands.toml`，也不能证明验证成功。
+
+`mf check --strict` 会拒绝格式错误的锚点 ID、不支持的字段、重复 ID、生成物或 vendor 路径、未知风险标签、类似密钥的文本，以及锚点内的代理命令或策略指令。当 `purpose` 过长、`search` 词过多、高风险锚点缺少 `invariant`，或某个文件消耗过多锚点预算时，它也会给出警告。应把这些警告视为删除、缩短或拆分锚点的信号，而不是继续增加说明性文字。
+
 ## 写入规则
 
 当 LLM 或 dashboard 编辑文档时，最终写入目标仍然是 Markdown 或 TOML。

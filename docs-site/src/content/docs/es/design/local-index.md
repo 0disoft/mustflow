@@ -56,6 +56,42 @@ Los metadatos de búsqueda también se guardan en la tabla `search_ngrams`. Esas
 
 Antes de buscar, `mf search` compara los hashes almacenados con los archivos actuales y devuelve un error si la caché está obsoleta. Los últimos resultados de verificación y el análisis de ejecuciones quedan reservados para funciones futuras.
 
+## Source anchors estructurados
+
+Los source anchors son un presupuesto pequeño de comentarios para navegación de código, no una capa general de documentación. Usa `mf:anchor` solo cuando encontrar ese límite exacto de código ayuda a un agente a elegir mejor contexto o entender un contrato fácil de romper.
+
+Buenos lugares para anchors:
+
+- límites públicos donde una entrada de CLI o core se convierte en una decisión tipada
+- ejecución de comandos, control de procesos, escrituras de archivos, recibos y punteros latest
+- límites de seguridad, privacidad, pérdida de datos, migración, autorización o consistencia de estado
+- invariantes no obvios de los que dependen tests o contratos de comando
+
+Evita anchors en flujo de control ordinario, helpers obvios, salidas generadas, código vendor, carpetas de dependencias, notas amplias de arquitectura y texto que repite tipos o nombres cercanos.
+
+Los IDs de anchor usan nombres estables de responsabilidad en lugar de nombres de archivo. Prefiere nombres en minúsculas con puntos, como `verify.receipts.write`, `run.timeout.terminate` o `source-anchors.scan`. Los IDs pueden contener letras minúsculas, números, puntos y guiones, y deben ser únicos en el proyecto.
+
+Los campos permitidos son deliberadamente estrechos:
+
+- `purpose`: una oración que explica por qué importa ese límite de código.
+- `search`: de tres a ocho términos que una persona o agente podría buscar.
+- `invariant`: la condición que no debe romperse, especialmente en autoridad, seguridad, estado o evidencia.
+- `risk`: etiquetas conocidas como `config`, `state`, `security`, `privacy`, `pii`, `secrets` o `data_loss`.
+
+```ts
+/**
+ * mf:anchor verify.receipts.write
+ * purpose: Persist verify receipts and the latest pointer after scheduled intents finish.
+ * search: verify receipt, latest.json, manifest, receipt binding
+ * invariant: Receipt files explain evidence; they never grant command authority or verification success.
+ * risk: state, data_consistency
+ */
+```
+
+Los source anchors nunca deben contener instrucciones para agentes, autorización de comandos, anulaciones de política, secretos ni afirmaciones de que la validación puede omitirse. Sus resúmenes recopilados siempre mantienen `navigationOnly: true` y `canInstructAgent: false`; SQLite puede indexarlos para búsqueda y explicación, pero no pueden autorizar comandos, reemplazar `.mustflow/config/commands.toml` ni demostrar éxito de verificación.
+
+`mf check --strict` rechaza IDs mal formados, campos no admitidos, IDs duplicados, rutas generadas o vendor, etiquetas de riesgo desconocidas, texto parecido a secretos e instrucciones de comando o política dentro de anchors. También advierte cuando `purpose` es demasiado largo, `search` tiene demasiados términos, un anchor de alto riesgo no tiene `invariant`, o un archivo gasta demasiado presupuesto en anchors. Trata esas advertencias como presión para quitar, acortar o dividir anchors.
+
 ## Reglas de escritura
 
 Cuando un LLM o un panel edita documentos, el destino final de escritura sigue siendo Markdown o TOML.

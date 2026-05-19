@@ -39,6 +39,33 @@ Cette règle s’applique à:
 Par exemple, lorsqu’un utilisateur exécute `mf check --strict` depuis `src/feature/deep`, la commande valide tout de même la racine ancêtre qui contient `.mustflow/config/mustflow.toml`.
 `mf map --write` et `mf run <intent> --json` écrivent aussi `REPO_MAP.md` et `.mustflow/state/runs/latest.json` dans cette même racine.
 
+## Frontières de modules de commande
+
+Les gros fichiers de commande doivent être divisés par responsabilité, pas par nombre de lignes. Une
+commande a besoin d’une nouvelle frontière de module lorsqu’un fichier mélange analyse d’arguments,
+validation, planification, exécution, écriture de reçus, rendu de sortie et adaptateurs de systèmes externes.
+
+Utilise ces noms de responsabilité lors d’un découpage:
+
+- Parser: transforme les arguments CLI, fichiers JSON et flags en entrée typée.
+- Validator: vérifie que l’entrée respecte le contrat mustflow et retourne des erreurs utilisateur.
+- Planner: décide du travail à faire sans écrire de fichiers ni exécuter de commandes.
+- Executor: exécute des commandes, lit ou écrit des fichiers, contrôle des processus ou autres effets.
+- Recorder: persiste les reçus, manifests, pointeurs latest et références de preuve.
+- Renderer: transforme les résultats internes en texte humain ou JSON.
+
+La direction des dépendances doit rester simple:
+
+- `src/cli/commands/<name>.ts` ou `src/cli/commands/<name>/command.ts` possède l’entrée CLI et la sortie finale.
+- `src/core/**` possède les décisions déterministes, identifiants, résumés, calculs de statut et contrôles de contrat.
+- Les modules adapter ou shell possèdent l’exécution de processus, les écritures de fichiers, SQLite, les horloges et le comportement plateforme.
+
+Les modules core ne doivent pas importer de reporters CLI, handles de processus, état global mutable
+ou écrivains filesystem. Les modules CLI peuvent appeler core et adapters, mais ne doivent pas cacher
+les décisions métier dans le rendu ou l’écriture de reçus. Quand un refactor touche le JSON public,
+les codes de sortie, les reçus ou la planification de commandes, garde l’ancien wrapper et extrais
+d’abord la plus petite tranche qui préserve le comportement.
+
 ## Langue de sortie de la CLI
 
 `--lang` est une option globale qui sélectionne la langue du texte fixe de la CLI.
