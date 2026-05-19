@@ -1,14 +1,10 @@
-import { spawn, spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 
-import { canRunMustflowBuiltinInProcess, isMustflowBinName } from '../../core/command-classification.js';
 import { createCommandEnv } from '../../core/command-env.js';
-import { BoundedOutputBuffer, type BoundedOutputSnapshot } from '../../core/bounded-output.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
-import { getPackageVersion } from '../lib/package-info.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import {
@@ -17,510 +13,24 @@ import {
 	isMustflowBuiltinIntent,
 	renderRunPreviewText,
 	type BlockedRunPlan,
-	type ResolvedArgvCommand,
 	type RunPreviewMode,
 } from '../lib/run-plan.js';
 import {
-	createRunReceipt,
-	createRunReceiptRelativePath,
 	writeRunReceipt,
-	type RunReceiptStatus,
 	type RunTerminationReceipt,
 } from '../../core/run-receipt.js';
 import { recordRunPerformanceHistory } from '../../core/run-performance-history.js';
 import { RunProfiler } from '../../core/run-profile.js';
 import { finishRunWriteTracking, startRunWriteTracking } from '../../core/run-write-drift.js';
-
-interface CommandResult {
-	readonly status: number | null;
-	readonly signal: string | null;
-	readonly error?: Error;
-	readonly stdout: string | Buffer | BoundedOutputSnapshot | null;
-	readonly stderr: string | Buffer | BoundedOutputSnapshot | null;
-	readonly pid?: number;
-	readonly termination?: RunTerminationReceipt | null;
-}
-
-interface BufferedReporter {
-	readonly reporter: Reporter;
-	readonly stdout: () => string;
-	readonly stderr: () => string;
-}
-
-const OUTPUT_LIMIT_ERROR_CODE = 'ENOBUFS';
-const OUTPUT_LIMIT_ERROR_MESSAGE = /\bmaxBuffer\b.*\bexceeded\b/i;
+import { runBuiltinArgvInProcess } from './run/builtin-dispatch.js';
+import { getRunStatus, runArgvCommandStreaming, runShellCommandStreaming } from './run/executor.js';
+import { emitOutput } from './run/output.js';
+import { createPendingTimeoutTermination, getKillMethod, terminateProcessTree } from './run/process-tree.js';
+import { assembleRunReceipt } from './run/receipt.js';
 
 export interface RunCommandOptions {
 	readonly writeLatestReceipt?: boolean;
 	readonly testTargets?: readonly string[];
-}
-
-function emitOutput(
-	reporter: Reporter,
-	output: string | Buffer | BoundedOutputSnapshot | null,
-	stream: 'stdout' | 'stderr',
-): void {
-	if (!output) {
-		return;
-	}
-
-	const text = (typeof output === 'object' && 'tail' in output ? output.tail : output.toString()).trimEnd();
-
-	if (text.length === 0) {
-		return;
-	}
-
-	reporter[stream](text);
-}
-
-function signalProcessTree(pid: number | undefined, signal: NodeJS.Signals): void {
-	if (!pid || pid <= 0) {
-		return;
-	}
-
-	if (process.platform === 'win32') {
-		spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], {
-			stdio: 'ignore',
-			windowsHide: true,
-		});
-		if (signal === 'SIGKILL') {
-			try {
-				process.kill(pid, signal);
-			} catch {
-				// taskkill may already have terminated the direct child.
-			}
-		}
-		return;
-	}
-
-	try {
-		process.kill(-pid, signal);
-	} catch {
-		try {
-			process.kill(pid, signal);
-		} catch {
-			// The child may already be gone after Node's spawn timeout handling.
-		}
-	}
-}
-
-function signalProcessTreeNonBlocking(pid: number | undefined, signal: NodeJS.Signals): void {
-	if (!pid || pid <= 0) {
-		return;
-	}
-
-	if (process.platform === 'win32') {
-		const killer = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
-			stdio: 'ignore',
-			windowsHide: true,
-			detached: true,
-		});
-		killer.unref();
-
-		if (signal === 'SIGKILL') {
-			try {
-				process.kill(pid, signal);
-			} catch {
-				// taskkill may already have terminated the direct child.
-			}
-		}
-		return;
-	}
-
-	try {
-		process.kill(-pid, signal);
-	} catch {
-		try {
-			process.kill(pid, signal);
-		} catch {
-			// The child may already be gone after the timeout fired.
-		}
-	}
-}
-
-function terminateProcessTree(pid: number | undefined): void {
-	signalProcessTree(pid, 'SIGTERM');
-}
-
-function forceTerminateProcessTree(pid: number | undefined): void {
-	signalProcessTree(pid, 'SIGKILL');
-}
-
-function terminateProcessTreeNonBlocking(pid: number | undefined): void {
-	signalProcessTreeNonBlocking(pid, 'SIGTERM');
-}
-
-function forceTerminateProcessTreeNonBlocking(pid: number | undefined): void {
-	signalProcessTreeNonBlocking(pid, 'SIGKILL');
-}
-
-function getKillMethod(): string {
-	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
-}
-
-function createPendingTimeoutTermination(method: string): RunTerminationReceipt {
-	return {
-		reason: 'timeout',
-		method,
-		graceful_signal: 'SIGTERM',
-		forced_signal: 'SIGKILL',
-		forced_kill_attempted: true,
-		confirmed: false,
-		cleanup_pending: true,
-	};
-}
-
-function createBufferedReporter(): BufferedReporter {
-	const stdout: string[] = [];
-	const stderr: string[] = [];
-
-	return {
-		reporter: {
-			stdout(message) {
-				stdout.push(`${message}\n`);
-			},
-			stderr(message) {
-				stderr.push(`${message}\n`);
-			},
-		},
-		stdout() {
-			return stdout.join('');
-		},
-		stderr() {
-			return stderr.join('');
-		},
-	};
-}
-
-/**
- * mf:anchor cli.run.builtin-inprocess
- * purpose: Dispatch selected mustflow built-in commands without spawning a nested CLI process.
- * search: builtin intent, in-process command, nested mf run, run receipt
- * invariant: Only commands classified by command-classification can use this path.
- * risk: config, state
- */
-async function runKnownBuiltinCommand(args: readonly string[], reporter: Reporter, lang: CliLang): Promise<number | undefined> {
-	const [command, ...commandArgs] = args;
-
-	if ((command === '--version' || command === '-v' || command === 'version') && commandArgs.length === 0) {
-		reporter.stdout(getPackageVersion());
-		return 0;
-	}
-
-	if (!canRunMustflowBuiltinInProcess(command)) {
-		return undefined;
-	}
-
-	if (command === 'check') {
-		return (await import('./check.js')).runCheck(commandArgs, reporter, lang);
-	}
-
-	if (command === 'classify') {
-		return (await import('./classify.js')).runClassify(commandArgs, reporter, lang);
-	}
-
-	if (command === 'context') {
-		return (await import('./context.js')).runContext(commandArgs, reporter, lang);
-	}
-
-	if (command === 'doctor') {
-		return (await import('./doctor.js')).runDoctor(commandArgs, reporter, lang);
-	}
-
-	if (command === 'help') {
-		return (await import('./help.js')).runHelp(commandArgs, reporter, lang);
-	}
-
-	if (command === 'impact') {
-		return (await import('./impact.js')).runImpact(commandArgs, reporter, lang);
-	}
-
-	if (command === 'line-endings') {
-		return (await import('./line-endings.js')).runLineEndings(commandArgs, reporter, lang);
-	}
-
-	if (command === 'map') {
-		return (await import('./map.js')).runMap(commandArgs, reporter, lang);
-	}
-
-	if (command === 'status') {
-		return (await import('./status.js')).runStatus(commandArgs, reporter, lang);
-	}
-
-	if (command === 'update') {
-		return (await import('./update.js')).runUpdate(commandArgs, reporter, lang);
-	}
-
-	if (command === 'version-sources') {
-		return (await import('./version-sources.js')).runVersionSources(commandArgs, reporter, lang);
-	}
-
-	return undefined;
-}
-
-async function withWorkingDirectory<T>(cwd: string, callback: () => T | Promise<T>): Promise<T> {
-	const previousCwd = process.cwd();
-
-	process.chdir(cwd);
-
-	try {
-		return await callback();
-	} finally {
-		process.chdir(previousCwd);
-	}
-}
-
-async function runBuiltinArgvInProcess(commandArgv: readonly string[], cwd: string, lang: CliLang): Promise<CommandResult | undefined> {
-	const [command = '', ...builtinArgs] = commandArgv;
-
-	if (!isMustflowBinName(command)) {
-		return undefined;
-	}
-
-	const output = createBufferedReporter();
-
-	try {
-		const status = await withWorkingDirectory(cwd, () => runKnownBuiltinCommand(builtinArgs, output.reporter, lang));
-
-		if (status === undefined) {
-			return undefined;
-		}
-
-		return {
-			status,
-			signal: null,
-			stdout: output.stdout(),
-			stderr: output.stderr(),
-		};
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-
-		return {
-			status: 1,
-			signal: null,
-			stdout: output.stdout(),
-			stderr: `${output.stderr()}${message}\n`,
-		};
-	}
-}
-
-function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr', chunk: Buffer): void {
-	if (stream === 'stdout') {
-		if (reporter.writeStdout) {
-			reporter.writeStdout(chunk);
-			return;
-		}
-
-		reporter.stdout(chunk.toString());
-		return;
-	}
-
-	if (reporter.writeStderr) {
-		reporter.writeStderr(chunk);
-		return;
-	}
-
-	reporter.stderr(chunk.toString());
-}
-
-interface SpawnedCommandInput {
-	readonly executable: string;
-	readonly args?: readonly string[];
-	readonly shell: boolean;
-}
-
-function createOutputLimitError(stream: 'stdout' | 'stderr', maxOutputBytes: number): Error {
-	return Object.assign(new Error(`${stream} exceeded max_output_bytes (${maxOutputBytes})`), {
-		code: OUTPUT_LIMIT_ERROR_CODE,
-	});
-}
-
-function runSpawnedCommandStreaming(
-	command: SpawnedCommandInput,
-	cwd: string,
-	env: NodeJS.ProcessEnv,
-	timeoutSeconds: number,
-	maxOutputBytes: number,
-	stdoutTailBytes: number,
-	stderrTailBytes: number,
-	reporter: Reporter,
-	streamOutput: boolean,
-	enforceOutputLimit: boolean,
-): Promise<CommandResult> {
-	return new Promise((resolve) => {
-		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
-		const stderr = new BoundedOutputBuffer(stderrTailBytes);
-		let settled = false;
-		let timedOut = false;
-		let childError: Error | undefined;
-		let childPid: number | undefined;
-		let stdoutBytes = 0;
-		let stderrBytes = 0;
-		let timeout: NodeJS.Timeout | undefined;
-		let termination: RunTerminationReceipt | null = null;
-
-		const child = spawn(command.executable, command.args ?? [], {
-			cwd,
-			env,
-			shell: command.shell,
-			stdio: ['ignore', 'pipe', 'pipe'],
-			windowsHide: true,
-			detached: process.platform !== 'win32',
-		});
-		childPid = child.pid;
-
-		const finish = (status: number | null, signal: string | null): void => {
-			if (settled) {
-				return;
-			}
-
-			settled = true;
-
-			if (timeout) {
-				clearTimeout(timeout);
-			}
-			resolve({
-				status: timedOut ? null : status,
-				signal: timedOut ? null : signal,
-				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
-				stdout: stdout.toSnapshot(),
-				stderr: stderr.toSnapshot(),
-				pid: childPid,
-				termination,
-			});
-		};
-
-		const stopForOutputLimit = (stream: 'stdout' | 'stderr'): void => {
-			if (settled || childError) {
-				return;
-			}
-
-			childError = createOutputLimitError(stream, maxOutputBytes);
-			child.stdout?.destroy();
-			child.stderr?.destroy();
-			child.unref();
-			terminateProcessTreeNonBlocking(childPid);
-			forceTerminateProcessTreeNonBlocking(childPid);
-			finish(null, null);
-		};
-
-		child.stdout?.on('data', (chunk: Buffer) => {
-			stdout.append(chunk);
-			stdoutBytes += chunk.byteLength;
-			if (streamOutput) {
-				writeStreamChunk(reporter, 'stdout', chunk);
-			}
-			if (enforceOutputLimit && stdoutBytes > maxOutputBytes) {
-				stopForOutputLimit('stdout');
-			}
-		});
-		child.stderr?.on('data', (chunk: Buffer) => {
-			stderr.append(chunk);
-			stderrBytes += chunk.byteLength;
-			if (streamOutput) {
-				writeStreamChunk(reporter, 'stderr', chunk);
-			}
-			if (enforceOutputLimit && stderrBytes > maxOutputBytes) {
-				stopForOutputLimit('stderr');
-			}
-		});
-		child.once('error', (error) => {
-			childError = error;
-		});
-		child.once('close', (status, signal) => {
-			finish(status, signal);
-		});
-
-		timeout = setTimeout(() => {
-			timedOut = true;
-			child.stdout?.destroy();
-			child.stderr?.destroy();
-			child.unref();
-			termination = createPendingTimeoutTermination(getKillMethod());
-			terminateProcessTreeNonBlocking(childPid);
-			forceTerminateProcessTreeNonBlocking(childPid);
-			finish(null, null);
-		}, timeoutSeconds * 1000);
-	});
-}
-
-function runArgvCommandStreaming(
-	command: ResolvedArgvCommand | undefined,
-	cwd: string,
-	env: NodeJS.ProcessEnv,
-	timeoutSeconds: number,
-	maxOutputBytes: number,
-	stdoutTailBytes: number,
-	stderrTailBytes: number,
-	reporter: Reporter,
-	streamOutput: boolean,
-	enforceOutputLimit: boolean,
-): Promise<CommandResult> {
-	return runSpawnedCommandStreaming(
-		{ executable: command?.executable ?? '', args: command?.args ?? [], shell: command?.shell ?? false },
-		cwd,
-		env,
-		timeoutSeconds,
-		maxOutputBytes,
-		stdoutTailBytes,
-		stderrTailBytes,
-		reporter,
-		streamOutput,
-		enforceOutputLimit,
-	);
-}
-
-function runShellCommandStreaming(
-	command: string | undefined,
-	cwd: string,
-	env: NodeJS.ProcessEnv,
-	timeoutSeconds: number,
-	maxOutputBytes: number,
-	stdoutTailBytes: number,
-	stderrTailBytes: number,
-	reporter: Reporter,
-	streamOutput: boolean,
-	enforceOutputLimit: boolean,
-): Promise<CommandResult> {
-	return runSpawnedCommandStreaming(
-		{ executable: command ?? '', shell: true },
-		cwd,
-		env,
-		timeoutSeconds,
-		maxOutputBytes,
-		stdoutTailBytes,
-		stderrTailBytes,
-		reporter,
-		streamOutput,
-		enforceOutputLimit,
-	);
-}
-
-function getRunStatus(error: Error | undefined, exitCode: number | null, successExitCodes: readonly number[]): RunReceiptStatus {
-	const errorWithCode = error as NodeJS.ErrnoException | undefined;
-
-	if (errorWithCode?.code === 'ETIMEDOUT') {
-		return 'timed_out';
-	}
-
-	if (isOutputLimitExceededError(error)) {
-		return 'output_limit_exceeded';
-	}
-
-	if (error) {
-		return 'start_failed';
-	}
-
-	return exitCode !== null && successExitCodes.includes(exitCode) ? 'passed' : 'failed';
-}
-
-function isOutputLimitExceededError(error: Error | undefined): boolean {
-	if (!error) {
-		return false;
-	}
-
-	const errorWithCode = error as NodeJS.ErrnoException;
-	return errorWithCode.code === OUTPUT_LIMIT_ERROR_CODE || OUTPUT_LIMIT_ERROR_MESSAGE.test(error.message);
 }
 
 function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
@@ -712,8 +222,6 @@ export async function runRun(
 	const env = profiler.measure('environment', () =>
 		createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
 	);
-	const lifecycleValue = plan.lifecycle ?? 'oneshot';
-	const runPolicyValue = plan.runPolicy ?? 'agent_allowed';
 	const writeTracker = profiler.measure('write_drift_before', () => startRunWriteTracking(projectRoot, contract, intentName));
 	const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);
 	const stderrTailBytes = Math.min(runReceiptPolicy.stderrTailBytes, plan.maxOutputBytes);
@@ -776,45 +284,25 @@ export async function runRun(
 		}
 	}
 
-	const receipt = profiler.measure('receipt_create', () => createRunReceipt({
-		intent: intentName,
-		status: runStatus,
-		timedOut: runStatus === 'timed_out',
-		startedAt,
-		finishedAt,
-		projectRoot,
-		cwd: plan.cwd,
-		lifecycle: lifecycleValue,
-		runPolicy: runPolicyValue,
-		mode: plan.mode,
-		argv: plan.commandArgv,
-		cmd: plan.shellCommand,
-		envPolicy: plan.envPolicy,
-		envAllowlist: plan.envAllowlist,
-		timeoutSeconds: plan.timeoutSeconds,
-		maxOutputBytes: plan.maxOutputBytes,
-		successExitCodes: plan.successExitCodes,
-		exitCode,
-		signal: result.signal,
-		error: result.error?.message ?? null,
-		killMethod,
-		termination,
-		stdout: result.stdout,
-		stderr: result.stderr,
-		writeDrift,
-		executorOverheadMs: Math.max(0, Math.round((performance.now() - executorStartedAtMs - childDurationMs) * 1000) / 1000),
-		phaseTimings: profiler.getReceiptPhases(),
-		selectionSummary: {
-			strategy: plan.testTargets.length > 0 ? 'project_test_selection' : 'direct_intent',
-			changed_file_count: 0,
-			changed_surface_counts: {},
-			selected_target_count: Math.max(1, plan.testTargets.length),
-			fallback_used: false,
-		},
-		stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
-		stderrTailBytes: runReceiptPolicy.stderrTailBytes,
-		receiptPath: createRunReceiptRelativePath(),
-	}));
+	const receipt = profiler.measure('receipt_create', () =>
+		assembleRunReceipt({
+			intentName,
+			runStatus,
+			startedAt,
+			finishedAt,
+			projectRoot,
+			plan,
+			result,
+			exitCode,
+			killMethod,
+			termination,
+			writeDrift,
+			executorOverheadMs: Math.max(0, Math.round((performance.now() - executorStartedAtMs - childDurationMs) * 1000) / 1000),
+			phaseTimings: profiler.getReceiptPhases(),
+			stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
+			stderrTailBytes: runReceiptPolicy.stderrTailBytes,
+		}),
+	);
 
 	if (options.writeLatestReceipt !== false) {
 		profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt));
