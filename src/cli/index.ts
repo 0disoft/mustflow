@@ -4,7 +4,7 @@ import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { COMMAND_DEFINITIONS } from './lib/command-registry.js';
+import { COMMAND_DEFINITIONS, findCommandDefinition } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
 import { DEFAULT_CLI_LANG, SUPPORTED_CLI_LANGS, isCliLang, t, type CliLang } from './lib/i18n.js';
 import { consoleReporter, type Reporter } from './lib/reporter.js';
@@ -131,100 +131,12 @@ export async function runCli(argv: string[], reporter: Reporter = consoleReporte
 		return 0;
 	}
 
-	if (command === '--version' || command === '-v' || command === 'version') {
-		return (await import('./commands/version.js')).runVersion(args, reporter, parsed.lang);
-	}
+	const commandId = command === '--version' || command === '-v' ? 'version' : command;
+	const commandDefinition = findCommandDefinition(commandId);
 
-	if (command === 'init') {
-		return (await import('./commands/init.js')).runInit(args, reporter, parsed.lang);
-	}
-
-	if (command === 'adapters') {
-		return (await import('./commands/adapters.js')).runAdapters(args, reporter, parsed.lang);
-	}
-
-	if (command === 'check') {
-		return (await import('./commands/check.js')).runCheck(args, reporter, parsed.lang);
-	}
-
-	if (command === 'classify') {
-		return (await import('./commands/classify.js')).runClassify(args, reporter, parsed.lang);
-	}
-
-	if (command === 'contract-lint') {
-		return (await import('./commands/contract-lint.js')).runContractLint(args, reporter, parsed.lang);
-	}
-
-	if (command === 'status') {
-		return (await import('./commands/status.js')).runStatus(args, reporter, parsed.lang);
-	}
-
-	if (command === 'update') {
-		return (await import('./commands/update.js')).runUpdate(args, reporter, parsed.lang);
-	}
-
-	if (command === 'upgrade') {
-		return (await import('./commands/upgrade.js')).runUpgrade(args, reporter, parsed.lang);
-	}
-
-	if (command === 'map') {
-		return (await import('./commands/map.js')).runMap(args, reporter, parsed.lang);
-	}
-
-	if (command === 'line-endings') {
-		return (await import('./commands/line-endings.js')).runLineEndings(args, reporter, parsed.lang);
-	}
-
-	if (command === 'run') {
-		return (await import('./commands/run.js')).runRun(args, reporter, parsed.lang);
-	}
-
-	if (command === 'context') {
-		return (await import('./commands/context.js')).runContext(args, reporter, parsed.lang);
-	}
-
-	if (command === 'doctor') {
-		return (await import('./commands/doctor.js')).runDoctor(args, reporter, parsed.lang);
-	}
-
-	if (command === 'docs') {
-		return (await import('./commands/docs.js')).runDocs(args, reporter, parsed.lang);
-	}
-
-	if (command === 'handoff') {
-		return (await import('./commands/handoff.js')).runHandoff(args, reporter, parsed.lang);
-	}
-
-	if (command === 'index') {
-		return (await import('./commands/index.js')).runIndex(args, reporter, parsed.lang);
-	}
-
-	if (command === 'search') {
-		return (await import('./commands/search.js')).runSearch(args, reporter, parsed.lang);
-	}
-
-	if (command === 'dashboard') {
-		return (await import('./commands/dashboard.js')).runDashboard(args, reporter, parsed.lang);
-	}
-
-	if (command === 'version-sources') {
-		return (await import('./commands/version-sources.js')).runVersionSources(args, reporter, parsed.lang);
-	}
-
-	if (command === 'verify') {
-		return (await import('./commands/verify.js')).runVerify(args, reporter, parsed.lang);
-	}
-
-	if (command === 'explain') {
-		return (await import('./commands/explain.js')).runExplain(args, reporter, parsed.lang);
-	}
-
-	if (command === 'impact') {
-		return (await import('./commands/impact.js')).runImpact(args, reporter, parsed.lang);
-	}
-
-	if (command === 'help') {
-		return (await import('./commands/help.js')).runHelp(args, reporter, parsed.lang);
+	if (commandDefinition) {
+		const runner = await commandDefinition.loadRunner();
+		return runner(args, reporter, parsed.lang);
 	}
 
 	reporter.stderr(renderCliError(t(parsed.lang, 'cli.error.unknownCommand', { command }), 'mf --help', parsed.lang));

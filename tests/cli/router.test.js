@@ -7,6 +7,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runCli as runCliInProcess } from '../../dist/cli/index.js';
+import { COMMAND_DEFINITIONS } from '../../dist/cli/lib/command-registry.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -100,6 +101,23 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf verify/);
 	assert.match(result.stdout, /mf explain/);
 	assert.match(result.stdout, /mf impact/);
+
+	for (const command of COMMAND_DEFINITIONS) {
+		assert.match(result.stdout, new RegExp(command.usage.replaceAll('-', String.raw`\-`)));
+	}
+});
+
+test('command registry ids are unique and dispatchable', async () => {
+	const commandIds = COMMAND_DEFINITIONS.map((command) => command.id);
+	assert.deepEqual(commandIds, [...new Set(commandIds)]);
+
+	for (const command of COMMAND_DEFINITIONS) {
+		assert.equal(typeof command.loadRunner, 'function', `${command.id} should declare a command runner`);
+
+		const result = await runCli([command.id, '--help']);
+		assert.equal(result.status, 0, `${command.id} should route through the top-level dispatcher`);
+		assert.match(result.stdout, new RegExp(`mf ${command.id}`));
+	}
 });
 
 test('runs when invoked through a linked package path', () => {
@@ -231,11 +249,11 @@ test('fails unknown commands with Korean guidance when --lang ko is set', async 
 });
 
 test('routes command-specific help', async () => {
-	for (const command of ['adapters', 'init', 'check', 'classify', 'contract-lint', 'status', 'update', 'upgrade', 'map', 'line-endings', 'run', 'context', 'doctor', 'handoff', 'index', 'search', 'dashboard', 'version', 'version-sources', 'verify', 'explain', 'impact', 'help']) {
-		const result = await runCli([command, '--help']);
+	for (const command of COMMAND_DEFINITIONS) {
+		const result = await runCli([command.id, '--help']);
 
 		assert.equal(result.status, 0);
-		assert.match(result.stdout, new RegExp(`mf ${command}`));
+		assert.match(result.stdout, new RegExp(`mf ${command.id}`));
 		assert.match(result.stdout, /Examples:/);
 		assert.match(result.stdout, /Exit codes:/);
 	}
