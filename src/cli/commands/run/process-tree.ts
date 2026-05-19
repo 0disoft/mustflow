@@ -87,13 +87,13 @@ export function getKillMethod(): string {
 	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
 }
 
-export function createPendingTimeoutTermination(method: string): RunTerminationReceipt {
+export function createPendingTimeoutTermination(method: string, forcedKillAttempted = false): RunTerminationReceipt {
 	return {
 		reason: 'timeout',
 		method,
 		graceful_signal: 'SIGTERM',
 		forced_signal: 'SIGKILL',
-		forced_kill_attempted: true,
+		forced_kill_attempted: forcedKillAttempted,
 		confirmed: false,
 		cleanup_pending: true,
 	};

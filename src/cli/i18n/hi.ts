@@ -782,6 +782,8 @@ export const hiMessages = {
   "run.error.conflictingPreviewModes":
     "--dry-run या --plan-only में से एक इस्तेमाल करें, दोनों नहीं",
   "run.error.timedOut": 'कमांड "{intent}" {seconds} सेकंड बाद time out हुई',
+  "run.error.outputLimitExceeded":
+    'कमांड "{intent}" ने max_output_bytes सीमा पार की: {message}',
   "run.error.startFailed": 'कमांड "{intent}" शुरू नहीं हो सकी: {message}',
 
   "search.help.summary":

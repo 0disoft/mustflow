@@ -780,6 +780,8 @@ Read these files before working:
   "run.error.conflictingPreviewModes":
     "Use either --dry-run or --plan-only, not both",
   "run.error.timedOut": 'Command "{intent}" timed out after {seconds} seconds',
+  "run.error.outputLimitExceeded":
+    'Command "{intent}" exceeded max_output_bytes: {message}',
   "run.error.startFailed": 'Command "{intent}" failed to start: {message}',
 
   "search.help.summary":

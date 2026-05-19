@@ -47,6 +47,7 @@ interface RunIntentMetadata {
 	readonly kind: string | null;
 	readonly configuredCwd: string;
 	readonly timeoutSeconds: number | null;
+	readonly killAfterSeconds: number;
 	readonly maxOutputBytes: number;
 	readonly successExitCodes: readonly number[];
 	readonly commandArgv: readonly string[] | undefined;
@@ -80,6 +81,7 @@ interface RunPlanBase {
 	readonly cwd: string | null;
 	readonly relativeCwd: string | null;
 	readonly timeoutSeconds: number | null;
+	readonly killAfterSeconds: number | null;
 	readonly maxOutputBytes: number | null;
 	readonly successExitCodes: readonly number[] | null;
 	readonly commandArgv: readonly string[] | undefined;
@@ -113,6 +115,7 @@ export interface RunnableRunPlan extends RunPlanBase {
 	readonly cwd: string;
 	readonly relativeCwd: string;
 	readonly timeoutSeconds: number;
+	readonly killAfterSeconds: number;
 	readonly maxOutputBytes: number;
 	readonly successExitCodes: readonly number[];
 	readonly mode: RunCommandMode;
@@ -219,6 +222,10 @@ function readEffectiveMaxOutputBytes(contract: CommandContract, intent: TomlTabl
 		DEFAULT_COMMAND_MAX_OUTPUT_BYTES;
 }
 
+function readEffectiveKillAfterSeconds(contract: CommandContract): number {
+	return readPositiveInteger(contract.defaults, 'kill_after_seconds') ?? 5;
+}
+
 function getMaxOutputBytesLimitDetail(contract: CommandContract, intent: TomlTable): string | null {
 	const intentValue = readPositiveInteger(intent, 'max_output_bytes');
 	if (intentValue !== undefined) {
@@ -248,6 +255,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		kind: readString(intent, 'kind') ?? null,
 		configuredCwd,
 		timeoutSeconds: readPositiveInteger(intent, 'timeout_seconds') ?? null,
+		killAfterSeconds: readEffectiveKillAfterSeconds(contract),
 		maxOutputBytes: readEffectiveMaxOutputBytes(contract, intent),
 		successExitCodes: getSuccessExitCodes(intent),
 		commandArgv,
@@ -292,6 +300,7 @@ function createBlockedRunPlan(
 		cwd: null,
 		relativeCwd: null,
 		timeoutSeconds: metadata?.timeoutSeconds ?? null,
+		killAfterSeconds: metadata?.killAfterSeconds ?? null,
 		maxOutputBytes: metadata?.maxOutputBytes ?? null,
 		successExitCodes: metadata?.successExitCodes ?? null,
 		commandArgv: metadata?.commandArgv,
@@ -387,6 +396,7 @@ export function createRunPlan(
 		cwd,
 		relativeCwd: getRelativeProjectPath(projectRoot, cwd),
 		timeoutSeconds: metadata.timeoutSeconds,
+		killAfterSeconds: metadata.killAfterSeconds,
 		maxOutputBytes: metadata.maxOutputBytes,
 		successExitCodes: metadata.successExitCodes,
 		commandArgv,

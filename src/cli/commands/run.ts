@@ -24,7 +24,7 @@ import { RunProfiler } from '../../core/run-profile.js';
 import { finishRunWriteTracking, startRunWriteTracking } from '../../core/run-write-drift.js';
 import { runBuiltinArgvInProcess } from './run/builtin-dispatch.js';
 import { getRunStatus, runArgvCommandStreaming, runShellCommandStreaming } from './run/executor.js';
-import { emitOutput } from './run/output.js';
+import { emitOutput, isOutputLimitExceededError } from './run/output.js';
 import { createPendingTimeoutTermination, getKillMethod, terminateProcessTree } from './run/process-tree.js';
 import { assembleRunReceipt } from './run/receipt.js';
 
@@ -245,12 +245,13 @@ export async function runRun(
 				plan.cwd,
 				env,
 				plan.timeoutSeconds,
+				plan.killAfterSeconds,
 				plan.maxOutputBytes,
 				stdoutTailBytes,
 				stderrTailBytes,
 				reporter,
 				!json,
-				json,
+				true,
 			);
 		}
 
@@ -260,12 +261,13 @@ export async function runRun(
 			plan.cwd,
 			env,
 			plan.timeoutSeconds,
+			plan.killAfterSeconds,
 			plan.maxOutputBytes,
 			stdoutTailBytes,
 			stderrTailBytes,
 			reporter,
 			!json,
-			json,
+			true,
 		);
 	});
 	const childDurationMs = performance.now() - childStartedAtMs;
@@ -328,7 +330,12 @@ export async function runRun(
 	if (result.error) {
 		const errorWithCode = result.error as NodeJS.ErrnoException;
 		if (errorWithCode.code === 'ETIMEDOUT') {
-			reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: plan.timeoutSeconds }));
+		reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: plan.timeoutSeconds }));
+		return 1;
+	}
+
+		if (isOutputLimitExceededError(result.error)) {
+			reporter.stderr(t(lang, 'run.error.outputLimitExceeded', { intent: intentName, message: result.error.message }));
 			return 1;
 		}
 

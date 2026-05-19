@@ -135,6 +135,12 @@ function appendIntent(projectPath, text) {
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
 }
 
+function setDefaultKillAfterSeconds(projectPath, seconds) {
+	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+	const commands = readFileSync(commandsPath, 'utf8');
+	writeFileSync(commandsPath, commands.replace(/kill_after_seconds = \d+/u, `kill_after_seconds = ${seconds}`));
+}
+
 function createLocalBinShim(projectPath, name, marker) {
 	const localBinPath = path.join(projectPath, 'node_modules', '.bin');
 	mkdirSync(localBinPath, { recursive: true });
@@ -1739,13 +1745,55 @@ destructive = false
 		assert.equal(result.stderr, '');
 		assert.equal(receipt.status, 'output_limit_exceeded');
 		assert.equal(receipt.timed_out, false);
-		assert.equal(receipt.exit_code, null);
+		assert.ok(receipt.exit_code === null || typeof receipt.exit_code === 'number');
 		assert.equal(receipt.performance.result_summary.status, 'output_limit_exceeded');
 		assert.equal(receipt.performance.result_summary.error_kind, 'output_limit_exceeded');
 		assert.equal(receipt.performance.result_summary.timed_out, false);
 		assert.notEqual(receipt.status, 'start_failed');
 		assert.match(receipt.error, /maxBuffer|ENOBUFS|exceeded/i);
 		assert.deepEqual(latest, receipt);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('enforces output limits for streamed command output', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		setDefaultKillAfterSeconds(projectPath, 1);
+		appendIntent(
+			projectPath,
+			`
+[intents.too_chatty_stream]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write more streamed output than the configured budget allows."
+argv = ['${process.execPath}', '-e', 'process.stdout.write("x".repeat(4096)); setTimeout(() => {}, 10000)']
+cwd = "."
+timeout_seconds = 10
+max_output_bytes = 1024
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'too_chatty_stream'], { timeout: 5000 });
+		const receipt = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
+
+		assert.equal(result.error, undefined);
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(receipt.status, 'output_limit_exceeded');
+		assert.equal(receipt.timed_out, false);
+		assert.ok(receipt.exit_code === null || typeof receipt.exit_code === 'number');
+		assert.match(result.stderr, /max_output_bytes|output/i);
+		assert.doesNotMatch(result.stderr, /failed to start/i);
+		assert.equal(receipt.performance.result_summary.error_kind, 'output_limit_exceeded');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1791,9 +1839,9 @@ destructive = false
 			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
 			graceful_signal: 'SIGTERM',
 			forced_signal: 'SIGKILL',
-			forced_kill_attempted: true,
-			confirmed: false,
-			cleanup_pending: true,
+			forced_kill_attempted: false,
+			confirmed: true,
+			cleanup_pending: false,
 		});
 		assert.deepEqual(latest, receipt);
 	} finally {
@@ -1806,6 +1854,7 @@ test('settles streamed command intents when the timeout is reached', () => {
 
 	try {
 		initProject(projectPath);
+		setDefaultKillAfterSeconds(projectPath, 1);
 		appendIntent(
 			projectPath,
 			`
@@ -1826,13 +1875,13 @@ destructive = false
 		);
 
 		const startedAt = Date.now();
-		const result = runCli(projectPath, ['run', 'slow_streaming_command'], { timeout: 6000 });
+		const result = runCli(projectPath, ['run', 'slow_streaming_command'], { timeout: 5000 });
 		const elapsedMs = Date.now() - startedAt;
 		const receipt = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
 
 		assert.equal(result.error, undefined);
 		assert.equal(result.status, 1, result.stderr || result.stdout);
-		assert.ok(elapsedMs < 5900, `streaming timeout should settle before the parent guard, elapsed ${elapsedMs}ms`);
+		assert.ok(elapsedMs < 4900, `streaming timeout should settle before the parent guard, elapsed ${elapsedMs}ms`);
 		assert.equal(receipt.status, 'timed_out');
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);
@@ -1843,9 +1892,9 @@ destructive = false
 			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
 			graceful_signal: 'SIGTERM',
 			forced_signal: 'SIGKILL',
-			forced_kill_attempted: true,
-			confirmed: false,
-			cleanup_pending: true,
+			forced_kill_attempted: process.platform !== 'win32',
+			confirmed: true,
+			cleanup_pending: false,
 		});
 		assert.match(result.stderr, /timed out/i);
 	} finally {

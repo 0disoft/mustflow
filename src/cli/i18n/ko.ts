@@ -777,6 +777,8 @@ export const koMessages = {
   "run.error.conflictingPreviewModes":
     "--dry-run과 --plan-only 중 하나만 사용하세요",
   "run.error.timedOut": '명령 "{intent}"가 {seconds}초 뒤 시간 초과되었습니다',
+  "run.error.outputLimitExceeded":
+    '명령 "{intent}"가 max_output_bytes 제한을 넘었습니다: {message}',
   "run.error.startFailed": '명령 "{intent}"를 시작하지 못했습니다: {message}',
 
   "search.help.summary":

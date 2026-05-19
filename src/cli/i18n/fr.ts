@@ -782,6 +782,8 @@ Lisez ces fichiers avant de travailler :
   "run.error.conflictingPreviewModes":
     "Utilisez --dry-run ou --plan-only, pas les deux",
   "run.error.timedOut": 'La commande "{intent}" a expiré après {seconds} secondes',
+  "run.error.outputLimitExceeded":
+    'La commande "{intent}" a dépassé max_output_bytes : {message}',
   "run.error.startFailed": 'Impossible de démarrer la commande "{intent}" : {message}',
 
   "search.help.summary":

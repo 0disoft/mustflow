@@ -6,11 +6,13 @@ import type { Reporter } from '../../lib/reporter.js';
 import type { ResolvedArgvCommand } from '../../lib/run-plan.js';
 import {
 	createPendingTimeoutTermination,
-	forceTerminateProcessTreeNonBlocking,
+	forceTerminateProcessTree,
 	getKillMethod,
-	terminateProcessTreeNonBlocking,
+	terminateProcessTree,
 } from './process-tree.js';
 import { createOutputLimitError, isOutputLimitExceededError, writeStreamChunk } from './output.js';
+
+const TERMINATION_CONFIRMATION_FALLBACK_MS = 1000;
 
 export interface CommandResult {
 	readonly status: number | null;
@@ -33,6 +35,7 @@ function runSpawnedCommandStreaming(
 	cwd: string,
 	env: NodeJS.ProcessEnv,
 	timeoutSeconds: number,
+	killAfterSeconds: number,
 	maxOutputBytes: number,
 	stdoutTailBytes: number,
 	stderrTailBytes: number,
@@ -50,6 +53,9 @@ function runSpawnedCommandStreaming(
 		let stdoutBytes = 0;
 		let stderrBytes = 0;
 		let timeout: NodeJS.Timeout | undefined;
+		let forceKillTimeout: NodeJS.Timeout | undefined;
+		let terminationFallbackTimeout: NodeJS.Timeout | undefined;
+		let terminationStarted = false;
 		let termination: RunTerminationReceipt | null = null;
 
 		const child = spawn(command.executable, command.args ?? [], {
@@ -62,7 +68,7 @@ function runSpawnedCommandStreaming(
 		});
 		childPid = child.pid;
 
-		const finish = (status: number | null, signal: string | null): void => {
+		const finish = (status: number | null, signal: string | null, terminationConfirmed = true): void => {
 			if (settled) {
 				return;
 			}
@@ -72,6 +78,19 @@ function runSpawnedCommandStreaming(
 			if (timeout) {
 				clearTimeout(timeout);
 			}
+			if (forceKillTimeout) {
+				clearTimeout(forceKillTimeout);
+			}
+			if (terminationFallbackTimeout) {
+				clearTimeout(terminationFallbackTimeout);
+			}
+			const confirmedTermination = termination ?
+				{
+					...termination,
+					confirmed: terminationConfirmed,
+					cleanup_pending: !terminationConfirmed,
+				} :
+				null;
 			resolve({
 				status: timedOut ? null : status,
 				signal: timedOut ? null : signal,
@@ -79,8 +98,35 @@ function runSpawnedCommandStreaming(
 				stdout: stdout.toSnapshot(),
 				stderr: stderr.toSnapshot(),
 				pid: childPid,
-				termination,
+				termination: confirmedTermination,
 			});
+		};
+
+		const beginTermination = (): void => {
+			if (terminationStarted) {
+				return;
+			}
+
+			terminationStarted = true;
+			child.stdout?.destroy();
+			child.stderr?.destroy();
+			terminateProcessTree(childPid);
+
+			const forceAfterMs = killAfterSeconds * 1000;
+			forceKillTimeout = setTimeout(() => {
+				if (termination) {
+					termination = {
+						...termination,
+						forced_kill_attempted: true,
+					};
+				}
+				forceTerminateProcessTree(childPid);
+			}, forceAfterMs);
+
+			terminationFallbackTimeout = setTimeout(() => {
+				child.unref();
+				finish(null, null, false);
+			}, forceAfterMs + TERMINATION_CONFIRMATION_FALLBACK_MS);
 		};
 
 		const stopForOutputLimit = (stream: 'stdout' | 'stderr'): void => {
@@ -89,12 +135,11 @@ function runSpawnedCommandStreaming(
 			}
 
 			childError = createOutputLimitError(stream, maxOutputBytes);
-			child.stdout?.destroy();
-			child.stderr?.destroy();
-			child.unref();
-			terminateProcessTreeNonBlocking(childPid);
-			forceTerminateProcessTreeNonBlocking(childPid);
-			finish(null, null);
+			if (timeout) {
+				clearTimeout(timeout);
+				timeout = undefined;
+			}
+			beginTermination();
 		};
 
 		child.stdout?.on('data', (chunk: Buffer) => {
@@ -125,14 +170,13 @@ function runSpawnedCommandStreaming(
 		});
 
 		timeout = setTimeout(() => {
+			if (settled || childError) {
+				return;
+			}
+
 			timedOut = true;
-			child.stdout?.destroy();
-			child.stderr?.destroy();
-			child.unref();
 			termination = createPendingTimeoutTermination(getKillMethod());
-			terminateProcessTreeNonBlocking(childPid);
-			forceTerminateProcessTreeNonBlocking(childPid);
-			finish(null, null);
+			beginTermination();
 		}, timeoutSeconds * 1000);
 	});
 }
@@ -142,6 +186,7 @@ export function runArgvCommandStreaming(
 	cwd: string,
 	env: NodeJS.ProcessEnv,
 	timeoutSeconds: number,
+	killAfterSeconds: number,
 	maxOutputBytes: number,
 	stdoutTailBytes: number,
 	stderrTailBytes: number,
@@ -154,6 +199,7 @@ export function runArgvCommandStreaming(
 		cwd,
 		env,
 		timeoutSeconds,
+		killAfterSeconds,
 		maxOutputBytes,
 		stdoutTailBytes,
 		stderrTailBytes,
@@ -168,6 +214,7 @@ export function runShellCommandStreaming(
 	cwd: string,
 	env: NodeJS.ProcessEnv,
 	timeoutSeconds: number,
+	killAfterSeconds: number,
 	maxOutputBytes: number,
 	stdoutTailBytes: number,
 	stderrTailBytes: number,
@@ -180,6 +227,7 @@ export function runShellCommandStreaming(
 		cwd,
 		env,
 		timeoutSeconds,
+		killAfterSeconds,
 		maxOutputBytes,
 		stdoutTailBytes,
 		stderrTailBytes,

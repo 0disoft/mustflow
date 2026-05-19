@@ -772,6 +772,8 @@ export const zhMessages = {
   "run.error.conflictingPreviewModes":
     "只能使用 --dry-run 或 --plan-only，不能同时使用",
   "run.error.timedOut": '命令 "{intent}" 在 {seconds} 秒后超时',
+  "run.error.outputLimitExceeded":
+    '命令 "{intent}" 超过 max_output_bytes：{message}',
   "run.error.startFailed": '命令 "{intent}" 启动失败：{message}',
 
   "search.help.summary":
