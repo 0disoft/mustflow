@@ -53,7 +53,7 @@ export interface IndexCommandIntent {
 
 export interface IndexedFileRecord {
 	readonly path: string;
-	readonly sourceScope: 'workflow' | 'source_anchor';
+	readonly sourceScope: 'workflow' | 'source_anchor' | 'state';
 	readonly sizeBytes: number;
 	readonly mtimeMs: number;
 	readonly contentHash: string;

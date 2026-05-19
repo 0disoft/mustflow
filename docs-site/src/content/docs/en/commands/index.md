@@ -34,8 +34,9 @@ The default command does not index arbitrary project source files; it is scoped 
 This file is generated and can be deleted and rebuilt at any time.
 The index stores content hashes for indexed files, allowing `mf search` to detect stale cache data.
 It also records an `indexed_files` table with path, source scope, file size, modified time,
-content hash, indexed time, index mode, and parser version so incremental index runs can decide
-whether an existing cache is still safe to reuse.
+content hash, indexed time, index mode, and parser version for indexed workflow files, optional
+source-anchor files, and the bounded latest-run evidence file when present. Incremental index runs
+use this table to decide whether an existing cache is still safe to reuse.
 
 The index is a lookup cache, not a memory store or audit log. It stores metadata,
 hashes, short document snippets, command contract summaries, skill route rows,
@@ -99,10 +100,12 @@ npx mf index --incremental --json
 ```
 
 By default, `mf index` performs a full rebuild. Incremental mode first checks the existing
-`.mustflow/cache/mustflow.sqlite` file. If the schema version, parser version, source-scope
-settings, and indexed file fingerprints are still compatible, it reuses the existing SQLite file
-without rewriting it. If any indexed workflow file was changed, deleted, or added, or if source
-anchor scope changed, mustflow falls back to a full rebuild.
+`.mustflow/cache/mustflow.sqlite` file. When source-anchor indexing is disabled, it can reuse a
+compatible SQLite file after a lightweight preflight that compares stored file size and modified-time
+metadata with the current indexed workflow and latest-run evidence files. If that preflight cannot
+prove reuse, or if source-anchor indexing is enabled, mustflow falls back to the full fingerprint
+check. If any indexed workflow file or latest-run evidence file was changed, deleted, or added, or if
+source-anchor scope changed, mustflow performs a full rebuild.
 
 ## Source Anchors
 

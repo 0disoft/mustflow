@@ -62,11 +62,13 @@ Search result `match` previews are also bounded. `mf search` derives them from i
 stored snippets, caps each preview at 240 characters, and does not expand a result back into a full
 document or source body.
 
-The `indexed_files` table stores derived fingerprints for each indexed workflow file and optional
-source-anchor file: path, source scope, size, modified time, content hash, indexed time, index mode,
-and parser version. `mf index --incremental` may reuse an existing SQLite file only when the schema,
-parser version, source-scope settings, and file fingerprints remain compatible; otherwise it falls
-back to a full rebuild.
+The `indexed_files` table stores derived fingerprints for each indexed workflow file, optional
+source-anchor file, and the latest-run evidence file when present: path, source scope, size, modified
+time, content hash, indexed time, index mode, and parser version. `mf index --incremental` may reuse
+an existing SQLite file only when the schema, parser version, source-scope settings, and file inputs
+remain compatible; otherwise it falls back to a full rebuild. When source-anchor indexing is disabled,
+the reuse path can stop after a lightweight size and modified-time preflight instead of reading and
+parsing every indexed input again.
 
 `path_surfaces` and `path_surface_reasons` are derived from the built-in change classification
 rules. They store rule id, pattern shape, pattern flags, surface kind, category, public-surface flag, validation

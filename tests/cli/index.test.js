@@ -1193,6 +1193,65 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 	}
 });
 
+test('incremental mode rebuilds when indexed verification evidence changes', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-evidence-incremental-');
+
+	try {
+		await createLocalIndexDirect(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'runs'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'verify',
+					status: 'failed',
+					verification_plan_id: 'plan-evidence-incremental',
+					evidence_model: {
+						verification_plan_id: 'plan-evidence-incremental',
+						receipts: [],
+						requirements: [],
+						coverage_matrix: [],
+						remaining_risks: [{ code: 'missing_evidence', severity: 'medium', detail: 'bounded detail' }],
+					},
+				},
+				null,
+				2,
+			),
+		);
+
+		const output = await createLocalIndexDirect(projectPath, { incremental: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [stateIndexedFile] = queryRows(
+			database,
+			'SELECT source_scope, index_mode FROM indexed_files WHERE path = ".mustflow/state/runs/latest.json"',
+		);
+		const [riskSignal] = queryRows(
+			database,
+			'SELECT code, severity FROM verification_risk_signals WHERE source_path = ".mustflow/state/runs/latest.json"',
+		);
+
+		assert.equal(output.index_mode, 'incremental');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
+		assert.equal(output.wrote_files, true);
+		assert.equal(output.verification_risk_signal_count, 1);
+		assert.deepEqual(stateIndexedFile, {
+			source_scope: 'state',
+			index_mode: 'incremental',
+		});
+		assert.deepEqual(riskSignal, {
+			code: 'missing_evidence',
+			severity: 'medium',
+		});
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('indexes latest verification evidence as bounded read-model summaries', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-verdict-evidence-');
 

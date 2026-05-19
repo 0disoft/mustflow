@@ -453,12 +453,37 @@ function collectCommandIntents(projectRoot: string): IndexCommandIntent[] {
 	return intents;
 }
 
+function normalizeIndexedFileSourceScope(value: SqlValue | undefined): IndexedFileRecord['sourceScope'] {
+	const sourceScope = toSearchString(value);
+
+	if (sourceScope === 'source_anchor' || sourceScope === 'state') {
+		return sourceScope;
+	}
+
+	return 'workflow';
+}
+
+type IndexedFileMetadataRecord = Omit<IndexedFileRecord, 'contentHash'>;
+
 function readIndexedFileRecord(
 	projectRoot: string,
 	relativePath: string,
 	sourceScope: IndexedFileRecord['sourceScope'],
 	contentHash: string | null = null,
 ): IndexedFileRecord {
+	const metadata = readIndexedFileMetadataRecord(projectRoot, relativePath, sourceScope);
+
+	return {
+		...metadata,
+		contentHash: contentHash ?? sha256Bytes(readFileSync(path.join(projectRoot, ...relativePath.split('/')))),
+	};
+}
+
+function readIndexedFileMetadataRecord(
+	projectRoot: string,
+	relativePath: string,
+	sourceScope: IndexedFileRecord['sourceScope'],
+): IndexedFileMetadataRecord {
 	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
 	const stats = statSync(fullPath);
 
@@ -467,7 +492,6 @@ function readIndexedFileRecord(
 		sourceScope,
 		sizeBytes: stats.size,
 		mtimeMs: Math.round(stats.mtimeMs),
-		contentHash: contentHash ?? sha256Bytes(readFileSync(fullPath)),
 	};
 }
 
@@ -488,7 +512,33 @@ function collectIndexedFileRecords(
 		}
 	}
 
+	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
+		records.set(
+			LATEST_RUN_STATE_RELATIVE_PATH,
+			readIndexedFileRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
+		);
+	}
+
 	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
+}
+
+function collectFastPreflightIndexedFileMetadataRecords(
+	projectRoot: string,
+	includeSource: boolean,
+): IndexedFileMetadataRecord[] | null {
+	if (includeSource) {
+		return null;
+	}
+
+	const records = getExistingIndexablePaths(projectRoot).map((relativePath) =>
+		readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'),
+	);
+
+	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
+		records.push(readIndexedFileMetadataRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'));
+	}
+
+	return records.sort((left, right) => left.path.localeCompare(right.path));
 }
 
 function normalizeSearchText(value: string): string {
@@ -2687,6 +2737,118 @@ interface IncrementalReuseDecision {
 	readonly capabilities: LocalSearchCapabilities | null;
 }
 
+interface IncrementalPreflightReuse {
+	readonly result: LocalIndexResult | null;
+	readonly rebuildReason: IncrementalRebuildReason | null;
+}
+
+function readCount(database: SqlJsDatabase, tableName: string): number {
+	if (!hasTable(database, tableName)) {
+		return 0;
+	}
+
+	const [row] = queryRows(database, `SELECT COUNT(*) AS count FROM ${tableName}`);
+	const count = row?.count;
+	return typeof count === 'number' && Number.isFinite(count) ? count : 0;
+}
+
+function readStoredIndexedPaths(database: SqlJsDatabase): string[] {
+	if (!hasTable(database, 'documents')) {
+		return [];
+	}
+
+	return queryRows(database, 'SELECT path FROM documents ORDER BY path')
+		.map((row) => toSearchString(row.path))
+		.filter(Boolean);
+}
+
+function createStoredLocalIndexResult(
+	projectRoot: string,
+	databasePath: string,
+	dryRun: boolean,
+	indexMode: LocalIndexResult['index_mode'],
+	database: SqlJsDatabase,
+	capabilities: LocalSearchCapabilities,
+): LocalIndexResult {
+	return {
+		schema_version: LOCAL_INDEX_SCHEMA_VERSION,
+		command: 'index',
+		ok: true,
+		mustflow_root: path.resolve(projectRoot),
+		database_path: databasePath,
+		dry_run: dryRun,
+		wrote_files: false,
+		index_mode: indexMode,
+		reused_existing: true,
+		rebuild_reason: null,
+		document_count: readCount(database, 'documents'),
+		skill_count: readCount(database, 'skills'),
+		skill_route_count: readCount(database, 'skill_routes'),
+		command_intent_count: readCount(database, 'command_intents'),
+		command_effect_count: readCount(database, 'command_effects'),
+		verification_evidence_summary_count: readCount(database, 'verification_evidence_summaries'),
+		verification_plan_count: readCount(database, 'verification_plans'),
+		acceptance_criteria_count: readCount(database, 'acceptance_criteria'),
+		criterion_coverage_count: readCount(database, 'criterion_coverage'),
+		verification_receipt_summary_count: readCount(database, 'verification_receipt_summaries'),
+		command_receipt_summary_count: readCount(database, 'command_receipt_summaries'),
+		verification_coverage_state_count: readCount(database, 'verification_coverage_states'),
+		verification_risk_signal_count: readCount(database, 'verification_risk_signals'),
+		validation_ratchet_signal_count: readCount(database, 'validation_ratchet_signals'),
+		completion_verdict_summary_count: readCount(database, 'completion_verdict_summaries'),
+		repro_route_count: readCount(database, 'repro_routes'),
+		repro_observation_count: readCount(database, 'repro_observations'),
+		failure_fingerprint_count: readCount(database, 'verification_failure_fingerprints'),
+		source_index_enabled: readMetadataValue(database, 'source_index_enabled') === 'true',
+		source_anchor_count: readCount(database, 'source_anchors'),
+		source_anchor_risk_signal_count: readCount(database, 'source_anchor_risk_signals'),
+		search_backend: capabilities.backend,
+		search_fts5_available: capabilities.fts5Available,
+		content_mode: LOCAL_INDEX_CONTENT_MODE,
+		store_full_content: LOCAL_INDEX_STORE_FULL_CONTENT,
+		max_snippet_bytes_per_document: MAX_SNIPPET_BYTES_PER_DOCUMENT,
+		excluded_raw_data_kinds: [...LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS],
+		indexed_file_count: readCount(database, 'indexed_files'),
+		indexed_paths: readStoredIndexedPaths(database),
+	};
+}
+
+function indexedFileMetadataMatch(
+	database: SqlJsDatabase,
+	currentFiles: readonly IndexedFileMetadataRecord[],
+): boolean {
+	const rows = queryRows(
+		database,
+		'SELECT path, source_scope, size_bytes, mtime_ms, parser_version FROM indexed_files ORDER BY path',
+	);
+
+	if (rows.length !== currentFiles.length) {
+		return false;
+	}
+
+	const currentByPath = new Map(currentFiles.map((file) => [file.path, file]));
+
+	for (const row of rows) {
+		const storedPath = toSearchString(row.path);
+		const current = currentByPath.get(storedPath);
+
+		if (!current) {
+			return false;
+		}
+
+		if (
+			normalizeIndexedFileSourceScope(row.source_scope) !== current.sourceScope ||
+			row.size_bytes !== current.sizeBytes ||
+			row.mtime_ms !== current.mtimeMs ||
+			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
+		) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly IndexedFileRecord[]): boolean {
 	const rows = queryRows(
 		database,
@@ -2708,7 +2870,7 @@ function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly Index
 		}
 
 		if (
-			toSearchString(row.source_scope) !== current.sourceScope ||
+			normalizeIndexedFileSourceScope(row.source_scope) !== current.sourceScope ||
 			toSearchString(row.content_hash) !== current.contentHash ||
 			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
 		) {
@@ -2717,6 +2879,61 @@ function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly Index
 	}
 
 	return true;
+}
+
+async function readIncrementalPreflightReuse(
+	SQL: SqlJsStatic,
+	databasePath: string,
+	projectRoot: string,
+	currentFiles: readonly IndexedFileMetadataRecord[] | null,
+	sourceScopeHash: string,
+	dryRun: boolean,
+	indexMode: LocalIndexResult['index_mode'],
+): Promise<IncrementalPreflightReuse> {
+	if (!currentFiles) {
+		return { result: null, rebuildReason: null };
+	}
+
+	if (!existsSync(databasePath)) {
+		return { result: null, rebuildReason: 'missing_index' };
+	}
+
+	let database: SqlJsDatabase | undefined;
+
+	try {
+		database = new SQL.Database(readFileSync(databasePath));
+
+		if (readStoredSchemaVersion(database) !== LOCAL_INDEX_SCHEMA_VERSION) {
+			return { result: null, rebuildReason: 'schema_version_mismatch' };
+		}
+
+		if (readMetadataValue(database, 'parser_version') !== LOCAL_INDEX_PARSER_VERSION) {
+			return { result: null, rebuildReason: 'parser_version_mismatch' };
+		}
+
+		if (readMetadataValue(database, 'source_scope_hash') !== sourceScopeHash) {
+			return { result: null, rebuildReason: 'source_scope_mismatch' };
+		}
+
+		if (!hasTable(database, 'indexed_files')) {
+			return { result: null, rebuildReason: 'indexed_files_missing' };
+		}
+
+		if (!indexedFileMetadataMatch(database, currentFiles)) {
+			return { result: null, rebuildReason: 'file_fingerprint_mismatch' };
+		}
+
+		const capabilities = readStoredSearchCapabilities(database);
+
+		return {
+			result: createStoredLocalIndexResult(projectRoot, databasePath, dryRun, indexMode, database, capabilities),
+			rebuildReason: null,
+		};
+	} catch {
+		return { result: null, rebuildReason: 'unreadable_index' };
+	} finally {
+		database?.close();
+	}
 }
 
 async function readIncrementalReuseDecision(
@@ -2778,13 +2995,41 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const dryRun = options.dryRun === true;
 	const incremental = options.incremental === true;
 	const indexMode: LocalIndexResult['index_mode'] = incremental ? 'incremental' : 'full';
+	const sourceConfig = readLocalIndexSourceConfig(projectRoot);
+	const includeSource = options.includeSource === true || sourceConfig.enabledByDefault;
+	const sourceScopeHash = getSourceScopeHash(includeSource, sourceConfig);
+	let capabilities = searchCapabilities(false);
+	let reusedExisting = false;
+	let rebuildReason: string | null = null;
+
+	const SQL = await loadSqlJs();
+	const capabilityDatabase = new SQL.Database();
+	capabilities = detectLocalSearchCapabilities(capabilityDatabase);
+	capabilityDatabase.close();
+
+	if (incremental) {
+		const preflightFiles = collectFastPreflightIndexedFileMetadataRecords(projectRoot, includeSource);
+		const preflightReuse = await readIncrementalPreflightReuse(
+			SQL,
+			databasePath,
+			projectRoot,
+			preflightFiles,
+			sourceScopeHash,
+			dryRun,
+			indexMode,
+		);
+
+		if (preflightReuse.result) {
+			return preflightReuse.result;
+		}
+
+		rebuildReason = preflightReuse.rebuildReason;
+	}
+
 	const documents = collectDocuments(projectRoot);
 	const skills = collectSkills(documents);
 	const skillRoutes = collectSkillRoutes(projectRoot);
 	const commandIntents = collectCommandIntents(projectRoot);
-	const sourceConfig = readLocalIndexSourceConfig(projectRoot);
-	const includeSource = options.includeSource === true || sourceConfig.enabledByDefault;
-	const sourceScopeHash = getSourceScopeHash(includeSource, sourceConfig);
 	const previousSourceAnchors = includeSource
 		? await readPreviousSourceAnchorSnapshots(databasePath).catch(() => [])
 		: [];
@@ -2796,19 +3041,11 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		: [];
 	const verificationEvidence = createVerificationEvidenceIndex(projectRoot);
 	const indexedFiles = collectIndexedFileRecords(projectRoot, documents, sourceAnchors);
-	let capabilities = searchCapabilities(false);
-	let reusedExisting = false;
-	let rebuildReason: string | null = null;
-
-	const SQL = await loadSqlJs();
-	const capabilityDatabase = new SQL.Database();
-	capabilities = detectLocalSearchCapabilities(capabilityDatabase);
-	capabilityDatabase.close();
 
 	if (incremental) {
 		const reuseDecision = await readIncrementalReuseDecision(SQL, databasePath, indexedFiles, sourceScopeHash);
 		reusedExisting = reuseDecision.reusable;
-		rebuildReason = reuseDecision.rebuildReason;
+		rebuildReason = reuseDecision.rebuildReason ?? rebuildReason;
 		capabilities = reuseDecision.capabilities ?? capabilities;
 	}
 
@@ -2897,7 +3134,7 @@ function getStalePaths(projectRoot: string, database: SqlJsDatabase): string[] {
 
 		for (const row of indexedRows) {
 			const indexedPath = toSearchString(row.path);
-			const sourceScope = toSearchString(row.source_scope) === 'source_anchor' ? 'source_anchor' : 'workflow';
+			const sourceScope = normalizeIndexedFileSourceScope(row.source_scope);
 
 			try {
 				const current = readIndexedFileRecord(projectRoot, indexedPath, sourceScope);
