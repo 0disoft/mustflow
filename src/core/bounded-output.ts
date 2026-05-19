@@ -3,6 +3,34 @@ export interface BoundedOutputSnapshot {
 	readonly tail: string;
 }
 
+function isUtf8ContinuationByte(value: number | undefined): boolean {
+	return value !== undefined && (value & 0xc0) === 0x80;
+}
+
+function findUtf8TailStart(buffer: Buffer, startOffset: number): number {
+	let start = Math.min(buffer.byteLength, Math.max(0, Math.trunc(startOffset)));
+
+	while (start < buffer.byteLength && isUtf8ContinuationByte(buffer[start])) {
+		start += 1;
+	}
+
+	return start;
+}
+
+export function decodeUtf8Tail(buffer: Buffer, maxTailBytes: number): { readonly text: string; readonly truncated: boolean } {
+	if (maxTailBytes <= 0) {
+		return { text: '', truncated: buffer.byteLength > 0 };
+	}
+
+	const rawStart = buffer.byteLength > maxTailBytes ? buffer.byteLength - maxTailBytes : 0;
+	const start = findUtf8TailStart(buffer, rawStart);
+
+	return {
+		text: buffer.subarray(start).toString('utf8'),
+		truncated: buffer.byteLength > maxTailBytes || start > 0,
+	};
+}
+
 export class BoundedOutputBuffer {
 	readonly #maxTailBytes: number;
 	#chunks: Buffer[] = [];
@@ -45,9 +73,11 @@ export class BoundedOutputBuffer {
 	}
 
 	toSnapshot(): BoundedOutputSnapshot {
+		const tail = decodeUtf8Tail(Buffer.concat(this.#chunks, this.#tailBytes), this.#maxTailBytes);
+
 		return {
 			bytes: this.#bytes,
-			tail: Buffer.concat(this.#chunks, this.#tailBytes).toString('utf8'),
+			tail: tail.text,
 		};
 	}
 }

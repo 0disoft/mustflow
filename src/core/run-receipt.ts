@@ -1,9 +1,9 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
+import { atomicWriteJsonFile, createStateRunId } from './atomic-state-write.js';
 import type { CommandEnvPolicy } from './command-env.js';
-import type { BoundedOutputSnapshot } from './bounded-output.js';
+import { decodeUtf8Tail, type BoundedOutputSnapshot } from './bounded-output.js';
 import { DEFAULT_RUN_RECEIPT_TAIL_BYTES } from './retention-policy.js';
 import type { RunWriteDriftReceipt } from './run-write-drift.js';
 import { redactSecretLikeText } from './secret-redaction.js';
@@ -12,8 +12,19 @@ const RUN_RECEIPT_SCHEMA_VERSION = '1';
 const RUN_RECEIPT_DIR = path.join('.mustflow', 'state', 'runs');
 const LATEST_RUN_RECEIPT = 'latest.json';
 
-export type RunReceiptStatus = 'passed' | 'failed' | 'timed_out' | 'start_failed';
+export type RunReceiptStatus = 'passed' | 'failed' | 'timed_out' | 'start_failed' | 'output_limit_exceeded';
+export type RunReceiptErrorKind = 'timeout' | 'start_failed' | 'output_limit_exceeded' | 'exit_code' | null;
 export type RunCommandMode = 'argv' | 'shell';
+
+export interface RunTerminationReceipt {
+	readonly reason: 'timeout';
+	readonly method: string;
+	readonly graceful_signal: string | null;
+	readonly forced_signal: string | null;
+	readonly forced_kill_attempted: boolean;
+	readonly confirmed: boolean;
+	readonly cleanup_pending: boolean;
+}
 
 export interface RunOutputReceipt {
 	readonly bytes: number;
@@ -59,7 +70,7 @@ export interface RunReceiptPerformance {
 		readonly status: RunReceiptStatus;
 		readonly exit_code_class: 'success' | 'failure' | 'no_exit_code';
 		readonly timed_out: boolean;
-		readonly error_kind: 'timeout' | 'start_failed' | 'exit_code' | null;
+		readonly error_kind: RunReceiptErrorKind;
 	};
 	readonly quality: {
 		readonly phase_timings_source: 'none' | 'structured_report';
@@ -105,6 +116,7 @@ export interface RunReceipt {
 	readonly signal: string | null;
 	readonly error: string | null;
 	readonly kill_method: string | null;
+	readonly termination?: RunTerminationReceipt;
 	readonly stdout: RunOutputReceipt;
 	readonly stderr: RunOutputReceipt;
 	readonly write_drift: RunWriteDriftReceipt;
@@ -135,6 +147,7 @@ export interface CreateRunReceiptInput {
 	readonly signal: string | null;
 	readonly error: string | null;
 	readonly killMethod: string | null;
+	readonly termination?: RunTerminationReceipt | null;
 	readonly stdout: string | Buffer | BoundedOutputSnapshot | null;
 	readonly stderr: string | Buffer | BoundedOutputSnapshot | null;
 	readonly writeDrift: RunWriteDriftReceipt;
@@ -143,6 +156,7 @@ export interface CreateRunReceiptInput {
 	readonly selectionSummary?: RunReceiptPerformanceSelection;
 	readonly stdoutTailBytes?: number;
 	readonly stderrTailBytes?: number;
+	readonly receiptPath?: string;
 }
 
 function toPosixPath(value: string): string {
@@ -152,14 +166,7 @@ function toPosixPath(value: string): string {
 function truncateTextByBytes(text: string, maxBytes: number): { text: string; truncated: boolean } {
 	const buffer = Buffer.from(text, 'utf8');
 
-	if (buffer.byteLength <= maxBytes) {
-		return { text, truncated: false };
-	}
-
-	return {
-		text: buffer.subarray(buffer.byteLength - maxBytes).toString('utf8'),
-		truncated: true,
-	};
+	return decodeUtf8Tail(buffer, maxBytes);
 }
 
 interface RedactionState {
@@ -224,8 +231,12 @@ function summarizeOutput(
 	};
 }
 
-function getReceiptRelativePath(): string {
-	return toPosixPath(path.join(RUN_RECEIPT_DIR, LATEST_RUN_RECEIPT));
+export function createRunReceiptRelativePath(): string {
+	return toPosixPath(path.join(RUN_RECEIPT_DIR, createStateRunId('run'), 'receipt.json'));
+}
+
+function getReceiptRelativePath(receiptPath?: string): string {
+	return receiptPath ?? toPosixPath(path.join(RUN_RECEIPT_DIR, LATEST_RUN_RECEIPT));
 }
 
 function stableJson(value: unknown): string {
@@ -267,13 +278,17 @@ function getExitCodeClass(status: RunReceiptStatus, exitCode: number | null): 's
 function getErrorKind(
 	status: RunReceiptStatus,
 	exitCode: number | null,
-): 'timeout' | 'start_failed' | 'exit_code' | null {
+): RunReceiptErrorKind {
 	if (status === 'timed_out') {
 		return 'timeout';
 	}
 
 	if (status === 'start_failed') {
 		return 'start_failed';
+	}
+
+	if (status === 'output_limit_exceeded') {
+		return 'output_limit_exceeded';
 	}
 
 	if (status === 'failed' && exitCode !== null) {
@@ -454,6 +469,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 		signal: input.signal,
 		error,
 		kill_method: input.killMethod,
+		...(input.termination ? { termination: input.termination } : {}),
 		stdout,
 		stderr,
 		write_drift: input.writeDrift,
@@ -486,14 +502,20 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 			redaction_kinds: [...redactionState.kinds].sort(),
 			fields: [...redactionState.fields].sort(),
 		},
-		receipt_path: getReceiptRelativePath(),
+		receipt_path: getReceiptRelativePath(input.receiptPath),
 	};
 }
 
 export function writeRunReceipt(projectRoot: string, receipt: RunReceipt): void {
 	const receiptDir = path.join(projectRoot, RUN_RECEIPT_DIR);
 	const latestPath = path.join(receiptDir, LATEST_RUN_RECEIPT);
+	const receiptPath = path.resolve(projectRoot, receipt.receipt_path);
+	const relativeToRunDir = path.relative(receiptDir, receiptPath);
 
-	mkdirSync(receiptDir, { recursive: true });
-	writeFileSync(latestPath, `${JSON.stringify(receipt, null, 2)}\n`);
+	if (relativeToRunDir.startsWith('..') || path.isAbsolute(relativeToRunDir)) {
+		throw new Error(`Run receipt path must stay inside ${RUN_RECEIPT_DIR}`);
+	}
+
+	atomicWriteJsonFile(receiptPath, receipt);
+	atomicWriteJsonFile(latestPath, receipt);
 }

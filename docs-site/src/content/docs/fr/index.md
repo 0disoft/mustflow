@@ -34,13 +34,15 @@ REPO_MAP.md  # fichier généré facultatif
 │  ├─ INDEX.md
 │  └─ */SKILL.md
 └─ state/  # généré pendant l'utilisation
-   └─ runs/latest.json
+   └─ runs/
+      ├─ run-*/receipt.json
+      └─ latest.json
 ```
 
 `mf init` ne crée pas `README.md`, `.github/`, le répertoire racine `docs/`, le répertoire racine `skills/`, le code source ni la configuration du gestionnaire de paquets.
 `REPO_MAP.md` est généré à partir de la structure du dépôt au lieu d'être copié depuis le modèle.
 `manifest.lock.toml` est généré par `mf init` pour enregistrer le résultat réel de l'installation.
-`.mustflow/state/runs/latest.json` est le dernier reçu d'exécution créé par `mf run`.
+`.mustflow/state/runs/latest.json` est le dernier reçu d'exécution; chaque répertoire `run-*` conserve le reçu enregistré de cette exécution.
 
 ## Ordre de lecture
 

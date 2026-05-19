@@ -20,7 +20,13 @@ import {
 	type ResolvedArgvCommand,
 	type RunPreviewMode,
 } from '../lib/run-plan.js';
-import { createRunReceipt, writeRunReceipt, type RunReceiptStatus } from '../../core/run-receipt.js';
+import {
+	createRunReceipt,
+	createRunReceiptRelativePath,
+	writeRunReceipt,
+	type RunReceiptStatus,
+	type RunTerminationReceipt,
+} from '../../core/run-receipt.js';
 import { recordRunPerformanceHistory } from '../../core/run-performance-history.js';
 import { RunProfiler } from '../../core/run-profile.js';
 import { finishRunWriteTracking, startRunWriteTracking } from '../../core/run-write-drift.js';
@@ -32,6 +38,7 @@ interface CommandResult {
 	readonly stdout: string | Buffer | BoundedOutputSnapshot | null;
 	readonly stderr: string | Buffer | BoundedOutputSnapshot | null;
 	readonly pid?: number;
+	readonly termination?: RunTerminationReceipt | null;
 }
 
 interface BufferedReporter {
@@ -39,6 +46,9 @@ interface BufferedReporter {
 	readonly stdout: () => string;
 	readonly stderr: () => string;
 }
+
+const OUTPUT_LIMIT_ERROR_CODE = 'ENOBUFS';
+const OUTPUT_LIMIT_ERROR_MESSAGE = /\bmaxBuffer\b.*\bexceeded\b/i;
 
 export interface RunCommandOptions {
 	readonly writeLatestReceipt?: boolean;
@@ -146,6 +156,18 @@ function forceTerminateProcessTreeNonBlocking(pid: number | undefined): void {
 
 function getKillMethod(): string {
 	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
+}
+
+function createPendingTimeoutTermination(method: string): RunTerminationReceipt {
+	return {
+		reason: 'timeout',
+		method,
+		graceful_signal: 'SIGTERM',
+		forced_signal: 'SIGKILL',
+		forced_kill_attempted: true,
+		confirmed: false,
+		cleanup_pending: true,
+	};
 }
 
 function createBufferedReporter(): BufferedReporter {
@@ -282,26 +304,6 @@ async function runBuiltinArgvInProcess(commandArgv: readonly string[], cwd: stri
 	}
 }
 
-function runArgvCommand(
-	command: ResolvedArgvCommand | undefined,
-	cwd: string,
-	maxOutputBytes: number,
-	env: NodeJS.ProcessEnv,
-	timeoutSeconds: number,
-): CommandResult {
-	return spawnSync(command?.executable ?? '', command?.args ?? [], {
-		cwd,
-		encoding: 'utf8',
-		input: '',
-		maxBuffer: maxOutputBytes,
-		env,
-		shell: command?.shell ?? false,
-		stdio: ['ignore', 'pipe', 'pipe'],
-		timeout: timeoutSeconds * 1000,
-		windowsHide: true,
-	});
-}
-
 function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr', chunk: Buffer): void {
 	if (stream === 'stdout') {
 		if (reporter.writeStdout) {
@@ -321,14 +323,29 @@ function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr', chunk
 	reporter.stderr(chunk.toString());
 }
 
-function runArgvCommandStreaming(
-	command: ResolvedArgvCommand | undefined,
+interface SpawnedCommandInput {
+	readonly executable: string;
+	readonly args?: readonly string[];
+	readonly shell: boolean;
+}
+
+function createOutputLimitError(stream: 'stdout' | 'stderr', maxOutputBytes: number): Error {
+	return Object.assign(new Error(`${stream} exceeded max_output_bytes (${maxOutputBytes})`), {
+		code: OUTPUT_LIMIT_ERROR_CODE,
+	});
+}
+
+function runSpawnedCommandStreaming(
+	command: SpawnedCommandInput,
 	cwd: string,
 	env: NodeJS.ProcessEnv,
 	timeoutSeconds: number,
+	maxOutputBytes: number,
 	stdoutTailBytes: number,
 	stderrTailBytes: number,
 	reporter: Reporter,
+	streamOutput: boolean,
+	enforceOutputLimit: boolean,
 ): Promise<CommandResult> {
 	return new Promise((resolve) => {
 		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
@@ -337,12 +354,15 @@ function runArgvCommandStreaming(
 		let timedOut = false;
 		let childError: Error | undefined;
 		let childPid: number | undefined;
+		let stdoutBytes = 0;
+		let stderrBytes = 0;
 		let timeout: NodeJS.Timeout | undefined;
+		let termination: RunTerminationReceipt | null = null;
 
-		const child = spawn(command?.executable ?? '', command?.args ?? [], {
+		const child = spawn(command.executable, command.args ?? [], {
 			cwd,
 			env,
-			shell: command?.shell ?? false,
+			shell: command.shell,
 			stdio: ['ignore', 'pipe', 'pipe'],
 			windowsHide: true,
 			detached: process.platform !== 'win32',
@@ -366,16 +386,43 @@ function runArgvCommandStreaming(
 				stdout: stdout.toSnapshot(),
 				stderr: stderr.toSnapshot(),
 				pid: childPid,
+				termination,
 			});
+		};
+
+		const stopForOutputLimit = (stream: 'stdout' | 'stderr'): void => {
+			if (settled || childError) {
+				return;
+			}
+
+			childError = createOutputLimitError(stream, maxOutputBytes);
+			child.stdout?.destroy();
+			child.stderr?.destroy();
+			child.unref();
+			terminateProcessTreeNonBlocking(childPid);
+			forceTerminateProcessTreeNonBlocking(childPid);
+			finish(null, null);
 		};
 
 		child.stdout?.on('data', (chunk: Buffer) => {
 			stdout.append(chunk);
-			writeStreamChunk(reporter, 'stdout', chunk);
+			stdoutBytes += chunk.byteLength;
+			if (streamOutput) {
+				writeStreamChunk(reporter, 'stdout', chunk);
+			}
+			if (enforceOutputLimit && stdoutBytes > maxOutputBytes) {
+				stopForOutputLimit('stdout');
+			}
 		});
 		child.stderr?.on('data', (chunk: Buffer) => {
 			stderr.append(chunk);
-			writeStreamChunk(reporter, 'stderr', chunk);
+			stderrBytes += chunk.byteLength;
+			if (streamOutput) {
+				writeStreamChunk(reporter, 'stderr', chunk);
+			}
+			if (enforceOutputLimit && stderrBytes > maxOutputBytes) {
+				stopForOutputLimit('stderr');
+			}
 		});
 		child.once('error', (error) => {
 			childError = error;
@@ -389,6 +436,7 @@ function runArgvCommandStreaming(
 			child.stdout?.destroy();
 			child.stderr?.destroy();
 			child.unref();
+			termination = createPendingTimeoutTermination(getKillMethod());
 			terminateProcessTreeNonBlocking(childPid);
 			forceTerminateProcessTreeNonBlocking(childPid);
 			finish(null, null);
@@ -396,24 +444,30 @@ function runArgvCommandStreaming(
 	});
 }
 
-function runShellCommand(
-	command: string | undefined,
+function runArgvCommandStreaming(
+	command: ResolvedArgvCommand | undefined,
 	cwd: string,
-	maxOutputBytes: number,
 	env: NodeJS.ProcessEnv,
 	timeoutSeconds: number,
-): CommandResult {
-	return spawnSync(command ?? '', {
+	maxOutputBytes: number,
+	stdoutTailBytes: number,
+	stderrTailBytes: number,
+	reporter: Reporter,
+	streamOutput: boolean,
+	enforceOutputLimit: boolean,
+): Promise<CommandResult> {
+	return runSpawnedCommandStreaming(
+		{ executable: command?.executable ?? '', args: command?.args ?? [], shell: command?.shell ?? false },
 		cwd,
-		encoding: 'utf8',
-		input: '',
-		maxBuffer: maxOutputBytes,
 		env,
-		shell: true,
-		stdio: ['ignore', 'pipe', 'pipe'],
-		timeout: timeoutSeconds * 1000,
-		windowsHide: true,
-	});
+		timeoutSeconds,
+		maxOutputBytes,
+		stdoutTailBytes,
+		stderrTailBytes,
+		reporter,
+		streamOutput,
+		enforceOutputLimit,
+	);
 }
 
 function runShellCommandStreaming(
@@ -421,74 +475,25 @@ function runShellCommandStreaming(
 	cwd: string,
 	env: NodeJS.ProcessEnv,
 	timeoutSeconds: number,
+	maxOutputBytes: number,
 	stdoutTailBytes: number,
 	stderrTailBytes: number,
 	reporter: Reporter,
+	streamOutput: boolean,
+	enforceOutputLimit: boolean,
 ): Promise<CommandResult> {
-	return new Promise((resolve) => {
-		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
-		const stderr = new BoundedOutputBuffer(stderrTailBytes);
-		let settled = false;
-		let timedOut = false;
-		let childError: Error | undefined;
-		let childPid: number | undefined;
-		let timeout: NodeJS.Timeout | undefined;
-
-		const child = spawn(command ?? '', {
-			cwd,
-			env,
-			shell: true,
-			stdio: ['ignore', 'pipe', 'pipe'],
-			windowsHide: true,
-			detached: process.platform !== 'win32',
-		});
-		childPid = child.pid;
-
-		const finish = (status: number | null, signal: string | null): void => {
-			if (settled) {
-				return;
-			}
-
-			settled = true;
-
-			if (timeout) {
-				clearTimeout(timeout);
-			}
-			resolve({
-				status: timedOut ? null : status,
-				signal: timedOut ? null : signal,
-				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
-				stdout: stdout.toSnapshot(),
-				stderr: stderr.toSnapshot(),
-				pid: childPid,
-			});
-		};
-
-		child.stdout?.on('data', (chunk: Buffer) => {
-			stdout.append(chunk);
-			writeStreamChunk(reporter, 'stdout', chunk);
-		});
-		child.stderr?.on('data', (chunk: Buffer) => {
-			stderr.append(chunk);
-			writeStreamChunk(reporter, 'stderr', chunk);
-		});
-		child.once('error', (error) => {
-			childError = error;
-		});
-		child.once('close', (status, signal) => {
-			finish(status, signal);
-		});
-
-		timeout = setTimeout(() => {
-			timedOut = true;
-			child.stdout?.destroy();
-			child.stderr?.destroy();
-			child.unref();
-			terminateProcessTreeNonBlocking(childPid);
-			forceTerminateProcessTreeNonBlocking(childPid);
-			finish(null, null);
-		}, timeoutSeconds * 1000);
-	});
+	return runSpawnedCommandStreaming(
+		{ executable: command ?? '', shell: true },
+		cwd,
+		env,
+		timeoutSeconds,
+		maxOutputBytes,
+		stdoutTailBytes,
+		stderrTailBytes,
+		reporter,
+		streamOutput,
+		enforceOutputLimit,
+	);
 }
 
 function getRunStatus(error: Error | undefined, exitCode: number | null, successExitCodes: readonly number[]): RunReceiptStatus {
@@ -498,11 +503,24 @@ function getRunStatus(error: Error | undefined, exitCode: number | null, success
 		return 'timed_out';
 	}
 
+	if (isOutputLimitExceededError(error)) {
+		return 'output_limit_exceeded';
+	}
+
 	if (error) {
 		return 'start_failed';
 	}
 
 	return exitCode !== null && successExitCodes.includes(exitCode) ? 'passed' : 'failed';
+}
+
+function isOutputLimitExceededError(error: Error | undefined): boolean {
+	if (!error) {
+		return false;
+	}
+
+	const errorWithCode = error as NodeJS.ErrnoException;
+	return errorWithCode.code === OUTPUT_LIMIT_ERROR_CODE || OUTPUT_LIMIT_ERROR_MESSAGE.test(error.message);
 }
 
 function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
@@ -713,36 +731,34 @@ export async function runRun(
 		}
 
 		if (plan.commandArgv) {
-			if (!json) {
-				streamedOutput = true;
-				return runArgvCommandStreaming(
-					plan.argvCommand,
-					plan.cwd,
-					env,
-					plan.timeoutSeconds,
-					stdoutTailBytes,
-					stderrTailBytes,
-					reporter,
-				);
-			}
-
-			return runArgvCommand(plan.argvCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
-		}
-
-		if (!json) {
-			streamedOutput = true;
-			return runShellCommandStreaming(
-				plan.shellCommand,
+			streamedOutput = !json;
+			return runArgvCommandStreaming(
+				plan.argvCommand,
 				plan.cwd,
 				env,
 				plan.timeoutSeconds,
+				plan.maxOutputBytes,
 				stdoutTailBytes,
 				stderrTailBytes,
 				reporter,
+				!json,
+				json,
 			);
 		}
 
-		return runShellCommand(plan.shellCommand, plan.cwd, plan.maxOutputBytes, env, plan.timeoutSeconds);
+		streamedOutput = !json;
+		return runShellCommandStreaming(
+			plan.shellCommand,
+			plan.cwd,
+			env,
+			plan.timeoutSeconds,
+			plan.maxOutputBytes,
+			stdoutTailBytes,
+			stderrTailBytes,
+			reporter,
+			!json,
+			json,
+		);
 	});
 	const childDurationMs = performance.now() - childStartedAtMs;
 	const finishedAt = new Date();
@@ -750,10 +766,14 @@ export async function runRun(
 	const exitCode = typeof result.status === 'number' ? result.status : null;
 	const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
 	let killMethod: string | null = null;
+	let termination: RunTerminationReceipt | null = null;
 
 	if (runStatus === 'timed_out') {
-		killMethod = getKillMethod();
-		terminateProcessTree(result.pid);
+		termination = result.termination ?? createPendingTimeoutTermination(getKillMethod());
+		killMethod = termination.method;
+		if (!result.termination && result.pid) {
+			terminateProcessTree(result.pid);
+		}
 	}
 
 	const receipt = profiler.measure('receipt_create', () => createRunReceipt({
@@ -778,6 +798,7 @@ export async function runRun(
 		signal: result.signal,
 		error: result.error?.message ?? null,
 		killMethod,
+		termination,
 		stdout: result.stdout,
 		stderr: result.stderr,
 		writeDrift,
@@ -792,6 +813,7 @@ export async function runRun(
 		},
 		stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
 		stderrTailBytes: runReceiptPolicy.stderrTailBytes,
+		receiptPath: createRunReceiptRelativePath(),
 	}));
 
 	if (options.writeLatestReceipt !== false) {

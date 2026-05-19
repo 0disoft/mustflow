@@ -34,13 +34,15 @@ REPO_MAP.md  # archivo generado opcional
 │  ├─ INDEX.md
 │  └─ */SKILL.md
 └─ state/  # generado durante el uso
-   └─ runs/latest.json
+   └─ runs/
+      ├─ run-*/receipt.json
+      └─ latest.json
 ```
 
 `mf init` no crea `README.md`, `.github/`, el directorio raíz `docs/`, el directorio raíz `skills/`, código fuente ni configuración del gestor de paquetes.
 `REPO_MAP.md` se genera a partir de la estructura del repositorio en lugar de copiarse desde la plantilla.
 `manifest.lock.toml` lo genera `mf init` para registrar el resultado real de la instalación.
-`.mustflow/state/runs/latest.json` es el recibo de ejecución más reciente creado por `mf run`.
+`.mustflow/state/runs/latest.json` es el recibo de ejecución más reciente; cada directorio `run-*` conserva el recibo guardado de esa ejecución.
 
 ## Orden de lectura
 

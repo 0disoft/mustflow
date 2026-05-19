@@ -199,9 +199,10 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].receipt.intent, 'verify_echo');
 		assert.equal(report.results[0].receipt.verification_plan_id, report.verification_plan_id);
 		assert.match(report.results[0].receipt.stdout.tail, /verify ok/);
-		assert.equal(report.run_dir, '.mustflow/state/runs/verify-latest');
-		assert.equal(report.manifest_path, '.mustflow/state/runs/verify-latest/manifest.json');
-		const manifestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-latest', 'manifest.json');
+		assert.match(report.run_dir, /^\.mustflow\/state\/runs\/verify-/u);
+		assert.equal(report.manifest_path, `${report.run_dir}/manifest.json`);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-latest')), false);
+		const manifestPath = path.join(projectPath, report.manifest_path);
 		const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 		const receiptPath = path.join(projectPath, manifest.receipts[0].receipt_path);
 		const receiptContent = readFileSync(receiptPath, 'utf8');
@@ -219,7 +220,7 @@ required_after = ["custom_verify"]
 		assert.equal(manifest.receipts[0].intent, 'verify_echo');
 		assert.equal(manifest.receipts[0].status, 'passed');
 		assert.equal(manifest.receipts[0].verification_plan_id, report.verification_plan_id);
-		assert.match(manifest.receipts[0].receipt_path, /\.mustflow\/state\/runs\/verify-latest\/intents\/001-verify_echo\.json/u);
+		assert.equal(manifest.receipts[0].receipt_path, `${report.run_dir}/intents/001-verify_echo.json`);
 		assert.equal(manifest.receipts[0].receipt_sha256, receiptSha256);
 		assert.equal(report.results[0].receipt_path, manifest.receipts[0].receipt_path);
 		assert.equal(report.results[0].receipt_sha256, receiptSha256);
@@ -260,7 +261,22 @@ required_after = ["custom_verify"]
 		assert.deepEqual(latest.completion_verdict, report.completion_verdict);
 		assert.deepEqual(manifest.evidence_model, report.evidence_model);
 		assert.deepEqual(latest.evidence_model, report.evidence_model);
-		assert.equal(latest.manifest_path, '.mustflow/state/runs/verify-latest/manifest.json');
+		assert.equal(latest.run_dir, report.run_dir);
+		assert.equal(latest.manifest_path, report.manifest_path);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects invalid verification parallelism', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--parallel', '0']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /--parallel must be a positive integer/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -312,7 +328,18 @@ test('rejects plan-only verify output without json', () => {
 	}
 });
 
-test('preserves classification details in plan-only verify output from a JSON plan', () => {
+test('documents from-plan as a deprecated classification-report alias', () => {
+	const result = runCli(projectRoot, ['verify', '--help']);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.match(result.stdout, /--from-classification <path>/);
+	assert.match(
+		result.stdout,
+		/--from-plan <path>\s+Deprecated compatibility alias for --from-classification; it still expects an mf classify report/,
+	);
+});
+
+test('preserves classification details in plan-only verify output from a classify report alias', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -368,7 +395,7 @@ required_after = ["docs_change"]
 	}
 });
 
-test('runs verification intents selected from a JSON plan', () => {
+test('runs verification intents selected from a classify report alias', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -407,6 +434,27 @@ required_after = ["schema_verify"]
 		assert.equal(report.status, 'passed');
 		assert.equal(report.summary.ran, 1);
 		assert.equal(report.results[0].intent, 'verify_from_plan');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects verify plan-only reports passed through the deprecated from-plan alias', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const planOnlyResult = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--plan-only', '--json']);
+		assert.equal(planOnlyResult.status, 0, planOnlyResult.stderr || planOnlyResult.stdout);
+
+		writeFileSync(path.join(projectPath, 'verify-plan-output.json'), planOnlyResult.stdout);
+
+		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan-output.json', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Verification input must be an mf classify report/);
+		assert.match(result.stdout, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}

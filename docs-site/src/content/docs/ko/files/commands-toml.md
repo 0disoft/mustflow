@@ -29,6 +29,8 @@ deny_unmanaged_long_running = true
 max_output_bytes = 1048576
 on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
+env_policy = "minimal"
+env_allowlist = []
 
 [intents.test]
 status = "unknown"
@@ -53,6 +55,8 @@ required_after = ["code_change", "behavior_change"]
   (16,777,216바이트)를 넘는 값은 거부됩니다.
 - `defaults.on_timeout`: 제한 시간을 넘겼을 때의 처리 방식입니다.
 - `defaults.kill_after_seconds`: 프로세스 정리 단계에서 사용할 수 있는 추가 대기 시간입니다.
+- `defaults.env_policy`: 의도별 설정이 없을 때 사용할 환경 변수 전달 정책입니다.
+- `defaults.env_allowlist`: 유효한 정책이 `allowlist`일 때 추가로 전달할 환경 변수 이름 목록입니다.
 
 ## 의도 상태
 
@@ -82,6 +86,8 @@ required_after = ["code_change", "behavior_change"]
 - `timeout_seconds`: 명령 제한 시간입니다.
 - `stdin`: 표준 입력 처리 방식입니다. 자동 실행 가능한 의도는 `closed`여야 합니다.
 - `success_exit_codes`: 성공으로 볼 종료 코드 목록입니다.
+- `env_policy`: 환경 변수 전달 정책을 의도별로 덮어씁니다. 새 자동 실행 의도에는 `minimal` 또는 `allowlist`를 우선 사용하고, 전체 상속이 꼭 필요할 때만 `inherit`를 명시합니다.
+- `env_allowlist`: `env_policy = "allowlist"`일 때 추가로 허용할 환경 변수 이름 목록입니다.
 - `manual_start_hint`: 장기 실행 명령을 에이전트가 아니라 사람이 직접 시작할 때 참고할 안내입니다.
 - `health_check_url`: 사람이 직접 시작한 장기 실행 프로세스를 확인할 수 있는 선택 URL입니다.
 - `stop_instruction`: 사람이 직접 시작한 장기 실행 프로세스를 멈추는 방법입니다.
@@ -111,6 +117,16 @@ writes = []
 network = false
 destructive = false
 ```
+
+## 환경 변수 정책
+
+`mf run`은 미리 보기와 실행 영수증에 실제 적용된 환경 변수 정책을 기록하지만, 환경 변수 값 자체는 출력하지 않습니다.
+
+- `minimal`: 명령 실행에 필요한 기본 변수만 전달합니다. `PATH`, 홈·임시 디렉터리 변수, 터미널 색상 플래그, 언어 설정, 윈도우 실행 필수 변수 등이 포함되며, 프로젝트 안의 `node_modules/.bin` 경로는 `PATH`에서 제거됩니다.
+- `allowlist`: `minimal`에 더해 `defaults.env_allowlist`와 의도의 `env_allowlist`에 적은 이름만 추가로 전달합니다.
+- `inherit`: 프로젝트 안의 `node_modules/.bin` 경로를 제거한 뒤 호스트 프로세스의 환경 변수를 넓게 전달합니다. 명령이 정말로 넓은 호스트 상태를 필요로 할 때만 사용합니다.
+
+설치 템플릿은 기본적으로 `env_policy = "minimal"`을 사용합니다. 환경 변수 정책이 없는 기존 설정은 호환성을 위해 예전처럼 전체 상속으로 동작하지만, 새 자동 실행 의도는 `minimal` 또는 `allowlist`로 옮기는 것이 좋습니다. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 결과적으로 `inherit`를 사용할 때 경고하며, 같은 의도에 `network = true`가 있으면 더 위험한 조합으로 함께 표시합니다.
 
 복잡한 셸 기능이 필요하면 `mode = "shell"`과 `cmd`를 명시하고, 실행 영향과 쓰기 경로를 함께 적습니다.
 

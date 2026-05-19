@@ -878,11 +878,13 @@ Lisez ces fichiers avant de travailler :
     "Exécute les intentions de vérification configurées sélectionnées par les métadonnées required_after.",
   "verify.help.option.reason": "Sélectionne la raison required_after à vérifier",
   "verify.help.option.fromClassification": "Lit les raisons de vérification depuis un rapport mf classify dans ce dépôt",
-  "verify.help.option.fromPlan": "Alias de compatibilité pour --from-classification",
+  "verify.help.option.fromPlan": "Alias de compatibilité obsolète pour --from-classification; il attend toujours un rapport mf classify",
   "verify.help.option.changed": "Classe les changements Git actuels et vérifie les raisons correspondantes",
   "verify.help.option.writePlan": "Option de compatibilité qui écrit le rapport de classification des changements",
   "verify.help.option.reproEvidence": "Lit une preuve structurée de reproduction de bogue depuis un résumé JSON local au dépôt",
   "verify.help.option.externalEvidence": "Lit une preuve CI externe de moindre autorité depuis un résumé JSON local au dépôt",
+  "verify.help.option.parallel":
+    "Exécute les lots planifiés sûrs et sans conflit avec au plus ce nombre de commandes ; valeur par défaut : 1",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":
@@ -898,6 +900,7 @@ Lisez ces fichiers avant de travailler :
   "verify.error.planOnlyJson": "--plan-only nécessite --json",
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence ne peut pas être utilisé avec --plan-only",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence ne peut pas être utilisé avec --plan-only",
+  "verify.error.invalidParallel": "--parallel doit être un entier positif",
   "verify.error.invalid_plan_file": "Le rapport de classification doit être un fichier JSON lisible",
   "verify.error.unsupported_plan_source": "L'entrée de vérification doit être un rapport mf classify",
   "verify.error.plan_root_mismatch": "Le rapport de classification doit venir de cette racine mustflow",

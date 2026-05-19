@@ -33,7 +33,7 @@ mustflow repository के schemas का उपयोग करें।
   latest verify run bundle का pointer लिखता है
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, जिसमें execution
   aggregate और evidence-based completion verdict शामिल हैं
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`,
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`,
   जिसमें verify report जैसा execution aggregate और verdict शामिल है
 - `run-receipt.schema.json`: `mf run <intent> --json` और `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`

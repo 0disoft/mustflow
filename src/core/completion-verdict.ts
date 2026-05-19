@@ -414,7 +414,8 @@ export function createDashboardCompletionVerdict(input: DashboardCompletionVerdi
 	const latestRunFailed =
 		input.latestRunStatus === 'failed' ||
 		input.latestRunStatus === 'timed_out' ||
-		input.latestRunStatus === 'start_failed';
+		input.latestRunStatus === 'start_failed' ||
+		input.latestRunStatus === 'output_limit_exceeded';
 
 	let status: CompletionVerdictStatus = 'unverified';
 	let primaryReason = 'dashboard_does_not_execute_verification';

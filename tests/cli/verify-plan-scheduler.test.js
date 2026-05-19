@@ -789,7 +789,7 @@ required_after = ["custom_verify"]
 		);
 
 		const planResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
-		const runResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json']);
+		const runResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json', '--parallel', '2']);
 		const planReport = JSON.parse(planResult.stdout);
 		const runReport = JSON.parse(runResult.stdout);
 		const scheduledIntents = planReport.schedule.entries.map((entry) => entry.intent);
@@ -803,6 +803,94 @@ required_after = ["custom_verify"]
 			scheduledIntents,
 		);
 		assert.deepEqual(readFileSync(orderPath, 'utf8').trim().split(/\r?\n/), scheduledIntents);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('runs non-conflicting explicit-effect verification batches in parallel when requested', () => {
+	const projectPath = createTempProject();
+	const startAPath = path.join(projectPath, 'parallel-a-start.txt');
+	const startBPath = path.join(projectPath, 'parallel-b-start.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[resources.parallel_a_state]
+type = "path"
+paths = ["parallel-a-*.txt"]
+concurrency = "exclusive_writer"
+description = "Parallel verification A state."
+
+[resources.parallel_b_state]
+type = "path"
+paths = ["parallel-b-*.txt"]
+concurrency = "exclusive_writer"
+description = "Parallel verification B state."
+
+[intents.verify_parallel_a]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Record parallel start marker A."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-a-start.txt", String(Date.now())); setTimeout(() => fs.writeFileSync("parallel-a-done.txt", "done"), 1000);']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["parallel-a-start.txt", "parallel-a-done.txt"]
+effects = [
+  { type = "write", mode = "replace", path = "parallel-a-start.txt", lock = "parallel_a_state", concurrency = "exclusive" },
+  { type = "write", mode = "replace", path = "parallel-a-done.txt", lock = "parallel_a_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_verify"]
+
+[intents.verify_parallel_b]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Record parallel start marker B."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-b-start.txt", String(Date.now())); setTimeout(() => fs.writeFileSync("parallel-b-done.txt", "done"), 1000);']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["parallel-b-start.txt", "parallel-b-done.txt"]
+effects = [
+  { type = "write", mode = "replace", path = "parallel-b-start.txt", lock = "parallel_b_state", concurrency = "exclusive" },
+  { type = "write", mode = "replace", path = "parallel-b-done.txt", lock = "parallel_b_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_verify"]
+`,
+		);
+
+		const planResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const runResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2']);
+		const planReport = JSON.parse(planResult.stdout);
+		const runReport = JSON.parse(runResult.stdout);
+		const scheduledIntents = planReport.schedule.entries.map((entry) => entry.intent);
+		const startDifference = Math.abs(Number(readFileSync(startAPath, 'utf8')) - Number(readFileSync(startBPath, 'utf8')));
+
+		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+		assert.equal(runResult.status, 0, runResult.stderr || runResult.stdout);
+		assert.deepEqual(planReport.schedule.batches.map((batch) => batch.intents), [scheduledIntents]);
+		assert.deepEqual(
+			planReport.schedule.entries.map((entry) => entry.parallelEligible),
+			[true, true],
+		);
+		assert.ok(startDifference < 900, `expected parallel start times, got ${startDifference}ms`);
+		assert.deepEqual(
+			runReport.results.filter((result) => !result.skipped).map((result) => result.intent),
+			scheduledIntents,
+		);
+		assert.match(runReport.results[0].receipt_path, /001-verify_parallel_a\.json$/);
+		assert.match(runReport.results[1].receipt_path, /002-verify_parallel_b\.json$/);
 	} finally {
 		removeTempProject(projectPath);
 	}

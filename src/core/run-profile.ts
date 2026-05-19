@@ -7,7 +7,14 @@ const RUN_PROFILE_ENV = 'MUSTFLOW_RUN_PROFILE';
 const RUN_PROFILE_DIR = path.join('.mustflow', 'state', 'runs');
 const LATEST_RUN_PROFILE = 'latest.profile.json';
 
-export type RunProfileStatus = 'passed' | 'failed' | 'timed_out' | 'start_failed' | 'blocked' | 'previewed';
+export type RunProfileStatus =
+	| 'passed'
+	| 'failed'
+	| 'timed_out'
+	| 'start_failed'
+	| 'output_limit_exceeded'
+	| 'blocked'
+	| 'previewed';
 
 export interface RunProfilePhase {
 	readonly name: string;

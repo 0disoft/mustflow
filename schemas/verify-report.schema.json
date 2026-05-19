@@ -88,7 +88,7 @@
         ],
         "properties": {
           "intent": { "type": ["string", "null"] },
-          "status": { "enum": ["passed", "failed", "timed_out", "start_failed", "skipped"] },
+          "status": { "enum": ["passed", "failed", "timed_out", "start_failed", "output_limit_exceeded", "skipped"] },
           "skipped": { "type": "boolean" },
           "reason": { "type": ["string", "null"] },
           "detail": { "type": ["string", "null"] },

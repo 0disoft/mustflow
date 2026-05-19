@@ -33,7 +33,7 @@ schémas du paquet installé ou ceux du dépôt mustflow.
   écrit un pointeur vers le dernier ensemble de vérification
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, avec l'état agrégé
   d'exécution et le verdict de finalisation fondé sur les preuves
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`,
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`,
   avec le même agrégat d'exécution et le même verdict que le rapport verify
 - `run-receipt.schema.json`: `mf run <intent> --json` et `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: `.mustflow/config/commands.toml` analysé

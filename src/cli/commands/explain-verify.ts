@@ -17,7 +17,7 @@ import {
 	type LocalCommandEffectGraph,
 	type LocalVerificationReadModelQueries,
 } from '../lib/local-index.js';
-import { planErrorMessageKey, readInputFromPlan } from './verify.js';
+import { planErrorMessageKey, readInputFromClassificationReport } from './verify.js';
 
 export type ExplainVerificationCandidate = {
 	readonly intent: string | null;
@@ -152,7 +152,7 @@ export function explainVerifyPlanErrorMessage(error: unknown, lang: CliLang): st
 }
 
 export function readExplainVerifyPlanReasons(projectRoot: string, planPath: string): readonly string[] {
-	return readInputFromPlan(projectRoot, planPath).reasons;
+	return readInputFromClassificationReport(projectRoot, planPath).reasons;
 }
 
 export async function getVerifyExplainOutput(

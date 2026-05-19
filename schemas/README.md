@@ -37,7 +37,7 @@ Current schemas:
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`, including an
   explicit execution aggregate, evidence-based completion verdict, and evidence model with a
   conservative coverage matrix for the selected receipts and skipped checks
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`, including
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`, including
   the same execution aggregate, completion verdict, evidence model, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
   `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links

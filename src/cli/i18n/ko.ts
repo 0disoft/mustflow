@@ -873,11 +873,13 @@ export const koMessages = {
     "required_after 메타데이터로 선택된 설정된 검증 의도를 실행합니다.",
   "verify.help.option.reason": "검증할 required_after 이유를 지정합니다",
   "verify.help.option.fromClassification": "이 저장소 안의 mf classify 보고서에서 검증 이유를 읽습니다",
-  "verify.help.option.fromPlan": "--from-classification과 같은 호환 옵션입니다",
+  "verify.help.option.fromPlan": "--from-classification과 같은 폐기 예정 호환 옵션입니다. 입력은 여전히 mf classify 보고서여야 합니다",
   "verify.help.option.changed": "현재 Git 변경을 분류하고 맞는 검증 이유를 실행합니다",
   "verify.help.option.writePlan": "변경 파일 분류 보고서를 쓰는 호환 옵션입니다",
   "verify.help.option.reproEvidence": "저장소 안의 JSON 요약에서 구조화된 버그 재현 증거를 읽습니다",
   "verify.help.option.externalEvidence": "저장소 안의 JSON 요약에서 낮은 권한의 외부 CI 증거를 읽습니다",
+  "verify.help.option.parallel":
+    "안전하고 서로 충돌하지 않는 예정 실행 묶음을 이 개수까지 함께 실행합니다. 기본값은 1입니다",
   "verify.help.option.planOnly": "명령을 실행하지 않고 검증 계획만 출력합니다. --json이 필요합니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":
@@ -893,6 +895,7 @@ export const koMessages = {
   "verify.error.planOnlyJson": "--plan-only에는 --json이 필요합니다",
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence는 --plan-only와 함께 사용할 수 없습니다",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence는 --plan-only와 함께 사용할 수 없습니다",
+  "verify.error.invalidParallel": "--parallel 값은 양의 정수여야 합니다",
   "verify.error.invalid_plan_file": "분류 보고서는 읽을 수 있는 JSON 파일이어야 합니다",
   "verify.error.unsupported_plan_source": "검증 입력은 mf classify 보고서여야 합니다",
   "verify.error.plan_root_mismatch": "분류 보고서는 현재 mustflow 루트에서 나온 것이어야 합니다",

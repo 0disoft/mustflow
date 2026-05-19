@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
+import { listSourceAnchorFiles } from '../../dist/core/source-anchors.js';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
 
 function assertHasIssueDetail(check, expectedId, expectedMessage) {
@@ -13,6 +14,19 @@ function assertHasIssueDetail(check, expectedId, expectedMessage) {
 		),
 		`missing issue detail ${expectedId}`,
 	);
+}
+
+function trySymlink(target, linkPath) {
+	try {
+		symlinkSync(target, linkPath, process.platform === 'win32' ? 'junction' : 'dir');
+		return true;
+	} catch (error) {
+		if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'ENOTSUP'].includes(error.code)) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 test('strict check fails invalid source anchors', () => {
@@ -186,5 +200,72 @@ test('strict check uses lower review thresholds for high-risk source anchors', (
 		assert.match(highRiskReview.message, /search terms 9 > 8/);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('strict check does not scan source anchors through symlinked directories', (t) => {
+	const projectPath = createTempProject();
+	const outsidePath = createTempProject('mustflow-source-anchor-outside-');
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		mkdirSync(path.join(outsidePath, 'outside-src'), { recursive: true });
+		writeFileSync(
+			path.join(outsidePath, 'outside-src', 'outside.ts'),
+			[
+				'/**',
+				' * mf:anchor Outside.Bad_ID',
+				' * purpose: This invalid outside anchor must not be scanned through a symlink.',
+				' */',
+				'export const outside = true;',
+				'',
+			].join('\n'),
+		);
+
+		if (!trySymlink(path.join(outsidePath, 'outside-src'), path.join(projectPath, 'src', 'linked-outside'))) {
+			t.skip('directory symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(check.ok, true);
+		assert.equal(check.issueCount, 0);
+		assert.equal(check.issueDetails.some((issue) => String(issue.message).includes('linked-outside')), false);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
+	}
+});
+
+test('source anchor discovery refuses explicitly followed symlink targets outside the project root', (t) => {
+	const projectPath = createTempProject();
+	const outsidePath = createTempProject('mustflow-source-anchor-outside-');
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		mkdirSync(path.join(outsidePath, 'outside-src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'local.ts'),
+			['// mf:anchor local.anchor', 'export const local = true;', ''].join('\n'),
+		);
+		writeFileSync(
+			path.join(outsidePath, 'outside-src', 'outside.ts'),
+			['// mf:anchor outside.anchor', 'export const outside = true;', ''].join('\n'),
+		);
+
+		if (!trySymlink(path.join(outsidePath, 'outside-src'), path.join(projectPath, 'src', 'linked-outside'))) {
+			t.skip('directory symlinks are unavailable in this environment');
+			return;
+		}
+
+		assert.deepEqual(listSourceAnchorFiles(projectPath, { followSymlinks: true }), ['src/local.ts']);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
 	}
 });

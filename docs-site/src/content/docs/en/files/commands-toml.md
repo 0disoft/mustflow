@@ -126,7 +126,7 @@ destructive = false
 - `allowlist`: start from the minimal environment, then add names from `defaults.env_allowlist` and the intent's `env_allowlist`.
 - `inherit`: pass the host process environment after removing the project-local `node_modules/.bin` path from `PATH`. Use this only when a command truly needs broad host state.
 
-Installed templates use `env_policy = "minimal"` by default. Existing configs without an environment policy keep the older inheritance behavior for compatibility, but new runnable intents should prefer `minimal` or `allowlist`.
+Installed templates use `env_policy = "minimal"` by default. Existing configs without an environment policy keep the older inheritance behavior for compatibility, but new runnable intents should prefer `minimal` or `allowlist`. `mf check --strict` warns when a configured agent-runnable intent effectively uses `inherit`, and calls out the higher-risk case where that intent also has `network = true`.
 
 If a shell is required, set `mode = "shell"` and `cmd`, then declare the command impact and write paths.
 

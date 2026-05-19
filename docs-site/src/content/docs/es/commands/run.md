@@ -44,7 +44,7 @@ npx mf run test --json
 
 ## Campos JSON
 
-Cada ejecución escribe el último recibo de ejecución en `.mustflow/state/runs/latest.json`.
+Cada ejecución escribe un recibo en un directorio único `.mustflow/state/runs/run-*` y actualiza atómicamente `.mustflow/state/runs/latest.json` con el mismo recibo más reciente.
 
 Con `--json`, el mismo recibo también se imprime en la salida estándar. La automatización y los agentes deben analizar esta salida estructurada en lugar de analizar salida legible para personas.
 
@@ -53,7 +53,7 @@ La salida legible por máquinas usa estos campos:
 - `schema_version` (`number`): versión del formato del recibo de ejecución.
 - `command` (`string`): siempre `run`.
 - `intent` (`string`): nombre de la intención de comando.
-- `status` (`string`): resultado de la ejecución. Uno de `passed`, `failed`, `timed_out` o `start_failed`.
+- `status` (`string`): resultado de la ejecución. Uno de `passed`, `failed`, `timed_out`, `start_failed` u `output_limit_exceeded`.
 - `timed_out` (`boolean`): si se alcanzó el tiempo de espera.
 - `started_at` (`string`): hora de inicio de la ejecución.
 - `finished_at` (`string`): hora de finalización de la ejecución.
@@ -72,9 +72,10 @@ La salida legible por máquinas usa estos campos:
 - `signal` (`string | null`): nombre de la señal cuando el proceso terminó por señal.
 - `error` (`string | null`): mensaje de error de inicio o ejecución.
 - `kill_method` (`string | null`): método usado para detener el proceso después del tiempo de espera.
+- `termination` (`object`, opcional): evidencia de limpieza por tiempo de espera, incluido el método de detención, señales suaves y forzadas, si se intentó terminación forzada, si la terminación fue confirmada y si la limpieza puede seguir pendiente.
 - `stdout` (`object`): resumen de salida estándar.
 - `stderr` (`object`): resumen de error estándar.
-- `receipt_path` (`string`): ruta del recibo de ejecución guardado.
+- `receipt_path` (`string`): ruta del recibo guardado dentro del directorio único de ejecución.
 
 Los objetos de resumen de salida usan estos campos:
 

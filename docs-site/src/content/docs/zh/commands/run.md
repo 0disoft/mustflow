@@ -44,7 +44,7 @@ npx mf run test --json
 
 ## JSON 字段
 
-每次执行都会将最新运行回执写入 `.mustflow/state/runs/latest.json`。
+每次执行都会把回执写入唯一的 `.mustflow/state/runs/run-*` 目录，并用同一份最新回执原子更新 `.mustflow/state/runs/latest.json`。
 
 使用 `--json` 时，同一回执会打印到 standard output。自动化和代理应解析此结构化输出，而不是解析人类可读输出。
 
@@ -53,7 +53,7 @@ npx mf run test --json
 - `schema_version` (`number`)：运行回执格式版本。
 - `command` (`string`)：始终为 `run`。
 - `intent` (`string`)：command intent 名称。
-- `status` (`string`)：运行结果，取值为 `passed`、`failed`、`timed_out` 或 `start_failed`。
+- `status` (`string`)：运行结果，取值为 `passed`、`failed`、`timed_out`、`start_failed` 或 `output_limit_exceeded`。
 - `timed_out` (`boolean`)：是否达到超时。
 - `started_at` (`string`)：运行开始时间。
 - `finished_at` (`string`)：运行结束时间。
@@ -71,9 +71,10 @@ npx mf run test --json
 - `signal` (`string | null`)：进程因 signal 结束时的 signal 名称。
 - `error` (`string | null`)：启动或运行时错误消息。
 - `kill_method` (`string | null`)：超时后停止进程的方法。
+- `termination` (`object`，可选)：超时清理证据，记录停止方法、普通与强制信号、是否尝试强制终止、是否确认进程已结束，以及清理是否可能仍未完成。
 - `stdout` (`object`)：标准输出摘要。
 - `stderr` (`object`)：标准错误摘要。
-- `receipt_path` (`string`)：已保存的运行回执路径。
+- `receipt_path` (`string`)：唯一运行目录中的已保存回执路径。
 
 输出摘要对象使用这些字段：
 

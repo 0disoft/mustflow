@@ -5,7 +5,7 @@ import {
 	isRecord,
 	type TomlTable,
 } from './config-loading.js';
-import { COMMAND_ENV_POLICIES } from './command-env.js';
+import { COMMAND_ENV_POLICIES, DEFAULT_COMMAND_ENV_POLICY, type CommandEnvPolicy } from './command-env.js';
 import {
 	COMMAND_EFFECT_CONCURRENCY,
 	COMMAND_EFFECT_MODES,
@@ -28,6 +28,10 @@ export interface CommandContractValidationIssue {
 
 function commandContractIssue(message: string): CommandContractValidationIssue {
 	return { message };
+}
+
+function commandContractWarning(message: string): CommandContractValidationIssue {
+	return { message, severity: 'warning' };
 }
 
 function hasOwn(table: TomlTable, key: string): boolean {
@@ -374,6 +378,75 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 	validateCommandIntentEffects(intentName, intent, issues);
 }
 
+function readValidCommandEnvPolicy(table: TomlTable | undefined): CommandEnvPolicy | undefined {
+	if (!table || !hasOwn(table, 'env_policy')) {
+		return undefined;
+	}
+
+	const value = table.env_policy;
+	return typeof value === 'string' && COMMAND_ENV_POLICIES.has(value as CommandEnvPolicy)
+		? (value as CommandEnvPolicy)
+		: undefined;
+}
+
+function getEffectiveCommandEnvPolicy(
+	defaults: TomlTable | undefined,
+	intent: TomlTable,
+): { policy: CommandEnvPolicy; source: 'intent' | 'defaults' | 'implicit' } {
+	const intentPolicy = readValidCommandEnvPolicy(intent);
+	if (intentPolicy) {
+		return { policy: intentPolicy, source: 'intent' };
+	}
+
+	const defaultPolicy = readValidCommandEnvPolicy(defaults);
+	if (defaultPolicy) {
+		return { policy: defaultPolicy, source: 'defaults' };
+	}
+
+	return { policy: DEFAULT_COMMAND_ENV_POLICY, source: 'implicit' };
+}
+
+function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
+	const issues: CommandContractValidationIssue[] = [];
+
+	if (!commandsToml || !isRecord(commandsToml.intents)) {
+		return issues;
+	}
+
+	const defaults = isRecord(commandsToml.defaults) ? commandsToml.defaults : undefined;
+
+	for (const [intentName, intent] of Object.entries(commandsToml.intents)) {
+		if (!isRecord(intent) || intent.status !== 'configured' || intent.run_policy !== 'agent_allowed') {
+			continue;
+		}
+
+		const envPolicy = getEffectiveCommandEnvPolicy(defaults, intent);
+		if (envPolicy.policy !== 'inherit') {
+			continue;
+		}
+
+		const networkScope = intent.network === true ? ' with network = true' : '';
+		const migration = 'set env_policy = "minimal" or "allowlist" unless broad host state is required';
+
+		if (envPolicy.source === 'implicit') {
+			issues.push(
+				commandContractWarning(
+					`configured agent-runnable intent ${intentName} implicitly inherits the host environment${networkScope}; ${migration}`,
+				),
+			);
+			continue;
+		}
+
+		issues.push(
+			commandContractWarning(
+				`configured agent-runnable intent ${intentName} uses env_policy = "inherit"${networkScope}; ${migration}`,
+			),
+		);
+	}
+
+	return issues;
+}
+
 /**
  * mf:anchor core.command-contract-validation
  * purpose: Validate command intent declarations that gate agent-executable repository commands.
@@ -415,18 +488,21 @@ export function validateCommandContractStrictDefaults(
 ): CommandContractValidationIssue[] {
 	const issues: CommandContractValidationIssue[] = [];
 
-	if (!commandsToml || !isRecord(commandsToml.defaults)) {
+	if (!commandsToml) {
 		return issues;
 	}
 
-	if (!hasOwn(commandsToml.defaults, 'max_output_bytes')) {
-		issues.push(commandContractIssue('[commands.defaults].max_output_bytes is required'));
+	if (isRecord(commandsToml.defaults)) {
+		if (!hasOwn(commandsToml.defaults, 'max_output_bytes')) {
+			issues.push(commandContractIssue('[commands.defaults].max_output_bytes is required'));
+		}
+
+		if (!hasOwn(commandsToml.defaults, 'on_timeout')) {
+			issues.push(commandContractIssue('[commands.defaults].on_timeout is required'));
+		}
 	}
 
-	if (!hasOwn(commandsToml.defaults, 'on_timeout')) {
-		issues.push(commandContractIssue('[commands.defaults].on_timeout is required'));
-	}
-
+	issues.push(...validateCommandEnvInheritanceWarnings(commandsToml));
 	issues.push(...validateCommandEffects(projectRoot, commandsToml));
 	issues.push(...validateCommandEffectLockWarnings(commandsToml));
 

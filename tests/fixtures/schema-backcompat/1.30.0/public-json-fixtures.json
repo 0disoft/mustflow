@@ -1417,7 +1417,7 @@
     {
       "id": "verify-run-manifest",
       "schema_file": "verify-run-manifest.schema.json",
-      "producer": ".mustflow/state/runs/verify-latest/manifest.json",
+      "producer": ".mustflow/state/runs/verify-*/manifest.json",
       "fixture": {
         "schema_version": "1",
         "command": "verify",

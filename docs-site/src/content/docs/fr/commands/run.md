@@ -44,7 +44,7 @@ npx mf run test --json
 
 ## Champs JSON
 
-Chaque exécution écrit le dernier reçu d’exécution dans `.mustflow/state/runs/latest.json`.
+Chaque exécution écrit un reçu dans un répertoire unique `.mustflow/state/runs/run-*` et met à jour atomiquement `.mustflow/state/runs/latest.json` avec le même dernier reçu.
 
 Avec `--json`, le même reçu est imprimé sur la sortie standard. Les automatisations et les agents doivent analyser cette sortie structurée au lieu d’analyser la sortie lisible par une personne.
 
@@ -53,7 +53,7 @@ La sortie lisible par machine utilise ces champs:
 - `schema_version` (`number`): version du format du reçu d’exécution.
 - `command` (`string`): toujours `run`.
 - `intent` (`string`): nom de l’intention de commande.
-- `status` (`string`): résultat de l’exécution. L’un de `passed`, `failed`, `timed_out` ou `start_failed`.
+- `status` (`string`): résultat de l’exécution. L’un de `passed`, `failed`, `timed_out`, `start_failed` ou `output_limit_exceeded`.
 - `timed_out` (`boolean`): indique si le délai d’expiration a été atteint.
 - `started_at` (`string`): heure de début de l’exécution.
 - `finished_at` (`string`): heure de fin de l’exécution.
@@ -72,9 +72,10 @@ La sortie lisible par machine utilise ces champs:
 - `signal` (`string | null`): nom du signal lorsque le processus s’est terminé par un signal.
 - `error` (`string | null`): message d’erreur au démarrage ou à l’exécution.
 - `kill_method` (`string | null`): méthode utilisée pour arrêter le processus après expiration.
+- `termination` (`object`, facultatif): preuve de nettoyage après expiration, avec la méthode d’arrêt, les signaux doux et forcés, l’indication d’une tentative forcée, la confirmation éventuelle de fin du processus et l’état de nettoyage restant.
 - `stdout` (`object`): résumé de la sortie standard.
 - `stderr` (`object`): résumé de l’erreur standard.
-- `receipt_path` (`string`): chemin du reçu d’exécution enregistré.
+- `receipt_path` (`string`): chemin du reçu enregistré dans le répertoire d’exécution unique.
 
 Les objets de résumé de sortie utilisent ces champs:
 

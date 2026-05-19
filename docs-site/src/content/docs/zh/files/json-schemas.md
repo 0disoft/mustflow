@@ -33,7 +33,7 @@ JSON Schema 合同。
   `.mustflow/state/runs/latest.json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`，包含执行汇总状态和
   基于证据的完成裁定
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`，
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`，
   包含与 verify 报告相同的执行汇总状态和完成裁定
 - `run-receipt.schema.json`: `mf run <intent> --json` 和 `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: 已解析的 `.mustflow/config/commands.toml`

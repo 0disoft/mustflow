@@ -244,6 +244,77 @@ test('fails invalid command environment policy fields', () => {
 	}
 });
 
+test('strict check warns on broad command environment inheritance', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commandsWithoutDefaultEnv = readText(commandsPath).replace(
+			'env_policy = "minimal"\nenv_allowlist = []\n',
+			'',
+		);
+		writeFileSync(
+			commandsPath,
+			[
+				commandsWithoutDefaultEnv,
+				'[intents.implicit_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run with implicit env fallback."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.network_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run with inherited env and network access."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'env_policy = "inherit"',
+				'network = true',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'pyproject.toml'),
+			['[project]', 'name = "example"', 'version = "1.0.0"', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes('implicit_env implicitly inherits the host environment; set env_policy = "minimal" or "allowlist"'),
+			),
+		);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes('network_env uses env_policy = "inherit" with network = true; set env_policy = "minimal" or "allowlist"'),
+			),
+		);
+		assertHasIssueDetail(check, 'mustflow.command_contract.broad_env_inheritance');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails oversized command output limits', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 

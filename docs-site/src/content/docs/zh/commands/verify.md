@@ -5,13 +5,13 @@ description: 运行由 required_after 元数据选出的已配置验证意图。
 
 `mf verify --reason <event>` 会读取 `.mustflow/config/commands.toml`，找出 `required_after` 列表包含指定原因的命令意图，并且只运行已配置、单次执行、允许代理运行、stdin 已关闭的意图。
 
-`mf verify --from-classification <path>` 会从 mustflow 根目录内的 `mf classify` JSON 报告读取验证原因。`--from-plan` 在命名过渡期间仍作为兼容别名可用。
+`mf verify --from-classification <path>` 会从 mustflow 根目录内的 `mf classify` JSON 报告读取验证原因。`--from-plan` 在命名过渡期间仍作为已弃用的兼容别名可用，但读取的仍是同一种分类报告；它不会读取 `mf verify --plan-only --json` 输出。
 
 `mf verify --changed` 使用与 `mf classify --changed` 相同的语义分类当前 Git 工作树，然后把这些验证原因交给验证选择模型。使用 `--write-plan <path>` 可以把分类报告保存到 mustflow 根目录内，同时当前运行仍使用内存中的选择模型。
 
 `mf verify --plan-only --json` 只打印验证计划，不执行命令。输出包含稳定的 `verification_plan_id` 和 `decision_graph`，用于连接变更表面、分类原因、命令候选、可运行性检查、效果和剩余缺口。存在最新本地索引时，每个计划条目可以包含从 `.mustflow/cache/mustflow.sqlite` 读取的 `effectGraph`，用于说明写入锁和锁冲突。要求项也可以包含 `surfaceReadModels` 元数据，用于说明哪些索引路径-表面规则匹配了变更文件。索引缺失或过期时只显示重建提示，不改变命令选择或执行权限。
 
-`mf verify` 实际执行命令时，会使用与 plan-only 输出相同的计划模型，并通过 `mf run` 收据串行执行 `schedule.entries`。verify 输出、验证包清单、latest 指针和各意图收据共享同一个 `verification_plan_id`。
+`mf verify` 实际执行命令时，会使用与 plan-only 输出相同的计划模型，并默认通过 `mf run` 收据串行执行 `schedule.entries`。如果 `--parallel <count>` 大于 `1`，只有同一个显式效果、无冲突计划批次中的条目才能同时执行，收据仍按计划顺序写入。verify 输出、验证包清单、latest 指针和各意图收据共享同一个 `verification_plan_id`。
 
 JSON 中的 `execution_status` 是命令执行的汇总状态。为了兼容旧消费者，`status` 保留为同一执行汇总状态的旧别名。需要判断请求的工作是否已完整验证的自动化，应读取 `completion_verdict.status`；只有 `verified` 表示完整验证。
 
@@ -55,7 +55,7 @@ npx mf verify --reason code_change --json
 - `status` (`string`)：为兼容保留的 `execution_status` 旧别名。
 - `completion_verdict` (`object`)：基于证据的完成裁定。自动化做最终判断时应使用 `completion_verdict.status`；只有 `verified` 表示完整验证。
 - `summary` (`object`)：匹配、运行、通过、失败和跳过的数量。
-- `run_dir` (`string`)：包含清单和各意图收据的验证包目录。
+- `run_dir` (`string`)：包含清单和各意图收据的唯一验证包目录。
 - `manifest_path` (`string`)：验证包清单路径。
 - `results` (`object[]`)：每个意图的运行或跳过结果。
 - `results[].verification_plan_id` (`string | null`)：运行结果的计划标识符；跳过结果为 `null`。

@@ -43,7 +43,7 @@ building automation around `--json` output.
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, including an evidence-based
   completion verdict, explicit execution aggregate, and evidence model with a conservative coverage
   matrix for selected receipts, skipped checks, and gaps
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`, including
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`, including
   the same execution aggregate, completion verdict, evidence model, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
   and `mf verify --from-classification <path> --plan-only --json`; command-effect graph fields are

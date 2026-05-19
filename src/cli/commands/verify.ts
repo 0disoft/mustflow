@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
@@ -15,6 +15,7 @@ import {
 	type CompletionVerdictCriteriaEvidence,
 	type CompletionVerdictReceiptBindingEvidence,
 } from '../../core/completion-verdict.js';
+import { atomicWriteJsonFile, createStateRunId } from '../../core/atomic-state-write.js';
 import {
 	createExternalEvidenceRisks,
 	type ExternalEvidenceCheck,
@@ -69,12 +70,18 @@ import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
 const VERIFY_SCHEMA_VERSION = '1';
-const VERIFY_RUN_DIR = path.join('.mustflow', 'state', 'runs', 'verify-latest');
-const VERIFY_MANIFEST_PATH = path.join(VERIFY_RUN_DIR, 'manifest.json');
-const LATEST_RUN_RECEIPT_PATH = path.join('.mustflow', 'state', 'runs', 'latest.json');
+const RUN_STATE_DIR = path.join('.mustflow', 'state', 'runs');
+const LATEST_RUN_RECEIPT_PATH = path.join(RUN_STATE_DIR, 'latest.json');
+const DEFAULT_VERIFY_PARALLELISM = 1;
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
-type VerificationResultStatus = 'passed' | 'failed' | 'timed_out' | 'start_failed' | 'skipped';
+type VerificationResultStatus =
+	| 'passed'
+	| 'failed'
+	| 'timed_out'
+	| 'start_failed'
+	| 'output_limit_exceeded'
+	| 'skipped';
 
 interface BufferedOutput {
 	readonly reporter: Reporter;
@@ -237,6 +244,7 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				{ label: '--write-plan <path>', description: t(lang, 'verify.help.option.writePlan') },
 				{ label: '--repro-evidence <path>', description: t(lang, 'verify.help.option.reproEvidence') },
 				{ label: '--external-evidence <path>', description: t(lang, 'verify.help.option.externalEvidence') },
+				{ label: '--parallel <count>', description: t(lang, 'verify.help.option.parallel') },
 				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
@@ -269,6 +277,7 @@ function parseVerifyArgs(args: readonly string[]): {
 	writePlan?: string;
 	reproEvidence?: string;
 	externalEvidence?: string;
+	parallelism?: number;
 	error?: string;
 } {
 	let reason: string | undefined;
@@ -280,6 +289,7 @@ function parseVerifyArgs(args: readonly string[]): {
 	let json = false;
 	let planOnly = false;
 	let changed = false;
+	let parallelism = DEFAULT_VERIFY_PARALLELISM;
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -296,6 +306,22 @@ function parseVerifyArgs(args: readonly string[]): {
 
 		if (arg === '--changed') {
 			changed = true;
+			continue;
+		}
+
+		if (arg === '--parallel') {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				return { json, planOnly, changed, reason, parallelism, error: 'missing_parallel_value' };
+			}
+
+			const parsedParallelism = parseVerifyParallelism(value);
+			if (parsedParallelism === null) {
+				return { json, planOnly, changed, reason, parallelism, error: 'invalid_parallel_value' };
+			}
+
+			parallelism = parsedParallelism;
+			index += 1;
 			continue;
 		}
 
@@ -413,6 +439,17 @@ function parseVerifyArgs(args: readonly string[]): {
 			continue;
 		}
 
+		if (arg.startsWith('--parallel=')) {
+			const value = arg.slice('--parallel='.length);
+			const parsedParallelism = parseVerifyParallelism(value);
+			if (parsedParallelism === null) {
+				return { json, planOnly, changed, reason, parallelism, error: 'invalid_parallel_value' };
+			}
+
+			parallelism = parsedParallelism;
+			continue;
+		}
+
 		if (arg.startsWith('--from-plan=')) {
 			const value = arg.slice('--from-plan='.length);
 			if (value.length === 0) {
@@ -519,7 +556,27 @@ function parseVerifyArgs(args: readonly string[]): {
 		};
 	}
 
-	return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, reproEvidence, externalEvidence };
+	return {
+		json,
+		planOnly,
+		changed,
+		reason,
+		fromClassification,
+		fromPlan,
+		writePlan,
+		reproEvidence,
+		externalEvidence,
+		parallelism,
+	};
+}
+
+function parseVerifyParallelism(value: string): number | null {
+	if (!/^[1-9][0-9]*$/u.test(value)) {
+		return null;
+	}
+
+	const parsed = Number(value);
+	return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
 function uniqueStrings(values: readonly string[]): string[] {
@@ -528,6 +585,28 @@ function uniqueStrings(values: readonly string[]): string[] {
 
 function toPosixPath(value: string): string {
 	return value.split(path.sep).join('/');
+}
+
+interface VerifyRunStatePaths {
+	readonly runDir: string;
+	readonly manifestPath: string;
+	readonly absoluteRunDir: string;
+	readonly absoluteIntentDir: string;
+	readonly absoluteManifestPath: string;
+}
+
+function createVerifyRunStatePaths(projectRoot: string): VerifyRunStatePaths {
+	const runDir = toPosixPath(path.join(RUN_STATE_DIR, createStateRunId('verify')));
+	const manifestPath = toPosixPath(path.join(runDir, 'manifest.json'));
+	const absoluteRunDir = path.join(projectRoot, runDir);
+
+	return {
+		runDir,
+		manifestPath,
+		absoluteRunDir,
+		absoluteIntentDir: path.join(absoluteRunDir, 'intents'),
+		absoluteManifestPath: path.join(projectRoot, manifestPath),
+	};
 }
 
 function sanitizeIntentFilePart(value: string): string {
@@ -716,7 +795,7 @@ function resolvePlanPath(projectRoot: string, inputPath: string): string {
 	return resolved;
 }
 
-export function readInputFromPlan(projectRoot: string, inputPath: string): VerifyInput {
+export function readInputFromClassificationReport(projectRoot: string, inputPath: string): VerifyInput {
 	let parsed: unknown;
 	const planPath = resolvePlanPath(projectRoot, inputPath);
 
@@ -1191,7 +1270,8 @@ async function runVerificationIntent(
 			receiptStatus === 'passed' ||
 			receiptStatus === 'failed' ||
 			receiptStatus === 'timed_out' ||
-			receiptStatus === 'start_failed'
+			receiptStatus === 'start_failed' ||
+			receiptStatus === 'output_limit_exceeded'
 		) {
 			status = receiptStatus;
 		}
@@ -1213,6 +1293,93 @@ async function runVerificationIntent(
 	};
 }
 
+type VerificationScheduleEntry = ChangeVerificationReport['schedule']['entries'][number];
+type VerificationScheduleBatch = ChangeVerificationReport['schedule']['batches'][number];
+
+function entriesForScheduleBatch(
+	entries: readonly VerificationScheduleEntry[],
+	batch: VerificationScheduleBatch,
+): VerificationScheduleEntry[] {
+	const batchIntents = new Set(batch.intents);
+	return entries.filter((entry) => batchIntents.has(entry.intent));
+}
+
+async function runVerificationEntriesSequentially(
+	entries: readonly VerificationScheduleEntry[],
+	lang: CliLang,
+	verificationPlanId: string,
+	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
+): Promise<VerificationResult[]> {
+	const results: VerificationResult[] = [];
+
+	for (const entry of entries) {
+		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, scheduledTestTargets.get(entry.intent) ?? []));
+	}
+
+	return results;
+}
+
+async function runVerificationEntriesInParallelChunks(
+	entries: readonly VerificationScheduleEntry[],
+	parallelism: number,
+	lang: CliLang,
+	verificationPlanId: string,
+	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
+): Promise<VerificationResult[]> {
+	const results: VerificationResult[] = [];
+
+	for (let index = 0; index < entries.length; index += parallelism) {
+		const chunk = entries.slice(index, index + parallelism);
+		results.push(
+			...(await Promise.all(
+				chunk.map((entry) =>
+					runVerificationIntent(entry.intent, lang, verificationPlanId, scheduledTestTargets.get(entry.intent) ?? []),
+				),
+			)),
+		);
+	}
+
+	return results;
+}
+
+async function runScheduledVerificationIntents(
+	report: ChangeVerificationReport,
+	lang: CliLang,
+	verificationPlanId: string,
+	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
+	parallelism: number,
+): Promise<VerificationResult[]> {
+	if (parallelism <= DEFAULT_VERIFY_PARALLELISM) {
+		return runVerificationEntriesSequentially(report.schedule.entries, lang, verificationPlanId, scheduledTestTargets);
+	}
+
+	const results: VerificationResult[] = [];
+
+	for (const batch of report.schedule.batches) {
+		const entries = entriesForScheduleBatch(report.schedule.entries, batch);
+		if (entries.length === 0) {
+			continue;
+		}
+
+		if (entries.length > 1 && entries.every((entry) => entry.parallelEligible)) {
+			results.push(
+				...(await runVerificationEntriesInParallelChunks(
+					entries,
+					parallelism,
+					lang,
+					verificationPlanId,
+					scheduledTestTargets,
+				)),
+			);
+			continue;
+		}
+
+		results.push(...(await runVerificationEntriesSequentially(entries, lang, verificationPlanId, scheduledTestTargets)));
+	}
+
+	return results;
+}
+
 function summarizeResults(results: readonly VerificationResult[]): VerificationSummary {
 	const ran = results.filter((result) => !result.skipped).length;
 	const passed = results.filter((result) => result.status === 'passed').length;
@@ -1220,7 +1387,10 @@ function summarizeResults(results: readonly VerificationResult[]): VerificationS
 	const failed = results.filter(
 		(result) =>
 			!result.skipped &&
-			(result.status === 'failed' || result.status === 'timed_out' || result.status === 'start_failed'),
+			(result.status === 'failed' ||
+				result.status === 'timed_out' ||
+				result.status === 'start_failed' ||
+				result.status === 'output_limit_exceeded'),
 	).length;
 
 	return {
@@ -1282,14 +1452,20 @@ function timedOutForResult(result: VerificationResult): boolean {
 }
 
 function errorKindForResult(result: VerificationResult): string | null {
-	return stringField(resultSummaryForResult(result)?.error_kind) ?? (result.status === 'start_failed' ? 'start_failed' : null);
+	return (
+		stringField(resultSummaryForResult(result)?.error_kind) ??
+		(result.status === 'start_failed' || result.status === 'output_limit_exceeded' ? result.status : null)
+	);
 }
 
 function failedResults(results: readonly VerificationResult[]): readonly VerificationResult[] {
 	return results.filter(
 		(result) =>
 			!result.skipped &&
-			(result.status === 'failed' || result.status === 'timed_out' || result.status === 'start_failed'),
+			(result.status === 'failed' ||
+				result.status === 'timed_out' ||
+				result.status === 'start_failed' ||
+				result.status === 'output_limit_exceeded'),
 	);
 }
 
@@ -1438,7 +1614,11 @@ function createCriteriaEvidence(
 
 		if (
 			selectedResults.some(
-				(result) => result?.status === 'failed' || result?.status === 'timed_out' || result?.status === 'start_failed',
+				(result) =>
+					result?.status === 'failed' ||
+					result?.status === 'timed_out' ||
+					result?.status === 'start_failed' ||
+					result?.status === 'output_limit_exceeded',
 			)
 		) {
 			return { ...current, contradicted: current.contradicted + 1 };
@@ -1651,13 +1831,11 @@ function writeVerifyRunReceipts(
 	reproEvidence: ReproEvidenceReport | null,
 	externalChecks: readonly ExternalEvidenceCheck[],
 ): VerificationOutput {
-	const runDir = path.join(projectRoot, VERIFY_RUN_DIR);
-	const intentDir = path.join(runDir, 'intents');
+	const statePaths = createVerifyRunStatePaths(projectRoot);
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
 	const results: VerificationResult[] = [];
 
-	rmSync(runDir, { recursive: true, force: true });
-	mkdirSync(intentDir, { recursive: true });
+	mkdirSync(statePaths.absoluteIntentDir, { recursive: true });
 
 	for (const [index, result] of output.results.entries()) {
 		let receiptPath: string | null = null;
@@ -1666,8 +1844,8 @@ function writeVerifyRunReceipts(
 
 		if (result.intent && result.receipt) {
 			const fileName = `${String(index + 1).padStart(3, '0')}-${sanitizeIntentFilePart(result.intent)}.json`;
-			const absoluteReceiptPath = path.join(intentDir, fileName);
-			receiptPath = toPosixPath(path.join(VERIFY_RUN_DIR, 'intents', fileName));
+			const absoluteReceiptPath = path.join(statePaths.absoluteIntentDir, fileName);
+			receiptPath = toPosixPath(path.join(statePaths.runDir, 'intents', fileName));
 			receipt = {
 				...result.receipt,
 				verification_plan_id: output.verification_plan_id,
@@ -1675,7 +1853,7 @@ function writeVerifyRunReceipts(
 			};
 			const receiptContent = `${JSON.stringify(receipt, null, 2)}\n`;
 			receiptSha256 = hashTextSha256(receiptContent);
-			writeFileSync(absoluteReceiptPath, receiptContent, 'utf8');
+			atomicWriteJsonFile(absoluteReceiptPath, receipt);
 		}
 
 		receipts.push({
@@ -1747,6 +1925,8 @@ function writeVerifyRunReceipts(
 		completion_verdict: completionVerdict,
 		failure_fingerprint: failureFingerprint,
 		repeated_failure_summary: repeatedFailureSummary,
+		run_dir: statePaths.runDir,
+		manifest_path: statePaths.manifestPath,
 		results,
 		evidence_model: createVerifyEvidenceModel({
 			report,
@@ -1783,7 +1963,7 @@ function writeVerifyRunReceipts(
 		receipts,
 	};
 
-	writeFileSync(path.join(runDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+	atomicWriteJsonFile(statePaths.absoluteManifestPath, manifest);
 
 	const latest: VerifyLatestRunPointer = {
 		schema_version: '1',
@@ -1802,11 +1982,11 @@ function writeVerifyRunReceipts(
 		summary: outputWithReceiptPaths.summary,
 		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
 		...(outputWithReceiptPaths.external_checks ? { external_checks: outputWithReceiptPaths.external_checks } : {}),
-		run_dir: toPosixPath(VERIFY_RUN_DIR),
-		manifest_path: toPosixPath(VERIFY_MANIFEST_PATH),
+		run_dir: statePaths.runDir,
+		manifest_path: statePaths.manifestPath,
 	};
 
-	writeFileSync(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), `${JSON.stringify(latest, null, 2)}\n`, 'utf8');
+	atomicWriteJsonFile(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), latest);
 	return outputWithReceiptPaths;
 }
 
@@ -1817,6 +1997,7 @@ async function createVerifyOutput(
 	lang: CliLang,
 	reproEvidence: ReproEvidenceReport | null = null,
 	externalChecks: readonly ExternalEvidenceCheck[] = [],
+	parallelism = DEFAULT_VERIFY_PARALLELISM,
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
@@ -1830,11 +2011,7 @@ async function createVerifyOutput(
 	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, { verificationPlanId });
 	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
 	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
-	const results: VerificationResult[] = [];
-
-	for (const entry of report.schedule.entries) {
-		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, scheduledTestTargets.get(entry.intent) ?? []));
-	}
+	const results = await runScheduledVerificationIntents(report, lang, verificationPlanId, scheduledTestTargets, parallelism);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
@@ -1906,8 +2083,8 @@ async function createVerifyOutput(
 		summary,
 		...(reproEvidence ? { repro_evidence: reproEvidence } : {}),
 		...(externalChecks.length > 0 ? { external_checks: externalChecks } : {}),
-		run_dir: toPosixPath(VERIFY_RUN_DIR),
-		manifest_path: toPosixPath(VERIFY_MANIFEST_PATH),
+		run_dir: '',
+		manifest_path: '',
 		results,
 	};
 
@@ -2004,6 +2181,10 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		const message =
 			parsed.error === 'missing_reason_value'
 				? t(lang, 'cli.error.missingValue', { option: '--reason' })
+				: parsed.error === 'missing_parallel_value'
+					? t(lang, 'cli.error.missingValue', { option: '--parallel' })
+				: parsed.error === 'invalid_parallel_value'
+					? t(lang, 'verify.error.invalidParallel')
 				: parsed.error === 'missing_from_classification_value'
 					? t(lang, 'cli.error.missingValue', { option: '--from-classification' })
 				: parsed.error === 'missing_from_plan_value'
@@ -2074,7 +2255,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 			input = changedInput.input;
 			changedPlan = changedInput.plan;
 		} else if (parsed.fromClassification || parsed.fromPlan) {
-			input = readInputFromPlan(projectRoot, (parsed.fromClassification ?? parsed.fromPlan) as string);
+			input = readInputFromClassificationReport(projectRoot, (parsed.fromClassification ?? parsed.fromPlan) as string);
 		} else {
 			input = {
 				reasons: [parsed.reason as string],
@@ -2121,6 +2302,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		lang,
 		reproEvidence,
 		externalChecks,
+		parsed.parallelism ?? DEFAULT_VERIFY_PARALLELISM,
 	);
 
 	if (parsed.json) {

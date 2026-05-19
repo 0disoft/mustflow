@@ -145,7 +145,7 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 	{
 		id: 'verify-run-manifest',
 		schemaFile: 'verify-run-manifest.schema.json',
-		producer: '.mustflow/state/runs/verify-latest/manifest.json',
+		producer: '.mustflow/state/runs/verify-*/manifest.json',
 		packaged: true,
 		documented: true,
 	},

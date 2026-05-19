@@ -44,7 +44,7 @@ npx mf run test --json
 
 ## JSON Fields
 
-Each execution writes the latest run receipt to `.mustflow/state/runs/latest.json`.
+Each execution writes a receipt under a unique `.mustflow/state/runs/run-*` directory and atomically updates `.mustflow/state/runs/latest.json` with the same latest receipt.
 
 With `--json`, the same receipt is printed to standard output. Automation and agents should parse this structured output instead of parsing human-readable output.
 
@@ -53,7 +53,7 @@ Machine-readable output uses these fields:
 - `schema_version` (`string`): Run receipt format version.
 - `command` (`string`): Always `run`.
 - `intent` (`string`): Command intent name.
-- `status` (`string`): Run result. One of `passed`, `failed`, `timed_out`, or `start_failed`.
+- `status` (`string`): Run result. One of `passed`, `failed`, `timed_out`, `start_failed`, or `output_limit_exceeded`.
 - `timed_out` (`boolean`): Whether the timeout was reached.
 - `started_at` (`string`): Run start time.
 - `finished_at` (`string`): Run finish time.
@@ -74,12 +74,13 @@ Machine-readable output uses these fields:
 - `signal` (`string | null`): Signal name when the process ended by signal.
 - `error` (`string | null`): Start or runtime error message.
 - `kill_method` (`string | null`): Method used to stop the process after timeout.
+- `termination` (`object`, optional): Timeout cleanup evidence, including the stop method, graceful and forced signals, whether a forced kill was attempted, whether process termination was confirmed, and whether cleanup may still be pending.
 - `stdout` (`object`): Standard output summary.
 - `stderr` (`object`): Standard error summary.
 - `write_drift` (`object`): Bounded comparison between declared write paths and files changed during the command.
 - `performance` (`object`): Safe performance summary for the latest execution.
 - `redaction` (`object`): Secret-like redaction metadata for the receipt.
-- `receipt_path` (`string`): Saved run receipt path.
+- `receipt_path` (`string`): Saved run receipt path under the unique run directory.
 
 Output summary objects use these fields:
 
@@ -122,6 +123,8 @@ Performance summary objects use safe metadata only:
 - `performance.output_summary` (`object`): Output byte counts and truncation flags only.
 - `performance.result_summary` (`object`): Status, exit-code class, timeout flag, and coarse error kind.
 - `performance.quality` (`object`): Whether optional phase or target timing sources were present and whether the sample is usable as a performance hint.
+
+`output_limit_exceeded` means the process produced more captured output than the configured `max_output_bytes` budget allowed before a normal exit result could be recorded. It is reported separately from `start_failed`, because the command did start but the output capture limit was exceeded.
 
 Performance summaries do not include command output, environment values, absolute paths, hostnames, branch names, raw commit hashes, or test names. They are local timing hints for already-authorized commands, not command authority and not proof that a verification step can be skipped.
 

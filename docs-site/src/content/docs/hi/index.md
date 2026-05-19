@@ -34,13 +34,15 @@ REPO_MAP.md  # वैकल्पिक रूप से जनरेट की 
 │  ├─ INDEX.md
 │  └─ */SKILL.md
 └─ state/  # उपयोग के दौरान जनरेट होता है
-   └─ runs/latest.json
+   └─ runs/
+      ├─ run-*/receipt.json
+      └─ latest.json
 ```
 
 `mf init` `README.md`, `.github/`, रूट `docs/`, रूट `skills/`, स्रोत कोड या पैकेज मैनेजर कॉन्फ़िगरेशन नहीं बनाता।
 `REPO_MAP.md` टेम्पलेट से कॉपी होने के बजाय रिपॉज़िटरी संरचना से जनरेट होता है।
 `manifest.lock.toml` को `mf init` वास्तविक इंस्टॉल परिणाम दर्ज करने के लिए जनरेट करता है।
-`.mustflow/state/runs/latest.json` `mf run` द्वारा बनाया गया सबसे नया रन रसीद है।
+`.mustflow/state/runs/latest.json` सबसे नया execution receipt है; हर `run-*` directory उस execution की saved receipt रखती है।
 
 ## पढ़ने का क्रम
 

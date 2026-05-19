@@ -5,13 +5,13 @@ description: Exécute les intentions de vérification configurées sélectionné
 
 `mf verify --reason <event>` lit `.mustflow/config/commands.toml`, trouve les intentions dont `required_after` contient la raison demandée, puis exécute seulement les intentions configurées, ponctuelles, autorisées pour les agents et avec stdin fermé.
 
-`mf verify --from-classification <path>` lit les raisons de vérification depuis un rapport JSON de `mf classify` situé dans la racine mustflow. `--from-plan` reste disponible comme alias de compatibilité.
+`mf verify --from-classification <path>` lit les raisons de vérification depuis un rapport JSON de `mf classify` situé dans la racine mustflow. `--from-plan` reste disponible comme alias de compatibilité obsolète, mais lit le même rapport de classification; il ne lit pas la sortie de `mf verify --plan-only --json`.
 
 `mf verify --changed` classe l'arbre de travail Git actuel avec la même sémantique que `mf classify --changed`, puis transmet ces raisons au modèle de sélection de vérification. Utilisez `--write-plan <path>` pour enregistrer le rapport de classification dans la racine mustflow tout en utilisant le modèle en mémoire pour l'exécution courante.
 
 `mf verify --plan-only --json` imprime le plan de vérification sans exécuter de commande. La sortie inclut un `verification_plan_id` stable et `decision_graph`, qui relie les surfaces modifiées, les raisons de classification, les commandes candidates, les contrôles d'éligibilité, les effets et les écarts restants. Quand un index local à jour existe, chaque entrée planifiée peut inclure `effectGraph` lu depuis `.mustflow/cache/mustflow.sqlite`, avec les verrous d'écriture et les conflits de verrous. Les exigences peuvent aussi inclure les métadonnées `surfaceReadModels`, qui expliquent quelle règle chemin-surface a correspondu aux fichiers modifiés. Si l'index est absent ou obsolète, la sortie affiche une suggestion de reconstruction sans modifier la sélection ni l'autorité d'exécution.
 
-Quand `mf verify` exécute réellement des commandes, il utilise le même modèle de planification que la sortie plan-only et exécute `schedule.entries` en série via les reçus `mf run`. La sortie verify, le manifeste du lot de vérification, le pointeur latest et les reçus par intention partagent le même `verification_plan_id`.
+Quand `mf verify` exécute réellement des commandes, il utilise le même modèle de planification que la sortie plan-only et exécute par défaut `schedule.entries` en série via les reçus `mf run`. Si `--parallel <count>` est supérieur à `1`, seules les entrées du même lot planifié, avec effets explicites et sans conflit, peuvent s'exécuter en même temps, et les reçus restent écrits dans l'ordre planifié. La sortie verify, le manifeste du lot de vérification, le pointeur latest et les reçus par intention partagent le même `verification_plan_id`.
 
 Dans le JSON, `execution_status` est l'état agrégé de l'exécution des commandes. Le champ historique `status` reste le même agrégat pour compatibilité. Les automatisations qui doivent décider si le travail demandé est entièrement vérifié doivent lire `completion_verdict.status`; seul `verified` représente une vérification complète.
 
@@ -55,7 +55,7 @@ La sortie lisible par machine utilise ces champs:
 - `status` (`string`): alias historique de `execution_status`, conservé pour compatibilité.
 - `completion_verdict` (`object`): verdict de finalisation fondé sur les preuves. Pour les décisions finales d'automatisation, utilisez `completion_verdict.status`; `verified` est le seul état qui indique une vérification complète.
 - `summary` (`object`): nombres d'intentions trouvées, exécutées, réussies, échouées et ignorées.
-- `run_dir` (`string`): répertoire du lot de vérification contenant le manifeste et les reçus par intention.
+- `run_dir` (`string`): répertoire unique du lot de vérification contenant le manifeste et les reçus par intention.
 - `manifest_path` (`string`): chemin du manifeste du lot de vérification.
 - `results` (`object[]`): résultat d'exécution ou d'ignorance par intention.
 - `results[].verification_plan_id` (`string | null`): identifiant de plan pour un résultat exécuté, ou `null` pour un résultat ignoré.

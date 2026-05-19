@@ -878,11 +878,13 @@ export const hiMessages = {
     "required_after metadata से चुने गए configured verification intents चलाएँ।",
   "verify.help.option.reason": "Verify करने के लिए required_after reason चुनें",
   "verify.help.option.fromClassification": "इस repository के अंदर mf classify report से verification reasons पढ़ें",
-  "verify.help.option.fromPlan": "--from-classification का compatibility alias",
+  "verify.help.option.fromPlan": "--from-classification का deprecated compatibility alias; input अब भी mf classify report होना चाहिए",
   "verify.help.option.changed": "Current Git changes classify करके matching reasons verify करें",
   "verify.help.option.writePlan": "Changed-file classification report लिखने वाला compatibility option",
   "verify.help.option.reproEvidence": "Repository-local JSON summary से structured bug reproduction evidence पढ़ें",
   "verify.help.option.externalEvidence": "Repository-local JSON summary से lower-authority external CI evidence पढ़ें",
+  "verify.help.option.parallel":
+    "Safe और non-conflicting schedule batches को इतने commands तक साथ चलाएं; default 1 है",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
@@ -898,6 +900,7 @@ export const hiMessages = {
   "verify.error.planOnlyJson": "--plan-only के लिए --json चाहिए",
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence को --plan-only के साथ इस्तेमाल नहीं किया जा सकता",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence को --plan-only के साथ इस्तेमाल नहीं किया जा सकता",
+  "verify.error.invalidParallel": "--parallel positive integer होना चाहिए",
   "verify.error.invalid_plan_file": "Classification report readable JSON file होना चाहिए",
   "verify.error.unsupported_plan_source": "Verification input mf classify report होना चाहिए",
   "verify.error.plan_root_mismatch": "Classification report इसी mustflow root से आना चाहिए",

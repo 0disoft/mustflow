@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { SECRET_LIKE_PATTERNS, textContainsSecretLike } from './secret-redaction.js';
@@ -68,6 +68,7 @@ export interface SourceAnchorFileOptions {
 	readonly excludeGeneratedOrVendor?: boolean;
 	readonly maxFileBytes?: number | null;
 	readonly allowedExtensions?: readonly string[] | ReadonlySet<string>;
+	readonly followSymlinks?: boolean;
 }
 
 export interface ParsedSourceAnchor {
@@ -85,28 +86,122 @@ function toPosixPath(value: string): string {
 	return value.split(path.sep).join('/');
 }
 
-function listFilesRecursive(root: string, ignoredDirectoryNames: ReadonlySet<string>, current = root): string[] {
+interface SourceAnchorFileDiscoveryOptions {
+	readonly ignoredDirectoryNames: ReadonlySet<string>;
+	readonly allowedExtensions: ReadonlySet<string>;
+	readonly include: readonly RegExp[];
+	readonly exclude: readonly RegExp[];
+	readonly excludeGeneratedOrVendor: boolean;
+	readonly maxFileBytes: number | null | undefined;
+	readonly followSymlinks: boolean;
+	readonly rootRealPath: string;
+	readonly visitedRealDirectories: Set<string>;
+}
+
+function pathIsInsideRoot(rootRealPath: string, candidateRealPath: string): boolean {
+	const relative = path.relative(rootRealPath, candidateRealPath);
+	return relative.length === 0 || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function shouldIncludeSourceAnchorFile(relativePath: string, options: SourceAnchorFileDiscoveryOptions): boolean {
+	if (!options.allowedExtensions.has(path.posix.extname(relativePath))) {
+		return false;
+	}
+
+	if (options.excludeGeneratedOrVendor && sourceAnchorPathIsGeneratedOrVendor(relativePath)) {
+		return false;
+	}
+
+	if (options.include.length > 0 && !matchesAnyGlob(relativePath, options.include)) {
+		return false;
+	}
+
+	if (options.exclude.length > 0 && matchesAnyGlob(relativePath, options.exclude)) {
+		return false;
+	}
+
+	return true;
+}
+
+function fileIsWithinSizeLimit(filePath: string, maxFileBytes: number | null | undefined): boolean {
+	if (typeof maxFileBytes !== 'number' || !Number.isFinite(maxFileBytes) || maxFileBytes <= 0) {
+		return true;
+	}
+
+	try {
+		return statSync(filePath).size <= maxFileBytes;
+	} catch {
+		return false;
+	}
+}
+
+function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOptions, current = root): string[] {
 	if (!existsSync(current)) {
 		return [];
 	}
 
+	const currentRealPath = realpathSync(current);
+	if (!pathIsInsideRoot(options.rootRealPath, currentRealPath) || options.visitedRealDirectories.has(currentRealPath)) {
+		return [];
+	}
+	options.visitedRealDirectories.add(currentRealPath);
+
 	const files: string[] = [];
 
-	for (const entry of readdirSync(current)) {
-		const entryPath = path.join(current, entry);
-		const stat = statSync(entryPath);
+	const entries = readdirSync(current, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
 
-		if (stat.isDirectory()) {
-			if (ignoredDirectoryNames.has(entry)) {
-				continue;
-			}
+	for (const entry of entries) {
+		const entryPath = path.join(current, entry.name);
 
-			files.push(...listFilesRecursive(root, ignoredDirectoryNames, entryPath));
+		if (options.ignoredDirectoryNames.has(entry.name)) {
 			continue;
 		}
 
-		if (stat.isFile()) {
-			files.push(path.relative(root, entryPath));
+		if (entry.isDirectory()) {
+			files.push(...listFilesRecursive(root, options, entryPath));
+			continue;
+		}
+
+		if (entry.isSymbolicLink()) {
+			if (!options.followSymlinks) {
+				continue;
+			}
+
+			let realPath: string;
+			try {
+				realPath = realpathSync(entryPath);
+			} catch {
+				continue;
+			}
+			if (!pathIsInsideRoot(options.rootRealPath, realPath)) {
+				continue;
+			}
+
+			let stat: ReturnType<typeof statSync>;
+			try {
+				stat = statSync(entryPath);
+			} catch {
+				continue;
+			}
+			if (stat.isDirectory()) {
+				files.push(...listFilesRecursive(root, options, entryPath));
+				continue;
+			}
+
+			if (stat.isFile()) {
+				const relativePath = toPosixPath(path.relative(root, entryPath));
+				if (shouldIncludeSourceAnchorFile(relativePath, options) && fileIsWithinSizeLimit(entryPath, options.maxFileBytes)) {
+					files.push(relativePath);
+				}
+			}
+			continue;
+		}
+
+		if (entry.isFile()) {
+			const relativePath = toPosixPath(path.relative(root, entryPath));
+			if (shouldIncludeSourceAnchorFile(relativePath, options) && fileIsWithinSizeLimit(entryPath, options.maxFileBytes)) {
+				files.push(relativePath);
+			}
 		}
 	}
 
@@ -187,29 +282,28 @@ function mergeIgnoredDirectoryNames(ignoredDirectoryNames: ReadonlySet<string> |
 	return new Set([...(ignoredDirectoryNames ?? []), ...SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS]);
 }
 
-function fileIsWithinSizeLimit(root: string, relativePath: string, maxFileBytes: number | null | undefined): boolean {
-	if (typeof maxFileBytes !== 'number' || !Number.isFinite(maxFileBytes) || maxFileBytes <= 0) {
-		return true;
+export function listSourceAnchorFiles(root: string, options: SourceAnchorFileOptions = {}): string[] {
+	if (!existsSync(root)) {
+		return [];
 	}
 
-	const filePath = path.join(root, ...relativePath.split('/'));
-
-	return statSync(filePath).size <= maxFileBytes;
-}
-
-export function listSourceAnchorFiles(root: string, options: SourceAnchorFileOptions = {}): string[] {
 	const ignoredDirectoryNames = mergeIgnoredDirectoryNames(options.ignoredDirectoryNames);
 	const allowedExtensions = normalizeAllowedExtensions(options.allowedExtensions);
 	const include = (options.include ?? []).map((pattern) => globToRegExp(pattern));
 	const exclude = (options.exclude ?? []).map((pattern) => globToRegExp(pattern));
+	const rootRealPath = realpathSync(root);
 
-	return listFilesRecursive(root, ignoredDirectoryNames)
-		.map((relativePath) => toPosixPath(relativePath))
-		.filter((relativePath) => allowedExtensions.has(path.posix.extname(relativePath)))
-		.filter((relativePath) => options.excludeGeneratedOrVendor !== true || !sourceAnchorPathIsGeneratedOrVendor(relativePath))
-		.filter((relativePath) => include.length === 0 || matchesAnyGlob(relativePath, include))
-		.filter((relativePath) => exclude.length === 0 || !matchesAnyGlob(relativePath, exclude))
-		.filter((relativePath) => fileIsWithinSizeLimit(root, relativePath, options.maxFileBytes));
+	return listFilesRecursive(root, {
+		ignoredDirectoryNames,
+		allowedExtensions,
+		include,
+		exclude,
+		excludeGeneratedOrVendor: options.excludeGeneratedOrVendor === true,
+		maxFileBytes: options.maxFileBytes,
+		followSymlinks: options.followSymlinks === true,
+		rootRealPath,
+		visitedRealDirectories: new Set<string>(),
+	});
 }
 
 export function stripSourceAnchorCommentPrefix(line: string): string {

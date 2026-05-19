@@ -178,7 +178,12 @@ function requirementOutcome(input: {
 }): CompletionVerdictStatus {
 	if (input.selectedIntents.some((intent) => {
 		const result = resultForIntent(input.results, intent);
-		return result?.status === 'failed' || result?.status === 'timed_out' || result?.status === 'start_failed';
+		return (
+			result?.status === 'failed' ||
+			result?.status === 'timed_out' ||
+			result?.status === 'start_failed' ||
+			result?.status === 'output_limit_exceeded'
+		);
 	})) {
 		return 'contradicted';
 	}

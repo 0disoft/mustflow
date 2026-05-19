@@ -5,13 +5,13 @@ description: required_after metadata से चुने गए configured verif
 
 `mf verify --reason <event>` `.mustflow/config/commands.toml` पढ़ता है, उस reason को `required_after` में रखने वाले command intents ढूँढता है, और केवल configured, one-shot, agent-allowed, closed-stdin intents चलाता है।
 
-`mf verify --from-classification <path>` mustflow root के अंदर मौजूद `mf classify` JSON report से verification reasons पढ़ता है। `--from-plan` compatibility alias के रूप में available रहता है।
+`mf verify --from-classification <path>` mustflow root के अंदर मौजूद `mf classify` JSON report से verification reasons पढ़ता है। `--from-plan` deprecated compatibility alias के रूप में available रहता है, लेकिन वही classification report पढ़ता है; यह `mf verify --plan-only --json` output नहीं पढ़ता।
 
 `mf verify --changed` current Git working tree को `mf classify --changed` जैसी semantics से classify करता है, फिर उन verification reasons को verification selection model में देता है। `--write-plan <path>` से classification report mustflow root के अंदर save किया जा सकता है, जबकि current run in-memory selection model ही use करता है।
 
 `mf verify --plan-only --json` commands चलाए बिना verification plan print करता है। Output में stable `verification_plan_id` और `decision_graph` होता है, जो changed surfaces, classification reasons, command candidates, eligibility checks, effects, और gaps को जोड़ता है। Fresh local index होने पर हर scheduled entry में `.mustflow/cache/mustflow.sqlite` से पढ़ा गया `effectGraph` आ सकता है, जिसमें write locks और lock conflicts होते हैं। Requirements में `surfaceReadModels` metadata भी आ सकता है, जो बताता है कि changed files से कौन सा indexed path-surface rule match हुआ। Index missing या stale हो तो output rebuild hint दिखाता है और command selection या execution authority नहीं बदलता।
 
-जब `mf verify` commands चलाता है, तो वह plan-only output वाला same schedule model use करता है और `schedule.entries` को `mf run` receipts के through serially चलाता है। Verify output, verify bundle manifest, latest pointer, और per-intent receipts same `verification_plan_id` share करते हैं।
+जब `mf verify` commands चलाता है, तो वह plan-only output वाला same schedule model use करता है और default रूप से `schedule.entries` को `mf run` receipts के through serially चलाता है। अगर `--parallel <count>` `1` से बड़ा है, तो केवल same explicit-effect, non-conflicting schedule batch की entries साथ चल सकती हैं, और receipts फिर भी schedule order में लिखे जाते हैं। Verify output, verify bundle manifest, latest pointer, और per-intent receipts same `verification_plan_id` share करते हैं।
 
 JSON में `execution_status` command execution का aggregate status है। पुराने consumers के लिए `status` वही aggregate compatibility alias के रूप में रखा गया है। Automation को requested work fully verified है या नहीं तय करने के लिए `completion_verdict.status` पढ़ना चाहिए; सिर्फ `verified` complete verification claim है।
 
@@ -55,7 +55,7 @@ Machine-readable output ये fields उपयोग करता है:
 - `status` (`string`): compatibility के लिए रखा गया `execution_status` का पुराना alias।
 - `completion_verdict` (`object`): evidence-based completion verdict। Final automation decisions के लिए `completion_verdict.status` use करें; सिर्फ `verified` complete verification बताता है।
 - `summary` (`object`): matched, ran, passed, failed, skipped counts।
-- `run_dir` (`string`): verification bundle directory, जिसमें manifest और per-intent receipts होते हैं।
+- `run_dir` (`string`): unique verification bundle directory, जिसमें manifest और per-intent receipts होते हैं।
 - `manifest_path` (`string`): verification bundle manifest path।
 - `results` (`object[]`): हर intent का run या skip result।
 - `results[].verification_plan_id` (`string | null`): run result का plan identifier, या skipped result के लिए `null`।

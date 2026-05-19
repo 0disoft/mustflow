@@ -876,11 +876,13 @@ Read these files before working:
     "Run configured verification intents selected by required_after metadata.",
   "verify.help.option.reason": "Select the required_after reason to verify",
   "verify.help.option.fromClassification": "Read verification reasons from an mf classify report inside this repository",
-  "verify.help.option.fromPlan": "Compatibility alias for --from-classification",
+  "verify.help.option.fromPlan": "Deprecated compatibility alias for --from-classification; it still expects an mf classify report",
   "verify.help.option.changed": "Classify current Git changes and verify the matching reasons",
   "verify.help.option.writePlan": "Compatibility option that writes the changed-file classification report",
   "verify.help.option.reproEvidence": "Read structured bug-fix reproduction evidence from a repository-local JSON summary",
   "verify.help.option.externalEvidence": "Read lower-authority external CI evidence from a repository-local JSON summary",
+  "verify.help.option.parallel":
+    "Run safe non-conflicting schedule batches with up to this many commands; default is 1",
   "verify.help.option.planOnly": "Print the verification plan without running commands; requires --json",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
@@ -896,6 +898,7 @@ Read these files before working:
   "verify.error.planOnlyJson": "--plan-only requires --json",
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence cannot be used with --plan-only",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence cannot be used with --plan-only",
+  "verify.error.invalidParallel": "--parallel must be a positive integer",
   "verify.error.invalid_plan_file": "Classification report must be a readable JSON file",
   "verify.error.unsupported_plan_source": "Verification input must be an mf classify report",
   "verify.error.plan_root_mismatch": "Classification report must come from this mustflow root",

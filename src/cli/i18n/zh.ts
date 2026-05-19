@@ -868,11 +868,13 @@ export const zhMessages = {
     "运行由 required_after 元数据选出的已配置验证意图。",
   "verify.help.option.reason": "选择要验证的 required_after 原因",
   "verify.help.option.fromClassification": "从此仓库内的 mf classify 报告读取验证原因",
-  "verify.help.option.fromPlan": "--from-classification 的兼容别名",
+  "verify.help.option.fromPlan": "--from-classification 的已弃用兼容别名；输入仍必须是 mf classify 报告",
   "verify.help.option.changed": "分类当前 Git 变更并验证匹配的原因",
   "verify.help.option.writePlan": "写入变更文件分类报告的兼容选项",
   "verify.help.option.reproEvidence": "从仓库本地 JSON 摘要读取结构化的 bug 复现证据",
   "verify.help.option.externalEvidence": "从仓库本地 JSON 摘要读取低权限外部 CI 证据",
+  "verify.help.option.parallel":
+    "最多并行执行这个数量的安全、无冲突计划批次命令；默认值为 1",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
@@ -888,6 +890,7 @@ export const zhMessages = {
   "verify.error.planOnlyJson": "--plan-only 需要 --json",
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence 不能与 --plan-only 一起使用",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence 不能与 --plan-only 一起使用",
+  "verify.error.invalidParallel": "--parallel 必须是正整数",
   "verify.error.invalid_plan_file": "分类报告必须是可读取的 JSON 文件",
   "verify.error.unsupported_plan_source": "验证输入必须是 mf classify 报告",
   "verify.error.plan_root_mismatch": "分类报告必须来自当前 mustflow 根目录",

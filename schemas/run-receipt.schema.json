@@ -35,7 +35,7 @@
     "schema_version": { "const": "1" },
     "command": { "const": "run" },
     "intent": { "type": "string" },
-    "status": { "enum": ["passed", "failed", "timed_out", "start_failed"] },
+    "status": { "enum": ["passed", "failed", "timed_out", "start_failed", "output_limit_exceeded"] },
     "timed_out": { "type": "boolean" },
     "started_at": { "type": "string", "format": "date-time" },
     "finished_at": { "type": "string", "format": "date-time" },
@@ -64,6 +64,7 @@
     "signal": { "type": ["string", "null"] },
     "error": { "type": ["string", "null"] },
     "kill_method": { "type": ["string", "null"] },
+    "termination": { "$ref": "#/$defs/termination" },
     "stdout": { "$ref": "#/$defs/output" },
     "stderr": { "$ref": "#/$defs/output" },
     "write_drift": { "$ref": "#/$defs/writeDrift" },
@@ -182,10 +183,10 @@
           "additionalProperties": false,
           "required": ["status", "exit_code_class", "timed_out", "error_kind"],
           "properties": {
-            "status": { "enum": ["passed", "failed", "timed_out", "start_failed"] },
+            "status": { "enum": ["passed", "failed", "timed_out", "start_failed", "output_limit_exceeded"] },
             "exit_code_class": { "enum": ["success", "failure", "no_exit_code"] },
             "timed_out": { "type": "boolean" },
-            "error_kind": { "enum": ["timeout", "start_failed", "exit_code", null] }
+            "error_kind": { "enum": ["timeout", "start_failed", "output_limit_exceeded", "exit_code", null] }
           }
         },
         "quality": {
@@ -198,6 +199,28 @@
             "usable_for_history": { "type": "boolean" }
           }
         }
+      }
+    },
+    "termination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "method",
+        "graceful_signal",
+        "forced_signal",
+        "forced_kill_attempted",
+        "confirmed",
+        "cleanup_pending"
+      ],
+      "properties": {
+        "reason": { "const": "timeout" },
+        "method": { "type": "string" },
+        "graceful_signal": { "type": ["string", "null"] },
+        "forced_signal": { "type": ["string", "null"] },
+        "forced_kill_attempted": { "type": "boolean" },
+        "confirmed": { "type": "boolean" },
+        "cleanup_pending": { "type": "boolean" }
       }
     },
     "redaction": {

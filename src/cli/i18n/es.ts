@@ -878,11 +878,13 @@ Lee estos archivos antes de trabajar:
     "Ejecuta intenciones de verificación configuradas seleccionadas por metadatos required_after.",
   "verify.help.option.reason": "Selecciona la razón required_after que se debe verificar",
   "verify.help.option.fromClassification": "Lee razones de verificación desde un informe de mf classify dentro de este repositorio",
-  "verify.help.option.fromPlan": "Alias de compatibilidad para --from-classification",
+  "verify.help.option.fromPlan": "Alias de compatibilidad obsoleto para --from-classification; todavía espera un informe de mf classify",
   "verify.help.option.changed": "Clasifica los cambios actuales de Git y verifica las razones correspondientes",
   "verify.help.option.writePlan": "Opción de compatibilidad que escribe el informe de clasificación de cambios",
   "verify.help.option.reproEvidence": "Lee evidencia estructurada de reproducción de errores desde un resumen JSON local del repositorio",
   "verify.help.option.externalEvidence": "Lee evidencia de CI externa de menor autoridad desde un resumen JSON local del repositorio",
+  "verify.help.option.parallel":
+    "Ejecuta lotes programados seguros y sin conflictos con hasta esta cantidad de comandos; el valor predeterminado es 1",
   "verify.help.option.planOnly": "Imprime el plan de verificación sin ejecutar comandos; requiere --json",
   "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
   "verify.help.exit.fail":
@@ -898,6 +900,7 @@ Lee estos archivos antes de trabajar:
   "verify.error.planOnlyJson": "--plan-only requiere --json",
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence no se puede usar con --plan-only",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence no se puede usar con --plan-only",
+  "verify.error.invalidParallel": "--parallel debe ser un entero positivo",
   "verify.error.invalid_plan_file": "El informe de clasificación debe ser un archivo JSON legible",
   "verify.error.unsupported_plan_source": "La entrada de verificación debe ser un informe de mf classify",
   "verify.error.plan_root_mismatch": "El informe de clasificación debe provenir de esta raíz mustflow",

@@ -34,7 +34,7 @@ instalado o los del repositorio de mustflow.
   escribe un puntero al último paquete de verificación
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, con estado agregado de
   ejecución y veredicto de finalización basado en evidencia
-- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-latest/manifest.json`,
+- `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`,
   con el mismo agregado de ejecución y veredicto que el informe verify
 - `run-receipt.schema.json`: `mf run <intent> --json` y `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: `.mustflow/config/commands.toml` analizado

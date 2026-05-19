@@ -700,7 +700,8 @@ required_after = ["schema_verify"]
 		);
 
 		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--json']);
-		const manifestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-latest', 'manifest.json');
+		const report = JSON.parse(result.stdout);
+		const manifestPath = path.join(projectPath, report.manifest_path);
 		const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);

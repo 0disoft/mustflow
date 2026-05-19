@@ -5,13 +5,13 @@ description: Runs configured verification intents selected by required_after met
 
 `mf verify --reason <event>` looks at `.mustflow/config/commands.toml`, finds command intents whose `required_after` list contains the given reason, and runs only the intents that are configured, one-shot, agent-allowed, closed-stdin commands.
 
-`mf verify --from-classification <path>` reads verification reasons from a JSON file inside the mustflow root. The file must be a mustflow classify report with `schema_version: "1"`, `command: "classify"`, the current `mustflow_root`, and `summary.validationReasons`. This keeps hand-written loose JSON from silently selecting runnable verification commands. `--from-plan` remains available as a compatibility alias during the naming transition.
+`mf verify --from-classification <path>` reads verification reasons from a JSON file inside the mustflow root. The file must be a mustflow classify report with `schema_version: "1"`, `command: "classify"`, the current `mustflow_root`, and `summary.validationReasons`. This keeps hand-written loose JSON from silently selecting runnable verification commands. `--from-plan` remains available as a deprecated compatibility alias during the naming transition, but it reads the same classify report shape; it does not read `mf verify --plan-only --json` output.
 
 `mf verify --changed` classifies the current Git working tree with the same semantics as `mf classify --changed`, then feeds those validation reasons into the verification selection model. Prefer `mf classify --changed --write <path>` when a tool needs a durable classification report. `--write-plan <path>` remains available as a compatibility option on `mf verify --changed`.
 
 `mf verify --plan-only --json` prints the verification plan without running commands. The output includes a stable `verification_plan_id` plus a `decision_graph` that links changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When a fresh local index exists, each scheduled entry can include `effectGraph` details from `.mustflow/cache/mustflow.sqlite`, including write locks and lock conflicts. Each `effectGraph` is marked `authority: "explanation_only"` and `grantsCommandAuthority: false`. Requirements can also include `surfaceReadModels` metadata that explains which indexed path-surface rule matched the changed files. Missing or stale indexes show a refresh hint and never change command selection or execution authority.
 
-When `mf verify` actually runs commands, it uses the same schedule model as plan-only output and executes `schedule.entries` serially through `mf run` receipts. The verify output, verify bundle manifest, latest pointer, and per-intent receipts share the same `verification_plan_id`.
+When `mf verify` actually runs commands, it uses the same schedule model as plan-only output and executes `schedule.entries` serially through `mf run` receipts by default. If `--parallel <count>` is greater than `1`, only entries from the same explicit-effect, non-conflicting schedule batch can run at the same time, and receipts are still written in schedule order. The verify output, verify bundle manifest, latest pointer, and per-intent receipts share the same `verification_plan_id`.
 
 The JSON `execution_status` field is the aggregate command execution result. The legacy `status` field is kept as the same execution aggregate for existing consumers. Automation that needs to decide whether the requested work is fully verified should read `completion_verdict.status`; only `verified` represents a complete verification claim.
 
@@ -20,7 +20,7 @@ Before writing the latest pointer, `mf verify` compares the previous verify summ
 ## Selection Rules
 
 - Matching uses the exact `required_after` reason string.
-- Classification files must stay inside the mustflow root, must be JSON, and must use the supported `mf classify` report shape.
+- Classification files must stay inside the mustflow root, must be JSON, and must use the supported `mf classify` report shape. Use `--from-classification` for new automation; keep `--from-plan` only for older integrations that already pass classify reports.
 - `--changed` uses current Git status paths; it does not make any command runnable.
 - Optional `.mustflow/config/test-selection.toml` rules may add project-declared related-test
   candidates for matched changed files, but those rules can only point to command intents already
@@ -89,7 +89,7 @@ Machine-readable output uses these fields:
   `authority: "supporting_only"`. They can downgrade a verdict when they are failed, cancelled, or
   unknown, but they do not select commands, authorize commands, or replace local run receipts.
 - `summary` (`object`): Counts for matched, ran, passed, failed, and skipped intents.
-- `run_dir` (`string`): Verify bundle directory containing the manifest and per-intent receipts.
+- `run_dir` (`string`): Unique verify bundle directory containing the manifest and per-intent receipts.
 - `manifest_path` (`string`): Verify bundle manifest path.
 - `results` (`object[]`): Per-intent run or skip results.
 - `results[].verification_plan_id` (`string | null`): The plan identifier for a run result, or `null` for skipped results.

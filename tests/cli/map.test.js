@@ -12,7 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -377,6 +377,55 @@ test('limits untracked filesystem discovery to anchor candidates', (t) => {
 	} finally {
 		removeTempProject(projectPath);
 	}
+});
+
+test('bounds git file discovery with timeout and output limits', async () => {
+	const { listGitFilesForRepoMap } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href);
+	const calls = [];
+	const files = listGitFilesForRepoMap(projectRoot, {
+		spawnGit(command, args, options) {
+			calls.push({ command, args, options });
+			return {
+				status: 0,
+				stdout: 'AGENTS.md\0README.md\0',
+			};
+		},
+	});
+
+	assert.deepEqual(files, ['AGENTS.md', 'README.md']);
+	assert.equal(calls.length, 1);
+	assert.equal(calls[0].command, 'git');
+	assert.deepEqual(calls[0].args, ['ls-files', '-z']);
+	assert.equal(calls[0].options.cwd, projectRoot);
+	assert.equal(calls[0].options.encoding, 'utf8');
+	assert.equal(calls[0].options.windowsHide, true);
+	assert.equal(Number.isInteger(calls[0].options.timeout) && calls[0].options.timeout > 0, true);
+	assert.equal(Number.isInteger(calls[0].options.maxBuffer) && calls[0].options.maxBuffer > 0, true);
+});
+
+test('treats oversized or timed-out git file discovery as unavailable for recursive fallback', async () => {
+	const { listGitFilesForRepoMap } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href);
+	const oversizedFiles = listGitFilesForRepoMap(projectRoot, {
+		spawnGit() {
+			return {
+				status: null,
+				error: Object.assign(new Error('stdout maxBuffer length exceeded'), { code: 'ENOBUFS' }),
+				stdout: 'AGENTS.md\0',
+			};
+		},
+	});
+	const timedOutFiles = listGitFilesForRepoMap(projectRoot, {
+		spawnGit() {
+			return {
+				status: null,
+				error: Object.assign(new Error('spawnSync git ETIMEDOUT'), { code: 'ETIMEDOUT' }),
+				stdout: 'AGENTS.md\0',
+			};
+		},
+	});
+
+	assert.deepEqual(oversizedFiles, []);
+	assert.deepEqual(timedOutFiles, []);
 });
 
 test('follows only in-root workspace symlinks when enabled', (t) => {

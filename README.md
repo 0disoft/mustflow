@@ -124,7 +124,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a machine-readable verification decision graph and read-only local-index lock explanations when available.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
-- Writes command receipts to `.mustflow/state/runs/latest.json`.
+- Writes command receipts under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
 - Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, command-authority source, or source-content database.
 - Tracks agent-created or agent-modified documentation needing prose review with `mf docs review`.
@@ -358,7 +358,7 @@ Development servers, watch modes, browser UIs, interactive commands, and backgro
 
 Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
 
-Each executed command run writes the latest run record to `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
+Each executed command run writes a run record under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
 
 ## Language and profiles
 

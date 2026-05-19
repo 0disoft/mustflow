@@ -953,6 +953,8 @@ destructive = false
 		assert.equal(receipt.write_drift.has_undeclared_changes, false);
 		assert.equal(receipt.write_drift.reason, 'git_status_unavailable_recursive_snapshot_disabled');
 		assert.ok(existsSync(latestPath));
+		assert.match(receipt.receipt_path, /^\.mustflow\/state\/runs\/run-.*\/receipt\.json$/u);
+		assert.ok(existsSync(path.join(projectPath, receipt.receipt_path)));
 		assert.deepEqual(latest, receipt);
 		assert.equal(performanceSamples.schema_version, '1');
 		assert.equal(performanceSamples.retention.max_age_days, 30);
@@ -1126,6 +1128,68 @@ test('keeps receipt performance fields limited to safe structured values', async
 		assert.doesNotMatch(serializedPerformance, /child-command/);
 		assert.doesNotMatch(serializedPerformance, /source\/path/);
 		assert.doesNotMatch(serializedPerformance, /direct-intent/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps bounded output tails on UTF-8 character boundaries', async () => {
+	const { BoundedOutputBuffer } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'bounded-output.js')).href);
+	const buffer = new BoundedOutputBuffer(2);
+
+	buffer.append('한');
+
+	const snapshot = buffer.toSnapshot();
+
+	assert.equal(snapshot.bytes, Buffer.byteLength('한', 'utf8'));
+	assert.equal(snapshot.tail, '');
+	assert.doesNotMatch(snapshot.tail, /\uFFFD/u);
+});
+
+test('keeps receipt output tails on UTF-8 character boundaries', async () => {
+	const projectPath = createTempProject();
+	const { createRunReceipt } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'run-receipt.js')).href);
+
+	try {
+		const receipt = createRunReceipt({
+			intent: 'utf8_tail_fixture',
+			status: 'passed',
+			timedOut: false,
+			startedAt: new Date('2026-05-15T12:00:00.000Z'),
+			finishedAt: new Date('2026-05-15T12:00:01.000Z'),
+			projectRoot: projectPath,
+			cwd: projectPath,
+			lifecycle: 'oneshot',
+			runPolicy: 'agent_allowed',
+			mode: 'argv',
+			argv: [process.execPath, '-e', 'process.stdout.write("한")'],
+			envPolicy: 'minimal',
+			envAllowlist: [],
+			timeoutSeconds: 10,
+			maxOutputBytes: 2,
+			successExitCodes: [0],
+			exitCode: 0,
+			signal: null,
+			error: null,
+			killMethod: null,
+			stdout: '한',
+			stderr: '',
+			writeDrift: {
+				status: 'unavailable',
+				declared_paths: [],
+				observed_paths: [],
+				undeclared_paths: [],
+				has_undeclared_changes: false,
+				reason: 'test_fixture',
+			},
+			stdoutTailBytes: 2,
+			stderrTailBytes: 2,
+		});
+
+		assert.equal(receipt.stdout.bytes, Buffer.byteLength('한', 'utf8'));
+		assert.equal(receipt.stdout.truncated, true);
+		assert.equal(receipt.stdout.tail, '');
+		assert.doesNotMatch(receipt.stdout.tail, /\uFFFD/u);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1642,6 +1706,51 @@ destructive = false
 	}
 });
 
+test('records output limit overflow separately from process start failure', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.too_chatty]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write more output than the configured capture budget allows."
+argv = ['${process.execPath}', '-e', 'process.stdout.write("x".repeat(4096))']
+cwd = "."
+timeout_seconds = 10
+max_output_bytes = 1024
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'too_chatty', '--json']);
+		const receipt = JSON.parse(result.stdout);
+		const latest = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(receipt.status, 'output_limit_exceeded');
+		assert.equal(receipt.timed_out, false);
+		assert.equal(receipt.exit_code, null);
+		assert.equal(receipt.performance.result_summary.status, 'output_limit_exceeded');
+		assert.equal(receipt.performance.result_summary.error_kind, 'output_limit_exceeded');
+		assert.equal(receipt.performance.result_summary.timed_out, false);
+		assert.notEqual(receipt.status, 'start_failed');
+		assert.match(receipt.error, /maxBuffer|ENOBUFS|exceeded/i);
+		assert.deepEqual(latest, receipt);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('records timed out command intents as JSON receipts', () => {
 	const projectPath = createTempProject();
 
@@ -1677,6 +1786,15 @@ destructive = false
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
 		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
+		assert.deepEqual(receipt.termination, {
+			reason: 'timeout',
+			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
+			graceful_signal: 'SIGTERM',
+			forced_signal: 'SIGKILL',
+			forced_kill_attempted: true,
+			confirmed: false,
+			cleanup_pending: true,
+		});
 		assert.deepEqual(latest, receipt);
 	} finally {
 		removeTempProject(projectPath);
@@ -1719,6 +1837,16 @@ destructive = false
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
+		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
+		assert.deepEqual(receipt.termination, {
+			reason: 'timeout',
+			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
+			graceful_signal: 'SIGTERM',
+			forced_signal: 'SIGKILL',
+			forced_kill_attempted: true,
+			confirmed: false,
+			cleanup_pending: true,
+		});
 		assert.match(result.stderr, /timed out/i);
 	} finally {
 		removeTempProject(projectPath);

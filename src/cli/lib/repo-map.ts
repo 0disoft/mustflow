@@ -13,6 +13,8 @@ const REPO_MAP_GENERATOR = 'mustflow';
 const REPO_MAP_RELATIVE_ROOT = '.';
 const REPO_MAP_SOURCE_POLICY = 'anchors_only';
 const REPO_MAP_PRIVACY_MODE = 'minimal';
+const GIT_LS_FILES_TIMEOUT_MS = 5_000;
+const GIT_LS_FILES_MAX_BUFFER_BYTES = 1_048_576;
 const EXCLUDED_SEGMENTS = new Set([
 	'.astro',
 	'.cache',
@@ -259,6 +261,28 @@ interface SafeDirectoryTarget {
 	readonly realPath: string;
 }
 
+interface GitLsFilesResult {
+	readonly status: number | null;
+	readonly error?: Error;
+	readonly stdout: string;
+}
+
+interface GitLsFilesOptions {
+	readonly maxBuffer?: number;
+	readonly timeout?: number;
+	readonly spawnGit?: (
+		command: string,
+		args: readonly string[],
+		options: {
+			readonly cwd: string;
+			readonly encoding: 'utf8';
+			readonly maxBuffer: number;
+			readonly timeout: number;
+			readonly windowsHide: true;
+		},
+	) => GitLsFilesResult;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -314,10 +338,17 @@ function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 	};
 }
 
-function getGitFiles(projectRoot: string): readonly string[] {
-	const result = spawnSync('git', ['ls-files', '-z'], {
+export function listGitFilesForRepoMap(projectRoot: string, options: GitLsFilesOptions = {}): readonly string[] {
+	const spawnGit =
+		options.spawnGit ??
+		((command, args, spawnOptions) =>
+			spawnSync(command, [...args], spawnOptions) as GitLsFilesResult);
+	const result = spawnGit('git', ['ls-files', '-z'], {
 		cwd: projectRoot,
 		encoding: 'utf8',
+		maxBuffer: options.maxBuffer ?? GIT_LS_FILES_MAX_BUFFER_BYTES,
+		timeout: options.timeout ?? GIT_LS_FILES_TIMEOUT_MS,
+		windowsHide: true,
 	});
 
 	if (result.status !== 0 || result.error) {
@@ -372,7 +403,7 @@ function listAnchorCandidateFilesRecursive(
 function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: ReadonlySet<string>): string[] {
 	const files = new Set<string>();
 
-	for (const relativePath of getGitFiles(projectRoot)) {
+	for (const relativePath of listGitFilesForRepoMap(projectRoot)) {
 		files.add(relativePath);
 	}
 
