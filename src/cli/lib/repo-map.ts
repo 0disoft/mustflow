@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, lstatSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { toPosixPath } from './filesystem.js';
+import { writeUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { readTomlFile } from './toml.js';
 
 const DEFAULT_DEPTH = 3;
@@ -925,5 +926,5 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 }
 
 export function writeRepoMap(projectRoot: string, content: string): void {
-	writeFileSync(path.join(projectRoot, 'REPO_MAP.md'), content);
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, 'REPO_MAP.md'), content);
 }

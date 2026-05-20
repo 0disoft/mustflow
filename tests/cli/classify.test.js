@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
@@ -38,6 +38,24 @@ function runCli(cwd, args) {
 function runGit(cwd, args) {
 	const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function trySymlink(target, linkPath, type = 'file') {
+	try {
+		symlinkSync(target, linkPath, type);
+		return true;
+	} catch (error) {
+		if (
+			error &&
+			typeof error === 'object' &&
+			'code' in error &&
+			['EPERM', 'ENOTSUP'].includes(error.code)
+		) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 test('classifies explicit paths with public surface contracts as json', async () => {
@@ -221,6 +239,37 @@ test('writes changed-file classification reports to repository-local paths', asy
 		assert.deepEqual(writtenReport.files, ['README.md']);
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('refuses to write classification reports through symlink targets', async (t) => {
+	const projectPath = createClassifyProject();
+	const outsidePath = createTempProject('mustflow-classify-outside-');
+	const outsideReportPath = path.join(outsidePath, 'classification.json');
+	const linkPath = path.join(projectPath, '.mustflow', 'state', 'classification-link.json');
+
+	try {
+		writeFileSync(outsideReportPath, 'outside\n');
+		mkdirSync(path.dirname(linkPath), { recursive: true });
+		if (!trySymlink(outsideReportPath, linkPath)) {
+			t.skip('file symlinks are not available in this environment');
+			return;
+		}
+
+		const result = await runCli(projectPath, [
+			'classify',
+			'README.md',
+			'--write',
+			'.mustflow/state/classification-link.json',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Invalid input|Usage: mf classify/);
+		assert.equal(readFileSync(outsideReportPath, 'utf8'), 'outside\n');
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
 	}
 });
 

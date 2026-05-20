@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export interface VerificationFailureFingerprint {
 	readonly schema_version: '1';
@@ -146,8 +148,7 @@ function readRepeatedFailureState(projectRoot: string): RepeatedFailureState {
 
 function writeRepeatedFailureState(projectRoot: string, state: RepeatedFailureState): void {
 	const statePath = repeatedFailureStatePath(projectRoot);
-	mkdirSync(path.dirname(statePath), { recursive: true });
-	writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+	writeJsonFileInsideWithoutSymlinks(projectRoot, statePath, state);
 }
 
 export function createVerificationFailureFingerprint(

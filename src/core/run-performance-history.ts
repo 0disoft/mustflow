@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { RunReceipt, RunReceiptPerformance } from './run-receipt.js';
+import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 const PERFORMANCE_HISTORY_SCHEMA_VERSION = '1';
 const PERFORMANCE_HISTORY_DIR = path.join('.mustflow', 'state', 'perf');
@@ -442,9 +443,8 @@ export function recordRunPerformanceHistory(projectRoot: string, receipt: RunRec
 		const samplesFile = createSamplesFile(samples);
 		const summaryFile = createSummary(samples, sample.observed_day);
 
-		mkdirSync(historyDir, { recursive: true });
-		writeFileSync(samplesPath, serialize(samplesFile));
-		writeFileSync(summaryPath, serialize(summaryFile));
+		writeJsonFileInsideWithoutSymlinks(projectRoot, samplesPath, samplesFile);
+		writeJsonFileInsideWithoutSymlinks(projectRoot, summaryPath, summaryFile);
 	} catch {
 		// Performance history is a local optimization hint. A write failure must not affect command execution.
 	}

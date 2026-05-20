@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
+
+import { readFileInsideWithoutSymlinks, writeFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export type LineEndingKind = 'lf' | 'crlf' | 'mixed' | 'none' | 'binary';
 export type LineEndingPolicy = 'lf' | 'unknown';
@@ -49,7 +51,7 @@ function hasLfPolicy(projectRoot: string): boolean {
 		return false;
 	}
 
-	const content = readFileSync(attributesPath, 'utf8');
+	const content = readFileInsideWithoutSymlinks(projectRoot, attributesPath).toString('utf8');
 	return /^\*\s+.*(?:^|\s)eol=lf(?:\s|$)/imu.test(content);
 }
 
@@ -174,7 +176,13 @@ export function inspectLineEndings(projectRoot: string, mode: 'check' | 'normali
 			continue;
 		}
 
-		const buffer = readFileSync(absolutePath);
+		let buffer: Buffer;
+		try {
+			buffer = readFileInsideWithoutSymlinks(root, absolutePath);
+		} catch (error) {
+			issues.push(error instanceof Error ? error.message : String(error));
+			continue;
+		}
 		const lineEnding = detectLineEnding(buffer);
 		const wouldChange = policy === 'lf' && (lineEnding === 'crlf' || lineEnding === 'mixed');
 
@@ -183,7 +191,7 @@ export function inspectLineEndings(projectRoot: string, mode: 'check' | 'normali
 		}
 
 		if (canApply) {
-			writeFileSync(absolutePath, normalizeLf(buffer));
+			writeFileInsideWithoutSymlinks(root, absolutePath, normalizeLf(buffer));
 			changedFiles.push(toPosixPath(relativePath));
 		}
 

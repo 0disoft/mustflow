@@ -1,6 +1,7 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
+
+import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 const RUN_PROFILE_SCHEMA_VERSION = '1';
 const RUN_PROFILE_ENV = 'MUSTFLOW_RUN_PROFILE';
@@ -127,8 +128,7 @@ export class RunProfiler {
 		};
 		const profilePath = path.join(input.projectRoot, RUN_PROFILE_DIR, LATEST_RUN_PROFILE);
 
-		mkdirSync(path.dirname(profilePath), { recursive: true });
-		writeFileSync(profilePath, `${JSON.stringify(profile, null, 2)}\n`);
+		writeJsonFileInsideWithoutSymlinks(input.projectRoot, profilePath, profile);
 	}
 
 	private recordPhase(name: string, startedAtMs: number): void {

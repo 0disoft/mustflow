@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { lstatSync, readlinkSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, lstatSync, readFileSync, readlinkSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { normalizeCommandEffects } from './command-effects.js';
@@ -7,6 +8,9 @@ import type { CommandContract } from './config-loading.js';
 
 const MAX_SNAPSHOT_FILES = 20_000;
 const MAX_REPORTED_PATHS = 200;
+const GIT_STATUS_TIMEOUT_MS = 10_000;
+const GIT_STATUS_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
+const MAX_HASH_BYTES = 5 * 1024 * 1024;
 const RECURSIVE_SNAPSHOT_ENV = 'MUSTFLOW_WRITE_DRIFT_SNAPSHOT';
 const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
 const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/runs']);
@@ -76,6 +80,31 @@ function signatureForPath(fullPath: string): FileSignature {
 	return `${type}:${stat.size}:${stat.mtimeMs}`;
 }
 
+function signatureForGitStatusPath(projectRoot: string, relativePath: string, status: string): FileSignature {
+	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
+
+	if (!existsSync(fullPath)) {
+		return `git:${status}:missing`;
+	}
+
+	const stat = lstatSync(fullPath);
+
+	if (stat.isSymbolicLink()) {
+		return `git:${status}:symlink:${readlinkSync(fullPath)}`;
+	}
+
+	if (!stat.isFile()) {
+		return `git:${status}:${stat.isDirectory() ? 'directory' : 'other'}:${stat.size}:${stat.mtimeMs}`;
+	}
+
+	if (stat.size > MAX_HASH_BYTES) {
+		return `git:${status}:file:${stat.size}:${stat.mtimeMs}:unhashed`;
+	}
+
+	const digest = createHash('sha256').update(readFileSync(fullPath)).digest('hex');
+	return `git:${status}:file:${stat.size}:${digest}`;
+}
+
 function collectSnapshotEntries(projectRoot: string, currentPath: string, entries: Map<string, FileSignature>): void {
 	const names = readdirSync(currentPath).sort((left, right) => left.localeCompare(right));
 
@@ -134,7 +163,9 @@ function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
 	const result = spawnSync('git', ['-C', projectRoot, 'status', '--porcelain=v1', '-z', '--untracked-files=all'], {
 		encoding: 'utf8',
 		input: '',
+		maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
 		stdio: ['ignore', 'pipe', 'pipe'],
+		timeout: GIT_STATUS_TIMEOUT_MS,
 		windowsHide: true,
 	});
 
@@ -154,7 +185,7 @@ function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
 			continue;
 		}
 
-		entries.set(filePath, `git:${status}`);
+		entries.set(filePath, signatureForGitStatusPath(projectRoot, filePath, status));
 
 		if (status.includes('R') || status.includes('C')) {
 			index += 1;

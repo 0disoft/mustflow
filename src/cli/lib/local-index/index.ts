@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -16,6 +16,7 @@ import {
 import { listSourceAnchorFiles } from '../../../core/source-anchors.js';
 import { normalizeCommandEffects, type NormalizedCommandEffect } from '../../../core/command-effects.js';
 import { listChangeClassificationRuleDescriptors } from '../../../core/change-classification.js';
+import { writeFileInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
 import {
 	DEFAULT_DATABASE_RELATIVE_PATH,
 	DEFAULT_PROMPT_CACHE_STABLE_READ,
@@ -3056,8 +3057,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 			includeSource,
 			new Date().toISOString(),
 		);
-		mkdirSync(path.dirname(databasePath), { recursive: true });
-		writeFileSync(databasePath, database.export());
+		writeFileInsideWithoutSymlinks(projectRoot, databasePath, database.export());
 		database.close();
 	}
 

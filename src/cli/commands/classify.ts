@@ -1,10 +1,10 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
 	createChangeClassificationReport,
 	type ChangeClassificationReport,
 } from '../../core/change-classification.js';
+import { writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -167,8 +167,7 @@ function resolveWritePath(projectRoot: string, inputPath: string): string {
 
 function writeClassifyOutput(projectRoot: string, inputPath: string, output: ClassifyOutput): void {
 	const outputPath = resolveWritePath(projectRoot, inputPath);
-	mkdirSync(path.dirname(outputPath), { recursive: true });
-	writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+	writeJsonFileInsideWithoutSymlinks(projectRoot, outputPath, output);
 }
 
 export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {

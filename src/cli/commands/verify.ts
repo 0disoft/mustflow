@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
@@ -9,13 +9,14 @@ import {
 	type ChangeVerificationCandidate,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
+import { writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import {
 	createVerifyCompletionVerdict,
 	type CompletionVerdict,
 	type CompletionVerdictCriteriaEvidence,
 	type CompletionVerdictReceiptBindingEvidence,
 } from '../../core/completion-verdict.js';
-import { atomicWriteJsonFile, createStateRunId } from '../../core/atomic-state-write.js';
+import { createStateRunId } from '../../core/atomic-state-write.js';
 import {
 	createExternalEvidenceRisks,
 	type ExternalEvidenceCheck,
@@ -844,8 +845,7 @@ function createInputFromChanged(projectRoot: string): { readonly input: VerifyIn
 
 function writeChangedPlan(projectRoot: string, inputPath: string, plan: ClassifyOutput): void {
 	const planPath = resolvePlanPath(projectRoot, inputPath);
-	mkdirSync(path.dirname(planPath), { recursive: true });
-	writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
+	writeJsonFileInsideWithoutSymlinks(projectRoot, planPath, plan);
 }
 
 export function planErrorMessageKey(code: string): MessageKey {
@@ -1557,8 +1557,6 @@ function writeVerifyRunReceipts(
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
 	const results: VerificationResult[] = [];
 
-	mkdirSync(statePaths.absoluteIntentDir, { recursive: true });
-
 	for (const [index, result] of output.results.entries()) {
 		let receiptPath: string | null = null;
 		let receiptSha256: string | null = null;
@@ -1575,7 +1573,7 @@ function writeVerifyRunReceipts(
 			};
 			const receiptContent = `${JSON.stringify(receipt, null, 2)}\n`;
 			receiptSha256 = hashTextSha256(receiptContent);
-			atomicWriteJsonFile(absoluteReceiptPath, receipt);
+			writeJsonFileInsideWithoutSymlinks(projectRoot, absoluteReceiptPath, receipt);
 		}
 
 		receipts.push({
@@ -1685,7 +1683,7 @@ function writeVerifyRunReceipts(
 		receipts,
 	};
 
-	atomicWriteJsonFile(statePaths.absoluteManifestPath, manifest);
+	writeJsonFileInsideWithoutSymlinks(projectRoot, statePaths.absoluteManifestPath, manifest);
 
 	const latest: VerifyLatestRunPointer = {
 		schema_version: '1',
@@ -1708,7 +1706,7 @@ function writeVerifyRunReceipts(
 		manifest_path: statePaths.manifestPath,
 	};
 
-	atomicWriteJsonFile(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), latest);
+	writeJsonFileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), latest);
 	return outputWithReceiptPaths;
 }
 
