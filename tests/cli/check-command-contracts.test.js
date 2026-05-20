@@ -466,12 +466,12 @@ test('fails oversized command output limits', () => {
 		assert.equal(result.status, 1);
 		assert.ok(
 			check.issues.some((issue) =>
-				issue === '[commands.defaults].max_output_bytes must be less than or equal to 16777216',
+			issue === '[commands.defaults].max_output_bytes must be less than or equal to 16777216 per output stream',
 			),
 		);
 		assert.ok(
 			check.issues.some((issue) =>
-				issue === '[commands.intents.too_large].max_output_bytes must be less than or equal to 16777216',
+			issue === '[commands.intents.too_large].max_output_bytes must be less than or equal to 16777216 per output stream',
 			),
 		);
 		assertHasIssueDetail(check, 'mustflow.command_contract.max_output_bytes_exceeds_limit');

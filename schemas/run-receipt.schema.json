@@ -56,6 +56,7 @@
     "cmd": { "type": "string" },
     "timeout_seconds": { "type": "integer" },
     "max_output_bytes": { "type": "integer" },
+    "max_output_bytes_scope": { "const": "per_stream" },
     "success_exit_codes": {
       "type": "array",
       "items": { "type": "integer" }
@@ -174,8 +175,10 @@
           "properties": {
             "stdout_bytes": { "type": "integer", "minimum": 0 },
             "stderr_bytes": { "type": "integer", "minimum": 0 },
+            "total_bytes": { "type": "integer", "minimum": 0 },
             "stdout_truncated": { "type": "boolean" },
-            "stderr_truncated": { "type": "boolean" }
+            "stderr_truncated": { "type": "boolean" },
+            "max_output_bytes_scope": { "const": "per_stream" }
           }
         },
         "result_summary": {

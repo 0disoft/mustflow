@@ -51,7 +51,7 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: 실행 의도에 명령 생명주기를 요구할지 정합니다.
 - `defaults.require_timeout_for_oneshot`: 단발성 명령에 제한 시간을 요구할지 정합니다.
 - `defaults.deny_unmanaged_long_running`: 관리되지 않는 장기 실행 명령을 차단할지 정합니다.
-- `defaults.max_output_bytes`: 실행기가 받을 수 있는 출력의 기본 상한입니다. 16 MiB
+- `defaults.max_output_bytes`: 실행기가 표준 출력(stdout)과 표준 오류(stderr) 각각에 적용하는 기본 출력 상한입니다. 16 MiB
   (16,777,216바이트)를 넘는 값은 거부됩니다.
 - `defaults.on_timeout`: 제한 시간을 넘겼을 때의 처리 방식입니다.
 - `defaults.kill_after_seconds`: 프로세스 정리 단계에서 사용할 수 있는 추가 대기 시간입니다.

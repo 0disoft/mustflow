@@ -1013,6 +1013,7 @@ destructive = false
 		assert.equal(receipt.env_policy, 'minimal');
 		assert.deepEqual(receipt.env_allowlist, []);
 		assert.equal(receipt.timeout_seconds, 10);
+		assert.equal(receipt.max_output_bytes_scope, 'per_stream');
 		assert.equal(receipt.stdout.truncated, false);
 		assert.match(receipt.stdout.tail, /hello receipt/);
 		assert.equal(receipt.stdout.redacted, false);
@@ -1034,8 +1035,10 @@ destructive = false
 		assert.ok(['node', 'bun'].includes(receipt.performance.runner.runtime));
 		assert.equal(receipt.performance.output_summary.stdout_bytes, receipt.stdout.bytes);
 		assert.equal(receipt.performance.output_summary.stderr_bytes, receipt.stderr.bytes);
+		assert.equal(receipt.performance.output_summary.total_bytes, receipt.stdout.bytes + receipt.stderr.bytes);
 		assert.equal(receipt.performance.output_summary.stdout_truncated, receipt.stdout.truncated);
 		assert.equal(receipt.performance.output_summary.stderr_truncated, receipt.stderr.truncated);
+		assert.equal(receipt.performance.output_summary.max_output_bytes_scope, 'per_stream');
 		assert.equal(receipt.performance.result_summary.status, 'passed');
 		assert.equal(receipt.performance.result_summary.exit_code_class, 'success');
 		assert.equal(receipt.performance.result_summary.timed_out, false);
@@ -1691,6 +1694,51 @@ destructive = false
 		assert.deepEqual(receipt.write_drift.undeclared_paths, ['git-sneaky.txt']);
 		assert.equal(receipt.write_drift.has_undeclared_changes, true);
 		assert.equal(receipt.write_drift.reason, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('detects undeclared rewrites to files that were already dirty before mf run', (t) => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		if (!commitGitBaseline(projectPath)) {
+			t.skip('git is not available in this environment');
+			return;
+		}
+		writeFileSync(path.join(projectPath, 'dirty.txt'), 'before\n');
+		appendIntent(
+			projectPath,
+			`
+[intents.git_dirty_rewrite]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Rewrite a file that was already dirty before execution."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync("dirty.txt", "after\\n")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'git_dirty_rewrite', '--json']);
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(receipt.status, 'passed');
+		assert.equal(receipt.write_drift.status, 'checked');
+		assert.deepEqual(receipt.write_drift.declared_paths, []);
+		assert.deepEqual(receipt.write_drift.observed_paths, ['dirty.txt']);
+		assert.deepEqual(receipt.write_drift.undeclared_paths, ['dirty.txt']);
+		assert.equal(receipt.write_drift.has_undeclared_changes, true);
+		assert.equal(readFileSync(path.join(projectPath, 'dirty.txt'), 'utf8'), 'after\n');
 	} finally {
 		removeTempProject(projectPath);
 	}

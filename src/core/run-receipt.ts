@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { atomicWriteJsonFile, createStateRunId } from './atomic-state-write.js';
+import { createStateRunId } from './atomic-state-write.js';
 import type { CommandEnvPolicy } from './command-env.js';
+import { COMMAND_OUTPUT_LIMIT_SCOPE } from './command-output-limits.js';
 import { decodeUtf8Tail, type BoundedOutputSnapshot } from './bounded-output.js';
 import { DEFAULT_RUN_RECEIPT_TAIL_BYTES } from './retention-policy.js';
 import type { RunWriteDriftReceipt } from './run-write-drift.js';
+import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { redactSecretLikeText } from './secret-redaction.js';
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
@@ -63,8 +65,10 @@ export interface RunReceiptPerformance {
 	readonly output_summary: {
 		readonly stdout_bytes: number;
 		readonly stderr_bytes: number;
+		readonly total_bytes: number;
 		readonly stdout_truncated: boolean;
 		readonly stderr_truncated: boolean;
+		readonly max_output_bytes_scope: typeof COMMAND_OUTPUT_LIMIT_SCOPE;
 	};
 	readonly result_summary: {
 		readonly status: RunReceiptStatus;
@@ -111,6 +115,7 @@ export interface RunReceipt {
 	readonly env_allowlist: readonly string[];
 	readonly timeout_seconds: number;
 	readonly max_output_bytes: number;
+	readonly max_output_bytes_scope: typeof COMMAND_OUTPUT_LIMIT_SCOPE;
 	readonly success_exit_codes: readonly number[];
 	readonly exit_code: number | null;
 	readonly signal: string | null;
@@ -363,8 +368,10 @@ function createPerformanceSummary(input: {
 		output_summary: {
 			stdout_bytes: input.stdout.bytes,
 			stderr_bytes: input.stderr.bytes,
+			total_bytes: input.stdout.bytes + input.stderr.bytes,
 			stdout_truncated: input.stdout.truncated,
 			stderr_truncated: input.stderr.truncated,
+			max_output_bytes_scope: COMMAND_OUTPUT_LIMIT_SCOPE,
 		},
 		result_summary: {
 			status: input.status,
@@ -464,6 +471,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 		env_allowlist: input.envAllowlist,
 		timeout_seconds: input.timeoutSeconds,
 		max_output_bytes: input.maxOutputBytes,
+		max_output_bytes_scope: COMMAND_OUTPUT_LIMIT_SCOPE,
 		success_exit_codes: input.successExitCodes,
 		exit_code: input.exitCode,
 		signal: input.signal,
@@ -516,6 +524,6 @@ export function writeRunReceipt(projectRoot: string, receipt: RunReceipt): void 
 		throw new Error(`Run receipt path must stay inside ${RUN_RECEIPT_DIR}`);
 	}
 
-	atomicWriteJsonFile(receiptPath, receipt);
-	atomicWriteJsonFile(latestPath, receipt);
+	writeJsonFileInsideWithoutSymlinks(projectRoot, receiptPath, receipt);
+	writeJsonFileInsideWithoutSymlinks(projectRoot, latestPath, receipt);
 }

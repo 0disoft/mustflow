@@ -18,6 +18,7 @@ import {
 } from '../../core/config-loading.js';
 import {
 	DEFAULT_COMMAND_MAX_OUTPUT_BYTES,
+	COMMAND_OUTPUT_LIMIT_SCOPE,
 	MAX_COMMAND_OUTPUT_BYTES,
 	commandMaxOutputBytesLimitMessage,
 } from '../../core/command-output-limits.js';
@@ -485,6 +486,7 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		resolved_cwd: plan.cwd,
 		timeout_seconds: plan.timeoutSeconds,
 		max_output_bytes: plan.maxOutputBytes,
+		max_output_bytes_scope: plan.maxOutputBytes === null ? null : COMMAND_OUTPUT_LIMIT_SCOPE,
 		mode: plan.mode,
 		argv: plan.commandArgv,
 		resolved_argv: plan.argvCommand,

@@ -70,7 +70,7 @@ export function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr'
 }
 
 export function createOutputLimitError(stream: 'stdout' | 'stderr', maxOutputBytes: number): Error {
-	return Object.assign(new Error(`${stream} exceeded max_output_bytes (${maxOutputBytes})`), {
+	return Object.assign(new Error(`${stream} exceeded per-stream max_output_bytes (${maxOutputBytes})`), {
 		code: OUTPUT_LIMIT_ERROR_CODE,
 	});
 }

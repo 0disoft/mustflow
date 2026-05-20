@@ -49,8 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: indique si les intentions exécutables doivent déclarer un cycle de vie de commande.
 - `defaults.require_timeout_for_oneshot`: indique si les commandes finies doivent déclarer un délai d’expiration.
 - `defaults.deny_unmanaged_long_running`: indique si les commandes longue durée non gérées sont bloquées.
-- `defaults.max_output_bytes`: limite de sortie par défaut acceptée par l’exécuteur. Les valeurs
-  supérieures à 16 Mio (16,777,216 octets) sont refusées.
+- `defaults.max_output_bytes`: limite de sortie par défaut acceptée par l’exécuteur pour chaque flux
+  de sortie standard ou d’erreur standard. Les valeurs supérieures à 16 Mio (16,777,216 octets) sont refusées.
 - `defaults.on_timeout`: politique de gestion des expirations.
 - `defaults.kill_after_seconds`: temps d’attente supplémentaire disponible pour le nettoyage des processus.
 

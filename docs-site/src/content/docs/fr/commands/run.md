@@ -65,8 +65,10 @@ La sortie lisible par machine utilise ces champs:
 - `argv` (`string[]`): commande et arguments lorsque le mode shell n’est pas utilisé.
 - `cmd` (`string`): chaîne de commande shell lorsque le mode shell est utilisé.
 - `timeout_seconds` (`number`): délai d’expiration appliqué.
-- `max_output_bytes` (`number`): taille maximale de sortie conservée. Les valeurs supérieures à
-  16 Mio (16,777,216 octets) sont refusées avant l’exécution.
+- `max_output_bytes` (`number`): taille maximale de sortie conservée pour chaque flux de sortie
+  standard ou d’erreur standard. Les valeurs supérieures à 16 Mio (16,777,216 octets) sont refusées avant l’exécution.
+- `max_output_bytes_scope` (`string`): toujours `per_stream`; `max_output_bytes` n’est pas un budget
+  combiné sortie standard plus erreur standard.
 - `success_exit_codes` (`number[]`): codes de sortie traités comme succès.
 - `exit_code` (`number | null`): code de sortie du processus.
 - `signal` (`string | null`): nom du signal lorsque le processus s’est terminé par un signal.

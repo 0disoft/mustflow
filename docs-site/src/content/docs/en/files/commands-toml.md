@@ -51,8 +51,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: Whether executable intents must declare a command lifecycle.
 - `defaults.require_timeout_for_oneshot`: Specifies whether oneshot commands are required to declare a timeout.
 - `defaults.deny_unmanaged_long_running`: Whether unmanaged long-running commands are blocked.
-- `defaults.max_output_bytes`: Default output limit accepted by the runner. Values above 16 MiB
-  (16,777,216 bytes) are rejected.
+- `defaults.max_output_bytes`: Default output limit accepted by the runner for each standard output
+  or standard error stream. Values above 16 MiB (16,777,216 bytes) are rejected.
 - `defaults.on_timeout`: Timeout handling policy.
 - `defaults.kill_after_seconds`: Extra wait time available to process cleanup.
 - `defaults.env_policy`: Environment policy for command execution when an intent does not override it.

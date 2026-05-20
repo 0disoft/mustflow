@@ -67,8 +67,10 @@ Machine-readable output uses these fields:
 - `argv` (`string[]`): Command and arguments when not using shell mode.
 - `cmd` (`string`): Shell command string when using shell mode.
 - `timeout_seconds` (`number`): Applied timeout.
-- `max_output_bytes` (`number`): Maximum retained output size. Values above 16 MiB
-  (16,777,216 bytes) are rejected before execution.
+- `max_output_bytes` (`number`): Maximum retained output size per standard output or standard error stream.
+  Values above 16 MiB (16,777,216 bytes) are rejected before execution.
+- `max_output_bytes_scope` (`string`): Always `per_stream`; `max_output_bytes` is not a combined
+  standard-output-plus-standard-error budget.
 - `success_exit_codes` (`number[]`): Exit codes treated as success.
 - `exit_code` (`number | null`): Process exit code.
 - `signal` (`string | null`): Signal name when the process ended by signal.
@@ -120,11 +122,12 @@ Performance summary objects use safe metadata only:
 - `performance.intent_fingerprint` (`string`): Hash of the intent and execution contract identity.
 - `performance.contract_fingerprint` (`string`): Hash of the execution contract identity.
 - `performance.runner` (`object`): Coarse local runner metadata such as platform family, architecture family, runtime, and runtime major version.
-- `performance.output_summary` (`object`): Output byte counts and truncation flags only.
+- `performance.output_summary` (`object`): Output byte counts, combined byte count, truncation flags,
+  and the `per_stream` output-limit scope.
 - `performance.result_summary` (`object`): Status, exit-code class, timeout flag, and coarse error kind.
 - `performance.quality` (`object`): Whether optional phase or target timing sources were present and whether the sample is usable as a performance hint.
 
-`output_limit_exceeded` means the process produced more captured output than the configured `max_output_bytes` budget allowed before a normal exit result could be recorded. It is reported separately from `start_failed`, because the command did start but the output capture limit was exceeded.
+`output_limit_exceeded` means either standard output or standard error produced more captured output than the configured per-stream `max_output_bytes` budget allowed before a normal exit result could be recorded. It is reported separately from `start_failed`, because the command did start but the output capture limit was exceeded.
 
 Performance summaries do not include command output, environment values, absolute paths, hostnames, branch names, raw commit hashes, or test names. They are local timing hints for already-authorized commands, not command authority and not proof that a verification step can be skipped.
 

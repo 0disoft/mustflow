@@ -35,6 +35,7 @@ A receipt must include:
 - `mode`
 - `timeout_seconds`
 - `max_output_bytes`
+- `max_output_bytes_scope`
 - `success_exit_codes`
 - `exit_code`
 - `signal`
@@ -52,6 +53,8 @@ A receipt must include:
 - `failed`: the process started but did not exit successfully.
 - `timed_out`: the command exceeded its configured timeout.
 - `start_failed`: the process could not be started.
+- `output_limit_exceeded`: the process started, but `stdout` or `stderr` exceeded the per-stream
+  `max_output_bytes` limit before a normal exit result could be recorded.
 
 ## Output Tails
 
@@ -62,6 +65,8 @@ Receipts store bounded output summaries, not raw, unbounded logs. Both `stdout` 
 - `tail`
 
 The tail must respect the configured output limits and should not be treated as a complete log.
+`max_output_bytes_scope = "per_stream"` means the configured byte limit applies independently to
+`stdout` and `stderr`, not to their combined size.
 
 ## Authority
 

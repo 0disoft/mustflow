@@ -49,8 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: indica si las intenciones ejecutables deben declarar un ciclo de vida de comando.
 - `defaults.require_timeout_for_oneshot`: indica si los comandos finitos deben declarar un tiempo de espera.
 - `defaults.deny_unmanaged_long_running`: indica si se bloquean comandos largos no gestionados.
-- `defaults.max_output_bytes`: límite de salida predeterminado aceptado por el ejecutor. Se rechazan
-  valores superiores a 16 MiB (16,777,216 bytes).
+- `defaults.max_output_bytes`: límite de salida predeterminado aceptado por el ejecutor para cada
+  flujo de salida estándar o error estándar. Se rechazan valores superiores a 16 MiB (16,777,216 bytes).
 - `defaults.on_timeout`: política de manejo de tiempo agotado.
 - `defaults.kill_after_seconds`: espera adicional disponible para limpiar procesos.
 

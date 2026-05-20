@@ -49,8 +49,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: क्या executable intents को command lifecycle declare करना होगा।
 - `defaults.require_timeout_for_oneshot`: क्या finite commands को timeout declare करना होगा।
 - `defaults.deny_unmanaged_long_running`: क्या unmanaged long-running commands block होंगी।
-- `defaults.max_output_bytes`: runner द्वारा स्वीकार किया जाने वाला default output limit। 16 MiB
-  (16,777,216 bytes) से बड़े मान अस्वीकार किए जाते हैं।
+- `defaults.max_output_bytes`: stdout या stderr stream में से हर एक के लिए runner द्वारा स्वीकार किया
+  जाने वाला default output limit। 16 MiB (16,777,216 bytes) से बड़े मान अस्वीकार किए जाते हैं।
 - `defaults.on_timeout`: timeout handling policy।
 - `defaults.kill_after_seconds`: process cleanup के लिए अतिरिक्त wait time।
 

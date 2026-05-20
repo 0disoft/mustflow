@@ -49,7 +49,7 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.require_lifecycle`: 可执行意图是否必须声明命令生命周期。
 - `defaults.require_timeout_for_oneshot`: 有限命令是否必须声明超时时间。
 - `defaults.deny_unmanaged_long_running`: 是否阻止未受管理的长时间运行命令。
-- `defaults.max_output_bytes`: 运行器接受的默认输出限制。超过 16 MiB（16,777,216 字节）的值会被拒绝。
+- `defaults.max_output_bytes`: 运行器对每个标准输出或标准错误流接受的默认输出限制。超过 16 MiB（16,777,216 字节）的值会被拒绝。
 - `defaults.on_timeout`: 超时处理策略。
 - `defaults.kill_after_seconds`: 进程清理可使用的额外等待时间。
 

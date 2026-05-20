@@ -75,7 +75,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.configured_missing_lifecycle', /^Configured intent [^\s]+ must define lifecycle$/u],
 	['mustflow.command_contract.configured_missing_run_policy', /^Configured intent [^\s]+ must define run_policy$/u],
 	['mustflow.command_contract.oneshot_missing_timeout', /^Oneshot intent [^\s]+ must define timeout_seconds$/u],
-	['mustflow.command_contract.max_output_bytes_exceeds_limit', /^\[commands\.(?:defaults|intents\.[^\]]+)\]\.max_output_bytes must be less than or equal to \d+$/u],
+	['mustflow.command_contract.max_output_bytes_exceeds_limit', /^\[commands\.(?:defaults|intents\.[^\]]+)\]\.max_output_bytes must be less than or equal to \d+ per output stream$/u],
 	['mustflow.command_contract.oneshot_stdin_not_closed', /^Oneshot intent [^\s]+ must set stdin = "closed"$/u],
 	['mustflow.command_contract.long_running_agent_allowed', /^Long-running intent [^\s]+ must not use run_policy = "agent_allowed"$/u],
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
