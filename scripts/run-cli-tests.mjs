@@ -34,7 +34,9 @@ const explainTests = [
 
 const localIndexTests = [
 	'index-dry-run.test.js',
-	'index.test.js',
+	'index-workflow.test.js',
+	'index-verification-evidence.test.js',
+	'index-source-anchors.test.js',
 	'search.test.js',
 	'search-backends.test.js',
 	'search-index-state.test.js',
@@ -42,6 +44,7 @@ const localIndexTests = [
 	'search-source-scope.test.js',
 ];
 
+const indexTests = ['index-workflow.test.js', 'index-verification-evidence.test.js', 'index-source-anchors.test.js'];
 const versioningTests = ['check-versioning.test.js', 'version-sources.test.js'];
 const runTests = [
 	'run-execution.test.js',
@@ -50,7 +53,12 @@ const runTests = [
 	'run-safety.test.js',
 ];
 const commandContractTests = ['check-command-contracts.test.js', ...runTests];
-const sourceAnchorTests = ['check-source-anchors.test.js', 'explain-source-anchor.test.js', 'index.test.js', 'search-source-scope.test.js'];
+const sourceAnchorTests = [
+	'check-source-anchors.test.js',
+	'explain-source-anchor.test.js',
+	'index-source-anchors.test.js',
+	'search-source-scope.test.js',
+];
 const schemaSmokeTests = ['schema.test.js'];
 const routerSmokeTests = ['router.test.js'];
 const verifyTests = [
@@ -79,7 +87,7 @@ const fastWorkflowContractTests = [
 
 const fastHarnessSafetyTests = [
 	'index-dry-run.test.js',
-	'index.test.js',
+	...indexTests,
 	'security-fuzz.test.js',
 	'test-audit.test.js',
 	'test-selection.test.js',
@@ -107,7 +115,7 @@ const commandRelatedTests = new Map([
 	['handoff', ['handoff.test.js', ...schemaSmokeTests]],
 	['help', [...routerSmokeTests]],
 	['impact', ['impact.test.js', ...schemaSmokeTests]],
-	['index', ['index-dry-run.test.js', 'index.test.js']],
+	['index', ['index-dry-run.test.js', ...indexTests]],
 	['init', ['init.test.js', 'workflow.test.js']],
 	['line-endings', ['line-endings.test.js', ...schemaSmokeTests]],
 	['map', ['map.test.js', 'workflow.test.js']],
@@ -164,7 +172,7 @@ const relatedRules = [
 	{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: ['schema.test.js'] },
 	{ match: /^src\/core\/public-surface-explanation\.ts$/u, tests: ['explain-surface.test.js'] },
-	{ match: /^src\/core\/command-effects\.ts$/u, tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index.test.js', ...runTests] },
+	{ match: /^src\/core\/command-effects\.ts$/u, tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index-workflow.test.js', ...runTests] },
 	{ match: /^src\/core\/command-explanation\.ts$/u, tests: ['explain-command.test.js', 'explain-retention-asset.test.js'] },
 	{ match: /^src\/core\/retention-(explanation|policy)\.ts$/u, tests: ['explain-retention-asset.test.js'] },
 	{ match: /^src\/core\/command-cwd\.ts$/u, tests: runTests },
@@ -176,18 +184,21 @@ const relatedRules = [
 	{ match: /^src\/core\/verification-scheduler\.ts$/u, tests: ['verify-plan-scheduler.test.js', ...runTests] },
 	{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
 	{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js'] },
-	{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index.test.js', 'search-source-scope.test.js'] },
-	{ match: /^src\/core\/source-anchor-symbols\.ts$/u, tests: ['index.test.js', 'search-source-scope.test.js', 'check-source-anchors.test.js'] },
+	{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index-source-anchors.test.js', 'search-source-scope.test.js'] },
+	{ match: /^src\/core\/source-anchor-symbols\.ts$/u, tests: ['index-source-anchors.test.js', 'search-source-scope.test.js', 'check-source-anchors.test.js'] },
 	{ match: /^src\/core\/source-anchors\.ts$/u, tests: sourceAnchorTests },
 	{ match: /^src\/core\/surface-decision-model\.ts$/u, tests: ['explain-surface.test.js', 'verify.test.js', 'verify-plan-scheduler.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/toml\.ts$/u, tests: ['check-config-validation.test.js', 'contract-lint.test.js', ...runTests] },
 	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js', 'schema.test.js'] },
 	{ match: /^scripts\/audit-tests\.mjs$/u, tests: ['test-audit.test.js'] },
+	{ match: /^tests\/cli\/index-support\.js$/u, tests: indexTests },
+	{ match: /^tests\/cli\/index\.test\.js$/u, tests: indexTests },
 	{ match: /^tests\/cli\/run-support\.js$/u, tests: runTests },
+	{ match: /^tests\/cli\/run\.test\.js$/u, tests: runTests },
 	{ match: /^tests\/cli\/([^/]+\.test\.js)$/u, testsForMatch: ([, testName]) => [testName] },
 	{
 		match: /^\.mustflow\/config\/commands\.toml$/u,
-		tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index.test.js', ...runTests, ...verifyTests],
+		tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index-workflow.test.js', ...runTests, ...verifyTests],
 	},
 	{ match: /^\.mustflow\/config\/mustflow\.toml$/u, tests: ['check-config-validation.test.js', 'doctor.test.js'] },
 	{ match: /^\.mustflow\/config\/preferences\.toml$/u, tests: ['check-versioning.test.js', 'version-sources.test.js'] },
@@ -366,7 +377,7 @@ function testDemand(testPath) {
 	if (
 		[
 			'index-dry-run.test.js',
-			'index.test.js',
+			...indexTests,
 			'search.test.js',
 			'search-backends.test.js',
 			'search-index-state.test.js',

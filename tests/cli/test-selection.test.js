@@ -11,6 +11,11 @@ const runTests = [
 	'run-receipts.test.js',
 	'run-safety.test.js',
 ];
+const indexTests = [
+	'index-workflow.test.js',
+	'index-verification-evidence.test.js',
+	'index-source-anchors.test.js',
+];
 
 function selectRelated(changedFiles) {
 	return listSuite('related', changedFiles);
@@ -75,7 +80,7 @@ test('related selection maps command config changes to contract surfaces', () =>
 	assert.equal(report.release_sensitive, true);
 	assert.equal(selected.has('check-command-contracts.test.js'), true);
 	assert.equal(selected.has('explain-command.test.js'), true);
-	assert.equal(selected.has('index.test.js'), true);
+	assert.equal(selected.has('index-workflow.test.js'), true);
 	for (const testName of runTests) {
 		assert.equal(selected.has(testName), true);
 	}
@@ -91,7 +96,9 @@ test('related selection maps package metadata helper changes to command consumer
 	for (const testName of runTests) {
 		assert.equal(selected.has(testName), true);
 	}
-	assert.equal(selected.has('index.test.js'), false);
+	for (const testName of indexTests) {
+		assert.equal(selected.has(testName), false);
+	}
 });
 
 test('related selection covers the selector script itself', () => {
@@ -129,7 +136,9 @@ test('fast baseline keeps harness safety checks but excludes heavier feature sui
 	const report = listSuite('fast');
 
 	assert.equal(report.selected.includes('index-dry-run.test.js'), true);
-	assert.equal(report.selected.includes('index.test.js'), true);
+	for (const testName of indexTests) {
+		assert.equal(report.selected.includes(testName), true);
+	}
 	assert.equal(report.selected.includes('security-fuzz.test.js'), true);
 	assert.equal(report.selected.includes('test-audit.test.js'), true);
 	assert.equal(report.selected.includes('test-selection.test.js'), true);
