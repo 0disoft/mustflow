@@ -16,6 +16,7 @@ This command never writes files. Use it when an agent or human requires an initi
 - `manifest.lock.toml` state.
 - Template identifier and version from the lock file when present.
 - Whether `.mustflow/config/commands.toml` exists and exposes runnable oneshot intents.
+- Whether runnable intents inherit the broad host environment.
 - Effective policy for command execution, Git automation, local state, and blocked action classes.
 - Missing required and optional read-order paths from `mustflow.toml`.
 - Whether `REPO_MAP.md` has been generated.
@@ -48,6 +49,7 @@ Health:
 - [ok] Validation: 0 issues
 - [info] Skill routes: not evaluated; run strict doctor (run: mf doctor --strict --json)
 - [ok] Command contract: present, 3 runnable intents
+- [ok] Environment: no inherited host-environment intents
 - [ok] Read order: all required files present
 - [info] REPO_MAP.md: not generated (run: mf map --write)
 - [info] Local index: not generated (run: mf index)
@@ -81,6 +83,7 @@ Machine-readable output uses these fields:
 - `ok` (`boolean`): Whether the install exists and validation passed.
 - `check` (`object`): Validation result using the `mf check` rules.
 - `context` (`object`): Main context state an agent needs before starting.
+- `command_environment` (`object`): Runnable command intents that inherit broad host environment state.
 - `effective_policy` (`object`): Applied repository policy for command execution, Git automation, and state authority.
 - `state_policy` (`object`): Local cache and state storage policy.
 - `blocked_actions` (`string[]`): Action classes blocked by the repository contract.
@@ -92,6 +95,8 @@ Nested fields use these shapes:
 - `check.ok` (`boolean`): Whether validation passed.
 - `check.issue_count` (`number`): Number of validation issues.
 - `check.issues` (`string[]`): Validation issue messages.
+- `check.warning_count` (`number`): Number of non-blocking validation warnings.
+- `check.warnings` (`string[]`): Non-blocking validation warning messages.
 - `context.manifest_lock` (`string`): Lock-file state. One of `present`, `missing`, or `invalid`.
 - `context.template` (`object | null`): Template identifier and version when known.
 - `context.command_contract_exists` (`boolean`): Whether `commands.toml` exists.
@@ -99,6 +104,8 @@ Nested fields use these shapes:
 - `context.missing_read_order` (`string[]`): Required read-order files that are missing.
 - `context.missing_optional_read_order` (`string[]`): Optional read-order files that are missing.
 - `context.latest_run_exists` (`boolean`): Whether the latest run receipt exists.
+- `command_environment.inherited_intents` (`string[]`): Agent-runnable intents that effectively use `env_policy = "inherit"`.
+- `command_environment.inherited_network_intents` (`string[]`): Inherited-environment intents that also set `network = true`.
 - `effective_policy.project_commands_require_mf_run` (`boolean`): Whether project verification commands should use `mf run`.
 - `effective_policy.allow_inferred_commands` (`boolean`): Whether agents may infer commands outside `commands.toml`.
 - `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): Git automation preferences.

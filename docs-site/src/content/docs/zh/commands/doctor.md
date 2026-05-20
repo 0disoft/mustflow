@@ -16,6 +16,7 @@ description: 面向当前 mustflow 根目录的只读诊断命令。
 - `manifest.lock.toml` 状态。
 - 当锁文件存在时，其中的模板标识符与版本。
 - `.mustflow/config/commands.toml` 是否存在，并是否暴露可运行的有限 intents。
+- 可运行 intents 是否继承宽泛的主机环境。
 - 命令执行、Git 自动化、本地状态和阻止动作的有效策略。
 - `mustflow.toml` 中缺失的必读与可选阅读路径。
 - `REPO_MAP.md` 是否已生成。
@@ -45,6 +46,7 @@ Health:
 - [ok] Install: installed
 - [ok] Validation: 0 issues
 - [ok] Command contract: present, 3 runnable intents
+- [ok] Environment: no inherited host-environment intents
 - [ok] Read order: all required files present
 - [info] REPO_MAP.md: not generated (run: mf map --write)
 - [info] Local index: not generated (run: mf index)
@@ -78,6 +80,7 @@ npx mf doctor --json
 - `ok` (`boolean`)：安装是否存在且验证是否通过。
 - `check` (`object`)：使用 `mf check` 规则得到的验证结果。
 - `context` (`object`)：代理开始前需要的主要上下文状态。
+- `command_environment` (`object`)：继承宽泛主机环境的可运行 intents 摘要。
 - `effective_policy` (`object`)：命令执行、Git 自动化和状态权威的实际仓库策略。
 - `state_policy` (`object`)：本地缓存和本地状态存储策略。
 - `blocked_actions` (`string[]`)：仓库契约阻止的动作类别。
@@ -89,6 +92,8 @@ npx mf doctor --json
 - `check.ok` (`boolean`)：验证是否通过。
 - `check.issue_count` (`number`)：验证问题数量。
 - `check.issues` (`string[]`)：验证问题消息。
+- `check.warning_count` (`number`)：非阻塞验证警告数量。
+- `check.warnings` (`string[]`)：非阻塞验证警告消息。
 - `context.manifest_lock` (`string`)：锁文件状态，取值为 `present`、`missing` 或 `invalid`。
 - `context.template` (`object | null`)：已知时的模板标识符与版本。
 - `context.command_contract_exists` (`boolean`)：`commands.toml` 是否存在。
@@ -96,6 +101,8 @@ npx mf doctor --json
 - `context.missing_read_order` (`string[]`)：缺失的必读顺序文件。
 - `context.missing_optional_read_order` (`string[]`)：缺失的可选阅读顺序文件。
 - `context.latest_run_exists` (`boolean`)：最新运行回执是否存在。
+- `command_environment.inherited_intents` (`string[]`)：继承主机环境的可运行 intents。
+- `command_environment.inherited_network_intents` (`string[]`)：启用网络且继承主机环境的可运行 intents。
 - `effective_policy.project_commands_require_mf_run` (`boolean`)：项目验证命令是否应使用 `mf run`。
 - `effective_policy.allow_inferred_commands` (`boolean`)：是否允许代理推断 `commands.toml` 之外的命令。
 - `effective_policy.auto_stage`、`effective_policy.auto_commit`、`effective_policy.auto_push` (`boolean`)：Git 自动化偏好。

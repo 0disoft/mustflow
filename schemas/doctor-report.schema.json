@@ -13,6 +13,7 @@
     "ok",
     "check",
     "context",
+    "command_environment",
     "effective_policy",
     "state_policy",
     "blocked_actions",
@@ -29,11 +30,16 @@
     "check": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ok", "issue_count", "issues"],
+      "required": ["ok", "issue_count", "issues", "warning_count", "warnings"],
       "properties": {
         "ok": { "type": "boolean" },
         "issue_count": { "type": "integer" },
         "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "warning_count": { "type": "integer" },
+        "warnings": {
           "type": "array",
           "items": { "type": "string" }
         }
@@ -83,6 +89,21 @@
         "latest_run_exists": { "type": "boolean" }
       }
     },
+    "command_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inherited_intents", "inherited_network_intents"],
+      "properties": {
+        "inherited_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "inherited_network_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
     "state_policy": { "$ref": "#/$defs/statePolicy" },
     "blocked_actions": {
@@ -102,6 +123,7 @@
               "validation",
               "skill_routes",
               "commands",
+              "environment",
               "read_order",
               "optional_read_order",
               "repo_map",

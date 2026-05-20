@@ -16,6 +16,7 @@ Este comando nunca escribe archivos. Úsalo cuando un agente o una persona neces
 - Estado de `manifest.lock.toml`.
 - Identificador y versión de plantilla del archivo de bloqueo, cuando existan.
 - Si `.mustflow/config/commands.toml` existe y expone intenciones `oneshot` ejecutables.
+- Si las intenciones ejecutables heredan el entorno amplio del host.
 - Politica efectiva para ejecucion de comandos, automatizacion Git, estado local y acciones bloqueadas.
 - Rutas obligatorias y opcionales del orden de lectura de `mustflow.toml` que faltan.
 - Si se generó `REPO_MAP.md`.
@@ -45,6 +46,7 @@ Health:
 - [ok] Install: installed
 - [ok] Validation: 0 issues
 - [ok] Command contract: present, 3 runnable intents
+- [ok] Environment: no inherited host-environment intents
 - [ok] Read order: all required files present
 - [info] REPO_MAP.md: not generated (run: mf map --write)
 - [info] Local index: not generated (run: mf index)
@@ -78,6 +80,7 @@ La salida legible por máquinas usa estos campos:
 - `ok` (`boolean`): si la instalación existe y la validación pasó.
 - `check` (`object`): resultado de validación según las reglas de `mf check`.
 - `context` (`object`): estado principal que un agente necesita antes de empezar.
+- `command_environment` (`object`): resumen de las intenciones ejecutables que heredan el entorno amplio del host.
 - `effective_policy` (`object`): politica aplicada del repositorio para ejecucion de comandos, automatizacion Git y autoridad del estado.
 - `state_policy` (`object`): politica de cache local y almacenamiento de estado local.
 - `blocked_actions` (`string[]`): clases de acciones bloqueadas por el contrato del repositorio.
@@ -89,6 +92,8 @@ Los campos anidados usan estas formas:
 - `check.ok` (`boolean`): si la validación pasó.
 - `check.issue_count` (`number`): número de problemas de validación.
 - `check.issues` (`string[]`): mensajes de problemas de validación.
+- `check.warning_count` (`number`): número de advertencias de validación no bloqueantes.
+- `check.warnings` (`string[]`): mensajes de advertencia de validación no bloqueantes.
 - `context.manifest_lock` (`string`): estado del archivo de bloqueo. Uno de `present`, `missing` o `invalid`.
 - `context.template` (`object | null`): identificador y versión de plantilla, cuando se conozcan.
 - `context.command_contract_exists` (`boolean`): si existe `commands.toml`.
@@ -96,6 +101,8 @@ Los campos anidados usan estas formas:
 - `context.missing_read_order` (`string[]`): archivos requeridos del orden de lectura que faltan.
 - `context.missing_optional_read_order` (`string[]`): archivos opcionales del orden de lectura que faltan.
 - `context.latest_run_exists` (`boolean`): si existe el último recibo de ejecución.
+- `command_environment.inherited_intents` (`string[]`): intenciones ejecutables que heredan el entorno del host.
+- `command_environment.inherited_network_intents` (`string[]`): intenciones ejecutables con red habilitada que heredan el entorno del host.
 - `effective_policy.project_commands_require_mf_run` (`boolean`): si los comandos de verificacion del proyecto deben usar `mf run`.
 - `effective_policy.allow_inferred_commands` (`boolean`): si los agentes pueden inferir comandos fuera de `commands.toml`.
 - `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): preferencias de automatizacion Git.

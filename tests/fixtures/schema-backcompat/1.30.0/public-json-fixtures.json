@@ -766,7 +766,9 @@
         "check": {
           "ok": true,
           "issue_count": 0,
-          "issues": []
+          "issues": [],
+          "warning_count": 0,
+          "warnings": []
         },
         "context": {
           "manifest_lock": "present",
@@ -781,6 +783,10 @@
           "missing_read_order": [],
           "missing_optional_read_order": [],
           "latest_run_exists": false
+        },
+        "command_environment": {
+          "inherited_intents": [],
+          "inherited_network_intents": []
         },
         "effective_policy": {
           "entrypoint": "AGENTS.md",

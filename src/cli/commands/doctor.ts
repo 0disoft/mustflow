@@ -11,7 +11,9 @@ import { t, type CliLang } from '../lib/i18n.js';
 import { getLocalIndexDatabasePath } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { checkMustflowProject } from '../lib/validation.js';
+import { checkMustflowProjectReport } from '../lib/validation.js';
+import { findCommandEnvInheritanceWarnings } from '../../core/command-contract-validation.js';
+import { readCommandContract } from '../../core/config-loading.js';
 import { summarizeSkillRouteAlignment } from '../../core/skill-route-alignment.js';
 
 const DOCTOR_SCHEMA_VERSION = '1';
@@ -20,6 +22,8 @@ interface DoctorCheckSummary {
 	readonly ok: boolean;
 	readonly issue_count: number;
 	readonly issues: readonly string[];
+	readonly warning_count: number;
+	readonly warnings: readonly string[];
 }
 
 interface DoctorContextSummary {
@@ -32,6 +36,11 @@ interface DoctorContextSummary {
 	readonly latest_run_exists: boolean;
 }
 
+interface DoctorCommandEnvironmentSummary {
+	readonly inherited_intents: readonly string[];
+	readonly inherited_network_intents: readonly string[];
+}
+
 type DoctorDiagnosticStatus = 'ok' | 'warn' | 'fail' | 'info';
 
 interface DoctorDiagnostic {
@@ -40,6 +49,7 @@ interface DoctorDiagnostic {
 		| 'validation'
 		| 'skill_routes'
 		| 'commands'
+		| 'environment'
 		| 'read_order'
 		| 'optional_read_order'
 		| 'repo_map'
@@ -59,6 +69,7 @@ interface DoctorOutput {
 	readonly ok: boolean;
 	readonly check: DoctorCheckSummary;
 	readonly context: DoctorContextSummary;
+	readonly command_environment: DoctorCommandEnvironmentSummary;
 	readonly effective_policy: EffectivePolicyContext;
 	readonly state_policy: StatePolicyContext;
 	readonly blocked_actions: readonly string[];
@@ -111,6 +122,7 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 	const localIndexExists = existsSync(getLocalIndexDatabasePath(output.mustflow_root));
 	const runnableIntentCount = output.context.runnable_intents.length;
 	const skillRouteAlignment = summarizeSkillRouteAlignment(output.check.issues);
+	const inheritedEnvIntentCount = output.command_environment.inherited_intents.length;
 
 	diagnostics.push({
 		id: 'install',
@@ -122,7 +134,10 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 	diagnostics.push({
 		id: 'validation',
 		status: output.check.ok ? 'ok' : 'fail',
-		summary: `${output.check.issue_count} ${pluralize(output.check.issue_count, 'issue', 'issues')}`,
+		summary:
+			output.check.warning_count === 0
+				? `${output.check.issue_count} ${pluralize(output.check.issue_count, 'issue', 'issues')}`
+				: `${output.check.issue_count} ${pluralize(output.check.issue_count, 'issue', 'issues')}, ${output.check.warning_count} ${pluralize(output.check.warning_count, 'warning', 'warnings')}`,
 		action: output.check.ok ? null : checkCommand,
 	});
 
@@ -140,6 +155,21 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 			? `present, ${runnableIntentCount} runnable ${pluralize(runnableIntentCount, 'intent', 'intents')}`
 			: 'missing',
 		action: output.context.command_contract_exists ? 'mf help commands' : 'mf init --dry-run',
+	});
+
+	diagnostics.push({
+		id: 'environment',
+		status: output.context.command_contract_exists ? (inheritedEnvIntentCount > 0 ? 'warn' : 'ok') : 'info',
+		summary: output.context.command_contract_exists
+			? inheritedEnvIntentCount === 0
+				? 'no inherited host-environment intents'
+				: `${inheritedEnvIntentCount} inherited host-environment ${pluralize(
+						inheritedEnvIntentCount,
+						'intent',
+						'intents',
+					)}: ${output.command_environment.inherited_intents.join(', ')}`
+			: 'command contract missing',
+		action: inheritedEnvIntentCount > 0 ? 'mf check --strict --json' : null,
 	});
 
 	diagnostics.push({
@@ -214,15 +244,38 @@ function getNextSteps(output: Omit<DoctorOutput, 'next_steps'>): readonly string
 	return nextSteps;
 }
 
+function readCommandEnvironmentSummary(projectRoot: string): DoctorCommandEnvironmentSummary {
+	try {
+		const contract = readCommandContract(projectRoot);
+		const warnings = findCommandEnvInheritanceWarnings(contract);
+
+		return {
+			inherited_intents: warnings.map((warning) => warning.intentName).sort((left, right) => left.localeCompare(right)),
+			inherited_network_intents: warnings
+				.filter((warning) => warning.network)
+				.map((warning) => warning.intentName)
+				.sort((left, right) => left.localeCompare(right)),
+		};
+	} catch {
+		return {
+			inherited_intents: [],
+			inherited_network_intents: [],
+		};
+	}
+}
+
 function createDoctorOutput(strict: boolean): DoctorOutput {
 	const mustflowRoot = resolveMustflowRoot();
 	const context = getAgentContext(mustflowRoot);
-	const issues = checkMustflowProject(mustflowRoot, { strict });
+	const checkReport = checkMustflowProjectReport(mustflowRoot, { strict });
 	const check = {
-		ok: issues.length === 0,
-		issue_count: issues.length,
-		issues,
+		ok: checkReport.issues.length === 0,
+		issue_count: checkReport.issues.length,
+		issues: checkReport.issues,
+		warning_count: checkReport.warnings.length,
+		warnings: checkReport.warnings,
 	};
+	const commandEnvironment = readCommandEnvironmentSummary(mustflowRoot);
 	const baseOutput: DoctorBaseOutput = {
 		schema_version: DOCTOR_SCHEMA_VERSION,
 		command: 'doctor',
@@ -240,6 +293,7 @@ function createDoctorOutput(strict: boolean): DoctorOutput {
 			missing_optional_read_order: context.optional_read_order.filter((entry) => !entry.exists).map((entry) => entry.path),
 			latest_run_exists: context.latest_run.exists,
 		},
+		command_environment: commandEnvironment,
 		effective_policy: context.effective_policy,
 		state_policy: context.state_policy,
 		blocked_actions: context.blocked_actions,
@@ -263,6 +317,8 @@ function getDiagnosticLabel(id: DoctorDiagnostic['id'], lang: CliLang): string {
 			return t(lang, 'doctor.diagnostic.skillRoutes');
 		case 'commands':
 			return t(lang, 'doctor.diagnostic.commands');
+		case 'environment':
+			return t(lang, 'doctor.diagnostic.environment');
 		case 'read_order':
 			return t(lang, 'doctor.diagnostic.readOrder');
 		case 'optional_read_order':

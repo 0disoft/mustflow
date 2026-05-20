@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -47,10 +47,14 @@ test('prints a read-only doctor summary as json', () => {
 		assert.equal(output.installed, true);
 		assert.equal(output.check.ok, true);
 		assert.equal(output.check.issue_count, 0);
+		assert.equal(output.check.warning_count, 0);
+		assert.deepEqual(output.check.warnings, []);
 		assert.equal(output.context.manifest_lock, 'present');
 		assert.equal(output.context.command_contract_exists, true);
 		assert.ok(output.context.runnable_intents.includes('mustflow_check'));
 		assert.deepEqual(output.context.missing_read_order, []);
+		assert.deepEqual(output.command_environment.inherited_intents, []);
+		assert.deepEqual(output.command_environment.inherited_network_intents, []);
 		assert.equal(output.effective_policy.project_commands_require_mf_run, true);
 		assert.equal(output.effective_policy.allow_inferred_commands, false);
 		assert.equal(output.effective_policy.auto_commit, false);
@@ -71,9 +75,59 @@ test('prints a read-only doctor summary as json', () => {
 		assert.ok(output.diagnostics.some((item) => item.id === 'validation' && item.status === 'ok'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'skill_routes' && item.status === 'info'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'commands' && item.status === 'ok'));
+		assert.ok(output.diagnostics.some((item) => item.id === 'environment' && item.status === 'ok'));
 		assert.ok(output.diagnostics.some((item) => item.id === 'read_order' && item.status === 'ok'));
 		assert.ok(output.next_steps.includes('mf help workflow'));
 		assert.ok(output.next_steps.includes('mf help commands'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('doctor warns when agent-runnable intents inherit the host environment', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.network_env]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run with inherited env and network access."
+argv = ["node", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+env_policy = "inherit"
+network = true
+destructive = false
+`,
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['doctor', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.ok, true);
+		assert.deepEqual(output.command_environment.inherited_intents, ['network_env']);
+		assert.deepEqual(output.command_environment.inherited_network_intents, ['network_env']);
+		assert.ok(
+			output.diagnostics.some(
+				(item) =>
+					item.id === 'environment' &&
+					item.status === 'warn' &&
+					item.summary.includes('network_env') &&
+					item.action === 'mf check --strict --json',
+			),
+		);
+		assert.ok(output.next_steps.includes('mf check --strict --json'));
 	} finally {
 		removeTempProject(projectPath);
 	}

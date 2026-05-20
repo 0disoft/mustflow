@@ -410,11 +410,22 @@ function getEffectiveCommandEnvPolicy(
 	return { policy: DEFAULT_COMMAND_ENV_POLICY, source: 'implicit' };
 }
 
-function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
-	const issues: CommandContractValidationIssue[] = [];
+export interface CommandEnvInheritanceWarning {
+	readonly intentName: string;
+	readonly source: 'intent' | 'defaults' | 'implicit';
+	readonly network: boolean;
+}
+
+interface CommandEnvInheritanceSource {
+	readonly defaults?: unknown;
+	readonly intents?: unknown;
+}
+
+export function findCommandEnvInheritanceWarnings(commandsToml: CommandEnvInheritanceSource | undefined): readonly CommandEnvInheritanceWarning[] {
+	const warnings: CommandEnvInheritanceWarning[] = [];
 
 	if (!commandsToml || !isRecord(commandsToml.intents)) {
-		return issues;
+		return warnings;
 	}
 
 	const defaults = isRecord(commandsToml.defaults) ? commandsToml.defaults : undefined;
@@ -429,23 +440,32 @@ function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefin
 			continue;
 		}
 
-		const networkScope = intent.network === true ? ' with network = true' : '';
-		const migration = 'set env_policy = "minimal" or "allowlist" unless broad host state is required';
+		warnings.push({
+			intentName,
+			source: envPolicy.source,
+			network: intent.network === true,
+		});
+	}
 
-		if (envPolicy.source === 'implicit') {
-			issues.push(
-				commandContractWarning(
-					`configured agent-runnable intent ${intentName} implicitly inherits the host environment${networkScope}; ${migration}`,
-				),
-			);
-			continue;
-		}
+	return warnings;
+}
 
-		issues.push(
-			commandContractWarning(
-				`configured agent-runnable intent ${intentName} uses env_policy = "inherit"${networkScope}; ${migration}`,
-			),
-		);
+function formatCommandEnvInheritanceWarning(warning: CommandEnvInheritanceWarning): string {
+	const networkScope = warning.network ? ' with network = true' : '';
+	const migration = 'set env_policy = "minimal" or "allowlist" unless broad host state is required';
+
+	if (warning.source === 'implicit') {
+		return `configured agent-runnable intent ${warning.intentName} implicitly inherits the host environment${networkScope}; ${migration}`;
+	}
+
+	return `configured agent-runnable intent ${warning.intentName} uses env_policy = "inherit"${networkScope}; ${migration}`;
+}
+
+function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
+	const issues: CommandContractValidationIssue[] = [];
+
+	for (const warning of findCommandEnvInheritanceWarnings(commandsToml)) {
+		issues.push(commandContractWarning(formatCommandEnvInheritanceWarning(warning)));
 	}
 
 	return issues;

@@ -16,6 +16,7 @@ Cette commande n’écrit jamais de fichiers. Utilise-la lorsqu’un agent ou un
 - État de `manifest.lock.toml`.
 - Identifiant et version du modèle depuis le fichier de verrouillage lorsqu’il est présent.
 - Existence de `.mustflow/config/commands.toml` et exposition d’intentions finies exécutables.
+- Intentions exécutables qui héritent de l’environnement hôte large.
 - Politique effective pour l’exécution des commandes, l’automatisation Git, l’état local et les actions bloquées.
 - Chemins requis et facultatifs de l’ordre de lecture qui manquent dans `mustflow.toml`.
 - Génération éventuelle de `REPO_MAP.md`.
@@ -45,6 +46,7 @@ Health:
 - [ok] Install: installed
 - [ok] Validation: 0 issues
 - [ok] Command contract: present, 3 runnable intents
+- [ok] Environment: no inherited host-environment intents
 - [ok] Read order: all required files present
 - [info] REPO_MAP.md: not generated (run: mf map --write)
 - [info] Local index: not generated (run: mf index)
@@ -78,6 +80,7 @@ La sortie lisible par machine utilise ces champs:
 - `ok` (`boolean`): indique si l’installation existe et si la validation a réussi.
 - `check` (`object`): résultat de validation utilisant les règles de `mf check`.
 - `context` (`object`): état de contexte principal dont un agent a besoin avant de commencer.
+- `command_environment` (`object`): résumé des intentions exécutables qui héritent de l’environnement hôte large.
 - `effective_policy` (`object`): politique appliquée du dépôt pour l’exécution des commandes, l’automatisation Git et l’autorité de l’état.
 - `state_policy` (`object`): politique de cache local et de stockage d’état local.
 - `blocked_actions` (`string[]`): classes d’actions bloquées par le contrat du dépôt.
@@ -89,6 +92,8 @@ Les champs imbriqués utilisent ces formes:
 - `check.ok` (`boolean`): indique si la validation a réussi.
 - `check.issue_count` (`number`): nombre de problèmes de validation.
 - `check.issues` (`string[]`): messages de problème de validation.
+- `check.warning_count` (`number`): nombre d’avertissements de validation non bloquants.
+- `check.warnings` (`string[]`): messages d’avertissement de validation non bloquants.
 - `context.manifest_lock` (`string`): état du fichier de verrouillage. L’un de `present`, `missing` ou `invalid`.
 - `context.template` (`object | null`): identifiant et version du modèle lorsqu’ils sont connus.
 - `context.command_contract_exists` (`boolean`): indique si `commands.toml` existe.
@@ -96,6 +101,8 @@ Les champs imbriqués utilisent ces formes:
 - `context.missing_read_order` (`string[]`): fichiers requis de l’ordre de lecture qui manquent.
 - `context.missing_optional_read_order` (`string[]`): fichiers facultatifs de l’ordre de lecture qui manquent.
 - `context.latest_run_exists` (`boolean`): indique si le dernier reçu d’exécution existe.
+- `command_environment.inherited_intents` (`string[]`): intentions exécutables qui héritent de l’environnement hôte.
+- `command_environment.inherited_network_intents` (`string[]`): intentions exécutables avec accès réseau qui héritent de l’environnement hôte.
 - `effective_policy.project_commands_require_mf_run` (`boolean`): indique si les commandes de vérification du projet doivent utiliser `mf run`.
 - `effective_policy.allow_inferred_commands` (`boolean`): indique si les agents peuvent déduire des commandes hors de `commands.toml`.
 - `effective_policy.auto_stage`, `effective_policy.auto_commit`, `effective_policy.auto_push` (`boolean`): préférences d’automatisation Git.
