@@ -1,0 +1,556 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
+
+import {
+	appendIntent,
+	cliPath,
+	commitGitBaseline,
+	createEnvWithoutPathLookup,
+	createEnvWithCommandPolicyFixtures,
+	createEnvWithLocalBinFirst,
+	createEnvWithRecursiveWriteDriftSnapshot,
+	createLocalBinShim,
+	createTempProject,
+	initProject,
+	latestRunProfilePath,
+	latestRunReceiptPath,
+	packageVersion,
+	projectRoot,
+	removeTempProject,
+	runCli,
+	runPerformanceSamplesPath,
+	runPerformanceSummaryPath,
+	setDefaultKillAfterSeconds,
+	trySymlink,
+	waitForClose,
+	waitForOutput,
+} from './run-support.js';
+
+test('previews a runnable command intent without spawning or writing a receipt', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'dry-run-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.preview_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Would create a marker file if executed."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+kill_after_seconds = 8
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dry-run-spawned.txt"]
+effects = [
+  { type = "write", mode = "create", path = "dry-run-spawned.txt" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'preview_marker', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.schema_version, '1');
+		assert.equal(preview.command, 'run');
+		assert.equal(preview.preview, true);
+		assert.equal(preview.preview_mode, 'dry-run');
+		assert.equal(preview.intent, 'preview_marker');
+		assert.equal(preview.runnable, true);
+		assert.deepEqual(preview.eligibility, { ok: true, code: 'ok', detail: null });
+		assert.equal(preview.reason_code, null);
+		assert.equal(preview.cwd, '.');
+		assert.equal(preview.resolved_cwd, projectPath);
+		assert.equal(preview.timeout_seconds, 10);
+		assert.equal(preview.kill_after_seconds, 8);
+		assert.equal(preview.mode, 'argv');
+		assert.deepEqual(preview.argv, [
+			process.execPath,
+			'-e',
+			`require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")`,
+		]);
+		assert.equal(preview.resolved_argv.executable, process.execPath);
+		assert.equal(preview.resolved_argv.shell, false);
+		assert.deepEqual(preview.writes, ['dry-run-spawned.txt']);
+		assert.equal(preview.effects[0].path, 'dry-run-spawned.txt');
+		assert.equal(preview.network, false);
+		assert.equal(preview.destructive, false);
+		assert.equal(preview.env_policy, 'minimal');
+		assert.deepEqual(preview.env_allowlist, []);
+		assert.deepEqual(preview.success_exit_codes, [0]);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews blocked and unknown command intents without writing a receipt', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "Run a development server."
+argv = ['${process.execPath}', '-e', 'setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+manual_start_hint = "Start this server in a human-controlled terminal."
+health_check_url = "http://127.0.0.1:3000/health"
+stop_instruction = "Stop the terminal process with Ctrl-C."
+related_oneshot_checks = ["test_fast"]
+`,
+		);
+
+		const manualOnlyResult = runCli(projectPath, ['run', 'snapshot_update', '--dry-run', '--json']);
+		const manualOnlyPreview = JSON.parse(manualOnlyResult.stdout);
+
+		assert.equal(manualOnlyResult.status, 1);
+		assert.equal(manualOnlyPreview.runnable, false);
+		assert.equal(manualOnlyPreview.status, 'manual_only');
+		assert.equal(manualOnlyPreview.reason_code, 'status_not_configured');
+		assert.match(manualOnlyPreview.suggested_intent_snippet, /\[intents\.snapshot_update\]/);
+		assert.match(manualOnlyPreview.suggested_intent_snippet, /status = "manual_only"/);
+		assert.match(manualOnlyPreview.suggested_intent_snippet, /agent_action = "do_not_guess_report_missing"/);
+
+		const longRunningResult = runCli(projectPath, ['run', 'dev_server', '--dry-run', '--json']);
+		const longRunningPreview = JSON.parse(longRunningResult.stdout);
+
+		assert.equal(longRunningResult.status, 1);
+		assert.equal(longRunningPreview.runnable, false);
+		assert.equal(longRunningPreview.lifecycle, 'server');
+		assert.equal(longRunningPreview.reason_code, 'lifecycle_not_oneshot');
+		assert.match(longRunningPreview.suggested_intent_snippet, /\[intents\.dev_server\]/);
+		assert.match(longRunningPreview.suggested_intent_snippet, /lifecycle = "server"/);
+		assert.match(longRunningPreview.suggested_intent_snippet, /run_policy = "requires_explicit_user_request"/);
+		assert.match(longRunningPreview.suggested_intent_snippet, /argv = \[/);
+		assert.equal(longRunningPreview.manual_start_hint, 'Start this server in a human-controlled terminal.');
+		assert.equal(longRunningPreview.health_check_url, 'http://127.0.0.1:3000/health');
+		assert.equal(longRunningPreview.stop_instruction, 'Stop the terminal process with Ctrl-C.');
+		assert.deepEqual(longRunningPreview.related_oneshot_checks, ['test_fast']);
+
+		const unknownResult = runCli(projectPath, ['run', 'does_not_exist', '--plan-only', '--json']);
+		const unknownPreview = JSON.parse(unknownResult.stdout);
+
+		assert.equal(unknownResult.status, 1);
+		assert.equal(unknownPreview.preview_mode, 'plan-only');
+		assert.equal(unknownPreview.runnable, false);
+		assert.equal(unknownPreview.reason_code, 'intent_not_table');
+		assert.equal(unknownPreview.status, null);
+		assert.match(unknownPreview.suggested_intent_snippet, /\[intents\.does_not_exist\]/);
+		assert.match(unknownPreview.suggested_intent_snippet, /"TODO_REPLACE_WITH_COMMAND"/);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses command plans with oversized output buffers', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.too_much_output]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Request too much output buffering."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+timeout_seconds = 10
+max_output_bytes = 16777217
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'too_much_output', '--plan-only', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'max_output_bytes_exceeds_limit');
+		assert.match(preview.detail, /16777216/);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses commands with long-running or background patterns before execution', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'argv-bg-ran.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.argv_bg]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide background work in argv shell wrapper."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran"); setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_node_eval_equals]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach long-running Node evaluation code to a flag."
+argv = ['${process.execPath}', '--eval=setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_python_attached]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach long-running Python evaluation code to a flag."
+argv = ["python", "-cwhile True: pass"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_shell_attached]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach a development server command to a shell wrapper flag."
+argv = ["bash", '-c"npm run dev"']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_safe_exec]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Safe package-manager one-shot command."
+argv = ["npm", "exec", "eslint", "--", "src/index.ts"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.shell_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide a development server in shell mode."
+mode = "shell"
+cmd = "npm run dev"
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'argv_bg', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+		const attachedNodeResult = runCli(projectPath, ['run', 'argv_node_eval_equals', '--dry-run', '--json']);
+		const attachedNodePreview = JSON.parse(attachedNodeResult.stdout);
+		const attachedPythonResult = runCli(projectPath, ['run', 'argv_python_attached', '--dry-run', '--json']);
+		const attachedPythonPreview = JSON.parse(attachedPythonResult.stdout);
+		const attachedShellResult = runCli(projectPath, ['run', 'argv_shell_attached', '--dry-run', '--json']);
+		const attachedShellPreview = JSON.parse(attachedShellResult.stdout);
+		const safeResult = runCli(projectPath, ['run', 'argv_safe_exec', '--dry-run', '--json']);
+		const safePreview = JSON.parse(safeResult.stdout);
+		const shellDevResult = runCli(projectPath, ['run', 'shell_dev', '--dry-run', '--json']);
+		const shellDevPreview = JSON.parse(shellDevResult.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'blocked_long_running_command_pattern');
+		assert.match(preview.detail, /interpreter evaluation payload/);
+		assert.match(preview.suggested_intent_snippet, /TODO_REPLACE_WITH_FINITE_COMMAND/);
+		for (const [blockedResult, blockedPreview, detailPattern] of [
+			[attachedNodeResult, attachedNodePreview, /interpreter evaluation payload/],
+			[attachedPythonResult, attachedPythonPreview, /interpreter evaluation payload/],
+			[attachedShellResult, attachedShellPreview, /shell wrapper payload/],
+		]) {
+			assert.equal(blockedResult.status, 1);
+			assert.equal(blockedPreview.runnable, false);
+			assert.equal(blockedPreview.reason_code, 'blocked_long_running_command_pattern');
+			assert.match(blockedPreview.detail, detailPattern);
+		}
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+		assert.equal(shellDevResult.status, 1);
+		assert.equal(shellDevPreview.runnable, false);
+		assert.equal(shellDevPreview.reason_code, 'blocked_long_running_command_pattern');
+		assert.match(shellDevPreview.detail, /Shell command contains/);
+		assert.match(shellDevPreview.detail, /npm run dev/);
+		assert.equal(safeResult.status, 0);
+		assert.equal(safePreview.runnable, true);
+		assert.equal(safePreview.reason_code, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews command intent cwd boundary failures without spawning or writing a receipt', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(path.dirname(projectPath), 'mustflow-outside-cwd-preview.txt');
+
+	try {
+		rmSync(markerPath, { force: true });
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.outside_cwd_preview]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run outside the project root."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = ".."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'outside_cwd_preview', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'cwd_outside_project');
+		assert.equal(preview.configured_cwd, '..');
+		assert.equal(preview.resolved_cwd, null);
+		assert.match(preview.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		rmSync(markerPath, { force: true });
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews missing command intent cwd values as blocked without spawning or writing a receipt', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'missing-cwd-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.missing_cwd_preview]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run inside a missing working directory."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "missing-dir"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'missing_cwd_preview', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'cwd_outside_project');
+		assert.equal(preview.configured_cwd, 'missing-dir');
+		assert.equal(preview.resolved_cwd, null);
+		assert.match(preview.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('previews command intent cwd symlink escapes without spawning or writing a receipt', (t) => {
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-run-outside-'));
+	const markerPath = path.join(outsideRoot, 'cwd-symlink-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		const linkPath = path.join(projectPath, 'linked-outside');
+		const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+		if (!trySymlink(outsideRoot, linkPath, linkType)) {
+			t.skip('directory symlinks are not available in this environment');
+			return;
+		}
+		appendIntent(
+			projectPath,
+			`
+[intents.outside_cwd_symlink_preview]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run through a symlink that leaves the project root."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "linked-outside"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'outside_cwd_symlink_preview', '--dry-run', '--json']);
+		const preview = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stderr, '');
+		assert.equal(preview.runnable, false);
+		assert.equal(preview.reason_code, 'cwd_outside_project');
+		assert.equal(preview.configured_cwd, 'linked-outside');
+		assert.equal(preview.resolved_cwd, null);
+		assert.match(preview.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		rmSync(outsideRoot, { recursive: true, force: true });
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses non-oneshot command intents', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.dev_server]
+status = "configured"
+lifecycle = "server"
+run_policy = "requires_explicit_user_request"
+description = "Run a development server."
+argv = ['${process.execPath}', '-e', 'setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'dev_server']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /dev_server/);
+		assert.match(result.stderr, /lifecycle = "server"/);
+		assert.match(result.stderr, /Suggested command contract snippet/);
+		assert.match(result.stderr, /\[intents\.dev_server\]/);
+		assert.match(result.stderr, /mf run/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses command intent cwd values outside the mustflow root', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.outside_cwd]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run outside the project root."
+argv = ['${process.execPath}', '-e', 'console.log("outside")']
+cwd = ".."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'outside_cwd']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Intent cwd must stay inside the current root/);
+		assert.doesNotMatch(result.stdout, /outside/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

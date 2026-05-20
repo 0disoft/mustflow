@@ -5,6 +5,12 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const runTests = [
+	'run-execution.test.js',
+	'run-preview.test.js',
+	'run-receipts.test.js',
+	'run-safety.test.js',
+];
 
 function selectRelated(changedFiles) {
 	return listSuite('related', changedFiles);
@@ -47,7 +53,9 @@ test('related selection keeps router changes out of local index suites', () => {
 test('related selection covers shared command eligibility behavior', () => {
 	const selected = selectedFor(['src/core/command-intent-eligibility.ts']);
 
-	assert.equal(selected.has('run.test.js'), true);
+	for (const testName of runTests) {
+		assert.equal(selected.has(testName), true);
+	}
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('security-fuzz.test.js'), true);
 	assert.equal(selected.has('schema.test.js'), true);
@@ -68,7 +76,9 @@ test('related selection maps command config changes to contract surfaces', () =>
 	assert.equal(selected.has('check-command-contracts.test.js'), true);
 	assert.equal(selected.has('explain-command.test.js'), true);
 	assert.equal(selected.has('index.test.js'), true);
-	assert.equal(selected.has('run.test.js'), true);
+	for (const testName of runTests) {
+		assert.equal(selected.has(testName), true);
+	}
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('package.test.js'), false);
 });
@@ -78,7 +88,9 @@ test('related selection maps package metadata helper changes to command consumer
 
 	assert.equal(selected.has('dashboard.test.js'), true);
 	assert.equal(selected.has('router.test.js'), true);
-	assert.equal(selected.has('run.test.js'), true);
+	for (const testName of runTests) {
+		assert.equal(selected.has(testName), true);
+	}
 	assert.equal(selected.has('index.test.js'), false);
 });
 
@@ -122,7 +134,9 @@ test('fast baseline keeps harness safety checks but excludes heavier feature sui
 	assert.equal(report.selected.includes('test-audit.test.js'), true);
 	assert.equal(report.selected.includes('test-selection.test.js'), true);
 	assert.equal(report.selected.includes('search.test.js'), false);
-	assert.equal(report.selected.includes('run.test.js'), false);
+	for (const testName of runTests) {
+		assert.equal(report.selected.includes(testName), false);
+	}
 	assert.equal(report.selected.includes('update.test.js'), false);
 	assert.equal(report.selected.includes('package.test.js'), false);
 });
