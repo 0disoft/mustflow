@@ -2,11 +2,11 @@
 mustflow_doc: skill.pure-core-imperative-shell
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: pure-core-imperative-shell
-description: Apply this skill when business decisions, validation, authorization, pricing, eligibility, state transitions, domain events, effect descriptions, or calculations are mixed with I/O such as databases, HTTP handlers, repositories, SDK calls, files, queues, logs, metrics, clocks, randomness, environment reads, payments, emails, or framework request/response objects.
+description: Apply this skill when business decisions, validation, authorization, pricing, discounts, credits, permissions, eligibility, state transitions, domain events, effect descriptions, or calculations are mixed with I/O such as databases, ORM entities, HTTP handlers, repositories, SDK calls, files, queues, logs, metrics, clocks, randomness, environment reads, payments, emails, or framework request/response objects.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -41,6 +41,7 @@ Core decides. Shell does.
 - Business rules are mixed with database access, HTTP handlers, repositories, external SDK calls, framework objects, logs, metrics, clocks, randomness, generated identifiers, environment reads, payments, emails, files, queues, or caches.
 - Code contains meaningful `if`, `switch`, pricing, permission, eligibility, expiration, quota, scoring, matching, validation, or state-transition logic and also performs side effects.
 - Several pricing, discount, permission, scoring, matching, recommendation, or provider-choice policies need to remain pure while being selected at runtime.
+- ORM models, entity hooks, lifecycle hooks, decorators, lazy-loaded relations, or active-record methods contain pricing, permissions, discounts, credits, entitlement, subscription, point, or state-transition decisions.
 - Core tests require database mocks, HTTP mocks, SDK mocks, clock mocks, logger mocks, or framework request objects.
 - A handler, repository, adapter, worker, or event consumer hides business policy.
 - A state change must produce domain events or effect descriptions without executing those effects immediately.
@@ -64,6 +65,7 @@ Core decides. Shell does.
 - The business action, command, workflow, or state change being implemented or refactored.
 - The decision the domain must make and the facts needed to make it.
 - The current side effects, including persistence, external calls, messages, logs, metrics, generated identifiers, time, randomness, and environment reads.
+- ORM-specific behavior involved in the current decision, such as relation includes, lazy loading, model methods, hooks, transactions, repository calls, and generated database row types.
 - Local patterns for result types, domain errors, events, effects, outbox messages, repositories, adapters, mappers, and tests.
 - Existing behavior evidence when refactoring code that already runs.
 - Relevant command-intent contract entries for verification.
@@ -97,7 +99,7 @@ Core decides. Shell does.
 
 1. Locate the mixed responsibility.
    - Decision signals: `if`, `switch`, status checks, role checks, amount calculations, eligibility checks, validation rules, state transitions, deadline rules, quota rules, and domain error choices.
-   - Execution signals: `await`, database access, external SDK calls, HTTP clients, file access, logging, metrics, email sending, message publishing, cache access, `new Date()`, `Date.now()`, generated identifiers, randomness, and environment reads.
+   - Execution signals: `await`, database access, ORM relation access, active-record model methods, ORM hooks, external SDK calls, HTTP clients, file access, logging, metrics, email sending, message publishing, cache access, `new Date()`, `Date.now()`, generated identifiers, randomness, and environment reads.
 2. Name the pure decision.
    - Prefer verbs such as `decide`, `calculate`, `derive`, `validate`, `transition`, `classify`, `price`, `score`, `select`, `can`, `is`, or `has`.
    - Avoid naming the core after a route, ORM model, SDK method, provider, or transport operation.
@@ -137,6 +139,9 @@ Core decides. Shell does.
    - Map decisions to persistence commands after core returns.
    - Database constraints can protect integrity, but they must not be the only place where business policy exists.
    - Use optimistic locking, version checks, unique constraints, and transactions in the shell when stale decisions or duplicates are possible.
+   - Keep ORM syntax, eager-loading choices, lazy-loading behavior, model hooks, decorators, and generated entity types out of business rules. Treat the ORM as a persistence tool, not the owner of domain policy.
+   - Do not hide notifications, payments, credit grants, permission changes, audit writes, or other business effects in ORM create, update, or delete hooks.
+   - For complex reads, allow a query service, projection, or explicit SQL-style read model instead of forcing all screens through the write-domain model.
 10. Keep external side effects outside local transactions.
     - Do not hold a database transaction open while calling slow network services.
     - When local state and external messages must both be reliable, save state and outbox messages in one transaction, then publish after commit.
@@ -145,8 +150,9 @@ Core decides. Shell does.
     - If status, state, phase, step, or stage controls allowed actions, use `state-machine-pattern` to define the transition table, event names, guards, terminal states, effect descriptions, invalid transitions, and tests.
     - Keep the transition function pure and let the shell persist state, transition history, idempotency records, and outbox rows.
 12. Use strategies for interchangeable pure policies when needed.
-    - If pricing, discount, scoring, ranking, matching, permission, recommendation, or provider-choice logic has several methods with one shared purpose, use `strategy-pattern`.
-    - Keep strategy selection in a selector, resolver, or shell boundary and keep strategy execution behind a shared pure contract when possible.
+   - If pricing, discount, scoring, ranking, matching, permission, recommendation, or provider-choice logic has several methods with one shared purpose, use `strategy-pattern`.
+   - Keep strategy selection in a selector, resolver, or shell boundary and keep strategy execution behind a shared pure contract when possible.
+   - Return explainable policy results for pricing, discounts, credits, entitlements, and permissions, such as original amount, applied rules, rejected rules, final amount, tax, rounding, and reason codes, so UI, receipts, refunds, support, and analytics do not recalculate the rule independently.
 13. Use command structure for state-changing shell units when needed.
     - If one user or system intent needs explicit payload, context, authorization, transaction, idempotency, outbox, audit, retry, concurrency, or queue and worker reuse, use `command-pattern` to shape the shell execution unit.
     - Keep the pure core as the decision maker and the command handler as the orchestrator.
@@ -167,6 +173,7 @@ Core decides. Shell does.
 - Given the same input, the core returns the same output.
 - The core can run without a database, network, file system, queue, cache, server, framework, logger, clock, environment variables, random generator, or generated identifier service.
 - Business rules are visible in core functions, not hidden inside handlers, repositories, adapters, or database queries.
+- Business rules are not hidden inside ORM models, relation loading, lifecycle hooks, decorators, or generated entity methods.
 - The shell owns all I/O, boundary mapping, persistence, transactions, retries, idempotency, logs, metrics, and side-effect execution.
 - Business rule tests do not require mocks.
 

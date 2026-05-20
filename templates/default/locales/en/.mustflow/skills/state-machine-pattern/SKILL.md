@@ -2,11 +2,11 @@
 mustflow_doc: skill.state-machine-pattern
 locale: en
 canonical: true
-revision: 1
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: state-machine-pattern
-description: Apply this skill when domain objects have lifecycle state, allowed actions depend on state, status changes are scattered, or state transitions need explicit events, guards, effects, history, idempotency, and concurrency control.
+description: Apply this skill when domain objects, jobs, external API calls, uploads, webhooks, or processing workflows have lifecycle state, deletion or restore flow, allowed actions depend on state, status changes are scattered, or state transitions need explicit events, guards, effects, history, idempotency, retry, reconciliation, and concurrency control.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -41,9 +41,12 @@ Use this skill to prevent scattered `if`, `switch`, direct assignment, silent no
 - A domain object has three or more states, or fields named `status`, `state`, `phase`, `step`, or `stage`.
 - State determines which actions, API calls, buttons, jobs, events, or commands are allowed.
 - The lifecycle includes cancel, approve, reject, expire, retry, fail, refund, suspend, restore, archive, delete, publish, ship, or deliver flows.
+- Delete, restore, purge, archive, deprecate, redirect, suspend, unsubscribe, revoke, or anonymize behavior has different access, retention, audit, search, support, or recovery consequences.
 - State changes must produce history, audit records, domain events, outbox messages, or external effects.
 - Multiple users, workers, queues, webhooks, or external systems can attempt transitions on the same entity.
 - External service results change state and require pending, success, and failure states.
+- Jobs, outbox deliveries, webhook processing, external API calls, AI processing, email delivery, imports, exports, or file conversions need queued, running, retrying, succeeded, failed, dead-letter, or unknown/reconciliation states.
+- File uploads, asset processing, image resizing, virus scanning, document conversion, private download readiness, or storage deletion have pending, uploaded, processing, ready, failed, deleted, or purged states.
 - Code repeatedly asks whether an action is possible from the current state.
 - State rules are scattered across handlers, repositories, jobs, UI code, adapters, SQL queries, or broad services.
 - Several booleans actually encode one lifecycle and can create impossible combinations.
@@ -55,7 +58,7 @@ Use this skill to prevent scattered `if`, `switch`, direct assignment, silent no
 - The state is a simple two-value toggle with no lifecycle rules, history, side effects, concurrency risk, or irreversible transition.
 - State does not affect allowed actions.
 - The code is a pure calculation, formatter, mapper, parser, or local UI-only state update.
-- A simple create, read, update, delete flow only distinguishes active and deleted and has no meaningful transition rules.
+- A simple create, read, update, delete flow only distinguishes active and deleted and has no meaningful transition rules, recovery behavior, retention behavior, or audit need.
 
 Two states can still require this skill when the lifecycle is meaningful, such as active to suspended to deleted, deleted being irreversible, or suspension requiring audit and authorization.
 
@@ -68,6 +71,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 - Current places that change state, validate actions, check state, or render available actions.
 - Guards, authorization facts, time facts, external facts, and loaded domain data needed to decide transitions.
 - Effects, domain events, outbox records, audit records, transition history, idempotency keys, and concurrency protections required by the lifecycle.
+- Retry and reconciliation rules, including which states can retry, which states are terminal, which states require manual review, and which external outcomes are unknown rather than failed.
 - Existing local patterns for `Result`, events, outbox, repositories, command handlers, pure core decisions, transition tables, tests, and documentation.
 - Relevant command-intent contract entries for verification.
 
@@ -104,6 +108,8 @@ Two states can still require this skill when the lifecycle is meaningful, such a
    - Make states mutually exclusive within one state machine.
 3. Name states by domain meaning.
    - Prefer states such as `DRAFT`, `PENDING_REVIEW`, `APPROVED`, `PAYMENT_PENDING`, `PAID`, `FULFILLMENT_PENDING`, `SHIPPED`, `DELIVERED`, `CANCELLED`, `REFUND_PENDING`, `REFUNDED`, `EXPIRED`, or `ARCHIVED`.
+   - For deletion-like lifecycles, distinguish states such as `ACTIVE`, `ARCHIVED`, `DEPRECATED`, `PRIVATE`, `SOFT_DELETED`, `PURGE_PENDING`, `PURGED`, `REDIRECTED`, `GONE`, `SUSPENDED`, and `ANONYMIZED` when those states differ in visibility, recovery, retention, indexing, or legal meaning.
+   - For uploaded assets, distinguish states such as `PENDING_UPLOAD`, `UPLOADED`, `SCANNING`, `PROCESSING`, `READY`, `FAILED`, `DELETE_PENDING`, and `DELETED` when storage, scanning, conversion, visibility, cleanup, or download access differs.
    - Avoid UI or placeholder names such as `STEP_1`, `STEP_2`, `BUTTON_DISABLED`, `GRAY`, `READY2`, `TEMP`, and broad states such as `PROCESSING` when a more specific waiting state exists.
 4. Name events as facts that happened.
    - Prefer events such as `PAYMENT_STARTED`, `PAYMENT_SUCCEEDED`, `PAYMENT_FAILED`, `CANCEL_REQUESTED`, `REFUND_APPROVED`, `SHIPMENT_CREATED`, `DELIVERY_CONFIRMED`, `TIMEOUT_REACHED`, and `EMAIL_VERIFIED`.
@@ -113,6 +119,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
    - Include every source state, allowed event, guard name, target state, and effect description.
    - Include terminal states explicitly with no outgoing transitions when they are truly terminal.
    - Do not hide transition rules inside handler branches, repository filters, database queries, adapter code, or UI code.
+   - Do not let direct `deleted_at` assignment bypass allowed archive, soft-delete, restore, purge, anonymize, or redirect transitions when deletion is a meaningful lifecycle.
 6. Keep guards pure.
    - Guards may inspect entity state, event data, context facts, loaded external facts, current time passed through context, and authorization facts passed through context.
    - Guards must not query databases, call SDKs, send messages, write logs, mutate state, read current time directly, generate random values, or trigger external work.
@@ -120,6 +127,9 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 7. Model external work with pending, success, and failure events.
    - Do not jump directly from request to success for payment, refund, shipment, email, file processing, AI processing, or other external operations.
    - Use states such as `PAYMENT_PENDING`, `REFUND_PENDING`, `FULFILLMENT_PENDING`, or `ANALYSIS_PENDING`, then model provider success and failure as separate events.
+   - For files, model upload URL issuance, upload confirmation, scan success or failure, variant generation, ready publication, failed retry, and storage deletion as separate events when those steps can fail independently.
+   - For jobs and outbox delivery, model queued, claimed or running, retry scheduled, succeeded, failed, and dead-letter or manual-review states when attempts and worker ownership matter.
+   - For provider mutations, model unknown completion separately from failure. An unknown state means the provider call may have succeeded and must be reconciled before another attempt can safely run.
 8. Model time as events.
    - Expiration, scheduled cancellation, automatic approval, automatic archive, retry window elapsed, and timeout should enter the state machine as events.
    - Do not scatter direct time checks that assign state outside the transition function.
@@ -140,9 +150,11 @@ Two states can still require this skill when the lifecycle is meaningful, such a
     - Same key and same payload should return the prior result.
     - Same key and different payload should return a duplicate conflict.
     - Different key with an impossible current state should return invalid transition rather than silently succeeding.
+    - Duplicate queued jobs, webhook callbacks, provider events, and slow worker completions should either return the already-applied transition, conflict on changed payload, or be ignored as stale by version or expected-state checks.
 13. Record transition history when the lifecycle matters operationally.
     - History should include entity type, entity identifier, from state, event type, to state, actor identifier when known, idempotency key, payload hash, reason when safe, and timestamp from context.
     - Use transition history for debugging, customer support, dispute handling, audit, and security review.
+    - Deletion and restore history should include actor, reason, recovery or purge deadline, and whether personal data was anonymized, hard-deleted, retained, or separated from the business record.
 14. Derive available actions from the state machine.
     - UI or API layers may display available actions, but they must not own an independent copy of transition rules.
     - Prefer a server-side helper that evaluates possible events or exposes allowed actions derived from the transition table.
@@ -170,6 +182,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 - Impossible transitions return explicit errors instead of being ignored.
 - Guards are pure and external facts are passed through context.
 - External work is represented through pending, success, and failure events, with effects executed after persistence.
+- Retryable work, dead-letter states, and unknown provider outcomes are represented explicitly when external work can be repeated or ambiguous.
 - Durable state transitions use concurrency control and duplicate-event handling when needed.
 - Important lifecycle changes leave transition history and outbox or effect records.
 - Tests cover the transition table and the highest-risk invalid, duplicate, and concurrent paths.
@@ -208,7 +221,7 @@ Choose the narrowest configured verification that covers the changed state machi
 - States, terminal states, and events introduced or changed
 - Transition table location and source-of-truth note
 - Guards and context facts
-- Effects, outbox, history, idempotency, and concurrency choices
+- Effects, outbox, history, idempotency, retry, reconciliation, dead-letter, and concurrency choices
 - Direct state assignments removed or remaining bypasses
 - Tests or verification evidence
 - Skipped checks and remaining state-machine risk

@@ -2,11 +2,11 @@
 mustflow_doc: skill.command-pattern
 locale: en
 canonical: true
-revision: 4
+revision: 13
 lifecycle: mustflow-owned
 authority: procedure
 name: command-pattern
-description: Apply this skill when a state-changing user or system intent needs to become one traceable, retryable, idempotent, authorized, transactional, and testable execution unit.
+description: Apply this skill when a state-changing user or system intent needs to become one traceable, retryable, idempotent, authorized, transactional, auditable, observable, replayable, and testable execution unit, especially for payment, credit, point, inventory, entitlement, subscription, permission, document, prompt, AI cost-bearing work, AI budget reservation, agent loop execution, long-running job, queue message contract, external-side-effect workflow, provider intent record, webhook follow-up, cron work, worker work, manual recovery action, or core-state change that should accept work in HTTP and hand off analytics, email, AI, search indexing, statistics, cache rebuild, or other auxiliary work after commit while preserving request, trace, causation, and job identifiers.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -46,8 +46,19 @@ Use commands to make these questions answerable later:
 ## Use When
 
 - A request creates, updates, deletes, approves, cancels, captures, refunds, archives, sends, publishes, imports, exports, or otherwise changes durable state.
+- A request changes payment, point, credit, inventory, coupon, subscription, entitlement, permission, AI prompt version, document version, policy version, or automation rule state.
+- A request starts, retries, cancels, records, or limits an AI operation where model usage, token cost, cache behavior, retry cost, plan limits, or provider-call reconciliation matters.
+- A request starts an agentic or multi-step AI operation where maximum steps, tool calls, tokens, cost, time, model fallback, policy decisions, or emergency stop behavior must be recorded before work fan-out.
+- A request consumes high-cost resources such as AI calls, image or video conversion, search, automation, file processing, webhooks, realtime fan-out, or provider calls that need credits, quotas, tenant limits, or usage records.
 - A user or system action calls an external service, sends a message, writes a file, sends email, charges payment, publishes a webhook, or schedules work.
+- A user or system action depends on an external API and must preserve the product's intent before the provider call so failed, unknown, delayed, or duplicate work can be retried, reconciled, or manually recovered later.
+- An operator needs to replay a failed email, reprocess a webhook, retry an AI job, rebuild a search index, disable an external feature, reconcile a payment, or move an exhausted job out of manual review without guessing from logs.
 - The operation needs authorization, audit logs, idempotency, retry classification, concurrency protection, an outbox, or a transaction boundary.
+- The operation must update several local records atomically and then coordinate with email, notification, webhook, analytics, payment, AI, or other external systems after commit.
+- A user request currently waits for auxiliary work such as analytics logging, search indexing, recommendation refresh, statistics aggregation, email delivery, AI summarization, file conversion, cache purge, or reporting updates even though the core state change could safely complete first.
+- An HTTP route should accept a long-running or externally dependent operation, persist the requested work, and return a queued, processing, or accepted result instead of completing email, AI, embedding, import, export, webhook follow-up, or statistics work inline.
+- A worker job, outbox dispatcher, webhook processor, or retryable background step needs durable status, duplicate prevention, attempts, locking, retry time, and dead-letter behavior.
+- A queue system, worker framework, or scheduler is introduced or replaced and the service needs job message shape, schema versioning, idempotency, retry, dead-letter, ordering, priority, observability, or manual replay to remain product-owned rather than queue-product-owned.
 - HTTP, queue, cron, CLI, or worker entrypoints should run the same state-changing intent.
 - An existing handler, job, service, or controller mixes intent parsing, authorization, domain decisions, persistence, side effects, event publishing, and error mapping.
 - A command bus may be justified because many commands repeat the same tracing, logging, idempotency, or middleware concerns.
@@ -69,8 +80,17 @@ Use commands to make these questions answerable later:
 - The user or system intent and the command name that would describe it with an imperative verb and target noun.
 - The source boundary: HTTP, queue, cron, CLI, worker, test, webhook, or internal system action.
 - The command payload, actor, tenant, request identifier, correlation identifier, causation identifier, source, and current time.
+- Trace or observability identifiers when relevant: trace id, span id, request id, command id, job run id, webhook event id, cron run id, user or anonymous id, tenant or organization id, and which identifiers are safe to log or propagate.
 - The durable resources loaded or changed by the command.
 - Authorization policy, domain rules, lifecycle state transitions, transaction needs, outbox or event needs, audit requirements, idempotency needs, retry policy, and concurrency risks.
+- Core state that must be committed before response, auxiliary work that can run after commit, acceptable delay or loss for each follow-up, and the dependency failure policy.
+- Provider intent and recovery policy, including the internal operation id, provider operation, safe payload hash, provider id when known, idempotency key, unknown-result handling, retry budget, reconciliation rule, manual replay rule, and whether a provider swap is an immediate fallback or a later migration path.
+- Work-acceptance response policy, such as immediate success, queued status, processing status, or accepted response; job status vocabulary; deduplication key; attempt limit; next-run time; lock expiry; dead-letter handling; and worker ownership.
+- Queue contract details when work crosses a queue: queue name, business urgency, job id, job type, schema version, created time, run-after time, attempt count, idempotency key, request or trace context, safe payload reference, retry categories, timeout, dead-letter target, ordering requirement, and manual replay rule.
+- AI work accounting when relevant: feature key, model key, usage ledger entry, user request id, provider call id, pricing snapshot, cache-hit type, retry grouping, cost limit, and whether failed or unknown calls require reconciliation before retry.
+- AI policy decision when relevant: estimated cost, remaining budget, selected model, fallback model, blocked reason, maximum input tokens, maximum output tokens, maximum tool calls, maximum agent steps, timeout, and whether provider budgets are only secondary guardrails.
+- Cost-bearing work accounting when relevant: value unit, cost unit, workspace or account quota, shared tenant credit pool, free-plan limit, user-action fan-out, usage event, rollup target, and whether retries or duplicate jobs can double-count cost.
+- Idempotency layers for request acceptance, job execution, provider calls, and incoming webhooks, including scope, request hash, duplicate result behavior, and different-payload conflict behavior.
 - Existing local conventions for result types, option types, domain errors, repositories, gateways, unit of work, outbox, audit logs, command buses, and tests.
 - Relevant command-intent contract entries for verification.
 
@@ -116,8 +136,10 @@ Use commands to make these questions answerable later:
    - Command payloads must be serializable data.
    - Do not put request objects, response objects, ORM entities, database connections, file streams, SDK clients, functions, class instances, or loggers in the payload.
    - Use an envelope when the command may be queued, retried, audited, or stored: command type, schema version, command identifier, optional idempotency key, and payload.
+   - Use a job envelope when work is queued or scheduled: job id, job type, schema version, idempotency key, created time, run-after time, attempt, trace or request context, and a safe payload or payload reference.
 4. Model execution context separately from payload.
    - Context should carry trusted actor, request identifier, correlation identifier, optional causation identifier, current time or time context, source, and tenant or account scope.
+   - When observability continuity matters, context should also carry or create safe trace, command, job run, webhook, or cron identifiers. Use internal ids or hashes for user and tenant context when those identifiers can leave the protected boundary.
    - Do not trust client-supplied actor identifiers, roles, or tenant identifiers without server-side authentication and membership checks.
    - Inject time through context. Do not read current time inside the handler except at the outer boundary that builds the context.
 5. Define the handler contract.
@@ -149,10 +171,22 @@ Use commands to make these questions answerable later:
    - Commit before publishing external messages or sending external effects.
    - Record audit evidence for security, payment, permission, and administrator commands.
    - Schedule follow-up work only after the command decision is persisted.
+   - For payment, point, credit, inventory, entitlement, subscription, coupon, and refund commands, prefer append-only ledgers or action records as the evidence source. Treat summary balances or statuses as derived or transactionally updated read state.
+   - For ordinary content, account, and workflow commands, persist the core state and outbox or job records before triggering analytics, email, search indexing, AI processing, statistics, cache purge, or feed refresh work.
+   - For cost-bearing AI commands, persist the accepted work, idempotency decision, usage-limit decision, and job or outbox record before a worker performs model calls. Record actual usage, retry grouping, cache-hit type, pricing snapshot, and provider outcome after the call.
+   - For agentic AI commands, persist the policy decision and hard caps before the first model call. Steps, tool calls, total tokens, elapsed time, and cost should be bounded by the command or job contract, not by provider defaults or operator memory.
+   - For any cost-bearing command, check plan, tenant, quota, credit, request-size, and rate limits before accepting the work when possible. Record usage intent or reserved quota before fan-out work starts, then reconcile actual usage after workers and provider calls complete.
+   - When one command creates many internal jobs, record the causation relationship so thumbnails, OCR, AI calls, embeddings, search indexing, notifications, logs, analytics exports, and webhooks can be attributed to the original user action without losing retry or cost detail.
+   - For HTTP acceptance of long-running work, persist the command result, job row, or outbox row in the same local transaction, then return the created resource identifier and current status. Do not make the HTTP request wait for the worker's external side effect unless the product contract truly requires immediate completion.
+   - For external API work, persist the internal intent before the provider call becomes the only record. Payment, email, map, AI, search, file, and webhook follow-up commands should leave enough local evidence to answer what was attempted, why, for whom, and how to retry or reconcile it later.
 9. Keep external effects out of local transactions.
    - Do not send email, webhooks, push notifications, SMS, files, AI requests, long network requests, payment captures, or refunds while holding a database transaction open.
    - Use outbox records, pending-effect records, job records, or a later worker command when local state and external work must both be reliable.
    - For payment or other harmful repeated effects, store a pending state or action ledger, pass idempotency keys to the provider when supported, and confirm the result through a follow-up command or workflow step.
+   - For workflows such as "payment approved then grant credits", persist the attempt, provider reference, ledger entry, balance/status update, and outbox event inside the local transaction after the provider result is known; send receipts, notifications, and analytics through outbox or worker steps after commit.
+   - Do not let optional analytics, email, AI, search, statistics, cache, or recommendation dependencies decide whether the core command succeeded. Record retryable follow-up work or a degraded status instead.
+   - Do not treat queue publication alone as proof that work exists. When possible, store the job or outbox record durably first so a dispatcher can recover after a process crash or queue-publish failure.
+   - Prefer single-provider plus adapter, failure queue, replay, and reconciliation over premature multi-provider orchestration unless the product contract truly needs live failover. Multiple providers do not remove the need for local intent records, idempotency, and manual recovery.
 10. Make idempotency explicit.
     - Require idempotency keys for payments, refunds, order creation, subscription starts, invite emails, password reset emails, file upload confirmation, external webhooks, point grants, coupon issuance, and administrator approvals.
     - Scope idempotency by actor, tenant, workspace, account, or other ownership boundary. Do not treat a raw idempotency key as globally safe.
@@ -160,6 +194,10 @@ Use commands to make these questions answerable later:
     - Return the previous success result for the same scope, type, key, and payload hash.
     - Return an idempotency conflict for the same scope, type, and key with a different payload hash.
     - Distinguish in-progress, succeeded, final failure, and retryable failure records.
+    - For retryable jobs, use durable deduplication keys and database uniqueness where possible. Assume queues and workers can deliver or run a job more than once.
+    - For provider calls, store the provider, operation, local idempotency key, safe request hash, provider object identifier when known, outcome, and last safe error. Distinguish `failed` from `unknown`: `failed` means the provider is known not to have completed the effect; `unknown` means reconciliation is required before retrying.
+    - For provider webhooks, store provider event ids or normalized event hashes so duplicate callbacks cannot double-charge, double-grant, double-refund, or repeat a state transition.
+    - For provider replacement, keep idempotency and operation ids in product language first. Provider-specific payment ids, message ids, place ids, model call ids, and search task ids are mappings, not the command identity.
 11. Record events safely.
     - Command names are imperative. Event names are past-tense facts.
     - Store domain events or outbox messages only after the state change decision succeeds.
@@ -170,13 +208,18 @@ Use commands to make these questions answerable later:
     - Return typed command errors for validation, authorization, not found, conflict, invariant, idempotency, dependency, and internal failures.
     - Do not throw for expected business failures.
     - Mark dependency failures as retryable or non-retryable.
-    - Retry transient network, timeout, rate-limit, lock-contention, queue-delay, or temporary persistence failures only when duplicate execution is safe.
-    - Do not retry invalid input, denied access, missing resource, domain-rule violation, idempotency conflict, or already-processed terminal states.
+   - Retry transient network, timeout, rate-limit, lock-contention, queue-delay, or temporary persistence failures only when duplicate execution is safe.
+   - Do not retry invalid input, denied access, missing resource, domain-rule violation, idempotency conflict, or already-processed terminal states.
+   - Give external dependencies explicit timeouts, retry budgets, backoff with jitter, and retryable error categories. Do not allow an auxiliary dependency to consume the whole user-request budget unless the command's core outcome depends on it.
+   - Classify follow-up failures separately from command failures. A failed email, analytics event, search index update, cache purge, or AI summary usually means pending or degraded follow-up work, not a failed core state change.
+   - Do not retry invalid input, denied authorization, permission rejection, malformed provider requests, or idempotency conflicts. Retry transient network failures, timeouts, rate limits, and temporary provider outages only when duplicate effects are prevented.
 13. Protect concurrency.
     - Use unique constraints, optimistic locking, pessimistic locking, conditional updates, state-transition checks, idempotency keys, or compare-and-swap saves when simultaneous commands may affect the same resource.
     - If a version conflict occurs, reload and recompute, return a conflict, enqueue a retry, or apply a domain-specific merge only when that policy is explicit.
+    - For slow worker or AI results, include the command version, target version, or expected state so stale results cannot overwrite newer state.
 14. Add observability and audit evidence.
     - Logs should include command type, command identifier, schema version, actor identifier, tenant identifier, request identifier, correlation identifier, causation identifier, source, affected resource identifier, duration, outcome, error kind, and error code.
+    - For commands that cross HTTP, queue, worker, cron, or webhook boundaries, keep the request id, trace id, causation id, command id, job run id, and webhook event id linked so a later backend change does not break incident reconstruction.
     - Logs and audits must not include passwords, tokens, cookies, raw card data, raw personal data, raw files, security answers, or raw sensitive provider responses.
     - Audit logs are required for permission changes, administrator invites, organization deletion, payment capture, refund, subscription cancellation, personal data export, account deletion, security setting changes, API key creation, and API key revocation.
 15. Introduce a command bus only with evidence.
@@ -184,9 +227,15 @@ Use commands to make these questions answerable later:
     - The bus may locate handlers, apply middleware, add common tracing, and normalize outer errors.
     - The bus must not own domain rules, know every handler branch, centralize business logic, or force one transaction policy on all commands.
 16. Split long-running work.
-    - Do not make a user request wait for bulk email, bulk file processing, AI document analysis, large imports, or external synchronization.
-    - Use a start command to create a job and return a queued status.
-    - Use worker commands for processing steps and completion or failure transitions.
+   - Do not make a user request wait for bulk email, bulk file processing, AI document analysis, large imports, or external synchronization.
+   - Use a start command to create a job and return a queued status.
+   - Use worker commands for processing steps and completion or failure transitions.
+   - Keep worker commands idempotent, version-aware, and stale-result safe so a slow AI, import, search, or conversion result cannot overwrite newer user state.
+   - Separate queues or worker pools when one class of work can starve another. Payment, webhook, email, AI, embedding, analytics, and dead-letter processing should not all compete for one unbounded worker path when delay or failure policy differs.
+   - Name queues by business domain, urgency, and failure policy where useful, such as billing webhook critical, transactional email, marketing email, media conversion, search reindex, analytics rollup, and dead-letter review. Avoid a single vague default queue when unrelated work can block critical rights, payment, or security updates.
+   - Put exhausted or poison jobs into a dead-letter or manual-review state with safe error metadata instead of retrying forever.
+   - Treat a queued failure as hidden until metrics, alerts, or operator review make it visible. Track queue depth, job age, retry count, failure rate, dead-letter growth, provider rate-limit pressure, and manual replay results for important queues.
+   - Define the smallest operator actions that make the command recoverable at 03:00: resend a specific email, reprocess a specific webhook, retry a specific AI job, rebuild a specific search index, reconcile a specific payment attempt, or temporarily disable one provider-backed feature.
 17. Test command behavior.
     - Cover success, required input absence, invalid input, unauthorized actor, missing resource, state conflict, domain invariant failure, duplicate retry with same payload, duplicate key with different payload, transaction rollback, outbox creation, dependency failure, retryability, non-retryability, and concurrency conflicts.
     - Use fake repositories and gateways for handler unit tests.
@@ -200,8 +249,12 @@ Use commands to make these questions answerable later:
 - The payload is serializable and free of framework, ORM, SDK, connection, stream, and function objects.
 - The handler has injected dependencies and handles one command.
 - Authorization, idempotency, transaction boundaries, outbox behavior, retry classification, concurrency protection, observability, and audit requirements are explicit where relevant.
+- Request, trace, command, job, cron, webhook, correlation, and causation identifiers are explicit where the command crosses asynchronous or external boundaries.
+- HTTP acceptance, durable job or outbox creation, worker ownership, queue separation, deduplication, retry budget, dead-letter behavior, and reconciliation rules are explicit when long-running or external work is involved.
+- Credit, quota, tenant-limit, usage-event, fan-out attribution, and retry-cost behavior are explicit when one command consumes high-cost resources or creates multiple internal jobs.
 - Expected command failures are returned as typed values.
 - External effects do not run inside local database transactions.
+- Auxiliary work that can lag, retry, degrade, or be lost is separated from the core command outcome instead of blocking the user request.
 - The final response reports any command bus, outbox, idempotency, audit, or retry behavior that was intentionally skipped because the operation did not need it.
 
 <!-- mustflow-section: verification -->
@@ -242,6 +295,10 @@ Choose the narrowest configured verification that proves the changed command pat
 - Strategy family used or intentionally avoided
 - Facade workflow used or intentionally avoided
 - Transaction, outbox, idempotency, retry, concurrency, audit, and observability choices
+- Job, worker, queue, deduplication, dead-letter, and provider reconciliation choices when relevant
+- AI or other high-cost usage ledger, pricing snapshot, cache-hit, credit, quota, tenant-limit, fan-out, retry-cost, provider-call, and limit-enforcement choices when relevant
+- AI policy decision, preflight budget, agent-step, tool-call, token, cost, timeout, fallback, and emergency-stop choices when relevant
+- Core versus auxiliary work split, including delayed, degraded, or lossy follow-up behavior when relevant
 - Command bus used or intentionally avoided
 - Tests or verification evidence
 - Skipped checks and remaining command safety risk

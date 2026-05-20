@@ -56,13 +56,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 60
+revision = 73
 translations = {}
 
 [documents."skill.adapter-boundary"]
 source = "locales/en/.mustflow/skills/adapter-boundary/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 11
 translations = {}
 
 [documents."skill.artifact-integrity-check"]
@@ -104,7 +104,7 @@ translations = {}
 [documents."skill.database-change-safety"]
 source = "locales/en/.mustflow/skills/database-change-safety/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 16
 translations = {}
 
 [documents."skill.dependency-injection"]
@@ -116,7 +116,7 @@ translations = {}
 [documents."skill.dependency-reality-check"]
 source = "locales/en/.mustflow/skills/dependency-reality-check/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 6
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -152,13 +152,13 @@ translations = {}
 [documents."skill.command-pattern"]
 source = "locales/en/.mustflow/skills/command-pattern/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 13
 translations = {}
 
 [documents."skill.command-contract-authoring"]
 source = "locales/en/.mustflow/skills/command-contract-authoring/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.cross-platform-filesystem-safety"]
@@ -170,13 +170,13 @@ translations = {}
 [documents."skill.pure-core-imperative-shell"]
 source = "locales/en/.mustflow/skills/pure-core-imperative-shell/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.result-option"]
 source = "locales/en/.mustflow/skills/result-option/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.docs-update"]
@@ -223,7 +223,7 @@ translations = {}
 [documents."skill.migration-safety-check"]
 source = "locales/en/.mustflow/skills/migration-safety-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 8
 translations = {}
 
 [documents."skill.multi-agent-work-coordination"]
@@ -241,7 +241,7 @@ translations = {}
 [documents."skill.performance-budget-check"]
 source = "locales/en/.mustflow/skills/performance-budget-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 12
 translations = {}
 
 [documents."skill.pattern-scout"]
@@ -271,13 +271,13 @@ translations = {}
 [documents."skill.structure-discovery-gate"]
 source = "locales/en/.mustflow/skills/structure-discovery-gate/SKILL.md"
 source_locale = "en"
-revision = 12
+revision = 26
 translations = {}
 
 [documents."skill.state-machine-pattern"]
 source = "locales/en/.mustflow/skills/state-machine-pattern/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 4
 translations = {}
 
 [documents."skill.strategy-pattern"]
@@ -325,7 +325,7 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 16
 translations = {}
 
 [documents."skill.security-regression-tests"]

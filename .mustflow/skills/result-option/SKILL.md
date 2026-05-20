@@ -2,11 +2,11 @@
 mustflow_doc: skill.result-option
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: result-option
-description: Apply this skill when expected failures, meaningful absence, null or undefined returns, thrown business errors, boolean success flags, raw string errors, repository lookups, validation, parsing, external adapter errors, or boundary error mapping need explicit Result and Option handling.
+description: Apply this skill when expected failures, meaningful absence, null or undefined returns, thrown business errors, boolean success flags, raw string errors, repository lookups, validation, parsing, external adapter errors, API error response contracts, or boundary error mapping need explicit Result and Option handling.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -44,6 +44,7 @@ Expected failure must be data. Meaningful absence must be data. Exceptions are o
 - A repository lookup can fail due to persistence and can also legitimately find no record.
 - External SDK, database, HTTP, payment, email, filesystem, or framework exceptions leak into business logic.
 - A controller, adapter, or command handler must convert typed failures into HTTP, UI, CLI, or queue responses.
+- API responses need stable machine-readable error codes, safe messages, request identifiers, and details that do not expose raw causes, provider payloads, or sensitive data.
 - Tests need stable success, failure, and absence cases without relying on thrown exceptions.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -127,6 +128,7 @@ Expected failure must be data. Meaningful absence must be data. Exceptions are o
    - Repositories that can fail and may not find data should return `Result<Option<T>, E>`.
    - Services may convert an `Option` into a domain error when the value is required.
    - Controllers, CLI handlers, queue consumers, and UI boundary code should convert `Result` into protocol responses.
+   - Public and integration APIs should expose a consistent error envelope with stable code, safe message, optional safe details, and request id when available; they should not leak internal `Result` names, stack traces, storage keys, SQL, provider responses, or sensitive raw causes.
    - Do not serialize internal `Result` or `Option` shapes as public API responses unless that is the explicit public contract.
 9. Log once at the outer boundary.
    - Do not log the same error at every layer.
