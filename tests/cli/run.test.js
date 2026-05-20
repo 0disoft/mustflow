@@ -253,6 +253,7 @@ description = "Would create a marker file if executed."
 argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
 cwd = "."
 timeout_seconds = 10
+kill_after_seconds = 8
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dry-run-spawned.txt"]
@@ -280,6 +281,7 @@ destructive = false
 		assert.equal(preview.cwd, '.');
 		assert.equal(preview.resolved_cwd, projectPath);
 		assert.equal(preview.timeout_seconds, 10);
+		assert.equal(preview.kill_after_seconds, 8);
 		assert.equal(preview.mode, 'argv');
 		assert.deepEqual(preview.argv, [
 			process.execPath,
@@ -985,6 +987,7 @@ description = "Print a receipt test message."
 argv = ['${process.execPath}', '-e', 'console.log("hello receipt")']
 cwd = "."
 timeout_seconds = 10
+kill_after_seconds = 8
 stdin = "closed"
 success_exit_codes = [0]
 writes = []
@@ -1013,6 +1016,7 @@ destructive = false
 		assert.equal(receipt.env_policy, 'minimal');
 		assert.deepEqual(receipt.env_allowlist, []);
 		assert.equal(receipt.timeout_seconds, 10);
+		assert.equal(receipt.kill_after_seconds, 8);
 		assert.equal(receipt.max_output_bytes_scope, 'per_stream');
 		assert.equal(receipt.stdout.truncated, false);
 		assert.match(receipt.stdout.tail, /hello receipt/);

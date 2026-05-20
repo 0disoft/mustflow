@@ -34,6 +34,7 @@ A receipt must include:
 - `run_policy`
 - `mode`
 - `timeout_seconds`
+- `kill_after_seconds`
 - `max_output_bytes`
 - `max_output_bytes_scope`
 - `success_exit_codes`

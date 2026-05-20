@@ -65,6 +65,7 @@ npx mf run test --json
 - `argv` (`string[]`)：未使用 shell 模式时的命令与参数。
 - `cmd` (`string`)：使用 shell 模式时的 shell 命令字符串。
 - `timeout_seconds` (`number`)：应用的超时时间。
+- `kill_after_seconds` (`number`)：超时后用于进程清理的额外等待时间。
 - `max_output_bytes` (`number`)：每个标准输出或标准错误流的最大保留输出字节数。超过 16 MiB（16,777,216 字节）的值会在执行前被拒绝。
 - `max_output_bytes_scope` (`string`)：始终为 `per_stream`；`max_output_bytes` 不是标准输出与标准错误合计后的总预算。
 - `success_exit_codes` (`number[]`)：被视为成功的退出码。

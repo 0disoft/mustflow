@@ -65,6 +65,7 @@ La salida legible por máquinas usa estos campos:
 - `argv` (`string[]`): comando y argumentos cuando no se usa modo shell.
 - `cmd` (`string`): cadena de comando shell cuando se usa modo shell.
 - `timeout_seconds` (`number`): tiempo de espera aplicado.
+- `kill_after_seconds` (`number`): espera adicional de limpieza del proceso aplicada después del tiempo de espera.
 - `max_output_bytes` (`number`): cantidad máxima de salida retenida por cada flujo de salida estándar
   o error estándar. Se rechazan antes de ejecutar valores superiores a 16 MiB (16,777,216 bytes).
 - `max_output_bytes_scope` (`string`): siempre `per_stream`; `max_output_bytes` no es un presupuesto

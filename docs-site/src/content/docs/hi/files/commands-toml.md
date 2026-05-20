@@ -52,7 +52,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.max_output_bytes`: stdout या stderr stream में से हर एक के लिए runner द्वारा स्वीकार किया
   जाने वाला default output limit। 16 MiB (16,777,216 bytes) से बड़े मान अस्वीकार किए जाते हैं।
 - `defaults.on_timeout`: timeout handling policy।
-- `defaults.kill_after_seconds`: process cleanup के लिए अतिरिक्त wait time।
+- `defaults.kill_after_seconds`: process cleanup के लिए default extra wait time। Intent अपना
+  `kill_after_seconds` देकर इसे override कर सकता है।
 
 ## Intent status
 
@@ -80,6 +81,7 @@ Agents केवल `status = "configured"` वाले intents चला स�
 - `cmd`: `mode = "shell"` होने पर उपयोग होने वाली shell command string।
 - `cwd`: command का working directory।
 - `timeout_seconds`: command timeout।
+- `kill_after_seconds`: timeout के बाद process cleanup के लिए optional per-intent extra wait time।
 - `stdin`: standard input behavior। Agent-runnable intents को `closed` उपयोग करना चाहिए।
 - `success_exit_codes`: successful माने जाने वाले exit codes।
 - `manual_start_hint`: agent execution के बाहर किसी long-running command को शुरू करने के लिए human-facing hint।

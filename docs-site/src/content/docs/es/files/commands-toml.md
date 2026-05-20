@@ -52,7 +52,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.max_output_bytes`: límite de salida predeterminado aceptado por el ejecutor para cada
   flujo de salida estándar o error estándar. Se rechazan valores superiores a 16 MiB (16,777,216 bytes).
 - `defaults.on_timeout`: política de manejo de tiempo agotado.
-- `defaults.kill_after_seconds`: espera adicional disponible para limpiar procesos.
+- `defaults.kill_after_seconds`: espera adicional predeterminada disponible para limpiar procesos.
+  Una intención puede sobrescribirla con su propio `kill_after_seconds`.
 
 ## Estado de intención
 
@@ -80,6 +81,7 @@ Los agentes solo pueden ejecutar intenciones con `status = "configured"`.
 - `cmd`: cadena de comando de shell usada cuando `mode = "shell"`.
 - `cwd`: directorio de trabajo del comando.
 - `timeout_seconds`: tiempo de espera del comando.
+- `kill_after_seconds`: espera adicional opcional por intención para limpiar procesos después del tiempo de espera.
 - `stdin`: comportamiento de entrada estándar. Las intenciones ejecutables por agentes deben usar `closed`.
 - `success_exit_codes`: códigos de salida considerados correctos.
 - `manual_start_hint`: guía opcional para que una persona inicie un comando de larga duración fuera de la ejecución del agente.

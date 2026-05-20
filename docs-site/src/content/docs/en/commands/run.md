@@ -67,6 +67,7 @@ Machine-readable output uses these fields:
 - `argv` (`string[]`): Command and arguments when not using shell mode.
 - `cmd` (`string`): Shell command string when using shell mode.
 - `timeout_seconds` (`number`): Applied timeout.
+- `kill_after_seconds` (`number`): Additional process-cleanup wait time applied after timeout.
 - `max_output_bytes` (`number`): Maximum retained output size per standard output or standard error stream.
   Values above 16 MiB (16,777,216 bytes) are rejected before execution.
 - `max_output_bytes_scope` (`string`): Always `per_stream`; `max_output_bytes` is not a combined

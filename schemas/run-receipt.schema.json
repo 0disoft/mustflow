@@ -55,6 +55,7 @@
     },
     "cmd": { "type": "string" },
     "timeout_seconds": { "type": "integer" },
+    "kill_after_seconds": { "type": "integer" },
     "max_output_bytes": { "type": "integer" },
     "max_output_bytes_scope": { "const": "per_stream" },
     "success_exit_codes": {

@@ -325,6 +325,7 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 	);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
 	validateMaxOutputBytesField(intent, 'max_output_bytes', `[commands.intents.${intentName}].max_output_bytes`, issues);
+	validatePositiveIntegerField(intent, 'kill_after_seconds', `[commands.intents.${intentName}].kill_after_seconds`, issues);
 	validateCommandIntentSelection(intentName, intent, issues);
 
 	if (intent.status !== 'configured') {

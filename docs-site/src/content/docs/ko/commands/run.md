@@ -65,6 +65,7 @@ npx mf run test --json
 - `argv` (`string[]`): 실행된 명령 및 인수 목록 (`exec` 모드).
 - `cmd` (`string`): 실행된 전체 셸 명령 문자열 (`shell` 모드).
 - `timeout_seconds` (`number`): 적용된 제한 시간(초)입니다.
+- `kill_after_seconds` (`number`): 시간 초과 뒤 프로세스 정리 단계에 적용되는 추가 대기 시간(초)입니다.
 - `max_output_bytes` (`number`): 표준 출력(stdout) 또는 표준 오류(stderr) 각각에 적용되는 캡처 및 보존 바이트 상한입니다. 16 MiB
   (16,777,216바이트)를 넘는 값은 실행 전에 거부됩니다.
 - `max_output_bytes_scope` (`string`): 항상 `per_stream`입니다. 즉 `max_output_bytes`는 표준 출력과 표준 오류를 합친 전체 상한이 아니라 각 출력 흐름별 상한입니다.

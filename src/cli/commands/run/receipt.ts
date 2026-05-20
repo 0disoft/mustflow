@@ -45,6 +45,7 @@ export function assembleRunReceipt(input: AssembleRunReceiptInput): RunReceipt {
 		envPolicy: input.plan.envPolicy,
 		envAllowlist: input.plan.envAllowlist,
 		timeoutSeconds: input.plan.timeoutSeconds,
+		killAfterSeconds: input.plan.killAfterSeconds,
 		maxOutputBytes: input.plan.maxOutputBytes,
 		successExitCodes: input.plan.successExitCodes,
 		exitCode: input.exitCode,

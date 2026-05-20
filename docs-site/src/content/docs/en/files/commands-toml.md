@@ -54,7 +54,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.max_output_bytes`: Default output limit accepted by the runner for each standard output
   or standard error stream. Values above 16 MiB (16,777,216 bytes) are rejected.
 - `defaults.on_timeout`: Timeout handling policy.
-- `defaults.kill_after_seconds`: Extra wait time available to process cleanup.
+- `defaults.kill_after_seconds`: Default extra wait time available to process cleanup. An intent can
+  override it with its own `kill_after_seconds`.
 - `defaults.env_policy`: Environment policy for command execution when an intent does not override it.
 - `defaults.env_allowlist`: Extra environment variable names passed when the effective policy is `allowlist`.
 
@@ -84,6 +85,7 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `cmd`: Shell command string used when `mode = "shell"`.
 - `cwd`: Working directory for the command.
 - `timeout_seconds`: Command timeout.
+- `kill_after_seconds`: Optional per-intent process-cleanup wait time after timeout.
 - `stdin`: Standard input behavior. Agent-runnable intents must use `closed`.
 - `success_exit_codes`: Exit codes considered successful.
 - `env_policy`: Optional override for command environment handling. Use `minimal`, `allowlist`, or explicit `inherit`.

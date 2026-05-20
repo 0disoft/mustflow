@@ -137,6 +137,7 @@
         "cmd": { "type": "string" },
         "cwd": { "type": "string" },
         "timeout_seconds": { "type": "integer" },
+        "kill_after_seconds": { "type": "integer" },
         "stdin": { "type": "string" },
         "success_exit_codes": {
           "type": "array",

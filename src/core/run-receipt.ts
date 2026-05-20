@@ -114,6 +114,7 @@ export interface RunReceipt {
 	readonly env_policy: CommandEnvPolicy;
 	readonly env_allowlist: readonly string[];
 	readonly timeout_seconds: number;
+	readonly kill_after_seconds: number;
 	readonly max_output_bytes: number;
 	readonly max_output_bytes_scope: typeof COMMAND_OUTPUT_LIMIT_SCOPE;
 	readonly success_exit_codes: readonly number[];
@@ -146,6 +147,7 @@ export interface CreateRunReceiptInput {
 	readonly envPolicy: CommandEnvPolicy;
 	readonly envAllowlist: readonly string[];
 	readonly timeoutSeconds: number;
+	readonly killAfterSeconds: number;
 	readonly maxOutputBytes: number;
 	readonly successExitCodes: readonly number[];
 	readonly exitCode: number | null;
@@ -318,6 +320,7 @@ function createPerformanceSummary(input: {
 	readonly envPolicy: CommandEnvPolicy;
 	readonly envAllowlist: readonly string[];
 	readonly timeoutSeconds: number;
+	readonly killAfterSeconds: number;
 	readonly maxOutputBytes: number;
 	readonly successExitCodes: readonly number[];
 	readonly exitCode: number | null;
@@ -330,6 +333,7 @@ function createPerformanceSummary(input: {
 		cwd: input.cwd,
 		env_allowlist: input.envAllowlist,
 		env_policy: input.envPolicy,
+		kill_after_seconds: input.killAfterSeconds,
 		lifecycle: input.lifecycle,
 		max_output_bytes: input.maxOutputBytes,
 		mode: input.mode,
@@ -470,6 +474,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 		env_policy: input.envPolicy,
 		env_allowlist: input.envAllowlist,
 		timeout_seconds: input.timeoutSeconds,
+		kill_after_seconds: input.killAfterSeconds,
 		max_output_bytes: input.maxOutputBytes,
 		max_output_bytes_scope: COMMAND_OUTPUT_LIMIT_SCOPE,
 		success_exit_codes: input.successExitCodes,
@@ -496,6 +501,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 			envPolicy: input.envPolicy,
 			envAllowlist: input.envAllowlist,
 			timeoutSeconds: input.timeoutSeconds,
+			killAfterSeconds: input.killAfterSeconds,
 			maxOutputBytes: input.maxOutputBytes,
 			successExitCodes: input.successExitCodes,
 			exitCode: input.exitCode,

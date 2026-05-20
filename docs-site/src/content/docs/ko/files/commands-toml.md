@@ -54,7 +54,8 @@ required_after = ["code_change", "behavior_change"]
 - `defaults.max_output_bytes`: 실행기가 표준 출력(stdout)과 표준 오류(stderr) 각각에 적용하는 기본 출력 상한입니다. 16 MiB
   (16,777,216바이트)를 넘는 값은 거부됩니다.
 - `defaults.on_timeout`: 제한 시간을 넘겼을 때의 처리 방식입니다.
-- `defaults.kill_after_seconds`: 프로세스 정리 단계에서 사용할 수 있는 추가 대기 시간입니다.
+- `defaults.kill_after_seconds`: 프로세스 정리 단계에서 사용할 기본 추가 대기 시간입니다. 의도별로
+  `kill_after_seconds`를 선언하면 이 값을 덮어씁니다.
 - `defaults.env_policy`: 의도별 설정이 없을 때 사용할 환경 변수 전달 정책입니다.
 - `defaults.env_allowlist`: 유효한 정책이 `allowlist`일 때 추가로 전달할 환경 변수 이름 목록입니다.
 
@@ -84,6 +85,7 @@ required_after = ["code_change", "behavior_change"]
 - `cmd`: `mode = "shell"`일 때 실행할 셸 명령 문자열입니다.
 - `cwd`: 명령을 실행할 작업 디렉터리입니다.
 - `timeout_seconds`: 명령 제한 시간입니다.
+- `kill_after_seconds`: 시간 초과 뒤 프로세스 정리 단계에 사용할 의도별 추가 대기 시간입니다.
 - `stdin`: 표준 입력 처리 방식입니다. 자동 실행 가능한 의도는 `closed`여야 합니다.
 - `success_exit_codes`: 성공으로 볼 종료 코드 목록입니다.
 - `env_policy`: 환경 변수 전달 정책을 의도별로 덮어씁니다. 새 자동 실행 의도에는 `minimal` 또는 `allowlist`를 우선 사용하고, 전체 상속이 꼭 필요할 때만 `inherit`를 명시합니다.

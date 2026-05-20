@@ -223,8 +223,10 @@ function readEffectiveMaxOutputBytes(contract: CommandContract, intent: TomlTabl
 		DEFAULT_COMMAND_MAX_OUTPUT_BYTES;
 }
 
-function readEffectiveKillAfterSeconds(contract: CommandContract): number {
-	return readPositiveInteger(contract.defaults, 'kill_after_seconds') ?? 5;
+function readEffectiveKillAfterSeconds(contract: CommandContract, intent: TomlTable): number {
+	return readPositiveInteger(intent, 'kill_after_seconds') ??
+		readPositiveInteger(contract.defaults, 'kill_after_seconds') ??
+		5;
 }
 
 function getMaxOutputBytesLimitDetail(contract: CommandContract, intent: TomlTable): string | null {
@@ -256,7 +258,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		kind: readString(intent, 'kind') ?? null,
 		configuredCwd,
 		timeoutSeconds: readPositiveInteger(intent, 'timeout_seconds') ?? null,
-		killAfterSeconds: readEffectiveKillAfterSeconds(contract),
+		killAfterSeconds: readEffectiveKillAfterSeconds(contract, intent),
 		maxOutputBytes: readEffectiveMaxOutputBytes(contract, intent),
 		successExitCodes: getSuccessExitCodes(intent),
 		commandArgv,
@@ -485,6 +487,7 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		cwd: plan.relativeCwd,
 		resolved_cwd: plan.cwd,
 		timeout_seconds: plan.timeoutSeconds,
+		kill_after_seconds: plan.killAfterSeconds,
 		max_output_bytes: plan.maxOutputBytes,
 		max_output_bytes_scope: plan.maxOutputBytes === null ? null : COMMAND_OUTPUT_LIMIT_SCOPE,
 		mode: plan.mode,
