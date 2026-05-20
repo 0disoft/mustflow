@@ -55,7 +55,7 @@ content_hash = "sha256:4cc76791ab884e390a90eee90acbc0e7357a88c0ca5fb4c0c95b08c38
 [files.".mustflow/skills/code-review/SKILL.md"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:a11d6edfb45a62fcaf4144f75b502bd19d5b71958c5f4ecbd3dfe2d1c30502c2"
+content_hash = "sha256:ff66857e34ce76b3bba6203aace7d2e345023c9a37eea06e2364b640ecc28032"
 
 [files.".mustflow/skills/codebase-orientation/SKILL.md"]
 source = "template_locale"
