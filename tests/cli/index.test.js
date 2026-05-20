@@ -1786,6 +1786,92 @@ test('indexes source anchors only when source indexing is requested', async () =
 	}
 });
 
+test('source incremental index reuses unchanged candidate metadata before parsing anchors', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-preflight-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'with-anchor.ts'),
+			`/**
+ * mf:anchor source.preflight.cached
+ * purpose: Track source index preflight reuse.
+ * search: source index preflight
+ * invariant: Candidate metadata can prove unchanged source files before parsing.
+ * risk: cache
+ */
+export const cachedAnchor = true;
+`,
+		);
+		writeFileSync(path.join(projectPath, 'src', 'plain.ts'), 'export const plainSource = true;\n');
+
+		const firstOutput = await createLocalIndexDirect(projectPath, { includeSource: true });
+		const secondOutput = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const indexedSourcePaths = queryRows(
+			database,
+			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+		).map((row) => row.path);
+		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
+
+		assert.equal(firstOutput.source_anchor_count, 1);
+		assert.equal(secondOutput.index_mode, 'incremental');
+		assert.equal(secondOutput.reused_existing, true);
+		assert.equal(secondOutput.wrote_files, false);
+		assert.equal(secondOutput.rebuild_reason, null);
+		assert.equal(secondOutput.source_anchor_count, 1);
+		assert.deepEqual(indexedSourcePaths, ['src/plain.ts', 'src/with-anchor.ts']);
+		assert.deepEqual(anchorRows, [{ id: 'source.preflight.cached', path: 'src/with-anchor.ts' }]);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('source incremental index rebuilds when the candidate source set changes', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-candidate-change-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'with-anchor.ts'),
+			`/**
+ * mf:anchor source.preflight.changed-set
+ * purpose: Track source index candidate set changes.
+ * search: source index candidate set
+ * invariant: New candidate source files force a deterministic incremental rebuild.
+ * risk: cache
+ */
+export const changedSetAnchor = true;
+`,
+		);
+		await createLocalIndexDirect(projectPath, { includeSource: true });
+		writeFileSync(path.join(projectPath, 'src', 'new-plain.ts'), 'export const newPlainSource = true;\n');
+
+		const output = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const indexedSourcePaths = queryRows(
+			database,
+			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+		).map((row) => row.path);
+		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
+
+		assert.equal(output.index_mode, 'incremental');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
+		assert.equal(output.source_anchor_count, 1);
+		assert.deepEqual(indexedSourcePaths, ['src/new-plain.ts', 'src/with-anchor.ts']);
+		assert.deepEqual(anchorRows, [{ id: 'source.preflight.changed-set', path: 'src/with-anchor.ts' }]);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('uses index config to bound source anchor scanning', async () => {
 	const projectPath = cloneSourceIndexConfigProject();
 	const fixture = getCachedIndexedProjectFixture({

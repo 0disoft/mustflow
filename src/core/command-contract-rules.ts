@@ -16,6 +16,7 @@ const INTERPRETER_EVALUATION_FLAGS = new Map<string, ReadonlySet<string>>([
 const PACKAGE_SCRIPT_RUNNERS = new Set(['bun', 'npm', 'pnpm', 'yarn']);
 const LONG_RUNNING_PACKAGE_SCRIPTS = new Set(['dev', 'start', 'serve', 'watch', 'preview']);
 const LONG_RUNNING_EXECUTABLES = new Set(['nodemon', 'pm2', 'serve', 'http-server', 'live-server', 'webpack-dev-server']);
+const ATTACHED_EVALUATION_FLAGS = new Set(['-command', '-commandwithargs']);
 
 export const BACKGROUND_SHELL_PATTERNS = [
 	/(?:^|[^&])&(?!&)\s*$/u,
@@ -65,10 +66,27 @@ function normalizeExecutableName(value: string): string {
 	return path.basename(value).replace(/\.(?:cmd|exe|ps1)$/iu, '').toLowerCase();
 }
 
+function flagAllowsAttachedPayload(flag: string): boolean {
+	return (flag.startsWith('-') && !flag.startsWith('--') && flag.length === 2) || flag === '/c' || ATTACHED_EVALUATION_FLAGS.has(flag);
+}
+
 function findFlagPayload(argv: readonly string[], flags: ReadonlySet<string>): string | null {
-	for (let index = 1; index < argv.length - 1; index += 1) {
-		if (flags.has(argv[index].toLowerCase())) {
-			return argv[index + 1];
+	for (let index = 1; index < argv.length; index += 1) {
+		const argument = argv[index] ?? '';
+		const normalizedArgument = argument.toLowerCase();
+
+		if (flags.has(normalizedArgument)) {
+			return argv[index + 1] ?? null;
+		}
+
+		for (const flag of flags) {
+			if (normalizedArgument.startsWith(`${flag}=`)) {
+				return argument.slice(flag.length + 1);
+			}
+
+			if (flagAllowsAttachedPayload(flag) && normalizedArgument.startsWith(flag) && argument.length > flag.length) {
+				return argument.slice(flag.length);
+			}
 		}
 	}
 

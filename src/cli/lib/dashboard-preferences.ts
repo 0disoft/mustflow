@@ -1,11 +1,12 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, type TomlTable } from './command-contract.js';
+import { readUtf8FileInsideWithoutSymlinks, writeUtf8FileInsideWithoutSymlinks } from './filesystem.js';
 import { isLocaleTag } from './locale-tags.js';
-import { markManifestLockFileCustomized } from './manifest-lock.js';
+import { ensureManifestLockTargetSafe, markManifestLockFileCustomized } from './manifest-lock.js';
 import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
-import { readTomlFile } from './toml.js';
+import { parseTomlText } from './toml.js';
 
 export type DashboardSettingKind = 'boolean' | 'select' | 'number';
 
@@ -327,7 +328,7 @@ export function readDashboardPreferences(projectRoot: string): DashboardPreferen
 		throw new Error('Missing .mustflow/config/preferences.toml. Run mf init first or switch to a mustflow root.');
 	}
 
-	const parsed = readTomlFile(preferencesPath);
+	const parsed = parseTomlText(readUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath));
 
 	if (!isRecord(parsed)) {
 		throw new Error('.mustflow/config/preferences.toml must contain a TOML table.');
@@ -469,7 +470,7 @@ export function updateDashboardPreferences(
 ): DashboardPreferencesSnapshot {
 	const preferencesPath = getPreferencesPath(projectRoot);
 	const definitionsById = new Map(DASHBOARD_PREFERENCE_SETTINGS.map((definition) => [definition.id, definition]));
-	let content = readFileSync(preferencesPath, 'utf8');
+	let content = readUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath);
 
 	for (const update of updates) {
 		const definition = definitionsById.get(update.id);
@@ -482,7 +483,8 @@ export function updateDashboardPreferences(
 		content = setTomlScalar(content, definition.path, value);
 	}
 
-	writeFileSync(preferencesPath, content);
+	ensureManifestLockTargetSafe(projectRoot);
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath, content);
 	markManifestLockFileCustomized(projectRoot, PREFERENCES_RELATIVE_PATH);
 	return readDashboardPreferences(projectRoot);
 }

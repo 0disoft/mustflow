@@ -1,9 +1,15 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { ensureInside } from './filesystem.js';
-import { readTomlFile, stringifyToml } from './toml.js';
+import {
+	ensureFileTargetInsideWithoutSymlinks,
+	ensureInside,
+	readFileInsideWithoutSymlinks,
+	readUtf8FileInsideWithoutSymlinks,
+	writeUtf8FileInsideWithoutSymlinks,
+} from './filesystem.js';
+import { parseTomlText, stringifyToml } from './toml.js';
 
 export const MANIFEST_LOCK_RELATIVE_PATH = '.mustflow/config/manifest.lock.toml';
 
@@ -93,24 +99,37 @@ function parseManifestLock(raw: unknown): ManifestLock {
 }
 
 export function sha256File(filePath: string): string {
-	return `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+	return `sha256:${createHash('sha256')
+		.update(readFileInsideWithoutSymlinks(path.dirname(filePath), filePath))
+		.digest('hex')}`;
+}
+
+function sha256ProjectFile(projectRoot: string, filePath: string): string {
+	return `sha256:${createHash('sha256').update(readFileInsideWithoutSymlinks(projectRoot, filePath)).digest('hex')}`;
+}
+
+export function ensureManifestLockTargetSafe(projectRoot: string): boolean {
+	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
+	ensureInside(projectRoot, lockPath);
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, lockPath, { allowMissingLeaf: true });
+	return existsSync(lockPath);
 }
 
 export function markManifestLockFileCustomized(projectRoot: string, relativePath: string): boolean {
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 	const filePath = path.join(projectRoot, relativePath);
-	ensureInside(projectRoot, lockPath);
 	ensureInside(projectRoot, filePath);
 
-	if (!existsSync(lockPath)) {
+	if (!ensureManifestLockTargetSafe(projectRoot)) {
 		return false;
 	}
 
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, filePath, { allowMissingLeaf: true });
 	if (!existsSync(filePath)) {
 		throw new Error(`Cannot refresh manifest lock for missing file: ${relativePath}`);
 	}
 
-	const parsed = readTomlFile(lockPath);
+	const parsed = parseTomlText(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath));
 	if (!isRecord(parsed)) {
 		throw new Error(`Invalid manifest lock: ${MANIFEST_LOCK_RELATIVE_PATH} must contain a TOML table`);
 	}
@@ -122,24 +141,30 @@ export function markManifestLockFileCustomized(projectRoot: string, relativePath
 	filesTable[relativePath] = {
 		source: typeof existingTable.source === 'string' ? existingTable.source : 'template_common',
 		last_action: 'customized',
-		content_hash: sha256File(filePath),
+		content_hash: sha256ProjectFile(projectRoot, filePath),
 	};
 	parsed.files = filesTable;
 
-	writeFileSync(lockPath, stringifyToml(parsed));
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, stringifyToml(parsed));
 	return true;
 }
 
 export function readManifestLock(projectRoot: string): ManifestLockReadResult {
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
-	ensureInside(projectRoot, lockPath);
+	try {
+		ensureInside(projectRoot, lockPath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, lockPath, { allowMissingLeaf: true });
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return { kind: 'invalid', lockPath, message };
+	}
 
 	if (!existsSync(lockPath)) {
 		return { kind: 'missing', lockPath };
 	}
 
 	try {
-		return { kind: 'present', lockPath, lock: parseManifestLock(readTomlFile(lockPath)) };
+		return { kind: 'present', lockPath, lock: parseManifestLock(parseTomlText(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath))) };
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		return { kind: 'invalid', lockPath, message };
@@ -181,7 +206,14 @@ export function inspectManifestLock(projectRoot: string): ManifestLockInspection
 			continue;
 		}
 
-		const actualHash = sha256File(filePath);
+		let actualHash: string;
+		try {
+			actualHash = sha256ProjectFile(projectRoot, filePath);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			issues.push(`Locked file cannot be read safely: ${lockedFile.relativePath}: ${message}`);
+			continue;
+		}
 
 		if (actualHash !== lockedFile.contentHash) {
 			changedFiles.push(lockedFile.relativePath);

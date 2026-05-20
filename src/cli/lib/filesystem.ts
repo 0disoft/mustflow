@@ -93,12 +93,16 @@ export function ensureInsideWithoutSymlinks(
 }
 
 export function readUtf8FileInsideWithoutSymlinks(parentPath: string, childPath: string): string {
+	return readFileInsideWithoutSymlinks(parentPath, childPath).toString('utf8');
+}
+
+export function readFileInsideWithoutSymlinks(parentPath: string, childPath: string): Buffer {
 	const absoluteChildPath = path.resolve(childPath);
 	ensureInsideWithoutSymlinks(parentPath, absoluteChildPath);
 	const fileDescriptor = openSync(absoluteChildPath, constants.O_RDONLY | NOFOLLOW_FLAG);
 
 	try {
-		return readFileSync(fileDescriptor, 'utf8');
+		return readFileSync(fileDescriptor);
 	} finally {
 		closeSync(fileDescriptor);
 	}
@@ -133,6 +137,10 @@ export function ensureFileTargetInsideWithoutSymlinks(
 }
 
 export function writeUtf8FileInsideWithoutSymlinks(parentPath: string, childPath: string, content: string): void {
+	writeFileInsideWithoutSymlinks(parentPath, childPath, content);
+}
+
+export function writeFileInsideWithoutSymlinks(parentPath: string, childPath: string, content: string | Buffer): void {
 	const absoluteChildPath = path.resolve(childPath);
 	const directoryPath = path.dirname(absoluteChildPath);
 
@@ -150,6 +158,16 @@ export function writeUtf8FileInsideWithoutSymlinks(parentPath: string, childPath
 	} finally {
 		closeSync(fileDescriptor);
 	}
+}
+
+export function copyFileInsideWithoutSymlinks(
+	sourceParentPath: string,
+	sourcePath: string,
+	targetParentPath: string,
+	targetPath: string,
+): void {
+	const content = readFileInsideWithoutSymlinks(sourceParentPath, sourcePath);
+	writeFileInsideWithoutSymlinks(targetParentPath, targetPath, content);
 }
 
 export function copyFileIfMissing(sourcePath: string, targetPath: string, relativePath: string): CopyResult {

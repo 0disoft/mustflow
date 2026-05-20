@@ -13,6 +13,7 @@ import {
 	type SourceAnchorStatus,
 	type SourceAnchorSymbol,
 } from '../../../core/source-anchor-status.js';
+import { listSourceAnchorFiles } from '../../../core/source-anchors.js';
 import { normalizeCommandEffects, type NormalizedCommandEffect } from '../../../core/command-effects.js';
 import { listChangeClassificationRuleDescriptors } from '../../../core/change-classification.js';
 import {
@@ -499,6 +500,7 @@ function collectIndexedFileRecords(
 	projectRoot: string,
 	documents: readonly IndexDocument[],
 	sourceAnchors: readonly SourceAnchorIndexRecord[],
+	sourceAnchorCandidatePaths: readonly string[] = [],
 ): IndexedFileRecord[] {
 	const records = new Map<string, IndexedFileRecord>();
 
@@ -506,7 +508,9 @@ function collectIndexedFileRecords(
 		records.set(document.path, readIndexedFileRecord(projectRoot, document.path, 'workflow', document.contentHash));
 	}
 
-	for (const anchorPath of [...new Set(sourceAnchors.map((anchor) => anchor.path))].sort((left, right) => left.localeCompare(right))) {
+	const sourcePaths = new Set([...sourceAnchorCandidatePaths, ...sourceAnchors.map((anchor) => anchor.path)]);
+
+	for (const anchorPath of [...sourcePaths].sort((left, right) => left.localeCompare(right))) {
 		if (!records.has(anchorPath)) {
 			records.set(anchorPath, readIndexedFileRecord(projectRoot, anchorPath, 'source_anchor'));
 		}
@@ -522,23 +526,44 @@ function collectIndexedFileRecords(
 	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
 }
 
+function collectSourceAnchorCandidatePaths(projectRoot: string, sourceConfig: LocalIndexSourceConfig): string[] {
+	return listSourceAnchorFiles(projectRoot, {
+		...sourceConfig,
+		excludeGeneratedOrVendor: true,
+	});
+}
+
 function collectFastPreflightIndexedFileMetadataRecords(
 	projectRoot: string,
 	includeSource: boolean,
+	sourceConfig: LocalIndexSourceConfig,
 ): IndexedFileMetadataRecord[] | null {
-	if (includeSource) {
-		return null;
+	const records = new Map<string, IndexedFileMetadataRecord>();
+
+	for (const relativePath of getExistingIndexablePaths(projectRoot)) {
+		records.set(relativePath, readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'));
 	}
 
-	const records = getExistingIndexablePaths(projectRoot).map((relativePath) =>
-		readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'),
-	);
+	if (includeSource) {
+		try {
+			for (const sourcePath of collectSourceAnchorCandidatePaths(projectRoot, sourceConfig)) {
+				if (!records.has(sourcePath)) {
+					records.set(sourcePath, readIndexedFileMetadataRecord(projectRoot, sourcePath, 'source_anchor'));
+				}
+			}
+		} catch {
+			return null;
+		}
+	}
 
 	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
-		records.push(readIndexedFileMetadataRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'));
+		records.set(
+			LATEST_RUN_STATE_RELATIVE_PATH,
+			readIndexedFileMetadataRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
+		);
 	}
 
-	return records.sort((left, right) => left.path.localeCompare(right.path));
+	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
 }
 
 function normalizeSearchText(value: string): string {
@@ -3008,7 +3033,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	capabilityDatabase.close();
 
 	if (incremental) {
-		const preflightFiles = collectFastPreflightIndexedFileMetadataRecords(projectRoot, includeSource);
+		const preflightFiles = collectFastPreflightIndexedFileMetadataRecords(projectRoot, includeSource, sourceConfig);
 		const preflightReuse = await readIncrementalPreflightReuse(
 			SQL,
 			databasePath,
@@ -3033,6 +3058,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const previousSourceAnchors = includeSource
 		? await readPreviousSourceAnchorSnapshots(databasePath).catch(() => [])
 		: [];
+	const sourceAnchorCandidatePaths = includeSource ? collectSourceAnchorCandidatePaths(projectRoot, sourceConfig) : [];
 	const sourceAnchors = includeSource
 		? collectSourceAnchorIndexRecords(projectRoot, previousSourceAnchors, {
 				...sourceConfig,
@@ -3040,7 +3066,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 			})
 		: [];
 	const verificationEvidence = createVerificationEvidenceIndex(projectRoot);
-	const indexedFiles = collectIndexedFileRecords(projectRoot, documents, sourceAnchors);
+	const indexedFiles = collectIndexedFileRecords(projectRoot, documents, sourceAnchors, sourceAnchorCandidatePaths);
 
 	if (incremental) {
 		const reuseDecision = await readIncrementalReuseDecision(SQL, databasePath, indexedFiles, sourceScopeHash);

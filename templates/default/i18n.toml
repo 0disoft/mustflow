@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 55
+revision = 60
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -116,7 +116,7 @@ translations = {}
 [documents."skill.dependency-reality-check"]
 source = "locales/en/.mustflow/skills/dependency-reality-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -137,6 +137,12 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.cli-output-contract-review"]
+source = "locales/en/.mustflow/skills/cli-output-contract-review/SKILL.md"
+source_locale = "en"
+revision = 3
+translations = {}
+
 [documents."skill.composition-over-inheritance"]
 source = "locales/en/.mustflow/skills/composition-over-inheritance/SKILL.md"
 source_locale = "en"
@@ -147,6 +153,18 @@ translations = {}
 source = "locales/en/.mustflow/skills/command-pattern/SKILL.md"
 source_locale = "en"
 revision = 4
+translations = {}
+
+[documents."skill.command-contract-authoring"]
+source = "locales/en/.mustflow/skills/command-contract-authoring/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.cross-platform-filesystem-safety"]
+source = "locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
+source_locale = "en"
+revision = 3
 translations = {}
 
 [documents."skill.pure-core-imperative-shell"]
@@ -182,7 +200,7 @@ translations = {}
 [documents."skill.external-prompt-injection-defense"]
 source = "locales/en/.mustflow/skills/external-prompt-injection-defense/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.external-skill-intake"]
@@ -228,6 +246,12 @@ translations = {}
 
 [documents."skill.pattern-scout"]
 source = "locales/en/.mustflow/skills/pattern-scout/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.process-execution-safety"]
+source = "locales/en/.mustflow/skills/process-execution-safety/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -301,13 +325,19 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 7
 translations = {}
 
 [documents."skill.security-regression-tests"]
 source = "locales/en/.mustflow/skills/security-regression-tests/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 9
+translations = {}
+
+[documents."skill.search-ad-content-authoring"]
+source = "locales/en/.mustflow/skills/search-ad-content-authoring/SKILL.md"
+source_locale = "en"
+revision = 3
 translations = {}
 
 [documents."skill.skill-authoring"]
@@ -334,10 +364,16 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.llm-service-ux-review"]
+source = "locales/en/.mustflow/skills/llm-service-ux-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
 [documents."skill.ui-quality-gate"]
 source = "locales/en/.mustflow/skills/ui-quality-gate/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 6
 translations = {}
 
 [documents."skill.visual-review-artifact"]

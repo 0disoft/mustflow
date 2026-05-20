@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import {
+	copyFileInsideWithoutSymlinks,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
 	writeUtf8FileInsideWithoutSymlinks,
@@ -149,15 +150,13 @@ function getInstalledTemplateFiles(projectRoot: string, template: ReturnType<typ
 	);
 }
 
-function writeTemplateFile(projectRoot: string, source: TemplateFileSource, targetPath: string): void {
+function writeTemplateFile(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string): void {
 	if (source.content !== undefined) {
 		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
 		return;
 	}
 
-	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-	copyFileSync(source.sourcePath, targetPath);
+	copyFileInsideWithoutSymlinks(templateRoot, source.sourcePath, projectRoot, targetPath);
 }
 
 function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allowMissingLeaf: boolean): string | undefined {
@@ -337,7 +336,7 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 	ensureInside(template.templateRoot, source.sourcePath);
 	ensureInside(projectRoot, targetPath);
 	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
-	writeTemplateFile(projectRoot, source, targetPath);
+	writeTemplateFile(projectRoot, template.templateRoot, source, targetPath);
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
@@ -356,10 +355,7 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 
 		ensureInside(projectRoot, sourcePath);
 		ensureInside(backupRoot, backupPath);
-		ensureFileTargetInsideWithoutSymlinks(projectRoot, sourcePath);
-		ensureFileTargetInsideWithoutSymlinks(projectRoot, backupPath, { allowMissingLeaf: true });
-		mkdirSync(path.dirname(backupPath), { recursive: true });
-		copyFileSync(sourcePath, backupPath);
+		copyFileInsideWithoutSymlinks(projectRoot, sourcePath, projectRoot, backupPath);
 	}
 
 	reporter.stdout(

@@ -5,8 +5,8 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 86
-source_fingerprint: "sha256:b0960aae0f1e882c219ab55bffc9a3e13cf823258d61ff4bcaba26416dcf09f3"
+anchor_count: 92
+source_fingerprint: "sha256:643ee85359cde7dfd5643a0d896cfef594392558d99b832f6d3054d26ec2d14e"
 ---
 
 # REPO_MAP.md
@@ -63,6 +63,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/behavior-preserving-refactor/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/cli-output-contract-review/
+
+- `.mustflow/skills/cli-output-contract-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/code-review/
 
 - `.mustflow/skills/code-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -70,6 +74,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/codebase-orientation/
 
 - `.mustflow/skills/codebase-orientation/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/command-contract-authoring/
+
+- `.mustflow/skills/command-contract-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/command-pattern/
 
@@ -82,6 +90,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/contract-sync-check/
 
 - `.mustflow/skills/contract-sync-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/cross-platform-filesystem-safety/
+
+- `.mustflow/skills/cross-platform-filesystem-safety/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/database-change-safety/
 
@@ -135,6 +147,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/line-ending-hygiene/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/llm-service-ux-review/
+
+- `.mustflow/skills/llm-service-ux-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/migration-safety-check/
 
 - `.mustflow/skills/migration-safety-check/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -154,6 +170,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/performance-budget-check/
 
 - `.mustflow/skills/performance-budget-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/process-execution-safety/
+
+- `.mustflow/skills/process-execution-safety/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/project-context-authoring/
 
@@ -186,6 +206,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/result-option/
 
 - `.mustflow/skills/result-option/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/search-ad-content-authoring/
+
+- `.mustflow/skills/search-ad-content-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/security-privacy-review/
 

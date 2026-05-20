@@ -10,7 +10,6 @@ import type { Reporter } from '../lib/reporter.js';
 import {
 	createRunPlan,
 	createRunPreview,
-	isMustflowBuiltinIntent,
 	renderRunPreviewText,
 	type BlockedRunPlan,
 	type RunPreviewMode,
@@ -22,7 +21,6 @@ import {
 import { recordRunPerformanceHistory } from '../../core/run-performance-history.js';
 import { RunProfiler } from '../../core/run-profile.js';
 import { finishRunWriteTracking, startRunWriteTracking } from '../../core/run-write-drift.js';
-import { runBuiltinArgvInProcess } from './run/builtin-dispatch.js';
 import { getRunStatus, runArgvCommandStreaming, runShellCommandStreaming } from './run/executor.js';
 import { emitOutput, isOutputLimitExceededError } from './run/output.js';
 import { createPendingTimeoutTermination, getKillMethod, terminateProcessTree } from './run/process-tree.js';
@@ -230,14 +228,6 @@ export async function runRun(
 	const childStartedAtMs = performance.now();
 	const startedAt = new Date();
 	const result = await profiler.measureAsync('child_command', async () => {
-		if (plan.commandArgv && isMustflowBuiltinIntent(plan.intent)) {
-			const builtinResult = await runBuiltinArgvInProcess(plan.commandArgv, plan.cwd, lang);
-
-			if (builtinResult) {
-				return builtinResult;
-			}
-		}
-
 		if (plan.commandArgv) {
 			streamedOutput = !json;
 			return runArgvCommandStreaming(

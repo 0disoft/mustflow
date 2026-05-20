@@ -25,12 +25,12 @@ content_hash = "sha256:259834228dc4f9d6936415f5b5bc7f7f1b6d3d582f423aa06eadcdd24
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:2a70d566d8d30d49bbce3e71039cd50f903f92eb9b04560319a558bcffc5a727"
+content_hash = "sha256:11314f08b7cdb4e6cf6cbec9c8a9aa73a69ba0b43dd3f49268855ab9dc7bde2a"
 
 [files.".mustflow/skills/routes.toml"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:b111a2cb05689eeec81037b5ad0e4cab325baf5e5f5c100461efc44eba1a6ceb"
+content_hash = "sha256:1b0b53d9fd92e7e0738fa0e49bf0537ba5e07d7947ed8b0c44151c0364b37e4e"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
@@ -90,7 +90,7 @@ content_hash = "sha256:33cba0645852e451218d923047169e439dd49e50567d3b74dd41c5042
 [files.".mustflow/skills/dependency-reality-check/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:72ae59e6b0d24a5792c547a5bf793aa550a130154aa64357296242a3c596165e"
+content_hash = "sha256:e101ec2ef84da3e49eac496e1e60da1045d3e7c50005884c0e2270cd64cbd5b2"
 
 [files.".mustflow/skills/diff-risk-review/SKILL.md"]
 source = "template_locale"
@@ -125,7 +125,7 @@ content_hash = "sha256:988255b2a06e246d984431955cbdaef36a1c6d059058c3c0013ac6f54
 [files.".mustflow/skills/ui-quality-gate/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:7c3097bac3e26621c59e465e41057b0d4368d607ee5bc7327e6e541521d31172"
+content_hash = "sha256:9e6395e8ca772a99a9317f931a06bae7542c0d024298694d8955bbdf7163aa5c"
 
 [files.".mustflow/skills/facade-pattern/SKILL.md"]
 source = "template_locale"
@@ -145,7 +145,7 @@ content_hash = "sha256:216ff6a301704d32ded0bfa62aac056bb3d3e7c4cc1c2f2a082bc50c5
 [files.".mustflow/skills/external-prompt-injection-defense/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:a702a7d1c4a392bd27d36dc85b301ab119d3adf915fb9885cc0bc77e61cfca49"
+content_hash = "sha256:b6cb2b68d304e16310aadc9dd741af7de628f9f94e758ee0d1943bc97d21b53e"
 
 [files.".mustflow/skills/external-skill-intake/SKILL.md"]
 source = "template_locale"
@@ -250,12 +250,12 @@ content_hash = "sha256:4e91af4bdfde20bf58d6117c48c7791cc06717d75ec5b35b582706ecf
 [files.".mustflow/skills/security-privacy-review/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:ff4a51f0ea5c3019fe9b6274dfb4811cfcee27453977721c75d228121e36fe62"
+content_hash = "sha256:02d8a4db04f38b28652efff9b950746458fbfa5091df239e4946a95a004325f4"
 
 [files.".mustflow/skills/security-regression-tests/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:4b5f845fe40fb50427634c2cc93b3831528a90572e05b0a6befcda4739ecb7dc"
+content_hash = "sha256:6ae39e562eddc56c5036d1e3d22e5dab60bd2629e748447b1e4035d2c1db2841"
 
 [files.".mustflow/skills/skill-authoring/SKILL.md"]
 source = "template_locale"

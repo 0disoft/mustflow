@@ -1,10 +1,11 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { stdin as processStdin, stdout as processStdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import {
+	copyFileInsideWithoutSymlinks,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
 	readUtf8FileInsideWithoutSymlinks,
@@ -22,6 +23,7 @@ type PlannedStatus = 'create' | 'unchanged' | 'conflict' | 'merge' | 'overwrite'
 interface PlannedFile {
 	readonly relativePath: string;
 	readonly sourcePath: string;
+	readonly sourceRoot: string;
 	readonly sourceKind: TemplateFileSource['sourceKind'];
 	readonly content?: string;
 	readonly targetPath: string;
@@ -610,8 +612,12 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 	};
 }
 
-function sameTemplateFileContent(projectRoot: string, source: TemplateFileSource, targetPath: string): boolean {
-	return (source.content ?? readFileSync(source.sourcePath, 'utf8')) === readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath);
+function readTemplateSourceText(templateRoot: string, sourcePath: string): string {
+	return readUtf8FileInsideWithoutSymlinks(templateRoot, sourcePath);
+}
+
+function sameTemplateFileContent(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string): boolean {
+	return (source.content ?? readTemplateSourceText(templateRoot, source.sourcePath)) === readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath);
 }
 
 function formatLocaleChoice(locale: string): string {
@@ -866,12 +872,12 @@ function escapeRegExp(value: string): string {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function planStatus(projectRoot: string, source: TemplateFileSource, targetPath: string, options: InitOptions): PlannedStatus {
+function planStatus(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string, options: InitOptions): PlannedStatus {
 	if (!existsSync(targetPath)) {
 		return 'create';
 	}
 
-	if (sameTemplateFileContent(projectRoot, source, targetPath)) {
+	if (sameTemplateFileContent(projectRoot, templateRoot, source, targetPath)) {
 		return 'unchanged';
 	}
 
@@ -886,19 +892,17 @@ function planStatus(projectRoot: string, source: TemplateFileSource, targetPath:
 	return 'conflict';
 }
 
-function writeTemplateFile(projectRoot: string, source: TemplateFileSource, targetPath: string): void {
+function writeTemplateFile(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string): void {
 	if (source.content !== undefined) {
 		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
 		return;
 	}
 
-	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-	copyFileSync(source.sourcePath, targetPath);
+	copyFileInsideWithoutSymlinks(templateRoot, source.sourcePath, projectRoot, targetPath);
 }
 
 function writePlannedFile(projectRoot: string, file: PlannedFile): void {
-	writeTemplateFile(projectRoot, file, file.targetPath);
+	writeTemplateFile(projectRoot, file.sourceRoot, file, file.targetPath);
 }
 
 function gitignoreFragmentPath(template: ReturnType<typeof getDefaultTemplate>): string {
@@ -920,12 +924,12 @@ function mergeGitignoreContent(existingContent: string, fragmentContent: string)
 	return `${existingContent.trimEnd()}\n\n${normalizedFragment}\n`;
 }
 
-function planGitignoreStatus(projectRoot: string, sourcePath: string, targetPath: string): PlannedStatus {
+function planGitignoreStatus(projectRoot: string, sourceRoot: string, sourcePath: string, targetPath: string): PlannedStatus {
 	if (!existsSync(targetPath)) {
 		return 'create';
 	}
 
-	const mergedContent = mergeGitignoreContent(readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath), readFileSync(sourcePath, 'utf8'));
+	const mergedContent = mergeGitignoreContent(readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath), readTemplateSourceText(sourceRoot, sourcePath));
 
 	return mergedContent === readUtf8FileInsideWithoutSymlinks(projectRoot, targetPath) ? 'unchanged' : 'merge';
 }
@@ -997,10 +1001,11 @@ function buildPlannedFiles(
 		return {
 			relativePath: source.relativePath,
 			sourcePath: source.sourcePath,
+			sourceRoot: template.templateRoot,
 			sourceKind: source.sourceKind,
 			content: source.content,
 			targetPath,
-			status: planStatus(targetRoot, source, targetPath, options),
+			status: planStatus(targetRoot, template.templateRoot, source, targetPath, options),
 			lock: true,
 		};
 	});
@@ -1014,9 +1019,10 @@ function buildPlannedFiles(
 	plannedFiles.push({
 		relativePath: GITIGNORE_RELATIVE_PATH,
 		sourcePath,
+		sourceRoot: template.templateRoot,
 		sourceKind: 'common',
 		targetPath,
-		status: planGitignoreStatus(targetRoot, sourcePath, targetPath),
+		status: planGitignoreStatus(targetRoot, template.templateRoot, sourcePath, targetPath),
 		lock: false,
 	});
 
@@ -1034,10 +1040,7 @@ function backupConflictingFiles(projectRoot: string, conflicts: readonly Planned
 	for (const conflict of conflicts) {
 		const backupPath = path.join(backupRoot, conflict.relativePath);
 		ensureInside(backupRoot, backupPath);
-		ensureFileTargetInsideWithoutSymlinks(projectRoot, conflict.targetPath);
-		ensureFileTargetInsideWithoutSymlinks(projectRoot, backupPath, { allowMissingLeaf: true });
-		mkdirSync(path.dirname(backupPath), { recursive: true });
-		copyFileSync(conflict.targetPath, backupPath);
+		copyFileInsideWithoutSymlinks(projectRoot, conflict.targetPath, projectRoot, backupPath);
 	}
 
 	return backupRoot;
@@ -1359,7 +1362,10 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 			ensureFileTargetInsideWithoutSymlinks(targetRoot, file.targetPath);
 			const mergedContent =
 				file.relativePath === GITIGNORE_RELATIVE_PATH
-					? mergeGitignoreContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), readFileSync(file.sourcePath, 'utf8'))
+					? mergeGitignoreContent(
+							readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath),
+							readTemplateSourceText(file.sourceRoot, file.sourcePath),
+						)
 					: mergeAgentsContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), selectedLocale);
 
 			writeUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath, mergedContent);

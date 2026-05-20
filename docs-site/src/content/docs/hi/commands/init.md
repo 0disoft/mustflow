@@ -38,6 +38,8 @@ AGENTS.md
    ├─ test-design-guard/SKILL.md
    ├─ test-maintenance/SKILL.md
    ├─ vertical-slice-tdd/SKILL.md
+   ├─ llm-service-ux-review/SKILL.md
+   ├─ search-ad-content-authoring/SKILL.md
    ├─ visual-review-artifact/SKILL.md
    └─ web-asset-optimization/SKILL.md
 ```

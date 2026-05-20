@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.18.7');
+	assert.equal(packageJson.version, '2.18.20');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -233,25 +233,32 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.defaultProfile, 'minimal');
 	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('command-contract-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('source-anchor-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('cli-output-contract-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('command-pattern'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('composition-over-inheritance'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('cross-platform-filesystem-safety'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('dependency-injection'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('external-skill-intake'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('facade-pattern'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('null-object-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('process-execution-safety'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('release-notes-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('result-option'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('state-machine-pattern'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('strategy-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('llm-service-ux-review'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('search-ad-content-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
 	assert.ok(template.manifest.skillProfiles.patterns.includes('architecture-deepening-review'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('command-contract-authoring'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('command-pattern'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('composition-over-inheritance'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('dependency-injection'));
@@ -262,19 +269,36 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.patterns.includes('state-machine-pattern'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('strategy-pattern'));
 	assert.equal(template.manifest.skillProfiles.product.includes('architecture-deepening-review'), false);
+	assert.ok(template.manifest.skillProfiles.product.includes('command-contract-authoring'));
+	assert.equal(template.manifest.skillProfiles.product.includes('cli-output-contract-review'), false);
+	assert.equal(template.manifest.skillProfiles.product.includes('process-execution-safety'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
+	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('search-ad-content-authoring'));
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
 	assert.ok(template.manifest.skillProfiles.product.includes('visual-review-artifact'));
 	assert.ok(template.manifest.skillProfiles.team.includes('architecture-deepening-review'));
+	assert.ok(template.manifest.skillProfiles.team.includes('command-contract-authoring'));
+	assert.ok(template.manifest.skillProfiles.team.includes('cross-platform-filesystem-safety'));
+	assert.ok(template.manifest.skillProfiles.team.includes('process-execution-safety'));
+	assert.equal(template.manifest.skillProfiles.team.includes('cli-output-contract-review'), false);
 	assert.equal(template.manifest.skillProfiles.team.includes('release-notes-authoring'), false);
 	assert.ok(template.manifest.skillProfiles.team.includes('multi-agent-work-coordination'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('architecture-deepening-review'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('cli-output-contract-review'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('command-contract-authoring'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('cross-platform-filesystem-safety'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('external-skill-intake'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('process-execution-safety'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('release-notes-authoring'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('skill-authoring'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('vertical-slice-tdd'));
 	assert.ok(template.manifest.skillProfiles.library.includes('architecture-deepening-review'));
+	assert.ok(template.manifest.skillProfiles.library.includes('cli-output-contract-review'));
+	assert.ok(template.manifest.skillProfiles.library.includes('command-contract-authoring'));
+	assert.ok(template.manifest.skillProfiles.library.includes('cross-platform-filesystem-safety'));
 	assert.ok(template.manifest.skillProfiles.library.includes('migration-safety-check'));
+	assert.ok(template.manifest.skillProfiles.library.includes('process-execution-safety'));
 	assert.ok(template.manifest.skillProfiles.library.includes('release-notes-authoring'));
 });
 

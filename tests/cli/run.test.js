@@ -435,6 +435,48 @@ writes = []
 network = false
 destructive = false
 
+[intents.argv_node_eval_equals]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach long-running Node evaluation code to a flag."
+argv = ['${process.execPath}', '--eval=setInterval(() => {}, 1000)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_python_attached]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach long-running Python evaluation code to a flag."
+argv = ["python", "-cwhile True: pass"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_shell_attached]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach a development server command to a shell wrapper flag."
+argv = ["bash", '-c"npm run dev"']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
 [intents.argv_safe_exec]
 status = "configured"
 lifecycle = "oneshot"
@@ -453,6 +495,12 @@ destructive = false
 
 		const result = runCli(projectPath, ['run', 'argv_bg', '--dry-run', '--json']);
 		const preview = JSON.parse(result.stdout);
+		const attachedNodeResult = runCli(projectPath, ['run', 'argv_node_eval_equals', '--dry-run', '--json']);
+		const attachedNodePreview = JSON.parse(attachedNodeResult.stdout);
+		const attachedPythonResult = runCli(projectPath, ['run', 'argv_python_attached', '--dry-run', '--json']);
+		const attachedPythonPreview = JSON.parse(attachedPythonResult.stdout);
+		const attachedShellResult = runCli(projectPath, ['run', 'argv_shell_attached', '--dry-run', '--json']);
+		const attachedShellPreview = JSON.parse(attachedShellResult.stdout);
 		const safeResult = runCli(projectPath, ['run', 'argv_safe_exec', '--dry-run', '--json']);
 		const safePreview = JSON.parse(safeResult.stdout);
 
@@ -461,6 +509,16 @@ destructive = false
 		assert.equal(preview.reason_code, 'blocked_long_running_command_pattern');
 		assert.match(preview.detail, /interpreter evaluation payload/);
 		assert.match(preview.suggested_intent_snippet, /TODO_REPLACE_WITH_FINITE_COMMAND/);
+		for (const [blockedResult, blockedPreview, detailPattern] of [
+			[attachedNodeResult, attachedNodePreview, /interpreter evaluation payload/],
+			[attachedPythonResult, attachedPythonPreview, /interpreter evaluation payload/],
+			[attachedShellResult, attachedShellPreview, /shell wrapper payload/],
+		]) {
+			assert.equal(blockedResult.status, 1);
+			assert.equal(blockedPreview.runnable, false);
+			assert.equal(blockedPreview.reason_code, 'blocked_long_running_command_pattern');
+			assert.match(blockedPreview.detail, detailPattern);
+		}
 		assert.equal(existsSync(markerPath), false);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 		assert.equal(safeResult.status, 0);
@@ -691,6 +749,45 @@ destructive = false
 	}
 });
 
+test('applies output limits to built-in mustflow intents through the spawned path', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.self_help_output_limit]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run mustflow help with a tiny output budget."
+argv = ["mf", "help"]
+cwd = "."
+timeout_seconds = 10
+max_output_bytes = 64
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'self_help_output_limit', '--json']);
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(receipt.status, 'output_limit_exceeded');
+		assert.equal(receipt.max_output_bytes, 64);
+		assert.equal(receipt.performance.result_summary.error_kind, 'output_limit_exceeded');
+		assert.match(receipt.error, /max_output_bytes|exceeded/i);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('does not put project-local shims ahead of PATH executables', () => {
 	const projectPath = createTempProject();
 
@@ -770,9 +867,8 @@ destructive = false
 	}
 });
 
-test('runs supported mustflow built-in intents without spawning a nested CLI process', async () => {
+test('runs supported mustflow built-in intents through the spawned CLI path', () => {
 	const projectPath = createTempProject();
-	const previousCwd = process.cwd();
 
 	try {
 		initProject(projectPath);
@@ -784,7 +880,7 @@ status = "configured"
 kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Run a built-in mustflow status command in-process."
+description = "Run a built-in mustflow status command through the current CLI entrypoint."
 argv = ["mf", "status", "--json"]
 cwd = "."
 timeout_seconds = 10
@@ -796,35 +892,19 @@ destructive = false
 `,
 		);
 
-		const { runRun } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run.js')).href);
-		const stdout = [];
-		const stderr = [];
-
-		process.chdir(projectPath);
-
-		const status = await runRun(
-			['self_check', '--json'],
-			{
-				stdout(message) {
-					stdout.push(message);
-				},
-				stderr(message) {
-					stderr.push(message);
-				},
-			},
-			'en',
-		);
-		const receipt = JSON.parse(stdout.join('\n'));
+		const result = runCli(projectPath, ['run', 'self_check', '--json'], {
+			env: createEnvWithoutPathLookup(),
+		});
+		const receipt = JSON.parse(result.stdout);
 		const statusOutput = JSON.parse(receipt.stdout.tail);
 
-		assert.equal(status, 0);
-		assert.deepEqual(stderr, []);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
 		assert.equal(receipt.intent, 'self_check');
 		assert.equal(receipt.status, 'passed');
 		assert.equal(statusOutput.installed, true);
 		assert.equal(statusOutput.manifestLock, 'present');
 	} finally {
-		process.chdir(previousCwd);
 		removeTempProject(projectPath);
 	}
 });

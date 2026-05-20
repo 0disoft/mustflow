@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
@@ -48,8 +48,9 @@ import {
 	type DocReviewStatus,
 	type ReviewerKind,
 } from '../lib/doc-review-ledger.js';
-import { inspectManifestLock } from '../lib/manifest-lock.js';
+import { MANIFEST_LOCK_RELATIVE_PATH, inspectManifestLock } from '../lib/manifest-lock.js';
 import {
+	getLocalIndexDatabasePath,
 	readLatestLocalVerificationReadModelQueries,
 	readLocalCommandEffectGraphs,
 	type LocalCommandEffectGraph,
@@ -87,6 +88,99 @@ const RELEASE_FILE_PATTERNS = [
 ] as const;
 const SKILL_INDEX_RELATIVE_PATH = '.mustflow/skills/INDEX.md';
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
+const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
+const AGENTS_RELATIVE_PATH = 'AGENTS.md';
+const STATUS_BLOCK_CACHE_TTL_MS = 750;
+
+type DashboardStatusBlockName =
+	| 'manifest'
+	| 'doc_review'
+	| 'raw_command_contract'
+	| 'command_contract'
+	| 'version_sources'
+	| 'update'
+	| 'run_history'
+	| 'skills'
+	| 'verification_read_model';
+
+interface DashboardStatusBlockCacheEntry<T> {
+	readonly signature: string;
+	readonly expiresAt: number;
+	readonly value: T;
+}
+
+const dashboardStatusBlockCache = new Map<string, DashboardStatusBlockCacheEntry<unknown>>();
+
+function dashboardStatusBlockCacheKey(projectRoot: string, blockName: DashboardStatusBlockName): string {
+	return `${path.resolve(projectRoot)}\0${blockName}`;
+}
+
+function readFileSignature(filePath: string): string {
+	try {
+		const stat = statSync(filePath);
+		return `${stat.mtimeMs}:${stat.size}`;
+	} catch {
+		return 'missing';
+	}
+}
+
+function readProjectFileSignature(projectRoot: string, relativePath: string): string {
+	return `${relativePath}=${readFileSignature(path.join(projectRoot, ...relativePath.split('/')))}`;
+}
+
+function readStatusBlockSignature(projectRoot: string, relativePaths: readonly string[]): string {
+	return relativePaths.map((relativePath) => readProjectFileSignature(projectRoot, relativePath)).join('|');
+}
+
+function readLocalIndexSignature(projectRoot: string): string {
+	return `local_index=${readFileSignature(getLocalIndexDatabasePath(projectRoot))}`;
+}
+
+function readDashboardStatusBlock<T>(
+	projectRoot: string,
+	blockName: DashboardStatusBlockName,
+	signature: string,
+	readBlock: () => T,
+): T {
+	const key = dashboardStatusBlockCacheKey(projectRoot, blockName);
+	const cached = dashboardStatusBlockCache.get(key);
+	const now = Date.now();
+
+	if (cached && cached.signature === signature && cached.expiresAt > now) {
+		return cached.value as T;
+	}
+
+	const value = readBlock();
+	dashboardStatusBlockCache.set(key, {
+		signature,
+		expiresAt: Date.now() + STATUS_BLOCK_CACHE_TTL_MS,
+		value,
+	});
+	return value;
+}
+
+async function readDashboardStatusBlockAsync<T>(
+	projectRoot: string,
+	blockName: DashboardStatusBlockName,
+	signature: string,
+	readBlock: () => Promise<T>,
+): Promise<T> {
+	const key = dashboardStatusBlockCacheKey(projectRoot, blockName);
+	const cached = dashboardStatusBlockCache.get(key);
+	const now = Date.now();
+
+	if (cached && cached.signature === signature && cached.expiresAt > now) {
+		return cached.value as T;
+	}
+
+	const value = await readBlock();
+	dashboardStatusBlockCache.set(key, {
+		signature,
+		expiresAt: Date.now() + STATUS_BLOCK_CACHE_TTL_MS,
+		value,
+	});
+	return value;
+}
 
 function readFrontmatterLines(content: string): string[] {
 	if (!content.startsWith('---')) {
@@ -856,11 +950,32 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 
 async function renderStatusResponse(projectRoot: string): Promise<DashboardStatusSnapshot> {
 	const context = getAgentContext(projectRoot);
-	const manifest = inspectManifestLock(projectRoot);
+	const manifest = readDashboardStatusBlock(
+		projectRoot,
+		'manifest',
+		readStatusBlockSignature(projectRoot, [MANIFEST_LOCK_RELATIVE_PATH]),
+		() => inspectManifestLock(projectRoot),
+	);
 	const lock = manifest.readResult.kind === 'present' ? manifest.readResult.lock : undefined;
-	const activeDocuments = listDocReviewEntries(projectRoot);
-	const rawCommandContract = readDashboardCommandContract(projectRoot);
-	const commandContract = await renderCommandContractResponse(projectRoot, rawCommandContract);
+	const activeDocuments = readDashboardStatusBlock(
+		projectRoot,
+		'doc_review',
+		readStatusBlockSignature(projectRoot, [DOC_REVIEW_LEDGER_RELATIVE_PATH]),
+		() => listDocReviewEntries(projectRoot),
+	);
+	const rawCommandContractSignature = readStatusBlockSignature(projectRoot, [COMMANDS_RELATIVE_PATH]);
+	const rawCommandContract = readDashboardStatusBlock(
+		projectRoot,
+		'raw_command_contract',
+		rawCommandContractSignature,
+		() => readDashboardCommandContract(projectRoot),
+	);
+	const commandContract = await readDashboardStatusBlockAsync(
+		projectRoot,
+		'command_contract',
+		`${rawCommandContractSignature}|${readLocalIndexSignature(projectRoot)}`,
+		() => renderCommandContractResponse(projectRoot, rawCommandContract),
+	);
 	const gitChangedFilesResult = readGitChangedFiles(projectRoot);
 	const gitChangedFiles = gitChangedFilesResult.ok ? gitChangedFilesResult.files : [];
 	const packageMetadata = readPackageMetadata();
@@ -872,7 +987,12 @@ async function renderStatusResponse(projectRoot: string): Promise<DashboardStatu
 		manifest.changedFiles,
 		manifest.missingFiles,
 	);
-	const readModel = await readLatestLocalVerificationReadModelQueries(projectRoot);
+	const readModel = await readDashboardStatusBlockAsync(
+		projectRoot,
+		'verification_read_model',
+		readLocalIndexSignature(projectRoot),
+		() => readLatestLocalVerificationReadModelQueries(projectRoot),
+	);
 
 	return {
 		schema_version: '1',
@@ -883,12 +1003,32 @@ async function renderStatusResponse(projectRoot: string): Promise<DashboardStatu
 		release: {
 			package_name: packageMetadata.name,
 			package_version: packageMetadata.version,
-			version_sources: detectVersionSources(projectRoot),
+			version_sources: readDashboardStatusBlock(
+				projectRoot,
+				'version_sources',
+				readStatusBlockSignature(projectRoot, ['package.json']),
+				() => detectVersionSources(projectRoot),
+			),
 			release_sensitive_changed_files: matchingFiles(gitChangedFiles, RELEASE_FILE_PATTERNS),
 		},
-		update: renderUpdateResponse(projectRoot),
-		run_history: renderRunHistoryResponse(projectRoot),
-		skills: renderSkillsResponse(projectRoot),
+		update: readDashboardStatusBlock(
+			projectRoot,
+			'update',
+			readStatusBlockSignature(projectRoot, [AGENTS_RELATIVE_PATH, MANIFEST_LOCK_RELATIVE_PATH]),
+			() => renderUpdateResponse(projectRoot),
+		),
+		run_history: readDashboardStatusBlock(
+			projectRoot,
+			'run_history',
+			readStatusBlockSignature(projectRoot, [LATEST_RUN_RELATIVE_PATH]),
+			() => renderRunHistoryResponse(projectRoot),
+		),
+		skills: readDashboardStatusBlock(
+			projectRoot,
+			'skills',
+			readStatusBlockSignature(projectRoot, [SKILL_INDEX_RELATIVE_PATH]),
+			() => renderSkillsResponse(projectRoot),
+		),
 		tracked_files: lock?.files.length ?? 0,
 		changed_files: manifest.changedFiles,
 		missing_files: manifest.missingFiles,

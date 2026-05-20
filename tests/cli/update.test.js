@@ -5,7 +5,7 @@ import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, rea
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -102,6 +102,46 @@ function trySymlink(target, linkPath, type) {
 		throw error;
 	}
 }
+
+test('safe file copy rejects symlinked source and target paths', async (t) => {
+	const { copyFileInsideWithoutSymlinks } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'filesystem.js')).href);
+	const rootPath = createTempProject();
+	const sourceRoot = path.join(rootPath, 'source');
+	const targetRoot = path.join(rootPath, 'target');
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-outside-copy-'));
+
+	try {
+		mkdirSync(sourceRoot, { recursive: true });
+		mkdirSync(targetRoot, { recursive: true });
+		const outsideSource = path.join(outsideRoot, 'outside-source.md');
+		const outsideTarget = path.join(outsideRoot, 'outside-target.md');
+		const sourceLink = path.join(sourceRoot, 'source-link.md');
+		const targetLink = path.join(targetRoot, 'target-link.md');
+		writeFileSync(outsideSource, '# Outside Source\n');
+		writeFileSync(outsideTarget, '# Outside Target\n');
+
+		if (!trySymlink(outsideSource, sourceLink, 'file') || !trySymlink(outsideTarget, targetLink, 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		assert.throws(
+			() => copyFileInsideWithoutSymlinks(sourceRoot, sourceLink, targetRoot, path.join(targetRoot, 'copied.md')),
+			/symlinks/,
+		);
+		assert.equal(existsSync(path.join(targetRoot, 'copied.md')), false);
+
+		writeFileSync(path.join(sourceRoot, 'safe.md'), '# Safe\n');
+		assert.throws(
+			() => copyFileInsideWithoutSymlinks(sourceRoot, path.join(sourceRoot, 'safe.md'), targetRoot, targetLink),
+			/symlinks/,
+		);
+		assert.equal(readFileSync(outsideTarget, 'utf8'), '# Outside Target\n');
+	} finally {
+		removeTempProject(rootPath);
+		rmSync(outsideRoot, { recursive: true, force: true });
+	}
+});
 
 test('prints an update dry-run plan for an up-to-date project', () => {
 	const projectPath = createTempProject();

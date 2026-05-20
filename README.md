@@ -228,6 +228,10 @@ your-project/
       │  └─ SKILL.md
       ├─ vertical-slice-tdd/
       │  └─ SKILL.md
+      ├─ llm-service-ux-review/
+      │  └─ SKILL.md
+      ├─ search-ad-content-authoring/
+      │  └─ SKILL.md
       ├─ ui-quality-gate/
       │  └─ SKILL.md
       ├─ visual-review-artifact/

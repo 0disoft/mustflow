@@ -2,11 +2,11 @@
 mustflow_doc: skill.dependency-reality-check
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-reality-check
-description: Apply this skill when a task assumes, adds, removes, imports, invokes, or documents a package, runtime, tool, command, service, or platform capability.
+description: Apply this skill when a task assumes, adds, removes, imports, invokes, installs, audits, or documents a package, runtime, tool, command, service, or platform capability, especially for AI-suggested dependencies or supply-chain-sensitive changes.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -31,6 +31,8 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 ## Use When
 
 - A change adds, removes, renames, imports, invokes, or documents a dependency, tool, runtime, command, plugin, service, or platform feature.
+- An AI-generated patch, assistant suggestion, copied snippet, or generated docs introduce a package name that could be hallucinated, misspelled, abandoned, lookalike, or unnecessary.
+- A change adds package-manager scripts, package lifecycle hooks, build downloads, binary installers, lockfile changes, audit suppression, vulnerability scanner output, or CI dependency gates.
 - A solution relies on a package manager, binary, environment variable, browser API, operating-system command, hosted service, or optional integration.
 - A generated instruction tells another agent or user to run a tool that may not be declared in the repository.
 - A failure may be caused by a missing install, mismatched version, unsupported runtime, or unavailable command.
@@ -48,6 +50,8 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 - The dependency, tool, command, runtime, service, or platform capability being assumed.
 - Package, lock, config, import, script, command-intent, or documentation files that declare or reference it.
 - The minimum version, capability, or availability claim if one is required.
+- Registry name, package scope, lockfile entry, provenance or maintainer expectation, install script risk, and whether the dependency is runtime, development, fixture-only, transitive, or optional.
+- Vulnerability, license, audit, lifecycle-script, binary-download, package-age, maintainer-change, and fork-or-replacement context when those details are available from approved repository tooling or existing metadata.
 - Relevant command-intent contract entries for build, package, test, or documentation verification.
 
 <!-- mustflow-section: preconditions -->
@@ -64,6 +68,7 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 - Prefer existing repository dependencies and declared command intents before adding new packages or tools.
 - Do not install packages, widen runtime requirements, or introduce new external services unless the user request and repository contract support it.
 - Do not claim a dependency is available just because it exists on the internet or in another project.
+- Do not add an AI-suggested dependency merely because its name sounds plausible. Treat plausible-but-undeclared packages as hallucination or slopsquatting risk until repository evidence or explicit user approval supports them.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
@@ -71,10 +76,16 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 1. Name the assumed dependency or capability and where the task relies on it.
 2. Check the repository declarations first: package metadata, lockfiles, config files, imports, command intents, docs, and templates.
 3. Decide whether the dependency is present, absent, optional, transitive, host-provided, or external.
-4. If present, verify that the requested capability and version expectation match the declared dependency.
-5. If absent, prefer an existing local alternative. Add a new dependency only when it is necessary and within the task scope.
-6. Keep all dependency-facing surfaces aligned: package metadata, lockfiles when intentionally updated, command contract, docs, tests, and installation notes.
-7. Run the narrowest configured verification that proves the dependency path used by the change.
+4. For AI-suggested names, check for hallucination and lookalike risk before accepting the import: exact package name, namespace, known local precedent, lockfile presence, and whether an existing dependency already solves the need.
+5. If present, verify that the requested capability and version expectation match the declared dependency.
+6. If absent, prefer an existing local alternative. Add a new dependency only when it is necessary, within the task scope, and reflected in the package metadata and lockfile policy.
+7. Treat package scripts and lifecycle hooks as executable code. Review `preinstall`, `install`, `postinstall`, `prepare`, build-time downloads, generated binaries, and shell-spawning scripts before accepting them.
+8. Check supply-chain-sensitive metadata when available through approved tooling or existing files: package scope, maintainer or organization expectation, package age, maintainer changes, install scripts, binary downloads, transitive dependency impact, license constraints, and fixture-only versus runtime use.
+9. For vulnerability or audit output, separate runtime dependencies from fixture-only or intentionally vulnerable samples. Do not weaken audit gates, delete lockfiles, or add broad suppressions without a repository-owned reason.
+10. For new dependencies, prefer pinned or lockfile-backed versions according to project policy. Avoid widening ranges or removing lockfiles to satisfy generated code.
+11. Do not introduce new package-manager wrappers, vulnerability scanners, registry queries, or install commands inside this skill. Use configured command intents or report the missing verification surface.
+12. Keep all dependency-facing surfaces aligned: package metadata, lockfiles when intentionally updated, command contract, docs, tests, and installation notes.
+13. Run the narrowest configured verification that proves the dependency path used by the change.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -100,6 +111,8 @@ Use a narrower configured test, package, or docs intent when it better proves th
 ## Failure Handling
 
 - If the dependency is missing, report the missing declaration or command instead of silently adding a workaround.
+- If a package name appears hallucinated, lookalike, unowned, or unrelated to the project, reject it or ask for explicit approval before adding it.
+- If a package adds lifecycle scripts, binary downloads, audit suppressions, broad version ranges, or lockfile deletion, treat the change as supply-chain-sensitive and escalate to a security review before continuing.
 - If the declared version lacks the needed capability, report the mismatch and avoid claiming support.
 - If a dependency requires network, credentials, operating-system setup, or service access, stop at that boundary and name the unchecked requirement.
 - If generated docs would instruct users to run undeclared tools, rewrite the docs to use declared commands or mark the tool as a manual prerequisite.

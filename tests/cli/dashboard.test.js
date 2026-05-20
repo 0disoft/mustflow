@@ -8,6 +8,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -19,6 +20,9 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const browserOpenModuleUrl = pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'browser-open.js')).href;
 const dashboardHtmlModuleUrl = pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'dashboard-html.js')).href;
+const dashboardPreferencesModuleUrl = pathToFileURL(
+	path.join(projectRoot, 'dist', 'cli', 'lib', 'dashboard-preferences.js'),
+).href;
 
 function createTempProject() {
 	const projectPath = mkdtempSync(path.join(tmpdir(), 'mustflow-dashboard-'));
@@ -29,6 +33,19 @@ function createTempProject() {
 
 function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
+}
+
+function trySymlink(target, linkPath, type) {
+	try {
+		symlinkSync(target, linkPath, type);
+		return true;
+	} catch (error) {
+		if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'ENOTSUP'].includes(error.code)) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 function runCli(cwd, args) {
@@ -160,6 +177,69 @@ test('dashboard HTML escapes inline JSON for script context', async () => {
 		scriptBody,
 		/\\u003C\/script\\u003E\\u003Cscript\\u003Ewindow\.__mustflowInjected=1\\u003C\/script\\u003E\\u0026\\u2028\\u2029/u,
 	);
+});
+
+test('dashboard preference update rejects symlinked preferences file', async (t) => {
+	const { updateDashboardPreferences } = await import(dashboardPreferencesModuleUrl);
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-dashboard-outside-'));
+	const outsidePreferencesPath = path.join(outsideRoot, 'preferences.toml');
+	const outsidePreferencesContent = '[git]\nauto_stage = false\n';
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		writeFileSync(outsidePreferencesPath, outsidePreferencesContent);
+		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		rmSync(preferencesPath);
+
+		if (!trySymlink(outsidePreferencesPath, preferencesPath, 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		assert.throws(
+			() => updateDashboardPreferences(projectPath, [{ id: 'git.auto_stage', value: true }]),
+			/symlinks/,
+		);
+		assert.equal(readFileSync(outsidePreferencesPath, 'utf8'), outsidePreferencesContent);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(outsideRoot, { recursive: true, force: true });
+	}
+});
+
+test('dashboard preference update rejects symlinked manifest lock before writing preferences', async (t) => {
+	const { updateDashboardPreferences } = await import(dashboardPreferencesModuleUrl);
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-dashboard-lock-outside-'));
+	const outsideLockPath = path.join(outsideRoot, 'manifest.lock.toml');
+	const outsideLockContent = 'schema_version = "outside"\n';
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		const preferencesBefore = readFileSync(preferencesPath, 'utf8');
+		const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+		writeFileSync(outsideLockPath, outsideLockContent);
+		rmSync(lockPath);
+
+		if (!trySymlink(outsideLockPath, lockPath, 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		assert.throws(
+			() => updateDashboardPreferences(projectPath, [{ id: 'git.auto_stage', value: true }]),
+			/symlinks/,
+		);
+		assert.equal(readFileSync(preferencesPath, 'utf8'), preferencesBefore);
+		assert.equal(readFileSync(outsideLockPath, 'utf8'), outsideLockContent);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(outsideRoot, { recursive: true, force: true });
+	}
 });
 
 test('dashboard exports static HTML and redacted JSON without starting a server', () => {
@@ -426,6 +506,65 @@ async function stopDashboard(child) {
 	child.kill();
 	await once(child, 'exit');
 }
+
+test('dashboard status cache invalidates command contract edits', async () => {
+	const projectPath = createTempProject();
+	let dashboard;
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		dashboard = spawn(process.execPath, [cliPath, 'dashboard', '--json'], {
+			cwd: projectPath,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+
+		const info = await waitForDashboardInfo(dashboard);
+		const html = await fetch(info.url).then((response) => response.text());
+		const token = /const dashboardToken = "([^"]+)";/u.exec(html)?.[1];
+		assert.ok(token);
+
+		const headers = { 'x-mustflow-dashboard-token': token };
+		const firstStatus = await fetch(new URL('/api/status', info.url), { headers }).then((response) =>
+			response.json(),
+		);
+		const secondStatus = await fetch(new URL('/api/status', info.url), { headers }).then((response) =>
+			response.json(),
+		);
+		assert.equal(firstStatus.command_contract.intents.length, secondStatus.command_contract.intents.length);
+
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.dashboard_status_cache_probe]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe dashboard status cache invalidation."
+argv = ['${process.execPath}', '-e', 'console.log("cache probe")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+`,
+		);
+
+		const changedStatus = await fetch(new URL('/api/status', info.url), { headers }).then((response) =>
+			response.json(),
+		);
+		assert.ok(
+			changedStatus.command_contract.intents.some((intent) => intent.name === 'dashboard_status_cache_probe'),
+		);
+		assert.ok(changedStatus.runnable_intents.includes('dashboard_status_cache_probe'));
+	} finally {
+		if (dashboard) {
+			await stopDashboard(dashboard);
+		}
+		removeTempProject(projectPath);
+	}
+});
 
 test('dashboard serves and updates safe preferences', async () => {
 	const projectPath = createTempProject();

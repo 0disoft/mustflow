@@ -119,13 +119,200 @@ test('ui quality gate folds external UI review lessons into mustflow boundaries'
 
 	assert.equal(localSkill, templateSkill);
 	assert.match(localSkill, /task-essential controls/u);
+	assert.match(localSkill, /vibe-coded UI/u);
+	assert.match(localSkill, /style drift/u);
+	assert.match(localSkill, /visual hierarchy/u);
+	assert.match(localSkill, /touch targets/u);
 	assert.match(localSkill, /keyboard and focus/u);
 	assert.match(localSkill, /accessible names and states/u);
+	assert.match(localSkill, /form validation/u);
+	assert.match(localSkill, /micro-interaction feedback/u);
+	assert.match(localSkill, /state architecture/u);
+	assert.match(localSkill, /dependency and API reality/u);
+	assert.match(localSkill, /high-risk widgets/u);
+	assert.match(localSkill, /view tree, data contract, interaction model, state model/u);
+	assert.match(localSkill, /component boundaries/u);
 	assert.match(localSkill, /text overlap/u);
 	assert.match(localSkill, /localization-safe labels/u);
 	assert.match(localSkill, /performance and asset-size/u);
 	assert.match(localSkill, /configured one-shot command or approved browser workflow/u);
 	assert.match(localSkill, /Do not start development servers, watchers, or browser sessions directly/u);
+});
+
+test('llm service UX review captures controllable AI interaction states', () => {
+	const localSkill = readText('.mustflow/skills/llm-service-ux-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/llm-service-ux-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /prompt composer/u);
+	assert.match(localSkill, /streaming response/u);
+	assert.match(localSkill, /Clickable citations should appear only for sources actually used/u);
+	assert.match(localSkill, /stop or cancel/u);
+	assert.match(localSkill, /automation bias/u);
+	assert.match(localSkill, /auto-scroll should pause/u);
+	assert.match(localSkill, /non-AI or manual path/u);
+	assert.match(localSkill, /exact passage links or previews/u);
+	assert.match(localSkill, /avoid resending unnecessary history/u);
+	assert.match(localSkill, /Conversation history, current thread, summarized context, and new-chat behavior/u);
+	assert.match(localSkill, /Do not expose hidden reasoning/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/llm-service-ux-review\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining LLM UX risk/u);
+});
+
+test('search ad content authoring keeps monetized content reader-first', () => {
+	const localSkill = readText('.mustflow/skills/search-ad-content-authoring/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/search-ad-content-authoring/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /search-oriented content/u);
+	assert.match(localSkill, /AdSense, Ezoic, Raptive, Mediavine/u);
+	assert.match(localSkill, /one to three focused sentences per paragraph/u);
+	assert.match(localSkill, /Do not promise search rankings/u);
+	assert.match(localSkill, /ad-slot filler/u);
+	assert.match(localSkill, /RPM formulas, network thresholds, revenue estimates/u);
+	assert.match(localSkill, /Do not treat exact word counts, heading counts, paragraph counts/u);
+	assert.match(localSkill, /site-specific editorial defaults/u);
+	assert.match(localSkill, /number or claim, interpretation, then limitation/u);
+	assert.match(localSkill, /never make ads look like menus, downloads, recommendations, or content actions/u);
+	assert.match(localSkill, /structured data aligned with the article body/u);
+	assert.match(localSkill, /Do not recommend delaying the reader's primary answer/u);
+	assert.match(localSkill, /uncloseable or deceptive sticky ads/u);
+	assert.match(localSkill, /semantic content structure/u);
+	assert.match(localSkill, /Real paragraphs, headings, figures/u);
+	assert.match(localSkill, /do not introduce new claims in the conclusion/u);
+	assert.match(localSkill, /reserve layout space/u);
+	assert.match(localSkill, /Three to five concise FAQs/u);
+	assert.match(localSkill, /source-freshness-check/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/search-ad-content-authoring\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining content risk/u);
+});
+
+test('execution contract skills stay template-synced and authority-bounded', () => {
+	const commandContractSkill = readText('.mustflow/skills/command-contract-authoring/SKILL.md');
+	const commandContractTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/command-contract-authoring/SKILL.md',
+	);
+	const cliOutputSkill = readText('.mustflow/skills/cli-output-contract-review/SKILL.md');
+	const cliOutputTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/cli-output-contract-review/SKILL.md',
+	);
+	const filesystemSkill = readText('.mustflow/skills/cross-platform-filesystem-safety/SKILL.md');
+	const filesystemTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md',
+	);
+	const processSkill = readText('.mustflow/skills/process-execution-safety/SKILL.md');
+	const processTemplate = readText('templates/default/locales/en/.mustflow/skills/process-execution-safety/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+
+	assert.equal(commandContractSkill, commandContractTemplate);
+	assert.equal(cliOutputSkill, cliOutputTemplate);
+	assert.equal(filesystemSkill, filesystemTemplate);
+	assert.equal(processSkill, processTemplate);
+	assert.match(commandContractSkill, /\.mustflow\/config\/commands\.toml/u);
+	assert.match(commandContractSkill, /only runnable command-authority surface/u);
+	assert.match(cliOutputSkill, /exit-code meaning/u);
+	assert.match(cliOutputSkill, /schema-backed reports/u);
+	assert.match(cliOutputSkill, /stdout\/stderr routing/u);
+	assert.match(cliOutputSkill, /terminal versus piped behavior/u);
+	assert.match(cliOutputSkill, /terminal color codes, progress spinners, cursor controls/u);
+	assert.match(cliOutputSkill, /Numbers should remain numbers/u);
+	assert.match(cliOutputSkill, /timestamp format/u);
+	assert.match(cliOutputSkill, /pipe-oriented output/u);
+	assert.match(cliOutputSkill, /command tree, router or help metadata/u);
+	assert.match(cliOutputSkill, /global flags/u);
+	assert.match(cliOutputSkill, /JSONL/u);
+	assert.match(cliOutputSkill, /Prompts must be avoidable/u);
+	assert.match(cliOutputSkill, /repository-declared exit-code map/u);
+	assert.match(cliOutputSkill, /0 to 255 range/u);
+	assert.match(cliOutputSkill, /semantic schema diff/u);
+	assert.match(cliOutputSkill, /snapshot or golden-output tests/u);
+	assert.match(cliOutputSkill, /Snapshot updates require explicit review/u);
+	assert.match(cliOutputSkill, /Do not introduce a new CLI test framework/u);
+	assert.match(filesystemSkill, /symlink escapes/u);
+	assert.match(filesystemSkill, /Windows and POSIX/u);
+	assert.match(filesystemSkill, /Windows reserved names/u);
+	assert.match(filesystemSkill, /null bytes/u);
+	assert.match(filesystemSkill, /Do not lowercase paths as a universal containment strategy/u);
+	assert.match(filesystemSkill, /time-of-check to time-of-use/u);
+	assert.match(filesystemSkill, /same-directory temporary-file/u);
+	assert.match(filesystemSkill, /POSIX rename semantics, Windows replacement behavior/u);
+	assert.match(filesystemSkill, /least-privilege creation permissions/u);
+	assert.match(filesystemSkill, /Unicode normalization for validation only/u);
+	assert.match(filesystemSkill, /Windows namespace prefixes/u);
+	assert.match(filesystemSkill, /alternate data streams/u);
+	assert.match(filesystemSkill, /reparse points or junctions/u);
+	assert.match(filesystemSkill, /partial path traversal/u);
+	assert.match(filesystemSkill, /same volume/u);
+	assert.match(filesystemSkill, /parent directory fsync/u);
+	assert.match(filesystemSkill, /Do not claim operating-system mitigations/u);
+	assert.match(processSkill, /process-tree cleanup/u);
+	assert.match(processSkill, /Do not finalize a receipt/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/command-contract-authoring\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/cli-output-contract-review\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/cross-platform-filesystem-safety\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/process-execution-safety\/SKILL\.md/u);
+});
+
+test('security skills cover AI-generated code and supply-chain boundaries', () => {
+	const securitySkill = readText('.mustflow/skills/security-privacy-review/SKILL.md');
+	const securityTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md',
+	);
+	const regressionSkill = readText('.mustflow/skills/security-regression-tests/SKILL.md');
+	const regressionTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/security-regression-tests/SKILL.md',
+	);
+	const dependencySkill = readText('.mustflow/skills/dependency-reality-check/SKILL.md');
+	const dependencyTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/dependency-reality-check/SKILL.md',
+	);
+	const promptSkill = readText('.mustflow/skills/external-prompt-injection-defense/SKILL.md');
+	const promptTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/external-prompt-injection-defense/SKILL.md',
+	);
+
+	assert.equal(securitySkill, securityTemplate);
+	assert.equal(regressionSkill, regressionTemplate);
+	assert.equal(dependencySkill, dependencyTemplate);
+	assert.equal(promptSkill, promptTemplate);
+	assert.match(securitySkill, /AI-generated code as untrusted/u);
+	assert.match(securitySkill, /server-side authorization/u);
+	assert.match(securitySkill, /private network ranges/u);
+	assert.match(securitySkill, /database-as-a-service/u);
+	assert.match(securitySkill, /Do not stop at "is logged in"/u);
+	assert.match(securitySkill, /JWT verification instead of decode-only logic/u);
+	assert.match(securitySkill, /file upload and download/u);
+	assert.match(securitySkill, /client-supplied prices/u);
+	assert.match(securitySkill, /deployment settings/u);
+	assert.match(securitySkill, /custom cryptography/u);
+	assert.match(securitySkill, /secure randomness/u);
+	assert.match(securitySkill, /certificate validation/u);
+	assert.match(securitySkill, /architecture drift/u);
+	assert.match(securitySkill, /scanner output as evidence/u);
+	assert.match(securitySkill, /dependency-reality-check/u);
+	assert.match(regressionSkill, /BOLA\/IDOR-style/u);
+	assert.match(regressionSkill, /SSRF-style private network/u);
+	assert.match(regressionSkill, /CSRF-style state change/u);
+	assert.match(regressionSkill, /two actors and two resources/u);
+	assert.match(regressionSkill, /decode-only JWT checks/u);
+	assert.match(regressionSkill, /client-supplied price/u);
+	assert.match(regressionSkill, /ORM mass assignment/u);
+	assert.match(regressionSkill, /insecure randomness/u);
+	assert.match(regressionSkill, /disabled certificate validation/u);
+	assert.match(regressionSkill, /security invariant/u);
+	assert.match(dependencySkill, /hallucination and lookalike risk/u);
+	assert.match(dependencySkill, /slopsquatting risk/u);
+	assert.match(dependencySkill, /lifecycle hooks/u);
+	assert.match(dependencySkill, /install scripts/u);
+	assert.match(dependencySkill, /broad suppressions/u);
+	assert.match(promptSkill, /hidden or ambiguous content/u);
+	assert.match(promptSkill, /MCP or tool configuration/u);
+	assert.match(promptSkill, /network exfiltration path/u);
+	assert.match(promptSkill, /auto-accept/u);
+	assert.match(promptSkill, /context exposure/u);
+	assert.match(promptSkill, /production credentials/u);
 });
 
 test('architecture deepening review stays review-first and template-synced', () => {
