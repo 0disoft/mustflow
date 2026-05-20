@@ -10,21 +10,21 @@ const MAX_SNAPSHOT_FILES = 20_000;
 const MAX_REPORTED_PATHS = 200;
 const GIT_STATUS_TIMEOUT_MS = 10_000;
 const GIT_STATUS_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
+const GIT_STATUS_UNTRACKED_MODE = 'normal';
 const MAX_HASH_BYTES = 5 * 1024 * 1024;
 const RECURSIVE_SNAPSHOT_ENV = 'MUSTFLOW_WRITE_DRIFT_SNAPSHOT';
 const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
 const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/runs']);
 
 type FileSignature = string;
+export type RunWriteDriftStatus = 'checked' | 'partial' | 'unavailable';
 
 interface SnapshotResult {
-	readonly ok: boolean;
+	readonly status: RunWriteDriftStatus;
 	readonly entries: ReadonlyMap<string, FileSignature>;
 	readonly reason: string | null;
 	readonly source: 'git_status' | 'recursive_snapshot' | 'unavailable';
 }
-
-export type RunWriteDriftStatus = 'checked' | 'unavailable';
 
 export interface RunWriteDriftReceipt {
 	readonly status: RunWriteDriftStatus;
@@ -138,7 +138,7 @@ function captureSnapshot(projectRoot: string): SnapshotResult {
 
 	if (!isRecursiveSnapshotEnabled()) {
 		return {
-			ok: false,
+			status: 'unavailable',
 			entries: new Map<string, FileSignature>(),
 			reason: 'git_status_unavailable_recursive_snapshot_disabled',
 			source: 'unavailable',
@@ -148,10 +148,10 @@ function captureSnapshot(projectRoot: string): SnapshotResult {
 	try {
 		const entries = new Map<string, FileSignature>();
 		collectSnapshotEntries(projectRoot, projectRoot, entries);
-		return { ok: true, entries, reason: null, source: 'recursive_snapshot' };
+		return { status: 'checked', entries, reason: null, source: 'recursive_snapshot' };
 	} catch (error) {
 		return {
-			ok: false,
+			status: 'unavailable',
 			entries: new Map<string, FileSignature>(),
 			reason: error instanceof Error && error.message.length > 0 ? error.message : 'snapshot_unavailable',
 			source: 'unavailable',
@@ -160,7 +160,7 @@ function captureSnapshot(projectRoot: string): SnapshotResult {
 }
 
 function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
-	const result = spawnSync('git', ['-C', projectRoot, 'status', '--porcelain=v1', '-z', '--untracked-files=all'], {
+	const result = spawnSync('git', ['-C', projectRoot, 'status', '--porcelain=v1', '-z', `--untracked-files=${GIT_STATUS_UNTRACKED_MODE}`], {
 		encoding: 'utf8',
 		input: '',
 		maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
@@ -168,6 +168,28 @@ function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
 		timeout: GIT_STATUS_TIMEOUT_MS,
 		windowsHide: true,
 	});
+
+	const errorCode = typeof result.error === 'object' && result.error && 'code' in result.error
+		? String(result.error.code)
+		: null;
+
+	if (errorCode === 'ETIMEDOUT') {
+		return {
+			status: 'unavailable',
+			entries: new Map<string, FileSignature>(),
+			reason: 'git_status_timeout',
+			source: 'unavailable',
+		};
+	}
+
+	if (errorCode === 'ENOBUFS') {
+		return {
+			status: 'unavailable',
+			entries: new Map<string, FileSignature>(),
+			reason: 'git_status_output_limit_exceeded',
+			source: 'unavailable',
+		};
+	}
 
 	if (result.error || result.status !== 0) {
 		return null;
@@ -193,9 +215,9 @@ function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
 	}
 
 	return {
-		ok: true,
+		status: 'partial',
 		entries,
-		reason: null,
+		reason: 'git_status_untracked_files_normal',
 		source: 'git_status',
 	};
 }
@@ -255,7 +277,7 @@ export function startRunWriteTracking(
 }
 
 export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftReceipt {
-	if (!tracker.before.ok) {
+	if (tracker.before.status === 'unavailable') {
 		return {
 			status: 'unavailable',
 			declared_paths: tracker.declaredPaths,
@@ -271,7 +293,7 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 	}
 
 	const after = captureSnapshot(tracker.projectRoot);
-	if (!after.ok) {
+	if (after.status === 'unavailable') {
 		return {
 			status: 'unavailable',
 			declared_paths: tracker.declaredPaths,
@@ -296,9 +318,13 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 	const observed = truncatePaths(observedPaths);
 	const declaredObserved = truncatePaths(declaredObservedPaths);
 	const undeclared = truncatePaths(undeclaredPaths);
+	const status: RunWriteDriftStatus = tracker.before.status === 'partial' || after.status === 'partial' ? 'partial' : 'checked';
+	const reason = status === 'partial'
+		? tracker.before.reason ?? after.reason ?? 'partial_snapshot'
+		: null;
 
 	return {
-		status: 'checked',
+		status,
 		declared_paths: tracker.declaredPaths,
 		observed_paths: observed.paths,
 		declared_observed_paths: declaredObserved.paths,
@@ -307,6 +333,6 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 		undeclared_count: undeclaredPaths.length,
 		has_undeclared_changes: undeclaredPaths.length > 0,
 		truncated: observed.truncated || declaredObserved.truncated || undeclared.truncated,
-		reason: null,
+		reason,
 	};
 }

@@ -1692,12 +1692,12 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.status, 'passed');
-		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.status, 'partial');
 		assert.deepEqual(receipt.write_drift.declared_paths, []);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['git-sneaky.txt']);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, ['git-sneaky.txt']);
 		assert.equal(receipt.write_drift.has_undeclared_changes, true);
-		assert.equal(receipt.write_drift.reason, null);
+		assert.equal(receipt.write_drift.reason, 'git_status_untracked_files_normal');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1737,11 +1737,12 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.status, 'passed');
-		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.status, 'partial');
 		assert.deepEqual(receipt.write_drift.declared_paths, []);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['dirty.txt']);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, ['dirty.txt']);
 		assert.equal(receipt.write_drift.has_undeclared_changes, true);
+		assert.equal(receipt.write_drift.reason, 'git_status_untracked_files_normal');
 		assert.equal(readFileSync(path.join(projectPath, 'dirty.txt'), 'utf8'), 'after\n');
 	} finally {
 		removeTempProject(projectPath);

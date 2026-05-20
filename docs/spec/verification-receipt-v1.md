@@ -69,6 +69,12 @@ The tail must respect the configured output limits and should not be treated as 
 `max_output_bytes_scope = "per_stream"` means the configured byte limit applies independently to
 `stdout` and `stderr`, not to their combined size.
 
+`write_drift.status` is `checked` only when the before/after scan completed fully. It is `partial`
+when a bounded scan completed with reduced detail, and `unavailable` when the scan could not
+complete. Git-backed write-drift tracking uses `git status --untracked-files=normal` with a
+10 second timeout and a 16 MiB output cap, so it avoids recursively expanding every untracked file
+on large repositories.
+
 ## Authority
 
 An `mf run` receipt provides stronger verification evidence than direct shell output because it is tied to a declared command intent. However, it holds lower authority than current source files, current user instructions, and the command contract that produced it.

@@ -260,7 +260,7 @@
         "reason"
       ],
       "properties": {
-        "status": { "enum": ["checked", "unavailable"] },
+        "status": { "enum": ["checked", "partial", "unavailable"] },
         "declared_paths": {
           "type": "array",
           "items": { "type": "string" }

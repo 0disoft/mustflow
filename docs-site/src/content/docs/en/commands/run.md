@@ -102,7 +102,7 @@ Output summary objects use these fields:
 
 Write drift objects use these fields:
 
-- `write_drift.status` (`string`): `checked` when the before/after scan completed, otherwise `unavailable`.
+- `write_drift.status` (`string`): `checked` when the before/after scan completed fully, `partial` when a bounded scan completed with reduced detail, or `unavailable` when scanning could not complete.
 - `write_drift.declared_paths` (`string[]`): Write paths declared by `writes` or write `effects`.
 - `write_drift.observed_paths` (`string[]`): Bounded list of files that changed during the command.
 - `write_drift.declared_observed_paths` (`string[]`): Observed changes covered by declared write paths.
@@ -111,7 +111,7 @@ Write drift objects use these fields:
 - `write_drift.undeclared_count` (`number`): Total undeclared changed-file count before truncation.
 - `write_drift.has_undeclared_changes` (`boolean`): Whether any observed change was outside the declared write paths.
 - `write_drift.truncated` (`boolean`): Whether one or more path lists were truncated.
-- `write_drift.reason` (`string | null`): Why write drift could not be checked, when unavailable.
+- `write_drift.reason` (`string | null`): Why write drift was partial or unavailable.
 
 Performance summary objects use safe metadata only:
 
@@ -155,7 +155,7 @@ The profile is local generated state for diagnosing the latest run path. It does
 
 `write_drift` stores path metadata only. It does not store file contents or diffs, and it does not make mustflow a filesystem sandbox. Undeclared changes are warning evidence for review, not an execution blocker.
 
-Write-drift tracking uses `git status` when it is available. If the project is not a Git worktree, mustflow does not recursively snapshot the whole repository by default; set `MUSTFLOW_WRITE_DRIFT_SNAPSHOT=1` only when you explicitly want that local fallback for the current run.
+Write-drift tracking uses a bounded `git status --untracked-files=normal` scan when it is available, with a 10 second timeout and a 16 MiB output cap. This avoids recursively expanding every untracked file on large repositories, so Git-backed scans are reported as `partial`. If the project is not a Git worktree, mustflow does not recursively snapshot the whole repository by default; set `MUSTFLOW_WRITE_DRIFT_SNAPSHOT=1` only when you explicitly want that local fallback for the current run.
 
 ## Exit Codes
 
