@@ -896,6 +896,84 @@ required_after = ["parallel_verify"]
 	}
 });
 
+test('stops before the next verification batch after a batch failure', () => {
+	const projectPath = createTempProject();
+	const nextMarkerPath = path.join(projectPath, 'batch-next-ran.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_batch_1_fail]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Fail the first verification batch."
+argv = ['${process.execPath}', '-e', 'process.exit(1)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["batch-fail.txt"]
+effects = [
+  { type = "write", mode = "replace", path = "batch-fail.txt", lock = "verify_batch_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["batch_failure_policy"]
+
+[intents.verify_batch_2_next]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Record if the second verification batch runs."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync("batch-next-ran.txt", "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["batch-next-ran.txt"]
+effects = [
+  { type = "write", mode = "replace", path = "batch-next-ran.txt", lock = "verify_batch_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["batch_failure_policy"]
+`,
+		);
+
+		const planResult = runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--plan-only', '--json']);
+		const runResult = runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--json']);
+		const planReport = JSON.parse(planResult.stdout);
+		const runReport = JSON.parse(runResult.stdout);
+
+		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+		assert.equal(runResult.status, 1, runResult.stderr || runResult.stdout);
+		assert.deepEqual(planReport.schedule.batches.map((batch) => batch.intents), [
+			['verify_batch_1_fail'],
+			['verify_batch_2_next'],
+		]);
+		assert.equal(existsSync(nextMarkerPath), false);
+		assert.deepEqual(
+			runReport.results.map((result) => [result.intent, result.status, result.skipped, result.reason]),
+			[
+				['verify_batch_1_fail', 'failed', false, 'run_failed'],
+				['verify_batch_2_next', 'skipped', true, 'stopped_after_failed_batch'],
+			],
+		);
+		assert.deepEqual(runReport.summary, {
+			matched: 2,
+			ran: 1,
+			passed: 0,
+			failed: 1,
+			skipped: 1,
+		});
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps manual-only plan candidates as skipped and reports gaps', () => {
 	const projectPath = createTempProject();
 

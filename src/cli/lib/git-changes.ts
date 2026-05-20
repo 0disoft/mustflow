@@ -2,6 +2,9 @@ import { spawnSync } from 'node:child_process';
 
 import { parseGitStatusOutput } from '../../core/change-classification.js';
 
+const GIT_STATUS_TIMEOUT_MS = 10_000;
+const GIT_STATUS_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
+
 export interface GitChangedFilesSuccess {
 	readonly ok: true;
 	readonly files: readonly string[];
@@ -27,9 +30,13 @@ export class GitChangedFilesError extends Error {
 }
 
 export function readGitChangedFiles(projectRoot: string): GitChangedFilesResult {
-	const result = spawnSync('git', ['status', '--short', '--untracked-files=all'], {
+	const result = spawnSync('git', ['status', '--porcelain=v1', '-z', '--untracked-files=all'], {
 		cwd: projectRoot,
 		encoding: 'utf8',
+		input: '',
+		maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
+		stdio: ['ignore', 'pipe', 'pipe'],
+		timeout: GIT_STATUS_TIMEOUT_MS,
 		windowsHide: true,
 	});
 

@@ -60,7 +60,7 @@ import { DEFAULT_VERIFY_PARALLELISM, parseVerifyArgs } from './verify/args.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
 import {
-	readLocalCommandEffectGraph,
+	readLocalCommandEffectGraphs,
 	readLocalPathSurfaces,
 	readLocalSourceAnchorVerdictRisks,
 	type LocalCommandEffectGraph,
@@ -880,6 +880,21 @@ function skippedResult(candidate: Pick<VerificationCandidate, 'intent' | 'reason
 	};
 }
 
+function stoppedAfterFailedBatchResult(entry: VerificationScheduleEntry, verificationPlanId: string): VerificationResult {
+	return {
+		intent: entry.intent,
+		status: 'skipped',
+		skipped: true,
+		reason: 'stopped_after_failed_batch',
+		detail: 'Skipped because an earlier verification batch failed and the schedule failure policy stops before the next batch.',
+		exit_code: null,
+		verification_plan_id: verificationPlanId,
+		receipt_path: null,
+		receipt_sha256: null,
+		receipt: null,
+	};
+}
+
 function candidateResultKey(candidate: ChangeVerificationCandidate): string {
 	return candidate.intent
 		? `intent:${candidate.intent}`
@@ -1030,6 +1045,16 @@ async function runVerificationEntriesInParallelChunks(
 	return results;
 }
 
+function verificationResultFailed(result: VerificationResult): boolean {
+	return (
+		!result.skipped &&
+		(result.status === 'failed' ||
+			result.status === 'timed_out' ||
+			result.status === 'start_failed' ||
+			result.status === 'output_limit_exceeded')
+	);
+}
+
 async function runScheduledVerificationIntents(
 	report: ChangeVerificationReport,
 	lang: CliLang,
@@ -1037,32 +1062,41 @@ async function runScheduledVerificationIntents(
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
 	parallelism: number,
 ): Promise<VerificationResult[]> {
-	if (parallelism <= DEFAULT_VERIFY_PARALLELISM) {
-		return runVerificationEntriesSequentially(report.schedule.entries, lang, verificationPlanId, scheduledTestTargets);
-	}
-
 	const results: VerificationResult[] = [];
 
-	for (const batch of report.schedule.batches) {
+	for (let batchIndex = 0; batchIndex < report.schedule.batches.length; batchIndex += 1) {
+		const batch = report.schedule.batches[batchIndex] as VerificationScheduleBatch;
 		const entries = entriesForScheduleBatch(report.schedule.entries, batch);
 		if (entries.length === 0) {
 			continue;
 		}
 
+		let batchResults: VerificationResult[];
 		if (entries.length > 1 && entries.every((entry) => entry.parallelEligible)) {
-			results.push(
-				...(await runVerificationEntriesInParallelChunks(
-					entries,
-					parallelism,
-					lang,
-					verificationPlanId,
-					scheduledTestTargets,
-				)),
-			);
+			batchResults =
+				parallelism > DEFAULT_VERIFY_PARALLELISM
+					? await runVerificationEntriesInParallelChunks(
+							entries,
+							parallelism,
+							lang,
+							verificationPlanId,
+							scheduledTestTargets,
+						)
+					: await runVerificationEntriesSequentially(entries, lang, verificationPlanId, scheduledTestTargets);
+		} else {
+			batchResults = await runVerificationEntriesSequentially(entries, lang, verificationPlanId, scheduledTestTargets);
+		}
+
+		results.push(...batchResults);
+		if (!batchResults.some(verificationResultFailed)) {
 			continue;
 		}
 
-		results.push(...(await runVerificationEntriesSequentially(entries, lang, verificationPlanId, scheduledTestTargets)));
+		const remainingEntries = report.schedule.batches
+			.slice(batchIndex + 1)
+			.flatMap((remainingBatch) => entriesForScheduleBatch(report.schedule.entries, remainingBatch));
+		results.push(...remainingEntries.map((entry) => stoppedAfterFailedBatchResult(entry, verificationPlanId)));
+		break;
 	}
 
 	return results;
@@ -1806,15 +1840,12 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 		return { ...report, verification_plan_id: verificationPlanId, requirements };
 	}
 
-	const firstGraph = await readLocalCommandEffectGraph(projectRoot, firstEntry.intent);
-	const graphsByIntent = new Map<string, LocalCommandEffectGraph>([[firstEntry.intent, firstGraph]]);
+	const scheduledIntents = Array.from(new Set(report.schedule.entries.map((entry) => entry.intent)));
+	const graphsByIntent = await readLocalCommandEffectGraphs(projectRoot, scheduledIntents);
+	const firstGraph = graphsByIntent.get(firstEntry.intent);
 
-	if (firstGraph.status === 'fresh') {
-		for (const entry of report.schedule.entries.slice(1)) {
-			if (!graphsByIntent.has(entry.intent)) {
-				graphsByIntent.set(entry.intent, await readLocalCommandEffectGraph(projectRoot, entry.intent));
-			}
-		}
+	if (!firstGraph) {
+		return { ...report, verification_plan_id: verificationPlanId, requirements };
 	}
 
 	return {

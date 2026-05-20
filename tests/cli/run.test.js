@@ -412,7 +412,7 @@ destructive = false
 	}
 });
 
-test('refuses argv commands with long-running or background patterns before execution', () => {
+test('refuses commands with long-running or background patterns before execution', () => {
 	const projectPath = createTempProject();
 	const markerPath = path.join(projectPath, 'argv-bg-ran.txt');
 
@@ -490,6 +490,21 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
+
+[intents.shell_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide a development server in shell mode."
+mode = "shell"
+cmd = "npm run dev"
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
 `,
 		);
 
@@ -503,6 +518,8 @@ destructive = false
 		const attachedShellPreview = JSON.parse(attachedShellResult.stdout);
 		const safeResult = runCli(projectPath, ['run', 'argv_safe_exec', '--dry-run', '--json']);
 		const safePreview = JSON.parse(safeResult.stdout);
+		const shellDevResult = runCli(projectPath, ['run', 'shell_dev', '--dry-run', '--json']);
+		const shellDevPreview = JSON.parse(shellDevResult.stdout);
 
 		assert.equal(result.status, 1);
 		assert.equal(preview.runnable, false);
@@ -521,6 +538,11 @@ destructive = false
 		}
 		assert.equal(existsSync(markerPath), false);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+		assert.equal(shellDevResult.status, 1);
+		assert.equal(shellDevPreview.runnable, false);
+		assert.equal(shellDevPreview.reason_code, 'blocked_long_running_command_pattern');
+		assert.match(shellDevPreview.detail, /Shell command contains/);
+		assert.match(shellDevPreview.detail, /npm run dev/);
 		assert.equal(safeResult.status, 0);
 		assert.equal(safePreview.runnable, true);
 		assert.equal(safePreview.reason_code, null);
@@ -1559,6 +1581,9 @@ timeout_seconds = 10
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["dist/"]
+effects = [
+  { type = "write", mode = "write", path = "dist/**" },
+]
 network = false
 destructive = false
 `,
@@ -1571,7 +1596,7 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.write_drift.status, 'checked');
-		assert.deepEqual(receipt.write_drift.declared_paths, ['dist']);
+		assert.deepEqual(receipt.write_drift.declared_paths, ['dist/**']);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['dist/output.js']);
 		assert.deepEqual(receipt.write_drift.declared_observed_paths, ['dist/output.js']);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, []);

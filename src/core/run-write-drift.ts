@@ -195,6 +195,11 @@ function declaredPathCoversObservedPath(declaredPath: string, observedPath: stri
 	const declaredKey = pathKey(declaredPath);
 	const observedKey = pathKey(observedPath);
 
+	if (declaredKey.endsWith('/**')) {
+		const baseKey = declaredKey.slice(0, -3) || '.';
+		return baseKey === '.' || observedKey === baseKey || observedKey.startsWith(`${baseKey}/`);
+	}
+
 	return declaredKey === '.' || observedKey === declaredKey || observedKey.startsWith(`${declaredKey}/`);
 }
 

@@ -84,6 +84,21 @@ test('fails unsafe command lifecycle contracts', () => {
 				'network = false',
 				'destructive = false',
 				'',
+				'[intents.shell_dev]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Direct long-running shell command."',
+				'mode = "shell"',
+				'cmd = "npm run dev"',
+				'cwd = "."',
+				'timeout_seconds = 30',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
 				'[intents.shell_bg]',
 				'status = "configured"',
 				'lifecycle = "oneshot"',
@@ -108,6 +123,7 @@ test('fails unsafe command lifecycle contracts', () => {
 		assert.match(result.stderr, /Oneshot intent test must define timeout_seconds/);
 		assert.match(result.stderr, /Long-running intent dev must not use run_policy = "agent_allowed"/);
 		assert.match(result.stderr, /Intent argv_bg contains a blocked long-running or background command pattern/);
+		assert.match(result.stderr, /Intent shell_dev contains a blocked long-running or background command pattern/);
 		assert.match(result.stderr, /Shell intent shell_bg contains a blocked long-running or background pattern/);
 	} finally {
 		removeTempProject(projectPath);
@@ -165,6 +181,21 @@ test('check json includes stable command-boundary issue ids', () => {
 				'network = false',
 				'destructive = false',
 				'',
+				'[intents.shell_dev]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Direct long-running shell command."',
+				'mode = "shell"',
+				'cmd = "npm run dev"',
+				'cwd = "."',
+				'timeout_seconds = 30',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
 			].join('\n'),
 		);
 
@@ -181,6 +212,11 @@ test('check json includes stable command-boundary issue ids', () => {
 			check,
 			'mustflow.command_contract.long_running_command_pattern',
 			'Intent argv_bg contains a blocked long-running or background command pattern',
+		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.long_running_command_pattern',
+			'Intent shell_dev contains a blocked long-running or background command pattern',
 		);
 	} finally {
 		removeTempProject(projectPath);

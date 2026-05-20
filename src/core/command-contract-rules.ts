@@ -164,6 +164,13 @@ export function commandIntentBlockedCommandPattern(intent: TomlTable): BlockedCo
 		};
 	}
 
+	if (intent.mode === 'shell' && typeof intent.cmd === 'string' && commandTextHasLongRunningPattern(intent.cmd)) {
+		return {
+			code: 'long_running_command_pattern',
+			detail: `Shell command contains a blocked long-running pattern: ${intent.cmd}.`,
+		};
+	}
+
 	const argv = readStringArray(intent, 'argv');
 	if (!argv) {
 		return null;

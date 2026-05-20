@@ -464,8 +464,6 @@ function normalizeIndexedFileSourceScope(value: SqlValue | undefined): IndexedFi
 	return 'workflow';
 }
 
-type IndexedFileMetadataRecord = Omit<IndexedFileRecord, 'contentHash'>;
-
 function readIndexedFileRecord(
 	projectRoot: string,
 	relativePath: string,
@@ -484,7 +482,7 @@ function readIndexedFileMetadataRecord(
 	projectRoot: string,
 	relativePath: string,
 	sourceScope: IndexedFileRecord['sourceScope'],
-): IndexedFileMetadataRecord {
+): Omit<IndexedFileRecord, 'contentHash'> {
 	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
 	const stats = statSync(fullPath);
 
@@ -533,22 +531,22 @@ function collectSourceAnchorCandidatePaths(projectRoot: string, sourceConfig: Lo
 	});
 }
 
-function collectFastPreflightIndexedFileMetadataRecords(
+function collectFastPreflightIndexedFileRecords(
 	projectRoot: string,
 	includeSource: boolean,
 	sourceConfig: LocalIndexSourceConfig,
-): IndexedFileMetadataRecord[] | null {
-	const records = new Map<string, IndexedFileMetadataRecord>();
+): IndexedFileRecord[] | null {
+	const records = new Map<string, IndexedFileRecord>();
 
 	for (const relativePath of getExistingIndexablePaths(projectRoot)) {
-		records.set(relativePath, readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'));
+		records.set(relativePath, readIndexedFileRecord(projectRoot, relativePath, 'workflow'));
 	}
 
 	if (includeSource) {
 		try {
 			for (const sourcePath of collectSourceAnchorCandidatePaths(projectRoot, sourceConfig)) {
 				if (!records.has(sourcePath)) {
-					records.set(sourcePath, readIndexedFileMetadataRecord(projectRoot, sourcePath, 'source_anchor'));
+					records.set(sourcePath, readIndexedFileRecord(projectRoot, sourcePath, 'source_anchor'));
 				}
 			}
 		} catch {
@@ -559,7 +557,7 @@ function collectFastPreflightIndexedFileMetadataRecords(
 	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
 		records.set(
 			LATEST_RUN_STATE_RELATIVE_PATH,
-			readIndexedFileMetadataRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
+			readIndexedFileRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
 		);
 	}
 
@@ -2838,42 +2836,6 @@ function createStoredLocalIndexResult(
 	};
 }
 
-function indexedFileMetadataMatch(
-	database: SqlJsDatabase,
-	currentFiles: readonly IndexedFileMetadataRecord[],
-): boolean {
-	const rows = queryRows(
-		database,
-		'SELECT path, source_scope, size_bytes, mtime_ms, parser_version FROM indexed_files ORDER BY path',
-	);
-
-	if (rows.length !== currentFiles.length) {
-		return false;
-	}
-
-	const currentByPath = new Map(currentFiles.map((file) => [file.path, file]));
-
-	for (const row of rows) {
-		const storedPath = toSearchString(row.path);
-		const current = currentByPath.get(storedPath);
-
-		if (!current) {
-			return false;
-		}
-
-		if (
-			normalizeIndexedFileSourceScope(row.source_scope) !== current.sourceScope ||
-			row.size_bytes !== current.sizeBytes ||
-			row.mtime_ms !== current.mtimeMs ||
-			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
-		) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly IndexedFileRecord[]): boolean {
 	const rows = queryRows(
 		database,
@@ -2910,7 +2872,7 @@ async function readIncrementalPreflightReuse(
 	SQL: SqlJsStatic,
 	databasePath: string,
 	projectRoot: string,
-	currentFiles: readonly IndexedFileMetadataRecord[] | null,
+	currentFiles: readonly IndexedFileRecord[] | null,
 	sourceScopeHash: string,
 	dryRun: boolean,
 	indexMode: LocalIndexResult['index_mode'],
@@ -2944,7 +2906,7 @@ async function readIncrementalPreflightReuse(
 			return { result: null, rebuildReason: 'indexed_files_missing' };
 		}
 
-		if (!indexedFileMetadataMatch(database, currentFiles)) {
+		if (!indexedFilesMatch(database, currentFiles)) {
 			return { result: null, rebuildReason: 'file_fingerprint_mismatch' };
 		}
 
@@ -3033,7 +2995,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	capabilityDatabase.close();
 
 	if (incremental) {
-		const preflightFiles = collectFastPreflightIndexedFileMetadataRecords(projectRoot, includeSource, sourceConfig);
+		const preflightFiles = collectFastPreflightIndexedFileRecords(projectRoot, includeSource, sourceConfig);
 		const preflightReuse = await readIncrementalPreflightReuse(
 			SQL,
 			databasePath,

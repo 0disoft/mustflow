@@ -295,16 +295,45 @@ function uniqueSorted(values: Iterable<string>): string[] {
 }
 
 function toPosixPath(value: string): string {
-	return value.trim().replaceAll('\\', '/');
+	return value.replaceAll('\\', '/');
 }
 
 export function normalizeStatusPath(value: string): string {
-	const pathText = toPosixPath(value);
+	const pathText = toPosixPath(value.trim());
 	const renameTarget = pathText.includes(' -> ') ? (pathText.split(' -> ').pop() ?? pathText) : pathText;
 	return renameTarget.replace(/^"|"$/gu, '');
 }
 
+function normalizePorcelainStatusPath(value: string): string {
+	return toPosixPath(value);
+}
+
+function parseGitPorcelainStatusOutput(output: string): string[] {
+	const paths: string[] = [];
+	const parts = output.split('\0').filter((part) => part.length > 0);
+
+	for (let index = 0; index < parts.length; index += 1) {
+		const entry = parts[index] ?? '';
+		const status = entry.slice(0, 2);
+		const filePath = normalizePorcelainStatusPath(entry.slice(3));
+
+		if (filePath.length > 0) {
+			paths.push(filePath);
+		}
+
+		if (status.includes('R') || status.includes('C')) {
+			index += 1;
+		}
+	}
+
+	return uniqueSorted(paths);
+}
+
 export function parseGitStatusOutput(output: string): string[] {
+	if (output.includes('\0')) {
+		return parseGitPorcelainStatusOutput(output);
+	}
+
 	const paths = output
 		.split(/\r?\n/u)
 		.map((line) => line.slice(3))

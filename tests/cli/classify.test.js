@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { runClassify } from '../../dist/cli/commands/classify.js';
+import { parseGitStatusOutput } from '../../dist/core/change-classification.js';
 import {
 	cloneProjectFixture,
 	createTempProject,
@@ -134,6 +135,18 @@ validation_reasons = ["unknown_change"]
 	} finally {
 		removeTempProject(projectPath);
 	}
+});
+
+test('parses nul-delimited git status without treating arrows in filenames as renames', () => {
+	const output = [
+		'?? docs/a -> b.md',
+		'R  docs/new name.md',
+		'docs/old name.md',
+		' M README.md',
+		'',
+	].join('\0');
+
+	assert.deepEqual(parseGitStatusOutput(output), ['docs/a -> b.md', 'docs/new name.md', 'README.md']);
 });
 
 test('classifies changed git status paths', async () => {

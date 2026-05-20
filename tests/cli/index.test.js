@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, removeTempProject, runCli } from './helpers/cli-harness.js';
@@ -1193,6 +1193,41 @@ test('incremental mode rebuilds when indexed workflow files change', async () =>
 	}
 });
 
+test('incremental mode rebuilds when an indexed file changes without size or mtime drift', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-same-fingerprint-');
+
+	try {
+		await createLocalIndexDirect(projectPath);
+		const contextIndexPath = path.join(projectPath, '.mustflow', 'context', 'INDEX.md');
+		const originalStats = statSync(contextIndexPath);
+		const replacement = '# Context Index\n\nChanged marker with matching byte count.\n';
+		const original = readFileSync(contextIndexPath, 'utf8');
+		const paddedReplacement =
+			replacement.length <= original.length ? replacement.padEnd(original.length, ' ') : replacement.slice(0, original.length);
+
+		writeFileSync(contextIndexPath, paddedReplacement);
+		utimesSync(contextIndexPath, originalStats.atime, originalStats.mtime);
+
+		const output = await createLocalIndexDirect(projectPath, { incremental: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [contextIndex] = queryRows(
+			database,
+			'SELECT content_snippet FROM documents WHERE path = ".mustflow/context/INDEX.md"',
+		);
+
+		assert.equal(output.index_mode, 'incremental');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
+		assert.equal(output.wrote_files, true);
+		assert.match(contextIndex.content_snippet, /Changed marker/u);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('incremental mode rebuilds when indexed verification evidence changes', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-evidence-incremental-');
 
@@ -1786,7 +1821,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 	}
 });
 
-test('source incremental index reuses unchanged candidate metadata before parsing anchors', async () => {
+test('source incremental index reuses unchanged candidate fingerprints before parsing anchors', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-source-preflight-');
 
 	try {
@@ -1797,7 +1832,7 @@ test('source incremental index reuses unchanged candidate metadata before parsin
  * mf:anchor source.preflight.cached
  * purpose: Track source index preflight reuse.
  * search: source index preflight
- * invariant: Candidate metadata can prove unchanged source files before parsing.
+ * invariant: Candidate fingerprints can prove unchanged source files before parsing anchors.
  * risk: cache
  */
 export const cachedAnchor = true;
