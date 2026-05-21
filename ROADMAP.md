@@ -1,6 +1,6 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-21
+Last reviewed: 2026-05-22
 
 This roadmap lists only remaining work. Completed items are removed after verification so agents can focus on upcoming decisions instead of reviewing project history.
 

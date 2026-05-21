@@ -2,7 +2,7 @@
 mustflow_doc: skill.test-design-guard
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: test-design-guard
@@ -31,6 +31,8 @@ Guard the design quality of new tests and new test cases. This skill prevents in
 
 This skill does not force TDD order. It requires evidence that each new or changed test proves an observable behavior contract.
 
+Good tests prove that important assumptions fail loudly. They should protect the risky behavior, boundary, state, permission, cost, or integration condition that would matter in production rather than only proving that the happy path can be demonstrated once.
+
 <!-- mustflow-section: use-when -->
 ## Use When
 
@@ -54,6 +56,7 @@ This skill does not force TDD order. It requires evidence that each new or chang
 - Behavior contract source: user request, issue, bug report, schema, command contract, public docs, fixture, template, or current behavior.
 - Existing tests, fixtures, and helpers near the behavior.
 - Intended test objective and changed files.
+- Risk list for the changed behavior, including money, permissions, deletion, external calls, AI cost, queues, files, data ownership, retries, timeouts, partial failure, or concurrency when those risks exist.
 - Baseline status when using a failing test as evidence.
 - Relevant command-intent contract entries.
 
@@ -78,6 +81,7 @@ This skill does not force TDD order. It requires evidence that each new or chang
 
 1. Confirm the contract and coverage.
    - Name the observable behavior being protected.
+   - Name the production risk the test is supposed to catch. If no risk can be named, prefer reusing existing coverage or reporting the idea as speculative.
    - Reuse or strengthen existing tests when they already cover the behavior.
    - Treat uncovered ideas without a contract source as suggestions, not tests.
 2. Select the smallest useful test shape.
@@ -98,6 +102,8 @@ This skill does not force TDD order. It requires evidence that each new or chang
 5. Check assertion quality.
    - Assert at least one observable result: return value, exit code, stdout or stderr, state change, file output, emitted effect, schema result, error shape, or user-visible contract.
    - Mock interaction assertions may support a test, but they must not be the only evidence of behavior unless the mock interaction itself is the public contract.
+   - For high-risk boundaries, prefer assertions over final state, stored records, rejected access, idempotency outcome, usage record, emitted event, or durable failure status rather than only asserting that a mocked collaborator was called.
+   - Treat tests that mock every database, transaction, authorization, serialization, queue, provider, or filesystem boundary as unit evidence only. Require a nearby integration, contract, fixture, or schema check when the real boundary is the risk.
 6. Choose verification by objective.
    - Use a semantic objective such as `new_behavior`, `bug_regression`, `security_negative`, `stale_test_cleanup`, `contract_sync`, `release_surface`, or `docs_or_template_contract`.
    - Start with the narrowest configured intent that proves the objective.
@@ -110,6 +116,7 @@ This skill does not force TDD order. It requires evidence that each new or chang
 ## Postconditions
 
 - Each new or changed test has a contract source, selected test shape, and observable assertion.
+- Each new or changed test has a named risk, or the final report explains why the change is low-risk or already covered.
 - RED evidence is classified as `behavior_red`, `api_scaffold_red`, `invalid_red`, or `not_applicable`.
 - Speculative edge cases and duplicate coverage are reported instead of silently added.
 - Verification uses configured command intents and reports any missing or skipped coverage.
@@ -142,6 +149,7 @@ Prefer the narrowest configured intent that proves the selected objective. `test
 ## Output Format
 
 - Contract source
+- Production risk being protected
 - Verification objective
 - Selected test shape: `example`, `boundary`, `property`, `mixed`, or `not_applicable`
 - Cases reused

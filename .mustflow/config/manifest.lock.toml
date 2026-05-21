@@ -45,7 +45,7 @@ content_hash = "sha256:39b809e5e723e2efe655aba822a9e3426602d19a562b1504062a13a25
 [files.".mustflow/skills/architecture-deepening-review/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:0fa4968c04f87fd75e15bec64990982c559c711e86ab0d08b609fe03c5378b88"
+content_hash = "sha256:330732476ca4d86f488117b18258151123bfddc1b89a52f1a6d755921c0235a0"
 
 [files.".mustflow/skills/behavior-preserving-refactor/SKILL.md"]
 source = "template_locale"
@@ -110,7 +110,7 @@ content_hash = "sha256:30519c80f6eccef1c29486d4754ed7b5379d0a6b1adcc413a188d13a2
 [files.".mustflow/skills/test-design-guard/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:70658ba7dcea451addc9189a439cc83b78ec90a19367a487d898994281ccccc1"
+content_hash = "sha256:e0e1d68521d68effc7e1dd0b6dcb655cafb44baf210c18367534e835676ed9ae"
 
 [files.".mustflow/skills/test-maintenance/SKILL.md"]
 source = "template_locale"
@@ -250,7 +250,7 @@ content_hash = "sha256:4e91af4bdfde20bf58d6117c48c7791cc06717d75ec5b35b582706ecf
 [files.".mustflow/skills/security-privacy-review/SKILL.md"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:e608ed585168326b921322c1242e74c581379a3f23ae25e5efd287986a14371f"
+content_hash = "sha256:9063ea80bfc864fa80bbdf034ecfcc2965d62cc4a1f28d1b305ee17ba7a5788d"
 
 [files.".mustflow/skills/security-regression-tests/SKILL.md"]
 source = "template_locale"
@@ -295,7 +295,7 @@ content_hash = "sha256:eac25df8b64646b381613a9ff9777df77b71634a806c27b6cab4f67e3
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:3186d57c79911b8499a0803b2f574d7678c4ff327566038be8f2abeb9aa897c7"
+content_hash = "sha256:d164090717b0d895c5578d521cbedc3662f04a19b68da5c2cc5f7af0507d0a1d"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"

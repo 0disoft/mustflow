@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 16
+revision: 17
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -31,6 +31,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 ## Use When
 
 - A change touches authentication, authorization, sessions, admin behavior, tenant boundaries, personal data, secrets, tokens, credentials, API keys, or private files.
+- A feature adds role, permission, administrator, internal-tool, feature-flag, emergency-access, support, or back-office exceptions that could make the authorization model less explicit over time.
 - A change comes from AI-generated code, vibe-coded output, copied examples, or a broad assistant patch that may have optimized for the happy path without proving abuse boundaries.
 - A change adds or modifies logging, telemetry, diagnostics, receipts, reports, caches, generated state, retention, redaction, export, or external transmission.
 - A change adds or modifies behavior analytics events, event schemas, page views, clicks, searches, impressions, scroll data, experiments, attribution, request traces, or observability data that may include personal data or sensitive context.
@@ -76,6 +77,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Changed files, diff summary, and the user goal.
 - Sensitive data, actor, trust boundary, storage, logging, retention, export, or external disclosure surfaces involved.
 - Actor, resource owner, tenant boundary, server-side authorization rule, state-changing route, external network target, dependency source, and agent/tool permission surface involved.
+- Permission model shape when authorization is involved: actor, resource, action, scope, condition, default decision, exception path, emergency-access path, and audit expectation.
 - Read, list, search, update, delete, upload, attach, download, invite, billing, and admin actions affected, including whether the server scopes each action by actor, owner, workspace, organization, team, role, or capability.
 - Cookie, JWT, OAuth, file upload, file download, business-value, database mutation, ORM bulk operation, CI/CD permission, deployment setting, or secret-source surface involved.
 - Cryptographic primitive, password hashing, random-token, secure transport, certificate validation, scanner gate, or security invariant involved.
@@ -126,6 +128,9 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
    - Treat client-provided actor ids, role names, workspace ids, plan names, prices, discounts, entitlement flags, and status values as untrusted input. Derive trusted actor and tenant context from server-side authentication and membership checks.
    - Check list, search, detail, attachment, export, and download paths as carefully as mutation paths. Read access is still data access.
    - Reject mass assignment. Server code should allowlist mutable fields instead of passing raw request bodies into database updates where privileged fields could be set by the client.
+   - Review permission rules as actor, resource, action, scope, and condition rather than role name alone. "Admin can do it" is not enough; the rule should say which administrator can perform which action on which resource and under which tenant or system scope.
+   - Treat growing exceptions such as `isAdmin`, hardcoded user ids, company-email suffixes, internal-tool bypasses, feature-flag bypasses, or support-only shortcuts as authorization-model decay. Replace them with explicit capabilities, scoped roles, or time-limited emergency access.
+   - Emergency access should have a reason, time limit, notification or approval path, and audit log. It should not become a permanent silent superuser branch.
 7. For high-impact admin operations, require a server-side capability or role check, actor attribution, target identity, reason or change note where useful, before/after evidence, and a rollback, preview, or recovery path proportionate to the impact.
    High-impact examples include publish/unpublish, slug change, redirect change, canonical change, robots or sitemap change, filter definition change, advertisement slot or policy change, cache purge, search reindex, ranking refresh, bulk edit, and role or permission change.
 8. For high-risk content claims, require source attribution, jurisdiction or market, effective date, verification date, risk tier, review owner, affected-content lookup, and human approval before publication when the domain is legal, privacy, finance, health, safety, eligibility, pricing, ranking, comparison, or compliance.
@@ -194,6 +199,8 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Public and packaged surfaces do not include unnecessary secrets, personal data, or misleading privacy guarantees.
 - Admin operations, shared-cache behavior, generated-state rebuilds, and audit logs are treated as security-sensitive when they affect private data, permissions, public indexing, traffic, or monetization.
 - Client-side permission displays, file upload or download flows, private asset URLs, and API response fields are treated as disclosure and access-control surfaces.
+- Permission models define actor, resource, action, scope, condition, and default-deny behavior when authorization is involved, or the missing model is reported as a risk.
+- Administrator, support, internal-tool, feature-flag, and emergency-access exceptions are audited, time-bounded, or reported as authorization-model drift.
 - Behavior analytics, observability, and audit logs are separated by durability, retention, attribution, personal-data, and loss-tolerance expectations.
 - Core security, privacy, billing, entitlement, file, search, job, webhook, and administrator events are internally owned or explicitly reported as SaaS-only with the resulting export, retention, and incident-reconstruction risk.
 - Trace context, baggage, request ids, user ids, tenant ids, job ids, and webhook ids are reviewed for sensitive data, external propagation, retention, and backend portability when those surfaces exist.
@@ -240,6 +247,7 @@ Use a narrower configured test, build, or documentation intent when it better pr
 - Data residency, data classification, AI processing location, runtime patch, and hard-limit policy checked when relevant
 - Claim, comparison, affiliate, user-generated content, data-ownership, deletion, anonymization, export, and retention boundaries checked when relevant
 - Authorization, session, token, input, file, network, business-logic, dependency, cryptography, transport, deployment, scanner, and agent-tool boundaries checked
+- Permission exception and emergency-access boundaries checked when relevant
 - Redaction, omission, or wording changes made
 - Related security-regression test need
 - Command intents run

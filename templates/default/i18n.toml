@@ -74,7 +74,7 @@ translations = {}
 [documents."skill.architecture-deepening-review"]
 source = "locales/en/.mustflow/skills/architecture-deepening-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.behavior-preserving-refactor"]
@@ -325,7 +325,7 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 16
+revision = 17
 translations = {}
 
 [documents."skill.security-regression-tests"]
@@ -349,7 +349,7 @@ translations = {}
 [documents."skill.test-design-guard"]
 source = "locales/en/.mustflow/skills/test-design-guard/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.test-maintenance"]
