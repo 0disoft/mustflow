@@ -16,6 +16,12 @@ const indexTests = [
 	'index-verification-evidence.test.js',
 	'index-source-anchors.test.js',
 ];
+const dashboardTests = [
+	'dashboard-preferences.test.js',
+	'dashboard-rendering.test.js',
+	'dashboard-safety.test.js',
+	'dashboard-verification.test.js',
+];
 
 function selectRelated(changedFiles) {
 	return listSuite('related', changedFiles);
@@ -91,7 +97,9 @@ test('related selection maps command config changes to contract surfaces', () =>
 test('related selection maps package metadata helper changes to command consumers', () => {
 	const selected = selectedFor(['src/cli/lib/package-info.ts']);
 
-	assert.equal(selected.has('dashboard.test.js'), true);
+	for (const testName of dashboardTests) {
+		assert.equal(selected.has(testName), true);
+	}
 	assert.equal(selected.has('router.test.js'), true);
 	for (const testName of runTests) {
 		assert.equal(selected.has(testName), true);
