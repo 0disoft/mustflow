@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.22.3",
+  "version": "2.22.4",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -36,7 +36,9 @@
     "test:coverage": "bun run build && node scripts/run-cli-tests.mjs coverage",
     "test:audit": "node scripts/audit-tests.mjs --json",
     "test:release": "bun run build && node scripts/run-cli-tests.mjs release",
-    "test:full": "bun run build && node scripts/run-cli-tests.mjs full",
+    "test:full": "bun run build && node scripts/run-cli-tests.mjs full-auto",
+    "test:full:auto": "bun run build && node scripts/run-cli-tests.mjs full-auto",
+    "test:full:serial": "bun run build && node scripts/run-cli-tests.mjs full",
     "check": "bun run check:package && bun run test:full",
     "check:package": "node -e \"const fs=require('fs'); JSON.parse(fs.readFileSync('package.json','utf8')); console.log('package.json ok')\"",
     "check:typecheck": "tsc -p tsconfig.json --noEmit",

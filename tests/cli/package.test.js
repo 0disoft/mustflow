@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.22.3');
+	assert.equal(packageJson.version, '2.22.4');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -93,7 +93,9 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts['test:coverage'], 'bun run build && node scripts/run-cli-tests.mjs coverage');
 	assert.equal(packageJson.scripts['test:audit'], 'node scripts/audit-tests.mjs --json');
 	assert.equal(packageJson.scripts['test:release'], 'bun run build && node scripts/run-cli-tests.mjs release');
-	assert.equal(packageJson.scripts['test:full'], 'bun run build && node scripts/run-cli-tests.mjs full');
+	assert.equal(packageJson.scripts['test:full'], 'bun run build && node scripts/run-cli-tests.mjs full-auto');
+	assert.equal(packageJson.scripts['test:full:auto'], 'bun run build && node scripts/run-cli-tests.mjs full-auto');
+	assert.equal(packageJson.scripts['test:full:serial'], 'bun run build && node scripts/run-cli-tests.mjs full');
 	assert.equal(packageJson.scripts.check, 'bun run check:package && bun run test:full');
 	assert.equal(packageJson.scripts['check:pack'], 'npm pack --dry-run --json');
 	assert.equal(packageJson.scripts['check:install'], 'npm run check:pack && node --test tests/integration/*.test.js');

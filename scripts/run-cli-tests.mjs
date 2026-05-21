@@ -105,6 +105,12 @@ const releaseTests = ['package.test.js'];
 const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
 const coverageTests = fastTests;
 const scheduler = process.env.MUSTFLOW_TEST_SCHEDULER ?? 'default';
+const defaultSchedulerResourceTokens = {
+	io: '6',
+	process: '6',
+	sqlite: '1',
+	git: '1',
+};
 
 const commandTestNames = new Set(allCliTests);
 const commandRelatedTests = new Map([
@@ -326,6 +332,7 @@ const suites = {
 	coverage: coverageTests,
 	release: releaseTests,
 	full: allCliTests,
+	'full-auto': allCliTests,
 	'full-profile': allCliTests,
 };
 
@@ -434,10 +441,10 @@ function resourceCapacity() {
 	const cpuDefault = Math.max(1, (os.availableParallelism?.() ?? os.cpus().length) - 1);
 	return {
 		cpu: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_CPU_TOKENS', String(cpuDefault))),
-		io: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_IO_TOKENS', '4')),
-		process: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_PROCESS_TOKENS', '4')),
-		sqlite: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_SQLITE_TOKENS', '1')),
-		git: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_GIT_TOKENS', '1')),
+		io: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_IO_TOKENS', defaultSchedulerResourceTokens.io)),
+		process: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_PROCESS_TOKENS', defaultSchedulerResourceTokens.process)),
+		sqlite: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_SQLITE_TOKENS', defaultSchedulerResourceTokens.sqlite)),
+		git: Number(readPositiveIntegerEnv('MUSTFLOW_TEST_GIT_TOKENS', defaultSchedulerResourceTokens.git)),
 	};
 }
 
@@ -512,7 +519,9 @@ function planWaves(paths) {
 const testPaths = uniqueExisting(selected).map((name) => path.join('tests', 'cli', name));
 const profileMode = mode.endsWith('-profile');
 const cachedMode = mode.endsWith('-cached');
-const baseMode = mode.replace(/-(?:cached|profile)$/u, '');
+const autoSchedulerMode = mode.endsWith('-auto');
+const baseMode = mode.replace(/-(?:cached|profile|auto)$/u, '');
+const schedulerMode = autoSchedulerMode ? 'auto' : scheduler;
 const concurrency =
 	mode === 'coverage'
 		? readPositiveIntegerEnv('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4')
@@ -626,7 +635,7 @@ function runTestProcess(paths, testArgs, stdio = 'inherit') {
 }
 
 function runScheduledTests() {
-	if (mode === 'coverage') {
+	if (baseMode === 'coverage') {
 		console.error('MUSTFLOW_TEST_SCHEDULER=auto is not supported for coverage mode.');
 		process.exit(2);
 	}
@@ -661,7 +670,7 @@ if (baseMode === 'related' && hasRelatedReleaseChanges()) {
 	console.log('Release-sensitive files changed; run `mf run test_release` before publishing or committing release metadata.');
 }
 
-if (scheduler === 'auto') {
+if (schedulerMode === 'auto') {
 	runScheduledTests();
 	process.exit(0);
 }

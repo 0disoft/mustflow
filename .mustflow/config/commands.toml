@@ -35,7 +35,7 @@ description = "Generated documentation site build output."
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Run the full repository CLI test suite."
+description = "Run the full repository CLI test suite with resource-aware scheduling."
 argv = ["bun", "run", "test:full"]
 cwd = "."
 timeout_seconds = 900
@@ -48,6 +48,24 @@ effects = [
 network = false
 destructive = false
 required_after = ["cross_cutting_code_change", "behavior_change", "test_change", "release_risk"]
+
+[intents.test_full_auto]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the full repository CLI test suite with resource-aware scheduling."
+argv = ["bun", "run", "test:full:auto"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["cross_cutting_code_change", "behavior_change", "test_change", "release_risk", "test_performance_investigation"]
 
 [intents.test_related]
 lifecycle = "oneshot"

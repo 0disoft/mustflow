@@ -157,3 +157,12 @@ test('fast baseline keeps harness safety checks but excludes heavier feature sui
 	assert.equal(report.selected.includes('update.test.js'), false);
 	assert.equal(report.selected.includes('package.test.js'), false);
 });
+
+test('full-auto keeps the same coverage surface as the full suite', () => {
+	const full = listSuite('full');
+	const fullAuto = listSuite('full-auto');
+
+	assert.deepEqual(fullAuto.selected, full.selected);
+	assert.equal(fullAuto.selected.length > 0, true);
+	assert.equal(fullAuto.selected.includes('package.test.js'), true);
+});
