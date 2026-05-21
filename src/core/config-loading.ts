@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { readTomlFile } from './toml.js';
+import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
+import { parseTomlText } from './toml.js';
 
 export type TomlTable = Record<string, unknown>;
 
@@ -26,8 +27,16 @@ export function resolveMustflowConfigPath(projectRoot: string, relativePath: str
 	return path.join(projectRoot, ...relativePath.split('/'));
 }
 
+export function readMustflowOwnedTomlFile(projectRoot: string, relativePath: string): unknown {
+	return parseTomlText(
+		readUtf8FileInsideWithoutSymlinks(projectRoot, resolveMustflowConfigPath(projectRoot, relativePath), {
+			maxBytes: 256 * 1024,
+		}),
+	);
+}
+
 export function readMustflowConfig(projectRoot: string): TomlTable {
-	const parsed = readTomlFile(resolveMustflowConfigPath(projectRoot, MUSTFLOW_CONFIG_RELATIVE_PATH));
+	const parsed = readMustflowOwnedTomlFile(projectRoot, MUSTFLOW_CONFIG_RELATIVE_PATH);
 
 	if (!isRecord(parsed)) {
 		throw new Error(`${MUSTFLOW_CONFIG_RELATIVE_PATH} must contain a TOML table`);
@@ -43,7 +52,7 @@ export function readMustflowConfigIfExists(projectRoot: string): TomlTable | und
 }
 
 export function readCommandContract(projectRoot: string): CommandContract {
-	const parsed = readTomlFile(resolveMustflowConfigPath(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH));
+	const parsed = readMustflowOwnedTomlFile(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH);
 
 	if (!isRecord(parsed)) {
 		throw new Error(`${COMMANDS_CONFIG_RELATIVE_PATH} must contain a TOML table`);

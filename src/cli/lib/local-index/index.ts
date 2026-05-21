@@ -4,7 +4,8 @@ import path from 'node:path';
 
 import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from '../command-contract.js';
 import { listFilesRecursive, toPosixPath } from '../filesystem.js';
-import { readTomlFile } from '../toml.js';
+import { readMustflowTomlFile } from '../toml.js';
+import { MUSTFLOW_JSON_MAX_BYTES, readMustflowTextFile } from '../mustflow-read.js';
 import {
 	collectSourceAnchorIndexRecords,
 	hasHighRiskSourceAnchorRiskTags,
@@ -146,7 +147,7 @@ function getExistingIndexablePaths(projectRoot: string): string[] {
 }
 
 function readText(projectRoot: string, relativePath: string): string {
-	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
+	return readMustflowTextFile(projectRoot, relativePath);
 }
 
 function readMustflowToml(projectRoot: string): TomlTable | undefined {
@@ -156,7 +157,7 @@ function readMustflowToml(projectRoot: string): TomlTable | undefined {
 		return undefined;
 	}
 
-	const parsed = readTomlFile(mustflowPath);
+	const parsed = readMustflowTomlFile(projectRoot, MUSTFLOW_RELATIVE_PATH);
 	return isRecord(parsed) ? parsed : undefined;
 }
 
@@ -167,7 +168,7 @@ function readIndexToml(projectRoot: string): TomlTable | undefined {
 		return undefined;
 	}
 
-	const parsed = readTomlFile(indexConfigPath);
+	const parsed = readMustflowTomlFile(projectRoot, INDEX_CONFIG_RELATIVE_PATH);
 	return isRecord(parsed) ? parsed : undefined;
 }
 
@@ -381,7 +382,7 @@ function collectSkillRoutes(projectRoot: string): IndexSkillRoute[] {
 		return [];
 	}
 
-	const content = readFileSync(indexPath, 'utf8');
+	const content = readMustflowTextFile(projectRoot, '.mustflow/skills/INDEX.md');
 	const routes: IndexSkillRoute[] = [];
 	let inRouteTable = false;
 
@@ -884,10 +885,11 @@ function isJsonRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function readJsonRecord(filePath: string): Record<string, unknown> | null {
+function readJsonRecord(projectRoot: string, relativePath: string): { readonly content: string; readonly value: Record<string, unknown> } | null {
 	try {
-		const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as unknown;
-		return isJsonRecord(parsed) ? parsed : null;
+		const content = readMustflowTextFile(projectRoot, relativePath, { maxBytes: MUSTFLOW_JSON_MAX_BYTES });
+		const parsed = JSON.parse(content) as unknown;
+		return isJsonRecord(parsed) ? { content, value: parsed } : null;
 	} catch {
 		return null;
 	}
@@ -1033,9 +1035,9 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 		};
 	}
 
-	const latest = readJsonRecord(latestPath);
+	const latestRecord = readJsonRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH);
 
-	if (!latest) {
+	if (!latestRecord) {
 		return {
 			summaries: [],
 			verificationPlans: [],
@@ -1054,7 +1056,8 @@ function createVerificationEvidenceIndex(projectRoot: string): VerificationEvide
 		};
 	}
 
-	const sourceHash = sha256Bytes(readFileSync(latestPath));
+	const latest = latestRecord.value;
+	const sourceHash = sha256Bytes(Buffer.from(latestRecord.content));
 	const command = stringField(latest, 'command') ?? 'unknown';
 	const kind = stringField(latest, 'kind') ?? (command === 'verify' ? 'verify_run_summary' : 'run_receipt');
 	const evidenceModel = recordField(latest, 'evidence_model');

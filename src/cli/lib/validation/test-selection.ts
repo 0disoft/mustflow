@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
-import { readTomlFile } from '../toml.js';
+import { readMustflowTomlFile } from '../toml.js';
 import {
 	ALLOWED_TEST_SELECTION_RISKS,
 	FORBIDDEN_TEST_SELECTION_COMMAND_AUTHORITY_FIELDS,
@@ -111,7 +111,7 @@ export function validateStrictTestSelectionConfig(
 
 	let parsed: unknown;
 	try {
-		parsed = readTomlFile(configPath);
+		parsed = readMustflowTomlFile(projectRoot, TEST_SELECTION_CONFIG_PATH);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		pushStrictIssue(issues, `Invalid TOML in ${TEST_SELECTION_CONFIG_PATH}: ${message}`);

@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { createChangeClassificationReport, type ChangeClassificationReport } from '../../core/change-classification.js';
 import { summarizeVersionImpact, type VersionImpactSummary } from '../../core/version-impact.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
@@ -8,7 +6,7 @@ import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readTomlFile } from '../lib/toml.js';
+import { readMustflowTomlFile } from '../lib/toml.js';
 import {
 	detectVersionSources,
 	releaseVersioningIsEnabled,
@@ -84,7 +82,7 @@ function parseImpactArgs(args: readonly string[]): ParsedImpactArgs {
 
 function readPreferences(projectRoot: string): TomlTable | undefined {
 	try {
-		const preferences = readTomlFile(path.join(projectRoot, '.mustflow', 'config', 'preferences.toml'));
+		const preferences = readMustflowTomlFile(projectRoot, '.mustflow/config/preferences.toml');
 		return isRecord(preferences) ? preferences : undefined;
 	} catch {
 		return undefined;

@@ -183,3 +183,31 @@ test('installed mustflow commands prefer a child mustflow root inside a parent p
 		removeTempProject(parentPath);
 	}
 });
+
+test('installed mustflow commands ignore plain .mustflow directories without config markers', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const nestedPath = path.join(projectPath, 'src', 'feature', 'deep');
+		mkdirSync(path.join(nestedPath, '.mustflow'), { recursive: true });
+		appendIntent(
+			projectPath,
+			printCwdIntent('print_cwd', 'Print the process working directory.'),
+		);
+
+		const context = runCli(nestedPath, ['context', '--json']);
+		const contextJson = JSON.parse(context.stdout);
+		assert.equal(context.status, 0, context.stderr || context.stdout);
+		assert.equal(path.resolve(contextJson.mustflow_root), path.resolve(projectPath));
+
+		const run = runCli(nestedPath, ['run', 'print_cwd', '--json']);
+		const receipt = JSON.parse(run.stdout);
+		assert.equal(run.status, 0, run.stderr || run.stdout);
+		assert.equal(path.resolve(receipt.stdout.tail.trim()), path.resolve(projectPath));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json')));
+		assert.equal(existsSync(path.join(nestedPath, '.mustflow', 'state', 'runs', 'latest.json')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

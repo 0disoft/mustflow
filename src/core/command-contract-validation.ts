@@ -324,6 +324,7 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 		COMMAND_ENV_POLICIES,
 		issues,
 	);
+	validateBooleanField(intent, 'allow_shell', `[commands.intents.${intentName}].allow_shell`, issues);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
 	validateMaxOutputBytesField(intent, 'max_output_bytes', `[commands.intents.${intentName}].max_output_bytes`, issues);
 	validatePositiveIntegerField(intent, 'kill_after_seconds', `[commands.intents.${intentName}].kill_after_seconds`, issues);
@@ -358,6 +359,10 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 
 	if (lifecycle && LONG_RUNNING_LIFECYCLES.has(lifecycle) && runPolicy === 'agent_allowed') {
 		issues.push(commandContractIssue(`Long-running intent ${intentName} must not use run_policy = "agent_allowed"`));
+	}
+
+	if (intent.mode === 'shell' && runPolicy === 'agent_allowed' && intent.allow_shell !== true) {
+		issues.push(commandContractIssue(`Agent-runnable shell intent ${intentName} must set allow_shell = true`));
 	}
 
 	if (!commandIntentHasCommandSource(intent)) {
@@ -417,7 +422,9 @@ function getEffectiveCommandEnvPolicy(
 export interface CommandEnvInheritanceWarning {
 	readonly intentName: string;
 	readonly source: 'intent' | 'defaults' | 'implicit';
+	readonly severity: 'warning' | 'error';
 	readonly network: boolean;
+	readonly reasons: readonly string[];
 }
 
 interface CommandEnvInheritanceSource {
@@ -444,32 +451,58 @@ export function findCommandEnvInheritanceWarnings(commandsToml: CommandEnvInheri
 			continue;
 		}
 
+		const reasons = readCommandEnvInheritanceRiskReasons(intent);
 		warnings.push({
 			intentName,
 			source: envPolicy.source,
+			severity: reasons.length > 0 ? 'error' : 'warning',
 			network: intent.network === true,
+			reasons,
 		});
 	}
 
 	return warnings;
 }
 
+function readCommandEnvInheritanceRiskReasons(intent: TomlTable): readonly string[] {
+	const reasons: string[] = [];
+
+	if (intent.network === true) {
+		reasons.push('network = true');
+	}
+
+	if (intent.destructive === true) {
+		reasons.push('destructive = true');
+	}
+
+	if (intent.mode === 'shell') {
+		reasons.push('mode = "shell"');
+	}
+
+	if (Array.isArray(intent.writes) && intent.writes.length > 0) {
+		reasons.push('declared writes');
+	}
+
+	return reasons;
+}
+
 function formatCommandEnvInheritanceWarning(warning: CommandEnvInheritanceWarning): string {
-	const networkScope = warning.network ? ' with network = true' : '';
+	const reasonScope = warning.reasons.length > 0 ? ` (${warning.reasons.join(', ')})` : '';
 	const migration = 'set env_policy = "minimal" or "allowlist" unless broad host state is required';
 
 	if (warning.source === 'implicit') {
-		return `configured agent-runnable intent ${warning.intentName} implicitly inherits the host environment${networkScope}; ${migration}`;
+		return `configured agent-runnable intent ${warning.intentName} implicitly inherits the host environment${reasonScope}; ${migration}`;
 	}
 
-	return `configured agent-runnable intent ${warning.intentName} uses env_policy = "inherit"${networkScope}; ${migration}`;
+	return `configured agent-runnable intent ${warning.intentName} uses env_policy = "inherit"${reasonScope}; ${migration}`;
 }
 
 function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
 	const issues: CommandContractValidationIssue[] = [];
 
 	for (const warning of findCommandEnvInheritanceWarnings(commandsToml)) {
-		issues.push(commandContractWarning(formatCommandEnvInheritanceWarning(warning)));
+		const message = formatCommandEnvInheritanceWarning(warning);
+		issues.push(warning.severity === 'warning' ? commandContractWarning(message) : commandContractIssue(message));
 	}
 
 	return issues;

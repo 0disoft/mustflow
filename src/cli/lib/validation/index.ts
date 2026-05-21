@@ -34,7 +34,11 @@ import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readGitChangedFiles } from '../git-changes.js';
 import { inspectManifestLock } from '../manifest-lock.js';
 import { generateRepoMap } from '../repo-map.js';
-import { readTomlFile } from '../toml.js';
+import { parseTomlText, readMustflowTomlFile } from '../toml.js';
+import {
+	MUSTFLOW_JSON_MAX_BYTES,
+	readMustflowTextFileResult,
+} from '../mustflow-read.js';
 import {
 	getContractModelDefinitions,
 	validateCandidateContractModelConfig,
@@ -67,6 +71,8 @@ import {
 	ALLOWED_MAP_MODES,
 	ALLOWED_MAP_PRIVACY_LEVELS,
 	ALLOWED_PROJECT_PROFILES,
+	ALLOWED_REPO_MAP_DEGRADED_VALUES,
+	ALLOWED_REPO_MAP_GIT_LS_FILES_STATUSES,
 	ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES,
 	ALLOWED_PROMPT_CACHE_STRATEGIES,
 	ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES,
@@ -156,6 +162,7 @@ import type { CheckIssue, CheckOptions, ParsedConfigFiles, SkillRouteMetadata } 
 export type { CheckOptions } from './types.js';
 import { isConfiguredCommandIntent, isDeclaredCommandIntent } from './command-intents.js';
 import { validateStrictTestSelectionConfig } from './test-selection.js';
+import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../templates.js';
 
 export {
 	describeCheckIssues,
@@ -918,14 +925,17 @@ function validateSkills(projectRoot: string, issues: CheckIssue[]): void {
 	const skillFiles = listFilesRecursive(skillsRoot).filter((relativePath) => relativePath.endsWith('/SKILL.md'));
 
 	for (const relativePath of skillFiles) {
-		const absolutePath = path.join(skillsRoot, relativePath);
-		const content = readFileSync(absolutePath, 'utf8');
+		const normalizedPath = `.mustflow/skills/${toPosixPath(relativePath)}`;
+		const content = readStrictMustflowText(projectRoot, normalizedPath, issues);
+		if (content === undefined) {
+			continue;
+		}
 		const sectionIds = readSkillSectionIds(content);
 		const missingSectionIds = REQUIRED_SKILL_SECTION_IDS.filter((sectionId) => !sectionIds.has(sectionId));
 
 		if (missingSectionIds.length > 0) {
 			issues.push({
-				message: `Missing required skill section ids in .mustflow/skills/${toPosixPath(relativePath)}: ${missingSectionIds.join(', ')}`,
+				message: `Missing required skill section ids in ${normalizedPath}: ${missingSectionIds.join(', ')}`,
 			});
 		}
 	}
@@ -962,6 +972,24 @@ function parseSimpleFrontmatter(content: string): Record<string, string> {
 	}
 
 	return frontmatter;
+}
+
+function readStrictMustflowText(
+	projectRoot: string,
+	relativePath: string,
+	issues: CheckIssue[],
+	options: { readonly maxBytes?: number } = {},
+): string | undefined {
+	const result = readMustflowTextFileResult(projectRoot, relativePath, options);
+	if (result.ok) {
+		return result.content;
+	}
+
+	if (result.exists && result.error) {
+		pushStrictIssue(issues, `${toPosixPath(relativePath)} could not be read safely: ${result.error}`);
+	}
+
+	return undefined;
 }
 
 function readFrontmatterLines(content: string): string[] {
@@ -1029,7 +1057,10 @@ function validateContextDocuments(projectRoot: string, issues: CheckIssue[]): vo
 
 	for (const relativePath of contextFiles) {
 		const normalizedPath = `.mustflow/context/${toPosixPath(relativePath)}`;
-		const content = readFileSync(path.join(contextRoot, relativePath), 'utf8');
+		const content = readStrictMustflowText(projectRoot, normalizedPath, issues);
+		if (content === undefined) {
+			continue;
+		}
 		const frontmatter = parseSimpleFrontmatter(content);
 
 		if (frontmatter.kind !== 'mustflow-context') {
@@ -1156,7 +1187,10 @@ function validateStrictRouterIndexes(projectRoot: string, issues: CheckIssue[]):
 			continue;
 		}
 
-		const content = readFileSync(filePath, 'utf8');
+		const content = readStrictMustflowText(projectRoot, relativePath, issues);
+		if (content === undefined) {
+			continue;
+		}
 
 		if (ROUTER_INDEX_PROCEDURE_SECTION_PATTERN.test(content)) {
 			pushStrictIssue(issues, `${relativePath} must stay a routing index and must not embed skill procedure sections`);
@@ -1278,7 +1312,7 @@ function readSkillRouteMetadata(projectRoot: string, issues: CheckIssue[]): Map<
 
 	let parsed: unknown;
 	try {
-		parsed = readTomlFile(metadataPath);
+		parsed = readMustflowTomlFile(projectRoot, SKILL_ROUTES_METADATA_PATH);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		pushStrictIssue(issues, `Invalid TOML in ${SKILL_ROUTES_METADATA_PATH}: ${message}`);
@@ -1369,7 +1403,10 @@ function validateSkillIndexRoutes(
 		return;
 	}
 
-	const skillIndexContent = readFileSync(skillIndexPath, 'utf8');
+	const skillIndexContent = readStrictMustflowText(projectRoot, SKILL_INDEX_PATH, issues);
+	if (skillIndexContent === undefined) {
+		return;
+	}
 	validateSkillIndexRouteShape(skillIndexContent, issues);
 
 	const skillRoutes = parseSkillIndexRoutes(skillIndexContent);
@@ -1418,7 +1455,11 @@ function validateSkillIndexRoutes(
 			continue;
 		}
 
-		const skillCommandIntents = new Set(readFrontmatterList(readFileSync(absoluteSkillPath, 'utf8'), 'command_intents'));
+		const skillContent = readStrictMustflowText(projectRoot, route.skillPath, issues);
+		if (skillContent === undefined) {
+			continue;
+		}
+		const skillCommandIntents = new Set(readFrontmatterList(skillContent, 'command_intents'));
 
 		for (const intentName of route.commandIntents) {
 			if (!isDeclaredCommandIntent(commandsToml, intentName)) {
@@ -1442,6 +1483,322 @@ function validateSkillIndexRoutes(
 
 	if (routeMetadata) {
 		validateSkillRouteMetadataAlignment(routeMetadata, routedSkillNames, expectedSkillNames, issues);
+	}
+}
+
+function templateFileContent(file: TemplateFileSource): string {
+	return file.content ?? readFileSync(file.sourcePath, 'utf8');
+}
+
+function skillRouteCategoryByLabel(label: string): keyof typeof SKILL_ROUTE_CATEGORY_LABELS | undefined {
+	for (const [category, categoryLabel] of Object.entries(SKILL_ROUTE_CATEGORY_LABELS)) {
+		if (categoryLabel === label) {
+			return category as keyof typeof SKILL_ROUTE_CATEGORY_LABELS;
+		}
+	}
+
+	return undefined;
+}
+
+function splitSkillIndexTableRow(line: string): string[] | undefined {
+	const trimmed = line.trim();
+	if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) {
+		return undefined;
+	}
+
+	return trimmed.slice(1, -1).split('|').map((cell) => cell.trim());
+}
+
+function collectSkillIndexCategoryHeadings(content: string): Set<keyof typeof SKILL_ROUTE_CATEGORY_LABELS> {
+	const categories = new Set<keyof typeof SKILL_ROUTE_CATEGORY_LABELS>();
+	let currentSection: string | undefined;
+
+	for (const line of content.split(/\r?\n/u)) {
+		const heading = /^(#{2,3})\s+(.+?)\s*$/u.exec(line.trim());
+		if (!heading) {
+			continue;
+		}
+
+		const [, level, title] = heading;
+		if (level === '##') {
+			currentSection = title;
+			continue;
+		}
+
+		if (currentSection === 'Specific Routes' && level === '###') {
+			const category = skillRouteCategoryByLabel(title);
+			if (category) {
+				categories.add(category);
+			}
+		}
+	}
+
+	return categories;
+}
+
+function collectSkillIndexCategoryGateRows(content: string): Set<keyof typeof SKILL_ROUTE_CATEGORY_LABELS> {
+	const categories = new Set<keyof typeof SKILL_ROUTE_CATEGORY_LABELS>();
+	let currentSection: string | undefined;
+
+	for (const line of content.split(/\r?\n/u)) {
+		const heading = /^(#{2,3})\s+(.+?)\s*$/u.exec(line.trim());
+		if (heading) {
+			const [, level, title] = heading;
+			if (level === '##') {
+				currentSection = title;
+			}
+			continue;
+		}
+
+		if (currentSection !== 'Route Category Gate') {
+			continue;
+		}
+
+		const cells = splitSkillIndexTableRow(line);
+		if (!cells || cells.length === 0 || /^:?-{3,}:?$/u.test(cells[0] ?? '') || cells[0] === 'Category') {
+			continue;
+		}
+
+		const category = skillRouteCategoryByLabel(cells[0] ?? '');
+		if (category) {
+			categories.add(category);
+		}
+	}
+
+	return categories;
+}
+
+function readSkillRouteMetadataFromTomlContent(
+	content: string,
+	sourceLabel: string,
+	issues: CheckIssue[],
+): Map<string, SkillRouteMetadata> {
+	let parsed: unknown;
+	try {
+		parsed = parseTomlText(content);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		pushStrictIssue(issues, `Invalid TOML in ${sourceLabel}: ${message}`);
+		return new Map();
+	}
+
+	if (!isRecord(parsed)) {
+		pushStrictIssue(issues, `${sourceLabel} must contain a TOML table`);
+		return new Map();
+	}
+
+	if (parsed.schema_version !== '1') {
+		pushStrictIssue(issues, `${sourceLabel} schema_version must be "1"`);
+	}
+
+	if (!isRecord(parsed.routes)) {
+		pushStrictIssue(issues, `${sourceLabel} must define a [routes] table`);
+		return new Map();
+	}
+
+	const metadata = new Map<string, SkillRouteMetadata>();
+
+	for (const [skillName, route] of Object.entries(parsed.routes)) {
+		if (!/^[a-z][a-z0-9-]*$/u.test(skillName)) {
+			pushStrictIssue(issues, `${sourceLabel} route key "${skillName}" must be a skill folder name`);
+			continue;
+		}
+
+		if (!isRecord(route)) {
+			pushStrictIssue(issues, `${sourceLabel} routes.${skillName} must be a TOML table`);
+			continue;
+		}
+
+		metadata.set(skillName, validateSkillRouteMetadataTable(skillName, route, issues));
+	}
+
+	return metadata;
+}
+
+function validateTemplateProfileSkillRoutes(
+	profile: string,
+	files: readonly TemplateFileSource[],
+	issues: CheckIssue[],
+): void {
+	const contentByPath = new Map(files.map((file) => [file.relativePath, templateFileContent(file)]));
+	const indexContent = contentByPath.get(SKILL_INDEX_PATH);
+	const routesContent = contentByPath.get(SKILL_ROUTES_METADATA_PATH);
+	const commandsContent = contentByPath.get('.mustflow/config/commands.toml');
+
+	if (!indexContent) {
+		pushStrictIssue(issues, `template profile "${profile}" is missing generated ${SKILL_INDEX_PATH}`);
+		return;
+	}
+
+	if (!routesContent) {
+		pushStrictIssue(issues, `template profile "${profile}" is missing generated ${SKILL_ROUTES_METADATA_PATH}`);
+		return;
+	}
+
+	let commandsToml: TomlTable | undefined;
+	if (commandsContent) {
+		try {
+			const parsedCommands = parseTomlText(commandsContent);
+			if (isRecord(parsedCommands)) {
+				commandsToml = parsedCommands;
+			}
+		} catch {
+			commandsToml = undefined;
+		}
+	}
+
+	const routeMetadata = readSkillRouteMetadataFromTomlContent(
+		routesContent,
+		`template profile "${profile}" ${SKILL_ROUTES_METADATA_PATH}`,
+		issues,
+	);
+	const skillRoutes = parseSkillIndexRoutes(indexContent);
+	const categoryHeadings = collectSkillIndexCategoryHeadings(indexContent);
+	const categoryGateRows = collectSkillIndexCategoryGateRows(indexContent);
+	const routesByCategory = new Map<keyof typeof SKILL_ROUTE_CATEGORY_LABELS, string[]>();
+	const selectedSkillContents = new Map<string, string>();
+	const routedSkillNames = new Set<string>();
+
+	for (const [relativePath, content] of contentByPath.entries()) {
+		const skillName = skillRouteName(relativePath);
+		if (skillName) {
+			selectedSkillContents.set(skillName, content);
+		}
+	}
+
+	for (const route of skillRoutes) {
+		const routeSkillName = skillRouteName(route.skillPath);
+		if (!routeSkillName) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" ${SKILL_INDEX_PATH} route "${route.skillPath}" must point to .mustflow/skills/<name>/SKILL.md`,
+			);
+			continue;
+		}
+
+		routedSkillNames.add(routeSkillName);
+		const metadata = routeMetadata.get(routeSkillName);
+
+		if (!selectedSkillContents.has(routeSkillName)) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" ${SKILL_INDEX_PATH} route "${routeSkillName}" points to a skill not installed by that profile`,
+			);
+		}
+
+		if (!metadata) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" ${SKILL_ROUTES_METADATA_PATH} is missing metadata for route "${routeSkillName}"`,
+			);
+		}
+
+		if (metadata?.category && route.category !== metadata.category) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" ${SKILL_INDEX_PATH} route "${routeSkillName}" must appear under the ${SKILL_ROUTE_CATEGORY_LABELS[metadata.category]} category section from ${SKILL_ROUTES_METADATA_PATH}`,
+			);
+		}
+
+		if (metadata?.category) {
+			routesByCategory.set(metadata.category, [...(routesByCategory.get(metadata.category) ?? []), routeSkillName]);
+		}
+
+		const skillContent = selectedSkillContents.get(routeSkillName);
+		const skillCommandIntents = new Set(skillContent ? readFrontmatterList(skillContent, 'command_intents') : []);
+
+		for (const intentName of route.commandIntents) {
+			if (commandsToml && !isDeclaredCommandIntent(commandsToml, intentName)) {
+				pushStrictIssue(
+					issues,
+					`template profile "${profile}" ${SKILL_INDEX_PATH} route "${routeSkillName}" references unknown command intent "${intentName}"`,
+				);
+			}
+
+			if (!skillCommandIntents.has(intentName)) {
+				pushStrictIssue(
+					issues,
+					`template profile "${profile}" ${SKILL_INDEX_PATH} route "${routeSkillName}" references command intent "${intentName}" not declared by the skill frontmatter`,
+				);
+			}
+		}
+	}
+
+	for (const [skillName, metadata] of routeMetadata.entries()) {
+		if (!routedSkillNames.has(skillName)) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" ${SKILL_ROUTES_METADATA_PATH} route "${skillName}" is not listed in ${SKILL_INDEX_PATH}`,
+			);
+		}
+
+		if (!selectedSkillContents.has(skillName)) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" ${SKILL_ROUTES_METADATA_PATH} route "${skillName}" points to a skill not installed by that profile`,
+			);
+		}
+
+	}
+
+	for (const skillName of selectedSkillContents.keys()) {
+		if (!routedSkillNames.has(skillName)) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" skill "${skillName}" is installed but not listed in ${SKILL_INDEX_PATH}`,
+			);
+		}
+	}
+
+	for (const category of categoryHeadings) {
+		if (!routesByCategory.has(category)) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" skill index category "${SKILL_ROUTE_CATEGORY_LABELS[category]}" has no route rows`,
+			);
+		}
+	}
+
+	for (const category of categoryGateRows) {
+		if (!routesByCategory.has(category)) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" route category gate references "${SKILL_ROUTE_CATEGORY_LABELS[category]}" without route rows`,
+			);
+		}
+	}
+
+	for (const [category, skillNames] of routesByCategory.entries()) {
+		const hasSelectableMainRoute = skillNames.some((skillName) => {
+			const routeType = routeMetadata.get(skillName)?.routeType;
+			return routeType === 'primary' || routeType === 'authoring';
+		});
+
+		if (!hasSelectableMainRoute) {
+			pushStrictIssue(
+				issues,
+				`template profile "${profile}" skill category "${SKILL_ROUTE_CATEGORY_LABELS[category]}" must include at least one primary or authoring route`,
+			);
+		}
+	}
+}
+
+function validateStrictTemplateSkillProfiles(issues: CheckIssue[]): void {
+	let template;
+	try {
+		template = getDefaultTemplate();
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		pushStrictIssue(issues, `default template skill profiles could not be loaded: ${message}`);
+		return;
+	}
+
+	for (const profile of template.manifest.profiles) {
+		validateTemplateProfileSkillRoutes(
+			profile,
+			getTemplateFiles(template, template.manifest.defaultLocale, profile),
+			issues,
+		);
 	}
 }
 
@@ -1483,7 +1840,10 @@ function validateStrictManagedMarkdownIdentities(projectRoot: string, issues: Ch
 			continue;
 		}
 
-		const content = readFileSync(path.join(projectRoot, relativePath), 'utf8');
+		const content = readStrictMustflowText(projectRoot, relativePath, issues);
+		if (content === undefined) {
+			continue;
+		}
 		const frontmatter = parseSimpleFrontmatter(content);
 		const documentLabel = formatManagedMarkdownLabel(relativePath, expectation);
 
@@ -1602,7 +1962,7 @@ function validateStrictCandidateContractModelConfigs(projectRoot: string, issues
 
 		let parsed: unknown;
 		try {
-			parsed = readTomlFile(configPath);
+			parsed = readMustflowTomlFile(projectRoot, model.filePath);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			pushStrictIssue(issues, `Invalid TOML in ${model.filePath}: ${message}`);
@@ -1669,9 +2029,9 @@ function listSkillDirectories(skillsRoot: string): string[] {
 	return [...skillNames].sort();
 }
 
-function readSkillResourceManifest(manifestPath: string, manifestLabel: string, issues: CheckIssue[]): TomlTable | undefined {
+function readSkillResourceManifest(projectRoot: string, manifestLabel: string, issues: CheckIssue[]): TomlTable | undefined {
 	try {
-		const parsed = readTomlFile(manifestPath);
+		const parsed = readMustflowTomlFile(projectRoot, manifestLabel);
 
 		if (!isRecord(parsed)) {
 			pushStrictIssue(issues, `${manifestLabel} must contain a TOML table`);
@@ -1786,6 +2146,7 @@ function validateSkillResourceTable(
 }
 
 function validateSkillResourceManifest(
+	projectRoot: string,
 	skillDir: string,
 	manifestLabel: string,
 	commandsToml: TomlTable | undefined,
@@ -1798,7 +2159,7 @@ function validateSkillResourceManifest(
 		return declaredResources;
 	}
 
-	const manifest = readSkillResourceManifest(manifestPath, manifestLabel, issues);
+	const manifest = readSkillResourceManifest(projectRoot, manifestLabel, issues);
 	if (!manifest) {
 		return declaredResources;
 	}
@@ -1899,14 +2260,16 @@ function validateStrictSkills(projectRoot: string, commandsToml: TomlTable | und
 		}
 
 		const manifestLabel = `.mustflow/skills/${skillName}/${SKILL_RESOURCE_MANIFEST}`;
-		const declaredResources = validateSkillResourceManifest(skillDir, manifestLabel, commandsToml, issues);
+		const declaredResources = validateSkillResourceManifest(projectRoot, skillDir, manifestLabel, commandsToml, issues);
 		validateDeclaredSkillScripts(skillDir, skillName, declaredResources, issues);
 	}
 
 	for (const relativePath of skillFiles) {
-		const absolutePath = path.join(skillsRoot, relativePath);
-		const content = readFileSync(absolutePath, 'utf8');
 		const normalizedRelativePath = toPosixPath(relativePath);
+		const content = readStrictMustflowText(projectRoot, `.mustflow/skills/${normalizedRelativePath}`, issues);
+		if (content === undefined) {
+			continue;
+		}
 		const skillName = normalizedRelativePath.split('/')[0] ?? '';
 		const skillLabel = `.mustflow/skills/${normalizedRelativePath}`;
 		const frontmatter = parseSimpleFrontmatter(content);
@@ -1945,7 +2308,10 @@ function validateStrictRepoMap(projectRoot: string, issues: CheckIssue[]): void 
 		return;
 	}
 
-	const content = readFileSync(repoMapPath, 'utf8');
+	const content = readStrictMustflowText(projectRoot, 'REPO_MAP.md', issues);
+	if (content === undefined) {
+		return;
+	}
 	const frontmatter = parseSimpleFrontmatter(content);
 
 	if (frontmatter.mustflow_doc !== REPO_MAP_DOC_ID) {
@@ -1976,6 +2342,17 @@ function validateStrictRepoMap(projectRoot: string, issues: CheckIssue[]): void 
 		pushStrictIssue(issues, 'REPO_MAP.md frontmatter anchor_count must be a positive integer');
 	}
 
+	if (!ALLOWED_REPO_MAP_DEGRADED_VALUES.has(frontmatter.degraded ?? '')) {
+		pushStrictIssue(issues, 'REPO_MAP.md frontmatter degraded must be true or false');
+	}
+
+	if (!ALLOWED_REPO_MAP_GIT_LS_FILES_STATUSES.has(frontmatter.git_ls_files_status ?? '')) {
+		pushStrictIssue(
+			issues,
+			'REPO_MAP.md frontmatter git_ls_files_status must be ok, timeout, max_buffer, or error',
+		);
+	}
+
 	if (!REPO_MAP_SOURCE_FINGERPRINT_PATTERN.test(frontmatter.source_fingerprint ?? '')) {
 		pushStrictIssue(issues, 'REPO_MAP.md frontmatter source_fingerprint must be sha256:<64 lowercase hex characters>');
 	} else {
@@ -2004,7 +2381,10 @@ function validateStrictContextDocuments(projectRoot: string, limits: RetentionLi
 	for (const relativePath of contextFiles) {
 		const normalizedPath = `.mustflow/context/${toPosixPath(relativePath)}`;
 		const absolutePath = path.join(contextRoot, relativePath);
-		const content = readFileSync(absolutePath, 'utf8');
+		const content = readStrictMustflowText(projectRoot, normalizedPath, issues);
+		if (content === undefined) {
+			continue;
+		}
 
 		if (exceedsKiBLimit(absolutePath, limits.contextMaxFileKb)) {
 			pushStrictIssue(
@@ -2060,7 +2440,13 @@ function validateStrictRunReceipt(projectRoot: string, issues: CheckIssue[]): vo
 	}
 
 	try {
-		const parsed = JSON.parse(readFileSync(latestRunPath, 'utf8')) as unknown;
+		const content = readStrictMustflowText(projectRoot, '.mustflow/state/runs/latest.json', issues, {
+			maxBytes: MUSTFLOW_JSON_MAX_BYTES,
+		});
+		if (content === undefined) {
+			return;
+		}
+		const parsed = JSON.parse(content) as unknown;
 
 		if (!isRecord(parsed)) {
 			pushStrictIssue(issues, '.mustflow/state/runs/latest.json must contain a JSON object');
@@ -2149,6 +2535,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);
 	validateStrictRouterIndexes(projectRoot, issues);
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
+	validateStrictTemplateSkillProfiles(issues);
 	validateStrictRepoMap(projectRoot, issues);
 	validateStrictContextDocuments(projectRoot, retentionLimits, issues);
 	validateStrictSourceAnchors(projectRoot, issues);

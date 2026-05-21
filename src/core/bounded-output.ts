@@ -34,6 +34,8 @@ export function decodeUtf8Tail(buffer: Buffer, maxTailBytes: number): { readonly
 export class BoundedOutputBuffer {
 	readonly #maxTailBytes: number;
 	#chunks: Buffer[] = [];
+	#headIndex = 0;
+	#headOffset = 0;
 	#tailBytes = 0;
 	#bytes = 0;
 
@@ -53,31 +55,62 @@ export class BoundedOutputBuffer {
 		this.#chunks.push(buffer);
 		this.#tailBytes += buffer.byteLength;
 
-		while (this.#tailBytes > this.#maxTailBytes && this.#chunks.length > 0) {
-			const first = this.#chunks[0];
+		while (this.#tailBytes > this.#maxTailBytes && this.#headIndex < this.#chunks.length) {
+			const first = this.#chunks[this.#headIndex];
 			const overflow = this.#tailBytes - this.#maxTailBytes;
 
 			if (!first) {
 				break;
 			}
 
-			if (first.byteLength <= overflow) {
-				this.#chunks.shift();
-				this.#tailBytes -= first.byteLength;
+			const firstAvailableBytes = first.byteLength - this.#headOffset;
+
+			if (firstAvailableBytes <= overflow) {
+				this.#headIndex += 1;
+				this.#headOffset = 0;
+				this.#tailBytes -= firstAvailableBytes;
 				continue;
 			}
 
-			this.#chunks[0] = first.subarray(overflow);
+			this.#headOffset += overflow;
 			this.#tailBytes -= overflow;
 		}
+
+		this.#compactRetainedChunks();
 	}
 
 	toSnapshot(): BoundedOutputSnapshot {
-		const tail = decodeUtf8Tail(Buffer.concat(this.#chunks, this.#tailBytes), this.#maxTailBytes);
+		const tail = decodeUtf8Tail(Buffer.concat(this.#retainedChunks(), this.#tailBytes), this.#maxTailBytes);
 
 		return {
 			bytes: this.#bytes,
 			tail: tail.text,
 		};
+	}
+
+	#retainedChunks(): Buffer[] {
+		if (this.#tailBytes === 0 || this.#headIndex >= this.#chunks.length) {
+			return [];
+		}
+
+		const chunks = this.#chunks.slice(this.#headIndex);
+		if (this.#headOffset > 0 && chunks[0]) {
+			chunks[0] = chunks[0].subarray(this.#headOffset);
+		}
+
+		return chunks;
+	}
+
+	#compactRetainedChunks(): void {
+		if (this.#headIndex === 0) {
+			return;
+		}
+
+		if (this.#headIndex < 64 && this.#headIndex * 2 < this.#chunks.length) {
+			return;
+		}
+
+		this.#chunks = this.#chunks.slice(this.#headIndex);
+		this.#headIndex = 0;
 	}
 }

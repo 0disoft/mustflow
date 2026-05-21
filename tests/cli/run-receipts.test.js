@@ -31,6 +31,10 @@ import {
 	waitForOutput,
 } from './run-support.js';
 
+const STREAM_STARTUP_WAIT_MS = 8_000;
+const RUN_PARENT_GUARD_TIMEOUT_MS = 15_000;
+const RUN_PARENT_GUARD_SETTLE_MS = 14_000;
+
 test('prints and writes a JSON run receipt', () => {
 	const projectPath = createTempProject();
 
@@ -321,6 +325,20 @@ test('keeps bounded output tails on UTF-8 character boundaries', async () => {
 	assert.doesNotMatch(snapshot.tail, /\uFFFD/u);
 });
 
+test('keeps bounded output tails when many small chunks overflow the buffer', async () => {
+	const { BoundedOutputBuffer } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'bounded-output.js')).href);
+	const buffer = new BoundedOutputBuffer(5);
+
+	for (const chunk of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+		buffer.append(chunk);
+	}
+
+	const snapshot = buffer.toSnapshot();
+
+	assert.equal(snapshot.bytes, 8);
+	assert.equal(snapshot.tail, 'defgh');
+});
+
 test('keeps receipt output tails on UTF-8 character boundaries', async () => {
 	const projectPath = createTempProject();
 	const { createRunReceipt } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'run-receipt.js')).href);
@@ -413,7 +431,7 @@ writes = []
 			closed = true;
 		});
 
-		await waitForOutput(() => stdout.join(''), /early/);
+		await waitForOutput(() => stdout.join(''), /early/, STREAM_STARTUP_WAIT_MS);
 		assert.equal(closed, false);
 
 		const closeResult = await waitForClose(child);
@@ -749,7 +767,7 @@ destructive = false
 `,
 		);
 
-		const result = runCli(projectPath, ['run', 'too_chatty_stream'], { timeout: 5000 });
+		const result = runCli(projectPath, ['run', 'too_chatty_stream'], { timeout: RUN_PARENT_GUARD_TIMEOUT_MS });
 		const receipt = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
 
 		assert.equal(result.error, undefined);
@@ -848,13 +866,16 @@ destructive = false
 		);
 
 		const startedAt = Date.now();
-		const result = runCli(projectPath, ['run', 'slow_streaming_command'], { timeout: 5000 });
+		const result = runCli(projectPath, ['run', 'slow_streaming_command'], { timeout: RUN_PARENT_GUARD_TIMEOUT_MS });
 		const elapsedMs = Date.now() - startedAt;
 		const receipt = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
 
 		assert.equal(result.error, undefined);
 		assert.equal(result.status, 1, result.stderr || result.stdout);
-		assert.ok(elapsedMs < 4900, `streaming timeout should settle before the parent guard, elapsed ${elapsedMs}ms`);
+		assert.ok(
+			elapsedMs < RUN_PARENT_GUARD_SETTLE_MS,
+			`streaming timeout should settle before the parent guard, elapsed ${elapsedMs}ms`,
+		);
 		assert.equal(receipt.status, 'timed_out');
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);

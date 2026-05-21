@@ -247,6 +247,7 @@ export function isSkillRouteAlignmentIssue(issue: string): boolean {
 		issue.includes('.mustflow/skills/INDEX.md route') ||
 		issue.includes('.mustflow/skills/INDEX.md .mustflow/skills/') ||
 		issue.includes('.mustflow/skills/INDEX.md has duplicate route') ||
+		issue.includes('template profile "') ||
 		issue.endsWith(' is not listed in .mustflow/skills/INDEX.md')
 	);
 }

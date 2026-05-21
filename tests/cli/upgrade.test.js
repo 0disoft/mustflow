@@ -119,6 +119,7 @@ test('upgrade applies safe project template updates when the package is current'
 			runCliAsync(projectPath, ['upgrade'], {
 				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
 				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 			}),
 		);
 
@@ -145,6 +146,7 @@ test('upgrade dry-run prints the safe update plan without writing project files'
 			runCliAsync(projectPath, ['upgrade', '--dry-run'], {
 				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
 				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 			}),
 		);
 
@@ -169,6 +171,7 @@ test('upgrade stops before project writes when a newer package is available', as
 			runCliAsync(projectPath, ['upgrade'], {
 				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
 				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 			}),
 		);
 
@@ -198,6 +201,7 @@ test('upgrade prefers the detected install manager in update guidance', async ()
 			runCliAsync(projectPath, ['upgrade'], {
 				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
 				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 				npm_config_user_agent: 'bun/1.3.14 node/v24.0.0 win32 x64',
 				npm_execpath: '',
 			}),

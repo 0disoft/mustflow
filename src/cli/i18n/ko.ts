@@ -665,6 +665,10 @@ export const koMessages = {
   "init.error.invalidPreference": "초기 설정 항목 형식이 올바르지 않습니다: {value}",
   "init.error.invalidPreferenceValue": "{key}에 사용할 수 없는 값입니다: {value}",
   "init.error.unsupportedPreference": "지원하지 않는 초기 설정 항목입니다: {key}",
+  "init.error.promptInputTooLarge":
+    "대화형 init 표준입력이 너무 큽니다. 최대 {maxBytes}바이트까지만 허용됩니다.",
+  "init.error.promptInputTooManyResponses":
+    "대화형 init 표준입력 응답이 너무 많습니다. 최대 {maxResponses}줄까지만 허용됩니다.",
   "init.prompt.locale": "mustflow 문서는 어떤 언어로 설치할까요?",
   "init.prompt.profile": "이 저장소에는 어떤 프로젝트 유형을 사용할까요?",
   "init.prompt.agentLang": "에이전트 최종 응답은 어떤 언어로 받을까요?",

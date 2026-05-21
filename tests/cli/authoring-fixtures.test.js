@@ -85,6 +85,23 @@ test('README and project context authoring routes stay separated', () => {
 	assert.match(skillIndex, /`\.mustflow\/context\/PROJECT\.md` needs cautious project context/u);
 });
 
+test('skill route selection convention treats authoring as a main route', () => {
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(skillIndex, /Choose one main route: a `primary` route/u);
+	assert.match(skillIndex, /Treat `authoring` routes as selectable main routes, not adjunct routes/u);
+	assert.match(skillIndex, /choose one main route \(`primary` or `authoring`\) and at most two adjunct/u);
+	assert.match(
+		routes,
+		/\[routes\."security-privacy-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "primary"/u,
+	);
+});
+
 test('repro-first debug skill keeps diagnosis loop boundaries explicit', () => {
 	const localSkill = readText('.mustflow/skills/repro-first-debug/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/repro-first-debug/SKILL.md');

@@ -655,6 +655,10 @@ export const zhMessages = {
     "{key} 的值无效：{value}",
   "init.error.unsupportedPreference":
     "不支持的初始化偏好设置：{key}",
+  "init.error.promptInputTooLarge":
+    "交互式 init 的标准输入过大；最多允许 {maxBytes} 字节。",
+  "init.error.promptInputTooManyResponses":
+    "交互式 init 的标准输入响应过多；最多允许 {maxResponses} 行。",
   "init.prompt.locale": "mustflow 文档应使用哪种语言？",
   "init.prompt.profile": "mustflow 应使用哪个项目配置？",
   "init.prompt.agentLang":

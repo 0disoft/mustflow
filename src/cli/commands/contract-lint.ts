@@ -3,12 +3,12 @@ import path from 'node:path';
 
 import { lintCommandContract, type ContractLintReport } from '../../core/contract-lint.js';
 import { readCommandContract, isRecord, type TomlTable } from '../../core/config-loading.js';
-import { readTomlFile } from '../../core/toml.js';
 import { releaseVersioningIsEnabled } from '../../core/version-sources.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+import { readMustflowTomlFile } from '../lib/toml.js';
 
 const CONTRACT_LINT_SCHEMA_VERSION = '1';
 
@@ -47,7 +47,7 @@ function readPreferences(projectRoot: string): TomlTable | undefined {
 		return undefined;
 	}
 
-	const preferences = readTomlFile(preferencesPath);
+	const preferences = readMustflowTomlFile(projectRoot, '.mustflow/config/preferences.toml');
 	return isRecord(preferences) ? preferences : undefined;
 }
 

@@ -24,6 +24,7 @@ import {
 import { MAX_COMMAND_OUTPUT_BYTES } from './command-output-limits.js';
 import { commandEffectsConflict, normalizeCommandEffects } from './command-effects.js';
 import { listChangeClassificationValidationReasons } from './change-classification.js';
+import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { parseSkillIndexRoutes } from './skill-route-alignment.js';
 import {
 	SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION,
@@ -661,7 +662,9 @@ function readSkillPathsByIntent(projectRoot: string | undefined): Map<string, st
 		return skillPathsByIntent;
 	}
 
-	const routes = parseSkillIndexRoutes(readFileSync(skillIndexPath, 'utf8'));
+	const routes = parseSkillIndexRoutes(
+		readUtf8FileInsideWithoutSymlinks(projectRoot, skillIndexPath, { maxBytes: 1024 * 1024 }),
+	);
 
 	for (const route of routes) {
 		for (const intent of route.commandIntents) {

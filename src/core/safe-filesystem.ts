@@ -1,6 +1,7 @@
 import {
 	closeSync,
 	constants,
+	fstatSync,
 	lstatSync,
 	mkdirSync,
 	openSync,
@@ -16,6 +17,10 @@ const NOFOLLOW_FLAG = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOF
 
 interface NoSymlinkPathOptions {
 	readonly allowMissingLeaf?: boolean;
+}
+
+interface SafeReadOptions {
+	readonly maxBytes?: number;
 }
 
 function isMissingPathError(error: unknown): boolean {
@@ -148,20 +153,35 @@ export function ensureFileTargetInsideWithoutSymlinks(
 	}
 }
 
-export function readFileInsideWithoutSymlinks(parentPath: string, childPath: string): Buffer {
+export function readFileInsideWithoutSymlinks(
+	parentPath: string,
+	childPath: string,
+	options: SafeReadOptions = {},
+): Buffer {
 	const absoluteChildPath = path.resolve(childPath);
 	ensureInsideWithoutSymlinks(parentPath, absoluteChildPath);
 	const fileDescriptor = openSync(absoluteChildPath, constants.O_RDONLY | NOFOLLOW_FLAG);
 
 	try {
+		const stats = fstatSync(fileDescriptor);
+		if (!stats.isFile()) {
+			throw new Error(`Path must be a regular file: ${childPath}`);
+		}
+		if (options.maxBytes !== undefined && stats.size > options.maxBytes) {
+			throw new Error(`File exceeds maximum size ${options.maxBytes} bytes: ${childPath}`);
+		}
 		return readFileSync(fileDescriptor);
 	} finally {
 		closeSync(fileDescriptor);
 	}
 }
 
-export function readUtf8FileInsideWithoutSymlinks(parentPath: string, childPath: string): string {
-	return readFileInsideWithoutSymlinks(parentPath, childPath).toString('utf8');
+export function readUtf8FileInsideWithoutSymlinks(
+	parentPath: string,
+	childPath: string,
+	options: SafeReadOptions = {},
+): string {
+	return readFileInsideWithoutSymlinks(parentPath, childPath, options).toString('utf8');
 }
 
 export function writeFileInsideWithoutSymlinks(

@@ -663,6 +663,10 @@ Read these files before working:
     "Invalid value for {key}: {value}",
   "init.error.unsupportedPreference":
     "Unsupported init preference setting: {key}",
+  "init.error.promptInputTooLarge":
+    "Interactive init stdin input is too large; expected at most {maxBytes} bytes.",
+  "init.error.promptInputTooManyResponses":
+    "Interactive init stdin input has too many responses; expected at most {maxResponses} lines.",
   "init.prompt.locale": "Which language should mustflow documents use?",
   "init.prompt.profile": "Which project profile should mustflow use?",
   "init.prompt.agentLang":

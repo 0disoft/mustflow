@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -13,7 +13,12 @@ import { readRetentionStore } from '../../core/retention-policy.js';
 import { toPosixPath } from './filesystem.js';
 import { readLocalIndexPromptContext, type LocalIndexPromptContext } from './local-index.js';
 import { inspectManifestLock } from './manifest-lock.js';
-import { readTomlFile } from './toml.js';
+import {
+	MUSTFLOW_JSON_MAX_BYTES,
+	readMustflowTextFile,
+	readMustflowTextFileIfExists,
+} from './mustflow-read.js';
+import { readMustflowTomlFile } from './toml.js';
 
 const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
@@ -213,15 +218,7 @@ function safeExists(projectRoot: string, relativePath: string): boolean {
 }
 
 function safeRead(projectRoot: string, relativePath: string): string | null {
-	const resolved = path.resolve(projectRoot, ...relativePath.split('/'));
-	const root = path.resolve(projectRoot);
-	const relative = path.relative(root, resolved);
-
-	if (relative.startsWith('..') || path.isAbsolute(relative) || !existsSync(resolved)) {
-		return null;
-	}
-
-	return readFileSync(resolved, 'utf8');
+	return readMustflowTextFileIfExists(projectRoot, relativePath);
 }
 
 function readTomlTableIfExists(projectRoot: string, relativePath: string): TomlTable | undefined {
@@ -231,7 +228,7 @@ function readTomlTableIfExists(projectRoot: string, relativePath: string): TomlT
 		return undefined;
 	}
 
-	const parsed = readTomlFile(filePath);
+	const parsed = readMustflowTomlFile(projectRoot, relativePath);
 	return isRecord(parsed) ? parsed : undefined;
 }
 
@@ -396,7 +393,9 @@ function readLatestRunContext(projectRoot: string): LatestRunContext {
 	}
 
 	try {
-		const parsed = JSON.parse(readFileSync(latestPath, 'utf8')) as unknown;
+		const parsed = JSON.parse(
+			readMustflowTextFile(projectRoot, LATEST_RUN_RELATIVE_PATH, { maxBytes: MUSTFLOW_JSON_MAX_BYTES }),
+		) as unknown;
 
 		if (!isRecord(parsed)) {
 			throw new Error('latest run receipt must contain a JSON object');

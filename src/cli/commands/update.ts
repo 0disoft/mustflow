@@ -14,7 +14,7 @@ import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type TemplateFileSource } from '../lib/templates.js';
-import { readTomlFile, stringifyToml } from '../lib/toml.js';
+import { readMustflowTomlFile, stringifyToml } from '../lib/toml.js';
 import { createUpdateDiffPreview, shouldPreviewUpdateDiff, type UpdateDiffPreview } from '../lib/update-diff-preview.js';
 
 const UPDATE_SCHEMA_VERSION = '1';
@@ -375,7 +375,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 	ensureInside(projectRoot, lockPath);
 	ensureFileTargetInsideWithoutSymlinks(projectRoot, lockPath);
-	const parsed = readTomlFile(lockPath);
+	const parsed = readMustflowTomlFile(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 
 	if (!isMutableTable(parsed)) {
 		throw new Error(`Invalid manifest lock: ${MANIFEST_LOCK_RELATIVE_PATH} must contain a TOML table`);

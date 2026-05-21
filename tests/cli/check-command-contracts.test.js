@@ -218,6 +218,11 @@ test('check json includes stable command-boundary issue ids', () => {
 			'mustflow.command_contract.long_running_command_pattern',
 			'Intent shell_dev contains a blocked long-running or background command pattern',
 		);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.agent_shell_requires_allow',
+			'Agent-runnable shell intent shell_dev must set allow_shell = true',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -280,7 +285,82 @@ test('fails invalid command environment policy fields', () => {
 	}
 });
 
-test('strict check warns on broad command environment inheritance', () => {
+test('fails agent-runnable shell intents without explicit shell allowance', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				readText(commandsPath),
+				'[intents.shell_without_allow]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run a shell command without the explicit shell allowance."',
+				'mode = "shell"',
+				'cmd = "node --version"',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.shell_with_allow]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run a shell command with the explicit shell allowance."',
+				'mode = "shell"',
+				'cmd = "node --version"',
+				'allow_shell = true',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.manual_shell_without_allow]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "requires_explicit_user_request"',
+				'description = "Run a shell command only after a direct user request."',
+				'mode = "shell"',
+				'cmd = "node --version"',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.agent_shell_requires_allow',
+			'Agent-runnable shell intent shell_without_allow must set allow_shell = true',
+		);
+		assert.ok(!check.issues.some((issue) => issue.includes('shell_with_allow must set allow_shell')));
+		assert.ok(!check.issues.some((issue) => issue.includes('manual_shell_without_allow must set allow_shell')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails high-risk inherited command environments', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 
 	try {
@@ -298,13 +378,28 @@ test('strict check warns on broad command environment inheritance', () => {
 				'status = "configured"',
 				'lifecycle = "oneshot"',
 				'run_policy = "agent_allowed"',
-				'description = "Run with implicit env fallback."',
+				'description = "Run with implicit minimal env fallback."',
 				'argv = ["node", "--version"]',
 				'cwd = "."',
 				'timeout_seconds = 10',
 				'stdin = "closed"',
 				'success_exit_codes = [0]',
 				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.explicit_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run with explicit inherited env and no high-risk flags."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'env_policy = "inherit"',
 				'network = false',
 				'destructive = false',
 				'',
@@ -323,6 +418,53 @@ test('strict check warns on broad command environment inheritance', () => {
 				'network = true',
 				'destructive = false',
 				'',
+				'[intents.destructive_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run with inherited env and destructive access."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'env_policy = "inherit"',
+				'network = false',
+				'destructive = true',
+				'',
+				'[intents.shell_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run shell mode with inherited env."',
+				'mode = "shell"',
+				'cmd = "node --version"',
+				'allow_shell = true',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'env_policy = "inherit"',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.write_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run with inherited env and declared writes."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = ["dist/"]',
+				'env_policy = "inherit"',
+				'network = false',
+				'destructive = false',
+				'',
 			].join('\n'),
 		);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
@@ -334,18 +476,62 @@ test('strict check warns on broad command environment inheritance', () => {
 		const result = runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.status, 1);
 		assert.ok(
-			check.warnings.some((warning) =>
-				warning.includes('implicit_env implicitly inherits the host environment; set env_policy = "minimal" or "allowlist"'),
+			!check.warnings.some((warning) =>
+				warning.includes('implicit_env implicitly inherits the host environment'),
 			),
 		);
 		assert.ok(
 			check.warnings.some((warning) =>
-				warning.includes('network_env uses env_policy = "inherit" with network = true; set env_policy = "minimal" or "allowlist"'),
+				warning.includes('explicit_env uses env_policy = "inherit"; set env_policy = "minimal" or "allowlist"'),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'network_env uses env_policy = "inherit" (network = true); set env_policy = "minimal" or "allowlist"',
+				),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'destructive_env uses env_policy = "inherit" (destructive = true); set env_policy = "minimal" or "allowlist"',
+				),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'shell_env uses env_policy = "inherit" (mode = "shell"); set env_policy = "minimal" or "allowlist"',
+				),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'write_env uses env_policy = "inherit" (declared writes); set env_policy = "minimal" or "allowlist"',
+				),
 			),
 		);
 		assertHasIssueDetail(check, 'mustflow.command_contract.broad_env_inheritance');
+		assert.ok(
+			check.issueDetails.some(
+				(issue) =>
+					issue.id === 'mustflow.command_contract.broad_env_inheritance' &&
+					issue.severity === 'error' &&
+					issue.message.includes('network_env'),
+			),
+		);
+		assert.ok(
+			check.issueDetails.some(
+				(issue) =>
+					issue.id === 'mustflow.command_contract.broad_env_inheritance' &&
+					issue.severity === 'warning' &&
+					issue.message.includes('explicit_env'),
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

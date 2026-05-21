@@ -25,12 +25,12 @@ content_hash = "sha256:259834228dc4f9d6936415f5b5bc7f7f1b6d3d582f423aa06eadcdd24
 [files.".mustflow/skills/INDEX.md"]
 source = "template_locale"
 last_action = "updated"
-content_hash = "sha256:9d7c6161112f517a4a9e410508d70014604fc56857899b12462f531ef4913b9b"
+content_hash = "sha256:7a2917469c742cd99e45470f3ca8bb5e6575f8718c471631888cd892d5183ebe"
 
 [files.".mustflow/skills/routes.toml"]
 source = "template_locale"
 last_action = "created"
-content_hash = "sha256:1b0b53d9fd92e7e0738fa0e49bf0537ba5e07d7947ed8b0c44151c0364b37e4e"
+content_hash = "sha256:f58c3ba9e04cce17e214b3c56b93b8ba7b791e774b2a9bdc6a547c002a5ef8a6"
 
 [files.".mustflow/skills/adapter-boundary/SKILL.md"]
 source = "template_locale"
@@ -295,7 +295,7 @@ content_hash = "sha256:eac25df8b64646b381613a9ff9777df77b71634a806c27b6cab4f67e3
 [files.".mustflow/config/commands.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:939ec6ed187d0ca17b57b3b2afd3043a1a07f7d90df60740c7fc3be2577453d6"
+content_hash = "sha256:3186d57c79911b8499a0803b2f574d7678c4ff327566038be8f2abeb9aa897c7"
 
 [files.".mustflow/config/preferences.toml"]
 source = "template_common"

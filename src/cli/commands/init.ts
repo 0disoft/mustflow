@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readSync } from 'node:fs';
 import path from 'node:path';
 import { stdin as processStdin, stdout as processStdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
@@ -49,6 +49,9 @@ const MUSTFLOW_BLOCK_START = '<!-- mustflow:start schema=1 -->';
 const MUSTFLOW_BLOCK_END = '<!-- mustflow:end -->';
 const GITIGNORE_RELATIVE_PATH = '.gitignore';
 const GITIGNORE_FRAGMENT_RELATIVE_PATH = 'gitignore.mustflow';
+const NON_INTERACTIVE_PROMPT_MAX_BYTES = 16 * 1024;
+const NON_INTERACTIVE_PROMPT_MAX_RESPONSES = 64;
+const NON_INTERACTIVE_PROMPT_READ_CHUNK_BYTES = 4096;
 const LOCALE_LABELS: Record<string, string> = {
 	en: 'English',
 	ko: 'Korean',
@@ -66,6 +69,12 @@ interface PromptChoice {
 interface PromptReader {
 	question(prompt: string): Promise<string>;
 	close(): void;
+}
+
+interface NonInteractivePromptInput {
+	readonly lines: readonly string[];
+	readonly errorKey?: 'init.error.promptInputTooLarge' | 'init.error.promptInputTooManyResponses';
+	readonly limit?: number;
 }
 
 interface PreferenceOverride {
@@ -626,9 +635,64 @@ function formatLocaleChoice(locale: string): string {
 	return `${label} (${locale})`;
 }
 
-function createPromptReader(reporter: Reporter): PromptReader {
+function readNonInteractivePromptInput(): NonInteractivePromptInput {
+	const chunks: Buffer[] = [];
+	let totalBytes = 0;
+
+	for (;;) {
+		const remainingBudget = NON_INTERACTIVE_PROMPT_MAX_BYTES + 1 - totalBytes;
+
+		if (remainingBudget <= 0) {
+			return {
+				lines: [],
+				errorKey: 'init.error.promptInputTooLarge',
+				limit: NON_INTERACTIVE_PROMPT_MAX_BYTES,
+			};
+		}
+
+		const buffer = Buffer.alloc(Math.min(NON_INTERACTIVE_PROMPT_READ_CHUNK_BYTES, remainingBudget));
+		const bytesRead = readSync(0, buffer, 0, buffer.length, null);
+
+		if (bytesRead === 0) {
+			break;
+		}
+
+		totalBytes += bytesRead;
+		chunks.push(Buffer.from(buffer.subarray(0, bytesRead)));
+
+		if (totalBytes > NON_INTERACTIVE_PROMPT_MAX_BYTES) {
+			return {
+				lines: [],
+				errorKey: 'init.error.promptInputTooLarge',
+				limit: NON_INTERACTIVE_PROMPT_MAX_BYTES,
+			};
+		}
+	}
+
+	const lines = Buffer.concat(chunks, totalBytes).toString('utf8').split(/\r?\n/u);
+
+	if (lines.length > NON_INTERACTIVE_PROMPT_MAX_RESPONSES) {
+		return {
+			lines: [],
+			errorKey: 'init.error.promptInputTooManyResponses',
+			limit: NON_INTERACTIVE_PROMPT_MAX_RESPONSES,
+		};
+	}
+
+	return { lines };
+}
+
+function createPromptReader(reporter: Reporter, lang: CliLang): PromptReader | undefined {
 	if (!processStdin.isTTY) {
-		const lines = readFileSync(0, 'utf8').split(/\r?\n/u);
+		const input = readNonInteractivePromptInput();
+
+		if (input.errorKey) {
+			const paramName = input.errorKey === 'init.error.promptInputTooLarge' ? 'maxBytes' : 'maxResponses';
+			reporter.stderr(t(lang, input.errorKey, { [paramName]: input.limit }));
+			return undefined;
+		}
+
+		const lines = [...input.lines];
 
 		return {
 			async question(prompt: string): Promise<string> {
@@ -756,8 +820,12 @@ async function promptInitOptions(
 	options: InitOptions,
 	reporter: Reporter,
 	lang: CliLang,
-): Promise<InitOptions> {
-	const reader = createPromptReader(reporter);
+): Promise<InitOptions | undefined> {
+	const reader = createPromptReader(reporter, lang);
+
+	if (!reader) {
+		return undefined;
+	}
 
 	try {
 		const preferenceOverrides = [...options.preferenceOverrides];
@@ -1306,7 +1374,18 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		return 1;
 	}
 
-	const options = shouldPromptForInit(args, parsedOptions) ? await promptInitOptions(template, parsedOptions, reporter, lang) : parsedOptions;
+	let options = parsedOptions;
+
+	if (shouldPromptForInit(args, parsedOptions)) {
+		const promptedOptions = await promptInitOptions(template, parsedOptions, reporter, lang);
+
+		if (!promptedOptions) {
+			return 1;
+		}
+
+		options = promptedOptions;
+	}
+
 	const selectedLocale = options.locale ?? template.manifest.defaultLocale;
 
 	if (!validateInitSelection(template, options, reporter, lang)) {

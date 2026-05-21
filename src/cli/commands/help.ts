@@ -1,11 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
-
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import { readMustflowTextFileIfExists } from '../lib/mustflow-read.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readTomlFile } from '../lib/toml.js';
+import { readMustflowTomlFile } from '../lib/toml.js';
 
 type TomlTable = Record<string, unknown>;
 
@@ -14,19 +12,16 @@ function isRecord(value: unknown): value is TomlTable {
 }
 
 function readTextIfExists(projectRoot: string, relativePath: string): string | undefined {
-	const filePath = path.join(projectRoot, ...relativePath.split('/'));
-	return existsSync(filePath) ? readFileSync(filePath, 'utf8') : undefined;
+	return readMustflowTextFileIfExists(projectRoot, relativePath) ?? undefined;
 }
 
 function readTomlIfExists(projectRoot: string, relativePath: string): TomlTable | undefined {
-	const filePath = path.join(projectRoot, ...relativePath.split('/'));
-
-	if (!existsSync(filePath)) {
+	try {
+		const parsed = readMustflowTomlFile(projectRoot, relativePath);
+		return isRecord(parsed) ? parsed : undefined;
+	} catch {
 		return undefined;
 	}
-
-	const parsed = readTomlFile(filePath);
-	return isRecord(parsed) ? parsed : undefined;
 }
 
 function renderMissing(relativePath: string, lang: CliLang): string {

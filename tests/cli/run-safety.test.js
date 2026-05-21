@@ -402,6 +402,51 @@ destructive = false
 	}
 });
 
+test('uses the minimal command environment when no policy is declared', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commandsWithoutDefaultEnv = readFileSync(commandsPath, 'utf8').replace(
+			'env_policy = "minimal"\nenv_allowlist = []\n',
+			'',
+		);
+		writeFileSync(commandsPath, commandsWithoutDefaultEnv);
+		appendIntent(
+			projectPath,
+			`
+[intents.env_implicit_minimal]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print whether implicit environment fallback exposes outer variables."
+argv = ['${process.execPath}', '-e', 'console.log(process.env.MUSTFLOW_TEST_SECRET_ENV || "missing")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'env_implicit_minimal', '--json'], {
+			env: createEnvWithCommandPolicyFixtures(),
+		});
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(receipt.env_policy, 'minimal');
+		assert.deepEqual(receipt.env_allowlist, []);
+		assert.match(receipt.stdout.tail, /missing/);
+		assert.doesNotMatch(receipt.stdout.tail, /hidden-env-value/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('passes only named extra environment variables through allowlist policy', () => {
 	const projectPath = createTempProject();
 

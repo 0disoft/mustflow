@@ -1,11 +1,9 @@
-import path from 'node:path';
-
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readTomlFile } from '../lib/toml.js';
+import { readMustflowTomlFile } from '../lib/toml.js';
 import {
 	detectVersionSources,
 	releaseVersioningIsEnabled,
@@ -43,7 +41,7 @@ export function getVersionSourcesHelp(lang: CliLang = 'en'): string {
 
 function readPreferences(projectRoot: string): TomlTable | undefined {
 	try {
-		const preferences = readTomlFile(path.join(projectRoot, '.mustflow', 'config', 'preferences.toml'));
+		const preferences = readMustflowTomlFile(projectRoot, '.mustflow/config/preferences.toml');
 		return isRecord(preferences) ? preferences : undefined;
 	} catch {
 		return undefined;

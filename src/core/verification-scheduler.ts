@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -7,7 +6,10 @@ import {
 	type NormalizedCommandEffect,
 } from './command-effects.js';
 import type { CommandContract } from './config-loading.js';
+import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 import type { VerificationCandidate } from './verification-plan.js';
+
+const MUSTFLOW_JSON_MAX_BYTES = 1024 * 1024;
 
 export interface VerificationScheduleEffect {
 	readonly intent: string;
@@ -76,9 +78,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return !!value && typeof value === 'object';
 }
 
-function readJsonFile(filePath: string): unknown {
+function readJsonFile(projectRoot: string, filePath: string): unknown {
 	try {
-		return JSON.parse(readFileSync(filePath, 'utf8'));
+		return JSON.parse(readUtf8FileInsideWithoutSymlinks(projectRoot, filePath, { maxBytes: MUSTFLOW_JSON_MAX_BYTES }));
 	} catch {
 		return null;
 	}
@@ -122,7 +124,7 @@ function readVerifyManifestUndeclaredWriteIntents(projectRoot: string, latest: R
 		return new Set();
 	}
 
-	const manifest = readJsonFile(manifestPath);
+	const manifest = readJsonFile(projectRoot, manifestPath);
 	if (!isObject(manifest) || manifest.command !== 'verify' || !Array.isArray(manifest.receipts)) {
 		return new Set();
 	}
@@ -138,7 +140,7 @@ function readVerifyManifestUndeclaredWriteIntents(projectRoot: string, latest: R
 			continue;
 		}
 
-		const intent = getUndeclaredWriteIntent(readJsonFile(receiptPath));
+		const intent = getUndeclaredWriteIntent(readJsonFile(projectRoot, receiptPath));
 		if (intent) {
 			intents.add(intent);
 		}
@@ -149,7 +151,7 @@ function readVerifyManifestUndeclaredWriteIntents(projectRoot: string, latest: R
 
 function readLatestUndeclaredWriteIntents(projectRoot: string): ReadonlySet<string> {
 	const latestPath = path.join(projectRoot, '.mustflow', 'state', 'runs', 'latest.json');
-	const parsed = readJsonFile(latestPath);
+	const parsed = readJsonFile(projectRoot, latestPath);
 	const directIntent = getUndeclaredWriteIntent(parsed);
 
 	if (directIntent) {

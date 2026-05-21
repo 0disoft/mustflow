@@ -77,6 +77,8 @@ cwd = "."
 timeout_seconds = 420
 stdin = "closed"
 success_exit_codes = [0]
+env_policy = "allowlist"
+env_allowlist = ["MUSTFLOW_TEST_CHANGED_FILES"]
 writes = ["dist/"]
 effects = [
   { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },
@@ -95,6 +97,8 @@ cwd = "."
 timeout_seconds = 300
 stdin = "closed"
 success_exit_codes = [0]
+env_policy = "allowlist"
+env_allowlist = ["MUSTFLOW_TEST_CHANGED_FILES"]
 writes = []
 network = false
 destructive = false
@@ -110,6 +114,8 @@ cwd = "."
 timeout_seconds = 600
 stdin = "closed"
 success_exit_codes = [0]
+env_policy = "allowlist"
+env_allowlist = ["MUSTFLOW_TEST_CHANGED_FILES"]
 writes = ["dist/"]
 effects = [
   { type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" },

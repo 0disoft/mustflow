@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import { toPosixPath } from './filesystem.js';
 import { writeUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
-import { readTomlFile } from './toml.js';
+import { readMustflowTomlFile } from './toml.js';
 
 const DEFAULT_DEPTH = 3;
 const REPO_MAP_DOC_ID = 'repo-map';
@@ -268,6 +268,13 @@ interface GitLsFilesResult {
 	readonly stdout: string;
 }
 
+type GitLsFilesStatus = 'ok' | 'timeout' | 'max_buffer' | 'error';
+
+interface GitFileDiscovery {
+	readonly files: readonly string[];
+	readonly status: GitLsFilesStatus;
+}
+
 interface GitLsFilesOptions {
 	readonly maxBuffer?: number;
 	readonly timeout?: number;
@@ -282,6 +289,16 @@ interface GitLsFilesOptions {
 			readonly windowsHide: true;
 		},
 	) => GitLsFilesResult;
+}
+
+interface RepositoryFiles {
+	readonly files: readonly string[];
+	readonly gitLsFilesStatus: GitLsFilesStatus;
+}
+
+interface AnchorDiscovery {
+	readonly anchors: readonly AnchorFile[];
+	readonly gitLsFilesStatus: GitLsFilesStatus;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -308,7 +325,7 @@ function readMustflowConfig(projectRoot: string): MustflowConfig {
 	}
 
 	try {
-		const parsed = readTomlFile(configPath);
+		const parsed = readMustflowTomlFile(projectRoot, '.mustflow/config/mustflow.toml');
 		return isRecord(parsed) ? (parsed as MustflowConfig) : {};
 	} catch {
 		return {};
@@ -339,7 +356,23 @@ function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 	};
 }
 
-export function listGitFilesForRepoMap(projectRoot: string, options: GitLsFilesOptions = {}): readonly string[] {
+function classifyGitLsFilesFailure(result: GitLsFilesResult): GitLsFilesStatus {
+	const errorRecord = result.error as unknown as { readonly code?: unknown } | undefined;
+	const errorCode = typeof errorRecord?.code === 'string' ? errorRecord.code : undefined;
+	const errorMessage = result.error?.message ?? '';
+
+	if (errorCode === 'ETIMEDOUT' || /timed?\s*out|ETIMEDOUT/iu.test(errorMessage)) {
+		return 'timeout';
+	}
+
+	if (errorCode === 'ENOBUFS' || /maxBuffer|ENOBUFS|buffer/iu.test(errorMessage)) {
+		return 'max_buffer';
+	}
+
+	return 'error';
+}
+
+export function discoverGitFilesForRepoMap(projectRoot: string, options: GitLsFilesOptions = {}): GitFileDiscovery {
 	const spawnGit =
 		options.spawnGit ??
 		((command, args, spawnOptions) =>
@@ -353,13 +386,23 @@ export function listGitFilesForRepoMap(projectRoot: string, options: GitLsFilesO
 	});
 
 	if (result.status !== 0 || result.error) {
-		return [];
+		return {
+			files: [],
+			status: classifyGitLsFilesFailure(result),
+		};
 	}
 
-	return result.stdout
-		.split('\0')
-		.map((line) => toPosixPath(line))
-		.filter(Boolean);
+	return {
+		files: result.stdout
+			.split('\0')
+			.map((line) => toPosixPath(line))
+			.filter(Boolean),
+		status: 'ok',
+	};
+}
+
+export function listGitFilesForRepoMap(projectRoot: string, options: GitLsFilesOptions = {}): readonly string[] {
+	return discoverGitFilesForRepoMap(projectRoot, options).files;
 }
 
 function isAnchorCandidatePath(relativePath: string, priorityPaths: ReadonlySet<string>): boolean {
@@ -401,10 +444,11 @@ function listAnchorCandidateFilesRecursive(
 	return results.sort();
 }
 
-function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: ReadonlySet<string>): string[] {
+function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: ReadonlySet<string>): RepositoryFiles {
 	const files = new Set<string>();
+	const gitFiles = discoverGitFilesForRepoMap(projectRoot);
 
-	for (const relativePath of listGitFilesForRepoMap(projectRoot)) {
+	for (const relativePath of gitFiles.files) {
 		files.add(relativePath);
 	}
 
@@ -412,7 +456,10 @@ function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: R
 		files.add(relativePath);
 	}
 
-	return Array.from(files);
+	return {
+		files: Array.from(files),
+		gitLsFilesStatus: gitFiles.status,
+	};
 }
 
 function shouldIncludePath(relativePath: string): boolean {
@@ -477,8 +524,9 @@ function discoverAnchors(
 	priorityPaths: ReadonlySet<string>,
 	nestedRepositories: readonly NestedRepository[],
 	excludedPrefixes: readonly string[],
-): AnchorFile[] {
-	return getRepositoryFiles(projectRoot, depth, priorityPaths)
+): AnchorDiscovery {
+	const repositoryFiles = getRepositoryFiles(projectRoot, depth, priorityPaths);
+	const anchors = repositoryFiles.files
 		.filter(shouldIncludePath)
 		.filter((relativePath) => !isUnderNestedRepository(relativePath, nestedRepositories))
 		.filter((relativePath) => !isUnderExcludedPrefix(relativePath, excludedPrefixes))
@@ -489,6 +537,11 @@ function discoverAnchors(
 		.filter((anchor): anchor is AnchorFile => Boolean(anchor))
 		.filter((anchor) => priorityPaths.has(anchor.relativePath) || getDirectoryDepth(anchor.relativePath) <= depth)
 		.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+
+	return {
+		anchors,
+		gitLsFilesStatus: repositoryFiles.gitLsFilesStatus,
+	};
 }
 
 function renderAnchorList(anchors: readonly AnchorFile[]): string[] {
@@ -815,12 +868,14 @@ function getSourceFingerprint(
 	depth: number,
 	includeNested: boolean,
 	configuredPriorityPaths: readonly string[],
+	gitLsFilesStatus: GitLsFilesStatus,
 	anchors: readonly AnchorFile[],
 	nestedRepositories: readonly NestedRepository[],
 ): string {
 	const payload = {
 		depth,
 		includeNested,
+		gitLsFilesStatus,
 		priorityPaths: [...configuredPriorityPaths].sort(),
 		anchors: anchors.map((anchor) => anchor.relativePath).sort(),
 		nestedRepositories: nestedRepositories
@@ -845,7 +900,13 @@ function getSourceFingerprint(
 	return `sha256:${digest}`;
 }
 
-function renderRepoMapFrontmatter(anchorCount: number, sourceFingerprint: string): string[] {
+function renderRepoMapFrontmatter(
+	anchorCount: number,
+	sourceFingerprint: string,
+	gitLsFilesStatus: GitLsFilesStatus,
+): string[] {
+	const degraded = gitLsFilesStatus !== 'ok';
+
 	return [
 		'---',
 		`mustflow_doc: ${REPO_MAP_DOC_ID}`,
@@ -855,8 +916,24 @@ function renderRepoMapFrontmatter(anchorCount: number, sourceFingerprint: string
 		`source_policy: ${REPO_MAP_SOURCE_POLICY}`,
 		`privacy_mode: ${REPO_MAP_PRIVACY_MODE}`,
 		`anchor_count: ${anchorCount}`,
+		`degraded: ${degraded ? 'true' : 'false'}`,
+		`git_ls_files_status: ${gitLsFilesStatus}`,
 		`source_fingerprint: "${sourceFingerprint}"`,
 		'---',
+		'',
+	];
+}
+
+function renderSourceQuality(gitLsFilesStatus: GitLsFilesStatus): string[] {
+	if (gitLsFilesStatus === 'ok') {
+		return [];
+	}
+
+	return [
+		'## Source Quality',
+		'',
+		`- \`git ls-files\` status: \`${gitLsFilesStatus}\``,
+		'- Anchor discovery used the bounded recursive fallback. Treat this map as incomplete until regenerated after Git file discovery succeeds.',
 		'',
 	];
 }
@@ -872,7 +949,9 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 	};
 	const nestedRepositories = discoverNestedRepositories(projectRoot, mapConfig, config.workspace);
 	const workspaceRootPrefixes = getWorkspaceRootPrefixes(projectRoot, config.workspace);
-	const anchors = discoverAnchors(projectRoot, depth, priorityPathSet, nestedRepositories, workspaceRootPrefixes);
+	const anchorDiscovery = discoverAnchors(projectRoot, depth, priorityPathSet, nestedRepositories, workspaceRootPrefixes);
+	const anchors = anchorDiscovery.anchors;
+	const gitLsFilesStatus = anchorDiscovery.gitLsFilesStatus;
 	const priorityAnchors = configuredPriorityPaths
 		.map((relativePath) => anchors.find((anchor) => anchor.relativePath === relativePath))
 		.filter((anchor): anchor is AnchorFile => Boolean(anchor));
@@ -883,12 +962,13 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 		depth,
 		mapConfig.includeNested,
 		configuredPriorityPaths,
+		gitLsFilesStatus,
 		anchors,
 		nestedRepositories,
 	);
 
 	return [
-		...renderRepoMapFrontmatter(anchorCount, sourceFingerprint),
+		...renderRepoMapFrontmatter(anchorCount, sourceFingerprint, gitLsFilesStatus),
 		'# REPO_MAP.md',
 		'',
 		'This file is an agent navigation map for the current mustflow root. It is not a full file listing.',
@@ -903,6 +983,7 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 			: []),
 		'- Use `git ls-files` or your editor when you need the complete file list.',
 		'',
+		...renderSourceQuality(gitLsFilesStatus),
 		'## Priority Anchors',
 		'',
 		...(priorityAnchors.length > 0 ? renderAnchorList(priorityAnchors) : ['No mustflow priority anchors were found.']),

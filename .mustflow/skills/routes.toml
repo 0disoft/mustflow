@@ -2,7 +2,7 @@ schema_version = "1"
 
 [routes."artifact-integrity-check"]
 category = "ui_assets"
-route_type = "adjunct"
+route_type = "primary"
 priority = 80
 applies_to_reasons = ["package_metadata_change", "release_risk"]
 
@@ -212,7 +212,7 @@ applies_to_reasons = ["test_change"]
 
 [routes."security-privacy-review"]
 category = "security_privacy"
-route_type = "adjunct"
+route_type = "primary"
 priority = 30
 applies_to_reasons = ["security_change", "privacy_change"]
 

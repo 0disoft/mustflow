@@ -71,23 +71,6 @@ Strong product framing to preserve:
 
 ## Next Patch Work Items
 
-These items were added after the May 2026 user-provided AI reviews about execution reliability,
-indexing performance, file safety, dashboard safety, and command environment policy. They are not
-current product behavior. Before implementing any item, re-check current source, command contracts,
-schemas, tests, documentation, and any external research claims instead of treating this roadmap as
-authority.
-
-Scope note: the `mf run` in-process built-in fast path issue and the first `v2.21.2` reliability patch
-are intentionally not listed here as remaining work. The following issues were already patched and
-verified and should not be re-added unless a fresh regression is found in current source:
-
-- command-effect path containment using case-sensitive relative-path checks where the platform
-  requires them
-- CLI safe read/write/copy helpers delegating to the core safe filesystem boundary
-- local index `indexed_paths` reporting actual indexed file paths instead of document-only paths
-- the immediate `verify --parallel` false-positive mitigation that lets each parallel chunk tolerate
-  the chunk's declared write paths
-
 No remaining patch work items are currently listed.
 
 ## Roadmap Maintenance Rule

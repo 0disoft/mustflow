@@ -665,6 +665,10 @@ export const hiMessages = {
     "{key} के लिए अमान्य मान: {value}",
   "init.error.unsupportedPreference":
     "असमर्थित init preference setting: {key}",
+  "init.error.promptInputTooLarge":
+    "Interactive init stdin input बहुत बड़ा है; अधिकतम {maxBytes} bytes अपेक्षित हैं।",
+  "init.error.promptInputTooManyResponses":
+    "Interactive init stdin input में बहुत अधिक responses हैं; अधिकतम {maxResponses} lines अपेक्षित हैं।",
   "init.prompt.locale": "mustflow दस्तावेज़ कौन सी भाषा उपयोग करें?",
   "init.prompt.profile": "mustflow कौन सा project profile उपयोग करे?",
   "init.prompt.agentLang":

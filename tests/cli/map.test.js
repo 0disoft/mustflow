@@ -168,8 +168,13 @@ test('prints an anchor-based repository map without ignored paths', () => {
 		assert.match(result.stdout, /^source_policy: anchors_only$/m);
 		assert.match(result.stdout, /^privacy_mode: minimal$/m);
 		assert.match(result.stdout, /^anchor_count: [1-9]\d*$/m);
+		assert.match(result.stdout, /^degraded: true$/m);
+		assert.match(result.stdout, /^git_ls_files_status: error$/m);
 		assert.match(result.stdout, /^source_fingerprint: "sha256:[a-f0-9]{64}"$/m);
 		assert.match(result.stdout, /^# REPO_MAP\.md$/m);
+		assert.match(result.stdout, /^## Source Quality$/m);
+		assert.match(result.stdout, /`git ls-files` status: `error`/);
+		assert.match(result.stdout, /bounded recursive fallback/);
 		assert.match(result.stdout, /Priority Anchors/);
 		assert.match(result.stdout, /Directory Anchors/);
 		assert.match(result.stdout, /AGENTS\.md/);
@@ -279,6 +284,8 @@ test('writes REPO_MAP.md when requested', () => {
 		assert.ok(existsSync(repoMapPath));
 		const repoMap = readFileSync(repoMapPath, 'utf8');
 		assert.match(repoMap, /^---\nmustflow_doc: repo-map/m);
+		assert.match(repoMap, /^degraded: true$/m);
+		assert.match(repoMap, /^git_ls_files_status: error$/m);
 		assert.match(repoMap, /^source_fingerprint: "sha256:[a-f0-9]{64}"$/m);
 		assert.match(repoMap, /packages\/api\/package\.json/);
 	} finally {
@@ -370,6 +377,9 @@ test('limits untracked filesystem discovery to anchor candidates', (t) => {
 		const result = runMap(projectPath, ['--stdout']);
 
 		assert.equal(result.status, 0);
+		assert.match(result.stdout, /^degraded: false$/m);
+		assert.match(result.stdout, /^git_ls_files_status: ok$/m);
+		assert.doesNotMatch(result.stdout, /^## Source Quality$/m);
 		assert.match(result.stdout, /src\/README\.md/);
 		assert.match(result.stdout, /\.mustflow\/context\/PROJECT\.md/);
 		assert.doesNotMatch(result.stdout, /src\/untracked-implementation\.ts/);
@@ -380,9 +390,11 @@ test('limits untracked filesystem discovery to anchor candidates', (t) => {
 });
 
 test('bounds git file discovery with timeout and output limits', async () => {
-	const { listGitFilesForRepoMap } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href);
+	const { discoverGitFilesForRepoMap, listGitFilesForRepoMap } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href
+	);
 	const calls = [];
-	const files = listGitFilesForRepoMap(projectRoot, {
+	const discovery = discoverGitFilesForRepoMap(projectRoot, {
 		spawnGit(command, args, options) {
 			calls.push({ command, args, options });
 			return {
@@ -391,7 +403,16 @@ test('bounds git file discovery with timeout and output limits', async () => {
 			};
 		},
 	});
+	const files = listGitFilesForRepoMap(projectRoot, {
+		spawnGit() {
+			return {
+				status: 0,
+				stdout: 'AGENTS.md\0README.md\0',
+			};
+		},
+	});
 
+	assert.deepEqual(discovery, { files: ['AGENTS.md', 'README.md'], status: 'ok' });
 	assert.deepEqual(files, ['AGENTS.md', 'README.md']);
 	assert.equal(calls.length, 1);
 	assert.equal(calls[0].command, 'git');
@@ -404,13 +425,32 @@ test('bounds git file discovery with timeout and output limits', async () => {
 });
 
 test('treats oversized or timed-out git file discovery as unavailable for recursive fallback', async () => {
-	const { listGitFilesForRepoMap } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href);
-	const oversizedFiles = listGitFilesForRepoMap(projectRoot, {
+	const { discoverGitFilesForRepoMap, listGitFilesForRepoMap } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href
+	);
+	const oversizedDiscovery = discoverGitFilesForRepoMap(projectRoot, {
 		spawnGit() {
 			return {
 				status: null,
 				error: Object.assign(new Error('stdout maxBuffer length exceeded'), { code: 'ENOBUFS' }),
 				stdout: 'AGENTS.md\0',
+			};
+		},
+	});
+	const timedOutDiscovery = discoverGitFilesForRepoMap(projectRoot, {
+		spawnGit() {
+			return {
+				status: null,
+				error: Object.assign(new Error('spawnSync git ETIMEDOUT'), { code: 'ETIMEDOUT' }),
+				stdout: 'AGENTS.md\0',
+			};
+		},
+	});
+	const genericFailureDiscovery = discoverGitFilesForRepoMap(projectRoot, {
+		spawnGit() {
+			return {
+				status: 128,
+				stdout: '',
 			};
 		},
 	});
@@ -424,7 +464,9 @@ test('treats oversized or timed-out git file discovery as unavailable for recurs
 		},
 	});
 
-	assert.deepEqual(oversizedFiles, []);
+	assert.deepEqual(oversizedDiscovery, { files: [], status: 'max_buffer' });
+	assert.deepEqual(timedOutDiscovery, { files: [], status: 'timeout' });
+	assert.deepEqual(genericFailureDiscovery, { files: [], status: 'error' });
 	assert.deepEqual(timedOutFiles, []);
 });
 

@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-import { isRecord, type TomlTable } from './config-loading.js';
-import { readTomlFile } from './toml.js';
+import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
 
 const RELEASE_VERSIONING_ACTIVE_FIELDS = [
 	'impact_check',
@@ -191,7 +190,7 @@ function hasGoModuleVersionSource(projectRoot: string): boolean {
 
 export function readDeclaredVersionSources(projectRoot: string): VersionSource[] {
 	try {
-		const versioningConfig = readTomlFile(path.join(projectRoot, VERSIONING_CONFIG_PATH));
+		const versioningConfig = readMustflowOwnedTomlFile(projectRoot, VERSIONING_CONFIG_PATH);
 
 		if (!isRecord(versioningConfig) || !Array.isArray(versioningConfig.sources)) {
 			return [];

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
-import { readTomlFile } from '../toml.js';
+import { readMustflowTomlFile } from '../toml.js';
 import {
 	REQUIRED_FILES,
 } from './constants.js';
@@ -61,7 +61,7 @@ export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedC
 		}
 
 		try {
-			const parsed = readTomlFile(filePath);
+			const parsed = readMustflowTomlFile(projectRoot, relativePath);
 
 			if (!isRecord(parsed)) {
 				issues.push({ message: `${relativePath} must contain a TOML table` });

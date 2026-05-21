@@ -36,14 +36,18 @@ refer to `AGENTS.md` and `.mustflow/config/commands.toml` to implement the most 
 
 ## Selection Convention
 
-- Choose one primary skill that best describes the main work. Prefer the most specific matching
-  skill over a broad architecture or review skill.
+- Choose one main route: a `primary` route for ordinary work or an `authoring` route for
+  mustflow authoring and maintenance work. Prefer the most specific matching skill over a broad
+  architecture or review skill.
+- Treat `authoring` routes as selectable main routes, not adjunct routes. Use them when the task
+  creates or maintains mustflow-owned skills, context files, command contracts, route metadata, or
+  public documentation entries.
 - Add no more than two adjunct skills for secondary risks such as tests, documentation, security,
   privacy, release, or contract drift.
 - Treat event-triggered skills as inactive until the event occurs. For example, read
   `failure-triage` only after a configured command intent or verification step fails.
-- If several primary skills appear to match, choose the one tied to the files and behavior being
-  changed now, then report the skipped plausible skills instead of reading every route.
+- If several main routes appear to match, choose the one tied to the files and behavior being
+  changed now, then report the skipped plausible routes instead of reading every route.
 
 ## Classification Prefilter
 
@@ -78,8 +82,8 @@ test tasks from requiring a full read of architecture-pattern routes. Categories
 
 ## Specific Routes
 
-After choosing a category, choose one primary route and at most two adjunct routes. Event routes
-stay inactive until their event occurs.
+After choosing a category, choose one main route (`primary` or `authoring`) and at most two adjunct
+routes. Event routes stay inactive until their event occurs.
 
 ### Bug and Failure
 

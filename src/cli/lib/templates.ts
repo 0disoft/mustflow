@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 import { parse } from 'smol-toml';
 
+const DEV_TEMPLATE_ROOT_ENV = 'MUSTFLOW_DEV_TEMPLATE_ROOT';
+const ALLOW_DEV_TEMPLATE_ROOT_ENV = 'MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT';
+
 export interface TemplateManifest {
 	readonly id: string;
 	readonly version: string;
@@ -146,17 +149,164 @@ function shouldIncludeTemplatePath(relativePath: string, selectedSkills: readonl
 	return selectedSkills.includes(skillName);
 }
 
+const SKILL_INDEX_SKILL_PATH_PATTERN = /`\.mustflow\/skills\/([^/]+)\/SKILL\.md`/u;
+const SKILL_INDEX_HEADING_PATTERN = /^(#{2,3})\s+(.+?)\s*$/u;
+const SKILL_INDEX_ROUTE_CATEGORY_NAMES = [
+	'Bug and Failure',
+	'General Code Change',
+	'Tests and Regression',
+	'Documentation and Release',
+	'Security and Privacy',
+	'Data and External Systems',
+	'UI and Assets',
+	'Architecture Patterns',
+	'Workflow and Contract Maintenance',
+] as const;
+
+function skillNameFromSkillIndexLine(line: string): string | undefined {
+	return SKILL_INDEX_SKILL_PATH_PATTERN.exec(line)?.[1];
+}
+
+function parseMarkdownTableCells(line: string): string[] | undefined {
+	const trimmedLine = line.trim();
+
+	if (!trimmedLine.startsWith('|') || !trimmedLine.endsWith('|')) {
+		return undefined;
+	}
+
+	return trimmedLine
+		.slice(1, -1)
+		.split('|')
+		.map((cell) => cell.trim());
+}
+
+function isMarkdownTableDivider(cells: readonly string[]): boolean {
+	return cells.every((cell) => /^:?-{3,}:?$/u.test(cell));
+}
+
+function isMarkdownTableHeading(cells: readonly string[]): boolean {
+	const firstCell = cells[0] ?? '';
+
+	return [
+		'Category',
+		'Classification evidence',
+		'Trigger',
+	].includes(firstCell);
+}
+
+function referencedSkillIndexCategories(text: string): readonly string[] {
+	return SKILL_INDEX_ROUTE_CATEGORY_NAMES.filter((categoryName) => text.includes(categoryName));
+}
+
+function collectSelectedSkillIndexCategories(lines: readonly string[], selectedSkillSet: ReadonlySet<string>): Set<string> {
+	const selectedCategories = new Set<string>();
+	let inSpecificRoutes = false;
+	let currentCategory: string | undefined;
+
+	for (const line of lines) {
+		const heading = SKILL_INDEX_HEADING_PATTERN.exec(line);
+
+		if (heading) {
+			const [, level, title] = heading;
+
+			if (level === '##') {
+				inSpecificRoutes = title === 'Specific Routes';
+				currentCategory = undefined;
+				continue;
+			}
+
+			if (inSpecificRoutes && level === '###') {
+				currentCategory = title;
+			}
+		}
+
+		const skillName = skillNameFromSkillIndexLine(line);
+
+		if (inSpecificRoutes && currentCategory && skillName && selectedSkillSet.has(skillName)) {
+			selectedCategories.add(currentCategory);
+		}
+	}
+
+	return selectedCategories;
+}
+
+function shouldKeepSkillIndexTableRow(
+	line: string,
+	currentSection: string | undefined,
+	selectedCategories: ReadonlySet<string>,
+): boolean {
+	const cells = parseMarkdownTableCells(line);
+
+	if (!cells || isMarkdownTableDivider(cells) || isMarkdownTableHeading(cells)) {
+		return true;
+	}
+
+	if (currentSection === 'Route Category Gate') {
+		const categoryName = cells[0] ?? '';
+
+		return !SKILL_INDEX_ROUTE_CATEGORY_NAMES.includes(categoryName as (typeof SKILL_INDEX_ROUTE_CATEGORY_NAMES)[number]) ||
+			selectedCategories.has(categoryName);
+	}
+
+	if (currentSection === 'Classification Prefilter') {
+		const categoryNames = referencedSkillIndexCategories(cells.join(' '));
+
+		return categoryNames.length === 0 || categoryNames.some((categoryName) => selectedCategories.has(categoryName));
+	}
+
+	return true;
+}
+
 function filterSkillIndexContent(content: string, selectedSkills: readonly string[]): string {
 	const selectedSkillSet = new Set(selectedSkills);
+	const lines = content.split(/\r?\n/u);
+	const selectedCategories = collectSelectedSkillIndexCategories(lines, selectedSkillSet);
+	const filteredLines: string[] = [];
+	let currentSection: string | undefined;
+	let skipCurrentSpecificCategory = false;
 
-	return content
-		.split(/\r?\n/u)
-		.filter((line) => {
-			const match = /`\.mustflow\/skills\/([^/]+)\/SKILL\.md`/u.exec(line);
+	for (const line of lines) {
+		const heading = SKILL_INDEX_HEADING_PATTERN.exec(line);
 
-			return !match || selectedSkillSet.has(match[1] ?? '');
-		})
-		.join('\n');
+		if (heading) {
+			const [, level, title] = heading;
+
+			if (level === '##') {
+				currentSection = title;
+				skipCurrentSpecificCategory = false;
+				filteredLines.push(line);
+				continue;
+			}
+
+			if (currentSection === 'Specific Routes' && level === '###') {
+				skipCurrentSpecificCategory = !selectedCategories.has(title);
+
+				if (!skipCurrentSpecificCategory) {
+					filteredLines.push(line);
+				}
+
+				continue;
+			}
+		}
+
+		if (skipCurrentSpecificCategory) {
+			continue;
+		}
+
+		const skillName = skillNameFromSkillIndexLine(line);
+
+		if (skillName && !selectedSkillSet.has(skillName)) {
+			continue;
+		}
+
+		if (!shouldKeepSkillIndexTableRow(line, currentSection, selectedCategories)) {
+			continue;
+		}
+
+		filteredLines.push(line);
+	}
+
+	return filteredLines.join('\n').replace(/\n{3,}/gu, '\n\n');
 }
 
 function filterSkillRouteMetadataContent(content: string, selectedSkills: readonly string[]): string {
@@ -271,9 +421,14 @@ function readManifest(manifestPath: string): TemplateManifest {
 }
 
 export function getDefaultTemplate(): TemplatePaths {
-	const templateRoot = path.resolve(
-		process.env.MUSTFLOW_DEV_TEMPLATE_ROOT ?? fileURLToPath(new URL('../../../templates/default', import.meta.url)),
-	);
+	const packagedTemplateRoot = fileURLToPath(new URL('../../../templates/default', import.meta.url));
+	const templateRootOverride = process.env[DEV_TEMPLATE_ROOT_ENV];
+	const selectedTemplateRoot =
+		templateRootOverride && process.env[ALLOW_DEV_TEMPLATE_ROOT_ENV] === '1'
+			? templateRootOverride
+			: packagedTemplateRoot;
+
+	const templateRoot = path.resolve(selectedTemplateRoot);
 	const manifestPath = path.join(templateRoot, 'manifest.toml');
 	const manifest = readManifest(manifestPath);
 

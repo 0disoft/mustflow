@@ -7,6 +7,7 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.max_output_bytes_exceeds_limit'
 	| 'mustflow.command_contract.oneshot_stdin_not_closed'
 	| 'mustflow.command_contract.long_running_agent_allowed'
+	| 'mustflow.command_contract.agent_shell_requires_allow'
 	| 'mustflow.command_contract.executable_source_missing'
 	| 'mustflow.command_contract.shell_background_pattern'
 	| 'mustflow.command_contract.long_running_command_pattern'
@@ -45,6 +46,11 @@ export type CheckIssueId =
 	| 'mustflow.skill.route_metadata_category_mismatch'
 	| 'mustflow.skill.route_metadata_unknown_reference'
 	| 'mustflow.skill.route_metadata_asymmetric_exclusion'
+	| 'mustflow.skill.template_profile_empty_category'
+	| 'mustflow.skill.template_profile_dead_route'
+	| 'mustflow.skill.template_profile_missing_main_route'
+	| 'mustflow.skill.template_profile_command_intent_drift'
+	| 'mustflow.skill.template_profile_metadata_mismatch'
 	| 'mustflow.skill.resource_unknown_command_intent'
 	| 'mustflow.source_anchor.invalid_format'
 	| 'mustflow.source_anchor.duplicate_id'
@@ -78,6 +84,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.max_output_bytes_exceeds_limit', /^\[commands\.(?:defaults|intents\.[^\]]+)\]\.max_output_bytes must be less than or equal to \d+ per output stream$/u],
 	['mustflow.command_contract.oneshot_stdin_not_closed', /^Oneshot intent [^\s]+ must set stdin = "closed"$/u],
 	['mustflow.command_contract.long_running_agent_allowed', /^Long-running intent [^\s]+ must not use run_policy = "agent_allowed"$/u],
+	['mustflow.command_contract.agent_shell_requires_allow', /^Agent-runnable shell intent [^\s]+ must set allow_shell = true$/u],
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
 	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
 	['mustflow.command_contract.long_running_command_pattern', /^Intent [^\s]+ contains a blocked long-running or background command pattern$/u],
@@ -88,7 +95,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.effects_invalid', /^(?:Strict: )?(?:\[commands\.(?:resources|intents\.[^\]]+\.effects)[^\]]*\]|Command effect for intent [^\s]+ must define path, paths, or lock)/u],
 	['mustflow.command_contract.effect_path_escape', /^Strict: Command effect path must stay inside the current root:/u],
 	['mustflow.command_contract.shared_writes_without_effects', /^Strict warning: configured agent-runnable intents .+ share path:.+ through writes without explicit effects or resource locks$/u],
-	['mustflow.command_contract.broad_env_inheritance', /^Strict warning: configured agent-runnable intent [^\s]+ (?:implicitly inherits the host environment|uses env_policy = "inherit")/u],
+	['mustflow.command_contract.broad_env_inheritance', /^Strict(?: warning)?: configured agent-runnable intent [^\s]+ (?:implicitly inherits the host environment|uses env_policy = "inherit")/u],
 	['mustflow.command_contract.project_local_bin_bare_executable', /^Strict warning: configured agent-runnable intent [^\s]+ uses bare executable "[^"]+" that matches project-local node_modules\/\.bin/u],
 	['mustflow.prompt_cache.required', /^Strict: \[prompt_cache\] table is required$/u],
 	['mustflow.prompt_cache.volatile_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include volatile path /u],
@@ -119,6 +126,11 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.skill.route_metadata_category_mismatch', /^Strict: \.mustflow\/skills\/INDEX\.md route "[^"]+" must appear under the .+ category section from \.mustflow\/skills\/routes\.toml$/u],
 	['mustflow.skill.route_metadata_unknown_reference', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" references unknown mutually exclusive route "[^"]+"$/u],
 	['mustflow.skill.route_metadata_asymmetric_exclusion', /^Strict warning: \.mustflow\/skills\/routes\.toml route "[^"]+" lists "[^"]+" as mutually exclusive but the reverse route does not$/u],
+	['mustflow.skill.template_profile_empty_category', /^Strict: template profile "[^"]+" (?:skill index category ".+" has no route rows|route category gate references ".+" without route rows)$/u],
+	['mustflow.skill.template_profile_dead_route', /^Strict: template profile "[^"]+" (?:\.mustflow\/skills\/INDEX\.md route "[^"]+" points to a skill not installed by that profile|\.mustflow\/skills\/routes\.toml route "[^"]+" points to a skill not installed by that profile|skill "[^"]+" is installed but not listed in \.mustflow\/skills\/INDEX\.md)$/u],
+	['mustflow.skill.template_profile_missing_main_route', /^Strict: template profile "[^"]+" skill category ".+" must include at least one primary or authoring route$/u],
+	['mustflow.skill.template_profile_command_intent_drift', /^Strict: template profile "[^"]+" \.mustflow\/skills\/INDEX\.md route "[^"]+" references (?:unknown command intent "[^"]+"|command intent "[^"]+" not declared by the skill frontmatter)$/u],
+	['mustflow.skill.template_profile_metadata_mismatch', /^Strict: template profile "[^"]+" (?:\.mustflow\/skills\/routes\.toml is missing metadata for route "[^"]+"|\.mustflow\/skills\/routes\.toml route "[^"]+" is not listed in \.mustflow\/skills\/INDEX\.md|\.mustflow\/skills\/INDEX\.md route "[^"]+" must appear under the .+ category section from \.mustflow\/skills\/routes\.toml)$/u],
 	['mustflow.skill.resource_unknown_command_intent', /^Strict: \.mustflow\/skills\/[^/]+\/resources\.toml script [^\s]+ references unknown command intent "[^"]+"$/u],
 	['mustflow.source_anchor.invalid_format', /^Strict: source anchor .+ has invalid format:/u],
 	['mustflow.source_anchor.duplicate_id', /^Strict: source anchor id "[^"]+" is duplicated:/u],

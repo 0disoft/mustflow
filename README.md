@@ -147,7 +147,9 @@ mustflow is not an automatic project editor and is not tied to a single agent pr
 
 ## Installed files
 
-`mf init` installs only the agent workflow into the current directory.
+`mf init` installs only the agent workflow into the current directory. The exact skill files depend
+on the selected profile; run `mf init --dry-run --profile <profile>` to preview the concrete plan
+for a project before writing files.
 
 ```text
 your-project/
@@ -166,82 +168,14 @@ your-project/
    │  └─ agent-workflow.md
    └─ skills/
       ├─ INDEX.md
-      ├─ artifact-integrity-check/
-      │  └─ SKILL.md
-      ├─ behavior-preserving-refactor/
-      │  └─ SKILL.md
-      ├─ code-review/
-      │  └─ SKILL.md
-      ├─ codebase-orientation/
-      │  └─ SKILL.md
-      ├─ contract-sync-check/
-      │  └─ SKILL.md
-      ├─ date-number-audit/
-      │  └─ SKILL.md
-      ├─ database-change-safety/
-      │  └─ SKILL.md
-      ├─ dependency-reality-check/
-      │  └─ SKILL.md
-      ├─ diff-risk-review/
-      │  └─ SKILL.md
-      ├─ docs-prose-review/
-      │  └─ SKILL.md
-      ├─ docs-update/
-      │  └─ SKILL.md
-      ├─ external-prompt-injection-defense/
-      │  └─ SKILL.md
-      ├─ external-skill-intake/
-      │  └─ SKILL.md
-      ├─ failure-triage/
-      │  └─ SKILL.md
-      ├─ instruction-conflict-scope-check/
-      │  └─ SKILL.md
-      ├─ migration-safety-check/
-      │  └─ SKILL.md
-      ├─ multi-agent-work-coordination/
-      │  └─ SKILL.md
-      ├─ performance-budget-check/
-      │  └─ SKILL.md
-      ├─ project-context-authoring/
-      │  └─ SKILL.md
-      ├─ pattern-scout/
-      │  └─ SKILL.md
-      ├─ repo-improvement-loop/
-      │  └─ SKILL.md
-      ├─ requirement-regression-guard/
-      │  └─ SKILL.md
-      ├─ repro-first-debug/
-      │  └─ SKILL.md
-      ├─ security-privacy-review/
-      │  └─ SKILL.md
-      ├─ source-freshness-check/
-      │  └─ SKILL.md
-      ├─ structure-discovery-gate/
-      │  └─ SKILL.md
-      ├─ security-regression-tests/
-      │  └─ SKILL.md
-      ├─ skill-authoring/
-      │  └─ SKILL.md
-      ├─ test-design-guard/
-      │  └─ SKILL.md
-      ├─ test-maintenance/
-      │  └─ SKILL.md
-      ├─ vertical-slice-tdd/
-      │  └─ SKILL.md
-      ├─ llm-service-ux-review/
-      │  └─ SKILL.md
-      ├─ search-ad-content-authoring/
-      │  └─ SKILL.md
-      ├─ ui-quality-gate/
-      │  └─ SKILL.md
-      ├─ visual-review-artifact/
-      │  ├─ SKILL.md
-      │  ├─ resources.toml
-      │  └─ assets/
-      │     └─ review-template.html
-      └─ web-asset-optimization/
+      ├─ routes.toml
+      └─ <profile-selected-skill>/
          └─ SKILL.md
 ```
+
+Profiles select the installed skill surface. The package can include optional skill files that are
+not copied into every project profile. Non-English workflow documents are localized when available;
+skill procedures currently fall back to the canonical English skill files.
 
 The default template does not create project-owned root documents or contract files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, or `openapi.yaml`. It also does not create CI configuration, general `docs/`, or general `skills/`. User projects may already use those names for their own files.
 

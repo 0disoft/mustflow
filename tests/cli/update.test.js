@@ -329,6 +329,7 @@ test('detects bundled template changes without local file changes', () => {
 
 		const result = runCli(projectPath, ['update', '--dry-run'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 
 		assert.equal(result.status, 0);
@@ -358,6 +359,7 @@ test('prints bounded update diffs in text dry-run output without writing files',
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--diff'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 
 		assert.equal(result.status, 0);
@@ -392,6 +394,7 @@ test('prints update dry-run diff previews as json for update and create actions'
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const plan = JSON.parse(result.stdout);
 		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
@@ -435,6 +438,7 @@ test('truncates update diff previews with an explicit marker', () => {
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const plan = JSON.parse(result.stdout);
 		const agentsItem = plan.items.find((item) => item.relativePath === 'AGENTS.md');
@@ -533,11 +537,13 @@ test('applies safe template updates and refreshes the manifest lock', () => {
 
 		const result = runCli(projectPath, ['update', '--apply'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const currentAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
 		const followUp = runCli(projectPath, ['update', '--dry-run', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const followUpPlan = JSON.parse(followUp.stdout);
 
@@ -571,6 +577,7 @@ test('applies newly added template files when local files are clean', () => {
 
 		const result = runCli(projectPath, ['update', '--apply', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const output = JSON.parse(result.stdout);
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
@@ -638,6 +645,7 @@ test('blocks template create through a symlink target', (t) => {
 
 		const result = runCli(projectPath, ['update', '--apply', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const output = JSON.parse(result.stdout);
 		const item = output.items.find((candidate) => candidate.relativePath === newRelativePath);
@@ -678,6 +686,7 @@ test('blocks template update through a symlink target', (t) => {
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const output = JSON.parse(result.stdout);
 		const item = output.items.find((candidate) => candidate.relativePath === 'AGENTS.md');
@@ -710,6 +719,7 @@ test('refuses template creates outside the mustflow install surface during updat
 
 		const result = runCli(projectPath, ['update', '--dry-run', '--json'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 		const output = JSON.parse(result.stdout);
 
@@ -740,6 +750,7 @@ test('refuses apply when installed files have local changes', () => {
 
 		const result = runCli(projectPath, ['update', '--apply'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 
 		assert.equal(result.status, 1);
@@ -776,6 +787,7 @@ test('refuses apply when a new template file collides with an untracked local fi
 
 		const result = runCli(projectPath, ['update', '--apply'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});
 
 		assert.equal(result.status, 1);

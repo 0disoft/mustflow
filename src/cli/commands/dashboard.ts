@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -58,6 +58,11 @@ import {
 } from '../lib/local-index.js';
 import { readPackageMetadata } from '../lib/package-info.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	MUSTFLOW_JSON_MAX_BYTES,
+	readMustflowTextFile,
+	readMustflowTextFileIfExists,
+} from '../lib/mustflow-read.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { detectVersionSources } from '../../core/version-sources.js';
@@ -91,6 +96,7 @@ const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const AGENTS_RELATIVE_PATH = 'AGENTS.md';
 const STATUS_BLOCK_CACHE_TTL_MS = 750;
+const STATUS_SIGNATURE_HASH_MAX_BYTES = 1024 * 1024;
 
 type DashboardStatusBlockName =
 	| 'manifest'
@@ -118,7 +124,12 @@ function dashboardStatusBlockCacheKey(projectRoot: string, blockName: DashboardS
 function readFileSignature(filePath: string): string {
 	try {
 		const stat = statSync(filePath);
-		return `${stat.mtimeMs}:${stat.size}`;
+		if (!stat.isFile() || stat.size > STATUS_SIGNATURE_HASH_MAX_BYTES) {
+			return `${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}:unhashed`;
+		}
+
+		const digest = createHash('sha256').update(readFileSync(filePath)).digest('hex');
+		return `${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}:${digest}`;
 	} catch {
 		return 'missing';
 	}
@@ -788,10 +799,12 @@ function renderSkillsResponse(projectRoot: string): DashboardStatusSnapshot['ski
 		};
 	}
 
-	const routes = parseSkillIndexRoutes(readFileSync(indexPath, 'utf8')).map((route) => {
+	const indexContent = readMustflowTextFile(projectRoot, SKILL_INDEX_RELATIVE_PATH);
+	const routes = parseSkillIndexRoutes(indexContent).map((route) => {
 		const skillPath = path.join(projectRoot, ...route.skillPath.split('/'));
-		const exists = existsSync(skillPath);
-		const declaredCommandIntents = exists ? readFrontmatterList(readFileSync(skillPath, 'utf8'), 'command_intents') : [];
+		const skillContent = readMustflowTextFileIfExists(projectRoot, route.skillPath);
+		const exists = skillContent !== null && existsSync(skillPath);
+		const declaredCommandIntents = skillContent ? readFrontmatterList(skillContent, 'command_intents') : [];
 		const sortedRouteIntents = [...route.commandIntents].sort((left, right) => left.localeCompare(right));
 		const sortedDeclaredIntents = [...declaredCommandIntents].sort((left, right) => left.localeCompare(right));
 
@@ -902,7 +915,9 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 	}
 
 	try {
-		const receipt = JSON.parse(readFileSync(receiptPath, 'utf8')) as unknown;
+		const receipt = JSON.parse(
+			readMustflowTextFile(projectRoot, LATEST_RUN_RELATIVE_PATH, { maxBytes: MUSTFLOW_JSON_MAX_BYTES }),
+		) as unknown;
 		if (!isRecord(receipt)) {
 			throw new Error('Run receipt must be a JSON object.');
 		}

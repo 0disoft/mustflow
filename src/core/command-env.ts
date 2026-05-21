@@ -5,7 +5,7 @@ import { readString, readStringArray, type CommandContract, type TomlTable } fro
 export type CommandEnvPolicy = 'inherit' | 'minimal' | 'allowlist';
 
 export const COMMAND_ENV_POLICIES = new Set<CommandEnvPolicy>(['inherit', 'minimal', 'allowlist']);
-export const DEFAULT_COMMAND_ENV_POLICY: CommandEnvPolicy = 'inherit';
+export const DEFAULT_COMMAND_ENV_POLICY: CommandEnvPolicy = 'minimal';
 
 const BASE_MINIMAL_ENV_KEYS = [
 	'CI',

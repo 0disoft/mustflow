@@ -4,8 +4,7 @@ import path from 'node:path';
 function hasMustflowMarker(directoryPath: string): boolean {
 	return (
 		existsSync(path.join(directoryPath, '.mustflow', 'config', 'mustflow.toml')) ||
-		existsSync(path.join(directoryPath, '.mustflow', 'config', 'commands.toml')) ||
-		existsSync(path.join(directoryPath, '.mustflow'))
+		existsSync(path.join(directoryPath, '.mustflow', 'config', 'commands.toml'))
 	);
 }
 

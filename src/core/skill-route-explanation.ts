@@ -1,7 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
+import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { parseSkillIndexRoutes, type SkillIndexRoute } from './skill-route-alignment.js';
+
+const MUSTFLOW_TEXT_MAX_BYTES = 1024 * 1024;
 
 export interface SkillRouteSummary {
 	readonly skill: string;
@@ -131,12 +134,16 @@ function routeToSummary(route: SkillIndexRoute, skillContent: string | null): Sk
 
 export function explainSkillRoute(projectRoot: string, target: string): SkillRouteDecision {
 	const indexPath = path.join(projectRoot, ...SKILL_INDEX_PATH.split('/'));
-	const indexContent = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
+	const indexContent = existsSync(indexPath)
+		? readUtf8FileInsideWithoutSymlinks(projectRoot, indexPath, { maxBytes: MUSTFLOW_TEXT_MAX_BYTES })
+		: '';
 	const routes = parseSkillIndexRoutes(indexContent);
 
 	for (const route of routes) {
 		const absoluteSkillPath = path.join(projectRoot, ...route.skillPath.split('/'));
-		const skillContent = existsSync(absoluteSkillPath) ? readFileSync(absoluteSkillPath, 'utf8') : null;
+		const skillContent = existsSync(absoluteSkillPath)
+			? readUtf8FileInsideWithoutSymlinks(projectRoot, absoluteSkillPath, { maxBytes: MUSTFLOW_TEXT_MAX_BYTES })
+			: null;
 
 		if (!targetMatchesRoute(target, route, skillContent)) {
 			continue;

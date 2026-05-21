@@ -2,13 +2,13 @@ import { existsSync } from 'node:fs';
 
 import {
 	isRecord,
+	readMustflowOwnedTomlFile,
 	readStringArray,
 	resolveMustflowConfigPath,
 	type CommandContract,
 	type TomlTable,
 } from './config-loading.js';
 import type { ChangeClassification, ChangeClassificationReport } from './change-classification.js';
-import { readTomlFile } from './toml.js';
 import {
 	classifyVerificationCandidate,
 	type VerificationCandidate,
@@ -165,7 +165,7 @@ function readRules(projectRoot: string): { readonly status: 'missing' | 'invalid
 	}
 
 	try {
-		const parsed = readTomlFile(configPath);
+		const parsed = readMustflowOwnedTomlFile(projectRoot, TEST_SELECTION_CONFIG_RELATIVE_PATH);
 		if (!isRecord(parsed) || parsed.schema_version !== '1' || !Array.isArray(parsed.rules)) {
 			return {
 				status: 'invalid',

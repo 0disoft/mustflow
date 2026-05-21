@@ -83,6 +83,7 @@ Agents may only run intents with `status = "configured"`, and status alone is no
   development servers are rejected for agent-runnable one-shot intents.
 - `mode`: Set to `shell` only when shell syntax is required.
 - `cmd`: Shell command string used when `mode = "shell"`.
+- `allow_shell`: Required as `true` before a shell-mode intent can use `run_policy = "agent_allowed"`.
 - `cwd`: Working directory for the command.
 - `timeout_seconds`: Command timeout.
 - `kill_after_seconds`: Optional per-intent process-cleanup wait time after timeout.
@@ -132,7 +133,8 @@ Installed templates use `env_policy = "minimal"` by default. Existing configs wi
 
 Because the project-local `node_modules/.bin` path is removed from `PATH`, do not declare bare local tool names such as `eslint`, `tsc`, or `vitest` as the executable. Use a package-manager mediated command instead, for example `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, or `yarn exec eslint ...`. `mf check --strict` warns when an agent-runnable intent uses a bare executable name that matches a file under the project-local `.bin` directory.
 
-If a shell is required, set `mode = "shell"` and `cmd`, then declare the command impact and write paths.
+If a shell is required for an agent-runnable intent, set `mode = "shell"`, `cmd`, and
+`allow_shell = true`, then declare the command impact and write paths. Prefer `argv` when possible.
 
 For `unknown`, `not_applicable`, `manual_only`, and `disabled`, agents must not infer a replacement command.
 
@@ -243,7 +245,7 @@ stop_instruction = "Stop the terminal process with Ctrl-C."
 related_oneshot_checks = ["test_fast"]
 ```
 
-`mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` is a positive integer, a command is declared through `argv` or `mode = "shell"` plus `cmd`, and `cwd` stays inside the current mustflow root.
+`mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` is a positive integer, a command is declared through `argv` or `mode = "shell"` plus `cmd`, shell mode also sets `allow_shell = true`, and `cwd` stays inside the current mustflow root.
 Upon completion, it logs the latest run record to `.mustflow/state/runs/latest.json`; when run with `--json`, it also outputs the same record to standard output.
 
 ## Built-In Intents

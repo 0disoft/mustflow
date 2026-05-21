@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { cloneProjectFixture, createTempProject, initProject, projectRoot, removeTempProject, runCli } from './helpers/cli-harness.js';
 
 function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
@@ -31,6 +31,47 @@ function assertHasIssueDetail(check, expectedId, expectedMessage) {
 		`missing issue detail ${expectedId}`,
 	);
 }
+
+function trySymlink(targetPath, linkPath) {
+	try {
+		symlinkSync(targetPath, linkPath, 'file');
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+test('strict check rejects symlinked skill index reads', (t) => {
+	const projectPath = createTempProject();
+	const outsidePath = createTempProject('mustflow-outside-');
+
+	try {
+		initProject(projectPath);
+		const skillIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
+		const outsideIndexPath = path.join(outsidePath, 'INDEX.md');
+		writeFileSync(outsideIndexPath, readText(skillIndexPath));
+		unlinkSync(skillIndexPath);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		if (!trySymlink(outsideIndexPath, skillIndexPath)) {
+			t.skip('file symlinks are unavailable in this environment');
+			return;
+		}
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes('Strict: .mustflow/skills/INDEX.md could not be read safely:'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
+	}
+});
 
 test('strict check fails unknown skill command intent metadata references', () => {
 	const projectPath = createTempProject();
@@ -261,6 +302,44 @@ test('strict check fails skill route category section drift', () => {
 		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_category_mismatch');
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails generated template profiles without selectable main routes', () => {
+	const projectPath = createTempProject();
+	const templatePath = cloneProjectFixture(path.join(projectRoot, 'templates', 'default'), 'mustflow-template-');
+
+	try {
+		initProject(projectPath);
+		const routesPath = path.join(templatePath, 'locales', 'en', '.mustflow', 'skills', 'routes.toml');
+		const routes = readText(routesPath).replace(
+			/(\[routes\."security-privacy-review"\]\ncategory = "security_privacy"\n)route_type = "primary"/u,
+			'$1route_type = "adjunct"',
+		);
+		writeFileSync(routesPath, routes);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json'], {
+			env: {
+				...process.env,
+				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
+			},
+		});
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: template profile "minimal" skill category "Security and Privacy" must include at least one primary or authoring route',
+			),
+		);
+		assertHasIssueDetail(check, 'mustflow.skill.template_profile_missing_main_route');
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(templatePath);
 	}
 });
 

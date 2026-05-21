@@ -135,6 +135,7 @@
           "items": { "type": "string" }
         },
         "cmd": { "type": "string" },
+        "allow_shell": { "type": "boolean" },
         "cwd": { "type": "string" },
         "timeout_seconds": { "type": "integer" },
         "kill_after_seconds": { "type": "integer" },

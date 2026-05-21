@@ -665,6 +665,10 @@ Lee estos archivos antes de trabajar:
     "Valor no valido para {key}: {value}",
   "init.error.unsupportedPreference":
     "Ajuste de preferencia de inicio no admitido: {key}",
+  "init.error.promptInputTooLarge":
+    "La entrada estándar de init interactivo es demasiado grande; se esperaban como máximo {maxBytes} bytes.",
+  "init.error.promptInputTooManyResponses":
+    "La entrada estándar de init interactivo tiene demasiadas respuestas; se esperaban como máximo {maxResponses} líneas.",
   "init.prompt.locale": "¿Qué idioma deben usar los documentos mustflow?",
   "init.prompt.profile": "¿Qué perfil de proyecto debe usar mustflow?",
   "init.prompt.agentLang":

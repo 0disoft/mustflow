@@ -157,6 +157,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /### General Code Change/);
 		assert.match(skillsIndex, /### Tests and Regression/);
 		assert.match(skillsIndex, /### Architecture Patterns/);
+		assert.doesNotMatch(skillsIndex, /\| UI and Assets \|/);
+		assert.doesNotMatch(skillsIndex, /### UI and Assets/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
@@ -232,13 +234,38 @@ test('refuses template creates outside the mustflow install surface during init'
 		);
 
 		const result = runInit(projectPath, ['--yes'], {
-			env: { ...process.env, MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath },
+			env: { ...process.env, MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath, MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1' },
 		});
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /outside the mustflow-managed install surface/);
 		assert.equal(existsSync(path.join(projectPath, 'src', 'anchored.ts')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml')), false);
+	} finally {
+		removeTempProject(projectPath);
+		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('ignores development template root overrides without explicit opt-in', () => {
+	const projectPath = createTempProject();
+	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
+
+	try {
+		cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+		addTemplateCreate(
+			templatePath,
+			'src/anchored.ts',
+			'// mf:anchor app.generated\nexport const generated = true;\n',
+		);
+
+		const result = runInit(projectPath, ['--yes'], {
+			env: { ...process.env, MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath },
+		});
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml')));
+		assert.equal(existsSync(path.join(projectPath, 'src', 'anchored.ts')), false);
 	} finally {
 		removeTempProject(projectPath);
 		rmSync(templatePath, { recursive: true, force: true });
@@ -318,6 +345,8 @@ test('applies profile locale agent language and product locale preferences', () 
 		assert.match(skillsIndex, /\.mustflow\/skills\/search-ad-content-authoring\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/ui-quality-gate\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/visual-review-artifact\/SKILL\.md/);
+		assert.match(skillsIndex, /\| UI and Assets \|/);
+		assert.match(skillsIndex, /### UI and Assets/);
 		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md/);
 
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
@@ -638,6 +667,38 @@ test('interactive init applies selected advanced preferences', () => {
 		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_commit = true/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "en"/);
 		assert.match(preferences, /\[reporting\.commit_suggestion\]\n(?:.*\n)*?enabled = false/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('interactive init rejects oversized piped prompt input before writing files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--interactive'], {
+			input: 'x'.repeat(16 * 1024 + 1),
+		});
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /stdin input is too large/);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('interactive init rejects too many piped prompt responses before writing files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--interactive'], {
+			input: Array.from({ length: 65 }, () => '1').join('\n'),
+		});
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /too many responses/);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow')), false);
 	} finally {
 		removeTempProject(projectPath);
 	}
