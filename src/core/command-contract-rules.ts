@@ -12,6 +12,7 @@ const INTERPRETER_EVALUATION_FLAGS = new Map<string, ReadonlySet<string>>([
 	['py', new Set(['-c'])],
 	['ruby', new Set(['-e'])],
 	['perl', new Set(['-e'])],
+	['julia', new Set(['-e', '--eval'])],
 ]);
 const INTERPRETER_LONG_RUNNING_MODULES = new Map<string, ReadonlySet<string>>([
 	['python', new Set(['http.server', 'simplehttpserver'])],
@@ -43,6 +44,14 @@ export const LONG_RUNNING_COMMAND_TEXT_PATTERNS = [
 	/\bnext\s+(?:dev|start)\b/iu,
 	/\bturbo\s+dev\b/iu,
 	/\btsx\s+(?:watch|--watch|-w)\b/iu,
+	/\bcargo\s+(?:watch|tauri\s+dev)\b/iu,
+	/\bzig\s+build\b(?=.*(?:--watch|-w|\bwatch\b))/iu,
+	/\btauri\s+dev\b/iu,
+	/\bgh\s+(?:run\s+watch|codespace\s+ssh|codespace\s+logs\b.*(?:--follow|-f))\b/iu,
+	/\bdeno\s+(?:serve|task\s+(?:dev|start|serve|watch|preview)|run\b.*(?:--watch|-w))\b/iu,
+	/\bflutter\s+(?:run|attach|logs)\b/iu,
+	/\bdart\s+run\s+build_runner\s+watch\b/iu,
+	/\bgo\s+run\s+(?:(?:github\.com\/(?:air-verse|cosmtrek)\/air)(?:\/v\d+)?|.*\bair\b)/iu,
 	/\b(?:python|python3|py)\s+-m\s+(?:http\.server|SimpleHTTPServer)\b/u,
 	/\b(?:nohup|disown)\b/iu,
 	/(?:^|[^&])&(?!&)\s*$/u,
@@ -161,6 +170,10 @@ function readPackageExecCommand(command: string, args: readonly string[]): { rea
 	return null;
 }
 
+function hasWatchFlag(args: readonly string[]): boolean {
+	return args.some((arg) => arg === '--watch' || arg === '-w' || arg === 'watch' || arg.startsWith('--watch='));
+}
+
 function longRunningExecutableDetail(command: string, args: readonly string[]): string | null {
 	if (LONG_RUNNING_EXECUTABLES.has(command)) {
 		return `executable "${command}" is commonly long-running`;
@@ -188,6 +201,58 @@ function longRunningExecutableDetail(command: string, args: readonly string[]): 
 
 	if (command === 'turbo' && args[0] === 'dev') {
 		return 'turbo dev is commonly long-running';
+	}
+
+	if (command === 'cargo' && args[0] === 'watch') {
+		return 'cargo watch is commonly long-running';
+	}
+
+	if (command === 'cargo' && args[0] === 'tauri' && args[1] === 'dev') {
+		return 'cargo tauri dev is commonly long-running';
+	}
+
+	if (command === 'zig' && args[0] === 'build' && hasWatchFlag(args.slice(1))) {
+		return 'zig build watch mode is commonly long-running';
+	}
+
+	if (command === 'tauri' && args[0] === 'dev') {
+		return 'tauri dev is commonly long-running';
+	}
+
+	if (command === 'gh' && args[0] === 'run' && args[1] === 'watch') {
+		return 'gh run watch is commonly long-running';
+	}
+
+	if (command === 'gh' && args[0] === 'codespace' && args[1] === 'ssh') {
+		return 'gh codespace ssh is interactive and commonly long-running';
+	}
+
+	if (command === 'gh' && args[0] === 'codespace' && args[1] === 'logs' && (args.includes('--follow') || args.includes('-f'))) {
+		return 'gh codespace logs follow mode is commonly long-running';
+	}
+
+	if (command === 'deno' && args[0] === 'task' && args[1] && LONG_RUNNING_PACKAGE_SCRIPTS.has(args[1])) {
+		return `deno task ${args[1]} is commonly long-running`;
+	}
+
+	if (command === 'deno' && args[0] === 'serve') {
+		return 'deno serve is commonly long-running';
+	}
+
+	if (command === 'deno' && args[0] === 'run' && hasWatchFlag(args.slice(1))) {
+		return 'deno run watch mode is commonly long-running';
+	}
+
+	if (command === 'flutter' && ['run', 'attach', 'logs'].includes(args[0] ?? '')) {
+		return `flutter ${args[0]} is commonly long-running`;
+	}
+
+	if (command === 'dart' && args[0] === 'run' && args[1] === 'build_runner' && args[2] === 'watch') {
+		return 'dart build_runner watch is commonly long-running';
+	}
+
+	if (command === 'go' && args[0] === 'run' && args.some((arg) => /(?:^|\/)(?:air)(?:$|@)/iu.test(arg))) {
+		return 'go run air is commonly long-running';
 	}
 
 	return null;

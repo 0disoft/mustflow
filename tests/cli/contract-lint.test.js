@@ -579,12 +579,51 @@ writes = []
 network = false
 destructive = false
 
+[intents.argv_safe_go_test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Safe Go one-shot test command."
+argv = ["go", "test", "./..."]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+
 [intents.argv_npx_vite]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Blocked package exec target."
 argv = ["npx", "vite"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+
+[intents.argv_deno_task_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Blocked Deno task target."
+argv = ["deno", "task", "dev"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+writes = []
+network = false
+destructive = false
+
+[intents.argv_gh_run_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Blocked GitHub Actions watch target."
+argv = ["gh", "run", "watch"]
 cwd = "."
 timeout_seconds = 30
 stdin = "closed"
@@ -615,8 +654,28 @@ destructive = false
 					issue.code === 'long_running_command_pattern',
 			),
 		);
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'argv_deno_task_dev' &&
+					issue.severity === 'error' &&
+					issue.code === 'long_running_command_pattern',
+			),
+		);
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'argv_gh_run_watch' &&
+					issue.severity === 'error' &&
+					issue.code === 'long_running_command_pattern',
+			),
+		);
 		assert.equal(
 			report.report.issues.some((issue) => issue.intent === 'argv_safe_exec' && issue.code === 'long_running_command_pattern'),
+			false,
+		);
+		assert.equal(
+			report.report.issues.some((issue) => issue.intent === 'argv_safe_go_test' && issue.code === 'long_running_command_pattern'),
 			false,
 		);
 	} finally {

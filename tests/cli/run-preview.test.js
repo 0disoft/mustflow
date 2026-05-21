@@ -288,6 +288,20 @@ writes = []
 network = false
 destructive = false
 
+[intents.argv_safe_go_test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Safe Go one-shot test command."
+argv = ["go", "test", "./..."]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
 [intents.argv_npx_vite]
 status = "configured"
 lifecycle = "oneshot"
@@ -372,6 +386,188 @@ writes = []
 network = false
 destructive = false
 
+[intents.argv_julia_eval]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to attach long-running Julia evaluation code to a flag."
+argv = ["julia", "-e", "while true; end"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_cargo_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run cargo watch."
+argv = ["cargo", "watch"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_cargo_tauri_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run cargo tauri dev."
+argv = ["cargo", "tauri", "dev"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_zig_build_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run zig build in watch mode."
+argv = ["zig", "build", "watch"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_tauri_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run tauri dev."
+argv = ["tauri", "dev"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_gh_run_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run gh run watch."
+argv = ["gh", "run", "watch"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_gh_codespace_logs_follow]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to follow GitHub Codespaces logs."
+argv = ["gh", "codespace", "logs", "--follow"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_deno_task_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a Deno dev task."
+argv = ["deno", "task", "dev"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_deno_run_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run Deno in watch mode."
+argv = ["deno", "run", "--watch", "server.ts"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_pnpm_dlx_tauri]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide a Tauri dev server behind pnpm dlx."
+argv = ["pnpm", "dlx", "tauri", "dev"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_flutter_run]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a Flutter app."
+argv = ["flutter", "run"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_dart_build_runner_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run Dart build_runner watch."
+argv = ["dart", "run", "build_runner", "watch"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_go_air]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run the Go air watcher."
+argv = ["go", "run", "github.com/air-verse/air"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
 [intents.shell_dev]
 status = "configured"
 lifecycle = "oneshot"
@@ -399,6 +595,8 @@ destructive = false
 		const attachedShellPreview = JSON.parse(attachedShellResult.stdout);
 		const safeResult = runCli(projectPath, ['run', 'argv_safe_exec', '--dry-run', '--json']);
 		const safePreview = JSON.parse(safeResult.stdout);
+		const safeGoResult = runCli(projectPath, ['run', 'argv_safe_go_test', '--dry-run', '--json']);
+		const safeGoPreview = JSON.parse(safeGoResult.stdout);
 		const disguisedLongRunningPreviews = [
 			['argv_npx_vite', /package-manager exec target vite/],
 			['argv_npm_exec_vite', /package-manager exec target vite/],
@@ -406,6 +604,19 @@ destructive = false
 			['argv_turbo_dev', /turbo dev/],
 			['argv_tsx_watch', /tsx watch/],
 			['argv_python_http_server', /interpreter module "http\.server"/],
+			['argv_julia_eval', /interpreter evaluation payload/],
+			['argv_cargo_watch', /cargo watch/],
+			['argv_cargo_tauri_dev', /cargo tauri dev/],
+			['argv_zig_build_watch', /zig build watch/],
+			['argv_tauri_dev', /tauri dev/],
+			['argv_gh_run_watch', /gh run watch/],
+			['argv_gh_codespace_logs_follow', /gh codespace logs follow/],
+			['argv_deno_task_dev', /deno task dev/],
+			['argv_deno_run_watch', /deno run watch/],
+			['argv_pnpm_dlx_tauri', /package-manager exec target tauri dev/],
+			['argv_flutter_run', /flutter run/],
+			['argv_dart_build_runner_watch', /dart build_runner watch/],
+			['argv_go_air', /go run air/],
 		].map(([intent, detailPattern]) => {
 			const blockedResult = runCli(projectPath, ['run', intent, '--dry-run', '--json']);
 			return [blockedResult, JSON.parse(blockedResult.stdout), detailPattern];
@@ -444,6 +655,9 @@ destructive = false
 		assert.equal(safeResult.status, 0);
 		assert.equal(safePreview.runnable, true);
 		assert.equal(safePreview.reason_code, null);
+		assert.equal(safeGoResult.status, 0);
+		assert.equal(safeGoPreview.runnable, true);
+		assert.equal(safeGoPreview.reason_code, null);
 	} finally {
 		removeTempProject(projectPath);
 	}
