@@ -31,6 +31,34 @@ import {
 	waitForOutput,
 } from './run-support.js';
 
+function writeStandaloneRunContract(projectPath, markerPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+		`
+[defaults]
+default_cwd = "."
+env_policy = "minimal"
+env_allowlist = []
+kill_after_seconds = 1
+
+[intents.untrusted_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create a marker file from a manually-created command contract."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["marker.txt"]
+network = false
+destructive = false
+`,
+	);
+}
+
 test('runs a configured oneshot command intent', () => {
 	const projectPath = createTempProject();
 
@@ -59,6 +87,51 @@ destructive = false
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /hello from mf run/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('requires explicit opt-in before executing commands from roots without a manifest lock', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'marker.txt');
+
+	try {
+		writeStandaloneRunContract(projectPath, markerPath);
+
+		const blocked = runCli(projectPath, ['run', 'untrusted_marker', '--json']);
+
+		assert.equal(blocked.status, 1);
+		assert.equal(blocked.stdout, '');
+		assert.match(blocked.stderr, /manifest\.lock\.toml/);
+		assert.match(blocked.stderr, /--allow-untrusted-root/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+
+		writeFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'schema_version = ');
+		const invalidLock = runCli(projectPath, ['run', 'untrusted_marker', '--json']);
+
+		assert.equal(invalidLock.status, 1);
+		assert.equal(invalidLock.stdout, '');
+		assert.match(invalidLock.stderr, /manifest lock is invalid/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+
+		const preview = runCli(projectPath, ['run', 'untrusted_marker', '--dry-run', '--json']);
+		const previewJson = JSON.parse(preview.stdout);
+
+		assert.equal(preview.status, 0, preview.stderr || preview.stdout);
+		assert.equal(previewJson.runnable, true);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+
+		const allowed = runCli(projectPath, ['run', 'untrusted_marker', '--allow-untrusted-root', '--json']);
+		const receipt = JSON.parse(allowed.stdout);
+
+		assert.equal(allowed.status, 0, allowed.stderr || allowed.stdout);
+		assert.equal(receipt.status, 'passed');
+		assert.equal(receipt.intent, 'untrusted_marker');
+		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');
 	} finally {
 		removeTempProject(projectPath);
 	}

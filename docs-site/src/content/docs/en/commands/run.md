@@ -17,6 +17,13 @@ The intent must satisfy all of these conditions:
 
 If any condition is not satisfied, the command is not run and the reason is reported.
 
+Before executing, `mf run` also requires a readable `.mustflow/config/manifest.lock.toml`.
+This confirms the root has been installed or updated through mustflow before repository-controlled
+commands can run. `--dry-run` and `--plan-only` still work without the lock so you can inspect a
+manual or older root without spawning a process. To execute from that root anyway, pass
+`--allow-untrusted-root` after reviewing `AGENTS.md` and `.mustflow/config/commands.toml`; this
+does not relax the command-intent requirements above.
+
 For blocked or unknown intents, `mf run` prints a copyable `manual_only` intent snippet. The snippet is a proposal for `.mustflow/config/commands.toml`; it does not grant command authority until a person reviews and enables it. Dry-run and plan-only JSON include the same proposal in `suggested_intent_snippet`.
 
 ## Excluded Lifecycles

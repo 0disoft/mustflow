@@ -121,6 +121,7 @@ const CONTRACT_LINT_SOURCE_FILES = [
 	'.mustflow/docs/agent-workflow.md',
 	'AGENTS.md',
 	'src/core/change-classification.ts',
+	'src/core/change-classification-policy.ts',
 ];
 
 export const DOCUMENTED_VERIFICATION_REASONS = [
@@ -158,7 +159,10 @@ const RELEASE_SENSITIVE_REASONS = new Set([
 ]);
 const COMMANDS_CONFIG_PATH = '.mustflow/config/commands.toml';
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
-const CHANGE_CLASSIFICATION_SOURCE_PATH = 'src/core/change-classification.ts';
+const CHANGE_CLASSIFICATION_SOURCE_PATHS = [
+	'src/core/change-classification.ts',
+	'src/core/change-classification-policy.ts',
+];
 const AGENT_WORKFLOW_PATH = '.mustflow/docs/agent-workflow.md';
 const PACKAGE_SCRIPT_RUNNERS = new Set(['bun', 'npm', 'pnpm', 'yarn']);
 const MAKEFILE_CANDIDATES = ['Makefile', 'makefile'];
@@ -698,7 +702,7 @@ function buildRelatedDocs(
 	const docs = [COMMANDS_CONFIG_PATH];
 
 	if (source === 'classification') {
-		docs.push(CHANGE_CLASSIFICATION_SOURCE_PATH);
+		docs.push(...CHANGE_CLASSIFICATION_SOURCE_PATHS);
 	}
 
 	if (source === 'documented') {

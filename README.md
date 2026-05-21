@@ -367,6 +367,12 @@ bun run docs:check
 bun run check:install
 ```
 
+When Bun is not available, maintainers can still run the core CLI and package metadata checks with Node/npm:
+
+```sh
+npm run check:core:node
+```
+
 Agents working in this repository should prefer the configured mustflow intents for routine verification.
 
 ```sh
@@ -376,6 +382,7 @@ mf run test_related
 mf run test
 mf run test_coverage
 mf run test_release
+mf run maintainer_check_node
 mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
@@ -413,6 +420,7 @@ The npm package includes only:
 dist/
 templates/
 schemas/
+examples/
 README.md
 LICENSE
 ```

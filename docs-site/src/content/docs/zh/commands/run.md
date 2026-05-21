@@ -17,6 +17,12 @@ description: 运行 commands.toml 中声明的有限 command intent。
 
 如果任一条件不满足，命令不会运行，并会报告原因。
 
+执行前，`mf run` 还要求 `.mustflow/config/manifest.lock.toml` 可读取。这个文件用于确认当前
+根目录已经通过 mustflow 安装或更新，然后才允许运行由仓库控制的命令。没有该锁文件时，
+`--dry-run` 和 `--plan-only` 仍可用于检查手动创建或较旧的根目录，而且不会启动进程。如果仍要从该
+根目录执行，请先检查 `AGENTS.md` 和 `.mustflow/config/commands.toml`，再传入
+`--allow-untrusted-root`；这不会放宽上面的命令意图要求。
+
 对于被阻止或未知的意图，`mf run` 会打印可复制的 `status = "manual_only"` 意图片段。该片段只是写入 `.mustflow/config/commands.toml` 的建议；在人为审阅并启用之前，它不会授予命令执行权限。`--dry-run` 和 `--plan-only` 的 JSON 会在 `suggested_intent_snippet` 中包含同一建议。
 
 ## 排除的生命周期

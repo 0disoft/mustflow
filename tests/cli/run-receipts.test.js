@@ -73,6 +73,7 @@ destructive = false
 		assert.equal(result.stderr, '');
 		assert.equal(receipt.schema_version, '1');
 		assert.equal(receipt.command, 'run');
+		assert.match(receipt.correlation_id, /^mf-run-[0-9a-f]{16}$/u);
 		assert.equal(receipt.intent, 'echo_json');
 		assert.equal(receipt.status, 'passed');
 		assert.equal(receipt.timed_out, false);
@@ -253,6 +254,7 @@ test('keeps receipt performance fields limited to safe structured values', async
 
 	try {
 		const receipt = createRunReceipt({
+			correlationId: 'mf-run-0000000000000001',
 			intent: 'structured_perf_fixture',
 			status: 'passed',
 			timedOut: false,
@@ -345,6 +347,7 @@ test('keeps receipt output tails on UTF-8 character boundaries', async () => {
 
 	try {
 		const receipt = createRunReceipt({
+			correlationId: 'mf-run-0000000000000002',
 			intent: 'utf8_tail_fixture',
 			status: 'passed',
 			timedOut: false,

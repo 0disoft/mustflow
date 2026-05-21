@@ -17,6 +17,13 @@ La intención debe cumplir todas estas condiciones:
 
 Si alguna condición no se cumple, el comando no se ejecuta e informa el motivo.
 
+Antes de ejecutar, `mf run` también exige que `.mustflow/config/manifest.lock.toml` sea legible.
+Ese archivo confirma que la raíz fue instalada o actualizada mediante mustflow antes de ejecutar
+comandos controlados por el repositorio. `--dry-run` y `--plan-only` siguen funcionando sin el
+bloqueo para inspeccionar una raíz manual o antigua sin iniciar procesos. Si aun así necesitas
+ejecutar desde esa raíz, usa `--allow-untrusted-root` después de revisar `AGENTS.md` y
+`.mustflow/config/commands.toml`; esto no relaja las condiciones de intención anteriores.
+
 Para intenciones bloqueadas o desconocidas, `mf run` imprime un snippet copiable con `status = "manual_only"`. El snippet es una propuesta para `.mustflow/config/commands.toml`; no concede autoridad de ejecución hasta que una persona lo revise y lo habilite. El JSON de `--dry-run` y `--plan-only` incluye la misma propuesta en `suggested_intent_snippet`.
 
 ## Ciclos de vida excluidos

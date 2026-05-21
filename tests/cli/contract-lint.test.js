@@ -285,6 +285,7 @@ test('contract-lint coverage reports clean required_after coverage', () => {
 		assert.deepEqual(codeChangeCoverage.gaps, []);
 		assert.ok(codeChangeCoverage.relatedDocs.includes('.mustflow/config/commands.toml'));
 		assert.ok(codeChangeCoverage.relatedDocs.includes('src/core/change-classification.ts'));
+		assert.ok(codeChangeCoverage.relatedDocs.includes('src/core/change-classification-policy.ts'));
 		assert.ok(codeChangeCoverage.relatedDocs.includes('.mustflow/skills/INDEX.md'));
 		assert.ok(codeChangeCoverage.relatedSkills.some((skillPath) => skillPath.endsWith('/test-maintenance/SKILL.md')));
 		assert.deepEqual(report.report.coverage.findings, []);

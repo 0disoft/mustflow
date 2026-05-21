@@ -1,11 +1,13 @@
 import { performance } from 'node:perf_hooks';
 
 import { createCommandEnv } from '../../core/command-env.js';
+import { createCorrelationId } from '../../core/correlation-id.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
+import { ALLOW_UNTRUSTED_ROOT_OPTION, assessRunRootTrust } from '../lib/run-root-trust.js';
 import type { Reporter } from '../lib/reporter.js';
 import {
 	createRunPlan,
@@ -27,6 +29,7 @@ import { createPendingTimeoutTermination, getKillMethod, terminateProcessTree } 
 import { assembleRunReceipt } from './run/receipt.js';
 
 export interface RunCommandOptions {
+	readonly correlationId?: string;
 	readonly writeLatestReceipt?: boolean;
 	readonly writeLatestProfile?: boolean;
 	readonly recordPerformanceHistory?: boolean;
@@ -124,6 +127,7 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 				{ label: '--dry-run', description: t(lang, 'run.help.option.dryRun') },
 				{ label: '--plan-only', description: t(lang, 'run.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'run.help.option.json') },
+				{ label: ALLOW_UNTRUSTED_ROOT_OPTION, description: t(lang, 'run.help.option.allowUntrustedRoot') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: ['mf run test', 'mf run lint --json', 'mf run mustflow_check --dry-run --json'],
@@ -163,7 +167,7 @@ export async function runRun(
 		return 0;
 	}
 
-	const supportedOptions = new Set(['--json', '--dry-run', '--plan-only']);
+	const supportedOptions = new Set(['--json', '--dry-run', '--plan-only', ALLOW_UNTRUSTED_ROOT_OPTION]);
 	const unsupported = args.filter((arg) => arg.startsWith('-') && !supportedOptions.has(arg));
 
 	if (unsupported.length > 0) {
@@ -174,6 +178,7 @@ export async function runRun(
 	const json = args.includes('--json');
 	const dryRun = args.includes('--dry-run');
 	const planOnly = args.includes('--plan-only');
+	const allowUntrustedRoot = args.includes(ALLOW_UNTRUSTED_ROOT_OPTION);
 	const previewMode: RunPreviewMode | null = dryRun ? 'dry-run' : planOnly ? 'plan-only' : null;
 
 	if (dryRun && planOnly) {
@@ -195,6 +200,17 @@ export async function runRun(
 	}
 
 	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
+	const rootTrust = profiler.measure('root_trust', () => assessRunRootTrust(projectRoot));
+
+	if (!previewMode && !allowUntrustedRoot && !rootTrust.trusted) {
+		const message =
+			rootTrust.reason === 'manifest_lock_invalid'
+				? t(lang, 'run.error.untrustedRootInvalid', { detail: rootTrust.detail ?? rootTrust.manifestLockPath })
+				: t(lang, 'run.error.untrustedRootMissing', { path: rootTrust.detail ?? rootTrust.manifestLockPath });
+		reporter.stderr(renderCliError(message, 'mf run --help', lang));
+		return 1;
+	}
+
 	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
 	const plan = profiler.measure('plan_creation', () =>
 		createRunPlan(projectRoot, contract, intentName, { testTargets: options.testTargets }),
@@ -297,6 +313,7 @@ export async function runRun(
 
 	const receipt = profiler.measure('receipt_create', () =>
 		assembleRunReceipt({
+			correlationId: options.correlationId ?? createCorrelationId('run'),
 			intentName,
 			runStatus,
 			startedAt,

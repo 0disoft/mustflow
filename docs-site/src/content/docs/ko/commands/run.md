@@ -17,6 +17,13 @@ description: commands.toml에 정의된 단발성 명령 의도를 실행하는 
 
 위 조건을 하나라도 만족하지 않으면 실행을 거부하고 이유를 출력합니다.
 
+실제 실행 전에는 `.mustflow/config/manifest.lock.toml`도 읽을 수 있어야 합니다. 이 잠금
+파일은 현재 루트가 mustflow로 설치되었거나 갱신된 작업 공간인지 확인하는 설치 근거입니다.
+잠금 파일이 없어도 `--dry-run`과 `--plan-only`는 계속 동작하므로, 수동으로 만든 루트나
+오래된 설치를 프로세스 실행 없이 확인할 수 있습니다. 그래도 실행해야 한다면 `AGENTS.md`와
+`.mustflow/config/commands.toml`을 검토한 뒤 `--allow-untrusted-root`를 붙이세요. 이 옵션은
+위의 명령 의도 실행 조건을 완화하지 않습니다.
+
 차단되었거나 알 수 없는 명령 의도에 대해 `mf run`은 복사해서 붙여 넣을 수 있는 `status = "manual_only"` 명령 의도 조각을 출력합니다. 이 조각은 `.mustflow/config/commands.toml`에 넣을 제안일 뿐이며, 사람이 검토하고 활성화하기 전까지 실행 권한을 주지 않습니다. `--dry-run`과 `--plan-only` JSON에는 같은 제안이 `suggested_intent_snippet` 필드로 포함됩니다.
 
 ## 실행 제한 대상

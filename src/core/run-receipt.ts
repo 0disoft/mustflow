@@ -99,6 +99,7 @@ export interface RunReceiptPerformanceSelection {
 export interface RunReceipt {
 	readonly schema_version: string;
 	readonly command: 'run';
+	readonly correlation_id: string;
 	readonly intent: string;
 	readonly status: RunReceiptStatus;
 	readonly timed_out: boolean;
@@ -132,6 +133,7 @@ export interface RunReceipt {
 }
 
 export interface CreateRunReceiptInput {
+	readonly correlationId: string;
 	readonly intent: string;
 	readonly status: RunReceiptStatus;
 	readonly timedOut: boolean;
@@ -459,6 +461,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 	return {
 		schema_version: RUN_RECEIPT_SCHEMA_VERSION,
 		command: 'run',
+		correlation_id: input.correlationId,
 		intent: input.intent,
 		status: input.status,
 		timed_out: input.timedOut,

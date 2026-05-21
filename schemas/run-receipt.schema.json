@@ -34,6 +34,10 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "run" },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^mf-[a-z][a-z0-9_-]*-[0-9a-f]{16}$"
+    },
     "intent": { "type": "string" },
     "status": { "enum": ["passed", "failed", "timed_out", "start_failed", "output_limit_exceeded"] },
     "timed_out": { "type": "boolean" },

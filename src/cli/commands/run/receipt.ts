@@ -11,6 +11,7 @@ import type { RunnableRunPlan } from '../../lib/run-plan.js';
 import type { CommandResult } from './executor.js';
 
 interface AssembleRunReceiptInput {
+	readonly correlationId: string;
 	readonly intentName: string;
 	readonly runStatus: RunReceiptStatus;
 	readonly startedAt: Date;
@@ -30,6 +31,7 @@ interface AssembleRunReceiptInput {
 
 export function assembleRunReceipt(input: AssembleRunReceiptInput): RunReceipt {
 	return createRunReceipt({
+		correlationId: input.correlationId,
 		intent: input.intentName,
 		status: input.runStatus,
 		timedOut: input.runStatus === 'timed_out',
