@@ -740,6 +740,8 @@ export const zhMessages = {
   "run.help.option.dryRun": "输出命令计划但不执行",
   "run.help.option.planOnly": "--dry-run 的别名",
   "run.help.option.json": "将运行记录或命令计划输出为 JSON",
+  "run.help.option.allowUntrustedRoot":
+    "人工复核后，允许从缺失或无效清单锁的根目录执行一次命令",
   "run.help.exit.ok": "命令已以允许的退出码完成",
   "run.help.exit.fail": "命令无效、被拒绝、超时或失败",
   "run.label.suggestedIntentSnippet": "建议的命令契约片段",
@@ -776,6 +778,10 @@ export const zhMessages = {
     "输出限制必须保持在允许的最大值内。",
   "run.error.conflictingPreviewModes":
     "只能使用 --dry-run 或 --plan-only，不能同时使用",
+  "run.error.untrustedRootMissing":
+    "已拒绝执行命令，因为缺少 {path}。请运行 mf init/update 安装工作流，或在检查 AGENTS.md 和 .mustflow/config/commands.toml 后传入 --allow-untrusted-root。",
+  "run.error.untrustedRootInvalid":
+    "已拒绝执行命令，因为清单锁无效：{detail}。请恢复或重新生成它，或在检查 AGENTS.md 和 .mustflow/config/commands.toml 后传入 --allow-untrusted-root。",
   "run.error.timedOut": '命令 "{intent}" 在 {seconds} 秒后超时',
   "run.error.outputLimitExceeded":
     '命令 "{intent}" 超过 max_output_bytes：{message}',

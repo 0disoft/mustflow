@@ -750,6 +750,8 @@ Lisez ces fichiers avant de travailler :
   "run.help.option.dryRun": "Imprime un plan de commande sans l'exécuter",
   "run.help.option.planOnly": "Alias de --dry-run",
   "run.help.option.json": "Imprime l'enregistrement d'exécution ou le plan de commande en JSON",
+  "run.help.option.allowUntrustedRoot":
+    "Autorise une seule exécution depuis une racine sans verrou de manifeste valide après revue manuelle",
   "run.help.exit.ok": "La commande s'est terminée avec un code de sortie autorisé",
   "run.help.exit.fail": "La commande était non valide, refusée, expirée ou a échoué",
   "run.label.suggestedIntentSnippet": "Extrait suggéré de contrat de commande",
@@ -786,6 +788,10 @@ Lisez ces fichiers avant de travailler :
     "La limite de sortie doit rester dans le maximum autorisé.",
   "run.error.conflictingPreviewModes":
     "Utilisez --dry-run ou --plan-only, pas les deux",
+  "run.error.untrustedRootMissing":
+    "Exécution refusée car {path} est absent. Lancez mf init/update pour installer le workflow, ou ajoutez --allow-untrusted-root après avoir relu AGENTS.md et .mustflow/config/commands.toml.",
+  "run.error.untrustedRootInvalid":
+    "Exécution refusée car le verrou de manifeste est invalide : {detail}. Restaurez-le ou régénérez-le, ou ajoutez --allow-untrusted-root après avoir relu AGENTS.md et .mustflow/config/commands.toml.",
   "run.error.timedOut": 'La commande "{intent}" a expiré après {seconds} secondes',
   "run.error.outputLimitExceeded":
     'La commande "{intent}" a dépassé max_output_bytes : {message}',

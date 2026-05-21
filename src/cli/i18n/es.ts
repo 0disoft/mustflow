@@ -750,6 +750,8 @@ Lee estos archivos antes de trabajar:
   "run.help.option.dryRun": "Imprime un plan de comando sin ejecutarlo",
   "run.help.option.planOnly": "Alias de --dry-run",
   "run.help.option.json": "Imprime el registro de ejecución o el plan de comando como JSON",
+  "run.help.option.allowUntrustedRoot":
+    "Permite una ejecución desde una raíz con bloqueo de manifiesto ausente o inválido tras revisión manual",
   "run.help.exit.ok": "El comando se completo con un codigo de salida permitido",
   "run.help.exit.fail": "El comando no era válido, fue rechazado, agotó el tiempo o falló",
   "run.label.suggestedIntentSnippet": "Snippet sugerido para el contrato de comandos",
@@ -786,6 +788,10 @@ Lee estos archivos antes de trabajar:
     "El límite de salida debe permanecer dentro del máximo permitido.",
   "run.error.conflictingPreviewModes":
     "Usa --dry-run o --plan-only, no ambos",
+  "run.error.untrustedRootMissing":
+    "Se rechazó ejecutar comandos porque falta {path}. Ejecuta mf init/update para instalar el flujo, o usa --allow-untrusted-root tras revisar AGENTS.md y .mustflow/config/commands.toml.",
+  "run.error.untrustedRootInvalid":
+    "Se rechazó ejecutar comandos porque el bloqueo de manifiesto no es válido: {detail}. Restáuralo o regenéralo, o usa --allow-untrusted-root tras revisar AGENTS.md y .mustflow/config/commands.toml.",
   "run.error.timedOut": 'El comando "{intent}" agotó el tiempo después de {seconds} segundos',
   "run.error.outputLimitExceeded":
     'El comando "{intent}" superó max_output_bytes: {message}',

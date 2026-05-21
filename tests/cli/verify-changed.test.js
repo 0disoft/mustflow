@@ -71,11 +71,14 @@ required_after = ["test_change"]
 		]);
 		const fromClassificationReport = JSON.parse(fromClassificationResult.stdout);
 		const changedReport = JSON.parse(changedResult.stdout);
+		const classifyReport = JSON.parse(classifyResult.stdout);
 
 		assert.equal(classifyResult.status, 0, classifyResult.stderr || classifyResult.stdout);
 		assert.equal(fromClassificationResult.status, 0, fromClassificationResult.stderr || fromClassificationResult.stdout);
 		assert.equal(changedResult.status, 0, changedResult.stderr || changedResult.stdout);
 		assert.equal(fromClassificationReport.verification_plan_id, changedReport.verification_plan_id);
+		assert.match(changedReport.correlation_id, /^mf-classify-[0-9a-f]{16}$/u);
+		assert.equal(fromClassificationReport.correlation_id, classifyReport.correlation_id);
 		assert.equal(changedReport.source, 'changed');
 		assert.deepEqual(changedReport.files, ['tests/fixtures/verify-changed.txt']);
 		assert.deepEqual(changedReport.classification_summary, fromClassificationReport.classification_summary);

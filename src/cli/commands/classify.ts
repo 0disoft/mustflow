@@ -4,6 +4,7 @@ import {
 	createChangeClassificationReport,
 	type ChangeClassificationReport,
 } from '../../core/change-classification.js';
+import { createCorrelationId } from '../../core/correlation-id.js';
 import { writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { requireGitChangedFiles } from '../lib/git-changes.js';
@@ -16,6 +17,7 @@ const CLASSIFY_SCHEMA_VERSION = '1';
 export interface ClassifyOutput extends ChangeClassificationReport {
 	readonly schema_version: string;
 	readonly command: 'classify';
+	readonly correlation_id: string;
 	readonly mustflow_root: string;
 }
 
@@ -112,6 +114,7 @@ export function createClassifyOutput(
 	return {
 		schema_version: CLASSIFY_SCHEMA_VERSION,
 		command: 'classify',
+		correlation_id: createCorrelationId('classify'),
 		mustflow_root: projectRoot,
 		...createChangeClassificationReport(source, files),
 	};

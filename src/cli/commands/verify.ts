@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { createClassifyOutput, type ClassifyOutput } from './classify.js';
+import type { ClassifyOutput } from './classify.js';
 import { runRun } from './run.js';
 import {
 	createChangeVerificationReport,
 	type ChangeVerificationCandidate,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
+import { createCorrelationId } from '../../core/correlation-id.js';
 import { readUtf8FileInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import {
 	createVerifyCompletionVerdict,
@@ -19,7 +20,6 @@ import { createStateRunId } from '../../core/atomic-state-write.js';
 import {
 	createExternalEvidenceRisks,
 	type ExternalEvidenceCheck,
-	type ExternalEvidenceStatus,
 } from '../../core/external-evidence.js';
 import {
 	createRepeatedFailureRisks,
@@ -32,13 +32,7 @@ import {
 import {
 	countReproEvidenceVerdictEffects,
 	createReproEvidenceRisks,
-	type ReproAfterFixEvidence,
-	type ReproBeforeFixEvidence,
 	type ReproEvidenceReport,
-	type ReproRouteIdentity,
-	type ReproRouteKind,
-	type ReproRouteStep,
-	type ReproRegressionGuardEvidence,
 } from '../../core/repro-evidence.js';
 import { createVerifyEvidenceModel, type VerificationEvidenceModel } from '../../core/verification-evidence.js';
 import { createScopeDiffRisks, type ScopeDiffRisk } from '../../core/scope-risk.js';
@@ -53,13 +47,6 @@ import {
 	type RunWriteBatchIntent,
 	type RunWriteDriftReceipt,
 } from '../../core/run-write-drift.js';
-import type {
-	ChangeClassification,
-	ChangeClassificationReport,
-	ChangeClassificationSummary,
-	ChangeSource,
-	PublicSurfaceUpdatePolicy,
-} from '../../core/change-classification.js';
 import type { VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import {
@@ -68,8 +55,18 @@ import {
 	resolveVerifyParallelism,
 	type VerifyParallelismSettings,
 } from './verify/args.js';
+import {
+	createInputFromChanged,
+	createSyntheticClassificationReport,
+	planErrorMessageKey,
+	readInputFromClassificationReport,
+	resolveVerifyInputPath,
+	writeChangedPlan,
+	type VerifyInput,
+} from './verify/input.js';
+import { readExternalEvidenceFile, readReproEvidenceFile } from './verify/evidence-input.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
+import { t, type CliLang } from '../lib/i18n.js';
 import {
 	readLocalCommandEffectGraphs,
 	readLocalPathSurfaces,
@@ -80,6 +77,8 @@ import {
 } from '../lib/local-index.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+
+export { planErrorMessageKey, readInputFromClassificationReport } from './verify/input.js';
 
 const VERIFY_SCHEMA_VERSION = '1';
 const RUN_STATE_DIR = path.join('.mustflow', 'state', 'runs');
@@ -134,6 +133,7 @@ interface VerificationParallelismReport {
 interface VerificationOutput {
 	readonly schema_version: string;
 	readonly command: 'verify';
+	readonly correlation_id: string;
 	readonly mustflow_root: string;
 	readonly reason: string;
 	readonly reasons: readonly string[];
@@ -166,6 +166,7 @@ interface VerifyRunReceiptManifestEntry {
 interface VerifyRunReceiptManifest {
 	readonly schema_version: string;
 	readonly command: 'verify';
+	readonly correlation_id: string;
 	readonly reason: string;
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
@@ -186,6 +187,7 @@ interface VerifyLatestRunPointer {
 	readonly schema_version: string;
 	readonly command: 'verify';
 	readonly kind: 'verify_run_summary';
+	readonly correlation_id: string;
 	readonly reason: string;
 	readonly reasons: readonly string[];
 	readonly plan_source: string | null;
@@ -209,11 +211,6 @@ interface PreviousVerifyLatestSummary {
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
 }
 
-export interface VerifyInput {
-	readonly reasons: readonly string[];
-	readonly classificationReport: ChangeClassificationReport;
-}
-
 type PlanOnlyScheduleEntry = ChangeVerificationReport['schedule']['entries'][number] & {
 	readonly effectGraph?: LocalCommandEffectGraph;
 };
@@ -223,6 +220,7 @@ type PlanOnlyRequirement = ChangeVerificationReport['requirements'][number] & {
 };
 
 type PlanOnlyOutput = ChangeVerificationReport & {
+	readonly correlation_id: string;
 	readonly verification_plan_id: string;
 	readonly requirements: readonly PlanOnlyRequirement[];
 	readonly schedule: Omit<ChangeVerificationReport['schedule'], 'entries'> & {
@@ -324,570 +322,6 @@ function sanitizeIntentFilePart(value: string): string {
 	return sanitized.length > 0 ? sanitized.slice(0, 80) : 'intent';
 }
 
-function readStringArray(value: unknown): string[] {
-	if (!Array.isArray(value)) {
-		return [];
-	}
-
-	return value.filter((item): item is string => typeof item === 'string');
-}
-
-function isStringArray(value: unknown): value is readonly string[] {
-	return Array.isArray(value) && value.every((item) => typeof item === 'string');
-}
-
-function isPlainRecord(value: unknown): value is Record<string, unknown> {
-	return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function isUpdatePolicy(value: unknown): value is PublicSurfaceUpdatePolicy {
-	return value === 'update' || value === 'update_or_mark_stale' || value === 'not_applicable';
-}
-
-function isUpdatePolicyArray(value: unknown): value is readonly PublicSurfaceUpdatePolicy[] {
-	return Array.isArray(value) && value.every((item): item is PublicSurfaceUpdatePolicy => isUpdatePolicy(item));
-}
-
-function readPlanRoot(value: unknown): string | null {
-	if (!isPlainRecord(value)) {
-		return null;
-	}
-
-	const root = value.mustflow_root;
-	return typeof root === 'string' && root.length > 0 ? root : null;
-}
-
-function readStrictClassificationSummary(value: unknown): ChangeClassificationSummary | null {
-	if (!isPlainRecord(value)) {
-		return null;
-	}
-
-	if (
-		!Number.isInteger(value.fileCount) ||
-		Number(value.fileCount) < 0 ||
-		!Number.isInteger(value.publicSurfaceCount) ||
-		Number(value.publicSurfaceCount) < 0 ||
-		!isStringArray(value.changeKinds) ||
-		!isStringArray(value.validationReasons) ||
-		!isUpdatePolicyArray(value.updatePolicies) ||
-		!isStringArray(value.driftChecks) ||
-		!isStringArray(value.affectedContracts)
-	) {
-		return null;
-	}
-
-	return {
-		fileCount: Number(value.fileCount),
-		publicSurfaceCount: Number(value.publicSurfaceCount),
-		changeKinds: [...value.changeKinds],
-		validationReasons: uniqueStrings(value.validationReasons),
-		updatePolicies: [...value.updatePolicies],
-		driftChecks: [...value.driftChecks],
-		affectedContracts: [...value.affectedContracts],
-	};
-}
-
-function readStrictClassification(value: unknown): ChangeClassification | null {
-	if (!isPlainRecord(value) || typeof value.path !== 'string' || !isStringArray(value.changeKinds)) {
-		return null;
-	}
-
-	const surface = value.surface;
-	if (!isPlainRecord(surface)) {
-		return null;
-	}
-
-	if (
-		typeof surface.kind !== 'string' ||
-		typeof surface.category !== 'string' ||
-		typeof surface.isPublicSurface !== 'boolean' ||
-		!isStringArray(surface.validationReasons) ||
-		!isStringArray(surface.affectedContracts) ||
-		!isUpdatePolicy(surface.updatePolicy) ||
-		!isStringArray(surface.driftChecks)
-	) {
-		return null;
-	}
-
-	return {
-		path: value.path,
-		changeKinds: [...value.changeKinds],
-		surface: {
-			kind: surface.kind,
-			category: surface.category,
-			isPublicSurface: surface.isPublicSurface,
-			validationReasons: [...surface.validationReasons],
-			affectedContracts: [...surface.affectedContracts],
-			updatePolicy: surface.updatePolicy,
-			driftChecks: [...surface.driftChecks],
-		},
-	};
-}
-
-function readStrictClassifications(value: unknown): ChangeClassification[] | null {
-	if (!Array.isArray(value)) {
-		return null;
-	}
-
-	const classifications = value.map(readStrictClassification);
-	return classifications.every((classification): classification is ChangeClassification => classification !== null)
-		? classifications
-		: null;
-}
-
-function readStrictClassifyPlan(projectRoot: string, plan: unknown): ChangeClassificationReport {
-	if (!isPlainRecord(plan)) {
-		throw new Error('unsupported_plan_source');
-	}
-
-	if (plan.schema_version !== '1' || plan.command !== 'classify') {
-		throw new Error('unsupported_plan_source');
-	}
-
-	if (readPlanRoot(plan) !== projectRoot) {
-		throw new Error('plan_root_mismatch');
-	}
-
-	const source = plan.source;
-	const files = plan.files;
-	const classifications = readStrictClassifications(plan.classifications);
-	const summary = readStrictClassificationSummary(plan.summary);
-
-	if ((source !== 'changed' && source !== 'paths') || !isStringArray(files) || !classifications || !summary) {
-		throw new Error('invalid_plan_file');
-	}
-
-	if (summary.validationReasons.length === 0) {
-		throw new Error('missing_plan_reasons');
-	}
-
-	return {
-		source,
-		files: [...files],
-		classifications,
-		summary,
-	};
-}
-
-function emptyClassificationSummary(validationReasons: readonly string[]): ChangeClassificationSummary {
-	return {
-		fileCount: 0,
-		publicSurfaceCount: 0,
-		changeKinds: [],
-		validationReasons,
-		updatePolicies: [],
-		driftChecks: [],
-		affectedContracts: [],
-	};
-}
-
-function createSyntheticClassificationReport(
-	reasons: readonly string[],
-	source: ChangeSource = 'paths',
-	files: readonly string[] = [],
-): ChangeClassificationReport {
-	return {
-		source,
-		files,
-		classifications: [],
-		summary: emptyClassificationSummary(reasons),
-	};
-}
-
-function resolvePlanPath(projectRoot: string, inputPath: string): string {
-	const resolved = path.resolve(projectRoot, inputPath);
-	const relative = path.relative(projectRoot, resolved);
-
-	if (relative.startsWith('..') || path.isAbsolute(relative)) {
-		throw new Error('plan_path_outside_root');
-	}
-
-	return resolved;
-}
-
-function readJsonInputFile(projectRoot: string, inputPath: string, invalidCode: string): unknown {
-	const inputFilePath = resolvePlanPath(projectRoot, inputPath);
-	let content: string;
-
-	try {
-		content = readUtf8FileInsideWithoutSymlinks(projectRoot, inputFilePath);
-	} catch (error) {
-		if (error instanceof Error && error.message.startsWith('Path must not contain symlinks:')) {
-			throw new Error('input_path_contains_symlink');
-		}
-
-		throw new Error(invalidCode);
-	}
-
-	try {
-		return JSON.parse(content);
-	} catch {
-		throw new Error(invalidCode);
-	}
-}
-
-export function readInputFromClassificationReport(projectRoot: string, inputPath: string): VerifyInput {
-	const parsed = readJsonInputFile(projectRoot, inputPath, 'invalid_plan_file');
-
-	const classificationReport = readStrictClassifyPlan(projectRoot, parsed);
-
-	return {
-		reasons: classificationReport.summary.validationReasons,
-		classificationReport,
-	};
-}
-
-function isExternalEvidenceStatus(value: unknown): value is ExternalEvidenceStatus {
-	return value === 'passed' || value === 'failed' || value === 'cancelled' || value === 'unknown';
-}
-
-type LegacyReproEvidenceStatus = 'present' | 'unavailable' | 'missing';
-
-interface LegacyReproEvidenceItem {
-	readonly status: LegacyReproEvidenceStatus;
-	readonly summary: string | null;
-	readonly reason: string | null;
-}
-
-function isLegacyReproEvidenceStatus(value: unknown): value is LegacyReproEvidenceStatus {
-	return value === 'present' || value === 'unavailable' || value === 'missing';
-}
-
-function isReproBeforeFixStatus(value: unknown): value is ReproBeforeFixEvidence['status'] {
-	return value === 'reproduced' || value === 'unavailable' || value === 'missing';
-}
-
-function isReproBeforeFixOutcome(value: unknown): value is ReproBeforeFixEvidence['outcome'] {
-	return value === 'failed_as_expected' || value === 'failed_differently' || value === 'passed_unexpectedly' || value === null;
-}
-
-function isReproAfterFixStatus(value: unknown): value is ReproAfterFixEvidence['status'] {
-	return value === 'passed' || value === 'failed' || value === 'unavailable' || value === 'missing';
-}
-
-function isReproAfterFixOutcome(value: unknown): value is ReproAfterFixEvidence['outcome'] {
-	return value === 'passed_expected_behavior' || value === 'failed_same_route' || value === 'failed_differently' || value === null;
-}
-
-function isReproRegressionGuardStatus(value: unknown): value is ReproRegressionGuardEvidence['status'] {
-	return value === 'passed' || value === 'failed' || value === 'unavailable' || value === 'missing';
-}
-
-function isReproRouteKind(value: unknown): value is ReproRouteKind {
-	return (
-		value === 'test' ||
-		value === 'cli' ||
-		value === 'browser' ||
-		value === 'api' ||
-		value === 'manual' ||
-		value === 'unknown' ||
-		value === null
-	);
-}
-
-function readOptionalString(value: unknown): string | null {
-	return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function readRouteStep(value: unknown, index: number): ReproRouteStep {
-	if (!isPlainRecord(value)) {
-		return {
-			ordinal: index + 1,
-			action: null,
-			target: null,
-			input_digest: null,
-			observation_digest: null,
-			summary: null,
-		};
-	}
-
-	const ordinal = typeof value.ordinal === 'number' && Number.isInteger(value.ordinal) && value.ordinal > 0 ? value.ordinal : index + 1;
-	return {
-		ordinal,
-		action: readOptionalString(value.action),
-		target: readOptionalString(value.target),
-		input_digest: readOptionalString(value.input_digest),
-		observation_digest: readOptionalString(value.observation_digest),
-		summary: readOptionalString(value.summary),
-	};
-}
-
-function readReproductionRoute(value: unknown): ReproRouteIdentity {
-	if (!isPlainRecord(value)) {
-		return {
-			route_id: null,
-			route_kind: null,
-			route_digest: null,
-			failure_oracle_hash: null,
-			steps: [],
-		};
-	}
-
-	const routeKind = value.route_kind ?? null;
-	if (!isReproRouteKind(routeKind)) {
-		throw new Error('invalid_repro_evidence_file');
-	}
-
-	const rawSteps = Array.isArray(value.steps) ? value.steps : [];
-	return {
-		route_id: readOptionalString(value.route_id),
-		route_kind: routeKind,
-		route_digest: readOptionalString(value.route_digest),
-		failure_oracle_hash: readOptionalString(value.failure_oracle_hash),
-		steps: rawSteps.map((step, index) => readRouteStep(step, index)),
-	};
-}
-
-function readLegacyReproEvidenceItem(value: unknown): LegacyReproEvidenceItem {
-	if (!isPlainRecord(value)) {
-		return {
-			status: 'missing',
-			summary: null,
-			reason: null,
-		};
-	}
-
-	if (!isLegacyReproEvidenceStatus(value.status)) {
-		throw new Error('invalid_repro_evidence_file');
-	}
-
-	return {
-		status: value.status,
-		summary: readOptionalString(value.summary),
-		reason: readOptionalString(value.reason),
-	};
-}
-
-function legacyBeforeFixEvidence(value: unknown): ReproBeforeFixEvidence {
-	const item = readLegacyReproEvidenceItem(value);
-	return {
-		status: item.status === 'present' ? 'reproduced' : item.status,
-		outcome: item.status === 'present' ? 'failed_as_expected' : null,
-		receipt_path: null,
-		receipt_sha256: null,
-		verification_plan_id: null,
-		summary: item.summary,
-		reason: item.reason,
-	};
-}
-
-function legacyAfterFixEvidence(value: unknown): ReproAfterFixEvidence {
-	const item = readLegacyReproEvidenceItem(value);
-	return {
-		status: item.status === 'present' ? 'passed' : item.status,
-		outcome: item.status === 'present' ? 'passed_expected_behavior' : null,
-		same_route_as: null,
-		receipt_path: null,
-		receipt_sha256: null,
-		verification_plan_id: null,
-		summary: item.summary,
-		reason: item.reason,
-	};
-}
-
-function legacyRegressionGuardEvidence(value: unknown): ReproRegressionGuardEvidence {
-	const item = readLegacyReproEvidenceItem(value);
-	return {
-		status: item.status === 'present' ? 'passed' : item.status,
-		intent: null,
-		test_path: null,
-		receipt_path: null,
-		receipt_sha256: null,
-		verification_plan_id: null,
-		summary: item.summary,
-		reason: item.reason,
-	};
-}
-
-function readBeforeFixEvidence(value: unknown): ReproBeforeFixEvidence {
-	if (!isPlainRecord(value)) {
-		return {
-			status: 'missing',
-			outcome: null,
-			receipt_path: null,
-			receipt_sha256: null,
-			verification_plan_id: null,
-			summary: null,
-			reason: null,
-		};
-	}
-
-	const outcome = value.outcome ?? null;
-	if (!isReproBeforeFixStatus(value.status) || !isReproBeforeFixOutcome(outcome)) {
-		throw new Error('invalid_repro_evidence_file');
-	}
-
-	return {
-		status: value.status,
-		outcome,
-		receipt_path: readOptionalString(value.receipt_path),
-		receipt_sha256: readOptionalString(value.receipt_sha256),
-		verification_plan_id: readOptionalString(value.verification_plan_id),
-		summary: readOptionalString(value.summary),
-		reason: readOptionalString(value.reason),
-	};
-}
-
-function readAfterFixEvidence(value: unknown): ReproAfterFixEvidence {
-	if (!isPlainRecord(value)) {
-		return {
-			status: 'missing',
-			outcome: null,
-			same_route_as: null,
-			receipt_path: null,
-			receipt_sha256: null,
-			verification_plan_id: null,
-			summary: null,
-			reason: null,
-		};
-	}
-
-	const outcome = value.outcome ?? null;
-	if (!isReproAfterFixStatus(value.status) || !isReproAfterFixOutcome(outcome)) {
-		throw new Error('invalid_repro_evidence_file');
-	}
-
-	return {
-		status: value.status,
-		outcome,
-		same_route_as: readOptionalString(value.same_route_as),
-		receipt_path: readOptionalString(value.receipt_path),
-		receipt_sha256: readOptionalString(value.receipt_sha256),
-		verification_plan_id: readOptionalString(value.verification_plan_id),
-		summary: readOptionalString(value.summary),
-		reason: readOptionalString(value.reason),
-	};
-}
-
-function readRegressionGuardEvidence(value: unknown): ReproRegressionGuardEvidence {
-	if (!isPlainRecord(value)) {
-		return {
-			status: 'missing',
-			intent: null,
-			test_path: null,
-			receipt_path: null,
-			receipt_sha256: null,
-			verification_plan_id: null,
-			summary: null,
-			reason: null,
-		};
-	}
-
-	if (!isReproRegressionGuardStatus(value.status)) {
-		throw new Error('invalid_repro_evidence_file');
-	}
-
-	return {
-		status: value.status,
-		intent: readOptionalString(value.intent),
-		test_path: readOptionalString(value.test_path),
-		receipt_path: readOptionalString(value.receipt_path),
-		receipt_sha256: readOptionalString(value.receipt_sha256),
-		verification_plan_id: readOptionalString(value.verification_plan_id),
-		summary: readOptionalString(value.summary),
-		reason: readOptionalString(value.reason),
-	};
-}
-
-function readReproEvidenceFile(projectRoot: string, inputPath: string): ReproEvidenceReport {
-	const parsed = readJsonInputFile(projectRoot, inputPath, 'invalid_repro_evidence_file');
-
-	if (!isPlainRecord(parsed) || parsed.schema_version !== '1' || parsed.command !== 'repro-evidence') {
-		throw new Error('unsupported_repro_evidence_source');
-	}
-
-	const regressionGuard =
-		isPlainRecord(parsed.regression_guard) && isReproRegressionGuardStatus(parsed.regression_guard.status)
-			? readRegressionGuardEvidence(parsed.regression_guard)
-			: legacyRegressionGuardEvidence(parsed.regression_guard);
-
-	return {
-		source: 'repro_first_debug',
-		authority: 'claim_evidence',
-		reported_symptom: readOptionalString(parsed.reported_symptom),
-		expected_behavior: readOptionalString(parsed.expected_behavior),
-		observed_behavior: readOptionalString(parsed.observed_behavior),
-		reproduction_route: readReproductionRoute(parsed.reproduction_route),
-		before_fix: isPlainRecord(parsed.before_fix)
-			? readBeforeFixEvidence(parsed.before_fix)
-			: legacyBeforeFixEvidence(parsed.evidence_before_fix),
-		after_fix: isPlainRecord(parsed.after_fix)
-			? readAfterFixEvidence(parsed.after_fix)
-			: legacyAfterFixEvidence(parsed.evidence_after_fix),
-		regression_guard: regressionGuard,
-	};
-}
-
-function readExternalEvidenceFile(projectRoot: string, inputPath: string): readonly ExternalEvidenceCheck[] {
-	const parsed = readJsonInputFile(projectRoot, inputPath, 'invalid_external_evidence_file');
-
-	if (!isPlainRecord(parsed) || parsed.schema_version !== '1' || parsed.command !== 'external-evidence') {
-		throw new Error('unsupported_external_evidence_source');
-	}
-
-	if (!Array.isArray(parsed.checks)) {
-		throw new Error('invalid_external_evidence_file');
-	}
-
-	return parsed.checks.map((check) => {
-		if (
-			!isPlainRecord(check) ||
-			typeof check.provider !== 'string' ||
-			check.provider.length === 0 ||
-			typeof check.name !== 'string' ||
-			check.name.length === 0 ||
-			!isExternalEvidenceStatus(check.status)
-		) {
-			throw new Error('invalid_external_evidence_file');
-		}
-
-		return {
-			source: 'external_ci',
-			authority: 'supporting_only',
-			provider: check.provider,
-			name: check.name,
-			status: check.status,
-			url: readOptionalString(check.url),
-			summary: readOptionalString(check.summary),
-		};
-	});
-}
-
-function createInputFromChanged(projectRoot: string): { readonly input: VerifyInput; readonly plan: ClassifyOutput } {
-	const plan = createClassifyOutput(projectRoot, 'changed', []);
-	return {
-		plan,
-		input: {
-			reasons: plan.summary.validationReasons,
-			classificationReport: plan,
-		},
-	};
-}
-
-function writeChangedPlan(projectRoot: string, inputPath: string, plan: ClassifyOutput): void {
-	const planPath = resolvePlanPath(projectRoot, inputPath);
-	writeJsonFileInsideWithoutSymlinks(projectRoot, planPath, plan);
-}
-
-export function planErrorMessageKey(code: string): MessageKey {
-	switch (code) {
-		case 'plan_path_outside_root':
-			return 'verify.error.plan_path_outside_root';
-		case 'input_path_contains_symlink':
-			return 'verify.error.input_path_contains_symlink';
-		case 'missing_plan_reasons':
-			return 'verify.error.missing_plan_reasons';
-		case 'unsupported_plan_source':
-			return 'verify.error.unsupported_plan_source';
-		case 'plan_root_mismatch':
-			return 'verify.error.plan_root_mismatch';
-		case 'git_changed_files_unavailable':
-			return 'verify.error.changed_files_unavailable';
-		default:
-			return 'verify.error.invalid_plan_file';
-	}
-}
-
 function skippedResult(candidate: Pick<VerificationCandidate, 'intent' | 'reason' | 'detail'>): VerificationResult {
 	return {
 		intent: candidate.intent || null,
@@ -977,11 +411,13 @@ async function runVerificationIntent(
 	intent: string,
 	lang: CliLang,
 	verificationPlanId: string,
+	correlationId: string,
 	testTargets: readonly string[] = [],
 	additionalDeclaredWritePaths: readonly string[] = [],
 ): Promise<VerificationResult> {
 	const output = createBufferedOutput();
 	const exitCode = await runRun([intent, '--json'], output.reporter, lang, {
+		correlationId,
 		writeLatestReceipt: false,
 		writeLatestProfile: false,
 		recordPerformanceHistory: false,
@@ -1038,12 +474,13 @@ async function runVerificationEntriesSequentially(
 	entries: readonly VerificationScheduleEntry[],
 	lang: CliLang,
 	verificationPlanId: string,
+	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 
 	for (const entry of entries) {
-		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, scheduledTestTargets.get(entry.intent) ?? []));
+		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, correlationId, scheduledTestTargets.get(entry.intent) ?? []));
 	}
 
 	return results;
@@ -1055,6 +492,7 @@ async function runVerificationEntriesInParallelChunks(
 	parallelism: number,
 	lang: CliLang,
 	verificationPlanId: string,
+	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
@@ -1069,6 +507,7 @@ async function runVerificationEntriesInParallelChunks(
 					entry.intent,
 					lang,
 					verificationPlanId,
+					correlationId,
 					scheduledTestTargets.get(entry.intent) ?? [],
 				),
 			),
@@ -1145,6 +584,7 @@ async function runScheduledVerificationIntents(
 	projectRoot: string,
 	lang: CliLang,
 	verificationPlanId: string,
+	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
 	parallelism: number,
 ): Promise<VerificationResult[]> {
@@ -1167,11 +607,12 @@ async function runScheduledVerificationIntents(
 							parallelism,
 							lang,
 							verificationPlanId,
+							correlationId,
 							scheduledTestTargets,
 						)
-					: await runVerificationEntriesSequentially(entries, lang, verificationPlanId, scheduledTestTargets);
+					: await runVerificationEntriesSequentially(entries, lang, verificationPlanId, correlationId, scheduledTestTargets);
 		} else {
-			batchResults = await runVerificationEntriesSequentially(entries, lang, verificationPlanId, scheduledTestTargets);
+			batchResults = await runVerificationEntriesSequentially(entries, lang, verificationPlanId, correlationId, scheduledTestTargets);
 		}
 
 		results.push(...batchResults);
@@ -1768,6 +1209,7 @@ function writeVerifyRunReceipts(
 	const manifest: VerifyRunReceiptManifest = {
 		schema_version: '1',
 		command: 'verify',
+		correlation_id: outputWithReceiptPaths.correlation_id,
 		reason: outputWithReceiptPaths.reason,
 		reasons: outputWithReceiptPaths.reasons,
 		plan_source: outputWithReceiptPaths.plan_source,
@@ -1790,6 +1232,7 @@ function writeVerifyRunReceipts(
 		schema_version: '1',
 		command: 'verify',
 		kind: 'verify_run_summary',
+		correlation_id: outputWithReceiptPaths.correlation_id,
 		reason: outputWithReceiptPaths.reason,
 		reasons: outputWithReceiptPaths.reasons,
 		plan_source: outputWithReceiptPaths.plan_source,
@@ -1833,7 +1276,7 @@ async function createVerifyOutput(
 	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, { verificationPlanId });
 	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
 	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
-	const results = await runScheduledVerificationIntents(report, projectRoot, lang, verificationPlanId, scheduledTestTargets, parallelism);
+	const results = await runScheduledVerificationIntents(report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
@@ -1891,6 +1334,7 @@ async function createVerifyOutput(
 	const output: VerificationOutput = {
 		schema_version: VERIFY_SCHEMA_VERSION,
 		command: 'verify',
+		correlation_id: input.correlationId,
 		mustflow_root: projectRoot,
 		reason: input.reasons.join(', '),
 		reasons: input.reasons,
@@ -1938,7 +1382,7 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 	});
 
 	if (!firstEntry) {
-		return { ...report, verification_plan_id: verificationPlanId, requirements };
+		return { ...report, correlation_id: input.correlationId, verification_plan_id: verificationPlanId, requirements };
 	}
 
 	const scheduledIntents = Array.from(new Set(report.schedule.entries.map((entry) => entry.intent)));
@@ -1946,11 +1390,12 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 	const firstGraph = graphsByIntent.get(firstEntry.intent);
 
 	if (!firstGraph) {
-		return { ...report, verification_plan_id: verificationPlanId, requirements };
+		return { ...report, correlation_id: input.correlationId, verification_plan_id: verificationPlanId, requirements };
 	}
 
 	return {
 		...report,
+		correlation_id: input.correlationId,
 		verification_plan_id: verificationPlanId,
 		requirements,
 		schedule: {
@@ -2077,7 +1522,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 
 	try {
 		if (parsed.writePlan) {
-			resolvePlanPath(projectRoot, parsed.writePlan);
+			resolveVerifyInputPath(projectRoot, parsed.writePlan);
 		}
 
 		if (parsed.changed) {
@@ -2088,6 +1533,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 			input = readInputFromClassificationReport(projectRoot, (parsed.fromClassification ?? parsed.fromPlan) as string);
 		} else {
 			input = {
+				correlationId: createCorrelationId('verify'),
 				reasons: [parsed.reason as string],
 				classificationReport: createSyntheticClassificationReport([parsed.reason as string]),
 			};

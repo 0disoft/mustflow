@@ -23,6 +23,10 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "verify" },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^mf-[a-z][a-z0-9_-]*-[0-9a-f]{16}$"
+    },
     "mustflow_root": { "type": "string" },
     "reason": { "type": "string" },
     "reasons": {

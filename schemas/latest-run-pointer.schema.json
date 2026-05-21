@@ -23,6 +23,10 @@
     "schema_version": { "const": "1" },
     "command": { "const": "verify" },
     "kind": { "const": "verify_run_summary" },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^mf-[a-z][a-z0-9_-]*-[0-9a-f]{16}$"
+    },
     "reason": { "type": "string" },
     "reasons": {
       "type": "array",

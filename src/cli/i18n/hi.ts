@@ -750,6 +750,8 @@ export const hiMessages = {
   "run.help.option.dryRun": "कमांड चलाए बिना उसका plan प्रिंट करें",
   "run.help.option.planOnly": "--dry-run का alias",
   "run.help.option.json": "Run record या command plan को JSON के रूप में प्रिंट करें",
+  "run.help.option.allowUntrustedRoot":
+    "Manual review के बाद missing या invalid manifest lock वाली root से एक execution allow करें",
   "run.help.exit.ok": "कमांड अनुमत exit code के साथ पूरी हुई",
   "run.help.exit.fail": "कमांड अमान्य थी, अस्वीकार हुई, timed out हुई या विफल हुई",
   "run.label.suggestedIntentSnippet": "Suggested command contract snippet",
@@ -786,6 +788,10 @@ export const hiMessages = {
     "Output limit अनुमत maximum के अंदर रहनी चाहिए।",
   "run.error.conflictingPreviewModes":
     "--dry-run या --plan-only में से एक इस्तेमाल करें, दोनों नहीं",
+  "run.error.untrustedRootMissing":
+    "{path} missing है, इसलिए commands execute करने से मना किया गया। Workflow install करने के लिए mf init/update चलाएँ, या AGENTS.md और .mustflow/config/commands.toml review करने के बाद --allow-untrusted-root पास करें।",
+  "run.error.untrustedRootInvalid":
+    "Manifest lock invalid है, इसलिए commands execute करने से मना किया गया: {detail}. इसे restore या regenerate करें, या AGENTS.md और .mustflow/config/commands.toml review करने के बाद --allow-untrusted-root पास करें।",
   "run.error.timedOut": 'कमांड "{intent}" {seconds} सेकंड बाद time out हुई',
   "run.error.outputLimitExceeded":
     'कमांड "{intent}" ने max_output_bytes सीमा पार की: {message}',

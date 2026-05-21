@@ -744,6 +744,8 @@ export const koMessages = {
   "run.help.option.dryRun": "실행하지 않고 명령 계획을 출력합니다",
   "run.help.option.planOnly": "--dry-run과 같은 동작입니다",
   "run.help.option.json": "실행 결과 또는 명령 계획을 JSON으로 출력합니다",
+  "run.help.option.allowUntrustedRoot":
+    "잠금 파일이 없거나 올바르지 않은 루트에서 수동 검토 후 이번 실행만 허용합니다",
   "run.help.exit.ok": "명령이 허용된 종료 코드로 완료되었습니다",
   "run.help.exit.fail":
     "명령이 잘못되었거나, 거부되었거나, 시간 초과되었거나, 실패했습니다",
@@ -781,6 +783,10 @@ export const koMessages = {
     "출력 상한은 허용된 최댓값 안에 있어야 합니다.",
   "run.error.conflictingPreviewModes":
     "--dry-run과 --plan-only 중 하나만 사용하세요",
+  "run.error.untrustedRootMissing":
+    "{path}이 없어 명령 실행을 거부했습니다. mf init/update로 워크플로우를 설치하거나, AGENTS.md와 .mustflow/config/commands.toml을 검토한 뒤 --allow-untrusted-root를 붙이세요.",
+  "run.error.untrustedRootInvalid":
+    "잠금 파일이 올바르지 않아 명령 실행을 거부했습니다: {detail}. 파일을 복구하거나 다시 생성하거나, AGENTS.md와 .mustflow/config/commands.toml을 검토한 뒤 --allow-untrusted-root를 붙이세요.",
   "run.error.timedOut": '명령 "{intent}"가 {seconds}초 뒤 시간 초과되었습니다',
   "run.error.outputLimitExceeded":
     '명령 "{intent}"가 max_output_bytes 제한을 넘었습니다: {message}',

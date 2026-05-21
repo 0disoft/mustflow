@@ -133,6 +133,7 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 		const exportSnapshot = JSON.parse(readFileSync(jsonPath, 'utf8'));
 		assert.equal(exportSnapshot.schema_version, '1');
 		assert.equal(exportSnapshot.command, 'dashboard export');
+		assert.match(exportSnapshot.correlation_id, /^mf-dashboard-[0-9a-f]{16}$/u);
 		assert.equal(exportSnapshot.format, 'json');
 		assert.equal(exportSnapshot.output_policy.starts_server, false);
 		assert.equal(exportSnapshot.output_policy.omits_dashboard_token, true);

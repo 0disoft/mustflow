@@ -76,6 +76,7 @@ test('classifies explicit paths with public surface contracts as json', async ()
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.schema_version, '1');
 		assert.equal(report.command, 'classify');
+		assert.match(report.correlation_id, /^mf-classify-[0-9a-f]{16}$/u);
 		assert.equal(report.source, 'paths');
 		assert.deepEqual(report.summary.changeKinds, ['documentation', 'schema', 'test_fixture', 'translation', 'unknown']);
 		assert.ok(report.summary.validationReasons.includes('docs_change'));
@@ -186,6 +187,7 @@ test('classifies changed git status paths', async () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.source, 'changed');
+		assert.match(report.correlation_id, /^mf-classify-[0-9a-f]{16}$/u);
 		assert.deepEqual(report.files, ['README.md', 'schemas/example.schema.json']);
 		assert.ok(report.summary.affectedContracts.includes('JSON schema'));
 		assert.ok(report.summary.affectedContracts.includes('public documentation'));
@@ -235,6 +237,7 @@ test('writes changed-file classification reports to repository-local paths', asy
 		assert.equal(existsSync(reportPath), true);
 		assert.deepEqual(writtenReport, printedReport);
 		assert.equal(writtenReport.command, 'classify');
+		assert.match(writtenReport.correlation_id, /^mf-classify-[0-9a-f]{16}$/u);
 		assert.equal(writtenReport.source, 'changed');
 		assert.deepEqual(writtenReport.files, ['README.md']);
 	} finally {

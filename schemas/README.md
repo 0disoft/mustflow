@@ -48,6 +48,10 @@ Current schemas:
 These schemas define stable, automation-facing fields. Human-readable command  
 output is intentionally excluded.
 
+Current `classify`, `verify`, `run`, dashboard export, and verify state outputs may include
+`correlation_id` so local artifacts from one work incident can be connected without storing raw
+transcripts, environment values, or hidden reasoning.
+
 The published schema surface is tracked in `src/core/public-json-contracts.ts`.  
 Release tests verify consistency between this manifest, `schemas/*.schema.json`,  
 `npm pack --dry-run --json`, and the installed package’s JSON command output.

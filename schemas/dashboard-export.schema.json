@@ -20,6 +20,10 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "dashboard export" },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^mf-[a-z][a-z0-9_-]*-[0-9a-f]{16}$"
+    },
     "format": { "enum": ["html", "json"] },
     "generated_at": { "type": "string" },
     "mustflow_root": { "type": "string" },

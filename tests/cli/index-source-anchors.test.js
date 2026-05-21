@@ -163,13 +163,12 @@ export const cachedAnchor = true;
 });
 
 test('source preflight compares metadata before hashing content', () => {
-	const localIndexSource = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'index.ts'), 'utf8');
+	const localIndexSource = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'source-index.ts'), 'utf8');
 	const preflightStart = localIndexSource.indexOf('function collectFastPreflightIndexedFileMetadataRecords');
-	const preflightEnd = localIndexSource.indexOf('\nfunction normalizeSearchText', preflightStart);
+	const preflightEnd = localIndexSource.length;
 	const preflightFunction = localIndexSource.slice(preflightStart, preflightEnd);
 
 	assert.notEqual(preflightStart, -1);
-	assert.notEqual(preflightEnd, -1);
 	assert.match(preflightFunction, /readIndexedFileMetadataRecord/u);
 	assert.doesNotMatch(preflightFunction, /readIndexedFileRecord|sha256Bytes|contentHash|readFileSync/u);
 });

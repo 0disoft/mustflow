@@ -748,6 +748,8 @@ Read these files before working:
   "run.help.option.dryRun": "Print a non-executing command plan",
   "run.help.option.planOnly": "Alias for --dry-run",
   "run.help.option.json": "Print the run record or command plan as JSON",
+  "run.help.option.allowUntrustedRoot":
+    "Allow one execution from a root with a missing or invalid manifest lock after manual review",
   "run.help.exit.ok": "The command completed with an allowed exit code",
   "run.help.exit.fail": "The command was invalid, refused, timed out, or failed",
   "run.label.suggestedIntentSnippet": "Suggested command contract snippet",
@@ -784,6 +786,10 @@ Read these files before working:
     "The output limit must stay within the allowed maximum.",
   "run.error.conflictingPreviewModes":
     "Use either --dry-run or --plan-only, not both",
+  "run.error.untrustedRootMissing":
+    "Refused to execute commands because {path} is missing. Run mf init/update to install the workflow, or pass --allow-untrusted-root after reviewing AGENTS.md and .mustflow/config/commands.toml.",
+  "run.error.untrustedRootInvalid":
+    "Refused to execute commands because the manifest lock is invalid: {detail}. Restore or regenerate it, or pass --allow-untrusted-root after reviewing AGENTS.md and .mustflow/config/commands.toml.",
   "run.error.timedOut": 'Command "{intent}" timed out after {seconds} seconds',
   "run.error.outputLimitExceeded":
     'Command "{intent}" exceeded max_output_bytes: {message}',

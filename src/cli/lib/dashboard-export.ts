@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import path from 'node:path';
 
 import { createDashboardCompletionVerdict, type CompletionVerdict } from '../../core/completion-verdict.js';
+import { createCorrelationId } from '../../core/correlation-id.js';
 import { createDashboardEvidenceModel, type VerificationEvidenceModel } from '../../core/verification-evidence.js';
 import { redactSecretLikeText } from '../../core/secret-redaction.js';
 import type { DashboardDocReviewSnapshot, DashboardStatusSnapshot } from './dashboard-html.js';
@@ -19,6 +20,7 @@ export type DashboardExportFormat = 'html' | 'json';
 export interface DashboardExportSnapshot {
 	readonly schema_version: '1';
 	readonly command: 'dashboard export';
+	readonly correlation_id: string;
 	readonly format: DashboardExportFormat;
 	readonly generated_at: string;
 	readonly mustflow_root: string;
@@ -709,6 +711,7 @@ export function createDashboardExportSnapshot(input: DashboardExportInput): Dash
 	const snapshot = {
 		schema_version: '1',
 		command: 'dashboard export',
+		correlation_id: createCorrelationId('dashboard'),
 		format: input.format,
 		generated_at: new Date().toISOString(),
 		mustflow_root: input.projectRoot,

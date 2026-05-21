@@ -127,6 +127,7 @@ required_after = ["custom_verify"]
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.command, 'verify');
+		assert.match(report.correlation_id, /^mf-verify-[0-9a-f]{16}$/u);
 		assert.equal(report.reason, 'custom_verify');
 		assert.deepEqual(report.reasons, ['custom_verify']);
 		assert.equal(report.plan_source, null);
@@ -206,6 +207,7 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].status, 'passed');
 		assert.equal(report.results[0].verification_plan_id, report.verification_plan_id);
 		assert.equal(report.results[0].receipt.intent, 'verify_echo');
+		assert.equal(report.results[0].receipt.correlation_id, report.correlation_id);
 		assert.equal(report.results[0].receipt.verification_plan_id, report.verification_plan_id);
 		assert.match(report.results[0].receipt.stdout.tail, /verify ok/);
 		assert.match(report.run_dir, /^\.mustflow\/state\/runs\/verify-/u);
@@ -220,6 +222,7 @@ required_after = ["custom_verify"]
 		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
 
 		assert.equal(manifest.command, 'verify');
+		assert.equal(manifest.correlation_id, report.correlation_id);
 		assert.equal(manifest.verification_plan_id, report.verification_plan_id);
 		assert.equal(manifest.execution_status, 'passed');
 		assert.equal(manifest.status, 'passed');
@@ -258,11 +261,13 @@ required_after = ["custom_verify"]
 		assert.equal(report.evidence_model.receipts[0].receipt_sha256, receiptSha256);
 		assert.deepEqual(report.evidence_model.explanation.verified_by, ['all_selected_verification_passed']);
 		assert.equal(perIntentReceipt.intent, 'verify_echo');
+		assert.equal(perIntentReceipt.correlation_id, report.correlation_id);
 		assert.equal(perIntentReceipt.verification_plan_id, report.verification_plan_id);
 		assert.equal(perIntentReceipt.receipt_path, manifest.receipts[0].receipt_path);
 		assert.match(perIntentReceipt.stdout.tail, /verify ok/);
 		assert.equal(latest.command, 'verify');
 		assert.equal(latest.kind, 'verify_run_summary');
+		assert.equal(latest.correlation_id, report.correlation_id);
 		assert.equal(latest.verification_plan_id, report.verification_plan_id);
 		assert.equal(latest.execution_status, 'passed');
 		assert.equal(latest.status, 'passed');

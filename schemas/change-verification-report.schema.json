@@ -29,6 +29,10 @@
     "classification_summary": {
       "$ref": "#/$defs/classificationSummary"
     },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^mf-[a-z][a-z0-9_-]*-[0-9a-f]{16}$"
+    },
     "verification_plan_id": {
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"

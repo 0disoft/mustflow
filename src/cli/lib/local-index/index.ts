@@ -1,11 +1,8 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { isRecord, readCommandContract, readString, readStringArray, type TomlTable } from '../command-contract.js';
-import { listFilesRecursive, toPosixPath } from '../filesystem.js';
-import { readMustflowTomlFile } from '../toml.js';
-import { MUSTFLOW_JSON_MAX_BYTES, readMustflowTextFile } from '../mustflow-read.js';
+import { isRecord, readStringArray, type TomlTable } from '../command-contract.js';
+import { toPosixPath } from '../filesystem.js';
 import {
 	collectSourceAnchorIndexRecords,
 	hasHighRiskSourceAnchorRiskTags,
@@ -14,8 +11,7 @@ import {
 	type SourceAnchorStatus,
 	type SourceAnchorSymbol,
 } from '../../../core/source-anchor-status.js';
-import { listSourceAnchorFiles } from '../../../core/source-anchors.js';
-import { normalizeCommandEffects, type NormalizedCommandEffect } from '../../../core/command-effects.js';
+import type { NormalizedCommandEffect } from '../../../core/command-effects.js';
 import { listChangeClassificationRuleDescriptors } from '../../../core/change-classification.js';
 import { writeFileInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
 import {
@@ -23,16 +19,13 @@ import {
 	DEFAULT_PROMPT_CACHE_STABLE_READ,
 	DEFAULT_PROMPT_CACHE_TASK_SOURCES,
 	DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES,
-	INDEX_CONFIG_RELATIVE_PATH,
 	LOCAL_INDEX_CONTENT_MODE,
 	LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS,
 	LOCAL_INDEX_PARSER_VERSION,
 	LOCAL_INDEX_SCHEMA_VERSION,
 	LOCAL_INDEX_STORE_FULL_CONTENT,
-	LATEST_RUN_STATE_RELATIVE_PATH,
 	MAX_SEARCH_MATCH_SNIPPET_CHARS,
 	MAX_SNIPPET_BYTES_PER_DOCUMENT,
-	MUSTFLOW_RELATIVE_PATH,
 	SEARCH_BACKEND_FTS5,
 	SEARCH_BACKEND_TABLE_SCAN,
 	SEARCH_MATCH_CONTEXT_AFTER_CHARS,
@@ -45,7 +38,22 @@ import {
 	SOURCE_INDEX_MAX_FILE_BYTES,
 	TEST_DISABLE_FTS5_ENV,
 } from './constants.js';
+import { collectCommandIntents } from './command-effect-index.js';
+import { sha256Text } from './hashing.js';
 import { loadSqlJs, type SqlJsDatabase, type SqlJsStatic, type SqlValue } from './sql.js';
+import {
+	collectFastPreflightIndexedFileMetadataRecords,
+	collectIndexedFileRecords,
+	collectSourceAnchorCandidatePaths,
+	getSourceScopeHash,
+	hashIndexedFileMetadataRecords,
+	normalizeIndexedFileSourceScope,
+	readIndexedFileRecord,
+	readLocalIndexSourceConfig,
+	readMustflowToml,
+	type IndexedFileMetadataRecord,
+} from './source-index.js';
+import { createVerificationEvidenceIndex, type VerificationEvidenceIndex } from './verification-evidence.js';
 import type {
 	CacheLayer,
 	IndexCommandIntent,
@@ -69,6 +77,7 @@ import type {
 	LocalSearchItem,
 	LocalSearchOptions,
 	LocalSearchResult,
+	LocalSearchScope,
 	LocalSevereVerificationRisk,
 	LocalSourceAnchorVerdictRisk,
 	LocalUncoveredCriterion,
@@ -78,6 +87,16 @@ import type {
 	SearchBackendKind,
 	SearchNgramTargetKind,
 } from './types.js';
+import {
+	collectDocuments,
+	collectDocumentsFromPaths,
+	collectSkillRoutes,
+	collectSkills,
+	getExistingIndexablePaths,
+	readText,
+	skillRouteKey,
+	splitVerificationIntents,
+} from './workflow-documents.js';
 export type {
 	LocalCommandEffectGraph,
 	LocalCommandEffectGraphStatus,
@@ -109,69 +128,6 @@ export function getLocalIndexDatabasePath(projectRoot: string): string {
 	return path.join(projectRoot, ...DEFAULT_DATABASE_RELATIVE_PATH.split('/'));
 }
 
-function getExistingIndexablePaths(projectRoot: string): string[] {
-	const paths = new Set<string>();
-	const addIfExists = (relativePath: string) => {
-		if (existsSync(path.join(projectRoot, ...relativePath.split('/')))) {
-			paths.add(relativePath);
-		}
-	};
-
-	addIfExists('AGENTS.md');
-
-	for (const relativePath of listFilesRecursive(path.join(projectRoot, '.mustflow', 'docs'))) {
-		if (relativePath.endsWith('.md')) {
-			paths.add(toPosixPath(path.join('.mustflow', 'docs', relativePath)));
-		}
-	}
-
-	for (const relativePath of listFilesRecursive(path.join(projectRoot, '.mustflow', 'context'))) {
-		if (relativePath.endsWith('.md')) {
-			paths.add(toPosixPath(path.join('.mustflow', 'context', relativePath)));
-		}
-	}
-
-	for (const relativePath of listFilesRecursive(path.join(projectRoot, '.mustflow', 'skills'))) {
-		if (relativePath === 'INDEX.md' || relativePath.endsWith('/SKILL.md')) {
-			paths.add(toPosixPath(path.join('.mustflow', 'skills', relativePath)));
-		}
-	}
-
-	for (const relativePath of listFilesRecursive(path.join(projectRoot, '.mustflow', 'config'))) {
-		if (relativePath.endsWith('.toml')) {
-			paths.add(toPosixPath(path.join('.mustflow', 'config', relativePath)));
-		}
-	}
-
-	return Array.from(paths).sort((left, right) => left.localeCompare(right));
-}
-
-function readText(projectRoot: string, relativePath: string): string {
-	return readMustflowTextFile(projectRoot, relativePath);
-}
-
-function readMustflowToml(projectRoot: string): TomlTable | undefined {
-	const mustflowPath = path.join(projectRoot, ...MUSTFLOW_RELATIVE_PATH.split('/'));
-
-	if (!existsSync(mustflowPath)) {
-		return undefined;
-	}
-
-	const parsed = readMustflowTomlFile(projectRoot, MUSTFLOW_RELATIVE_PATH);
-	return isRecord(parsed) ? parsed : undefined;
-}
-
-function readIndexToml(projectRoot: string): TomlTable | undefined {
-	const indexConfigPath = path.join(projectRoot, ...INDEX_CONFIG_RELATIVE_PATH.split('/'));
-
-	if (!existsSync(indexConfigPath)) {
-		return undefined;
-	}
-
-	const parsed = readMustflowTomlFile(projectRoot, INDEX_CONFIG_RELATIVE_PATH);
-	return isRecord(parsed) ? parsed : undefined;
-}
-
 function readNestedTable(table: TomlTable | undefined, key: string): TomlTable | undefined {
 	if (!table || !isRecord(table[key])) {
 		return undefined;
@@ -182,404 +138,6 @@ function readNestedTable(table: TomlTable | undefined, key: string): TomlTable |
 
 function readOptionalStringArray(table: TomlTable | undefined, key: string): readonly string[] | null {
 	return table ? readStringArray(table, key) ?? null : null;
-}
-
-function readBoolean(table: TomlTable | undefined, key: string): boolean | undefined {
-	const value = table?.[key];
-	return typeof value === 'boolean' ? value : undefined;
-}
-
-function readPositiveInteger(table: TomlTable | undefined, key: string): number | null {
-	const value = table?.[key];
-
-	if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
-		return null;
-	}
-
-	return value;
-}
-
-function readLocalIndexSourceConfig(projectRoot: string): LocalIndexSourceConfig {
-	const sourceIndexTable = readNestedTable(readIndexToml(projectRoot), 'source_index');
-	const configuredMaxFileBytes = readPositiveInteger(sourceIndexTable, 'max_file_bytes');
-
-	return {
-		enabledByDefault: readBoolean(sourceIndexTable, 'enabled_by_default') === true,
-		include: readOptionalStringArray(sourceIndexTable, 'include') ?? [],
-		exclude: readOptionalStringArray(sourceIndexTable, 'exclude') ?? [],
-		maxFileBytes: Math.min(configuredMaxFileBytes ?? SOURCE_INDEX_MAX_FILE_BYTES, SOURCE_INDEX_MAX_FILE_BYTES),
-		allowedExtensions: readOptionalStringArray(sourceIndexTable, 'allowed_extensions') ?? [],
-	};
-}
-
-function sha256Text(content: string): string {
-	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
-}
-
-function sha256Bytes(content: Uint8Array): string {
-	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
-}
-
-function getSourceScopeHash(includeSource: boolean, sourceConfig: LocalIndexSourceConfig): string {
-	return sha256Text(
-		JSON.stringify({
-			includeSource,
-			sourceConfig,
-		}),
-	);
-}
-
-function getDocumentType(relativePath: string): string {
-	if (relativePath === 'AGENTS.md') {
-		return 'agent_rules';
-	}
-
-	if (relativePath.startsWith('.mustflow/config/')) {
-		return 'config';
-	}
-
-	if (relativePath === '.mustflow/skills/INDEX.md') {
-		return 'skill_index';
-	}
-
-	if (relativePath === '.mustflow/context/INDEX.md') {
-		return 'context_index';
-	}
-
-	if (relativePath.startsWith('.mustflow/context/')) {
-		return 'context';
-	}
-
-	if (relativePath.endsWith('/SKILL.md')) {
-		return 'skill';
-	}
-
-	if (relativePath.startsWith('.mustflow/docs/')) {
-		return 'workflow_doc';
-	}
-
-	return 'document';
-}
-
-function parseFrontmatter(content: string): Record<string, string> {
-	if (!content.startsWith('---')) {
-		return {};
-	}
-
-	const end = content.indexOf('\n---', 3);
-
-	if (end === -1) {
-		return {};
-	}
-
-	const result: Record<string, string> = {};
-	const rawFrontmatter = content.slice(3, end);
-
-	for (const line of rawFrontmatter.split(/\r?\n/)) {
-		const separatorIndex = line.indexOf(':');
-
-		if (separatorIndex === -1) {
-			continue;
-		}
-
-		const key = line.slice(0, separatorIndex).trim();
-		const value = line.slice(separatorIndex + 1).trim();
-
-		if (key.length > 0 && value.length > 0) {
-			result[key] = value;
-		}
-	}
-
-	return result;
-}
-
-function getTitle(relativePath: string, content: string): string {
-	const heading = content.match(/^#\s+(.+)$/mu)?.[1]?.trim();
-	return heading && heading.length > 0 ? heading : path.posix.basename(relativePath);
-}
-
-function getSections(content: string): string[] {
-	return [...content.matchAll(/^##\s+(.+)$/gmu)].map((match) => match[1]?.trim()).filter((value): value is string => Boolean(value));
-}
-
-function truncateUtf8(value: string, maxBytes: number): string {
-	const buffer = Buffer.from(value, 'utf8');
-
-	if (buffer.byteLength <= maxBytes) {
-		return value;
-	}
-
-	return buffer.subarray(0, maxBytes).toString('utf8').replace(/\uFFFD$/u, '');
-}
-
-function collectDocuments(projectRoot: string): IndexDocument[] {
-	return getExistingIndexablePaths(projectRoot).map((relativePath) => {
-		const content = readText(projectRoot, relativePath);
-		const frontmatter = parseFrontmatter(content);
-		const revision = Number.parseInt(frontmatter.revision ?? '', 10);
-
-		return {
-			path: relativePath,
-			type: getDocumentType(relativePath),
-			title: getTitle(relativePath, content),
-			locale: frontmatter.locale ?? null,
-			revision: Number.isInteger(revision) ? revision : null,
-			contentHash: sha256Text(content),
-			contentSnippet: truncateUtf8(content, MAX_SNIPPET_BYTES_PER_DOCUMENT),
-			sections: getSections(content),
-		};
-	});
-}
-
-function collectSkills(documents: readonly IndexDocument[]): IndexSkill[] {
-	return documents
-		.filter((document) => document.type === 'skill')
-		.map((document) => ({
-			name: document.path.split('/').at(-2) ?? document.title,
-			path: document.path,
-			title: document.title,
-		}))
-		.sort((left, right) => left.name.localeCompare(right.name));
-}
-
-function normalizeMarkdownCell(value: string): string {
-	return value
-		.replace(/<br\s*\/?>/giu, ' ')
-		.replace(/`([^`]+)`/gu, '$1')
-		.replace(/\s+/gu, ' ')
-		.trim();
-}
-
-function parseMarkdownTableRow(line: string): string[] {
-	return line
-		.trim()
-		.replace(/^\|/u, '')
-		.replace(/\|$/u, '')
-		.split('|')
-		.map((cell) => normalizeMarkdownCell(cell));
-}
-
-function isMarkdownSeparatorRow(cells: readonly string[]): boolean {
-	return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/u.test(cell));
-}
-
-function skillNameFromPath(skillPath: string): string {
-	return skillPath.split('/').at(-2) ?? path.posix.basename(skillPath, '.md');
-}
-
-function splitVerificationIntents(value: string): string[] {
-	return value
-		.split(',')
-		.map((item) => item.trim())
-		.filter(Boolean)
-		.sort((left, right) => left.localeCompare(right));
-}
-
-function collectSkillRoutes(projectRoot: string): IndexSkillRoute[] {
-	const indexPath = path.join(projectRoot, '.mustflow', 'skills', 'INDEX.md');
-
-	if (!existsSync(indexPath)) {
-		return [];
-	}
-
-	const content = readMustflowTextFile(projectRoot, '.mustflow/skills/INDEX.md');
-	const routes: IndexSkillRoute[] = [];
-	let inRouteTable = false;
-
-	for (const line of content.split(/\r?\n/u)) {
-		if (!line.trim().startsWith('|')) {
-			if (inRouteTable && line.trim() === '') {
-				inRouteTable = false;
-			}
-
-			continue;
-		}
-
-		const cells = parseMarkdownTableRow(line);
-
-		if (cells.includes('Skill Document') && cells.includes('Trigger')) {
-			inRouteTable = true;
-			continue;
-		}
-
-		if (!inRouteTable || isMarkdownSeparatorRow(cells) || cells.length < 7) {
-			continue;
-		}
-
-		const [trigger, skillPath, requiredInput, editScope, risk, verificationIntents, expectedOutput] = cells;
-
-		if (!skillPath?.startsWith('.mustflow/skills/') || !skillPath.endsWith('/SKILL.md')) {
-			continue;
-		}
-
-		routes.push({
-			skillName: skillNameFromPath(skillPath),
-			skillPath,
-			trigger: trigger ?? '',
-			requiredInput: requiredInput ?? '',
-			editScope: editScope ?? '',
-			risk: risk ?? '',
-			verificationIntents: splitVerificationIntents(verificationIntents ?? ''),
-			expectedOutput: expectedOutput ?? '',
-		});
-	}
-
-	return routes.sort((left, right) => {
-		const skillOrder = left.skillName.localeCompare(right.skillName);
-		return skillOrder === 0 ? left.trigger.localeCompare(right.trigger) : skillOrder;
-	});
-}
-
-function collectCommandIntents(projectRoot: string): IndexCommandIntent[] {
-	if (!existsSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'))) {
-		return [];
-	}
-
-	const contract = readCommandContract(projectRoot);
-	const intents: IndexCommandIntent[] = [];
-
-	for (const [name, intent] of Object.entries(contract.intents).sort(([left], [right]) => left.localeCompare(right))) {
-		if (!isRecord(intent)) {
-			continue;
-		}
-
-		intents.push({
-			name,
-			status: readString(intent, 'status') ?? 'unknown',
-			lifecycle: readString(intent, 'lifecycle') ?? null,
-			runPolicy: readString(intent, 'run_policy') ?? null,
-			description: readString(intent, 'description') ?? null,
-			effects: normalizeCommandEffects(projectRoot, contract, name),
-		});
-	}
-
-	return intents;
-}
-
-function normalizeIndexedFileSourceScope(value: SqlValue | undefined): IndexedFileRecord['sourceScope'] {
-	const sourceScope = toSearchString(value);
-
-	if (sourceScope === 'source_anchor' || sourceScope === 'state') {
-		return sourceScope;
-	}
-
-	return 'workflow';
-}
-
-type IndexedFileMetadataRecord = Omit<IndexedFileRecord, 'contentHash'>;
-
-function readIndexedFileRecord(
-	projectRoot: string,
-	relativePath: string,
-	sourceScope: IndexedFileRecord['sourceScope'],
-	contentHash: string | null = null,
-): IndexedFileRecord {
-	const metadata = readIndexedFileMetadataRecord(projectRoot, relativePath, sourceScope);
-
-	return {
-		...metadata,
-		contentHash: contentHash ?? sha256Bytes(readFileSync(path.join(projectRoot, ...relativePath.split('/')))),
-	};
-}
-
-function readIndexedFileMetadataRecord(
-	projectRoot: string,
-	relativePath: string,
-	sourceScope: IndexedFileRecord['sourceScope'],
-): IndexedFileMetadataRecord {
-	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
-	const stats = statSync(fullPath);
-
-	return {
-		path: relativePath,
-		sourceScope,
-		sizeBytes: stats.size,
-		mtimeMs: Math.round(stats.mtimeMs),
-	};
-}
-
-function hashIndexedFileMetadataRecord(projectRoot: string, metadata: IndexedFileMetadataRecord): IndexedFileRecord {
-	return {
-		...metadata,
-		contentHash: sha256Bytes(readFileSync(path.join(projectRoot, ...metadata.path.split('/')))),
-	};
-}
-
-function hashIndexedFileMetadataRecords(
-	projectRoot: string,
-	metadataRecords: readonly IndexedFileMetadataRecord[],
-): IndexedFileRecord[] {
-	return metadataRecords.map((metadata) => hashIndexedFileMetadataRecord(projectRoot, metadata));
-}
-
-function collectIndexedFileRecords(
-	projectRoot: string,
-	documents: readonly IndexDocument[],
-	sourceAnchors: readonly SourceAnchorIndexRecord[],
-	sourceAnchorCandidatePaths: readonly string[] = [],
-): IndexedFileRecord[] {
-	const records = new Map<string, IndexedFileRecord>();
-
-	for (const document of documents) {
-		records.set(document.path, readIndexedFileRecord(projectRoot, document.path, 'workflow', document.contentHash));
-	}
-
-	const sourcePaths = new Set([...sourceAnchorCandidatePaths, ...sourceAnchors.map((anchor) => anchor.path)]);
-
-	for (const anchorPath of [...sourcePaths].sort((left, right) => left.localeCompare(right))) {
-		if (!records.has(anchorPath)) {
-			records.set(anchorPath, readIndexedFileRecord(projectRoot, anchorPath, 'source_anchor'));
-		}
-	}
-
-	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
-		records.set(
-			LATEST_RUN_STATE_RELATIVE_PATH,
-			readIndexedFileRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
-		);
-	}
-
-	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
-}
-
-function collectSourceAnchorCandidatePaths(projectRoot: string, sourceConfig: LocalIndexSourceConfig): string[] {
-	return listSourceAnchorFiles(projectRoot, {
-		...sourceConfig,
-		excludeGeneratedOrVendor: true,
-	});
-}
-
-function collectFastPreflightIndexedFileMetadataRecords(
-	projectRoot: string,
-	includeSource: boolean,
-	sourceConfig: LocalIndexSourceConfig,
-): IndexedFileMetadataRecord[] | null {
-	const records = new Map<string, IndexedFileMetadataRecord>();
-
-	for (const relativePath of getExistingIndexablePaths(projectRoot)) {
-		records.set(relativePath, readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'));
-	}
-
-	if (includeSource) {
-		try {
-			for (const sourcePath of collectSourceAnchorCandidatePaths(projectRoot, sourceConfig)) {
-				if (!records.has(sourcePath)) {
-					records.set(sourcePath, readIndexedFileMetadataRecord(projectRoot, sourcePath, 'source_anchor'));
-				}
-			}
-		} catch {
-			return null;
-		}
-	}
-
-	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
-		records.set(
-			LATEST_RUN_STATE_RELATIVE_PATH,
-			readIndexedFileMetadataRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
-		);
-	}
-
-	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
 }
 
 function normalizeSearchText(value: string): string {
@@ -654,72 +212,7 @@ interface LocalSearchCapabilities {
 	readonly fts5Available: boolean;
 }
 
-interface VerificationEvidenceSummary {
-	readonly sourcePath: string;
-	readonly sourceHash: string;
-	readonly command: string;
-	readonly kind: string;
-	readonly status: string;
-	readonly runDir: string | null;
-	readonly manifestPath: string | null;
-	readonly verificationPlanId: string | null;
-	readonly completionStatus: string | null;
-	readonly primaryReason: string | null;
-	readonly matchedIntents: number;
-	readonly ranIntents: number;
-	readonly passedIntents: number;
-	readonly failedIntents: number;
-	readonly skippedIntents: number;
-	readonly receiptCount: number;
-	readonly coverageCount: number;
-	readonly remainingRiskCount: number;
-	readonly failureFingerprint: string | null;
-}
-
-interface VerificationReceiptSummary {
-	readonly sourcePath: string;
-	readonly ordinal: number;
-	readonly intent: string | null;
-	readonly status: string;
-	readonly skipped: boolean;
-	readonly verificationPlanId: string | null;
-	readonly receiptPath: string | null;
-	readonly receiptSha256: string | null;
-	readonly commandFingerprint: string | null;
-	readonly contractFingerprint: string | null;
-	readonly currentStateHash: string | null;
-	readonly writeDriftStatus: string | null;
-}
-
-interface VerificationCoverageState {
-	readonly sourcePath: string;
-	readonly criterionId: string;
-	readonly source: string;
-	readonly status: string;
-	readonly requirementReason: string | null;
-	readonly intents: readonly string[];
-	readonly receiptCount: number;
-	readonly gapCount: number;
-	readonly sourceAnchorCount: number;
-}
-
-interface VerificationRiskSignal {
-	readonly sourcePath: string;
-	readonly ordinal: number;
-	readonly code: string;
-	readonly severity: string;
-	readonly detailHash: string;
-}
-
-interface ValidationRatchetSignalReadModel {
-	readonly signalId: string;
-	readonly planId: string | null;
-	readonly code: string;
-	readonly severity: string;
-	readonly pathHash: string;
-	readonly beforeHash: string | null;
-	readonly afterHash: string | null;
-}
+const DIRECT_SEARCH_MAX_WORKFLOW_FILES = 200;
 
 interface SourceAnchorRiskSignalReadModel {
 	readonly anchorId: string;
@@ -730,135 +223,6 @@ interface SourceAnchorRiskSignalReadModel {
 	readonly navigationOnly: boolean;
 	readonly canInstructAgent: boolean;
 }
-
-interface VerificationFailureFingerprint {
-	readonly sourcePath: string;
-	readonly fingerprint: string;
-	readonly verificationPlanId: string | null;
-	readonly status: string;
-	readonly failedIntents: readonly string[];
-	readonly primaryReason: string | null;
-	readonly failedIntentsHash: string | null;
-	readonly riskCodesHash: string | null;
-	readonly affectedSurfacesHash: string | null;
-	readonly firstSeenAt: string | null;
-	readonly lastSeenAt: string | null;
-	readonly seenCount: number;
-	readonly requiresNewEvidence: boolean;
-}
-
-interface VerificationPlanReadModel {
-	readonly planId: string;
-	readonly sourcePath: string;
-	readonly classificationHash: string | null;
-	readonly commandContractHash: string | null;
-	readonly selectedIntentsHash: string | null;
-	readonly createdAt: string | null;
-	readonly sourceHash: string;
-}
-
-interface AcceptanceCriterionReadModel {
-	readonly criterionId: string;
-	readonly planId: string;
-	readonly source: string;
-	readonly statementHash: string | null;
-	readonly reason: string | null;
-	readonly surface: string | null;
-	readonly pathHash: string | null;
-}
-
-interface CriterionCoverageReadModel {
-	readonly criterionId: string;
-	readonly planId: string;
-	readonly status: string;
-	readonly receiptCount: number;
-	readonly gapCount: number;
-	readonly riskCount: number;
-}
-
-interface CommandReceiptReadModel {
-	readonly receiptHash: string;
-	readonly planId: string;
-	readonly intent: string | null;
-	readonly status: string;
-	readonly commandFingerprint: string | null;
-	readonly contractFingerprint: string | null;
-	readonly currentStateHash: string | null;
-	readonly writeDriftStatus: string | null;
-}
-
-interface CompletionVerdictSummaryReadModel {
-	readonly claimId: string;
-	readonly planId: string;
-	readonly status: string;
-	readonly primaryReason: string | null;
-	readonly riskCount: number;
-	readonly contradictionCount: number;
-	readonly blockerCount: number;
-}
-
-interface ReproRouteReadModel {
-	readonly routeId: string;
-	readonly taskHash: string;
-	readonly routeDigest: string | null;
-	readonly routeKind: string | null;
-	readonly failureOracleHash: string | null;
-}
-
-interface ReproObservationReadModel {
-	readonly routeId: string;
-	readonly phase: 'before_fix' | 'after_fix' | 'regression_guard';
-	readonly outcome: string | null;
-	readonly receiptHash: string | null;
-	readonly diagnosticFingerprint: string;
-}
-
-interface FailureFingerprintReadModel {
-	readonly fingerprint: string;
-	readonly planId: string | null;
-	readonly failedIntentsHash: string | null;
-	readonly riskCodesHash: string | null;
-	readonly seenCount: number;
-	readonly firstSeenAt: string | null;
-	readonly lastSeenAt: string | null;
-}
-
-interface VerificationEvidenceIndex {
-	readonly summaries: readonly VerificationEvidenceSummary[];
-	readonly verificationPlans: readonly VerificationPlanReadModel[];
-	readonly acceptanceCriteria: readonly AcceptanceCriterionReadModel[];
-	readonly criterionCoverage: readonly CriterionCoverageReadModel[];
-	readonly receipts: readonly VerificationReceiptSummary[];
-	readonly commandReceiptSummaries: readonly CommandReceiptReadModel[];
-	readonly coverageStates: readonly VerificationCoverageState[];
-	readonly riskSignals: readonly VerificationRiskSignal[];
-	readonly validationRatchetSignals: readonly ValidationRatchetSignalReadModel[];
-	readonly completionVerdictSummaries: readonly CompletionVerdictSummaryReadModel[];
-	readonly failureFingerprints: readonly VerificationFailureFingerprint[];
-	readonly reproRoutes: readonly ReproRouteReadModel[];
-	readonly reproObservations: readonly ReproObservationReadModel[];
-	readonly failureFingerprintReadModels: readonly FailureFingerprintReadModel[];
-}
-
-const VALIDATION_RATCHET_RISK_CODES = new Set([
-	'related_test_deleted',
-	'skip_or_only_marker_present',
-	'todo_or_pending_marker_added',
-	'assertion_count_decreased',
-	'assertion_matcher_weakened',
-	'negative_assertion_removed',
-	'exception_assertion_removed',
-	'snapshot_mass_updated',
-	'golden_output_replaced',
-	'verification_intent_disabled',
-	'verification_required_after_removed',
-	'success_exit_codes_widened',
-	'command_allows_no_tests',
-	'command_forces_snapshot_update',
-	'command_hides_failure',
-	'coverage_threshold_lowered',
-	'test_selection_narrowed',
-]);
 
 function searchCapabilities(fts5Available: boolean): LocalSearchCapabilities {
 	return {
@@ -881,508 +245,8 @@ function detectLocalSearchCapabilities(database: SqlJsDatabase): LocalSearchCapa
 	}
 }
 
-function isJsonRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function readJsonRecord(projectRoot: string, relativePath: string): { readonly content: string; readonly value: Record<string, unknown> } | null {
-	try {
-		const content = readMustflowTextFile(projectRoot, relativePath, { maxBytes: MUSTFLOW_JSON_MAX_BYTES });
-		const parsed = JSON.parse(content) as unknown;
-		return isJsonRecord(parsed) ? { content, value: parsed } : null;
-	} catch {
-		return null;
-	}
-}
-
-function stringField(record: Record<string, unknown> | null | undefined, key: string): string | null {
-	const value = record?.[key];
-	return typeof value === 'string' ? value : null;
-}
-
-function booleanField(record: Record<string, unknown> | null | undefined, key: string): boolean {
-	return record?.[key] === true;
-}
-
-function numberField(record: Record<string, unknown> | null | undefined, key: string): number {
-	const value = record?.[key];
-	return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
-function recordField(record: Record<string, unknown> | null | undefined, key: string): Record<string, unknown> | null {
-	const value = record?.[key];
-	return isJsonRecord(value) ? value : null;
-}
-
-function recordArrayField(record: Record<string, unknown> | null | undefined, key: string): readonly Record<string, unknown>[] {
-	const value = record?.[key];
-	return Array.isArray(value) ? value.filter(isJsonRecord) : [];
-}
-
-function stringArrayField(record: Record<string, unknown> | null | undefined, key: string): readonly string[] {
-	const value = record?.[key];
-	return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-}
-
 function joinedList(values: readonly string[]): string {
 	return [...values].sort((left, right) => left.localeCompare(right)).join(', ');
-}
-
-function hashJson(value: unknown): string {
-	return sha256Text(JSON.stringify(value));
-}
-
-function stringListHash(values: readonly (string | null)[]): string | null {
-	const normalized = values.filter((value): value is string => typeof value === 'string' && value.length > 0);
-	return normalized.length > 0 ? hashJson([...normalized].sort((left, right) => left.localeCompare(right))) : null;
-}
-
-function reproObservation(
-	routeId: string,
-	phase: ReproObservationReadModel['phase'],
-	evidence: Record<string, unknown> | null,
-): ReproObservationReadModel {
-	const status = stringField(evidence, 'status');
-	const outcome = stringField(evidence, 'outcome') ?? status;
-	const receiptHash = stringField(evidence, 'receipt_sha256');
-	const diagnosticFingerprint =
-		stringField(evidence, 'diagnostic_fingerprint') ??
-		stringField(evidence, 'diagnostic_hash') ??
-		hashJson({
-			phase,
-			status,
-			outcome,
-			summary: stringField(evidence, 'summary'),
-			reason: stringField(evidence, 'reason'),
-		});
-
-	return {
-		routeId,
-		phase,
-		outcome,
-		receiptHash,
-		diagnosticFingerprint,
-	};
-}
-
-function evidenceStatusForRunReceipt(latest: Record<string, unknown>): string {
-	return stringField(latest, 'status') ?? (booleanField(latest, 'timed_out') ? 'timed_out' : 'unknown');
-}
-
-function failedIntentsFromReceipts(receipts: readonly VerificationReceiptSummary[]): readonly string[] {
-	return receipts
-		.filter((receipt) => ['failed', 'timed_out', 'start_failed'].includes(receipt.status))
-		.map((receipt) => receipt.intent)
-		.filter((intent): intent is string => typeof intent === 'string' && intent.length > 0)
-		.sort((left, right) => left.localeCompare(right));
-}
-
-function createFailureFingerprint(input: {
-	readonly command: string;
-	readonly status: string;
-	readonly verificationPlanId: string | null;
-	readonly primaryReason: string | null;
-	readonly failedIntents: readonly string[];
-	readonly riskCodes: readonly string[];
-	readonly runIntent?: string | null;
-	readonly timedOut?: boolean;
-	readonly exitCodeClass?: string | null;
-	readonly errorKind?: string | null;
-}): string | null {
-	if (
-		input.status === 'passed' ||
-		input.status === 'verified' ||
-		(input.failedIntents.length === 0 && input.riskCodes.length === 0 && input.timedOut !== true && !input.errorKind)
-	) {
-		return null;
-	}
-
-	return sha256Text(
-		JSON.stringify({
-			command: input.command,
-			status: input.status,
-			verificationPlanId: input.verificationPlanId,
-			primaryReason: input.primaryReason,
-			failedIntents: [...input.failedIntents].sort((left, right) => left.localeCompare(right)),
-			riskCodes: [...input.riskCodes].sort((left, right) => left.localeCompare(right)),
-			runIntent: input.runIntent ?? null,
-			timedOut: input.timedOut === true,
-			exitCodeClass: input.exitCodeClass ?? null,
-			errorKind: input.errorKind ?? null,
-		}),
-	);
-}
-
-function createVerificationEvidenceIndex(projectRoot: string): VerificationEvidenceIndex {
-	const latestPath = path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/'));
-
-	if (!existsSync(latestPath)) {
-		return {
-			summaries: [],
-			verificationPlans: [],
-			acceptanceCriteria: [],
-			criterionCoverage: [],
-			receipts: [],
-			commandReceiptSummaries: [],
-			coverageStates: [],
-			riskSignals: [],
-			validationRatchetSignals: [],
-			completionVerdictSummaries: [],
-			failureFingerprints: [],
-			reproRoutes: [],
-			reproObservations: [],
-			failureFingerprintReadModels: [],
-		};
-	}
-
-	const latestRecord = readJsonRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH);
-
-	if (!latestRecord) {
-		return {
-			summaries: [],
-			verificationPlans: [],
-			acceptanceCriteria: [],
-			criterionCoverage: [],
-			receipts: [],
-			commandReceiptSummaries: [],
-			coverageStates: [],
-			riskSignals: [],
-			validationRatchetSignals: [],
-			completionVerdictSummaries: [],
-			failureFingerprints: [],
-			reproRoutes: [],
-			reproObservations: [],
-			failureFingerprintReadModels: [],
-		};
-	}
-
-	const latest = latestRecord.value;
-	const sourceHash = sha256Bytes(Buffer.from(latestRecord.content));
-	const command = stringField(latest, 'command') ?? 'unknown';
-	const kind = stringField(latest, 'kind') ?? (command === 'verify' ? 'verify_run_summary' : 'run_receipt');
-	const evidenceModel = recordField(latest, 'evidence_model');
-	const completionVerdict = recordField(latest, 'completion_verdict');
-	const completionEvidence = recordField(completionVerdict, 'evidence');
-	const verificationPlanId = stringField(latest, 'verification_plan_id') ?? stringField(evidenceModel, 'verification_plan_id');
-	const primaryReason = stringField(completionVerdict, 'primary_reason');
-	const status = stringField(latest, 'status') ?? stringField(completionVerdict, 'status') ?? 'unknown';
-	const completionStatus = stringField(completionVerdict, 'status');
-	const rawReceipts = recordArrayField(evidenceModel, 'receipts');
-	const rawCoverage = recordArrayField(evidenceModel, 'coverage_matrix');
-	const rawRequirements = recordArrayField(evidenceModel, 'requirements');
-	const rawRisks = recordArrayField(evidenceModel, 'remaining_risks');
-	const recordedFailureFingerprintRecord = recordField(latest, 'failure_fingerprint');
-	const repeatedFailureSummary = recordField(latest, 'repeated_failure_summary');
-	const reproEvidence = recordField(latest, 'repro_evidence') ?? recordField(evidenceModel, 'repro_evidence');
-	const reproductionRoute = recordField(reproEvidence, 'reproduction_route');
-	const recordedFailureFingerprint = stringField(recordedFailureFingerprintRecord, 'fingerprint');
-	const receipts: VerificationReceiptSummary[] =
-		rawReceipts.length > 0
-			? rawReceipts.map((receipt, index) => ({
-					sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-					ordinal: index + 1,
-					intent: stringField(receipt, 'intent'),
-					status: stringField(receipt, 'status') ?? 'unknown',
-					skipped: booleanField(receipt, 'skipped'),
-					verificationPlanId: stringField(receipt, 'verification_plan_id'),
-					receiptPath: stringField(receipt, 'receipt_path'),
-					receiptSha256: stringField(receipt, 'receipt_sha256'),
-					commandFingerprint: stringField(receipt, 'command_fingerprint'),
-					contractFingerprint: stringField(receipt, 'contract_fingerprint'),
-					currentStateHash:
-						stringField(receipt, 'head_tree_hash') ??
-						stringField(receipt, 'changed_files_hash') ??
-						stringField(receipt, 'changed_file_hash'),
-					writeDriftStatus: stringField(receipt, 'write_drift_status'),
-				}))
-			: [
-					{
-						sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-						ordinal: 1,
-						intent: stringField(latest, 'intent'),
-						status: evidenceStatusForRunReceipt(latest),
-						skipped: false,
-						verificationPlanId: null,
-						receiptPath: stringField(latest, 'receipt_path') ?? LATEST_RUN_STATE_RELATIVE_PATH,
-						receiptSha256: sourceHash,
-						commandFingerprint: stringField(recordField(latest, 'performance'), 'command_fingerprint'),
-						contractFingerprint: stringField(recordField(latest, 'performance'), 'contract_fingerprint'),
-						currentStateHash: stringField(latest, 'head_tree_hash') ?? stringField(latest, 'changed_files_hash'),
-						writeDriftStatus: stringField(recordField(latest, 'write_drift'), 'status'),
-					},
-				];
-	const coverageStates = rawCoverage.map((coverage): VerificationCoverageState => {
-		const evidence = recordField(coverage, 'evidence');
-
-		return {
-			sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-			criterionId: stringField(coverage, 'criterion_id') ?? 'unknown',
-			source: stringField(coverage, 'source') ?? 'unknown',
-			status: stringField(coverage, 'status') ?? 'unknown',
-			requirementReason: stringField(coverage, 'requirement_reason'),
-			intents: stringArrayField(evidence, 'intents'),
-			receiptCount: stringArrayField(evidence, 'receipt_paths').length,
-			gapCount: stringArrayField(evidence, 'gap_reasons').length,
-			sourceAnchorCount: stringArrayField(evidence, 'source_anchor_ids').length,
-		};
-	});
-	const riskSignals = rawRisks.map((risk, index): VerificationRiskSignal => ({
-		sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-		ordinal: index + 1,
-		code: stringField(risk, 'code') ?? 'unknown',
-		severity: stringField(risk, 'severity') ?? 'unknown',
-		detailHash: sha256Text(stringField(risk, 'detail') ?? ''),
-	}));
-	const validationRatchetSignals = rawRisks
-		.map((risk, index): ValidationRatchetSignalReadModel | null => {
-			const code = stringField(risk, 'code') ?? 'unknown';
-			if (!VALIDATION_RATCHET_RISK_CODES.has(code)) {
-				return null;
-			}
-
-			const severity = stringField(risk, 'severity') ?? 'unknown';
-			const pathValue = stringField(risk, 'path');
-			const detailHash = sha256Text(stringField(risk, 'detail') ?? '');
-			const pathHash = pathValue === null ? hashJson({ code, detailHash }) : sha256Text(pathValue);
-			const beforeHash = stringField(risk, 'before_hash') ?? stringField(risk, 'before_digest');
-			const afterHash = stringField(risk, 'after_hash') ?? stringField(risk, 'after_digest');
-
-			return {
-				signalId: hashJson({
-					sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-					ordinal: index + 1,
-					planId: verificationPlanId,
-					code,
-					pathHash,
-					beforeHash,
-					afterHash,
-				}),
-				planId: verificationPlanId,
-				code,
-				severity,
-				pathHash,
-				beforeHash,
-				afterHash,
-			};
-		})
-		.filter((signal): signal is ValidationRatchetSignalReadModel => signal !== null);
-	const verificationPlans: VerificationPlanReadModel[] =
-		verificationPlanId === null
-			? []
-			: [
-					{
-						planId: verificationPlanId,
-						sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-						classificationHash:
-							rawRequirements.length > 0 || rawCoverage.length > 0
-								? hashJson({
-										requirements: rawRequirements.map((requirement) => ({
-											id: stringField(requirement, 'requirement_id') ?? stringField(requirement, 'id'),
-											reason: stringField(requirement, 'reason'),
-											source: stringField(requirement, 'source'),
-										})),
-										coverage: rawCoverage.map((coverage) => ({
-											id: stringField(coverage, 'criterion_id'),
-											reason: stringField(coverage, 'requirement_reason'),
-											source: stringField(coverage, 'source'),
-											status: stringField(coverage, 'status'),
-										})),
-									})
-								: null,
-						commandContractHash: stringListHash(receipts.map((receipt) => receipt.contractFingerprint)),
-						selectedIntentsHash: stringListHash(receipts.map((receipt) => receipt.intent)),
-						createdAt: stringField(latest, 'started_at') ?? stringField(latest, 'created_at'),
-						sourceHash,
-					},
-				];
-	const acceptanceCriteria =
-		verificationPlanId === null
-			? []
-			: rawCoverage.map((coverage): AcceptanceCriterionReadModel => {
-					const evidence = recordField(coverage, 'evidence');
-					const pathRefs = [
-						...stringArrayField(evidence, 'paths'),
-						...stringArrayField(evidence, 'changed_paths'),
-						...stringArrayField(evidence, 'source_anchor_ids'),
-					];
-
-					return {
-						criterionId: stringField(coverage, 'criterion_id') ?? 'unknown',
-						planId: verificationPlanId,
-						source: stringField(coverage, 'source') ?? 'unknown',
-						statementHash: stringField(coverage, 'statement') ? sha256Text(stringField(coverage, 'statement') ?? '') : null,
-						reason: stringField(coverage, 'requirement_reason'),
-						surface: stringField(coverage, 'surface'),
-						pathHash: pathRefs.length > 0 ? stringListHash(pathRefs) : null,
-					};
-				});
-	const criterionCoverage =
-		verificationPlanId === null
-			? []
-			: coverageStates.map((coverage): CriterionCoverageReadModel => ({
-					criterionId: coverage.criterionId,
-					planId: verificationPlanId,
-					status: coverage.status,
-					receiptCount: coverage.receiptCount,
-					gapCount: coverage.gapCount,
-					riskCount: coverage.sourceAnchorCount,
-				}));
-	const commandReceiptSummaries =
-		verificationPlanId === null
-			? []
-			: receipts
-					.filter((receipt) => receipt.verificationPlanId === verificationPlanId || receipt.verificationPlanId === null)
-					.map((receipt): CommandReceiptReadModel => ({
-						receiptHash:
-							receipt.receiptSha256 ??
-							hashJson({
-								sourcePath: receipt.sourcePath,
-								ordinal: receipt.ordinal,
-								intent: receipt.intent,
-								status: receipt.status,
-								verificationPlanId,
-							}),
-						planId: verificationPlanId,
-						intent: receipt.intent,
-						status: receipt.status,
-						commandFingerprint: receipt.commandFingerprint,
-						contractFingerprint: receipt.contractFingerprint,
-						currentStateHash: receipt.currentStateHash,
-						writeDriftStatus: receipt.writeDriftStatus,
-					}));
-	const completionVerdictSummaries =
-		verificationPlanId === null || completionStatus === null
-			? []
-			: [
-					{
-						claimId: hashJson({
-							sourceHash,
-							verificationPlanId,
-							completionStatus,
-							primaryReason,
-						}),
-						planId: verificationPlanId,
-						status: completionStatus,
-						primaryReason,
-						riskCount: riskSignals.length,
-						contradictionCount: stringArrayField(completionVerdict, 'contradictions').length,
-						blockerCount: stringArrayField(completionVerdict, 'blockers').length,
-					},
-				];
-	const failedIntents = failedIntentsFromReceipts(receipts);
-	const failureFingerprint =
-		recordedFailureFingerprint ??
-		createFailureFingerprint({
-			command,
-			status: completionStatus ?? status,
-			verificationPlanId,
-			primaryReason,
-			failedIntents,
-			riskCodes: riskSignals.map((risk) => risk.code),
-			runIntent: stringField(latest, 'intent'),
-			timedOut: booleanField(latest, 'timed_out'),
-			exitCodeClass: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'exit_code_class'),
-			errorKind: stringField(recordField(recordField(latest, 'performance'), 'result_summary'), 'error_kind'),
-		});
-	const failureFingerprints =
-		failureFingerprint === null
-			? []
-			: [
-					{
-						sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-						fingerprint: failureFingerprint,
-						verificationPlanId,
-						status: completionStatus ?? status,
-						failedIntents,
-						primaryReason,
-						failedIntentsHash:
-							stringField(recordedFailureFingerprintRecord, 'failed_intents_hash') ??
-							stringField(repeatedFailureSummary, 'failed_intents_hash'),
-						riskCodesHash:
-							stringField(recordedFailureFingerprintRecord, 'risk_codes_hash') ??
-							stringField(repeatedFailureSummary, 'risk_codes_hash'),
-						affectedSurfacesHash:
-							stringField(recordedFailureFingerprintRecord, 'affected_surfaces_hash') ??
-							stringField(repeatedFailureSummary, 'affected_surfaces_hash'),
-						firstSeenAt: stringField(repeatedFailureSummary, 'first_seen_at'),
-						lastSeenAt: stringField(repeatedFailureSummary, 'last_seen_at'),
-						seenCount: Math.max(1, numberField(repeatedFailureSummary, 'seen_count')),
-						requiresNewEvidence: booleanField(repeatedFailureSummary, 'requires_new_evidence'),
-					},
-				];
-	const routeId = stringField(reproductionRoute, 'route_id');
-	const reproRoutes =
-		routeId === null || reproEvidence === null
-			? []
-			: [
-					{
-						routeId,
-						taskHash: hashJson({
-							reported_symptom: stringField(reproEvidence, 'reported_symptom'),
-							expected_behavior: stringField(reproEvidence, 'expected_behavior'),
-							observed_behavior: stringField(reproEvidence, 'observed_behavior'),
-						}),
-						routeDigest: stringField(reproductionRoute, 'route_digest'),
-						routeKind: stringField(reproductionRoute, 'route_kind'),
-						failureOracleHash: stringField(reproductionRoute, 'failure_oracle_hash'),
-					},
-				];
-	const reproObservations =
-		routeId === null || reproEvidence === null
-			? []
-			: [
-					reproObservation(routeId, 'before_fix', recordField(reproEvidence, 'before_fix')),
-					reproObservation(routeId, 'after_fix', recordField(reproEvidence, 'after_fix')),
-					reproObservation(routeId, 'regression_guard', recordField(reproEvidence, 'regression_guard')),
-				];
-	const failureFingerprintReadModels = failureFingerprints.map((fingerprint): FailureFingerprintReadModel => ({
-		fingerprint: fingerprint.fingerprint,
-		planId: fingerprint.verificationPlanId,
-		failedIntentsHash: fingerprint.failedIntentsHash ?? stringListHash(fingerprint.failedIntents),
-		riskCodesHash: fingerprint.riskCodesHash,
-		seenCount: fingerprint.seenCount,
-		firstSeenAt: fingerprint.firstSeenAt,
-		lastSeenAt: fingerprint.lastSeenAt,
-	}));
-
-	return {
-		summaries: [
-			{
-				sourcePath: LATEST_RUN_STATE_RELATIVE_PATH,
-				sourceHash,
-				command,
-				kind,
-				status,
-				runDir: stringField(latest, 'run_dir'),
-				manifestPath: stringField(latest, 'manifest_path'),
-				verificationPlanId,
-				completionStatus,
-				primaryReason,
-				matchedIntents: numberField(completionEvidence, 'matched_intents'),
-				ranIntents: numberField(completionEvidence, 'ran_intents'),
-				passedIntents: numberField(completionEvidence, 'passed_intents'),
-				failedIntents: numberField(completionEvidence, 'failed_intents'),
-				skippedIntents: numberField(completionEvidence, 'skipped_intents'),
-				receiptCount: receipts.length,
-				coverageCount: coverageStates.length,
-				remainingRiskCount: riskSignals.length,
-				failureFingerprint,
-			},
-		],
-		verificationPlans,
-		acceptanceCriteria,
-		criterionCoverage,
-		receipts,
-		commandReceiptSummaries,
-		coverageStates,
-		riskSignals,
-		validationRatchetSignals,
-		completionVerdictSummaries,
-		failureFingerprints,
-		reproRoutes,
-		reproObservations,
-		failureFingerprintReadModels,
-	};
 }
 
 function readMetadataValue(database: SqlJsDatabase, key: string): string | undefined {
@@ -2186,10 +1050,6 @@ function populatePathSurfaceReadModel(database: SqlJsDatabase): void {
 	}
 }
 
-function skillRouteKey(route: Pick<IndexSkillRoute, 'skillName' | 'trigger'>): string {
-	return `${route.skillName}\u0000${route.trigger}`;
-}
-
 function populateSearchTables(
 	database: SqlJsDatabase,
 	capabilities: LocalSearchCapabilities,
@@ -2877,7 +1737,7 @@ function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly Index
 		}
 
 		if (
-			normalizeIndexedFileSourceScope(row.source_scope) !== current.sourceScope ||
+			normalizeIndexedFileSourceScope(toSearchString(row.source_scope)) !== current.sourceScope ||
 			toSearchString(row.content_hash) !== current.contentHash ||
 			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
 		) {
@@ -2909,7 +1769,7 @@ function indexedFileMetadataMatch(database: SqlJsDatabase, currentFiles: readonl
 		}
 
 		if (
-			normalizeIndexedFileSourceScope(row.source_scope) !== current.sourceScope ||
+			normalizeIndexedFileSourceScope(toSearchString(row.source_scope)) !== current.sourceScope ||
 			toNullableNumber(row.size_bytes) !== current.sizeBytes ||
 			toNullableNumber(row.mtime_ms) !== current.mtimeMs ||
 			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
@@ -3180,7 +2040,7 @@ function getStalePaths(projectRoot: string, database: SqlJsDatabase): string[] {
 
 		for (const row of indexedRows) {
 			const indexedPath = toSearchString(row.path);
-			const sourceScope = normalizeIndexedFileSourceScope(row.source_scope);
+			const sourceScope = normalizeIndexedFileSourceScope(toSearchString(row.source_scope));
 
 			try {
 				const current = readIndexedFileRecord(projectRoot, indexedPath, sourceScope);
@@ -4141,6 +3001,137 @@ function scoreIndexedOrTableScan(
 	return indexedMatches.active && matchSet.size > 0 && matchSet.has(key) ? Math.max(tableScore, 20) : tableScore;
 }
 
+function sortLocalSearchResults(
+	results: readonly LocalSearchItem[],
+	scope: LocalSearchScope,
+	limit: number,
+): LocalSearchItem[] {
+	return [...results]
+		.sort((left, right) => {
+			if (scope === 'all' && left.authority_rank !== right.authority_rank) {
+				return left.authority_rank - right.authority_rank;
+			}
+
+			return right.score - left.score || (left.path ?? left.name ?? '').localeCompare(right.path ?? right.name ?? '');
+		})
+		.slice(0, limit);
+}
+
+function collectBoundedDirectSearchDocuments(projectRoot: string): IndexDocument[] {
+	const documents: IndexDocument[] = [];
+	const relativePaths = getExistingIndexablePaths(projectRoot).slice(0, DIRECT_SEARCH_MAX_WORKFLOW_FILES);
+
+	for (const relativePath of relativePaths) {
+		try {
+			documents.push(...collectDocumentsFromPaths(projectRoot, [relativePath]));
+		} catch {
+			continue;
+		}
+	}
+
+	return documents;
+}
+
+function searchLocalWorkflowFilesDirectly(
+	projectRoot: string,
+	databasePath: string,
+	normalizedQuery: string,
+	limit: number,
+	scope: LocalSearchScope,
+): LocalSearchResult {
+	const cacheLayers = readCacheLayerSets(projectRoot);
+	const results: LocalSearchItem[] = [];
+
+	if (scope === 'workflow' || scope === 'all') {
+		const documents = collectBoundedDirectSearchDocuments(projectRoot);
+
+		for (const document of documents) {
+			let searchableContent = document.contentSnippet;
+
+			try {
+				searchableContent = readText(projectRoot, document.path);
+			} catch {
+				searchableContent = document.contentSnippet;
+			}
+
+			const primaryFields = [document.path, document.title];
+			const secondaryFields = [document.type, searchableContent, ...document.sections];
+			const fields = [...primaryFields, ...secondaryFields];
+
+			if (!isMatched(fields, normalizedQuery)) {
+				continue;
+			}
+
+			results.push(
+				withCacheHint(
+					{
+						kind: 'document',
+						path: document.path,
+						title: document.title,
+						document_type: document.type,
+						...workflowAuthorityForDocument(document.type),
+						match: getMatchSnippet(fields, normalizedQuery),
+						score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+					},
+					cacheLayers,
+				),
+			);
+		}
+
+		for (const skill of collectSkills(documents)) {
+			const fields = [skill.name, skill.path, skill.title];
+
+			if (!isMatched(fields, normalizedQuery)) {
+				continue;
+			}
+
+			results.push(
+				withCacheHint(
+					{
+						kind: 'skill',
+						name: skill.name,
+						path: skill.path,
+						title: skill.title,
+						...skillAuthority(),
+						match: getMatchSnippet(fields, normalizedQuery),
+						score: scoreMatch(fields, [], normalizedQuery),
+					},
+					cacheLayers,
+				),
+			);
+		}
+	}
+
+	const sortedResults = sortLocalSearchResults(results, scope, limit);
+
+	return {
+		schema_version: LOCAL_INDEX_SCHEMA_VERSION,
+		command: 'search',
+		ok: true,
+		mustflow_root: path.resolve(projectRoot),
+		database_path: databasePath,
+		query: normalizedQuery,
+		limit,
+		scope,
+		index_fresh: false,
+		stale_paths: [],
+		search_backend: SEARCH_BACKEND_TABLE_SCAN,
+		search_fts5_available: false,
+		result_count: sortedResults.length,
+		results: sortedResults,
+	};
+}
+
+function isLocalIndexStaleError(error: unknown): boolean {
+	return error instanceof Error && error.message.startsWith('Local mustflow index is stale:');
+}
+
+function isLocalIndexRuntimeUnavailableError(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : String(error);
+
+	return /file is not a database|database disk image is malformed|no such table|no such column|sqlite|sql\.js/iu.test(message);
+}
+
 /**
  * mf:anchor cli.search.local-index
  * purpose: Search the local index while preserving workflow authority above source navigation hints.
@@ -4154,16 +3145,23 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 	const scope = options.scope ?? 'workflow';
 	const databasePath = getLocalIndexDatabasePath(projectRoot);
 
-	if (!existsSync(databasePath)) {
-		throw new Error('Local mustflow index not found. Run `mf index` before searching.');
-	}
-
 	if (normalizedQuery.length === 0) {
 		throw new Error('Search query must not be empty.');
 	}
 
-	const SQL = await loadSqlJs();
-	const database = new SQL.Database(readFileSync(databasePath));
+	if (!existsSync(databasePath)) {
+		return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+	}
+
+	let database: SqlJsDatabase;
+
+	try {
+		const SQL = await loadSqlJs();
+		database = new SQL.Database(readFileSync(databasePath));
+	} catch {
+		return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+	}
+
 	const cacheLayers = readCacheLayerSets(projectRoot);
 	let capabilities = searchCapabilities(false);
 	const results: LocalSearchItem[] = [];
@@ -4423,19 +3421,21 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				);
 			}
 		}
+	} catch (error) {
+		if (isLocalIndexStaleError(error)) {
+			throw error;
+		}
+
+		if (isLocalIndexRuntimeUnavailableError(error)) {
+			return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+		}
+
+		throw error;
 	} finally {
 		database.close();
 	}
 
-	const sortedResults = results
-		.sort((left, right) => {
-			if (scope === 'all' && left.authority_rank !== right.authority_rank) {
-				return left.authority_rank - right.authority_rank;
-			}
-
-			return right.score - left.score || (left.path ?? left.name ?? '').localeCompare(right.path ?? right.name ?? '');
-		})
-		.slice(0, limit);
+	const sortedResults = sortLocalSearchResults(results, scope, limit);
 
 	return {
 		schema_version: LOCAL_INDEX_SCHEMA_VERSION,
