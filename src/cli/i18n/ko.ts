@@ -882,7 +882,7 @@ export const koMessages = {
   "verify.help.option.reproEvidence": "저장소 안의 JSON 요약에서 구조화된 버그 재현 증거를 읽습니다",
   "verify.help.option.externalEvidence": "저장소 안의 JSON 요약에서 낮은 권한의 외부 CI 증거를 읽습니다",
   "verify.help.option.parallel":
-    "안전하고 서로 충돌하지 않는 예정 실행 묶음을 이 개수까지 함께 실행합니다. 기본값은 1입니다",
+    "안전하고 서로 충돌하지 않는 예정 실행 묶음을 이 개수까지 함께 실행하되, 로컬 상한을 적용합니다. 기본값은 1입니다",
   "verify.help.option.planOnly": "명령을 실행하지 않고 검증 계획만 출력합니다. --json이 필요합니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":
@@ -904,6 +904,7 @@ export const koMessages = {
   "verify.error.plan_root_mismatch": "분류 보고서는 현재 mustflow 루트에서 나온 것이어야 합니다",
   "verify.error.missing_plan_reasons": "분류 보고서에는 summary.validationReasons가 있어야 합니다",
   "verify.error.plan_path_outside_root": "분류 보고서 경로는 mustflow 루트 안에 있어야 합니다",
+  "verify.error.input_path_contains_symlink": "입력 파일 경로에는 심볼릭 링크가 포함되면 안 됩니다",
   "verify.error.changed_files_unavailable": "git status로 변경 파일을 확인할 수 없습니다",
   "verify.error.invalid_repro_evidence_file": "재현 증거는 구조화된 증거 필드를 포함한 읽을 수 있는 JSON 요약이어야 합니다",
   "verify.error.unsupported_repro_evidence_source": "재현 증거 입력은 command repro-evidence를 사용해야 합니다",

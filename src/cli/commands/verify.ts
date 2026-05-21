@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
@@ -9,7 +8,7 @@ import {
 	type ChangeVerificationCandidate,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
-import { writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
+import { readUtf8FileInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import {
 	createVerifyCompletionVerdict,
 	type CompletionVerdict,
@@ -48,6 +47,12 @@ import {
 	createValidationRatchetRisks,
 	type ValidationRatchetRisk,
 } from '../../core/validation-ratchet.js';
+import {
+	finishRunWriteBatchTracking,
+	startRunWriteBatchTracking,
+	type RunWriteBatchIntent,
+	type RunWriteDriftReceipt,
+} from '../../core/run-write-drift.js';
 import type {
 	ChangeClassification,
 	ChangeClassificationReport,
@@ -57,7 +62,12 @@ import type {
 } from '../../core/change-classification.js';
 import type { VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
-import { DEFAULT_VERIFY_PARALLELISM, parseVerifyArgs } from './verify/args.js';
+import {
+	DEFAULT_VERIFY_PARALLELISM,
+	parseVerifyArgs,
+	resolveVerifyParallelism,
+	type VerifyParallelismSettings,
+} from './verify/args.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
 import {
@@ -111,6 +121,16 @@ interface VerificationSummary {
 	readonly skipped: number;
 }
 
+interface VerificationParallelismReport {
+	readonly requested: number;
+	readonly effective: number;
+	readonly repository_max: number;
+	readonly cpu_available: number | null;
+	readonly capped: boolean;
+	readonly mode: 'serial' | 'parallel_chunks';
+	readonly note: string;
+}
+
 interface VerificationOutput {
 	readonly schema_version: string;
 	readonly command: 'verify';
@@ -126,6 +146,7 @@ interface VerificationOutput {
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
+	readonly parallelism?: VerificationParallelismReport;
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
 	readonly run_dir: string;
@@ -484,15 +505,29 @@ function resolvePlanPath(projectRoot: string, inputPath: string): string {
 	return resolved;
 }
 
-export function readInputFromClassificationReport(projectRoot: string, inputPath: string): VerifyInput {
-	let parsed: unknown;
-	const planPath = resolvePlanPath(projectRoot, inputPath);
+function readJsonInputFile(projectRoot: string, inputPath: string, invalidCode: string): unknown {
+	const inputFilePath = resolvePlanPath(projectRoot, inputPath);
+	let content: string;
 
 	try {
-		parsed = JSON.parse(readFileSync(planPath, 'utf8'));
-	} catch {
-		throw new Error('invalid_plan_file');
+		content = readUtf8FileInsideWithoutSymlinks(projectRoot, inputFilePath);
+	} catch (error) {
+		if (error instanceof Error && error.message.startsWith('Path must not contain symlinks:')) {
+			throw new Error('input_path_contains_symlink');
+		}
+
+		throw new Error(invalidCode);
 	}
+
+	try {
+		return JSON.parse(content);
+	} catch {
+		throw new Error(invalidCode);
+	}
+}
+
+export function readInputFromClassificationReport(projectRoot: string, inputPath: string): VerifyInput {
+	const parsed = readJsonInputFile(projectRoot, inputPath, 'invalid_plan_file');
 
 	const classificationReport = readStrictClassifyPlan(projectRoot, parsed);
 
@@ -755,14 +790,7 @@ function readRegressionGuardEvidence(value: unknown): ReproRegressionGuardEviden
 }
 
 function readReproEvidenceFile(projectRoot: string, inputPath: string): ReproEvidenceReport {
-	let parsed: unknown;
-	const evidencePath = resolvePlanPath(projectRoot, inputPath);
-
-	try {
-		parsed = JSON.parse(readFileSync(evidencePath, 'utf8'));
-	} catch {
-		throw new Error('invalid_repro_evidence_file');
-	}
+	const parsed = readJsonInputFile(projectRoot, inputPath, 'invalid_repro_evidence_file');
 
 	if (!isPlainRecord(parsed) || parsed.schema_version !== '1' || parsed.command !== 'repro-evidence') {
 		throw new Error('unsupported_repro_evidence_source');
@@ -791,14 +819,7 @@ function readReproEvidenceFile(projectRoot: string, inputPath: string): ReproEvi
 }
 
 function readExternalEvidenceFile(projectRoot: string, inputPath: string): readonly ExternalEvidenceCheck[] {
-	let parsed: unknown;
-	const evidencePath = resolvePlanPath(projectRoot, inputPath);
-
-	try {
-		parsed = JSON.parse(readFileSync(evidencePath, 'utf8'));
-	} catch {
-		throw new Error('invalid_external_evidence_file');
-	}
+	const parsed = readJsonInputFile(projectRoot, inputPath, 'invalid_external_evidence_file');
 
 	if (!isPlainRecord(parsed) || parsed.schema_version !== '1' || parsed.command !== 'external-evidence') {
 		throw new Error('unsupported_external_evidence_source');
@@ -852,6 +873,8 @@ export function planErrorMessageKey(code: string): MessageKey {
 	switch (code) {
 		case 'plan_path_outside_root':
 			return 'verify.error.plan_path_outside_root';
+		case 'input_path_contains_symlink':
+			return 'verify.error.input_path_contains_symlink';
 		case 'missing_plan_reasons':
 			return 'verify.error.missing_plan_reasons';
 		case 'unsupported_plan_source':
@@ -1025,6 +1048,7 @@ async function runVerificationEntriesSequentially(
 }
 
 async function runVerificationEntriesInParallelChunks(
+	projectRoot: string,
 	entries: readonly VerificationScheduleEntry[],
 	parallelism: number,
 	lang: CliLang,
@@ -1035,32 +1059,73 @@ async function runVerificationEntriesInParallelChunks(
 
 	for (let index = 0; index < entries.length; index += parallelism) {
 		const chunk = entries.slice(index, index + parallelism);
-		const batchDeclaredWritePaths = [
-			...new Set(
-				chunk.flatMap((entry) =>
-					entry.effects
-						.filter((effect) => effect.access === 'write' && typeof effect.path === 'string')
-						.map((effect) => effect.path as string),
+		const batchTracker = startRunWriteBatchTracking(projectRoot);
+
+		const chunkResults = await Promise.all(
+			chunk.map((entry) =>
+				runVerificationIntent(
+					entry.intent,
+					lang,
+					verificationPlanId,
+					scheduledTestTargets.get(entry.intent) ?? [],
 				),
 			),
-		].sort((left, right) => left.localeCompare(right));
-
-		results.push(
-			...(await Promise.all(
-				chunk.map((entry) =>
-					runVerificationIntent(
-						entry.intent,
-						lang,
-						verificationPlanId,
-						scheduledTestTargets.get(entry.intent) ?? [],
-						batchDeclaredWritePaths,
-					),
-				),
-			)),
 		);
+		const writeDriftByIntent = finishRunWriteBatchTracking(
+			batchTracker,
+			chunk.map((entry) => ({
+				intentName: entry.intent,
+				declaredPaths: declaredWritePathsForScheduleEntry(entry),
+				observedPaths: observedWriteDriftPaths(chunkResults.find((result) => result.intent === entry.intent)),
+			} satisfies RunWriteBatchIntent)),
+		);
+
+		results.push(...chunkResults.map((result) => applyParallelChunkWriteDrift(result, writeDriftByIntent)));
 	}
 
 	return results;
+}
+
+function declaredWritePathsForScheduleEntry(entry: VerificationScheduleEntry): readonly string[] {
+	return [
+		...new Set(
+			entry.effects
+				.filter((effect) => effect.access === 'write' && typeof effect.path === 'string')
+				.map((effect) => effect.path as string),
+		),
+	].sort((left, right) => left.localeCompare(right));
+}
+
+function observedWriteDriftPaths(result: VerificationResult | undefined): readonly string[] {
+	const writeDrift = objectField(result?.receipt?.write_drift);
+	const observedPaths = writeDrift?.observed_paths;
+	if (!Array.isArray(observedPaths)) {
+		return [];
+	}
+
+	return observedPaths.filter((value): value is string => typeof value === 'string');
+}
+
+function applyParallelChunkWriteDrift(
+	result: VerificationResult,
+	writeDriftByIntent: ReadonlyMap<string, RunWriteDriftReceipt>,
+): VerificationResult {
+	if (!result.intent || !result.receipt) {
+		return result;
+	}
+
+	const writeDrift = writeDriftByIntent.get(result.intent);
+	if (!writeDrift) {
+		return result;
+	}
+
+	return {
+		...result,
+		receipt: {
+			...result.receipt,
+			write_drift: writeDrift,
+		},
+	};
 }
 
 function verificationResultFailed(result: VerificationResult): boolean {
@@ -1075,6 +1140,7 @@ function verificationResultFailed(result: VerificationResult): boolean {
 
 async function runScheduledVerificationIntents(
 	report: ChangeVerificationReport,
+	projectRoot: string,
 	lang: CliLang,
 	verificationPlanId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
@@ -1094,6 +1160,7 @@ async function runScheduledVerificationIntents(
 			batchResults =
 				parallelism > DEFAULT_VERIFY_PARALLELISM
 					? await runVerificationEntriesInParallelChunks(
+							projectRoot,
 							entries,
 							parallelism,
 							lang,
@@ -1485,7 +1552,9 @@ function readVerificationFailureFingerprint(value: unknown): VerificationFailure
 
 function readPreviousVerifyLatestSummary(projectRoot: string): PreviousVerifyLatestSummary | null {
 	try {
-		const parsed = JSON.parse(readFileSync(path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), 'utf8')) as Record<
+		const parsed = JSON.parse(
+			readUtf8FileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, LATEST_RUN_RECEIPT_PATH)),
+		) as Record<
 			string,
 			unknown
 		>;
@@ -1559,6 +1628,18 @@ function createVerificationPlanId(report: ChangeVerificationReport, contract: Re
 	};
 
 	return hashTextSha256(stableJson(fingerprintSource));
+}
+
+function toParallelismReport(settings: VerifyParallelismSettings): VerificationParallelismReport {
+	return {
+		requested: settings.requested,
+		effective: settings.effective,
+		repository_max: settings.repositoryMax,
+		cpu_available: settings.cpuAvailable,
+		capped: settings.capped,
+		mode: settings.mode,
+		note: settings.note,
+	};
 }
 
 function writeVerifyRunReceipts(
@@ -1736,6 +1817,7 @@ async function createVerifyOutput(
 	reproEvidence: ReproEvidenceReport | null = null,
 	externalChecks: readonly ExternalEvidenceCheck[] = [],
 	parallelism = DEFAULT_VERIFY_PARALLELISM,
+	parallelismReport: VerificationParallelismReport | null = null,
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
@@ -1749,7 +1831,7 @@ async function createVerifyOutput(
 	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, { verificationPlanId });
 	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
 	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
-	const results = await runScheduledVerificationIntents(report, lang, verificationPlanId, scheduledTestTargets, parallelism);
+	const results = await runScheduledVerificationIntents(report, projectRoot, lang, verificationPlanId, scheduledTestTargets, parallelism);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
@@ -1819,6 +1901,7 @@ async function createVerifyOutput(
 		failure_fingerprint: failureFingerprint,
 		repeated_failure_summary: null,
 		summary,
+		...(parallelismReport ? { parallelism: parallelismReport } : {}),
 		...(reproEvidence ? { repro_evidence: reproEvidence } : {}),
 		...(externalChecks.length > 0 ? { external_checks: externalChecks } : {}),
 		run_dir: '',
@@ -1891,9 +1974,19 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 		`passed: ${output.summary.passed}`,
 		`failed: ${output.summary.failed}`,
 		`skipped: ${output.summary.skipped}`,
-		'',
-		t(lang, 'verify.label.results'),
 	];
+
+	if (output.parallelism) {
+		const cpuAvailable = output.parallelism.cpu_available ?? t(lang, 'value.none');
+		lines.push(
+			`parallelism: requested ${output.parallelism.requested}, effective ${output.parallelism.effective}, repository max ${output.parallelism.repository_max}, cpu available ${cpuAvailable}, mode ${output.parallelism.mode}`,
+		);
+		if (output.parallelism.capped) {
+			lines.push(`parallelism note: ${output.parallelism.note}`);
+		}
+	}
+
+	lines.push('', t(lang, 'verify.label.results'));
 
 	for (const result of output.results) {
 		const intent = result.intent ?? t(lang, 'value.none');
@@ -2030,6 +2123,8 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		return 0;
 	}
 
+	const parallelismSettings = resolveVerifyParallelism(parsed.parallelism ?? DEFAULT_VERIFY_PARALLELISM);
+	const parallelismReport = parsed.parallelismSpecified ? toParallelismReport(parallelismSettings) : null;
 	const output = await createVerifyOutput(
 		input,
 		parsed.fromClassification ?? parsed.fromPlan ?? (parsed.changed ? 'changed' : null),
@@ -2037,7 +2132,8 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		lang,
 		reproEvidence,
 		externalChecks,
-		parsed.parallelism ?? DEFAULT_VERIFY_PARALLELISM,
+		parallelismSettings.effective,
+		parallelismReport,
 	);
 
 	if (parsed.json) {

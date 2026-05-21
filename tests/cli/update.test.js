@@ -143,6 +143,61 @@ test('safe file copy rejects symlinked source and target paths', async (t) => {
 	}
 });
 
+test('missing-only file copy uses the safe filesystem boundary', async (t) => {
+	const { copyFileIfMissing } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'filesystem.js')).href);
+	const rootPath = createTempProject();
+	const sourceRoot = path.join(rootPath, 'source');
+	const targetRoot = path.join(rootPath, 'target');
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-missing-copy-'));
+
+	try {
+		mkdirSync(sourceRoot, { recursive: true });
+		mkdirSync(targetRoot, { recursive: true });
+		const sourcePath = path.join(sourceRoot, 'safe.md');
+		const nestedTargetPath = path.join(targetRoot, 'nested', 'copied.md');
+		writeFileSync(sourcePath, '# Safe\n');
+
+		assert.deepEqual(copyFileIfMissing(sourcePath, nestedTargetPath, 'nested/copied.md'), {
+			status: 'created',
+			relativePath: 'nested/copied.md',
+		});
+		assert.equal(readFileSync(nestedTargetPath, 'utf8'), '# Safe\n');
+
+		const outsideTarget = path.join(outsideRoot, 'outside-target.md');
+		const targetLink = path.join(targetRoot, 'target-link.md');
+		writeFileSync(outsideTarget, '# Outside Target\n');
+
+		if (!trySymlink(outsideTarget, targetLink, 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		assert.deepEqual(copyFileIfMissing(sourcePath, targetLink, 'target-link.md'), {
+			status: 'skipped',
+			relativePath: 'target-link.md',
+		});
+		assert.equal(readFileSync(outsideTarget, 'utf8'), '# Outside Target\n');
+
+		const outsideSource = path.join(outsideRoot, 'outside-source.md');
+		const sourceLink = path.join(sourceRoot, 'source-link.md');
+		writeFileSync(outsideSource, '# Outside Source\n');
+
+		if (!trySymlink(outsideSource, sourceLink, 'file')) {
+			t.skip('symlinks are unavailable in this environment');
+			return;
+		}
+
+		assert.throws(
+			() => copyFileIfMissing(sourceLink, path.join(targetRoot, 'source-link-copy.md'), 'source-link-copy.md'),
+			/symlinks/,
+		);
+		assert.equal(existsSync(path.join(targetRoot, 'source-link-copy.md')), false);
+	} finally {
+		removeTempProject(rootPath);
+		rmSync(outsideRoot, { recursive: true, force: true });
+	}
+});
+
 test('prints an update dry-run plan for an up-to-date project', () => {
 	const projectPath = createTempProject();
 

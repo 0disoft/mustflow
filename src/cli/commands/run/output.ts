@@ -3,6 +3,8 @@ import type { Reporter } from '../../lib/reporter.js';
 
 const OUTPUT_LIMIT_ERROR_CODE = 'ENOBUFS';
 const OUTPUT_LIMIT_ERROR_MESSAGE = /\bmaxBuffer\b.*\bexceeded\b/i;
+const OUTPUT_LIMIT_TERMINATION_MARKER =
+	'[mustflow] output limit exceeded; terminating command before streaming more child output.';
 
 export interface BufferedReporter {
 	readonly reporter: Reporter;
@@ -67,6 +69,43 @@ export function writeStreamChunk(reporter: Reporter, stream: 'stdout' | 'stderr'
 	}
 
 	reporter.stderr(chunk.toString());
+}
+
+function isUtf8ContinuationByte(value: number | undefined): boolean {
+	return value !== undefined && (value & 0xc0) === 0x80;
+}
+
+function findUtf8PrefixEnd(buffer: Buffer, maxBytes: number): number {
+	let end = Math.min(buffer.byteLength, Math.max(0, Math.trunc(maxBytes)));
+
+	if (end >= buffer.byteLength) {
+		return buffer.byteLength;
+	}
+
+	while (end > 0 && isUtf8ContinuationByte(buffer[end])) {
+		end -= 1;
+	}
+
+	return end;
+}
+
+export function writeStreamChunkPrefix(
+	reporter: Reporter,
+	stream: 'stdout' | 'stderr',
+	chunk: Buffer,
+	maxBytes: number,
+): void {
+	const prefixEnd = findUtf8PrefixEnd(chunk, maxBytes);
+
+	if (prefixEnd <= 0) {
+		return;
+	}
+
+	writeStreamChunk(reporter, stream, chunk.subarray(0, prefixEnd));
+}
+
+export function writeOutputLimitTerminationMarker(reporter: Reporter): void {
+	reporter.stderr(OUTPUT_LIMIT_TERMINATION_MARKER);
 }
 
 export function createOutputLimitError(stream: 'stdout' | 'stderr', maxOutputBytes: number): Error {

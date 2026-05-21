@@ -891,11 +891,152 @@ required_after = ["parallel_verify"]
 		assert.deepEqual(ranResults.map((result) => result.intent), scheduledIntents);
 		for (const result of ranResults) {
 			assert.equal(result.receipt.write_drift.status, 'checked');
+			assert.equal(result.receipt.write_drift.attribution_mode, 'parallel_chunk');
+			assert.deepEqual(result.receipt.write_drift.chunk_intents, scheduledIntents);
 			assert.equal(result.receipt.write_drift.has_undeclared_changes, false);
 			assert.deepEqual(result.receipt.write_drift.undeclared_paths, []);
+			assert.deepEqual(result.receipt.write_drift.ambiguous_paths, []);
+			assert.equal(result.receipt.write_drift.ambiguous_count, 0);
+			assert.equal(
+				result.receipt.write_drift.declared_observed_paths.every((changedPath) =>
+					changedPath.startsWith(result.intent === 'verify_parallel_a' ? 'parallel-a-' : 'parallel-b-'),
+				),
+				true,
+			);
 		}
 		assert.match(runReport.results[0].receipt_path, /001-verify_parallel_a\.json$/);
 		assert.match(runReport.results[1].receipt_path, /002-verify_parallel_b\.json$/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('attributes undeclared parallel write drift without blaming sibling intents', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_parallel_clean]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write only its declared file."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync("parallel-clean.txt", "clean")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["parallel-clean.txt"]
+effects = [
+  { type = "write", mode = "replace", path = "parallel-clean.txt", lock = "parallel_clean_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_drift"]
+
+[intents.verify_parallel_drift]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write one declared file and one undeclared file."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-drift.txt", "declared"); setTimeout(() => fs.writeFileSync("parallel-sneaky.txt", "sneaky"), 250);']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["parallel-drift.txt"]
+effects = [
+  { type = "write", mode = "replace", path = "parallel-drift.txt", lock = "parallel_drift_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_drift"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'parallel_drift', '--json', '--parallel=2'], {
+			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
+		});
+		const report = JSON.parse(result.stdout);
+		const cleanResult = report.results.find((item) => item.intent === 'verify_parallel_clean');
+		const driftResult = report.results.find((item) => item.intent === 'verify_parallel_drift');
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.ok(cleanResult);
+		assert.ok(driftResult);
+		assert.equal(cleanResult.receipt.write_drift.attribution_mode, 'parallel_chunk');
+		assert.equal(driftResult.receipt.write_drift.attribution_mode, 'parallel_chunk');
+		assert.deepEqual(cleanResult.receipt.write_drift.undeclared_paths, []);
+		assert.deepEqual(cleanResult.receipt.write_drift.ambiguous_paths, []);
+		assert.deepEqual(driftResult.receipt.write_drift.undeclared_paths, ['parallel-sneaky.txt']);
+		assert.deepEqual(driftResult.receipt.write_drift.ambiguous_paths, []);
+		assert.equal(report.completion_verdict.evidence.write_drift_risk_count, 1);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps runner-owned state paths out of parallel write drift attribution', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_parallel_state]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write runner-owned state."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.mkdirSync(".mustflow/state/runs", { recursive: true }); fs.writeFileSync(".mustflow/state/runs/manual-state.json", "{}")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [
+  { type = "write", mode = "replace", path = ".mustflow/state/runs/manual-state.json", lock = "runner_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_state"]
+
+[intents.verify_parallel_regular]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write regular declared state."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync("parallel-regular.txt", "regular")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [
+  { type = "write", mode = "replace", path = "parallel-regular.txt", lock = "parallel_regular_state", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["parallel_state"]
+`,
+		);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'parallel_state', '--json', '--parallel=2'], {
+			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
+		});
+		const report = JSON.parse(result.stdout);
+		const stateResult = report.results.find((item) => item.intent === 'verify_parallel_state');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(stateResult);
+		assert.equal(stateResult.receipt.write_drift.has_undeclared_changes, false);
+		assert.deepEqual(stateResult.receipt.write_drift.observed_paths, []);
+		assert.deepEqual(stateResult.receipt.write_drift.undeclared_paths, []);
+		assert.deepEqual(stateResult.receipt.write_drift.ambiguous_paths, []);
 	} finally {
 		removeTempProject(projectPath);
 	}

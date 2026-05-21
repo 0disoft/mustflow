@@ -690,7 +690,14 @@ destructive = false
 		assert.equal(receipt.status, 'output_limit_exceeded');
 		assert.equal(receipt.timed_out, false);
 		assert.ok(receipt.exit_code === null || typeof receipt.exit_code === 'number');
+		assert.equal(result.stdout, 'x'.repeat(1024));
 		assert.match(result.stderr, /max_output_bytes|output/i);
+		assert.match(result.stderr, /\[mustflow\] output limit exceeded; terminating command before streaming more child output\./);
+		assert.equal(
+			(result.stderr.match(/\[mustflow\] output limit exceeded; terminating command before streaming more child output\./g) ?? [])
+				.length,
+			1,
+		);
 		assert.doesNotMatch(result.stderr, /failed to start/i);
 		assert.equal(receipt.performance.result_summary.error_kind, 'output_limit_exceeded');
 	} finally {

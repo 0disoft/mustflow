@@ -278,7 +278,7 @@ export function createVerificationSchedule(
 				(intent) => `Latest receipt for ${intent} reported undeclared writes; it is not parallel eligible.`,
 			),
 			'If a future parallel batch has already started, let it finish and stop before the next batch on failure.',
-			'mf verify still executes copied commands serially and writes the latest run summary after the batch completes.',
+			'The runner names the default copied-command path; mf verify --parallel may execute eligible entries in bounded chunks and writes the latest run summary after each batch completes.',
 		],
 	};
 }

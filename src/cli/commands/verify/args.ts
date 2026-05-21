@@ -1,4 +1,17 @@
+import { availableParallelism } from 'node:os';
+
 export const DEFAULT_VERIFY_PARALLELISM = 1;
+export const MAX_VERIFY_PARALLELISM = 8;
+
+export interface VerifyParallelismSettings {
+	readonly requested: number;
+	readonly effective: number;
+	readonly repositoryMax: number;
+	readonly cpuAvailable: number | null;
+	readonly capped: boolean;
+	readonly mode: 'serial' | 'parallel_chunks';
+	readonly note: string;
+}
 
 export interface ParsedVerifyArgs {
 	readonly json: boolean;
@@ -11,6 +24,7 @@ export interface ParsedVerifyArgs {
 	readonly reproEvidence?: string;
 	readonly externalEvidence?: string;
 	readonly parallelism?: number;
+	readonly parallelismSpecified?: boolean;
 	readonly error?: string;
 }
 
@@ -25,6 +39,7 @@ export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
 	let planOnly = false;
 	let changed = false;
 	let parallelism = DEFAULT_VERIFY_PARALLELISM;
+	let parallelismSpecified = false;
 
 	for (let index = 0; index < args.length; index += 1) {
 		const arg = args[index];
@@ -56,6 +71,7 @@ export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
 			}
 
 			parallelism = parsedParallelism;
+			parallelismSpecified = true;
 			index += 1;
 			continue;
 		}
@@ -182,6 +198,7 @@ export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
 			}
 
 			parallelism = parsedParallelism;
+			parallelismSpecified = true;
 			continue;
 		}
 
@@ -302,6 +319,7 @@ export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
 		reproEvidence,
 		externalEvidence,
 		parallelism,
+		parallelismSpecified,
 	};
 }
 
@@ -312,4 +330,38 @@ function parseVerifyParallelism(value: string): number | null {
 
 	const parsed = Number(value);
 	return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+function readAvailableParallelism(): number | null {
+	try {
+		const value = availableParallelism();
+		return Number.isSafeInteger(value) && value > 0 ? value : null;
+	} catch {
+		return null;
+	}
+}
+
+export function resolveVerifyParallelism(
+	requested: number,
+	cpuAvailable: number | null = readAvailableParallelism(),
+): VerifyParallelismSettings {
+	const cpuLimit = cpuAvailable === null ? MAX_VERIFY_PARALLELISM : Math.max(DEFAULT_VERIFY_PARALLELISM, cpuAvailable);
+	const effectiveLimit = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(MAX_VERIFY_PARALLELISM, cpuLimit));
+	const effective = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(requested, effectiveLimit));
+	const capped = effective !== requested;
+	const mode = effective > DEFAULT_VERIFY_PARALLELISM ? 'parallel_chunks' : 'serial';
+	const note =
+		mode === 'parallel_chunks'
+			? 'Parallel verification is a bounded optimization for eligible non-conflicting entries; it is not stronger evidence than serial verification.'
+			: 'Verification runs serially unless an eligible non-conflicting batch receives an effective parallelism greater than 1.';
+
+	return {
+		requested,
+		effective,
+		repositoryMax: MAX_VERIFY_PARALLELISM,
+		cpuAvailable,
+		capped,
+		mode,
+		note,
+	};
 }

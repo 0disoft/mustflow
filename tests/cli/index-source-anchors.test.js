@@ -3,6 +3,7 @@ import { appendFileSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, 
 import path from 'node:path';
 import { test } from 'node:test';
 
+import { projectRoot } from './helpers/cli-harness.js';
 import {
 	LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS,
 	assertLocalIndexStorageBoundary,
@@ -161,6 +162,18 @@ export const cachedAnchor = true;
 	}
 });
 
+test('source preflight compares metadata before hashing content', () => {
+	const localIndexSource = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'index.ts'), 'utf8');
+	const preflightStart = localIndexSource.indexOf('function collectFastPreflightIndexedFileMetadataRecords');
+	const preflightEnd = localIndexSource.indexOf('\nfunction normalizeSearchText', preflightStart);
+	const preflightFunction = localIndexSource.slice(preflightStart, preflightEnd);
+
+	assert.notEqual(preflightStart, -1);
+	assert.notEqual(preflightEnd, -1);
+	assert.match(preflightFunction, /readIndexedFileMetadataRecord/u);
+	assert.doesNotMatch(preflightFunction, /readIndexedFileRecord|sha256Bytes|contentHash|readFileSync/u);
+});
+
 test('source incremental index rebuilds when the candidate source set changes', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-source-candidate-change-');
 
@@ -197,6 +210,51 @@ export const changedSetAnchor = true;
 		assert.equal(output.source_anchor_count, 1);
 		assert.deepEqual(indexedSourcePaths, ['src/new-plain.ts', 'src/with-anchor.ts']);
 		assert.deepEqual(anchorRows, [{ id: 'source.preflight.changed-set', path: 'src/with-anchor.ts' }]);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('source incremental index rebuilds when a source file changes without size or mtime drift', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-same-fingerprint-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		const sourcePath = path.join(projectPath, 'src', 'with-anchor.ts');
+		const originalSource = `/**
+ * mf:anchor source.preflight.same-fingerprint
+ * purpose: Initial source anchor metadata.
+ * search: source same fingerprint
+ * invariant: Metadata-identical edits still force rebuild.
+ * risk: cache
+ */
+export const sameFingerprintAnchor = true;
+`;
+		const changedSource = originalSource.replace('Initial source anchor metadata.', 'Changed source anchor metadata.');
+
+		assert.equal(changedSource.length, originalSource.length);
+		writeFileSync(sourcePath, originalSource);
+		await createLocalIndexDirect(projectPath, { includeSource: true });
+
+		const originalStats = statSync(sourcePath);
+		writeFileSync(sourcePath, changedSource);
+		utimesSync(sourcePath, originalStats.atime, originalStats.mtime);
+
+		const output = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [anchor] = queryRows(
+			database,
+			'SELECT purpose FROM source_anchors WHERE id = "source.preflight.same-fingerprint"',
+		);
+
+		assert.equal(output.index_mode, 'incremental');
+		assert.equal(output.reused_existing, false);
+		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
+		assert.equal(output.wrote_files, true);
+		assert.equal(anchor.purpose, 'Changed source anchor metadata.');
 		database.close();
 	} finally {
 		removeTempProject(projectPath);

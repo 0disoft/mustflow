@@ -877,7 +877,7 @@ export const zhMessages = {
   "verify.help.option.reproEvidence": "从仓库本地 JSON 摘要读取结构化的 bug 复现证据",
   "verify.help.option.externalEvidence": "从仓库本地 JSON 摘要读取低权限外部 CI 证据",
   "verify.help.option.parallel":
-    "最多并行执行这个数量的安全、无冲突计划批次命令；默认值为 1",
+    "最多并行执行这个数量的安全、无冲突计划批次命令，并受本地上限限制；默认值为 1",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
@@ -899,6 +899,7 @@ export const zhMessages = {
   "verify.error.plan_root_mismatch": "分类报告必须来自当前 mustflow 根目录",
   "verify.error.missing_plan_reasons": "分类报告必须包含 summary.validationReasons",
   "verify.error.plan_path_outside_root": "分类报告路径必须位于 mustflow 根目录内",
+  "verify.error.input_path_contains_symlink": "输入文件路径不得包含符号链接",
   "verify.error.changed_files_unavailable": "无法通过 git status 检查变更文件",
   "verify.error.invalid_repro_evidence_file": "复现证据必须是包含结构化证据字段的可读取 JSON 摘要",
   "verify.error.unsupported_repro_evidence_source": "复现证据输入必须使用 command repro-evidence",

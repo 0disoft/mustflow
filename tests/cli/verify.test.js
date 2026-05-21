@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { availableParallelism, tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +44,15 @@ function replaceCommands(projectPath, text) {
 function runGit(cwd, args) {
 	const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function tryFileSymlink(targetPath, linkPath) {
+	try {
+		symlinkSync(targetPath, linkPath, 'file');
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 function commitProjectBaseline(projectPath) {
@@ -277,6 +286,49 @@ test('rejects invalid verification parallelism', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /--parallel must be a positive integer/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('caps excessive verification parallelism and reports the effective settings', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_echo]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a verification message."
+argv = ['${process.execPath}', '-e', 'console.log("verify ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["custom_verify"]
+`,
+		);
+
+		const requested = 999;
+		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--parallel', String(requested), '--json']);
+		const report = JSON.parse(result.stdout);
+		const expectedCpuLimit = Math.max(1, Math.min(8, availableParallelism()));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.parallelism.requested, requested);
+		assert.equal(report.parallelism.effective, expectedCpuLimit);
+		assert.equal(report.parallelism.repository_max, 8);
+		assert.equal(report.parallelism.cpu_available, availableParallelism());
+		assert.equal(report.parallelism.capped, true);
+		assert.equal(report.parallelism.mode, expectedCpuLimit > 1 ? 'parallel_chunks' : 'serial');
+		assert.match(report.parallelism.note, /bounded optimization|runs serially/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -724,6 +776,77 @@ test('rejects verify plans outside the mustflow root', () => {
 		assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
 	} finally {
 		rmSync(outsidePlanPath, { force: true });
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects verify external inputs that resolve through symlinks', (t) => {
+	const projectPath = createTempProject();
+	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-linked-verify-inputs-'));
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(outsideRoot, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'schema_verify')));
+		writeFileSync(
+			path.join(outsideRoot, 'repro-evidence.json'),
+			JSON.stringify({
+				schema_version: '1',
+				command: 'repro-evidence',
+			}),
+		);
+		writeFileSync(
+			path.join(outsideRoot, 'external-evidence.json'),
+			JSON.stringify({
+				schema_version: '1',
+				command: 'external-evidence',
+				checks: [],
+			}),
+		);
+
+		const symlinks = [
+			['classification-link.json', 'classification.json'],
+			['repro-evidence-link.json', 'repro-evidence.json'],
+			['external-evidence-link.json', 'external-evidence.json'],
+		];
+
+		for (const [linkName, targetName] of symlinks) {
+			if (!tryFileSymlink(path.join(outsideRoot, targetName), path.join(projectPath, linkName))) {
+				t.skip('file symlinks are not available in this environment');
+				return;
+			}
+		}
+
+		const classificationResult = runCli(projectPath, [
+			'verify',
+			'--from-classification',
+			'classification-link.json',
+			'--json',
+		]);
+		const deprecatedAliasResult = runCli(projectPath, ['verify', '--from-plan', 'classification-link.json', '--json']);
+		const reproResult = runCli(projectPath, [
+			'verify',
+			'--reason',
+			'bug_fix',
+			'--repro-evidence',
+			'repro-evidence-link.json',
+			'--json',
+		]);
+		const externalResult = runCli(projectPath, [
+			'verify',
+			'--reason',
+			'external_ci_change',
+			'--external-evidence',
+			'external-evidence-link.json',
+			'--json',
+		]);
+
+		for (const result of [classificationResult, deprecatedAliasResult, reproResult, externalResult]) {
+			assert.equal(result.status, 1);
+			assert.match(result.stderr, /Input file path must not contain symlinks/);
+			assert.match(result.stdout, /Usage: mf verify/);
+		}
+	} finally {
+		rmSync(outsideRoot, { recursive: true, force: true });
 		removeTempProject(projectPath);
 	}
 });

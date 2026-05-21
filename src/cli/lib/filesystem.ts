@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 export {
@@ -41,13 +41,42 @@ export function copyFileInsideWithoutSymlinks(
 	writeFileInsideWithoutSymlinks(targetParentPath, targetPath, content);
 }
 
+function pathExistsWithoutFollowingLeaf(filePath: string): boolean {
+	try {
+		lstatSync(filePath);
+		return true;
+	} catch (error) {
+		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+			return false;
+		}
+
+		throw error;
+	}
+}
+
+function nearestExistingAncestor(filePath: string): string {
+	let currentPath = path.resolve(path.dirname(filePath));
+
+	while (!pathExistsWithoutFollowingLeaf(currentPath)) {
+		const parentPath = path.dirname(currentPath);
+
+		if (parentPath === currentPath) {
+			throw new Error(`No existing parent directory for path: ${filePath}`);
+		}
+
+		currentPath = parentPath;
+	}
+
+	return currentPath;
+}
+
 export function copyFileIfMissing(sourcePath: string, targetPath: string, relativePath: string): CopyResult {
-	if (existsSync(targetPath)) {
+	if (pathExistsWithoutFollowingLeaf(targetPath)) {
 		return { status: 'skipped', relativePath };
 	}
 
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-	copyFileSync(sourcePath, targetPath);
+	const content = readFileInsideWithoutSymlinks(path.dirname(sourcePath), sourcePath);
+	writeFileInsideWithoutSymlinks(nearestExistingAncestor(targetPath), targetPath, content);
 
 	return { status: 'created', relativePath };
 }

@@ -887,7 +887,7 @@ Lisez ces fichiers avant de travailler :
   "verify.help.option.reproEvidence": "Lit une preuve structurée de reproduction de bogue depuis un résumé JSON local au dépôt",
   "verify.help.option.externalEvidence": "Lit une preuve CI externe de moindre autorité depuis un résumé JSON local au dépôt",
   "verify.help.option.parallel":
-    "Exécute les lots planifiés sûrs et sans conflit avec au plus ce nombre de commandes ; valeur par défaut : 1",
+    "Exécute les lots planifiés sûrs et sans conflit avec au plus ce nombre de commandes, plafonné par les limites locales ; valeur par défaut : 1",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":
@@ -909,6 +909,7 @@ Lisez ces fichiers avant de travailler :
   "verify.error.plan_root_mismatch": "Le rapport de classification doit venir de cette racine mustflow",
   "verify.error.missing_plan_reasons": "Le rapport de classification doit inclure summary.validationReasons",
   "verify.error.plan_path_outside_root": "Le chemin du rapport de classification doit rester dans la racine mustflow",
+  "verify.error.input_path_contains_symlink": "Le chemin du fichier d'entrée ne doit pas contenir de liens symboliques",
   "verify.error.changed_files_unavailable": "Impossible d'inspecter les fichiers modifies avec git status",
   "verify.error.invalid_repro_evidence_file": "La preuve de reproduction doit être un résumé JSON lisible avec des champs de preuve structurés",
   "verify.error.unsupported_repro_evidence_source": "L'entrée de preuve de reproduction doit utiliser command repro-evidence",

@@ -885,7 +885,7 @@ Read these files before working:
   "verify.help.option.reproEvidence": "Read structured bug-fix reproduction evidence from a repository-local JSON summary",
   "verify.help.option.externalEvidence": "Read lower-authority external CI evidence from a repository-local JSON summary",
   "verify.help.option.parallel":
-    "Run safe non-conflicting schedule batches with up to this many commands; default is 1",
+    "Run safe non-conflicting schedule batches with up to this many commands, capped by local limits; default is 1",
   "verify.help.option.planOnly": "Print the verification plan without running commands; requires --json",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
@@ -907,6 +907,7 @@ Read these files before working:
   "verify.error.plan_root_mismatch": "Classification report must come from this mustflow root",
   "verify.error.missing_plan_reasons": "Classification report must include summary.validationReasons",
   "verify.error.plan_path_outside_root": "Classification report path must stay inside the mustflow root",
+  "verify.error.input_path_contains_symlink": "Input file path must not contain symlinks",
   "verify.error.changed_files_unavailable": "Unable to inspect changed files with git status",
   "verify.error.invalid_repro_evidence_file": "Repro evidence must be a readable JSON summary with structured evidence fields",
   "verify.error.unsupported_repro_evidence_source": "Repro evidence input must use command repro-evidence",

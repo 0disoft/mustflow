@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { test } from 'node:test';
-import { removeTempProject, runCli } from './helpers/cli-harness.js';
+import { projectRoot, removeTempProject, runCli } from './helpers/cli-harness.js';
 import { cloneCachedIndexedProjectFixture, searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
 function cloneIndexedProject() {
@@ -160,6 +162,14 @@ test('searches command effect paths and locks from the local index', async () =>
 	} finally {
 		removeTempProject(projectPath);
 	}
+});
+
+test('search narrows indexed command candidates before loading command effects in bulk', () => {
+	const source = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'index.ts'), 'utf8');
+
+	assert.match(source, /function getCommandEffectsByIntent/u);
+	assert.match(source, /const commandRows = queryCandidateRows/u);
+	assert.doesNotMatch(source, /getCommandEffects\(database,\s*name\)/u);
 });
 
 test('prints cache-layer hints for task-scoped search results', async () => {

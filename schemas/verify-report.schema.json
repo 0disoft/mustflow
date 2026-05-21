@@ -64,6 +64,7 @@
         "skipped": { "type": "integer" }
       }
     },
+    "parallelism": { "$ref": "#/$defs/parallelism" },
     "repro_evidence": { "$ref": "#/$defs/reproEvidence" },
     "external_checks": {
       "type": "array",
@@ -113,6 +114,33 @@
     }
   },
   "$defs": {
+    "parallelism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested",
+        "effective",
+        "repository_max",
+        "cpu_available",
+        "capped",
+        "mode",
+        "note"
+      ],
+      "properties": {
+        "requested": { "type": "integer", "minimum": 1 },
+        "effective": { "type": "integer", "minimum": 1 },
+        "repository_max": { "type": "integer", "minimum": 1 },
+        "cpu_available": {
+          "anyOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "capped": { "type": "boolean" },
+        "mode": { "enum": ["serial", "parallel_chunks"] },
+        "note": { "type": "string" }
+      }
+    },
     "failureFingerprint": {
       "type": "object",
       "additionalProperties": false,

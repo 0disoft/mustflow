@@ -10,7 +10,13 @@ import {
 	getKillMethod,
 	terminateProcessTree,
 } from './process-tree.js';
-import { createOutputLimitError, isOutputLimitExceededError, writeStreamChunk } from './output.js';
+import {
+	createOutputLimitError,
+	isOutputLimitExceededError,
+	writeOutputLimitTerminationMarker,
+	writeStreamChunk,
+	writeStreamChunkPrefix,
+} from './output.js';
 
 const TERMINATION_CONFIRMATION_FALLBACK_MS = 1000;
 
@@ -56,6 +62,7 @@ function runSpawnedCommandStreaming(
 		let forceKillTimeout: NodeJS.Timeout | undefined;
 		let terminationFallbackTimeout: NodeJS.Timeout | undefined;
 		let terminationStarted = false;
+		let outputLimitMarkerWritten = false;
 		let termination: RunTerminationReceipt | null = null;
 
 		const child = spawn(command.executable, command.args ?? [], {
@@ -142,25 +149,48 @@ function runSpawnedCommandStreaming(
 			beginTermination();
 		};
 
-		child.stdout?.on('data', (chunk: Buffer) => {
-			stdout.append(chunk);
-			stdoutBytes += chunk.byteLength;
+		const writeOutputLimitMarkerOnce = (): void => {
+			if (!streamOutput || outputLimitMarkerWritten) {
+				return;
+			}
+
+			outputLimitMarkerWritten = true;
+			writeOutputLimitTerminationMarker(reporter);
+		};
+
+		const handleOutputChunk = (stream: 'stdout' | 'stderr', buffer: BoundedOutputBuffer, chunk: Buffer): void => {
+			const previousBytes = stream === 'stdout' ? stdoutBytes : stderrBytes;
+			const nextBytes = previousBytes + chunk.byteLength;
+			const exceedsLimit = enforceOutputLimit && nextBytes > maxOutputBytes;
+			const remainingStreamBytes = enforceOutputLimit ? Math.max(0, maxOutputBytes - previousBytes) : chunk.byteLength;
+
+			buffer.append(chunk);
+
+			if (stream === 'stdout') {
+				stdoutBytes = nextBytes;
+			} else {
+				stderrBytes = nextBytes;
+			}
+
 			if (streamOutput) {
-				writeStreamChunk(reporter, 'stdout', chunk);
+				if (exceedsLimit) {
+					writeStreamChunkPrefix(reporter, stream, chunk, remainingStreamBytes);
+					writeOutputLimitMarkerOnce();
+				} else {
+					writeStreamChunk(reporter, stream, chunk);
+				}
 			}
-			if (enforceOutputLimit && stdoutBytes > maxOutputBytes) {
-				stopForOutputLimit('stdout');
+
+			if (exceedsLimit) {
+				stopForOutputLimit(stream);
 			}
+		};
+
+		child.stdout?.on('data', (chunk: Buffer) => {
+			handleOutputChunk('stdout', stdout, chunk);
 		});
 		child.stderr?.on('data', (chunk: Buffer) => {
-			stderr.append(chunk);
-			stderrBytes += chunk.byteLength;
-			if (streamOutput) {
-				writeStreamChunk(reporter, 'stderr', chunk);
-			}
-			if (enforceOutputLimit && stderrBytes > maxOutputBytes) {
-				stopForOutputLimit('stderr');
-			}
+			handleOutputChunk('stderr', stderr, chunk);
 		});
 		child.once('error', (error) => {
 			childError = error;

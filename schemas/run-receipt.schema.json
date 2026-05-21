@@ -281,7 +281,21 @@
         "undeclared_count": { "type": "integer" },
         "has_undeclared_changes": { "type": "boolean" },
         "truncated": { "type": "boolean" },
-        "reason": { "type": ["string", "null"] }
+        "reason": { "type": ["string", "null"] },
+        "attribution_mode": { "const": "parallel_chunk" },
+        "chunk_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "attributed_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ambiguous_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ambiguous_count": { "type": "integer", "minimum": 0 }
       }
     }
   }

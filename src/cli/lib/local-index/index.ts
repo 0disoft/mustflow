@@ -465,6 +465,8 @@ function normalizeIndexedFileSourceScope(value: SqlValue | undefined): IndexedFi
 	return 'workflow';
 }
 
+type IndexedFileMetadataRecord = Omit<IndexedFileRecord, 'contentHash'>;
+
 function readIndexedFileRecord(
 	projectRoot: string,
 	relativePath: string,
@@ -483,7 +485,7 @@ function readIndexedFileMetadataRecord(
 	projectRoot: string,
 	relativePath: string,
 	sourceScope: IndexedFileRecord['sourceScope'],
-): Omit<IndexedFileRecord, 'contentHash'> {
+): IndexedFileMetadataRecord {
 	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
 	const stats = statSync(fullPath);
 
@@ -493,6 +495,20 @@ function readIndexedFileMetadataRecord(
 		sizeBytes: stats.size,
 		mtimeMs: Math.round(stats.mtimeMs),
 	};
+}
+
+function hashIndexedFileMetadataRecord(projectRoot: string, metadata: IndexedFileMetadataRecord): IndexedFileRecord {
+	return {
+		...metadata,
+		contentHash: sha256Bytes(readFileSync(path.join(projectRoot, ...metadata.path.split('/')))),
+	};
+}
+
+function hashIndexedFileMetadataRecords(
+	projectRoot: string,
+	metadataRecords: readonly IndexedFileMetadataRecord[],
+): IndexedFileRecord[] {
+	return metadataRecords.map((metadata) => hashIndexedFileMetadataRecord(projectRoot, metadata));
 }
 
 function collectIndexedFileRecords(
@@ -532,22 +548,22 @@ function collectSourceAnchorCandidatePaths(projectRoot: string, sourceConfig: Lo
 	});
 }
 
-function collectFastPreflightIndexedFileRecords(
+function collectFastPreflightIndexedFileMetadataRecords(
 	projectRoot: string,
 	includeSource: boolean,
 	sourceConfig: LocalIndexSourceConfig,
-): IndexedFileRecord[] | null {
-	const records = new Map<string, IndexedFileRecord>();
+): IndexedFileMetadataRecord[] | null {
+	const records = new Map<string, IndexedFileMetadataRecord>();
 
 	for (const relativePath of getExistingIndexablePaths(projectRoot)) {
-		records.set(relativePath, readIndexedFileRecord(projectRoot, relativePath, 'workflow'));
+		records.set(relativePath, readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'));
 	}
 
 	if (includeSource) {
 		try {
 			for (const sourcePath of collectSourceAnchorCandidatePaths(projectRoot, sourceConfig)) {
 				if (!records.has(sourcePath)) {
-					records.set(sourcePath, readIndexedFileRecord(projectRoot, sourcePath, 'source_anchor'));
+					records.set(sourcePath, readIndexedFileMetadataRecord(projectRoot, sourcePath, 'source_anchor'));
 				}
 			}
 		} catch {
@@ -558,7 +574,7 @@ function collectFastPreflightIndexedFileRecords(
 	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
 		records.set(
 			LATEST_RUN_STATE_RELATIVE_PATH,
-			readIndexedFileRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
+			readIndexedFileMetadataRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
 		);
 	}
 
@@ -2869,11 +2885,44 @@ function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly Index
 	return true;
 }
 
+function indexedFileMetadataMatch(database: SqlJsDatabase, currentFiles: readonly IndexedFileMetadataRecord[]): boolean {
+	const rows = queryRows(
+		database,
+		'SELECT path, source_scope, size_bytes, mtime_ms, parser_version FROM indexed_files ORDER BY path',
+	);
+
+	if (rows.length !== currentFiles.length) {
+		return false;
+	}
+
+	const currentByPath = new Map(currentFiles.map((file) => [file.path, file]));
+
+	for (const row of rows) {
+		const storedPath = toSearchString(row.path);
+		const current = currentByPath.get(storedPath);
+
+		if (!current) {
+			return false;
+		}
+
+		if (
+			normalizeIndexedFileSourceScope(row.source_scope) !== current.sourceScope ||
+			toNullableNumber(row.size_bytes) !== current.sizeBytes ||
+			toNullableNumber(row.mtime_ms) !== current.mtimeMs ||
+			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
+		) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 async function readIncrementalPreflightReuse(
 	SQL: SqlJsStatic,
 	databasePath: string,
 	projectRoot: string,
-	currentFiles: readonly IndexedFileRecord[] | null,
+	currentFiles: readonly IndexedFileMetadataRecord[] | null,
 	sourceScopeHash: string,
 	dryRun: boolean,
 	indexMode: LocalIndexResult['index_mode'],
@@ -2907,7 +2956,13 @@ async function readIncrementalPreflightReuse(
 			return { result: null, rebuildReason: 'indexed_files_missing' };
 		}
 
-		if (!indexedFilesMatch(database, currentFiles)) {
+		if (!indexedFileMetadataMatch(database, currentFiles)) {
+			return { result: null, rebuildReason: 'file_fingerprint_mismatch' };
+		}
+
+		const hashedCurrentFiles = hashIndexedFileMetadataRecords(projectRoot, currentFiles);
+
+		if (!indexedFilesMatch(database, hashedCurrentFiles)) {
 			return { result: null, rebuildReason: 'file_fingerprint_mismatch' };
 		}
 
@@ -2996,7 +3051,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	capabilityDatabase.close();
 
 	if (incremental) {
-		const preflightFiles = collectFastPreflightIndexedFileRecords(projectRoot, includeSource, sourceConfig);
+		const preflightFiles = collectFastPreflightIndexedFileMetadataRecords(projectRoot, includeSource, sourceConfig);
 		const preflightReuse = await readIncrementalPreflightReuse(
 			SQL,
 			databasePath,
@@ -3862,12 +3917,8 @@ function getDocumentTerms(database: SqlJsDatabase, documentPath: string): string
 	);
 }
 
-function getCommandEffects(database: SqlJsDatabase, intent: string): NormalizedCommandEffect[] {
-	return queryRows(
-		database,
-		'SELECT intent, source, access, mode, path, lock, concurrency FROM command_effects WHERE intent = ? ORDER BY lock, path, mode',
-		[intent],
-	).map((row) => ({
+function commandEffectFromRow(row: Record<string, SqlValue>): NormalizedCommandEffect {
+	return {
 		intent: toSearchString(row.intent),
 		source: toSearchString(row.source) as NormalizedCommandEffect['source'],
 		access: toSearchString(row.access) as NormalizedCommandEffect['access'],
@@ -3875,7 +3926,57 @@ function getCommandEffects(database: SqlJsDatabase, intent: string): NormalizedC
 		path: row.path === null || row.path === undefined ? null : toSearchString(row.path),
 		lock: toSearchString(row.lock),
 		concurrency: toSearchString(row.concurrency) as NormalizedCommandEffect['concurrency'],
-	}));
+	};
+}
+
+function sqlPlaceholders(values: readonly unknown[]): string {
+	return values.map(() => '?').join(', ');
+}
+
+function queryCandidateRows(
+	database: SqlJsDatabase,
+	sql: string,
+	keyColumn: string,
+	candidates: ReadonlySet<string>,
+	indexedMatches: IndexedSearchMatches,
+): Record<string, SqlValue>[] {
+	if (!indexedMatches.active || candidates.size === 0) {
+		return queryRows(database, sql);
+	}
+
+	const keys = [...candidates].sort((left, right) => left.localeCompare(right));
+
+	return queryRows(database, `${sql} WHERE ${keyColumn} IN (${sqlPlaceholders(keys)})`, keys);
+}
+
+function getCommandEffectsByIntent(
+	database: SqlJsDatabase,
+	intents: readonly string[],
+): ReadonlyMap<string, readonly NormalizedCommandEffect[]> {
+	const uniqueIntents = [...new Set(intents)].sort((left, right) => left.localeCompare(right));
+	const effectsByIntent = new Map<string, NormalizedCommandEffect[]>(uniqueIntents.map((intent) => [intent, []]));
+
+	if (uniqueIntents.length === 0) {
+		return effectsByIntent;
+	}
+
+	for (const row of queryRows(
+		database,
+		`SELECT intent, source, access, mode, path, lock, concurrency
+FROM command_effects
+WHERE intent IN (${sqlPlaceholders(uniqueIntents)})
+ORDER BY intent, lock, path, mode`,
+		uniqueIntents,
+	)) {
+		const effect = commandEffectFromRow(row);
+		const effects = effectsByIntent.get(effect.intent);
+
+		if (effects) {
+			effects.push(effect);
+		}
+	}
+
+	return effectsByIntent;
 }
 
 interface IndexedSearchMatches {
@@ -4022,7 +4123,7 @@ function matchesIndexedOrTableScan(
 	matchSet: ReadonlySet<string>,
 	key: string,
 ): boolean {
-	return (indexedMatches.active && matchSet.has(key)) || isMatched(fields, query);
+	return indexedMatches.active && matchSet.size > 0 ? matchSet.has(key) : isMatched(fields, query);
 }
 
 function scoreIndexedOrTableScan(
@@ -4034,7 +4135,7 @@ function scoreIndexedOrTableScan(
 	key: string,
 ): number {
 	const tableScore = scoreMatch(primaryFields, secondaryFields, query);
-	return indexedMatches.active && matchSet.has(key) ? Math.max(tableScore, 20) : tableScore;
+	return indexedMatches.active && matchSet.size > 0 && matchSet.has(key) ? Math.max(tableScore, 20) : tableScore;
 }
 
 /**
@@ -4076,7 +4177,13 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		}
 
 		if (scope === 'workflow' || scope === 'all') {
-			for (const row of queryRows(database, 'SELECT path, type, title, content_snippet FROM documents')) {
+			for (const row of queryCandidateRows(
+				database,
+				'SELECT path, type, title, content_snippet FROM documents',
+				'path',
+				indexedMatches.documents,
+				indexedMatches,
+			)) {
 				const pathValue = toSearchString(row.path);
 				const typeValue = toSearchString(row.type);
 				const title = toSearchString(row.title);
@@ -4114,7 +4221,13 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				);
 			}
 
-			for (const row of queryRows(database, 'SELECT name, path, title FROM skills')) {
+			for (const row of queryCandidateRows(
+				database,
+				'SELECT name, path, title FROM skills',
+				'name',
+				indexedMatches.skills,
+				indexedMatches,
+			)) {
 				const name = toSearchString(row.name);
 				const pathValue = toSearchString(row.path);
 				const title = toSearchString(row.title);
@@ -4147,9 +4260,14 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				);
 			}
 
-			for (const row of queryRows(
+			const matchedSkillRouteNames = new Set([...indexedMatches.skillRoutes].map((routeKey) => routeKey.split('\u0000')[0] ?? ''));
+
+			for (const row of queryCandidateRows(
 				database,
 				'SELECT skill_name, skill_path, trigger, required_input, edit_scope, risk, verification_intents, expected_output FROM skill_routes',
+				'skill_name',
+				matchedSkillRouteNames,
+				indexedMatches,
 			)) {
 				const name = toSearchString(row.skill_name);
 				const pathValue = toSearchString(row.skill_path);
@@ -4163,8 +4281,9 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 				const secondaryFields = [pathValue, requiredInput, editScope, risk, expectedOutput];
 				const fields = [...primaryFields, ...secondaryFields];
 				const routeKey = skillRouteKey({ skillName: name, trigger });
+				const indexedRouteMatch = indexedMatches.active && indexedMatches.skillRoutes.has(routeKey);
 
-				if (!matchesIndexedOrTableScan(fields, normalizedQuery, indexedMatches, indexedMatches.skillRoutes, routeKey)) {
+				if (!indexedRouteMatch && !isMatched(fields, normalizedQuery)) {
 					continue;
 				}
 
@@ -4180,27 +4299,34 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							verification_intents: verificationIntents,
 							...skillAuthority(),
 							match: getMatchSnippet(fields, normalizedQuery),
-							score: scoreIndexedOrTableScan(
-								primaryFields,
-								secondaryFields,
-								normalizedQuery,
-								indexedMatches,
-								indexedMatches.skillRoutes,
-								routeKey,
-							),
+							score: indexedRouteMatch
+								? Math.max(scoreMatch(primaryFields, secondaryFields, normalizedQuery), 20)
+								: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
 						},
 						cacheLayers,
 					),
 				);
 			}
 
-			for (const row of queryRows(database, 'SELECT name, status, lifecycle, run_policy, description FROM command_intents')) {
+			const commandRows = queryCandidateRows(
+				database,
+				'SELECT name, status, lifecycle, run_policy, description FROM command_intents',
+				'name',
+				indexedMatches.commandIntents,
+				indexedMatches,
+			);
+			const effectsByIntent = getCommandEffectsByIntent(
+				database,
+				commandRows.map((row) => toSearchString(row.name)),
+			);
+
+			for (const row of commandRows) {
 				const name = toSearchString(row.name);
 				const status = toSearchString(row.status);
 				const lifecycle = toSearchString(row.lifecycle);
 				const runPolicy = toSearchString(row.run_policy);
 				const description = toSearchString(row.description);
-				const effects = getCommandEffects(database, name);
+				const effects = effectsByIntent.get(name) ?? [];
 				const effectLocks = [...new Set(effects.map((effect) => effect.lock))].sort((left, right) =>
 					left.localeCompare(right),
 				);
@@ -4245,9 +4371,12 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		}
 
 		if (scope === 'source' || scope === 'all') {
-			for (const row of queryRows(
+			for (const row of queryCandidateRows(
 				database,
 				'SELECT source_anchors.id, path, line_start, purpose, search_terms, invariant, risk, source_anchors.navigation_only, source_anchors.can_instruct_agent, status, confidence FROM source_anchors LEFT JOIN source_anchor_status ON source_anchor_status.anchor_id = source_anchors.id',
+				'source_anchors.id',
+				indexedMatches.sourceAnchors,
+				indexedMatches,
 			)) {
 				const id = toSearchString(row.id);
 				const pathValue = toSearchString(row.path);

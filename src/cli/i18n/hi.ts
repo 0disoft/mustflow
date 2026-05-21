@@ -887,7 +887,7 @@ export const hiMessages = {
   "verify.help.option.reproEvidence": "Repository-local JSON summary से structured bug reproduction evidence पढ़ें",
   "verify.help.option.externalEvidence": "Repository-local JSON summary से lower-authority external CI evidence पढ़ें",
   "verify.help.option.parallel":
-    "Safe और non-conflicting schedule batches को इतने commands तक साथ चलाएं; default 1 है",
+    "Safe और non-conflicting schedule batches को इतने commands तक साथ चलाएं, local limits से capped; default 1 है",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
@@ -909,6 +909,7 @@ export const hiMessages = {
   "verify.error.plan_root_mismatch": "Classification report इसी mustflow root से आना चाहिए",
   "verify.error.missing_plan_reasons": "Classification report में summary.validationReasons होना चाहिए",
   "verify.error.plan_path_outside_root": "Classification report path mustflow root के अंदर रहना चाहिए",
+  "verify.error.input_path_contains_symlink": "Input file path में symbolic link नहीं होना चाहिए",
   "verify.error.changed_files_unavailable": "git status से बदली फ़ाइलें नहीं पढ़ी जा सकीं",
   "verify.error.invalid_repro_evidence_file": "Repro evidence structured evidence fields वाला readable JSON summary होना चाहिए",
   "verify.error.unsupported_repro_evidence_source": "Repro evidence input को command repro-evidence इस्तेमाल करना चाहिए",

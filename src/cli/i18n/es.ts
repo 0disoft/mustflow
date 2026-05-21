@@ -887,7 +887,7 @@ Lee estos archivos antes de trabajar:
   "verify.help.option.reproEvidence": "Lee evidencia estructurada de reproducción de errores desde un resumen JSON local del repositorio",
   "verify.help.option.externalEvidence": "Lee evidencia de CI externa de menor autoridad desde un resumen JSON local del repositorio",
   "verify.help.option.parallel":
-    "Ejecuta lotes programados seguros y sin conflictos con hasta esta cantidad de comandos; el valor predeterminado es 1",
+    "Ejecuta lotes programados seguros y sin conflictos con hasta esta cantidad de comandos, limitada por topes locales; el valor predeterminado es 1",
   "verify.help.option.planOnly": "Imprime el plan de verificación sin ejecutar comandos; requiere --json",
   "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
   "verify.help.exit.fail":
@@ -909,6 +909,7 @@ Lee estos archivos antes de trabajar:
   "verify.error.plan_root_mismatch": "El informe de clasificación debe provenir de esta raíz mustflow",
   "verify.error.missing_plan_reasons": "El informe de clasificación debe incluir summary.validationReasons",
   "verify.error.plan_path_outside_root": "La ruta del informe de clasificación debe permanecer dentro de la raíz mustflow",
+  "verify.error.input_path_contains_symlink": "La ruta del archivo de entrada no debe contener enlaces simbólicos",
   "verify.error.changed_files_unavailable": "No se pudieron inspeccionar los archivos cambiados con git status",
   "verify.error.invalid_repro_evidence_file": "La evidencia de reproducción debe ser un resumen JSON legible con campos de evidencia estructurados",
   "verify.error.unsupported_repro_evidence_source": "La entrada de evidencia de reproducción debe usar command repro-evidence",

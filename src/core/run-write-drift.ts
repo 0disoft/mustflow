@@ -37,12 +37,28 @@ export interface RunWriteDriftReceipt {
 	readonly has_undeclared_changes: boolean;
 	readonly truncated: boolean;
 	readonly reason: string | null;
+	readonly attribution_mode?: 'parallel_chunk';
+	readonly chunk_intents?: readonly string[];
+	readonly attributed_paths?: readonly string[];
+	readonly ambiguous_paths?: readonly string[];
+	readonly ambiguous_count?: number;
 }
 
 export interface RunWriteTracker {
 	readonly projectRoot: string;
 	readonly declaredPaths: readonly string[];
 	readonly before: SnapshotResult;
+}
+
+export interface RunWriteBatchTracker {
+	readonly projectRoot: string;
+	readonly before: SnapshotResult;
+}
+
+export interface RunWriteBatchIntent {
+	readonly intentName: string;
+	readonly declaredPaths: readonly string[];
+	readonly observedPaths: readonly string[];
 }
 
 export interface RunWriteTrackingOptions {
@@ -268,6 +284,32 @@ function truncatePaths(paths: readonly string[]): { readonly paths: readonly str
 	return { paths: paths.slice(0, MAX_REPORTED_PATHS), truncated: true };
 }
 
+function uniqueSortedPaths(paths: Iterable<string>): string[] {
+	return [...new Set([...paths].map(normalizeRelativePath))].sort((left, right) => left.localeCompare(right));
+}
+
+function pathsCoverObservedPath(declaredPaths: readonly string[], observedPath: string): boolean {
+	return declaredPaths.some((declaredPath) => declaredPathCoversObservedPath(declaredPath, observedPath));
+}
+
+function createUnavailableWriteDriftReceipt(
+	declaredPaths: readonly string[],
+	reason: string | null,
+): RunWriteDriftReceipt {
+	return {
+		status: 'unavailable',
+		declared_paths: declaredPaths,
+		observed_paths: [],
+		declared_observed_paths: [],
+		undeclared_paths: [],
+		observed_count: 0,
+		undeclared_count: 0,
+		has_undeclared_changes: false,
+		truncated: false,
+		reason,
+	};
+}
+
 export function startRunWriteTracking(
 	projectRoot: string,
 	contract: CommandContract,
@@ -286,36 +328,129 @@ export function startRunWriteTracking(
 	};
 }
 
-export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftReceipt {
+export function startRunWriteBatchTracking(projectRoot: string): RunWriteBatchTracker {
+	return {
+		projectRoot,
+		before: captureSnapshot(projectRoot),
+	};
+}
+
+export function finishRunWriteBatchTracking(
+	tracker: RunWriteBatchTracker,
+	intents: readonly RunWriteBatchIntent[],
+): ReadonlyMap<string, RunWriteDriftReceipt> {
+	const chunkIntents = intents.map((intent) => intent.intentName).sort((left, right) => left.localeCompare(right));
+	const fallbackReceipts = new Map<string, RunWriteDriftReceipt>();
+
+	for (const intent of intents) {
+		fallbackReceipts.set(
+			intent.intentName,
+			createUnavailableWriteDriftReceipt(uniqueSortedPaths(intent.declaredPaths), tracker.before.reason),
+		);
+	}
+
 	if (tracker.before.status === 'unavailable') {
-		return {
-			status: 'unavailable',
-			declared_paths: tracker.declaredPaths,
-			observed_paths: [],
-			declared_observed_paths: [],
-			undeclared_paths: [],
-			observed_count: 0,
-			undeclared_count: 0,
-			has_undeclared_changes: false,
-			truncated: false,
-			reason: tracker.before.reason,
-		};
+		return fallbackReceipts;
 	}
 
 	const after = captureSnapshot(tracker.projectRoot);
 	if (after.status === 'unavailable') {
-		return {
-			status: 'unavailable',
-			declared_paths: tracker.declaredPaths,
-			observed_paths: [],
-			declared_observed_paths: [],
-			undeclared_paths: [],
-			observed_count: 0,
-			undeclared_count: 0,
-			has_undeclared_changes: false,
-			truncated: false,
-			reason: after.reason,
-		};
+		return new Map(
+			intents.map((intent) => [
+				intent.intentName,
+				createUnavailableWriteDriftReceipt(uniqueSortedPaths(intent.declaredPaths), after.reason),
+			]),
+		);
+	}
+
+	const observedPaths = listObservedChangedPaths(tracker.before.entries, after.entries);
+	const declaredObservedByIntent = new Map<string, string[]>();
+	const undeclaredByIntent = new Map<string, string[]>();
+	const ambiguousByIntent = new Map<string, string[]>();
+
+	for (const intent of intents) {
+		declaredObservedByIntent.set(intent.intentName, []);
+		undeclaredByIntent.set(intent.intentName, []);
+		ambiguousByIntent.set(intent.intentName, []);
+	}
+
+	for (const observedPath of observedPaths) {
+		const declaredOwners = intents.filter((intent) => pathsCoverObservedPath(intent.declaredPaths, observedPath));
+
+		if (declaredOwners.length === 1) {
+			declaredObservedByIntent.get(declaredOwners[0]?.intentName ?? '')?.push(observedPath);
+			continue;
+		}
+
+		if (declaredOwners.length > 1) {
+			for (const owner of declaredOwners) {
+				ambiguousByIntent.get(owner.intentName)?.push(observedPath);
+			}
+			continue;
+		}
+
+		const observedWitnesses = intents.filter((intent) =>
+			intent.observedPaths.some((intentObservedPath) => pathKey(intentObservedPath) === pathKey(observedPath)),
+		);
+
+		if (observedWitnesses.length === 1) {
+			undeclaredByIntent.get(observedWitnesses[0]?.intentName ?? '')?.push(observedPath);
+			continue;
+		}
+
+		const ambiguousTargets = observedWitnesses.length > 0 ? observedWitnesses : intents;
+		for (const intent of ambiguousTargets) {
+			ambiguousByIntent.get(intent.intentName)?.push(observedPath);
+		}
+	}
+
+	const status: RunWriteDriftStatus = tracker.before.status === 'partial' || after.status === 'partial' ? 'partial' : 'checked';
+	const reason = status === 'partial'
+		? tracker.before.reason ?? after.reason ?? 'partial_snapshot'
+		: null;
+	const receipts = new Map<string, RunWriteDriftReceipt>();
+
+	for (const intent of intents) {
+		const declaredPaths = uniqueSortedPaths(intent.declaredPaths);
+		const declaredObservedPaths = uniqueSortedPaths(declaredObservedByIntent.get(intent.intentName) ?? []);
+		const undeclaredPaths = uniqueSortedPaths(undeclaredByIntent.get(intent.intentName) ?? []);
+		const ambiguousPaths = uniqueSortedPaths(ambiguousByIntent.get(intent.intentName) ?? []);
+		const intentObservedPaths = uniqueSortedPaths([...declaredObservedPaths, ...undeclaredPaths, ...ambiguousPaths]);
+		const observed = truncatePaths(intentObservedPaths);
+		const declaredObserved = truncatePaths(declaredObservedPaths);
+		const undeclared = truncatePaths(undeclaredPaths);
+		const ambiguous = truncatePaths(ambiguousPaths);
+
+		receipts.set(intent.intentName, {
+			status,
+			declared_paths: declaredPaths,
+			observed_paths: observed.paths,
+			declared_observed_paths: declaredObserved.paths,
+			undeclared_paths: undeclared.paths,
+			observed_count: intentObservedPaths.length,
+			undeclared_count: undeclaredPaths.length,
+			has_undeclared_changes: undeclaredPaths.length > 0 || ambiguousPaths.length > 0,
+			truncated: observed.truncated || declaredObserved.truncated || undeclared.truncated || ambiguous.truncated,
+			reason,
+			attribution_mode: 'parallel_chunk',
+			chunk_intents: chunkIntents,
+			attributed_paths: uniqueSortedPaths([...declaredObservedPaths, ...undeclaredPaths]),
+			ambiguous_paths: ambiguous.paths,
+			ambiguous_count: ambiguousPaths.length,
+		});
+	}
+
+	return receipts;
+}
+
+export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftReceipt {
+	if (tracker.before.status === 'unavailable') {
+		return createUnavailableWriteDriftReceipt(tracker.declaredPaths, tracker.before.reason);
+	}
+
+	const after = captureSnapshot(tracker.projectRoot);
+	if (after.status === 'unavailable') {
+		return createUnavailableWriteDriftReceipt(tracker.declaredPaths, after.reason);
 	}
 
 	const observedPaths = listObservedChangedPaths(tracker.before.entries, after.entries);
