@@ -23,6 +23,7 @@ import {
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
 import { MAX_COMMAND_OUTPUT_BYTES, commandMaxOutputBytesLimitMessage } from './command-output-limits.js';
+import { SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION, successExitCodesAreValid } from './success-exit-codes.js';
 
 export interface CommandContractValidationIssue {
 	readonly message: string;
@@ -373,9 +374,12 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 	}
 
 	if (hasOwn(intent, 'success_exit_codes')) {
-		const value = intent.success_exit_codes;
-		if (!Array.isArray(value) || value.length === 0 || value.some((entry) => !Number.isInteger(entry))) {
-			issues.push(commandContractIssue(`[commands.intents.${intentName}].success_exit_codes must be an integer array`));
+		if (!successExitCodesAreValid(intent.success_exit_codes)) {
+			issues.push(
+				commandContractIssue(
+					`[commands.intents.${intentName}].success_exit_codes must be ${SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION}`,
+				),
+			);
 		}
 	}
 

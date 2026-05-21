@@ -28,6 +28,8 @@ import { assembleRunReceipt } from './run/receipt.js';
 
 export interface RunCommandOptions {
 	readonly writeLatestReceipt?: boolean;
+	readonly writeLatestProfile?: boolean;
+	readonly recordPerformanceHistory?: boolean;
 	readonly testTargets?: readonly string[];
 	readonly additionalDeclaredWritePaths?: readonly string[];
 }
@@ -99,6 +101,18 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 	}
 
 	reporter.stderr(renderCliError(message, 'mf help commands', lang));
+}
+
+function writeLatestProfile(
+	profiler: RunProfiler,
+	options: RunCommandOptions,
+	input: Parameters<RunProfiler['writeLatest']>[0],
+): void {
+	if (options.writeLatestProfile === false) {
+		return;
+	}
+
+	profiler.writeLatest(input);
 }
 
 export function getRunHelp(lang: CliLang = 'en'): string {
@@ -194,7 +208,7 @@ export async function runRun(
 				reporter.stdout(renderRunPreviewText(plan, previewMode, lang));
 			}
 		});
-		profiler.writeLatest({
+		writeLatestProfile(profiler, options, {
 			projectRoot,
 			intent: intentName,
 			status: plan.ok ? 'previewed' : 'blocked',
@@ -206,7 +220,7 @@ export async function runRun(
 
 	if (!plan.ok) {
 		reportRunPlanFailure(plan, reporter, lang);
-		profiler.writeLatest({
+		writeLatestProfile(profiler, options, {
 			projectRoot,
 			intent: intentName,
 			status: 'blocked',
@@ -304,8 +318,10 @@ export async function runRun(
 	if (options.writeLatestReceipt !== false) {
 		profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt));
 	}
-	profiler.measure('performance_history_write', () => recordRunPerformanceHistory(projectRoot, receipt));
-	profiler.writeLatest({
+	if (options.recordPerformanceHistory !== false) {
+		profiler.measure('performance_history_write', () => recordRunPerformanceHistory(projectRoot, receipt));
+	}
+	writeLatestProfile(profiler, options, {
 		projectRoot,
 		intent: intentName,
 		status: runStatus,

@@ -84,7 +84,7 @@ export function forceTerminateProcessTreeNonBlocking(pid: number | undefined): v
 }
 
 export function getKillMethod(): string {
-	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
+	return process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm';
 }
 
 export function createPendingTimeoutTermination(method: string, forcedKillAttempted = false): RunTerminationReceipt {

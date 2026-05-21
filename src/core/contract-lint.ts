@@ -25,6 +25,10 @@ import { MAX_COMMAND_OUTPUT_BYTES } from './command-output-limits.js';
 import { commandEffectsConflict, normalizeCommandEffects } from './command-effects.js';
 import { listChangeClassificationValidationReasons } from './change-classification.js';
 import { parseSkillIndexRoutes } from './skill-route-alignment.js';
+import {
+	SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION,
+	successExitCodesAreValid as successExitCodeValuesAreValid,
+} from './success-exit-codes.js';
 
 export type ContractLintStatus = 'passed' | 'warning' | 'failed';
 export type ContractLintSeverity = 'error' | 'warning';
@@ -186,7 +190,7 @@ function readBoolean(intent: TomlTable, key: string): boolean | null {
 
 function successExitCodesAreValid(intent: TomlTable): boolean {
 	const value = intent.success_exit_codes;
-	return value === undefined || (Array.isArray(value) && value.every((entry) => Number.isInteger(entry)));
+	return value === undefined || successExitCodeValuesAreValid(value);
 }
 
 function writesAreValid(intent: TomlTable): boolean {
@@ -564,7 +568,13 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 	}
 
 	if (!successExitCodesAreValid(value)) {
-		pushIssue(issues, 'error', 'invalid_success_exit_codes', name, `Intent ${name} success_exit_codes must be an integer array.`);
+		pushIssue(
+			issues,
+			'error',
+			'invalid_success_exit_codes',
+			name,
+			`Intent ${name} success_exit_codes must be ${SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION}.`,
+		);
 	}
 
 	if (!writesAreValid(value)) {

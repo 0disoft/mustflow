@@ -81,7 +81,10 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.executable_source_missing', /^Configured intent [^\s]+ must define argv or mode = "shell" with cmd$/u],
 	['mustflow.command_contract.shell_background_pattern', /^Shell intent [^\s]+ contains a blocked long-running or background pattern$/u],
 	['mustflow.command_contract.long_running_command_pattern', /^Intent [^\s]+ contains a blocked long-running or background command pattern$/u],
-	['mustflow.command_contract.success_exit_codes_invalid', /^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be an integer array$/u],
+	[
+		'mustflow.command_contract.success_exit_codes_invalid',
+		/^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be a non-empty integer array with values from 0 through 255$/u,
+	],
 	['mustflow.command_contract.effects_invalid', /^(?:Strict: )?(?:\[commands\.(?:resources|intents\.[^\]]+\.effects)[^\]]*\]|Command effect for intent [^\s]+ must define path, paths, or lock)/u],
 	['mustflow.command_contract.effect_path_escape', /^Strict: Command effect path must stay inside the current root:/u],
 	['mustflow.command_contract.shared_writes_without_effects', /^Strict warning: configured agent-runnable intents .+ share path:.+ through writes without explicit effects or resource locks$/u],

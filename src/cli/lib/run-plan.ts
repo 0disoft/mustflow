@@ -23,6 +23,7 @@ import {
 	commandMaxOutputBytesLimitMessage,
 } from '../../core/command-output-limits.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
+import { normalizeSuccessExitCodes } from '../../core/success-exit-codes.js';
 import { t, type CliLang } from './i18n.js';
 
 export interface ResolvedArgvCommand {
@@ -127,13 +128,7 @@ export interface RunnableRunPlan extends RunPlanBase {
 export type RunPlan = BlockedRunPlan | RunnableRunPlan;
 
 function getSuccessExitCodes(intent: TomlTable): number[] {
-	const value = intent.success_exit_codes;
-
-	if (!Array.isArray(value) || value.length === 0 || value.some((entry) => !Number.isInteger(entry))) {
-		return [0];
-	}
-
-	return value.map(Number);
+	return normalizeSuccessExitCodes(intent.success_exit_codes);
 }
 
 function readBoolean(intent: TomlTable, key: string): boolean | undefined {

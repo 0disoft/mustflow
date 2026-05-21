@@ -13,9 +13,15 @@ const INTERPRETER_EVALUATION_FLAGS = new Map<string, ReadonlySet<string>>([
 	['ruby', new Set(['-e'])],
 	['perl', new Set(['-e'])],
 ]);
+const INTERPRETER_LONG_RUNNING_MODULES = new Map<string, ReadonlySet<string>>([
+	['python', new Set(['http.server', 'simplehttpserver'])],
+	['python3', new Set(['http.server', 'simplehttpserver'])],
+	['py', new Set(['http.server', 'simplehttpserver'])],
+]);
 const PACKAGE_SCRIPT_RUNNERS = new Set(['bun', 'npm', 'pnpm', 'yarn']);
 const LONG_RUNNING_PACKAGE_SCRIPTS = new Set(['dev', 'start', 'serve', 'watch', 'preview']);
 const LONG_RUNNING_EXECUTABLES = new Set(['nodemon', 'pm2', 'serve', 'http-server', 'live-server', 'webpack-dev-server']);
+const PACKAGE_EXEC_RUNNERS = new Set(['npx', 'bunx']);
 const ATTACHED_EVALUATION_FLAGS = new Set(['-command', '-commandwithargs']);
 
 export const BACKGROUND_SHELL_PATTERNS = [
@@ -32,6 +38,12 @@ export const BACKGROUND_SHELL_PATTERNS = [
 
 export const LONG_RUNNING_COMMAND_TEXT_PATTERNS = [
 	/\b(?:npm|pnpm|bun|yarn)\s+(?:run\s+)?(?:dev|start|serve|watch|preview)\b/iu,
+	/\b(?:npx|bunx)\s+(?:-[^\s]+\s+)*(?:vite|nodemon|pm2|serve|http-server|live-server|webpack-dev-server)\b/iu,
+	/\b(?:npm|pnpm|yarn)\s+(?:exec|x|dlx)\s+(?:-[^\s]+\s+)*(?:vite|nodemon|pm2|serve|http-server|live-server|webpack-dev-server)\b/iu,
+	/\bnext\s+(?:dev|start)\b/iu,
+	/\bturbo\s+dev\b/iu,
+	/\btsx\s+(?:watch|--watch|-w)\b/iu,
+	/\b(?:python|python3|py)\s+-m\s+(?:http\.server|SimpleHTTPServer)\b/u,
 	/\b(?:nohup|disown)\b/iu,
 	/(?:^|[^&])&(?!&)\s*$/u,
 	/\bsetInterval\s*\(/u,
@@ -113,26 +125,43 @@ function readPackageScriptName(command: string, args: readonly string[]): string
 	return null;
 }
 
-function argvHasBlockedLongRunningPattern(argv: readonly string[]): string | null {
-	const [rawCommand = '', ...args] = argv;
-	const command = normalizeExecutableName(rawCommand);
+function findFirstNonOptionArgument(args: readonly string[]): { readonly value: string; readonly index: number } | null {
+	for (let index = 0; index < args.length; index += 1) {
+		const argument = args[index] ?? '';
 
-	const shellPayload = SHELL_WRAPPER_COMMANDS.has(command) ? findFlagPayload(argv, SHELL_EVALUATION_FLAGS) : null;
-	if (shellPayload && (shellCommandHasBlockedBackgroundPattern(shellPayload) || commandTextHasLongRunningPattern(shellPayload))) {
-		return `shell wrapper payload contains a blocked long-running or background pattern: ${shellPayload}`;
+		if (argument === '--') {
+			const value = args[index + 1];
+			return value ? { value, index: index + 1 } : null;
+		}
+
+		if (argument.length > 0 && !argument.startsWith('-')) {
+			return { value: argument, index };
+		}
 	}
 
-	const interpreterFlags = INTERPRETER_EVALUATION_FLAGS.get(command);
-	const interpreterPayload = interpreterFlags ? findFlagPayload(argv, interpreterFlags) : null;
-	if (interpreterPayload && commandTextHasLongRunningPattern(interpreterPayload)) {
-		return `interpreter evaluation payload contains a blocked long-running pattern: ${interpreterPayload}`;
+	return null;
+}
+
+function readPackageExecCommand(command: string, args: readonly string[]): { readonly command: string; readonly args: readonly string[] } | null {
+	if (PACKAGE_EXEC_RUNNERS.has(command)) {
+		const target = findFirstNonOptionArgument(args);
+		return target ? { command: normalizeExecutableName(target.value), args: args.slice(target.index + 1) } : null;
 	}
 
-	const packageScriptName = readPackageScriptName(command, args);
-	if (packageScriptName && LONG_RUNNING_PACKAGE_SCRIPTS.has(packageScriptName)) {
-		return `package-manager script "${packageScriptName}" is commonly long-running`;
+	if (command === 'npm' && ['exec', 'x'].includes(args[0] ?? '')) {
+		const target = findFirstNonOptionArgument(args.slice(1));
+		return target ? { command: normalizeExecutableName(target.value), args: args.slice(target.index + 2) } : null;
 	}
 
+	if ((command === 'pnpm' || command === 'yarn') && ['exec', 'dlx'].includes(args[0] ?? '')) {
+		const target = findFirstNonOptionArgument(args.slice(1));
+		return target ? { command: normalizeExecutableName(target.value), args: args.slice(target.index + 2) } : null;
+	}
+
+	return null;
+}
+
+function longRunningExecutableDetail(command: string, args: readonly string[]): string | null {
 	if (LONG_RUNNING_EXECUTABLES.has(command)) {
 		return `executable "${command}" is commonly long-running`;
 	}
@@ -153,7 +182,53 @@ function argvHasBlockedLongRunningPattern(argv: readonly string[]): string | nul
 		return 'tsc watch mode is long-running';
 	}
 
+	if (command === 'tsx' && ['watch', '--watch', '-w'].includes(args[0] ?? '')) {
+		return `tsx ${args[0]} is commonly long-running`;
+	}
+
+	if (command === 'turbo' && args[0] === 'dev') {
+		return 'turbo dev is commonly long-running';
+	}
+
 	return null;
+}
+
+function argvHasBlockedLongRunningPattern(argv: readonly string[]): string | null {
+	const [rawCommand = '', ...args] = argv;
+	const command = normalizeExecutableName(rawCommand);
+
+	const shellPayload = SHELL_WRAPPER_COMMANDS.has(command) ? findFlagPayload(argv, SHELL_EVALUATION_FLAGS) : null;
+	if (shellPayload && (shellCommandHasBlockedBackgroundPattern(shellPayload) || commandTextHasLongRunningPattern(shellPayload))) {
+		return `shell wrapper payload contains a blocked long-running or background pattern: ${shellPayload}`;
+	}
+
+	const interpreterFlags = INTERPRETER_EVALUATION_FLAGS.get(command);
+	const interpreterPayload = interpreterFlags ? findFlagPayload(argv, interpreterFlags) : null;
+	if (interpreterPayload && commandTextHasLongRunningPattern(interpreterPayload)) {
+		return `interpreter evaluation payload contains a blocked long-running pattern: ${interpreterPayload}`;
+	}
+
+	const interpreterModules = INTERPRETER_LONG_RUNNING_MODULES.get(command);
+	const moduleFlagIndex = args.indexOf('-m');
+	const moduleName = moduleFlagIndex >= 0 ? args[moduleFlagIndex + 1]?.toLowerCase() : null;
+	if (moduleName && interpreterModules?.has(moduleName)) {
+		return `interpreter module "${moduleName}" is commonly long-running`;
+	}
+
+	const packageScriptName = readPackageScriptName(command, args);
+	if (packageScriptName && LONG_RUNNING_PACKAGE_SCRIPTS.has(packageScriptName)) {
+		return `package-manager script "${packageScriptName}" is commonly long-running`;
+	}
+
+	const packageExecCommand = readPackageExecCommand(command, args);
+	if (packageExecCommand) {
+		const detail = longRunningExecutableDetail(packageExecCommand.command, packageExecCommand.args);
+		if (detail) {
+			return `package-manager exec target ${detail}`;
+		}
+	}
+
+	return longRunningExecutableDetail(command, args);
 }
 
 export function commandIntentBlockedCommandPattern(intent: TomlTable): BlockedCommandPattern | null {

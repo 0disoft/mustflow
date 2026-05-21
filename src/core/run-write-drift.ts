@@ -10,7 +10,7 @@ const MAX_SNAPSHOT_FILES = 20_000;
 const MAX_REPORTED_PATHS = 200;
 const GIT_STATUS_TIMEOUT_MS = 10_000;
 const GIT_STATUS_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
-const GIT_STATUS_UNTRACKED_MODE = 'normal';
+const GIT_STATUS_UNTRACKED_MODE = 'all';
 const MAX_HASH_BYTES = 5 * 1024 * 1024;
 const RECURSIVE_SNAPSHOT_ENV = 'MUSTFLOW_WRITE_DRIFT_SNAPSHOT';
 const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
@@ -237,7 +237,7 @@ function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
 	return {
 		status: 'partial',
 		entries,
-		reason: 'git_status_untracked_files_normal',
+		reason: 'git_status_untracked_files_all',
 		source: 'git_status',
 	};
 }

@@ -45,8 +45,12 @@ function pathLockKey(relativePath: string): string {
 	return `path:${normalizeRelativePath(relativePath)}`;
 }
 
-function validateEffectPath(projectRoot: string, intent: TomlTable, rawPath: string): string {
-	const cwd = resolveSafeProjectCwd(projectRoot, readString(intent, 'cwd'));
+function readEffectiveCommandCwd(commandContract: CommandContract, intent: TomlTable): string {
+	return readString(intent, 'cwd') ?? readString(commandContract.defaults, 'default_cwd') ?? '.';
+}
+
+function validateEffectPath(projectRoot: string, commandContract: CommandContract, intent: TomlTable, rawPath: string): string {
+	const cwd = resolveSafeProjectCwd(projectRoot, readEffectiveCommandCwd(commandContract, intent));
 	const resolved = path.resolve(cwd, rawPath);
 	const root = path.resolve(projectRoot);
 	const relative = path.relative(root, resolved);
@@ -136,7 +140,7 @@ function normalizeDeclaredEffect(
 	}
 
 	return paths.map((rawPath) => {
-		const normalizedPath = validateEffectPath(projectRoot, intent, rawPath);
+		const normalizedPath = validateEffectPath(projectRoot, commandContract, intent, rawPath);
 		return {
 			intent: intentName,
 			source: 'effects',
@@ -149,11 +153,16 @@ function normalizeDeclaredEffect(
 	});
 }
 
-function normalizeWritesEffect(projectRoot: string, intentName: string, intent: TomlTable): NormalizedCommandEffect[] {
+function normalizeWritesEffect(
+	projectRoot: string,
+	commandContract: CommandContract,
+	intentName: string,
+	intent: TomlTable,
+): NormalizedCommandEffect[] {
 	const writes = readStringArray(intent, 'writes') ?? [];
 
 	return writes.map((rawPath) => {
-		const normalizedPath = validateEffectPath(projectRoot, intent, rawPath);
+		const normalizedPath = validateEffectPath(projectRoot, commandContract, intent, rawPath);
 		return {
 			intent: intentName,
 			source: 'writes',
@@ -183,7 +192,7 @@ export function normalizeCommandEffects(
 		);
 	}
 
-	return normalizeWritesEffect(projectRoot, intentName, intent);
+	return normalizeWritesEffect(projectRoot, commandContract, intentName, intent);
 }
 
 export function commandEffectsConflict(left: NormalizedCommandEffect, right: NormalizedCommandEffect): boolean {

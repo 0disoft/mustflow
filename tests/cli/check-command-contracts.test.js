@@ -351,6 +351,46 @@ test('strict check warns on broad command environment inheritance', () => {
 	}
 });
 
+test('fails command contracts with out-of-range success exit codes', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[intents.invalid_success_exit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Invalid success exit code values."
+argv = ["node", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [-1, 256]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.success_exit_codes_invalid',
+			'[commands.intents.invalid_success_exit].success_exit_codes must be a non-empty integer array with values from 0 through 255',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check warns when bare argv executable resolves only through project-local bin', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 

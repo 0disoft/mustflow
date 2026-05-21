@@ -983,6 +983,8 @@ async function runVerificationIntent(
 	const output = createBufferedOutput();
 	const exitCode = await runRun([intent, '--json'], output.reporter, lang, {
 		writeLatestReceipt: false,
+		writeLatestProfile: false,
+		recordPerformanceHistory: false,
 		testTargets,
 		additionalDeclaredWritePaths,
 	});

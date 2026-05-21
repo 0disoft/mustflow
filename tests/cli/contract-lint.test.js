@@ -578,6 +578,19 @@ stdin = "closed"
 writes = []
 network = false
 destructive = false
+
+[intents.argv_npx_vite]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Blocked package exec target."
+argv = ["npx", "vite"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+writes = []
+network = false
+destructive = false
 `,
 		);
 
@@ -594,9 +607,62 @@ destructive = false
 					issue.code === 'long_running_command_pattern',
 			),
 		);
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'argv_npx_vite' &&
+					issue.severity === 'error' &&
+					issue.code === 'long_running_command_pattern',
+			),
+		);
 		assert.equal(
 			report.report.issues.some((issue) => issue.intent === 'argv_safe_exec' && issue.code === 'long_running_command_pattern'),
 			false,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('contract-lint rejects out-of-range success exit codes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const current = readFileSync(commandsPath(projectPath), 'utf8');
+		writeFileSync(
+			commandsPath(projectPath),
+			`${current}
+
+[intents.invalid_success_exit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Invalid success exit code values."
+argv = ["node", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [-1, 256]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.report.status, 'failed');
+		assert.ok(
+			report.report.issues.some(
+				(issue) =>
+					issue.intent === 'invalid_success_exit' &&
+					issue.severity === 'error' &&
+					issue.code === 'invalid_success_exit_codes' &&
+					/non-empty integer array/.test(issue.message),
+			),
 		);
 	} finally {
 		removeTempProject(projectPath);

@@ -288,6 +288,90 @@ writes = []
 network = false
 destructive = false
 
+[intents.argv_npx_vite]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide a development server behind npx."
+argv = ["npx", "vite"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_npm_exec_vite]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide a development server behind npm exec."
+argv = ["npm", "exec", "vite"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_bunx_vite]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to hide a development server behind bunx."
+argv = ["bunx", "vite"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_turbo_dev]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a long-running turbo dev process."
+argv = ["turbo", "dev"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_tsx_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a long-running tsx watcher."
+argv = ["tsx", "watch", "src/index.ts"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.argv_python_http_server]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a long-running Python HTTP server."
+argv = ["python", "-m", "http.server"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
 [intents.shell_dev]
 status = "configured"
 lifecycle = "oneshot"
@@ -315,6 +399,17 @@ destructive = false
 		const attachedShellPreview = JSON.parse(attachedShellResult.stdout);
 		const safeResult = runCli(projectPath, ['run', 'argv_safe_exec', '--dry-run', '--json']);
 		const safePreview = JSON.parse(safeResult.stdout);
+		const disguisedLongRunningPreviews = [
+			['argv_npx_vite', /package-manager exec target vite/],
+			['argv_npm_exec_vite', /package-manager exec target vite/],
+			['argv_bunx_vite', /package-manager exec target vite/],
+			['argv_turbo_dev', /turbo dev/],
+			['argv_tsx_watch', /tsx watch/],
+			['argv_python_http_server', /interpreter module "http\.server"/],
+		].map(([intent, detailPattern]) => {
+			const blockedResult = runCli(projectPath, ['run', intent, '--dry-run', '--json']);
+			return [blockedResult, JSON.parse(blockedResult.stdout), detailPattern];
+		});
 		const shellDevResult = runCli(projectPath, ['run', 'shell_dev', '--dry-run', '--json']);
 		const shellDevPreview = JSON.parse(shellDevResult.stdout);
 
@@ -328,6 +423,12 @@ destructive = false
 			[attachedPythonResult, attachedPythonPreview, /interpreter evaluation payload/],
 			[attachedShellResult, attachedShellPreview, /shell wrapper payload/],
 		]) {
+			assert.equal(blockedResult.status, 1);
+			assert.equal(blockedPreview.runnable, false);
+			assert.equal(blockedPreview.reason_code, 'blocked_long_running_command_pattern');
+			assert.match(blockedPreview.detail, detailPattern);
+		}
+		for (const [blockedResult, blockedPreview, detailPattern] of disguisedLongRunningPreviews) {
 			assert.equal(blockedResult.status, 1);
 			assert.equal(blockedPreview.runnable, false);
 			assert.equal(blockedPreview.reason_code, 'blocked_long_running_command_pattern');

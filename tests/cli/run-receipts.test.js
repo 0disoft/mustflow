@@ -570,6 +570,73 @@ destructive = false
 	}
 });
 
+test('run command options can suppress auxiliary run state writes', async () => {
+	const projectPath = createTempProject();
+	const previousCwd = process.cwd();
+	const previousProfile = process.env.MUSTFLOW_RUN_PROFILE;
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.no_auxiliary_state]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run without writing latest receipt, latest profile, or performance history."
+argv = ['${process.execPath}', '-e', 'console.log("no auxiliary state")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		process.chdir(projectPath);
+		process.env.MUSTFLOW_RUN_PROFILE = '1';
+
+		const { runRun } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run.js')).href);
+		const stdout = [];
+		const stderr = [];
+		const status = await runRun(
+			['no_auxiliary_state', '--json'],
+			{
+				stdout(message) {
+					stdout.push(message);
+				},
+				stderr(message) {
+					stderr.push(message);
+				},
+			},
+			'en',
+			{
+				writeLatestReceipt: false,
+				writeLatestProfile: false,
+				recordPerformanceHistory: false,
+			},
+		);
+		const receipt = JSON.parse(stdout.join(''));
+
+		assert.equal(status, 0, stderr.join(''));
+		assert.equal(receipt.status, 'passed');
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+		assert.equal(existsSync(latestRunProfilePath(projectPath)), false);
+		assert.equal(existsSync(runPerformanceSamplesPath(projectPath)), false);
+		assert.equal(existsSync(runPerformanceSummaryPath(projectPath)), false);
+	} finally {
+		if (previousProfile === undefined) {
+			delete process.env.MUSTFLOW_RUN_PROFILE;
+		} else {
+			process.env.MUSTFLOW_RUN_PROFILE = previousProfile;
+		}
+		process.chdir(previousCwd);
+		removeTempProject(projectPath);
+	}
+});
+
 test('uses retention policy tail byte limits for JSON run receipts', () => {
 	const projectPath = createTempProject();
 
@@ -739,10 +806,10 @@ destructive = false
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
-		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
+		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm');
 		assert.deepEqual(receipt.termination, {
 			reason: 'timeout',
-			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
+			method: process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm',
 			graceful_signal: 'SIGTERM',
 			forced_signal: 'SIGKILL',
 			forced_kill_attempted: false,
@@ -792,10 +859,10 @@ destructive = false
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
-		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
+		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm');
 		assert.deepEqual(receipt.termination, {
 			reason: 'timeout',
-			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
+			method: process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm',
 			graceful_signal: 'SIGTERM',
 			forced_signal: 'SIGKILL',
 			forced_kill_attempted: process.platform !== 'win32',
