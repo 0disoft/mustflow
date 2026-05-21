@@ -160,6 +160,10 @@ export function readFileInsideWithoutSymlinks(parentPath: string, childPath: str
 	}
 }
 
+export function readUtf8FileInsideWithoutSymlinks(parentPath: string, childPath: string): string {
+	return readFileInsideWithoutSymlinks(parentPath, childPath).toString('utf8');
+}
+
 export function writeFileInsideWithoutSymlinks(
 	parentPath: string,
 	childPath: string,

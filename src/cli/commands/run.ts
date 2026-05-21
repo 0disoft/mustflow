@@ -29,6 +29,7 @@ import { assembleRunReceipt } from './run/receipt.js';
 export interface RunCommandOptions {
 	readonly writeLatestReceipt?: boolean;
 	readonly testTargets?: readonly string[];
+	readonly additionalDeclaredWritePaths?: readonly string[];
 }
 
 function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
@@ -220,7 +221,11 @@ export async function runRun(
 	const env = profiler.measure('environment', () =>
 		createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
 	);
-	const writeTracker = profiler.measure('write_drift_before', () => startRunWriteTracking(projectRoot, contract, intentName));
+	const writeTracker = profiler.measure('write_drift_before', () =>
+		startRunWriteTracking(projectRoot, contract, intentName, {
+			additionalDeclaredPaths: options.additionalDeclaredWritePaths,
+		}),
+	);
 	const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);
 	const stderrTailBytes = Math.min(runReceiptPolicy.stderrTailBytes, plan.maxOutputBytes);
 	let streamedOutput = false;

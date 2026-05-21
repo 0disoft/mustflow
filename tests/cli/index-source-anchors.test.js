@@ -77,6 +77,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 		assert.equal(output.schema_version, '20');
 		assert.equal(output.source_index_enabled, true);
 		assert.equal(output.source_anchor_count, 4);
+		assert.ok(output.indexed_paths.includes('src/auth.ts'));
 		assert.equal(anchor.path, 'src/auth.ts');
 		assert.equal(anchor.purpose, 'Map verified server session claims to app user context.');
 		assert.equal(anchor.search_terms, 'login, session refresh, role mapping, authorization');

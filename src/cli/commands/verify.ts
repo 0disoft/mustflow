@@ -955,11 +955,13 @@ async function runVerificationIntent(
 	lang: CliLang,
 	verificationPlanId: string,
 	testTargets: readonly string[] = [],
+	additionalDeclaredWritePaths: readonly string[] = [],
 ): Promise<VerificationResult> {
 	const output = createBufferedOutput();
 	const exitCode = await runRun([intent, '--json'], output.reporter, lang, {
 		writeLatestReceipt: false,
 		testTargets,
+		additionalDeclaredWritePaths,
 	});
 	const rawStdout = output.stdout().trim();
 	let receipt: Record<string, unknown> | null = null;
@@ -1033,10 +1035,26 @@ async function runVerificationEntriesInParallelChunks(
 
 	for (let index = 0; index < entries.length; index += parallelism) {
 		const chunk = entries.slice(index, index + parallelism);
+		const batchDeclaredWritePaths = [
+			...new Set(
+				chunk.flatMap((entry) =>
+					entry.effects
+						.filter((effect) => effect.access === 'write' && typeof effect.path === 'string')
+						.map((effect) => effect.path as string),
+				),
+			),
+		].sort((left, right) => left.localeCompare(right));
+
 		results.push(
 			...(await Promise.all(
 				chunk.map((entry) =>
-					runVerificationIntent(entry.intent, lang, verificationPlanId, scheduledTestTargets.get(entry.intent) ?? []),
+					runVerificationIntent(
+						entry.intent,
+						lang,
+						verificationPlanId,
+						scheduledTestTargets.get(entry.intent) ?? [],
+						batchDeclaredWritePaths,
+					),
 				),
 			)),
 		);

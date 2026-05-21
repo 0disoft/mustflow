@@ -14,7 +14,7 @@ const GIT_STATUS_UNTRACKED_MODE = 'normal';
 const MAX_HASH_BYTES = 5 * 1024 * 1024;
 const RECURSIVE_SNAPSHOT_ENV = 'MUSTFLOW_WRITE_DRIFT_SNAPSHOT';
 const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
-const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/runs']);
+const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/perf', '.mustflow/state/runs']);
 
 type FileSignature = string;
 export type RunWriteDriftStatus = 'checked' | 'partial' | 'unavailable';
@@ -43,6 +43,10 @@ export interface RunWriteTracker {
 	readonly projectRoot: string;
 	readonly declaredPaths: readonly string[];
 	readonly before: SnapshotResult;
+}
+
+export interface RunWriteTrackingOptions {
+	readonly additionalDeclaredPaths?: readonly string[];
 }
 
 function isRecursiveSnapshotEnabled(): boolean {
@@ -268,10 +272,16 @@ export function startRunWriteTracking(
 	projectRoot: string,
 	contract: CommandContract,
 	intentName: string,
+	options: RunWriteTrackingOptions = {},
 ): RunWriteTracker {
+	const declaredPaths = [
+		...listDeclaredWritePaths(projectRoot, contract, intentName),
+		...(options.additionalDeclaredPaths ?? []).map(normalizeRelativePath),
+	];
+
 	return {
 		projectRoot,
-		declaredPaths: listDeclaredWritePaths(projectRoot, contract, intentName),
+		declaredPaths: [...new Set(declaredPaths)].sort((left, right) => left.localeCompare(right)),
 		before: captureSnapshot(projectRoot),
 	};
 }

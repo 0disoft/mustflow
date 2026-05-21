@@ -49,14 +49,13 @@ function validateEffectPath(projectRoot: string, intent: TomlTable, rawPath: str
 	const cwd = resolveSafeProjectCwd(projectRoot, readString(intent, 'cwd'));
 	const resolved = path.resolve(cwd, rawPath);
 	const root = path.resolve(projectRoot);
-	const resolvedLower = resolved.toLowerCase();
-	const rootLower = root.toLowerCase();
+	const relative = path.relative(root, resolved);
 
-	if (resolvedLower !== rootLower && !resolvedLower.startsWith(`${rootLower}${path.sep}`)) {
+	if (relative.startsWith('..') || path.isAbsolute(relative)) {
 		throw new Error(`Command effect path must stay inside the current root: ${rawPath}`);
 	}
 
-	return normalizeRelativePath(path.relative(projectRoot, resolved));
+	return normalizeRelativePath(relative);
 }
 
 function readResourcePaths(commandContract: CommandContract, lock: string): string[] {

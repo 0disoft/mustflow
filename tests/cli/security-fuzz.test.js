@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,6 +13,9 @@ const commandContractRulesModuleUrl = pathToFileURL(
 ).href;
 const commandIntentEligibilityModuleUrl = pathToFileURL(
 	path.join(projectRoot, 'dist', 'core', 'command-intent-eligibility.js'),
+).href;
+const commandEffectsModuleUrl = pathToFileURL(
+	path.join(projectRoot, 'dist', 'core', 'command-effects.js'),
 ).href;
 
 const SAFE_INTENT_NAME_PATTERN = /^[A-Za-z0-9_-]+$/u;
@@ -105,5 +110,42 @@ test('package-manager one-shot commands remain runnable', async () => {
 
 		assert.equal(result.ok, true, `${argv.join(' ')} should remain runnable`);
 		assert.equal(result.code, 'ok');
+	}
+});
+
+test('POSIX command effect containment is case-sensitive', async (t) => {
+	if (process.platform === 'win32') {
+		t.skip('Windows path containment is case-insensitive by platform convention');
+		return;
+	}
+
+	const { normalizeCommandEffects } = await import(commandEffectsModuleUrl);
+	const mixedCaseRoot = mkdtempSync(path.join(tmpdir(), 'MustflowEffectRoot-'));
+	const lowerCaseSibling = path.join(path.dirname(mixedCaseRoot), path.basename(mixedCaseRoot).toLowerCase(), 'outside.txt');
+
+	try {
+		const contract = {
+			defaults: {},
+			resources: {},
+			intents: {
+				leaky_effect: {
+					cwd: '.',
+					effects: [
+						{
+							type: 'write',
+							mode: 'replace',
+							path: path.relative(mixedCaseRoot, lowerCaseSibling),
+						},
+					],
+				},
+			},
+		};
+
+		assert.throws(
+			() => normalizeCommandEffects(mixedCaseRoot, contract, 'leaky_effect'),
+			/Command effect path must stay inside the current root/,
+		);
+	} finally {
+		rmSync(mixedCaseRoot, { recursive: true, force: true });
 	}
 });

@@ -871,11 +871,14 @@ required_after = ["parallel_verify"]
 		);
 
 		const planResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
-		const runResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2']);
+		const runResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2'], {
+			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
+		});
 		const planReport = JSON.parse(planResult.stdout);
 		const runReport = JSON.parse(runResult.stdout);
 		const scheduledIntents = planReport.schedule.entries.map((entry) => entry.intent);
 		const startDifference = Math.abs(Number(readFileSync(startAPath, 'utf8')) - Number(readFileSync(startBPath, 'utf8')));
+		const ranResults = runReport.results.filter((result) => !result.skipped);
 
 		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
 		assert.equal(runResult.status, 0, runResult.stderr || runResult.stdout);
@@ -885,10 +888,12 @@ required_after = ["parallel_verify"]
 			[true, true],
 		);
 		assert.ok(startDifference < 900, `expected parallel start times, got ${startDifference}ms`);
-		assert.deepEqual(
-			runReport.results.filter((result) => !result.skipped).map((result) => result.intent),
-			scheduledIntents,
-		);
+		assert.deepEqual(ranResults.map((result) => result.intent), scheduledIntents);
+		for (const result of ranResults) {
+			assert.equal(result.receipt.write_drift.status, 'checked');
+			assert.equal(result.receipt.write_drift.has_undeclared_changes, false);
+			assert.deepEqual(result.receipt.write_drift.undeclared_paths, []);
+		}
 		assert.match(runReport.results[0].receipt_path, /001-verify_parallel_a\.json$/);
 		assert.match(runReport.results[1].receipt_path, /002-verify_parallel_b\.json$/);
 	} finally {

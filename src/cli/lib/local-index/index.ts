@@ -3100,7 +3100,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 		max_snippet_bytes_per_document: MAX_SNIPPET_BYTES_PER_DOCUMENT,
 		excluded_raw_data_kinds: [...LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS],
 		indexed_file_count: indexedFiles.length,
-		indexed_paths: documents.map((document) => document.path),
+		indexed_paths: indexedFiles.map((file) => file.path),
 	};
 }
 
