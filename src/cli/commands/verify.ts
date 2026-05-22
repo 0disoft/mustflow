@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto';
-import path from 'node:path';
 
 import type { ClassifyOutput } from './classify.js';
 import { runRun } from './run.js';
@@ -16,7 +15,6 @@ import {
 	type CompletionVerdictCriteriaEvidence,
 	type CompletionVerdictReceiptBindingEvidence,
 } from '../../core/completion-verdict.js';
-import { createStateRunId } from '../../core/atomic-state-write.js';
 import {
 	createExternalEvidenceRisks,
 	type ExternalEvidenceCheck,
@@ -65,6 +63,11 @@ import {
 	type VerifyInput,
 } from './verify/input.js';
 import { readExternalEvidenceFile, readReproEvidenceFile } from './verify/evidence-input.js';
+import {
+	createVerifyIntentReceiptPath,
+	createVerifyRunStatePaths,
+	resolveLatestVerifyRunReceiptPath,
+} from './verify/state-paths.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
@@ -81,8 +84,6 @@ import type { Reporter } from '../lib/reporter.js';
 export { planErrorMessageKey, readInputFromClassificationReport } from './verify/input.js';
 
 const VERIFY_SCHEMA_VERSION = '1';
-const RUN_STATE_DIR = path.join('.mustflow', 'state', 'runs');
-const LATEST_RUN_RECEIPT_PATH = path.join(RUN_STATE_DIR, 'latest.json');
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
 type VerificationResultStatus =
@@ -289,37 +290,6 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 
 function uniqueStrings(values: readonly string[]): string[] {
 	return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))];
-}
-
-function toPosixPath(value: string): string {
-	return value.split(path.sep).join('/');
-}
-
-interface VerifyRunStatePaths {
-	readonly runDir: string;
-	readonly manifestPath: string;
-	readonly absoluteRunDir: string;
-	readonly absoluteIntentDir: string;
-	readonly absoluteManifestPath: string;
-}
-
-function createVerifyRunStatePaths(projectRoot: string): VerifyRunStatePaths {
-	const runDir = toPosixPath(path.join(RUN_STATE_DIR, createStateRunId('verify')));
-	const manifestPath = toPosixPath(path.join(runDir, 'manifest.json'));
-	const absoluteRunDir = path.join(projectRoot, runDir);
-
-	return {
-		runDir,
-		manifestPath,
-		absoluteRunDir,
-		absoluteIntentDir: path.join(absoluteRunDir, 'intents'),
-		absoluteManifestPath: path.join(projectRoot, manifestPath),
-	};
-}
-
-function sanitizeIntentFilePart(value: string): string {
-	const sanitized = value.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '');
-	return sanitized.length > 0 ? sanitized.slice(0, 80) : 'intent';
 }
 
 function skippedResult(candidate: Pick<VerificationCandidate, 'intent' | 'reason' | 'detail'>): VerificationResult {
@@ -996,7 +966,7 @@ function readVerificationFailureFingerprint(value: unknown): VerificationFailure
 function readPreviousVerifyLatestSummary(projectRoot: string): PreviousVerifyLatestSummary | null {
 	try {
 		const parsed = JSON.parse(
-			readUtf8FileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, LATEST_RUN_RECEIPT_PATH)),
+			readUtf8FileInsideWithoutSymlinks(projectRoot, resolveLatestVerifyRunReceiptPath(projectRoot)),
 		) as Record<
 			string,
 			unknown
@@ -1105,9 +1075,8 @@ function writeVerifyRunReceipts(
 		let receipt = result.receipt;
 
 		if (result.intent && result.receipt) {
-			const fileName = `${String(index + 1).padStart(3, '0')}-${sanitizeIntentFilePart(result.intent)}.json`;
-			const absoluteReceiptPath = path.join(statePaths.absoluteIntentDir, fileName);
-			receiptPath = toPosixPath(path.join(statePaths.runDir, 'intents', fileName));
+			const receiptStatePath = createVerifyIntentReceiptPath(statePaths, index + 1, result.intent);
+			receiptPath = receiptStatePath.receiptPath;
 			receipt = {
 				...result.receipt,
 				verification_plan_id: output.verification_plan_id,
@@ -1115,7 +1084,7 @@ function writeVerifyRunReceipts(
 			};
 			const receiptContent = `${JSON.stringify(receipt, null, 2)}\n`;
 			receiptSha256 = hashTextSha256(receiptContent);
-			writeJsonFileInsideWithoutSymlinks(projectRoot, absoluteReceiptPath, receipt);
+			writeJsonFileInsideWithoutSymlinks(projectRoot, receiptStatePath.absoluteReceiptPath, receipt);
 		}
 
 		receipts.push({
@@ -1250,7 +1219,7 @@ function writeVerifyRunReceipts(
 		manifest_path: statePaths.manifestPath,
 	};
 
-	writeJsonFileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, LATEST_RUN_RECEIPT_PATH), latest);
+	writeJsonFileInsideWithoutSymlinks(projectRoot, resolveLatestVerifyRunReceiptPath(projectRoot), latest);
 	return outputWithReceiptPaths;
 }
 

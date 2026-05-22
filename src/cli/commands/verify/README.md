@@ -5,5 +5,6 @@ This directory holds narrow input-boundary helpers for `src/cli/commands/verify.
 - `args.ts` parses and normalizes `mf verify` flags.
 - `input.ts` loads change classification and changed-plan inputs.
 - `evidence-input.ts` loads reproduction and external evidence inputs.
+- `state-paths.ts` owns verify run directory, manifest, latest-summary, and per-intent receipt paths.
 
-Keep execution, verdict assembly, receipt writing, and output rendering outside these modules.
+Keep execution, verdict assembly, receipt content writing, and output rendering outside these modules.
