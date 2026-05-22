@@ -48,6 +48,10 @@ import {
 import type { VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import {
+	evaluateCommandPreconditions,
+	type CommandPreconditionPlan,
+} from '../../core/command-preconditions.js';
+import {
 	DEFAULT_VERIFY_PARALLELISM,
 	parseVerifyArgs,
 	resolveVerifyParallelism,
@@ -214,6 +218,7 @@ interface PreviousVerifyLatestSummary {
 
 type PlanOnlyScheduleEntry = ChangeVerificationReport['schedule']['entries'][number] & {
 	readonly effectGraph?: LocalCommandEffectGraph;
+	readonly preconditions?: readonly CommandPreconditionPlan[];
 };
 
 type PlanOnlyRequirement = ChangeVerificationReport['requirements'][number] & {
@@ -1356,10 +1361,25 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 
 	const scheduledIntents = Array.from(new Set(report.schedule.entries.map((entry) => entry.intent)));
 	const graphsByIntent = await readLocalCommandEffectGraphs(projectRoot, scheduledIntents);
+	const preconditionsByIntent = new Map(
+		scheduledIntents.map((intent) => [intent, evaluateCommandPreconditions(projectRoot, contract, intent)]),
+	);
 	const firstGraph = graphsByIntent.get(firstEntry.intent);
 
 	if (!firstGraph) {
-		return { ...report, correlation_id: input.correlationId, verification_plan_id: verificationPlanId, requirements };
+		return {
+			...report,
+			correlation_id: input.correlationId,
+			verification_plan_id: verificationPlanId,
+			requirements,
+			schedule: {
+				...report.schedule,
+				entries: report.schedule.entries.map((entry) => ({
+					...entry,
+					preconditions: preconditionsByIntent.get(entry.intent) ?? [],
+				})),
+			},
+		};
 	}
 
 	return {
@@ -1372,6 +1392,7 @@ async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Pr
 			entries: report.schedule.entries.map((entry) => ({
 				...entry,
 				effectGraph: graphsByIntent.get(entry.intent) ?? firstGraph,
+				preconditions: preconditionsByIntent.get(entry.intent) ?? [],
 			})),
 		},
 	};

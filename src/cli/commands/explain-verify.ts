@@ -205,7 +205,7 @@ export async function getVerifyExplainOutput(
 
 	const requirements = plans.map((plan): ExplainVerificationRequirement => {
 		const candidates = plan.candidates.map((candidate): ExplainVerificationCandidate => {
-			const command = candidate.intent ? explainCommandIntent(contract, candidate.intent).intent : null;
+			const command = candidate.intent ? explainCommandIntent(contract, candidate.intent, { projectRoot }).intent : null;
 
 			return {
 				intent: candidate.intent.length > 0 ? candidate.intent : null,
@@ -328,6 +328,14 @@ export function renderVerifyExplainDecision(decision: ExplainVerificationDecisio
 
 			if (candidate.requiredAfter.length > 0) {
 				lines.push(`    required_after: ${candidate.requiredAfter.join(', ')}`);
+			}
+
+			if (candidate.command && candidate.command.preconditions.length > 0) {
+				lines.push(`    preconditions: ${candidate.command.preconditions.length}`);
+				for (const precondition of candidate.command.preconditions) {
+					const target = precondition.path ?? precondition.artifact ?? precondition.label ?? precondition.kind;
+					lines.push(`      - ${precondition.kind} ${target}: ${precondition.status}`);
+				}
 			}
 
 			if (candidate.effectGraph) {

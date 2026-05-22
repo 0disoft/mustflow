@@ -25,6 +25,9 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 
 `mf explain surface [path]` 解释仓库相对路径如何映射到变更分类使用的公开表面契约。存在最新本地索引时，它还会显示匹配的派生路径-表面规则。索引缺失或过期时只显示重建提示，不改变分类或命令选择。
 
+`mf explain why <target>` 通过其他 explain 主题已经使用的同一决策模型解释现有决策。它是只读包装器，不是新的选择器。支持的目标包括 `command <intent>`、`intent <intent>`、`verify --reason <event>`、`verify --from-plan <path>`、`skill <skill_id>`、`skills`、`surface [path]` 和 `latest-failure`。
+`mf explain why latest-failure` 只读取 `.mustflow/state/runs/latest.json` 中的有界元数据：状态、意图、退出码、错误类型、耗时和简短摘要。它不会打印 stdout 或 stderr 尾部。
+
 ## 输出
 
 - `mustflow root`：当前 mustflow 根目录。
@@ -45,6 +48,7 @@ description: 用于解释 mustflow 策略决策为何适用的只读命令。
 - `Skill routes`：使用 `skills` 主题时的严格技能索引/正文对齐状态。
 - `Public surface`：使用 `surface` 主题时的表面类型、类别、验证原因、受影响契约、更新策略和漂移检查。
 - `Path-surface read model`：使用 `surface` 主题且 `.mustflow/cache/mustflow.sqlite` 可用时，从最新本地索引读取的规则标识、模式和派生表面元数据。
+- `Latest run failure`：使用 `mf explain why latest-failure` 时的有界最近运行状态、意图、退出码、错误类型、耗时和摘要。
 
 ## 示例
 
@@ -57,8 +61,11 @@ npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
+npx mf explain why command test --json
+npx mf explain why latest-failure
 npx mf explain verify --reason code_change
 npx mf explain verify --from-plan verify-plan.json --json
+npx mf explain why verify --reason code_change --json
 npx mf explain retention
 npx mf explain retention --json
 npx mf explain skill code-review
@@ -80,9 +87,9 @@ npx mf explain authority AGENTS.md --json
 
 - `schema_version` (`string`)：输出格式版本。
 - `command` (`string`)：始终为 `explain`。
-- `topic` (`string`)：`anchor`、`asset-optimization`、`authority`、`command`、`retention`、`skill`、`skills`、`surface` 或 `verify`。
+- `topic` (`string`)：`anchor`、`asset-optimization`、`authority`、`command`、`retention`、`skill`、`skills`、`surface`、`verify` 或 `why`。
 - `mustflow_root` (`string`)：当前 mustflow 根目录。
-- `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。对于 `authority`，还包括 `boundary.role`、`boundary.canDefine` 和 `boundary.cannotDefine`。对于 `command`，当命令意图已声明时，`decision.effectGraph` 包含本地索引中的命令效果图状态、写入锁、冲突、过期路径和重建提示。对于 `verify`，`decision.verification` 包含选中的原因、匹配候选项、跳过原因、缺口、`decisionGraph` 和本地命令效果图状态。对于 `surface`，可用时 `decision.readModel` 包含只读本地索引的路径-表面状态和匹配规则元数据。
+- `decision` (`object`)：解析出的决策、原因、有效操作、来源文件、验证状态和主题专用详情。对于 `authority`，还包括 `boundary.role`、`boundary.canDefine` 和 `boundary.cannotDefine`。对于 `command`，当命令意图已声明时，`decision.effectGraph` 包含本地索引中的命令效果图状态、写入锁、冲突、过期路径和重建提示。对于 `verify`，`decision.verification` 包含选中的原因、匹配候选项、跳过原因、缺口、`decisionGraph` 和本地命令效果图状态。对于 `surface`，可用时 `decision.readModel` 包含只读本地索引的路径-表面状态和匹配规则元数据。对于 `why latest-failure`，`decision.latestFailure` 包含没有日志尾部的有界最近运行元数据。
 
 ## 帮助和退出码
 

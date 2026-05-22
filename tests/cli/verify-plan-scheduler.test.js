@@ -70,6 +70,9 @@ timeout_seconds = 10
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["executed.txt"]
+preconditions = [
+  { kind = "path_exists", path = "dist/cli/index.js", satisfy_intent = "build" },
+]
 network = false
 destructive = false
 required_after = ["custom_verify"]
@@ -120,6 +123,10 @@ escalate_to = ["test"]
 		assert.equal(report.candidates[0].selectionState, 'selected');
 		assert.deepEqual(report.gaps, []);
 		assert.equal(report.decision_graph.schema_version, '1');
+		assert.equal(report.schedule.entries[0].preconditions.length, 1);
+		assert.equal(report.schedule.entries[0].preconditions[0].kind, 'path_exists');
+		assert.equal(report.schedule.entries[0].preconditions[0].status, 'missing');
+		assert.equal(report.schedule.entries[0].preconditions[0].satisfyIntent.intent, 'build');
 		assert.equal(report.decision_graph.root, 'verification_decision');
 		assert.equal(report.decision_graph.summary.runnable > 0, true);
 		assert.equal(report.decision_graph.summary.selected, 1);

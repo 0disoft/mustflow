@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
@@ -89,6 +89,189 @@ test('explains configured agent-runnable command intents as json', () => {
 		assertExplanationOnlyEffectGraph(report.decision.effectGraph, 'missing');
 		assert.deepEqual(report.decision.effectGraph.writeLocks, []);
 		assert.deepEqual(report.decision.effectGraph.lockConflicts, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains command preconditions without running the satisfy intent', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'fresh.ts'), 'source');
+		writeFileSync(path.join(projectPath, 'dist', 'fresh.js'), 'artifact');
+		writeFileSync(path.join(projectPath, 'src', 'stale.ts'), 'source');
+		writeFileSync(path.join(projectPath, 'dist', 'stale.js'), 'artifact');
+		const oldTime = new Date('2024-01-01T00:00:00Z');
+		const newTime = new Date('2024-01-02T00:00:00Z');
+		utimesSync(path.join(projectPath, 'src', 'fresh.ts'), oldTime, oldTime);
+		utimesSync(path.join(projectPath, 'dist', 'fresh.js'), newTime, newTime);
+		utimesSync(path.join(projectPath, 'src', 'stale.ts'), newTime, newTime);
+		utimesSync(path.join(projectPath, 'dist', 'stale.js'), oldTime, oldTime);
+		appendFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+			`
+[intents.manual_build]
+status = "manual_only"
+description = "Manual build fixture."
+
+[intents.needs_artifact]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Command with an artifact precondition."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+preconditions = [
+  { kind = "path_exists", path = "dist/generated.js", satisfy_intent = "mustflow_check" },
+  { kind = "artifact_freshness", artifact = "dist/fresh.js", sources = ["src/fresh.ts"], satisfy_intent = "mustflow_check" },
+  { kind = "artifact_freshness", artifact = "dist/stale.js", sources = ["src/stale.ts"], satisfy_intent = "manual_build" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['explain', 'command', 'needs_artifact', '--json']);
+		const report = JSON.parse(result.stdout);
+		const [missingPrecondition, satisfiedPrecondition, stalePrecondition] = report.decision.intent.preconditions;
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(missingPrecondition.kind, 'path_exists');
+		assert.equal(missingPrecondition.status, 'missing');
+		assert.equal(missingPrecondition.path, 'dist/generated.js');
+		assert.equal(missingPrecondition.satisfyIntent.intent, 'mustflow_check');
+		assert.equal(missingPrecondition.satisfyIntent.runnable, true);
+		assert.equal(satisfiedPrecondition.kind, 'artifact_freshness');
+		assert.equal(satisfiedPrecondition.status, 'satisfied');
+		assert.equal(satisfiedPrecondition.newestSource, 'src/fresh.ts');
+		assert.equal(stalePrecondition.kind, 'artifact_freshness');
+		assert.equal(stalePrecondition.status, 'stale');
+		assert.equal(stalePrecondition.newestSource, 'src/stale.ts');
+		assert.equal(stalePrecondition.satisfyIntent.intent, 'manual_build');
+		assert.equal(stalePrecondition.satisfyIntent.runnable, false);
+		assert.equal(existsSync(path.join(projectPath, 'dist', 'generated.js')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains why command decisions through the why surface as json', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'why', 'command', 'mustflow_check', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.kind, 'allowed');
+		assert.equal(report.decision.inputCommand, 'mustflow_check');
+		assert.equal(report.decision.countsAsMustflowVerification, true);
+		assert.equal(report.decision.intent.status, 'configured');
+		assertExplanationOnlyEffectGraph(report.decision.effectGraph, 'missing');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains why intent alias decisions through the why surface as json', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'why', 'intent', 'lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.kind, 'blocked');
+		assert.equal(report.decision.inputCommand, 'lint');
+		assert.equal(report.decision.countsAsMustflowVerification, false);
+		assert.match(report.decision.reason, /status is unknown, not configured/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains missing latest failure without exposing logs', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'why', 'latest-failure', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.kind, 'latest_failure');
+		assert.equal(report.decision.latestFailure.present, false);
+		assert.equal(report.decision.latestFailure.valid, false);
+		assert.equal(report.decision.latestFailure.failed, false);
+		assert.equal(JSON.stringify(report).includes('tail'), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains latest failure using bounded receipt metadata only', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
+		mkdirSync(runsDir, { recursive: true });
+		writeFileSync(
+			path.join(runsDir, 'latest.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'run',
+					intent: 'failing_fixture',
+					status: 'failed',
+					duration_ms: 42,
+					exit_code: 1,
+					stdout: { tail: 'hidden stdout tail' },
+					stderr: { tail: 'hidden stderr tail' },
+					performance: {
+						result_summary: {
+							error_kind: 'exit_code',
+						},
+					},
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['explain', 'why', 'latest-failure', '--json']);
+		const report = JSON.parse(result.stdout);
+		const serialized = JSON.stringify(report);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.kind, 'latest_failure');
+		assert.equal(report.decision.latestFailure.present, true);
+		assert.equal(report.decision.latestFailure.valid, true);
+		assert.equal(report.decision.latestFailure.failed, true);
+		assert.equal(report.decision.latestFailure.status, 'failed');
+		assert.equal(report.decision.latestFailure.intent, 'failing_fixture');
+		assert.equal(report.decision.latestFailure.exitCode, 1);
+		assert.equal(report.decision.latestFailure.errorKind, 'exit_code');
+		assert.equal(report.decision.latestFailure.durationMs, 42);
+		assert.equal(serialized.includes('hidden stdout tail'), false);
+		assert.equal(serialized.includes('hidden stderr tail'), false);
 	} finally {
 		removeTempProject(projectPath);
 	}

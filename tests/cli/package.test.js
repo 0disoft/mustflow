@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.22.13');
+	assert.equal(packageJson.version, '2.22.14');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -184,6 +184,7 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 	assert.match(explainSchema, /"effectGraph"/u);
 	assert.match(explainSchema, /"readModel"/u);
 	assert.match(explainSchema, /"decisionGraph"/u);
+	assert.match(explainSchema, /"latestFailure"/u);
 	assert.match(changeVerificationSchema, /"decision_graph"/u);
 	assert.match(changeVerificationSchema, /"effectGraph"/u);
 	assert.match(changeVerificationSchema, /"surfaceReadModels"/u);
@@ -209,6 +210,7 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 		assert.match(explainCommand, /decision\.effectGraph/u, `${locale} explain docs should document command graphs`);
 		assert.match(explainCommand, /decision\.readModel/u, `${locale} explain docs should document surface read models`);
 		assert.match(explainCommand, /decisionGraph/u, `${locale} explain docs should document verify decision graph`);
+		assert.match(explainCommand, /decision\.latestFailure/u, `${locale} explain docs should document latest failure metadata`);
 		assert.match(verifyCommand, /decision_graph/u, `${locale} verify docs should document decision graph`);
 		assert.match(verifyCommand, /effectGraph/u, `${locale} verify docs should document command graphs`);
 		assert.match(verifyCommand, /surfaceReadModels/u, `${locale} verify docs should document surface read models`);

@@ -50,7 +50,22 @@ Effect paths are resolved relative to the intent working directory and must rema
 the current mustflow root. When `effects` are absent, mustflow treats each  
 `writes` entry as a conservative exclusive write lock. The `delete_recreate` mode conflicts with readers and writers of the same lock.
 
-This scheduling metadata does not enable parallel execution in `mf run`. Until run receipts no longer share a single `latest.json` target, copied verification commands should still be executed serially.
+This scheduling metadata does not grant command authority. `mf run` uses it to
+write a local active-lock record before executing a configured intent, block
+overlapping commands with conflicting locks, and release the record when the run
+finishes or times out. `mf run --dry-run` reports active lock conflicts without
+executing the command.
+
+Active locks are stored under ignored local state and contain only bounded
+metadata: intent id, process id, start time, command digest, declared locks, and
+declared write paths. They must not store raw command output, environment
+values, shell transcripts, or absolute personal paths. If a later run finds a
+lock whose owning process is no longer live, it may reclaim that stale record
+before acquiring its own lock.
+
+This scheduling metadata does not enable broad parallel execution in `mf run`.
+Non-conflicting explicit locks may overlap when a higher-level verifier chooses
+parallel execution, but commands without explicit effects remain conservative.
 
 ## Status Values
 
@@ -76,6 +91,60 @@ program and argument list.
 
 `shell` mode may be supported when explicitly declared by the project, but it carries higher risk and must still satisfy lifecycle, policy, timeout, and root boundary checks.
 
+## Typed Intent Inputs
+
+The command contract may declare validation-only typed input metadata under an
+intent's `inputs` table. This metadata is a design surface for future
+parameterized execution; it does not make an intent runnable.
+
+Supported input types are:
+
+- `path`
+- `enum`
+- `boolean`
+- `integer`
+- `literal`
+
+Typed inputs must preserve argument boundaries. An input placeholder may appear
+only as a whole `argv` token such as `{target_file}`. Shell command strings and
+mixed string interpolation such as `--test={target_file}` are invalid because
+they would blur command-authority and escaping rules.
+
+Path inputs must declare one or more normalized repository-relative
+`allowed_roots`. Absolute paths, traversal segments, empty roots, and Windows
+reserved device-name segments are rejected. `allowed_extensions` entries must
+start with a dot.
+
+Until typed execution is implemented together with dry-run output, receipts,
+declared effect expansion, and redaction rules, any `configured` intent that
+declares `inputs` is rejected.
+
+## Precondition Planning
+
+An intent may declare `preconditions` as planning metadata. Preconditions explain
+missing or stale prerequisites in `mf run --dry-run`, `mf verify --plan-only
+--json`, and `mf explain command`; they do not execute another intent.
+
+```toml
+[intents.test_release]
+preconditions = [
+  { kind = "path_exists", path = "dist/cli/index.js", satisfy_intent = "build" },
+  { kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**/*.ts"], satisfy_intent = "build" },
+]
+```
+
+Supported precondition kinds are:
+
+- `path_exists`: reports `satisfied` when the declared repository-relative path
+  exists, otherwise `missing`.
+- `artifact_freshness`: reports `missing` when the artifact does not exist,
+  `stale` when a matched source file is newer, `satisfied` when the artifact is
+  at least as new as matched sources, and `unknown` when no source files match.
+
+`satisfy_intent` points to the configured command a maintainer may use to
+satisfy the precondition. It is explanatory only: manual-only, unknown, stale,
+or even agent-runnable satisfy intents are never run implicitly as dependencies.
+
 ## Built-in mustflow Intents
 
 An intent with `kind = "mustflow_builtin"` and `argv[0]` equal to `mf` or  
@@ -98,3 +167,9 @@ mustflow verification.
 - `mf run build` fails when `cwd` escapes the current mustflow root.
 - `mf run mustflow_check` does not require an externally discoverable `mf`  
   executable when the intent is a mustflow built-in.
+- `mf check` accepts validation-only typed input metadata on non-runnable
+  intents and rejects unsafe paths, undeclared placeholders, shell strings, and
+  configured intents that declare inputs.
+- `mf run <intent> --dry-run --json`, `mf verify --plan-only --json`, and
+  `mf explain command <intent> --json` surface declared precondition status
+  without running `satisfy_intent`.

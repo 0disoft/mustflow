@@ -20,6 +20,10 @@ inclus dans le paquet npm.
 - `run-receipt.schema.json` : `mf run <intent> --json` et `.mustflow/state/runs/latest.json`.
 - `commands.schema.json` : `.mustflow/config/commands.toml` parsé.
 
+`commands.schema.json` accepte aussi les métadonnées `preconditions` pour la planification : elles
+peuvent signaler des chemins manquants ou des artefacts obsolètes dans dry-run, verify-plan et
+explain, mais `satisfy_intent` n'est jamais exécuté implicitement comme dépendance.
+
 ## Spécifications actuelles
 
 - `instruction-authority-v1.md`: résolution des règles effectives entre instructions utilisateur, politique du host, fichiers du dépôt, contrats de commande et état généré.

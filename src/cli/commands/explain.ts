@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
@@ -38,6 +41,7 @@ import {
 } from './explain-verify.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
+const LATEST_RUN_RECEIPT_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 
 type ExplainTopic =
 	| 'anchor'
@@ -48,13 +52,35 @@ type ExplainTopic =
 	| 'skill'
 	| 'skills'
 	| 'surface'
-	| 'verify';
+	| 'verify'
+	| 'why';
 type ExplainCommandDecision = CommandDecision & {
 	readonly effectGraph?: LocalCommandEffectGraph;
 };
 type ExplainSurfaceDecision = PublicSurfaceDecision & {
 	readonly readModel?: LocalPathSurfaceReadModel;
 };
+interface LatestFailureSummary {
+	readonly path: string;
+	readonly present: boolean;
+	readonly valid: boolean;
+	readonly failed: boolean;
+	readonly status: string | null;
+	readonly intent: string | null;
+	readonly exitCode: number | null;
+	readonly errorKind: string | null;
+	readonly durationMs: number | null;
+	readonly summary: string;
+}
+interface LatestFailureDecision {
+	readonly kind: 'latest_failure';
+	readonly decision: string;
+	readonly reason: string;
+	readonly effectiveAction: string;
+	readonly countsAsMustflowVerification: false;
+	readonly sourceFiles: readonly string[];
+	readonly latestFailure: LatestFailureSummary;
+}
 type ExplainDecision =
 	| AuthorityDecision
 	| ExplainCommandDecision
@@ -63,7 +89,8 @@ type ExplainDecision =
 	| SkillRouteAlignmentDecision
 	| ExplainSurfaceDecision
 	| SourceAnchorDecision
-	| ExplainVerificationDecision;
+	| ExplainVerificationDecision
+	| LatestFailureDecision;
 
 interface ExplainOutput {
 	readonly schema_version: string;
@@ -76,7 +103,7 @@ interface ExplainOutput {
 export function getExplainHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf explain <topic> [target] [options] | mf explain verify --reason <event> [options] | mf explain verify --from-plan <path> [options]',
+			usage: 'mf explain <topic> [target] [options] | mf explain verify --reason <event> [options] | mf explain why <target> [options]',
 			summary: t(lang, 'explain.help.summary'),
 			options: [
 				{ label: '--json', description: t(lang, 'cli.option.json') },
@@ -95,6 +122,9 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 				'mf explain retention --json',
 				'mf explain verify --reason code_change',
 				'mf explain verify --from-plan verify-plan.json --json',
+				'mf explain why command test --json',
+				'mf explain why verify --reason code_change --json',
+				'mf explain why latest-failure --json',
 				'mf explain skill code-review',
 				'mf explain skill mustflow.core.code-review --json',
 				'mf explain skills',
@@ -143,7 +173,7 @@ function getAnchorExplainOutput(projectRoot: string, anchorId: string): ExplainO
 }
 
 async function getCommandExplainOutput(projectRoot: string, commandName: string): Promise<ExplainOutput> {
-	const decision = explainCommandIntent(readCommandContract(projectRoot), commandName);
+	const decision = explainCommandIntent(readCommandContract(projectRoot), commandName, { projectRoot });
 	const effectGraph = decision.intent ? await readLocalCommandEffectGraph(projectRoot, commandName) : undefined;
 
 	return {
@@ -198,6 +228,308 @@ async function getSurfaceExplainOutput(projectRoot: string, pathArg: string | un
 	};
 }
 
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function stringField(record: Record<string, unknown>, key: string): string | null {
+	const value = record[key];
+	return typeof value === 'string' ? value : null;
+}
+
+function integerField(record: Record<string, unknown>, key: string): number | null {
+	const value = record[key];
+	return typeof value === 'number' && Number.isInteger(value) ? value : null;
+}
+
+function recordField(record: Record<string, unknown>, key: string): Record<string, unknown> | null {
+	const value = record[key];
+	return isJsonRecord(value) ? value : null;
+}
+
+function latestFailureDecision(latestFailure: LatestFailureSummary, decision: string, reason: string, effectiveAction: string): LatestFailureDecision {
+	return {
+		kind: 'latest_failure',
+		decision,
+		reason,
+		effectiveAction,
+		countsAsMustflowVerification: false,
+		sourceFiles: [
+			LATEST_RUN_RECEIPT_RELATIVE_PATH,
+			'.mustflow/config/mustflow.toml',
+			'.mustflow/docs/agent-workflow.md',
+		],
+		latestFailure,
+	};
+}
+
+function getLatestFailureExplainOutput(projectRoot: string): ExplainOutput {
+	const latestPath = path.join(projectRoot, ...LATEST_RUN_RECEIPT_RELATIVE_PATH.split('/'));
+	const sourcePath = LATEST_RUN_RECEIPT_RELATIVE_PATH;
+
+	if (!existsSync(latestPath)) {
+		return {
+			schema_version: EXPLAIN_SCHEMA_VERSION,
+			command: 'explain',
+			topic: 'why',
+			mustflow_root: projectRoot,
+			decision: latestFailureDecision(
+				{
+					path: sourcePath,
+					present: false,
+					valid: false,
+					failed: false,
+					status: null,
+					intent: null,
+					exitCode: null,
+					errorKind: null,
+					durationMs: null,
+					summary: 'No latest mf run receipt is available.',
+				},
+				'latest run receipt is missing',
+				'mustflow has no bounded latest run metadata to explain.',
+				'Run a configured mf run or mf verify command before treating latest-run state as evidence.',
+			),
+		};
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(readFileSync(latestPath, 'utf8'));
+	} catch {
+		return {
+			schema_version: EXPLAIN_SCHEMA_VERSION,
+			command: 'explain',
+			topic: 'why',
+			mustflow_root: projectRoot,
+			decision: latestFailureDecision(
+				{
+					path: sourcePath,
+					present: true,
+					valid: false,
+					failed: false,
+					status: null,
+					intent: null,
+					exitCode: null,
+					errorKind: null,
+					durationMs: null,
+					summary: 'The latest mf run receipt is not valid JSON.',
+				},
+				'latest run receipt is invalid',
+				'mustflow could not read bounded latest run metadata safely.',
+				'Ignore the latest-run state and rerun the intended configured command to create a fresh receipt.',
+			),
+		};
+	}
+
+	if (!isJsonRecord(parsed)) {
+		return {
+			schema_version: EXPLAIN_SCHEMA_VERSION,
+			command: 'explain',
+			topic: 'why',
+			mustflow_root: projectRoot,
+			decision: latestFailureDecision(
+				{
+					path: sourcePath,
+					present: true,
+					valid: false,
+					failed: false,
+					status: null,
+					intent: null,
+					exitCode: null,
+					errorKind: null,
+					durationMs: null,
+					summary: 'The latest mf run receipt is not a JSON object.',
+				},
+				'latest run receipt is invalid',
+				'mustflow could not read bounded latest run metadata safely.',
+				'Ignore the latest-run state and rerun the intended configured command to create a fresh receipt.',
+			),
+		};
+	}
+
+	const status = stringField(parsed, 'status');
+	const intent = stringField(parsed, 'intent');
+	const exitCode = integerField(parsed, 'exit_code');
+	const performance = recordField(parsed, 'performance');
+	const resultSummary = performance ? recordField(performance, 'result_summary') : null;
+	const errorKind = resultSummary ? stringField(resultSummary, 'error_kind') : null;
+	const durationMs = integerField(parsed, 'duration_ms') ?? (performance ? integerField(performance, 'duration_ms') : null);
+	if (!status) {
+		return {
+			schema_version: EXPLAIN_SCHEMA_VERSION,
+			command: 'explain',
+			topic: 'why',
+			mustflow_root: projectRoot,
+			decision: latestFailureDecision(
+				{
+					path: sourcePath,
+					present: true,
+					valid: false,
+					failed: false,
+					status: null,
+					intent,
+					exitCode,
+					errorKind,
+					durationMs,
+					summary: 'The latest mf run receipt does not include a status field.',
+				},
+				'latest run receipt is invalid',
+				'mustflow could not read bounded latest run metadata safely.',
+				'Ignore the latest-run state and rerun the intended configured command to create a fresh receipt.',
+			),
+		};
+	}
+
+	const failed = status !== 'passed';
+
+	return {
+		schema_version: EXPLAIN_SCHEMA_VERSION,
+		command: 'explain',
+		topic: 'why',
+		mustflow_root: projectRoot,
+		decision: latestFailureDecision(
+			{
+				path: sourcePath,
+				present: true,
+				valid: true,
+				failed,
+				status,
+				intent,
+				exitCode,
+				errorKind,
+				durationMs,
+				summary: `Latest bounded run receipt status is ${status}.`,
+			},
+			failed ? 'latest run did not pass' : 'latest run is not a failure',
+			failed
+				? 'the latest bounded run receipt reports a non-passing status without exposing stdout or stderr tails.'
+				: 'the latest bounded run receipt does not report a failure status.',
+			failed
+				? 'Inspect the configured command result and rerun the narrowest relevant intent after fixing the cause.'
+				: 'Do not treat this as a failure explanation; choose the next verification from current changes and command contracts.',
+		),
+	};
+}
+
+function withWhyTopic(output: ExplainOutput): ExplainOutput {
+	return { ...output, topic: 'why' };
+}
+
+async function getWhyExplainOutput(
+	projectRoot: string,
+	targetArg: string | undefined,
+	rest: readonly string[],
+	lang: CliLang,
+	reporter: Reporter,
+): Promise<ExplainOutput | null> {
+	switch (targetArg) {
+		case 'command':
+		case 'intent': {
+			const [commandName, ...extra] = rest;
+
+			if (!commandName) {
+				printUsageError(reporter, t(lang, 'explain.error.missingCommand'), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			if (extra.length > 0) {
+				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: extra[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			return withWhyTopic(await getCommandExplainOutput(projectRoot, commandName));
+		}
+		case 'verify': {
+			const parsed = parseExplainVerifyArgs([...rest]);
+
+			if (parsed.error) {
+				printUsageError(reporter, explainVerifyArgErrorMessage(parsed.error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			const selectedInputCount = [parsed.reason, parsed.fromPlan].filter(Boolean).length;
+
+			if (selectedInputCount > 1) {
+				printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			if (selectedInputCount === 0) {
+				printUsageError(reporter, t(lang, 'verify.error.missingReason'), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			try {
+				if (parsed.fromPlan) {
+					const reasons = readExplainVerifyPlanReasons(projectRoot, parsed.fromPlan);
+					return withWhyTopic(await getVerifyExplainOutput(EXPLAIN_SCHEMA_VERSION, projectRoot, reasons, null, parsed.fromPlan));
+				}
+
+				return withWhyTopic(
+					await getVerifyExplainOutput(
+						EXPLAIN_SCHEMA_VERSION,
+						projectRoot,
+						[parsed.reason as string],
+						parsed.reason as string,
+						null,
+					),
+				);
+			} catch (error) {
+				printUsageError(reporter, explainVerifyPlanErrorMessage(error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+		}
+		case 'skill': {
+			const [skillName, ...extra] = rest;
+
+			if (!skillName) {
+				printUsageError(reporter, t(lang, 'explain.error.missingSkill'), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			if (extra.length > 0) {
+				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: extra[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			return withWhyTopic(getSkillExplainOutput(projectRoot, skillName));
+		}
+		case 'skills':
+			if (rest.length > 0) {
+				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+			return withWhyTopic(getSkillsExplainOutput(projectRoot));
+		case 'surface': {
+			const [pathArg, ...extra] = rest;
+
+			if (extra.length > 0) {
+				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: extra[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+
+			return withWhyTopic(await getSurfaceExplainOutput(projectRoot, pathArg));
+		}
+		case 'latest-failure':
+		case 'latest-run':
+			if (rest.length > 0) {
+				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+				return null;
+			}
+			return getLatestFailureExplainOutput(projectRoot);
+		default:
+			printUsageError(
+				reporter,
+				t(lang, targetArg ? 'explain.error.unknownTopic' : 'explain.error.missingTopic', { topic: targetArg ?? '' }),
+				'mf explain --help',
+				getExplainHelp(lang),
+				lang,
+			);
+			return null;
+	}
+}
+
 function formatNullable(value: string | number | boolean | null, lang: CliLang): string {
 	if (value === null) {
 		return t(lang, 'value.none');
@@ -238,6 +570,24 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		lines.push(...renderVerifyExplainDecision(output.decision, lang));
 	}
 
+	if ('latestFailure' in output.decision) {
+		const latest = output.decision.latestFailure;
+		lines.push(
+			'',
+			'Latest run failure',
+			`- path: ${latest.path}`,
+			`- present: ${latest.present ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			`- valid: ${latest.valid ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			`- failed: ${latest.failed ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			`- status: ${latest.status ?? t(lang, 'value.none')}`,
+			`- intent: ${latest.intent ?? t(lang, 'value.none')}`,
+			`- exit_code: ${latest.exitCode ?? t(lang, 'value.none')}`,
+			`- error_kind: ${latest.errorKind ?? t(lang, 'value.none')}`,
+			`- duration_ms: ${latest.durationMs ?? t(lang, 'value.none')}`,
+			`- summary: ${latest.summary}`,
+		);
+	}
+
 	if ('boundary' in output.decision) {
 		lines.push('', t(lang, 'explain.label.authorityBoundary'), `- role: ${output.decision.boundary.role}`);
 
@@ -275,6 +625,20 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 			`- success_exit_codes: ${intent.successExitCodes.join(', ') || t(lang, 'value.none')}`,
 			`- required_after: ${intent.requiredAfter.join(', ') || t(lang, 'value.none')}`,
 		);
+
+		if (intent.preconditions.length > 0) {
+			lines.push('- preconditions:');
+			for (const precondition of intent.preconditions) {
+				const target = precondition.path ?? precondition.artifact ?? precondition.label ?? precondition.kind;
+				lines.push(`  - ${precondition.kind} ${target}: ${precondition.status}`);
+				lines.push(`    detail: ${precondition.detail}`);
+				if (precondition.satisfyIntent) {
+					lines.push(
+						`    satisfy_intent: ${precondition.satisfyIntent.intent} (${precondition.satisfyIntent.runnable ? 'runnable' : 'not_runnable'})`,
+					);
+				}
+			}
+		}
 	}
 
 	if ('effectGraph' in output.decision && output.decision.effectGraph) {
@@ -377,6 +741,18 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 				`- expected_output: ${route.expectedOutput}`,
 			);
 		}
+
+		const evidence = output.decision.selectionEvidence;
+		lines.push(
+			'',
+			'Skill selection evidence',
+			`- matched_by: ${evidence.matchedBy.join(', ') || t(lang, 'value.none')}`,
+			`- required_inputs: ${evidence.requiredInputs.join(', ') || t(lang, 'value.none')}`,
+			`- missing_inputs: ${evidence.missingInputs.join(', ') || t(lang, 'value.none')}`,
+			`- candidate_adjuncts: ${evidence.candidateAdjuncts.join(', ') || t(lang, 'value.none')}`,
+			`- unmatched_paths: ${evidence.unmatchedPaths.join(', ') || t(lang, 'value.none')}`,
+			`- gap_notes: ${evidence.gapNotes.join(' | ') || t(lang, 'value.none')}`,
+		);
 	}
 
 	if ('surface' in output.decision) {
@@ -453,6 +829,23 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 	const json = args.includes('--json');
 	const positional = args.filter((arg) => arg !== '--json');
 	const [topic, targetArg, ...rest] = positional;
+
+	if (topic === 'why') {
+		const projectRoot = resolveMustflowRoot();
+		const output = await getWhyExplainOutput(projectRoot, targetArg, rest, lang, reporter);
+
+		if (!output) {
+			return 1;
+		}
+
+		if (json) {
+			reporter.stdout(JSON.stringify(output, null, 2));
+			return 0;
+		}
+
+		reporter.stdout(renderExplainDecision(output, lang));
+		return 0;
+	}
 
 	if (topic === 'verify') {
 		const verifyArgs = targetArg === undefined ? rest : [targetArg, ...rest];

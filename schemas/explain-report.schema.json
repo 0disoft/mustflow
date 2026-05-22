@@ -14,7 +14,7 @@
   "properties": {
     "schema_version": { "const": "1" },
     "command": { "const": "explain" },
-    "topic": { "enum": ["anchor", "asset-optimization", "authority", "command", "retention", "skill", "skills", "surface", "verify"] },
+    "topic": { "enum": ["anchor", "asset-optimization", "authority", "command", "retention", "skill", "skills", "surface", "verify", "why"] },
     "mustflow_root": { "type": "string" },
     "decision": {
       "oneOf": [
@@ -25,7 +25,8 @@
         { "$ref": "#/$defs/skillRouteAlignmentDecision" },
         { "$ref": "#/$defs/publicSurfaceDecision" },
         { "$ref": "#/$defs/sourceAnchorDecision" },
-        { "$ref": "#/$defs/verificationDecision" }
+        { "$ref": "#/$defs/verificationDecision" },
+        { "$ref": "#/$defs/latestFailureDecision" }
       ]
     }
   },
@@ -350,6 +351,10 @@
             "requiredAfter": {
               "type": "array",
               "items": { "type": "string" }
+            },
+            "preconditions": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/commandPrecondition" }
             }
           }
         },
@@ -869,7 +874,7 @@
         "destructive",
         "successExitCodes",
         "requiredAfter"
-      ],
+          ],
       "properties": {
         "name": { "type": "string" },
         "status": { "type": ["string", "null"] },
@@ -892,6 +897,110 @@
         "requiredAfter": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "preconditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/commandPrecondition" }
+        }
+      }
+    },
+    "commandPrecondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "label",
+        "status",
+        "detail",
+        "path",
+        "artifact",
+        "sources",
+        "newestSource",
+        "satisfyIntent"
+      ],
+      "properties": {
+        "kind": { "type": "string" },
+        "label": { "type": ["string", "null"] },
+        "status": { "enum": ["satisfied", "missing", "stale", "unknown", "invalid"] },
+        "detail": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "artifact": { "type": ["string", "null"] },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "newestSource": { "type": ["string", "null"] },
+        "satisfyIntent": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/preconditionSatisfyIntent" }
+          ]
+        }
+      }
+    },
+    "preconditionSatisfyIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "declared", "runnable", "status", "lifecycle", "runPolicy", "detail"],
+      "properties": {
+        "intent": { "type": "string" },
+        "declared": { "type": "boolean" },
+        "runnable": { "type": "boolean" },
+        "status": { "type": ["string", "null"] },
+        "lifecycle": { "type": ["string", "null"] },
+        "runPolicy": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] }
+      }
+    },
+    "latestFailureDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "decision",
+        "reason",
+        "effectiveAction",
+        "countsAsMustflowVerification",
+        "sourceFiles",
+        "latestFailure"
+      ],
+      "properties": {
+        "kind": { "const": "latest_failure" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "effectiveAction": { "type": "string" },
+        "countsAsMustflowVerification": { "const": false },
+        "sourceFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "latestFailure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "present",
+            "valid",
+            "failed",
+            "status",
+            "intent",
+            "exitCode",
+            "errorKind",
+            "durationMs",
+            "summary"
+          ],
+          "properties": {
+            "path": { "const": ".mustflow/state/runs/latest.json" },
+            "present": { "type": "boolean" },
+            "valid": { "type": "boolean" },
+            "failed": { "type": "boolean" },
+            "status": { "type": ["string", "null"] },
+            "intent": { "type": ["string", "null"] },
+            "exitCode": { "type": ["integer", "null"] },
+            "errorKind": { "type": ["string", "null"] },
+            "durationMs": { "type": ["integer", "null"] },
+            "summary": { "type": "string" }
+          }
         }
       }
     },
@@ -950,7 +1059,8 @@
         "effectiveAction",
         "countsAsMustflowVerification",
         "sourceFiles",
-        "route"
+        "route",
+        "selectionEvidence"
       ],
       "properties": {
         "kind": { "const": "skill_route" },
@@ -990,6 +1100,44 @@
             },
             "expectedOutput": { "type": "string" },
             "declaredCommandIntents": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "selectionEvidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "matchedBy",
+            "requiredInputs",
+            "missingInputs",
+            "candidateAdjuncts",
+            "unmatchedPaths",
+            "gapNotes"
+          ],
+          "properties": {
+            "matchedBy": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "requiredInputs": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "missingInputs": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "candidateAdjuncts": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "unmatchedPaths": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "gapNotes": {
               "type": "array",
               "items": { "type": "string" }
             }

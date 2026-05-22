@@ -25,6 +25,9 @@ Les explications de vérification incluent `decision.verification.decisionGraph`
 
 `mf explain surface [path]` explique comment un chemin relatif au dépôt correspond au contrat de surface publique utilisé par la classification des changements. Quand un index local à jour existe, il affiche aussi la règle dérivée chemin-surface qui a correspondu. Si l'index est absent ou obsolète, il affiche une suggestion de reconstruction sans changer la classification ni la sélection des commandes.
 
+`mf explain why <target>` explique une décision existante avec les mêmes modèles que les autres sujets explain. C'est une enveloppe en lecture seule, pas un nouveau sélecteur. Les cibles prises en charge incluent `command <intent>`, `intent <intent>`, `verify --reason <event>`, `verify --from-plan <path>`, `skill <skill_id>`, `skills`, `surface [path]` et `latest-failure`.
+`mf explain why latest-failure` lit seulement les métadonnées bornées de `.mustflow/state/runs/latest.json` : état, intention, code de sortie, type d'erreur, durée et bref résumé. Il n'affiche pas les queues stdout ou stderr.
+
 ## Sortie
 
 - `mustflow root` : racine mustflow actuelle.
@@ -45,6 +48,7 @@ Les explications de vérification incluent `decision.verification.decisionGraph`
 - `Skill routes` : état strict d'alignement entre index et corps quand le sujet `skills` est utilisé.
 - `Public surface` : type de surface, catégorie, raisons de vérification, contrats affectés, politique de mise à jour et vérifications de dérive quand le sujet `surface` est utilisé.
 - `Path-surface read model` : identifiant de règle, motif et métadonnées de surface dérivées depuis l'index local à jour quand le sujet `surface` est utilisé et que `.mustflow/cache/mustflow.sqlite` est disponible.
+- `Latest run failure` : état, intention, code de sortie, type d'erreur, durée et résumé bornés de la dernière exécution quand `mf explain why latest-failure` est utilisé.
 
 ## Exemples
 
@@ -57,8 +61,11 @@ npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
+npx mf explain why command test --json
+npx mf explain why latest-failure
 npx mf explain verify --reason code_change
 npx mf explain verify --from-plan verify-plan.json --json
+npx mf explain why verify --reason code_change --json
 npx mf explain retention
 npx mf explain retention --json
 npx mf explain skill code-review
@@ -80,9 +87,9 @@ La sortie lisible par machine utilise ces champs :
 
 - `schema_version` (`string`) : version du format de sortie.
 - `command` (`string`) : toujours `explain`.
-- `topic` (`string`) : `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface` ou `verify`.
+- `topic` (`string`) : `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface`, `verify` ou `why`.
 - `mustflow_root` (`string`) : racine mustflow actuelle.
-- `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet. Pour `authority`, inclut `boundary.role`, `boundary.canDefine` et `boundary.cannotDefine`. Pour `command`, `decision.effectGraph` contient l'état du graphe d'effets de commande de l'index local, les verrous d'écriture, les conflits, les chemins obsolètes et les suggestions de reconstruction quand l'intention est déclarée. Pour `verify`, `decision.verification` contient les raisons choisies, les candidats correspondants, les raisons d'omission, les écarts, `decisionGraph` et l'état du graphe d'effets de commande local. Pour `surface`, `decision.readModel` contient l'état chemin-surface de l'index local en lecture seule et les métadonnées de la règle correspondante quand elles sont disponibles.
+- `decision` (`object`) : décision résolue, raison, action effective, fichiers sources, état de vérification et détails propres au sujet. Pour `authority`, inclut `boundary.role`, `boundary.canDefine` et `boundary.cannotDefine`. Pour `command`, `decision.effectGraph` contient l'état du graphe d'effets de commande de l'index local, les verrous d'écriture, les conflits, les chemins obsolètes et les suggestions de reconstruction quand l'intention est déclarée. Pour `verify`, `decision.verification` contient les raisons choisies, les candidats correspondants, les raisons d'omission, les écarts, `decisionGraph` et l'état du graphe d'effets de commande local. Pour `surface`, `decision.readModel` contient l'état chemin-surface de l'index local en lecture seule et les métadonnées de la règle correspondante quand elles sont disponibles. Pour `why latest-failure`, `decision.latestFailure` contient les métadonnées bornées de la dernière exécution sans queues de logs.
 
 ## Aide et codes de sortie
 

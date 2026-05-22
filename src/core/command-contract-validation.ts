@@ -18,6 +18,7 @@ import {
 	validateCommandEffectLockWarnings,
 	validateCommandEffects,
 } from './command-effects.js';
+import { COMMAND_PRECONDITION_KINDS } from './command-preconditions.js';
 import {
 	commandIntentBlockedCommandPattern,
 	commandIntentHasCommandSource,
@@ -25,6 +26,13 @@ import {
 } from './command-contract-rules.js';
 import { MAX_COMMAND_OUTPUT_BYTES, commandMaxOutputBytesLimitMessage } from './command-output-limits.js';
 import { SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION, successExitCodesAreValid } from './success-exit-codes.js';
+
+const COMMAND_INPUT_TYPES = new Set(['path', 'enum', 'boolean', 'integer', 'literal']);
+const COMMAND_INPUT_NAME_PATTERN = /^[a-z][a-z0-9_]*$/u;
+const COMMAND_ARGV_PLACEHOLDER_PATTERN = /^\{([a-z][a-z0-9_]*)\}$/u;
+const COMMAND_ARGV_MIXED_PLACEHOLDER_PATTERN = /\{([a-z][a-z0-9_]*)\}/u;
+const WINDOWS_RESERVED_PATH_SEGMENTS = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu;
+const SAFE_PATH_EXTENSION_PATTERN = /^\.[A-Za-z0-9][A-Za-z0-9._-]*$/u;
 
 export interface CommandContractValidationIssue {
 	readonly id?: CheckIssueId;
@@ -46,6 +54,10 @@ function hasOwn(table: TomlTable, key: string): boolean {
 
 function isPositiveInteger(value: unknown): boolean {
 	return Number.isInteger(value) && Number(value) > 0;
+}
+
+function isInteger(value: unknown): boolean {
+	return Number.isInteger(value);
 }
 
 function validateTable(config: TomlTable, tableName: string, issues: CommandContractValidationIssue[]): TomlTable | undefined {
@@ -112,6 +124,18 @@ function validatePositiveIntegerField(
 	}
 }
 
+function validateIntegerField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+	id?: CheckIssueId,
+): void {
+	if (hasOwn(table, key) && !isInteger(table[key])) {
+		issues.push(commandContractIssue(`${label} must be an integer`, id));
+	}
+}
+
 function validateMaxOutputBytesField(
 	table: TomlTable,
 	key: string,
@@ -143,6 +167,336 @@ function validateAllowedStringField(
 
 	if (typeof table[key] !== 'string' || !allowedValues.has(table[key])) {
 		issues.push(commandContractIssue(`${label} must be ${Array.from(allowedValues).map((value) => `"${value}"`).join(' or ')}`));
+	}
+}
+
+function normalizeContractPath(value: string): string {
+	return value.trim().replace(/\\/gu, '/');
+}
+
+function contractPathIsUnsafe(value: string): boolean {
+	const normalized = normalizeContractPath(value);
+	const segments = normalized.split('/').filter((segment) => segment.length > 0);
+
+	return (
+		normalized.length === 0 ||
+		normalized.includes('\0') ||
+		normalized.startsWith('/') ||
+		path.win32.isAbsolute(value) ||
+		path.posix.isAbsolute(value) ||
+		segments.some((segment) => segment === '.' || segment === '..' || WINDOWS_RESERVED_PATH_SEGMENTS.test(segment))
+	);
+}
+
+function validateSafeRelativePathArrayField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+): void {
+	validateStringArrayField(table, key, label, issues);
+
+	if (!Array.isArray(table[key])) {
+		return;
+	}
+
+	for (const entry of table[key]) {
+		if (typeof entry === 'string' && contractPathIsUnsafe(entry)) {
+			issues.push(
+				commandContractIssue(
+					`${label} entry "${entry}" must be a normalized repository-relative path without traversal or reserved device names`,
+					'mustflow.command_contract.inputs_invalid',
+				),
+			);
+		}
+	}
+}
+
+function validateAllowedExtensionsField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+): void {
+	validateStringArrayField(table, key, label, issues);
+
+	if (!Array.isArray(table[key])) {
+		return;
+	}
+
+	for (const entry of table[key]) {
+		if (typeof entry === 'string' && !SAFE_PATH_EXTENSION_PATTERN.test(entry)) {
+			issues.push(
+				commandContractIssue(
+					`${label} entry "${entry}" must start with "." and contain only letters, numbers, dots, underscores, or hyphens`,
+					'mustflow.command_contract.inputs_invalid',
+				),
+			);
+		}
+	}
+}
+
+function validateCommandInputDefinition(
+	intentName: string,
+	inputName: string,
+	input: TomlTable,
+	issues: CommandContractValidationIssue[],
+): void {
+	const label = `[commands.intents.${intentName}.inputs.${inputName}]`;
+
+	if (!COMMAND_INPUT_NAME_PATTERN.test(inputName)) {
+		issues.push(
+			commandContractIssue(
+				`Command input ${intentName}.${inputName} name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	validateAllowedStringField(input, 'type', `${label}.type`, COMMAND_INPUT_TYPES, issues);
+	validateBooleanField(input, 'required', `${label}.required`, issues);
+	validateBooleanField(input, 'secret', `${label}.secret`, issues);
+	validateStringField(input, 'description', `${label}.description`, issues);
+	validateStringField(input, 'placeholder', `${label}.placeholder`, issues);
+	validateStringArrayField(input, 'allowed_values', `${label}.allowed_values`, issues);
+	validateSafeRelativePathArrayField(input, 'allowed_roots', `${label}.allowed_roots`, issues);
+	validateAllowedExtensionsField(input, 'allowed_extensions', `${label}.allowed_extensions`, issues);
+	validateIntegerField(input, 'min', `${label}.min`, issues, 'mustflow.command_contract.inputs_invalid');
+	validateIntegerField(input, 'max', `${label}.max`, issues, 'mustflow.command_contract.inputs_invalid');
+
+	if (input.type === 'path' && (!Array.isArray(input.allowed_roots) || input.allowed_roots.length === 0)) {
+		issues.push(
+			commandContractIssue(
+				`${label}.allowed_roots must define at least one repository-relative root for path inputs`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	if (input.type === 'enum' && (!Array.isArray(input.allowed_values) || input.allowed_values.length === 0)) {
+		issues.push(
+			commandContractIssue(
+				`${label}.allowed_values must define at least one value for enum inputs`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	if (input.type === 'literal' && !hasOwn(input, 'value')) {
+		issues.push(
+			commandContractIssue(
+				`${label}.value must be defined for literal inputs`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	if (hasOwn(input, 'value') && !['string', 'number', 'boolean'].includes(typeof input.value)) {
+		issues.push(commandContractIssue(`${label}.value must be a string, number, or boolean`, 'mustflow.command_contract.inputs_invalid'));
+	}
+
+	if (isInteger(input.min) && isInteger(input.max) && Number(input.min) > Number(input.max)) {
+		issues.push(commandContractIssue(`${label}.min must be less than or equal to ${label}.max`, 'mustflow.command_contract.inputs_invalid'));
+	}
+}
+
+function validateCommandIntentInputs(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
+	if (!hasOwn(intent, 'inputs')) {
+		return;
+	}
+
+	if (!isRecord(intent.inputs)) {
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}.inputs] must be a TOML table`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+		return;
+	}
+
+	if (intent.status === 'configured') {
+		issues.push(
+			commandContractIssue(
+				`Configured intent ${intentName} must not declare inputs until typed input execution is implemented`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	if (intent.mode === 'shell' || hasOwn(intent, 'cmd')) {
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}.inputs] requires argv command mode; shell-string interpolation is not allowed`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	if (!Array.isArray(intent.argv)) {
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}.inputs] requires argv so typed input placeholders remain argument-bound`,
+				'mustflow.command_contract.inputs_invalid',
+			),
+		);
+	}
+
+	const inputNames = new Set<string>();
+	for (const [inputName, input] of Object.entries(intent.inputs)) {
+		inputNames.add(inputName);
+
+		if (!isRecord(input)) {
+			issues.push(
+				commandContractIssue(
+					`[commands.intents.${intentName}.inputs.${inputName}] must be a TOML table`,
+					'mustflow.command_contract.inputs_invalid',
+				),
+			);
+			continue;
+		}
+
+		validateCommandInputDefinition(intentName, inputName, input, issues);
+	}
+
+	const argv = readStringArray(intent, 'argv');
+	if (!argv) {
+		return;
+	}
+
+	for (const token of argv) {
+		const exactMatch = COMMAND_ARGV_PLACEHOLDER_PATTERN.exec(token);
+		if (exactMatch) {
+			const inputName = exactMatch[1];
+			if (!inputNames.has(inputName)) {
+				issues.push(
+					commandContractIssue(
+						`Command argv token "${token}" references undeclared input ${intentName}.${inputName}`,
+						'mustflow.command_contract.inputs_invalid',
+					),
+				);
+			}
+			continue;
+		}
+
+		if (COMMAND_ARGV_MIXED_PLACEHOLDER_PATTERN.test(token)) {
+			issues.push(
+				commandContractIssue(
+					`Command argv token "${token}" must use a whole-token typed input placeholder instead of string interpolation`,
+					'mustflow.command_contract.inputs_invalid',
+				),
+			);
+		}
+	}
+}
+
+function validateSafeRelativePathField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+): void {
+	validateStringField(table, key, label, issues);
+
+	if (typeof table[key] === 'string' && contractPathIsUnsafe(table[key])) {
+		issues.push(
+			commandContractIssue(
+				`${label} must be a normalized repository-relative path without traversal or reserved device names`,
+				'mustflow.command_contract.preconditions_invalid',
+			),
+		);
+	}
+}
+
+function validateSafeRelativePathPatternArrayField(
+	table: TomlTable,
+	key: string,
+	label: string,
+	issues: CommandContractValidationIssue[],
+): void {
+	validateStringArrayField(table, key, label, issues);
+
+	if (!Array.isArray(table[key])) {
+		return;
+	}
+
+	for (const entry of table[key]) {
+		if (typeof entry === 'string' && contractPathIsUnsafe(entry.replace(/\*/gu, 'wildcard'))) {
+			issues.push(
+				commandContractIssue(
+					`${label} entry "${entry}" must be a normalized repository-relative path pattern without traversal or reserved device names`,
+					'mustflow.command_contract.preconditions_invalid',
+				),
+			);
+		}
+	}
+}
+
+function validateCommandIntentPreconditions(
+	intentName: string,
+	intent: TomlTable,
+	allIntents: TomlTable,
+	issues: CommandContractValidationIssue[],
+): void {
+	if (!hasOwn(intent, 'preconditions')) {
+		return;
+	}
+
+	if (!Array.isArray(intent.preconditions) || intent.preconditions.some((entry) => !isRecord(entry))) {
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}].preconditions must be an array of tables`,
+				'mustflow.command_contract.preconditions_invalid',
+			),
+		);
+		return;
+	}
+
+	for (const [index, precondition] of intent.preconditions.entries()) {
+		const preconditionTable = precondition as TomlTable;
+		const label = `[commands.intents.${intentName}.preconditions.${index}]`;
+
+		validateAllowedStringField(preconditionTable, 'kind', `${label}.kind`, COMMAND_PRECONDITION_KINDS, issues);
+		validateStringField(preconditionTable, 'label', `${label}.label`, issues);
+		validateSafeRelativePathField(preconditionTable, 'path', `${label}.path`, issues);
+		validateSafeRelativePathField(preconditionTable, 'artifact', `${label}.artifact`, issues);
+		validateSafeRelativePathPatternArrayField(preconditionTable, 'sources', `${label}.sources`, issues);
+		validateStringField(preconditionTable, 'satisfy_intent', `${label}.satisfy_intent`, issues);
+
+		if (preconditionTable.kind === 'path_exists' && !hasOwn(preconditionTable, 'path')) {
+			issues.push(
+				commandContractIssue(`${label}.path is required for kind = "path_exists"`, 'mustflow.command_contract.preconditions_invalid'),
+			);
+		}
+
+		if (preconditionTable.kind === 'artifact_freshness') {
+			if (!hasOwn(preconditionTable, 'artifact')) {
+				issues.push(
+					commandContractIssue(
+						`${label}.artifact is required for kind = "artifact_freshness"`,
+						'mustflow.command_contract.preconditions_invalid',
+					),
+				);
+			}
+
+			if (!Array.isArray(preconditionTable.sources) || preconditionTable.sources.length === 0) {
+				issues.push(
+					commandContractIssue(
+						`${label}.sources must define at least one source path pattern for kind = "artifact_freshness"`,
+						'mustflow.command_contract.preconditions_invalid',
+					),
+				);
+			}
+		}
+
+		if (typeof preconditionTable.satisfy_intent === 'string' && !isRecord(allIntents[preconditionTable.satisfy_intent])) {
+			issues.push(
+				commandContractIssue(
+					`${label}.satisfy_intent references unknown intent "${preconditionTable.satisfy_intent}"`,
+					'mustflow.command_contract.preconditions_invalid',
+				),
+			);
+		}
 	}
 }
 
@@ -309,7 +663,12 @@ function validateCommandIntentSelection(intentName: string, intent: TomlTable, i
 	}
 }
 
-function validateCommandIntent(intentName: string, intent: TomlTable, issues: CommandContractValidationIssue[]): void {
+function validateCommandIntent(
+	intentName: string,
+	intent: TomlTable,
+	allIntents: TomlTable,
+	issues: CommandContractValidationIssue[],
+): void {
 	if (!commandIntentNameIsSafe(intentName)) {
 		issues.push(commandContractIssue(`Intent ${intentName} name must contain only letters, numbers, underscores, and hyphens`));
 	}
@@ -341,6 +700,8 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 	validateMaxOutputBytesField(intent, 'max_output_bytes', `[commands.intents.${intentName}].max_output_bytes`, issues);
 	validatePositiveIntegerField(intent, 'kill_after_seconds', `[commands.intents.${intentName}].kill_after_seconds`, issues);
 	validateCommandIntentSelection(intentName, intent, issues);
+	validateCommandIntentInputs(intentName, intent, issues);
+	validateCommandIntentPreconditions(intentName, intent, allIntents, issues);
 
 	if (intent.status !== 'configured') {
 		return;
@@ -659,7 +1020,7 @@ export function validateCommandContractConfig(commandsToml: TomlTable | undefine
 			continue;
 		}
 
-		validateCommandIntent(intentName, intent, issues);
+		validateCommandIntent(intentName, intent, commandsToml.intents, issues);
 	}
 
 	return issues;

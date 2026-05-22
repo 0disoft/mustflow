@@ -11,7 +11,9 @@ Current schemas:
 - `run-receipt.schema.json`: output of `mf run <intent> --json` and `.mustflow/state/runs/latest.json`,
   including bounded declared-write drift metadata, a safe latest-run performance summary, and optional
   structured phase timings and selection summaries
-- `commands.schema.json`: parsed `.mustflow/config/commands.toml`
+- `commands.schema.json`: parsed `.mustflow/config/commands.toml`, including validation-only
+  typed intent input metadata and explanatory preconditions that do not authorize parameterized
+  command execution or automatic dependency execution
 - `test-selection.schema.json`: parsed optional `.mustflow/config/test-selection.toml`
 - `contract-lint-report.schema.json`: output of `mf contract-lint --json`
 - `dashboard-export.schema.json`: bounded static export written by `mf dashboard --export-json <path>`,
@@ -33,7 +35,8 @@ Current schemas:
 - `docs-review-list.schema.json`: output of `mf docs review list --json`
 - `explain-report.schema.json`: output of `mf explain authority --json`, `mf explain command --json`,  
   `mf explain verify --reason <event> --json`, `mf explain retention --json`, `mf explain skills --json`,
-  and `mf explain surface --json`. Verify explanations include the shared `decisionGraph` evidence model.
+  `mf explain surface --json`, and `mf explain why <target> --json`. Verify explanations include the shared
+  `decisionGraph` evidence model; latest-failure explanations include bounded latest-run metadata only.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`, including an
   explicit execution aggregate, evidence-based completion verdict, and evidence model with a
   conservative coverage matrix for the selected receipts and skipped checks
@@ -43,7 +46,7 @@ Current schemas:
   `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links
   changed surfaces, classification reasons, command candidates, eligibility, selected or not-selected state,
   effects, and gaps.
-  Local-index command-effect graphs are explanation-only and cannot grant command authority.
+  Local-index command-effect graphs and command preconditions are explanation-only and cannot grant command authority.
 
 These schemas define stable, automation-facing fields. Human-readable command  
 output is intentionally excluded.

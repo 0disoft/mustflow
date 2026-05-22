@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -132,6 +133,184 @@ test('requires explicit opt-in before executing commands from roots without a ma
 		assert.equal(receipt.status, 'passed');
 		assert.equal(receipt.intent, 'untrusted_marker');
 		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('blocks overlapping run intents that declare conflicting active locks', async () => {
+	const projectPath = createTempProject();
+	const conflictMarkerPath = path.join(projectPath, 'conflict.txt');
+	const otherMarkerPath = path.join(projectPath, 'other.txt');
+	let holder;
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.lock_holder]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Hold an exclusive lock briefly."
+argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 1200)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["shared.txt"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "shared.txt", lock = "shared_lock", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+
+[intents.lock_conflict]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write under the same exclusive lock."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(conflictMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["shared.txt"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "shared.txt", lock = "shared_lock", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+
+[intents.lock_other]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write under a separate lock."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(otherMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["other.txt"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "other.txt", lock = "other_lock", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		let holderStdout = '';
+		let holderStderr = '';
+		holder = spawn(process.execPath, [cliPath, 'run', 'lock_holder'], {
+			cwd: projectPath,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+		holder.stdout.on('data', (chunk) => {
+			holderStdout += chunk.toString();
+		});
+		holder.stderr.on('data', (chunk) => {
+			holderStderr += chunk.toString();
+		});
+		await waitForOutput(() => holderStdout, /lock-ready/u);
+
+		const preview = runCli(projectPath, ['run', 'lock_conflict', '--dry-run', '--json']);
+		const previewJson = JSON.parse(preview.stdout);
+		assert.equal(preview.status, 0, preview.stderr || preview.stdout);
+		assert.equal(previewJson.active_lock_conflicts.length, 1);
+		assert.equal(previewJson.active_lock_conflicts[0].conflictsWithIntent, 'lock_holder');
+
+		const conflict = runCli(projectPath, ['run', 'lock_conflict']);
+		assert.equal(conflict.status, 1);
+		assert.match(conflict.stderr, /active run lock/u);
+		assert.equal(existsSync(conflictMarkerPath), false);
+
+		const other = runCli(projectPath, ['run', 'lock_other']);
+		assert.equal(other.status, 0, other.stderr || other.stdout);
+		assert.equal(readFileSync(otherMarkerPath, 'utf8'), 'ran');
+
+		const holderResult = await waitForClose(holder);
+		holder = undefined;
+		assert.equal(holderResult.status, 0, holderStderr);
+
+		const afterRelease = runCli(projectPath, ['run', 'lock_conflict']);
+		assert.equal(afterRelease.status, 0, afterRelease.stderr || afterRelease.stdout);
+		assert.equal(readFileSync(conflictMarkerPath, 'utf8'), 'ran');
+	} finally {
+		if (holder?.pid) {
+			holder.kill();
+		}
+		removeTempProject(projectPath);
+	}
+});
+
+test('reclaims stale active lock records whose owner process is gone', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'stale-recovered.txt');
+	const deadRunId = 'dead-run-lock-record';
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.stale_lock_probe]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run after a stale lock is reclaimed."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["stale-recovered.txt"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "stale-recovered.txt", lock = "stale_lock", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		const activeLockDir = path.join(projectPath, '.mustflow', 'state', 'locks', 'active');
+		mkdirSync(activeLockDir, { recursive: true });
+		writeFileSync(
+			path.join(activeLockDir, `${createHash('sha256').update(deadRunId).digest('hex')}.json`),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					kind: 'active_run_lock',
+					run_id: deadRunId,
+					intent: 'dead_writer',
+					pid: 999999,
+					started_at: '2024-01-01T00:00:00.000Z',
+					root_hash: 'test',
+					command_hash: null,
+					effects: [
+						{
+							source: 'effects',
+							access: 'write',
+							mode: 'delete_recreate',
+							path: 'stale-recovered.txt',
+							lock: 'stale_lock',
+							concurrency: 'exclusive',
+						},
+					],
+					writes: ['stale-recovered.txt'],
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['run', 'stale_lock_probe']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');
+		assert.deepEqual(readdirSync(activeLockDir).filter((name) => name.endsWith('.json')), []);
 	} finally {
 		removeTempProject(projectPath);
 	}

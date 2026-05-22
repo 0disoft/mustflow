@@ -18,6 +18,9 @@ mustflow 将版本化合同规范保存在仓库的
 - `run-receipt.schema.json`：`mf run <intent> --json` 和 `.mustflow/state/runs/latest.json`。
 - `commands.schema.json`：解析后的 `.mustflow/config/commands.toml`。
 
+`commands.schema.json` 也接受用于计划说明的 `preconditions` 元数据。它们可以在 dry-run、
+verify-plan 和 explain 输出中报告缺失路径或过期产物，但 `satisfy_intent` 永远不会作为依赖被隐式执行。
+
 ## 当前规范
 
 - `instruction-authority-v1.md`：解析用户指示、host 策略、仓库文件、命令合同和生成状态之间的有效规则。

@@ -6,6 +6,10 @@ import {
 	type CommandContract,
 	type TomlTable,
 } from './config-loading.js';
+import {
+	evaluateCommandPreconditions,
+	type CommandPreconditionPlan,
+} from './command-preconditions.js';
 
 export type CommandDecisionKind = 'allowed' | 'blocked' | 'unknown';
 
@@ -23,6 +27,7 @@ export interface CommandIntentSummary {
 	readonly destructive: boolean | null;
 	readonly successExitCodes: readonly number[];
 	readonly requiredAfter: readonly string[];
+	readonly preconditions: readonly CommandPreconditionPlan[];
 }
 
 export interface CommandDecision {
@@ -84,7 +89,12 @@ function resolveCommandMode(intent: TomlTable): 'argv' | 'shell' | 'missing' {
 	return 'missing';
 }
 
-function summarizeIntent(name: string, intent: TomlTable): CommandIntentSummary {
+function summarizeIntent(
+	name: string,
+	intent: TomlTable,
+	contract: CommandContract,
+	projectRoot: string | undefined,
+): CommandIntentSummary {
 	return {
 		name,
 		status: readString(intent, 'status') ?? null,
@@ -99,6 +109,7 @@ function summarizeIntent(name: string, intent: TomlTable): CommandIntentSummary 
 		destructive: readOptionalBoolean(intent, 'destructive'),
 		successExitCodes: readOptionalIntegerArray(intent, 'success_exit_codes'),
 		requiredAfter: readOptionalStringArray(intent, 'required_after'),
+		preconditions: projectRoot ? evaluateCommandPreconditions(projectRoot, contract, name) : [],
 	};
 }
 
@@ -132,7 +143,11 @@ function collectBlockingReasons(summary: CommandIntentSummary): string[] {
 	return reasons;
 }
 
-export function explainCommandIntent(contract: CommandContract, commandName: string): CommandDecision {
+export function explainCommandIntent(
+	contract: CommandContract,
+	commandName: string,
+	options: { readonly projectRoot?: string } = {},
+): CommandDecision {
 	const intentCandidate = contract.intents[commandName];
 
 	if (!isRecord(intentCandidate)) {
@@ -148,7 +163,7 @@ export function explainCommandIntent(contract: CommandContract, commandName: str
 		};
 	}
 
-	const intent = summarizeIntent(commandName, intentCandidate);
+	const intent = summarizeIntent(commandName, intentCandidate, contract, options.projectRoot);
 	const blockingReasons = collectBlockingReasons(intent);
 
 	if (blockingReasons.length === 0) {

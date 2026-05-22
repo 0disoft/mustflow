@@ -33,6 +33,15 @@ installed-package JSON command output.
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
 - `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
 
+`commands.schema.json` accepts validation-only typed input metadata under an intent's `inputs`
+table. These declarations are for future parameterized execution design and do not make an intent
+runnable. A configured intent that declares inputs is rejected until typed execution, dry-run,
+receipt, and redaction behavior are implemented together.
+
+`commands.schema.json` also accepts `preconditions` planning metadata. Preconditions can report
+missing paths or stale artifacts in dry-run, verification-plan, and explanation output, but
+`satisfy_intent` is never executed implicitly as a dependency.
+
 ## Current Specifications
 
 - `instruction-authority-v1.md`: effective rule resolution across user instructions, host policy, repository files, command contracts, and generated state.

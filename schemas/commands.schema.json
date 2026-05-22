@@ -100,6 +100,29 @@
         "escalate_to": { "$ref": "#/$defs/stringArray" }
       }
     },
+    "intentInputs": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": { "$ref": "#/$defs/intentInput" }
+    },
+    "intentInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["path", "enum", "boolean", "integer", "literal"] },
+        "description": { "type": "string" },
+        "required": { "type": "boolean" },
+        "placeholder": { "type": "string" },
+        "secret": { "type": "boolean" },
+        "allowed_roots": { "$ref": "#/$defs/stringArray" },
+        "allowed_extensions": { "$ref": "#/$defs/stringArray" },
+        "allowed_values": { "$ref": "#/$defs/stringArray" },
+        "value": { "type": ["string", "number", "boolean"] },
+        "min": { "type": "integer" },
+        "max": { "type": "integer" }
+      }
+    },
     "costHints": {
       "type": "object",
       "additionalProperties": false,
@@ -108,6 +131,19 @@
         "cold_start_seconds": { "type": "integer", "minimum": 0 },
         "timeout_ratio_expectation": { "type": "number", "minimum": 0 },
         "cost_tier": { "type": "string" }
+      }
+    },
+    "intentPrecondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["path_exists", "artifact_freshness"] },
+        "label": { "type": "string" },
+        "path": { "type": "string" },
+        "artifact": { "type": "string" },
+        "sources": { "$ref": "#/$defs/stringArray" },
+        "satisfy_intent": { "type": "string" }
       }
     },
     "relationHints": {
@@ -165,6 +201,11 @@
         },
         "covers": { "$ref": "#/$defs/coverageHints" },
         "selection": { "$ref": "#/$defs/selectionHints" },
+        "inputs": { "$ref": "#/$defs/intentInputs" },
+        "preconditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/intentPrecondition" }
+        },
         "cost": { "$ref": "#/$defs/costHints" },
         "relations": { "$ref": "#/$defs/relationHints" },
         "reason": { "type": "string" },

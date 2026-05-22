@@ -118,6 +118,52 @@ required_after = ["custom_verify"]
 	}
 });
 
+test('explains why verification candidates use the existing decision graph', () => {
+	const projectPath = createTempProject('mustflow-explain-verify-');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.why_verify_fixture]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Why verify fixture."
+argv = ['${process.execPath}', '-e', 'console.log("why verify")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["why_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['explain', 'why', 'verify', '--reason', 'why_verify', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.kind, 'verify');
+		assert.equal(report.decision.input.reason, 'why_verify');
+		assert.deepEqual(report.decision.verification.reasons, ['why_verify']);
+		assert.equal(report.decision.verification.requirements[0].candidates[0].intent, 'why_verify_fixture');
+		assert.equal(report.decision.verification.decisionGraph.root, 'verification_decision');
+		assert.ok(
+			report.decision.verification.decisionGraph.nodes.some(
+				(node) => node.kind === 'command_candidate' && node.intent === 'why_verify_fixture',
+			),
+		);
+		assert.equal(report.decision.countsAsMustflowVerification, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explains verification candidates from a JSON plan', () => {
 	const projectPath = createTempProject('mustflow-explain-verify-');
 

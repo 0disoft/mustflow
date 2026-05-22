@@ -312,6 +312,40 @@ escalate_to = ["test"]
 	}
 });
 
+test('command contract schema accepts validation-only typed intent inputs', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.typed_input_probe]
+status = "unknown"
+description = "Document future typed input metadata without authorizing execution."
+argv = ["node", "--test", "{target_file}", "{mode}"]
+
+[intents.typed_input_probe.inputs.target_file]
+type = "path"
+required = true
+description = "Repository-relative test file."
+allowed_roots = ["tests"]
+allowed_extensions = [".test.js"]
+
+[intents.typed_input_probe.inputs.mode]
+type = "enum"
+allowed_values = ["unit", "integration"]
+`,
+		);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commands = parse(readFileSync(commandsPath, 'utf8'));
+
+		assertMatchesSchema(schemaRoot, 'commands.schema.json', commands);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('command contract schema accepts non-authorizing long-running intent hints', () => {
 	const projectPath = createTempProject();
 
@@ -542,12 +576,40 @@ test('explain command json output matches the published schema', () => {
 	}
 });
 
+test('explain why command json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['explain', 'why', 'command', 'mustflow_check', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'explain-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explain verify json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
 		const result = runCli(projectPath, ['explain', 'verify', '--reason', 'code_change', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'explain-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explain why latest-failure json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['explain', 'why', 'latest-failure', '--json']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'explain-report.schema.json', JSON.parse(result.stdout));

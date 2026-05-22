@@ -513,7 +513,59 @@
         },
         "effectGraph": {
           "$ref": "#/$defs/commandEffectGraph"
+        },
+        "preconditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/commandPrecondition" }
         }
+      }
+    },
+    "commandPrecondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "label",
+        "status",
+        "detail",
+        "path",
+        "artifact",
+        "sources",
+        "newestSource",
+        "satisfyIntent"
+      ],
+      "properties": {
+        "kind": { "type": "string" },
+        "label": { "type": ["string", "null"] },
+        "status": { "enum": ["satisfied", "missing", "stale", "unknown", "invalid"] },
+        "detail": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "artifact": { "type": ["string", "null"] },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "newestSource": { "type": ["string", "null"] },
+        "satisfyIntent": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/preconditionSatisfyIntent" }
+          ]
+        }
+      }
+    },
+    "preconditionSatisfyIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "declared", "runnable", "status", "lifecycle", "runPolicy", "detail"],
+      "properties": {
+        "intent": { "type": "string" },
+        "declared": { "type": "boolean" },
+        "runnable": { "type": "boolean" },
+        "status": { "type": ["string", "null"] },
+        "lifecycle": { "type": ["string", "null"] },
+        "runPolicy": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] }
       }
     },
     "commandEffectGraph": {

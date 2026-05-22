@@ -9,6 +9,11 @@ import {
 	type CommandIntentEligibilityResult,
 } from '../../core/command-intent-eligibility.js';
 import {
+	inspectActiveRunLocks,
+	type ActiveRunLockConflict,
+	type ActiveRunLockStaleRecord,
+} from '../../core/active-run-locks.js';
+import {
 	isRecord,
 	readPositiveInteger,
 	readString,
@@ -24,6 +29,10 @@ import {
 } from '../../core/command-output-limits.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
 import { normalizeSuccessExitCodes } from '../../core/success-exit-codes.js';
+import {
+	evaluateCommandPreconditions,
+	type CommandPreconditionPlan,
+} from '../../core/command-preconditions.js';
 import { t, type CliLang } from './i18n.js';
 
 export interface ResolvedArgvCommand {
@@ -102,6 +111,9 @@ interface RunPlanBase {
 	readonly healthCheckUrl: string | null;
 	readonly stopInstruction: string | null;
 	readonly relatedOneshotChecks: readonly string[];
+	readonly preconditions: readonly CommandPreconditionPlan[];
+	readonly activeLockConflicts: readonly ActiveRunLockConflict[];
+	readonly staleActiveLocks: readonly ActiveRunLockStaleRecord[];
 }
 
 export interface BlockedRunPlan extends RunPlanBase {
@@ -280,6 +292,7 @@ function createBlockedRunPlan(
 	eligibility: CommandIntentEligibilityResult,
 	reasonCode: RunPlanReasonCode,
 	detail: string | null,
+	preconditions: readonly CommandPreconditionPlan[] = [],
 ): BlockedRunPlan {
 	const metadata = intent ? readRunIntentMetadata(contract, intent) : null;
 
@@ -317,6 +330,9 @@ function createBlockedRunPlan(
 		healthCheckUrl: metadata?.healthCheckUrl ?? null,
 		stopInstruction: metadata?.stopInstruction ?? null,
 		relatedOneshotChecks: metadata?.relatedOneshotChecks ?? [],
+		preconditions,
+		activeLockConflicts: [],
+		staleActiveLocks: [],
 	};
 }
 
@@ -333,8 +349,11 @@ export function createRunPlan(
 		return createBlockedRunPlan(contract, intentName, undefined, eligibility, 'intent_not_table', eligibility.detail);
 	}
 
+	const preconditions = evaluateCommandPreconditions(projectRoot, contract, intentName);
+	const activeLocks = inspectActiveRunLocks(projectRoot, contract, intentName);
+
 	if (!eligibility.ok) {
-		return createBlockedRunPlan(contract, intentName, rawIntent, eligibility, eligibility.code, eligibility.detail);
+		return createBlockedRunPlan(contract, intentName, rawIntent, eligibility, eligibility.code, eligibility.detail, preconditions);
 	}
 
 	const metadata = readRunIntentMetadata(contract, rawIntent);
@@ -347,6 +366,7 @@ export function createRunPlan(
 			eligibility,
 			'max_output_bytes_exceeds_limit',
 			maxOutputBytesLimitDetail,
+			preconditions,
 		);
 	}
 
@@ -362,6 +382,7 @@ export function createRunPlan(
 			eligibility,
 			'cwd_outside_project',
 			error instanceof Error ? error.message : String(error),
+			preconditions,
 		);
 	}
 
@@ -376,6 +397,7 @@ export function createRunPlan(
 			eligibility,
 			!metadata.timeoutSeconds ? 'missing_timeout' : 'missing_command_source',
 			!metadata.timeoutSeconds ? 'Intent timeout_seconds is missing or invalid.' : 'Intent does not define argv or shell cmd.',
+			preconditions,
 		);
 	}
 
@@ -413,6 +435,9 @@ export function createRunPlan(
 		healthCheckUrl: metadata.healthCheckUrl,
 		stopInstruction: metadata.stopInstruction,
 		relatedOneshotChecks: metadata.relatedOneshotChecks,
+		preconditions,
+		activeLockConflicts: activeLocks.conflicts,
+		staleActiveLocks: activeLocks.staleRecords,
 	};
 }
 
@@ -502,6 +527,9 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		health_check_url: plan.healthCheckUrl,
 		stop_instruction: plan.stopInstruction,
 		related_oneshot_checks: plan.relatedOneshotChecks,
+		preconditions: plan.preconditions,
+		active_lock_conflicts: plan.activeLockConflicts,
+		stale_active_locks: plan.staleActiveLocks,
 	};
 }
 
@@ -536,6 +564,21 @@ export function renderRunPreviewText(plan: RunPlan, previewMode: RunPreviewMode,
 	lines.push(`Cwd: ${plan.relativeCwd}`);
 	lines.push(`Timeout: ${plan.timeoutSeconds}s`);
 	lines.push(`Environment: ${plan.envPolicy}${plan.envAllowlist.length > 0 ? ` (${plan.envAllowlist.join(', ')})` : ''}`);
+
+	if (plan.preconditions.length > 0) {
+		lines.push('Preconditions:');
+		for (const precondition of plan.preconditions) {
+			const target = precondition.path ?? precondition.artifact ?? precondition.label ?? precondition.kind;
+			lines.push(`- ${precondition.kind} ${target}: ${precondition.status}`);
+		}
+	}
+
+	if (plan.activeLockConflicts.length > 0) {
+		lines.push('Active lock conflicts:');
+		for (const conflict of plan.activeLockConflicts) {
+			lines.push(`- ${conflict.lock}: ${conflict.detail}`);
+		}
+	}
 
 	if (plan.commandArgv) {
 		lines.push(`Argv: ${plan.commandArgv.join(' ')}`);

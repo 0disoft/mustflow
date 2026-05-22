@@ -31,6 +31,15 @@ mustflow의 버전 있는 계약 명세는 저장소의
 - `verify-report.schema.json`: `mf verify --reason <event> --json`
 - `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
 
+`commands.schema.json`은 명령 인텐트의 `inputs` 테이블에 검증 전용 타입 입력 메타데이터를
+받아들입니다. 이 선언은 향후 매개변수 있는 실행을 설계하기 위한 것이며, 그 자체로 명령을
+실행 가능하게 만들지 않습니다. 타입 입력을 선언한 configured 인텐트는 타입 입력 실행,
+드라이런, 실행 영수증, 민감값 가림 규칙이 함께 구현되기 전까지 거부됩니다.
+
+`commands.schema.json`은 `preconditions` 계획 메타데이터도 받아들입니다. 선행 조건은
+드라이런, 검증 계획, 설명 출력에서 누락된 경로나 오래된 산출물을 보고할 수 있지만,
+`satisfy_intent`는 의존 명령처럼 자동 실행되지 않습니다.
+
 ## 현재 명세
 
 - `instruction-authority-v1.md`: 사용자 지시, 호스트 정책, 저장소 파일, 명령 계약, 생성 상태 사이의 유효 규칙 해석.

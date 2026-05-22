@@ -21,6 +21,10 @@ npm पैकेज में भी शामिल हैं।
 - `run-receipt.schema.json`: `mf run <intent> --json` और `.mustflow/state/runs/latest.json`.
 - `commands.schema.json`: parse किया गया `.mustflow/config/commands.toml`.
 
+`commands.schema.json` planning metadata के रूप में `preconditions` भी स्वीकार करता है। ये dry-run,
+verify-plan, और explain output में missing paths या stale artifacts दिखा सकते हैं, लेकिन
+`satisfy_intent` को dependency की तरह अपने-आप execute नहीं किया जाता।
+
 ## मौजूदा specifications
 
 - `instruction-authority-v1.md`: user instructions, host policy, repository files, command contracts, और generated state के बीच effective rule resolution.

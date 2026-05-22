@@ -243,6 +243,206 @@ test('check json includes stable command-boundary issue ids', () => {
 	}
 });
 
+test('fails configured intents that declare typed inputs before execution support exists', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[intents.test_single]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run one test target."
+argv = ["node", "--test", "{target_file}"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.test_single.inputs.target_file]
+type = "path"
+required = true
+allowed_roots = ["tests"]
+allowed_extensions = [".test.js"]
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.command_contract.inputs_invalid',
+			'Configured intent test_single must not declare inputs until typed input execution is implemented',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('validates typed intent input declarations without enabling command execution', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[intents.typed_probe]
+status = "unknown"
+description = "Document a future typed input contract."
+argv = ["node", "--test={target_file}", "{missing_input}"]
+
+[intents.typed_shell_probe]
+status = "unknown"
+description = "Document an unsafe shell input contract."
+mode = "shell"
+cmd = "node --test {target_file}"
+
+[intents.typed_shell_probe.inputs.target_file]
+type = "path"
+allowed_roots = ["tests"]
+allowed_extensions = [".test.js"]
+
+[intents.typed_probe.inputs.TargetFile]
+type = "path"
+allowed_roots = ["tests"]
+allowed_extensions = [".test.js"]
+
+[intents.typed_probe.inputs.target_file]
+type = "path"
+allowed_roots = ["../outside", "C:\\\\temp", "CON"]
+allowed_extensions = ["test.js"]
+
+[intents.typed_probe.inputs.mode]
+type = "enum"
+allowed_values = []
+
+[intents.typed_probe.inputs.count]
+type = "integer"
+min = 5
+max = 2
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(check, 'mustflow.command_contract.inputs_invalid');
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes('Command input typed_probe.TargetFile name must start with a lowercase letter'),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'[commands.intents.typed_probe.inputs.target_file].allowed_roots entry "../outside" must be a normalized repository-relative path',
+				),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'[commands.intents.typed_probe.inputs.target_file].allowed_roots entry "C:\\temp" must be a normalized repository-relative path',
+				),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'[commands.intents.typed_probe.inputs.target_file].allowed_extensions entry "test.js" must start with "."',
+				),
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue ===
+				'[commands.intents.typed_probe.inputs.mode].allowed_values must define at least one value for enum inputs',
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue ===
+				'[commands.intents.typed_probe.inputs.count].min must be less than or equal to [commands.intents.typed_probe.inputs.count].max',
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue ===
+				'Command argv token "--test={target_file}" must use a whole-token typed input placeholder instead of string interpolation',
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue === 'Command argv token "{missing_input}" references undeclared input typed_probe.missing_input',
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue ===
+				'[commands.intents.typed_shell_probe.inputs] requires argv command mode; shell-string interpolation is not allowed',
+			),
+		);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue ===
+				'[commands.intents.typed_shell_probe.inputs] requires argv so typed input placeholders remain argument-bound',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('validates command precondition declarations as planning metadata only', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[intents.precondition_probe]
+status = "unknown"
+description = "Document invalid precondition metadata."
+argv = ["node", "-e", ""]
+preconditions = [
+  { kind = "path_exists", satisfy_intent = "missing_build" },
+  { kind = "artifact_freshness", artifact = "../dist/out.js", sources = [] },
+  { kind = "unknown_kind", path = "dist/out.js" },
+]
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(check, 'mustflow.command_contract.preconditions_invalid');
+		assert.ok(check.issues.some((issue) => issue.includes('.path is required for kind = "path_exists"')));
+		assert.ok(check.issues.some((issue) => issue.includes('.satisfy_intent references unknown intent "missing_build"')));
+		assert.ok(check.issues.some((issue) => issue.includes('.artifact must be a normalized repository-relative path')));
+		assert.ok(check.issues.some((issue) => issue.includes('.sources must define at least one source path pattern')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails invalid command environment policy fields', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 

@@ -12,6 +12,8 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.shell_background_pattern'
 	| 'mustflow.command_contract.long_running_command_pattern'
 	| 'mustflow.command_contract.success_exit_codes_invalid'
+	| 'mustflow.command_contract.inputs_invalid'
+	| 'mustflow.command_contract.preconditions_invalid'
 	| 'mustflow.command_contract.effects_invalid'
 	| 'mustflow.command_contract.effect_path_escape'
 	| 'mustflow.command_contract.shared_writes_without_effects'
@@ -97,6 +99,14 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	[
 		'mustflow.command_contract.success_exit_codes_invalid',
 		/^\[commands\.intents\.[^\]]+\]\.success_exit_codes must be a non-empty integer array with values from 0 through 255$/u,
+	],
+	[
+		'mustflow.command_contract.inputs_invalid',
+		/^(?:Configured intent [^\s]+ must not declare inputs|\[commands\.intents\..+\.inputs(?:\.|\])|Command input [^\s]+ name must|Command argv token "[^"]+" (?:references undeclared input|must use a whole-token typed input placeholder))/u,
+	],
+	[
+		'mustflow.command_contract.preconditions_invalid',
+		/^\[commands\.intents\..+\.preconditions(?:\.|\]|\s)/u,
 	],
 	['mustflow.command_contract.effects_invalid', /^(?:Strict: )?(?:\[commands\.(?:resources|intents\.[^\]]+\.effects)[^\]]*\]|Command effect for intent [^\s]+ must define path, paths, or lock)/u],
 	['mustflow.command_contract.effect_path_escape', /^Strict: Command effect path must stay inside the current root:/u],

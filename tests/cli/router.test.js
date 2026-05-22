@@ -239,6 +239,28 @@ test('fails unknown commands with help', async () => {
 	assert.match(result.stdout, /Usage:/);
 });
 
+test('keeps convenience workflow ideas inside existing command surfaces', async () => {
+	const topLevelConvenienceAliases = ['triage', 'simulate', 'report'];
+	const commandIds = new Set(COMMAND_DEFINITIONS.map((command) => command.id));
+
+	for (const alias of topLevelConvenienceAliases) {
+		assert.equal(commandIds.has(alias), false, `${alias} should not become a top-level command without a product decision`);
+
+		const result = await runCli([alias]);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, new RegExp(`Unknown command: ${alias}`));
+		assert.match(result.stdout, /mf classify/);
+		assert.match(result.stdout, /mf verify/);
+		assert.match(result.stdout, /mf explain/);
+		assert.match(result.stdout, /mf dashboard/);
+	}
+
+	const adaptersGenerate = await runCli(['adapters', 'generate']);
+	assert.equal(adaptersGenerate.status, 1);
+	assert.match(adaptersGenerate.stderr, /Unknown adapters action: generate/);
+	assert.match(adaptersGenerate.stdout, /mf adapters status/);
+});
+
 test('fails unknown commands with Korean guidance when --lang ko is set', async () => {
 	const result = await runCli(['--lang', 'ko', 'unknown']);
 

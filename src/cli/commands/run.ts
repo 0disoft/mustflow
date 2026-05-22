@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 
+import { acquireActiveRunLock, type ActiveRunLockConflict } from '../../core/active-run-locks.js';
 import { createCommandEnv } from '../../core/command-env.js';
 import { createCorrelationId } from '../../core/correlation-id.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
@@ -14,6 +16,7 @@ import {
 	createRunPreview,
 	renderRunPreviewText,
 	type BlockedRunPlan,
+	type RunnableRunPlan,
 	type RunPreviewMode,
 } from '../lib/run-plan.js';
 import {
@@ -116,6 +119,24 @@ function writeLatestProfile(
 	}
 
 	profiler.writeLatest(input);
+}
+
+function createPlanCommandHash(plan: RunnableRunPlan): string {
+	const payload = {
+		mode: plan.mode,
+		cwd: plan.relativeCwd,
+		argv: plan.commandArgv ?? null,
+		cmd: plan.shellCommand ?? null,
+	};
+
+	return `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`;
+}
+
+function renderActiveLockConflictMessage(intentName: string, conflicts: readonly ActiveRunLockConflict[]): string {
+	const [first] = conflicts;
+	const detail = first ? `${first.lock} conflicts with active intent ${first.conflictsWithIntent} (pid ${first.conflictsWithPid})` : 'unknown active lock conflict';
+
+	return `mf run ${intentName} is blocked by an active run lock: ${detail}`;
 }
 
 export function getRunHelp(lang: CliLang = 'en'): string {
@@ -245,6 +266,23 @@ export async function runRun(
 		return 1;
 	}
 
+	const activeRunLock = profiler.measure('active_lock_acquire', () =>
+		acquireActiveRunLock(projectRoot, contract, intentName, { commandHash: createPlanCommandHash(plan) }),
+	);
+
+	if (!activeRunLock.ok) {
+		reporter.stderr(renderCliError(renderActiveLockConflictMessage(intentName, activeRunLock.conflicts), 'mf run --dry-run --json', lang));
+		writeLatestProfile(profiler, options, {
+			projectRoot,
+			intent: intentName,
+			status: 'blocked',
+			previewMode: null,
+		});
+		return 1;
+	}
+
+	try {
+
 	const runReceiptPolicy = profiler.measure('retention_policy', () =>
 		resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot)),
 	);
@@ -372,4 +410,7 @@ export async function runRun(
 	}
 
 	return runStatus === 'passed' ? 0 : 1;
+	} finally {
+		activeRunLock.handle.release();
+	}
 }

@@ -275,7 +275,7 @@ mf run mustflow_update_apply
 | `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
 | `mf verify --reason <event> --plan-only --json` | Print the required verification plan without running commands. |
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
-| `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, and output contract for one skill route. |
+| `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, output contract, and selection evidence for one skill route. |
 | `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
 | `mf explain surface [path]` | Explain how a path maps to public-surface and validation categories. |
 

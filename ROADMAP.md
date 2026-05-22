@@ -71,7 +71,7 @@ Strong product framing to preserve:
 
 ## Next Patch Work Items
 
-No remaining patch work items are currently listed.
+No remaining patch work items.
 
 ## Roadmap Maintenance Rule
 

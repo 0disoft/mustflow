@@ -88,6 +88,31 @@ test('explains a single skill route as json', () => {
 		assert.match(report.decision.route.trigger, /Code changes need review/);
 		assert.deepEqual(report.decision.route.verificationIntents, ['test', 'test_related', 'test_audit', 'lint']);
 		assert.ok(report.decision.route.declaredCommandIntents.includes('test'));
+		assert.deepEqual(report.decision.selectionEvidence.matchedBy, ['frontmatter.skill_id:mustflow.core.code-review']);
+		assert.deepEqual(report.decision.selectionEvidence.requiredInputs, ['Diff and task goal']);
+		assert.deepEqual(report.decision.selectionEvidence.missingInputs, []);
+		assert.ok(report.decision.selectionEvidence.candidateAdjuncts.includes('diff-risk-review'));
+		assert.deepEqual(report.decision.selectionEvidence.unmatchedPaths, []);
+		assert.match(report.decision.selectionEvidence.gapNotes.join('\n'), /no task paths/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains single skill route selection evidence as text', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'skill', 'code-review']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Skill selection evidence/);
+		assert.match(result.stdout, /matched_by: skill_name:code-review, frontmatter.name:code-review/);
+		assert.match(result.stdout, /required_inputs: Diff and task goal/);
+		assert.match(result.stdout, /candidate_adjuncts: .*diff-risk-review/);
+		assert.match(result.stdout, /unmatched_paths: none/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -107,6 +132,9 @@ test('reports an undeclared skill route without inventing a route', () => {
 		assert.equal(report.decision.kind, 'skill_route');
 		assert.equal(report.decision.route, null);
 		assert.match(report.decision.reason, /no matching route/);
+		assert.deepEqual(report.decision.selectionEvidence.matchedBy, []);
+		assert.deepEqual(report.decision.selectionEvidence.candidateAdjuncts, []);
+		assert.match(report.decision.selectionEvidence.missingInputs.join('\n'), /missing-skill/);
 	} finally {
 		removeTempProject(projectPath);
 	}

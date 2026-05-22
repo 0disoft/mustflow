@@ -55,6 +55,9 @@ writes = ["dry-run-spawned.txt"]
 effects = [
   { type = "write", mode = "create", path = "dry-run-spawned.txt" },
 ]
+preconditions = [
+  { kind = "path_exists", path = "dist/cli/index.js", satisfy_intent = "mustflow_check" },
+]
 network = false
 destructive = false
 `,
@@ -92,6 +95,12 @@ destructive = false
 		assert.equal(preview.env_policy, 'minimal');
 		assert.deepEqual(preview.env_allowlist, []);
 		assert.deepEqual(preview.success_exit_codes, [0]);
+		assert.equal(preview.preconditions.length, 1);
+		assert.equal(preview.preconditions[0].kind, 'path_exists');
+		assert.equal(preview.preconditions[0].status, 'missing');
+		assert.equal(preview.preconditions[0].path, 'dist/cli/index.js');
+		assert.equal(preview.preconditions[0].satisfyIntent.intent, 'mustflow_check');
+		assert.equal(preview.preconditions[0].satisfyIntent.runnable, true);
 		assert.equal(existsSync(markerPath), false);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 	} finally {
