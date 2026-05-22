@@ -102,6 +102,31 @@ test('skill route selection convention treats authoring as a main route', () => 
 	);
 });
 
+test('idea triage keeps brainstorming evidence-based and bounded', () => {
+	const localSkill = readText('.mustflow/skills/idea-triage/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/idea-triage/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /outside AI suggestions/u);
+	assert.match(localSkill, /apply_now/u);
+	assert.match(localSkill, /defer/u);
+	assert.match(localSkill, /reject/u);
+	assert.match(localSkill, /research/u);
+	assert.match(localSkill, /future work/u);
+	assert.match(localSkill, /current-behavior claims for unimplemented ideas/u);
+	assert.match(localSkill, /non-goals, and core promises/u);
+	assert.match(localSkill, /do not classify it as `apply_now`/u);
+	assert.match(localSkill, /module boundary, architecture, external service boundary, or command contract/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/idea-triage\/SKILL\.md/u);
+	assert.match(skillIndex, /apply, defer, reject, or research decisions/u);
+	assert.match(routes, /\[routes\."idea-triage"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "docs_change", "mustflow_docs_change", "workflow_change", "product_change"\]/u);
+	assert.match(manifest, /"idea-triage"/u);
+});
+
 test('repro-first debug skill keeps diagnosis loop boundaries explicit', () => {
 	const localSkill = readText('.mustflow/skills/repro-first-debug/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/repro-first-debug/SKILL.md');

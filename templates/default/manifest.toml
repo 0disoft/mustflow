@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.22.14"
+version = "2.22.15"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -38,6 +38,7 @@ creates = [
   ".mustflow/skills/ui-quality-gate/SKILL.md",
   ".mustflow/skills/external-prompt-injection-defense/SKILL.md",
   ".mustflow/skills/external-skill-intake/SKILL.md",
+  ".mustflow/skills/idea-triage/SKILL.md",
   ".mustflow/skills/facade-pattern/SKILL.md",
   ".mustflow/skills/instruction-conflict-scope-check/SKILL.md",
   ".mustflow/skills/failure-triage/SKILL.md",
@@ -106,6 +107,7 @@ minimal = [
   "docs-update",
   "external-prompt-injection-defense",
   "failure-triage",
+  "idea-triage",
   "instruction-conflict-scope-check",
   "pattern-scout",
   "requirement-regression-guard",
@@ -137,6 +139,7 @@ patterns = [
   "external-prompt-injection-defense",
   "facade-pattern",
   "failure-triage",
+  "idea-triage",
   "instruction-conflict-scope-check",
   "null-object-pattern",
   "pattern-scout",
@@ -179,6 +182,7 @@ oss = [
   "external-skill-intake",
   "facade-pattern",
   "failure-triage",
+  "idea-triage",
   "instruction-conflict-scope-check",
   "line-ending-hygiene",
   "migration-safety-check",
@@ -225,6 +229,7 @@ team = [
   "external-prompt-injection-defense",
   "facade-pattern",
   "failure-triage",
+  "idea-triage",
   "instruction-conflict-scope-check",
   "multi-agent-work-coordination",
   "null-object-pattern",
@@ -262,6 +267,7 @@ product = [
   "external-prompt-injection-defense",
   "facade-pattern",
   "failure-triage",
+  "idea-triage",
   "instruction-conflict-scope-check",
   "llm-service-ux-review",
   "null-object-pattern",
@@ -308,6 +314,7 @@ library = [
   "external-prompt-injection-defense",
   "facade-pattern",
   "failure-triage",
+  "idea-triage",
   "instruction-conflict-scope-check",
   "line-ending-hygiene",
   "migration-safety-check",
