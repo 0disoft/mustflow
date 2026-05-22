@@ -75,6 +75,12 @@ export interface CheckIssueDetail {
 	readonly message: string;
 }
 
+export interface CheckIssueInput {
+	readonly id?: CheckIssueId | null;
+	readonly severity?: 'error' | 'warning';
+	readonly message: string;
+}
+
 const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.intent_table_missing', /^Missing \[intents\] table in \.mustflow\/config\/commands\.toml$/u],
 	['mustflow.command_contract.intent_not_table', /^Intent [^\s]+ must be a TOML table$/u],
@@ -166,11 +172,16 @@ export function getCheckIssueId(message: string): CheckIssueId | null {
 	return null;
 }
 
-export function describeCheckIssues(messages: readonly string[]): CheckIssueDetail[] {
-	return messages.map((message) => ({
-		id: getCheckIssueId(message),
-		severity: message.startsWith('Strict warning: ') ? 'warning' : 'error',
-		mode: message.startsWith('Strict') ? 'strict' : 'base',
-		message,
-	}));
+export function describeCheckIssues(issues: readonly (string | CheckIssueInput)[]): CheckIssueDetail[] {
+	return issues.map((issue) => {
+		const message = typeof issue === 'string' ? issue : issue.message;
+		const severity = message.startsWith('Strict warning: ') ? 'warning' : 'error';
+
+		return {
+			id: typeof issue === 'string' ? getCheckIssueId(message) : issue.id ?? getCheckIssueId(message),
+			severity: typeof issue === 'string' ? severity : issue.severity ?? severity,
+			mode: message.startsWith('Strict') ? 'strict' : 'base',
+			message,
+		};
+	});
 }

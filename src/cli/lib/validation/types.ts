@@ -1,7 +1,9 @@
+import type { CheckIssueId } from '../../../core/check-issues.js';
 import type { TomlTable } from '../command-contract.js';
 import type { SKILL_ROUTE_CATEGORY_LABELS } from './constants.js';
 
 export interface CheckIssue {
+	readonly id?: CheckIssueId | null;
 	readonly message: string;
 	readonly severity?: 'error' | 'warning';
 }

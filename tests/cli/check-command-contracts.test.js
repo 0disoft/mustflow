@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { describeCheckIssues } from '../../dist/core/check-issues.js';
 
 function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
@@ -18,6 +19,20 @@ function assertHasIssueDetail(check, expectedId, expectedMessage) {
 		`missing issue detail ${expectedId}`,
 	);
 }
+
+test('check issue details preserve structured ids before regex fallback', () => {
+	const [structured, legacy] = describeCheckIssues([
+		{
+			id: 'mustflow.command_contract.oneshot_missing_timeout',
+			message: 'Producer-owned command contract message with revised wording.',
+		},
+		'Oneshot intent test must define timeout_seconds',
+	]);
+
+	assert.equal(structured.id, 'mustflow.command_contract.oneshot_missing_timeout');
+	assert.equal(structured.message, 'Producer-owned command contract message with revised wording.');
+	assert.equal(legacy.id, 'mustflow.command_contract.oneshot_missing_timeout');
+});
 
 test('fails unsafe command lifecycle contracts', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');

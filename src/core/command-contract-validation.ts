@@ -10,6 +10,7 @@ import {
 	type TomlTable,
 } from './config-loading.js';
 import { COMMAND_ENV_POLICIES, DEFAULT_COMMAND_ENV_POLICY, type CommandEnvPolicy } from './command-env.js';
+import type { CheckIssueId } from './check-issues.js';
 import {
 	COMMAND_EFFECT_CONCURRENCY,
 	COMMAND_EFFECT_MODES,
@@ -26,16 +27,17 @@ import { MAX_COMMAND_OUTPUT_BYTES, commandMaxOutputBytesLimitMessage } from './c
 import { SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION, successExitCodesAreValid } from './success-exit-codes.js';
 
 export interface CommandContractValidationIssue {
+	readonly id?: CheckIssueId;
 	readonly message: string;
 	readonly severity?: 'warning' | 'error';
 }
 
-function commandContractIssue(message: string): CommandContractValidationIssue {
-	return { message };
+function commandContractIssue(message: string, id?: CheckIssueId): CommandContractValidationIssue {
+	return id ? { id, message } : { message };
 }
 
-function commandContractWarning(message: string): CommandContractValidationIssue {
-	return { message, severity: 'warning' };
+function commandContractWarning(message: string, id?: CheckIssueId): CommandContractValidationIssue {
+	return id ? { id, message, severity: 'warning' } : { message, severity: 'warning' };
 }
 
 function hasOwn(table: TomlTable, key: string): boolean {
@@ -119,7 +121,12 @@ function validateMaxOutputBytesField(
 	validatePositiveIntegerField(table, key, label, issues);
 
 	if (isPositiveInteger(table[key]) && Number(table[key]) > MAX_COMMAND_OUTPUT_BYTES) {
-		issues.push(commandContractIssue(commandMaxOutputBytesLimitMessage(label)));
+		issues.push(
+			commandContractIssue(
+				commandMaxOutputBytesLimitMessage(label),
+				'mustflow.command_contract.max_output_bytes_exceeds_limit',
+			),
+		);
 	}
 }
 
@@ -211,7 +218,12 @@ function validateCommandIntentEffects(intentName: string, intent: TomlTable, iss
 	}
 
 	if (!Array.isArray(intent.effects) || intent.effects.some((entry) => !isRecord(entry))) {
-		issues.push(commandContractIssue(`[commands.intents.${intentName}].effects must be an array of tables`));
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}].effects must be an array of tables`,
+				'mustflow.command_contract.effects_invalid',
+			),
+		);
 		return;
 	}
 
@@ -338,44 +350,89 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 	const runPolicy = typeof intent.run_policy === 'string' ? intent.run_policy : undefined;
 
 	if (!lifecycle) {
-		issues.push(commandContractIssue(`Configured intent ${intentName} must define lifecycle`));
+		issues.push(
+			commandContractIssue(
+				`Configured intent ${intentName} must define lifecycle`,
+				'mustflow.command_contract.configured_missing_lifecycle',
+			),
+		);
 	}
 
 	if (!runPolicy) {
-		issues.push(commandContractIssue(`Configured intent ${intentName} must define run_policy`));
+		issues.push(
+			commandContractIssue(
+				`Configured intent ${intentName} must define run_policy`,
+				'mustflow.command_contract.configured_missing_run_policy',
+			),
+		);
 	}
 
 	if (lifecycle === 'oneshot') {
 		validatePositiveIntegerField(intent, 'timeout_seconds', `[commands.intents.${intentName}].timeout_seconds`, issues);
 
 		if (!hasOwn(intent, 'timeout_seconds')) {
-			issues.push(commandContractIssue(`Oneshot intent ${intentName} must define timeout_seconds`));
+			issues.push(
+				commandContractIssue(
+					`Oneshot intent ${intentName} must define timeout_seconds`,
+					'mustflow.command_contract.oneshot_missing_timeout',
+				),
+			);
 		}
 
 		if (intent.stdin !== 'closed') {
-			issues.push(commandContractIssue(`Oneshot intent ${intentName} must set stdin = "closed"`));
+			issues.push(
+				commandContractIssue(
+					`Oneshot intent ${intentName} must set stdin = "closed"`,
+					'mustflow.command_contract.oneshot_stdin_not_closed',
+				),
+			);
 		}
 	}
 
 	if (lifecycle && LONG_RUNNING_LIFECYCLES.has(lifecycle) && runPolicy === 'agent_allowed') {
-		issues.push(commandContractIssue(`Long-running intent ${intentName} must not use run_policy = "agent_allowed"`));
+		issues.push(
+			commandContractIssue(
+				`Long-running intent ${intentName} must not use run_policy = "agent_allowed"`,
+				'mustflow.command_contract.long_running_agent_allowed',
+			),
+		);
 	}
 
 	if (intent.mode === 'shell' && runPolicy === 'agent_allowed' && intent.allow_shell !== true) {
-		issues.push(commandContractIssue(`Agent-runnable shell intent ${intentName} must set allow_shell = true`));
+		issues.push(
+			commandContractIssue(
+				`Agent-runnable shell intent ${intentName} must set allow_shell = true`,
+				'mustflow.command_contract.agent_shell_requires_allow',
+			),
+		);
 	}
 
 	if (!commandIntentHasCommandSource(intent)) {
-		issues.push(commandContractIssue(`Configured intent ${intentName} must define argv or mode = "shell" with cmd`));
+		issues.push(
+			commandContractIssue(
+				`Configured intent ${intentName} must define argv or mode = "shell" with cmd`,
+				'mustflow.command_contract.executable_source_missing',
+			),
+		);
 	}
 
 	const blockedCommandPattern = commandIntentBlockedCommandPattern(intent);
 	if (blockedCommandPattern?.code === 'shell_background_pattern') {
-		issues.push(commandContractIssue(`Shell intent ${intentName} contains a blocked long-running or background pattern`));
+		issues.push(
+			commandContractIssue(
+				`Shell intent ${intentName} contains a blocked long-running or background pattern`,
+				'mustflow.command_contract.shell_background_pattern',
+			),
+		);
 	}
 
 	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
-		issues.push(commandContractIssue(`Intent ${intentName} contains a blocked long-running or background command pattern`));
+		issues.push(
+			commandContractIssue(
+				`Intent ${intentName} contains a blocked long-running or background command pattern`,
+				'mustflow.command_contract.long_running_command_pattern',
+			),
+		);
 	}
 
 	if (hasOwn(intent, 'success_exit_codes')) {
@@ -383,6 +440,7 @@ function validateCommandIntent(intentName: string, intent: TomlTable, issues: Co
 			issues.push(
 				commandContractIssue(
 					`[commands.intents.${intentName}].success_exit_codes must be ${SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION}`,
+					'mustflow.command_contract.success_exit_codes_invalid',
 				),
 			);
 		}
@@ -502,7 +560,11 @@ function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefin
 
 	for (const warning of findCommandEnvInheritanceWarnings(commandsToml)) {
 		const message = formatCommandEnvInheritanceWarning(warning);
-		issues.push(warning.severity === 'warning' ? commandContractWarning(message) : commandContractIssue(message));
+		issues.push(
+			warning.severity === 'warning'
+				? commandContractWarning(message, 'mustflow.command_contract.broad_env_inheritance')
+				: commandContractIssue(message, 'mustflow.command_contract.broad_env_inheritance'),
+		);
 	}
 
 	return issues;
@@ -550,6 +612,7 @@ function validateProjectLocalBinWarnings(projectRoot: string, commandsToml: Toml
 		issues.push(
 			commandContractWarning(
 				`configured agent-runnable intent ${intentName} uses bare executable "${executable}" that matches project-local node_modules/.bin; use a package-manager mediated command such as npm exec, pnpm exec, bun x, or yarn exec`,
+				'mustflow.command_contract.project_local_bin_bare_executable',
 			),
 		);
 	}
@@ -576,13 +639,23 @@ export function validateCommandContractConfig(commandsToml: TomlTable | undefine
 	validateCommandResources(commandsToml, issues);
 
 	if (!isRecord(commandsToml.intents)) {
-		issues.push(commandContractIssue('Missing [intents] table in .mustflow/config/commands.toml'));
+		issues.push(
+			commandContractIssue(
+				'Missing [intents] table in .mustflow/config/commands.toml',
+				'mustflow.command_contract.intent_table_missing',
+			),
+		);
 		return issues;
 	}
 
 	for (const [intentName, intent] of Object.entries(commandsToml.intents)) {
 		if (!isRecord(intent)) {
-			issues.push(commandContractIssue(`Intent ${intentName} must be a TOML table`));
+			issues.push(
+				commandContractIssue(
+					`Intent ${intentName} must be a TOML table`,
+					'mustflow.command_contract.intent_not_table',
+				),
+			);
 			continue;
 		}
 

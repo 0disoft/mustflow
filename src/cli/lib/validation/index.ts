@@ -6,6 +6,7 @@ import {
 	validateCommandContractConfig,
 	validateCommandContractStrictDefaults,
 } from '../../../core/command-contract-validation.js';
+import { describeCheckIssues, type CheckIssueDetail } from '../../../core/check-issues.js';
 import {
 	ALLOWED_RETENTION_ON_LIMIT,
 	ALLOWED_RETENTION_STORES,
@@ -2567,17 +2568,21 @@ export interface CheckProjectReport {
 	readonly issues: string[];
 	readonly warnings: string[];
 	readonly allMessages: string[];
+	readonly issueDetails: CheckIssueDetail[];
 }
 
 export function checkMustflowProjectReport(projectRoot: string, options: CheckOptions = {}): CheckProjectReport {
 	const issues = collectCheckIssues(projectRoot, options);
-	const errors = issues.filter((issue) => issue.severity !== 'warning').map((issue) => issue.message);
-	const warnings = issues.filter((issue) => issue.severity === 'warning').map((issue) => issue.message);
+	const errorIssues = issues.filter((issue) => issue.severity !== 'warning');
+	const warningIssues = issues.filter((issue) => issue.severity === 'warning');
+	const errors = errorIssues.map((issue) => issue.message);
+	const warnings = warningIssues.map((issue) => issue.message);
 
 	return {
 		issues: errors,
 		warnings,
 		allMessages: [...errors, ...warnings],
+		issueDetails: describeCheckIssues([...errorIssues, ...warningIssues]),
 	};
 }
 
