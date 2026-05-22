@@ -59,7 +59,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.22.12');
+	assert.equal(packageJson.version, '2.22.13');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -85,19 +85,20 @@ test('default template manifest version stays synchronized with package version'
 test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts.prepack, 'npm run build');
 	assert.equal(packageJson.scripts.test, 'bun run test:full');
-	assert.equal(packageJson.scripts['test:fast'], 'bun run build && node scripts/run-cli-tests.mjs fast');
-	assert.equal(packageJson.scripts['test:related'], 'bun run build && node scripts/run-cli-tests.mjs related');
+	assert.equal(packageJson.scripts['test:fast'], 'node scripts/run-cli-tests.mjs --build fast');
+	assert.equal(packageJson.scripts['test:related'], 'node scripts/run-cli-tests.mjs --build related');
 	assert.equal(packageJson.scripts['test:related:cached'], 'node scripts/run-cli-tests.mjs related-cached');
-	assert.equal(packageJson.scripts['test:related:profile'], 'bun run build && node scripts/run-cli-tests.mjs related-profile');
-	assert.equal(packageJson.scripts['test:cli'], 'bun run build && node scripts/run-cli-tests.mjs cli');
-	assert.equal(packageJson.scripts['test:coverage'], 'bun run build && node scripts/run-cli-tests.mjs coverage');
+	assert.equal(packageJson.scripts['test:related:profile'], 'node scripts/run-cli-tests.mjs --build related-profile');
+	assert.equal(packageJson.scripts['test:cli'], 'node scripts/run-cli-tests.mjs --build cli');
+	assert.equal(packageJson.scripts['test:coverage'], 'node scripts/run-cli-tests.mjs --build coverage');
 	assert.equal(packageJson.scripts['test:audit'], 'node scripts/audit-tests.mjs --json');
-	assert.equal(packageJson.scripts['test:release'], 'bun run build && node scripts/run-cli-tests.mjs release');
-	assert.equal(packageJson.scripts['test:fast:node'], 'npm run build && node scripts/run-cli-tests.mjs fast');
-	assert.equal(packageJson.scripts['test:release:node'], 'npm run build && node scripts/run-cli-tests.mjs release');
-	assert.equal(packageJson.scripts['test:full'], 'bun run build && node scripts/run-cli-tests.mjs full-auto');
-	assert.equal(packageJson.scripts['test:full:auto'], 'bun run build && node scripts/run-cli-tests.mjs full-auto');
-	assert.equal(packageJson.scripts['test:full:serial'], 'bun run build && node scripts/run-cli-tests.mjs full');
+	assert.equal(packageJson.scripts['test:release'], 'node scripts/run-cli-tests.mjs --build release');
+	assert.equal(packageJson.scripts['test:fast:node'], 'node scripts/run-cli-tests.mjs --build-runner=npm fast');
+	assert.equal(packageJson.scripts['test:release:node'], 'node scripts/run-cli-tests.mjs --build-runner=npm release');
+	assert.equal(packageJson.scripts['test:full'], 'node scripts/run-cli-tests.mjs --build full-auto');
+	assert.equal(packageJson.scripts['test:full:auto'], 'node scripts/run-cli-tests.mjs --build full-auto');
+	assert.equal(packageJson.scripts['test:full:profile'], 'node scripts/run-cli-tests.mjs --build full-profile');
+	assert.equal(packageJson.scripts['test:full:serial'], 'node scripts/run-cli-tests.mjs --build full');
 	assert.equal(packageJson.scripts.check, 'bun run check:package && bun run test:full');
 	assert.equal(packageJson.scripts['check:core:node'], 'node scripts/run-node-core-check.mjs');
 	assert.doesNotMatch(packageJson.scripts['check:core:node'], /\bbun\b/u);
@@ -136,9 +137,17 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
 	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
 	assert.match(cliTestRunner, /function runProfiledTests\(\)/u);
+	assert.match(cliTestRunner, /function acquireTestRunnerLock\(\)/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_RUNNER_LOCK_DIR/u);
+	assert.match(cliTestRunner, /--build-runner/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_SCHEDULER/u);
 	assert.match(cliTestRunner, /function planWaves\(/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_SQLITE_TOKENS/u);
+	assert.match(cliTestRunner, /MUSTFLOW_TEST_GIT_TOKENS/u);
+	assert.match(cliTestRunner, /io: '16'/u);
+	assert.match(cliTestRunner, /process: '16'/u);
+	assert.match(cliTestRunner, /sqlite: '4'/u);
+	assert.match(cliTestRunner, /git: '2'/u);
 	assert.match(cliTestRunner, /serial total/u);
 	assert.match(cliTestRunner, /dist\/ is older than changed TypeScript source/u);
 

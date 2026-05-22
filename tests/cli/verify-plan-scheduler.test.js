@@ -3,7 +3,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import {
+	createTempProject,
+	initProjectInProcess as initProject,
+	removeTempProject,
+	runCliInProcess as runCli,
+} from './helpers/cli-harness.js';
 
 function appendIntent(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
@@ -45,12 +50,12 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 	};
 }
 
-test('prints plan-only verification candidates without running commands', () => {
+test('prints plan-only verification candidates without running commands', async () => {
 	const projectPath = createTempProject();
 	const markerPath = path.join(projectPath, 'executed.txt');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -96,7 +101,7 @@ escalate_to = ["test"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -187,11 +192,11 @@ escalate_to = ["test"]
 	}
 });
 
-test('prints verification schedule batches from command effects', () => {
+test('prints verification schedule batches from command effects', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -239,8 +244,8 @@ required_after = ["custom_verify"]
 `,
 		);
 
-		const indexResult = runCli(projectPath, ['index', '--json']);
-		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
+		const indexResult = await runCli(projectPath, ['index', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
@@ -283,11 +288,11 @@ required_after = ["custom_verify"]
 	}
 });
 
-test('does not select a narrower runnable intent when a selected runnable intent explicitly subsumes it', () => {
+test('does not select a narrower runnable intent when a selected runnable intent explicitly subsumes it', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -326,7 +331,7 @@ required_after = ["docs_verify"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'docs_verify', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'docs_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const fullCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_docs_full');
 		const smokeCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_docs_smoke');
@@ -355,11 +360,11 @@ required_after = ["docs_verify"]
 	}
 });
 
-test('selects the lowest-cost runnable intent only when coverage hints are equivalent', () => {
+test('selects the lowest-cost runnable intent only when coverage hints are equivalent', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -413,7 +418,7 @@ expected_seconds = 60
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'cost_verify', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'cost_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const fastCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_fast_equivalent');
 		const slowCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_slow_equivalent');
@@ -434,11 +439,11 @@ expected_seconds = 60
 	}
 });
 
-test('keeps writes-only verification intents serial-only in the schedule model', () => {
+test('keeps writes-only verification intents serial-only in the schedule model', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -477,7 +482,7 @@ required_after = ["parallel_verify"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const explicitEntry = report.schedule.entries.find((entry) => entry.intent === 'verify_effect_lock');
 		const writesOnlyEntry = report.schedule.entries.find((entry) => entry.intent === 'verify_writes_only');
@@ -503,11 +508,11 @@ required_after = ["parallel_verify"]
 	}
 });
 
-test('keeps lock-only resources as first-class schedule effects', () => {
+test('keeps lock-only resources as first-class schedule effects', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -554,8 +559,8 @@ required_after = ["database_verify"]
 `,
 		);
 
-		const indexResult = runCli(projectPath, ['index', '--json']);
-		const result = runCli(projectPath, ['verify', '--reason', 'database_verify', '--plan-only', '--json']);
+		const indexResult = await runCli(projectPath, ['index', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'database_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const firstEntry = report.schedule.entries.find((entry) => entry.intent === 'verify_database_a');
 
@@ -591,11 +596,11 @@ required_after = ["database_verify"]
 	}
 });
 
-test('removes parallel eligibility after latest receipt reports undeclared writes', () => {
+test('removes parallel eligibility after latest receipt reports undeclared writes', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -634,7 +639,7 @@ effects = [
 			})}\n`,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const entry = report.schedule.entries.find((scheduleEntry) => scheduleEntry.intent === 'verify_declared_effect_drift');
 
@@ -652,11 +657,11 @@ effects = [
 	}
 });
 
-test('removes parallel eligibility from per-intent receipt referenced by verify latest pointer', () => {
+test('removes parallel eligibility from per-intent receipt referenced by verify latest pointer', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -718,7 +723,7 @@ effects = [
 			})}\n`,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const entry = report.schedule.entries.find((scheduleEntry) => scheduleEntry.intent === 'verify_declared_effect_drift');
 
@@ -735,12 +740,12 @@ effects = [
 	}
 });
 
-test('runs verification intents in the plan schedule order', () => {
+test('runs verification intents in the plan schedule order', async () => {
 	const projectPath = createTempProject();
 	const orderPath = path.join(projectPath, 'order.txt');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -788,8 +793,8 @@ required_after = ["custom_verify"]
 `,
 		);
 
-		const planResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
-		const runResult = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json', '--parallel', '2']);
+		const planResult = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
+		const runResult = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json', '--parallel', '2']);
 		const planReport = JSON.parse(planResult.stdout);
 		const runReport = JSON.parse(runResult.stdout);
 		const scheduledIntents = planReport.schedule.entries.map((entry) => entry.intent);
@@ -808,13 +813,15 @@ required_after = ["custom_verify"]
 	}
 });
 
-test('runs non-conflicting explicit-effect verification batches in parallel when requested', () => {
+test('runs non-conflicting explicit-effect verification batches in parallel when requested', async () => {
 	const projectPath = createTempProject();
 	const startAPath = path.join(projectPath, 'parallel-a-start.txt');
 	const startBPath = path.join(projectPath, 'parallel-b-start.txt');
+	const parallelWorkDelayMs = 3000;
+	const parallelStartToleranceMs = 2000;
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -835,7 +842,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Record parallel start marker A."
-argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-a-start.txt", String(Date.now())); setTimeout(() => fs.writeFileSync("parallel-a-done.txt", "done"), 1000);']
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-a-start.txt", String(Date.now())); setTimeout(() => fs.writeFileSync("parallel-a-done.txt", "done"), ${parallelWorkDelayMs});']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
@@ -854,7 +861,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Record parallel start marker B."
-argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-b-start.txt", String(Date.now())); setTimeout(() => fs.writeFileSync("parallel-b-done.txt", "done"), 1000);']
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.writeFileSync("parallel-b-start.txt", String(Date.now())); setTimeout(() => fs.writeFileSync("parallel-b-done.txt", "done"), ${parallelWorkDelayMs});']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
@@ -870,8 +877,8 @@ required_after = ["parallel_verify"]
 `,
 		);
 
-		const planResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
-		const runResult = runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2'], {
+		const planResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
+		const runResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
 		});
 		const planReport = JSON.parse(planResult.stdout);
@@ -887,7 +894,10 @@ required_after = ["parallel_verify"]
 			planReport.schedule.entries.map((entry) => entry.parallelEligible),
 			[true, true],
 		);
-		assert.ok(startDifference < 900, `expected parallel start times, got ${startDifference}ms`);
+		assert.ok(
+			startDifference < parallelStartToleranceMs,
+			`expected parallel start times under ${parallelStartToleranceMs}ms, got ${startDifference}ms`,
+		);
 		assert.deepEqual(ranResults.map((result) => result.intent), scheduledIntents);
 		for (const result of ranResults) {
 			assert.equal(result.receipt.write_drift.status, 'checked');
@@ -911,11 +921,11 @@ required_after = ["parallel_verify"]
 	}
 });
 
-test('attributes undeclared parallel write drift without blaming sibling intents', () => {
+test('attributes undeclared parallel write drift without blaming sibling intents', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -957,7 +967,7 @@ required_after = ["parallel_drift"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'parallel_drift', '--json', '--parallel=2'], {
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_drift', '--json', '--parallel=2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
 		});
 		const report = JSON.parse(result.stdout);
@@ -979,11 +989,11 @@ required_after = ["parallel_drift"]
 	}
 });
 
-test('keeps runner-owned state paths out of parallel write drift attribution', () => {
+test('keeps runner-owned state paths out of parallel write drift attribution', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1025,7 +1035,7 @@ required_after = ["parallel_state"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'parallel_state', '--json', '--parallel=2'], {
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_state', '--json', '--parallel=2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
 		});
 		const report = JSON.parse(result.stdout);
@@ -1042,12 +1052,12 @@ required_after = ["parallel_state"]
 	}
 });
 
-test('stops before the next verification batch after a batch failure', () => {
+test('stops before the next verification batch after a batch failure', async () => {
 	const projectPath = createTempProject();
 	const nextMarkerPath = path.join(projectPath, 'batch-next-ran.txt');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1089,8 +1099,8 @@ required_after = ["batch_failure_policy"]
 `,
 		);
 
-		const planResult = runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--plan-only', '--json']);
-		const runResult = runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--json']);
+		const planResult = await runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--plan-only', '--json']);
+		const runResult = await runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--json']);
 		const planReport = JSON.parse(planResult.stdout);
 		const runReport = JSON.parse(runResult.stdout);
 
@@ -1120,11 +1130,11 @@ required_after = ["batch_failure_policy"]
 	}
 });
 
-test('keeps manual-only plan candidates as skipped and reports gaps', () => {
+test('keeps manual-only plan candidates as skipped and reports gaps', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1136,7 +1146,7 @@ required_after = ["custom_partial"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason=custom_partial', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason=custom_partial', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -1162,11 +1172,11 @@ required_after = ["custom_partial"]
 	}
 });
 
-test('escalates to a declared fallback intent when targeted verification is unavailable', () => {
+test('escalates to a declared fallback intent when targeted verification is unavailable', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1195,7 +1205,7 @@ destructive = false
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason=custom_escalate', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason=custom_escalate', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const targeted = report.candidates.find((candidate) => candidate.intent === 'verify_manual_with_fallback');
 		const fallback = report.candidates.find((candidate) => candidate.intent === 'verify_broad_fallback');
@@ -1229,11 +1239,11 @@ destructive = false
 	}
 });
 
-test('adds declared escalation intents for high-risk runnable verification requirements', () => {
+test('adds declared escalation intents for high-risk runnable verification requirements', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1271,7 +1281,7 @@ destructive = false
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason=release_risk', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason=release_risk', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const targeted = report.candidates.find((candidate) => candidate.intent === 'verify_schema_targeted');
 		const escalation = report.candidates.find((candidate) => candidate.intent === 'verify_release_gate');
@@ -1302,11 +1312,11 @@ destructive = false
 	}
 });
 
-test('does not use performance history or cache files as verification authority', () => {
+test('does not use performance history or cache files as verification authority', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const perfDir = path.join(projectPath, '.mustflow', 'state', 'perf');
 		const cacheDir = path.join(projectPath, '.mustflow', 'cache');
 
@@ -1374,7 +1384,7 @@ test('does not use performance history or cache files as verification authority'
 		);
 		writeFileSync(path.join(cacheDir, 'mustflow.sqlite'), 'not a real authority database');
 
-		const result = runCli(projectPath, ['verify', '--reason=history_only', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason=history_only', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);

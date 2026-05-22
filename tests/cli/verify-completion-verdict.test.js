@@ -14,9 +14,9 @@ import {
 	updateRepeatedFailureState,
 } from '../../dist/core/repeated-failure.js';
 import { createValidationRatchetRisks } from '../../dist/core/validation-ratchet.js';
+import { runCliInProcess } from './helpers/cli-harness.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-verify-'));
@@ -26,15 +26,12 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
+async function runCli(cwd, args, options = {}) {
+	return runCliInProcess(cwd, args, options);
 }
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
+async function initProject(projectPath) {
+	const result = await runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
@@ -91,7 +88,7 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 	};
 }
 
-test('does not verify when selected commands pass without bound receipts', () => {
+test('does not verify when selected commands pass without bound receipts', async () => {
 	const verdict = createVerifyCompletionVerdict({
 		verificationPlanId: `sha256:${'0'.repeat(64)}`,
 		matchedIntents: 1,
@@ -110,7 +107,7 @@ test('does not verify when selected commands pass without bound receipts', () =>
 	assert.deepEqual(verdict.limitations, ['receipt_binding_requires_review']);
 });
 
-test('treats plan-receipt mismatch as a contradiction before lower verdict states', () => {
+test('treats plan-receipt mismatch as a contradiction before lower verdict states', async () => {
 	const verdict = createVerifyCompletionVerdict({
 		verificationPlanId: `sha256:${'1'.repeat(64)}`,
 		matchedIntents: 1,
@@ -131,7 +128,7 @@ test('treats plan-receipt mismatch as a contradiction before lower verdict state
 	assert.deepEqual(verdict.limitations, []);
 });
 
-test('blocks verified claims when repeated failure rules require new evidence', () => {
+test('blocks verified claims when repeated failure rules require new evidence', async () => {
 	const verdict = createVerifyCompletionVerdict({
 		verificationPlanId: `sha256:${'2'.repeat(64)}`,
 		matchedIntents: 1,
@@ -152,7 +149,7 @@ test('blocks verified claims when repeated failure rules require new evidence', 
 	assert.deepEqual(verdict.contradictions, []);
 });
 
-test('treats critical validation ratchet risks as contradicted completion evidence', () => {
+test('treats critical validation ratchet risks as contradicted completion evidence', async () => {
 	const verdict = createVerifyCompletionVerdict({
 		verificationPlanId: `sha256:${'3'.repeat(64)}`,
 		matchedIntents: 1,
@@ -173,11 +170,11 @@ test('treats critical validation ratchet risks as contradicted completion eviden
 	assert.deepEqual(verdict.limitations, []);
 });
 
-test('downgrades verified verdicts when high-risk source anchors need invariant review', () => {
+test('downgrades verified verdicts when high-risk source anchors need invariant review', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
 		const sourcePath = path.join(projectPath, 'src', 'auth.ts');
 		writeFileSync(
@@ -214,7 +211,7 @@ destructive = false
 required_after = ["auth_change"]
 `,
 		);
-		const firstIndex = runCli(projectPath, ['index', '--source', '--json']);
+		const firstIndex = await runCli(projectPath, ['index', '--source', '--json']);
 		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
 
 		writeFileSync(
@@ -233,12 +230,12 @@ export function canAccess(role) {
 `,
 		);
 
-		const secondIndex = runCli(projectPath, ['index', '--source', '--json']);
+		const secondIndex = await runCli(projectPath, ['index', '--source', '--json']);
 		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
 		const plan = path.join(projectPath, 'auth-plan.json');
 		writeFileSync(plan, JSON.stringify(createClassifyPlan(projectPath, 'auth_change', 'src/auth.ts'), null, 2));
 
-		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
@@ -266,11 +263,11 @@ export function canAccess(role) {
 	}
 });
 
-test('downgrades verified verdicts when changed files exceed the scope diff budget', () => {
+test('downgrades verified verdicts when changed files exceed the scope diff budget', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -330,7 +327,7 @@ required_after = ["scope_change"]
 			),
 		);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
@@ -352,11 +349,11 @@ required_after = ["scope_change"]
 	}
 });
 
-test('flags repeated unresolved verification failures for the same plan', () => {
+test('flags repeated unresolved verification failures for the same plan', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -379,11 +376,11 @@ required_after = ["repeat_failure"]
 		const plan = path.join(projectPath, 'repeat-plan.json');
 		writeFileSync(plan, JSON.stringify(createClassifyPlan(projectPath, 'repeat_failure'), null, 2));
 
-		const firstResult = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const firstResult = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const firstReport = JSON.parse(firstResult.stdout);
-		const secondResult = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const secondResult = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const secondReport = JSON.parse(secondResult.stdout);
-		const thirdResult = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const thirdResult = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const thirdReport = JSON.parse(thirdResult.stdout);
 
 		assert.equal(firstResult.status, 1);
@@ -453,11 +450,11 @@ required_after = ["repeat_failure"]
 	}
 });
 
-test('keeps repeated failure state bounded to derived fingerprint summaries', () => {
+test('keeps repeated failure state bounded to derived fingerprint summaries', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		for (let index = 0; index < REPEATED_FAILURE_STATE_LIMIT + 5; index += 1) {
 			const failureFingerprint = createVerificationFailureFingerprint({
 				verificationPlanId: `sha256:${index.toString(16).padStart(64, '0')}`,
@@ -513,11 +510,11 @@ test('keeps repeated failure state bounded to derived fingerprint summaries', ()
 	}
 });
 
-test('downgrades verified verdicts when changed tests carry validation ratchet risk', () => {
+test('downgrades verified verdicts when changed tests carry validation ratchet risk', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -588,7 +585,7 @@ ${focusedMarker}('focused test should be reviewed', () => {});
 			),
 		);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
@@ -611,11 +608,11 @@ ${focusedMarker}('focused test should be reviewed', () => {});
 	}
 });
 
-test('detects obvious validation weakening in changed tests', () => {
+test('detects obvious validation weakening in changed tests', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -643,7 +640,7 @@ required_after = ["ratchet_change"]
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-test('keeps strong behavior checks', () => {
+test('keeps strong behavior checks', async () => {
 	assert.equal(1 + 1, 2);
 	assert.deepEqual({ ok: true }, { ok: true });
 	assert.throws(() => {
@@ -659,7 +656,7 @@ test('keeps strong behavior checks', () => {
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-test('keeps strong behavior checks', () => {
+test('keeps strong behavior checks', async () => {
 	assert.ok(1 + 1);
 });
 
@@ -707,7 +704,7 @@ test.todo('restore rejected-path coverage');
 			),
 		);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', plan, '--json']);
 		const report = JSON.parse(result.stdout);
 		const riskCodes = report.evidence_model.remaining_risks.map((risk) => risk.code);
 
@@ -727,11 +724,11 @@ test.todo('restore rejected-path coverage');
 	}
 });
 
-test('keeps language-specific validation ratchet analysis conservative', () => {
+test('keeps language-specific validation ratchet analysis conservative', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const testFilePath = path.join(projectPath, 'tests', 'ratchet-python.test.py');
 		mkdirSync(path.dirname(testFilePath), { recursive: true });
 		writeFileSync(
@@ -788,11 +785,11 @@ def test_denies_admin_access():
 	}
 });
 
-test('detects command contract validation weakening from changed diffs', () => {
+test('detects command contract validation weakening from changed diffs', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		commitProjectBaseline(projectPath);
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 		let commands = readFileSync(commandsPath, 'utf8');
@@ -858,11 +855,11 @@ argv = ["npm", "test", "--", "--passWithNoTests", "--grep", "happy"]
 	}
 });
 
-test('detects package validation script weakening from changed diffs', () => {
+test('detects package validation script weakening from changed diffs', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const packageJsonPath = path.join(projectPath, 'package.json');
 		writeFileSync(
 			packageJsonPath,
@@ -939,11 +936,11 @@ test('detects package validation script weakening from changed diffs', () => {
 	}
 });
 
-test('downgrades verified verdicts when a receipt reports undeclared write drift', () => {
+test('downgrades verified verdicts when a receipt reports undeclared write drift', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -965,7 +962,7 @@ required_after = ["write_drift_change"]
 		);
 		commitProjectBaseline(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'write_drift_change', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'write_drift_change', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
@@ -981,11 +978,11 @@ required_after = ["write_drift_change"]
 	}
 });
 
-test('treats external CI evidence as lower-authority verdict support', () => {
+test('treats external CI evidence as lower-authority verdict support', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1027,7 +1024,7 @@ required_after = ["external_ci_change"]
 			),
 		);
 
-		const result = runCli(projectPath, [
+		const result = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'external_ci_change',
@@ -1072,11 +1069,11 @@ required_after = ["external_ci_change"]
 	}
 });
 
-test('uses structured repro evidence to gate bug-fix completion verdicts', () => {
+test('uses structured repro evidence to gate bug-fix completion verdicts', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1097,7 +1094,7 @@ required_after = ["bug_fix"]
 `,
 		);
 
-		const seedResult = runCli(projectPath, ['verify', '--reason', 'bug_fix', '--json']);
+		const seedResult = await runCli(projectPath, ['verify', '--reason', 'bug_fix', '--json']);
 		const seedReport = JSON.parse(seedResult.stdout);
 		assert.equal(seedResult.status, 0, seedResult.stderr || seedResult.stdout);
 		const seedReceipt = seedReport.results.find((result) => result.intent === 'verify_repro');
@@ -1156,7 +1153,7 @@ required_after = ["bug_fix"]
 		};
 		writeFileSync(path.join(projectPath, 'repro-evidence-complete.json'), JSON.stringify(completeEvidence, null, 2));
 
-		const verifiedResult = runCli(projectPath, [
+		const verifiedResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -1199,7 +1196,7 @@ required_after = ["bug_fix"]
 			JSON.stringify(mismatchedRouteEvidence, null, 2),
 		);
 
-		const mismatchedRouteResult = runCli(projectPath, [
+		const mismatchedRouteResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -1234,7 +1231,7 @@ required_after = ["bug_fix"]
 			JSON.stringify(staleReceiptEvidence, null, 2),
 		);
 
-		const staleReceiptResult = runCli(projectPath, [
+		const staleReceiptResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -1273,7 +1270,7 @@ required_after = ["bug_fix"]
 			JSON.stringify(missingAfterFixEvidence, null, 2),
 		);
 
-		const missingAfterFixResult = runCli(projectPath, [
+		const missingAfterFixResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -1311,7 +1308,7 @@ required_after = ["bug_fix"]
 			JSON.stringify(failedAfterFixEvidence, null, 2),
 		);
 
-		const failedAfterFixResult = runCli(projectPath, [
+		const failedAfterFixResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -1347,7 +1344,7 @@ required_after = ["bug_fix"]
 			JSON.stringify(failedRegressionGuardEvidence, null, 2),
 		);
 
-		const failedGuardResult = runCli(projectPath, [
+		const failedGuardResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -1381,7 +1378,7 @@ required_after = ["bug_fix"]
 		};
 		writeFileSync(path.join(projectPath, 'repro-evidence-missing.json'), JSON.stringify(missingEvidence, null, 2));
 
-		const partialResult = runCli(projectPath, [
+		const partialResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',

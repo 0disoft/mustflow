@@ -2,7 +2,7 @@
 mustflow_doc: skill.diff-risk-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: diff-risk-review
@@ -94,10 +94,15 @@ Classify the risk of a completed change, choose the smallest relevant configured
    - `medium`: templates, tests, package metadata, generated maps, or workflow docs without runtime behavior changes
    - `high`: runtime behavior, command execution, security, privacy, data handling, migrations, release behavior, or multi-surface changes
 5. Identify the minimum relevant configured verification intents. Prefer the narrowest configured intents that cover the changed surfaces, but do not hide missing, unknown, manual-only, or skipped intents.
-6. Record rollback notes for any changed installed template, command contract, package version, generated file, migration-like change, or public behavior change.
-7. Check for scope drift: unrelated files, invented facts, unnecessary abstractions, weakened validation, or unreported generated-file refreshes.
-8. If external PR or bot review exists, classify each suggestion as behavior risk, maintainability polish, contract drift, or not applicable. Adapt high-confidence repeatable lessons into the relevant skill instead of leaving them only in the current patch.
-9. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
+6. Use this verification floor unless a narrower skill gives a stricter rule:
+   - `low`: docs validation or `mustflow_check` for mustflow-owned prose and metadata.
+   - `medium`: `test_related` when tests, templates, package metadata, or workflow behavior changed, plus `mustflow_check` for mustflow-owned surfaces.
+   - `high`: `test_related`, `lint` or `build` when executable code changed, and `mustflow_check`; add `test_audit` when validation quality or test selection changed.
+   - `release_sensitive`: add `test_release` when package metadata, schema packaging, installed templates, public docs, or version metadata changed.
+7. Record rollback notes for any changed installed template, command contract, package version, generated file, migration-like change, or public behavior change.
+8. Check for scope drift: unrelated files, invented facts, unnecessary abstractions, weakened validation, or unreported generated-file refreshes.
+9. If external PR or bot review exists, classify each suggestion as behavior risk, maintainability polish, contract drift, or not applicable. Adapt high-confidence repeatable lessons into the relevant skill instead of leaving them only in the current patch.
+10. Produce a concise risk and verification summary. Use `code-review` only if findings require a full review-style report.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

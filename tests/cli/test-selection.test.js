@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -113,6 +115,48 @@ test('related selection covers the selector script itself', () => {
 	const selected = selectedFor(['scripts/run-cli-tests.mjs']);
 
 	assert.deepEqual([...selected], ['test-selection.test.js']);
+});
+
+test('test runner refuses overlapping repository build and test locks', () => {
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-lock-'));
+	const lockDir = path.join(tempRoot, 'lock');
+
+	try {
+		mkdirSync(lockDir);
+		writeFileSync(
+			path.join(lockDir, 'owner.json'),
+			`${JSON.stringify({
+				pid: process.pid,
+				cwd: projectRoot,
+				command: 'node scripts/run-cli-tests.mjs --build full-auto',
+				started_at: new Date().toISOString(),
+			})}\n`,
+		);
+
+		const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', '--build', 'fast', '--list'], {
+			cwd: projectRoot,
+			encoding: 'utf8',
+			env: {
+				...process.env,
+				MUSTFLOW_TEST_RUNNER_LOCK_DIR: lockDir,
+			},
+		});
+
+		assert.equal(result.status, 2);
+		assert.match(result.stderr, /Another mustflow CLI test runner is already active/u);
+		assert.match(result.stderr, /Owner PID:/u);
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test('related selection treats shared CLI harness changes as broad CLI risk', () => {
+	const selected = selectedFor(['tests/cli/helpers/cli-harness.js']);
+
+	assert.equal(selected.has('init.test.js'), true);
+	assert.equal(selected.has('verify.test.js'), true);
+	assert.equal(selected.has('verify-changed.test.js'), true);
+	assert.equal(selected.has('package.test.js'), false);
 });
 
 test('related selection reports release-sensitive template changes', () => {

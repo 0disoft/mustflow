@@ -2,7 +2,7 @@
 mustflow_doc: skill.pattern-scout
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: pattern-scout
@@ -66,12 +66,17 @@ Find the closest local implementation pattern before creating new structure, nam
 ## Procedure
 
 1. Name the change shape: command, UI pane, schema, template document, skill, test, documentation page, or other local category.
-2. Search for the nearest existing examples in that category and inspect enough surrounding code to understand ownership, naming, data flow, and verification style.
-3. Choose the closest pattern and list the files that define it. If multiple patterns conflict, choose the one nearest to the files being changed.
-4. Identify the parts that must stay aligned: file naming, frontmatter, schema keys, localization keys, test helper style, manifest entries, lock entries, or documentation routing.
-5. Implement by extending the chosen pattern instead of inventing a parallel shape.
-6. If the change intentionally differs from the closest pattern, state the reason in the final report.
-7. Use the smallest configured verification that covers the changed pattern.
+2. Search for examples in this order:
+   - same directory or feature folder;
+   - same command, package, template, schema, or docs family;
+   - same architectural layer, such as core, CLI, tests, docs, or templates;
+   - repository-wide only after local evidence is insufficient.
+3. Inspect enough surrounding code to understand ownership, naming, data flow, and verification style. Prefer patterns with matching file names, exported names, registry entries, tests, and template or schema synchronization.
+4. Choose the closest pattern and list the files that define it. If multiple patterns conflict, choose the one nearest to the files being changed and explain why other candidates were rejected.
+5. Identify the parts that must stay aligned: file naming, frontmatter, schema keys, localization keys, test helper style, manifest entries, lock entries, or documentation routing.
+6. Implement by extending the chosen pattern instead of inventing a parallel shape.
+7. If the change intentionally differs from the closest pattern, state the reason in the final report.
+8. Use the smallest configured verification that covers the changed pattern.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -108,3 +113,4 @@ Also run any narrower configured test, build, or documentation intent required b
 - Registries, manifests, or docs kept aligned
 - Command intents run
 - Skipped checks and reasons
+- Remaining pattern risks

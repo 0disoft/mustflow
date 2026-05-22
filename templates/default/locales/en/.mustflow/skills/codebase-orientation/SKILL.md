@@ -2,7 +2,7 @@
 mustflow_doc: skill.codebase-orientation
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: codebase-orientation
@@ -69,12 +69,23 @@ Build a concise, evidence-based map of an unfamiliar repository area before plan
 
 1. Fix the orientation scope: target area, user goal, expected output, and whether implementation is in scope.
 2. Read the nearest repository instructions and matching skill routes before inspecting source files.
-3. Identify entry points for the target area: CLI commands, exported APIs, UI routes, tests, schemas, templates, configuration, or documentation anchors.
-4. Trace the main flow through current files. Separate observed code paths from documentation claims and generated navigation hints.
-5. Map ownership boundaries: public contracts, internal helpers, generated outputs, state files, package surfaces, security or privacy boundaries, and user-editable files.
-6. Record verification surfaces already declared in `.mustflow/config/commands.toml`. Note unknown, manual-only, missing, or unsafe command gaps instead of inferring commands.
-7. Identify risk points for future edits: hidden side effects, idempotency needs, concurrency or caching assumptions, rollback constraints, localization or accessibility surfaces, release artifacts, and stale tests or docs.
-8. Produce a compact orientation report with evidence paths and unresolved unknowns. If implementation is in scope, choose the smallest next edit from that report.
+3. Use navigation aids in order:
+   - current changed files or user-named paths;
+   - `REPO_MAP.md` only when broader repository navigation is needed;
+   - file search for names, exported symbols, command ids, schema ids, route ids, and test names.
+   Treat generated maps and docs as pointers, not proof.
+4. Identify entry points for the target area: CLI command registry entry, command runner, exported API, UI route, worker, schema, template, configuration, or documentation anchor.
+5. Trace one main flow through current files in this order when applicable: entry point, orchestration function, core decision module, adapters or side effects, state writer or generated output, schema or public contract, then the nearest test.
+6. Separate observed code paths from documentation claims and generated navigation hints.
+7. Map ownership boundaries:
+   - public CLI, JSON, schema, template, package, or docs contract;
+   - core decision logic versus shell/adapters;
+   - user-editable files versus mustflow-owned files;
+   - generated output, cache, local state, and lock files;
+   - security, privacy, filesystem, process, localization, release, or compatibility boundaries.
+8. Record verification surfaces already declared in `.mustflow/config/commands.toml`. Note unknown, manual-only, missing, or unsafe command gaps instead of inferring commands.
+9. Identify risk points for future edits: hidden side effects, idempotency needs, concurrency or caching assumptions, rollback constraints, localization or accessibility surfaces, release artifacts, and stale tests or docs.
+10. Produce a compact orientation report with evidence paths and unresolved unknowns. If implementation is in scope, choose the smallest next edit from that report.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

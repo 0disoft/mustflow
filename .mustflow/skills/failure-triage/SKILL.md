@@ -2,7 +2,7 @@
 mustflow_doc: skill.failure-triage
 locale: en
 canonical: true
-revision: 3
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: failure-triage
@@ -29,12 +29,15 @@ Identify the most probable root cause of a failed command or verification step b
 - A configured command intent returns a non-zero exit code.
 - Validation, build, test, or documentation checks fail.
 - The root cause of the failure is not yet apparent.
+- A test or build failure may have been caused by an overlapping run, orphaned process, stale lock, or deleted build output.
+- Several failures appear together and the first root cause needs to be separated from follow-on noise.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
 
-- The failure is fully understood and a targeted fix is available.
+- The failure is fully understood and a targeted fix is available; apply the relevant implementation or test skill instead.
 - The user has requested only a high-level summary.
+- A bug or runtime symptom is not yet reproducible; use `repro-first-debug` first unless the command failure itself is the reproduction.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -44,6 +47,7 @@ Identify the most probable root cause of a failed command or verification step b
 - Truncated stdout and stderr output
 - Recently modified files
 - Relevant command contract entry
+- Active or recently active build/test/profile processes when the failure mentions missing compiled files, stale output, port/resource conflicts, or unexpected file deletion
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -63,9 +67,24 @@ Identify the most probable root cause of a failed command or verification step b
 
 1. Preserve the original failing intent name.
 2. Analyze the first actionable error.
-3. Determine if the failure originates from code, tests, configuration, documentation, or the environment.
-4. Examine the most relevant files.
-5. Develop a single hypothesis and verify it using the most targeted configured intent.
+3. Classify the probable failure domain before editing:
+   - `code`: implementation behavior, public output, or data transformation changed.
+   - `test`: assertion, fixture, helper, scheduler grouping, or test isolation changed.
+   - `configuration`: command contract, schema, template metadata, preferences, or package metadata drifted.
+   - `documentation`: docs navigation, frontmatter, generated content, or localized metadata drifted.
+   - `environment`: missing tool, platform difference, path, permission, lock, stale build output, or orphaned process.
+   - `tool_runner`: the verification runner, scheduler, cache, or build wrapper failed independently from the code under test.
+4. If several failures appear, triage in this order: environment and overlapping processes, build or generated output, configuration/schema drift, fixture setup, then behavior logic.
+5. For failures involving `dist/`, generated output, temporary files, ports, databases, or abrupt test termination, check whether another build/test/profile process for the same repository is still running.
+6. If an orphaned or overlapping process is found, stop or wait for it before changing source files, then rerun the narrowest failing intent to confirm the failure is reproducible.
+7. Pick one rerun target:
+   - the original failing intent when it is narrow enough;
+   - `test_related` when changed files map to a focused suite;
+   - `docs_validate_fast` for docs navigation or content-only failures;
+   - `test_release` for package, template, schema, or release metadata drift;
+   - `mustflow_check` for workflow, skill, command-contract, or manifest-lock failures.
+8. Examine the most relevant files.
+9. Develop a single hypothesis and verify it using the most targeted configured intent.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -84,6 +103,8 @@ intent that isolates the same failure area.
 
 - Avoid bundling unrelated fixes.
 - If the failure is due to missing tools, report the missing tool and the command that revealed the issue.
+- If the failure was caused by an orphaned or overlapping process, report that the original run was invalid and add or use a guard that prevents the same overlap before taking new measurements.
+- If rerunning the same intent produces a different failure without code changes, classify the issue as flaky or environmental and avoid weakening assertions until the unstable dependency is identified.
 - If sensitive data appears in the output, cease copying raw output and summarize the information safely.
 
 <!-- mustflow-section: output-format -->

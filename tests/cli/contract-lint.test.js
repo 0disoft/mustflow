@@ -1,13 +1,9 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+import { runCliInProcess } from './helpers/cli-harness.js';
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-contract-lint-'));
@@ -17,15 +13,12 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
+async function runCli(cwd, args) {
+	return runCliInProcess(cwd, args);
 }
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
+async function initProject(projectPath) {
+	const result = await runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
@@ -87,13 +80,13 @@ function cleanCoverageCommands(options = {}) {
 	].join('\n');
 }
 
-test('contract-lint reports command contract warnings without failing', () => {
+test('contract-lint reports command contract warnings without failing', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -108,11 +101,11 @@ test('contract-lint reports command contract warnings without failing', () => {
 	}
 });
 
-test('contract-lint warns when a package script referenced by an intent is missing', () => {
+test('contract-lint warns when a package script referenced by an intent is missing', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, 'package.json'),
 			`${JSON.stringify({ name: 'example', version: '1.0.0', scripts: { test: 'node --version' } }, null, 2)}\n`,
@@ -176,7 +169,7 @@ required_after = ["docs_change"]
 			].join('\n'),
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -202,11 +195,11 @@ required_after = ["docs_change"]
 	}
 });
 
-test('contract-lint suggests non-runnable intent snippets from existing command files', () => {
+test('contract-lint suggests non-runnable intent snippets from existing command files', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, 'package.json'),
 			`${JSON.stringify({ name: 'example', version: '1.0.0', scripts: { test: 'node --test' } }, null, 2)}\n`,
@@ -214,7 +207,7 @@ test('contract-lint suggests non-runnable intent snippets from existing command 
 		writeFileSync(path.join(projectPath, 'Makefile'), 'build:\n\t@echo build\n');
 		writeFileSync(path.join(projectPath, 'justfile'), 'lint:\n\tnode --check index.js\n');
 
-		const result = runCli(projectPath, ['contract-lint', '--suggest', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--suggest', '--json']);
 		const report = JSON.parse(result.stdout);
 		const suggestions = report.report.suggestions;
 
@@ -238,17 +231,17 @@ test('contract-lint suggests non-runnable intent snippets from existing command 
 	}
 });
 
-test('contract-lint suggestion text output includes review-only snippets', () => {
+test('contract-lint suggestion text output includes review-only snippets', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, 'package.json'),
 			`${JSON.stringify({ name: 'example', scripts: { test: 'node --test' } }, null, 2)}\n`,
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--suggest']);
+		const result = await runCli(projectPath, ['contract-lint', '--suggest']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /Suggestions/);
@@ -260,14 +253,14 @@ test('contract-lint suggestion text output includes review-only snippets', () =>
 	}
 });
 
-test('contract-lint coverage reports clean required_after coverage', () => {
+test('contract-lint coverage reports clean required_after coverage', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeCommands(projectPath, cleanCoverageCommands());
 
-		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--coverage', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -294,14 +287,14 @@ test('contract-lint coverage reports clean required_after coverage', () => {
 	}
 });
 
-test('contract-lint coverage warns for uncovered classification reasons', () => {
+test('contract-lint coverage warns for uncovered classification reasons', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeCommands(projectPath, cleanCoverageCommands({ includeCodeChange: false }));
 
-		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--coverage', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -322,11 +315,11 @@ test('contract-lint coverage warns for uncovered classification reasons', () => 
 	}
 });
 
-test('contract-lint coverage warns for unknown required_after reasons', () => {
+test('contract-lint coverage warns for unknown required_after reasons', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeCommands(
 			projectPath,
 			cleanCoverageCommands({
@@ -334,7 +327,7 @@ test('contract-lint coverage warns for unknown required_after reasons', () => {
 			}),
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--coverage', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -357,11 +350,11 @@ test('contract-lint coverage warns for unknown required_after reasons', () => {
 	}
 });
 
-test('contract-lint coverage warns when a classification reason is not runnable', () => {
+test('contract-lint coverage warns when a classification reason is not runnable', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeCommands(
 			projectPath,
 			cleanCoverageCommands({
@@ -370,7 +363,7 @@ test('contract-lint coverage warns when a classification reason is not runnable'
 			}),
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--coverage', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -394,11 +387,11 @@ test('contract-lint coverage warns when a classification reason is not runnable'
 	}
 });
 
-test('contract-lint coverage warns for same-reason writers without explicit effects', () => {
+test('contract-lint coverage warns for same-reason writers without explicit effects', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeCommands(
 			projectPath,
 			cleanCoverageCommands({
@@ -440,7 +433,7 @@ required_after = ["code_change"]
 			}),
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--coverage', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--coverage', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -458,14 +451,14 @@ required_after = ["code_change"]
 	}
 });
 
-test('contract-lint coverage text output stays concise', () => {
+test('contract-lint coverage text output stays concise', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeCommands(projectPath, cleanCoverageCommands({ includeCodeChange: false }));
 
-		const result = runCli(projectPath, ['contract-lint', '--coverage']);
+		const result = await runCli(projectPath, ['contract-lint', '--coverage']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /Coverage/);
@@ -476,11 +469,11 @@ test('contract-lint coverage text output stays concise', () => {
 	}
 });
 
-test('contract-lint fails malformed configured command intents', () => {
+test('contract-lint fails malformed configured command intents', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const current = readFileSync(commandsPath(projectPath), 'utf8');
 		writeFileSync(
 			commandsPath(projectPath),
@@ -492,7 +485,7 @@ description = "Malformed test intent."
 `,
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -504,11 +497,11 @@ description = "Malformed test intent."
 	}
 });
 
-test('contract-lint rejects shell commands with background patterns', () => {
+test('contract-lint rejects shell commands with background patterns', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const current = readFileSync(commandsPath(projectPath), 'utf8');
 		writeFileSync(
 			commandsPath(projectPath),
@@ -526,7 +519,7 @@ stdin = "closed"
 `,
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -544,11 +537,11 @@ stdin = "closed"
 	}
 });
 
-test('contract-lint rejects argv commands with long-running patterns', () => {
+test('contract-lint rejects argv commands with long-running patterns', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const current = readFileSync(commandsPath(projectPath), 'utf8');
 		writeFileSync(
 			commandsPath(projectPath),
@@ -634,7 +627,7 @@ destructive = false
 `,
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -684,11 +677,11 @@ destructive = false
 	}
 });
 
-test('contract-lint rejects out-of-range success exit codes', () => {
+test('contract-lint rejects out-of-range success exit codes', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const current = readFileSync(commandsPath(projectPath), 'utf8');
 		writeFileSync(
 			commandsPath(projectPath),
@@ -710,7 +703,7 @@ destructive = false
 `,
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -729,11 +722,11 @@ destructive = false
 	}
 });
 
-test('contract-lint rejects unsafe intent names', () => {
+test('contract-lint rejects unsafe intent names', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const current = readFileSync(commandsPath(projectPath), 'utf8');
 		writeFileSync(
 			commandsPath(projectPath),
@@ -755,7 +748,7 @@ destructive = false
 `,
 		);
 
-		const result = runCli(projectPath, ['contract-lint', '--json']);
+		const result = await runCli(projectPath, ['contract-lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);

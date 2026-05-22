@@ -2,7 +2,7 @@
 mustflow_doc: skill.contract-sync-check
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: contract-sync-check
@@ -69,12 +69,19 @@ Keep declared behavior, machine-readable contracts, installed templates, tests, 
 ## Procedure
 
 1. Name the contract being changed and identify its source of truth.
-2. List the expected synchronized surfaces for that contract: source code, schemas, command metadata, templates, manifests, lock files, tests, README, docs site, and localized copies.
-3. Compare the changed files with that list and add any missing required surface.
-4. Keep derived files mechanically aligned with the source of truth. If a surface is intentionally not updated, record the reason.
-5. Check that command intent names, schema ids, frontmatter revisions, template entries, version strings, and documented examples match exactly where they are meant to match.
-6. Use the narrowest configured verification that covers the contract and any packaging or documentation surface touched.
-7. In the final report, separate synchronized surfaces from skipped or deferred surfaces.
+2. If multiple files appear to define the contract, resolve source authority before editing:
+   - command behavior: current code and command contract first, then schemas, tests, and docs;
+   - JSON or package contract: schema and package metadata first, then code, tests, and docs;
+   - installed template contract: template manifest and template source files first, then lock files, i18n metadata, tests, and docs;
+   - workflow authority: nearest `AGENTS.md`, `.mustflow/config/*.toml`, and skill/index metadata before explanatory docs;
+   - prose examples: executable behavior and maintained docs before README snippets or fixtures.
+   If no authority is clear, stop and report the competing sources instead of choosing silently.
+3. List the expected synchronized surfaces for that contract: source code, schemas, command metadata, templates, manifests, lock files, tests, README, docs site, and localized copies.
+4. Compare the changed files with that list and add any missing required surface.
+5. Keep derived files mechanically aligned with the source of truth. If a surface is intentionally not updated, record the reason.
+6. Check that command intent names, schema ids, frontmatter revisions, template entries, version strings, and documented examples match exactly where they are meant to match.
+7. Use the narrowest configured verification that covers the contract and any packaging or documentation surface touched.
+8. In the final report, separate synchronized surfaces from skipped or deferred surfaces.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

@@ -2,7 +2,7 @@
 mustflow_doc: skill.requirement-regression-guard
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: requirement-regression-guard
@@ -92,17 +92,22 @@ The goal is not to write tests for everything. The goal is to preserve the behav
    - Prefer the nearest existing test style and fixture pattern.
    - Use schema, snapshot, integration, or documentation checks only when they are the real contract surface.
    - Use `test-maintenance` when adding, updating, or removing tests.
-4. Add the smallest useful guard before implementation when feasible.
+4. Handle `blocked` requirements before implementation:
+   - identify the missing decision, environment, source, or acceptance detail;
+   - avoid writing speculative behavior or broad placeholder tests;
+   - add a small skipped or pending test only when the repository already uses that style and the expected contract is clear enough to prevent forgetting it;
+   - otherwise report the blocked requirement in a deferred-requirements section with the smallest next decision needed.
+5. Add the smallest useful guard before implementation when feasible.
    - For bug fixes, prefer a failing regression test or fixture that reproduces the issue.
    - For refactors, prefer characterization coverage that proves current behavior stays stable.
    - For new behavior, prefer tests that encode acceptance criteria rather than implementation details.
-5. Implement the change only after the guard path is clear.
+6. Implement the change only after the guard path is clear.
    - Keep requirement coverage and implementation changes distinguishable in the diff when practical.
    - Do not remove or weaken existing guards unless the requirement itself changed and the reason is documented.
-6. Verify the mapped requirements.
+7. Verify the mapped requirements.
    - Run the narrowest configured command intents that cover the changed behavior and any synchronized contracts.
    - If a required intent is manual-only or unknown, report the missing coverage instead of guessing a command.
-7. Report requirement coverage.
+8. Report requirement coverage.
    - List covered, missing, partial, and blocked requirements.
    - Tie each implementation claim to the test, fixture, schema, doc check, or explicit skipped-check reason that supports it.
 

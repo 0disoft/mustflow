@@ -6,9 +6,9 @@ import { availableParallelism, tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { runCliInProcess } from './helpers/cli-harness.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-verify-'));
@@ -18,15 +18,12 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
+async function runCli(cwd, args) {
+	return runCliInProcess(cwd, args);
 }
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
+async function initProject(projectPath) {
+	const result = await runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
@@ -97,11 +94,11 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 	};
 }
 
-test('runs configured verification intents for a reason', () => {
+test('runs configured verification intents for a reason', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -122,7 +119,7 @@ required_after = ["custom_verify"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -282,12 +279,12 @@ required_after = ["custom_verify"]
 	}
 });
 
-test('rejects invalid verification parallelism', () => {
+test('rejects invalid verification parallelism', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
-		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--parallel', '0']);
+		await initProject(projectPath);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--parallel', '0']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /--parallel must be a positive integer/);
@@ -296,11 +293,11 @@ test('rejects invalid verification parallelism', () => {
 	}
 });
 
-test('caps excessive verification parallelism and reports the effective settings', () => {
+test('caps excessive verification parallelism and reports the effective settings', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -322,7 +319,7 @@ required_after = ["custom_verify"]
 		);
 
 		const requested = 999;
-		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--parallel', String(requested), '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--parallel', String(requested), '--json']);
 		const report = JSON.parse(result.stdout);
 		const expectedCpuLimit = Math.max(1, Math.min(8, availableParallelism()));
 
@@ -339,13 +336,13 @@ required_after = ["custom_verify"]
 	}
 });
 
-test('reports plan-only gaps when no intents match the reason', () => {
+test('reports plan-only gaps when no intents match the reason', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'missing_reason', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'missing_reason', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -369,13 +366,13 @@ test('reports plan-only gaps when no intents match the reason', () => {
 	}
 });
 
-test('rejects plan-only verify output without json', () => {
+test('rejects plan-only verify output without json', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /--plan-only requires --json/);
@@ -385,8 +382,8 @@ test('rejects plan-only verify output without json', () => {
 	}
 });
 
-test('documents from-plan as a deprecated classification-report alias', () => {
-	const result = runCli(projectRoot, ['verify', '--help']);
+test('documents from-plan as a deprecated classification-report alias', async () => {
+	const result = await runCli(projectRoot, ['verify', '--help']);
 
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 	assert.match(result.stdout, /--from-classification <path>/);
@@ -396,11 +393,11 @@ test('documents from-plan as a deprecated classification-report alias', () => {
 	);
 });
 
-test('preserves classification details in plan-only verify output from a classify report alias', () => {
+test('preserves classification details in plan-only verify output from a classify report alias', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -425,8 +422,8 @@ required_after = ["docs_change"]
 			JSON.stringify(createClassifyPlan(projectPath, 'docs_change'), null, 2),
 		);
 
-		const indexResult = runCli(projectPath, ['index', '--json']);
-		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--plan-only', '--json']);
+		const indexResult = await runCli(projectPath, ['index', '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
@@ -452,11 +449,11 @@ required_after = ["docs_change"]
 	}
 });
 
-test('runs verification intents selected from a classify report alias', () => {
+test('runs verification intents selected from a classify report alias', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -481,7 +478,7 @@ required_after = ["schema_verify"]
 			JSON.stringify(createClassifyPlan(projectPath, 'schema_verify', 'schemas/classify-report.schema.json'), null, 2),
 		);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -496,18 +493,18 @@ required_after = ["schema_verify"]
 	}
 });
 
-test('rejects verify plan-only reports passed through the deprecated from-plan alias', () => {
+test('rejects verify plan-only reports passed through the deprecated from-plan alias', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const planOnlyResult = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--plan-only', '--json']);
+		const planOnlyResult = await runCli(projectPath, ['verify', '--reason', 'schema_verify', '--plan-only', '--json']);
 		assert.equal(planOnlyResult.status, 0, planOnlyResult.stderr || planOnlyResult.stdout);
 
 		writeFileSync(path.join(projectPath, 'verify-plan-output.json'), planOnlyResult.stdout);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan-output.json', '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', 'verify-plan-output.json', '--json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Verification input must be an mf classify report/);
@@ -517,17 +514,17 @@ test('rejects verify plan-only reports passed through the deprecated from-plan a
 	}
 });
 
-test('rejects loose classification report inputs that are not classify output', () => {
+test('rejects loose classification report inputs that are not classify output', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, 'verify-plan.json'),
 			JSON.stringify({ classification_summary: { validationReasons: ['schema_verify'] } }, null, 2),
 		);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Verification input must be an mf classify report/);
@@ -537,17 +534,17 @@ test('rejects loose classification report inputs that are not classify output', 
 	}
 });
 
-test('rejects classify plans from a different mustflow root', () => {
+test('rejects classify plans from a different mustflow root', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, 'verify-plan.json'),
 			JSON.stringify({ ...createClassifyPlan(projectPath, 'schema_verify'), mustflow_root: path.join(projectPath, 'other') }, null, 2),
 		);
 
-		const result = runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
+		const result = await runCli(projectPath, ['verify', '--from-plan', 'verify-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Classification report must come from this mustflow root/);
@@ -557,11 +554,11 @@ test('rejects classify plans from a different mustflow root', () => {
 	}
 });
 
-test('reports blocked verification when matching intents are not runnable', () => {
+test('reports blocked verification when matching intents are not runnable', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -573,7 +570,7 @@ required_after = ["custom_partial"]
 `,
 		);
 
-		const result = runCli(projectPath, ['verify', '--reason=custom_partial', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason=custom_partial', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -593,13 +590,13 @@ required_after = ["custom_partial"]
 	}
 });
 
-test('reports blocked verification when no intents match the reason', () => {
+test('reports blocked verification when no intents match the reason', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'missing_reason', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'missing_reason', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -611,7 +608,7 @@ test('reports blocked verification when no intents match the reason', () => {
 		assert.equal(report.results[0].intent, null);
 		assert.equal(report.results[0].reason, 'no_matching_intents');
 
-		const planOnlyResult = runCli(projectPath, ['verify', '--reason', 'preference_only', '--plan-only', '--json']);
+		const planOnlyResult = await runCli(projectPath, ['verify', '--reason', 'preference_only', '--plan-only', '--json']);
 		const planOnlyReport = JSON.parse(planOnlyResult.stdout);
 
 		assert.equal(planOnlyResult.status, 0, planOnlyResult.stderr || planOnlyResult.stdout);
@@ -622,11 +619,11 @@ test('reports blocked verification when no intents match the reason', () => {
 	}
 });
 
-test('does not treat verification preferences as command authority', () => {
+test('does not treat verification preferences as command authority', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
 		const preferences = readFileSync(preferencesPath, 'utf8').replace(
 			'report_skipped = true',
@@ -639,7 +636,7 @@ test('does not treat verification preferences as command authority', () => {
 		);
 		writeFileSync(preferencesPath, preferences);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'preference_only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'preference_only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -653,11 +650,11 @@ test('does not treat verification preferences as command authority', () => {
 	}
 });
 
-test('does not treat source anchors or local index rows as verification authority', () => {
+test('does not treat source anchors or local index rows as verification authority', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'));
 		writeFileSync(
 			path.join(projectPath, 'src', 'anchor-authority.ts'),
@@ -674,8 +671,8 @@ export function anchorOnly() {
 `,
 		);
 
-		const indexResult = runCli(projectPath, ['index', '--source', '--json']);
-		const verifyResult = runCli(projectPath, ['verify', '--reason', 'source_anchor_only', '--plan-only', '--json']);
+		const indexResult = await runCli(projectPath, ['index', '--source', '--json']);
+		const verifyResult = await runCli(projectPath, ['verify', '--reason', 'source_anchor_only', '--plan-only', '--json']);
 		const report = JSON.parse(verifyResult.stdout);
 
 		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
@@ -689,20 +686,20 @@ export function anchorOnly() {
 	}
 });
 
-test('rejects conflicting verify reason inputs', () => {
+test('rejects conflicting verify reason inputs', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(path.join(projectPath, 'verify-plan.json'), JSON.stringify({ reasons: ['schema_verify'] }));
 
-		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--from-plan', 'verify-plan.json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'schema_verify', '--from-plan', 'verify-plan.json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Use only one of --reason, --from-classification, --from-plan, or --changed/);
 		assert.match(result.stdout, /Usage: mf verify/);
 
-		const changedResult = runCli(projectPath, ['verify', '--changed', '--reason', 'schema_verify', '--json']);
+		const changedResult = await runCli(projectPath, ['verify', '--changed', '--reason', 'schema_verify', '--json']);
 
 		assert.equal(changedResult.status, 1);
 		assert.match(changedResult.stderr, /Use only one of --reason, --from-classification, --from-plan, or --changed/);
@@ -712,13 +709,13 @@ test('rejects conflicting verify reason inputs', () => {
 	}
 });
 
-test('rejects verify write-plan without changed mode', () => {
+test('rejects verify write-plan without changed mode', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--reason', 'schema_verify', '--write-plan', 'change-plan.json', '--json']);
+		const result = await runCli(projectPath, ['verify', '--reason', 'schema_verify', '--write-plan', 'change-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /--write-plan requires --changed/);
@@ -728,13 +725,13 @@ test('rejects verify write-plan without changed mode', () => {
 	}
 });
 
-test('fails changed verify when git status cannot be read', () => {
+test('fails changed verify when git status cannot be read', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--changed', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unable to inspect changed files with git status/);
@@ -744,13 +741,13 @@ test('fails changed verify when git status cannot be read', () => {
 	}
 });
 
-test('rejects changed verify plan writes outside the mustflow root', () => {
+test('rejects changed verify plan writes outside the mustflow root', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['verify', '--changed', '--write-plan', '../change-plan.json', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--write-plan', '../change-plan.json', '--json']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
@@ -759,23 +756,23 @@ test('rejects changed verify plan writes outside the mustflow root', () => {
 	}
 });
 
-test('fails verify when reason is missing', () => {
-	const result = runCli(projectRoot, ['verify', '--json']);
+test('fails verify when reason is missing', async () => {
+	const result = await runCli(projectRoot, ['verify', '--json']);
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Missing verification reason/);
 	assert.match(result.stdout, /Usage: mf verify/);
 });
 
-test('rejects verify plans outside the mustflow root', () => {
+test('rejects verify plans outside the mustflow root', async () => {
 	const projectPath = createTempProject();
 	const outsidePlanPath = path.join(tmpdir(), `mustflow-outside-plan-${Date.now()}.json`);
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(outsidePlanPath, JSON.stringify({ reasons: ['schema_verify'] }));
 
-		const result = runCli(projectPath, ['verify', '--from-plan', outsidePlanPath]);
+		const result = await runCli(projectPath, ['verify', '--from-plan', outsidePlanPath]);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
@@ -785,12 +782,12 @@ test('rejects verify plans outside the mustflow root', () => {
 	}
 });
 
-test('rejects verify external inputs that resolve through symlinks', (t) => {
+test('rejects verify external inputs that resolve through symlinks', async (t) => {
 	const projectPath = createTempProject();
 	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-linked-verify-inputs-'));
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(path.join(outsideRoot, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'schema_verify')));
 		writeFileSync(
 			path.join(outsideRoot, 'repro-evidence.json'),
@@ -821,14 +818,14 @@ test('rejects verify external inputs that resolve through symlinks', (t) => {
 			}
 		}
 
-		const classificationResult = runCli(projectPath, [
+		const classificationResult = await runCli(projectPath, [
 			'verify',
 			'--from-classification',
 			'classification-link.json',
 			'--json',
 		]);
-		const deprecatedAliasResult = runCli(projectPath, ['verify', '--from-plan', 'classification-link.json', '--json']);
-		const reproResult = runCli(projectPath, [
+		const deprecatedAliasResult = await runCli(projectPath, ['verify', '--from-plan', 'classification-link.json', '--json']);
+		const reproResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'bug_fix',
@@ -836,7 +833,7 @@ test('rejects verify external inputs that resolve through symlinks', (t) => {
 			'repro-evidence-link.json',
 			'--json',
 		]);
-		const externalResult = runCli(projectPath, [
+		const externalResult = await runCli(projectPath, [
 			'verify',
 			'--reason',
 			'external_ci_change',

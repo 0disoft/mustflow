@@ -2,7 +2,7 @@
 mustflow_doc: skill.release-notes-authoring
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: release-notes-authoring
@@ -53,6 +53,7 @@ This first version is intentionally limited. Until the repository declares a rea
 - Evidence for each public claim, such as changed files, tests, schemas, docs, templates, package metadata, or run receipts.
 - Version source and release-versioning preferences when package or template versions are mentioned.
 - Relevant command-intent contract entries for status, diff, docs, release, and mustflow validation.
+- Any known limitation such as missing release-history intent, unverified migration evidence, or translation review gap.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -76,6 +77,7 @@ This first version is intentionally limited. Until the repository declares a rea
 1. Establish the evidence set.
    - Use user-provided summaries, current diff summaries, release preparation notes, and directly relevant changed files.
    - If historical commits, tags, or prior releases are needed and no configured read-only intent exists, report the missing release-history intent.
+   - State the current limitation explicitly when the note is only based on the active diff or user-provided summary.
 2. Identify public surfaces.
    - CLI behavior, installed templates, schemas, command contracts, package metadata, user-visible docs, migrations, security or privacy behavior, and contributor-facing workflow can be release-note material.
    - Internal refactors, test-only changes, generated-output refreshes, formatting, and private planning notes stay out unless they change a public contract.
@@ -140,4 +142,5 @@ Use release checks when notes mention package metadata, template metadata, schem
 - Version or migration claims checked
 - Command intents run
 - Skipped release-history checks and reasons
+- Current limitations of the release-note evidence
 - Remaining release-note risks

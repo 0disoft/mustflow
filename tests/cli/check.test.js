@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import {
 	existsSync,
 	mkdtempSync,
@@ -12,10 +11,7 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+import { runCliInProcess } from './helpers/cli-harness.js';
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-check-'));
@@ -25,19 +21,16 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
+async function runCli(cwd, args) {
+	return runCliInProcess(cwd, args);
 }
 
 function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
 }
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
+async function initProject(projectPath) {
+	const result = await runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0);
 	assert.ok(existsSync(path.join(projectPath, 'AGENTS.md')));
 }
@@ -53,13 +46,13 @@ function assertHasIssueDetail(check, expectedId, expectedMessage) {
 	);
 }
 
-test('passes a freshly initialized mustflow project', () => {
+test('passes a freshly initialized mustflow project', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /mustflow check passed/);
@@ -68,14 +61,14 @@ test('passes a freshly initialized mustflow project', () => {
 	}
 });
 
-test('fails when a locked file content hash no longer matches', () => {
+test('fails when a locked file content hash no longer matches', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Lock hash mismatch: AGENTS\.md/);
@@ -84,14 +77,14 @@ test('fails when a locked file content hash no longer matches', () => {
 	}
 });
 
-test('prints check result as json', () => {
+test('prints check result as json', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Changed rules\n');
 
-		const result = runCli(projectPath, ['check', '--json']);
+		const result = await runCli(projectPath, ['check', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -111,13 +104,13 @@ test('prints check result as json', () => {
 	}
 });
 
-test('passes strict check for a freshly initialized mustflow project', () => {
+test('passes strict check for a freshly initialized mustflow project', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0);
@@ -130,11 +123,11 @@ test('passes strict check for a freshly initialized mustflow project', () => {
 	}
 });
 
-test('strict check fails missing output limits and invalid latest run receipts', () => {
+test('strict check fails missing output limits and invalid latest run receipts', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 		const commands = readText(commandsPath).replace('max_output_bytes = 1048576\n', '');
 		writeFileSync(commandsPath, commands);
@@ -142,7 +135,7 @@ test('strict check fails missing output limits and invalid latest run receipts',
 		mkdirSync(runsDir, { recursive: true });
 		writeFileSync(path.join(runsDir, 'latest.json'), '{not json');
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -154,16 +147,16 @@ test('strict check fails missing output limits and invalid latest run receipts',
 	}
 });
 
-test('strict check fails missing retention policy', () => {
+test('strict check fails missing retention policy', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
 		const config = readText(configPath).replace(/\n\[retention\][\s\S]*?(?=\n\[document_roots\])/u, '\n');
 		writeFileSync(configPath, config);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -173,11 +166,11 @@ test('strict check fails missing retention policy', () => {
 	}
 });
 
-test('strict check fails oversized generated files and raw JSONL logs under mustflow', () => {
+test('strict check fails oversized generated files and raw JSONL logs under mustflow', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
 		const config = readText(configPath)
 			.replace('[retention.repo_map]\nmax_file_kb = 128', '[retention.repo_map]\nmax_file_kb = 1')
@@ -197,7 +190,7 @@ test('strict check fails oversized generated files and raw JSONL logs under must
 		mkdirSync(knowledgeDir, { recursive: true });
 		writeFileSync(path.join(knowledgeDir, 'events.jsonl'), '{}\n');
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -220,11 +213,11 @@ test('strict check fails oversized generated files and raw JSONL logs under must
 	}
 });
 
-test('strict check rejects per-task plans and worklogs under versioned mustflow files', () => {
+test('strict check rejects per-task plans and worklogs under versioned mustflow files', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const worklogDir = path.join(projectPath, '.mustflow', 'worklogs');
 		const planDir = path.join(projectPath, '.mustflow', 'plans');
 		mkdirSync(worklogDir, { recursive: true });
@@ -232,7 +225,7 @@ test('strict check rejects per-task plans and worklogs under versioned mustflow 
 		writeFileSync(path.join(worklogDir, 'task.md'), '# Task notes\n');
 		writeFileSync(path.join(planDir, 'next.md'), '# Plan\n');
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -251,14 +244,14 @@ test('strict check rejects per-task plans and worklogs under versioned mustflow 
 	}
 });
 
-test('fails when a file recorded in manifest lock is missing', () => {
+test('fails when a file recorded in manifest lock is missing', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'docs', 'agent-workflow.md'));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Locked file missing: \.mustflow\/docs\/agent-workflow\.md/);
@@ -267,14 +260,14 @@ test('fails when a file recorded in manifest lock is missing', () => {
 	}
 });
 
-test('keeps older installs valid when manifest lock is absent', () => {
+test('keeps older installs valid when manifest lock is absent', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /mustflow check passed/);
@@ -283,14 +276,14 @@ test('keeps older installs valid when manifest lock is absent', () => {
 	}
 });
 
-test('fails when AGENTS.md is missing', () => {
+test('fails when AGENTS.md is missing', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		unlinkSync(path.join(projectPath, 'AGENTS.md'));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Missing AGENTS\.md/);
@@ -299,11 +292,11 @@ test('fails when AGENTS.md is missing', () => {
 	}
 });
 
-test('strict check fails when verification preferences try to define command authority', () => {
+test('strict check fails when verification preferences try to define command authority', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
 		const preferences = readText(preferencesPath).replace(
 			'report_skipped = true',
@@ -317,7 +310,7 @@ test('strict check fails when verification preferences try to define command aut
 		writeFileSync(preferencesPath, preferences);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -341,11 +334,11 @@ test('strict check fails when verification preferences try to define command aut
 	}
 });
 
-test('strict check accepts narrow candidate path classification configs', () => {
+test('strict check accepts narrow candidate path classification configs', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'config', 'surfaces.toml'),
 			[
@@ -383,7 +376,7 @@ test('strict check accepts narrow candidate path classification configs', () => 
 			].join('\n'),
 		);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -394,11 +387,11 @@ test('strict check accepts narrow candidate path classification configs', () => 
 	}
 });
 
-test('strict check rejects candidate path classification command authority and deferred policy files', () => {
+test('strict check rejects candidate path classification command authority and deferred policy files', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'config', 'surfaces.toml'),
 			[
@@ -418,7 +411,7 @@ test('strict check rejects candidate path classification command authority and d
 			['schema_version = "1"', ''].join('\n'),
 		);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -447,11 +440,11 @@ test('strict check rejects candidate path classification command authority and d
 	}
 });
 
-test('strict check fails when release versioning preferences define sources or release authority', () => {
+test('strict check fails when release versioning preferences define sources or release authority', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
 		const preferences = readText(preferencesPath).replace(
 			'sync_tests = true',
@@ -465,7 +458,7 @@ test('strict check fails when release versioning preferences define sources or r
 		);
 		writeFileSync(preferencesPath, preferences);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCli(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -481,17 +474,17 @@ test('strict check fails when release versioning preferences define sources or r
 	}
 });
 
-test('fails when commit message style is unsupported', () => {
+test('fails when commit message style is unsupported', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
 		const preferences = readText(preferencesPath).replace('style = "conventional"', 'style = "emoji"');
 		writeFileSync(preferencesPath, preferences);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(

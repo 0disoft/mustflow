@@ -2,7 +2,7 @@
 mustflow_doc: skill.repro-first-debug
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: repro-first-debug
@@ -74,13 +74,20 @@ This skill keeps debugging anchored to symptom evidence, deterministic reproduct
 2. Locate the smallest fast, deterministic reproduction path: an existing command intent, test file, route, UI action, fixture, or function boundary.
 3. Prefer existing targeted verification before adding a new test. If no targeted path exists, record the gap and create the smallest reproduction only when it is supported by the symptom.
 4. Keep the first reproduction focused on one failing condition. Avoid turning the reproduction into a broad regression suite.
-5. If the cause is not obvious, list three to five plausible hypotheses. For each hypothesis, write the observation that would confirm or reject it before changing production code.
-6. Inspect the source that controls the reproduced behavior and gather the smallest observation needed to choose between hypotheses.
-7. If temporary instrumentation is needed, give every probe a unique marker, keep it local to the suspect boundary, and remove it before final verification.
-8. Apply the smallest fix that addresses the reproduced cause.
-9. Re-run the original reproduction path after the fix. If that path is unavailable or too broad, run the closest configured intent and report the limitation.
-10. Add or keep a regression guard only when it is tied to the reproduced symptom or a directly observed boundary condition.
-11. Report the symptom, reproduction, hypotheses considered, observations, fix, original reproduction rerun, checks, and remaining risk.
+5. If the cause is not obvious, list three to five plausible hypotheses using distinct categories where possible:
+   - recent code or contract change;
+   - environment, platform, tool version, or missing dependency;
+   - timing, ordering, concurrency, cache, or cleanup;
+   - specific input, fixture, locale, path, or data shape;
+   - external source, generated output, or stale build artifact.
+   For each hypothesis, write the observation that would confirm or reject it before changing production code.
+6. If the symptom appears flaky, separate the reproducible behavior from the unstable trigger. Do not treat one passing broad rerun as proof that the issue is fixed.
+7. Inspect the source that controls the reproduced behavior and gather the smallest observation needed to choose between hypotheses.
+8. If temporary instrumentation is needed, give every probe a unique marker, keep it local to the suspect boundary, and remove it before final verification.
+9. Apply the smallest fix that addresses the reproduced cause.
+10. Re-run the original reproduction path after the fix. If that path is unavailable or too broad, run the closest configured intent and report the limitation.
+11. Add or keep a regression guard only when it is tied to the reproduced symptom or a directly observed boundary condition.
+12. Report the symptom, reproduction, hypotheses considered, observations, fix, original reproduction rerun, checks, and remaining risk.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

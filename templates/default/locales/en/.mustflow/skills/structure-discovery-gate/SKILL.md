@@ -2,11 +2,11 @@
 mustflow_doc: skill.structure-discovery-gate
 locale: en
 canonical: true
-revision: 26
+revision: 27
 lifecycle: mustflow-owned
 authority: procedure
 name: structure-discovery-gate
-description: Apply this skill before introducing new feature structure, folders, file boundaries, routing, data models, integration boundaries, frontend/backend/database/infrastructure choices, database engine choices, managed database extensions or provider convenience features, authentication identity ownership, public URL contracts, data residency policy, runtime patchability, runtime portability, global-ready locale country currency timezone and money models, server-side authorization boundaries, file upload and storage strategy, API response contracts, semantic content blocks, filter URL policy, admin operations, cache strategy, content lifecycle, asset strategy, policy or fact registry, content graph decisions, source collection flows, user-state layers, core/application/delivery/infra boundaries, framework-magic boundaries, operational versus analytics boundaries, HTTP-to-worker boundaries, job or outbox models, backup or restore assumptions, vendor or platform exit paths, external-service truth ownership, search or queue or analytics portability, operational reproducibility, observability identifier flow, deployment-state portability, CI/CD reproducibility, dependency ecosystem or maintainer-risk placement, multi-server state boundaries, vertical versus horizontal scaling boundaries, AI usage cost boundaries, AI gateway hard-limit boundaries, failure-isolation boundaries, pricing-growth boundaries, or content-heavy product architecture.
+description: Apply this skill before introducing new feature structure, ownership boundaries, data models, integration choices, or platform decisions that may create long-term architecture commitments.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure

@@ -2,7 +2,7 @@
 mustflow_doc: skill.docs-update
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: docs-update
@@ -45,6 +45,7 @@ Ensure documentation accurately reflects the current workflow, commands, and use
 - Relevant source or template file
 - Current documentation page or Markdown file
 - `.mustflow/config/commands.toml`
+- Localization or template metadata that owns the document when the edited page is installed or translated
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -63,10 +64,16 @@ Ensure documentation accurately reflects the current workflow, commands, and use
 ## Procedure
 
 1. Locate the document responsible for the explanation.
-2. Update only the most relevant sections.
-3. Ensure command names and paths are exact.
-4. Avoid adding marketing language or tutorial filler.
-5. Do not manually modify generated files.
+2. Decide section relevance before writing:
+   - update the page that owns the contract before summary or index pages;
+   - update README only when the first-screen claim changes;
+   - update localized or template metadata only when the source document is installed or translated;
+   - avoid duplicating long procedures across multiple docs.
+3. Update only the most relevant sections.
+4. Ensure command names, paths, field names, option names, and frontmatter are exact.
+5. If localization exists and translation confidence is low, update source metadata and mark follow-up instead of guessing translated wording.
+6. Avoid adding marketing language or tutorial filler.
+7. Do not manually modify generated files.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

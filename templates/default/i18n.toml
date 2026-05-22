@@ -92,7 +92,7 @@ translations = {}
 [documents."skill.contract-sync-check"]
 source = "locales/en/.mustflow/skills/contract-sync-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.date-number-audit"]
@@ -128,13 +128,13 @@ translations = {}
 [documents."skill.diff-risk-review"]
 source = "locales/en/.mustflow/skills/diff-risk-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.codebase-orientation"]
 source = "locales/en/.mustflow/skills/codebase-orientation/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.cli-output-contract-review"]
@@ -182,7 +182,7 @@ translations = {}
 [documents."skill.docs-update"]
 source = "locales/en/.mustflow/skills/docs-update/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.docs-prose-review"]
@@ -194,7 +194,7 @@ translations = {}
 [documents."skill.failure-triage"]
 source = "locales/en/.mustflow/skills/failure-triage/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.external-prompt-injection-defense"]
@@ -241,13 +241,13 @@ translations = {}
 [documents."skill.performance-budget-check"]
 source = "locales/en/.mustflow/skills/performance-budget-check/SKILL.md"
 source_locale = "en"
-revision = 12
+revision = 15
 translations = {}
 
 [documents."skill.pattern-scout"]
 source = "locales/en/.mustflow/skills/pattern-scout/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.process-execution-safety"]
@@ -265,13 +265,13 @@ translations = {}
 [documents."skill.requirement-regression-guard"]
 source = "locales/en/.mustflow/skills/requirement-regression-guard/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.structure-discovery-gate"]
 source = "locales/en/.mustflow/skills/structure-discovery-gate/SKILL.md"
 source_locale = "en"
-revision = 26
+revision = 27
 translations = {}
 
 [documents."skill.state-machine-pattern"]
@@ -289,13 +289,13 @@ translations = {}
 [documents."skill.repro-first-debug"]
 source = "locales/en/.mustflow/skills/repro-first-debug/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.source-freshness-check"]
 source = "locales/en/.mustflow/skills/source-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.source-anchor-authoring"]
@@ -313,13 +313,13 @@ translations = {}
 [documents."skill.readme-authoring"]
 source = "locales/en/.mustflow/skills/readme-authoring/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.release-notes-authoring"]
 source = "locales/en/.mustflow/skills/release-notes-authoring/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.security-privacy-review"]
@@ -355,7 +355,7 @@ translations = {}
 [documents."skill.test-maintenance"]
 source = "locales/en/.mustflow/skills/test-maintenance/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.vertical-slice-tdd"]

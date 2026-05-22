@@ -2,7 +2,7 @@
 mustflow_doc: skill.test-maintenance
 locale: en
 canonical: true
-revision: 3
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: test-maintenance
@@ -35,6 +35,7 @@ Keep tests aligned with the current behavior contract.
 - A bug fix needs a regression test.
 - Existing tests may be stale, duplicated, too broad, or tied to removed implementation details.
 - Snapshot output has changed.
+- Test execution moves between subprocess execution, in-process helpers, grouped runners, or scheduler-managed waves.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -49,6 +50,7 @@ Keep tests aligned with the current behavior contract.
 - Current behavior contract
 - Changed or removed code path
 - Existing test style
+- Isolation model for the affected tests, including whether they share a Node process, working directory adapter, environment variables, or build output
 - `.mustflow/config/commands.toml`
 - `.mustflow/config/mustflow.toml` `[testing]`
 
@@ -77,9 +79,18 @@ Keep tests aligned with the current behavior contract.
    - `legacy_contract`: old behavior is intentionally preserved
    - `flaky_or_environmental`: failure may depend on environment
 4. Add, update, remove, or report tests according to the classification.
-5. Do not reintroduce removed behavior solely because old tests expect it.
-6. Treat snapshot updates as manual unless `snapshot_update` is explicitly approved and configured.
-7. Keep tests deterministic and close to the behavior contract.
+5. For `flaky_or_environmental` tests, do not delete or weaken assertions immediately. First classify the unstable factor:
+   - timing, ordering, or scheduler grouping;
+   - filesystem cleanup, lock files, or generated output;
+   - shared process state or environment variables;
+   - platform-specific path, shell, locale, or line-ending behavior;
+   - external tool availability or version drift.
+6. For flaky tests, prefer isolation, deterministic fixtures, explicit waiting, runner locks, or narrower concurrency before `skip` markers. Use a skip only when the behavior is intentionally unsupported in that environment and the reason is documented.
+7. Do not reintroduce removed behavior solely because old tests expect it.
+8. When replacing subprocess tests with in-process helpers, verify that the helper does not mutate global process state that can leak across sibling tests. Pay special attention to `process.cwd()`, `process.env`, `process.argv`, `process.exitCode`, module-level caches, timers, and signal handlers.
+9. If several in-process CLI tests can run in the same Node test runner, either provide context-local state for the shared resource, serialize the affected tests, or keep the unsafe tests isolated in separate processes.
+10. Treat snapshot updates as manual unless `snapshot_update` is explicitly approved and configured.
+11. Keep tests deterministic and close to the behavior contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -107,6 +118,7 @@ Do not infer missing test commands.
 - If tests fail, inspect the first relevant failure.
 - Do not delete or weaken tests merely to make validation pass.
 - If it is uncertain whether a test is stale, report it instead of deleting it.
+- If a failure appears only under grouped or parallel in-process execution, look for shared process state before changing the behavior assertions.
 - If the test command is unavailable, report the missing intent.
 
 <!-- mustflow-section: output-format -->
@@ -117,6 +129,7 @@ Do not infer missing test commands.
 - Tests updated
 - Tests removed, with reason
 - Stale test candidates
+- Flaky or environmental classification and handling
 - Command intents run
 - Skipped command intents and reasons
 - Remaining test risks

@@ -4,7 +4,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import {
+	createTempProject,
+	initProjectInProcess as initProject,
+	removeTempProject,
+	runCliInProcess as runCli,
+} from './helpers/cli-harness.js';
 
 function runGit(cwd, args) {
 	const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -24,12 +29,12 @@ function replaceCommands(projectPath, text) {
 	writeFileSync(commandsPath, `${text.trim()}\n`);
 }
 
-test('plans verification from current changed files', () => {
+test('plans verification from current changed files', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -54,15 +59,15 @@ required_after = ["test_change"]
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const changedResult = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
-		const classifyResult = runCli(projectPath, [
+		const changedResult = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const classifyResult = await runCli(projectPath, [
 			'classify',
 			'--changed',
 			'--write',
 			'.mustflow/state/change-classification.json',
 			'--json',
 		]);
-		const fromClassificationResult = runCli(projectPath, [
+		const fromClassificationResult = await runCli(projectPath, [
 			'verify',
 			'--from-classification',
 			'.mustflow/state/change-classification.json',
@@ -95,18 +100,18 @@ required_after = ["test_change"]
 	}
 });
 
-test('reports missing project-declared test selection without inferring a subset', () => {
+test('reports missing project-declared test selection without inferring a subset', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-missing.txt');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		mkdirSync(path.dirname(fixturePath), { recursive: true });
 		writeFileSync(fixturePath, 'before\n');
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -126,13 +131,13 @@ test('reports missing project-declared test selection without inferring a subset
 	}
 });
 
-test('warns when project-declared test selection rules do not match changed files', () => {
+test('warns when project-declared test selection rules do not match changed files', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-unmatched.txt');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		writeFileSync(
 			selectionPath,
 			`
@@ -151,7 +156,7 @@ select = { intent = "source_related", fallback_intent = "source_fast" }
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -168,13 +173,13 @@ select = { intent = "source_related", fallback_intent = "source_fast" }
 	}
 });
 
-test('treats project-declared test selection matches as a minimum selected set', () => {
+test('treats project-declared test selection matches as a minimum selected set', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-manifest.txt');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -243,7 +248,7 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 		const candidate = report.candidates.find((item) => item.intent === 'manifest_related');
 
@@ -291,14 +296,14 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 	}
 });
 
-test('passes project-declared test targets only when selected intent opts in', () => {
+test('passes project-declared test targets only when selected intent opts in', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-targets.txt');
 	const targetsPath = path.join(projectPath, 'targets.json');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -352,9 +357,9 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const planResult = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const planResult = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
 		const planReport = JSON.parse(planResult.stdout);
-		const result = runCli(projectPath, ['verify', '--changed', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--json']);
 		const report = JSON.parse(result.stdout);
 		const targets = JSON.parse(readFileSync(targetsPath, 'utf8'));
 
@@ -371,13 +376,13 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 	}
 });
 
-test('runs verification from current changed files', () => {
+test('runs verification from current changed files', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
 	const markerPath = path.join(projectPath, 'executed.txt');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -402,7 +407,7 @@ required_after = ["test_change"]
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const result = runCli(projectPath, ['verify', '--changed', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -417,12 +422,12 @@ required_after = ["test_change"]
 	}
 });
 
-test('plans verification for unclassified changed files with unknown_change', () => {
+test('plans verification for unclassified changed files with unknown_change', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'unmapped', 'verify-changed.custom');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -447,7 +452,7 @@ required_after = ["unknown_change"]
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const result = runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -467,13 +472,13 @@ required_after = ["unknown_change"]
 	}
 });
 
-test('writes changed-file classification plan before verifying', () => {
+test('writes changed-file classification plan before verifying', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
 	const planPath = path.join(projectPath, '.mustflow', 'state', 'change-plan.json');
 
 	try {
-		initProject(projectPath);
+		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -498,7 +503,7 @@ required_after = ["test_change"]
 		commitProjectBaseline(projectPath);
 		writeFileSync(fixturePath, 'after\n');
 
-		const result = runCli(projectPath, [
+		const result = await runCli(projectPath, [
 			'verify',
 			'--changed',
 			'--write-plan',
