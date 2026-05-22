@@ -5,8 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 92
-source_fingerprint: "sha256:643ee85359cde7dfd5643a0d896cfef594392558d99b832f6d3054d26ec2d14e"
+anchor_count: 93
+degraded: false
+git_ls_files_status: ok
+source_fingerprint: "sha256:1f6b24e546706620dcde8898ada5b96a2478e1327363d6d6c0d49862f3a6ab24"
 ---
 
 # REPO_MAP.md
@@ -35,6 +37,7 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### /
 
 - `.gitattributes`: Git text, binary, and line-ending policy. Check before normalizing files.
+- `ARCHITECTURE.md`: Optional system structure, module boundaries, and architectural decisions.
 - `CHANGELOG.md`: Optional release history and user-visible change log.
 - `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.
 - `package.json`: Node.js package manifest, binary entry points, and package scripts.
