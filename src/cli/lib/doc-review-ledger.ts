@@ -9,6 +9,7 @@ import {
 	toPosixPath,
 	writeUtf8FileInsideWithoutSymlinks,
 } from './filesystem.js';
+import { isRecord, type TomlTable } from './command-contract.js';
 import { parseTomlText, stringifyToml } from './toml.js';
 
 export const DOC_REVIEW_LEDGER_RELATIVE_PATH = '.mustflow/review/docs.toml';
@@ -79,12 +80,6 @@ export interface ReviewDocInput {
 	readonly reviewerCommandIntent?: string;
 	readonly summary?: string;
 	readonly now?: string;
-}
-
-type TomlTable = Record<string, unknown>;
-
-function isRecord(value: unknown): value is TomlTable {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function readOptionalString(value: unknown): string | undefined {

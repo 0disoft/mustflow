@@ -1,15 +1,10 @@
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
+import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { readMustflowTextFileIfExists } from '../lib/mustflow-read.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readMustflowTomlFile } from '../lib/toml.js';
-
-type TomlTable = Record<string, unknown>;
-
-function isRecord(value: unknown): value is TomlTable {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function readTextIfExists(projectRoot: string, relativePath: string): string | undefined {
 	return readMustflowTextFileIfExists(projectRoot, relativePath) ?? undefined;

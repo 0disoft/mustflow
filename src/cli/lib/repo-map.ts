@@ -1,19 +1,18 @@
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { toPosixPath } from './filesystem.js';
+import {
+	getRepoMapSourceFingerprint,
+	renderRepoMapFrontmatter,
+	type RepoMapGitLsFilesStatus,
+} from './repo-map-frontmatter.js';
 import { writeUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
+import { isRecord } from './command-contract.js';
 import { readMustflowTomlFile } from './toml.js';
 
 const DEFAULT_DEPTH = 3;
-const REPO_MAP_DOC_ID = 'repo-map';
-const REPO_MAP_LIFECYCLE = 'generated';
-const REPO_MAP_GENERATOR = 'mustflow';
-const REPO_MAP_RELATIVE_ROOT = '.';
-const REPO_MAP_SOURCE_POLICY = 'anchors_only';
-const REPO_MAP_PRIVACY_MODE = 'minimal';
 const GIT_LS_FILES_TIMEOUT_MS = 5_000;
 const GIT_LS_FILES_MAX_BUFFER_BYTES = 1_048_576;
 const EXCLUDED_SEGMENTS = new Set([
@@ -268,7 +267,7 @@ interface GitLsFilesResult {
 	readonly stdout: string;
 }
 
-type GitLsFilesStatus = 'ok' | 'timeout' | 'max_buffer' | 'error';
+type GitLsFilesStatus = RepoMapGitLsFilesStatus;
 
 interface GitFileDiscovery {
 	readonly files: readonly string[];
@@ -299,10 +298,6 @@ interface RepositoryFiles {
 interface AnchorDiscovery {
 	readonly anchors: readonly AnchorFile[];
 	readonly gitLsFilesStatus: GitLsFilesStatus;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function getStringArray(value: unknown): string[] {
@@ -864,66 +859,6 @@ function countNestedEntrypoints(repository: NestedRepository): number {
 	].filter(Boolean).length;
 }
 
-function getSourceFingerprint(
-	depth: number,
-	includeNested: boolean,
-	configuredPriorityPaths: readonly string[],
-	gitLsFilesStatus: GitLsFilesStatus,
-	anchors: readonly AnchorFile[],
-	nestedRepositories: readonly NestedRepository[],
-): string {
-	const payload = {
-		depth,
-		includeNested,
-		gitLsFilesStatus,
-		priorityPaths: [...configuredPriorityPaths].sort(),
-		anchors: anchors.map((anchor) => anchor.relativePath).sort(),
-		nestedRepositories: nestedRepositories
-			.map((repository) => ({
-				relativePath: repository.relativePath,
-				mustflow: repository.mustflow,
-				agentRules: repository.agentRules,
-				repoMap: repository.repoMap,
-				mustflowConfig: repository.mustflowConfig,
-				commandContract: repository.commandContract,
-				contextIndex: repository.contextIndex,
-				skillIndex: repository.skillIndex,
-				rootDocuments: repository.rootDocuments.map((document) => document.relativePath).sort(),
-				machineContracts: [...repository.machineContracts].sort(),
-				manifests: [...repository.manifests].sort(),
-				commandAdapters: [...repository.commandAdapters].sort(),
-				editingPolicies: [...repository.editingPolicies].sort(),
-			}))
-			.sort((left, right) => left.relativePath.localeCompare(right.relativePath)),
-	};
-	const digest = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
-	return `sha256:${digest}`;
-}
-
-function renderRepoMapFrontmatter(
-	anchorCount: number,
-	sourceFingerprint: string,
-	gitLsFilesStatus: GitLsFilesStatus,
-): string[] {
-	const degraded = gitLsFilesStatus !== 'ok';
-
-	return [
-		'---',
-		`mustflow_doc: ${REPO_MAP_DOC_ID}`,
-		`lifecycle: ${REPO_MAP_LIFECYCLE}`,
-		`generated_by: ${REPO_MAP_GENERATOR}`,
-		`relative_root: "${REPO_MAP_RELATIVE_ROOT}"`,
-		`source_policy: ${REPO_MAP_SOURCE_POLICY}`,
-		`privacy_mode: ${REPO_MAP_PRIVACY_MODE}`,
-		`anchor_count: ${anchorCount}`,
-		`degraded: ${degraded ? 'true' : 'false'}`,
-		`git_ls_files_status: ${gitLsFilesStatus}`,
-		`source_fingerprint: "${sourceFingerprint}"`,
-		'---',
-		'',
-	];
-}
-
 function renderSourceQuality(gitLsFilesStatus: GitLsFilesStatus): string[] {
 	if (gitLsFilesStatus === 'ok') {
 		return [];
@@ -958,14 +893,14 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 	const otherAnchors = anchors.filter((anchor) => !priorityPathSet.has(anchor.relativePath));
 	const anchorCount =
 		anchors.length + nestedRepositories.reduce((total, repository) => total + countNestedEntrypoints(repository), 0);
-	const sourceFingerprint = getSourceFingerprint(
+	const sourceFingerprint = getRepoMapSourceFingerprint({
 		depth,
-		mapConfig.includeNested,
+		includeNested: mapConfig.includeNested,
 		configuredPriorityPaths,
 		gitLsFilesStatus,
 		anchors,
 		nestedRepositories,
-	);
+	});
 
 	return [
 		...renderRepoMapFrontmatter(anchorCount, sourceFingerprint, gitLsFilesStatus),

@@ -9,6 +9,7 @@ import {
 	readUtf8FileInsideWithoutSymlinks,
 	writeUtf8FileInsideWithoutSymlinks,
 } from './filesystem.js';
+import { isRecord, type TomlTable } from './command-contract.js';
 import { parseTomlText, stringifyToml } from './toml.js';
 
 export const MANIFEST_LOCK_RELATIVE_PATH = '.mustflow/config/manifest.lock.toml';
@@ -39,12 +40,6 @@ export interface ManifestLockInspection {
 	readonly changedFiles: readonly string[];
 	readonly missingFiles: readonly string[];
 	readonly issues: readonly string[];
-}
-
-type TomlTable = Record<string, unknown>;
-
-function isRecord(value: unknown): value is TomlTable {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function readString(table: TomlTable, key: string, label: string): string {

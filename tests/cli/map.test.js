@@ -293,6 +293,60 @@ test('writes REPO_MAP.md when requested', () => {
 	}
 });
 
+test('keeps repo map frontmatter and source fingerprint rendering stable', async () => {
+	const { getRepoMapSourceFingerprint, renderRepoMapFrontmatter } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map-frontmatter.js')).href
+	);
+	const input = {
+		depth: 3,
+		includeNested: true,
+		configuredPriorityPaths: ['README.md', 'AGENTS.md'],
+		gitLsFilesStatus: 'ok',
+		anchors: [{ relativePath: 'docs/README.md' }, { relativePath: 'AGENTS.md' }],
+		nestedRepositories: [
+			{
+				relativePath: 'packages/api/',
+				mustflow: true,
+				agentRules: 'packages/api/AGENTS.md',
+				repoMap: undefined,
+				mustflowConfig: 'packages/api/.mustflow/config/mustflow.toml',
+				commandContract: 'packages/api/.mustflow/config/commands.toml',
+				contextIndex: undefined,
+				skillIndex: undefined,
+				rootDocuments: [{ relativePath: 'packages/api/README.md' }],
+				machineContracts: [],
+				manifests: ['packages/api/package.json'],
+				commandAdapters: [],
+				editingPolicies: [],
+			},
+		],
+	};
+	const reorderedInput = {
+		...input,
+		configuredPriorityPaths: [...input.configuredPriorityPaths].reverse(),
+		anchors: [...input.anchors].reverse(),
+	};
+	const fingerprint = getRepoMapSourceFingerprint(input);
+
+	assert.match(fingerprint, /^sha256:[a-f0-9]{64}$/);
+	assert.equal(getRepoMapSourceFingerprint(reorderedInput), fingerprint);
+	assert.deepEqual(renderRepoMapFrontmatter(3, fingerprint, 'ok'), [
+		'---',
+		'mustflow_doc: repo-map',
+		'lifecycle: generated',
+		'generated_by: mustflow',
+		'relative_root: "."',
+		'source_policy: anchors_only',
+		'privacy_mode: minimal',
+		'anchor_count: 3',
+		'degraded: false',
+		'git_ls_files_status: ok',
+		`source_fingerprint: "${fingerprint}"`,
+		'---',
+		'',
+	]);
+});
+
 test('prints nested repository entrypoints when workspace map is enabled', () => {
 	const projectPath = createTempProject();
 
