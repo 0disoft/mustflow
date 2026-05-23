@@ -21,7 +21,11 @@ const expectedFixtures = [
 ];
 
 function readText(relativePath) {
-	return readFileSync(path.join(projectRoot, relativePath), 'utf8');
+	const sourcePath = relativePath.startsWith('.mustflow/')
+		? path.join(projectRoot, 'templates', 'default', 'locales', 'en', relativePath)
+		: path.join(projectRoot, relativePath);
+
+	return readFileSync(sourcePath, 'utf8');
 }
 
 function readFixture(name) {

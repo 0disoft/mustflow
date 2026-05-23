@@ -30,12 +30,3 @@ Thumbs.db
 Desktop.ini
 .idea/
 .vscode/
-
-# mustflow-generated local state
-.mustflow/cache/
-.mustflow/state/
-.mustflow/backups/
-.mustflow/worklogs/
-.mustflow/plans/
-.mustflow/tasks/
-.mustflow/work-items/
