@@ -64,8 +64,8 @@ function renderIndexSummary(result: Awaited<ReturnType<typeof createLocalIndex>>
 		`source_anchors: ${result.source_anchor_count}`,
 		`source_anchor_risk_signals: ${result.source_anchor_risk_signal_count}`,
 		`index_mode: ${result.index_mode}`,
-		`reused_existing: ${result.reused_existing ? 'yes' : 'no'}`,
-		`${t(lang, 'label.wroteFiles')}: ${result.wrote_files ? 'yes' : 'no'}`,
+		`reused_existing: ${result.reused_existing ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+		`${t(lang, 'label.wroteFiles')}: ${result.wrote_files ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
 	];
 
 	if (result.dry_run) {

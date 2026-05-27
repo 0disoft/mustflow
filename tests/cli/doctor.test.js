@@ -84,6 +84,24 @@ test('prints a read-only doctor summary as json', () => {
 	}
 });
 
+test('localizes doctor human-readable summary labels', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['--lang', 'ko', 'doctor']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /설치됨: 예/);
+		assert.match(result.stdout, /검사: 통과/);
+		assert.match(result.stdout, /\[정상\] 설치:/);
+		assert.doesNotMatch(result.stdout, /Installed: yes/);
+		assert.doesNotMatch(result.stdout, /Check: passed/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('doctor warns when agent-runnable intents inherit the host environment', () => {
 	const projectPath = createTempProject();
 

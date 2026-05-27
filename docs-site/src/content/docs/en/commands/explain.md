@@ -14,6 +14,8 @@ Without a path, the command prints the authority model. With a path, it reports 
 `mf explain command <intent>` explains whether a command intent in `.mustflow/config/commands.toml` is runnable through `mf run`, why it is allowed or blocked, and whether running it would count as mustflow verification.
 When a fresh local index exists, it also reads the derived command-effect graph so the report can show write locks and lock conflicts without changing command authority. The graph is marked `explanation_only`, points back to `.mustflow/config/commands.toml`, and never grants runnable status by itself.
 
+`mf explain --why-blocked <intent>` focuses that command decision on the `mf run` preflight plan. It shows the blocking reason code, bounded run-plan metadata, and any suggested command-contract snippet without running the intent.
+
 `mf explain verify --reason <event>` and `mf explain verify --from-plan <path>` explain which verification candidates `mf verify` would select without running commands or writing receipts. They use the same `required_after` matching and command eligibility rules as `mf verify`, and show skipped candidates with stable reason codes.
 Verify explanations include `decision.verification.decisionGraph`, the same decision model used by plan-only verification and dashboard snapshots. When a fresh local index exists, verify explanations also include read-only command-effect graph status for matching candidates. Missing or stale indexes show a rebuild hint and do not change command selection or command authority.
 
@@ -42,6 +44,7 @@ When a fresh local index exists, it also shows the derived path-surface rule tha
 - `Expected frontmatter`: Required `mustflow_doc`, `authority`, and `lifecycle` values when the path is recognized.
 - `Authority boundary`: What the authority lane may define and what it must leave to higher-authority files, current code, or `commands.toml`.
 - `Command intent`: Command-contract metadata when the `command` topic is used.
+- `Blocked run plan`: `mf run` preflight status, reason code, detail, configured cwd, timeout, mode, writes, and suggested snippet when `--why-blocked` is used.
 - `Command effect graph`: Fresh local-index write locks and lock conflicts when the `command` topic is used and `.mustflow/cache/mustflow.sqlite` is available. Missing or stale indexes show a rebuild hint instead of changing the command decision. Graph metadata is explanation-only and cannot make a command runnable.
 - `Verification explanation`: Reasons, matching `required_after` intents, runnable candidates, skipped candidates, gaps, `decisionGraph`, and local-index command-effect status when the `verify` topic is used.
 - `Retention policy`: Effective retention settings when the `retention` topic is used.
@@ -63,6 +66,8 @@ npx mf explain asset-optimization
 npx mf explain asset-optimization --json
 npx mf explain command test
 npx mf explain command lint --json
+npx mf explain --why-blocked lint
+npx mf explain --why-blocked deploy --json
 npx mf explain why command test --json
 npx mf explain why latest-failure
 npx mf explain verify --reason code_change
@@ -91,7 +96,7 @@ Machine-readable output uses these fields:
 - `command` (`string`): Always `explain`.
 - `topic` (`string`): `anchor`, `asset-optimization`, `authority`, `command`, `retention`, `skill`, `skills`, `surface`, `verify`, or `why`.
 - `mustflow_root` (`string`): Current mustflow root.
-- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, refresh hints, and explanation-only command-authority fields when an intent is declared. For `skill`, `decision.selectionEvidence` contains deterministic route evidence such as `matchedBy`, `requiredInputs`, `missingInputs`, `candidateAdjuncts`, `unmatchedPaths`, and `gapNotes`. For `verify`, `decision.verification` contains selected reasons, matching candidates, skip reasons, gaps, `decisionGraph`, and local-index command-effect status. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available. For `why latest-failure`, `decision.latestFailure` contains bounded latest-run metadata without log tails.
+- `decision` (`object`): The resolved decision, reason, effective action, source files, verification status, and topic-specific details. For `authority`, this includes `boundary.role`, `boundary.canDefine`, and `boundary.cannotDefine`. For `command`, `decision.effectGraph` contains local-index command-effect graph status, write locks, conflicts, stale paths, refresh hints, and explanation-only command-authority fields when an intent is declared. For `--why-blocked`, `decision.blockedRunPlan` contains the `mf run` preflight reason code, detail, metadata, and suggested snippet. For `skill`, `decision.selectionEvidence` contains deterministic route evidence such as `matchedBy`, `requiredInputs`, `missingInputs`, `candidateAdjuncts`, `unmatchedPaths`, and `gapNotes`. For `verify`, `decision.verification` contains selected reasons, matching candidates, skip reasons, gaps, `decisionGraph`, and local-index command-effect status. For `surface`, `decision.readModel` contains read-only local-index path-surface status and matching rule metadata when available. For `why latest-failure`, `decision.latestFailure` contains bounded latest-run metadata without log tails.
 
 ## Help and Exit Codes
 

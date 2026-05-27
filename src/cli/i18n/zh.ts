@@ -22,6 +22,10 @@ export const zhMessages = {
   "value.yes": "是",
   "value.no": "否",
   "value.none": "无",
+  "value.present": "存在",
+  "value.missing": "缺失",
+  "value.passed": "通过",
+  "value.failed": "失败",
 
   "command.adapters.summary": "不生成适配器文件，检查宿主兼容性",
   "command.init.summary": "复制默认的 mustflow 代理工作流",
@@ -64,6 +68,7 @@ export const zhMessages = {
     "验证失败，或命令收到了无效输入",
   "check.result.passed": "mustflow 检查已通过",
   "check.result.strictPassed": "mustflow 严格检查已通过",
+  "check.result.failed": "mustflow 检查失败：发现 {count} 个问题。",
 
   "contractLint.help.summary":
     "检查 .mustflow/config/commands.toml 中的命令契约错误和警告。",
@@ -532,6 +537,10 @@ export const zhMessages = {
   "doctor.section.issueList": "问题列表：",
   "doctor.section.suggestedCommands": "建议命令：",
   "doctor.actionLabel": "运行",
+  "doctor.status.ok": "正常",
+  "doctor.status.warn": "警告",
+  "doctor.status.fail": "失败",
+  "doctor.status.info": "信息",
   "doctor.diagnostic.install": "安装",
   "doctor.diagnostic.validation": "验证",
 	"doctor.diagnostic.skillRoutes": "技能路由",
@@ -786,6 +795,11 @@ export const zhMessages = {
   "run.error.outputLimitExceeded":
     '命令 "{intent}" 超过 max_output_bytes：{message}',
   "run.error.startFailed": '命令 "{intent}" 启动失败：{message}',
+  "run.error.activeLockConflict":
+    "mf run {intent} 被活动运行锁阻止：{detail}",
+  "run.error.activeLockConflictDetail":
+    "{lock} 与活动 intent {intent} 冲突（pid {pid}）",
+  "run.error.activeLockConflictUnknown": "未知的活动运行锁冲突",
 
   "search.help.summary":
     "搜索本地 SQLite 索引中的 mustflow 工作流。",
@@ -897,6 +911,16 @@ export const zhMessages = {
   "verify.label.planSource": "计划来源",
   "verify.label.status": "状态",
   "verify.label.results": "结果",
+  "verify.label.completionVerdict": "完成判定",
+  "verify.label.matched": "匹配",
+  "verify.label.ran": "已运行",
+  "verify.label.passed": "已通过",
+  "verify.label.failed": "已失败",
+  "verify.label.skipped": "已跳过",
+  "verify.label.parallelism": "并行度",
+  "verify.label.parallelismNote": "并行度说明",
+  "verify.parallelism.summary":
+    "请求 {requested}，实际 {effective}，仓库上限 {repositoryMax}，可用 CPU {cpuAvailable}，模式 {mode}",
   "verify.error.missingReason": "缺少验证原因",
   "verify.error.conflictingInputs": "只能使用 --reason、--from-classification、--from-plan 或 --changed 其中之一",
   "verify.error.writePlanRequiresChanged": "--write-plan 需要 --changed",
@@ -938,6 +962,7 @@ export const zhMessages = {
   "explain.label.publicSurface": "公共表面",
   "explain.label.validationReasons": "验证原因",
   "explain.label.affectedContracts": "受影响契约",
+  "explain.label.blockedRunPlan": "被阻止的运行计划",
   "explain.error.missingTopic": "缺少 explain 主题",
   "explain.error.missingCommand": "缺少命令意图",
   "explain.error.missingSkill": "缺少技能标识",

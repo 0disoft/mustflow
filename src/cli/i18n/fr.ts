@@ -22,6 +22,10 @@ export const frMessages = {
   "value.yes": "oui",
   "value.no": "non",
   "value.none": "aucun",
+  "value.present": "présent",
+  "value.missing": "manquant",
+  "value.passed": "réussi",
+  "value.failed": "échoué",
 
   "command.adapters.summary": "Inspecte la compatibilité des adaptateurs sans générer de fichiers",
   "command.init.summary": "Copie le flux de travail d'agent mustflow par défaut",
@@ -64,6 +68,7 @@ export const frMessages = {
     "La validation a échoué ou la commande a reçu une entrée non valide",
   "check.result.passed": "vérification mustflow réussie",
   "check.result.strictPassed": "vérification stricte mustflow réussie",
+  "check.result.failed": "vérification mustflow échouée : {count} problème(s) trouvé(s).",
 
   "contractLint.help.summary":
     "Inspecte .mustflow/config/commands.toml pour trouver les erreurs et avertissements du contrat de commandes.",
@@ -542,6 +547,10 @@ export const frMessages = {
   "doctor.section.issueList": "Liste des problèmes :",
   "doctor.section.suggestedCommands": "Commandes suggérées :",
   "doctor.actionLabel": "exécuter",
+  "doctor.status.ok": "ok",
+  "doctor.status.warn": "alerte",
+  "doctor.status.fail": "échec",
+  "doctor.status.info": "info",
   "doctor.diagnostic.install": "Installation",
   "doctor.diagnostic.validation": "Validation",
 	"doctor.diagnostic.skillRoutes": "Routage des skills",
@@ -796,6 +805,11 @@ Lisez ces fichiers avant de travailler :
   "run.error.outputLimitExceeded":
     'La commande "{intent}" a dépassé max_output_bytes : {message}',
   "run.error.startFailed": 'Impossible de démarrer la commande "{intent}" : {message}',
+  "run.error.activeLockConflict":
+    "mf run {intent} est bloqué par un verrou d'exécution actif : {detail}",
+  "run.error.activeLockConflictDetail":
+    "{lock} entre en conflit avec l'intention active {intent} (pid {pid})",
+  "run.error.activeLockConflictUnknown": "conflit de verrou d'exécution actif inconnu",
 
   "search.help.summary":
     "Recherche dans l'index SQLite local du flux de travail mustflow.",
@@ -907,6 +921,16 @@ Lisez ces fichiers avant de travailler :
   "verify.label.planSource": "Source du plan",
   "verify.label.status": "État",
   "verify.label.results": "Résultats",
+  "verify.label.completionVerdict": "Verdict de complétion",
+  "verify.label.matched": "Correspondants",
+  "verify.label.ran": "Exécutés",
+  "verify.label.passed": "Réussis",
+  "verify.label.failed": "Échoués",
+  "verify.label.skipped": "Ignorés",
+  "verify.label.parallelism": "Parallélisme",
+  "verify.label.parallelismNote": "Note de parallélisme",
+  "verify.parallelism.summary":
+    "demandé {requested}, effectif {effective}, maximum du dépôt {repositoryMax}, CPU disponible {cpuAvailable}, mode {mode}",
   "verify.error.missingReason": "Raison de vérification manquante",
   "verify.error.conflictingInputs": "Utilisez un seul de --reason, --from-classification, --from-plan ou --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan nécessite --changed",
@@ -948,6 +972,7 @@ Lisez ces fichiers avant de travailler :
   "explain.label.publicSurface": "Surface publique",
   "explain.label.validationReasons": "Raisons de validation",
   "explain.label.affectedContracts": "Contrats affectes",
+  "explain.label.blockedRunPlan": "Plan d'exécution bloqué",
   "explain.error.missingTopic": "Sujet d'explication manquant",
   "explain.error.missingCommand": "Intention de commande manquante",
   "explain.error.missingSkill": "Identifiant de skill manquant",

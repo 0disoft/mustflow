@@ -79,7 +79,7 @@ export function runStatus(args: string[], reporter: Reporter, lang: CliLang = 'e
 	}
 
 	reporter.stdout(t(lang, 'status.title'));
-	reporter.stdout(`${t(lang, 'label.installed')}: ${status.installed ? 'yes' : 'no'}`);
+	reporter.stdout(`${t(lang, 'label.installed')}: ${status.installed ? t(lang, 'value.yes') : t(lang, 'value.no')}`);
 	reporter.stdout(`${t(lang, 'label.manifestLock')}: ${status.manifestLock}`);
 	reporter.stdout(`${t(lang, 'label.trackedFiles')}: ${status.trackedFiles}`);
 	reporter.stdout(`${t(lang, 'label.changedFiles')}: ${status.changedFiles.length}`);

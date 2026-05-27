@@ -227,6 +227,11 @@ destructive = false
 		assert.match(conflict.stderr, /active run lock/u);
 		assert.equal(existsSync(conflictMarkerPath), false);
 
+		const localizedConflict = runCli(projectPath, ['--lang', 'ko', 'run', 'lock_conflict']);
+		assert.equal(localizedConflict.status, 1);
+		assert.match(localizedConflict.stderr, /활성 실행 잠금/u);
+		assert.equal(existsSync(conflictMarkerPath), false);
+
 		const other = runCli(projectPath, ['run', 'lock_other']);
 		assert.equal(other.status, 0, other.stderr || other.stdout);
 		assert.equal(readFileSync(otherMarkerPath, 'utf8'), 'ran');

@@ -279,6 +279,44 @@ required_after = ["custom_verify"]
 	}
 });
 
+test('localizes human-readable verification summary labels', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_echo]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print a verification message."
+argv = ['${process.execPath}', '-e', 'console.log("verify ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["custom_verify"]
+`,
+		);
+
+		const result = await runCli(projectPath, ['--lang', 'ko', 'verify', '--reason', 'custom_verify']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /완료 판정:/);
+		assert.match(result.stdout, /일치: 1/);
+		assert.match(result.stdout, /실행: 1/);
+		assert.match(result.stdout, /통과: 1/);
+		assert.doesNotMatch(result.stdout, /completion verdict:/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('rejects invalid verification parallelism', async () => {
 	const projectPath = createTempProject();
 

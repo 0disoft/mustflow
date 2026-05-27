@@ -90,5 +90,7 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 		reporter.stderr(issue);
 	}
 
+	reporter.stderr(t(lang, 'check.result.failed', { count: issues.length }));
+
 	return 1;
 }

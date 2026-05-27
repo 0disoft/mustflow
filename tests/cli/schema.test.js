@@ -590,6 +590,20 @@ test('explain why command json output matches the published schema', () => {
 	}
 });
 
+test('explain why-blocked json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['explain', '--why-blocked', 'lint', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'explain-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explain verify json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

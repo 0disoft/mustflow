@@ -360,7 +360,60 @@
         },
         "effectGraph": {
           "$ref": "#/$defs/commandEffectGraph"
+        },
+        "blockedRunPlan": {
+          "$ref": "#/$defs/blockedRunPlan"
         }
+      }
+    },
+    "blockedRunPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runnable",
+        "reasonCode",
+        "detail",
+        "status",
+        "lifecycle",
+        "runPolicy",
+        "configuredCwd",
+        "timeoutSeconds",
+        "mode",
+        "writes",
+        "suggestedIntentSnippet"
+      ],
+      "properties": {
+        "runnable": { "type": "boolean" },
+        "reasonCode": {
+          "type": ["string", "null"],
+          "enum": [
+            "intent_not_table",
+            "status_not_configured",
+            "lifecycle_not_oneshot",
+            "run_policy_not_agent_allowed",
+            "stdin_not_closed",
+            "missing_timeout",
+            "missing_command_source",
+            "unsafe_intent_name",
+            "blocked_shell_background_pattern",
+            "blocked_long_running_command_pattern",
+            "cwd_outside_project",
+            "max_output_bytes_exceeds_limit",
+            null
+          ]
+        },
+        "detail": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "lifecycle": { "type": ["string", "null"] },
+        "runPolicy": { "type": ["string", "null"] },
+        "configuredCwd": { "type": ["string", "null"] },
+        "timeoutSeconds": { "type": ["integer", "null"] },
+        "mode": { "type": ["string", "null"] },
+        "writes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggestedIntentSnippet": { "type": ["string", "null"] }
       }
     },
     "commandEffectGraph": {

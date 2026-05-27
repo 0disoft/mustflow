@@ -110,11 +110,11 @@ export async function runContext(args: string[], reporter: Reporter, lang: CliLa
 
 	const context = getAgentContext(mustflowRoot);
 	reporter.stdout(t(lang, 'context.title'));
-	reporter.stdout(`${t(lang, 'label.installed')}: ${context.installed ? 'yes' : 'no'}`);
+	reporter.stdout(`${t(lang, 'label.installed')}: ${context.installed ? t(lang, 'value.yes') : t(lang, 'value.no')}`);
 	reporter.stdout(`${t(lang, 'label.mustflowRoot')}: ${context.mustflow_root}`);
-	reporter.stdout(`${t(lang, 'label.commandContract')}: ${context.command_contract.exists ? 'present' : 'missing'}`);
+	reporter.stdout(`${t(lang, 'label.commandContract')}: ${context.command_contract.exists ? t(lang, 'value.present') : t(lang, 'value.missing')}`);
 	reporter.stdout(`${t(lang, 'label.runnableIntents')}: ${context.command_contract.runnable_intents.length}`);
-	reporter.stdout(`${t(lang, 'label.latestRun')}: ${context.latest_run.exists ? 'present' : 'missing'}`);
+	reporter.stdout(`${t(lang, 'label.latestRun')}: ${context.latest_run.exists ? t(lang, 'value.present') : t(lang, 'value.missing')}`);
 
 	return 0;
 }

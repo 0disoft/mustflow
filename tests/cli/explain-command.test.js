@@ -363,6 +363,49 @@ test('explains blocked command intents without allowing guessed execution', () =
 	}
 });
 
+test('explains why a command is blocked with run-plan metadata and a suggested snippet', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', '--why-blocked', 'lint', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.kind, 'blocked');
+		assert.equal(report.decision.inputCommand, 'lint');
+		assert.equal(report.decision.blockedRunPlan.runnable, false);
+		assert.equal(report.decision.blockedRunPlan.reasonCode, 'status_not_configured');
+		assert.equal(report.decision.blockedRunPlan.status, 'unknown');
+		assert.match(report.decision.reason, /status is unknown, not configured/);
+		assert.match(report.decision.reason, /lifecycle is missing, not oneshot/);
+		assert.match(report.decision.blockedRunPlan.suggestedIntentSnippet, /\[intents\.lint\]/);
+		assert.match(report.decision.blockedRunPlan.suggestedIntentSnippet, /status = "manual_only"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains why-blocked as not blocked for runnable command intents', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', '--why-blocked', 'mustflow_check']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /command intent "mustflow_check" is not blocked for mf run/);
+		assert.match(result.stdout, /Blocked run plan/);
+		assert.match(result.stdout, /- runnable: yes/);
+		assert.match(result.stdout, /- reason_code: none/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explains undeclared command intents as unknown', () => {
 	const projectPath = createTempProject('mustflow-explain-command-');
 

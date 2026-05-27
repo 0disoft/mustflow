@@ -45,6 +45,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
+				'mf explain --why-blocked test',
 				'mf impact --changed',
 				'mf upgrade --dry-run',
 				'mf verify --changed --plan-only --json',

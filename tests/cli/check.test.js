@@ -72,6 +72,7 @@ test('fails when a locked file content hash no longer matches', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Lock hash mismatch: AGENTS\.md/);
+		assert.match(result.stderr, /mustflow check failed: 1 issue\(s\) found\./);
 	} finally {
 		removeTempProject(projectPath);
 	}

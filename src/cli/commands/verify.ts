@@ -1405,21 +1405,27 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 		`${t(lang, 'verify.label.reason')}: ${output.reason}`,
 		`${t(lang, 'verify.label.planSource')}: ${output.plan_source ?? t(lang, 'value.none')}`,
 		`${t(lang, 'verify.label.status')}: ${output.status}`,
-		`completion verdict: ${output.completion_verdict.status} (${output.completion_verdict.primary_reason})`,
-		`matched: ${output.summary.matched}`,
-		`ran: ${output.summary.ran}`,
-		`passed: ${output.summary.passed}`,
-		`failed: ${output.summary.failed}`,
-		`skipped: ${output.summary.skipped}`,
+		`${t(lang, 'verify.label.completionVerdict')}: ${output.completion_verdict.status} (${output.completion_verdict.primary_reason})`,
+		`${t(lang, 'verify.label.matched')}: ${output.summary.matched}`,
+		`${t(lang, 'verify.label.ran')}: ${output.summary.ran}`,
+		`${t(lang, 'verify.label.passed')}: ${output.summary.passed}`,
+		`${t(lang, 'verify.label.failed')}: ${output.summary.failed}`,
+		`${t(lang, 'verify.label.skipped')}: ${output.summary.skipped}`,
 	];
 
 	if (output.parallelism) {
 		const cpuAvailable = output.parallelism.cpu_available ?? t(lang, 'value.none');
 		lines.push(
-			`parallelism: requested ${output.parallelism.requested}, effective ${output.parallelism.effective}, repository max ${output.parallelism.repository_max}, cpu available ${cpuAvailable}, mode ${output.parallelism.mode}`,
+			`${t(lang, 'verify.label.parallelism')}: ${t(lang, 'verify.parallelism.summary', {
+				requested: output.parallelism.requested,
+				effective: output.parallelism.effective,
+				repositoryMax: output.parallelism.repository_max,
+				cpuAvailable,
+				mode: output.parallelism.mode,
+			})}`,
 		);
 		if (output.parallelism.capped) {
-			lines.push(`parallelism note: ${output.parallelism.note}`);
+			lines.push(`${t(lang, 'verify.label.parallelismNote')}: ${output.parallelism.note}`);
 		}
 	}
 

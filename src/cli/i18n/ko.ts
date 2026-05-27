@@ -23,6 +23,10 @@ export const koMessages = {
   "value.yes": "예",
   "value.no": "아니요",
   "value.none": "없음",
+  "value.present": "있음",
+  "value.missing": "없음",
+  "value.passed": "통과",
+  "value.failed": "실패",
 
   "command.adapters.summary": "어댑터 파일을 만들지 않고 호스트 호환성을 확인합니다",
   "command.init.summary": "기본 mustflow 에이전트 워크플로우를 복사합니다",
@@ -63,6 +67,7 @@ export const koMessages = {
   "check.help.exit.fail": "검증 실패 또는 잘못된 입력이 제공되었습니다",
   "check.result.passed": "mustflow 검사 통과",
   "check.result.strictPassed": "mustflow 엄격 검사 통과",
+  "check.result.failed": "mustflow 검사 실패: 문제 {count}개를 찾았습니다.",
 
   "contractLint.help.summary":
     ".mustflow/config/commands.toml의 명령 계약 오류와 경고를 확인합니다.",
@@ -544,6 +549,10 @@ export const koMessages = {
   "doctor.section.issueList": "문제 목록:",
   "doctor.section.suggestedCommands": "추천 명령:",
   "doctor.actionLabel": "명령",
+  "doctor.status.ok": "정상",
+  "doctor.status.warn": "주의",
+  "doctor.status.fail": "실패",
+  "doctor.status.info": "정보",
   "doctor.diagnostic.install": "설치",
   "doctor.diagnostic.validation": "검증",
 	"doctor.diagnostic.skillRoutes": "스킬 라우팅",
@@ -791,6 +800,11 @@ export const koMessages = {
   "run.error.outputLimitExceeded":
     '명령 "{intent}"가 max_output_bytes 제한을 넘었습니다: {message}',
   "run.error.startFailed": '명령 "{intent}"를 시작하지 못했습니다: {message}',
+  "run.error.activeLockConflict":
+    "mf run {intent} 실행이 활성 실행 잠금 때문에 차단되었습니다: {detail}",
+  "run.error.activeLockConflictDetail":
+    "{lock} 잠금이 실행 중인 {intent} 의도와 충돌합니다(pid {pid})",
+  "run.error.activeLockConflictUnknown": "알 수 없는 활성 실행 잠금 충돌",
 
   "search.help.summary":
     "로컬 SQLite 색인에서 mustflow 워크플로우를 검색합니다.",
@@ -902,6 +916,16 @@ export const koMessages = {
   "verify.label.planSource": "계획 원본",
   "verify.label.status": "상태",
   "verify.label.results": "결과",
+  "verify.label.completionVerdict": "완료 판정",
+  "verify.label.matched": "일치",
+  "verify.label.ran": "실행",
+  "verify.label.passed": "통과",
+  "verify.label.failed": "실패",
+  "verify.label.skipped": "생략",
+  "verify.label.parallelism": "병렬 실행",
+  "verify.label.parallelismNote": "병렬 실행 참고",
+  "verify.parallelism.summary":
+    "요청 {requested}, 실제 {effective}, 저장소 상한 {repositoryMax}, 사용 가능 CPU {cpuAvailable}, 모드 {mode}",
   "verify.error.missingReason": "검증 이유가 없습니다",
   "verify.error.conflictingInputs": "--reason, --from-classification, --from-plan, --changed 중 하나만 사용하세요",
   "verify.error.writePlanRequiresChanged": "--write-plan에는 --changed가 필요합니다",
@@ -943,6 +967,7 @@ export const koMessages = {
   "explain.label.publicSurface": "공개 표면",
   "explain.label.validationReasons": "검증 이유",
   "explain.label.affectedContracts": "영향받는 계약",
+  "explain.label.blockedRunPlan": "차단된 실행 계획",
   "explain.error.missingTopic": "설명할 주제가 없습니다",
   "explain.error.missingCommand": "설명할 명령 의도가 없습니다",
   "explain.error.missingSkill": "설명할 스킬 식별자가 없습니다",

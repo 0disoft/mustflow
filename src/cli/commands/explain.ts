@@ -39,6 +39,10 @@ import {
 	renderVerifyExplainDecision,
 	type ExplainVerificationDecision,
 } from './explain-verify.js';
+import {
+	createRunPlan,
+	type RunPlanReasonCode,
+} from '../lib/run-plan.js';
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 const LATEST_RUN_RECEIPT_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
@@ -56,6 +60,7 @@ type ExplainTopic =
 	| 'why';
 type ExplainCommandDecision = CommandDecision & {
 	readonly effectGraph?: LocalCommandEffectGraph;
+	readonly blockedRunPlan?: BlockedRunPlanSummary;
 };
 type ExplainSurfaceDecision = PublicSurfaceDecision & {
 	readonly readModel?: LocalPathSurfaceReadModel;
@@ -81,6 +86,19 @@ interface LatestFailureDecision {
 	readonly sourceFiles: readonly string[];
 	readonly latestFailure: LatestFailureSummary;
 }
+interface BlockedRunPlanSummary {
+	readonly runnable: boolean;
+	readonly reasonCode: RunPlanReasonCode | null;
+	readonly detail: string | null;
+	readonly status: string | null;
+	readonly lifecycle: string | null;
+	readonly runPolicy: string | null;
+	readonly configuredCwd: string | null;
+	readonly timeoutSeconds: number | null;
+	readonly mode: string | null;
+	readonly writes: readonly string[];
+	readonly suggestedIntentSnippet: string | null;
+}
 type ExplainDecision =
 	| AuthorityDecision
 	| ExplainCommandDecision
@@ -103,7 +121,7 @@ interface ExplainOutput {
 export function getExplainHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf explain <topic> [target] [options] | mf explain verify --reason <event> [options] | mf explain why <target> [options]',
+			usage: 'mf explain <topic> [target] [options] | mf explain verify --reason <event> [options] | mf explain why <target> [options] | mf explain --why-blocked <intent> [options]',
 			summary: t(lang, 'explain.help.summary'),
 			options: [
 				{ label: '--json', description: t(lang, 'cli.option.json') },
@@ -118,6 +136,8 @@ export function getExplainHelp(lang: CliLang = 'en'): string {
 				'mf explain asset-optimization --json',
 				'mf explain command test',
 				'mf explain command lint --json',
+				'mf explain --why-blocked deploy',
+				'mf explain --why-blocked lint --json',
 				'mf explain retention',
 				'mf explain retention --json',
 				'mf explain verify --reason code_change',
@@ -182,6 +202,45 @@ async function getCommandExplainOutput(projectRoot: string, commandName: string)
 		topic: 'command',
 		mustflow_root: projectRoot,
 		decision: effectGraph ? { ...decision, effectGraph } : decision,
+	};
+}
+
+function getWhyBlockedExplainOutput(projectRoot: string, commandName: string): ExplainOutput {
+	const contract = readCommandContract(projectRoot);
+	const plan = createRunPlan(projectRoot, contract, commandName);
+	const commandDecision = explainCommandIntent(contract, commandName, { projectRoot });
+	const blockedRunPlan: BlockedRunPlanSummary = {
+		runnable: plan.ok,
+		reasonCode: plan.reasonCode,
+		detail: plan.detail,
+		status: plan.intentStatus,
+		lifecycle: plan.lifecycle,
+		runPolicy: plan.runPolicy,
+		configuredCwd: plan.configuredCwd,
+		timeoutSeconds: plan.timeoutSeconds,
+		mode: plan.mode,
+		writes: plan.writes ?? [],
+		suggestedIntentSnippet: plan.suggestedIntentSnippet,
+	};
+	const decision: ExplainCommandDecision = {
+		...commandDecision,
+		decision: plan.ok
+			? `command intent "${commandName}" is not blocked for mf run`
+			: `command intent "${commandName}" is blocked for mf run`,
+		effectiveAction: plan.ok
+			? `Run mf run ${commandName} when this intent is required for the changed behavior.`
+			: plan.suggestedIntentSnippet
+				? 'Review the suggested command contract snippet before enabling agent execution.'
+				: commandDecision.effectiveAction,
+		blockedRunPlan,
+	};
+
+	return {
+		schema_version: EXPLAIN_SCHEMA_VERSION,
+		command: 'explain',
+		topic: 'why',
+		mustflow_root: projectRoot,
+		decision,
 	};
 }
 
@@ -588,6 +647,28 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 		);
 	}
 
+	if ('blockedRunPlan' in output.decision && output.decision.blockedRunPlan) {
+		const plan = output.decision.blockedRunPlan;
+		lines.push(
+			'',
+			t(lang, 'explain.label.blockedRunPlan'),
+			`- runnable: ${plan.runnable ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
+			`- reason_code: ${plan.reasonCode ?? t(lang, 'value.none')}`,
+			`- detail: ${plan.detail ?? t(lang, 'value.none')}`,
+			`- status: ${plan.status ?? t(lang, 'value.none')}`,
+			`- lifecycle: ${plan.lifecycle ?? t(lang, 'value.none')}`,
+			`- run_policy: ${plan.runPolicy ?? t(lang, 'value.none')}`,
+			`- configured_cwd: ${plan.configuredCwd ?? t(lang, 'value.none')}`,
+			`- timeout_seconds: ${plan.timeoutSeconds ?? t(lang, 'value.none')}`,
+			`- mode: ${plan.mode ?? t(lang, 'value.none')}`,
+			`- writes: ${plan.writes.join(', ') || t(lang, 'value.none')}`,
+		);
+
+		if (plan.suggestedIntentSnippet) {
+			lines.push('', `${t(lang, 'run.label.suggestedIntentSnippet')}:`, plan.suggestedIntentSnippet);
+		}
+	}
+
 	if ('boundary' in output.decision) {
 		lines.push('', t(lang, 'explain.label.authorityBoundary'), `- role: ${output.decision.boundary.role}`);
 
@@ -829,6 +910,27 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 	const json = args.includes('--json');
 	const positional = args.filter((arg) => arg !== '--json');
 	const [topic, targetArg, ...rest] = positional;
+
+	if (topic === '--why-blocked') {
+		if (!targetArg) {
+			printUsageError(reporter, t(lang, 'explain.error.missingCommand'), 'mf explain --help', getExplainHelp(lang), lang);
+			return 1;
+		}
+
+		if (rest.length > 0) {
+			printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+			return 1;
+		}
+
+		const output = getWhyBlockedExplainOutput(resolveMustflowRoot(), targetArg);
+		if (json) {
+			reporter.stdout(JSON.stringify(output, null, 2));
+			return 0;
+		}
+
+		reporter.stdout(renderExplainDecision(output, lang));
+		return 0;
+	}
 
 	if (topic === 'why') {
 		const projectRoot = resolveMustflowRoot();

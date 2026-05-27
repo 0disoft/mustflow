@@ -20,6 +20,10 @@ export const enMessages = {
   "value.yes": "yes",
   "value.no": "no",
   "value.none": "none",
+  "value.present": "present",
+  "value.missing": "missing",
+  "value.passed": "passed",
+  "value.failed": "failed",
 
   "command.adapters.summary": "Inspect host adapter compatibility without generating adapter files",
   "command.init.summary": "Copy the default mustflow agent workflow",
@@ -62,6 +66,7 @@ export const enMessages = {
     "Validation failed or the command received invalid input",
   "check.result.passed": "mustflow check passed",
   "check.result.strictPassed": "mustflow strict check passed",
+  "check.result.failed": "mustflow check failed: {count} issue(s) found.",
 
   "contractLint.help.summary":
     "Inspect .mustflow/config/commands.toml for command-contract errors and warnings.",
@@ -540,6 +545,10 @@ export const enMessages = {
   "doctor.section.issueList": "Issue list:",
   "doctor.section.suggestedCommands": "Suggested commands:",
   "doctor.actionLabel": "run",
+  "doctor.status.ok": "ok",
+  "doctor.status.warn": "warn",
+  "doctor.status.fail": "fail",
+  "doctor.status.info": "info",
   "doctor.diagnostic.install": "Install",
   "doctor.diagnostic.validation": "Validation",
 	"doctor.diagnostic.skillRoutes": "Skill routes",
@@ -794,6 +803,11 @@ Read these files before working:
   "run.error.outputLimitExceeded":
     'Command "{intent}" exceeded max_output_bytes: {message}',
   "run.error.startFailed": 'Command "{intent}" failed to start: {message}',
+  "run.error.activeLockConflict":
+    "mf run {intent} is blocked by an active run lock: {detail}",
+  "run.error.activeLockConflictDetail":
+    "{lock} conflicts with active intent {intent} (pid {pid})",
+  "run.error.activeLockConflictUnknown": "unknown active lock conflict",
 
   "search.help.summary":
     "Search the local SQLite index for the mustflow workflow.",
@@ -905,6 +919,16 @@ Read these files before working:
   "verify.label.planSource": "Plan source",
   "verify.label.status": "Status",
   "verify.label.results": "Results",
+  "verify.label.completionVerdict": "Completion verdict",
+  "verify.label.matched": "Matched",
+  "verify.label.ran": "Ran",
+  "verify.label.passed": "Passed",
+  "verify.label.failed": "Failed",
+  "verify.label.skipped": "Skipped",
+  "verify.label.parallelism": "Parallelism",
+  "verify.label.parallelismNote": "Parallelism note",
+  "verify.parallelism.summary":
+    "requested {requested}, effective {effective}, repository max {repositoryMax}, CPU available {cpuAvailable}, mode {mode}",
   "verify.error.missingReason": "Missing verification reason",
   "verify.error.conflictingInputs": "Use only one of --reason, --from-classification, --from-plan, or --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan requires --changed",
@@ -946,6 +970,7 @@ Read these files before working:
   "explain.label.publicSurface": "Public surface",
   "explain.label.validationReasons": "Validation reasons",
   "explain.label.affectedContracts": "Affected contracts",
+  "explain.label.blockedRunPlan": "Blocked run plan",
   "explain.error.missingTopic": "Missing explain topic",
   "explain.error.missingCommand": "Missing command intent",
   "explain.error.missingSkill": "Missing skill id",

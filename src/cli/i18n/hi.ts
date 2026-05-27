@@ -22,6 +22,10 @@ export const hiMessages = {
   "value.yes": "हाँ",
   "value.no": "नहीं",
   "value.none": "none",
+  "value.present": "मौजूद",
+  "value.missing": "गुम",
+  "value.passed": "पास",
+  "value.failed": "फेल",
 
   "command.adapters.summary": "एडाप्टर फ़ाइलें बनाए बिना होस्ट संगतता जाँचें",
   "command.init.summary": "डिफ़ॉल्ट mustflow एजेंट वर्कफ़्लो कॉपी करें",
@@ -64,6 +68,7 @@ export const hiMessages = {
     "सत्यापन विफल हुआ या कमांड को अमान्य इनपुट मिला",
   "check.result.passed": "mustflow check पास हुआ",
   "check.result.strictPassed": "mustflow strict check पास हुआ",
+  "check.result.failed": "mustflow check फेल हुआ: {count} समस्या मिली।",
 
   "contractLint.help.summary":
     ".mustflow/config/commands.toml में command-contract errors और warnings जाँचें.",
@@ -542,6 +547,10 @@ export const hiMessages = {
   "doctor.section.issueList": "समस्या सूची:",
   "doctor.section.suggestedCommands": "सुझाई गई कमांड:",
   "doctor.actionLabel": "चलाएँ",
+  "doctor.status.ok": "ठीक",
+  "doctor.status.warn": "चेतावनी",
+  "doctor.status.fail": "फेल",
+  "doctor.status.info": "जानकारी",
   "doctor.diagnostic.install": "इंस्टॉल",
   "doctor.diagnostic.validation": "सत्यापन",
 	"doctor.diagnostic.skillRoutes": "स्किल रूट",
@@ -796,6 +805,11 @@ export const hiMessages = {
   "run.error.outputLimitExceeded":
     'कमांड "{intent}" ने max_output_bytes सीमा पार की: {message}',
   "run.error.startFailed": 'कमांड "{intent}" शुरू नहीं हो सकी: {message}',
+  "run.error.activeLockConflict":
+    "mf run {intent} सक्रिय रन लॉक के कारण रुका है: {detail}",
+  "run.error.activeLockConflictDetail":
+    "{lock} सक्रिय intent {intent} से टकराता है (pid {pid})",
+  "run.error.activeLockConflictUnknown": "अज्ञात सक्रिय रन लॉक टकराव",
 
   "search.help.summary":
     "mustflow वर्कफ़्लो के लिए स्थानीय SQLite इंडेक्स में खोजें।",
@@ -907,6 +921,16 @@ export const hiMessages = {
   "verify.label.planSource": "Plan source",
   "verify.label.status": "Status",
   "verify.label.results": "Results",
+  "verify.label.completionVerdict": "Completion verdict",
+  "verify.label.matched": "Matched",
+  "verify.label.ran": "Ran",
+  "verify.label.passed": "Passed",
+  "verify.label.failed": "Failed",
+  "verify.label.skipped": "Skipped",
+  "verify.label.parallelism": "Parallelism",
+  "verify.label.parallelismNote": "Parallelism note",
+  "verify.parallelism.summary":
+    "requested {requested}, effective {effective}, repository max {repositoryMax}, CPU available {cpuAvailable}, mode {mode}",
   "verify.error.missingReason": "Verification reason missing है",
   "verify.error.conflictingInputs": "--reason, --from-classification, --from-plan, या --changed में से केवल एक इस्तेमाल करें",
   "verify.error.writePlanRequiresChanged": "--write-plan के लिए --changed चाहिए",
@@ -948,6 +972,7 @@ export const hiMessages = {
   "explain.label.publicSurface": "Public surface",
   "explain.label.validationReasons": "Validation reasons",
   "explain.label.affectedContracts": "Affected contracts",
+  "explain.label.blockedRunPlan": "Blocked run plan",
   "explain.error.missingTopic": "Explain topic गुम है",
   "explain.error.missingCommand": "Command intent गुम है",
   "explain.error.missingSkill": "Skill id गुम है",

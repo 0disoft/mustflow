@@ -22,6 +22,10 @@ export const esMessages = {
   "value.yes": "sí",
   "value.no": "no",
   "value.none": "ninguno",
+  "value.present": "presente",
+  "value.missing": "faltante",
+  "value.passed": "superado",
+  "value.failed": "fallido",
 
   "command.adapters.summary": "Inspecciona compatibilidad de adaptadores sin generar archivos",
   "command.init.summary": "Copia el flujo de trabajo de agente mustflow predeterminado",
@@ -64,6 +68,7 @@ export const esMessages = {
     "La validación falló o el comando recibió una entrada no válida",
   "check.result.passed": "comprobacion mustflow superada",
   "check.result.strictPassed": "comprobacion estricta de mustflow superada",
+  "check.result.failed": "comprobacion mustflow fallida: se encontraron {count} problema(s).",
 
   "contractLint.help.summary":
     "Inspecciona .mustflow/config/commands.toml para encontrar errores y advertencias del contrato de comandos.",
@@ -542,6 +547,10 @@ export const esMessages = {
   "doctor.section.issueList": "Lista de problemas:",
   "doctor.section.suggestedCommands": "Comandos sugeridos:",
   "doctor.actionLabel": "ejecutar",
+  "doctor.status.ok": "ok",
+  "doctor.status.warn": "advertencia",
+  "doctor.status.fail": "fallo",
+  "doctor.status.info": "info",
   "doctor.diagnostic.install": "Instalación",
   "doctor.diagnostic.validation": "Validación",
 	"doctor.diagnostic.skillRoutes": "Rutas de skills",
@@ -796,6 +805,11 @@ Lee estos archivos antes de trabajar:
   "run.error.outputLimitExceeded":
     'El comando "{intent}" superó max_output_bytes: {message}',
   "run.error.startFailed": 'No se pudo iniciar el comando "{intent}": {message}',
+  "run.error.activeLockConflict":
+    "mf run {intent} está bloqueado por un bloqueo de ejecución activo: {detail}",
+  "run.error.activeLockConflictDetail":
+    "{lock} entra en conflicto con la intención activa {intent} (pid {pid})",
+  "run.error.activeLockConflictUnknown": "conflicto de bloqueo de ejecución activo desconocido",
 
   "search.help.summary":
     "Busca en el índice SQLite local del flujo de trabajo mustflow.",
@@ -907,6 +921,16 @@ Lee estos archivos antes de trabajar:
   "verify.label.planSource": "Fuente del plan",
   "verify.label.status": "Estado",
   "verify.label.results": "Resultados",
+  "verify.label.completionVerdict": "Veredicto de finalización",
+  "verify.label.matched": "Coincidencias",
+  "verify.label.ran": "Ejecutadas",
+  "verify.label.passed": "Superadas",
+  "verify.label.failed": "Fallidas",
+  "verify.label.skipped": "Omitidas",
+  "verify.label.parallelism": "Paralelismo",
+  "verify.label.parallelismNote": "Nota de paralelismo",
+  "verify.parallelism.summary":
+    "solicitado {requested}, efectivo {effective}, máximo del repositorio {repositoryMax}, CPU disponible {cpuAvailable}, modo {mode}",
   "verify.error.missingReason": "Falta la razón de verificación",
   "verify.error.conflictingInputs": "Usa solo uno de --reason, --from-classification, --from-plan o --changed",
   "verify.error.writePlanRequiresChanged": "--write-plan requiere --changed",
@@ -948,6 +972,7 @@ Lee estos archivos antes de trabajar:
   "explain.label.publicSurface": "Superficie publica",
   "explain.label.validationReasons": "Razones de validacion",
   "explain.label.affectedContracts": "Contratos afectados",
+  "explain.label.blockedRunPlan": "Plan de ejecución bloqueado",
   "explain.error.missingTopic": "Falta el tema de explicación",
   "explain.error.missingCommand": "Falta la intención de comando",
   "explain.error.missingSkill": "Falta el id de skill",

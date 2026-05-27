@@ -132,11 +132,17 @@ function createPlanCommandHash(plan: RunnableRunPlan): string {
 	return `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`;
 }
 
-function renderActiveLockConflictMessage(intentName: string, conflicts: readonly ActiveRunLockConflict[]): string {
+function renderActiveLockConflictMessage(intentName: string, conflicts: readonly ActiveRunLockConflict[], lang: CliLang): string {
 	const [first] = conflicts;
-	const detail = first ? `${first.lock} conflicts with active intent ${first.conflictsWithIntent} (pid ${first.conflictsWithPid})` : 'unknown active lock conflict';
+	const detail = first
+		? t(lang, 'run.error.activeLockConflictDetail', {
+				lock: first.lock,
+				intent: first.conflictsWithIntent,
+				pid: first.conflictsWithPid,
+			})
+		: t(lang, 'run.error.activeLockConflictUnknown');
 
-	return `mf run ${intentName} is blocked by an active run lock: ${detail}`;
+	return t(lang, 'run.error.activeLockConflict', { intent: intentName, detail });
 }
 
 export function getRunHelp(lang: CliLang = 'en'): string {
@@ -271,7 +277,7 @@ export async function runRun(
 	);
 
 	if (!activeRunLock.ok) {
-		reporter.stderr(renderCliError(renderActiveLockConflictMessage(intentName, activeRunLock.conflicts), 'mf run --dry-run --json', lang));
+		reporter.stderr(renderCliError(renderActiveLockConflictMessage(intentName, activeRunLock.conflicts, lang), 'mf run --dry-run --json', lang));
 		writeLatestProfile(profiler, options, {
 			projectRoot,
 			intent: intentName,
@@ -396,9 +402,9 @@ export async function runRun(
 	if (result.error) {
 		const errorWithCode = result.error as NodeJS.ErrnoException;
 		if (errorWithCode.code === 'ETIMEDOUT') {
-		reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: plan.timeoutSeconds }));
-		return 1;
-	}
+			reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: plan.timeoutSeconds }));
+			return 1;
+		}
 
 		if (isOutputLimitExceededError(result.error)) {
 			reporter.stderr(t(lang, 'run.error.outputLimitExceeded', { intent: intentName, message: result.error.message }));

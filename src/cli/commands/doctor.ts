@@ -332,23 +332,36 @@ function getDiagnosticLabel(id: DoctorDiagnostic['id'], lang: CliLang): string {
 	}
 }
 
+function getDiagnosticStatusLabel(status: DoctorDiagnosticStatus, lang: CliLang): string {
+	switch (status) {
+		case 'ok':
+			return t(lang, 'doctor.status.ok');
+		case 'warn':
+			return t(lang, 'doctor.status.warn');
+		case 'fail':
+			return t(lang, 'doctor.status.fail');
+		case 'info':
+			return t(lang, 'doctor.status.info');
+	}
+}
+
 function renderDoctorOutput(output: DoctorOutput, lang: CliLang): string {
 	const lines: string[] = [];
 
 	lines.push(t(lang, 'doctor.title'));
 	lines.push(`${t(lang, 'label.mustflowRoot')}: ${output.mustflow_root}`);
-	lines.push(`${t(lang, 'label.installed')}: ${output.installed ? 'yes' : 'no'}`);
-	lines.push(`${t(lang, 'doctor.label.strict')}: ${output.strict ? 'yes' : 'no'}`);
-	lines.push(`${t(lang, 'doctor.label.check')}: ${output.check.ok ? 'passed' : 'failed'}`);
+	lines.push(`${t(lang, 'label.installed')}: ${output.installed ? t(lang, 'value.yes') : t(lang, 'value.no')}`);
+	lines.push(`${t(lang, 'doctor.label.strict')}: ${output.strict ? t(lang, 'value.yes') : t(lang, 'value.no')}`);
+	lines.push(`${t(lang, 'doctor.label.check')}: ${output.check.ok ? t(lang, 'value.passed') : t(lang, 'value.failed')}`);
 	lines.push(`${t(lang, 'doctor.label.issues')}: ${output.check.issue_count}`);
-	lines.push(`${t(lang, 'label.commandContract')}: ${output.context.command_contract_exists ? 'present' : 'missing'}`);
+	lines.push(`${t(lang, 'label.commandContract')}: ${output.context.command_contract_exists ? t(lang, 'value.present') : t(lang, 'value.missing')}`);
 	lines.push(`${t(lang, 'label.runnableIntents')}: ${output.context.runnable_intents.length}`);
 
 	lines.push('', t(lang, 'doctor.section.health'));
 	for (const diagnostic of output.diagnostics) {
 		const action =
 			diagnostic.action && diagnostic.status !== 'ok' ? ` (${t(lang, 'doctor.actionLabel')}: ${diagnostic.action})` : '';
-		lines.push(`- [${diagnostic.status}] ${getDiagnosticLabel(diagnostic.id, lang)}: ${diagnostic.summary}${action}`);
+		lines.push(`- [${getDiagnosticStatusLabel(diagnostic.status, lang)}] ${getDiagnosticLabel(diagnostic.id, lang)}: ${diagnostic.summary}${action}`);
 	}
 
 	if (output.check.issues.length > 0) {
