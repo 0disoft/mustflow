@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
 	existsSync,
@@ -52,6 +53,17 @@ function parsePackResult(stdout) {
 function hasBinShim(projectPath, name) {
 	return existsSync(path.join(projectPath, 'node_modules', '.bin', name)) ||
 		existsSync(path.join(projectPath, 'node_modules', '.bin', `${name}.cmd`));
+}
+
+function refreshManifestLockHash(projectPath, relativePath) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	const filePath = path.join(projectPath, ...relativePath.split('/'));
+	const lock = readFileSync(lockPath, 'utf8');
+	const hash = `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
+
+	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
 }
 
 function packRepository(packRoot) {
@@ -202,6 +214,7 @@ destructive = false
 required_after = ["schema_verify"]
 `,
 			);
+			refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
 			schemaVerifyIntentInstalled = true;
 		}
 
@@ -231,6 +244,7 @@ required_after = ["schema_verify"]
 
 		if (schemaVerifyIntentInstalled) {
 			writeFileSync(commandsPath, originalCommands);
+			refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
 		}
 
 		const check = runPackageManagerTool('npx', ['mf', 'check', '--strict', '--json'], { cwd: projectPath });
