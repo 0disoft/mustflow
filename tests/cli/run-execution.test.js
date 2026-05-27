@@ -118,6 +118,49 @@ test('requires explicit opt-in before executing commands from roots without a ma
 		assert.equal(existsSync(markerPath), false);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'),
+			`schema_version = "1"
+[template]
+id = "default"
+version = "0.0.0"
+[files]
+`,
+		);
+		const emptyLock = runCli(projectPath, ['run', 'untrusted_marker', '--json']);
+
+		assert.equal(emptyLock.status, 1);
+		assert.equal(emptyLock.stdout, '');
+		assert.match(emptyLock.stderr, /manifest lock is invalid/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+
+		writeFileSync(path.join(projectPath, 'AGENTS.md'), 'Read the workflow files.\n');
+		const agentsHash = `sha256:${createHash('sha256').update(readFileSync(path.join(projectPath, 'AGENTS.md'))).digest('hex')}`;
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'),
+			`schema_version = "1"
+[template]
+id = "default"
+version = "0.0.0"
+[files."AGENTS.md"]
+source = "template"
+last_action = "created"
+content_hash = "${agentsHash}"
+[files.".mustflow/config/commands.toml"]
+source = "template"
+last_action = "created"
+content_hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+`,
+		);
+		const staleLock = runCli(projectPath, ['run', 'untrusted_marker', '--json']);
+
+		assert.equal(staleLock.status, 1);
+		assert.equal(staleLock.stdout, '');
+		assert.match(staleLock.stderr, /Lock hash mismatch: \.mustflow\/config\/commands\.toml/);
+		assert.equal(existsSync(markerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+
 		const preview = runCli(projectPath, ['run', 'untrusted_marker', '--dry-run', '--json']);
 		const previewJson = JSON.parse(preview.stdout);
 
@@ -133,6 +176,45 @@ test('requires explicit opt-in before executing commands from roots without a ma
 		assert.equal(receipt.status, 'passed');
 		assert.equal(receipt.intent, 'untrusted_marker');
 		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('blocks agent-runnable shell intents unless allow_shell is true at runtime', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'shell-marker.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.shell_without_allow]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Attempt a shell command without the explicit shell allowance."
+mode = "shell"
+cmd = ${JSON.stringify(`"${process.execPath}" -e "require('node:fs').writeFileSync(process.argv[1], 'ran')" "${markerPath}"`)}
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["shell-marker.txt"]
+network = false
+destructive = false
+`,
+		);
+
+		const preview = runCli(projectPath, ['run', 'shell_without_allow', '--plan-only', '--json']);
+		const run = runCli(projectPath, ['run', 'shell_without_allow', '--json']);
+
+		assert.equal(preview.status, 1);
+		assert.match(preview.stdout, /agent_shell_requires_allow/);
+		assert.equal(run.status, 1);
+		assert.match(run.stderr, /allow_shell = true/);
+		assert.equal(existsSync(markerPath), false);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -446,10 +528,12 @@ destructive = false
 
 test('does not put project-local shims ahead of PATH executables', () => {
 	const projectPath = createTempProject();
+	const markerPath = path.join(tmpdir(), `mustflow-pwned-git-${process.pid}-${Date.now()}`);
 
 	try {
+		rmSync(markerPath, { force: true });
 		initProject(projectPath);
-		createLocalBinShim(projectPath, 'git', 'PWNED_GIT_SHIM');
+		createLocalBinShim(projectPath, 'git', 'PWNED_GIT_SHIM', markerPath);
 		appendIntent(
 			projectPath,
 			`
@@ -478,7 +562,9 @@ destructive = false
 		assert.equal(receipt.status, 'passed');
 		assert.match(receipt.stdout.tail, /git version/i);
 		assert.doesNotMatch(receipt.stdout.tail, /PWNED_GIT_SHIM/);
+		assert.equal(existsSync(markerPath), false);
 	} finally {
+		rmSync(markerPath, { force: true });
 		removeTempProject(projectPath);
 	}
 });

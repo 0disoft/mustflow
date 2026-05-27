@@ -12,6 +12,7 @@ export type CommandIntentEligibilityCode =
 	| 'lifecycle_not_oneshot'
 	| 'run_policy_not_agent_allowed'
 	| 'stdin_not_closed'
+	| 'agent_shell_requires_allow'
 	| 'missing_timeout'
 	| 'missing_command_source'
 	| 'unsafe_intent_name'
@@ -116,6 +117,14 @@ export function evaluateCommandIntentEligibility(
 			ok: false,
 			code: 'blocked_long_running_command_pattern',
 			detail: blockedPattern.detail,
+		};
+	}
+
+	if (rawIntent.mode === 'shell' && rawIntent.allow_shell !== true) {
+		return {
+			ok: false,
+			code: 'agent_shell_requires_allow',
+			detail: `Agent-runnable shell intent ${intentName} must set allow_shell = true.`,
 		};
 	}
 

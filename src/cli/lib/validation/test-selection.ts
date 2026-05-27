@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { readMustflowTomlFile } from '../toml.js';
+import { normalizeSafeTestTargetPath, TEST_TARGET_PATH_ERROR } from '../../../core/test-target-paths.js';
 import {
 	ALLOWED_TEST_SELECTION_RISKS,
 	FORBIDDEN_TEST_SELECTION_COMMAND_AUTHORITY_FIELDS,
@@ -19,6 +20,19 @@ import {
 	validateStringArrayField,
 } from './primitives.js';
 import type { CheckIssue } from './types.js';
+
+function validateTestTargetPathArrayField(table: TomlTable, key: string, label: string, issues: CheckIssue[]): void {
+	if (!hasOwn(table, key)) {
+		return;
+	}
+
+	const value = table[key];
+
+	if (!Array.isArray(value) || value.length === 0 || !value.every((entry) => normalizeSafeTestTargetPath(entry) !== null)) {
+		issues.push({ message: `${label} ${TEST_TARGET_PATH_ERROR}` });
+	}
+}
+
 function validateNoTestSelectionCommandAuthorityFields(label: string, table: TomlTable, issues: CheckIssue[]): void {
 	for (const field of FORBIDDEN_TEST_SELECTION_COMMAND_AUTHORITY_FIELDS) {
 		if (hasOwn(table, field)) {
@@ -94,7 +108,7 @@ function validateTestSelectionRule(
 		validateNoTestSelectionCommandAuthorityFields(`${label}.select`, select, issues);
 		validateTestSelectionIntentReference(select.intent, `${label}.select.intent`, commandsToml, issues);
 		validateTestSelectionIntentReference(select.fallback_intent, `${label}.select.fallback_intent`, commandsToml, issues);
-		validatePathArrayField(select, 'test_targets', `${TEST_SELECTION_CONFIG_PATH} ${label}.select.test_targets`, issues);
+		validateTestTargetPathArrayField(select, 'test_targets', `${TEST_SELECTION_CONFIG_PATH} ${label}.select.test_targets`, issues);
 	}
 }
 

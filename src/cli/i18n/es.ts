@@ -773,6 +773,8 @@ Lee estos archivos antes de trabajar:
   "run.error.runPolicy":
     'El comando "{intent}" requiere run_policy = "agent_allowed" para mf run',
   "run.error.stdin": 'El comando "{intent}" debe establecer stdin = "closed"',
+  "run.error.agentShellRequiresAllow":
+    'El comando "{intent}" debe establecer allow_shell = true cuando mode = "shell"',
   "run.error.timeout": 'El comando "{intent}" debe definir timeout_seconds',
   "run.error.commandSource":
     'El comando "{intent}" debe definir argv o mode = "shell" con cmd',
@@ -791,6 +793,10 @@ Lee estos archivos antes de trabajar:
     'El comando "{intent}" tiene un cwd no válido: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "El cwd de la intención debe permanecer dentro de la raíz actual.",
+  "run.error.invalidTestTarget":
+    'El comando "{intent}" recibió un objetivo de prueba no válido. {detail}',
+  "run.error.invalidTestTargetDetail":
+    "Los objetivos de prueba deben ser rutas relativas y no pueden empezar con '-'.",
   "run.error.maxOutputBytes":
     'El comando "{intent}" tiene max_output_bytes no válido. {detail}',
   "run.error.maxOutputBytesDetail":

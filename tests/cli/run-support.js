@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -133,25 +134,51 @@ export function appendIntent(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const commands = readFileSync(commandsPath, 'utf8');
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
+	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
 }
 
 export function setDefaultKillAfterSeconds(projectPath, seconds) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const commands = readFileSync(commandsPath, 'utf8');
 	writeFileSync(commandsPath, commands.replace(/kill_after_seconds = \d+/u, `kill_after_seconds = ${seconds}`));
+	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
 }
 
-export function createLocalBinShim(projectPath, name, marker) {
+export function refreshManifestLockHash(projectPath, relativePath) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	if (!existsSync(lockPath)) {
+		return;
+	}
+
+	const filePath = path.join(projectPath, ...relativePath.split('/'));
+	const hash = `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+	const lock = readFileSync(lockPath, 'utf8');
+	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
+	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
+}
+
+export function createLocalBinShim(projectPath, name, marker, markerPath = null) {
 	const localBinPath = path.join(projectPath, 'node_modules', '.bin');
 	mkdirSync(localBinPath, { recursive: true });
 
+	const markerWrite = markerPath
+		? `${process.execPath} -e "require('node:fs').writeFileSync(process.argv[1], 'ran')" ${JSON.stringify(markerPath)}`
+		: '';
+
 	if (process.platform === 'win32') {
-		writeFileSync(path.join(localBinPath, `${name}.cmd`), `@echo off\r\necho ${marker} %*\r\nexit /b 0\r\n`);
+		writeFileSync(
+			path.join(localBinPath, `${name}.cmd`),
+			[`@echo off`, markerWrite, `echo ${marker} %*`, `exit /b 0`, ''].filter((line) => line.length > 0).join('\r\n'),
+		);
 		return;
 	}
 
 	const shimPath = path.join(localBinPath, name);
-	writeFileSync(shimPath, `#!/bin/sh\necho ${marker} "$@"\nexit 0\n`);
+	writeFileSync(
+		shimPath,
+		[`#!/bin/sh`, markerWrite, `echo ${marker} "$@"`, `exit 0`, ''].filter((line) => line.length > 0).join('\n'),
+	);
 	chmodSync(shimPath, 0o755);
 }
 

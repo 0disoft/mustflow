@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { ChangeClassification, ChangeClassificationReport } from './change-classification.js';
+import { createCommandEnv } from './command-env.js';
 
 export type ValidationRatchetRiskCode =
 	| 'related_test_deleted'
@@ -100,6 +101,7 @@ function gitDiffLines(projectRoot: string, relativePath: string): DiffLines {
 	const result = spawnSync('git', ['diff', '--no-ext-diff', '--unified=0', '--', relativePath], {
 		cwd: projectRoot,
 		encoding: 'utf8',
+		env: createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
 		windowsHide: true,
 	});
 

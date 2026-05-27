@@ -768,6 +768,8 @@ export const koMessages = {
   "run.error.runPolicy":
     '명령 "{intent}"는 mf run에서 실행하려면 run_policy = "agent_allowed"가 필요합니다',
   "run.error.stdin": '명령 "{intent}"는 stdin = "closed"를 설정해야 합니다',
+  "run.error.agentShellRequiresAllow":
+    '명령 "{intent}"는 mode = "shell"일 때 allow_shell = true를 설정해야 합니다',
   "run.error.timeout": '명령 "{intent}"는 timeout_seconds를 정의해야 합니다',
   "run.error.commandSource":
     '명령 "{intent}"는 argv를 정의하거나 mode = "shell"과 cmd를 함께 정의해야 합니다',
@@ -786,6 +788,10 @@ export const koMessages = {
     '명령 "{intent}"의 실행 위치(cwd)가 올바르지 않습니다: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "명령 실행 위치(cwd)는 현재 루트 안에 있어야 합니다.",
+  "run.error.invalidTestTarget":
+    '명령 "{intent}"에 올바르지 않은 테스트 대상이 전달되었습니다. {detail}',
+  "run.error.invalidTestTargetDetail":
+    "테스트 대상은 상대 파일 경로여야 하며 '-'로 시작할 수 없습니다.",
   "run.error.maxOutputBytes":
     '명령 "{intent}"의 max_output_bytes 값이 올바르지 않습니다. {detail}',
   "run.error.maxOutputBytesDetail":

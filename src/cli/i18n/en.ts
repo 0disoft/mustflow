@@ -771,6 +771,8 @@ Read these files before working:
   "run.error.runPolicy":
     'Command "{intent}" requires run_policy = "agent_allowed" for mf run',
   "run.error.stdin": 'Command "{intent}" must set stdin = "closed"',
+  "run.error.agentShellRequiresAllow":
+    'Command "{intent}" must set allow_shell = true when mode = "shell"',
   "run.error.timeout": 'Command "{intent}" must define timeout_seconds',
   "run.error.commandSource":
     'Command "{intent}" must define argv or mode = "shell" with cmd',
@@ -789,6 +791,10 @@ Read these files before working:
     'Command "{intent}" has an invalid cwd: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "Intent cwd must stay inside the current root.",
+  "run.error.invalidTestTarget":
+    'Command "{intent}" received an invalid test target. {detail}',
+  "run.error.invalidTestTargetDetail":
+    "Test targets must be relative file paths and cannot start with '-'.",
   "run.error.maxOutputBytes":
     'Command "{intent}" has invalid max_output_bytes. {detail}',
   "run.error.maxOutputBytesDetail":

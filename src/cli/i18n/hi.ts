@@ -773,6 +773,8 @@ export const hiMessages = {
   "run.error.runPolicy":
     'mf run के लिए कमांड "{intent}" में run_policy = "agent_allowed" चाहिए',
   "run.error.stdin": 'कमांड "{intent}" को stdin = "closed" सेट करना होगा',
+  "run.error.agentShellRequiresAllow":
+    'कमांड "{intent}" में mode = "shell" होने पर allow_shell = true सेट होना चाहिए',
   "run.error.timeout": 'कमांड "{intent}" को timeout_seconds परिभाषित करना होगा',
   "run.error.commandSource":
     'कमांड "{intent}" को argv या mode = "shell" के साथ cmd परिभाषित करना होगा',
@@ -791,6 +793,10 @@ export const hiMessages = {
     'कमांड "{intent}" का cwd अमान्य है: {detail}',
   "run.error.cwdOutsideProjectDetail":
     "Intent cwd current root के अंदर रहना चाहिए।",
+  "run.error.invalidTestTarget":
+    'कमांड "{intent}" को अमान्य test target मिला। {detail}',
+  "run.error.invalidTestTargetDetail":
+    "Test targets relative file paths होने चाहिए और '-' से शुरू नहीं हो सकते।",
   "run.error.maxOutputBytes":
     'कमांड "{intent}" में max_output_bytes अमान्य है। {detail}',
   "run.error.maxOutputBytesDetail":

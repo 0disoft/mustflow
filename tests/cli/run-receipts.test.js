@@ -21,6 +21,7 @@ import {
 	latestRunReceiptPath,
 	packageVersion,
 	projectRoot,
+	refreshManifestLockHash,
 	removeTempProject,
 	runCli,
 	runPerformanceSamplesPath,
@@ -400,6 +401,7 @@ test('streams non-JSON child output before command completion and stores only a 
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
 		const config = readFileSync(configPath, 'utf8').replace('keep_stdout_tail_bytes = 65536', 'keep_stdout_tail_bytes = 4');
 		writeFileSync(configPath, config);
+		refreshManifestLockHash(projectPath, '.mustflow/config/mustflow.toml');
 
 		appendIntent(
 			projectPath,
@@ -667,6 +669,7 @@ test('uses retention policy tail byte limits for JSON run receipts', () => {
 		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
 		const config = readFileSync(configPath, 'utf8').replace('keep_stdout_tail_bytes = 65536', 'keep_stdout_tail_bytes = 12');
 		writeFileSync(configPath, config);
+		refreshManifestLockHash(projectPath, '.mustflow/config/mustflow.toml');
 
 		appendIntent(
 			projectPath,

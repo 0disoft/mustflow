@@ -29,6 +29,7 @@ import {
 } from '../../core/command-output-limits.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
 import { normalizeSuccessExitCodes } from '../../core/success-exit-codes.js';
+import { normalizeSafeTestTargetPath, TEST_TARGET_PATH_ERROR } from '../../core/test-target-paths.js';
 import {
 	evaluateCommandPreconditions,
 	type CommandPreconditionPlan,
@@ -49,6 +50,7 @@ export type RunPreviewMode = 'dry-run' | 'plan-only';
 export type RunPlanReasonCode =
 	| Exclude<CommandIntentEligibilityCode, 'ok'>
 	| 'cwd_outside_project'
+	| 'invalid_test_target'
 	| 'max_output_bytes_exceeds_limit';
 
 interface RunIntentMetadata {
@@ -165,15 +167,24 @@ function getRelativeProjectPath(projectRoot: string, targetPath: string): string
 	return relativePath.length > 0 ? toPosixPath(relativePath) : '.';
 }
 
-function normalizeTestTargets(values: readonly string[] | undefined): string[] {
-	return [
-		...new Set(
-			(values ?? [])
-				.map((value) => value.trim().replace(/\\/g, '/'))
-				.filter((value) => value.length > 0 && !path.posix.isAbsolute(value) && !path.win32.isAbsolute(value))
-				.filter((value) => value.split('/').every((segment) => segment.length > 0 && segment !== '.' && segment !== '..')),
-		),
-	].sort((left, right) => left.localeCompare(right));
+function normalizeTestTargets(values: readonly string[] | undefined):
+	| { readonly ok: true; readonly values: readonly string[] }
+	| { readonly ok: false; readonly detail: string } {
+	const normalizedValues: string[] = [];
+
+	for (const value of values ?? []) {
+		const normalized = normalizeSafeTestTargetPath(value);
+		if (normalized === null) {
+			return { ok: false, detail: `Test target ${JSON.stringify(value)} is invalid: ${TEST_TARGET_PATH_ERROR}.` };
+		}
+
+		normalizedValues.push(normalized);
+	}
+
+	return {
+		ok: true,
+		values: [...new Set(normalizedValues)].sort((left, right) => left.localeCompare(right)),
+	};
 }
 
 function commandAcceptsTestTargets(intent: TomlTable): boolean {
@@ -386,7 +397,22 @@ export function createRunPlan(
 		);
 	}
 
-	const testTargets = commandAcceptsTestTargets(rawIntent) ? normalizeTestTargets(options.testTargets) : [];
+	const normalizedTestTargets = commandAcceptsTestTargets(rawIntent) ?
+		normalizeTestTargets(options.testTargets) :
+		({ ok: true, values: [] as readonly string[] } as const);
+	if (!normalizedTestTargets.ok) {
+		return createBlockedRunPlan(
+			contract,
+			intentName,
+			rawIntent,
+			eligibility,
+			'invalid_test_target',
+			normalizedTestTargets.detail,
+			preconditions,
+		);
+	}
+
+	const testTargets = normalizedTestTargets.values;
 	const commandArgv = metadata.commandArgv && testTargets.length > 0 ? [...metadata.commandArgv, ...testTargets] : metadata.commandArgv;
 
 	if (!metadata.timeoutSeconds || !metadata.mode) {

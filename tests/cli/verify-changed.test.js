@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -27,6 +28,17 @@ function commitProjectBaseline(projectPath) {
 function replaceCommands(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	writeFileSync(commandsPath, `${text.trim()}\n`);
+	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+}
+
+function refreshManifestLockHash(projectPath, relativePath) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	const filePath = path.join(projectPath, ...relativePath.split('/'));
+	const hash = `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+	const lock = readFileSync(lockPath, 'utf8');
+	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
+	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
 }
 
 test('plans verification from current changed files', async () => {
@@ -296,7 +308,7 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 	}
 });
 
-test('passes project-declared test targets only when selected intent opts in', async () => {
+test('passes only safe project-declared test targets when selected intent opts in', async () => {
 	const projectPath = createTempProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-targets.txt');
 	const targetsPath = path.join(projectPath, 'targets.json');
@@ -371,6 +383,80 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 		assert.equal(report.results[0].receipt.performance.selection.strategy, 'project_test_selection');
 		assert.equal(report.results[0].receipt.performance.selection.selected_target_count, 1);
 		assert.ok(report.results[0].receipt.argv.includes('tests/fixtures'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects project-declared test targets that look like command options before execution', async () => {
+	const projectPath = createTempProject();
+	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-target-injection.txt');
+	const markerPath = path.join(projectPath, 'pwned.txt');
+	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
+
+	try {
+		await initProject(projectPath);
+		replaceCommands(
+			projectPath,
+			`
+[intents.manifest_related]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared related tests with targets."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["pwned.txt"]
+network = false
+destructive = false
+
+[intents.manifest_related.selection]
+accepts_test_targets = true
+
+[intents.manifest_fast]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared fast fallback."
+argv = ['${process.execPath}', '-e', 'console.log("manifest fast")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		writeFileSync(
+			selectionPath,
+			`
+schema_version = "1"
+
+[[rules]]
+id = "fixture-selection"
+risk = "medium"
+reason = "Fixture changes use the project-declared related tests."
+match = { paths = ["tests/fixtures/**"], surfaces = ["test_fixture"] }
+select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_targets = ["--config", "evil.config.js"] }
+`,
+		);
+		mkdirSync(path.dirname(fixturePath), { recursive: true });
+		writeFileSync(fixturePath, 'before\n');
+		commitProjectBaseline(projectPath);
+		writeFileSync(fixturePath, 'after\n');
+
+		const planResult = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		const planReport = JSON.parse(planResult.stdout);
+		const result = await runCli(projectPath, ['verify', '--changed', '--json']);
+
+		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+		assert.equal(planReport.test_selection.status, 'invalid');
+		assert.equal(result.status, 1);
+		assert.equal(existsSync(markerPath), false);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -14,6 +14,7 @@ import {
 	type VerificationCandidate,
 	type VerificationSkipReason,
 } from './verification-plan.js';
+import { normalizeSafeTestTargetPath } from './test-target-paths.js';
 
 export const TEST_SELECTION_CONFIG_RELATIVE_PATH = '.mustflow/config/test-selection.toml';
 const STALE_OR_MISSING_RULES_NOTE =
@@ -135,9 +136,21 @@ function readRule(value: unknown): TestSelectionRule | null {
 	const surfaces = readStringArray(value.match, 'surfaces');
 	const intent = readStringField(value.select, 'intent');
 	const fallbackIntent = readStringField(value.select, 'fallback_intent');
-	const testTargets = readStringArray(value.select, 'test_targets') ?? [];
+	const rawTestTargets = readStringArray(value.select, 'test_targets') ?? [];
+	const testTargets = rawTestTargets.map((target) => normalizeSafeTestTargetPath(target));
 
-	if (!id || !risk || !reason || !paths || paths.length === 0 || !surfaces || surfaces.length === 0 || !intent || !fallbackIntent) {
+	if (
+		!id ||
+		!risk ||
+		!reason ||
+		!paths ||
+		paths.length === 0 ||
+		!surfaces ||
+		surfaces.length === 0 ||
+		!intent ||
+		!fallbackIntent ||
+		!testTargets.every((target): target is string => target !== null)
+	) {
 		return null;
 	}
 

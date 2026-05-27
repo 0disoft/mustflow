@@ -60,6 +60,9 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 		case 'stdin_not_closed':
 			message = t(lang, 'run.error.stdin', { intent: plan.intentName });
 			break;
+		case 'agent_shell_requires_allow':
+			message = t(lang, 'run.error.agentShellRequiresAllow', { intent: plan.intentName });
+			break;
 		case 'missing_timeout':
 			message = t(lang, 'run.error.timeout', { intent: plan.intentName });
 			break;
@@ -88,6 +91,12 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 			message = t(lang, 'run.error.cwdOutsideProject', {
 				intent: plan.intentName,
 				detail: getRunPlanDetail(plan, lang, 'run.error.cwdOutsideProjectDetail'),
+			});
+			break;
+		case 'invalid_test_target':
+			message = t(lang, 'run.error.invalidTestTarget', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.invalidTestTargetDetail'),
 			});
 			break;
 		case 'max_output_bytes_exceeds_limit':
@@ -298,6 +307,7 @@ export async function runRun(
 	const writeTracker = profiler.measure('write_drift_before', () =>
 		startRunWriteTracking(projectRoot, contract, intentName, {
 			additionalDeclaredPaths: options.additionalDeclaredWritePaths,
+			env,
 		}),
 	);
 	const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);

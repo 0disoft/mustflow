@@ -19,6 +19,38 @@ function assertHasIssueDetail(check, expectedId, expectedMessage) {
 	);
 }
 
+function appendConfiguredTestSelectionIntents(projectPath) {
+	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+	writeFileSync(
+		commandsPath,
+		`${readText(commandsPath)}
+[intents.project_related_tests]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared related tests."
+argv = ["node", "-e", "console.log('related')"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+
+[intents.project_fast_tests]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run project-declared fast fallback tests."
+argv = ["node", "-e", "console.log('fast')"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+`,
+	);
+}
+
 test('fails when map and workspace configuration fields are invalid', () => {
 	const projectPath = createTempProject();
 
@@ -612,35 +644,7 @@ test('validates project-declared test selection manifest intent references', () 
 
 	try {
 		initProject(projectPath);
-		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
-		writeFileSync(
-			commandsPath,
-			`${readText(commandsPath)}
-[intents.project_related_tests]
-status = "configured"
-lifecycle = "oneshot"
-run_policy = "agent_allowed"
-description = "Run project-declared related tests."
-argv = ["node", "-e", "console.log('related')"]
-cwd = "."
-timeout_seconds = 10
-stdin = "closed"
-success_exit_codes = [0]
-writes = []
-
-[intents.project_fast_tests]
-status = "configured"
-lifecycle = "oneshot"
-run_policy = "agent_allowed"
-description = "Run project-declared fast fallback tests."
-argv = ["node", "-e", "console.log('fast')"]
-cwd = "."
-timeout_seconds = 10
-stdin = "closed"
-success_exit_codes = [0]
-writes = []
-`,
-		);
+		appendConfiguredTestSelectionIntents(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(
 			path.join(projectPath, 'package.json'),
@@ -665,6 +669,40 @@ select = { intent = "project_related_tests", fallback_intent = "project_fast_tes
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(check.ok, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects test selection targets that look like command options', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendConfiguredTestSelectionIntents(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'test-selection.toml'),
+			`
+schema_version = "1"
+
+[[rules]]
+id = "source-related"
+risk = "medium"
+reason = "Source changes use the project-declared related-test command."
+match = { paths = ["src/**"], surfaces = ["source"] }
+select = { intent = "project_related_tests", fallback_intent = "project_fast_tests", test_targets = ["--config", "evil.config.js"] }
+`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.includes(
+				".mustflow/config/test-selection.toml rules[0].select.test_targets entries must be non-empty relative paths that do not start with '-'",
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

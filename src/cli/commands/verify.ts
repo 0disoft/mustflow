@@ -45,6 +45,7 @@ import {
 	type RunWriteBatchIntent,
 	type RunWriteDriftReceipt,
 } from '../../core/run-write-drift.js';
+import { createCommandEnv } from '../../core/command-env.js';
 import type { VerificationCandidate } from '../../core/verification-plan.js';
 import { readCommandContract } from '../../core/config-loading.js';
 import {
@@ -474,7 +475,10 @@ async function runVerificationEntriesInParallelChunks(
 
 	for (let index = 0; index < entries.length; index += parallelism) {
 		const chunk = entries.slice(index, index + parallelism);
-		const batchTracker = startRunWriteBatchTracking(projectRoot);
+		const batchTracker = startRunWriteBatchTracking(
+			projectRoot,
+			createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
+		);
 
 		const chunkResults = await Promise.all(
 			chunk.map((entry) =>

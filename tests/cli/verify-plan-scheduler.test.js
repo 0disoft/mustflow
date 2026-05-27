@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -14,6 +15,17 @@ function appendIntent(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const commands = readFileSync(commandsPath, 'utf8');
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
+	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+}
+
+function refreshManifestLockHash(projectPath, relativePath) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	const filePath = path.join(projectPath, ...relativePath.split('/'));
+	const hash = `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+	const lock = readFileSync(lockPath, 'utf8');
+	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
+	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
 }
 
 function createClassifyPlan(projectPath, reason, filePath = 'README.md') {

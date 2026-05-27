@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
+import { createCommandEnv } from './command-env.js';
 import { readFileInsideWithoutSymlinks, writeFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export type LineEndingKind = 'lf' | 'crlf' | 'mixed' | 'none' | 'binary';
@@ -59,6 +60,7 @@ function gitList(projectRoot: string, args: readonly string[]): readonly string[
 	const result = spawnSync('git', [...args, '-z'], {
 		cwd: projectRoot,
 		encoding: 'buffer',
+		env: createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
 		stdio: ['ignore', 'pipe', 'pipe'],
 		windowsHide: true,
 	});

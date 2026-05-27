@@ -763,6 +763,8 @@ export const zhMessages = {
   "run.error.runPolicy":
     '命令 "{intent}" 需要 run_policy = "agent_allowed" 才能通过 mf run 执行',
   "run.error.stdin": '命令 "{intent}" 必须设置 stdin = "closed"',
+  "run.error.agentShellRequiresAllow":
+    '当 mode = "shell" 时，命令 "{intent}" 必须设置 allow_shell = true',
   "run.error.timeout": '命令 "{intent}" 必须定义 timeout_seconds',
   "run.error.commandSource":
     '命令 "{intent}" 必须定义 argv，或定义 mode = "shell" 并提供 cmd',
@@ -781,6 +783,10 @@ export const zhMessages = {
     '命令 "{intent}" 的 cwd 无效：{detail}',
   "run.error.cwdOutsideProjectDetail":
     "意图 cwd 必须位于当前根目录内。",
+  "run.error.invalidTestTarget":
+    '命令 "{intent}" 收到无效测试目标。{detail}',
+  "run.error.invalidTestTargetDetail":
+    "测试目标必须是相对文件路径，且不能以 '-' 开头。",
   "run.error.maxOutputBytes":
     '命令 "{intent}" 的 max_output_bytes 无效。{detail}',
   "run.error.maxOutputBytesDetail":

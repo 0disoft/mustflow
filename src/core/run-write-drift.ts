@@ -17,6 +17,7 @@ const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
 const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/perf', '.mustflow/state/runs']);
 
 type FileSignature = string;
+type SnapshotEnvironment = NodeJS.ProcessEnv;
 export type RunWriteDriftStatus = 'checked' | 'partial' | 'unavailable';
 
 interface SnapshotResult {
@@ -46,12 +47,14 @@ export interface RunWriteDriftReceipt {
 
 export interface RunWriteTracker {
 	readonly projectRoot: string;
+	readonly env: SnapshotEnvironment;
 	readonly declaredPaths: readonly string[];
 	readonly before: SnapshotResult;
 }
 
 export interface RunWriteBatchTracker {
 	readonly projectRoot: string;
+	readonly env: SnapshotEnvironment;
 	readonly before: SnapshotResult;
 }
 
@@ -63,6 +66,7 @@ export interface RunWriteBatchIntent {
 
 export interface RunWriteTrackingOptions {
 	readonly additionalDeclaredPaths?: readonly string[];
+	readonly env: SnapshotEnvironment;
 }
 
 function isRecursiveSnapshotEnabled(): boolean {
@@ -150,8 +154,8 @@ function collectSnapshotEntries(projectRoot: string, currentPath: string, entrie
 	}
 }
 
-function captureSnapshot(projectRoot: string): SnapshotResult {
-	const gitSnapshot = captureGitStatusSnapshot(projectRoot);
+function captureSnapshot(projectRoot: string, env: SnapshotEnvironment): SnapshotResult {
+	const gitSnapshot = captureGitStatusSnapshot(projectRoot, env);
 	if (gitSnapshot) {
 		return gitSnapshot;
 	}
@@ -179,9 +183,10 @@ function captureSnapshot(projectRoot: string): SnapshotResult {
 	}
 }
 
-function captureGitStatusSnapshot(projectRoot: string): SnapshotResult | null {
+function captureGitStatusSnapshot(projectRoot: string, env: SnapshotEnvironment): SnapshotResult | null {
 	const result = spawnSync('git', ['-C', projectRoot, 'status', '--porcelain=v1', '-z', `--untracked-files=${GIT_STATUS_UNTRACKED_MODE}`], {
 		encoding: 'utf8',
+		env,
 		input: '',
 		maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
 		stdio: ['ignore', 'pipe', 'pipe'],
@@ -314,7 +319,7 @@ export function startRunWriteTracking(
 	projectRoot: string,
 	contract: CommandContract,
 	intentName: string,
-	options: RunWriteTrackingOptions = {},
+	options: RunWriteTrackingOptions,
 ): RunWriteTracker {
 	const declaredPaths = [
 		...listDeclaredWritePaths(projectRoot, contract, intentName),
@@ -323,15 +328,17 @@ export function startRunWriteTracking(
 
 	return {
 		projectRoot,
+		env: options.env,
 		declaredPaths: [...new Set(declaredPaths)].sort((left, right) => left.localeCompare(right)),
-		before: captureSnapshot(projectRoot),
+		before: captureSnapshot(projectRoot, options.env),
 	};
 }
 
-export function startRunWriteBatchTracking(projectRoot: string): RunWriteBatchTracker {
+export function startRunWriteBatchTracking(projectRoot: string, env: SnapshotEnvironment): RunWriteBatchTracker {
 	return {
 		projectRoot,
-		before: captureSnapshot(projectRoot),
+		env,
+		before: captureSnapshot(projectRoot, env),
 	};
 }
 
@@ -353,7 +360,7 @@ export function finishRunWriteBatchTracking(
 		return fallbackReceipts;
 	}
 
-	const after = captureSnapshot(tracker.projectRoot);
+	const after = captureSnapshot(tracker.projectRoot, tracker.env);
 	if (after.status === 'unavailable') {
 		return new Map(
 			intents.map((intent) => [
@@ -448,7 +455,7 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 		return createUnavailableWriteDriftReceipt(tracker.declaredPaths, tracker.before.reason);
 	}
 
-	const after = captureSnapshot(tracker.projectRoot);
+	const after = captureSnapshot(tracker.projectRoot, tracker.env);
 	if (after.status === 'unavailable') {
 		return createUnavailableWriteDriftReceipt(tracker.declaredPaths, after.reason);
 	}
