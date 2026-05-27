@@ -311,7 +311,7 @@ function acquireMutex(projectRoot: string): () => void {
 	const root = activeLockRoot(projectRoot);
 	const mutex = activeLockMutexDirectory(projectRoot);
 	mkdirSync(root, { recursive: true });
-	const startedAt = Date.now();
+	let startedAt = Date.now();
 
 	while (true) {
 		try {
@@ -335,10 +335,12 @@ function acquireMutex(projectRoot: string): () => void {
 					const staleByAge = Number.isFinite(ownerStartedAt) && Date.now() - ownerStartedAt > LOCK_MUTEX_STALE_MS;
 					if (!isProcessLive(ownerPid) || staleByAge) {
 						rmSync(mutex, { recursive: true, force: true });
+						startedAt = Date.now();
 						continue;
 					}
 				} catch {
 					rmSync(mutex, { recursive: true, force: true });
+					startedAt = Date.now();
 					continue;
 				}
 

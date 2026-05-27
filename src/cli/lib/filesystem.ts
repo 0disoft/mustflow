@@ -28,7 +28,7 @@ export interface ListFilesOptions {
 }
 
 export function toPosixPath(value: string): string {
-	return value.split(path.sep).join('/');
+	return value.replace(/\\/gu, '/');
 }
 
 export function copyFileInsideWithoutSymlinks(

@@ -46,6 +46,10 @@ interface CommandPreconditionDeclaration {
 	readonly satisfyIntent: string | null;
 }
 
+interface CommandPreconditionEvaluationContext {
+	projectFiles: readonly string[] | null;
+}
+
 const IGNORED_WALK_DIRECTORIES = new Set([
 	'.git',
 	'node_modules',
@@ -182,7 +186,11 @@ function listProjectFiles(projectRoot: string): readonly string[] {
 	return files.sort((left, right) => left.localeCompare(right));
 }
 
-function matchingSourceFiles(projectRoot: string, patterns: readonly string[]): readonly string[] {
+function matchingSourceFiles(
+	projectRoot: string,
+	patterns: readonly string[],
+	context: CommandPreconditionEvaluationContext,
+): readonly string[] {
 	const safePatterns = patterns.filter((pattern) => !relativePathIsUnsafe(pattern));
 	const matchers = safePatterns.map(globToRegExp);
 
@@ -190,7 +198,8 @@ function matchingSourceFiles(projectRoot: string, patterns: readonly string[]): 
 		return [];
 	}
 
-	return listProjectFiles(projectRoot).filter((filePath) => matchers.some((matcher) => matcher.test(filePath)));
+	context.projectFiles ??= listProjectFiles(projectRoot);
+	return context.projectFiles.filter((filePath) => matchers.some((matcher) => matcher.test(filePath)));
 }
 
 function evaluatePathExists(
@@ -247,6 +256,7 @@ function evaluateArtifactFreshness(
 	projectRoot: string,
 	declaration: CommandPreconditionDeclaration,
 	satisfyIntent: CommandPreconditionSatisfyIntent | null,
+	context: CommandPreconditionEvaluationContext,
 ): CommandPreconditionPlan {
 	const artifact = declaration.artifact;
 
@@ -293,7 +303,7 @@ function evaluateArtifactFreshness(
 		};
 	}
 
-	const sourceFiles = matchingSourceFiles(projectRoot, declaration.sources);
+	const sourceFiles = matchingSourceFiles(projectRoot, declaration.sources, context);
 	if (sourceFiles.length === 0) {
 		return {
 			kind: declaration.kind,
@@ -309,9 +319,29 @@ function evaluateArtifactFreshness(
 	}
 
 	const artifactMtime = statSync(artifactPath).mtimeMs;
-	const newest = sourceFiles
-		.map((source) => ({ source, mtime: statSync(path.join(projectRoot, ...source.split('/'))).mtimeMs }))
-		.sort((left, right) => right.mtime - left.mtime)[0];
+	let newest: { source: string; mtime: number } | null = null;
+
+	for (const source of sourceFiles) {
+		const mtime = statSync(path.join(projectRoot, ...source.split('/'))).mtimeMs;
+		if (!newest || mtime > newest.mtime) {
+			newest = { source, mtime };
+		}
+	}
+
+	if (!newest) {
+		return {
+			kind: declaration.kind,
+			label: declaration.label,
+			status: 'unknown',
+			detail: 'no readable source files matched the freshness precondition.',
+			path: null,
+			artifact,
+			sources: declaration.sources,
+			newestSource: null,
+			satisfyIntent,
+		};
+	}
+
 	const stale = newest.mtime > artifactMtime;
 
 	return {
@@ -339,6 +369,8 @@ export function evaluateCommandPreconditions(
 		return [];
 	}
 
+	const context: CommandPreconditionEvaluationContext = { projectFiles: null };
+
 	return readPreconditionDeclarations(intent).map((declaration) => {
 		const satisfyIntent = createSatisfyIntentSummary(contract, declaration.satisfyIntent);
 
@@ -347,7 +379,7 @@ export function evaluateCommandPreconditions(
 		}
 
 		if (declaration.kind === 'artifact_freshness') {
-			return evaluateArtifactFreshness(projectRoot, declaration, satisfyIntent);
+			return evaluateArtifactFreshness(projectRoot, declaration, satisfyIntent, context);
 		}
 
 		return {

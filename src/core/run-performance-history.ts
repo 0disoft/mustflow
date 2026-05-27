@@ -413,19 +413,36 @@ function serialize(value: unknown): string {
 	return `${JSON.stringify(value, null, 2)}\n`;
 }
 
-function enforceSizeLimit(samples: readonly RunPerformanceSample[], today: string): readonly RunPerformanceSample[] {
-	let pruned = [...samples];
-	let summary = createSummary(pruned, today);
+function serializedHistorySize(samples: readonly RunPerformanceSample[], today: string): number {
+	return (
+		Buffer.byteLength(serialize(createSamplesFile(samples)), 'utf8') +
+		Buffer.byteLength(serialize(createSummary(samples, today)), 'utf8')
+	);
+}
 
-	while (
-		pruned.length > 0 &&
-		Buffer.byteLength(serialize(createSamplesFile(pruned)), 'utf8') + Buffer.byteLength(serialize(summary), 'utf8') > MAX_TOTAL_BYTES
-	) {
-		pruned = pruned.slice(1);
-		summary = createSummary(pruned, today);
+function enforceSizeLimit(samples: readonly RunPerformanceSample[], today: string): readonly RunPerformanceSample[] {
+	if (serializedHistorySize(samples, today) <= MAX_TOTAL_BYTES) {
+		return samples;
 	}
 
-	return pruned;
+	let low = 1;
+	let high = samples.length;
+	let firstFittingIndex = samples.length;
+
+	while (low <= high) {
+		const middle = Math.floor((low + high) / 2);
+		const candidate = samples.slice(middle);
+
+		if (serializedHistorySize(candidate, today) <= MAX_TOTAL_BYTES) {
+			firstFittingIndex = middle;
+			high = middle - 1;
+			continue;
+		}
+
+		low = middle + 1;
+	}
+
+	return samples.slice(firstFittingIndex);
 }
 
 export function recordRunPerformanceHistory(projectRoot: string, receipt: RunReceipt): void {

@@ -103,6 +103,13 @@ function trySymlink(target, linkPath, type) {
 	}
 }
 
+test('toPosixPath normalizes mixed separators without host-specific path assumptions', async () => {
+	const { toPosixPath } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'filesystem.js')).href);
+
+	assert.equal(toPosixPath('C:\\Users\\cherr/Documents\\workspace'), 'C:/Users/cherr/Documents/workspace');
+	assert.equal(toPosixPath('docs/site/page.md'), 'docs/site/page.md');
+});
+
 test('safe file copy rejects symlinked source and target paths', async (t) => {
 	const { copyFileInsideWithoutSymlinks } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'filesystem.js')).href);
 	const rootPath = createTempProject();

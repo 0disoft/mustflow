@@ -262,7 +262,7 @@ export function createValidationRatchetRisks(
 					riskDetail(classification.path, 'changes a large snapshot region; review that the update does not hide a regression.'),
 				);
 			}
-			if (GOLDEN_PATH.test(`${classification.path} `) && diff.added.length + diff.removed.length >= 20) {
+			if (GOLDEN_PATH.test(classification.path) && diff.added.length + diff.removed.length >= 20) {
 				addRisk(
 					'golden_output_replaced',
 					'medium',

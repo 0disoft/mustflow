@@ -3162,11 +3162,11 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
 	}
 
-	const cacheLayers = readCacheLayerSets(projectRoot);
 	let capabilities = searchCapabilities(false);
 	const results: LocalSearchItem[] = [];
 
 	try {
+		const cacheLayers = readCacheLayerSets(projectRoot);
 		const stalePaths = getStalePaths(projectRoot, database);
 		capabilities = readStoredSearchCapabilities(database);
 		const indexedMatches = getIndexedSearchMatches(database, normalizedQuery);

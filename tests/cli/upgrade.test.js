@@ -216,3 +216,28 @@ test('upgrade prefers the detected install manager in update guidance', async ()
 		removeTempProject(templatePath);
 	}
 });
+
+test('upgrade does not infer install manager from unrelated path substrings', async () => {
+	const projectPath = createTempProject();
+	const { templatePath } = createTemplateWithAgentsUpdate();
+
+	try {
+		copyInitializedProject(projectPath);
+		const result = await withPackageVersion('999.0.0', (registryUrl) =>
+			runCliAsync(projectPath, ['upgrade'], {
+				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
+				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
+				MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
+				npm_config_user_agent: '',
+				npm_execpath: path.join(projectPath, 'bun-projects', 'runner.js'),
+			}),
+		);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stdout, /Update commands:\r?\nnpm: npm install -g mustflow@latest/);
+		assert.doesNotMatch(result.stdout, /Update commands:\r?\nbun: bun add -g mustflow@latest/);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(templatePath);
+	}
+});

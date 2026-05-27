@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import type { PackageMetadata } from './package-info.js';
 
 const DEFAULT_NPM_REGISTRY_URL = 'https://registry.npmjs.org';
@@ -41,6 +43,7 @@ const PACKAGE_MANAGER_COMMANDS = [
 ] as const;
 
 type PackageManagerId = (typeof PACKAGE_MANAGER_COMMANDS)[number]['id'];
+const PACKAGE_MANAGER_IDS = PACKAGE_MANAGER_COMMANDS.map((entry) => entry.id);
 
 export interface PackageVersionCheck {
 	readonly packageName: string;
@@ -138,24 +141,38 @@ function getTimeoutMs(): number {
 	return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : DEFAULT_VERSION_CHECK_TIMEOUT_MS;
 }
 
-function detectPackageManagerId(): PackageManagerId | null {
-	const signals = [
-		process.env.npm_config_user_agent,
-		process.env.npm_execpath,
-		process.execPath,
-		process.argv[1],
-		import.meta.url,
-	]
-		.filter((signal): signal is string => typeof signal === 'string' && signal.length > 0)
-		.map((signal) => signal.toLowerCase());
+function packageManagerFromUserAgent(userAgent: string | undefined): PackageManagerId | null {
+	const firstToken = userAgent?.trim().toLowerCase().split(/\s+/u)[0] ?? '';
 
-	for (const id of ['bun', 'pnpm', 'yarn', 'deno', 'npm'] as const) {
-		if (signals.some((signal) => signal.includes(id))) {
+	for (const id of PACKAGE_MANAGER_IDS) {
+		if (firstToken === id || firstToken.startsWith(`${id}/`)) {
 			return id;
 		}
 	}
 
 	return null;
+}
+
+function packageManagerFromExecutablePath(executablePath: string | undefined): PackageManagerId | null {
+	if (!executablePath) {
+		return null;
+	}
+
+	const normalized = path
+		.basename(executablePath)
+		.toLowerCase()
+		.replace(/\.(?:cmd|ps1|exe|cjs|mjs|js)$/u, '')
+		.replace(/-cli$/u, '');
+
+	return PACKAGE_MANAGER_IDS.find((id) => normalized === id) ?? null;
+}
+
+function detectPackageManagerId(): PackageManagerId | null {
+	return (
+		packageManagerFromUserAgent(process.env.npm_config_user_agent) ??
+		packageManagerFromExecutablePath(process.env.npm_execpath) ??
+		packageManagerFromExecutablePath(process.execPath)
+	);
 }
 
 function getPackageInstallCommands(packageName: string): PackageInstallCommand[] {
