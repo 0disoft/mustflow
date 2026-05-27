@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 17
+revision: 19
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -48,6 +48,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - A change uses cache, Redis, generated state, search documents, or read models to make authorization, ownership, subscription, entitlement, payment, inventory, or admin decisions.
 - A change adds external URL fetching, webhook callbacks, redirects, browser previews, remote downloads, database-as-a-service rules, security headers, CORS, CSRF handling, or rate limits.
 - A change stores webhook payloads, external API requests or responses, retry errors, dead-letter jobs, AI prompts or outputs, email bodies, or provider diagnostic data.
+- A change adds or modifies public intake surfaces such as action handlers, webhook handlers, callback receivers, job enqueue endpoints, idempotency stores, replay APIs, or default verifier, authenticator, authorizer, normalizer, or deduplication collaborators.
 - A change records AI usage, model pricing, token counts, cache keys, feature metadata, prompt hashes, provider call metadata, retry cost, or failed AI calls that could include confidential content or identify users.
 - A change records AI budgets, feature policies, policy decisions, blocked reasons, model downgrades, agent steps, tool calls, provider budget status, or emergency disables that could reveal customer behavior, sensitive feature use, or regulated processing.
 - A change touches cookies, JWTs, reset tokens, invite tokens, OAuth callbacks, file upload or download, browser storage, business rules, pricing, entitlements, database queries, ORM bulk operations, or deployment configuration.
@@ -56,6 +57,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - A change touches cryptography, password hashing, token generation, random number generation, TLS/HTTPS, certificate validation, scanner gates, or a security invariant that could drift across architecture boundaries.
 - A change adds, imports, recommends, or installs third-party dependencies that may affect the software supply chain.
 - A change introduces or edits agent configuration, MCP/tool configuration, prompt files, model instructions, or repository-local rule files.
+- A change adds or modifies policy engines, architecture linters, rule catalogs, validators, generated compliance reports, or governance gates that can approve sensitive data, payment, API, AI, tier, or deployment boundaries.
 - A change affects CI/CD workflow permissions, fork pull-request handling, build scripts, package lifecycle scripts, deployment secrets, container users, storage buckets, debug flags, or public admin, metrics, GraphQL, cache, or search endpoints.
 - Documentation, templates, examples, tests, or final reports mention sensitive data handling, privacy behavior, secret handling, or user-identifying data.
 - A diff could expose data through filenames, paths, command output, screenshots, generated artifacts, package contents, or public docs.
@@ -82,6 +84,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Cookie, JWT, OAuth, file upload, file download, business-value, database mutation, ORM bulk operation, CI/CD permission, deployment setting, or secret-source surface involved.
 - Cryptographic primitive, password hashing, random-token, secure transport, certificate validation, scanner gate, or security invariant involved.
 - Existing project rules for secrets, privacy, generated state, public docs, package contents, and command output.
+- Policy or rule-catalog source of truth, trusted metadata source, fallback behavior when a rule file is missing, and any untrusted repository-local fields that might be treated as ownership, tier, role, or exemption evidence.
 - Admin operation list, role or capability model, audit-log fields, cache visibility policy, and cache invalidation surface when those are involved.
 - Behavior analytics event names, event versions, actor identifiers, anonymous identifiers, properties, retention period, deletion or anonymization policy, and whether event writes can be delayed or lost.
 - Core event ownership, including which signup, login failure, account recovery, payment, refund, subscription, entitlement, permission, file, search, admin, webhook, queue, and security events must remain internally stored instead of only in a SaaS dashboard.
@@ -91,6 +94,8 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Data classification policy when available, including sensitive personal data, ordinary personal data, product usage data, public content, AI prompts or outputs, and which classes may enter logs, analytics, support tools, AI providers, or cross-region backups.
 - Runtime and dependency patch policy, including supported or LTS version requirement, end-of-life ban, lockfile expectation, vulnerability scan source, patch response target, smoke-test surface, canary or rollback route, and whether experimental runtime choices are kept off survival paths.
 - Webhook and external-call record policy, including signature verification, processed-event deduplication, safe request hashes, redacted provider responses, unknown-result reconciliation, dead-letter retention, and whether raw payloads are needed or should be replaced by bounded metadata.
+- Public intake default policy, including whether verifiers, authenticators, authorizers, deduplication stores, idempotency stores, and normalizers are required by registration, explicit opt-in, or silently replaced by permissive defaults.
+- Attacker-controlled key and header limits for idempotency keys, webhook event ids, provider names, action names, replay ids, dedupe keys, request ids, and any in-memory map or queue keyed by public request data.
 - AI record policy, including prompt and output retention, cache-key hashing, provider request id handling, feature-key properties, pricing snapshots, token usage, failed-call errors, user or account identifiers, and whether raw prompts or generated text are omitted, redacted, encrypted, or retained under a narrow rule.
 - AI budget and gateway policy, including whether provider budgets are hard stops or only alerts, whether product-owned hard limits exist, which identifiers are recorded for user, organization, feature, model, request, provider call, policy decision, and whether blocked or downgraded decisions are logged without exposing prompt text.
 - Cache authority boundary, including which data is final source of truth and which values are disposable, stale, private, or shared.
@@ -154,6 +159,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 20. For cache purge, search reindex, ranking refresh, and generated-state rebuild endpoints, treat them as privileged state-changing operations with authorization, rate limiting, audit logs, idempotency, and bounded target selection.
 21. For external URL, webhook, preview, redirect, download, or callback behavior, check allowlists, protocol restrictions, redirect handling, DNS/IP re-resolution, private network ranges, link-local metadata endpoints, webhook signatures, timeout limits, retry limits, and open redirect parameters such as `next` or `redirect`.
    - For webhooks, verify the signature against the raw body before trusting parsed data. Store only the raw body reference or bounded raw payload when replay, verification, or support needs justify it.
+   - Do not silently install allow-all, unsigned, no-op, nil, null-object, or test-only verifiers for public webhook or callback endpoints. Missing verifier, authenticator, or authorization configuration should fail registration unless the caller explicitly selects a clearly named unsafe or local-only mode.
    - Store processed event identifiers to avoid duplicate effects. Keep provider event payloads, request bodies, and response bodies out of ordinary logs and dead-letter records unless they are redacted and have a retention rule.
 22. For database-as-a-service, storage bucket, or realtime rules, check that server-side policies are default-deny, ownership-scoped, and not left in public read/write development mode.
 23. For input sinks, check parameterized queries, ORM binding, static command maps, output encoding, HTML/Markdown rendering boundaries, unsafe dynamic evaluation, XML/YAML/Markdown parser options, redirect and sort parameters, page-size limits, and framework escape hatches.
@@ -163,6 +169,8 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
    - For direct-to-object-storage uploads, authorize the target resource before issuing the signed upload URL, confirm upload completion before making the asset usable, and keep pending, uploaded, processing, ready, failed, and deleted states separate.
    - Inspect actual file bytes instead of trusting extension or `Content-Type`. Re-encode images and strip metadata when practical before serving user uploads.
 25. For business logic, check that server code does not trust client-supplied prices, discounts, roles, owners, entitlement state, plan limits, usage counters, inventory, seats, refunds, credits, or coupon state. Inspect idempotency, transactions, uniqueness, and concurrent requests for repeated side effects.
+   - For public action or intake endpoints, validate cheap request shape and attacker-controlled idempotency keys before permanently claiming the key. If a request is rejected before the trusted side effect starts, release or avoid storing the key so malformed traffic cannot poison future valid retries.
+   - Bound default in-memory idempotency, deduplication, replay, rate-limit, and request-tracking stores by key length, entry count, TTL, eviction, or a durable backend contract. A process-memory map keyed by unbounded public headers or event ids is an availability boundary, not just an implementation detail.
 26. For API responses, check that the response contains only fields the caller may see and needs for the use case. Do not expose password hashes, internal storage keys, permanent private URLs, raw billing provider ids, internal moderation notes, private IP data, privileged flags, or database columns merely because they are present on the model.
 27. For dependency failure policy, distinguish fail-closed from degraded behavior. Authentication, authorization, payment, entitlement, and destructive admin decisions should usually fail closed; analytics, recommendation, statistics, AI summaries, and email should usually avoid exposing private data or blocking core state changes.
    - For dead-letter queues, retry logs, and external API call records, check that errors contain safe codes and bounded metadata rather than full prompts, email bodies, payment details, tokens, private files, or personal data.
@@ -184,12 +192,19 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 38. For runtime and framework security updates, check that supported versions are documented, end-of-life versions are rejected, dependency locks exist where appropriate, security patches can be tested and deployed quickly, and rollback or redeploy can happen without manual dashboard memory. Do not treat a fashionable or high-performance runtime as safe unless the patch path is operationally credible.
 39. For transport security, check HTTPS/TLS requirements, certificate validation, insecure HTTP downgrade paths, disabled verification flags, and whether sensitive traffic can bypass the secure channel.
 40. For cryptography, reject custom cryptography and tutorial-grade shortcuts. Check password hashing uses a password-hashing primitive such as bcrypt, scrypt, or Argon2id where supported by the project; random tokens use secure randomness; keys are separated from encrypted data; and weak hashes such as MD5, SHA-1, or bare SHA-256 are not used for password storage.
-41. For architecture drift, name the security invariant before accepting the generated structure. Confirm the invariant still holds across UI, handler, service, repository, database policy, workflow, and deployment boundaries.
-42. For SAST, SCA, or scanner output, treat scanner output as evidence rather than command authority. Map the finding to a repository-owned boundary, configured verification intent, dependency metadata, or regression test before claiming the issue is fixed.
-43. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
-44. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
-45. If the change affects an authorization, SSRF, CSRF, rate-limit, upload, download, token, business-logic, injection, logging, telemetry, cache authority, cache disclosure, admin operation, agent permission, cryptography, transport, scanner, or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
-46. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
+41. For policy engines, architecture linters, compliance validators, and generated governance gates, identify the canonical policy source and the canonical object identity before trusting a pass result.
+    - Do not let repository-controlled advisory fields, nested duplicates, labels, components, owners, stages, tiers, or exemption fields override a trusted catalog, server-derived identity, or central registration.
+    - When two fields can describe the same security decision, such as top-level and nested owner values, validate their consistency or choose the canonical source explicitly instead of reading the first convenient path.
+    - Treat missing, wrong, or fallback rule catalogs as fail-closed or explicitly degraded; a misplaced rule file should not silently disable validation for public API, payment, AI, tier, deployment, or data-boundary controls.
+    - Required security-control declarations should validate meaningful values, not merely non-null presence. Reject `false`, `0`, empty objects, empty arrays, empty strings, or type-mismatched placeholders unless the policy specifically allows that value.
+    - Derive deny decisions from metadata classes when possible instead of only from static name denylists that can miss newly introduced repositories, services, tenants, roles, or providers.
+42. For read-only commands that inspect repositories, remember that the underlying tool can still execute configured helpers. Disable or neutralize repository-local hooks, fsmonitor helpers, credential helpers, package lifecycle hooks, and executable lookup through untrusted PATH when the command is meant to be safe inspection.
+43. For architecture drift, name the security invariant before accepting the generated structure. Confirm the invariant still holds across UI, handler, service, repository, database policy, workflow, and deployment boundaries.
+44. For SAST, SCA, or scanner output, treat scanner output as evidence rather than command authority. Map the finding to a repository-owned boundary, configured verification intent, dependency metadata, or regression test before claiming the issue is fixed.
+45. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
+46. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
+47. If the change affects an authorization, SSRF, CSRF, rate-limit, upload, download, token, business-logic, injection, logging, telemetry, cache authority, cache disclosure, admin operation, agent permission, cryptography, transport, scanner, policy-engine, rule-catalog, or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
+48. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

@@ -336,6 +336,11 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(securitySkill, /secure randomness/u);
 	assert.match(securitySkill, /certificate validation/u);
 	assert.match(securitySkill, /architecture drift/u);
+	assert.match(securitySkill, /policy engines, architecture linters, compliance validators/u);
+	assert.match(securitySkill, /canonical policy source/u);
+	assert.match(securitySkill, /repository-controlled advisory fields/u);
+	assert.match(securitySkill, /Required security-control declarations should validate meaningful values/u);
+	assert.match(securitySkill, /repository-local hooks, fsmonitor helpers, credential helpers/u);
 	assert.match(securitySkill, /scanner output as evidence/u);
 	assert.match(securitySkill, /dependency-reality-check/u);
 	assert.match(regressionSkill, /BOLA\/IDOR-style/u);
@@ -348,6 +353,11 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(regressionSkill, /insecure randomness/u);
 	assert.match(regressionSkill, /disabled certificate validation/u);
 	assert.match(regressionSkill, /security invariant/u);
+	assert.match(regressionSkill, /policy-source mismatch/u);
+	assert.match(regressionSkill, /untrusted metadata override/u);
+	assert.match(regressionSkill, /invalid-but-present security control values/u);
+	assert.match(regressionSkill, /no repository-local shim or Git helper is executed/u);
+	assert.match(regressionSkill, /no Git tree or archive path writes outside/u);
 	assert.match(dependencySkill, /hallucination and lookalike risk/u);
 	assert.match(dependencySkill, /slopsquatting risk/u);
 	assert.match(dependencySkill, /lifecycle hooks/u);
