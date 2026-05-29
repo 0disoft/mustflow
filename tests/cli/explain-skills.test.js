@@ -150,7 +150,8 @@ test('fails explain skills when a target argument is provided', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unexpected argument: extra/);
-		assert.match(result.stdout, /Usage:/);
+		assert.match(result.stderr, /Usage:/);
+		assert.equal(result.stdout, '');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -166,7 +167,8 @@ test('fails explain skill when the skill id is missing', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Missing skill id/);
-		assert.match(result.stdout, /Usage:/);
+		assert.match(result.stderr, /Usage:/);
+		assert.equal(result.stdout, '');
 	} finally {
 		removeTempProject(projectPath);
 	}

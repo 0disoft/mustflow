@@ -258,7 +258,7 @@ test('keeps convenience workflow ideas inside existing command surfaces', async 
 	const adaptersGenerate = await runCli(['adapters', 'generate']);
 	assert.equal(adaptersGenerate.status, 1);
 	assert.match(adaptersGenerate.stderr, /Unknown adapters action: generate/);
-	assert.match(adaptersGenerate.stdout, /mf adapters status/);
+	assert.match(adaptersGenerate.stderr, /mf adapters status/);
 });
 
 test('fails unknown commands with Korean guidance when --lang ko is set', async () => {
@@ -314,7 +314,7 @@ test('fails unknown command options with standardized guidance', async () => {
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unknown option: --bad/);
 		assert.match(result.stderr, new RegExp(`Run \`mf ${command} --help\` for usage\\.`));
-		assert.match(result.stdout, /Usage:/);
+		assert.match(result.stderr, /Usage:/);
 	}
 });
 

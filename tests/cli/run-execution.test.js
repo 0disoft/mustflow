@@ -237,7 +237,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Hold an exclusive lock briefly."
-argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 1200)']
+argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 4000)']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"

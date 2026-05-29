@@ -157,15 +157,12 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /### General Code Change/);
 		assert.match(skillsIndex, /### Tests and Regression/);
 		assert.match(skillsIndex, /### Architecture Patterns/);
-		assert.doesNotMatch(skillsIndex, /\| UI and Assets \|/);
-		assert.doesNotMatch(skillsIndex, /### UI and Assets/);
+		assert.match(skillsIndex, /\| UI and Assets \|/);
+		assert.match(skillsIndex, /### UI and Assets/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/vertical-slice-tdd\/SKILL\.md/);
-		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/docs-prose-review\/SKILL\.md/);
-		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/external-skill-intake\/SKILL\.md/);
-		assert.doesNotMatch(skillsIndex, /\.mustflow\/skills\/web-asset-optimization\/SKILL\.md/);
 		const skillRoutes = readText(path.join(projectPath, '.mustflow', 'skills', 'routes.toml'));
 		assert.match(skillRoutes, /\[routes\."code-review"\]/);
 		assert.match(skillRoutes, /category = "general_code"/);

@@ -123,7 +123,7 @@ test('fails changed impact when git status cannot be read', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unable to inspect changed files with git status/);
-		assert.match(result.stdout, /Usage: mf impact/);
+		assert.match(result.stderr, /Usage: mf impact/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -134,5 +134,5 @@ test('fails impact without changed mode or explicit paths', async () => {
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Specify --changed or at least one path/);
-	assert.match(result.stdout, /Usage: mf impact/);
+	assert.match(result.stderr, /Usage: mf impact/);
 });

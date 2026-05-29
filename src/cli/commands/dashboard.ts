@@ -438,6 +438,30 @@ function sendBadRequest(response: ServerResponse): void {
 	sendText(response, 400, 'Bad request');
 }
 
+function isDashboardBadRequestError(error: unknown, message: string): boolean {
+	return (
+		error instanceof SyntaxError ||
+		message === 'Request body is too large.' ||
+		message === 'Invalid review status.' ||
+		message === 'Request body must be a JSON object.' ||
+		message === 'Request body must include an updates array.' ||
+		message === 'Each update must be a JSON object.' ||
+		message === 'Each update must include an id.' ||
+		message === 'Bulk documentation review updates require a separate confirmed flow.' ||
+		message.startsWith('Unknown dashboard preference: ') ||
+		message.endsWith(' is locked in the dashboard.') ||
+		message.endsWith(' is required.') ||
+		message.endsWith(' must be a boolean.') ||
+		message.endsWith(' must be an integer.') ||
+		message.endsWith(' must be a string.') ||
+		message.endsWith(' must not be empty.') ||
+		/^.+ must be at (?:least|most) \d+\.$/u.test(message) ||
+		/^.+ must be one of: .+\.$/u.test(message) ||
+		message.startsWith('status must be ') ||
+		message.startsWith('reviewerKind must be ')
+	);
+}
+
 function isAuthorized(request: IncomingMessage, token: string): boolean {
 	const rawToken = request.headers['x-mustflow-dashboard-token'];
 	const candidate = Array.isArray(rawToken) ? rawToken[0] : rawToken;
@@ -1132,7 +1156,7 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 			sendText(response, 404, 'Not found');
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			if (error instanceof SyntaxError || message === 'Request body is too large.' || message === 'Invalid review status.') {
+			if (isDashboardBadRequestError(error, message)) {
 				sendBadRequest(response);
 				return;
 			}

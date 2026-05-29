@@ -354,7 +354,7 @@ export async function runRun(
 	const childStartedAtMs = performance.now();
 	const startedAt = new Date();
 	const stopRunProgress = createRunProgressReporter({
-		enabled: !json,
+		enabled: !json && Boolean(reporter.writeStderr),
 		intentName,
 		timeoutSeconds: plan.timeoutSeconds,
 		reporter,

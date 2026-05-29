@@ -275,13 +275,16 @@ test('reports invalid classification report inputs for explain verify', () => {
 
 		assert.equal(missingResult.status, 1);
 		assert.match(missingResult.stderr, /Classification report must be a readable JSON file/);
-		assert.match(missingResult.stdout, /Usage: mf explain/);
+		assert.match(missingResult.stderr, /Usage: mf explain/);
+		assert.equal(missingResult.stdout, '');
 		assert.equal(invalidResult.status, 1);
 		assert.match(invalidResult.stderr, /Classification report must be a readable JSON file/);
-		assert.match(invalidResult.stdout, /Usage: mf explain/);
+		assert.match(invalidResult.stderr, /Usage: mf explain/);
+		assert.equal(invalidResult.stdout, '');
 		assert.equal(looseResult.status, 1);
 		assert.match(looseResult.stderr, /Verification input must be an mf classify report/);
-		assert.match(looseResult.stdout, /Usage: mf explain/);
+		assert.match(looseResult.stderr, /Usage: mf explain/);
+		assert.equal(looseResult.stdout, '');
 	} finally {
 		removeTempProject(projectPath);
 	}

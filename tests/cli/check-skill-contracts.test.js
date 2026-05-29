@@ -311,10 +311,15 @@ test('strict check fails generated template profiles without selectable main rou
 
 	try {
 		initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify({ name: 'example', version: '0.1.0' }, null, 2));
 		const routesPath = path.join(templatePath, 'locales', 'en', '.mustflow', 'skills', 'routes.toml');
-		const routes = readText(routesPath).replace(
-			/(\[routes\."security-privacy-review"\]\ncategory = "security_privacy"\n)route_type = "primary"/u,
-			'$1route_type = "adjunct"',
+		const routes = ['security-privacy-review', 'config-env-change', 'auth-permission-change'].reduce(
+			(text, routeName) =>
+				text.replace(
+					new RegExp(`(\\[routes\\."${routeName}"\\]\\ncategory = "security_privacy"\\n)route_type = "primary"`, 'u'),
+					'$1route_type = "adjunct"',
+				),
+			readText(routesPath),
 		);
 		writeFileSync(routesPath, routes);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));

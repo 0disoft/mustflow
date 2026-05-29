@@ -204,7 +204,7 @@ test('fails changed classification when git status cannot be read', async () => 
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unable to inspect changed files with git status/);
-		assert.match(result.stdout, /Usage: mf classify/);
+		assert.match(result.stderr, /Usage: mf classify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -306,7 +306,7 @@ test('rejects classification report writes outside the mustflow root', async () 
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Classification report path must stay inside the mustflow root/);
-	assert.match(result.stdout, /Usage: mf classify/);
+	assert.match(result.stderr, /Usage: mf classify/);
 });
 
 test('fails classify without changed mode or explicit paths', async () => {
@@ -314,5 +314,5 @@ test('fails classify without changed mode or explicit paths', async () => {
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Specify --changed or at least one path/);
-	assert.match(result.stdout, /Usage: mf classify/);
+	assert.match(result.stderr, /Usage: mf classify/);
 });

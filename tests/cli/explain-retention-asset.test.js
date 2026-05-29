@@ -102,7 +102,8 @@ test('fails explain retention when a target argument is provided', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unexpected argument: extra/);
-		assert.match(result.stdout, /Usage:/);
+		assert.match(result.stderr, /Usage:/);
+		assert.equal(result.stdout, '');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -118,7 +119,8 @@ test('fails explain asset optimization when a target argument is provided', () =
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unexpected argument: extra/);
-		assert.match(result.stdout, /Usage:/);
+		assert.match(result.stderr, /Usage:/);
+		assert.equal(result.stdout, '');
 	} finally {
 		removeTempProject(projectPath);
 	}

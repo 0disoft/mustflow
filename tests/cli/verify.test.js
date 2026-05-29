@@ -426,7 +426,7 @@ test('rejects plan-only verify output without json', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /--plan-only requires --json/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -558,7 +558,7 @@ test('rejects verify plan-only reports passed through the deprecated from-plan a
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Verification input must be an mf classify report/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -578,7 +578,7 @@ test('rejects loose classification report inputs that are not classify output', 
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Verification input must be an mf classify report/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -598,7 +598,7 @@ test('rejects classify plans from a different mustflow root', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Classification report must come from this mustflow root/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -747,13 +747,13 @@ test('rejects conflicting verify reason inputs', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Use only one of --reason, --from-classification, --from-plan, or --changed/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 
 		const changedResult = await runCli(projectPath, ['verify', '--changed', '--reason', 'schema_verify', '--json']);
 
 		assert.equal(changedResult.status, 1);
 		assert.match(changedResult.stderr, /Use only one of --reason, --from-classification, --from-plan, or --changed/);
-		assert.match(changedResult.stdout, /Usage: mf verify/);
+		assert.match(changedResult.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -769,7 +769,7 @@ test('rejects verify write-plan without changed mode', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /--write-plan requires --changed/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -785,7 +785,7 @@ test('fails changed verify when git status cannot be read', async () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unable to inspect changed files with git status/);
-		assert.match(result.stdout, /Usage: mf verify/);
+		assert.match(result.stderr, /Usage: mf verify/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -811,7 +811,7 @@ test('fails verify when reason is missing', async () => {
 
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Missing verification reason/);
-	assert.match(result.stdout, /Usage: mf verify/);
+	assert.match(result.stderr, /Usage: mf verify/);
 });
 
 test('rejects verify plans outside the mustflow root', async () => {
@@ -895,7 +895,7 @@ test('rejects verify external inputs that resolve through symlinks', async (t) =
 		for (const result of [classificationResult, deprecatedAliasResult, reproResult, externalResult]) {
 			assert.equal(result.status, 1);
 			assert.match(result.stderr, /Input file path must not contain symlinks/);
-			assert.match(result.stdout, /Usage: mf verify/);
+			assert.match(result.stderr, /Usage: mf verify/);
 		}
 	} finally {
 		rmSync(outsideRoot, { recursive: true, force: true });

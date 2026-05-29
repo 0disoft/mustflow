@@ -434,7 +434,7 @@ test('fails explain command when the command intent name is missing', () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Missing command intent/);
-		assert.match(result.stdout, /Usage:/);
+		assert.match(result.stderr, /Usage:/);
 	} finally {
 		removeTempProject(projectPath);
 	}
