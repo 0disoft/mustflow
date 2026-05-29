@@ -22,6 +22,7 @@ const READ_CHUNK_BYTES = 64 * 1024;
 
 interface NoSymlinkPathOptions {
 	readonly allowMissingLeaf?: boolean;
+	readonly allowMissingDescendant?: boolean;
 }
 
 interface SafeReadOptions {
@@ -109,7 +110,7 @@ export function ensureInsideWithoutSymlinks(
 				throw new Error(`Path component is not a directory: ${currentPath}`);
 			}
 		} catch (error) {
-			if (isMissingPathError(error) && isLeaf && options.allowMissingLeaf) {
+			if (isMissingPathError(error) && (options.allowMissingDescendant || (isLeaf && options.allowMissingLeaf))) {
 				return;
 			}
 
@@ -184,7 +185,7 @@ export function ensureFileTargetInsideWithoutSymlinks(
 ): void {
 	const absoluteChildPath = path.resolve(childPath);
 	ensureInside(parentPath, absoluteChildPath);
-	ensureInsideWithoutSymlinks(parentPath, path.dirname(absoluteChildPath), { allowMissingLeaf: true });
+	ensureInsideWithoutSymlinks(parentPath, path.dirname(absoluteChildPath), { allowMissingDescendant: true });
 
 	try {
 		const stats = lstatSync(absoluteChildPath);

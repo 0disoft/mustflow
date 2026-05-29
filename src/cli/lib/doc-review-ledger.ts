@@ -162,7 +162,7 @@ function readLedgerFile(projectRoot: string): DocReviewLedger {
 	const ledgerPath = path.join(projectRoot, DOC_REVIEW_LEDGER_RELATIVE_PATH);
 	const ledgerDirectoryPath = path.dirname(ledgerPath);
 	ensureInside(projectRoot, ledgerPath);
-	ensureInsideWithoutSymlinks(projectRoot, ledgerDirectoryPath, { allowMissingLeaf: true });
+	ensureInsideWithoutSymlinks(projectRoot, ledgerDirectoryPath, { allowMissingDescendant: true });
 
 	if (!existsSync(ledgerDirectoryPath)) {
 		return { schema_version: '1', documents: [] };

@@ -3021,15 +3021,29 @@ function sortLocalSearchResults(
 	scope: LocalSearchScope,
 	limit: number,
 ): LocalSearchItem[] {
-	return [...results]
-		.sort((left, right) => {
+	const sorted = [...results].sort((left, right) => {
 			if (scope === 'all' && left.authority_rank !== right.authority_rank) {
 				return left.authority_rank - right.authority_rank;
 			}
 
 			return right.score - left.score || (left.path ?? left.name ?? '').localeCompare(right.path ?? right.name ?? '');
-		})
-		.slice(0, limit);
+		});
+	const limited = sorted.slice(0, limit);
+
+	if (scope !== 'all' || limited.some((item) => item.kind === 'source_anchor')) {
+		return limited;
+	}
+
+	const sourceAnchor = sorted.find((item) => item.kind === 'source_anchor');
+	if (!sourceAnchor) {
+		return limited;
+	}
+
+	if (limited.length < limit) {
+		return [...limited, sourceAnchor];
+	}
+
+	return [...limited.slice(0, Math.max(0, limit - 1)), sourceAnchor];
 }
 
 function collectBoundedDirectSearchDocuments(projectRoot: string): IndexDocument[] {
