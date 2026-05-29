@@ -226,7 +226,7 @@ export function updateRepeatedFailureState(input: {
 		requires_new_evidence: UNRESOLVED_VERIFY_STATUSES.has(input.status) && seenCount >= 2,
 	};
 	const nextFingerprints = [summary, ...state.fingerprints.filter((entry) => entry.fingerprint !== summary.fingerprint)]
-		.sort((left, right) => right.last_seen_at.localeCompare(left.last_seen_at))
+		.sort((left, right) => (left.last_seen_at > right.last_seen_at ? -1 : left.last_seen_at < right.last_seen_at ? 1 : 0))
 		.slice(0, REPEATED_FAILURE_STATE_LIMIT);
 
 	writeRepeatedFailureState(input.projectRoot, {

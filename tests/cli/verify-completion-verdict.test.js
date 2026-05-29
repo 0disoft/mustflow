@@ -797,6 +797,104 @@ def test_denies_admin_access():
 	}
 });
 
+test('detects validation ratchet risks across multiple changed files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const firstTestPath = path.join(projectPath, 'tests', 'ratchet-one.test.js');
+		const secondTestPath = path.join(projectPath, 'tests', 'ratchet-two.test.js');
+		mkdirSync(path.dirname(firstTestPath), { recursive: true });
+		writeFileSync(
+			firstTestPath,
+			`
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test('keeps strict equality', () => {
+	assert.equal(1 + 1, 2);
+});
+`,
+		);
+		writeFileSync(
+			secondTestPath,
+			`
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test('keeps failure coverage', () => {
+	assert.throws(() => {
+		throw new Error('expected');
+	});
+});
+`,
+		);
+		commitProjectBaseline(projectPath);
+		writeFileSync(
+			firstTestPath,
+			`
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test('keeps strict equality', () => {
+	assert.ok(1 + 1);
+});
+`,
+		);
+		writeFileSync(
+			secondTestPath,
+			`
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test.todo('restore failure coverage');
+`,
+		);
+
+		const classify = (filePath) => ({
+			path: filePath,
+			changeKinds: ['test'],
+			surface: {
+				kind: 'test_contract',
+				category: 'test',
+				isPublicSurface: false,
+				validationReasons: ['ratchet_change'],
+				affectedContracts: ['test behavior contract'],
+				updatePolicy: 'not_applicable',
+				driftChecks: ['related test selection'],
+			},
+		});
+		const risks = createValidationRatchetRisks(
+			{
+				source: 'changed',
+				files: ['tests/ratchet-one.test.js', 'tests/ratchet-two.test.js'],
+				classifications: [classify('tests/ratchet-one.test.js'), classify('tests/ratchet-two.test.js')],
+				summary: {
+					fileCount: 2,
+					publicSurfaceCount: 0,
+					changeKinds: ['test'],
+					validationReasons: ['ratchet_change'],
+					updatePolicies: [],
+					driftChecks: ['related test selection'],
+					affectedContracts: ['test behavior contract'],
+				},
+			},
+			projectPath,
+		);
+
+		assert.deepEqual(
+			risks.map((risk) => [risk.path, risk.code]),
+			[
+				['tests/ratchet-one.test.js', 'assertion_matcher_weakened'],
+				['tests/ratchet-two.test.js', 'todo_or_pending_marker_added'],
+				['tests/ratchet-two.test.js', 'assertion_count_decreased'],
+				['tests/ratchet-two.test.js', 'exception_assertion_removed'],
+			],
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('detects command contract validation weakening from changed diffs', async () => {
 	const projectPath = createTempProject();
 

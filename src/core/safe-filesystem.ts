@@ -14,6 +14,9 @@ import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 
 const NOFOLLOW_FLAG = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
+const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 25, 50, 100, 200];
+const WINDOWS_RENAME_RETRY_CODES = new Set(['EBUSY', 'ENOTEMPTY', 'EPERM']);
+const WRITE_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
 
 interface NoSymlinkPathOptions {
 	readonly allowMissingLeaf?: boolean;
@@ -30,6 +33,33 @@ function isMissingPathError(error: unknown): boolean {
 function tempFilePath(targetPath: string): string {
 	const suffix = `${process.pid}-${Date.now()}-${randomBytes(6).toString('hex')}`;
 	return path.join(path.dirname(targetPath), `.${path.basename(targetPath)}.${suffix}.tmp`);
+}
+
+function sleep(milliseconds: number): void {
+	Atomics.wait(WRITE_SLEEP_BUFFER, 0, 0, milliseconds);
+}
+
+function isRetryableWindowsRenameError(error: unknown): boolean {
+	if (process.platform !== 'win32' || !error || typeof error !== 'object' || !('code' in error)) {
+		return false;
+	}
+
+	return WINDOWS_RENAME_RETRY_CODES.has(String(error.code));
+}
+
+function renameWithWindowsRetry(sourcePath: string, targetPath: string): void {
+	for (let attempt = 0; ; attempt += 1) {
+		try {
+			renameSync(sourcePath, targetPath);
+			return;
+		} catch (error) {
+			const delay = WINDOWS_RENAME_RETRY_DELAYS_MS[attempt];
+			if (delay === undefined || !isRetryableWindowsRenameError(error)) {
+				throw error;
+			}
+			sleep(delay);
+		}
+	}
 }
 
 export function ensureInside(parentPath: string, childPath: string): void {
@@ -206,7 +236,7 @@ export function writeFileInsideWithoutSymlinks(
 		closeSync(fileDescriptor);
 		fileDescriptor = null;
 		ensureFileTargetInsideWithoutSymlinks(parentPath, absoluteChildPath, { allowMissingLeaf: true });
-		renameSync(temporaryPath, absoluteChildPath);
+		renameWithWindowsRetry(temporaryPath, absoluteChildPath);
 	} catch (error) {
 		if (fileDescriptor !== null) {
 			try {

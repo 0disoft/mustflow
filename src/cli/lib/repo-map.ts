@@ -75,6 +75,8 @@ const MACHINE_CONTRACT_ANCHOR_FILES = [
 	'schema.graphql',
 	'schema.prisma',
 ];
+const ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILE_SET = new Set(ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES);
+const MACHINE_CONTRACT_ANCHOR_FILE_SET = new Set(MACHINE_CONTRACT_ANCHOR_FILES);
 const DEFAULT_NESTED_ANCHOR_FILES = [
 	'AGENTS.md',
 	'REPO_MAP.md',
@@ -665,13 +667,13 @@ function collectNestedRepository(
 		.filter((anchorFile) => EDITING_POLICY_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
 	const rootDocuments = anchorFiles
-		.filter((anchorFile) => ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES.includes(anchorFile) && existingAnchors.has(anchorFile))
+		.filter((anchorFile) => ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILE_SET.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => ({
 			label: NESTED_ROOT_DOC_LABELS.get(anchorFile) ?? 'root document',
 			relativePath: `${relativeRoot}${anchorFile}`,
 		}));
 	const machineContracts = anchorFiles
-		.filter((anchorFile) => MACHINE_CONTRACT_ANCHOR_FILES.includes(anchorFile) && existingAnchors.has(anchorFile))
+		.filter((anchorFile) => MACHINE_CONTRACT_ANCHOR_FILE_SET.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
 	const mustflowConfig = resolveAnchor('.mustflow/config/mustflow.toml');
 	const commandContract = resolveAnchor('.mustflow/config/commands.toml');

@@ -22,6 +22,7 @@ const LOCK_ROOT_RELATIVE_PATH = '.mustflow/state/locks';
 const LOCK_MUTEX_STALE_MS = 30_000;
 const LOCK_MUTEX_WAIT_MS = 1_000;
 const LOCK_MUTEX_SLEEP_MS = 25;
+const LOCK_MUTEX_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
 
 export interface ActiveRunLockEffect {
 	readonly source: string;
@@ -85,7 +86,7 @@ export type ActiveRunLockAcquireResult =
 	};
 
 function sleep(milliseconds: number): void {
-	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+	Atomics.wait(LOCK_MUTEX_SLEEP_BUFFER, 0, 0, milliseconds);
 }
 
 function sha256(value: string): string {
@@ -310,24 +311,32 @@ function createRecord(
 function acquireMutex(projectRoot: string): () => void {
 	const root = activeLockRoot(projectRoot);
 	const mutex = activeLockMutexDirectory(projectRoot);
+	const ownerPath = path.join(mutex, 'owner.json');
+	const ownerToken = sha256(`${process.pid}:${Date.now()}:${process.hrtime.bigint()}`);
 	mkdirSync(root, { recursive: true });
 	let startedAt = Date.now();
 
 	while (true) {
 		try {
 			mkdirSync(mutex);
-			writeFileSync(
-				path.join(mutex, 'owner.json'),
-				JSON.stringify({ pid: process.pid, started_at: new Date().toISOString() }, null, 2),
-			);
-			return () => rmSync(mutex, { recursive: true, force: true });
+			const ownerRecord = { pid: process.pid, started_at: new Date().toISOString(), token: ownerToken };
+			writeFileSync(ownerPath, JSON.stringify(ownerRecord, null, 2));
+			return () => {
+				try {
+					const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; token?: unknown };
+					if (Number(owner.pid) === ownerRecord.pid && owner.token === ownerRecord.token) {
+						rmSync(mutex, { recursive: true, force: true });
+					}
+				} catch {
+					// A missing or replaced owner file means this process no longer owns the mutex.
+				}
+			};
 		} catch (error) {
 			if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'EEXIST') {
 				throw error;
 			}
 
 			if (Date.now() - startedAt > LOCK_MUTEX_WAIT_MS) {
-				const ownerPath = path.join(mutex, 'owner.json');
 				try {
 					const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; started_at?: unknown };
 					const ownerPid = Number(owner.pid);

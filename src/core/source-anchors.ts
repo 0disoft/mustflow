@@ -23,6 +23,7 @@ export const SOURCE_ANCHOR_GENERATED_PATH_PARTS = new Set([
 	'vendor',
 ]);
 export const SOURCE_ANCHOR_ALLOWED_FIELDS = new Set(['purpose', 'search', 'invariant', 'risk']);
+const MAX_SOURCE_ANCHOR_DIRECTORY_DEPTH = 200;
 export const SOURCE_ANCHOR_ALLOWED_RISKS = new Set([
 	'authn',
 	'authz',
@@ -135,8 +136,12 @@ function fileIsWithinSizeLimit(filePath: string, maxFileBytes: number | null | u
 	}
 }
 
-function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOptions, current = root): string[] {
+function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOptions, current = root, depth = 0): string[] {
 	if (!existsSync(current)) {
+		return [];
+	}
+
+	if (depth > MAX_SOURCE_ANCHOR_DIRECTORY_DEPTH) {
 		return [];
 	}
 
@@ -158,7 +163,7 @@ function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOpti
 		}
 
 		if (entry.isDirectory()) {
-			files.push(...listFilesRecursive(root, options, entryPath));
+			files.push(...listFilesRecursive(root, options, entryPath, depth + 1));
 			continue;
 		}
 
@@ -184,7 +189,7 @@ function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOpti
 				continue;
 			}
 			if (stat.isDirectory()) {
-				files.push(...listFilesRecursive(root, options, entryPath));
+				files.push(...listFilesRecursive(root, options, entryPath, depth + 1));
 				continue;
 			}
 

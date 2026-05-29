@@ -97,8 +97,65 @@ function fileTextIfReadable(projectRoot: string, relativePath: string): string |
 	}
 }
 
-function gitDiffLines(projectRoot: string, relativePath: string): DiffLines {
-	const result = spawnSync('git', ['diff', '--no-ext-diff', '--unified=0', '--', relativePath], {
+function normalizeGitDiffPath(value: string): string {
+	return value
+		.replace(/^"(.*)"$/u, '$1')
+		.replace(/^(?:a|b)\//u, '')
+		.replaceAll('\\', '/');
+}
+
+function parseGitDiffLines(stdout: string): ReadonlyMap<string, DiffLines> {
+	const byPath = new Map<string, { added: string[]; removed: string[] }>();
+	let oldPath: string | null = null;
+	let currentPath: string | null = null;
+
+	for (const line of stdout.split(/\r?\n/u)) {
+		if (line.startsWith('--- ')) {
+			const rawPath = line.slice(4).trim();
+			oldPath = rawPath === '/dev/null' ? null : normalizeGitDiffPath(rawPath);
+			continue;
+		}
+
+		if (line.startsWith('+++ ')) {
+			const rawPath = line.slice(4).trim();
+			currentPath = rawPath === '/dev/null' ? oldPath : normalizeGitDiffPath(rawPath);
+			if (currentPath && !byPath.has(currentPath)) {
+				byPath.set(currentPath, { added: [], removed: [] });
+			}
+			continue;
+		}
+
+		if (!currentPath || line.startsWith('@@')) {
+			continue;
+		}
+
+		const diff = byPath.get(currentPath);
+		if (!diff) {
+			continue;
+		}
+
+		if (line.startsWith('+')) {
+			diff.added.push(line.slice(1));
+		} else if (line.startsWith('-')) {
+			diff.removed.push(line.slice(1));
+		}
+	}
+
+	return new Map(
+		[...byPath.entries()].map(([filePath, diff]) => [
+			filePath,
+			{ added: diff.added, removed: diff.removed },
+		]),
+	);
+}
+
+function gitDiffLinesByPath(projectRoot: string, relativePaths: readonly string[]): ReadonlyMap<string, DiffLines> {
+	const uniquePaths = [...new Set(relativePaths)].filter((relativePath) => resolveInsideRoot(projectRoot, relativePath) !== null);
+	if (uniquePaths.length === 0) {
+		return new Map();
+	}
+
+	const result = spawnSync('git', ['diff', '--no-ext-diff', '--unified=0', '--', ...uniquePaths], {
 		cwd: projectRoot,
 		encoding: 'utf8',
 		env: createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
@@ -106,24 +163,10 @@ function gitDiffLines(projectRoot: string, relativePath: string): DiffLines {
 	});
 
 	if (result.status !== 0 || typeof result.stdout !== 'string' || result.stdout.length === 0) {
-		return { added: [], removed: [] };
+		return new Map();
 	}
 
-	const added: string[] = [];
-	const removed: string[] = [];
-
-	for (const line of result.stdout.split(/\r?\n/u)) {
-		if (line.startsWith('+++') || line.startsWith('---')) {
-			continue;
-		}
-		if (line.startsWith('+')) {
-			added.push(line.slice(1));
-		} else if (line.startsWith('-')) {
-			removed.push(line.slice(1));
-		}
-	}
-
-	return { added, removed };
+	return parseGitDiffLines(result.stdout);
 }
 
 function countMatching(lines: readonly string[], pattern: RegExp): number {
@@ -173,6 +216,9 @@ export function createValidationRatchetRisks(
 ): readonly ValidationRatchetRisk[] {
 	const risks: ValidationRatchetRisk[] = [];
 	const seenRisks = new Set<string>();
+	const changedDiffs = report.source === 'changed'
+		? gitDiffLinesByPath(projectRoot, report.classifications.map((classification) => classification.path))
+		: new Map<string, DiffLines>();
 
 	function addRisk(code: ValidationRatchetRiskCode, severity: ValidationRatchetRiskSeverity, pathText: string, detail: string): void {
 		const key = `${pathText}\0${code}`;
@@ -185,7 +231,9 @@ export function createValidationRatchetRisks(
 
 	for (const classification of report.classifications) {
 		const resolvedPath = resolveInsideRoot(projectRoot, classification.path);
-		const diff = report.source === 'changed' ? gitDiffLines(projectRoot, classification.path) : { added: [], removed: [] };
+		const diff = report.source === 'changed'
+			? changedDiffs.get(classification.path) ?? { added: [], removed: [] }
+			: { added: [], removed: [] };
 		const addedText = diff.added.join('\n');
 
 		if (isTestClassification(classification)) {
