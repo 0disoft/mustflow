@@ -946,12 +946,17 @@ function readSkillSectionIds(content: string): Set<string> {
 	return new Set([...content.matchAll(SKILL_SECTION_MARKER_PATTERN)].map((match) => match[1]));
 }
 
+function findFrontmatterEnd(content: string): number {
+	const match = /\n---(?:\r?\n|$)/u.exec(content.slice(3));
+	return match ? 3 + match.index : -1;
+}
+
 function parseSimpleFrontmatter(content: string): Record<string, string> {
 	if (!content.startsWith('---')) {
 		return {};
 	}
 
-	const end = content.indexOf('\n---', 3);
+	const end = findFrontmatterEnd(content);
 	if (end === -1) {
 		return {};
 	}
@@ -998,7 +1003,7 @@ function readFrontmatterLines(content: string): string[] {
 		return [];
 	}
 
-	const end = content.indexOf('\n---', 3);
+	const end = findFrontmatterEnd(content);
 	if (end === -1) {
 		return [];
 	}

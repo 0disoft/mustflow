@@ -475,8 +475,8 @@ function pushCoverageFinding(
 	pushIssue(issues, severity, code, intent, message);
 }
 
-function configuredIntentIsRunnable(intent: TomlTable): boolean {
-	return evaluateCommandIntentEligibility('summary', intent).ok;
+function configuredIntentIsRunnable(intentName: string, intent: TomlTable): boolean {
+	return evaluateCommandIntentEligibility(intentName, intent).ok;
 }
 
 function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): TomlTable | null {
@@ -970,7 +970,7 @@ export function lintCommandContract(contract: CommandContract, options: Contract
 		summary: {
 			totalIntents: intentEntries.length,
 			configured: validIntents.filter((intent) => readString(intent, 'status') === 'configured').length,
-			runnable: validIntents.filter(configuredIntentIsRunnable).length,
+			runnable: intentTables.filter(([name, intent]) => configuredIntentIsRunnable(name, intent)).length,
 			manualOnly: validIntents.filter((intent) => readString(intent, 'status') === 'manual_only').length,
 			unknown: validIntents.filter((intent) => readString(intent, 'status') === 'unknown').length,
 			errors,

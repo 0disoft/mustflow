@@ -7,6 +7,7 @@ import { normalizeCommandEffects } from './command-effects.js';
 import type { CommandContract } from './config-loading.js';
 
 const MAX_SNAPSHOT_FILES = 20_000;
+const MAX_SNAPSHOT_DIRECTORY_DEPTH = 200;
 const MAX_REPORTED_PATHS = 200;
 const GIT_STATUS_TIMEOUT_MS = 10_000;
 const GIT_STATUS_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
@@ -107,34 +108,47 @@ function signatureForPath(fullPath: string): FileSignature {
 function signatureForGitStatusPath(projectRoot: string, relativePath: string, status: string): FileSignature {
 	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
 
-	if (!existsSync(fullPath)) {
+	try {
+		if (!existsSync(fullPath)) {
+			return `git:${status}:missing`;
+		}
+
+		const stat = lstatSync(fullPath);
+
+		if (stat.isSymbolicLink()) {
+			return `git:${status}:symlink:${readlinkSync(fullPath)}`;
+		}
+
+		if (!stat.isFile()) {
+			return `git:${status}:${stat.isDirectory() ? 'directory' : 'other'}:${stat.size}:${stat.mtimeMs}`;
+		}
+
+		if (stat.size > MAX_HASH_BYTES) {
+			return `git:${status}:file:${stat.size}:${stat.mtimeMs}:unhashed`;
+		}
+
+		const digest = createHash('sha256').update(readFileSync(fullPath)).digest('hex');
+		return `git:${status}:file:${stat.size}:${digest}`;
+	} catch {
 		return `git:${status}:missing`;
 	}
-
-	const stat = lstatSync(fullPath);
-
-	if (stat.isSymbolicLink()) {
-		return `git:${status}:symlink:${readlinkSync(fullPath)}`;
-	}
-
-	if (!stat.isFile()) {
-		return `git:${status}:${stat.isDirectory() ? 'directory' : 'other'}:${stat.size}:${stat.mtimeMs}`;
-	}
-
-	if (stat.size > MAX_HASH_BYTES) {
-		return `git:${status}:file:${stat.size}:${stat.mtimeMs}:unhashed`;
-	}
-
-	const digest = createHash('sha256').update(readFileSync(fullPath)).digest('hex');
-	return `git:${status}:file:${stat.size}:${digest}`;
 }
 
-function collectSnapshotEntries(projectRoot: string, currentPath: string, entries: Map<string, FileSignature>): void {
+function collectSnapshotEntries(
+	currentPath: string,
+	currentRelativePath: string,
+	depth: number,
+	entries: Map<string, FileSignature>,
+): void {
+	if (depth > MAX_SNAPSHOT_DIRECTORY_DEPTH) {
+		throw new Error('snapshot_directory_depth_limit_exceeded');
+	}
+
 	const names = readdirSync(currentPath).sort((left, right) => left.localeCompare(right));
 
 	for (const name of names) {
 		const fullPath = path.join(currentPath, name);
-		const relativePath = normalizeRelativePath(path.relative(projectRoot, fullPath));
+		const relativePath = currentRelativePath === '.' ? name : `${currentRelativePath}/${name}`;
 		const stat = lstatSync(fullPath);
 
 		if (stat.isDirectory()) {
@@ -142,7 +156,7 @@ function collectSnapshotEntries(projectRoot: string, currentPath: string, entrie
 				continue;
 			}
 
-			collectSnapshotEntries(projectRoot, fullPath, entries);
+			collectSnapshotEntries(fullPath, relativePath, depth + 1, entries);
 			continue;
 		}
 
@@ -171,7 +185,7 @@ function captureSnapshot(projectRoot: string, env: SnapshotEnvironment): Snapsho
 
 	try {
 		const entries = new Map<string, FileSignature>();
-		collectSnapshotEntries(projectRoot, projectRoot, entries);
+		collectSnapshotEntries(projectRoot, '.', 0, entries);
 		return { status: 'checked', entries, reason: null, source: 'recursive_snapshot' };
 	} catch (error) {
 		return {
@@ -235,6 +249,10 @@ function captureGitStatusSnapshot(projectRoot: string, env: SnapshotEnvironment)
 		entries.set(filePath, signatureForGitStatusPath(projectRoot, filePath, status));
 
 		if (status.includes('R') || status.includes('C')) {
+			const sourcePath = normalizeRelativePath(parts[index + 1] ?? '');
+			if (status.includes('R') && sourcePath.length > 0) {
+				entries.set(sourcePath, `git:${status}:missing`);
+			}
 			index += 1;
 		}
 	}

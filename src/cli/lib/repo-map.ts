@@ -555,7 +555,12 @@ function renderDirectoryAnchors(anchors: readonly AnchorFile[]): string[] {
 
 	for (const anchor of anchors) {
 		const directory = getDirectoryName(anchor.relativePath);
-		grouped.set(directory, [...(grouped.get(directory) ?? []), anchor]);
+		const group = grouped.get(directory);
+		if (group) {
+			group.push(anchor);
+		} else {
+			grouped.set(directory, [anchor]);
+		}
 	}
 
 	for (const directory of Array.from(grouped.keys()).sort((left, right) => {
@@ -707,10 +712,15 @@ function discoverNestedRepositories(
 	const repositories: NestedRepository[] = [];
 	const seenRepositoryPaths = new Set<string>();
 	const seenDirectoryPaths = new Set<string>();
-	const projectRootRealPath = realpathSync(projectRoot);
+	let projectRootRealPath: string;
+	try {
+		projectRootRealPath = realpathSync(projectRoot);
+	} catch {
+		return [];
+	}
 
 	function visit(directoryTarget: SafeDirectoryTarget, depth: number): void {
-		if (repositories.length >= workspaceConfig.maxRepositories || depth > workspaceConfig.maxDepth) {
+		if (repositories.length >= workspaceConfig.maxRepositories || depth >= workspaceConfig.maxDepth) {
 			return;
 		}
 

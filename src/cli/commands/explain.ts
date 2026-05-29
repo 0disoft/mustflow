@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import { MUSTFLOW_JSON_MAX_BYTES, readMustflowTextFile } from '../lib/mustflow-read.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import {
@@ -354,7 +355,9 @@ function getLatestFailureExplainOutput(projectRoot: string): ExplainOutput {
 
 	let parsed: unknown;
 	try {
-		parsed = JSON.parse(readFileSync(latestPath, 'utf8'));
+		parsed = JSON.parse(
+			readMustflowTextFile(projectRoot, LATEST_RUN_RECEIPT_RELATIVE_PATH, { maxBytes: MUSTFLOW_JSON_MAX_BYTES }),
+		);
 	} catch {
 		return {
 			schema_version: EXPLAIN_SCHEMA_VERSION,

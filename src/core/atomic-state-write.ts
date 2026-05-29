@@ -1,11 +1,8 @@
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-function tempFilePath(targetPath: string): string {
-	const suffix = `${process.pid}-${Date.now()}-${randomBytes(6).toString('hex')}`;
-	return path.join(path.dirname(targetPath), `.${path.basename(targetPath)}.${suffix}.tmp`);
-}
+import { writeUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export function createStateRunId(prefix: 'run' | 'verify'): string {
 	const timestamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
@@ -13,20 +10,9 @@ export function createStateRunId(prefix: 'run' | 'verify'): string {
 }
 
 export function atomicWriteTextFile(targetPath: string, content: string): void {
-	mkdirSync(path.dirname(targetPath), { recursive: true });
-	const temporaryPath = tempFilePath(targetPath);
-
-	try {
-		writeFileSync(temporaryPath, content, { encoding: 'utf8', flag: 'wx' });
-		renameSync(temporaryPath, targetPath);
-	} catch (error) {
-		try {
-			unlinkSync(temporaryPath);
-		} catch {
-			// Best-effort cleanup for a temporary file that may not have been created.
-		}
-		throw error;
-	}
+	const targetDirectory = path.dirname(targetPath);
+	mkdirSync(targetDirectory, { recursive: true });
+	writeUtf8FileInsideWithoutSymlinks(targetDirectory, targetPath, content);
 }
 
 export function atomicWriteJsonFile(targetPath: string, value: unknown): void {

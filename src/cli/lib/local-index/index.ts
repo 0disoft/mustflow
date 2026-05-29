@@ -1209,6 +1209,14 @@ function createSourceAnchorRiskSignals(sourceAnchors: readonly SourceAnchorIndex
 		}));
 }
 
+function rollbackTransaction(database: SqlJsDatabase): void {
+	try {
+		database.run('ROLLBACK');
+	} catch {
+		// Keep the original indexing failure as the actionable error.
+	}
+}
+
 function populateDatabase(
 	database: SqlJsDatabase,
 	capabilities: LocalSearchCapabilities,
@@ -1226,6 +1234,8 @@ function populateDatabase(
 ): void {
 	const sourceAnchorRiskSignals = createSourceAnchorRiskSignals(sourceAnchors);
 
+	database.run('BEGIN TRANSACTION');
+	try {
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['schema_version', LOCAL_INDEX_SCHEMA_VERSION]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['parser_version', LOCAL_INDEX_PARSER_VERSION]);
 	database.run('INSERT INTO metadata (key, value) VALUES (?, ?)', ['content_mode', LOCAL_INDEX_CONTENT_MODE]);
@@ -1623,6 +1633,11 @@ function populateDatabase(
 
 	populatePathSurfaceReadModel(database);
 	populateSearchTables(database, capabilities, documents, skills, skillRoutes, commandIntents, sourceAnchors);
+	database.run('COMMIT');
+	} catch (error) {
+		rollbackTransaction(database);
+		throw error;
+	}
 }
 
 type IncrementalRebuildReason =

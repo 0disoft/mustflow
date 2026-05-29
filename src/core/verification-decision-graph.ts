@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import type { PublicSurfaceUpdatePolicy } from './change-classification.js';
 import {
 	isRecord,
@@ -152,7 +154,14 @@ export interface VerificationDecisionGraph {
 }
 
 function stableIdPart(value: string): string {
-	return value.trim().replace(/[^A-Za-z0-9_.-]+/gu, '_') || 'none';
+	const trimmed = value.trim();
+	if (trimmed.length === 0) {
+		return 'none';
+	}
+
+	const readable = trimmed.replace(/[^A-Za-z0-9_.-]+/gu, '_') || 'value';
+	const digest = createHash('sha256').update(trimmed).digest('hex').slice(0, 10);
+	return `${readable}_${digest}`;
 }
 
 function readBoolean(table: TomlTable, key: string): boolean | null {

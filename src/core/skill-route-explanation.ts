@@ -62,7 +62,8 @@ function readFrontmatterLines(content: string): string[] {
 		return [];
 	}
 
-	const end = content.indexOf('\n---', 3);
+	const endMatch = /\n---(?:\r?\n|$)/u.exec(content.slice(3));
+	const end = endMatch ? 3 + endMatch.index : -1;
 	if (end < 0) {
 		return [];
 	}

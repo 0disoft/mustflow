@@ -6,6 +6,7 @@ import {
 	mkdirSync,
 	openSync,
 	readFileSync,
+	readSync,
 	renameSync,
 	unlinkSync,
 	writeFileSync,
@@ -17,6 +18,7 @@ const NOFOLLOW_FLAG = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOF
 const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 25, 50, 100, 200];
 const WINDOWS_RENAME_RETRY_CODES = new Set(['EBUSY', 'ENOTEMPTY', 'EPERM']);
 const WRITE_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
+const READ_CHUNK_BYTES = 64 * 1024;
 
 interface NoSymlinkPathOptions {
 	readonly allowMissingLeaf?: boolean;
@@ -107,12 +109,32 @@ export function ensureInsideWithoutSymlinks(
 				throw new Error(`Path component is not a directory: ${currentPath}`);
 			}
 		} catch (error) {
-			if (isMissingPathError(error) && options.allowMissingLeaf) {
+			if (isMissingPathError(error) && isLeaf && options.allowMissingLeaf) {
 				return;
 			}
 
 			throw error;
 		}
+	}
+}
+
+function readBoundedFileDescriptor(fileDescriptor: number, childPath: string, maxBytes: number): Buffer {
+	const chunks: Buffer[] = [];
+	let totalBytes = 0;
+
+	while (true) {
+		const chunk = Buffer.allocUnsafe(Math.min(READ_CHUNK_BYTES, maxBytes + 1 - totalBytes));
+		const bytesRead = readSync(fileDescriptor, chunk, 0, chunk.byteLength, null);
+		if (bytesRead === 0) {
+			return Buffer.concat(chunks, totalBytes);
+		}
+
+		totalBytes += bytesRead;
+		if (totalBytes > maxBytes) {
+			throw new Error(`File exceeds maximum size ${maxBytes} bytes: ${childPath}`);
+		}
+
+		chunks.push(bytesRead === chunk.byteLength ? chunk : chunk.subarray(0, bytesRead));
 	}
 }
 
@@ -193,6 +215,10 @@ export function readFileInsideWithoutSymlinks(
 	const fileDescriptor = openSync(absoluteChildPath, constants.O_RDONLY | NOFOLLOW_FLAG);
 
 	try {
+		if (NOFOLLOW_FLAG === 0 && lstatSync(absoluteChildPath).isSymbolicLink()) {
+			throw new Error(`Path must not contain symlinks: ${childPath}`);
+		}
+
 		const stats = fstatSync(fileDescriptor);
 		if (!stats.isFile()) {
 			throw new Error(`Path must be a regular file: ${childPath}`);
@@ -200,7 +226,9 @@ export function readFileInsideWithoutSymlinks(
 		if (options.maxBytes !== undefined && stats.size > options.maxBytes) {
 			throw new Error(`File exceeds maximum size ${options.maxBytes} bytes: ${childPath}`);
 		}
-		return readFileSync(fileDescriptor);
+		return options.maxBytes === undefined
+			? readFileSync(fileDescriptor)
+			: readBoundedFileDescriptor(fileDescriptor, childPath, options.maxBytes);
 	} finally {
 		closeSync(fileDescriptor);
 	}

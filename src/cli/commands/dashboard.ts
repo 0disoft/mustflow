@@ -1,7 +1,7 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import type { AddressInfo, Socket } from 'node:net';
 import path from 'node:path';
 
 import { openUrlInBrowser } from '../lib/browser-open.js';
@@ -439,7 +439,15 @@ function sendBadRequest(response: ServerResponse): void {
 }
 
 function isAuthorized(request: IncomingMessage, token: string): boolean {
-	return request.headers['x-mustflow-dashboard-token'] === token;
+	const rawToken = request.headers['x-mustflow-dashboard-token'];
+	const candidate = Array.isArray(rawToken) ? rawToken[0] : rawToken;
+	if (typeof candidate !== 'string') {
+		return false;
+	}
+
+	const expected = Buffer.from(token);
+	const actual = Buffer.from(candidate);
+	return expected.byteLength === actual.byteLength && timingSafeEqual(actual, expected);
 }
 
 async function readRequestJson(request: IncomingMessage): Promise<unknown> {
@@ -1122,13 +1130,24 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 			}
 
 			sendText(response, 404, 'Not found');
-		} catch {
-			sendBadRequest(response);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			if (error instanceof SyntaxError || message === 'Request body is too large.' || message === 'Invalid review status.') {
+				sendBadRequest(response);
+				return;
+			}
+
+			reporter.stderr(message);
+			sendText(response, 500, 'Internal server error');
 		}
 	});
+	server.headersTimeout = 10_000;
+	server.requestTimeout = 30_000;
+	server.keepAliveTimeout = 1_000;
 
 	return new Promise((resolve) => {
 		let resolved = false;
+		const sockets = new Set<Socket>();
 		const close = () => {
 			if (resolved) {
 				return;
@@ -1136,7 +1155,17 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 
 			resolved = true;
 			server.close(() => resolve(0));
+			for (const socket of sockets) {
+				socket.destroy();
+			}
 		};
+
+		server.on('connection', (socket) => {
+			sockets.add(socket);
+			socket.on('close', () => {
+				sockets.delete(socket);
+			});
+		});
 
 		server.on('error', (error) => {
 			if (!resolved) {

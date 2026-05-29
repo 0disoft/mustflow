@@ -340,6 +340,15 @@ function intentIsExplicitlySubsumed(
 	);
 }
 
+function minNumber(values: readonly number[]): number | null {
+	let minimum: number | null = null;
+	for (const value of values) {
+		minimum = minimum === null ? value : Math.min(minimum, value);
+	}
+
+	return minimum;
+}
+
 function selectVerificationCandidates(
 	commandContract: CommandContract,
 	candidates: readonly VerificationCandidate[],
@@ -350,9 +359,16 @@ function selectVerificationCandidates(
 	const selectedIntents = new Set(runnableCandidates.map((candidate) => candidate.intent));
 
 	for (const candidate of runnableCandidates) {
-		const isSubsumed = runnableCandidates.some(
-			(other) => other.intent !== candidate.intent && intentIsExplicitlySubsumed(commandContract, candidate.intent, other.intent),
-		);
+		const isSubsumed = runnableCandidates.some((other) => {
+			if (other.intent === candidate.intent) {
+				return false;
+			}
+
+			return (
+				intentIsExplicitlySubsumed(commandContract, candidate.intent, other.intent) &&
+				!intentIsExplicitlySubsumed(commandContract, other.intent, candidate.intent)
+			);
+		});
 
 		if (isSubsumed) {
 			selectedIntents.delete(candidate.intent);
@@ -387,7 +403,11 @@ function selectVerificationCandidates(
 			continue;
 		}
 
-		const minCost = Math.min(...(costs as number[]));
+		const minCost = minNumber(costs as number[]);
+		if (minCost === null) {
+			continue;
+		}
+
 		const winners = group.filter((candidate) => readIntentCostExpectedSeconds(commandContract, candidate.intent) === minCost);
 		if (winners.length !== 1) {
 			continue;

@@ -5,6 +5,7 @@ import {
 	readFileSync,
 	readdirSync,
 	rmSync,
+	statSync,
 	writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
@@ -320,7 +321,12 @@ function acquireMutex(projectRoot: string): () => void {
 		try {
 			mkdirSync(mutex);
 			const ownerRecord = { pid: process.pid, started_at: new Date().toISOString(), token: ownerToken };
-			writeFileSync(ownerPath, JSON.stringify(ownerRecord, null, 2));
+			try {
+				writeFileSync(ownerPath, JSON.stringify(ownerRecord, null, 2));
+			} catch (error) {
+				rmSync(mutex, { recursive: true, force: true });
+				throw error;
+			}
 			return () => {
 				try {
 					const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; token?: unknown };
@@ -348,9 +354,17 @@ function acquireMutex(projectRoot: string): () => void {
 						continue;
 					}
 				} catch {
-					rmSync(mutex, { recursive: true, force: true });
-					startedAt = Date.now();
-					continue;
+					try {
+						const mutexStat = statSync(mutex);
+						if (Date.now() - mutexStat.mtimeMs > LOCK_MUTEX_STALE_MS) {
+							rmSync(mutex, { recursive: true, force: true });
+							startedAt = Date.now();
+							continue;
+						}
+					} catch {
+						startedAt = Date.now();
+						continue;
+					}
 				}
 
 				throw new Error('active_run_lock_mutex_busy');

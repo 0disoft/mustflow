@@ -5,6 +5,9 @@ import path from 'node:path';
 import type { ChangeClassification, ChangeClassificationReport } from './change-classification.js';
 import { createCommandEnv } from './command-env.js';
 
+const GIT_DIFF_TIMEOUT_MS = 10_000;
+const GIT_DIFF_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
+
 export type ValidationRatchetRiskCode =
 	| 'related_test_deleted'
 	| 'skip_or_only_marker_present'
@@ -159,6 +162,8 @@ function gitDiffLinesByPath(projectRoot: string, relativePaths: readonly string[
 		cwd: projectRoot,
 		encoding: 'utf8',
 		env: createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
+		maxBuffer: GIT_DIFF_MAX_BUFFER_BYTES,
+		timeout: GIT_DIFF_TIMEOUT_MS,
 		windowsHide: true,
 	});
 
