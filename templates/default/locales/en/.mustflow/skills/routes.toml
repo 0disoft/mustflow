@@ -108,6 +108,60 @@ route_type = "primary"
 priority = 20
 applies_to_reasons = ["unknown_change", "code_change"]
 
+[routes."api-contract-change"]
+category = "general_code"
+route_type = "primary"
+priority = 82
+applies_to_reasons = ["code_change", "public_api_change", "docs_change", "test_change"]
+
+[routes."typescript-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."javascript-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."python-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."go-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."rust-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."dart-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."hono-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "security_change"]
+
+[routes."elysia-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "security_change"]
+
 [routes."source-anchor-authoring"]
 category = "general_code"
 route_type = "primary"
@@ -156,11 +210,29 @@ route_type = "primary"
 priority = 55
 applies_to_reasons = ["code_change", "behavior_change"]
 
+[routes."database-migration-change"]
+category = "data_external"
+route_type = "primary"
+priority = 82
+applies_to_reasons = ["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"]
+
+[routes."dependency-upgrade-review"]
+category = "data_external"
+route_type = "primary"
+priority = 75
+applies_to_reasons = ["code_change", "docs_change", "security_change", "package_metadata_change", "release_risk"]
+
 [routes."dependency-reality-check"]
 category = "data_external"
 route_type = "adjunct"
 priority = 45
 applies_to_reasons = ["code_change", "docs_change", "security_change"]
+
+[routes."file-path-cross-platform-change"]
+category = "data_external"
+route_type = "primary"
+priority = 78
+applies_to_reasons = ["code_change", "public_api_change", "test_change", "docs_change", "security_change", "package_metadata_change"]
 
 [routes."cross-platform-filesystem-safety"]
 category = "data_external"
@@ -173,6 +245,12 @@ category = "data_external"
 route_type = "primary"
 priority = 55
 applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."tauri-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 90
+applies_to_reasons = ["code_change", "security_change", "public_api_change"]
 
 [routes."process-execution-safety"]
 category = "data_external"
@@ -222,6 +300,18 @@ route_type = "primary"
 priority = 30
 applies_to_reasons = ["security_change", "privacy_change"]
 
+[routes."config-env-change"]
+category = "security_privacy"
+route_type = "primary"
+priority = 35
+applies_to_reasons = ["code_change", "docs_change", "security_change", "privacy_change", "package_metadata_change", "mustflow_config_change"]
+
+[routes."auth-permission-change"]
+category = "security_privacy"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
+
 [routes."security-regression-tests"]
 category = "security_privacy"
 route_type = "adjunct"
@@ -263,6 +353,48 @@ category = "ui_assets"
 route_type = "primary"
 priority = 50
 applies_to_reasons = ["ui_change"]
+
+[routes."html-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."css-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."tailwind-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."unocss-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."flutter-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
+
+[routes."astro-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."svelte-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
 
 [routes."pattern-scout"]
 category = "architecture_patterns"
@@ -311,6 +443,12 @@ category = "docs_release"
 route_type = "primary"
 priority = 55
 applies_to_reasons = ["release_risk", "docs_change"]
+
+[routes."release-publish-change"]
+category = "docs_release"
+route_type = "primary"
+priority = 58
+applies_to_reasons = ["release_risk", "package_metadata_change", "docs_change", "public_api_change"]
 
 [routes."search-ad-content-authoring"]
 category = "docs_release"

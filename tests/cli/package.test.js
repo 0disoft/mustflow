@@ -12,6 +12,24 @@ const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'defau
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
+const technologySkillNames = [
+	'astro-code-change',
+	'css-code-change',
+	'dart-code-change',
+	'elysia-code-change',
+	'flutter-code-change',
+	'go-code-change',
+	'hono-code-change',
+	'html-code-change',
+	'javascript-code-change',
+	'python-code-change',
+	'rust-code-change',
+	'svelte-code-change',
+	'tailwind-code-change',
+	'tauri-code-change',
+	'typescript-code-change',
+	'unocss-code-change',
+];
 const templateCreates = readTomlStringArrayBlock(templateManifest, 'creates');
 const templateSkillCreates = templateCreates.filter((relativePath) => relativePath.startsWith('.mustflow/skills/'));
 
@@ -59,7 +77,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.22.17');
+	assert.equal(packageJson.version, '2.22.41');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -249,13 +267,33 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.deepEqual(template.manifest.profiles, ['minimal', 'patterns', 'oss', 'team', 'product', 'library']);
 	assert.equal(template.manifest.defaultProfile, 'minimal');
 	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('api-contract-change'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('command-contract-authoring'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('config-env-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('database-migration-change'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-upgrade-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('file-path-cross-platform-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('source-anchor-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
+	for (const skillName of technologySkillNames) {
+		assert.ok(template.manifest.skillProfiles.minimal.includes(skillName), `minimal should include ${skillName}`);
+		assert.ok(template.manifest.skillProfiles.patterns.includes(skillName), `patterns should include ${skillName}`);
+		assert.ok(template.manifest.skillProfiles.oss.includes(skillName), `oss should include ${skillName}`);
+		assert.ok(template.manifest.skillProfiles.team.includes(skillName), `team should include ${skillName}`);
+		assert.ok(template.manifest.skillProfiles.product.includes(skillName), `product should include ${skillName}`);
+		assert.ok(template.manifest.skillProfiles.library.includes(skillName), `library should include ${skillName}`);
+	}
+	for (const profileName of template.manifest.profiles) {
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('config-env-change'),
+			`${profileName} should include config-env-change`,
+		);
+	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('cli-output-contract-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('command-pattern'), false);
@@ -268,6 +306,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.minimal.includes('process-execution-safety'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('release-notes-authoring'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('release-publish-change'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('result-option'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('state-machine-pattern'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('strategy-pattern'), false);
@@ -290,6 +329,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.product.includes('cli-output-contract-review'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('process-execution-safety'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
+	assert.equal(template.manifest.skillProfiles.product.includes('release-publish-change'), false);
 	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('search-ad-content-authoring'));
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
@@ -300,6 +340,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.team.includes('process-execution-safety'));
 	assert.equal(template.manifest.skillProfiles.team.includes('cli-output-contract-review'), false);
 	assert.equal(template.manifest.skillProfiles.team.includes('release-notes-authoring'), false);
+	assert.equal(template.manifest.skillProfiles.team.includes('release-publish-change'), false);
 	assert.ok(template.manifest.skillProfiles.team.includes('multi-agent-work-coordination'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('architecture-deepening-review'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('cli-output-contract-review'));
@@ -308,6 +349,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.oss.includes('external-skill-intake'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('process-execution-safety'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('release-notes-authoring'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('release-publish-change'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('skill-authoring'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('vertical-slice-tdd'));
 	assert.ok(template.manifest.skillProfiles.library.includes('architecture-deepening-review'));
@@ -317,6 +359,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.library.includes('migration-safety-check'));
 	assert.ok(template.manifest.skillProfiles.library.includes('process-execution-safety'));
 	assert.ok(template.manifest.skillProfiles.library.includes('release-notes-authoring'));
+	assert.ok(template.manifest.skillProfiles.library.includes('release-publish-change'));
 });
 
 test('default template locales use localized workflow docs and canonical English skills', async () => {

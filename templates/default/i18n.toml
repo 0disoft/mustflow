@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 73
+revision = 81
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -75,6 +75,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/architecture-deepening-review/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.api-contract-change"]
+source = "locales/en/.mustflow/skills/api-contract-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.behavior-preserving-refactor"]
@@ -107,6 +113,12 @@ source_locale = "en"
 revision = 16
 translations = {}
 
+[documents."skill.database-migration-change"]
+source = "locales/en/.mustflow/skills/database-migration-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.dependency-injection"]
 source = "locales/en/.mustflow/skills/dependency-injection/SKILL.md"
 source_locale = "en"
@@ -119,8 +131,20 @@ source_locale = "en"
 revision = 6
 translations = {}
 
+[documents."skill.dependency-upgrade-review"]
+source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.line-ending-hygiene"]
 source = "locales/en/.mustflow/skills/line-ending-hygiene/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.file-path-cross-platform-change"]
+source = "locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -133,6 +157,114 @@ translations = {}
 
 [documents."skill.codebase-orientation"]
 source = "locales/en/.mustflow/skills/codebase-orientation/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.astro-code-change"]
+source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.auth-permission-change"]
+source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.config-env-change"]
+source = "locales/en/.mustflow/skills/config-env-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.css-code-change"]
+source = "locales/en/.mustflow/skills/css-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.dart-code-change"]
+source = "locales/en/.mustflow/skills/dart-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.elysia-code-change"]
+source = "locales/en/.mustflow/skills/elysia-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.flutter-code-change"]
+source = "locales/en/.mustflow/skills/flutter-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.go-code-change"]
+source = "locales/en/.mustflow/skills/go-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.hono-code-change"]
+source = "locales/en/.mustflow/skills/hono-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.html-code-change"]
+source = "locales/en/.mustflow/skills/html-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.javascript-code-change"]
+source = "locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.python-code-change"]
+source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.rust-code-change"]
+source = "locales/en/.mustflow/skills/rust-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.svelte-code-change"]
+source = "locales/en/.mustflow/skills/svelte-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.tailwind-code-change"]
+source = "locales/en/.mustflow/skills/tailwind-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.tauri-code-change"]
+source = "locales/en/.mustflow/skills/tauri-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.typescript-code-change"]
+source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.unocss-code-change"]
+source = "locales/en/.mustflow/skills/unocss-code-change/SKILL.md"
 source_locale = "en"
 revision = 2
 translations = {}
@@ -320,6 +452,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/release-notes-authoring/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.release-publish-change"]
+source = "locales/en/.mustflow/skills/release-publish-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.security-privacy-review"]
