@@ -762,6 +762,9 @@ Read these files before working:
   "run.help.exit.ok": "The command completed with an allowed exit code",
   "run.help.exit.fail": "The command was invalid, refused, timed out, or failed",
   "run.label.suggestedIntentSnippet": "Suggested command contract snippet",
+  "run.progress.started": "Running {intent} (timeout: {seconds}s)...",
+  "run.progress.timeoutWarning":
+    "Still running {intent}... ({seconds}s elapsed, {percent}% of timeout)",
   "run.error.missingIntent": "Missing command name",
   "run.error.unknownIntent": "Unknown command: {intent}",
   "run.error.statusNotConfigured":

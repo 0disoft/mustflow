@@ -764,6 +764,9 @@ Lee estos archivos antes de trabajar:
   "run.help.exit.ok": "El comando se completo con un codigo de salida permitido",
   "run.help.exit.fail": "El comando no era válido, fue rechazado, agotó el tiempo o falló",
   "run.label.suggestedIntentSnippet": "Snippet sugerido para el contrato de comandos",
+  "run.progress.started": "Ejecutando {intent} (timeout: {seconds}s)...",
+  "run.progress.timeoutWarning":
+    "{intent} sigue ejecutándose... ({seconds}s transcurridos, {percent}% del timeout)",
   "run.error.missingIntent": "Falta el nombre del comando",
   "run.error.unknownIntent": "Comando desconocido: {intent}",
   "run.error.statusNotConfigured":

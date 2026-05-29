@@ -754,6 +754,9 @@ export const zhMessages = {
   "run.help.exit.ok": "命令已以允许的退出码完成",
   "run.help.exit.fail": "命令无效、被拒绝、超时或失败",
   "run.label.suggestedIntentSnippet": "建议的命令契约片段",
+  "run.progress.started": "正在运行 {intent}（超时：{seconds} 秒）...",
+  "run.progress.timeoutWarning":
+    "{intent} 仍在运行...（已用 {seconds} 秒，达到超时的 {percent}%）",
   "run.error.missingIntent": "缺少命令名称",
   "run.error.unknownIntent": "未知命令：{intent}",
   "run.error.statusNotConfigured":

@@ -88,6 +88,7 @@ destructive = false
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /hello from mf run/);
+		assert.match(result.stderr, /Running echo_hello \(timeout: 10s\)\.\.\./);
 	} finally {
 		removeTempProject(projectPath);
 	}

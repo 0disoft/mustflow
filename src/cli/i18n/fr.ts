@@ -764,6 +764,9 @@ Lisez ces fichiers avant de travailler :
   "run.help.exit.ok": "La commande s'est terminée avec un code de sortie autorisé",
   "run.help.exit.fail": "La commande était non valide, refusée, expirée ou a échoué",
   "run.label.suggestedIntentSnippet": "Extrait suggéré de contrat de commande",
+  "run.progress.started": "Exécution de {intent} (timeout : {seconds}s)...",
+  "run.progress.timeoutWarning":
+    "{intent} est toujours en cours... ({seconds}s écoulées, {percent}% du timeout)",
   "run.error.missingIntent": "Nom de commande manquant",
   "run.error.unknownIntent": "Commande inconnue : {intent}",
   "run.error.statusNotConfigured":

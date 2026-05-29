@@ -177,6 +177,5 @@ export function runHelp(args: string[], reporter: Reporter, lang: CliLang = 'en'
 	}
 
 	reporter.stderr(renderCliError(t(lang, 'help.error.unknownTopic', { topic }), 'mf help --help', lang));
-	reporter.stdout(getHelpHelp(lang));
 	return 1;
 }

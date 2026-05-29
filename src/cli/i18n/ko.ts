@@ -759,6 +759,9 @@ export const koMessages = {
   "run.help.exit.fail":
     "명령이 잘못되었거나, 거부되었거나, 시간 초과되었거나, 실패했습니다",
   "run.label.suggestedIntentSnippet": "제안 명령 계약 조각",
+  "run.progress.started": "{intent} 실행 중(timeout: {seconds}초)...",
+  "run.progress.timeoutWarning":
+    "{intent} 계속 실행 중... ({seconds}초 경과, timeout의 {percent}%)",
   "run.error.missingIntent": "명령 이름이 없습니다",
   "run.error.unknownIntent": "알 수 없는 명령: {intent}",
   "run.error.statusNotConfigured":

@@ -154,6 +154,43 @@ function renderActiveLockConflictMessage(intentName: string, conflicts: readonly
 	return t(lang, 'run.error.activeLockConflict', { intent: intentName, detail });
 }
 
+function createRunProgressReporter(input: {
+	readonly enabled: boolean;
+	readonly intentName: string;
+	readonly timeoutSeconds: number;
+	readonly reporter: Reporter;
+	readonly lang: CliLang;
+}): () => void {
+	if (!input.enabled) {
+		return () => undefined;
+	}
+
+	input.reporter.stderr(t(input.lang, 'run.progress.started', { intent: input.intentName, seconds: input.timeoutSeconds }));
+
+	const timers: NodeJS.Timeout[] = [];
+	for (const ratio of [0.5, 0.8]) {
+		const delayMs = Math.max(1, Math.floor(input.timeoutSeconds * 1000 * ratio));
+		const elapsedSeconds = Math.max(1, Math.round(input.timeoutSeconds * ratio));
+		const timer = setTimeout(() => {
+			input.reporter.stderr(
+				t(input.lang, 'run.progress.timeoutWarning', {
+					intent: input.intentName,
+					seconds: elapsedSeconds,
+					percent: Math.round(ratio * 100),
+				}),
+			);
+		}, delayMs);
+		timer.unref?.();
+		timers.push(timer);
+	}
+
+	return () => {
+		for (const timer of timers) {
+			clearTimeout(timer);
+		}
+	};
+}
+
 export function getRunHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
@@ -316,11 +353,35 @@ export async function runRun(
 
 	const childStartedAtMs = performance.now();
 	const startedAt = new Date();
+	const stopRunProgress = createRunProgressReporter({
+		enabled: !json,
+		intentName,
+		timeoutSeconds: plan.timeoutSeconds,
+		reporter,
+		lang,
+	});
 	const result = await profiler.measureAsync('child_command', async () => {
-		if (plan.commandArgv) {
+		try {
+			if (plan.commandArgv) {
+				streamedOutput = !json;
+				return runArgvCommandStreaming(
+					plan.argvCommand,
+					plan.cwd,
+					env,
+					plan.timeoutSeconds,
+					plan.killAfterSeconds,
+					plan.maxOutputBytes,
+					stdoutTailBytes,
+					stderrTailBytes,
+					reporter,
+					!json,
+					true,
+				);
+			}
+
 			streamedOutput = !json;
-			return runArgvCommandStreaming(
-				plan.argvCommand,
+			return runShellCommandStreaming(
+				plan.shellCommand,
 				plan.cwd,
 				env,
 				plan.timeoutSeconds,
@@ -332,22 +393,9 @@ export async function runRun(
 				!json,
 				true,
 			);
+		} finally {
+			stopRunProgress();
 		}
-
-		streamedOutput = !json;
-		return runShellCommandStreaming(
-			plan.shellCommand,
-			plan.cwd,
-			env,
-			plan.timeoutSeconds,
-			plan.killAfterSeconds,
-			plan.maxOutputBytes,
-			stdoutTailBytes,
-			stderrTailBytes,
-			reporter,
-			!json,
-			true,
-		);
 	});
 	const childDurationMs = performance.now() - childStartedAtMs;
 	const finishedAt = new Date();

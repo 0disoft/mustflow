@@ -9,12 +9,36 @@ export function renderDashboardStyles(): string {
 	--accent: #8fb4ff;
 	--danger: #ff9a9a;
 	--ok: #9be7ba;
+	--control-bg: #11141a;
+	--control-hover-bg: #171b23;
+	--control-active-bg: #0d1015;
 	--row-bg: rgba(255, 255, 255, 0.018);
 	--row-bg-alt: rgba(255, 255, 255, 0.035);
 	--status-neutral-bg: rgba(174, 182, 197, 0.1);
 	--status-ok-bg: rgba(155, 231, 186, 0.1);
 	--status-warn-bg: rgba(255, 154, 154, 0.1);
 	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: light) {
+	:root {
+		color-scheme: light;
+		--bg: #f6f8fb;
+		--panel: #ffffff;
+		--line: #d9e0ea;
+		--text: #162033;
+		--muted: #5d6b82;
+		--accent: #285fc2;
+		--danger: #b4232d;
+		--ok: #197a47;
+		--control-bg: #ffffff;
+		--control-hover-bg: #eef3f9;
+		--control-active-bg: #e4ebf5;
+		--row-bg: rgba(40, 95, 194, 0.035);
+		--row-bg-alt: rgba(40, 95, 194, 0.065);
+		--status-neutral-bg: rgba(93, 107, 130, 0.11);
+		--status-ok-bg: rgba(25, 122, 71, 0.11);
+		--status-warn-bg: rgba(180, 35, 45, 0.1);
+	}
 }
 * { box-sizing: border-box; }
 body {
@@ -75,6 +99,11 @@ main {
 	gap: 8px;
 	margin-bottom: 14px;
 	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+	display: none;
 }
 .tab {
 	border-color: transparent;
@@ -120,16 +149,34 @@ input:focus-visible {
 	white-space: nowrap;
 }
 button, select, input {
-	background: #11141a;
+	background: var(--control-bg);
 	border: 1px solid var(--line);
 	border-radius: 6px;
 	color: var(--text);
 	font: inherit;
 	min-height: 38px;
+	transition: background-color 160ms ease, border-color 160ms ease;
 }
 button {
 	cursor: pointer;
 	padding: 0 14px;
+}
+button:not(:disabled):hover,
+select:hover,
+input:hover {
+	background: var(--control-hover-bg);
+	border-color: var(--accent);
+}
+button:not(:disabled):active {
+	background: var(--control-active-bg);
+}
+@media (prefers-reduced-motion: no-preference) {
+	button {
+		transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
+	}
+	button:not(:disabled):active {
+		transform: translateY(1px);
+	}
 }
 button:disabled {
 	cursor: not-allowed;

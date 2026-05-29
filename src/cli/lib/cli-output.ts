@@ -66,5 +66,5 @@ export function printUsageError(
 	lang: CliLang = 'en',
 ): void {
 	reporter.stderr(renderCliError(message, helpCommand, lang));
-	reporter.stdout(helpText);
+	reporter.stderr(helpText);
 }

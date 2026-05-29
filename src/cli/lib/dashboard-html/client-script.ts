@@ -163,6 +163,10 @@ function updateSaveState() {
 	document.getElementById("save").disabled = pending.size === 0;
 }
 
+function hasUnsavedChanges() {
+	return pending.size > 0;
+}
+
 function setPending(id, value) {
 	const original = snapshot.settings.find((setting) => setting.id === id)?.value;
 	if (Object.is(original, value)) {
@@ -1915,6 +1919,11 @@ document.getElementById("reload").addEventListener("click", () => {
 });
 document.getElementById("save").addEventListener("click", () => {
 	save().catch((error) => statusText(error.message, "error"));
+});
+window.addEventListener("beforeunload", (event) => {
+	if (!hasUnsavedChanges()) return;
+	event.preventDefault();
+	event.returnValue = "";
 });
 document.getElementById("open-mustflow").addEventListener("click", () => {
 	openMustflowFolder().catch((error) => statusText(error.message, "error"));

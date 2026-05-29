@@ -764,6 +764,9 @@ export const hiMessages = {
   "run.help.exit.ok": "कमांड अनुमत exit code के साथ पूरी हुई",
   "run.help.exit.fail": "कमांड अमान्य थी, अस्वीकार हुई, timed out हुई या विफल हुई",
   "run.label.suggestedIntentSnippet": "Suggested command contract snippet",
+  "run.progress.started": "{intent} चल रहा है (timeout: {seconds}s)...",
+  "run.progress.timeoutWarning":
+    "{intent} अभी भी चल रहा है... ({seconds}s बीते, timeout का {percent}%)",
   "run.error.missingIntent": "कमांड नाम नहीं दिया गया",
   "run.error.unknownIntent": "अज्ञात कमांड: {intent}",
   "run.error.statusNotConfigured":
