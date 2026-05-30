@@ -113,7 +113,7 @@ export const zhMessages = {
   "api.error.missingAction": "请指定 api 操作：workspace-summary、command-catalog、verification-plan、latest-evidence、diff-risk 或 health",
   "api.error.unknownAction": "未知 api 操作：{action}",
   "api.error.actionRequiresJson": "{action} 需要 --json",
-  "api.error.verificationPlanRequiresChanged": "verification-plan 当前需要 --changed",
+  "api.error.actionRequiresChanged": "{action} 当前需要 --changed",
   "label.installed": "已安装",
   "label.mustflowRoot": "mustflow 根目录",
   "label.commandContract": "命令规范",

@@ -204,6 +204,21 @@ test('api verification-plan requires changed mode', () => {
 	}
 });
 
+test('api diff-risk requires changed mode with action-specific guidance', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['api', 'diff-risk', '--json']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /diff-risk currently requires --changed/u);
+		assert.match(result.stderr, /mf api --help/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints a compact latest evidence api report', () => {
 	const projectPath = createTempProject();
 

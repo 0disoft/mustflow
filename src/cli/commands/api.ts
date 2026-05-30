@@ -1188,7 +1188,7 @@ function runCommandCatalog(args: readonly string[], reporter: Reporter, lang: Cl
 	return 0;
 }
 
-function validateVerificationPlanAction(args: readonly string[], reporter: Reporter, lang: CliLang): boolean {
+function validateChangedJsonAction(action: string, args: readonly string[], reporter: Reporter, lang: CliLang): boolean {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getApiHelp(lang));
 		return false;
@@ -1203,12 +1203,12 @@ function validateVerificationPlanAction(args: readonly string[], reporter: Repor
 	}
 
 	if (!args.includes('--json')) {
-		printUsageError(reporter, t(lang, 'api.error.actionRequiresJson', { action: 'verification-plan' }), 'mf api --help', getApiHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'api.error.actionRequiresJson', { action }), 'mf api --help', getApiHelp(lang), lang);
 		return false;
 	}
 
 	if (!args.includes('--changed')) {
-		printUsageError(reporter, t(lang, 'api.error.verificationPlanRequiresChanged'), 'mf api --help', getApiHelp(lang), lang);
+		printUsageError(reporter, t(lang, 'api.error.actionRequiresChanged', { action }), 'mf api --help', getApiHelp(lang), lang);
 		return false;
 	}
 
@@ -1216,7 +1216,7 @@ function validateVerificationPlanAction(args: readonly string[], reporter: Repor
 }
 
 function runVerificationPlan(args: readonly string[], reporter: Reporter, lang: CliLang): number {
-	if (!validateVerificationPlanAction(args, reporter, lang)) {
+	if (!validateChangedJsonAction('verification-plan', args, reporter, lang)) {
 		return args.includes('--help') || args.includes('-h') ? 0 : 1;
 	}
 
@@ -1234,7 +1234,7 @@ function runLatestEvidence(args: readonly string[], reporter: Reporter, lang: Cl
 }
 
 function runDiffRisk(args: readonly string[], reporter: Reporter, lang: CliLang): number {
-	if (!validateVerificationPlanAction(args, reporter, lang)) {
+	if (!validateChangedJsonAction('diff-risk', args, reporter, lang)) {
 		return args.includes('--help') || args.includes('-h') ? 0 : 1;
 	}
 

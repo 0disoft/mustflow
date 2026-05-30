@@ -112,7 +112,7 @@ export const koMessages = {
   "api.error.missingAction": "api 작업을 지정하세요: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk 또는 health",
   "api.error.unknownAction": "알 수 없는 api 작업: {action}",
   "api.error.actionRequiresJson": "{action}에는 --json이 필요합니다",
-  "api.error.verificationPlanRequiresChanged": "verification-plan은 현재 --changed가 필요합니다",
+  "api.error.actionRequiresChanged": "{action}은 현재 --changed가 필요합니다",
   "label.installed": "설치됨",
   "label.mustflowRoot": "mustflow 루트",
   "label.commandContract": "명령 계약",

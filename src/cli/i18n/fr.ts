@@ -113,7 +113,7 @@ export const frMessages = {
   "api.error.missingAction": "Indiquez une action api : workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk ou health",
   "api.error.unknownAction": "Action api inconnue : {action}",
   "api.error.actionRequiresJson": "{action} exige --json",
-  "api.error.verificationPlanRequiresChanged": "verification-plan exige actuellement --changed",
+  "api.error.actionRequiresChanged": "{action} exige actuellement --changed",
   "label.installed": "Installé",
   "label.mustflowRoot": "racine mustflow",
   "label.commandContract": "Spécification des commandes",

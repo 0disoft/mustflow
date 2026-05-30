@@ -113,7 +113,7 @@ export const hiMessages = {
   "api.error.missingAction": "api action बताएँ: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk, या health",
   "api.error.unknownAction": "अज्ञात api action: {action}",
   "api.error.actionRequiresJson": "{action} के लिए --json चाहिए",
-  "api.error.verificationPlanRequiresChanged": "verification-plan को अभी --changed चाहिए",
+  "api.error.actionRequiresChanged": "{action} को अभी --changed चाहिए",
   "label.installed": "इंस्टॉल किया गया",
   "label.mustflowRoot": "mustflow रूट",
   "label.commandContract": "कमांड विनिर्देश",

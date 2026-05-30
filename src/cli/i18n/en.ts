@@ -111,7 +111,7 @@ export const enMessages = {
   "api.error.missingAction": "Specify an api action: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk, or health",
   "api.error.unknownAction": "Unknown api action: {action}",
   "api.error.actionRequiresJson": "{action} requires --json",
-  "api.error.verificationPlanRequiresChanged": "verification-plan currently requires --changed",
+  "api.error.actionRequiresChanged": "{action} currently requires --changed",
   "label.installed": "Installed",
   "label.mustflowRoot": "mustflow root",
   "label.commandContract": "Command specification",
