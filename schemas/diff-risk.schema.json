@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/diff-risk.schema.json",
+  "title": "mustflow diff risk API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "source",
+    "status",
+    "risk_level",
+    "changed_file_count",
+    "changed_files",
+    "public_surface_count",
+    "validation_reasons",
+    "update_policies",
+    "drift_checks",
+    "required_verification",
+    "gap_count",
+    "gaps",
+    "recommended_commands",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api diff-risk" },
+    "mustflow_root": { "type": "string" },
+    "source": { "$ref": "#/$defs/source" },
+    "status": { "enum": ["available", "unavailable"] },
+    "risk_level": { "enum": ["none", "low", "medium", "high", "unknown"] },
+    "changed_file_count": { "type": "integer", "minimum": 0 },
+    "changed_files": { "$ref": "#/$defs/stringArray" },
+    "public_surface_count": { "type": "integer", "minimum": 0 },
+    "validation_reasons": { "$ref": "#/$defs/stringArray" },
+    "update_policies": { "$ref": "#/$defs/stringArray" },
+    "drift_checks": { "$ref": "#/$defs/stringArray" },
+    "required_verification": { "$ref": "#/$defs/stringArray" },
+    "gap_count": { "type": "integer", "minimum": 0 },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/gap" }
+    },
+    "recommended_commands": { "$ref": "#/$defs/stringArray" },
+    "issues": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "command"],
+      "properties": {
+        "kind": { "const": "changed" },
+        "command": { "const": "mf verify --changed --plan-only --json" }
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "files", "surfaces", "detail"],
+      "properties": {
+        "reason": { "type": "string" },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

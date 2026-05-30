@@ -33,6 +33,7 @@ function getTopLevelHelp(lang: CliLang): string {
 			],
 			examples: [
 				'mf --lang ko help',
+				'mf api workspace-summary --json',
 				'mf adapters status --json',
 				'mf init --dry-run',
 				'mf doctor --json',

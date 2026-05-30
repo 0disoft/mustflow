@@ -197,6 +197,12 @@ mf run mustflow_update_apply
 | `mf check` | mustflow 파일, TOML 설정, 스킬 문서 형식을 검사합니다. |
 | `mf check --strict` | 문서 정체성, 스킬 메타데이터, 명령 경계, 보존 정책, 실행 출력 제한, 원본 로그, 비밀정보 흔적 등 추가 안전 조건까지 검사합니다. |
 | `mf doctor` | 현재 mustflow 루트를 읽기 전용으로 진단합니다. |
+| `mf api workspace-summary --json` | 코딩 에이전트와 외부 하네스가 쓰는 안정적인 읽기 전용 JSON 요약을 출력합니다. |
+| `mf api command-catalog --json` | 원본 실행 문자열을 노출하지 않고 command intent 가능 여부와 안전한 `mf run` 진입점을 출력합니다. |
+| `mf api verification-plan --changed --json` | 명령을 실행하지 않고 변경 파일에 대한 안정적인 읽기 전용 verification plan을 출력합니다. |
+| `mf api latest-evidence --json` | 원본 명령 출력 없이 bounded 최신 run 또는 verify evidence를 출력합니다. |
+| `mf api diff-risk --changed --json` | 변경 파일 risk와 verification 요약을 작게 출력합니다. |
+| `mf api health --json` | 빠른 agent gate용 workspace health 보고서를 작게 출력합니다. |
 | `mf context --json` | 읽기 순서, 명령 규칙, 제공 기능, 최근 실행 요약을 JSON으로 출력합니다. |
 | `mf map --stdout` | 현재 mustflow 루트의 탐색 지도를 터미널에 출력합니다. |
 | `mf map --write` | `REPO_MAP.md`를 생성하거나 갱신합니다. |

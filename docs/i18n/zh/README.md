@@ -199,6 +199,12 @@ mf run mustflow_update_apply
 | `mf check` | 验证 mustflow 文件、TOML 配置和技能文档结构。 |
 | `mf check --strict` | 额外执行文档身份、技能元数据、命令边界、保留策略、输出限制、原始日志及类似秘密上下文的安全检查。 |
 | `mf doctor` | 以只读方式检查当前 mustflow 根目录。 |
+| `mf api workspace-summary --json` | 为编码代理和外部执行框架输出稳定的只读 JSON 摘要。 |
+| `mf api command-catalog --json` | 输出命令 intent 可用性和安全的 `mf run` 入口，不暴露原始命令字符串。 |
+| `mf api verification-plan --changed --json` | 为已变更文件输出稳定的只读 verification plan，不执行命令。 |
+| `mf api latest-evidence --json` | 输出 bounded 最新 run 或 verify evidence，不包含原始命令输出。 |
+| `mf api diff-risk --changed --json` | 输出已变更文件的紧凑 risk 和 verification 摘要。 |
+| `mf api health --json` | 为快速 agent gate 输出紧凑 workspace health 报告。 |
 | `mf context --json` | 以 JSON 格式输出读取顺序、命令规则、可用能力及最近运行摘要。 |
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |
 | `mf map --write` | 创建或更新 `REPO_MAP.md`。 |

@@ -249,6 +249,12 @@ mf run mustflow_update_apply
 | `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons. Add `--write <path>` to save the classification report. |
 | `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. Add `--suggest` to print non-runnable candidate snippets from existing command files. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
+| `mf api workspace-summary --json` | Print a stable, read-only JSON summary for coding agents and external harnesses. |
+| `mf api command-catalog --json` | Print command intent availability and safe `mf run` entrypoints without exposing raw command strings. |
+| `mf api verification-plan --changed --json` | Print a stable, read-only verification plan for changed files without executing commands. |
+| `mf api latest-evidence --json` | Print bounded latest run or verify evidence without raw command output. |
+| `mf api diff-risk --changed --json` | Print a compact changed-file risk and verification summary. |
+| `mf api health --json` | Print a compact workspace health report for quick agent gating. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
 | `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |

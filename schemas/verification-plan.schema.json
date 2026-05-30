@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/verification-plan.schema.json",
+  "title": "mustflow verification plan API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "source",
+    "status",
+    "verification_plan_id",
+    "classification",
+    "requirements",
+    "candidates",
+    "gaps",
+    "schedule",
+    "test_selection",
+    "execution_policy",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api verification-plan" },
+    "mustflow_root": { "type": "string" },
+    "source": { "$ref": "#/$defs/source" },
+    "status": { "enum": ["available", "unavailable"] },
+    "verification_plan_id": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "classification": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/classification" }
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/requirement" }
+    },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/gap" }
+    },
+    "schedule": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/schedule" }
+      ]
+    },
+    "test_selection": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/testSelection" }
+      ]
+    },
+    "execution_policy": { "$ref": "#/$defs/executionPolicy" },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "command"],
+      "properties": {
+        "kind": { "const": "changed" },
+        "command": { "const": "mf verify --changed --plan-only --json" }
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "file_count",
+        "files",
+        "validation_reasons",
+        "public_surface_count",
+        "update_policies",
+        "drift_checks"
+      ],
+      "properties": {
+        "source": { "const": "changed" },
+        "file_count": { "type": "integer", "minimum": 0 },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "validation_reasons": { "$ref": "#/$defs/stringArray" },
+        "public_surface_count": { "type": "integer", "minimum": 0 },
+        "update_policies": { "$ref": "#/$defs/stringArray" },
+        "drift_checks": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "file_count",
+        "files",
+        "surfaces",
+        "affected_contracts",
+        "drift_checks",
+        "update_policies"
+      ],
+      "properties": {
+        "reason": { "type": "string" },
+        "file_count": { "type": "integer", "minimum": 0 },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "affected_contracts": { "$ref": "#/$defs/stringArray" },
+        "drift_checks": { "$ref": "#/$defs/stringArray" },
+        "update_policies": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "intent",
+        "status",
+        "selection_state",
+        "eligibility_state",
+        "candidate_state",
+        "skip_reason",
+        "detail"
+      ],
+      "properties": {
+        "reason": { "type": "string" },
+        "intent": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "selection_state": { "type": "string" },
+        "eligibility_state": { "type": "string" },
+        "candidate_state": { "type": "string" },
+        "skip_reason": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] }
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "files", "surfaces", "detail"],
+      "properties": {
+        "reason": { "type": "string" },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "detail": { "type": "string" }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runner",
+        "entry_count",
+        "batch_count",
+        "selected_intents",
+        "entries",
+        "batches",
+        "notes"
+      ],
+      "properties": {
+        "runner": { "type": "string" },
+        "entry_count": { "type": "integer", "minimum": 0 },
+        "batch_count": { "type": "integer", "minimum": 0 },
+        "selected_intents": { "$ref": "#/$defs/stringArray" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scheduleEntry" }
+        },
+        "batches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scheduleBatch" }
+        },
+        "notes": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "scheduleEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "run_command",
+        "preview_command",
+        "parallel_eligible",
+        "parallel_reason",
+        "locks",
+        "conflict_count"
+      ],
+      "properties": {
+        "intent": { "type": "string" },
+        "run_command": { "type": ["string", "null"] },
+        "preview_command": { "type": ["string", "null"] },
+        "parallel_eligible": { "type": "boolean" },
+        "parallel_reason": { "type": "string" },
+        "locks": { "$ref": "#/$defs/stringArray" },
+        "conflict_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "scheduleBatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "intents", "locks"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 1 },
+        "intents": { "$ref": "#/$defs/stringArray" },
+        "locks": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "testSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "candidate_count", "selected_count", "note"],
+      "properties": {
+        "status": { "type": "string" },
+        "candidate_count": { "type": "integer", "minimum": 0 },
+        "selected_count": { "type": "integer", "minimum": 0 },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "executionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan_command", "run_command", "direct_commands_allowed", "selected_intents_run_via"],
+      "properties": {
+        "plan_command": { "const": "mf verify --changed --plan-only --json" },
+        "run_command": { "const": "mf verify --changed --json" },
+        "direct_commands_allowed": { "const": false },
+        "selected_intents_run_via": { "const": "mf run <intent>" }
+      }
+    }
+  }
+}

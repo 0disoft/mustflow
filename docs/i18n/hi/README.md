@@ -221,6 +221,12 @@ mf run mustflow_update_apply
 | `mf check`                | mustflow फ़ाइलों, TOML कॉन्फ़िगरेशन और कौशल दस्तावेज़ संरचना की जांच करता है।          |
 | `mf check --strict`       | दस्तावेज़ पहचान, कौशल मेटाडेटा, कमांड सीमाएँ, रिटेंशन नीति, आउटपुट सीमाएँ, कच्चे लॉग, और secret-like संदर्भों के लिए अतिरिक्त सुरक्षा जांच करता है। |
 | `mf doctor`               | फ़ाइल लिखे बिना वर्तमान mustflow रूट का निरीक्षण करता है।                               |
+| `mf api workspace-summary --json` | coding agents और external harnesses के लिए stable, read-only JSON summary दिखाता है। |
+| `mf api command-catalog --json` | raw command strings दिखाए बिना command intent availability और safe `mf run` entrypoints दिखाता है। |
+| `mf api verification-plan --changed --json` | commands चलाए बिना बदली गई files के लिए stable, read-only verification plan दिखाता है। |
+| `mf api latest-evidence --json` | raw command output के बिना bounded latest run या verify evidence दिखाता है। |
+| `mf api diff-risk --changed --json` | बदली गई files के लिए compact risk और verification summary दिखाता है। |
+| `mf api health --json` | quick agent gate के लिए compact workspace health report दिखाता है। |
 | `mf context --json`       | पढ़ने के क्रम, कमांड नियम, उपलब्ध क्षमताएँ और हाल की रन सारांश JSON के रूप में प्रदर्शित करता है। |
 | `mf map --stdout`         | वर्तमान mustflow रूट मैप को मानक आउटपुट पर प्रिंट करता है।                              |
 | `mf map --write`          | `REPO_MAP.md` फ़ाइल बनाता या अपडेट करता है।                                            |

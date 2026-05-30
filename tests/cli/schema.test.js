@@ -29,6 +29,36 @@ function runCli(cwd, args) {
 	});
 }
 
+function runGit(projectPath, args) {
+	return spawnSync('git', ['-C', projectPath, ...args], {
+		cwd: projectPath,
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'pipe'],
+		windowsHide: true,
+	});
+}
+
+function commitGitBaseline(projectPath) {
+	let result = runGit(projectPath, ['init']);
+	if (result.status !== 0) {
+		return false;
+	}
+
+	for (const args of [
+		['config', 'user.email', 'mustflow-tests@example.invalid'],
+		['config', 'user.name', 'mustflow tests'],
+		['add', '.'],
+		['commit', '-m', 'baseline'],
+	]) {
+		result = runGit(projectPath, args);
+		if (result.status !== 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 function initProject(projectPath) {
 	const result = runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -188,6 +218,94 @@ test('context cache-profile json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'context-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace summary api json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['api', 'workspace-summary', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'workspace-summary.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('command catalog api json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['api', 'command-catalog', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'command-catalog.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('verification plan api json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'schema-verification-plan-probe.js'), 'console.log("changed");\n');
+		const result = runCli(projectPath, ['api', 'verification-plan', '--changed', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'verification-plan.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('latest evidence api json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['api', 'latest-evidence', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'latest-evidence.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('diff risk api json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'schema-diff-risk-probe.js'), 'console.log("changed");\n');
+		const result = runCli(projectPath, ['api', 'diff-risk', '--changed', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'diff-risk.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('health api json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['api', 'health', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'health.schema.json', JSON.parse(result.stdout));
 	} finally {
 		removeTempProject(projectPath);
 	}

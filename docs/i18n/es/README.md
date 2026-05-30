@@ -197,6 +197,12 @@ mf run mustflow_update_apply
 | `mf check`                  | Valida archivos mustflow, configuración TOML y la estructura de documentos de habilidades.   |
 | `mf check --strict`         | Realiza comprobaciones adicionales de seguridad para identidad documental, metadatos, límites, política y contexto. |
 | `mf doctor`                 | Inspecciona la raíz mustflow actual sin modificar archivos.                                  |
+| `mf api workspace-summary --json` | Imprime un resumen JSON estable y de solo lectura para agentes de código y arneses externos. |
+| `mf api command-catalog --json` | Imprime disponibilidad de intents y entradas seguras `mf run` sin exponer comandos sin procesar. |
+| `mf api verification-plan --changed --json` | Imprime un verification plan estable y de solo lectura para archivos cambiados sin ejecutar comandos. |
+| `mf api latest-evidence --json` | Imprime evidencia bounded del último run o verify sin salida de comando sin procesar. |
+| `mf api diff-risk --changed --json` | Imprime un resumen compacto de riesgo y verificación para archivos cambiados. |
+| `mf api health --json` | Imprime un informe compacto de salud del workspace para gates rápidos de agente. |
 | `mf context --json`         | Imprime en JSON el orden de lectura, reglas de comandos, capacidades disponibles y resumen de ejecución reciente. |
 | `mf map --stdout`           | Imprime el mapa de la raíz mustflow actual en la salida estándar.                            |
 | `mf map --write`            | Crea o actualiza `REPO_MAP.md`.                                                             |

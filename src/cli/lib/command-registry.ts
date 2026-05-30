@@ -17,6 +17,12 @@ export interface CommandDefinition {
 
 export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 	{
+		id: 'api',
+		usage: 'mf api',
+		summaryKey: 'command.api.summary',
+		loadRunner: async () => (await import('../commands/api.js')).runApi,
+	},
+	{
 		id: 'adapters',
 		usage: 'mf adapters',
 		summaryKey: 'command.adapters.summary',

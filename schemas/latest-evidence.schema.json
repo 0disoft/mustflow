@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/latest-evidence.schema.json",
+  "title": "mustflow latest evidence API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "latest",
+    "manifest",
+    "policy",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api latest-evidence" },
+    "mustflow_root": { "type": "string" },
+    "latest": { "$ref": "#/$defs/latest" },
+    "manifest": { "$ref": "#/$defs/manifest" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "issues": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "latest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exists",
+        "path",
+        "kind",
+        "status",
+        "intent",
+        "reason",
+        "verification_plan_id",
+        "completion_verdict_status",
+        "manifest_path",
+        "receipt_path",
+        "run_dir",
+        "exit_code",
+        "timed_out",
+        "duration_ms",
+        "summary"
+      ],
+      "properties": {
+        "exists": { "type": "boolean" },
+        "path": { "const": ".mustflow/state/runs/latest.json" },
+        "kind": { "enum": ["run_receipt", "verify_run_summary", "unknown", null] },
+        "status": { "type": ["string", "null"] },
+        "intent": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] },
+        "verification_plan_id": { "type": ["string", "null"] },
+        "completion_verdict_status": { "type": ["string", "null"] },
+        "manifest_path": { "type": ["string", "null"] },
+        "receipt_path": { "type": ["string", "null"] },
+        "run_dir": { "type": ["string", "null"] },
+        "exit_code": { "type": ["integer", "null"] },
+        "timed_out": { "type": ["boolean", "null"] },
+        "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "summary": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "object" }
+          ]
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "path", "receipt_count", "error"],
+      "properties": {
+        "status": { "enum": ["available", "missing", "unavailable", "not_applicable"] },
+        "path": { "type": ["string", "null"] },
+        "receipt_count": { "type": ["integer", "null"], "minimum": 0 },
+        "error": { "type": ["string", "null"] }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_output_included", "hidden_reasoning_included", "max_bytes"],
+      "properties": {
+        "raw_output_included": { "const": false },
+        "hidden_reasoning_included": { "const": false },
+        "max_bytes": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

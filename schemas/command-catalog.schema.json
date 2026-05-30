@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/command-catalog.schema.json",
+  "title": "mustflow command catalog API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "command_contract",
+    "execution_policy",
+    "intents",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api command-catalog" },
+    "mustflow_root": { "type": "string" },
+    "command_contract": { "$ref": "#/$defs/commandContract" },
+    "execution_policy": { "$ref": "#/$defs/executionPolicy" },
+    "intents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/intent" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "commandContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "parse_error", "total_intents", "runnable_count", "blocked_count"],
+      "properties": {
+        "path": { "const": ".mustflow/config/commands.toml" },
+        "exists": { "type": "boolean" },
+        "parse_error": { "type": ["string", "null"] },
+        "total_intents": { "type": "integer", "minimum": 0 },
+        "runnable_count": { "type": "integer", "minimum": 0 },
+        "blocked_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "executionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_authority",
+        "run_entrypoint",
+        "preview_entrypoint",
+        "direct_commands_allowed",
+        "requires_configured_oneshot_agent_allowed"
+      ],
+      "properties": {
+        "command_authority": { "const": ".mustflow/config/commands.toml" },
+        "run_entrypoint": { "const": "mf run <intent>" },
+        "preview_entrypoint": { "const": "mf run <intent> --dry-run --json" },
+        "direct_commands_allowed": { "const": false },
+        "requires_configured_oneshot_agent_allowed": { "const": true }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "kind",
+        "status",
+        "lifecycle",
+        "run_policy",
+        "runnable",
+        "reason_code",
+        "detail",
+        "run_command",
+        "preview_command",
+        "mode",
+        "cwd",
+        "timeout_seconds",
+        "kill_after_seconds",
+        "max_output_bytes",
+        "success_exit_codes",
+        "required_after",
+        "writes",
+        "effect_count",
+        "network",
+        "destructive",
+        "accepts_test_targets",
+        "env_policy",
+        "env_allowlist",
+        "precondition_count",
+        "active_lock_conflict_count",
+        "stale_active_lock_count",
+        "agent_action",
+        "manual_start_hint",
+        "health_check_url",
+        "stop_instruction",
+        "related_oneshot_checks"
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "kind": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "lifecycle": { "type": ["string", "null"] },
+        "run_policy": { "type": ["string", "null"] },
+        "runnable": { "type": "boolean" },
+        "reason_code": { "type": ["string", "null"] },
+        "detail": { "type": ["string", "null"] },
+        "run_command": { "type": ["string", "null"] },
+        "preview_command": { "type": ["string", "null"] },
+        "mode": { "enum": ["argv", "shell", null] },
+        "cwd": { "type": ["string", "null"] },
+        "timeout_seconds": { "type": ["integer", "null"], "minimum": 1 },
+        "kill_after_seconds": { "type": ["integer", "null"], "minimum": 1 },
+        "max_output_bytes": { "type": ["integer", "null"], "minimum": 1 },
+        "success_exit_codes": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 0 }
+            }
+          ]
+        },
+        "required_after": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "writes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "effect_count": { "type": "integer", "minimum": 0 },
+        "network": { "type": ["boolean", "null"] },
+        "destructive": { "type": ["boolean", "null"] },
+        "accepts_test_targets": { "type": "boolean" },
+        "env_policy": { "type": ["string", "null"] },
+        "env_allowlist": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "precondition_count": { "type": "integer", "minimum": 0 },
+        "active_lock_conflict_count": { "type": "integer", "minimum": 0 },
+        "stale_active_lock_count": { "type": "integer", "minimum": 0 },
+        "agent_action": { "type": ["string", "null"] },
+        "manual_start_hint": { "type": ["string", "null"] },
+        "health_check_url": { "type": ["string", "null"] },
+        "stop_instruction": { "type": ["string", "null"] },
+        "related_oneshot_checks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

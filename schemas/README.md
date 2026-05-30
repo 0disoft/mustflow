@@ -8,6 +8,12 @@ Current schemas:
 - `doctor-report.schema.json`: output of `mf doctor --json`
 - `adapter-compatibility-report.schema.json`: output of `mf adapters status --json`
 - `context-report.schema.json`: output of `mf context --json`
+- `workspace-summary.schema.json`: output of `mf api workspace-summary --json`
+- `command-catalog.schema.json`: output of `mf api command-catalog --json`
+- `verification-plan.schema.json`: output of `mf api verification-plan --changed --json`
+- `latest-evidence.schema.json`: output of `mf api latest-evidence --json`
+- `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`
+- `health.schema.json`: output of `mf api health --json`
 - `run-receipt.schema.json`: output of `mf run <intent> --json` and `.mustflow/state/runs/latest.json`,
   including bounded declared-write drift metadata, a safe latest-run performance summary, and optional
   structured phase timings and selection summaries

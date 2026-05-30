@@ -79,6 +79,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /Usage:/);
 	assert.match(result.stdout, /Examples:/);
 	assert.match(result.stdout, /Exit codes:/);
+	assert.match(result.stdout, /mf api/);
 	assert.match(result.stdout, /mf adapters/);
 	assert.match(result.stdout, /mf init/);
 	assert.match(result.stdout, /mf check/);
@@ -284,6 +285,7 @@ test('routes command-specific help', async () => {
 test('fails unknown command options with standardized guidance', async () => {
 	const cases = [
 		['init', '--bad'],
+		['api', '--bad'],
 		['adapters', 'status', '--bad'],
 		['check', '--bad'],
 		['classify', '--bad'],

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/health.schema.json",
+  "title": "mustflow health API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "status",
+    "installed",
+    "check_ok",
+    "command_contract_ok",
+    "runnable_count",
+    "git_status",
+    "changed_file_count",
+    "latest_run_exists",
+    "blockers",
+    "warnings",
+    "recommended_next_commands"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api health" },
+    "mustflow_root": { "type": "string" },
+    "status": { "enum": ["ok", "degraded", "blocked"] },
+    "installed": { "type": "boolean" },
+    "check_ok": { "type": "boolean" },
+    "command_contract_ok": { "type": "boolean" },
+    "runnable_count": { "type": "integer", "minimum": 0 },
+    "git_status": { "enum": ["available", "unavailable"] },
+    "changed_file_count": { "type": ["integer", "null"], "minimum": 0 },
+    "latest_run_exists": { "type": "boolean" },
+    "blockers": { "$ref": "#/$defs/stringArray" },
+    "warnings": { "$ref": "#/$defs/stringArray" },
+    "recommended_next_commands": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

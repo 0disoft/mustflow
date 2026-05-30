@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/workspace-summary.schema.json",
+  "title": "mustflow workspace summary API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "installed",
+    "manifest_lock",
+    "template",
+    "check",
+    "read_order",
+    "command_surface",
+    "skill_surface",
+    "git_state",
+    "latest_run",
+    "effective_policy",
+    "state_policy",
+    "blocked_actions",
+    "recommended_read_surfaces",
+    "recommended_next_commands",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api workspace-summary" },
+    "mustflow_root": { "type": "string" },
+    "installed": { "type": "boolean" },
+    "manifest_lock": { "enum": ["missing", "invalid", "present"] },
+    "template": { "$ref": "#/$defs/templateContext" },
+    "check": { "$ref": "#/$defs/check" },
+    "read_order": { "$ref": "#/$defs/readOrder" },
+    "command_surface": { "$ref": "#/$defs/commandSurface" },
+    "skill_surface": { "$ref": "#/$defs/skillSurface" },
+    "git_state": { "$ref": "#/$defs/gitState" },
+    "latest_run": { "$ref": "#/$defs/latestRun" },
+    "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
+    "state_policy": { "$ref": "#/$defs/statePolicy" },
+    "blocked_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "recommended_read_surfaces": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "recommended_next_commands": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "templateContext": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version"],
+          "properties": {
+            "id": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "issue_count", "warning_count", "issues", "warnings"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "issue_count": { "type": "integer", "minimum": 0 },
+        "warning_count": { "type": "integer", "minimum": 0 },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "readOrder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "optional", "missing_required", "missing_optional"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "optional": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missing_required": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missing_optional": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "commandSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "exists",
+        "total_intents",
+        "runnable_intents",
+        "runnable_count",
+        "non_runnable_count"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "total_intents": { "type": "integer", "minimum": 0 },
+        "runnable_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "runnable_count": { "type": "integer", "minimum": 0 },
+        "non_runnable_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "skillSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index_path", "index_exists", "routes_path", "routes_exists"],
+      "properties": {
+        "index_path": { "const": ".mustflow/skills/INDEX.md" },
+        "index_exists": { "type": "boolean" },
+        "routes_path": { "const": ".mustflow/skills/routes.toml" },
+        "routes_exists": { "type": "boolean" }
+      }
+    },
+    "gitState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "changed_file_count", "changed_files", "error"],
+          "properties": {
+            "status": { "const": "available" },
+            "changed_file_count": { "type": "integer", "minimum": 0 },
+            "changed_files": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "error": { "type": "null" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "changed_file_count", "changed_files", "error"],
+          "properties": {
+            "status": { "const": "unavailable" },
+            "changed_file_count": { "type": "null" },
+            "changed_files": {
+              "type": "array",
+              "maxItems": 0
+            },
+            "error": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "effectivePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entrypoint",
+        "nearest_agents",
+        "command_contract",
+        "project_commands_require_mf_run",
+        "allow_inferred_commands",
+        "auto_stage",
+        "auto_commit",
+        "auto_push",
+        "state_is_versioned",
+        "raw_logs_allowed"
+      ],
+      "properties": {
+        "entrypoint": { "type": "string" },
+        "nearest_agents": { "type": "string" },
+        "command_contract": { "type": "string" },
+        "project_commands_require_mf_run": { "type": "boolean" },
+        "allow_inferred_commands": { "type": "boolean" },
+        "auto_stage": { "type": "boolean" },
+        "auto_commit": { "type": "boolean" },
+        "auto_push": { "type": "boolean" },
+        "state_is_versioned": { "type": "boolean" },
+        "raw_logs_allowed": { "type": "boolean" }
+      }
+    },
+    "statePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cache_path",
+        "state_path",
+        "versioned",
+        "safe_to_delete",
+        "stores_raw_conversation",
+        "stores_full_terminal_output",
+        "stores_hidden_chain_of_thought"
+      ],
+      "properties": {
+        "cache_path": { "type": "string" },
+        "state_path": { "type": "string" },
+        "versioned": { "type": "boolean" },
+        "safe_to_delete": { "type": "boolean" },
+        "stores_raw_conversation": { "type": "boolean" },
+        "stores_full_terminal_output": { "type": "boolean" },
+        "stores_hidden_chain_of_thought": { "type": "boolean" }
+      }
+    },
+    "latestRun": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "exists"],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "const": false }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "exists", "valid", "error"],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "const": true },
+            "valid": { "const": false },
+            "error": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "exists",
+            "valid",
+            "intent",
+            "status",
+            "timed_out",
+            "exit_code",
+            "finished_at",
+            "duration_ms"
+          ],
+          "properties": {
+            "path": { "type": "string" },
+            "exists": { "const": true },
+            "valid": { "const": true },
+            "intent": { "type": "string" },
+            "status": { "type": "string" },
+            "timed_out": { "type": "boolean" },
+            "exit_code": { "type": ["integer", "null"] },
+            "finished_at": { "type": ["string", "null"] },
+            "duration_ms": { "type": ["integer", "null"] }
+          }
+        }
+      ]
+    }
+  }
+}
