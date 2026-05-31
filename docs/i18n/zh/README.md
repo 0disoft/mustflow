@@ -203,7 +203,7 @@ mf run mustflow_update_apply
 | `mf api command-catalog --json` | 输出命令 intent 可用性和安全的 `mf run` 入口，不暴露原始命令字符串。 |
 | `mf api verification-plan --changed --json` | 为已变更文件输出稳定的只读 verification plan，不执行命令。 |
 | `mf api latest-evidence --json` | 输出 bounded 最新 run 或 verify evidence，不包含原始命令输出。 |
-| `mf api diff-risk --changed --json` | 输出已变更文件的紧凑 risk 和 verification 摘要。 |
+| `mf api diff-risk --changed --json` | 输出已变更文件的紧凑 risk、verification 摘要和只读 residual correction 信号。 |
 | `mf api health --json` | 为快速 agent gate 输出紧凑 workspace health 报告。 |
 | `mf context --json` | 以 JSON 格式输出读取顺序、命令规则、可用能力及最近运行摘要。 |
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |

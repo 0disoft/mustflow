@@ -310,9 +310,39 @@ interface ApiDiffRiskOutput {
 	readonly update_policies: readonly string[];
 	readonly drift_checks: readonly string[];
 	readonly required_verification: readonly string[];
+	readonly residual_corrections: ApiResidualCorrections;
 	readonly gap_count: number;
 	readonly gaps: readonly ApiVerificationPlanGap[];
 	readonly recommended_commands: readonly string[];
+	readonly issues: readonly string[];
+}
+
+interface ApiResidualCorrectionSignal {
+	readonly kind: 'latest_unresolved_plan' | 'repeated_failure' | 'remaining_risk';
+	readonly confidence: 'low' | 'medium' | 'high';
+	readonly evidence_count: number;
+	readonly source: 'latest-evidence';
+	readonly verification_plan_id: string | null;
+	readonly affected_reasons: readonly string[];
+	readonly affected_intents: readonly string[];
+	readonly detail: string;
+	readonly recommendation: 'provide_new_evidence' | 'review_remaining_risk';
+}
+
+interface ApiResidualCorrections {
+	readonly status: 'not_enough_evidence' | 'available' | 'unavailable';
+	readonly mode: 'read_only';
+	readonly grants_command_authority: false;
+	readonly applies_to_current_plan: boolean;
+	readonly selected_intent_additions: readonly string[];
+	readonly suggested_intent_additions: readonly string[];
+	readonly recommended_commands: readonly string[];
+	readonly signals: readonly ApiResidualCorrectionSignal[];
+	readonly policy: {
+		readonly single_observation_changes_plan: false;
+		readonly minimum_repeated_samples_for_plan_change: 2;
+		readonly automatic_intent_additions_enabled: false;
+	};
 	readonly issues: readonly string[];
 }
 
@@ -1044,6 +1074,175 @@ function getRiskLevel(classification: ClassifyOutput | null, report: ChangeVerif
 	return 'low';
 }
 
+function uniqueSortedStrings(values: readonly unknown[]): readonly string[] {
+	return [...new Set(values.filter((value): value is string => typeof value === 'string' && value.length > 0))]
+		.sort((left, right) => left.localeCompare(right));
+}
+
+function readEvidenceRequirements(parsed: unknown): readonly Record<string, unknown>[] {
+	if (!isRecord(parsed) || !isRecord(parsed.evidence_model) || !Array.isArray(parsed.evidence_model.requirements)) {
+		return [];
+	}
+
+	return parsed.evidence_model.requirements.filter(isRecord);
+}
+
+function readEvidenceRemainingRisks(parsed: unknown): readonly Record<string, unknown>[] {
+	if (!isRecord(parsed) || !isRecord(parsed.evidence_model) || !Array.isArray(parsed.evidence_model.remaining_risks)) {
+		return [];
+	}
+
+	return parsed.evidence_model.remaining_risks.filter(isRecord);
+}
+
+function readEvidenceReceipts(parsed: unknown): readonly Record<string, unknown>[] {
+	if (!isRecord(parsed) || !isRecord(parsed.evidence_model) || !Array.isArray(parsed.evidence_model.receipts)) {
+		return [];
+	}
+
+	return parsed.evidence_model.receipts.filter(isRecord);
+}
+
+function affectedReasonsFromLatest(parsed: unknown): readonly string[] {
+	return uniqueSortedStrings(readEvidenceRequirements(parsed).map((requirement) => readString(requirement, 'reason')));
+}
+
+function affectedIntentsFromLatest(parsed: unknown): readonly string[] {
+	const requirementIntents = readEvidenceRequirements(parsed).flatMap((requirement) => [
+		...(Array.isArray(requirement.selected_intents) ? requirement.selected_intents : []),
+		...(Array.isArray(requirement.skipped_intents) ? requirement.skipped_intents : []),
+	]);
+	const receiptIntents = readEvidenceReceipts(parsed).map((receipt) => readString(receipt, 'intent'));
+
+	return uniqueSortedStrings([...requirementIntents, ...receiptIntents]);
+}
+
+function repeatedFailureConfidence(seenCount: number, requiresNewEvidence: boolean): ApiResidualCorrectionSignal['confidence'] {
+	if (requiresNewEvidence || seenCount >= 3) {
+		return 'high';
+	}
+
+	return seenCount >= 2 ? 'medium' : 'low';
+}
+
+function createResidualPolicy(): ApiResidualCorrections['policy'] {
+	return {
+		single_observation_changes_plan: false,
+		minimum_repeated_samples_for_plan_change: 2,
+		automatic_intent_additions_enabled: false,
+	};
+}
+
+function createEmptyResidualCorrections(
+	status: ApiResidualCorrections['status'],
+	issues: readonly string[] = [],
+): ApiResidualCorrections {
+	return {
+		status,
+		mode: 'read_only',
+		grants_command_authority: false,
+		applies_to_current_plan: false,
+		selected_intent_additions: [],
+		suggested_intent_additions: [],
+		recommended_commands: [],
+		signals: [],
+		policy: createResidualPolicy(),
+		issues,
+	};
+}
+
+function createResidualCorrections(projectRoot: string, verificationPlanId: string | null): ApiResidualCorrections {
+	if (!verificationPlanId) {
+		return createEmptyResidualCorrections('not_enough_evidence');
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = readJsonInsideRoot(projectRoot, LATEST_RUN_RELATIVE_PATH);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return message.includes('ENOENT') ? createEmptyResidualCorrections('not_enough_evidence') : createEmptyResidualCorrections('unavailable', [message]);
+	}
+
+	if (!isRecord(parsed) || parsed.command !== 'verify' || parsed.kind !== 'verify_run_summary') {
+		return createEmptyResidualCorrections('not_enough_evidence');
+	}
+
+	const latestPlanId = readString(parsed, 'verification_plan_id') ?? null;
+	const appliesToCurrentPlan = latestPlanId === verificationPlanId;
+	const affectedReasons = affectedReasonsFromLatest(parsed);
+	const affectedIntents = affectedIntentsFromLatest(parsed);
+	const completionVerdict = isRecord(parsed.completion_verdict) ? parsed.completion_verdict : null;
+	const completionStatus = completionVerdict ? readString(completionVerdict, 'status') : null;
+	const signals: ApiResidualCorrectionSignal[] = [];
+
+	if (appliesToCurrentPlan && completionStatus && completionStatus !== 'verified') {
+		signals.push({
+			kind: 'latest_unresolved_plan',
+			confidence: 'low',
+			evidence_count: 1,
+			source: 'latest-evidence',
+			verification_plan_id: latestPlanId,
+			affected_reasons: affectedReasons,
+			affected_intents: affectedIntents,
+			detail: `Latest verify evidence for this plan ended with completion verdict ${completionStatus}; do not treat the base plan as complete without new evidence.`,
+			recommendation: 'provide_new_evidence',
+		});
+	}
+
+	const repeatedFailure = isRecord(parsed.repeated_failure_summary) ? parsed.repeated_failure_summary : null;
+	if (appliesToCurrentPlan && repeatedFailure) {
+		const seenCount = typeof repeatedFailure.seen_count === 'number' && Number.isFinite(repeatedFailure.seen_count)
+			? Math.max(1, Math.floor(repeatedFailure.seen_count))
+			: 1;
+		const requiresNewEvidence = repeatedFailure.requires_new_evidence === true;
+
+		if (seenCount >= 2 || requiresNewEvidence) {
+			signals.push({
+				kind: 'repeated_failure',
+				confidence: repeatedFailureConfidence(seenCount, requiresNewEvidence),
+				evidence_count: seenCount,
+				source: 'latest-evidence',
+				verification_plan_id: latestPlanId,
+				affected_reasons: affectedReasons,
+				affected_intents: affectedIntents,
+				detail: 'Latest evidence reports repeated unresolved verification for this plan; collect new evidence or narrow the hypothesis before claiming completion.',
+				recommendation: 'provide_new_evidence',
+			});
+		}
+	}
+
+	if (appliesToCurrentPlan) {
+		for (const risk of readEvidenceRemainingRisks(parsed).slice(0, 5)) {
+			const detail = readString(risk, 'detail') ?? readString(risk, 'code') ?? 'Latest verify evidence has a remaining risk.';
+			signals.push({
+				kind: 'remaining_risk',
+				confidence: 'low',
+				evidence_count: 1,
+				source: 'latest-evidence',
+				verification_plan_id: latestPlanId,
+				affected_reasons: affectedReasons,
+				affected_intents: affectedIntents,
+				detail,
+				recommendation: 'review_remaining_risk',
+			});
+		}
+	}
+
+	return {
+		status: signals.length > 0 ? 'available' : 'not_enough_evidence',
+		mode: 'read_only',
+		grants_command_authority: false,
+		applies_to_current_plan: appliesToCurrentPlan,
+		selected_intent_additions: [],
+		suggested_intent_additions: [],
+		recommended_commands: signals.length > 0 ? ['mf api latest-evidence --json'] : [],
+		signals,
+		policy: createResidualPolicy(),
+		issues: [],
+	};
+}
+
 function createDiffRiskOutput(): ApiDiffRiskOutput {
 	const mustflowRoot = resolveMustflowRoot();
 	let classification: ClassifyOutput | null = null;
@@ -1066,6 +1265,7 @@ function createDiffRiskOutput(): ApiDiffRiskOutput {
 			update_policies: [],
 			drift_checks: [],
 			required_verification: [],
+			residual_corrections: createResidualCorrections(mustflowRoot, null),
 			gap_count: 0,
 			gaps: [],
 			recommended_commands: [],
@@ -1073,15 +1273,25 @@ function createDiffRiskOutput(): ApiDiffRiskOutput {
 		};
 	}
 
-	let report: ChangeVerificationReport | null = null;
 	const issues: string[] = [];
+	let contract: CommandContract | null = null;
 	try {
-		report = createChangeVerificationReport(classification, readCommandContract(mustflowRoot), mustflowRoot);
+		contract = readCommandContract(mustflowRoot);
 	} catch (error) {
 		issues.push(error instanceof Error ? error.message : String(error));
 	}
 
+	let report: ChangeVerificationReport | null = null;
+	if (contract) {
+		try {
+			report = createChangeVerificationReport(classification, contract, mustflowRoot);
+		} catch (error) {
+			issues.push(error instanceof Error ? error.message : String(error));
+		}
+	}
+
 	const requiredVerification = report ? report.schedule.entries.map((entry) => entry.intent) : [];
+	const verificationPlanId = report && contract ? createVerificationPlanId(report, contract) : null;
 
 	return {
 		schema_version: API_DIFF_RISK_SCHEMA_VERSION,
@@ -1097,6 +1307,7 @@ function createDiffRiskOutput(): ApiDiffRiskOutput {
 		update_policies: classification.summary.updatePolicies,
 		drift_checks: classification.summary.driftChecks,
 		required_verification: requiredVerification,
+		residual_corrections: createResidualCorrections(mustflowRoot, verificationPlanId),
 		gap_count: report?.gaps.length ?? 0,
 		gaps: report?.gaps.map((gap) => ({
 			reason: gap.reason,

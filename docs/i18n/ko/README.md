@@ -201,7 +201,7 @@ mf run mustflow_update_apply
 | `mf api command-catalog --json` | 원본 실행 문자열을 노출하지 않고 command intent 가능 여부와 안전한 `mf run` 진입점을 출력합니다. |
 | `mf api verification-plan --changed --json` | 명령을 실행하지 않고 변경 파일에 대한 안정적인 읽기 전용 verification plan을 출력합니다. |
 | `mf api latest-evidence --json` | 원본 명령 출력 없이 bounded 최신 run 또는 verify evidence를 출력합니다. |
-| `mf api diff-risk --changed --json` | 변경 파일 risk와 verification 요약을 작게 출력합니다. |
+| `mf api diff-risk --changed --json` | 변경 파일 risk, verification 요약, 읽기 전용 residual correction 신호를 작게 출력합니다. |
 | `mf api health --json` | 빠른 agent gate용 workspace health 보고서를 작게 출력합니다. |
 | `mf context --json` | 읽기 순서, 명령 규칙, 제공 기능, 최근 실행 요약을 JSON으로 출력합니다. |
 | `mf map --stdout` | 현재 mustflow 루트의 탐색 지도를 터미널에 출력합니다. |

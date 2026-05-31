@@ -845,6 +845,22 @@
         "required_verification": [
           "docs_validate_fast"
         ],
+        "residual_corrections": {
+          "status": "not_enough_evidence",
+          "mode": "read_only",
+          "grants_command_authority": false,
+          "applies_to_current_plan": false,
+          "selected_intent_additions": [],
+          "suggested_intent_additions": [],
+          "recommended_commands": [],
+          "signals": [],
+          "policy": {
+            "single_observation_changes_plan": false,
+            "minimum_repeated_samples_for_plan_change": 2,
+            "automatic_intent_additions_enabled": false
+          },
+          "issues": []
+        },
         "gap_count": 0,
         "gaps": [],
         "recommended_commands": [

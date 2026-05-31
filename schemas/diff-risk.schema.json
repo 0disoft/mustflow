@@ -37,6 +37,7 @@
     "update_policies": { "$ref": "#/$defs/stringArray" },
     "drift_checks": { "$ref": "#/$defs/stringArray" },
     "required_verification": { "$ref": "#/$defs/stringArray" },
+    "residual_corrections": { "$ref": "#/$defs/residualCorrections" },
     "gap_count": { "type": "integer", "minimum": 0 },
     "gaps": {
       "type": "array",
@@ -68,6 +69,80 @@
         "files": { "$ref": "#/$defs/stringArray" },
         "surfaces": { "$ref": "#/$defs/stringArray" },
         "detail": { "type": "string" }
+      }
+    },
+    "residualCorrections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "mode",
+        "grants_command_authority",
+        "applies_to_current_plan",
+        "selected_intent_additions",
+        "suggested_intent_additions",
+        "recommended_commands",
+        "signals",
+        "policy",
+        "issues"
+      ],
+      "properties": {
+        "status": { "enum": ["not_enough_evidence", "available", "unavailable"] },
+        "mode": { "const": "read_only" },
+        "grants_command_authority": { "const": false },
+        "applies_to_current_plan": { "type": "boolean" },
+        "selected_intent_additions": { "$ref": "#/$defs/stringArray" },
+        "suggested_intent_additions": { "$ref": "#/$defs/stringArray" },
+        "recommended_commands": { "$ref": "#/$defs/stringArray" },
+        "signals": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/residualSignal" }
+        },
+        "policy": { "$ref": "#/$defs/residualPolicy" },
+        "issues": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "residualPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "single_observation_changes_plan",
+        "minimum_repeated_samples_for_plan_change",
+        "automatic_intent_additions_enabled"
+      ],
+      "properties": {
+        "single_observation_changes_plan": { "const": false },
+        "minimum_repeated_samples_for_plan_change": { "const": 2 },
+        "automatic_intent_additions_enabled": { "const": false }
+      }
+    },
+    "residualSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "confidence",
+        "evidence_count",
+        "source",
+        "verification_plan_id",
+        "affected_reasons",
+        "affected_intents",
+        "detail",
+        "recommendation"
+      ],
+      "properties": {
+        "kind": { "enum": ["latest_unresolved_plan", "repeated_failure", "remaining_risk"] },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "evidence_count": { "type": "integer", "minimum": 1 },
+        "source": { "const": "latest-evidence" },
+        "verification_plan_id": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "affected_reasons": { "$ref": "#/$defs/stringArray" },
+        "affected_intents": { "$ref": "#/$defs/stringArray" },
+        "detail": { "type": "string" },
+        "recommendation": { "enum": ["provide_new_evidence", "review_remaining_risk"] }
       }
     }
   }

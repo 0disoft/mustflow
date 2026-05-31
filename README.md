@@ -253,7 +253,7 @@ mf run mustflow_update_apply
 | `mf api command-catalog --json` | Print command intent availability and safe `mf run` entrypoints without exposing raw command strings. |
 | `mf api verification-plan --changed --json` | Print a stable, read-only verification plan for changed files without executing commands. |
 | `mf api latest-evidence --json` | Print bounded latest run or verify evidence without raw command output. |
-| `mf api diff-risk --changed --json` | Print a compact changed-file risk and verification summary. |
+| `mf api diff-risk --changed --json` | Print a compact changed-file risk, verification summary, and read-only residual correction signals. |
 | `mf api health --json` | Print a compact workspace health report for quick agent gating. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |

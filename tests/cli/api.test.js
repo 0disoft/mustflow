@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
@@ -267,12 +267,98 @@ test('prints a compact diff risk api report', () => {
 			assert.ok(output.changed_files.includes('diff-risk-probe.js'));
 			assert.ok(output.changed_file_count > 0);
 			assert.ok(Array.isArray(output.required_verification));
+			assert.equal(output.residual_corrections.mode, 'read_only');
+			assert.equal(output.residual_corrections.grants_command_authority, false);
+			assert.deepEqual(output.residual_corrections.selected_intent_additions, []);
+			assert.deepEqual(output.residual_corrections.suggested_intent_additions, []);
 			assert.ok(output.recommended_commands.includes('mf api verification-plan --changed --json'));
 		} else {
 			assert.equal(output.status, 'unavailable');
 			assert.equal(output.risk_level, 'unknown');
 			assert.ok(output.issues.length > 0);
 		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('api diff-risk reports residual corrections from unresolved latest evidence', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const hasGitBaseline = commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'diff-risk-residual-probe.js'), 'console.log("changed");\n');
+
+		if (!hasGitBaseline) {
+			return;
+		}
+
+		const planResult = runCli(projectPath, ['api', 'verification-plan', '--changed', '--json']);
+		const planOutput = JSON.parse(planResult.stdout);
+		assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+		assert.match(planOutput.verification_plan_id, /^sha256:[0-9a-f]{64}$/u);
+
+		const latestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
+		mkdirSync(path.dirname(latestPath), { recursive: true });
+		writeFileSync(
+			latestPath,
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					command: 'verify',
+					kind: 'verify_run_summary',
+					verification_plan_id: planOutput.verification_plan_id,
+					status: 'failed',
+					completion_verdict: {
+						status: 'blocked',
+					},
+					evidence_model: {
+						requirements: [
+							{
+								reason: 'unknown_change',
+								selected_intents: ['test_fast'],
+								skipped_intents: [],
+							},
+						],
+						receipts: [
+							{
+								intent: 'test_fast',
+							},
+						],
+						remaining_risks: [
+							{
+								code: 'repeated_failure_requires_new_evidence',
+								severity: 'high',
+								detail: 'Need new evidence before another completion claim.',
+							},
+						],
+					},
+					repeated_failure_summary: {
+						seen_count: 2,
+						requires_new_evidence: true,
+					},
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const result = runCli(projectPath, ['api', 'diff-risk', '--changed', '--json']);
+		const output = JSON.parse(result.stdout);
+		const signalKinds = output.residual_corrections.signals.map((signal) => signal.kind);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.residual_corrections.status, 'available');
+		assert.equal(output.residual_corrections.applies_to_current_plan, true);
+		assert.equal(output.residual_corrections.grants_command_authority, false);
+		assert.deepEqual(output.residual_corrections.selected_intent_additions, []);
+		assert.deepEqual(output.residual_corrections.suggested_intent_additions, []);
+		assert.ok(output.residual_corrections.recommended_commands.includes('mf api latest-evidence --json'));
+		assert.ok(signalKinds.includes('latest_unresolved_plan'));
+		assert.ok(signalKinds.includes('repeated_failure'));
+		assert.ok(signalKinds.includes('remaining_risk'));
+		assert.ok(output.residual_corrections.signals.some((signal) => signal.confidence === 'high'));
 	} finally {
 		removeTempProject(projectPath);
 	}
