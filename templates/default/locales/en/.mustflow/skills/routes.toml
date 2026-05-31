@@ -228,6 +228,12 @@ route_type = "adjunct"
 priority = 45
 applies_to_reasons = ["code_change", "docs_change", "security_change"]
 
+[routes."version-freshness-check"]
+category = "data_external"
+route_type = "adjunct"
+priority = 68
+applies_to_reasons = ["code_change", "docs_change", "package_metadata_change", "mustflow_config_change", "release_risk"]
+
 [routes."file-path-cross-platform-change"]
 category = "data_external"
 route_type = "primary"

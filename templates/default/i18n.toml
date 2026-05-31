@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 81
+revision = 82
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -133,6 +133,12 @@ translations = {}
 
 [documents."skill.dependency-upgrade-review"]
 source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.version-freshness-check"]
+source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

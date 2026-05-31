@@ -18,6 +18,7 @@ This file applies to the mustflow repository itself. It is not installed into us
 - The `release-notes-authoring` profile skill so OSS and library projects can draft public notes from verified local evidence without inventing release history.
 - The `vertical-slice-tdd` default skill so explicit TDD requests stay in small observable RED/GREEN behavior slices without forcing test-first work on every task.
 - The `source-freshness-check` skill now covers external research intake so outside methodology notes are split into evidence, recommendations, executable instructions, and repository-native adoption targets.
+- The `version-freshness-check` default skill so agents verify external version references against repository policy and approved upstream evidence before writing stale framework, runtime, CI action, Docker, package, or scaffold defaults.
 - The `external-skill-intake` skill now defers web-testing and session-handoff proposals unless they fit configured one-shot verification or restricted ledger boundaries.
 - The `date-number-audit` skill now classifies release version impact from explicit public-contract tags before choosing `major`, `minor`, `patch`, or `no_release`.
 - The `test-design-guard` default skill so agents classify RED evidence, choose evidence-backed test shapes, and avoid speculative or mock-only test coverage.

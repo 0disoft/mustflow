@@ -77,7 +77,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.22.49');
+	assert.equal(packageJson.version, '2.23.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -275,6 +275,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-migration-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-upgrade-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('version-freshness-check'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('file-path-cross-platform-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('source-anchor-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
@@ -292,6 +293,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('config-env-change'),
 			`${profileName} should include config-env-change`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('version-freshness-check'),
+			`${profileName} should include version-freshness-check`,
 		);
 	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
