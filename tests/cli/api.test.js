@@ -388,3 +388,59 @@ test('prints a compact health api report', () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('prints active run locks api report', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const lockPath = path.join(projectPath, '.mustflow', 'state', 'locks', 'active', 'manual-lock.json');
+		mkdirSync(path.dirname(lockPath), { recursive: true });
+		writeFileSync(
+			lockPath,
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					kind: 'active_run_lock',
+					run_id: 'manual-active-lock',
+					intent: 'test_fast',
+					pid: process.pid,
+					started_at: new Date().toISOString(),
+					root_hash: 'test-root-hash',
+					command_hash: null,
+					effects: [
+						{
+							source: 'writes',
+							access: 'write',
+							mode: 'write',
+							path: 'dist',
+							lock: 'path:dist',
+							concurrency: 'exclusive',
+						},
+					],
+					writes: ['dist'],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const result = runCli(projectPath, ['api', 'locks', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
+		assert.equal(output.schema_version, '1');
+		assert.equal(output.command, 'api locks');
+		assert.equal(output.status, 'active');
+		assert.equal(output.active_count, 1);
+		assert.equal(output.stale_count, 0);
+		assert.equal(output.active_locks[0].intent, 'test_fast');
+		assert.equal(output.active_locks[0].effects[0].lock, 'path:dist');
+		assert.equal(output.policy.wait_entrypoint, 'mf run <intent> --wait');
+		assert.equal(output.policy.direct_commands_bypass_locks, true);
+		assert.ok(output.recommended_commands.includes('mf run <intent> --wait'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

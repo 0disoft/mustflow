@@ -109,8 +109,9 @@ export const frMessages = {
   "api.help.action.latestEvidence": "Affiche les dernières preuves bounded de run ou verify pour les agents",
   "api.help.action.diffRisk": "Affiche un résumé compact du risque et de la vérification des fichiers modifiés",
   "api.help.action.health": "Affiche un résumé compact de santé du workspace",
+  "api.help.action.locks": "Affiche les verrous mf run actifs pour coordonner plusieurs sessions",
   "api.help.exit.ok": "Le rapport API a été inspecté et imprimé",
-  "api.error.missingAction": "Indiquez une action api : workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk ou health",
+  "api.error.missingAction": "Indiquez une action api : workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk, health ou locks",
   "api.error.unknownAction": "Action api inconnue : {action}",
   "api.error.actionRequiresJson": "{action} exige --json",
   "api.error.actionRequiresChanged": "{action} exige actuellement --changed",
@@ -772,6 +773,8 @@ Lisez ces fichiers avant de travailler :
   "run.help.option.dryRun": "Imprime un plan de commande sans l'exécuter",
   "run.help.option.planOnly": "Alias de --dry-run",
   "run.help.option.json": "Imprime l'enregistrement d'exécution ou le plan de commande en JSON",
+  "run.help.option.wait": "Attend les verrous actifs en conflit avant d'exécuter",
+  "run.help.option.waitTimeout": "Nombre maximal de secondes d'attente des verrous actifs. Par défaut : 300",
   "run.help.option.allowUntrustedRoot":
     "Autorise une seule exécution depuis une racine sans verrou de manifeste valide après revue manuelle",
   "run.help.exit.ok": "La commande s'est terminée avec un code de sortie autorisé",
@@ -780,6 +783,8 @@ Lisez ces fichiers avant de travailler :
   "run.progress.started": "Exécution de {intent} (timeout : {seconds}s)...",
   "run.progress.timeoutWarning":
     "{intent} est toujours en cours... ({seconds}s écoulées, {percent}% du timeout)",
+  "run.progress.waitingForActiveLock":
+    "Attente avant d'exécuter {intent} ; l'intention active {activeIntent} détient un verrou en conflit (timeout : {seconds}s)",
   "run.error.missingIntent": "Nom de commande manquant",
   "run.error.unknownIntent": "Commande inconnue : {intent}",
   "run.error.statusNotConfigured":
@@ -819,6 +824,8 @@ Lisez ces fichiers avant de travailler :
     "La limite de sortie doit rester dans le maximum autorisé.",
   "run.error.conflictingPreviewModes":
     "Utilisez --dry-run ou --plan-only, pas les deux",
+  "run.error.invalidWaitTimeout": "--wait-timeout doit être un entier positif",
+  "run.error.waitRequiresExecution": "--wait ne peut être utilisé que lors de l'exécution d'une commande, pas avec --dry-run ou --plan-only",
   "run.error.untrustedRootMissing":
     "Exécution refusée car {path} est absent. Lancez mf init/update pour installer le workflow, ou ajoutez --allow-untrusted-root après avoir relu AGENTS.md et .mustflow/config/commands.toml.",
   "run.error.untrustedRootInvalid":

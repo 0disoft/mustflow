@@ -203,10 +203,12 @@ mf run mustflow_update_apply
 | `mf api latest-evidence --json` | 원본 명령 출력 없이 bounded 최신 run 또는 verify evidence를 출력합니다. |
 | `mf api diff-risk --changed --json` | 변경 파일 risk, verification 요약, 읽기 전용 residual correction 신호를 작게 출력합니다. |
 | `mf api health --json` | 빠른 agent gate용 workspace health 보고서를 작게 출력합니다. |
+| `mf api locks --json` | 여러 세션 조율용 활성 `mf run` 잠금을 출력합니다. |
 | `mf context --json` | 읽기 순서, 명령 규칙, 제공 기능, 최근 실행 요약을 JSON으로 출력합니다. |
 | `mf map --stdout` | 현재 mustflow 루트의 탐색 지도를 터미널에 출력합니다. |
 | `mf map --write` | `REPO_MAP.md`를 생성하거나 갱신합니다. |
 | `mf run <intent>` | 허용된 일회성 명령을 실행합니다. |
+| `mf run <intent> --wait` | 충돌하는 활성 실행 잠금이 풀릴 때까지 기다린 뒤 명령을 실행합니다. |
 | `mf index` | mustflow 문서와 명령 규칙을 SQLite 색인으로 만듭니다. |
 | `mf search <query>` | SQLite 색인에서 문서, 스킬, 명령 규칙을 검색합니다. |
 | `mf status` | 설치 상태와 변경/누락 파일을 확인합니다. |

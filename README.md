@@ -255,6 +255,7 @@ mf run mustflow_update_apply
 | `mf api latest-evidence --json` | Print bounded latest run or verify evidence without raw command output. |
 | `mf api diff-risk --changed --json` | Print a compact changed-file risk, verification summary, and read-only residual correction signals. |
 | `mf api health --json` | Print a compact workspace health report for quick agent gating. |
+| `mf api locks --json` | Print active `mf run` locks for multi-session coordination. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
 | `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
@@ -264,6 +265,7 @@ mf run mustflow_update_apply
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf run <intent>` | Run an allowed one-shot command. |
+| `mf run <intent> --wait` | Wait for conflicting active run locks before executing the command. |
 | `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |
 | `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |
 | `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |

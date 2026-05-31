@@ -205,10 +205,12 @@ mf run mustflow_update_apply
 | `mf api latest-evidence --json` | 输出 bounded 最新 run 或 verify evidence，不包含原始命令输出。 |
 | `mf api diff-risk --changed --json` | 输出已变更文件的紧凑 risk、verification 摘要和只读 residual correction 信号。 |
 | `mf api health --json` | 为快速 agent gate 输出紧凑 workspace health 报告。 |
+| `mf api locks --json` | 输出用于多会话协调的活动 `mf run` 锁。 |
 | `mf context --json` | 以 JSON 格式输出读取顺序、命令规则、可用能力及最近运行摘要。 |
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |
 | `mf map --write` | 创建或更新 `REPO_MAP.md`。 |
 | `mf run <intent>` | 运行允许的一次性命令。 |
+| `mf run <intent> --wait` | 执行命令前等待冲突的活动运行锁释放。 |
 | `mf index` | 为 mustflow 文档和命令规则构建 SQLite 索引。 |
 | `mf search <query>` | 在 SQLite 索引中搜索文档、技能和命令规则。 |
 | `mf status` | 检查安装状态及已更改或缺失的文件。 |

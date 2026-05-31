@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/locks.schema.json",
+  "title": "mustflow active locks API report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "status",
+    "lock_root",
+    "active_count",
+    "stale_count",
+    "active_locks",
+    "stale_locks",
+    "policy",
+    "recommended_commands",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api locks" },
+    "mustflow_root": { "type": "string" },
+    "status": { "enum": ["clear", "active", "stale", "unavailable"] },
+    "lock_root": { "const": ".mustflow/state/locks" },
+    "active_count": { "type": "integer", "minimum": 0 },
+    "stale_count": { "type": "integer", "minimum": 0 },
+    "active_locks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/activeLock" }
+    },
+    "stale_locks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/staleLock" }
+    },
+    "policy": { "$ref": "#/$defs/policy" },
+    "recommended_commands": { "$ref": "#/$defs/stringArray" },
+    "issues": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "activeLock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "intent", "pid", "started_at", "command_hash", "effects", "writes"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "intent": { "type": "string" },
+        "pid": { "type": "integer" },
+        "started_at": { "type": "string" },
+        "command_hash": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "writes": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "access", "mode", "path", "lock", "concurrency"],
+      "properties": {
+        "source": { "type": "string" },
+        "access": { "type": "string" },
+        "mode": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "lock": { "type": "string" },
+        "concurrency": { "type": "string" }
+      }
+    },
+    "staleLock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "intent", "pid", "reason"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "intent": { "type": "string" },
+        "pid": { "type": "integer" },
+        "reason": { "type": "string" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "conflict_model", "direct_commands_bypass_locks", "wait_entrypoint"],
+      "properties": {
+        "source": { "const": "active-run-locks" },
+        "conflict_model": { "const": "command_effects_and_writes" },
+        "direct_commands_bypass_locks": { "const": true },
+        "wait_entrypoint": { "const": "mf run <intent> --wait" }
+      }
+    }
+  }
+}

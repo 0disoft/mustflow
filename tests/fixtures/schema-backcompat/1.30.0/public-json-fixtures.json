@@ -895,6 +895,30 @@
       }
     },
     {
+      "id": "locks",
+      "schema_file": "locks.schema.json",
+      "producer": "mf api locks --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "api locks",
+        "mustflow_root": "C:/repo",
+        "status": "clear",
+        "lock_root": ".mustflow/state/locks",
+        "active_count": 0,
+        "stale_count": 0,
+        "active_locks": [],
+        "stale_locks": [],
+        "policy": {
+          "source": "active-run-locks",
+          "conflict_model": "command_effects_and_writes",
+          "direct_commands_bypass_locks": true,
+          "wait_entrypoint": "mf run <intent> --wait"
+        },
+        "recommended_commands": [],
+        "issues": []
+      }
+    },
+    {
       "id": "contract-lint-report",
       "schema_file": "contract-lint-report.schema.json",
       "producer": "mf contract-lint --json",

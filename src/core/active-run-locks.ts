@@ -72,6 +72,12 @@ export interface ActiveRunLockInspection {
 	readonly staleRecords: readonly ActiveRunLockStaleRecord[];
 }
 
+export interface ActiveRunLockState {
+	readonly records: readonly ActiveRunLockRecord[];
+	readonly activeRecords: readonly ActiveRunLockRecord[];
+	readonly staleRecords: readonly ActiveRunLockStaleRecord[];
+}
+
 export interface ActiveRunLockHandle {
 	readonly record: ActiveRunLockRecord;
 	readonly recoveredStaleRecords: readonly ActiveRunLockStaleRecord[];
@@ -387,6 +393,18 @@ export function inspectActiveRunLocks(
 
 	return {
 		conflicts: findConflicts(intentName, effects, liveRecords),
+		staleRecords,
+	};
+}
+
+export function listActiveRunLocks(projectRoot: string): ActiveRunLockState {
+	const records = readActiveRecords(projectRoot);
+	const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
+	const activeRecords = records.filter((record) => !staleRecords.some((stale) => stale.runId === record.run_id));
+
+	return {
+		records,
+		activeRecords,
 		staleRecords,
 	};
 }

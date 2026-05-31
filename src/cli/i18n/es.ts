@@ -109,8 +109,9 @@ export const esMessages = {
   "api.help.action.latestEvidence": "Imprime evidencia bounded del último run o verify para agentes",
   "api.help.action.diffRisk": "Imprime un resumen compacto de riesgo y verificación para archivos cambiados",
   "api.help.action.health": "Imprime un resumen compacto de salud del workspace",
+  "api.help.action.locks": "Imprime bloqueos mf run activos para coordinar varias sesiones",
   "api.help.exit.ok": "El informe API se inspeccionó e imprimió",
-  "api.error.missingAction": "Especifica una acción api: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk o health",
+  "api.error.missingAction": "Especifica una acción api: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk, health o locks",
   "api.error.unknownAction": "Acción api desconocida: {action}",
   "api.error.actionRequiresJson": "{action} requiere --json",
   "api.error.actionRequiresChanged": "{action} actualmente requiere --changed",
@@ -772,6 +773,8 @@ Lee estos archivos antes de trabajar:
   "run.help.option.dryRun": "Imprime un plan de comando sin ejecutarlo",
   "run.help.option.planOnly": "Alias de --dry-run",
   "run.help.option.json": "Imprime el registro de ejecución o el plan de comando como JSON",
+  "run.help.option.wait": "Espera bloqueos activos en conflicto antes de ejecutar",
+  "run.help.option.waitTimeout": "Segundos máximos para esperar bloqueos activos. Predeterminado: 300",
   "run.help.option.allowUntrustedRoot":
     "Permite una ejecución desde una raíz con bloqueo de manifiesto ausente o inválido tras revisión manual",
   "run.help.exit.ok": "El comando se completo con un codigo de salida permitido",
@@ -780,6 +783,8 @@ Lee estos archivos antes de trabajar:
   "run.progress.started": "Ejecutando {intent} (timeout: {seconds}s)...",
   "run.progress.timeoutWarning":
     "{intent} sigue ejecutándose... ({seconds}s transcurridos, {percent}% del timeout)",
+  "run.progress.waitingForActiveLock":
+    "Esperando para ejecutar {intent}; el intent activo {activeIntent} mantiene un bloqueo en conflicto (timeout: {seconds}s)",
   "run.error.missingIntent": "Falta el nombre del comando",
   "run.error.unknownIntent": "Comando desconocido: {intent}",
   "run.error.statusNotConfigured":
@@ -819,6 +824,8 @@ Lee estos archivos antes de trabajar:
     "El límite de salida debe permanecer dentro del máximo permitido.",
   "run.error.conflictingPreviewModes":
     "Usa --dry-run o --plan-only, no ambos",
+  "run.error.invalidWaitTimeout": "--wait-timeout debe ser un entero positivo",
+  "run.error.waitRequiresExecution": "--wait solo se puede usar al ejecutar un comando, no con --dry-run o --plan-only",
   "run.error.untrustedRootMissing":
     "Se rechazó ejecutar comandos porque falta {path}. Ejecuta mf init/update para instalar el flujo, o usa --allow-untrusted-root tras revisar AGENTS.md y .mustflow/config/commands.toml.",
   "run.error.untrustedRootInvalid":

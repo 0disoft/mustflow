@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
+import { listActiveRunLocks, type ActiveRunLockEffect } from '../../core/active-run-locks.js';
 import {
 	createChangeVerificationReport,
 	type ChangeVerificationReport,
@@ -33,8 +34,10 @@ const API_VERIFICATION_PLAN_SCHEMA_VERSION = '1';
 const API_LATEST_EVIDENCE_SCHEMA_VERSION = '1';
 const API_DIFF_RISK_SCHEMA_VERSION = '1';
 const API_HEALTH_SCHEMA_VERSION = '1';
+const API_LOCKS_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
+const LOCKS_RELATIVE_PATH = '.mustflow/state/locks';
 const MUSTFLOW_JSON_MAX_BYTES = 1024 * 1024;
 
 interface ApiWorkspaceSummaryCheck {
@@ -363,6 +366,43 @@ interface ApiHealthOutput {
 	readonly recommended_next_commands: readonly string[];
 }
 
+interface ApiLocksOutput {
+	readonly schema_version: string;
+	readonly command: 'api locks';
+	readonly mustflow_root: string;
+	readonly status: 'clear' | 'active' | 'stale' | 'unavailable';
+	readonly lock_root: typeof LOCKS_RELATIVE_PATH;
+	readonly active_count: number;
+	readonly stale_count: number;
+	readonly active_locks: readonly ApiLockRecord[];
+	readonly stale_locks: readonly ApiStaleLockRecord[];
+	readonly policy: {
+		readonly source: 'active-run-locks';
+		readonly conflict_model: 'command_effects_and_writes';
+		readonly direct_commands_bypass_locks: true;
+		readonly wait_entrypoint: 'mf run <intent> --wait';
+	};
+	readonly recommended_commands: readonly string[];
+	readonly issues: readonly string[];
+}
+
+interface ApiLockRecord {
+	readonly run_id: string;
+	readonly intent: string;
+	readonly pid: number;
+	readonly started_at: string;
+	readonly command_hash: string | null;
+	readonly effects: readonly ActiveRunLockEffect[];
+	readonly writes: readonly string[];
+}
+
+interface ApiStaleLockRecord {
+	readonly run_id: string;
+	readonly intent: string;
+	readonly pid: number;
+	readonly reason: string;
+}
+
 export function getApiHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
@@ -393,6 +433,10 @@ export function getApiHelp(lang: CliLang = 'en'): string {
 					label: 'health',
 					description: t(lang, 'api.help.action.health'),
 				},
+				{
+					label: 'locks',
+					description: t(lang, 'api.help.action.locks'),
+				},
 			],
 			options: [
 				{ label: '--changed', description: t(lang, 'classify.help.option.changed') },
@@ -406,6 +450,7 @@ export function getApiHelp(lang: CliLang = 'en'): string {
 				'mf api latest-evidence --json',
 				'mf api diff-risk --changed --json',
 				'mf api health --json',
+				'mf api locks --json',
 			],
 			exitCodes: [
 				{ label: '0', description: t(lang, 'api.help.exit.ok') },
@@ -1359,6 +1404,69 @@ function createHealthOutput(): ApiHealthOutput {
 	};
 }
 
+function createLocksOutput(): ApiLocksOutput {
+	const mustflowRoot = resolveMustflowRoot();
+	try {
+		const state = listActiveRunLocks(mustflowRoot);
+		const activeLocks = state.activeRecords.map((record) => ({
+			run_id: record.run_id,
+			intent: record.intent,
+			pid: record.pid,
+			started_at: record.started_at,
+			command_hash: record.command_hash,
+			effects: record.effects,
+			writes: record.writes,
+		}));
+		const staleLocks = state.staleRecords.map((record) => ({
+			run_id: record.runId,
+			intent: record.intent,
+			pid: record.pid,
+			reason: record.reason,
+		}));
+		const recommendedCommands = activeLocks.length > 0 ? ['mf api locks --json', 'mf run <intent> --wait'] : [];
+
+		return {
+			schema_version: API_LOCKS_SCHEMA_VERSION,
+			command: 'api locks',
+			mustflow_root: mustflowRoot,
+			status: activeLocks.length > 0 ? 'active' : staleLocks.length > 0 ? 'stale' : 'clear',
+			lock_root: LOCKS_RELATIVE_PATH,
+			active_count: activeLocks.length,
+			stale_count: staleLocks.length,
+			active_locks: activeLocks,
+			stale_locks: staleLocks,
+			policy: {
+				source: 'active-run-locks',
+				conflict_model: 'command_effects_and_writes',
+				direct_commands_bypass_locks: true,
+				wait_entrypoint: 'mf run <intent> --wait',
+			},
+			recommended_commands: recommendedCommands,
+			issues: [],
+		};
+	} catch (error) {
+		return {
+			schema_version: API_LOCKS_SCHEMA_VERSION,
+			command: 'api locks',
+			mustflow_root: mustflowRoot,
+			status: 'unavailable',
+			lock_root: LOCKS_RELATIVE_PATH,
+			active_count: 0,
+			stale_count: 0,
+			active_locks: [],
+			stale_locks: [],
+			policy: {
+				source: 'active-run-locks',
+				conflict_model: 'command_effects_and_writes',
+				direct_commands_bypass_locks: true,
+				wait_entrypoint: 'mf run <intent> --wait',
+			},
+			recommended_commands: [],
+			issues: [error instanceof Error ? error.message : String(error)],
+		};
+	}
+}
+
 function validateJsonOnlyAction(action: string, args: readonly string[], reporter: Reporter, lang: CliLang): boolean {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getApiHelp(lang));
@@ -1462,6 +1570,15 @@ function runHealth(args: readonly string[], reporter: Reporter, lang: CliLang): 
 	return 0;
 }
 
+function runLocks(args: readonly string[], reporter: Reporter, lang: CliLang): number {
+	if (!validateJsonOnlyAction('locks', args, reporter, lang)) {
+		return args.includes('--help') || args.includes('-h') ? 0 : 1;
+	}
+
+	reporter.stdout(JSON.stringify(createLocksOutput(), null, 2));
+	return 0;
+}
+
 export function runApi(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
 	if (args.includes('--help') || args.includes('-h')) {
 		reporter.stdout(getApiHelp(lang));
@@ -1502,6 +1619,10 @@ export function runApi(args: string[], reporter: Reporter, lang: CliLang = 'en')
 
 	if (action === 'health') {
 		return runHealth(rest, reporter, lang);
+	}
+
+	if (action === 'locks') {
+		return runLocks(rest, reporter, lang);
 	}
 
 	printUsageError(reporter, t(lang, 'api.error.unknownAction', { action }), 'mf api --help', getApiHelp(lang), lang);

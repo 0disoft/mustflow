@@ -14,6 +14,7 @@ Current schemas:
 - `latest-evidence.schema.json`: output of `mf api latest-evidence --json`
 - `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`
 - `health.schema.json`: output of `mf api health --json`
+- `locks.schema.json`: output of `mf api locks --json`
 - `run-receipt.schema.json`: output of `mf run <intent> --json` and `.mustflow/state/runs/latest.json`,
   including bounded declared-write drift metadata, a safe latest-run performance summary, and optional
   structured phase timings and selection summaries

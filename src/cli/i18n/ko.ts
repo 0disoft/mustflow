@@ -108,8 +108,9 @@ export const koMessages = {
   "api.help.action.latestEvidence": "에이전트용 bounded 최신 run 또는 verify evidence를 출력합니다",
   "api.help.action.diffRisk": "변경 파일 risk와 verification 요약을 작게 출력합니다",
   "api.help.action.health": "workspace health 요약을 작게 출력합니다",
+  "api.help.action.locks": "여러 세션 조율용 활성 mf run 잠금을 출력합니다",
   "api.help.exit.ok": "API 보고서를 확인하고 출력했습니다",
-  "api.error.missingAction": "api 작업을 지정하세요: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk 또는 health",
+  "api.error.missingAction": "api 작업을 지정하세요: workspace-summary, command-catalog, verification-plan, latest-evidence, diff-risk, health 또는 locks",
   "api.error.unknownAction": "알 수 없는 api 작업: {action}",
   "api.error.actionRequiresJson": "{action}에는 --json이 필요합니다",
   "api.error.actionRequiresChanged": "{action}은 현재 --changed가 필요합니다",
@@ -766,6 +767,8 @@ export const koMessages = {
   "run.help.option.dryRun": "실행하지 않고 명령 계획을 출력합니다",
   "run.help.option.planOnly": "--dry-run과 같은 동작입니다",
   "run.help.option.json": "실행 결과 또는 명령 계획을 JSON으로 출력합니다",
+  "run.help.option.wait": "충돌하는 활성 실행 잠금이 풀릴 때까지 기다린 뒤 실행합니다",
+  "run.help.option.waitTimeout": "활성 실행 잠금을 기다릴 최대 초입니다. 기본값: 300",
   "run.help.option.allowUntrustedRoot":
     "잠금 파일이 없거나 올바르지 않은 루트에서 수동 검토 후 이번 실행만 허용합니다",
   "run.help.exit.ok": "명령이 허용된 종료 코드로 완료되었습니다",
@@ -775,6 +778,8 @@ export const koMessages = {
   "run.progress.started": "{intent} 실행 중(timeout: {seconds}초)...",
   "run.progress.timeoutWarning":
     "{intent} 계속 실행 중... ({seconds}초 경과, timeout의 {percent}%)",
+  "run.progress.waitingForActiveLock":
+    "{intent} 실행 대기 중; 활성 intent {activeIntent}가 충돌하는 잠금을 보유 중입니다(timeout: {seconds}초)",
   "run.error.missingIntent": "명령 이름이 없습니다",
   "run.error.unknownIntent": "알 수 없는 명령: {intent}",
   "run.error.statusNotConfigured":
@@ -814,6 +819,8 @@ export const koMessages = {
     "출력 상한은 허용된 최댓값 안에 있어야 합니다.",
   "run.error.conflictingPreviewModes":
     "--dry-run과 --plan-only 중 하나만 사용하세요",
+  "run.error.invalidWaitTimeout": "--wait-timeout은 양의 정수여야 합니다",
+  "run.error.waitRequiresExecution": "--wait는 --dry-run 또는 --plan-only가 아닌 실제 명령 실행에만 사용할 수 있습니다",
   "run.error.untrustedRootMissing":
     "{path}이 없어 명령 실행을 거부했습니다. mf init/update로 워크플로우를 설치하거나, AGENTS.md와 .mustflow/config/commands.toml을 검토한 뒤 --allow-untrusted-root를 붙이세요.",
   "run.error.untrustedRootInvalid":

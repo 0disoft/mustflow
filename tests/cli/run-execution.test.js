@@ -334,6 +334,82 @@ destructive = false
 	}
 });
 
+test('waits for conflicting active locks when requested', async () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(projectPath, 'waited.txt');
+	let holder;
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.wait_holder]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Hold an exclusive lock briefly."
+argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 1200)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["shared-wait.txt"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "shared-wait.txt", lock = "wait_lock", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+
+[intents.wait_runner]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write after the holder releases the lock."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(markerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["shared-wait.txt"]
+effects = [
+  { type = "write", mode = "delete_recreate", path = "shared-wait.txt", lock = "wait_lock", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		let holderStdout = '';
+		let holderStderr = '';
+		holder = spawn(process.execPath, [cliPath, 'run', 'wait_holder'], {
+			cwd: projectPath,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+		holder.stdout.on('data', (chunk) => {
+			holderStdout += chunk.toString();
+		});
+		holder.stderr.on('data', (chunk) => {
+			holderStderr += chunk.toString();
+		});
+		await waitForOutput(() => holderStdout, /lock-ready/u);
+
+		const waited = runCli(projectPath, ['run', 'wait_runner', '--wait', '--wait-timeout', '5']);
+		assert.equal(waited.status, 0, waited.stderr || waited.stdout);
+		assert.match(waited.stderr, /Waiting to run wait_runner/u);
+		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');
+
+		const holderResult = await waitForClose(holder);
+		holder = undefined;
+		assert.equal(holderResult.status, 0, holderStderr);
+	} finally {
+		if (holder?.pid) {
+			holder.kill();
+		}
+		removeTempProject(projectPath);
+	}
+});
+
 test('reclaims stale active lock records whose owner process is gone', () => {
 	const projectPath = createTempProject();
 	const markerPath = path.join(projectPath, 'stale-recovered.txt');

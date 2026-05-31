@@ -109,8 +109,9 @@ export const zhMessages = {
   "api.help.action.latestEvidence": "为代理输出 bounded 最新 run 或 verify evidence",
   "api.help.action.diffRisk": "为已变更文件输出紧凑 risk 和 verification 摘要",
   "api.help.action.health": "输出紧凑 workspace health 摘要",
+  "api.help.action.locks": "输出用于多会话协调的活动 mf run 锁",
   "api.help.exit.ok": "已检查并输出 API 报告",
-  "api.error.missingAction": "请指定 api 操作：workspace-summary、command-catalog、verification-plan、latest-evidence、diff-risk 或 health",
+  "api.error.missingAction": "请指定 api 操作：workspace-summary、command-catalog、verification-plan、latest-evidence、diff-risk、health 或 locks",
   "api.error.unknownAction": "未知 api 操作：{action}",
   "api.error.actionRequiresJson": "{action} 需要 --json",
   "api.error.actionRequiresChanged": "{action} 当前需要 --changed",
@@ -762,6 +763,8 @@ export const zhMessages = {
   "run.help.option.dryRun": "输出命令计划但不执行",
   "run.help.option.planOnly": "--dry-run 的别名",
   "run.help.option.json": "将运行记录或命令计划输出为 JSON",
+  "run.help.option.wait": "执行前等待冲突的活动运行锁释放",
+  "run.help.option.waitTimeout": "等待活动运行锁的最大秒数。默认值：300",
   "run.help.option.allowUntrustedRoot":
     "人工复核后，允许从缺失或无效清单锁的根目录执行一次命令",
   "run.help.exit.ok": "命令已以允许的退出码完成",
@@ -770,6 +773,8 @@ export const zhMessages = {
   "run.progress.started": "正在运行 {intent}（超时：{seconds} 秒）...",
   "run.progress.timeoutWarning":
     "{intent} 仍在运行...（已用 {seconds} 秒，达到超时的 {percent}%）",
+  "run.progress.waitingForActiveLock":
+    "正在等待运行 {intent}；活动 intent {activeIntent} 持有冲突锁（超时：{seconds} 秒）",
   "run.error.missingIntent": "缺少命令名称",
   "run.error.unknownIntent": "未知命令：{intent}",
   "run.error.statusNotConfigured":
@@ -809,6 +814,8 @@ export const zhMessages = {
     "输出限制必须保持在允许的最大值内。",
   "run.error.conflictingPreviewModes":
     "只能使用 --dry-run 或 --plan-only，不能同时使用",
+  "run.error.invalidWaitTimeout": "--wait-timeout 必须是正整数",
+  "run.error.waitRequiresExecution": "--wait 只能用于实际执行命令，不能与 --dry-run 或 --plan-only 一起使用",
   "run.error.untrustedRootMissing":
     "已拒绝执行命令，因为缺少 {path}。请运行 mf init/update 安装工作流，或在检查 AGENTS.md 和 .mustflow/config/commands.toml 后传入 --allow-untrusted-root。",
   "run.error.untrustedRootInvalid":

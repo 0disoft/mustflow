@@ -40,6 +40,28 @@ export interface RunCommandOptions {
 	readonly additionalDeclaredWritePaths?: readonly string[];
 }
 
+const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 300;
+const ACTIVE_LOCK_WAIT_POLL_MS = 1_000;
+
+interface ParsedRunArguments {
+	readonly json: boolean;
+	readonly dryRun: boolean;
+	readonly planOnly: boolean;
+	readonly allowUntrustedRoot: boolean;
+	readonly wait: boolean;
+	readonly waitTimeoutSeconds: number;
+	readonly intentName: string | null;
+	readonly extra: readonly string[];
+	readonly unsupported: readonly string[];
+	readonly invalidWaitTimeout: boolean;
+}
+
+function delay(milliseconds: number): Promise<void> {
+	return new Promise((resolve) => {
+		setTimeout(resolve, milliseconds);
+	});
+}
+
 function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
 	return plan.detail ?? t(lang, fallbackKey);
 }
@@ -154,6 +176,97 @@ function renderActiveLockConflictMessage(intentName: string, conflicts: readonly
 	return t(lang, 'run.error.activeLockConflict', { intent: intentName, detail });
 }
 
+function parseRunArguments(args: readonly string[]): ParsedRunArguments {
+	const supportedBooleanOptions = new Set(['--json', '--dry-run', '--plan-only', '--wait', ALLOW_UNTRUSTED_ROOT_OPTION]);
+	const supportedValueOptions = new Set(['--wait-timeout']);
+	const positional: string[] = [];
+	const unsupported: string[] = [];
+	let waitTimeoutSeconds = DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS;
+	let invalidWaitTimeout = false;
+
+	for (let index = 0; index < args.length; index += 1) {
+		const arg = args[index] as string;
+		if (supportedBooleanOptions.has(arg)) {
+			continue;
+		}
+
+		if (supportedValueOptions.has(arg)) {
+			const value = args[index + 1];
+			if (!value || value.startsWith('-')) {
+				invalidWaitTimeout = true;
+				continue;
+			}
+			const parsed = Number(value);
+			if (!Number.isInteger(parsed) || parsed <= 0) {
+				invalidWaitTimeout = true;
+			} else {
+				waitTimeoutSeconds = parsed;
+			}
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith('-')) {
+			unsupported.push(arg);
+			continue;
+		}
+
+		positional.push(arg);
+	}
+
+	const [intentName, ...extra] = positional;
+	return {
+		json: args.includes('--json'),
+		dryRun: args.includes('--dry-run'),
+		planOnly: args.includes('--plan-only'),
+		allowUntrustedRoot: args.includes(ALLOW_UNTRUSTED_ROOT_OPTION),
+		wait: args.includes('--wait'),
+		waitTimeoutSeconds,
+		intentName: intentName ?? null,
+		extra,
+		unsupported,
+		invalidWaitTimeout,
+	};
+}
+
+async function acquireActiveRunLockWithOptionalWait(input: {
+	readonly enabled: boolean;
+	readonly waitTimeoutSeconds: number;
+	readonly projectRoot: string;
+	readonly contract: Parameters<typeof acquireActiveRunLock>[1];
+	readonly intentName: string;
+	readonly commandHash: string;
+	readonly json: boolean;
+	readonly reporter: Reporter;
+	readonly lang: CliLang;
+}): Promise<ReturnType<typeof acquireActiveRunLock>> {
+	const startedAt = Date.now();
+	let reportedWait = false;
+
+	while (true) {
+		const result = acquireActiveRunLock(input.projectRoot, input.contract, input.intentName, { commandHash: input.commandHash });
+		if (result.ok || !input.enabled || result.conflicts.length === 0) {
+			return result;
+		}
+
+		if (!input.json && !reportedWait) {
+			const [first] = result.conflicts;
+			input.reporter.stderr(t(input.lang, 'run.progress.waitingForActiveLock', {
+				intent: input.intentName,
+				activeIntent: first?.conflictsWithIntent ?? 'unknown',
+				seconds: input.waitTimeoutSeconds,
+			}));
+			reportedWait = true;
+		}
+
+		if (Date.now() - startedAt >= input.waitTimeoutSeconds * 1000) {
+			return result;
+		}
+
+		await delay(Math.min(ACTIVE_LOCK_WAIT_POLL_MS, Math.max(1, input.waitTimeoutSeconds * 1000 - (Date.now() - startedAt))));
+	}
+}
+
 function createRunProgressReporter(input: {
 	readonly enabled: boolean;
 	readonly intentName: string;
@@ -200,6 +313,8 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 				{ label: '--dry-run', description: t(lang, 'run.help.option.dryRun') },
 				{ label: '--plan-only', description: t(lang, 'run.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'run.help.option.json') },
+				{ label: '--wait', description: t(lang, 'run.help.option.wait') },
+				{ label: '--wait-timeout <seconds>', description: t(lang, 'run.help.option.waitTimeout') },
 				{ label: ALLOW_UNTRUSTED_ROOT_OPTION, description: t(lang, 'run.help.option.allowUntrustedRoot') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
@@ -240,18 +355,23 @@ export async function runRun(
 		return 0;
 	}
 
-	const supportedOptions = new Set(['--json', '--dry-run', '--plan-only', ALLOW_UNTRUSTED_ROOT_OPTION]);
-	const unsupported = args.filter((arg) => arg.startsWith('-') && !supportedOptions.has(arg));
+	const parsedArgs = parseRunArguments(args);
+	const unsupported = parsedArgs.unsupported;
 
 	if (unsupported.length > 0) {
 		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
 
-	const json = args.includes('--json');
-	const dryRun = args.includes('--dry-run');
-	const planOnly = args.includes('--plan-only');
-	const allowUntrustedRoot = args.includes(ALLOW_UNTRUSTED_ROOT_OPTION);
+	if (parsedArgs.invalidWaitTimeout) {
+		printUsageError(reporter, t(lang, 'run.error.invalidWaitTimeout'), 'mf run --help', getRunHelp(lang), lang);
+		return 1;
+	}
+
+	const json = parsedArgs.json;
+	const dryRun = parsedArgs.dryRun;
+	const planOnly = parsedArgs.planOnly;
+	const allowUntrustedRoot = parsedArgs.allowUntrustedRoot;
 	const previewMode: RunPreviewMode | null = dryRun ? 'dry-run' : planOnly ? 'plan-only' : null;
 
 	if (dryRun && planOnly) {
@@ -259,8 +379,13 @@ export async function runRun(
 		return 1;
 	}
 
-	const positional = args.filter((arg) => !supportedOptions.has(arg));
-	const [intentName, ...extra] = positional;
+	if (parsedArgs.wait && previewMode) {
+		printUsageError(reporter, t(lang, 'run.error.waitRequiresExecution'), 'mf run --help', getRunHelp(lang), lang);
+		return 1;
+	}
+
+	const intentName = parsedArgs.intentName;
+	const extra = parsedArgs.extra;
 
 	if (!intentName) {
 		printUsageError(reporter, t(lang, 'run.error.missingIntent'), 'mf run --help', getRunHelp(lang), lang);
@@ -318,8 +443,18 @@ export async function runRun(
 		return 1;
 	}
 
-	const activeRunLock = profiler.measure('active_lock_acquire', () =>
-		acquireActiveRunLock(projectRoot, contract, intentName, { commandHash: createPlanCommandHash(plan) }),
+	const activeRunLock = await profiler.measureAsync('active_lock_acquire', () =>
+		acquireActiveRunLockWithOptionalWait({
+			enabled: parsedArgs.wait,
+			waitTimeoutSeconds: parsedArgs.waitTimeoutSeconds,
+			projectRoot,
+			contract,
+			intentName,
+			commandHash: createPlanCommandHash(plan),
+			json,
+			reporter,
+			lang,
+		}),
 	);
 
 	if (!activeRunLock.ok) {

@@ -203,10 +203,12 @@ mf run mustflow_update_apply
 | `mf api latest-evidence --json` | Imprime evidencia bounded del último run o verify sin salida de comando sin procesar. |
 | `mf api diff-risk --changed --json` | Imprime un resumen compacto de riesgo, verificación y señales residual correction de solo lectura para archivos cambiados. |
 | `mf api health --json` | Imprime un informe compacto de salud del workspace para gates rápidos de agente. |
+| `mf api locks --json` | Imprime bloqueos activos de `mf run` para coordinar varias sesiones. |
 | `mf context --json`         | Imprime en JSON el orden de lectura, reglas de comandos, capacidades disponibles y resumen de ejecución reciente. |
 | `mf map --stdout`           | Imprime el mapa de la raíz mustflow actual en la salida estándar.                            |
 | `mf map --write`            | Crea o actualiza `REPO_MAP.md`.                                                             |
 | `mf run <intent>`           | Ejecuta un comando puntual permitido.                                                       |
+| `mf run <intent> --wait`    | Espera bloqueos activos en conflicto antes de ejecutar el comando.                          |
 | `mf index`                  | Crea un índice SQLite para documentación y reglas de comandos de mustflow.                   |
 | `mf search <query>`         | Busca documentación, habilidades y reglas de comandos en el índice SQLite.                   |
 | `mf status`                 | Inspecciona el estado instalado y archivos modificados o ausentes.                          |

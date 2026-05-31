@@ -227,10 +227,12 @@ mf run mustflow_update_apply
 | `mf api latest-evidence --json` | raw command output के बिना bounded latest run या verify evidence दिखाता है। |
 | `mf api diff-risk --changed --json` | बदली गई files के लिए compact risk, verification summary, और read-only residual correction signals दिखाता है। |
 | `mf api health --json` | quick agent gate के लिए compact workspace health report दिखाता है। |
+| `mf api locks --json` | multi-session coordination के लिए active `mf run` locks दिखाता है। |
 | `mf context --json`       | पढ़ने के क्रम, कमांड नियम, उपलब्ध क्षमताएँ और हाल की रन सारांश JSON के रूप में प्रदर्शित करता है। |
 | `mf map --stdout`         | वर्तमान mustflow रूट मैप को मानक आउटपुट पर प्रिंट करता है।                              |
 | `mf map --write`          | `REPO_MAP.md` फ़ाइल बनाता या अपडेट करता है।                                            |
 | `mf run <intent>`         | अनुमत एक-बार चलने वाले कमांड को चलाता है।                                               |
+| `mf run <intent> --wait`  | command चलाने से पहले conflicting active run locks के लिए wait करता है।                 |
 | `mf index`                | mustflow दस्तावेज़ों और कमांड नियमों के लिए SQLite सूचकांक बनाता है।                    |
 | `mf search <query>`       | SQLite सूचकांक में दस्तावेज़, कौशल और कमांड नियम खोजता है।                            |
 | `mf status`               | इंस्टॉल स्थिति और बदली या अनुपस्थित फ़ाइलों की जांच करता है।                           |

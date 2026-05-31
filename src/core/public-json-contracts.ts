@@ -82,6 +82,14 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		installedCommand: ['mf', 'api', 'health', '--json'],
 	},
 	{
+		id: 'locks',
+		schemaFile: 'locks.schema.json',
+		producer: 'mf api locks --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'api', 'locks', '--json'],
+	},
+	{
 		id: 'run-receipt',
 		schemaFile: 'run-receipt.schema.json',
 		producer: 'mf run <intent> --json',
