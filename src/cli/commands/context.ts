@@ -1,6 +1,14 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { getAgentContext, getPromptCacheProfileContext, type PromptCacheProfile } from '../lib/agent-context.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
@@ -33,71 +41,50 @@ export function getContextHelp(lang: CliLang = 'en'): string {
 	);
 }
 
+const CONTEXT_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--cache-profile', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
 const CACHE_PROFILES = new Set<PromptCacheProfile>(['stable', 'task', 'volatile', 'all']);
 
-function parseCacheProfile(args: string[]): { readonly profile: PromptCacheProfile | null; readonly error: string | null } {
-	const index = args.indexOf('--cache-profile');
-
-	if (index === -1) {
-		return { profile: null, error: null };
-	}
-
-	const value = args[index + 1];
-
-	if (!value || value.startsWith('-')) {
-		return { profile: null, error: 'missing' };
+function parseCacheProfile(value: string | null): { readonly profile: PromptCacheProfile | null; readonly invalid: boolean } {
+	if (value === null) {
+		return { profile: null, invalid: false };
 	}
 
 	if (!CACHE_PROFILES.has(value as PromptCacheProfile)) {
-		return { profile: null, error: value };
+		return { profile: null, invalid: true };
 	}
 
-	return { profile: value as PromptCacheProfile, error: null };
+	return { profile: value as PromptCacheProfile, invalid: false };
 }
 
 export async function runContext(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getContextHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--json', '--cache-profile']);
-	const cacheProfile = parseCacheProfile(args);
-	const unsupported = args.filter((arg, index) => {
-		if (arg === '--cache-profile') {
-			return false;
-		}
-
-		if (index > 0 && args[index - 1] === '--cache-profile') {
-			return false;
-		}
-
-		return !supported.has(arg);
-	});
-
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf context --help', getContextHelp(lang), lang);
+	const parsed = parseCliOptions(args, CONTEXT_OPTIONS);
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf context --help', getContextHelp(lang), lang);
 		return 1;
 	}
 
-	if (cacheProfile.error === 'missing') {
-		printUsageError(reporter, t(lang, 'cli.error.missingValue', { option: '--cache-profile' }), 'mf context --help', getContextHelp(lang), lang);
-		return 1;
-	}
-
-	if (cacheProfile.error) {
+	const cacheProfile = parseCacheProfile(getParsedCliStringOption(parsed, '--cache-profile'));
+	if (cacheProfile.invalid) {
 		printUsageError(reporter, t(lang, 'cli.error.unexpectedValue', { option: '--cache-profile' }), 'mf context --help', getContextHelp(lang), lang);
 		return 1;
 	}
 
-	if (cacheProfile.profile && !args.includes('--json')) {
+	if (cacheProfile.profile && !hasParsedCliOption(parsed, '--json')) {
 		printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: '--cache-profile' }), 'mf context --help', getContextHelp(lang), lang);
 		return 1;
 	}
 
 	const mustflowRoot = resolveMustflowRoot();
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(parsed, '--json')) {
 		if (cacheProfile.profile) {
 			reporter.stdout(JSON.stringify(await getPromptCacheProfileContext(mustflowRoot, cacheProfile.profile), null, 2));
 			return 0;

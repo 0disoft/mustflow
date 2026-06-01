@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/evidence-report.schema.json",
+  "title": "mustflow evidence report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "status",
+    "source",
+    "policy",
+    "plan",
+    "latest",
+    "coverage",
+    "recommended_commands",
+    "export_path",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "evidence" },
+    "mustflow_root": { "type": "string" },
+    "status": {
+      "enum": ["verified", "unresolved", "needs_verification", "gaps", "latest_only", "no_changes", "unavailable"]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "changed", "plan_path", "latest_path"],
+      "properties": {
+        "mode": { "enum": ["changed", "latest", "plan"] },
+        "changed": { "type": "boolean" },
+        "plan_path": { "type": ["string", "null"] },
+        "latest_path": { "const": ".mustflow/state/runs/latest.json" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "command_authority",
+        "direct_commands_allowed",
+        "executes_commands",
+        "grants_command_authority",
+        "raw_output_included",
+        "hidden_reasoning_included",
+        "writes_files"
+      ],
+      "properties": {
+        "mode": { "const": "read_only_report" },
+        "command_authority": { "const": ".mustflow/config/commands.toml" },
+        "direct_commands_allowed": { "const": false },
+        "executes_commands": { "const": false },
+        "grants_command_authority": { "const": false },
+        "raw_output_included": { "const": false },
+        "hidden_reasoning_included": { "const": false },
+        "writes_files": { "type": "boolean" }
+      }
+    },
+    "plan": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/plan" }
+      ]
+    },
+    "latest": { "$ref": "#/$defs/latest" },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "recommended_commands": { "$ref": "#/$defs/stringArray" },
+    "export_path": { "type": ["string", "null"] },
+    "issues": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "nullableStringArray": {
+      "type": "array",
+      "items": { "type": ["string", "null"] }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "status",
+        "verification_plan_id",
+        "changed_file_count",
+        "changed_files",
+        "validation_reasons",
+        "selected_intents",
+        "requirement_count",
+        "gap_count",
+        "requirements",
+        "gaps",
+        "test_selection",
+        "issues"
+      ],
+      "properties": {
+        "source": { "enum": ["changed", "plan_file"] },
+        "status": { "enum": ["available", "unavailable", "no_changes"] },
+        "verification_plan_id": { "type": ["string", "null"] },
+        "changed_file_count": { "type": ["integer", "null"], "minimum": 0 },
+        "changed_files": { "$ref": "#/$defs/stringArray" },
+        "validation_reasons": { "$ref": "#/$defs/stringArray" },
+        "selected_intents": { "$ref": "#/$defs/stringArray" },
+        "requirement_count": { "type": "integer", "minimum": 0 },
+        "gap_count": { "type": "integer", "minimum": 0 },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/requirement" }
+        },
+        "gaps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceItem" }
+        },
+        "test_selection": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "candidate_count", "selected_count", "note"],
+              "properties": {
+                "status": { "type": ["string", "null"] },
+                "candidate_count": { "type": ["integer", "null"], "minimum": 0 },
+                "selected_count": { "type": ["integer", "null"], "minimum": 0 },
+                "note": { "type": ["string", "null"] }
+              }
+            }
+          ]
+        },
+        "issues": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "file_count",
+        "files",
+        "surfaces",
+        "affected_contracts",
+        "candidate_intents",
+        "selected_intents",
+        "skipped_intents",
+        "status",
+        "evidence_receipts",
+        "gap_reasons"
+      ],
+      "properties": {
+        "reason": { "type": "string" },
+        "file_count": { "type": "integer", "minimum": 0 },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "affected_contracts": { "$ref": "#/$defs/stringArray" },
+        "candidate_intents": { "$ref": "#/$defs/stringArray" },
+        "selected_intents": { "$ref": "#/$defs/stringArray" },
+        "skipped_intents": { "$ref": "#/$defs/stringArray" },
+        "status": { "enum": ["covered_by_latest", "selected", "blocked", "unselected"] },
+        "evidence_receipts": { "$ref": "#/$defs/stringArray" },
+        "gap_reasons": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "latest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "exists",
+        "path",
+        "kind",
+        "verification_plan_id",
+        "applies_to_plan",
+        "completion_verdict_status",
+        "execution_status",
+        "receipt_count",
+        "skipped_check_count",
+        "remaining_risk_count",
+        "requirements",
+        "receipts",
+        "skipped_checks",
+        "remaining_risks",
+        "issues"
+      ],
+      "properties": {
+        "status": { "enum": ["available", "missing", "unavailable", "not_requested"] },
+        "exists": { "type": "boolean" },
+        "path": { "const": ".mustflow/state/runs/latest.json" },
+        "kind": { "enum": ["run_receipt", "verify_run_summary", "unknown", null] },
+        "verification_plan_id": { "type": ["string", "null"] },
+        "applies_to_plan": { "type": ["boolean", "null"] },
+        "completion_verdict_status": { "type": ["string", "null"] },
+        "execution_status": { "type": ["string", "null"] },
+        "receipt_count": { "type": ["integer", "null"], "minimum": 0 },
+        "skipped_check_count": { "type": "integer", "minimum": 0 },
+        "remaining_risk_count": { "type": "integer", "minimum": 0 },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/latestRequirement" }
+        },
+        "receipts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/latestReceipt" }
+        },
+        "skipped_checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceItem" }
+        },
+        "remaining_risks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceItem" }
+        },
+        "issues": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "latestRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "outcome", "selected_intents", "skipped_intents"],
+      "properties": {
+        "reason": { "type": "string" },
+        "outcome": { "type": ["string", "null"] },
+        "selected_intents": { "$ref": "#/$defs/stringArray" },
+        "skipped_intents": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "latestReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "status", "skipped", "verification_plan_id", "receipt_path", "receipt_sha256"],
+      "properties": {
+        "intent": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "skipped": { "type": "boolean" },
+        "verification_plan_id": { "type": ["string", "null"] },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "intent", "status", "files", "surfaces", "detail"],
+      "properties": {
+        "reason": { "type": ["string", "null"] },
+        "intent": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "files": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" },
+        "detail": { "type": "string" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement_count",
+        "covered_by_latest_count",
+        "selected_requirement_count",
+        "blocked_requirement_count",
+        "unselected_requirement_count",
+        "selected_intent_count",
+        "receipt_count",
+        "skipped_check_count",
+        "remaining_risk_count",
+        "gap_count"
+      ],
+      "properties": {
+        "requirement_count": { "type": "integer", "minimum": 0 },
+        "covered_by_latest_count": { "type": "integer", "minimum": 0 },
+        "selected_requirement_count": { "type": "integer", "minimum": 0 },
+        "blocked_requirement_count": { "type": "integer", "minimum": 0 },
+        "unselected_requirement_count": { "type": "integer", "minimum": 0 },
+        "selected_intent_count": { "type": "integer", "minimum": 0 },
+        "receipt_count": { "type": "integer", "minimum": 0 },
+        "skipped_check_count": { "type": "integer", "minimum": 0 },
+        "remaining_risk_count": { "type": "integer", "minimum": 0 },
+        "gap_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -22,10 +22,11 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
+function runCli(cwd, args, options = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
+		...options,
 	});
 }
 
@@ -71,6 +72,44 @@ function appendIntent(projectPath, text) {
 	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
 }
 
+function appendRunPlanBlockedSchemaIntents(projectPath) {
+	appendIntent(
+		projectPath,
+		`
+[intents.verify_schema_cwd_blocked]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Exercise schema output for an intent whose cwd cannot be used by mf run."
+argv = ['${process.execPath}', '-e', 'console.log("cwd blocked")']
+cwd = ".."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_blocked"]
+
+[intents.verify_schema_output_limit_blocked]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Exercise schema output for an intent whose output limit cannot be used by mf run."
+argv = ['${process.execPath}', '-e', 'console.log("output limit blocked")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+max_output_bytes = 999999999
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["schema_blocked"]
+`,
+	);
+}
+
 function refreshManifestLockHash(projectPath, relativePath) {
 	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
 	const filePath = path.join(projectPath, ...relativePath.split('/'));
@@ -86,6 +125,17 @@ async function readPublicJsonContracts() {
 		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'public-json-contracts.js')).href
 	);
 	return contractsModule.getPublicJsonSchemaContracts();
+}
+
+async function readVerificationSkipReasons() {
+	const verificationPlanModule = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'verification-plan.js')).href
+	);
+	return [...verificationPlanModule.VERIFICATION_SKIP_REASONS].sort((left, right) => left.localeCompare(right));
+}
+
+function readSchema(schemaFile) {
+	return JSON.parse(readFileSync(path.join(schemaRoot, schemaFile), 'utf8'));
 }
 
 function compareSemver(left, right) {
@@ -119,6 +169,21 @@ test('public json schema manifest covers schema files and documentation', async 
 		assert.ok(contract.producer.length > 0, `${contract.schemaFile} should declare a producer`);
 		assert.match(readme, new RegExp(`\`${contract.schemaFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\``));
 	}
+});
+
+test('verification skip reason schemas stay aligned with core plan reasons', async () => {
+	const expectedReasons = await readVerificationSkipReasons();
+	const changeVerificationSchema = readSchema('change-verification-report.schema.json');
+	const explainSchema = readSchema('explain-report.schema.json');
+	const changeVerificationReasons = [...changeVerificationSchema.$defs.skipReason.enum].sort((left, right) =>
+		left.localeCompare(right),
+	);
+	const explainReasons = explainSchema.$defs.verificationCandidate.properties.skipReason.enum
+		.filter((reason) => reason !== null)
+		.sort((left, right) => left.localeCompare(right));
+
+	assert.deepEqual(changeVerificationReasons, expectedReasons);
+	assert.deepEqual(explainReasons, expectedReasons);
 });
 
 test('public json schema backward-compatibility fixtures match current schemas', async () => {
@@ -320,6 +385,29 @@ test('locks api json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'locks.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('api serve jsonl responses match the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const input = [
+			JSON.stringify({ id: 'health', action: 'health' }),
+			JSON.stringify({ id: 'missing-changed', action: 'verification-plan' }),
+			'',
+		].join('\n');
+		const result = runCli(projectPath, ['api', 'serve', '--stdio'], { input });
+		const lines = result.stdout.trim().split(/\r?\n/u).map((line) => JSON.parse(line));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(lines.length, 2);
+		for (const line of lines) {
+			assertMatchesSchema(schemaRoot, 'api-serve-response.schema.json', line);
+		}
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -572,6 +660,96 @@ test('contract lint suggestion json output matches the published schema', () => 
 	}
 });
 
+test('onboard commands json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', scripts: { test: 'node --test' } }, null, 2)}\n`,
+		);
+		const result = runCli(projectPath, ['onboard', 'commands', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'onboard-commands-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('next json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		const result = runCli(projectPath, ['next', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'next-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('evidence json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const schemaRoot = path.join(projectRoot, 'schemas');
+		const result = runCli(projectPath, ['evidence', '--latest', '--json']);
+
+		assert.equal(result.status, 1);
+		assertMatchesSchema(schemaRoot, 'evidence-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace status json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['workspace', 'status', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'workspace-status.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace command-catalog json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['workspace', 'command-catalog', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'workspace-command-catalog.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace verify json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['workspace', 'verify', '--changed', '--plan-only', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'workspace-verification-plan.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('dashboard export json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
@@ -757,6 +935,28 @@ test('explain verify json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'explain-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explain verify json schema accepts run-plan blocker skip reasons', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendRunPlanBlockedSchemaIntents(projectPath);
+
+		const result = runCli(projectPath, ['explain', 'verify', '--reason', 'schema_blocked', '--json']);
+		const report = JSON.parse(result.stdout);
+		const skipReasons = report.decision.verification.requirements.flatMap((requirement) =>
+			requirement.candidates.map((candidate) => candidate.skipReason),
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(skipReasons.includes('cwd_outside_project'));
+		assert.ok(skipReasons.includes('max_output_bytes_exceeds_limit'));
+		assertMatchesSchema(schemaRoot, 'explain-report.schema.json', report);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -996,6 +1196,26 @@ required_after = ["schema_verify"]
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'change-verification-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('change verification json schema accepts run-plan blocker skip reasons', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendRunPlanBlockedSchemaIntents(projectPath);
+
+		const result = runCli(projectPath, ['verify', '--reason', 'schema_blocked', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const skipReasons = report.candidates.map((candidate) => candidate.skipReason);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(skipReasons.includes('cwd_outside_project'));
+		assert.ok(skipReasons.includes('max_output_bytes_exceeds_limit'));
+		assertMatchesSchema(schemaRoot, 'change-verification-report.schema.json', report);
 	} finally {
 		removeTempProject(projectPath);
 	}

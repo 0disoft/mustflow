@@ -1,6 +1,12 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readMustflowTomlFile } from '../lib/toml.js';
@@ -11,6 +17,9 @@ import {
 } from '../../core/version-sources.js';
 
 const VERSION_SOURCES_SCHEMA_VERSION = '1';
+const VERSION_SOURCES_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+] as const;
 
 interface VersionSourcesOutput {
 	readonly schema_version: string;
@@ -83,18 +92,16 @@ function renderVersionSources(output: VersionSourcesOutput, lang: CliLang): stri
 }
 
 export function runVersionSources(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getVersionSourcesHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--json']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
+	const options = parseCliOptions(args, VERSION_SOURCES_OPTIONS);
+	if (options.error) {
 		printUsageError(
 			reporter,
-			t(lang, 'cli.error.unknownOption', { option: unsupported[0] }),
+			formatCliOptionParseError(options.error, lang),
 			'mf version-sources --help',
 			getVersionSourcesHelp(lang),
 			lang,
@@ -104,7 +111,7 @@ export function runVersionSources(args: string[], reporter: Reporter, lang: CliL
 
 	const output = getVersionSourcesOutput(resolveMustflowRoot());
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(options, '--json')) {
 		reporter.stdout(JSON.stringify(output, null, 2));
 		return 0;
 	}

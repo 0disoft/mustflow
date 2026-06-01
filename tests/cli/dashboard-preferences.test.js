@@ -283,6 +283,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /mf update --dry-run/);
 		assert.match(html, /mf update --apply/);
 		assert.match(html, /mf run test_release/);
+		assert.doesNotMatch(html, /intentName === "version_check" \? true/u);
+		assert.match(html, /const runnable = intent \? intent\.runnable : false;/);
 		assert.match(html, /function commandStateKey\(intent\)/);
 		assert.match(html, /document\.getElementById\("tab-commands"\)\.textContent/);
 		assert.match(html, /dashboard\.tab\.documents":"문서 검수/);

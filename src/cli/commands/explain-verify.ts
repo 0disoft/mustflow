@@ -67,85 +67,6 @@ export interface ExplainVerifyOutput {
 	readonly decision: ExplainVerificationDecision;
 }
 
-export function parseExplainVerifyArgs(args: readonly string[]): {
-	reason?: string;
-	fromPlan?: string;
-	error?: string;
-} {
-	let reason: string | undefined;
-	let fromPlan: string | undefined;
-
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (arg === '--reason') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { reason, fromPlan, error: 'missing_reason_value' };
-			}
-
-			reason = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--from-plan') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { reason, fromPlan, error: 'missing_from_plan_value' };
-			}
-
-			fromPlan = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--reason=')) {
-			const value = arg.slice('--reason='.length);
-			if (value.length === 0) {
-				return { reason, fromPlan, error: 'missing_reason_value' };
-			}
-
-			reason = value;
-			continue;
-		}
-
-		if (arg.startsWith('--from-plan=')) {
-			const value = arg.slice('--from-plan='.length);
-			if (value.length === 0) {
-				return { reason, fromPlan, error: 'missing_from_plan_value' };
-			}
-
-			fromPlan = value;
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { reason, fromPlan, error: arg };
-		}
-
-		return { reason, fromPlan, error: `unexpected:${arg}` };
-	}
-
-	return { reason, fromPlan };
-}
-
-export function explainVerifyArgErrorMessage(error: string, lang: CliLang): string {
-	if (error === 'missing_reason_value') {
-		return t(lang, 'cli.error.missingValue', { option: '--reason' });
-	}
-
-	if (error === 'missing_from_plan_value') {
-		return t(lang, 'cli.error.missingValue', { option: '--from-plan' });
-	}
-
-	if (error.startsWith('unexpected:')) {
-		return t(lang, 'cli.error.unexpectedArgument', { argument: error.slice('unexpected:'.length) });
-	}
-
-	return t(lang, 'cli.error.unknownOption', { option: error });
-}
-
 export function explainVerifyPlanErrorMessage(error: unknown, lang: CliLang): string {
 	const code = error instanceof Error ? error.message : 'invalid_plan_file';
 	return t(lang, planErrorMessageKey(code));
@@ -163,7 +84,7 @@ export async function getVerifyExplainOutput(
 	planSource: string | null,
 ): Promise<ExplainVerifyOutput> {
 	const contract = readCommandContract(projectRoot);
-	const plans = reasons.map((reason) => createVerificationPlan(contract, reason));
+	const plans = reasons.map((reason) => createVerificationPlan(contract, reason, projectRoot));
 	const graphRequirements = reasons.map((reason) => ({
 		reason,
 		files: [],

@@ -8,6 +8,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- `mf onboard commands` now suggests review-only command-intent snippets from package.json, Makefile, and justfile without writing files or granting command authority.
+- `mf next` now reports the next safe mustflow action from install health, changed-file verification requirements, runnable configured intents, and command-contract gaps.
+- `mf api serve --stdio` now serves read-only API reports as newline-delimited JSON responses without executing configured commands or exposing raw output.
+- `mf workspace status` now reports configured workspace roots and nested repository command-contract readiness without granting parent-to-child command authority, `mf workspace command-catalog --json` aggregates per-root intent availability without exposing raw command strings, and `mf workspace verify --changed --plan-only --json` aggregates per-root verification plans without running commands.
+- `mf evidence` now summarizes changed-file verification requirements, latest bounded evidence, receipts, remaining risks, and command-contract gaps without running commands.
 - Profile-aware skill installation for `mf init` now lets the default `minimal` profile install only core everyday coding skills. Broader profiles can opt into maintainer, team, product, web, and library skill groups from the same packaged template.
 - `mf check --strict` now validates optional candidate path-classification files at `.mustflow/config/changes.toml` and `.mustflow/config/surfaces.toml` without making them active command authority.
 - `mf handoff validate <path>` now validates restricted work-item or handoff JSON records without writing files, storing transcripts, or granting command authority.
@@ -76,6 +81,7 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Fixed
 
+- Dashboard and context command summaries now reuse the shared command eligibility rules, so shell intents without `allow_shell = true` and other blocked command shapes do not appear runnable.
 - `mf search` now caps every returned `results[].match` preview so long queries or metadata matches cannot expand into unbounded output.
 - Strict validation now catches package and default-template manifest version drift when template version synchronization is enabled.
 - Source anchor validation prevents authority-like anchor text from claiming permission to skip validation or change command policy.

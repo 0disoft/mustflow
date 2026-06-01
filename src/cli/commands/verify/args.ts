@@ -1,7 +1,39 @@
 import { availableParallelism } from 'node:os';
 
+import {
+	getParsedCliStringOption,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionParseError,
+	type CliOptionSpec,
+	type ParsedCliOptions,
+} from '../../lib/option-parser.js';
+
 export const DEFAULT_VERIFY_PARALLELISM = 1;
 export const MAX_VERIFY_PARALLELISM = 8;
+
+const VERIFY_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--plan-only', kind: 'boolean' },
+	{ name: '--changed', kind: 'boolean' },
+	{ name: '--reason', kind: 'string' },
+	{ name: '--parallel', kind: 'string' },
+	{ name: '--from-classification', kind: 'string' },
+	{ name: '--from-plan', kind: 'string' },
+	{ name: '--write-plan', kind: 'string' },
+	{ name: '--external-evidence', kind: 'string' },
+	{ name: '--repro-evidence', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
+
+const VERIFY_MISSING_VALUE_ERRORS = new Map<string, string>([
+	['--parallel', 'missing_parallel_value'],
+	['--reason', 'missing_reason_value'],
+	['--from-plan', 'missing_from_plan_value'],
+	['--from-classification', 'missing_from_classification_value'],
+	['--write-plan', 'missing_write_plan_value'],
+	['--external-evidence', 'missing_external_evidence_value'],
+	['--repro-evidence', 'missing_repro_evidence_value'],
+]);
 
 export interface VerifyParallelismSettings {
 	readonly requested: number;
@@ -29,298 +61,53 @@ export interface ParsedVerifyArgs {
 }
 
 export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
-	let reason: string | undefined;
-	let fromClassification: string | undefined;
-	let fromPlan: string | undefined;
-	let writePlan: string | undefined;
-	let reproEvidence: string | undefined;
-	let externalEvidence: string | undefined;
-	let json = false;
-	let planOnly = false;
-	let changed = false;
+	const parsed = parseCliOptions(args, VERIFY_OPTIONS);
+	const base = createParsedVerifyArgsBase(parsed);
 	let parallelism = DEFAULT_VERIFY_PARALLELISM;
 	let parallelismSpecified = false;
 
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
+	if (parsed.error) {
+		return { ...base, parallelism, parallelismSpecified, error: mapVerifyOptionParseError(parsed.error) };
+	}
 
-		if (arg === '--json') {
-			json = true;
-			continue;
+	const parallelValue = getParsedCliStringOption(parsed, '--parallel');
+	if (parallelValue !== null) {
+		const parsedParallelism = parseVerifyParallelism(parallelValue);
+		if (parsedParallelism === null) {
+			return { ...base, parallelism, parallelismSpecified, error: 'invalid_parallel_value' };
 		}
 
-		if (arg === '--plan-only') {
-			planOnly = true;
-			continue;
-		}
-
-		if (arg === '--changed') {
-			changed = true;
-			continue;
-		}
-
-		if (arg === '--parallel') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { json, planOnly, changed, reason, parallelism, error: 'missing_parallel_value' };
-			}
-
-			const parsedParallelism = parseVerifyParallelism(value);
-			if (parsedParallelism === null) {
-				return { json, planOnly, changed, reason, parallelism, error: 'invalid_parallel_value' };
-			}
-
-			parallelism = parsedParallelism;
-			parallelismSpecified = true;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--reason') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { json, planOnly, changed, reason, error: 'missing_reason_value' };
-			}
-
-			reason = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--from-plan') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { json, planOnly, changed, reason, fromClassification, fromPlan, error: 'missing_from_plan_value' };
-			}
-
-			fromPlan = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--from-classification') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					error: 'missing_from_classification_value',
-				};
-			}
-
-			fromClassification = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--write-plan') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					writePlan,
-					error: 'missing_write_plan_value',
-				};
-			}
-
-			writePlan = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--external-evidence') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					writePlan,
-					externalEvidence,
-					error: 'missing_external_evidence_value',
-				};
-			}
-
-			externalEvidence = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg === '--repro-evidence') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					writePlan,
-					reproEvidence,
-					externalEvidence,
-					error: 'missing_repro_evidence_value',
-				};
-			}
-
-			reproEvidence = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--reason=')) {
-			const value = arg.slice('--reason='.length);
-			if (value.length === 0) {
-				return { json, planOnly, changed, reason, error: 'missing_reason_value' };
-			}
-
-			reason = value;
-			continue;
-		}
-
-		if (arg.startsWith('--parallel=')) {
-			const value = arg.slice('--parallel='.length);
-			const parsedParallelism = parseVerifyParallelism(value);
-			if (parsedParallelism === null) {
-				return { json, planOnly, changed, reason, parallelism, error: 'invalid_parallel_value' };
-			}
-
-			parallelism = parsedParallelism;
-			parallelismSpecified = true;
-			continue;
-		}
-
-		if (arg.startsWith('--from-plan=')) {
-			const value = arg.slice('--from-plan='.length);
-			if (value.length === 0) {
-				return { json, planOnly, changed, reason, fromClassification, fromPlan, error: 'missing_from_plan_value' };
-			}
-
-			fromPlan = value;
-			continue;
-		}
-
-		if (arg.startsWith('--from-classification=')) {
-			const value = arg.slice('--from-classification='.length);
-			if (value.length === 0) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					error: 'missing_from_classification_value',
-				};
-			}
-
-			fromClassification = value;
-			continue;
-		}
-
-		if (arg.startsWith('--write-plan=')) {
-			const value = arg.slice('--write-plan='.length);
-			if (value.length === 0) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					writePlan,
-					error: 'missing_write_plan_value',
-				};
-			}
-
-			writePlan = value;
-			continue;
-		}
-
-		if (arg.startsWith('--external-evidence=')) {
-			const value = arg.slice('--external-evidence='.length);
-			if (value.length === 0) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					writePlan,
-					externalEvidence,
-					error: 'missing_external_evidence_value',
-				};
-			}
-
-			externalEvidence = value;
-			continue;
-		}
-
-		if (arg.startsWith('--repro-evidence=')) {
-			const value = arg.slice('--repro-evidence='.length);
-			if (value.length === 0) {
-				return {
-					json,
-					planOnly,
-					changed,
-					reason,
-					fromClassification,
-					fromPlan,
-					writePlan,
-					reproEvidence,
-					externalEvidence,
-					error: 'missing_repro_evidence_value',
-				};
-			}
-
-			reproEvidence = value;
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { json, planOnly, changed, reason, fromClassification, fromPlan, writePlan, reproEvidence, externalEvidence, error: arg };
-		}
-
-		return {
-			json,
-			planOnly,
-			changed,
-			reason,
-			fromClassification,
-			fromPlan,
-			writePlan,
-			reproEvidence,
-			externalEvidence,
-			error: `unexpected:${arg}`,
-		};
+		parallelism = parsedParallelism;
+		parallelismSpecified = true;
 	}
 
 	return {
-		json,
-		planOnly,
-		changed,
-		reason,
-		fromClassification,
-		fromPlan,
-		writePlan,
-		reproEvidence,
-		externalEvidence,
+		...base,
 		parallelism,
 		parallelismSpecified,
 	};
+}
+
+function createParsedVerifyArgsBase(parsed: ParsedCliOptions): Omit<ParsedVerifyArgs, 'parallelism' | 'parallelismSpecified' | 'error'> {
+	return {
+		json: hasParsedCliOption(parsed, '--json'),
+		planOnly: hasParsedCliOption(parsed, '--plan-only'),
+		changed: hasParsedCliOption(parsed, '--changed'),
+		reason: getParsedCliStringOption(parsed, '--reason') ?? undefined,
+		fromClassification: getParsedCliStringOption(parsed, '--from-classification') ?? undefined,
+		fromPlan: getParsedCliStringOption(parsed, '--from-plan') ?? undefined,
+		writePlan: getParsedCliStringOption(parsed, '--write-plan') ?? undefined,
+		reproEvidence: getParsedCliStringOption(parsed, '--repro-evidence') ?? undefined,
+		externalEvidence: getParsedCliStringOption(parsed, '--external-evidence') ?? undefined,
+	};
+}
+
+function mapVerifyOptionParseError(error: CliOptionParseError): string {
+	if (error.kind === 'missing_value') {
+		return VERIFY_MISSING_VALUE_ERRORS.get(error.option) ?? error.option;
+	}
+
+	return error.option.startsWith('-') ? error.option : `unexpected:${error.option}`;
 }
 
 function parseVerifyParallelism(value: string): number | null {

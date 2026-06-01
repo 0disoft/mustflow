@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/next-report.schema.json",
+  "title": "mustflow next report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "status",
+    "policy",
+    "state",
+    "decision",
+    "recommended_commands",
+    "blockers",
+    "warnings",
+    "gaps",
+    "verification_plan_id"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "next" },
+    "mustflow_root": { "type": "string" },
+    "status": {
+      "enum": ["setup_required", "blocked", "idle", "needs_verification", "unavailable"]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_authority",
+        "direct_commands_allowed",
+        "grants_command_authority",
+        "writes_files"
+      ],
+      "properties": {
+        "command_authority": { "const": ".mustflow/config/commands.toml" },
+        "direct_commands_allowed": { "const": false },
+        "grants_command_authority": { "const": false },
+        "writes_files": { "const": false }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "installed",
+        "check_ok",
+        "command_contract_ok",
+        "git_status",
+        "changed_file_count",
+        "validation_reasons",
+        "selected_intents",
+        "gap_count"
+      ],
+      "properties": {
+        "installed": { "type": "boolean" },
+        "check_ok": { "type": "boolean" },
+        "command_contract_ok": { "type": "boolean" },
+        "git_status": { "enum": ["available", "unavailable"] },
+        "changed_file_count": { "type": ["integer", "null"] },
+        "validation_reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selected_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "gap_count": { "type": "integer" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "command", "title", "detail"],
+      "properties": {
+        "kind": {
+          "enum": ["setup", "repair", "inspect", "configure_commands", "verify", "none"]
+        },
+        "command": { "type": ["string", "null"] },
+        "title": { "type": "string" },
+        "detail": { "type": "string" }
+      }
+    },
+    "recommended_commands": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "files", "surfaces", "detail"],
+        "properties": {
+          "reason": { "type": "string" },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "surfaces": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "verification_plan_id": { "type": ["string", "null"] }
+  }
+}

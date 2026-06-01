@@ -53,6 +53,30 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/contract-lint.js')).runContractLint,
 	},
 	{
+		id: 'onboard',
+		usage: 'mf onboard',
+		summaryKey: 'command.onboard.summary',
+		loadRunner: async () => (await import('../commands/onboard.js')).runOnboard,
+	},
+	{
+		id: 'next',
+		usage: 'mf next',
+		summaryKey: 'command.next.summary',
+		loadRunner: async () => (await import('../commands/next.js')).runNext,
+	},
+	{
+		id: 'evidence',
+		usage: 'mf evidence',
+		summaryKey: 'command.evidence.summary',
+		loadRunner: async () => (await import('../commands/evidence.js')).runEvidence,
+	},
+	{
+		id: 'workspace',
+		usage: 'mf workspace',
+		summaryKey: 'command.workspace.summary',
+		loadRunner: async () => (await import('../commands/workspace.js')).runWorkspace,
+	},
+	{
 		id: 'status',
 		usage: 'mf status',
 		summaryKey: 'command.status.summary',

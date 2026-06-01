@@ -23,6 +23,8 @@ Small typo fixes and narrow documentation corrections can go directly to a pull 
 ## Development Setup
 
 Use Node.js 20 or newer. This repository uses Bun for development scripts.
+The repository root contains its own `AGENTS.md` and `.mustflow/**` contract so contributors and
+agents can work from the same command-authority model that mustflow installs into user projects.
 
 ```sh
 bun install

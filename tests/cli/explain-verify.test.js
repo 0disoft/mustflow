@@ -118,6 +118,43 @@ required_after = ["custom_verify"]
 	}
 });
 
+test('accepts inline explain verify options through shared option parsing', () => {
+	const projectPath = createTempProject('mustflow-explain-verify-');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.inline_verify_fixture]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inline verify fixture."
+argv = ['${process.execPath}', '-e', 'console.log("inline verify")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["inline_verify"]
+`,
+		);
+
+		const result = runCli(projectPath, ['explain', 'verify', '--reason=inline_verify', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'verify');
+		assert.equal(report.decision.input.reason, 'inline_verify');
+		assert.equal(report.decision.verification.requirements[0].candidates[0].intent, 'inline_verify_fixture');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explains why verification candidates use the existing decision graph', () => {
 	const projectPath = createTempProject('mustflow-explain-verify-');
 

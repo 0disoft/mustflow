@@ -223,10 +223,15 @@ mf run mustflow_update_apply
 | `mf doctor`               | फ़ाइल लिखे बिना वर्तमान mustflow रूट का निरीक्षण करता है।                               |
 | `mf api workspace-summary --json` | coding agents और external harnesses के लिए stable, read-only JSON summary दिखाता है। |
 | `mf api command-catalog --json` | raw command strings दिखाए बिना command intent availability और safe `mf run` entrypoints दिखाता है। |
+| `mf api serve --stdio` | वही read-only API reports stdin/stdout पर line-delimited JSON responses के रूप में serve करता है। |
 | `mf api verification-plan --changed --json` | commands चलाए बिना बदली गई files के लिए stable, read-only verification plan दिखाता है। |
 | `mf api latest-evidence --json` | raw command output के बिना bounded latest run या verify evidence दिखाता है। |
 | `mf api diff-risk --changed --json` | बदली गई files के लिए compact risk, verification summary, और read-only residual correction signals दिखाता है। |
 | `mf api health --json` | quick agent gate के लिए compact workspace health report दिखाता है। |
+| `mf evidence --changed` | commands चलाए बिना changed-file verification requirements, latest evidence, receipts और remaining gaps summarize करता है। |
+| `mf workspace status` | configured workspace roots और nested repository contract readiness inspect करता है, parent-to-child command authority दिए बिना। |
+| `mf workspace command-catalog` | raw command strings के बिना per-repository command intent availability और safe `mf run` entrypoints दिखाता है। |
+| `mf workspace verify --changed --plan-only` | commands चलाए बिना per-repository changed-file verification plans दिखाता है। |
 | `mf api locks --json` | multi-session coordination के लिए active `mf run` locks दिखाता है। |
 | `mf context --json`       | पढ़ने के क्रम, कमांड नियम, उपलब्ध क्षमताएँ और हाल की रन सारांश JSON के रूप में प्रदर्शित करता है। |
 | `mf map --stdout`         | वर्तमान mustflow रूट मैप को मानक आउटपुट पर प्रिंट करता है।                              |
@@ -245,7 +250,7 @@ mf run mustflow_update_apply
 | `mf version-sources`      | फ़ाइलें बदले बिना detected package, template, और declared version sources की जांच करता है। |
 | `mf explain authority [path]` | फ़ाइलें बदले बिना managed Markdown authority निर्णयों को समझाता है।               |
 
-ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json` आउटपुट का उपयोग करना चाहिए। स्थिर आउटपुट के JSON स्कीमाएँ `schemas/` में उपलब्ध हैं।
+ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json` आउटपुट या `mf api serve --stdio` JSONL responses का उपयोग करना चाहिए। स्थिर आउटपुट के JSON स्कीमाएँ `schemas/` में उपलब्ध हैं।
 
 ## कमांड निष्पादन नीति
 

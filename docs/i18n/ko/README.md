@@ -199,10 +199,15 @@ mf run mustflow_update_apply
 | `mf doctor` | 현재 mustflow 루트를 읽기 전용으로 진단합니다. |
 | `mf api workspace-summary --json` | 코딩 에이전트와 외부 하네스가 쓰는 안정적인 읽기 전용 JSON 요약을 출력합니다. |
 | `mf api command-catalog --json` | 원본 실행 문자열을 노출하지 않고 command intent 가능 여부와 안전한 `mf run` 진입점을 출력합니다. |
+| `mf api serve --stdio` | 같은 읽기 전용 API 보고서를 stdin/stdout의 줄 단위 JSON 응답으로 제공합니다. |
 | `mf api verification-plan --changed --json` | 명령을 실행하지 않고 변경 파일에 대한 안정적인 읽기 전용 verification plan을 출력합니다. |
 | `mf api latest-evidence --json` | 원본 명령 출력 없이 bounded 최신 run 또는 verify evidence를 출력합니다. |
 | `mf api diff-risk --changed --json` | 변경 파일 risk, verification 요약, 읽기 전용 residual correction 신호를 작게 출력합니다. |
 | `mf api health --json` | 빠른 agent gate용 workspace health 보고서를 작게 출력합니다. |
+| `mf evidence --changed` | 명령을 실행하지 않고 changed-file 검증 요구사항, 최신 evidence, receipt, 남은 gap을 요약합니다. |
+| `mf workspace status` | configured workspace root와 nested repository contract 준비 상태를 확인하며 부모가 자식에게 명령 권한을 부여하지 않습니다. |
+| `mf workspace command-catalog` | repository별 command intent 사용 가능 상태와 안전한 `mf run` 진입점을 원본 command string 없이 출력합니다. |
+| `mf workspace verify --changed --plan-only` | repository별 changed-file verification plan을 명령 실행 없이 출력합니다. |
 | `mf api locks --json` | 여러 세션 조율용 활성 `mf run` 잠금을 출력합니다. |
 | `mf context --json` | 읽기 순서, 명령 규칙, 제공 기능, 최근 실행 요약을 JSON으로 출력합니다. |
 | `mf map --stdout` | 현재 mustflow 루트의 탐색 지도를 터미널에 출력합니다. |
@@ -221,7 +226,7 @@ mf run mustflow_update_apply
 | `mf version-sources` | 감지된 패키지, 템플릿, 선언된 버전 기준 원본을 파일 수정 없이 확인합니다. |
 | `mf explain authority [path]` | 관리되는 마크다운 문서의 권한 결정을 파일 수정 없이 설명합니다. |
 
-자동화나 에이전트가 결과를 읽어야 할 경우, 사람이 읽기 위한 텍스트를 파싱하지 말고 `--json` 출력을 사용하세요. 안정적인 출력 형식을 설명하는 JSON 스키마는 `schemas/`에 있습니다.
+자동화나 에이전트가 결과를 읽어야 할 경우, 사람이 읽기 위한 텍스트를 파싱하지 말고 `--json` 출력이나 `mf api serve --stdio` JSONL 응답을 사용하세요. 안정적인 출력 형식을 설명하는 JSON 스키마는 `schemas/`에 있습니다.
 
 ## 명령 실행 정책
 

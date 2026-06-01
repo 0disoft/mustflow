@@ -1254,7 +1254,7 @@ function renderReleaseCommand(root, intentName, fallbackCommand, reasonKey) {
 	name.className = "command-name";
 	name.textContent = intentName;
 	const state = document.createElement("div");
-	const runnable = intentName === "version_check" ? true : intent ? intent.runnable : false;
+	const runnable = intent ? intent.runnable : false;
 	state.className = runnable ? "command-state ok" : "command-state warn";
 	state.textContent = runnable ? message("dashboard.commands.runnable") : message("dashboard.verification.unavailable");
 	summary.appendChild(name);

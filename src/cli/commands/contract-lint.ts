@@ -6,11 +6,22 @@ import { readCommandContract, isRecord, type TomlTable } from '../../core/config
 import { releaseVersioningIsEnabled } from '../../core/version-sources.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readMustflowTomlFile } from '../lib/toml.js';
 
 const CONTRACT_LINT_SCHEMA_VERSION = '1';
+const CONTRACT_LINT_OPTIONS = [
+	{ name: '--coverage', kind: 'boolean' },
+	{ name: '--suggest', kind: 'boolean' },
+	{ name: '--json', kind: 'boolean' },
+] as const;
 
 interface ContractLintOutput {
 	readonly schema_version: string;
@@ -113,18 +124,16 @@ function renderContractLintOutput(output: ContractLintOutput, lang: CliLang): st
 }
 
 export function runContractLint(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getContractLintHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--coverage', '--suggest', '--json']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
+	const options = parseCliOptions(args, CONTRACT_LINT_OPTIONS);
+	if (options.error) {
 		printUsageError(
 			reporter,
-			t(lang, 'cli.error.unknownOption', { option: unsupported[0] }),
+			formatCliOptionParseError(options.error, lang),
 			'mf contract-lint --help',
 			getContractLintHelp(lang),
 			lang,
@@ -132,9 +141,13 @@ export function runContractLint(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
-	const output = createContractLintOutput(resolveMustflowRoot(), args.includes('--coverage'), args.includes('--suggest'));
+	const output = createContractLintOutput(
+		resolveMustflowRoot(),
+		hasParsedCliOption(options, '--coverage'),
+		hasParsedCliOption(options, '--suggest'),
+	);
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(options, '--json')) {
 		reporter.stdout(JSON.stringify(output, null, 2));
 	} else {
 		reporter.stdout(renderContractLintOutput(output, lang));

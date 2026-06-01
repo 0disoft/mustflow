@@ -27,6 +27,13 @@ mustflow repository के schemas का उपयोग करें।
 - `doctor-report.schema.json`: `mf doctor --json`
 - `context-report.schema.json`: `mf context --json`
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
+- `onboard-commands-report.schema.json`: `mf onboard commands --json`
+- `next-report.schema.json`: `mf next --json`
+- `evidence-report.schema.json`: `mf evidence --changed --json`
+- `api-serve-response.schema.json`: `mf api serve --stdio` की हर line-delimited response
+- `workspace-status.schema.json`: `mf workspace status --json`
+- `workspace-command-catalog.schema.json`: `mf workspace command-catalog --json`
+- `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json`, जब `mf verify`

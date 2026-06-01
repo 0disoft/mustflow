@@ -84,6 +84,7 @@ import {
 	type LocalPathSurfaceReadModel,
 	type LocalSourceAnchorVerdictRisk,
 } from '../lib/local-index.js';
+import { hasCliOptionToken } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
@@ -1398,7 +1399,7 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 }
 
 export async function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getVerifyHelp(lang));
 		return 0;
 	}

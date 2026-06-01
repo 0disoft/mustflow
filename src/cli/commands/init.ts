@@ -14,6 +14,7 @@ import {
 import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { isLocaleTag } from '../lib/locale-tags.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
+import { formatCliOptionParseError, hasCliOptionToken, parseCliOptions, type CliOptionSpec } from '../lib/option-parser.js';
 import { isCommitMessageStyle, isTestAuthoringPolicy } from '../lib/preferences-options.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
@@ -60,6 +61,20 @@ const LOCALE_LABELS: Record<string, string> = {
 	fr: 'French',
 	hi: 'Hindi',
 };
+const INIT_BOOLEAN_OPTIONS = new Set(['--yes', '--dry-run', '--merge', '--force', '--interactive']);
+const INIT_OPTION_SPECS = [
+	{ name: '--yes', kind: 'boolean' },
+	{ name: '--dry-run', kind: 'boolean' },
+	{ name: '--merge', kind: 'boolean' },
+	{ name: '--force', kind: 'boolean' },
+	{ name: '--interactive', kind: 'boolean' },
+	{ name: '--set', kind: 'string' },
+	{ name: '--profile', kind: 'string' },
+	{ name: '--locale', kind: 'string' },
+	{ name: '--agent-lang', kind: 'string' },
+	{ name: '--product-source-locale', kind: 'string' },
+	{ name: '--product-locale', kind: 'string' },
+] satisfies readonly CliOptionSpec[];
 
 interface PromptChoice {
 	readonly value: string;
@@ -156,43 +171,14 @@ export function getInitHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-function splitLongOption(arg: string): { name: string; value?: string } {
+function splitOptionName(arg: string): string {
 	const equalsIndex = arg.indexOf('=');
 
 	if (equalsIndex === -1) {
-		return { name: arg };
+		return arg;
 	}
 
-	return {
-		name: arg.slice(0, equalsIndex),
-		value: arg.slice(equalsIndex + 1),
-	};
-}
-
-function readRequiredOptionValue(
-	args: string[],
-	index: number,
-	parsed: { name: string; value?: string },
-	reporter: Reporter,
-	lang: CliLang,
-): string | undefined {
-	if (parsed.value !== undefined) {
-		if (parsed.value.trim().length === 0) {
-			printUsageError(reporter, t(lang, 'cli.error.missingValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
-			return undefined;
-		}
-
-		return parsed.value;
-	}
-
-	const next = args[index + 1];
-
-	if (!next || next.startsWith('-')) {
-		printUsageError(reporter, t(lang, 'cli.error.missingValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
-		return undefined;
-	}
-
-	return next;
+	return arg.slice(0, equalsIndex);
 }
 
 function parseBoolean(value: string): boolean | undefined {
@@ -493,7 +479,7 @@ function parsePreferenceOverride(raw: string, reporter: Reporter, lang: CliLang)
 	return createPreferenceOverride(raw.slice(0, equalsIndex), raw.slice(equalsIndex + 1), reporter, lang);
 }
 
-function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOptions | undefined {
+function parseOptions(args: readonly string[], reporter: Reporter, lang: CliLang): InitOptions | undefined {
 	let yes = false;
 	let dryRun = false;
 	let merge = false;
@@ -505,58 +491,62 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 	let productSourceLocale: string | undefined;
 	const productLocales: string[] = [];
 	const preferenceOverrides: PreferenceOverride[] = [];
+	const parsed = parseCliOptions(args, INIT_OPTION_SPECS);
 
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (!arg) {
-			continue;
-		}
-
-		const parsed = splitLongOption(arg);
-
-		if (['--yes', '--dry-run', '--merge', '--force', '--interactive'].includes(parsed.name) && parsed.value !== undefined) {
-			printUsageError(reporter, t(lang, 'cli.error.unexpectedValue', { option: parsed.name }), 'mf init --help', getInitHelp(lang), lang);
+	if (parsed.error) {
+		const optionName = splitOptionName(parsed.error.option);
+		if (parsed.error.kind === 'unknown_option' && INIT_BOOLEAN_OPTIONS.has(optionName) && parsed.error.option.includes('=')) {
+			printUsageError(reporter, t(lang, 'cli.error.unexpectedValue', { option: optionName }), 'mf init --help', getInitHelp(lang), lang);
 			return undefined;
 		}
 
-		if (parsed.name === '--yes') {
+		printUsageError(
+			reporter,
+			formatCliOptionParseError(parsed.error, lang),
+			'mf init --help',
+			getInitHelp(lang),
+			lang,
+		);
+		return undefined;
+	}
+
+	for (const occurrence of parsed.occurrences) {
+		if (occurrence.name === '--yes') {
 			yes = true;
 			continue;
 		}
 
-		if (parsed.name === '--dry-run') {
+		if (occurrence.name === '--dry-run') {
 			dryRun = true;
 			continue;
 		}
 
-		if (parsed.name === '--merge') {
+		if (occurrence.name === '--merge') {
 			merge = true;
 			continue;
 		}
 
-		if (parsed.name === '--force') {
+		if (occurrence.name === '--force') {
 			force = true;
 			continue;
 		}
 
-		if (parsed.name === '--interactive') {
+		if (occurrence.name === '--interactive') {
 			interactive = true;
 			continue;
 		}
 
-		if (parsed.name === '--set') {
-			const value = readRequiredOptionValue(args, index, parsed, reporter, lang);
+		if (typeof occurrence.value !== 'string') {
+			continue;
+		}
 
-			if (value === undefined) {
-				return undefined;
-			}
+		if (occurrence.value.trim().length === 0) {
+			printUsageError(reporter, t(lang, 'cli.error.missingValue', { option: occurrence.name }), 'mf init --help', getInitHelp(lang), lang);
+			return undefined;
+		}
 
-			if (parsed.value === undefined) {
-				index += 1;
-			}
-
-			const override = parsePreferenceOverride(value, reporter, lang);
+		if (occurrence.name === '--set') {
+			const override = parsePreferenceOverride(occurrence.value, reporter, lang);
 
 			if (!override) {
 				return undefined;
@@ -566,34 +556,17 @@ function parseOptions(args: string[], reporter: Reporter, lang: CliLang): InitOp
 			continue;
 		}
 
-		if (['--profile', '--locale', '--agent-lang', '--product-source-locale', '--product-locale'].includes(parsed.name)) {
-			const value = readRequiredOptionValue(args, index, parsed, reporter, lang);
-
-			if (value === undefined) {
-				return undefined;
-			}
-
-			if (parsed.value === undefined) {
-				index += 1;
-			}
-
-			if (parsed.name === '--profile') {
-				profile = value;
-			} else if (parsed.name === '--locale') {
-				locale = value;
-			} else if (parsed.name === '--agent-lang') {
-				agentLang = value;
-			} else if (parsed.name === '--product-source-locale') {
-				productSourceLocale = value;
-			} else {
-				productLocales.push(value);
-			}
-
-			continue;
+		if (occurrence.name === '--profile') {
+			profile = occurrence.value;
+		} else if (occurrence.name === '--locale') {
+			locale = occurrence.value;
+		} else if (occurrence.name === '--agent-lang') {
+			agentLang = occurrence.value;
+		} else if (occurrence.name === '--product-source-locale') {
+			productSourceLocale = occurrence.value;
+		} else if (occurrence.name === '--product-locale') {
+			productLocales.push(occurrence.value);
 		}
-
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: arg }), 'mf init --help', getInitHelp(lang), lang);
-		return undefined;
 	}
 
 	if (merge && force) {
@@ -1353,7 +1326,7 @@ function writeManifestLock(
 }
 
 export async function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getInitHelp(lang));
 		return 0;
 	}

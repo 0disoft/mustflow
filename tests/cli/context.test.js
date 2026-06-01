@@ -68,6 +68,35 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
+
+[intents.shell_without_allow_shell_context]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe shared runnable eligibility for shell intents."
+mode = "shell"
+cmd = "echo context shell probe"
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.cwd_outside_context]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe shared run-plan eligibility for cwd validation."
+argv = ['${process.execPath}', '-e', 'console.log("outside cwd probe")']
+cwd = "../outside"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
 `,
 		);
 
@@ -91,6 +120,8 @@ destructive = false
 		assert.equal(echoIntent.lifecycle, 'oneshot');
 		assert.equal(echoIntent.run_policy, 'agent_allowed');
 		assert.ok(context.command_contract.runnable_intents.includes('echo_context'));
+		assert.equal(context.command_contract.runnable_intents.includes('shell_without_allow_shell_context'), false);
+		assert.equal(context.command_contract.runnable_intents.includes('cwd_outside_context'), false);
 		assert.equal(context.effective_policy.entrypoint, 'AGENTS.md');
 		assert.equal(context.effective_policy.nearest_agents, 'AGENTS.md');
 		assert.equal(context.effective_policy.command_contract, '.mustflow/config/commands.toml');
@@ -178,6 +209,30 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.volatile_suffix.never_place_before_stable_prefix, true);
 		assert.equal(context.volatile_suffix.include_absolute_root, false);
 		assert.equal(context.volatile_suffix.include_latest_run, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('context cache-profile options use the shared CLI option rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const inlineProfile = runCli(projectPath, ['context', '--json', '--cache-profile=stable']);
+		const missingValue = runCli(projectPath, ['context', '--json', '--cache-profile']);
+		const withoutJson = runCli(projectPath, ['context', '--cache-profile', 'stable']);
+		const unknownOption = runCli(projectPath, ['context', '--bad']);
+
+		assert.equal(inlineProfile.status, 0, inlineProfile.stderr || inlineProfile.stdout);
+		assert.equal(JSON.parse(inlineProfile.stdout).cache_profile, 'stable');
+		assert.equal(missingValue.status, 1);
+		assert.match(missingValue.stderr, /Missing value for --cache-profile/u);
+		assert.equal(withoutJson.status, 1);
+		assert.match(withoutJson.stderr, /Unexpected argument: --cache-profile/u);
+		assert.equal(unknownOption.status, 1);
+		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

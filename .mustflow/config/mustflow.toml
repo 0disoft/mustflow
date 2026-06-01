@@ -1,0 +1,424 @@
+version = 1
+profile = "default"
+
+read_order = [
+  "AGENTS.md",
+  ".mustflow/docs/agent-workflow.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/preferences.toml",
+  ".mustflow/skills/INDEX.md",
+]
+optional_read_order = [
+  ".mustflow/context/INDEX.md",
+  "REPO_MAP.md",
+]
+
+[authority]
+primary_instruction = "AGENTS.md"
+repository_map = "REPO_MAP.md"
+skill_index = ".mustflow/skills/INDEX.md"
+command_contract = ".mustflow/config/commands.toml"
+workflow_preferences = ".mustflow/config/preferences.toml"
+workflow_reference = ".mustflow/docs/agent-workflow.md"
+context_index = ".mustflow/context/INDEX.md"
+project_context = ".mustflow/context/PROJECT.md"
+
+[map]
+output = "REPO_MAP.md"
+mode = "anchors_only"
+privacy = "minimal"
+include_nested = false
+anchor_files = [
+  "AGENTS.md",
+  "REPO_MAP.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/preferences.toml",
+  ".mustflow/skills/INDEX.md",
+  "README.md",
+  "PROJECT.md",
+  "ROADMAP.md",
+  "DESIGN.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "CHANGELOG.md",
+  "CODE_OF_CONDUCT.md",
+  "SUPPORT.md",
+  "GOVERNANCE.md",
+  "MAINTAINERS.md",
+  "RELEASING.md",
+  "RELEASE.md",
+  "TESTING.md",
+  "DEPLOYMENT.md",
+  "OPERATIONS.md",
+  "RUNBOOK.md",
+  "CONFIGURATION.md",
+  "DATA_MODEL.md",
+  "SCHEMA.md",
+  "PRIVACY.md",
+  "TROUBLESHOOTING.md",
+  "ARCHITECTURE.md",
+  "API.md",
+  "project.contract.json",
+  "project.constants.json",
+  "design-tokens.json",
+  "openapi.json",
+  "openapi.yaml",
+  "openapi.yml",
+  "asyncapi.json",
+  "asyncapi.yaml",
+  "asyncapi.yml",
+  "schema.graphql",
+  "schema.prisma",
+  ".mustflow/context/INDEX.md",
+  ".mustflow/context/PROJECT.md",
+  "package.json",
+  "pyproject.toml",
+  "go.mod",
+  "Cargo.toml",
+  "deno.json",
+  "justfile",
+  "Justfile",
+  "Makefile",
+  "Taskfile.yml",
+]
+
+[workspace]
+enabled = false
+roots = []
+max_depth = 4
+max_repositories = 50
+follow_symlinks = false
+stop_at_repository_root = true
+
+[capabilities]
+workflow = true
+command_contract = true
+skills = true
+repo_map = "generated_optional"
+preferences = "optional"
+context = "optional"
+local_index = "generated_optional"
+work_items = "disabled"
+services = "disabled"
+adapters = []
+
+[context]
+enabled = true
+root = ".mustflow/context"
+index = ".mustflow/context/INDEX.md"
+default_files = [
+  ".mustflow/context/PROJECT.md",
+]
+read_policy = "task_relevant_only"
+authority = "contextual"
+external_anchors = [
+  "README.md",
+  "ROADMAP.md",
+  "DESIGN.md",
+]
+
+[prompt_cache]
+enabled = true
+strategy = "stable_prefix"
+stable_prefix_policy = "hash_verified"
+prefer_references_when_unchanged = true
+exclude_volatile_state_from_prefix = true
+include_content_hashes = true
+max_stable_prefix_kb = 96
+max_task_context_kb = 48
+max_volatile_suffix_kb = 24
+
+[prompt_cache.layers.stable]
+read = [
+  "AGENTS.md",
+  ".mustflow/docs/agent-workflow.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/skills/INDEX.md",
+]
+
+[prompt_cache.layers.task]
+read_policy = "task_relevant_only"
+sources = [
+  ".mustflow/context/INDEX.md",
+  "REPO_MAP.md",
+  "matching_skill",
+  "relevant_source_files",
+]
+
+[prompt_cache.layers.volatile]
+sources = [
+  ".mustflow/state/runs/latest.json",
+  "changed_files",
+  "command_output_tail",
+  "current_user_task",
+]
+never_place_before_stable_prefix = true
+
+[agent_loop]
+phases = [
+  "orient",
+  "plan",
+  "act",
+  "verify",
+  "report",
+  "handoff",
+]
+
+[harness]
+mode = "single_session"
+fresh_context_preferred = true
+fresh_context_mode = "hash_check_before_reread"
+
+[harness.phases]
+enabled = [
+  "plan",
+  "work",
+  "verify",
+  "judge",
+  "handoff",
+]
+
+[refresh]
+enabled = true
+mode = "checkpoint"
+default_method = "hash_check"
+reread_when_hash_changed = true
+reuse_cached_prefix_when_unchanged = true
+required_at = [
+  "session_start",
+  "task_start",
+  "before_first_edit",
+  "before_command_run",
+  "after_instruction_file_change",
+  "root_change",
+  "after_compaction",
+  "before_final_report",
+]
+turn_threshold = 8
+tool_call_threshold = 16
+output_bytes_threshold = 100000
+state_store = "cache"
+
+[refresh.levels.light]
+method = "hash_check"
+read = [
+  "AGENTS.md",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.command]
+method = "hash_check"
+read = [
+  "AGENTS.md",
+  ".mustflow/config/commands.toml",
+]
+
+[refresh.levels.edit]
+method = "reread_if_changed"
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/docs/agent-workflow.md",
+]
+
+[refresh.levels.report]
+method = "hash_check"
+read = [
+  "AGENTS.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
+]
+
+[refresh.levels.skill]
+method = "hash_check"
+read = [
+  "AGENTS.md",
+  ".mustflow/skills/INDEX.md",
+]
+
+[refresh.levels.full]
+method = "reread_if_changed"
+read = [
+  "AGENTS.md",
+  ".mustflow/docs/agent-workflow.md",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/preferences.toml",
+  ".mustflow/skills/INDEX.md",
+]
+
+[compaction]
+enabled = false
+strategy = "tiered"
+state_store = "cache"
+
+[compaction.rules]
+require_source_refs = true
+summaries_are_derived = true
+current_files_override_summaries = true
+never_store_secrets = true
+scrub_absolute_user_paths = true
+do_not_store_hidden_chain_of_thought = true
+
+[verification]
+command_source = ".mustflow/config/commands.toml"
+require_configured_intents = true
+allow_inferred_commands = false
+require_command_lifecycle = true
+require_timeout_for_oneshot = true
+
+[testing]
+policy = "behavior_contract"
+prefer_update_existing_tests = true
+require_existing_test_search = true
+require_test_change_report = true
+forbid_validation_weakening = true
+allow_test_deletion_when = [
+  "behavior_removed",
+  "public_contract_changed",
+  "duplicate_coverage",
+  "implementation_detail_removed",
+  "obsolete_snapshot",
+]
+forbid_test_deletion_when = [
+  "only_to_make_tests_pass",
+  "without_behavior_rationale",
+  "without_reporting",
+  "without_running_relevant_validation",
+]
+stale_test_action = "update_remove_or_report"
+
+[handoff]
+enabled = false
+mode = "report_only"
+
+[budget]
+enabled = true
+max_iterations = 6
+max_wall_clock_minutes = 60
+max_command_runs = 20
+max_total_output_mb = 8
+max_failures_per_intent = 2
+on_limit = "stop_and_report"
+
+[approval]
+required_for = [
+  "git_commit",
+  "git_push",
+  "dependency_install",
+  "dependency_upgrade",
+  "network_access",
+  "database_migration",
+  "destructive_command",
+  "secret_access",
+  "release",
+  "cross_repository_change",
+]
+on_required = "stop_and_request_approval"
+
+[isolation]
+preferred = "git_worktree"
+required_for_long_running = true
+allow_dirty_main_worktree = false
+
+[retention]
+enabled = true
+
+[retention.raw_events]
+store = "none"
+max_file_mb = 25
+max_total_mb = 250
+max_age_days = 14
+on_limit = "report"
+
+[retention.run_receipts]
+store = "repo_local_ignored"
+max_file_kb = 128
+max_items = 1
+max_total_mb = 1
+keep_stdout_tail_bytes = 65536
+keep_stderr_tail_bytes = 65536
+
+[retention.knowledge]
+enabled = false
+store = "repo_local_ignored"
+max_file_kb = 128
+max_total_mb = 10
+require_source_refs = true
+require_review_status = true
+
+[retention.context]
+max_file_kb = 8
+
+[retention.handoffs]
+store = "repo_local_ignored"
+max_file_kb = 64
+max_total_mb = 5
+require_source_refs = true
+
+[retention.repo_map]
+max_file_kb = 128
+fail_if_larger = true
+
+[document_roots]
+canonical = [
+  "AGENTS.md",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
+  ".mustflow/context/**",
+  ".mustflow/docs/**",
+  ".mustflow/skills/**",
+]
+generated = [
+  "REPO_MAP.md",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/cache/**",
+  ".mustflow/state/**",
+]
+ignored = [
+  "node_modules/**",
+  "vendor/**",
+  "third_party/**",
+  "dist/**",
+  "build/**",
+  "coverage/**",
+]
+
+[edit_policy]
+protected = [
+  ".git/**",
+  "node_modules/**",
+  "vendor/**",
+  "third_party/**",
+  "dist/**",
+  "build/**",
+  "coverage/**",
+  "**/*.pem",
+  "**/*.key",
+  "**/.env",
+]
+extra_care = [
+  "AGENTS.md",
+  "REPO_MAP.md",
+  ".mustflow/config/**",
+  ".mustflow/context/**",
+  ".mustflow/skills/**",
+  ".mustflow/docs/**",
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  "bun.lock",
+  "deno.lock",
+]
+
+[reporting]
+include = [
+  "changed_files",
+  "commands_run",
+  "commands_failed",
+  "commands_skipped_with_reason",
+]

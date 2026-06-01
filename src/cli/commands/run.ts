@@ -8,6 +8,15 @@ import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.j
 import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
 import { t, type CliLang, type MessageKey } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionParseError,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import { ALLOW_UNTRUSTED_ROOT_OPTION, assessRunRootTrust } from '../lib/run-root-trust.js';
 import type { Reporter } from '../lib/reporter.js';
@@ -42,6 +51,14 @@ export interface RunCommandOptions {
 
 const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 300;
 const ACTIVE_LOCK_WAIT_POLL_MS = 1_000;
+const RUN_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--dry-run', kind: 'boolean' },
+	{ name: '--plan-only', kind: 'boolean' },
+	{ name: '--wait', kind: 'boolean' },
+	{ name: ALLOW_UNTRUSTED_ROOT_OPTION, kind: 'boolean' },
+	{ name: '--wait-timeout', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedRunArguments {
 	readonly json: boolean;
@@ -52,8 +69,7 @@ interface ParsedRunArguments {
 	readonly waitTimeoutSeconds: number;
 	readonly intentName: string | null;
 	readonly extra: readonly string[];
-	readonly unsupported: readonly string[];
-	readonly invalidWaitTimeout: boolean;
+	readonly error: CliOptionParseError | 'invalid_wait_timeout' | null;
 }
 
 function delay(milliseconds: number): Promise<void> {
@@ -177,55 +193,47 @@ function renderActiveLockConflictMessage(intentName: string, conflicts: readonly
 }
 
 function parseRunArguments(args: readonly string[]): ParsedRunArguments {
-	const supportedBooleanOptions = new Set(['--json', '--dry-run', '--plan-only', '--wait', ALLOW_UNTRUSTED_ROOT_OPTION]);
-	const supportedValueOptions = new Set(['--wait-timeout']);
-	const positional: string[] = [];
-	const unsupported: string[] = [];
+	const parsed = parseCliOptions(args, RUN_OPTIONS, { allowPositionals: true });
 	let waitTimeoutSeconds = DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS;
-	let invalidWaitTimeout = false;
 
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index] as string;
-		if (supportedBooleanOptions.has(arg)) {
-			continue;
-		}
+	if (parsed.error) {
+		const [intentName, ...extra] = parsed.positionals;
 
-		if (supportedValueOptions.has(arg)) {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				invalidWaitTimeout = true;
-				continue;
-			}
-			const parsed = Number(value);
-			if (!Number.isInteger(parsed) || parsed <= 0) {
-				invalidWaitTimeout = true;
-			} else {
-				waitTimeoutSeconds = parsed;
-			}
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			unsupported.push(arg);
-			continue;
-		}
-
-		positional.push(arg);
+		return {
+			json: hasParsedCliOption(parsed, '--json'),
+			dryRun: hasParsedCliOption(parsed, '--dry-run'),
+			planOnly: hasParsedCliOption(parsed, '--plan-only'),
+			allowUntrustedRoot: hasParsedCliOption(parsed, ALLOW_UNTRUSTED_ROOT_OPTION),
+			wait: hasParsedCliOption(parsed, '--wait'),
+			waitTimeoutSeconds,
+			intentName: intentName ?? null,
+			extra,
+			error: parsed.error,
+		};
 	}
 
-	const [intentName, ...extra] = positional;
+	const waitTimeoutValue = getParsedCliStringOption(parsed, '--wait-timeout');
+	let error: ParsedRunArguments['error'] = null;
+	if (waitTimeoutValue !== null) {
+		const parsedWaitTimeout = Number(waitTimeoutValue);
+		if (!Number.isInteger(parsedWaitTimeout) || parsedWaitTimeout <= 0) {
+			error = 'invalid_wait_timeout';
+		} else {
+			waitTimeoutSeconds = parsedWaitTimeout;
+		}
+	}
+
+	const [intentName, ...extra] = parsed.positionals;
 	return {
-		json: args.includes('--json'),
-		dryRun: args.includes('--dry-run'),
-		planOnly: args.includes('--plan-only'),
-		allowUntrustedRoot: args.includes(ALLOW_UNTRUSTED_ROOT_OPTION),
-		wait: args.includes('--wait'),
+		json: hasParsedCliOption(parsed, '--json'),
+		dryRun: hasParsedCliOption(parsed, '--dry-run'),
+		planOnly: hasParsedCliOption(parsed, '--plan-only'),
+		allowUntrustedRoot: hasParsedCliOption(parsed, ALLOW_UNTRUSTED_ROOT_OPTION),
+		wait: hasParsedCliOption(parsed, '--wait'),
 		waitTimeoutSeconds,
 		intentName: intentName ?? null,
 		extra,
-		unsupported,
-		invalidWaitTimeout,
+		error,
 	};
 }
 
@@ -350,20 +358,24 @@ export async function runRun(
 	const executorStartedAtMs = performance.now();
 	const profiler = new RunProfiler();
 
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getRunHelp(lang));
 		return 0;
 	}
 
 	const parsedArgs = parseRunArguments(args);
-	const unsupported = parsedArgs.unsupported;
 
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf run --help', getRunHelp(lang), lang);
+	if (parsedArgs.error && parsedArgs.error !== 'invalid_wait_timeout') {
+		if (parsedArgs.error.kind === 'missing_value' && parsedArgs.error.option === '--wait-timeout') {
+			printUsageError(reporter, t(lang, 'run.error.invalidWaitTimeout'), 'mf run --help', getRunHelp(lang), lang);
+			return 1;
+		}
+
+		printUsageError(reporter, formatCliOptionParseError(parsedArgs.error, lang), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
 
-	if (parsedArgs.invalidWaitTimeout) {
+	if (parsedArgs.error === 'invalid_wait_timeout') {
 		printUsageError(reporter, t(lang, 'run.error.invalidWaitTimeout'), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}

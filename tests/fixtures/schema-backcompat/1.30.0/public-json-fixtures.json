@@ -919,6 +919,44 @@
       }
     },
     {
+      "id": "api-serve-response",
+      "schema_file": "api-serve-response.schema.json",
+      "producer": "mf api serve --stdio",
+      "fixture": {
+        "schema_version": "1",
+        "command": "api serve",
+        "transport": "stdio",
+        "id": "health",
+        "ok": true,
+        "policy": {
+          "mode": "read_only",
+          "executes_commands": false,
+          "direct_commands_allowed": false,
+          "raw_output_included": false,
+          "hidden_reasoning_included": false
+        },
+        "result": {
+          "schema_version": "1",
+          "command": "api health",
+          "mustflow_root": "C:/repo",
+          "status": "ok",
+          "installed": true,
+          "check_ok": true,
+          "command_contract_ok": true,
+          "runnable_count": 1,
+          "git_status": "available",
+          "changed_file_count": 0,
+          "latest_run_exists": false,
+          "blockers": [],
+          "warnings": [],
+          "recommended_next_commands": [
+            "mf context --json",
+            "mf doctor --json"
+          ]
+        }
+      }
+    },
+    {
       "id": "contract-lint-report",
       "schema_file": "contract-lint-report.schema.json",
       "producer": "mf contract-lint --json",
@@ -987,6 +1025,446 @@
         "ledger_path": ".mustflow/review/docs.toml",
         "count": 0,
         "documents": []
+      }
+    },
+    {
+      "id": "onboard-commands-report",
+      "schema_file": "onboard-commands-report.schema.json",
+      "producer": "mf onboard commands --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "onboard commands",
+        "mustflow_root": "C:/repo",
+        "command_contract_path": ".mustflow/config/commands.toml",
+        "policy": {
+          "command_authority": ".mustflow/config/commands.toml",
+          "suggestions_grant_command_authority": false,
+          "suggestions_are_review_only": true,
+          "writes_files": false
+        },
+        "summary": {
+          "total_intents": 2,
+          "runnable_intents": 1,
+          "manual_only_intents": 1,
+          "unknown_intents": 0,
+          "suggestions": 1,
+          "package_scripts": 1,
+          "make_targets": 0,
+          "just_recipes": 0,
+          "contract_errors": 0,
+          "contract_warnings": 1
+        },
+        "suggestions": [
+          {
+            "sourceFile": "package.json",
+            "sourceKind": "package_script",
+            "sourceName": "test",
+            "commandHint": "package script test",
+            "suggestedIntent": "suggest_package_test",
+            "status": "unknown",
+            "reason": "Review this package script before granting command execution authority.",
+            "snippet": "[intents.suggest_package_test]\nstatus = \"unknown\"\ndescription = \"Review package script: test.\"\nreason = \"Candidate discovered from package.json; review timeout, cwd, writes, network, destructive behavior, and whether agents may run it.\"\nagent_action = \"do_not_guess_report_missing\""
+          }
+        ],
+        "next_steps": [
+          "Review each suggested unknown intent before copying it into .mustflow/config/commands.toml.",
+          "Do not add execution fields until a maintainer has reviewed the command behavior."
+        ]
+      }
+    },
+    {
+      "id": "next-report",
+      "schema_file": "next-report.schema.json",
+      "producer": "mf next --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "next",
+        "mustflow_root": "C:/repo",
+        "status": "blocked",
+        "policy": {
+          "command_authority": ".mustflow/config/commands.toml",
+          "direct_commands_allowed": false,
+          "grants_command_authority": false,
+          "writes_files": false
+        },
+        "state": {
+          "installed": true,
+          "check_ok": true,
+          "command_contract_ok": true,
+          "git_status": "available",
+          "changed_file_count": 1,
+          "validation_reasons": [
+            "code_change"
+          ],
+          "selected_intents": [],
+          "gap_count": 1
+        },
+        "decision": {
+          "kind": "configure_commands",
+          "command": "mf onboard commands",
+          "title": "Review command-contract gaps",
+          "detail": "No runnable command intents cover required_after = \"code_change\". Do not guess package-manager commands directly."
+        },
+        "recommended_commands": [
+          "mf api verification-plan --changed --json",
+          "mf onboard commands",
+          "mf run mustflow_check"
+        ],
+        "blockers": [
+          "No runnable command intents cover required_after = \"code_change\"."
+        ],
+        "warnings": [],
+        "gaps": [
+          {
+            "reason": "code_change",
+            "files": [
+              "src/index.ts"
+            ],
+            "surfaces": [
+              "source"
+            ],
+            "detail": "No runnable command intents cover required_after = \"code_change\"."
+          }
+        ],
+        "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "id": "evidence-report",
+      "schema_file": "evidence-report.schema.json",
+      "producer": "mf evidence --changed --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "evidence",
+        "mustflow_root": "C:/repo",
+        "status": "needs_verification",
+        "source": {
+          "mode": "changed",
+          "changed": true,
+          "plan_path": null,
+          "latest_path": ".mustflow/state/runs/latest.json"
+        },
+        "policy": {
+          "mode": "read_only_report",
+          "command_authority": ".mustflow/config/commands.toml",
+          "direct_commands_allowed": false,
+          "executes_commands": false,
+          "grants_command_authority": false,
+          "raw_output_included": false,
+          "hidden_reasoning_included": false,
+          "writes_files": false
+        },
+        "plan": {
+          "source": "changed",
+          "status": "available",
+          "verification_plan_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "changed_file_count": 1,
+          "changed_files": [
+            "src/index.ts"
+          ],
+          "validation_reasons": [
+            "code_change"
+          ],
+          "selected_intents": [
+            "test_related"
+          ],
+          "requirement_count": 1,
+          "gap_count": 0,
+          "requirements": [
+            {
+              "reason": "code_change",
+              "file_count": 1,
+              "files": [
+                "src/index.ts"
+              ],
+              "surfaces": [
+                "source"
+              ],
+              "affected_contracts": [],
+              "candidate_intents": [
+                "test_related"
+              ],
+              "selected_intents": [
+                "test_related"
+              ],
+              "skipped_intents": [],
+              "status": "selected",
+              "evidence_receipts": [],
+              "gap_reasons": []
+            }
+          ],
+          "gaps": [],
+          "test_selection": {
+            "status": "available",
+            "candidate_count": 1,
+            "selected_count": 1,
+            "note": null
+          },
+          "issues": []
+        },
+        "latest": {
+          "status": "missing",
+          "exists": false,
+          "path": ".mustflow/state/runs/latest.json",
+          "kind": null,
+          "verification_plan_id": null,
+          "applies_to_plan": null,
+          "completion_verdict_status": null,
+          "execution_status": null,
+          "receipt_count": null,
+          "skipped_check_count": 0,
+          "remaining_risk_count": 0,
+          "requirements": [],
+          "receipts": [],
+          "skipped_checks": [],
+          "remaining_risks": [],
+          "issues": []
+        },
+        "coverage": {
+          "requirement_count": 1,
+          "covered_by_latest_count": 0,
+          "selected_requirement_count": 1,
+          "blocked_requirement_count": 0,
+          "unselected_requirement_count": 0,
+          "selected_intent_count": 1,
+          "receipt_count": 0,
+          "skipped_check_count": 0,
+          "remaining_risk_count": 0,
+          "gap_count": 0
+        },
+        "recommended_commands": [
+          "mf verify --changed --json",
+          "mf run test_related"
+        ],
+        "export_path": null,
+        "issues": []
+      }
+    },
+    {
+      "id": "workspace-status",
+      "schema_file": "workspace-status.schema.json",
+      "producer": "mf workspace status --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "workspace status",
+        "mustflow_root": "C:/repo",
+        "workspace": {
+          "enabled": true,
+          "roots": [
+            "packages"
+          ],
+          "max_depth": 4,
+          "max_repositories": 50,
+          "follow_symlinks": false,
+          "stop_at_repository_root": true
+        },
+        "policy": {
+          "mode": "read_only",
+          "grants_command_authority": false,
+          "parent_root_grants_child_authority": false,
+          "command_authority_per_root": ".mustflow/config/commands.toml",
+          "run_entrypoint_per_root": "mf run <intent>",
+          "executes_commands": false,
+          "raw_commands_included": false
+        },
+        "repository_count": 1,
+        "repositories": [
+          {
+            "relative_path": "packages/service/",
+            "status": "mustflow_ready",
+            "git_repository": true,
+            "mustflow": true,
+            "agent_rules": "packages/service/AGENTS.md",
+            "repo_map": null,
+            "mustflow_config": "packages/service/.mustflow/config/mustflow.toml",
+            "command_contract": {
+              "path": "packages/service/.mustflow/config/commands.toml",
+              "exists": true,
+              "parse_error": null,
+              "total_intents": 1,
+              "runnable_count": 1,
+              "runnable_intents": [
+                "test_fast"
+              ],
+              "blocked_count": 0
+            },
+            "context_index": null,
+            "skill_index": null,
+            "root_document_count": 1,
+            "machine_contract_count": 0,
+            "manifest_count": 1,
+            "command_adapter_count": 0,
+            "editing_policy_count": 1,
+            "issues": []
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "workspace-command-catalog",
+      "schema_file": "workspace-command-catalog.schema.json",
+      "producer": "mf workspace command-catalog --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "workspace command-catalog",
+        "mustflow_root": "C:/repo",
+        "workspace": {
+          "enabled": true,
+          "roots": [
+            "packages"
+          ],
+          "max_depth": 4,
+          "max_repositories": 50,
+          "follow_symlinks": false,
+          "stop_at_repository_root": true
+        },
+        "policy": {
+          "mode": "read_only",
+          "grants_command_authority": false,
+          "parent_root_grants_child_authority": false,
+          "command_authority_per_root": ".mustflow/config/commands.toml",
+          "run_entrypoint_per_root": "mf run <intent>",
+          "executes_commands": false,
+          "raw_commands_included": false
+        },
+        "repository_count": 1,
+        "total_intent_count": 2,
+        "runnable_intent_count": 1,
+        "repositories": [
+          {
+            "relative_path": "packages/service/",
+            "status": "available",
+            "command_contract": {
+              "path": "packages/service/.mustflow/config/commands.toml",
+              "exists": true,
+              "parse_error": null,
+              "total_intents": 2,
+              "runnable_count": 1,
+              "runnable_intents": [
+                "test_fast"
+              ],
+              "blocked_count": 1
+            },
+            "intent_count": 2,
+            "runnable_count": 1,
+            "blocked_count": 1,
+            "intents": [
+              {
+                "name": "test_fast",
+                "description": "Run fast tests.",
+                "status": "configured",
+                "lifecycle": "oneshot",
+                "run_policy": "agent_allowed",
+                "runnable": true,
+                "reason_code": null,
+                "detail": null,
+                "run_command": "mf run test_fast",
+                "run_from_repository": "packages/service/",
+                "timeout_seconds": 60,
+                "required_after": [
+                  "code_change"
+                ],
+                "writes": [],
+                "network": false,
+                "destructive": false
+              },
+              {
+                "name": "deploy",
+                "description": "Manual deployment gate.",
+                "status": "manual_only",
+                "lifecycle": "oneshot",
+                "run_policy": "manual_only",
+                "runnable": false,
+                "reason_code": "status_not_configured",
+                "detail": "Intent status is manual_only, not configured.",
+                "run_command": null,
+                "run_from_repository": "packages/service/",
+                "timeout_seconds": null,
+                "required_after": [],
+                "writes": [],
+                "network": null,
+                "destructive": null
+              }
+            ],
+            "issues": []
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "workspace-verification-plan",
+      "schema_file": "workspace-verification-plan.schema.json",
+      "producer": "mf workspace verify --changed --plan-only --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "workspace verify",
+        "mustflow_root": "C:/repo",
+        "workspace": {
+          "enabled": true,
+          "roots": [
+            "packages"
+          ],
+          "max_depth": 4,
+          "max_repositories": 50,
+          "follow_symlinks": false,
+          "stop_at_repository_root": true
+        },
+        "policy": {
+          "mode": "read_only",
+          "grants_command_authority": false,
+          "parent_root_grants_child_authority": false,
+          "command_authority_per_root": ".mustflow/config/commands.toml",
+          "run_entrypoint_per_root": "mf run <intent>",
+          "executes_commands": false,
+          "raw_commands_included": false,
+          "plan_command_per_root": "mf verify --changed --plan-only --json",
+          "selected_intents_run_via": "mf run <intent>"
+        },
+        "repository_count": 1,
+        "total_changed_file_count": 1,
+        "total_requirement_count": 1,
+        "total_selected_intent_count": 1,
+        "total_gap_count": 0,
+        "repositories": [
+          {
+            "relative_path": "packages/service/",
+            "status": "available",
+            "command_contract": {
+              "path": "packages/service/.mustflow/config/commands.toml",
+              "exists": true,
+              "parse_error": null,
+              "total_intents": 1,
+              "runnable_count": 1,
+              "runnable_intents": [
+                "test_fast"
+              ],
+              "blocked_count": 0
+            },
+            "changed_file_count": 1,
+            "changed_files": [
+              "src/index.ts"
+            ],
+            "verification_plan_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "requirement_count": 1,
+            "candidate_count": 1,
+            "selected_intent_count": 1,
+            "gap_count": 0,
+            "selected_intents": [
+              {
+                "intent": "test_fast",
+                "run_command": "mf run test_fast",
+                "run_from_repository": "packages/service/",
+                "locks": [],
+                "conflict_count": 0
+              }
+            ],
+            "gaps": [],
+            "issues": []
+          }
+        ],
+        "issues": []
       }
     },
     {

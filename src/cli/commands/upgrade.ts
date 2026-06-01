@@ -1,9 +1,19 @@
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { checkNpmLatestVersion, type PackageVersionCheck } from '../lib/npm-version-check.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { readPackageMetadata } from '../lib/package-info.js';
 import type { Reporter } from '../lib/reporter.js';
 import { runUpdate } from './update.js';
+
+const UPGRADE_OPTIONS = [
+	{ name: '--dry-run', kind: 'boolean' },
+] as const;
 
 export function getUpgradeHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -42,20 +52,18 @@ function printPackageCheck(check: PackageVersionCheck, reporter: Reporter, lang:
 }
 
 export async function runUpgrade(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getUpgradeHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--dry-run']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf upgrade --help', getUpgradeHelp(lang), lang);
+	const options = parseCliOptions(args, UPGRADE_OPTIONS);
+	if (options.error) {
+		printUsageError(reporter, formatCliOptionParseError(options.error, lang), 'mf upgrade --help', getUpgradeHelp(lang), lang);
 		return 1;
 	}
 
-	const dryRun = args.includes('--dry-run');
+	const dryRun = hasParsedCliOption(options, '--dry-run');
 
 	reporter.stdout(t(lang, 'upgrade.title'));
 	reporter.stdout('');

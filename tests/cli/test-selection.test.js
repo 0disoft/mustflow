@@ -169,14 +169,18 @@ test('related selection reports release-sensitive template changes', () => {
 test('fast baseline keeps lightweight command and workflow contracts', () => {
 	const report = listSuite('fast');
 
-	assert.deepEqual(report.selected.slice(0, 7), [
+	assert.deepEqual(report.selected.slice(0, 11), [
 		'adapters.test.js',
 		'classify.test.js',
+		'evidence.test.js',
 		'impact.test.js',
 		'handoff.test.js',
+		'next.test.js',
+		'onboard.test.js',
 		'router.test.js',
 		'status.test.js',
 		'version-sources.test.js',
+		'workspace.test.js',
 	]);
 	assert.equal(report.selected.includes('docs.test.js'), true);
 	assert.equal(report.selected.includes('authoring-fixtures.test.js'), true);

@@ -4,6 +4,11 @@ import { isMustflowBinName } from '../../core/command-classification.js';
 import { resolveSafeProjectCwd } from '../../core/command-cwd.js';
 import { resolveCommandEnv, type CommandEnvPolicy } from '../../core/command-env.js';
 import {
+	getCommandMaxOutputBytesLimitDetail,
+	readEffectiveCommandCwd,
+	readEffectiveCommandMaxOutputBytes,
+} from '../../core/command-run-constraints.js';
+import {
 	evaluateCommandIntentEligibility,
 	type CommandIntentEligibilityCode,
 	type CommandIntentEligibilityResult,
@@ -24,8 +29,6 @@ import {
 import {
 	DEFAULT_COMMAND_MAX_OUTPUT_BYTES,
 	COMMAND_OUTPUT_LIMIT_SCOPE,
-	MAX_COMMAND_OUTPUT_BYTES,
-	commandMaxOutputBytesLimitMessage,
 } from '../../core/command-output-limits.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
 import { normalizeSuccessExitCodes } from '../../core/success-exit-codes.js';
@@ -235,36 +238,14 @@ function getRunPlanMode(commandArgv: readonly string[] | undefined, intent: Toml
 	return intent.mode === 'shell' ? 'shell' : null;
 }
 
-function readEffectiveMaxOutputBytes(contract: CommandContract, intent: TomlTable): number {
-	return readPositiveInteger(intent, 'max_output_bytes') ??
-		readPositiveInteger(contract.defaults, 'max_output_bytes') ??
-		DEFAULT_COMMAND_MAX_OUTPUT_BYTES;
-}
-
 function readEffectiveKillAfterSeconds(contract: CommandContract, intent: TomlTable): number {
 	return readPositiveInteger(intent, 'kill_after_seconds') ??
 		readPositiveInteger(contract.defaults, 'kill_after_seconds') ??
 		5;
 }
 
-function getMaxOutputBytesLimitDetail(contract: CommandContract, intent: TomlTable): string | null {
-	const intentValue = readPositiveInteger(intent, 'max_output_bytes');
-	if (intentValue !== undefined) {
-		return intentValue > MAX_COMMAND_OUTPUT_BYTES ?
-			commandMaxOutputBytesLimitMessage('[commands.intents.<intent>].max_output_bytes') :
-			null;
-	}
-
-	const defaultValue = readPositiveInteger(contract.defaults, 'max_output_bytes');
-	if (defaultValue !== undefined && defaultValue > MAX_COMMAND_OUTPUT_BYTES) {
-		return commandMaxOutputBytesLimitMessage('[commands.defaults].max_output_bytes');
-	}
-
-	return null;
-}
-
 function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): RunIntentMetadata {
-	const configuredCwd = readString(intent, 'cwd') ?? readString(contract.defaults, 'default_cwd') ?? '.';
+	const configuredCwd = readEffectiveCommandCwd(contract, intent);
 	const commandArgv = readStringArray(intent, 'argv');
 	const shellCommand = intent.mode === 'shell' ? readString(intent, 'cmd') : undefined;
 	const env = resolveCommandEnv(contract, intent);
@@ -277,7 +258,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		configuredCwd,
 		timeoutSeconds: readPositiveInteger(intent, 'timeout_seconds') ?? null,
 		killAfterSeconds: readEffectiveKillAfterSeconds(contract, intent),
-		maxOutputBytes: readEffectiveMaxOutputBytes(contract, intent),
+		maxOutputBytes: readEffectiveCommandMaxOutputBytes(contract, intent, DEFAULT_COMMAND_MAX_OUTPUT_BYTES),
 		successExitCodes: getSuccessExitCodes(intent),
 		commandArgv,
 		shellCommand,
@@ -368,7 +349,7 @@ export function createRunPlan(
 	}
 
 	const metadata = readRunIntentMetadata(contract, rawIntent);
-	const maxOutputBytesLimitDetail = getMaxOutputBytesLimitDetail(contract, rawIntent);
+	const maxOutputBytesLimitDetail = getCommandMaxOutputBytesLimitDetail(contract, rawIntent);
 	if (maxOutputBytesLimitDetail) {
 		return createBlockedRunPlan(
 			contract,

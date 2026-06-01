@@ -15,6 +15,7 @@ Current schemas:
 - `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`
 - `health.schema.json`: output of `mf api health --json`
 - `locks.schema.json`: output of `mf api locks --json`
+- `api-serve-response.schema.json`: each newline-delimited response from `mf api serve --stdio`
 - `run-receipt.schema.json`: output of `mf run <intent> --json` and `.mustflow/state/runs/latest.json`,
   including bounded declared-write drift metadata, a safe latest-run performance summary, and optional
   structured phase timings and selection summaries
@@ -23,6 +24,21 @@ Current schemas:
   command execution or automatic dependency execution
 - `test-selection.schema.json`: parsed optional `.mustflow/config/test-selection.toml`
 - `contract-lint-report.schema.json`: output of `mf contract-lint --json`
+- `onboard-commands-report.schema.json`: output of `mf onboard commands --json`, containing
+  review-only command-intent suggestions that do not grant command authority or write files
+- `next-report.schema.json`: output of `mf next --json`, containing the next safe action,
+  changed-file verification gaps, and read-only command recommendations
+- `evidence-report.schema.json`: output of `mf evidence --changed --json`, containing verification
+  requirements, latest bounded evidence, receipts, remaining risks, and gaps without running commands
+- `workspace-status.schema.json`: output of `mf workspace status --json`, containing configured
+  workspace roots, discovered nested repositories, and per-root command-contract readiness without
+  granting command authority
+- `workspace-command-catalog.schema.json`: output of `mf workspace command-catalog --json`,
+  containing per-root command intent availability, safe `mf run` entrypoints, and no raw command
+  strings
+- `workspace-verification-plan.schema.json`: output of
+  `mf workspace verify --changed --plan-only --json`, containing per-root changed-file
+  verification plans without running commands or granting parent-to-child command authority
 - `dashboard-export.schema.json`: bounded static export written by `mf dashboard --export-json <path>`,
   including output policy, redaction and truncation metadata, the dashboard harness report, and
   the evidence-based completion verdict, evidence model, and conservative coverage matrix for the

@@ -272,6 +272,37 @@ test('rejects conflicting nested map options', () => {
 	}
 });
 
+test('rejects unsupported map options with usage help', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const unknownOption = runMap(projectPath, ['--bad']);
+		const booleanValue = runMap(projectPath, ['--stdout=true']);
+
+		assert.equal(unknownOption.status, 1);
+		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
+		assert.match(unknownOption.stderr, /Usage: mf map \[options\]/u);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --stdout=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf map \[options\]/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('accepts inline map depth values through shared option parsing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runMap(projectPath, ['--stdout', '--depth=2']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /^# REPO_MAP\.md$/m);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('writes REPO_MAP.md when requested', () => {
 	const projectPath = createTempProject();
 

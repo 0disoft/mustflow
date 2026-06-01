@@ -1,8 +1,24 @@
 import type { Reporter } from '../lib/reporter.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import { generateRepoMap, writeRepoMap } from '../lib/repo-map.js';
+
+const MAP_OPTIONS = [
+	{ name: '--stdout', kind: 'boolean' },
+	{ name: '--write', kind: 'boolean' },
+	{ name: '--depth', kind: 'string' },
+	{ name: '--include-nested', kind: 'boolean' },
+	{ name: '--root-only', kind: 'boolean' },
+] as const satisfies readonly CliOptionSpec[];
 
 export function getMapHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -37,65 +53,40 @@ export function getMapHelp(lang: CliLang = 'en'): string {
 }
 
 export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getMapHelp(lang));
 		return 0;
 	}
 
-	let shouldPrint = false;
-	let shouldWrite = false;
-	let depth = 3;
-	let includeNested: boolean | undefined;
+	const parsed = parseCliOptions(args, MAP_OPTIONS);
 
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (arg === '--stdout') {
-			shouldPrint = true;
-			continue;
-		}
-
-		if (arg === '--write') {
-			shouldWrite = true;
-			continue;
-		}
-
-		if (arg === '--include-nested') {
-			if (includeNested === false) {
-				printUsageError(reporter, t(lang, 'map.error.nestedConflict'), 'mf map --help', getMapHelp(lang), lang);
-				return 1;
-			}
-
-			includeNested = true;
-			continue;
-		}
-
-		if (arg === '--root-only') {
-			if (includeNested === true) {
-				printUsageError(reporter, t(lang, 'map.error.nestedConflict'), 'mf map --help', getMapHelp(lang), lang);
-				return 1;
-			}
-
-			includeNested = false;
-			continue;
-		}
-
-		if (arg === '--depth') {
-			const rawDepth = args[index + 1];
-			const parsedDepth = Number.parseInt(rawDepth ?? '', 10);
-
-			if (!Number.isInteger(parsedDepth) || parsedDepth < 1) {
-				printUsageError(reporter, t(lang, 'map.error.invalidDepth'), 'mf map --help', getMapHelp(lang), lang);
-				return 1;
-			}
-
-			depth = parsedDepth;
-			index += 1;
-			continue;
-		}
-
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: arg }), 'mf map --help', getMapHelp(lang), lang);
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf map --help', getMapHelp(lang), lang);
 		return 1;
+	}
+
+	let shouldPrint = hasParsedCliOption(parsed, '--stdout');
+	const shouldWrite = hasParsedCliOption(parsed, '--write');
+	let depth = 3;
+	const wantsIncludeNested = hasParsedCliOption(parsed, '--include-nested');
+	const wantsRootOnly = hasParsedCliOption(parsed, '--root-only');
+	let includeNested = wantsIncludeNested ? true : wantsRootOnly ? false : undefined;
+	const rawDepth = getParsedCliStringOption(parsed, '--depth');
+
+	if (wantsIncludeNested && wantsRootOnly) {
+		printUsageError(reporter, t(lang, 'map.error.nestedConflict'), 'mf map --help', getMapHelp(lang), lang);
+		return 1;
+	}
+
+	if (rawDepth !== null) {
+		const parsedDepth = Number.parseInt(rawDepth, 10);
+
+		if (!Number.isInteger(parsedDepth) || parsedDepth < 1) {
+			printUsageError(reporter, t(lang, 'map.error.invalidDepth'), 'mf map --help', getMapHelp(lang), lang);
+			return 1;
+		}
+
+		depth = parsedDepth;
 	}
 
 	if (!shouldPrint && !shouldWrite) {

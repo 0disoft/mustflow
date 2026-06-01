@@ -245,6 +245,32 @@ test('writes changed-file classification reports to repository-local paths', asy
 	}
 });
 
+test('classify write option uses shared CLI value parsing', async () => {
+	const projectPath = createClassifyProject();
+	const reportPath = path.join(projectPath, '.mustflow', 'state', 'inline-classification.json');
+
+	try {
+		const inlineWrite = await runCli(projectPath, [
+			'classify',
+			'README.md',
+			'--write=.mustflow/state/inline-classification.json',
+			'--json',
+		]);
+		const missingWrite = await runCli(projectPath, ['classify', 'README.md', '--write']);
+		const booleanValue = await runCli(projectPath, ['classify', 'README.md', '--json=true']);
+
+		assert.equal(inlineWrite.status, 0, inlineWrite.stderr || inlineWrite.stdout);
+		assert.equal(existsSync(reportPath), true);
+		assert.equal(JSON.parse(inlineWrite.stdout).source, 'paths');
+		assert.equal(missingWrite.status, 1);
+		assert.match(missingWrite.stderr, /Missing value for --write/u);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('refuses to write classification reports through symlink targets', async (t) => {
 	const projectPath = createClassifyProject();
 	const outsidePath = createTempProject('mustflow-classify-outside-');

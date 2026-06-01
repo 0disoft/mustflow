@@ -14,6 +14,8 @@ Use this path when you build an AI coding tool, agent harness, editor integratio
 ## Plan and Verify
 
 ```sh
+mf api workspace-summary --json
+mf api serve --stdio
 mf classify --changed --json
 mf verify --reason code_change --plan-only --json
 mf run <intent> --json

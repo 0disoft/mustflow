@@ -4,6 +4,13 @@ import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readMustflowTomlFile } from '../lib/toml.js';
@@ -14,6 +21,10 @@ import {
 } from '../../core/version-sources.js';
 
 const IMPACT_SCHEMA_VERSION = '1';
+const IMPACT_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--changed', kind: 'boolean' },
+] as const satisfies readonly CliOptionSpec[];
 
 interface ImpactOutput {
 	readonly schema_version: string;
@@ -31,7 +42,7 @@ interface ParsedImpactArgs {
 	readonly json: boolean;
 	readonly changed: boolean;
 	readonly paths: readonly string[];
-	readonly error?: string;
+	readonly error?: ReturnType<typeof parseCliOptions>['error'];
 }
 
 export function getImpactHelp(lang: CliLang = 'en'): string {
@@ -55,29 +66,13 @@ export function getImpactHelp(lang: CliLang = 'en'): string {
 }
 
 function parseImpactArgs(args: readonly string[]): ParsedImpactArgs {
-	const paths: string[] = [];
-	let json = false;
-	let changed = false;
-
-	for (const arg of args) {
-		if (arg === '--json') {
-			json = true;
-			continue;
-		}
-
-		if (arg === '--changed') {
-			changed = true;
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { json, changed, paths, error: arg };
-		}
-
-		paths.push(arg);
-	}
-
-	return { json, changed, paths };
+	const parsed = parseCliOptions(args, IMPACT_OPTIONS, { allowPositionals: true });
+	return {
+		json: hasParsedCliOption(parsed, '--json'),
+		changed: hasParsedCliOption(parsed, '--changed'),
+		paths: parsed.positionals,
+		error: parsed.error,
+	};
 }
 
 function readPreferences(projectRoot: string): TomlTable | undefined {
@@ -133,7 +128,7 @@ function renderImpactOutput(output: ImpactOutput, lang: CliLang): string {
 }
 
 export function runImpact(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getImpactHelp(lang));
 		return 0;
 	}
@@ -143,7 +138,7 @@ export function runImpact(args: string[], reporter: Reporter, lang: CliLang = 'e
 	if (parsed.error) {
 		printUsageError(
 			reporter,
-			t(lang, 'cli.error.unknownOption', { option: parsed.error }),
+			formatCliOptionParseError(parsed.error, lang),
 			'mf impact --help',
 			getImpactHelp(lang),
 			lang,

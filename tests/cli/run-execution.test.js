@@ -394,7 +394,7 @@ destructive = false
 		});
 		await waitForOutput(() => holderStdout, /lock-ready/u);
 
-		const waited = runCli(projectPath, ['run', 'wait_runner', '--wait', '--wait-timeout', '5']);
+		const waited = runCli(projectPath, ['run', 'wait_runner', '--wait', '--wait-timeout=5']);
 		assert.equal(waited.status, 0, waited.stderr || waited.stdout);
 		assert.match(waited.stderr, /Waiting to run wait_runner/u);
 		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');

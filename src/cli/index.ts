@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { COMMAND_DEFINITIONS, findCommandDefinition } from './lib/command-registry.js';
 import { renderCliError, renderHelp } from './lib/cli-output.js';
 import { DEFAULT_CLI_LANG, SUPPORTED_CLI_LANGS, isCliLang, t, type CliLang } from './lib/i18n.js';
+import { parseCliOptions, type CliOptionSpec } from './lib/option-parser.js';
 import { consoleReporter, type Reporter } from './lib/reporter.js';
 
 interface ParsedGlobalOptions {
@@ -14,6 +15,10 @@ interface ParsedGlobalOptions {
 	readonly args: readonly string[];
 	readonly error?: string;
 }
+
+const GLOBAL_OPTIONS: readonly CliOptionSpec[] = [
+	{ name: '--lang', kind: 'string' },
+];
 
 function getTopLevelHelp(lang: CliLang): string {
 	return renderHelp(
@@ -34,6 +39,7 @@ function getTopLevelHelp(lang: CliLang): string {
 			examples: [
 				'mf --lang ko help',
 				'mf api workspace-summary --json',
+				'mf api serve --stdio',
 				'mf adapters status --json',
 				'mf init --dry-run',
 				'mf doctor --json',
@@ -42,6 +48,11 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf check --json',
 				'mf classify --changed',
 				'mf contract-lint --json',
+				'mf onboard commands --json',
+				'mf next --json',
+				'mf evidence --changed --json',
+				'mf workspace status --json',
+				'mf workspace verify --changed --plan-only --json',
 				'mf context --json',
 				'mf map --write',
 				'mf search mustflow_check',
@@ -76,46 +87,33 @@ function getErrorMessage(error: unknown): string {
 
 function parseGlobalOptions(argv: string[]): ParsedGlobalOptions {
 	let lang = DEFAULT_CLI_LANG;
-	const args: string[] = [];
+	const parsed = parseCliOptions(argv, GLOBAL_OPTIONS, {
+		allowPositionals: true,
+		allowUnknownOptions: true,
+		allowEmptyStringValues: true,
+	});
 
-	for (let index = 0; index < argv.length; index += 1) {
-		const arg = argv[index];
-
-		if (!arg) {
-			continue;
-		}
-
-		if (arg === '--lang') {
-			const value = argv[index + 1];
-
-			if (!value || value.startsWith('-')) {
-				return { lang, args, error: t(lang, 'cli.error.missingLangValue') };
-			}
-
-			if (!isCliLang(value)) {
-				return { lang, args, error: t(lang, 'cli.error.unsupportedLanguage', { language: value }) };
-			}
-
-			lang = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--lang=')) {
-			const value = arg.slice('--lang='.length);
-
-			if (!isCliLang(value)) {
-				return { lang, args, error: t(lang, 'cli.error.unsupportedLanguage', { language: value }) };
-			}
-
-			lang = value;
-			continue;
-		}
-
-		args.push(arg);
+	if (parsed.error) {
+		return { lang, args: parsed.positionals, error: t(lang, 'cli.error.missingLangValue') };
 	}
 
-	return { lang, args };
+	for (const occurrence of parsed.occurrences) {
+		if (occurrence.name !== '--lang' || typeof occurrence.value !== 'string') {
+			continue;
+		}
+
+		if (!isCliLang(occurrence.value)) {
+			return {
+				lang,
+				args: parsed.positionals,
+				error: t(lang, 'cli.error.unsupportedLanguage', { language: occurrence.value }),
+			};
+		}
+
+		lang = occurrence.value;
+	}
+
+	return { lang, args: parsed.positionals };
 }
 
 export async function runCli(argv: string[], reporter: Reporter = consoleReporter): Promise<number> {

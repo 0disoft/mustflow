@@ -9,6 +9,12 @@ import {
 } from '../lib/agent-context.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { getLocalIndexDatabasePath } from '../lib/local-index.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { checkMustflowProjectReport } from '../lib/validation.js';
@@ -17,6 +23,10 @@ import { readCommandContract } from '../../core/config-loading.js';
 import { summarizeSkillRouteAlignment } from '../../core/skill-route-alignment.js';
 
 const DOCTOR_SCHEMA_VERSION = '1';
+const DOCTOR_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--strict', kind: 'boolean' },
+] as const;
 
 interface DoctorCheckSummary {
 	readonly ok: boolean;
@@ -382,22 +392,20 @@ function renderDoctorOutput(output: DoctorOutput, lang: CliLang): string {
 }
 
 export function runDoctor(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getDoctorHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--json', '--strict']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf doctor --help', getDoctorHelp(lang), lang);
+	const options = parseCliOptions(args, DOCTOR_OPTIONS);
+	if (options.error) {
+		printUsageError(reporter, formatCliOptionParseError(options.error, lang), 'mf doctor --help', getDoctorHelp(lang), lang);
 		return 1;
 	}
 
-	const output = createDoctorOutput(args.includes('--strict'));
+	const output = createDoctorOutput(hasParsedCliOption(options, '--strict'));
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(options, '--json')) {
 		reporter.stdout(JSON.stringify(output, null, 2));
 		return output.ok ? 0 : 1;
 	}

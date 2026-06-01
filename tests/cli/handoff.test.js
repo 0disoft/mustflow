@@ -164,3 +164,31 @@ test('rejects handoff paths outside the mustflow root', async () => {
 		rmSync(outsideRoot, { recursive: true, force: true });
 	}
 });
+
+test('handoff validate rejects unsupported options with usage help', async () => {
+	const projectPath = createHandoffProject();
+
+	try {
+		const unknownOption = await runCli(projectPath, [
+			'handoff',
+			'validate',
+			'.mustflow/work-items/MF-0001.json',
+			'--bad',
+		]);
+		const booleanValue = await runCli(projectPath, [
+			'handoff',
+			'validate',
+			'.mustflow/work-items/MF-0001.json',
+			'--json=true',
+		]);
+
+		assert.equal(unknownOption.status, 1);
+		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
+		assert.match(unknownOption.stderr, /Usage: mf handoff validate <path> \[options\]/u);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf handoff validate <path> \[options\]/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

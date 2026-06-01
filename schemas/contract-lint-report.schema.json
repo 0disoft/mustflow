@@ -139,6 +139,7 @@
                             "missing_timeout",
                             "missing_command_source",
                             "unsafe_intent_name",
+                            "agent_shell_requires_allow",
                             "blocked_shell_background_pattern",
                             "blocked_long_running_command_pattern"
                           ]

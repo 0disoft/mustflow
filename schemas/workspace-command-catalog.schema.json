@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/workspace-command-catalog.schema.json",
+  "title": "mustflow workspace command catalog report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "workspace",
+    "policy",
+    "repository_count",
+    "total_intent_count",
+    "runnable_intent_count",
+    "repositories",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "workspace command-catalog" },
+    "mustflow_root": { "type": "string" },
+    "workspace": { "$ref": "#/$defs/workspace" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "repository_count": { "type": "integer", "minimum": 0 },
+    "total_intent_count": { "type": "integer", "minimum": 0 },
+    "runnable_intent_count": { "type": "integer", "minimum": 0 },
+    "repositories": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/repository" }
+    },
+    "issues": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "roots",
+        "max_depth",
+        "max_repositories",
+        "follow_symlinks",
+        "stop_at_repository_root"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "roots": { "$ref": "#/$defs/stringArray" },
+        "max_depth": { "type": "integer", "minimum": 1 },
+        "max_repositories": { "type": "integer", "minimum": 1 },
+        "follow_symlinks": { "type": "boolean" },
+        "stop_at_repository_root": { "type": "boolean" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "grants_command_authority",
+        "parent_root_grants_child_authority",
+        "command_authority_per_root",
+        "run_entrypoint_per_root",
+        "executes_commands",
+        "raw_commands_included"
+      ],
+      "properties": {
+        "mode": { "const": "read_only" },
+        "grants_command_authority": { "const": false },
+        "parent_root_grants_child_authority": { "const": false },
+        "command_authority_per_root": { "const": ".mustflow/config/commands.toml" },
+        "run_entrypoint_per_root": { "const": "mf run <intent>" },
+        "executes_commands": { "const": false },
+        "raw_commands_included": { "const": false }
+      }
+    },
+    "commandSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "exists",
+        "parse_error",
+        "total_intents",
+        "runnable_count",
+        "runnable_intents",
+        "blocked_count"
+      ],
+      "properties": {
+        "path": { "$ref": "#/$defs/nullableString" },
+        "exists": { "type": "boolean" },
+        "parse_error": { "$ref": "#/$defs/nullableString" },
+        "total_intents": { "type": ["integer", "null"], "minimum": 0 },
+        "runnable_count": { "type": ["integer", "null"], "minimum": 0 },
+        "runnable_intents": { "$ref": "#/$defs/stringArray" },
+        "blocked_count": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relative_path",
+        "status",
+        "command_contract",
+        "intent_count",
+        "runnable_count",
+        "blocked_count",
+        "intents",
+        "issues"
+      ],
+      "properties": {
+        "relative_path": { "type": "string" },
+        "status": { "enum": ["available", "contract_missing", "contract_invalid"] },
+        "command_contract": { "$ref": "#/$defs/commandSurface" },
+        "intent_count": { "type": "integer", "minimum": 0 },
+        "runnable_count": { "type": "integer", "minimum": 0 },
+        "blocked_count": { "type": "integer", "minimum": 0 },
+        "intents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/intent" }
+        },
+        "issues": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "status",
+        "lifecycle",
+        "run_policy",
+        "runnable",
+        "reason_code",
+        "detail",
+        "run_command",
+        "run_from_repository",
+        "timeout_seconds",
+        "required_after",
+        "writes",
+        "network",
+        "destructive"
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "$ref": "#/$defs/nullableString" },
+        "status": { "$ref": "#/$defs/nullableString" },
+        "lifecycle": { "$ref": "#/$defs/nullableString" },
+        "run_policy": { "$ref": "#/$defs/nullableString" },
+        "runnable": { "type": "boolean" },
+        "reason_code": { "$ref": "#/$defs/nullableString" },
+        "detail": { "$ref": "#/$defs/nullableString" },
+        "run_command": { "$ref": "#/$defs/nullableString" },
+        "run_from_repository": { "type": "string" },
+        "timeout_seconds": { "type": ["integer", "null"], "minimum": 1 },
+        "required_after": { "$ref": "#/$defs/stringArray" },
+        "writes": { "$ref": "#/$defs/stringArray" },
+        "network": { "type": ["boolean", "null"] },
+        "destructive": { "type": ["boolean", "null"] }
+      }
+    }
+  }
+}

@@ -77,6 +77,31 @@ test('api workspace-summary requires json mode', () => {
 	}
 });
 
+test('api report options use shared boolean option rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const jsonValue = runCli(projectPath, ['api', 'workspace-summary', '--json=true']);
+		assert.equal(jsonValue.status, 1);
+		assert.match(jsonValue.stderr, /Unknown option: --json=true/u);
+		assert.match(jsonValue.stderr, /mf api --help/u);
+
+		const changedValue = runCli(projectPath, ['api', 'verification-plan', '--changed=true', '--json']);
+		assert.equal(changedValue.status, 1);
+		assert.match(changedValue.stderr, /Unknown option: --changed=true/u);
+		assert.match(changedValue.stderr, /mf api --help/u);
+
+		const unexpectedArgument = runCli(projectPath, ['api', 'health', '--json', 'extra']);
+		assert.equal(unexpectedArgument.status, 1);
+		assert.match(unexpectedArgument.stderr, /Unknown option: extra/u);
+		assert.match(unexpectedArgument.stderr, /mf api --help/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints a read-only command catalog api report', () => {
 	const projectPath = createTempProject();
 
@@ -440,6 +465,86 @@ test('prints active run locks api report', () => {
 		assert.equal(output.policy.wait_entrypoint, 'mf run <intent> --wait');
 		assert.equal(output.policy.direct_commands_bypass_locks, true);
 		assert.ok(output.recommended_commands.includes('mf run <intent> --wait'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('api serve returns read-only reports over finite stdio input', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const input = [
+			JSON.stringify({ id: 'health-request', action: 'health' }),
+			JSON.stringify({ id: 'catalog-request', action: 'command-catalog' }),
+			'',
+		].join('\n');
+		const result = runCli(projectPath, ['api', 'serve', '--stdio'], { input });
+		const lines = result.stdout.trim().split(/\r?\n/u).map((line) => JSON.parse(line));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
+		assert.equal(lines.length, 2);
+		assert.equal(lines[0].schema_version, '1');
+		assert.equal(lines[0].command, 'api serve');
+		assert.equal(lines[0].transport, 'stdio');
+		assert.equal(lines[0].id, 'health-request');
+		assert.equal(lines[0].ok, true);
+		assert.equal(lines[0].policy.mode, 'read_only');
+		assert.equal(lines[0].policy.executes_commands, false);
+		assert.equal(lines[0].policy.direct_commands_allowed, false);
+		assert.equal(lines[0].result.command, 'api health');
+		assert.equal(lines[1].id, 'catalog-request');
+		assert.equal(lines[1].ok, true);
+		assert.equal(lines[1].result.command, 'api command-catalog');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('api serve reports protocol errors without running fallback commands', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const input = [
+			JSON.stringify({ id: 'missing-changed', action: 'verification-plan' }),
+			JSON.stringify({ id: 'unknown-action', action: 'run' }),
+			'{not json',
+			'',
+		].join('\n');
+		const result = runCli(projectPath, ['api', 'serve', '--stdio'], { input });
+		const lines = result.stdout.trim().split(/\r?\n/u).map((line) => JSON.parse(line));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
+		assert.equal(lines.length, 3);
+		assert.equal(lines[0].id, 'missing-changed');
+		assert.equal(lines[0].ok, false);
+		assert.equal(lines[0].error.code, 'action_requires_changed');
+		assert.equal(lines[0].policy.direct_commands_allowed, false);
+		assert.equal(lines[1].id, 'unknown-action');
+		assert.equal(lines[1].ok, false);
+		assert.equal(lines[1].error.code, 'unknown_action');
+		assert.equal(lines[2].id, null);
+		assert.equal(lines[2].ok, false);
+		assert.equal(lines[2].error.code, 'invalid_json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('api serve options use shared boolean option rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const stdioValue = runCli(projectPath, ['api', 'serve', '--stdio=true']);
+
+		assert.equal(stdioValue.status, 1);
+		assert.match(stdioValue.stderr, /Unknown option: --stdio=true/u);
+		assert.match(stdioValue.stderr, /mf api --help/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

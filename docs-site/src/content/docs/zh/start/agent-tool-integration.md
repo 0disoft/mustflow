@@ -14,6 +14,8 @@ description: 通过中立的仓库本地合同，把 AI 编码工具或 harness 
 ## 计划和验证
 
 ```sh
+mf api workspace-summary --json
+mf api serve --stdio
 mf classify --changed --json
 mf verify --reason code_change --plan-only --json
 mf run <intent> --json

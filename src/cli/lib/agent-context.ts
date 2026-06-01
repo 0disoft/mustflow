@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import {
 	isRecord,
-	readPositiveInteger,
+	type CommandContract,
 	readString,
 	readStringArray,
 	type TomlTable,
@@ -18,6 +18,7 @@ import {
 	readMustflowTextFile,
 	readMustflowTextFileIfExists,
 } from './mustflow-read.js';
+import { createRunPlan } from './run-plan.js';
 import { readMustflowTomlFile } from './toml.js';
 
 const CONTEXT_SCHEMA_VERSION = '1';
@@ -290,16 +291,6 @@ function sha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
 
-function isRunnableIntent(intent: TomlTable): boolean {
-	return (
-		readString(intent, 'status') === 'configured' &&
-		readString(intent, 'lifecycle') === 'oneshot' &&
-		readString(intent, 'run_policy') === 'agent_allowed' &&
-		intent.stdin === 'closed' &&
-		Boolean(readPositiveInteger(intent, 'timeout_seconds'))
-	);
-}
-
 function readCommandContractContext(projectRoot: string): CommandContractContext {
 	const commands = readTomlTableIfExists(projectRoot, COMMANDS_RELATIVE_PATH);
 
@@ -314,6 +305,11 @@ function readCommandContractContext(projectRoot: string): CommandContractContext
 
 	const intents: IntentContext[] = [];
 	const runnableIntents: string[] = [];
+	const contract: CommandContract = {
+		defaults: isRecord(commands.defaults) ? commands.defaults : {},
+		intents: commands.intents,
+		resources: isRecord(commands.resources) ? commands.resources : {},
+	};
 
 	for (const [name, intent] of Object.entries(commands.intents).sort(([left], [right]) => left.localeCompare(right))) {
 		if (!isRecord(intent)) {
@@ -332,7 +328,7 @@ function readCommandContractContext(projectRoot: string): CommandContractContext
 			description: readString(intent, 'description') ?? null,
 		});
 
-		if (isRunnableIntent(intent)) {
+		if (createRunPlan(projectRoot, contract, name).ok) {
 			runnableIntents.push(name);
 		}
 	}

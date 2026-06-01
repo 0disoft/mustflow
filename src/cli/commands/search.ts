@@ -1,8 +1,22 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang, type MessageKey, type MessageParams } from '../lib/i18n.js';
 import { searchLocalIndex, type LocalSearchResult, type LocalSearchScope } from '../lib/local-index.js';
+import {
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionParseError,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+
+const SEARCH_OPTIONS = [
+	{ name: '--limit', kind: 'string' },
+	{ name: '--scope', kind: 'string' },
+	{ name: '--json', kind: 'boolean' },
+] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedSearchOptions {
 	readonly query: string;
@@ -51,101 +65,59 @@ export function getSearchHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
-	const queryParts: string[] = [];
-	let limit = 10;
-	let scope: LocalSearchScope = 'workflow';
-	let json = false;
-
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (!arg) {
-			continue;
-		}
-
-		if (arg === '--json') {
-			json = true;
-			continue;
-		}
-
-		if (arg === '--limit') {
-			const rawLimit = args[index + 1];
-
-			if (!rawLimit || rawLimit.startsWith('-')) {
-				return { query: '', limit, scope, json, error: { key: 'search.error.missingLimit' } };
-			}
-
-			const parsedLimit = Number.parseInt(rawLimit, 10);
-
-			if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-				return { query: '', limit, scope, json, error: { key: 'search.error.invalidLimit' } };
-			}
-
-			limit = parsedLimit;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--limit=')) {
-			const rawLimit = arg.slice('--limit='.length);
-			const parsedLimit = Number.parseInt(rawLimit, 10);
-
-			if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-				return { query: '', limit, scope, json, error: { key: 'search.error.invalidLimit' } };
-			}
-
-			limit = parsedLimit;
-			continue;
-		}
-
-		if (arg === '--scope') {
-			const rawScope = args[index + 1];
-
-			if (!rawScope || rawScope.startsWith('-')) {
-				return { query: '', limit, scope, json, error: { key: 'search.error.missingScope' } };
-			}
-
-			if (!isSearchScope(rawScope)) {
-				return {
-					query: '',
-					limit,
-					scope,
-					json,
-					error: { key: 'search.error.invalidScope', params: { scope: rawScope } },
-				};
-			}
-
-			scope = rawScope;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--scope=')) {
-			const rawScope = arg.slice('--scope='.length);
-
-			if (!isSearchScope(rawScope)) {
-				return {
-					query: '',
-					limit,
-					scope,
-					json,
-					error: { key: 'search.error.invalidScope', params: { scope: rawScope } },
-				};
-			}
-
-			scope = rawScope;
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { query: '', limit, scope, json, error: { key: 'cli.error.unknownOption', params: { option: arg } } };
-		}
-
-		queryParts.push(arg);
+function toSearchOptionError(error: CliOptionParseError): ParsedSearchOptions['error'] {
+	if (error.kind === 'missing_value' && error.option === '--limit') {
+		return { key: 'search.error.missingLimit' };
 	}
 
-	const query = queryParts.join(' ').trim();
+	if (error.kind === 'missing_value' && error.option === '--scope') {
+		return { key: 'search.error.missingScope' };
+	}
+
+	if (error.kind === 'missing_value') {
+		return { key: 'cli.error.missingValue', params: { option: error.option } };
+	}
+
+	return { key: 'cli.error.unknownOption', params: { option: error.option } };
+}
+
+function parseSearchOptions(args: readonly string[]): ParsedSearchOptions {
+	const parsed = parseCliOptions(args, SEARCH_OPTIONS, { allowPositionals: true });
+	let limit = 10;
+	let scope: LocalSearchScope = 'workflow';
+	const json = hasParsedCliOption(parsed, '--json');
+
+	if (parsed.error) {
+		return { query: '', limit, scope, json, error: toSearchOptionError(parsed.error) };
+	}
+
+	const rawLimit = getParsedCliStringOption(parsed, '--limit');
+	if (rawLimit !== null) {
+		const parsedLimit = Number.parseInt(rawLimit, 10);
+
+		if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
+			return { query: '', limit, scope, json, error: { key: 'search.error.invalidLimit' } };
+		}
+
+		limit = parsedLimit;
+	}
+
+	const rawScope = getParsedCliStringOption(parsed, '--scope');
+	if (rawScope !== null) {
+		if (!isSearchScope(rawScope)) {
+			return {
+				query: '',
+				limit,
+				scope,
+				json,
+				error: { key: 'search.error.invalidScope', params: { scope: rawScope } },
+			};
+		}
+
+		scope = rawScope;
+	}
+
+	const query = parsed.positionals.join(' ').trim();
 
 	if (query.length === 0) {
 		return { query, limit, scope, json, error: { key: 'search.error.missingQuery' } };
@@ -183,7 +155,7 @@ function renderSearchSummary(result: LocalSearchResult, lang: CliLang): string {
 }
 
 export async function runSearch(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getSearchHelp(lang));
 		return 0;
 	}

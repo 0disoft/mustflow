@@ -68,6 +68,24 @@ test('rejects unsupported search scope values', () => {
 	}
 });
 
+test('rejects unsupported search options with usage help', () => {
+	const projectPath = cloneIndexedProject();
+
+	try {
+		const unknownOption = runCli(projectPath, ['search', 'mustflow_check', '--bad']);
+		const booleanValue = runCli(projectPath, ['search', 'mustflow_check', '--json=true']);
+
+		assert.equal(unknownOption.status, 1);
+		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
+		assert.match(unknownOption.stderr, /Usage: mf search <query> \[options\]/u);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf search <query> \[options\]/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints human readable search results with a configurable limit', () => {
 	const projectPath = cloneIndexedProject();
 
@@ -77,6 +95,20 @@ test('prints human readable search results with a configurable limit', () => {
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /mustflow search/);
 		assert.match(result.stdout, /\.mustflow\/skills\/code-review\/SKILL\.md/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('accepts inline search limit and scope values through shared option parsing', () => {
+	const projectPath = cloneIndexedProject();
+
+	try {
+		const result = runCli(projectPath, ['search', 'code-review', '--limit=2', '--scope=all']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /mustflow search/);
+		assert.match(result.stdout, /Scope: all/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

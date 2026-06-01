@@ -23,6 +23,13 @@ installed-package JSON command output.
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
+- `onboard-commands-report.schema.json`: `mf onboard commands --json`
+- `next-report.schema.json`: `mf next --json`
+- `evidence-report.schema.json`: `mf evidence --changed --json`
+- `api-serve-response.schema.json`: each newline-delimited response from `mf api serve --stdio`
+- `workspace-status.schema.json`: `mf workspace status --json`
+- `workspace-command-catalog.schema.json`: `mf workspace command-catalog --json`
+- `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `classify-report.schema.json`: `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact <path...> --json`
 - `line-endings-report.schema.json`: `mf line-endings check --json`

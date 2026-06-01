@@ -9,10 +9,23 @@ import { writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.j
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
 const CLASSIFY_SCHEMA_VERSION = '1';
+const CLASSIFY_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--changed', kind: 'boolean' },
+	{ name: '--write', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
 
 export interface ClassifyOutput extends ChangeClassificationReport {
 	readonly schema_version: string;
@@ -24,9 +37,9 @@ export interface ClassifyOutput extends ChangeClassificationReport {
 interface ParsedClassifyArgs {
 	readonly json: boolean;
 	readonly changed: boolean;
-	readonly writePath?: string;
+	readonly writePath: string | null;
 	readonly paths: readonly string[];
-	readonly error?: string;
+	readonly error?: ReturnType<typeof parseCliOptions>['error'];
 }
 
 export function getClassifyHelp(lang: CliLang = 'en'): string {
@@ -55,53 +68,14 @@ export function getClassifyHelp(lang: CliLang = 'en'): string {
 }
 
 function parseClassifyArgs(args: readonly string[]): ParsedClassifyArgs {
-	const paths: string[] = [];
-	let json = false;
-	let changed = false;
-	let writePath: string | undefined;
-
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (arg === '--json') {
-			json = true;
-			continue;
-		}
-
-		if (arg === '--changed') {
-			changed = true;
-			continue;
-		}
-
-		if (arg === '--write') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { json, changed, writePath, paths, error: 'missing_write_value' };
-			}
-
-			writePath = value;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--write=')) {
-			const value = arg.slice('--write='.length);
-			if (value.length === 0) {
-				return { json, changed, writePath, paths, error: 'missing_write_value' };
-			}
-
-			writePath = value;
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { json, changed, writePath, paths, error: arg };
-		}
-
-		paths.push(arg);
-	}
-
-	return { json, changed, writePath, paths };
+	const parsed = parseCliOptions(args, CLASSIFY_OPTIONS, { allowPositionals: true });
+	return {
+		json: hasParsedCliOption(parsed, '--json'),
+		changed: hasParsedCliOption(parsed, '--changed'),
+		writePath: getParsedCliStringOption(parsed, '--write'),
+		paths: parsed.positionals,
+		error: parsed.error,
+	};
 }
 
 export function createClassifyOutput(
@@ -174,7 +148,7 @@ function writeClassifyOutput(projectRoot: string, inputPath: string, output: Cla
 }
 
 export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getClassifyHelp(lang));
 		return 0;
 	}
@@ -182,13 +156,9 @@ export function runClassify(args: string[], reporter: Reporter, lang: CliLang = 
 	const parsed = parseClassifyArgs(args);
 
 	if (parsed.error) {
-		const message =
-			parsed.error === 'missing_write_value'
-				? t(lang, 'cli.error.missingValue', { option: '--write' })
-				: t(lang, 'cli.error.unknownOption', { option: parsed.error });
 		printUsageError(
 			reporter,
-			message,
+			formatCliOptionParseError(parsed.error, lang),
 			'mf classify --help',
 			getClassifyHelp(lang),
 			lang,

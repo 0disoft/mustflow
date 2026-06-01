@@ -77,7 +77,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.23.0');
+	assert.equal(packageJson.version, '2.24.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -507,6 +507,10 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/commands/adapters.js'));
 	assert.ok(files.has('dist/cli/commands/classify.js'));
 	assert.ok(files.has('dist/cli/commands/contract-lint.js'));
+	assert.ok(files.has('dist/cli/commands/onboard.js'));
+	assert.ok(files.has('dist/cli/commands/next.js'));
+	assert.ok(files.has('dist/cli/commands/evidence.js'));
+	assert.ok(files.has('dist/cli/commands/workspace.js'));
 	assert.ok(files.has('dist/cli/commands/init.js'));
 	assert.ok(files.has('dist/cli/commands/docs.js'));
 	assert.ok(files.has('dist/cli/commands/index.js'));
@@ -538,6 +542,12 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/run-receipt.schema.json'));
 	assert.ok(files.has('schemas/commands.schema.json'));
 	assert.ok(files.has('schemas/contract-lint-report.schema.json'));
+	assert.ok(files.has('schemas/onboard-commands-report.schema.json'));
+	assert.ok(files.has('schemas/next-report.schema.json'));
+	assert.ok(files.has('schemas/evidence-report.schema.json'));
+	assert.ok(files.has('schemas/workspace-status.schema.json'));
+	assert.ok(files.has('schemas/workspace-command-catalog.schema.json'));
+	assert.ok(files.has('schemas/workspace-verification-plan.schema.json'));
 	assert.ok(files.has('schemas/classify-report.schema.json'));
 	assert.ok(files.has('schemas/docs-review-list.schema.json'));
 	assert.ok(files.has('schemas/explain-report.schema.json'));

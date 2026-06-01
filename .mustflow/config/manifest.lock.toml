@@ -1,0 +1,17 @@
+schema_version = "1"
+
+[template]
+id = "default"
+version = "2.24.0"
+profile = "library"
+locale = "en"
+
+[files."AGENTS.md"]
+source = "template_locale"
+last_action = "created"
+content_hash = "sha256:1503c7578553a1cbafac0bc24344e26deed5243925bbd1b69e7010321a069380"
+
+[files.".mustflow/config/commands.toml"]
+source = "repository"
+last_action = "customized"
+content_hash = "sha256:e8ea54f5500140424d319391dcc0bec266125dea0e16830591c443234213d89c"

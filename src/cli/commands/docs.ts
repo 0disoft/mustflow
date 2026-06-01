@@ -16,6 +16,15 @@ import {
 } from '../lib/doc-review-ledger.js';
 import { ensureInside, readUtf8FileInsideWithoutSymlinks } from '../lib/filesystem.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionKind,
+	type CliOptionSpec,
+	type ParsedCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 
@@ -76,44 +85,63 @@ export function getDocsHelp(lang: CliLang = 'en'): string {
 }
 
 function parseOptions(args: readonly string[], valueOptions: ReadonlySet<string>, flags: ReadonlySet<string>): ParsedOptions {
-	const values = new Map<string, string>();
-	const parsedFlags = new Set<string>();
-	const positionals: string[] = [];
+	const specs = createDocsOptionSpecs(valueOptions, flags);
+	const parsed = parseCliOptions(args, specs, { allowPositionals: true });
+	const values = parsedDocsValues(parsed, valueOptions);
+	const parsedFlags = parsedDocsFlags(parsed, flags);
 
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (flags.has(arg)) {
-			parsedFlags.add(arg);
-			continue;
-		}
-
-		const equalsIndex = arg.indexOf('=');
-		const optionName = equalsIndex > -1 ? arg.slice(0, equalsIndex) : arg;
-
-		if (valueOptions.has(optionName)) {
-			const inlineValue = equalsIndex > -1 ? arg.slice(equalsIndex + 1) : undefined;
-			const nextValue = inlineValue ?? args[index + 1];
-
-			if (!nextValue || (!inlineValue && nextValue.startsWith('-'))) {
-				return { values, flags: parsedFlags, positionals, error: { option: optionName, missingValue: true } };
-			}
-
-			values.set(optionName, nextValue);
-			if (inlineValue === undefined) {
-				index += 1;
-			}
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { values, flags: parsedFlags, positionals, error: { option: arg } };
-		}
-
-		positionals.push(arg);
+	if (parsed.error) {
+		return {
+			values,
+			flags: parsedFlags,
+			positionals: parsed.positionals,
+			error: {
+				option: parsed.error.option,
+				missingValue: parsed.error.kind === 'missing_value',
+			},
+		};
 	}
 
-	return { values, flags: parsedFlags, positionals };
+	return { values, flags: parsedFlags, positionals: parsed.positionals };
+}
+
+function createDocsOptionSpecs(valueOptions: ReadonlySet<string>, flags: ReadonlySet<string>): readonly CliOptionSpec[] {
+	const specs = new Map<string, CliOptionKind>();
+
+	for (const option of valueOptions) {
+		specs.set(option, 'string');
+	}
+
+	for (const flag of flags) {
+		specs.set(flag, 'boolean');
+	}
+
+	return [...specs.entries()].map(([name, kind]) => ({ name, kind }));
+}
+
+function parsedDocsValues(parsed: ParsedCliOptions, valueOptions: ReadonlySet<string>): ReadonlyMap<string, string> {
+	const values = new Map<string, string>();
+
+	for (const option of valueOptions) {
+		const value = getParsedCliStringOption(parsed, option);
+		if (value !== null) {
+			values.set(option, value);
+		}
+	}
+
+	return values;
+}
+
+function parsedDocsFlags(parsed: ParsedCliOptions, flags: ReadonlySet<string>): ReadonlySet<string> {
+	const parsedFlags = new Set<string>();
+
+	for (const flag of flags) {
+		if (hasParsedCliOption(parsed, flag)) {
+			parsedFlags.add(flag);
+		}
+	}
+
+	return parsedFlags;
 }
 
 function parseStatus(value: string | undefined): DocReviewStatus | undefined {
@@ -457,7 +485,7 @@ function runReviewMark(
 }
 
 export function runDocs(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getDocsHelp(lang));
 		return 0;
 	}

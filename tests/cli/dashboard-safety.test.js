@@ -89,6 +89,18 @@ cwd = "."
 timeout_seconds = 10
 stdin = "closed"
 success_exit_codes = [0]
+
+[intents.dashboard_shell_without_allow_shell]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe dashboard shared runnable eligibility for shell intents."
+mode = "shell"
+cmd = "echo dashboard shell probe"
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
 `,
 		);
 
@@ -99,6 +111,12 @@ success_exit_codes = [0]
 			changedStatus.command_contract.intents.some((intent) => intent.name === 'dashboard_status_cache_probe'),
 		);
 		assert.ok(changedStatus.runnable_intents.includes('dashboard_status_cache_probe'));
+		assert.equal(changedStatus.runnable_intents.includes('dashboard_shell_without_allow_shell'), false);
+		assert.ok(
+			changedStatus.command_contract.intents.some(
+				(intent) => intent.name === 'dashboard_shell_without_allow_shell' && intent.runnable === false,
+			),
+		);
 	} finally {
 		if (dashboard) {
 			await stopDashboard(dashboard);
@@ -117,6 +135,36 @@ test('dashboard rejects non-local host binding', () => {
 		const result = runCli(projectPath, ['dashboard', '--host', '0.0.0.0']);
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Refused dashboard host 0\.0\.0\.0/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard options use shared value and boolean option rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		const booleanValue = runCli(projectPath, ['dashboard', '--json=true']);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /mf dashboard --help/u);
+
+		const missingHost = runCli(projectPath, ['dashboard', '--host=']);
+		assert.equal(missingHost.status, 1);
+		assert.match(missingHost.stderr, /Missing value for --host/u);
+		assert.match(missingHost.stderr, /mf dashboard --help/u);
+
+		const conflictingExport = runCli(projectPath, [
+			'dashboard',
+			'--export=reports/first.html',
+			'--export=reports/second.html',
+		]);
+		assert.equal(conflictingExport.status, 1);
+		assert.match(conflictingExport.stderr, /Use only one dashboard export mode/u);
+		assert.match(conflictingExport.stderr, /mf dashboard --help/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -163,6 +163,79 @@ destructive = false
 	}
 });
 
+test('explains satisfy intents blocked by static run constraints as not runnable', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+		appendFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+			`
+[intents.satisfy_outside_cwd]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Satisfy intent blocked by cwd."
+argv = ["node", "-e", ""]
+cwd = ".."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.satisfy_too_much_output]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Satisfy intent blocked by output limit."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+max_output_bytes = 16777217
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.needs_static_blocked_satisfy]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Command with statically blocked satisfy intents."
+argv = ["node", "-e", ""]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+preconditions = [
+  { kind = "path_exists", path = "dist/outside-cwd.js", satisfy_intent = "satisfy_outside_cwd" },
+  { kind = "path_exists", path = "dist/too-much-output.js", satisfy_intent = "satisfy_too_much_output" },
+]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['explain', 'command', 'needs_static_blocked_satisfy', '--json']);
+		const report = JSON.parse(result.stdout);
+		const [outsideCwdPrecondition, outputLimitPrecondition] = report.decision.intent.preconditions;
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(outsideCwdPrecondition.satisfyIntent.intent, 'satisfy_outside_cwd');
+		assert.equal(outsideCwdPrecondition.satisfyIntent.runnable, false);
+		assert.match(outsideCwdPrecondition.satisfyIntent.detail, /Intent cwd must stay inside the current root/);
+		assert.equal(outputLimitPrecondition.satisfyIntent.intent, 'satisfy_too_much_output');
+		assert.equal(outputLimitPrecondition.satisfyIntent.runnable, false);
+		assert.match(outputLimitPrecondition.satisfyIntent.detail, /16777216/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('explains why command decisions through the why surface as json', () => {
 	const projectPath = createTempProject('mustflow-explain-command-');
 
@@ -383,6 +456,46 @@ test('explains why a command is blocked with run-plan metadata and a suggested s
 		assert.match(report.decision.reason, /lifecycle is missing, not oneshot/);
 		assert.match(report.decision.blockedRunPlan.suggestedIntentSnippet, /\[intents\.lint\]/);
 		assert.match(report.decision.blockedRunPlan.suggestedIntentSnippet, /status = "manual_only"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('explains why-blocked with global json before the pseudo-topic', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['explain', '--json', '--why-blocked', 'lint']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.topic, 'why');
+		assert.equal(report.decision.inputCommand, 'lint');
+		assert.equal(report.decision.blockedRunPlan.runnable, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects unsupported explain options with shared option parsing', () => {
+	const projectPath = createTempProject('mustflow-explain-command-');
+
+	try {
+		initProject(projectPath);
+
+		const booleanValue = runCli(projectPath, ['explain', 'command', 'mustflow_check', '--json=true']);
+		const verifyOnly = runCli(projectPath, ['explain', 'command', 'mustflow_check', '--reason', 'code_change']);
+		const pseudoTopicValue = runCli(projectPath, ['explain', '--why-blocked=true', 'lint']);
+
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf explain/u);
+		assert.equal(verifyOnly.status, 1);
+		assert.match(verifyOnly.stderr, /Unknown option: --reason/u);
+		assert.equal(pseudoTopicValue.status, 1);
+		assert.match(pseudoTopicValue.stderr, /Unknown option: --why-blocked=true/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

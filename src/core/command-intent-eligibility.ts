@@ -19,6 +19,27 @@ export type CommandIntentEligibilityCode =
 	| 'blocked_shell_background_pattern'
 	| 'blocked_long_running_command_pattern';
 
+export type CommandIntentIneligibilityCode = Exclude<CommandIntentEligibilityCode, 'ok'>;
+
+export const COMMAND_INTENT_INELIGIBILITY_CODES = [
+	'intent_not_table',
+	'status_not_configured',
+	'lifecycle_not_oneshot',
+	'run_policy_not_agent_allowed',
+	'stdin_not_closed',
+	'agent_shell_requires_allow',
+	'missing_timeout',
+	'missing_command_source',
+	'unsafe_intent_name',
+	'blocked_shell_background_pattern',
+	'blocked_long_running_command_pattern',
+] as const satisfies readonly CommandIntentIneligibilityCode[];
+
+type CommandIntentIneligibilityCodeContractComplete =
+	Exclude<CommandIntentIneligibilityCode, (typeof COMMAND_INTENT_INELIGIBILITY_CODES)[number]> extends never ? true : never;
+
+export const commandIntentIneligibilityCodeContractComplete: CommandIntentIneligibilityCodeContractComplete = true;
+
 export type CommandIntentEligibilityResult =
 	| {
 			readonly ok: true;
@@ -27,7 +48,7 @@ export type CommandIntentEligibilityResult =
 	  }
 	| {
 			readonly ok: false;
-			readonly code: Exclude<CommandIntentEligibilityCode, 'ok'>;
+			readonly code: CommandIntentIneligibilityCode;
 			readonly detail: string | null;
 	  };
 

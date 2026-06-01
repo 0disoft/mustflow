@@ -22,6 +22,13 @@ mustflow의 버전 있는 계약 명세는 저장소의
 - `run-receipt.schema.json`: `mf run <intent> --json`과 `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: 파싱된 `.mustflow/config/commands.toml`
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
+- `onboard-commands-report.schema.json`: `mf onboard commands --json`
+- `next-report.schema.json`: `mf next --json`
+- `evidence-report.schema.json`: `mf evidence --changed --json`
+- `api-serve-response.schema.json`: `mf api serve --stdio`의 줄 단위 응답
+- `workspace-status.schema.json`: `mf workspace status --json`
+- `workspace-command-catalog.schema.json`: `mf workspace command-catalog --json`
+- `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `classify-report.schema.json`: `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact <path...> --json`
 - `line-endings-report.schema.json`: `mf line-endings check --json`

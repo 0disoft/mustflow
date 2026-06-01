@@ -85,6 +85,10 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf check/);
 	assert.match(result.stdout, /mf classify/);
 	assert.match(result.stdout, /mf contract-lint/);
+	assert.match(result.stdout, /mf onboard/);
+	assert.match(result.stdout, /mf next/);
+	assert.match(result.stdout, /mf evidence/);
+	assert.match(result.stdout, /mf workspace/);
 	assert.match(result.stdout, /mf status/);
 	assert.match(result.stdout, /mf update/);
 	assert.match(result.stdout, /mf upgrade/);
@@ -160,6 +164,15 @@ test('prints Korean command help with --lang', async () => {
 	assert.match(result.stdout, /사용법: mf init/);
 	assert.match(result.stdout, /프로젝트 유형을 설정합니다/);
 	assert.match(result.stdout, /설치할 mustflow 문서 언어를 설정합니다/);
+});
+
+test('global language parsing leaves command options on the selected command', async () => {
+	const result = await runCli(['dashboard', '--json=true', '--lang=ko']);
+
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /알 수 없는 옵션: --json=true/);
+	assert.match(result.stderr, /사용법은 `mf dashboard --help` 명령으로 확인하세요/);
+	assert.match(result.stderr, /사용법: mf dashboard/);
 });
 
 test('prints localized top-level help for all README languages', async () => {
@@ -290,6 +303,12 @@ test('fails unknown command options with standardized guidance', async () => {
 		['check', '--bad'],
 		['classify', '--bad'],
 		['contract-lint', '--bad'],
+		['onboard', 'commands', '--bad'],
+		['next', '--bad'],
+		['evidence', '--bad'],
+		['workspace', 'status', '--bad'],
+		['workspace', 'command-catalog', '--bad'],
+		['workspace', 'verify', '--changed', '--plan-only', '--bad'],
 		['status', '--bad'],
 		['update', '--bad'],
 		['map', '--bad'],

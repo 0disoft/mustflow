@@ -11,6 +11,13 @@ import {
 import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File, type LockedFile } from '../lib/manifest-lock.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type TemplateFileSource } from '../lib/templates.js';
@@ -19,6 +26,13 @@ import { createUpdateDiffPreview, shouldPreviewUpdateDiff, type UpdateDiffPrevie
 
 const UPDATE_SCHEMA_VERSION = '1';
 const CUSTOMIZED_LOCK_ACTION = 'customized';
+
+const UPDATE_OPTIONS = [
+	{ name: '--dry-run', kind: 'boolean' },
+	{ name: '--apply', kind: 'boolean' },
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--diff', kind: 'boolean' },
+] as const satisfies readonly CliOptionSpec[];
 
 export type UpdateAction = 'unchanged' | 'create' | 'update' | 'blocked-local-change' | 'manual-review';
 type UpdateMode = 'dry-run' | 'apply' | 'unspecified';
@@ -538,23 +552,23 @@ function printDiffPreviews(items: readonly UpdatePlanItem[], reporter: Reporter,
 }
 
 export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getUpdateHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--dry-run', '--apply', '--json', '--diff']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-	const wantsJson = args.includes('--json');
-	const wantsDryRun = args.includes('--dry-run');
-	const wantsApply = args.includes('--apply');
-	const wantsDiff = args.includes('--diff');
-	const requestedMode = getRequestedMode(wantsDryRun, wantsApply);
+	const parsed = parseCliOptions(args, UPDATE_OPTIONS);
 
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf update --help', getUpdateHelp(lang), lang);
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf update --help', getUpdateHelp(lang), lang);
 		return 1;
 	}
+
+	const wantsJson = hasParsedCliOption(parsed, '--json');
+	const wantsDryRun = hasParsedCliOption(parsed, '--dry-run');
+	const wantsApply = hasParsedCliOption(parsed, '--apply');
+	const wantsDiff = hasParsedCliOption(parsed, '--diff');
+	const requestedMode = getRequestedMode(wantsDryRun, wantsApply);
 
 	if (wantsDryRun && wantsApply) {
 		const error = t(lang, 'update.error.cannotCombineModes');

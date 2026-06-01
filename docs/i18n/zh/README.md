@@ -201,10 +201,15 @@ mf run mustflow_update_apply
 | `mf doctor` | 以只读方式检查当前 mustflow 根目录。 |
 | `mf api workspace-summary --json` | 为编码代理和外部执行框架输出稳定的只读 JSON 摘要。 |
 | `mf api command-catalog --json` | 输出命令 intent 可用性和安全的 `mf run` 入口，不暴露原始命令字符串。 |
+| `mf api serve --stdio` | 通过 stdin/stdout 以按行分隔的 JSON 响应提供相同的只读 API 报告。 |
 | `mf api verification-plan --changed --json` | 为已变更文件输出稳定的只读 verification plan，不执行命令。 |
 | `mf api latest-evidence --json` | 输出 bounded 最新 run 或 verify evidence，不包含原始命令输出。 |
 | `mf api diff-risk --changed --json` | 输出已变更文件的紧凑 risk、verification 摘要和只读 residual correction 信号。 |
 | `mf api health --json` | 为快速 agent gate 输出紧凑 workspace health 报告。 |
+| `mf evidence --changed` | 不执行命令，汇总 changed-file 验证需求、最新 evidence、receipt 和剩余缺口。 |
+| `mf workspace status` | 检查已配置 workspace 根目录和嵌套仓库合同状态，不授予父到子的命令权限。 |
+| `mf workspace command-catalog` | 输出各仓库命令 intent 可用性和安全的 `mf run` 入口，不暴露原始命令字符串。 |
+| `mf workspace verify --changed --plan-only` | 不执行命令，输出各仓库的变更文件验证计划。 |
 | `mf api locks --json` | 输出用于多会话协调的活动 `mf run` 锁。 |
 | `mf context --json` | 以 JSON 格式输出读取顺序、命令规则、可用能力及最近运行摘要。 |
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |
@@ -223,7 +228,7 @@ mf run mustflow_update_apply
 | `mf version-sources` | 不修改文件的情况下检查检测到的 package、模板及声明的版本来源。 |
 | `mf explain authority [path]` | 不修改文件的情况下解释受管 Markdown 文档的权威决策。 |
 
-自动化和代理应使用 `--json` 输出，避免解析面向人类的文本。稳定的 JSON Schema 位于 `schemas/`。
+自动化和代理应使用 `--json` 输出或 `mf api serve --stdio` JSONL 响应，避免解析面向人类的文本。稳定的 JSON Schema 位于 `schemas/`。
 
 ## 命令执行策略
 

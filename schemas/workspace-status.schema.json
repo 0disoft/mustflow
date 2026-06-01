@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/workspace-status.schema.json",
+  "title": "mustflow workspace status report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "workspace",
+    "policy",
+    "repository_count",
+    "repositories",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "workspace status" },
+    "mustflow_root": { "type": "string" },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "roots",
+        "max_depth",
+        "max_repositories",
+        "follow_symlinks",
+        "stop_at_repository_root"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "roots": { "$ref": "#/$defs/stringArray" },
+        "max_depth": { "type": "integer", "minimum": 1 },
+        "max_repositories": { "type": "integer", "minimum": 1 },
+        "follow_symlinks": { "type": "boolean" },
+        "stop_at_repository_root": { "type": "boolean" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "grants_command_authority",
+        "parent_root_grants_child_authority",
+        "command_authority_per_root",
+        "run_entrypoint_per_root",
+        "executes_commands",
+        "raw_commands_included"
+      ],
+      "properties": {
+        "mode": { "const": "read_only" },
+        "grants_command_authority": { "const": false },
+        "parent_root_grants_child_authority": { "const": false },
+        "command_authority_per_root": { "const": ".mustflow/config/commands.toml" },
+        "run_entrypoint_per_root": { "const": "mf run <intent>" },
+        "executes_commands": { "const": false },
+        "raw_commands_included": { "const": false }
+      }
+    },
+    "repository_count": { "type": "integer", "minimum": 0 },
+    "repositories": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/repository" }
+    },
+    "issues": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "commandSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "exists",
+        "parse_error",
+        "total_intents",
+        "runnable_count",
+        "runnable_intents",
+        "blocked_count"
+      ],
+      "properties": {
+        "path": { "$ref": "#/$defs/nullableString" },
+        "exists": { "type": "boolean" },
+        "parse_error": { "$ref": "#/$defs/nullableString" },
+        "total_intents": { "type": ["integer", "null"], "minimum": 0 },
+        "runnable_count": { "type": ["integer", "null"], "minimum": 0 },
+        "runnable_intents": { "$ref": "#/$defs/stringArray" },
+        "blocked_count": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relative_path",
+        "status",
+        "git_repository",
+        "mustflow",
+        "agent_rules",
+        "repo_map",
+        "mustflow_config",
+        "command_contract",
+        "context_index",
+        "skill_index",
+        "root_document_count",
+        "machine_contract_count",
+        "manifest_count",
+        "command_adapter_count",
+        "editing_policy_count",
+        "issues"
+      ],
+      "properties": {
+        "relative_path": { "type": "string" },
+        "status": { "enum": ["mustflow_ready", "contract_missing", "contract_invalid"] },
+        "git_repository": { "const": true },
+        "mustflow": { "type": "boolean" },
+        "agent_rules": { "$ref": "#/$defs/nullableString" },
+        "repo_map": { "$ref": "#/$defs/nullableString" },
+        "mustflow_config": { "$ref": "#/$defs/nullableString" },
+        "command_contract": { "$ref": "#/$defs/commandSurface" },
+        "context_index": { "$ref": "#/$defs/nullableString" },
+        "skill_index": { "$ref": "#/$defs/nullableString" },
+        "root_document_count": { "type": "integer", "minimum": 0 },
+        "machine_contract_count": { "type": "integer", "minimum": 0 },
+        "manifest_count": { "type": "integer", "minimum": 0 },
+        "command_adapter_count": { "type": "integer", "minimum": 0 },
+        "editing_policy_count": { "type": "integer", "minimum": 0 },
+        "issues": { "$ref": "#/$defs/stringArray" }
+      }
+    }
+  }
+}

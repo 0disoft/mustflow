@@ -4,6 +4,14 @@ import path from 'node:path';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { MUSTFLOW_JSON_MAX_BYTES, readMustflowTextFile } from '../lib/mustflow-read.js';
+import {
+	formatCliOptionParseError,
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import {
@@ -32,10 +40,8 @@ import {
 	type LocalPathSurfaceReadModel,
 } from '../lib/local-index.js';
 import {
-	explainVerifyArgErrorMessage,
 	explainVerifyPlanErrorMessage,
 	getVerifyExplainOutput,
-	parseExplainVerifyArgs,
 	readExplainVerifyPlanReasons,
 	renderVerifyExplainDecision,
 	type ExplainVerificationDecision,
@@ -47,6 +53,12 @@ import {
 
 const EXPLAIN_SCHEMA_VERSION = '1';
 const LATEST_RUN_RECEIPT_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
+const EXPLAIN_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--why-blocked', kind: 'boolean' },
+	{ name: '--reason', kind: 'string' },
+	{ name: '--from-plan', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
 
 type ExplainTopic =
 	| 'anchor'
@@ -117,6 +129,13 @@ interface ExplainOutput {
 	readonly topic: ExplainTopic;
 	readonly mustflow_root: string;
 	readonly decision: ExplainDecision;
+}
+interface ParsedExplainOptions {
+	readonly json: boolean;
+	readonly whyBlocked: boolean;
+	readonly reason: string | null;
+	readonly fromPlan: string | null;
+	readonly positionals: readonly string[];
 }
 
 export function getExplainHelp(lang: CliLang = 'en'): string {
@@ -478,16 +497,48 @@ function withWhyTopic(output: ExplainOutput): ExplainOutput {
 	return { ...output, topic: 'why' };
 }
 
+function firstVerifyOnlyOption(options: ParsedExplainOptions): string | null {
+	if (options.reason !== null) {
+		return '--reason';
+	}
+
+	if (options.fromPlan !== null) {
+		return '--from-plan';
+	}
+
+	return null;
+}
+
+function rejectVerifyOnlyOption(
+	options: ParsedExplainOptions,
+	reporter: Reporter,
+	lang: CliLang,
+): boolean {
+	const option = firstVerifyOnlyOption(options);
+
+	if (!option) {
+		return false;
+	}
+
+	printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option }), 'mf explain --help', getExplainHelp(lang), lang);
+	return true;
+}
+
 async function getWhyExplainOutput(
 	projectRoot: string,
 	targetArg: string | undefined,
 	rest: readonly string[],
+	options: ParsedExplainOptions,
 	lang: CliLang,
 	reporter: Reporter,
 ): Promise<ExplainOutput | null> {
 	switch (targetArg) {
 		case 'command':
 		case 'intent': {
+			if (rejectVerifyOnlyOption(options, reporter, lang)) {
+				return null;
+			}
+
 			const [commandName, ...extra] = rest;
 
 			if (!commandName) {
@@ -503,14 +554,12 @@ async function getWhyExplainOutput(
 			return withWhyTopic(await getCommandExplainOutput(projectRoot, commandName));
 		}
 		case 'verify': {
-			const parsed = parseExplainVerifyArgs([...rest]);
-
-			if (parsed.error) {
-				printUsageError(reporter, explainVerifyArgErrorMessage(parsed.error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+			if (rest.length > 0) {
+				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
 				return null;
 			}
 
-			const selectedInputCount = [parsed.reason, parsed.fromPlan].filter(Boolean).length;
+			const selectedInputCount = [options.reason, options.fromPlan].filter(Boolean).length;
 
 			if (selectedInputCount > 1) {
 				printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf explain --help', getExplainHelp(lang), lang);
@@ -523,17 +572,17 @@ async function getWhyExplainOutput(
 			}
 
 			try {
-				if (parsed.fromPlan) {
-					const reasons = readExplainVerifyPlanReasons(projectRoot, parsed.fromPlan);
-					return withWhyTopic(await getVerifyExplainOutput(EXPLAIN_SCHEMA_VERSION, projectRoot, reasons, null, parsed.fromPlan));
+				if (options.fromPlan) {
+					const reasons = readExplainVerifyPlanReasons(projectRoot, options.fromPlan);
+					return withWhyTopic(await getVerifyExplainOutput(EXPLAIN_SCHEMA_VERSION, projectRoot, reasons, null, options.fromPlan));
 				}
 
 				return withWhyTopic(
 					await getVerifyExplainOutput(
 						EXPLAIN_SCHEMA_VERSION,
 						projectRoot,
-						[parsed.reason as string],
-						parsed.reason as string,
+						[options.reason as string],
+						options.reason as string,
 						null,
 					),
 				);
@@ -543,6 +592,10 @@ async function getWhyExplainOutput(
 			}
 		}
 		case 'skill': {
+			if (rejectVerifyOnlyOption(options, reporter, lang)) {
+				return null;
+			}
+
 			const [skillName, ...extra] = rest;
 
 			if (!skillName) {
@@ -558,12 +611,20 @@ async function getWhyExplainOutput(
 			return withWhyTopic(getSkillExplainOutput(projectRoot, skillName));
 		}
 		case 'skills':
+			if (rejectVerifyOnlyOption(options, reporter, lang)) {
+				return null;
+			}
+
 			if (rest.length > 0) {
 				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
 				return null;
 			}
 			return withWhyTopic(getSkillsExplainOutput(projectRoot));
 		case 'surface': {
+			if (rejectVerifyOnlyOption(options, reporter, lang)) {
+				return null;
+			}
+
 			const [pathArg, ...extra] = rest;
 
 			if (extra.length > 0) {
@@ -575,6 +636,10 @@ async function getWhyExplainOutput(
 		}
 		case 'latest-failure':
 		case 'latest-run':
+			if (rejectVerifyOnlyOption(options, reporter, lang)) {
+				return null;
+			}
+
 			if (rest.length > 0) {
 				printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
 				return null;
@@ -905,28 +970,46 @@ function renderExplainDecision(output: ExplainOutput, lang: CliLang): string {
 }
 
 export async function runExplain(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getExplainHelp(lang));
 		return 0;
 	}
 
-	const json = args.includes('--json');
-	const positional = args.filter((arg) => arg !== '--json');
-	const [topic, targetArg, ...rest] = positional;
+	const parsed = parseCliOptions(args, EXPLAIN_OPTIONS, { allowPositionals: true });
 
-	if (topic === '--why-blocked') {
-		if (!targetArg) {
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+		return 1;
+	}
+
+	const options: ParsedExplainOptions = {
+		json: hasParsedCliOption(parsed, '--json'),
+		whyBlocked: hasParsedCliOption(parsed, '--why-blocked'),
+		reason: getParsedCliStringOption(parsed, '--reason'),
+		fromPlan: getParsedCliStringOption(parsed, '--from-plan'),
+		positionals: parsed.positionals,
+	};
+	const [topic, targetArg, ...rest] = options.positionals;
+
+	if (options.whyBlocked) {
+		const [commandName, ...extra] = options.positionals;
+
+		if (rejectVerifyOnlyOption(options, reporter, lang)) {
+			return 1;
+		}
+
+		if (!commandName) {
 			printUsageError(reporter, t(lang, 'explain.error.missingCommand'), 'mf explain --help', getExplainHelp(lang), lang);
 			return 1;
 		}
 
-		if (rest.length > 0) {
-			printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: rest[0] }), 'mf explain --help', getExplainHelp(lang), lang);
+		if (extra.length > 0) {
+			printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: extra[0] }), 'mf explain --help', getExplainHelp(lang), lang);
 			return 1;
 		}
 
-		const output = getWhyBlockedExplainOutput(resolveMustflowRoot(), targetArg);
-		if (json) {
+		const output = getWhyBlockedExplainOutput(resolveMustflowRoot(), commandName);
+		if (options.json) {
 			reporter.stdout(JSON.stringify(output, null, 2));
 			return 0;
 		}
@@ -937,13 +1020,13 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 
 	if (topic === 'why') {
 		const projectRoot = resolveMustflowRoot();
-		const output = await getWhyExplainOutput(projectRoot, targetArg, rest, lang, reporter);
+		const output = await getWhyExplainOutput(projectRoot, targetArg, rest, options, lang, reporter);
 
 		if (!output) {
 			return 1;
 		}
 
-		if (json) {
+		if (options.json) {
 			reporter.stdout(JSON.stringify(output, null, 2));
 			return 0;
 		}
@@ -953,15 +1036,12 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 	}
 
 	if (topic === 'verify') {
-		const verifyArgs = targetArg === undefined ? rest : [targetArg, ...rest];
-		const parsed = parseExplainVerifyArgs(verifyArgs);
-
-		if (parsed.error) {
-			printUsageError(reporter, explainVerifyArgErrorMessage(parsed.error, lang), 'mf explain --help', getExplainHelp(lang), lang);
+		if (targetArg) {
+			printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: targetArg }), 'mf explain --help', getExplainHelp(lang), lang);
 			return 1;
 		}
 
-		const selectedInputCount = [parsed.reason, parsed.fromPlan].filter(Boolean).length;
+		const selectedInputCount = [options.reason, options.fromPlan].filter(Boolean).length;
 
 		if (selectedInputCount > 1) {
 			printUsageError(reporter, t(lang, 'verify.error.conflictingInputs'), 'mf explain --help', getExplainHelp(lang), lang);
@@ -977,15 +1057,15 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 		let output: ExplainOutput;
 
 		try {
-			if (parsed.fromPlan) {
-				const reasons = readExplainVerifyPlanReasons(projectRoot, parsed.fromPlan);
-				output = await getVerifyExplainOutput(EXPLAIN_SCHEMA_VERSION, projectRoot, reasons, null, parsed.fromPlan);
+			if (options.fromPlan) {
+				const reasons = readExplainVerifyPlanReasons(projectRoot, options.fromPlan);
+				output = await getVerifyExplainOutput(EXPLAIN_SCHEMA_VERSION, projectRoot, reasons, null, options.fromPlan);
 			} else {
 				output = await getVerifyExplainOutput(
 					EXPLAIN_SCHEMA_VERSION,
 					projectRoot,
-					[parsed.reason as string],
-					parsed.reason as string,
+					[options.reason as string],
+					options.reason as string,
 					null,
 				);
 			}
@@ -994,7 +1074,7 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 			return 1;
 		}
 
-		if (json) {
+		if (options.json) {
 			reporter.stdout(JSON.stringify(output, null, 2));
 			return 0;
 		}
@@ -1003,16 +1083,7 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 		return 0;
 	}
 
-	const unsupported = args.filter((arg) => arg.startsWith('-') && arg !== '--json');
-
-	if (unsupported.length > 0) {
-		printUsageError(
-			reporter,
-			t(lang, 'cli.error.unknownOption', { option: unsupported[0] }),
-			'mf explain --help',
-			getExplainHelp(lang),
-			lang,
-		);
+	if (rejectVerifyOnlyOption(options, reporter, lang)) {
 		return 1;
 	}
 
@@ -1154,7 +1225,7 @@ export async function runExplain(args: string[], reporter: Reporter, lang: CliLa
 			break;
 	}
 
-	if (json) {
+	if (options.json) {
 		reporter.stdout(JSON.stringify(output, null, 2));
 		return 0;
 	}

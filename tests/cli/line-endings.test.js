@@ -125,3 +125,23 @@ test('line-endings normalize refuses apply without LF policy', () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('line-endings rejects unsupported options with usage help', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const unknownOption = runCli(projectPath, ['line-endings', 'check', '--bad']);
+		const booleanValue = runCli(projectPath, ['line-endings', 'check', '--json=true']);
+
+		assert.equal(unknownOption.status, 1);
+		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
+		assert.match(unknownOption.stderr, /Usage: mf line-endings <check\|normalize> \[options\]/u);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf line-endings <check\|normalize> \[options\]/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

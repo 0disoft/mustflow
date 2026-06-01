@@ -1,8 +1,19 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { checkMustflowProjectReport } from '../lib/validation.js';
+
+const CHECK_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--strict', kind: 'boolean' },
+] as const;
 
 export function getCheckHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -34,26 +45,24 @@ export function getCheckHelp(lang: CliLang = 'en'): string {
 }
 
 export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getCheckHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--json', '--strict']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf check --help', getCheckHelp(lang), lang);
+	const options = parseCliOptions(args, CHECK_OPTIONS);
+	if (options.error) {
+		printUsageError(reporter, formatCliOptionParseError(options.error, lang), 'mf check --help', getCheckHelp(lang), lang);
 		return 1;
 	}
 
-	const strict = args.includes('--strict');
+	const strict = hasParsedCliOption(options, '--strict');
 	const report = checkMustflowProjectReport(resolveMustflowRoot(), { strict });
 	const issues = report.issues;
 	const warnings = report.warnings;
 	const ok = issues.length === 0;
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(options, '--json')) {
 		reporter.stdout(
 			JSON.stringify(
 				{

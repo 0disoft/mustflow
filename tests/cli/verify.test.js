@@ -343,6 +343,26 @@ test('rejects invalid verification parallelism', async () => {
 	}
 });
 
+test('rejects unsupported verify option forms through shared option parsing', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		const booleanValue = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json=true']);
+		const emptyReason = await runCli(projectPath, ['verify', '--reason=']);
+
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/);
+		assert.match(booleanValue.stderr, /Usage: mf verify/);
+
+		assert.equal(emptyReason.status, 1);
+		assert.match(emptyReason.stderr, /Missing value for --reason/);
+		assert.match(emptyReason.stderr, /Usage: mf verify/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('caps excessive verification parallelism and reports the effective settings', async () => {
 	const projectPath = createTempProject();
 
@@ -635,6 +655,57 @@ required_after = ["custom_partial"]
 		assert.equal(report.results[0].status, 'skipped');
 		assert.equal(report.results[0].reason, 'status_not_configured');
 		assert.equal(report.results[0].detail, 'Needs a human.');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reports run-plan blockers as skipped verification candidates', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_outside_cwd]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verification intent with an unsafe cwd."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "../outside"
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["outside_cwd_verify"]
+`,
+		);
+
+		const result = await runCli(projectPath, ['verify', '--reason', 'outside_cwd_verify', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.status, 'blocked');
+		assert.equal(report.summary.matched, 1);
+		assert.equal(report.summary.ran, 0);
+		assert.equal(report.summary.skipped, 1);
+		assert.equal(report.results[0].intent, 'verify_outside_cwd');
+		assert.equal(report.results[0].status, 'skipped');
+		assert.equal(report.results[0].reason, 'cwd_outside_project');
+		assert.match(report.results[0].detail, /cwd|root|outside|\.\./u);
+
+		const planOnlyResult = await runCli(projectPath, ['verify', '--reason', 'outside_cwd_verify', '--plan-only', '--json']);
+		const planOnlyReport = JSON.parse(planOnlyResult.stdout);
+
+		assert.equal(planOnlyResult.status, 0, planOnlyResult.stderr || planOnlyResult.stdout);
+		assert.equal(planOnlyReport.candidates[0].intent, 'verify_outside_cwd');
+		assert.equal(planOnlyReport.candidates[0].status, 'skipped');
+		assert.equal(planOnlyReport.candidates[0].skipReason, 'cwd_outside_project');
+		assert.equal(planOnlyReport.schedule.entries.length, 0);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -1,0 +1,378 @@
+schema_version = "1"
+
+# This file is the command-intent contract that prevents agents from guessing commands.
+# mf run executes only configured + oneshot + agent_allowed + closed stdin + explicit timeout + declared command intents.
+# cwd must stay inside the current mustflow root.
+
+[defaults]
+missing_behavior = "do_not_guess"
+allow_inferred_commands = false
+require_lifecycle = true
+require_timeout_for_oneshot = true
+deny_unmanaged_long_running = true
+default_cwd = "."
+default_timeout_seconds = 600
+stdin = "closed"
+max_output_bytes = 1048576
+on_timeout = "terminate_process_tree"
+kill_after_seconds = 5
+env_policy = "minimal"
+env_allowlist = [
+  "MUSTFLOW_TEST_CONCURRENCY",
+  "MUSTFLOW_TEST_RELATED_CONCURRENCY",
+  "MUSTFLOW_TEST_CLI_CONCURRENCY",
+  "MUSTFLOW_TEST_FULL_CONCURRENCY",
+  "MUSTFLOW_TEST_COVERAGE_CONCURRENCY",
+  "MUSTFLOW_TEST_SCHEDULER",
+  "MUSTFLOW_TEST_CPU_TOKENS",
+  "MUSTFLOW_TEST_IO_TOKENS",
+  "MUSTFLOW_TEST_PROCESS_TOKENS",
+  "MUSTFLOW_TEST_SQLITE_TOKENS",
+  "MUSTFLOW_TEST_GIT_TOKENS",
+  "MUSTFLOW_TEST_CHANGED_FILES",
+]
+
+[resources.dist_build_output]
+description = "Generated TypeScript CLI build output under dist/."
+concurrency = "exclusive_writer"
+
+[intents.build]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Compile the mustflow TypeScript CLI into dist/."
+argv = ["bun", "run", "build"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["build_config_change", "public_api_change", "code_change", "package_metadata_change"]
+
+[intents.lint]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the no-emit TypeScript static check."
+argv = ["bun", "run", "check:typecheck"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["code_change", "style_change", "public_api_change"]
+
+[intents.test_fast]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the fast mustflow CLI regression baseline after rebuilding dist/."
+argv = ["bun", "run", "test:fast"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["low_risk_code_change", "copy_change", "i18n_change", "unknown_change"]
+
+[intents.test_related]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run mustflow CLI tests selected from changed files after rebuilding dist/."
+argv = ["bun", "run", "test:related"]
+cwd = "."
+timeout_seconds = 1200
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
+
+[intents.test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the full mustflow CLI regression suite after rebuilding dist/."
+argv = ["bun", "run", "test"]
+cwd = "."
+timeout_seconds = 1800
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["code_change", "behavior_change", "release_risk", "cross_cutting_code_change"]
+
+[intents.test_release]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run release-sensitive package metadata and packaging tests after rebuilding dist/."
+argv = ["bun", "run", "test:release"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["package_metadata_change", "template_version_change", "packaging_change", "public_api_change"]
+
+[intents.test_audit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect stale, redundant, or mock-heavy test candidates."
+argv = ["bun", "run", "test:audit"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["test_change", "behavior_removed", "public_api_change"]
+
+[intents.test_coverage]
+status = "manual_only"
+description = "Inspect Node's coverage report for the fast mustflow CLI baseline."
+reason = "Coverage output is interpretive and may be slow on local machines."
+agent_action = "do_not_run_report_manual"
+required_after = ["test_policy_change", "coverage_request"]
+
+[intents.asset_optimize]
+status = "manual_only"
+description = "Optimize web image assets with a maintainer-reviewed asset pipeline."
+reason = "This repository has not declared a bounded image optimization pipeline for agent use."
+agent_action = "do_not_guess_report_missing"
+required_after = ["image_asset_change", "web_asset_change"]
+
+[intents.docs_validate_fast]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Validate documentation navigation and localized content links without a full static build."
+argv = ["bun", "run", "docs:check:fast"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["docs_change", "copy_change", "i18n_change"]
+
+[intents.docs_validate]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Build and validate the full documentation site, including search, sitemap, and root redirect checks."
+argv = ["bun", "run", "docs:check"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["docs-site/dist/**", "docs-site/.astro/**"]
+network = false
+destructive = false
+required_after = ["docs_change", "release_risk", "before_publish"]
+
+[intents.mustflow_doctor]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Diagnose the mustflow source repository state, check result, and next steps read-only."
+argv = ["node", "dist/cli/index.js", "doctor", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_task", "mustflow_config_change", "mustflow_docs_change"]
+
+[intents.mustflow_check]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Strictly validate the mustflow source repository workflow documents and configuration files."
+argv = ["node", "dist/cli/index.js", "check", "--strict"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change"]
+
+[intents.line_endings_check]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect tracked files for CRLF or mixed line-ending drift."
+argv = ["node", "dist/cli/index.js", "line-endings", "check", "--json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["line_ending_warning", "formatting_change"]
+
+[intents.contract_lint]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the source repository command contract for runnable coverage and command-contract warnings."
+argv = ["node", "dist/cli/index.js", "contract-lint", "--coverage", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change"]
+
+[intents.maintainer_check_node]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the Node/npm-compatible core maintainer check without Bun script execution."
+argv = ["node", "scripts/run-node-core-check.mjs"]
+cwd = "."
+timeout_seconds = 1800
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["public_api_change", "package_metadata_change"]
+
+[intents.changes_status]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect changed files in the Git working tree read-only."
+argv = ["git", "status", "--short"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_final_report", "commit_message_suggestion"]
+
+[intents.changes_diff_summary]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect a read-only summary of Git changes."
+argv = ["git", "diff", "--stat"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_final_report", "commit_message_suggestion"]
+
+[intents.repo_map]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create or refresh the REPO_MAP.md repository navigation map."
+argv = ["node", "dist/cli/index.js", "map", "--write"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["REPO_MAP.md"]
+network = false
+destructive = false
+required_after = ["structure_change", "directory_change"]
+
+[intents.snapshot_update]
+status = "manual_only"
+description = "Update snapshot or golden test baselines."
+reason = "Snapshot and golden updates can hide unintended output changes and require explicit review."
+agent_action = "do_not_update_snapshots_without_approval"
+required_after = ["snapshot_change", "user_approved_snapshot_update"]
+
+[intents.line_endings_normalize]
+status = "manual_only"
+description = "Normalize tracked text files to the repository line-ending policy."
+reason = "Line-ending normalization rewrites tracked files and requires an explicit request."
+agent_action = "do_not_normalize_report_suggestion_only"
+required_after = ["user_requested_line_ending_normalization"]
+
+[intents.docs_dev]
+status = "manual_only"
+description = "Start the documentation development server."
+reason = "Development servers are long-running and interactive; agents must not start them directly."
+agent_action = "do_not_start_server_report_manual"
+required_after = ["docs_change"]
+
+[intents.docs_preview]
+status = "manual_only"
+description = "Preview the built documentation site."
+reason = "Preview servers are long-running and interactive; agents must not start them directly."
+agent_action = "do_not_start_server_report_manual"
+required_after = ["docs_change"]
+
+[intents.check_install]
+status = "manual_only"
+description = "Pack and install the package into a temporary integration project."
+reason = "Install checks create external temporary projects and are reserved for release or maintainer review."
+agent_action = "do_not_run_report_manual"
+required_after = ["packaging_change", "release_risk"]
+
+[intents.release_check]
+status = "manual_only"
+description = "Run the full release gate before publishing."
+reason = "Release gates are broad maintainer actions and may include package, docs, install, and publish-adjacent checks."
+agent_action = "do_not_run_report_manual"
+required_after = ["release_risk", "before_publish"]
+
+[intents.mustflow_update_dry_run]
+status = "manual_only"
+description = "Preview updating the source repository's dogfood workflow files from the installed template."
+reason = "The mustflow source repository owns the template source; updating it from its own generated output requires maintainer review."
+agent_action = "do_not_run_report_manual"
+required_after = ["template_update_check"]
+
+[intents.mustflow_update_apply]
+status = "manual_only"
+description = "Apply updates to the source repository's dogfood workflow files from the installed template."
+reason = "The mustflow source repository owns the template source; update application must be an explicit maintainer action."
+agent_action = "do_not_run_report_manual"
+required_after = ["template_update_apply"]
+
+[intents.git_commit]
+status = "manual_only"
+description = "Create a Git commit."
+reason = "Creating a commit requires explicit user approval."
+agent_action = "do_not_commit_report_suggestion_only"

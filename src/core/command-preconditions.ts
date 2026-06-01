@@ -9,6 +9,7 @@ import {
 	type TomlTable,
 } from './config-loading.js';
 import { evaluateCommandIntentEligibility } from './command-intent-eligibility.js';
+import { getCommandRunStaticBlocker } from './command-run-constraints.js';
 
 export const COMMAND_PRECONDITION_KINDS = new Set(['path_exists', 'artifact_freshness']);
 
@@ -106,6 +107,7 @@ function readPreconditionDeclarations(intent: TomlTable): readonly CommandPrecon
 }
 
 function createSatisfyIntentSummary(
+	projectRoot: string,
 	contract: CommandContract,
 	intentName: string | null,
 ): CommandPreconditionSatisfyIntent | null {
@@ -115,15 +117,18 @@ function createSatisfyIntentSummary(
 
 	const rawIntent = contract.intents[intentName];
 	const eligibility = evaluateCommandIntentEligibility(intentName, rawIntent);
+	const runBlocker = eligibility.ok && isRecord(rawIntent)
+		? getCommandRunStaticBlocker(projectRoot, contract, rawIntent)
+		: null;
 
 	return {
 		intent: intentName,
 		declared: isRecord(rawIntent),
-		runnable: eligibility.ok,
+		runnable: eligibility.ok && !runBlocker,
 		status: isRecord(rawIntent) ? readString(rawIntent, 'status') ?? null : null,
 		lifecycle: isRecord(rawIntent) ? readString(rawIntent, 'lifecycle') ?? null : null,
 		runPolicy: isRecord(rawIntent) ? readString(rawIntent, 'run_policy') ?? null : null,
-		detail: eligibility.detail,
+		detail: eligibility.detail ?? runBlocker?.detail ?? null,
 	};
 }
 
@@ -372,7 +377,7 @@ export function evaluateCommandPreconditions(
 	const context: CommandPreconditionEvaluationContext = { projectFiles: null };
 
 	return readPreconditionDeclarations(intent).map((declaration) => {
-		const satisfyIntent = createSatisfyIntentSummary(contract, declaration.satisfyIntent);
+		const satisfyIntent = createSatisfyIntentSummary(projectRoot, contract, declaration.satisfyIntent);
 
 		if (declaration.kind === 'path_exists') {
 			return evaluatePathExists(projectRoot, declaration, satisfyIntent);

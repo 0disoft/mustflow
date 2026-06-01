@@ -217,12 +217,12 @@ interface AnchorFile {
 	readonly description: string;
 }
 
-interface MapConfig {
+export interface MapConfig {
 	readonly includeNested: boolean;
 	readonly anchorFiles: readonly string[];
 }
 
-interface WorkspaceConfig {
+export interface WorkspaceConfig {
 	readonly enabled: boolean;
 	readonly roots: readonly string[];
 	readonly maxDepth: number;
@@ -231,12 +231,12 @@ interface WorkspaceConfig {
 	readonly stopAtRepositoryRoot: boolean;
 }
 
-interface NestedAnchor {
+export interface NestedAnchor {
 	readonly label: string;
 	readonly relativePath: string;
 }
 
-interface NestedRepository {
+export interface NestedRepository {
 	readonly relativePath: string;
 	readonly mustflow: boolean;
 	readonly agentRules?: string;
@@ -252,7 +252,7 @@ interface NestedRepository {
 	readonly editingPolicies: readonly string[];
 }
 
-interface RepoMapConfig {
+export interface RepoMapConfig {
 	readonly priorityPaths: readonly string[];
 	readonly map: MapConfig;
 	readonly workspace: WorkspaceConfig;
@@ -329,7 +329,7 @@ function readMustflowConfig(projectRoot: string): MustflowConfig {
 	}
 }
 
-function getRepoMapConfig(projectRoot: string): RepoMapConfig {
+export function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 	const parsed = readMustflowConfig(projectRoot);
 	const configuredPriorityPaths = [...getStringArray(parsed.read_order), ...getStringArray(parsed.optional_read_order)];
 	const map = isRecord(parsed.map) ? parsed.map : {};
@@ -700,7 +700,7 @@ function collectNestedRepository(
 	};
 }
 
-function discoverNestedRepositories(
+export function discoverNestedRepositories(
 	projectRoot: string,
 	mapConfig: MapConfig,
 	workspaceConfig: WorkspaceConfig,

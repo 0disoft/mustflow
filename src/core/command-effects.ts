@@ -8,6 +8,7 @@ import {
 	type TomlTable,
 } from './config-loading.js';
 import { resolveSafeProjectCwd } from './command-cwd.js';
+import { readEffectiveCommandCwd } from './command-run-constraints.js';
 
 export const COMMAND_EFFECT_MODES = new Set(['read', 'write', 'append', 'replace', 'delete_recreate']);
 export const COMMAND_EFFECT_TYPES = new Set(['read', 'write']);
@@ -43,10 +44,6 @@ function normalizeRelativePath(rawPath: string): string {
 
 function pathLockKey(relativePath: string): string {
 	return `path:${normalizeRelativePath(relativePath)}`;
-}
-
-function readEffectiveCommandCwd(commandContract: CommandContract, intent: TomlTable): string {
-	return readString(intent, 'cwd') ?? readString(commandContract.defaults, 'default_cwd') ?? '.';
 }
 
 function validateEffectPath(projectRoot: string, commandContract: CommandContract, intent: TomlTable, rawPath: string): string {

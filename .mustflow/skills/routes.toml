@@ -1,0 +1,481 @@
+schema_version = "1"
+
+[routes."artifact-integrity-check"]
+category = "ui_assets"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["package_metadata_change", "release_risk"]
+
+[routes."architecture-deepening-review"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 70
+applies_to_reasons = ["code_change", "cross_cutting_code_change"]
+
+[routes."code-review"]
+category = "general_code"
+route_type = "primary"
+priority = 50
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."behavior-preserving-refactor"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 40
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."composition-over-inheritance"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["code_change"]
+
+[routes."strategy-pattern"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["code_change"]
+
+[routes."command-pattern"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."command-contract-authoring"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 80
+applies_to_reasons = ["mustflow_config_change", "mustflow_docs_change"]
+
+[routes."cli-output-contract-review"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 65
+applies_to_reasons = ["public_api_change", "behavior_change", "docs_change"]
+
+[routes."facade-pattern"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["code_change"]
+
+[routes."pure-core-imperative-shell"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."state-machine-pattern"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 80
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."result-option"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 75
+applies_to_reasons = ["code_change", "public_api_change"]
+
+[routes."null-object-pattern"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 75
+applies_to_reasons = ["code_change"]
+
+[routes."requirement-regression-guard"]
+category = "tests"
+route_type = "adjunct"
+priority = 35
+applies_to_reasons = ["behavior_change", "test_change"]
+
+[routes."multi-agent-work-coordination"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 90
+applies_to_reasons = ["workflow_change"]
+
+[routes."idea-triage"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 50
+applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "workflow_change", "product_change"]
+
+[routes."codebase-orientation"]
+category = "general_code"
+route_type = "primary"
+priority = 20
+applies_to_reasons = ["unknown_change", "code_change"]
+
+[routes."api-contract-change"]
+category = "general_code"
+route_type = "primary"
+priority = 82
+applies_to_reasons = ["code_change", "public_api_change", "docs_change", "test_change"]
+
+[routes."typescript-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."javascript-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."python-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."go-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."rust-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."dart-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."hono-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "security_change"]
+
+[routes."elysia-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "security_change"]
+
+[routes."source-anchor-authoring"]
+category = "general_code"
+route_type = "primary"
+priority = 60
+applies_to_reasons = ["code_change", "mustflow_docs_change"]
+
+[routes."repo-improvement-loop"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 45
+applies_to_reasons = ["mustflow_docs_change", "mustflow_config_change"]
+
+[routes."visual-review-artifact"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 75
+applies_to_reasons = ["docs_change"]
+
+[routes."llm-service-ux-review"]
+category = "ui_assets"
+route_type = "primary"
+priority = 65
+applies_to_reasons = ["ui_change", "product_change"]
+
+[routes."diff-risk-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 30
+applies_to_reasons = ["unknown_change", "code_change"]
+
+[routes."contract-sync-check"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 25
+applies_to_reasons = ["public_api_change", "package_metadata_change", "mustflow_config_change"]
+
+[routes."date-number-audit"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 25
+applies_to_reasons = ["docs_change", "package_metadata_change"]
+
+[routes."database-change-safety"]
+category = "data_external"
+route_type = "primary"
+priority = 55
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."database-migration-change"]
+category = "data_external"
+route_type = "primary"
+priority = 82
+applies_to_reasons = ["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"]
+
+[routes."dependency-upgrade-review"]
+category = "data_external"
+route_type = "primary"
+priority = 75
+applies_to_reasons = ["code_change", "docs_change", "security_change", "package_metadata_change", "release_risk"]
+
+[routes."dependency-reality-check"]
+category = "data_external"
+route_type = "adjunct"
+priority = 45
+applies_to_reasons = ["code_change", "docs_change", "security_change"]
+
+[routes."version-freshness-check"]
+category = "data_external"
+route_type = "adjunct"
+priority = 68
+applies_to_reasons = ["code_change", "docs_change", "package_metadata_change", "mustflow_config_change", "release_risk"]
+
+[routes."file-path-cross-platform-change"]
+category = "data_external"
+route_type = "primary"
+priority = 78
+applies_to_reasons = ["code_change", "public_api_change", "test_change", "docs_change", "security_change", "package_metadata_change"]
+
+[routes."cross-platform-filesystem-safety"]
+category = "data_external"
+route_type = "adjunct"
+priority = 65
+applies_to_reasons = ["code_change", "security_change", "migration_change"]
+
+[routes."adapter-boundary"]
+category = "data_external"
+route_type = "primary"
+priority = 55
+applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."tauri-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 90
+applies_to_reasons = ["code_change", "security_change", "public_api_change"]
+
+[routes."process-execution-safety"]
+category = "data_external"
+route_type = "primary"
+priority = 70
+applies_to_reasons = ["code_change", "behavior_change", "security_change"]
+
+[routes."dependency-injection"]
+category = "data_external"
+route_type = "primary"
+priority = 70
+applies_to_reasons = ["code_change"]
+
+[routes."line-ending-hygiene"]
+category = "workflow_contracts"
+route_type = "event"
+priority = 70
+applies_to_reasons = ["formatting_change"]
+
+[routes."performance-budget-check"]
+category = "general_code"
+route_type = "adjunct"
+priority = 70
+applies_to_reasons = ["performance_change"]
+
+[routes."vertical-slice-tdd"]
+category = "tests"
+route_type = "primary"
+priority = 60
+applies_to_reasons = ["test_change", "behavior_change"]
+
+[routes."test-design-guard"]
+category = "tests"
+route_type = "adjunct"
+priority = 40
+applies_to_reasons = ["test_change", "behavior_change"]
+
+[routes."test-maintenance"]
+category = "tests"
+route_type = "primary"
+priority = 45
+applies_to_reasons = ["test_change"]
+
+[routes."security-privacy-review"]
+category = "security_privacy"
+route_type = "primary"
+priority = 30
+applies_to_reasons = ["security_change", "privacy_change"]
+
+[routes."config-env-change"]
+category = "security_privacy"
+route_type = "primary"
+priority = 35
+applies_to_reasons = ["code_change", "docs_change", "security_change", "privacy_change", "package_metadata_change", "mustflow_config_change"]
+
+[routes."auth-permission-change"]
+category = "security_privacy"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
+
+[routes."security-regression-tests"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 50
+applies_to_reasons = ["security_change", "test_change"]
+
+[routes."failure-triage"]
+category = "bug_failure"
+route_type = "event"
+priority = 20
+applies_to_reasons = ["command_failure"]
+
+[routes."external-prompt-injection-defense"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 40
+applies_to_reasons = ["docs_change", "security_change", "mustflow_config_change"]
+
+[routes."external-skill-intake"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 70
+applies_to_reasons = ["mustflow_docs_change"]
+
+[routes."instruction-conflict-scope-check"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 35
+applies_to_reasons = ["mustflow_docs_change", "mustflow_config_change"]
+
+[routes."migration-safety-check"]
+category = "data_external"
+route_type = "adjunct"
+priority = 60
+applies_to_reasons = ["migration_change"]
+
+[routes."ui-quality-gate"]
+category = "ui_assets"
+route_type = "primary"
+priority = 50
+applies_to_reasons = ["ui_change"]
+
+[routes."html-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."css-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."tailwind-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."unocss-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."flutter-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
+
+[routes."astro-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+
+[routes."svelte-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
+
+[routes."pattern-scout"]
+category = "architecture_patterns"
+route_type = "adjunct"
+priority = 30
+applies_to_reasons = ["code_change"]
+
+[routes."structure-discovery-gate"]
+category = "general_code"
+route_type = "primary"
+priority = 35
+applies_to_reasons = ["code_change", "unknown_change"]
+
+[routes."repro-first-debug"]
+category = "bug_failure"
+route_type = "primary"
+priority = 25
+applies_to_reasons = ["behavior_change", "unknown_change"]
+
+[routes."source-freshness-check"]
+category = "docs_release"
+route_type = "adjunct"
+priority = 65
+applies_to_reasons = ["docs_change"]
+
+[routes."project-context-authoring"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 65
+applies_to_reasons = ["mustflow_docs_change"]
+
+[routes."skill-authoring"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 55
+applies_to_reasons = ["mustflow_docs_change"]
+
+[routes."readme-authoring"]
+category = "docs_release"
+route_type = "primary"
+priority = 50
+applies_to_reasons = ["docs_change"]
+
+[routes."release-notes-authoring"]
+category = "docs_release"
+route_type = "primary"
+priority = 55
+applies_to_reasons = ["release_risk", "docs_change"]
+
+[routes."release-publish-change"]
+category = "docs_release"
+route_type = "primary"
+priority = 58
+applies_to_reasons = ["release_risk", "package_metadata_change", "docs_change", "public_api_change"]
+
+[routes."search-ad-content-authoring"]
+category = "docs_release"
+route_type = "primary"
+priority = 60
+applies_to_reasons = ["docs_change", "copy_change", "product_change"]
+
+[routes."docs-prose-review"]
+category = "docs_release"
+route_type = "adjunct"
+priority = 70
+applies_to_reasons = ["docs_change", "copy_change"]
+
+[routes."web-asset-optimization"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 65
+applies_to_reasons = ["image_asset_change", "web_asset_change"]
+
+[routes."docs-update"]
+category = "docs_release"
+route_type = "primary"
+priority = 35
+applies_to_reasons = ["docs_change", "copy_change", "i18n_change"]

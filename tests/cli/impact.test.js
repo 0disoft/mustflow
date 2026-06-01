@@ -136,3 +136,13 @@ test('fails impact without changed mode or explicit paths', async () => {
 	assert.match(result.stderr, /Specify --changed or at least one path/);
 	assert.match(result.stderr, /Usage: mf impact/);
 });
+
+test('impact options use shared CLI option parsing', async () => {
+	const missingPath = await runCli(projectRoot, ['impact', '--json=false']);
+	const unknownOption = await runCli(projectRoot, ['impact', 'README.md', '--bad']);
+
+	assert.equal(missingPath.status, 1);
+	assert.match(missingPath.stderr, /Unknown option: --json=false/);
+	assert.equal(unknownOption.status, 1);
+	assert.match(unknownOption.stderr, /Unknown option: --bad/);
+});

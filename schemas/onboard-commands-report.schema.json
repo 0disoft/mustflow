@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/onboard-commands-report.schema.json",
+  "title": "mustflow onboard commands report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "command_contract_path",
+    "policy",
+    "summary",
+    "suggestions",
+    "next_steps"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "onboard commands" },
+    "mustflow_root": { "type": "string" },
+    "command_contract_path": { "const": ".mustflow/config/commands.toml" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_authority",
+        "suggestions_grant_command_authority",
+        "suggestions_are_review_only",
+        "writes_files"
+      ],
+      "properties": {
+        "command_authority": { "const": ".mustflow/config/commands.toml" },
+        "suggestions_grant_command_authority": { "const": false },
+        "suggestions_are_review_only": { "const": true },
+        "writes_files": { "const": false }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_intents",
+        "runnable_intents",
+        "manual_only_intents",
+        "unknown_intents",
+        "suggestions",
+        "package_scripts",
+        "make_targets",
+        "just_recipes",
+        "contract_errors",
+        "contract_warnings"
+      ],
+      "properties": {
+        "total_intents": { "type": "integer" },
+        "runnable_intents": { "type": "integer" },
+        "manual_only_intents": { "type": "integer" },
+        "unknown_intents": { "type": "integer" },
+        "suggestions": { "type": "integer" },
+        "package_scripts": { "type": "integer" },
+        "make_targets": { "type": "integer" },
+        "just_recipes": { "type": "integer" },
+        "contract_errors": { "type": "integer" },
+        "contract_warnings": { "type": "integer" }
+      }
+    },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceFile",
+          "sourceKind",
+          "sourceName",
+          "commandHint",
+          "suggestedIntent",
+          "status",
+          "reason",
+          "snippet"
+        ],
+        "properties": {
+          "sourceFile": { "type": "string" },
+          "sourceKind": {
+            "enum": ["package_script", "make_target", "just_recipe"]
+          },
+          "sourceName": { "type": "string" },
+          "commandHint": { "type": "string" },
+          "suggestedIntent": { "type": "string" },
+          "status": { "const": "unknown" },
+          "reason": { "type": "string" },
+          "snippet": { "type": "string" }
+        }
+      }
+    },
+    "next_steps": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

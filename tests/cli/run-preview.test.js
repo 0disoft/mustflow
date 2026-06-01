@@ -108,6 +108,31 @@ destructive = false
 	}
 });
 
+test('rejects unsupported run options before planning or execution', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const booleanValue = runCli(projectPath, ['run', 'preview_marker', '--dry-run=true']);
+		const missingTimeout = runCli(projectPath, ['run', 'preview_marker', '--wait-timeout']);
+		const invalidTimeout = runCli(projectPath, ['run', 'preview_marker', '--wait-timeout=0']);
+
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --dry-run=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf run/u);
+		assert.equal(booleanValue.stdout, '');
+		assert.equal(missingTimeout.status, 1);
+		assert.match(missingTimeout.stderr, /wait-timeout/u);
+		assert.match(missingTimeout.stderr, /Usage: mf run/u);
+		assert.equal(missingTimeout.stdout, '');
+		assert.equal(invalidTimeout.status, 1);
+		assert.match(invalidTimeout.stderr, /wait-timeout/u);
+		assert.equal(invalidTimeout.stdout, '');
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('previews blocked and unknown command intents without writing a receipt', () => {
 	const projectPath = createTempProject();
 

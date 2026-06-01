@@ -1,8 +1,22 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { inspectLineEndings, type LineEndingReport } from '../../core/line-endings.js';
+
+const LINE_ENDING_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--all', kind: 'boolean' },
+	{ name: '--apply', kind: 'boolean' },
+	{ name: '--dry-run', kind: 'boolean' },
+] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedLineEndingOptions {
 	readonly action: 'check' | 'normalize';
@@ -41,12 +55,11 @@ export function getLineEndingsHelp(lang: CliLang = 'en'): string {
 
 function parseLineEndingOptions(args: readonly string[], lang: CliLang): ParsedLineEndingOptions {
 	const [action, ...rest] = args;
-	const json = rest.includes('--json');
-	const apply = rest.includes('--apply');
-	const dryRun = rest.includes('--dry-run');
-	const all = rest.includes('--all');
-	const supported = new Set(['--json', '--all', '--apply', '--dry-run']);
-	const unsupported = rest.find((arg) => arg.startsWith('-') && !supported.has(arg));
+	const parsed = parseCliOptions(rest, LINE_ENDING_OPTIONS, { allowPositionals: true });
+	const json = hasParsedCliOption(parsed, '--json');
+	const apply = hasParsedCliOption(parsed, '--apply');
+	const dryRun = hasParsedCliOption(parsed, '--dry-run');
+	const all = hasParsedCliOption(parsed, '--all');
 
 	if (action !== 'check' && action !== 'normalize') {
 		return {
@@ -59,8 +72,8 @@ function parseLineEndingOptions(args: readonly string[], lang: CliLang): ParsedL
 		};
 	}
 
-	if (unsupported) {
-		return { action, json, apply, dryRun, all, error: t(lang, 'cli.error.unknownOption', { option: unsupported }) };
+	if (parsed.error) {
+		return { action, json, apply, dryRun, all, error: formatCliOptionParseError(parsed.error, lang) };
 	}
 
 	if (action === 'check' && (apply || dryRun)) {
@@ -105,7 +118,7 @@ function renderLineEndingSummary(report: LineEndingReport, lang: CliLang): strin
 }
 
 export function runLineEndings(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getLineEndingsHelp(lang));
 		return 0;
 	}

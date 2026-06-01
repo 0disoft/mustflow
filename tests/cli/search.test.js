@@ -165,7 +165,7 @@ test('searches command effect paths and locks from the local index', async () =>
 });
 
 test('search narrows indexed command candidates before loading command effects in bulk', () => {
-	const source = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'index.ts'), 'utf8');
+	const source = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'search-read-model.ts'), 'utf8');
 
 	assert.match(source, /function getCommandEffectsByIntent/u);
 	assert.match(source, /const commandRows = queryCandidateRows/u);

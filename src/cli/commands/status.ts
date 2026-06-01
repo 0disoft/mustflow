@@ -5,8 +5,17 @@ import type { Reporter } from '../lib/reporter.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { inspectManifestLock } from '../lib/manifest-lock.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 
+const STATUS_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+] as const;
 
 interface StatusSnapshot {
 	readonly installed: boolean;
@@ -57,23 +66,21 @@ function getStatusSnapshot(projectRoot: string): StatusSnapshot {
 }
 
 export function runStatus(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getStatusHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--json']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf status --help', getStatusHelp(lang), lang);
+	const options = parseCliOptions(args, STATUS_OPTIONS);
+	if (options.error) {
+		printUsageError(reporter, formatCliOptionParseError(options.error, lang), 'mf status --help', getStatusHelp(lang), lang);
 		return 1;
 	}
 
 	const projectRoot = resolveMustflowRoot();
 	const status = getStatusSnapshot(projectRoot);
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(options, '--json')) {
 		reporter.stdout(JSON.stringify(status, null, 2));
 		return 0;
 	}

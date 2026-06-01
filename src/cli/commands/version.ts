@@ -1,8 +1,18 @@
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { checkNpmLatestVersion, type PackageVersionCheck } from '../lib/npm-version-check.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { readPackageMetadata } from '../lib/package-info.js';
 import type { Reporter } from '../lib/reporter.js';
+
+const VERSION_OPTIONS = [
+	{ name: '--check', kind: 'boolean' },
+] as const;
 
 export function getVersionHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -43,18 +53,16 @@ function renderVersionCheck(check: PackageVersionCheck, lang: CliLang): string {
 }
 
 export async function runVersion(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getVersionHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--check']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
-
-	if (unsupported.length > 0) {
+	const options = parseCliOptions(args, VERSION_OPTIONS);
+	if (options.error) {
 		printUsageError(
 			reporter,
-			t(lang, 'cli.error.unknownOption', { option: unsupported[0] }),
+			formatCliOptionParseError(options.error, lang),
 			'mf version --help',
 			getVersionHelp(lang),
 			lang,
@@ -64,7 +72,7 @@ export async function runVersion(args: string[], reporter: Reporter, lang: CliLa
 
 	const metadata = readPackageMetadata();
 
-	if (!args.includes('--check')) {
+	if (!hasParsedCliOption(options, '--check')) {
 		reporter.stdout(metadata.version);
 		return 0;
 	}

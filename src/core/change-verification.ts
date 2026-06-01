@@ -236,6 +236,7 @@ function escalationIntentsForCandidate(commandContract: CommandContract, candida
 
 function expandCandidatesWithDeclaredFallbacks(
 	commandContract: CommandContract,
+	projectRoot: string,
 	candidates: readonly VerificationCandidate[],
 ): readonly VerificationCandidate[] {
 	const hasRunnableCandidate = candidates.some(
@@ -258,7 +259,10 @@ function expandCandidatesWithDeclaredFallbacks(
 	return [
 		...candidates,
 		...fallbackIntents.map((intent) => {
-			const fallback = classifyVerificationCandidate(intent, commandContract.intents[intent]);
+			const fallback = classifyVerificationCandidate(intent, commandContract.intents[intent], {
+				commandContract,
+				projectRoot,
+			});
 
 			return {
 				...fallback,
@@ -285,6 +289,7 @@ function requirementNeedsDeclaredEscalation(requirement: VerificationRequirement
 
 function expandCandidatesWithDeclaredEscalations(
 	commandContract: CommandContract,
+	projectRoot: string,
 	requirement: VerificationRequirement,
 	candidates: readonly VerificationCandidate[],
 ): readonly VerificationCandidate[] {
@@ -304,7 +309,10 @@ function expandCandidatesWithDeclaredEscalations(
 	return [
 		...candidates,
 		...escalationIntents.map((intent) => {
-			const escalation = classifyVerificationCandidate(intent, commandContract.intents[intent]);
+			const escalation = classifyVerificationCandidate(intent, commandContract.intents[intent], {
+				commandContract,
+				projectRoot,
+			});
 
 			return {
 				...escalation,
@@ -499,10 +507,12 @@ export function createChangeVerificationReport(
 		requirement,
 		candidates: expandCandidatesWithDeclaredEscalations(
 			commandContract,
+			projectRoot,
 			requirement,
 			expandCandidatesWithDeclaredFallbacks(
 				commandContract,
-				createVerificationPlan(commandContract, requirement.reason).candidates,
+				projectRoot,
+				createVerificationPlan(commandContract, requirement.reason, projectRoot).candidates,
 			),
 		),
 	}));

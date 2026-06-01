@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/api-serve-response.schema.json",
+  "title": "mustflow api serve response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "transport",
+    "id",
+    "ok",
+    "policy"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "api serve" },
+    "transport": { "const": "stdio" },
+    "id": { "type": ["string", "number", "null"] },
+    "ok": { "type": "boolean" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "executes_commands",
+        "direct_commands_allowed",
+        "raw_output_included",
+        "hidden_reasoning_included"
+      ],
+      "properties": {
+        "mode": { "const": "read_only" },
+        "executes_commands": { "const": false },
+        "direct_commands_allowed": { "const": false },
+        "raw_output_included": { "const": false },
+        "hidden_reasoning_included": { "const": false }
+      }
+    },
+    "result": {
+      "anyOf": [
+        { "$ref": "workspace-summary.schema.json" },
+        { "$ref": "command-catalog.schema.json" },
+        { "$ref": "verification-plan.schema.json" },
+        { "$ref": "latest-evidence.schema.json" },
+        { "$ref": "diff-risk.schema.json" },
+        { "$ref": "health.schema.json" },
+        { "$ref": "locks.schema.json" }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_json",
+            "invalid_request",
+            "unknown_action",
+            "action_requires_changed",
+            "action_does_not_accept_changed",
+            "report_unavailable"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "ok": { "const": true }
+      },
+      "required": ["result"],
+      "not": {
+        "required": ["error"]
+      }
+    },
+    {
+      "properties": {
+        "ok": { "const": false }
+      },
+      "required": ["error"],
+      "not": {
+        "required": ["result"]
+      }
+    }
+  ]
+}

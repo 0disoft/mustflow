@@ -14,6 +14,8 @@ Use this path when you build an AI coding tool, agent harness, editor integratio
 ## Plan and Verify
 
 ```sh
+mf api workspace-summary --json
+mf api serve --stdio
 mf classify --changed --json
 mf verify --reason code_change --plan-only --json
 mf run <intent> --json
@@ -26,6 +28,7 @@ Use JSON outputs and schemas instead of parsing human-facing terminal text. Publ
 Prefer improving existing JSON surfaces before adding a new command name:
 
 - Use `mf classify --changed --json` for triage-style path and surface evidence.
+- Use `mf api <action> --json` or `mf api serve --stdio` for stable read-only workspace, command, evidence, risk, health, and lock reports.
 - Use `mf verify --plan-only --json` for simulation-style verification planning.
 - Use `mf explain <topic> --json` when an integration needs decision evidence.
 - Use `mf dashboard --export-json <path>` for bounded static review artifacts.

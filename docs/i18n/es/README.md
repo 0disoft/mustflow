@@ -199,10 +199,15 @@ mf run mustflow_update_apply
 | `mf doctor`                 | Inspecciona la raíz mustflow actual sin modificar archivos.                                  |
 | `mf api workspace-summary --json` | Imprime un resumen JSON estable y de solo lectura para agentes de código y arneses externos. |
 | `mf api command-catalog --json` | Imprime disponibilidad de intents y entradas seguras `mf run` sin exponer comandos sin procesar. |
+| `mf api serve --stdio` | Sirve los mismos informes API de solo lectura como respuestas JSON delimitadas por líneas en stdin/stdout. |
 | `mf api verification-plan --changed --json` | Imprime un verification plan estable y de solo lectura para archivos cambiados sin ejecutar comandos. |
 | `mf api latest-evidence --json` | Imprime evidencia bounded del último run o verify sin salida de comando sin procesar. |
 | `mf api diff-risk --changed --json` | Imprime un resumen compacto de riesgo, verificación y señales residual correction de solo lectura para archivos cambiados. |
 | `mf api health --json` | Imprime un informe compacto de salud del workspace para gates rápidos de agente. |
+| `mf evidence --changed` | Resume requisitos de verificación de cambios, evidencia reciente, recibos y brechas restantes sin ejecutar comandos. |
+| `mf workspace status` | Inspecciona raíces workspace configuradas y preparación de contratos anidados sin conceder autoridad de comandos de padre a hijo. |
+| `mf workspace command-catalog` | Muestra disponibilidad de intents por repositorio y entradas seguras `mf run` sin cadenas de comando sin procesar. |
+| `mf workspace verify --changed --plan-only` | Muestra planes de verificación de cambios por repositorio sin ejecutar comandos. |
 | `mf api locks --json` | Imprime bloqueos activos de `mf run` para coordinar varias sesiones. |
 | `mf context --json`         | Imprime en JSON el orden de lectura, reglas de comandos, capacidades disponibles y resumen de ejecución reciente. |
 | `mf map --stdout`           | Imprime el mapa de la raíz mustflow actual en la salida estándar.                            |
@@ -221,7 +226,7 @@ mf run mustflow_update_apply
 | `mf version-sources`        | Inspecciona fuentes de versión detectadas, de plantilla y declaradas sin modificar archivos. |
 | `mf explain authority [path]` | Explica decisiones de autoridad de Markdown gestionado sin modificar archivos.            |
 
-Las automatizaciones y agentes deben usar la salida `--json` en lugar de analizar texto orientado a humanos. Los JSON Schemas para salidas estables se encuentran en `schemas/`.
+Las automatizaciones y agentes deben usar la salida `--json` o las respuestas JSONL de `mf api serve --stdio` en lugar de analizar texto orientado a humanos. Los JSON Schemas para salidas estables se encuentran en `schemas/`.
 
 ## Política de ejecución de comandos
 

@@ -1,8 +1,18 @@
 import { inspectAdapterCompatibility, type AdapterCompatibilityReport } from '../../core/adapter-compatibility.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+
+const ADAPTERS_STATUS_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+] as const;
 
 interface ParsedAdaptersArgs {
 	readonly action: 'status';
@@ -31,9 +41,8 @@ export function getAdaptersHelp(lang: CliLang = 'en'): string {
 
 function parseAdaptersArgs(args: readonly string[], lang: CliLang): ParsedAdaptersArgs {
 	const [action, ...rest] = args;
-	const json = rest.includes('--json');
-	const supported = new Set(['--json']);
-	const unsupported = rest.find((arg) => arg.startsWith('-') && !supported.has(arg));
+	const parsed = parseCliOptions(rest, ADAPTERS_STATUS_OPTIONS, { allowPositionals: true });
+	const json = hasParsedCliOption(parsed, '--json');
 
 	if (!action) {
 		return {
@@ -51,13 +60,12 @@ function parseAdaptersArgs(args: readonly string[], lang: CliLang): ParsedAdapte
 		};
 	}
 
-	if (unsupported) {
-		return { action, json, error: t(lang, 'cli.error.unknownOption', { option: unsupported }) };
+	if (parsed.error) {
+		return { action, json, error: formatCliOptionParseError(parsed.error, lang) };
 	}
 
-	if (rest.some((arg) => !arg.startsWith('-'))) {
-		const unexpected = rest.find((arg) => !arg.startsWith('-')) as string;
-		return { action, json, error: t(lang, 'cli.error.unexpectedArgument', { argument: unexpected }) };
+	if (parsed.positionals.length > 0) {
+		return { action, json, error: t(lang, 'cli.error.unexpectedArgument', { argument: parsed.positionals[0] ?? '' }) };
 	}
 
 	return { action, json };
@@ -93,7 +101,7 @@ function renderAdapterReport(report: AdapterCompatibilityReport, lang: CliLang):
 }
 
 export function runAdapters(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getAdaptersHelp(lang));
 		return 0;
 	}

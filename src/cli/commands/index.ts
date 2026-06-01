@@ -1,8 +1,22 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { createLocalIndex } from '../lib/local-index.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+
+const INDEX_OPTIONS = [
+	{ name: '--dry-run', kind: 'boolean' },
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--source', kind: 'boolean' },
+	{ name: '--incremental', kind: 'boolean' },
+] as const satisfies readonly CliOptionSpec[];
 
 export function getIndexHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -76,26 +90,25 @@ function renderIndexSummary(result: Awaited<ReturnType<typeof createLocalIndex>>
 }
 
 export async function runIndex(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getIndexHelp(lang));
 		return 0;
 	}
 
-	const supported = new Set(['--dry-run', '--json', '--source', '--incremental']);
-	const unsupported = args.filter((arg) => !supported.has(arg));
+	const parsed = parseCliOptions(args, INDEX_OPTIONS);
 
-	if (unsupported.length > 0) {
-		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: unsupported[0] }), 'mf index --help', getIndexHelp(lang), lang);
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf index --help', getIndexHelp(lang), lang);
 		return 1;
 	}
 
 	const result = await createLocalIndex(resolveMustflowRoot(), {
-		dryRun: args.includes('--dry-run'),
-		includeSource: args.includes('--source'),
-		incremental: args.includes('--incremental'),
+		dryRun: hasParsedCliOption(parsed, '--dry-run'),
+		includeSource: hasParsedCliOption(parsed, '--source'),
+		incremental: hasParsedCliOption(parsed, '--incremental'),
 	});
 
-	if (args.includes('--json')) {
+	if (hasParsedCliOption(parsed, '--json')) {
 		reporter.stdout(JSON.stringify(result, null, 2));
 		return 0;
 	}

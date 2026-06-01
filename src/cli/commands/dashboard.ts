@@ -7,6 +7,14 @@ import path from 'node:path';
 import { openUrlInBrowser } from '../lib/browser-open.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import {
+	formatCliOptionParseError,
+	getParsedCliStringOption,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
+import {
 	renderDashboardHtml,
 	type DashboardCommandEffectGraph,
 	type DashboardCommandEffectGraphStatus,
@@ -57,6 +65,7 @@ import {
 	type LocalVerificationReadModelQueries,
 } from '../lib/local-index.js';
 import { readPackageMetadata } from '../lib/package-info.js';
+import { createRunPlan } from '../lib/run-plan.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	MUSTFLOW_JSON_MAX_BYTES,
@@ -81,6 +90,16 @@ const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
 const DEFAULT_DASHBOARD_PORT = 0;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+const DASHBOARD_OPTIONS: readonly CliOptionSpec[] = [
+	{ name: '--host', kind: 'string' },
+	{ name: '--port', kind: 'string' },
+	{ name: '--open', kind: 'boolean' },
+	{ name: '--no-open', kind: 'boolean' },
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--export', kind: 'string' },
+	{ name: '--export-json', kind: 'string' },
+	{ name: '--help', kind: 'boolean', aliases: ['-h'] },
+];
 
 const RELEASE_FILE_PATTERNS = [
 	/^package\.json$/u,
@@ -277,126 +296,39 @@ export function getDashboardHelp(lang: CliLang = 'en'): string {
 }
 
 function parseDashboardOptions(args: readonly string[], lang: CliLang): { options?: DashboardOptions; error?: string } {
-	let host = DEFAULT_DASHBOARD_HOST;
+	const parsed = parseCliOptions(args, DASHBOARD_OPTIONS);
+
+	if (parsed.error) {
+		return { error: formatCliOptionParseError(parsed.error, lang) };
+	}
+
+	const host = getParsedCliStringOption(parsed, '--host') ?? DEFAULT_DASHBOARD_HOST;
 	let port = DEFAULT_DASHBOARD_PORT;
-	let json = false;
-	let openBrowser = false;
-	let exportPath: string | undefined;
-	let exportFormat: DashboardExportFormat | undefined;
-	let serverOptionUsed = false;
+	const portValue = getParsedCliStringOption(parsed, '--port');
 
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index];
-
-		if (!arg) {
-			continue;
+	if (portValue !== null) {
+		const parsedPort = Number(portValue);
+		if (!Number.isInteger(parsedPort) || parsedPort < 0 || parsedPort > 65_535) {
+			return { error: t(lang, 'dashboard.error.invalidPort', { port: portValue }) };
 		}
+		port = parsedPort;
+	}
 
-		if (arg === '--json') {
-			json = true;
-			openBrowser = false;
-			serverOptionUsed = true;
-			continue;
-		}
+	const json = hasParsedCliOption(parsed, '--json');
+	const lastOpenOption = lastOptionTokenName(args, ['--open', '--no-open']);
+	const openBrowser = lastOpenOption === '--open' && !json;
+	const serverOptionUsed = hasParsedCliOption(parsed, '--json')
+		|| hasParsedCliOption(parsed, '--open')
+		|| hasParsedCliOption(parsed, '--no-open')
+		|| getParsedCliStringOption(parsed, '--host') !== null
+		|| portValue !== null;
+	const htmlExportPath = getParsedCliStringOption(parsed, '--export');
+	const jsonExportPath = getParsedCliStringOption(parsed, '--export-json');
+	const exportPath = htmlExportPath ?? jsonExportPath ?? undefined;
+	const exportFormat: DashboardExportFormat | undefined = jsonExportPath !== null ? 'json' : htmlExportPath !== null ? 'html' : undefined;
 
-		if (arg === '--open') {
-			openBrowser = true;
-			serverOptionUsed = true;
-			continue;
-		}
-
-		if (arg === '--no-open') {
-			openBrowser = false;
-			serverOptionUsed = true;
-			continue;
-		}
-
-		if (arg === '--host') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { error: t(lang, 'cli.error.missingValue', { option: '--host' }) };
-			}
-			host = value;
-			serverOptionUsed = true;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--host=')) {
-			host = arg.slice('--host='.length);
-			serverOptionUsed = true;
-			continue;
-		}
-
-		if (arg === '--port') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { error: t(lang, 'cli.error.missingValue', { option: '--port' }) };
-			}
-			const parsedPort = Number(value);
-			if (!Number.isInteger(parsedPort) || parsedPort < 0 || parsedPort > 65_535) {
-				return { error: t(lang, 'dashboard.error.invalidPort', { port: value }) };
-			}
-			port = parsedPort;
-			serverOptionUsed = true;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--port=')) {
-			const value = arg.slice('--port='.length);
-			const parsedPort = Number(value);
-			if (!Number.isInteger(parsedPort) || parsedPort < 0 || parsedPort > 65_535) {
-				return { error: t(lang, 'dashboard.error.invalidPort', { port: value }) };
-			}
-			port = parsedPort;
-			serverOptionUsed = true;
-			continue;
-		}
-
-		if (arg === '--export' || arg === '--export-json') {
-			const value = args[index + 1];
-			if (!value || value.startsWith('-')) {
-				return { error: t(lang, 'cli.error.missingValue', { option: arg }) };
-			}
-			if (exportPath) {
-				return { error: t(lang, 'dashboard.error.conflictingExportModes') };
-			}
-			exportPath = value;
-			exportFormat = arg === '--export-json' ? 'json' : 'html';
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith('--export=')) {
-			if (exportPath) {
-				return { error: t(lang, 'dashboard.error.conflictingExportModes') };
-			}
-			exportPath = arg.slice('--export='.length);
-			exportFormat = 'html';
-			if (!exportPath) {
-				return { error: t(lang, 'cli.error.missingValue', { option: '--export' }) };
-			}
-			continue;
-		}
-
-		if (arg.startsWith('--export-json=')) {
-			if (exportPath) {
-				return { error: t(lang, 'dashboard.error.conflictingExportModes') };
-			}
-			exportPath = arg.slice('--export-json='.length);
-			exportFormat = 'json';
-			if (!exportPath) {
-				return { error: t(lang, 'cli.error.missingValue', { option: '--export-json' }) };
-			}
-			continue;
-		}
-
-		if (arg.startsWith('-')) {
-			return { error: t(lang, 'cli.error.unknownOption', { option: arg }) };
-		}
-
-		return { error: t(lang, 'cli.error.unexpectedArgument', { argument: arg }) };
+	if (countOptionTokens(args, ['--export', '--export-json']) > 1) {
+		return { error: t(lang, 'dashboard.error.conflictingExportModes') };
 	}
 
 	if (exportPath && serverOptionUsed) {
@@ -411,11 +343,39 @@ function parseDashboardOptions(args: readonly string[], lang: CliLang): { option
 		return { error: t(lang, 'dashboard.error.nonLocalHost', { host }) };
 	}
 
-	if (json) {
-		openBrowser = false;
+	return { options: { host, port, json, openBrowser } };
+}
+
+function countOptionTokens(args: readonly string[], names: readonly string[]): number {
+	const nameSet = new Set(names);
+	let count = 0;
+
+	for (const arg of args) {
+		if (nameSet.has(optionTokenName(arg))) {
+			count += 1;
+		}
 	}
 
-	return { options: { host, port, json, openBrowser } };
+	return count;
+}
+
+function lastOptionTokenName(args: readonly string[], names: readonly string[]): string | null {
+	const nameSet = new Set(names);
+	let lastName: string | null = null;
+
+	for (const arg of args) {
+		const name = optionTokenName(arg);
+		if (nameSet.has(name)) {
+			lastName = name;
+		}
+	}
+
+	return lastName;
+}
+
+function optionTokenName(arg: string): string {
+	const separatorIndex = arg.indexOf('=');
+	return separatorIndex === -1 ? arg : arg.slice(0, separatorIndex);
 }
 
 function sendJson(response: ServerResponse, statusCode: number, value: unknown): void {
@@ -679,13 +639,7 @@ async function renderCommandContractResponse(
 			const runPolicy = readString(intent, 'run_policy') ?? null;
 			const stdin = readString(intent, 'stdin') ?? null;
 			const timeoutSeconds = readPositiveInteger(intent, 'timeout_seconds') ?? null;
-			const runnable =
-				status === 'configured' &&
-				lifecycle === 'oneshot' &&
-				runPolicy === 'agent_allowed' &&
-				stdin === 'closed' &&
-				timeoutSeconds !== null &&
-				(readStringArray(intent, 'argv') !== undefined || readString(intent, 'cmd') !== undefined);
+			const runnable = createRunPlan(projectRoot, contract, name).ok;
 
 			return [
 				{
@@ -1011,7 +965,7 @@ function toDashboardUrl(host: string, port: number): string {
 }
 
 export async function runDashboard(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getDashboardHelp(lang));
 		return 0;
 	}

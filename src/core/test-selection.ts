@@ -317,7 +317,10 @@ export function createProjectTestSelectionPlan(
 		});
 
 		const primary = withDetail(
-			classifyVerificationCandidate(rule.intent, commandContract.intents[rule.intent]),
+			classifyVerificationCandidate(rule.intent, commandContract.intents[rule.intent], {
+				commandContract,
+				projectRoot,
+			}),
 			`Project-declared test selection rule "${rule.id}".`,
 		);
 		const primaryTestTargets = appliedTestTargetsForCandidate(rule, commandContract, primary);
@@ -333,7 +336,10 @@ export function createProjectTestSelectionPlan(
 		selectedReportCandidates.push(toReportCandidate(rule, reason, 'primary', primary, primaryTestTargets));
 
 		const fallback = withDetail(
-			classifyVerificationCandidate(rule.fallbackIntent, commandContract.intents[rule.fallbackIntent]),
+			classifyVerificationCandidate(rule.fallbackIntent, commandContract.intents[rule.fallbackIntent], {
+				commandContract,
+				projectRoot,
+			}),
 			`Fallback for project-declared test selection rule "${rule.id}".`,
 		);
 		const fallbackTestTargets = appliedTestTargetsForCandidate(rule, commandContract, fallback);

@@ -85,11 +85,15 @@ const verifyTests = [
 const fastCommandSurfaceTests = [
 	'adapters.test.js',
 	'classify.test.js',
+	'evidence.test.js',
 	'impact.test.js',
 	'handoff.test.js',
+	'next.test.js',
+	'onboard.test.js',
 	'router.test.js',
 	'status.test.js',
 	'version-sources.test.js',
+	'workspace.test.js',
 ];
 
 const fastWorkflowContractTests = [
@@ -119,7 +123,7 @@ const defaultSchedulerResourceTokens = {
 	sqlite: '4',
 	git: '2',
 };
-const inProcessCliTests = new Set(['check.test.js', 'contract-lint.test.js', ...verifyTests]);
+const inProcessCliTests = new Set(['check.test.js', 'contract-lint.test.js', 'next.test.js', 'onboard.test.js', ...verifyTests]);
 const envSensitiveInProcessCliTests = new Set(['verify-plan-scheduler.test.js']);
 
 const commandTestNames = new Set(allCliTests);
@@ -141,6 +145,10 @@ const commandRelatedTests = new Map([
 	['init', ['init.test.js', 'workflow.test.js']],
 	['line-endings', ['line-endings.test.js', ...schemaSmokeTests]],
 	['map', ['map.test.js', 'workflow.test.js']],
+	['next', ['next.test.js', ...schemaSmokeTests]],
+	['evidence', ['evidence.test.js', ...schemaSmokeTests]],
+	['onboard', ['onboard.test.js', 'contract-lint.test.js', ...schemaSmokeTests]],
+	['workspace', ['workspace.test.js', ...schemaSmokeTests]],
 	['run', [...runTests, ...schemaSmokeTests]],
 	['search', ['search.test.js', 'search-backends.test.js', 'search-index-state.test.js', 'search-output.test.js', 'search-source-scope.test.js']],
 	['status', ['status.test.js']],
@@ -167,8 +175,43 @@ const relatedRules = [
 	{ match: /^src\/cli\/lib\/doc-review-ledger\.ts$/u, tests: ['docs.test.js', ...dashboardTests] },
 	{ match: /^src\/cli\/lib\/local-index\.ts$/u, tests: [...localIndexTests, 'explain-command.test.js', 'explain-surface.test.js'] },
 	{ match: /^src\/cli\/lib\/npm-version-check\.ts$/u, tests: ['router.test.js'] },
+	{
+		match: /^src\/cli\/lib\/option-parser\.ts$/u,
+		tests: [
+			'option-parser.test.js',
+			'router.test.js',
+			...runTests,
+			'adapters.test.js',
+			'check.test.js',
+			'classify.test.js',
+			'status.test.js',
+			'doctor.test.js',
+			'context.test.js',
+			'contract-lint.test.js',
+			...explainTests,
+			'handoff.test.js',
+			'impact.test.js',
+			'index-dry-run.test.js',
+			...indexTests,
+			'line-endings.test.js',
+			'map.test.js',
+			'next.test.js',
+			'onboard.test.js',
+			'search.test.js',
+			'search-backends.test.js',
+			'search-index-state.test.js',
+			'search-output.test.js',
+			'search-source-scope.test.js',
+			'update.test.js',
+			'upgrade.test.js',
+			...verifyTests,
+			'version-sources.test.js',
+			'workspace.test.js',
+		],
+	},
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: [...dashboardTests, 'router.test.js', ...runTests] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: [...runTests, ...dashboardTests, 'router.test.js'] },
+	{ match: /^src\/cli\/lib\/repo-map\.ts$/u, tests: ['map.test.js', 'workspace.test.js'] },
 	{ match: /^src\/cli\/lib\/run-plan\.ts$/u, tests: [...runTests, ...schemaSmokeTests] },
 	{ match: /^src\/cli\/lib\/run-receipt\.ts$/u, tests: [...runTests, ...dashboardTests, ...schemaSmokeTests] },
 	{ match: /^src\/cli\/lib\/validation\.ts$/u, tests: [...checkTests, ...schemaSmokeTests] },

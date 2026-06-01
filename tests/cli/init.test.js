@@ -533,6 +533,44 @@ test('rejects conflicting interactive and yes init modes', () => {
 	}
 });
 
+test('rejects invalid init option shapes before writing files', () => {
+	const invalidArgs = [
+		[['--dry-run=true'], /Unexpected value for --dry-run/],
+		[['--profile'], /Missing value for --profile/],
+		[['--profile=   '], /Missing value for --profile/],
+		[['extra'], /Unknown option: extra/],
+	];
+
+	for (const [args, expectedError] of invalidArgs) {
+		const projectPath = createTempProject();
+
+		try {
+			const result = runInit(projectPath, args);
+
+			assert.equal(result.status, 1);
+			assert.match(result.stderr, expectedError);
+			assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+		} finally {
+			removeTempProject(projectPath);
+		}
+	}
+});
+
+test('init help detection uses shared option token rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = runInit(projectPath, ['--help=true']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Usage: mf init \[options\]/);
+		assert.equal(result.stderr, '');
+		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('is idempotent when installed files already match the template', () => {
 	const projectPath = createTempProject();
 

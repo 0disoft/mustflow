@@ -18,7 +18,7 @@ The core concept is straightforward: place `AGENTS.md` at the project root and k
 
 - Use mustflow in your repository: start with [Quick start](#quick-start), then review the [no-guessing workflow](#no-guessing-workflow) and [`examples/minimal-js/`](examples/minimal-js/).
 - Contribute to mustflow: read [CONTRIBUTING.md](CONTRIBUTING.md), then run only configured command intents from [`.mustflow/config/commands.toml`](.mustflow/config/commands.toml).
-- Build an AI coding tool or agent harness: use `AGENTS.md` and `mf context --json` for repository context, then consume JSON output and schemas from `mf classify`, `mf verify`, `mf run`, `mf dashboard`, and [`schemas/`](schemas/).
+- Build an AI coding tool or agent harness: use `AGENTS.md` and `mf context --json` for repository context, then consume JSON output and schemas from `mf api`, `mf classify`, `mf verify`, `mf run`, `mf dashboard`, and [`schemas/`](schemas/).
 
 ## No-guessing workflow
 
@@ -248,6 +248,12 @@ mf run mustflow_update_apply
 | `mf adapters status` | Inspect existing host-specific instruction and adapter files without generating adapter files or granting command authority. |
 | `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons. Add `--write <path>` to save the classification report. |
 | `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. Add `--suggest` to print non-runnable candidate snippets from existing command files. |
+| `mf onboard commands` | Suggest review-only command-intent snippets from package.json, Makefile, or justfile without writing files or granting command authority. |
+| `mf next` | Inspect install state, changed files, verification coverage, and command-contract gaps, then print the next safe mustflow action without running commands. |
+| `mf evidence` | Summarize changed-file verification requirements, latest evidence, receipts, remaining risks, and gaps without running commands. |
+| `mf workspace status` | Inspect configured workspace roots and nested repository contract readiness without granting parent-to-child command authority. |
+| `mf workspace command-catalog` | Aggregate per-repository command intent availability with safe `mf run` entrypoints and no raw command strings. |
+| `mf workspace verify --changed --plan-only` | Aggregate per-repository changed-file verification plans without running commands or granting parent-to-child command authority. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf api workspace-summary --json` | Print a stable, read-only JSON summary for coding agents and external harnesses. |
 | `mf api command-catalog --json` | Print command intent availability and safe `mf run` entrypoints without exposing raw command strings. |
@@ -256,6 +262,7 @@ mf run mustflow_update_apply
 | `mf api diff-risk --changed --json` | Print a compact changed-file risk, verification summary, and read-only residual correction signals. |
 | `mf api health --json` | Print a compact workspace health report for quick agent gating. |
 | `mf api locks --json` | Print active `mf run` locks for multi-session coordination. |
+| `mf api serve --stdio` | Serve the same read-only API reports as newline-delimited JSON responses over stdin/stdout. |
 | `mf docs review list` | Show documents still waiting for prose review after agent edits. |
 | `mf docs review add <path>` | Add or refresh a document review queue entry. |
 | `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
@@ -287,7 +294,7 @@ mf run mustflow_update_apply
 | `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
 | `mf explain surface [path]` | Explain how a path maps to public-surface and validation categories. |
 
-Automation and agents should use `--json` output instead of parsing human-facing text. Published JSON Schemas for stable outputs live in `schemas/`.
+Automation and agents should use `--json` output or `mf api serve --stdio` JSONL responses instead of parsing human-facing text. Published JSON Schemas for stable outputs live in `schemas/`.
 
 ## Command execution policy
 
@@ -366,6 +373,9 @@ These are ideas not yet officially supported:
 ## Development
 
 Development commands in this repository use Bun. Users do not need Bun to run `mf` in their own projects.
+The mustflow source repository dogfoods the installed workflow files at the repository root: agents
+should read `AGENTS.md`, `.mustflow/docs/agent-workflow.md`, and `.mustflow/config/commands.toml`
+before changing code or running verification.
 
 ```sh
 bun install

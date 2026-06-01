@@ -86,6 +86,41 @@ test('lists an empty documentation review queue without creating a ledger', () =
 	}
 });
 
+test('docs review options use shared inline value and boolean option rules', () => {
+	const projectPath = createDocsProject();
+
+	try {
+		writeDoc(projectPath, 'docs/guide.md');
+
+		const addResult = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'docs/guide.md',
+			'--reason=llm_modified',
+			'--actor-kind=llm',
+			'--actor-id=codex',
+		]);
+		const listResult = runCli(projectPath, ['docs', 'review', 'list', '--status=pending', '--json']);
+		const booleanValue = runCli(projectPath, ['docs', 'review', 'list', '--json=true']);
+		const missingValue = runCli(projectPath, ['docs', 'review', 'list', '--status=']);
+
+		assert.equal(addResult.status, 0, addResult.stderr || addResult.stdout);
+		assert.equal(listResult.status, 0, listResult.stderr || listResult.stdout);
+		assert.equal(JSON.parse(listResult.stdout).count, 1);
+
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /mf docs --help/u);
+
+		assert.equal(missingValue.status, 1);
+		assert.match(missingValue.stderr, /Missing value for --status/u);
+		assert.match(missingValue.stderr, /mf docs --help/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('adds LLM-modified documentation to the review queue', () => {
 	const projectPath = createDocsProject();
 

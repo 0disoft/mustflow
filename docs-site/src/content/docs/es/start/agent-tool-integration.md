@@ -14,6 +14,8 @@ Usa esta ruta cuando construyes una herramienta de codificación con IA, un harn
 ## Planificación y verificación
 
 ```sh
+mf api workspace-summary --json
+mf api serve --stdio
 mf classify --changed --json
 mf verify --reason code_change --plan-only --json
 mf run <intent> --json

@@ -822,6 +822,26 @@ test('requires an explicit update mode', () => {
 	}
 });
 
+test('rejects unsupported update options before planning or applying', () => {
+	const projectPath = createTempProject();
+
+	try {
+		copyInitializedProject(projectPath);
+
+		const unknownOption = runCli(projectPath, ['update', '--bad']);
+		const booleanValue = runCli(projectPath, ['update', '--dry-run=true']);
+
+		assert.equal(unknownOption.status, 1);
+		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
+		assert.match(unknownOption.stderr, /Usage: mf update \(--dry-run\|--apply\) \[options\]/u);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --dry-run=true/u);
+		assert.match(booleanValue.stderr, /Usage: mf update \(--dry-run\|--apply\) \[options\]/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('requires dry-run mode for update diff previews', () => {
 	const projectPath = createTempProject();
 

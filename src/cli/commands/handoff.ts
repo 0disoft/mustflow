@@ -9,8 +9,17 @@ import {
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { ensureInsideWithoutSymlinks, readUtf8FileInsideWithoutSymlinks } from '../lib/filesystem.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import {
+	formatCliOptionParseError,
+	hasCliOptionToken,
+	hasParsedCliOption,
+	parseCliOptions,
+	type CliOptionSpec,
+} from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+
+const HANDOFF_OPTIONS = [{ name: '--json', kind: 'boolean' }] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedHandoffArgs {
 	readonly action: 'validate';
@@ -43,32 +52,25 @@ export function getHandoffHelp(lang: CliLang = 'en'): string {
 
 function parseHandoffArgs(args: readonly string[], lang: CliLang): ParsedHandoffArgs {
 	const [action, ...rest] = args;
-	let json = false;
-	let recordPath: string | undefined;
 
 	if (!action) {
-		return { action: 'validate', json, error: t(lang, 'handoff.error.missingAction') };
+		return { action: 'validate', json: false, error: t(lang, 'handoff.error.missingAction') };
 	}
 
 	if (action !== 'validate') {
-		return { action: 'validate', json, error: t(lang, 'handoff.error.unknownAction', { action }) };
+		return { action: 'validate', json: false, error: t(lang, 'handoff.error.unknownAction', { action }) };
 	}
 
-	for (const arg of rest) {
-		if (arg === '--json') {
-			json = true;
-			continue;
-		}
+	const parsed = parseCliOptions(rest, HANDOFF_OPTIONS, { allowPositionals: true });
+	const json = hasParsedCliOption(parsed, '--json');
+	const [recordPath, unexpectedArgument] = parsed.positionals;
 
-		if (arg.startsWith('-')) {
-			return { action, path: recordPath, json, error: t(lang, 'cli.error.unknownOption', { option: arg }) };
-		}
+	if (unexpectedArgument) {
+		return { action, path: recordPath, json, error: t(lang, 'cli.error.unexpectedArgument', { argument: unexpectedArgument }) };
+	}
 
-		if (recordPath) {
-			return { action, path: recordPath, json, error: t(lang, 'cli.error.unexpectedArgument', { argument: arg }) };
-		}
-
-		recordPath = arg;
+	if (parsed.error) {
+		return { action, path: recordPath, json, error: formatCliOptionParseError(parsed.error, lang) };
 	}
 
 	if (!recordPath) {
@@ -132,7 +134,7 @@ function renderHandoffReport(report: HandoffValidationReport, lang: CliLang): st
 export function runHandoff(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
 	const helpText = getHandoffHelp(lang);
 
-	if (args.includes('--help') || args.includes('-h')) {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(helpText);
 		return 0;
 	}
