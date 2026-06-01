@@ -131,6 +131,52 @@ test('idea triage keeps brainstorming evidence-based and bounded', () => {
 	assert.match(manifest, /"idea-triage"/u);
 });
 
+test('clarifying question gate keeps blocking questions evidence-based and bounded', () => {
+	const localSkill = readText('.mustflow/skills/clarifying-question-gate/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/clarifying-question-gate/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /Ask only the questions that protect the work from expensive wrong assumptions/u);
+	assert.match(localSkill, /repository_answerable/u);
+	assert.match(localSkill, /safe_assumption/u);
+	assert.match(localSkill, /blocking_question/u);
+	assert.match(localSkill, /ask at most three questions at once/u);
+	assert.match(localSkill, /Do not ask the user to answer facts that the\s+codebase can answer/u);
+	assert.match(localSkill, /"should I add tests\?"/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/clarifying-question-gate\/SKILL\.md/u);
+	assert.match(skillIndex, /cannot be safely inferred from repository evidence/u);
+	assert.match(routes, /\[routes\."clarifying-question-gate"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/clarifying-question-gate\/SKILL\.md"/u);
+	assert.match(manifest, /"clarifying-question-gate"/u);
+});
+
+test('structure discovery gate keeps pre-implementation design questions bounded', () => {
+	const localSkill = readText('.mustflow/skills/structure-discovery-gate/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/structure-discovery-gate/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /pre-implementation design gate/u);
+	assert.match(localSkill, /simple_patch/u);
+	assert.match(localSkill, /bounded_feature/u);
+	assert.match(localSkill, /structural_change/u);
+	assert.match(localSkill, /risk_change/u);
+	assert.match(localSkill, /four sentences or fewer/u);
+	assert.match(localSkill, /observable success criteria and verification proof/u);
+	assert.match(localSkill, /actor roles, tenant or ownership boundaries, and server-side authorization/u);
+	assert.match(localSkill, /failure mode, retry, idempotency, partial success, rollback/u);
+	assert.match(localSkill, /Ask only questions whose answers can change the design/u);
+	assert.match(skillIndex, /pre-implementation design gate/u);
+	assert.match(skillIndex, /design gate classification, restated requirement, success criteria/u);
+	assert.match(routes, /\[routes\."structure-discovery-gate"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /applies_to_reasons = \["code_change", "unknown_change", "behavior_change", "public_api_change", "security_change", "data_change", "migration_change", "product_change"\]/u);
+});
+
 test('repro-first debug skill keeps diagnosis loop boundaries explicit', () => {
 	const localSkill = readText('.mustflow/skills/repro-first-debug/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/repro-first-debug/SKILL.md');

@@ -409,7 +409,7 @@ translations = {}
 [documents."skill.structure-discovery-gate"]
 source = "locales/en/.mustflow/skills/structure-discovery-gate/SKILL.md"
 source_locale = "en"
-revision = 27
+revision = 28
 translations = {}
 
 [documents."skill.state-machine-pattern"]

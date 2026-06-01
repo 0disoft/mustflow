@@ -2,7 +2,7 @@
 mustflow_doc: skill.structure-discovery-gate
 locale: en
 canonical: true
-revision: 27
+revision: 28
 lifecycle: mustflow-owned
 authority: procedure
 name: structure-discovery-gate
@@ -27,10 +27,18 @@ metadata:
 
 Find hidden structure decisions before coding so new files, folders, names, routing, data models, and integration boundaries reduce future change cost instead of producing a neat but brittle tree.
 
+This is the pre-implementation design gate for work where the agent might otherwise shrink the user's
+problem into an easy toy version. It should expose the agent's current understanding, classify the
+work by risk, and stop before coding only when the next design choice can change compatibility,
+data, authorization, failure behavior, scale, operations, or long-term structure.
+
 <!-- mustflow-section: use-when -->
 ## Use When
 
 - The task asks for a new feature, module, folder layout, architecture, scaffold, refactor, API integration, website, app flow, routing structure, data model, state model, or file split.
+- The user asks for a broad or ambiguous capability and coding immediately would require guessing
+  success criteria, scope boundaries, users or roles, data lifecycle, failure policy, scale target,
+  existing conventions, non-negotiable constraints, test proof, or operational recovery behavior.
 - A named technology or service may be only an implementation choice rather than the product domain, such as AdSense, Stripe, Supabase, Firebase, Resend, SendGrid, Google Analytics, Plausible, or a CMS.
 - The request may hide costly structural decisions around localization, SEO, authentication, authorization, payments, ads, analytics, admin workflows, deployment, content management, storage, retention, or external service replacement.
 - A website, content system, marketplace, comparison site, review site, knowledge base, documentation site, or data-backed product may later need filtering, search, localization, SEO, public APIs, apps, content revisions, data verification, redirects, or cache invalidation.
@@ -78,6 +86,10 @@ Find hidden structure decisions before coding so new files, folders, names, rout
 ## Required Inputs
 
 - User request and intended product or code change.
+- Design gate classification: `simple_patch`, `bounded_feature`, `structural_change`, or
+  `risk_change`, with a short reason for the classification.
+- The agent's current understanding of the requirement in four sentences or fewer.
+- Candidate success criteria, non-goals, and compatibility boundaries that could change the design.
 - Current project instructions, relevant context, and nearby implementation patterns when available.
 - Known target platform, language, framework, package, or deployment constraints.
 - Any named external services, content sources, user roles, locales, data stores, algorithms, policies, feature flags, or revenue surfaces in the request.
@@ -135,8 +147,32 @@ Find hidden structure decisions before coding so new files, folders, names, rout
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Restate the requested change as the product capability or code responsibility, not just the named technology.
-2. Identify hidden decisions that could change routing, folder names, file boundaries, data model, state ownership, environment variables, tests, deployment, SEO, localization, external integrations, or legal and policy requirements.
+1. Classify the work before designing:
+   - `simple_patch`: one obvious target, existing local pattern, low reversibility cost, no new
+     contract, data, permission, dependency, or architecture decision. Do not run a design interview;
+     inspect files and fix it.
+   - `bounded_feature`: a focused capability with a few missing product or verification decisions.
+     Produce a compact gate with at most five design-shaping questions.
+   - `structural_change`: new boundaries, data models, public contracts, workflows, services, or
+     cross-module responsibilities are likely. Do not edit until the design gate has a selected
+     implementation boundary.
+   - `risk_change`: the work touches database schema, auth, permissions, billing, personal data,
+     destructive actions, public APIs, migrations, dependencies on survival paths, external side
+     effects, or operational recovery. Treat editing as blocked until the risky decisions are
+     resolved or explicitly scoped out.
+2. Restate the requested change as the product capability or code responsibility, not just the named technology. Keep the restatement to four sentences or fewer so the user can correct an early misunderstanding quickly.
+3. Identify hidden decisions that could change routing, folder names, file boundaries, data model, state ownership, environment variables, tests, deployment, SEO, localization, external integrations, or legal and policy requirements.
+   Always check whether the design changes along these axes before asking:
+   - observable success criteria and verification proof;
+   - scope and non-scope, including public API, URL, schema, event, and stored-data compatibility;
+   - actor roles, tenant or ownership boundaries, and server-side authorization;
+   - data creation, state transition, deletion, retention, migration, and recovery lifecycle;
+   - failure mode, retry, idempotency, partial success, rollback, operator visibility, and manual recovery;
+   - expected scale, performance floor, pagination, indexing, caching, and queue or batch throughput;
+   - existing local conventions, nearby precedents, naming, error shapes, folder layout, and test style;
+   - constraints such as no new dependency, no migration, no public contract change, browser/runtime support, SEO, SSR, and privacy boundaries;
+   - tests or invariants that prove the behavior, not only happy-path examples;
+   - logging, metrics, audit, trace identifiers, alerts, and operational repair paths.
    For content-heavy products, treat these as structural decisions, not later feature polish:
    - Permanent identity: distinguish stable ids from titles, slugs, display names, routes, and provider ids.
    - Addressing: decide canonical URLs, locale routes, slug history, redirects, filter URLs, sitemap inclusion, `noindex`, and canonical behavior.
@@ -195,12 +231,15 @@ Find hidden structure decisions before coding so new files, folders, names, rout
    - Failure radius: decide timeout, retry, circuit-breaker, feature-flag, stale fallback, degraded mode, and resource-pool boundaries so one auxiliary dependency does not make unrelated core functions fail.
    - Operations: decide status workflow, ownership, created/updated actors, permissions, audit logs, preview needs, admin filters, analytics event identity, privacy, deletion, anonymization, retention, backup, and migration expectations before adding user or content data.
    - Interaction and monetization: decide whether accounts, anonymous identity linking, comments, moderation, reports, notifications, newsletter sends, paywalls, access levels, plans, and previews require data fields now even when the UI is deferred.
-3. Classify each decision:
+4. Classify each decision:
    - Blocking: the answer can change the basic structure and cannot be safely assumed.
    - Structure-impacting: the answer changes boundaries, but a conservative default can be stated if the user does not answer.
    - Preference: the answer affects styling, wording, or minor details and should not block structure.
-4. Ask at most five high-value questions before coding. Prioritize localization, authentication, authorization, payments, ads, personal data, destructive data actions, admin workflows, SEO, content storage, and external service replacement.
-5. For any question not asked, state the default assumption briefly. Defaults should keep future changes possible without adding speculative layers.
+5. Ask only questions whose answers can change the design. Each question must include the decision,
+   why it matters, the recommended default, and how at least one alternative changes the implementation.
+   Do not ask about facts that current files, docs, tests, schemas, or conventions can answer.
+6. Ask at most five high-value questions before coding. Prioritize localization, authentication, authorization, payments, ads, personal data, destructive data actions, admin workflows, SEO, content storage, external service replacement, failure policy, operational recovery, and verification proof.
+7. For any question not asked, state the default assumption briefly. Defaults should keep future changes possible without adding speculative layers.
    For a content or data-product default, prefer:
    - Stable internal ids plus mutable slugs.
    - Explicit lifecycle states and delete alternatives, such as archive, private, redirect, gone, and soft delete, before adding a destructive remove path.
@@ -254,7 +293,7 @@ Find hidden structure decisions before coding so new files, folders, names, rout
    - Operations-as-code-lite before infrastructure-as-code: even without Terraform or OpenTofu, require an environment schema, secret inventory, domain notes, cron definitions, deployment steps, observability notes, and smoke-test expectations when the platform can become a hidden source of truth.
    - Domain-shaped API responses over screen-shaped payloads; screen-specific endpoints are acceptable when labeled internal and still expose resources, states, errors, and pagination rather than card titles, button text, or storage implementation details.
    Do not add full implementations of these surfaces unless the task needs them now.
-6. Select structure patterns only when the task's risk shape requires them:
+8. Select structure patterns only when the task's risk shape requires them:
    - Use a plan/apply gate for destructive, bulk, migration, billing, permission, publishing, or external-send operations that need review before execution.
    - Use a capability object when a function should require a specific granted action instead of reading broad user or role state.
    - Use Result and Option values for expected business failures, meaningful absence, not found, invalid input, denied access, stale state, or blocked policy. Use `result-option` before editing that return-shape contract.
@@ -273,23 +312,23 @@ Find hidden structure decisions before coding so new files, folders, names, rout
    - Inject time or a time context when expiration, scheduling, retries, leases, or rate windows affect behavior.
    - Use explicit state transitions when three or more states have meaningful allowed moves.
    - Use an action ledger or idempotency key when repeating a side effect would be harmful.
-7. Prefer the smallest local version of the selected pattern. Do not add a framework, base class, service locator, global event bus, broad repository layer, or abstract factory when a plain function, table, adapter, or narrow policy object is enough.
-8. Separate product domains from vendor implementations. Use broad names at the product boundary and specific names inside provider or adapter internals.
+9. Prefer the smallest local version of the selected pattern. Do not add a framework, base class, service locator, global event bus, broad repository layer, or abstract factory when a plain function, table, adapter, or narrow policy object is enough.
+10. Separate product domains from vendor implementations. Use broad names at the product boundary and specific names inside provider or adapter internals.
    - Prefer `monetization/ads/providers/adsense` over top-level `adsense`.
    - Prefer `payments/providers/stripe` over top-level `stripe`.
    - Prefer `notifications/email/providers/resend` over top-level `resend`.
    - Prefer `analytics/providers/google-analytics` over top-level `googleAnalytics`.
-9. Propose the smallest folder and file structure that follows the answers and assumptions. For each new file or folder, state its responsibility and what it must not contain.
-10. Check the structure against local precedent with `pattern-scout` when the repository already has a nearby pattern.
-11. If the selected structure changes expected failure, meaningful absence, thrown business errors, null returns, or public error mapping, use `result-option` before editing that scope.
-12. If the selected structure creates or repairs a state-changing execution unit, use `command-pattern` before editing that scope.
-13. If the selected structure introduces or repairs lifecycle state transitions, use `state-machine-pattern` before editing that scope.
-14. If the selected structure introduces interchangeable algorithms, policies, calculations, provider choices, or feature-flag variants, use `strategy-pattern` before editing that scope.
-15. If the selected structure introduces one high-level entry point over several subsystem collaborators, use `facade-pattern` before editing that scope.
-16. If the selected structure separates business decisions from execution, use `pure-core-imperative-shell` before editing that scope.
-17. If the selected structure introduces inheritance, base classes, protected state, or subclass variants, use `composition-over-inheritance` before editing that scope.
-18. If the selected structure introduces or repairs an external dependency boundary, use `dependency-injection` for construction and collaborator flow, and `adapter-boundary` for external data, protocol, error, timeout, retry, idempotency, security, and observability handling.
-19. Implement only after the questions, assumptions, structure, dependency direction, and verification surface are clear enough for the task size.
+11. Propose the smallest folder and file structure that follows the answers and assumptions. For each new file or folder, state its responsibility and what it must not contain.
+12. Check the structure against local precedent with `pattern-scout` when the repository already has a nearby pattern.
+13. If the selected structure changes expected failure, meaningful absence, thrown business errors, null returns, or public error mapping, use `result-option` before editing that scope.
+14. If the selected structure creates or repairs a state-changing execution unit, use `command-pattern` before editing that scope.
+15. If the selected structure introduces or repairs lifecycle state transitions, use `state-machine-pattern` before editing that scope.
+16. If the selected structure introduces interchangeable algorithms, policies, calculations, provider choices, or feature-flag variants, use `strategy-pattern` before editing that scope.
+17. If the selected structure introduces one high-level entry point over several subsystem collaborators, use `facade-pattern` before editing that scope.
+18. If the selected structure separates business decisions from execution, use `pure-core-imperative-shell` before editing that scope.
+19. If the selected structure introduces inheritance, base classes, protected state, or subclass variants, use `composition-over-inheritance` before editing that scope.
+20. If the selected structure introduces or repairs an external dependency boundary, use `dependency-injection` for construction and collaborator flow, and `adapter-boundary` for external data, protocol, error, timeout, retry, idempotency, security, and observability handling.
+21. Implement only after the questions, assumptions, structure, dependency direction, and verification surface are clear enough for the task size.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -337,8 +376,12 @@ Also run narrower configured tests or builds required by the changed source, tem
 <!-- mustflow-section: output-format -->
 ## Output Format
 
+- Design gate classification and reason
+- Restated requirement in four sentences or fewer
 - Capability or responsibility being built
 - Blocking questions asked, or none
+- Recommended defaults and tradeoffs for each blocking question
+- Success criteria, non-goals, and compatibility boundaries
 - Structure-impacting assumptions
 - Proposed files and responsibilities
 - Upfront structure decisions versus deferred features
