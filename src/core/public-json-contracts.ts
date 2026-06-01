@@ -150,6 +150,7 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		packaged: true,
 		documented: true,
 		installedCommand: ['mf', 'evidence', '--changed', '--json'],
+		expectedExitCodes: [0, 1],
 	},
 	{
 		id: 'workspace-status',
