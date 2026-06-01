@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 82
+revision = 85
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -146,13 +146,13 @@ translations = {}
 [documents."skill.line-ending-hygiene"]
 source = "locales/en/.mustflow/skills/line-ending-hygiene/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.file-path-cross-platform-change"]
 source = "locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 4
 translations = {}
 
 [documents."skill.diff-risk-review"]
@@ -302,7 +302,7 @@ translations = {}
 [documents."skill.cross-platform-filesystem-safety"]
 source = "locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 6
 translations = {}
 
 [documents."skill.pure-core-imperative-shell"]
@@ -391,7 +391,7 @@ translations = {}
 [documents."skill.process-execution-safety"]
 source = "locales/en/.mustflow/skills/process-execution-safety/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 4
 translations = {}
 
 [documents."skill.repo-improvement-loop"]

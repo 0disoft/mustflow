@@ -294,6 +294,12 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	const filesystemTemplate = readText(
 		'templates/default/locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md',
 	);
+	const filePathSkill = readText('.mustflow/skills/file-path-cross-platform-change/SKILL.md');
+	const filePathTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md',
+	);
+	const lineEndingSkill = readText('.mustflow/skills/line-ending-hygiene/SKILL.md');
+	const lineEndingTemplate = readText('templates/default/locales/en/.mustflow/skills/line-ending-hygiene/SKILL.md');
 	const processSkill = readText('.mustflow/skills/process-execution-safety/SKILL.md');
 	const processTemplate = readText('templates/default/locales/en/.mustflow/skills/process-execution-safety/SKILL.md');
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
@@ -301,6 +307,8 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	assert.equal(commandContractSkill, commandContractTemplate);
 	assert.equal(cliOutputSkill, cliOutputTemplate);
 	assert.equal(filesystemSkill, filesystemTemplate);
+	assert.equal(filePathSkill, filePathTemplate);
+	assert.equal(lineEndingSkill, lineEndingTemplate);
 	assert.equal(processSkill, processTemplate);
 	assert.match(commandContractSkill, /\.mustflow\/config\/commands\.toml/u);
 	assert.match(commandContractSkill, /only runnable command-authority surface/u);
@@ -339,12 +347,60 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	assert.match(filesystemSkill, /same volume/u);
 	assert.match(filesystemSkill, /parent directory fsync/u);
 	assert.match(filesystemSkill, /Do not claim operating-system mitigations/u);
+	assert.match(filesystemSkill, /clone or checkout materialization/u);
+	assert.match(filesystemSkill, /per-invocation `core\.longpaths=true`/u);
+	assert.match(filesystemSkill, /POSIX `ENAMETOOLONG`/u);
+	assert.match(filesystemSkill, /filename_too_long/u);
+	assert.match(filesystemSkill, /Preserve bounded diagnostic evidence/u);
+	assert.match(filesystemSkill, /global Git config/u);
+	assert.match(filesystemSkill, /plain-text symlink stubs/u);
+	assert.match(filesystemSkill, /byte_limit_exceeded/u);
+	assert.match(filesystemSkill, /preflight -> dangerous operation -> classifier -> safe cleanup/u);
+	assert.match(filesystemSkill, /app-owned staging directory/u);
+	assert.match(filesystemSkill, /Do not delete a user-selected final destination/u);
+	assert.match(filesystemSkill, /inotify watch limit rather than a full disk/u);
+	assert.match(filePathSkill, /clone or checkout destinations/u);
+	assert.match(filePathSkill, /repository clone or checkout destinations/u);
+	assert.match(filePathSkill, /path_too_long/u);
+	assert.match(filePathSkill, /watcher_limit/u);
+	assert.match(filePathSkill, /clone checkout failure classification/u);
+	assert.match(filePathSkill, /classify filesystem and platform causes before network or auth causes/u);
+	assert.match(filePathSkill, /byte-budget proof/u);
+	assert.match(filePathSkill, /fullwidth-convert/u);
+	assert.match(filePathSkill, /byte_limit_exceeded/u);
+	assert.match(filePathSkill, /preflight -> dangerous operation -> classifier -> safe cleanup/u);
+	assert.match(filePathSkill, /fetch repository metadata into an app-owned staging area/u);
+	assert.match(filePathSkill, /Do not clone, extract, scaffold, or install directly/u);
+	assert.match(filePathSkill, /user-selected final folder/u);
+	assert.match(lineEndingSkill, /Docker or shell scripts fail with CRLF interpreter errors/u);
+	assert.match(lineEndingSkill, /Do not create `\.gitattributes`/u);
+	assert.match(lineEndingSkill, /repository-wide renormalization/u);
+	assert.match(lineEndingSkill, /bad interpreter/u);
 	assert.match(processSkill, /process-tree cleanup/u);
 	assert.match(processSkill, /Do not finalize a receipt/u);
+	assert.match(processSkill, /Git clone or checkout/u);
+	assert.match(processSkill, /filesystem\/path/u);
+	assert.match(processSkill, /Do not classify a Git checkout path failure as network/u);
+	assert.match(processSkill, /Preserve bounded stdout\/stderr tails/u);
+	assert.match(processSkill, /registry edits, global Git config/u);
+	assert.match(processSkill, /environment repair as a separate setup workflow/u);
+	assert.match(processSkill, /Do not build `exec\("long command string"\)`/u);
+	assert.match(processSkill, /stdin or an owned temporary file/u);
+	assert.match(processSkill, /argv_too_long/u);
+	assert.match(processSkill, /shell_command_too_long/u);
+	assert.match(processSkill, /path\.win32/u);
+	assert.match(processSkill, /path\.posix/u);
+	assert.match(processSkill, /app-owned staging area/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/command-contract-authoring\/SKILL\.md/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/cli-output-contract-review\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/file-path-cross-platform-change\/SKILL\.md/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/cross-platform-filesystem-safety\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/line-ending-hygiene\/SKILL\.md/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/process-execution-safety\/SKILL\.md/u);
+	assert.match(skillIndex, /Git checkout path failure misreported as network or auth/u);
+	assert.match(skillIndex, /user-selected destination deletion/u);
+	assert.match(skillIndex, /command-line length limits/u);
+	assert.match(skillIndex, /hidden repository-wide policy change/u);
 });
 
 test('security skills cover AI-generated code and supply-chain boundaries', () => {
