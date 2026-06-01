@@ -57,6 +57,9 @@ jobs:
             exit 1
           fi
 
+      - name: Publish package
+        run: npm publish --access public
+
       - name: Create GitHub release for pushed tag
         if: github.event_name == 'push'
         env:
@@ -71,6 +74,3 @@ jobs:
             --verify-tag \
             --title "$GITHUB_REF_NAME" \
             --notes "Release ${GITHUB_REF_NAME}."
-
-      - name: Publish package
-        run: npm publish --access public
