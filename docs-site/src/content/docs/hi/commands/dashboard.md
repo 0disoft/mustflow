@@ -21,7 +21,7 @@ npx mf dashboard
 
 Dashboard page में English, Korean, Chinese, Spanish, French और Hindi के लिए language selector है। चुनी गई भाषा browser में save होती है।
 
-Documents review tab default रूप से active review entries दिखाता है। Approved और ignored entries केवल status filter से चुने जाने पर दिखती हैं।
+Documents review tab default रूप से active review entries दिखाता है। स्वीकृत और अनदेखी entries केवल status filter से चुने जाने पर दिखती हैं।
 
 किसी specific port के लिए `--port` use करें। Browser बंद रखना हो तो `--no-open` use करें। किसी tool को URL parse करना हो तो `--json` use करें; JSON mode browser open नहीं करता।
 

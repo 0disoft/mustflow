@@ -28,7 +28,7 @@ npx mf docs review list --json
 npx mf docs review list --all
 ```
 
-Default list केवल active items दिखाती है. Approved और ignored entries देखने के लिए `--all` use करें.
+Default list केवल active items दिखाती है. स्वीकृत और अनदेखी entries देखने के लिए `--all` use करें.
 
 ## Document Add करें
 
