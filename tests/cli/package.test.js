@@ -9,6 +9,7 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
+const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 const templateCreates = readTomlStringArrayBlock(templateManifest, 'creates');
@@ -36,7 +37,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.25.1');
+	assert.equal(packageJson.version, '2.25.2');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -99,6 +100,17 @@ test('npm publish workflow uses trusted publisher identity', () => {
 	);
 	assert.doesNotMatch(publishNpmWorkflow, /NODE_AUTH_TOKEN/u);
 	assert.doesNotMatch(publishNpmWorkflow, /secrets\.NODE_AUTH_TOKEN/u);
+});
+
+test('source repository declares bounded npm registry release checks', () => {
+	assert.match(sourceCommandContract, /\[intents\.release_npm_version_available\]/u);
+	assert.match(sourceCommandContract, /\[intents\.release_npm_published_verify\]/u);
+	assert.match(sourceCommandContract, /scripts\/check-npm-release-version\.mjs/u);
+	assert.match(sourceCommandContract, /--expect-available/u);
+	assert.match(sourceCommandContract, /--expect-published/u);
+	assert.match(sourceCommandContract, /network = true/u);
+	assert.match(sourceCommandContract, /destructive = false/u);
+	assert.match(sourceCommandContract, /MUSTFLOW_NPM_REGISTRY_URL/u);
 });
 
 test('CLI test runner keeps concurrency configurable', () => {

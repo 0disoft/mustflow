@@ -404,6 +404,8 @@ mf run maintainer_check_node
 mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
+mf run release_npm_version_available
+mf run release_npm_published_verify
 ```
 
 The Bun scripts remain available for human maintainers and release packaging. `test_fast` runs the fast CLI regression baseline, `test_related` selects tests from changed files and falls back to the fast baseline, and both use 8 Node test workers by default. Set `MUSTFLOW_TEST_CONCURRENCY=1`, `2`, or another positive integer to tune those workers on local machines. `test_release` keeps package metadata and packaging checks out of routine local edits. `test_coverage` runs the fast CLI baseline through Node's built-in coverage report with no enforced threshold; set `MUSTFLOW_TEST_COVERAGE_CONCURRENCY=1`, `2`, or another positive integer to adjust its worker count. `lint` and test-audit are configured as narrow repository-local gates. `docs_validate_fast` checks documentation navigation and localized content links without building the entire static site; `docs_validate` performs the full static documentation build, search index, and sitemap gate for release-sensitive changes.
@@ -416,7 +418,7 @@ Run the full release check before publishing:
 bun run release:check
 ```
 
-`release:check` validates the CLI, builds the documentation site, packs the npm tarball, installs it into a temporary project, and runs the public `mf` workflow. Maintainer npm publishing uses the `Publish npm package` GitHub Actions workflow from a published GitHub Release. The release tag must match the `package.json` version, with an optional leading `v`. npm Trusted Publishing must be configured for the workflow before maintainers publish through it.
+`release:check` validates the CLI, builds the documentation site, packs the npm tarball, installs it into a temporary project, and runs the public `mf` workflow. Maintainer npm publishing uses the `Publish npm package` GitHub Actions workflow from a published GitHub Release. The release tag must match the `package.json` version, with an optional leading `v`. Run `mf run release_npm_version_available` before creating the tag and `mf run release_npm_published_verify` after the publish workflow completes. npm Trusted Publishing must be configured for the workflow before maintainers publish through it.
 
 ## Documentation site
 

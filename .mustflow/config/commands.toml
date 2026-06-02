@@ -30,6 +30,7 @@ env_allowlist = [
   "MUSTFLOW_TEST_SQLITE_TOKENS",
   "MUSTFLOW_TEST_GIT_TOKENS",
   "MUSTFLOW_TEST_CHANGED_FILES",
+  "MUSTFLOW_NPM_REGISTRY_URL",
 ]
 
 [resources.dist_build_output]
@@ -393,6 +394,36 @@ description = "Run the full release gate before publishing."
 reason = "Release gates are broad maintainer actions and may include package, docs, install, and publish-adjacent checks."
 agent_action = "do_not_run_report_manual"
 required_after = ["release_risk", "before_publish"]
+
+[intents.release_npm_version_available]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the package.json version is not already published to the npm registry before creating a release tag."
+argv = ["node", "scripts/check-npm-release-version.mjs", "--expect-available"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+required_after = ["release_risk", "before_publish", "package_metadata_change"]
+
+[intents.release_npm_published_verify]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the package.json version exists in the npm registry after the publish workflow completes."
+argv = ["node", "scripts/check-npm-release-version.mjs", "--expect-published"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+required_after = ["release_risk"]
 
 [intents.mustflow_update_dry_run]
 status = "manual_only"
