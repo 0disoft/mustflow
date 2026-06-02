@@ -51,8 +51,11 @@ test('related selection uses explicit command test contracts without router fall
 	const selected = selectedFor(['src/cli/commands/verify.ts']);
 
 	assert.equal(selected.has('verify.test.js'), true);
+	assert.equal(selected.has('verify-inputs.test.js'), true);
 	assert.equal(selected.has('explain-verify.test.js'), true);
 	assert.equal(selected.has('schema.test.js'), true);
+	assert.equal(selected.has('schema-command-contracts.test.js'), true);
+	assert.equal(selected.has('schema-explain-verify-output.test.js'), true);
 	assert.equal(selected.has('router.test.js'), false);
 	assert.equal(selected.has('check.test.js'), false);
 });
@@ -70,8 +73,11 @@ test('related selection covers shared command eligibility behavior', () => {
 		assert.equal(selected.has(testName), true);
 	}
 	assert.equal(selected.has('verify.test.js'), true);
+	assert.equal(selected.has('verify-inputs.test.js'), true);
 	assert.equal(selected.has('security-fuzz.test.js'), true);
 	assert.equal(selected.has('schema.test.js'), true);
+	assert.equal(selected.has('schema-command-contracts.test.js'), true);
+	assert.equal(selected.has('schema-explain-verify-output.test.js'), true);
 });
 
 test('related selection keeps package surface checks release-sensitive instead of running package suite', () => {
@@ -89,11 +95,13 @@ test('related selection maps command config changes to contract surfaces', () =>
 	assert.equal(selected.has('check-command-contracts.test.js'), true);
 	assert.equal(selected.has('explain-command.test.js'), true);
 	assert.equal(selected.has('index-workflow.test.js'), true);
+	assert.equal(selected.has('schema-command-contracts.test.js'), true);
 	for (const testName of runTests) {
 		assert.equal(selected.has(testName), true);
 	}
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('package.test.js'), false);
+	assert.equal(selected.has('package-template.test.js'), false);
 });
 
 test('related selection maps package metadata helper changes to command consumers', () => {
@@ -157,13 +165,29 @@ test('related selection treats shared CLI harness changes as broad CLI risk', ()
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('verify-changed.test.js'), true);
 	assert.equal(selected.has('package.test.js'), false);
+	assert.equal(selected.has('package-template.test.js'), false);
 });
 
 test('related selection reports release-sensitive template changes', () => {
 	const report = selectRelated(['templates/default/AGENTS.md']);
 
 	assert.equal(report.release_sensitive, true);
-	assert.deepEqual(report.selected.sort(), ['docs.test.js', 'init.test.js', 'update.test.js']);
+	assert.deepEqual(report.selected.sort(), ['docs.test.js', 'init-default-template.test.js', 'init.test.js', 'update.test.js']);
+});
+
+test('related selection maps init command changes to default template installation', () => {
+	const selected = selectedFor(['src/cli/commands/init.ts']);
+
+	assert.equal(selected.has('init.test.js'), true);
+	assert.equal(selected.has('init-default-template.test.js'), true);
+	assert.equal(selected.has('workflow.test.js'), true);
+});
+
+test('related selection maps skill changes to authoring skill contracts', () => {
+	const selected = selectedFor(['.mustflow/skills/cpp-code-change/SKILL.md']);
+
+	assert.equal(selected.has('authoring-skill-contracts.test.js'), true);
+	assert.equal(selected.has('authoring-fixtures.test.js'), false);
 });
 
 test('fast baseline keeps lightweight command and workflow contracts', () => {
@@ -184,6 +208,7 @@ test('fast baseline keeps lightweight command and workflow contracts', () => {
 	]);
 	assert.equal(report.selected.includes('docs.test.js'), true);
 	assert.equal(report.selected.includes('authoring-fixtures.test.js'), true);
+	assert.equal(report.selected.includes('authoring-skill-contracts.test.js'), true);
 	assert.equal(report.selected.includes('i18n-architecture.test.js'), true);
 	assert.equal(report.selected.includes('pages-workflow.test.js'), true);
 });
@@ -204,6 +229,7 @@ test('fast baseline keeps harness safety checks but excludes heavier feature sui
 	}
 	assert.equal(report.selected.includes('update.test.js'), false);
 	assert.equal(report.selected.includes('package.test.js'), false);
+	assert.equal(report.selected.includes('package-template.test.js'), false);
 });
 
 test('full-auto keeps the same coverage surface as the full suite', () => {
@@ -213,4 +239,5 @@ test('full-auto keeps the same coverage surface as the full suite', () => {
 	assert.deepEqual(fullAuto.selected, full.selected);
 	assert.equal(fullAuto.selected.length > 0, true);
 	assert.equal(fullAuto.selected.includes('package.test.js'), true);
+	assert.equal(fullAuto.selected.includes('package-template.test.js'), true);
 });

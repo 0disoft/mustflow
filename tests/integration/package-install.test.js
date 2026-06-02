@@ -259,6 +259,7 @@ required_after = ["schema_verify"]
 		assert.equal(doctorJson.ok, true);
 		assert.equal(doctorJson.strict, true);
 		assert.ok(doctorJson.context.runnable_intents.includes('mustflow_check'));
+		assert.ok(doctorJson.context.runnable_intents.includes('local_index'));
 
 		const nestedPath = path.join(projectPath, 'src', 'feature', 'deep');
 		mkdirSync(nestedPath, { recursive: true });
@@ -288,6 +289,13 @@ required_after = ["schema_verify"]
 		assert.equal(contextJson.installed, true);
 		assert.equal(contextJson.command_contract.exists, true);
 		assert.ok(contextJson.command_contract.runnable_intents.includes('mustflow_check'));
+		assert.ok(contextJson.command_contract.runnable_intents.includes('local_index'));
+
+		const runIndex = runPackageManagerTool('npx', ['mf', 'run', 'local_index', '--json'], { cwd: projectPath });
+		assert.equal(runIndex.status, 0, runIndex.stderr || runIndex.stdout);
+		const runIndexJson = JSON.parse(runIndex.stdout);
+		assert.equal(runIndexJson.intent, 'local_index');
+		assert.equal(runIndexJson.status, 'passed');
 
 		const index = runPackageManagerTool('npx', ['mf', 'index', '--json'], { cwd: projectPath });
 		assert.equal(index.status, 0, index.stderr || index.stdout);

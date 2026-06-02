@@ -672,7 +672,7 @@ test('keeps strong behavior checks', async () => {
 	assert.ok(1 + 1);
 });
 
-test.todo('restore rejected-path coverage');
+test.pending('deferred rejected-path coverage');
 `,
 		);
 
@@ -846,7 +846,7 @@ test('keeps strict equality', () => {
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-test.todo('restore failure coverage');
+test.pending('deferred failure coverage');
 `,
 		);
 

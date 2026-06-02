@@ -73,10 +73,11 @@ const sourceAnchorTests = [
 	'index-source-anchors.test.js',
 	'search-source-scope.test.js',
 ];
-const schemaSmokeTests = ['schema.test.js'];
+const schemaSmokeTests = ['schema.test.js', 'schema-command-contracts.test.js', 'schema-explain-verify-output.test.js'];
 const routerSmokeTests = ['router.test.js'];
 const verifyTests = [
 	'verify.test.js',
+	'verify-inputs.test.js',
 	'verify-changed.test.js',
 	'verify-completion-verdict.test.js',
 	'verify-plan-scheduler.test.js',
@@ -99,6 +100,7 @@ const fastCommandSurfaceTests = [
 const fastWorkflowContractTests = [
 	'docs.test.js',
 	'authoring-fixtures.test.js',
+	'authoring-skill-contracts.test.js',
 	'i18n-architecture.test.js',
 	'pages-workflow.test.js',
 ];
@@ -113,7 +115,7 @@ const fastHarnessSafetyTests = [
 
 const fastTests = [...fastCommandSurfaceTests, ...fastWorkflowContractTests, ...fastHarnessSafetyTests];
 
-const releaseTests = ['package.test.js'];
+const releaseTests = ['package.test.js', 'package-template.test.js'];
 const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
 const coverageTests = fastTests;
 const scheduler = process.env.MUSTFLOW_TEST_SCHEDULER ?? 'default';
@@ -142,7 +144,7 @@ const commandRelatedTests = new Map([
 	['help', [...routerSmokeTests]],
 	['impact', ['impact.test.js', ...schemaSmokeTests]],
 	['index', ['index-dry-run.test.js', ...indexTests]],
-	['init', ['init.test.js', 'workflow.test.js']],
+	['init', ['init.test.js', 'init-default-template.test.js', 'workflow.test.js']],
 	['line-endings', ['line-endings.test.js', ...schemaSmokeTests]],
 	['map', ['map.test.js', 'workflow.test.js']],
 	['next', ['next.test.js', ...schemaSmokeTests]],
@@ -160,9 +162,10 @@ const commandRelatedTests = new Map([
 ]);
 
 const relatedRules = [
-	{ match: /^schemas\//u, tests: ['schema.test.js'] },
-	{ match: /^templates\//u, tests: ['init.test.js', 'update.test.js'] },
+	{ match: /^schemas\//u, tests: schemaSmokeTests },
+	{ match: /^templates\//u, tests: ['init.test.js', 'init-default-template.test.js', 'update.test.js'] },
 	{ match: /^tests\/fixtures\/authoring\//u, tests: ['authoring-fixtures.test.js'] },
+	{ match: /^\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
 	{ match: /^\.mustflow\/skills\/(readme-authoring|project-context-authoring)\//u, tests: ['authoring-fixtures.test.js'] },
 	{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: ['test-selection.test.js'] },
 	{ match: /^src\/cli\/index\.ts$/u, tests: ['router.test.js', 'workflow.test.js'] },
@@ -219,7 +222,7 @@ const relatedRules = [
 	{ match: /^src\/cli\/commands\/verify\//u, tests: [...verifyTests, 'explain-verify.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/cli\/lib\/template/u, tests: ['init.test.js', 'update.test.js'] },
 	{ match: /^src\/cli\/lib\/root/u, tests: ['root-discovery.test.js'] },
-	{ match: /^src\/cli\/lib\/schema/u, tests: ['schema.test.js'] },
+	{ match: /^src\/cli\/lib\/schema/u, tests: schemaSmokeTests },
 	{ match: /^src\/core\/command-intent-eligibility\.ts$/u, tests: [...runTests, ...verifyTests, 'security-fuzz.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/command-classification\.ts$/u, tests: ['classify.test.js', 'impact.test.js', ...verifyTests, ...schemaSmokeTests] },
 	{ match: /^src\/core\/command-contract-rules\.ts$/u, tests: ['check-command-contracts.test.js', ...runTests] },
@@ -267,7 +270,14 @@ const relatedRules = [
 	{ match: /^tests\/cli\/([^/]+\.test\.js)$/u, testsForMatch: ([, testName]) => [testName] },
 	{
 		match: /^\.mustflow\/config\/commands\.toml$/u,
-		tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index-workflow.test.js', ...runTests, ...verifyTests],
+		tests: [
+			'check-command-contracts.test.js',
+			'explain-command.test.js',
+			'index-workflow.test.js',
+			...runTests,
+			...verifyTests,
+			'schema-command-contracts.test.js',
+		],
 	},
 	{ match: /^\.mustflow\/config\/mustflow\.toml$/u, tests: ['check-config-validation.test.js', 'doctor.test.js'] },
 	{ match: /^\.mustflow\/config\/preferences\.toml$/u, tests: ['check-versioning.test.js', 'version-sources.test.js'] },
