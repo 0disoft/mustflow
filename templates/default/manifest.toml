@@ -22,6 +22,7 @@ creates = [
   ".mustflow/skills/clarifying-question-gate/SKILL.md",
   ".mustflow/skills/astro-code-change/SKILL.md",
   ".mustflow/skills/css-code-change/SKILL.md",
+  ".mustflow/skills/cpp-code-change/SKILL.md",
   ".mustflow/skills/dart-code-change/SKILL.md",
   ".mustflow/skills/elysia-code-change/SKILL.md",
   ".mustflow/skills/flutter-code-change/SKILL.md",
@@ -62,6 +63,7 @@ creates = [
   ".mustflow/skills/ui-quality-gate/SKILL.md",
   ".mustflow/skills/external-prompt-injection-defense/SKILL.md",
   ".mustflow/skills/external-skill-intake/SKILL.md",
+  ".mustflow/skills/github-contribution-quality-gate/SKILL.md",
   ".mustflow/skills/file-path-cross-platform-change/SKILL.md",
   ".mustflow/skills/idea-triage/SKILL.md",
   ".mustflow/skills/facade-pattern/SKILL.md",
@@ -128,6 +130,7 @@ minimal = [
   "clarifying-question-gate",
   "astro-code-change",
   "css-code-change",
+  "cpp-code-change",
   "dart-code-change",
   "elysia-code-change",
   "flutter-code-change",
@@ -180,6 +183,7 @@ patterns = [
   "clarifying-question-gate",
   "astro-code-change",
   "css-code-change",
+  "cpp-code-change",
   "dart-code-change",
   "elysia-code-change",
   "flutter-code-change",
@@ -243,6 +247,7 @@ oss = [
   "clarifying-question-gate",
   "astro-code-change",
   "css-code-change",
+  "cpp-code-change",
   "dart-code-change",
   "elysia-code-change",
   "flutter-code-change",
@@ -276,6 +281,7 @@ oss = [
   "docs-update",
   "external-prompt-injection-defense",
   "external-skill-intake",
+  "github-contribution-quality-gate",
   "facade-pattern",
   "failure-triage",
   "file-path-cross-platform-change",
@@ -318,6 +324,7 @@ team = [
   "clarifying-question-gate",
   "astro-code-change",
   "css-code-change",
+  "cpp-code-change",
   "dart-code-change",
   "elysia-code-change",
   "flutter-code-change",
@@ -348,6 +355,7 @@ team = [
   "diff-risk-review",
   "docs-update",
   "external-prompt-injection-defense",
+  "github-contribution-quality-gate",
   "facade-pattern",
   "failure-triage",
   "file-path-cross-platform-change",
@@ -381,6 +389,7 @@ product = [
   "clarifying-question-gate",
   "astro-code-change",
   "css-code-change",
+  "cpp-code-change",
   "dart-code-change",
   "elysia-code-change",
   "flutter-code-change",
@@ -411,6 +420,7 @@ product = [
   "docs-update",
   "external-prompt-injection-defense",
   "facade-pattern",
+  "github-contribution-quality-gate",
   "failure-triage",
   "file-path-cross-platform-change",
   "idea-triage",
@@ -449,6 +459,7 @@ library = [
   "clarifying-question-gate",
   "astro-code-change",
   "css-code-change",
+  "cpp-code-change",
   "dart-code-change",
   "elysia-code-change",
   "flutter-code-change",
@@ -482,6 +493,7 @@ library = [
   "docs-update",
   "external-prompt-injection-defense",
   "facade-pattern",
+  "github-contribution-quality-gate",
   "failure-triage",
   "file-path-cross-platform-change",
   "idea-triage",
@@ -523,6 +535,7 @@ managed_targets = [".gitignore"]
 generated_targets = [
   "REPO_MAP.md",
   ".mustflow/config/manifest.lock.toml",
+  ".mustflow/cache/**",
   ".mustflow/state/**",
   ".mustflow/worklogs/**",
   ".mustflow/plans/**",
@@ -593,6 +606,7 @@ default = "abort"
 [conflict_policy.generated]
 "REPO_MAP.md" = "prompt"
 ".mustflow/config/manifest.lock.toml" = "regenerate"
+".mustflow/cache/**" = "keep"
 ".mustflow/state/**" = "keep"
 ".mustflow/worklogs/**" = "keep"
 ".mustflow/plans/**" = "keep"

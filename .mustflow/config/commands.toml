@@ -36,6 +36,10 @@ env_allowlist = [
 description = "Generated TypeScript CLI build output under dist/."
 concurrency = "exclusive_writer"
 
+[resources.local_index_cache]
+description = "Generated mustflow SQLite local index under .mustflow/cache/."
+concurrency = "exclusive_writer"
+
 [intents.build]
 status = "configured"
 lifecycle = "oneshot"
@@ -206,6 +210,22 @@ network = false
 destructive = false
 required_after = ["before_task", "mustflow_config_change", "mustflow_docs_change"]
 
+[intents.mustflow_doctor_strict]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Diagnose the mustflow source repository state with strict workflow and skill-route checks read-only."
+argv = ["node", "dist/cli/index.js", "doctor", "--strict", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_task", "mustflow_config_change", "mustflow_docs_change"]
+
 [intents.mustflow_check]
 status = "configured"
 kind = "mustflow_builtin"
@@ -237,6 +257,23 @@ writes = []
 network = false
 destructive = false
 required_after = ["line_ending_warning", "formatting_change"]
+
+[intents.local_index]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create or refresh the generated mustflow SQLite local index."
+argv = ["node", "dist/cli/index.js", "index"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/**"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/cache/**", lock = "local_index_cache", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["structure_change", "directory_change"]
 
 [intents.contract_lint]
 status = "configured"

@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 85
+revision = 87
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -189,6 +189,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/css-code-change/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.cpp-code-change"]
+source = "locales/en/.mustflow/skills/cpp-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.dart-code-change"]
@@ -345,6 +351,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/external-skill-intake/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.github-contribution-quality-gate"]
+source = "locales/en/.mustflow/skills/github-contribution-quality-gate/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.facade-pattern"]

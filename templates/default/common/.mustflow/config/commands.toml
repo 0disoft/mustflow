@@ -19,6 +19,10 @@ kill_after_seconds = 5
 env_policy = "minimal"
 env_allowlist = []
 
+[resources.local_index_cache]
+description = "Generated mustflow SQLite local index under .mustflow/cache/."
+concurrency = "exclusive_writer"
+
 [intents.test]
 status = "unknown"
 description = "Run the test suite."
@@ -199,6 +203,23 @@ writes = [
 network = false
 destructive = false
 required_after = ["clean_mustflow_update_plan", "template_update_apply"]
+
+[intents.local_index]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create or refresh the generated mustflow SQLite local index."
+argv = ["mf", "index"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/**"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/cache/**", lock = "local_index_cache", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["structure_change", "directory_change"]
 
 [intents.repo_map]
 status = "configured"

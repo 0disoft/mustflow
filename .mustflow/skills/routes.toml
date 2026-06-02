@@ -114,6 +114,12 @@ route_type = "adjunct"
 priority = 42
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
 
+[routes."cpp-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
+
 [routes."api-contract-change"]
 category = "general_code"
 route_type = "primary"
@@ -347,6 +353,12 @@ category = "workflow_contracts"
 route_type = "authoring"
 priority = 70
 applies_to_reasons = ["mustflow_docs_change"]
+
+[routes."github-contribution-quality-gate"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 60
+applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "public_api_change"]
 
 [routes."instruction-conflict-scope-check"]
 category = "workflow_contracts"
