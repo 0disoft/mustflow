@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 87
+revision = 88
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -191,6 +191,12 @@ source_locale = "en"
 revision = 2
 translations = {}
 
+[documents."skill.bun-code-change"]
+source = "locales/en/.mustflow/skills/bun-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.cpp-code-change"]
 source = "locales/en/.mustflow/skills/cpp-code-change/SKILL.md"
 source_locale = "en"
@@ -237,6 +243,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.node-code-change"]
+source = "locales/en/.mustflow/skills/node-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.python-code-change"]

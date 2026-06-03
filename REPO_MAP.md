@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 121
+anchor_count: 123
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:14afd4d8346edaf1a080c6889ddd6fdac4feac51998824e7639db0b443cdeb70"
+source_fingerprint: "sha256:8b88eee94627a961af35dd2cbb54c7709b875e09ee4b5079efe2116483e44d1b"
 ---
 
 # REPO_MAP.md
@@ -77,6 +77,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/behavior-preserving-refactor/
 
 - `.mustflow/skills/behavior-preserving-refactor/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/bun-code-change/
+
+- `.mustflow/skills/bun-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/clarifying-question-gate/
 
@@ -237,6 +241,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/multi-agent-work-coordination/
 
 - `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/node-code-change/
+
+- `.mustflow/skills/node-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/null-object-pattern/
 

@@ -9,6 +9,7 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 const technologySkillNames = [
 	'astro-code-change',
+	'bun-code-change',
 	'css-code-change',
 	'cpp-code-change',
 	'dart-code-change',
@@ -18,6 +19,7 @@ const technologySkillNames = [
 	'hono-code-change',
 	'html-code-change',
 	'javascript-code-change',
+	'node-code-change',
 	'python-code-change',
 	'rust-code-change',
 	'svelte-code-change',

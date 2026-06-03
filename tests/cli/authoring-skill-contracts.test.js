@@ -128,6 +128,58 @@ test('cpp code change keeps target identity and compatibility risk explicit', ()
 	assert.match(manifest, /"cpp-code-change"/u);
 });
 
+test('Node and Bun code change skills keep runtime and toolchain ownership explicit', () => {
+	const nodeSkill = readText('.mustflow/skills/node-code-change/SKILL.md');
+	const templateNodeSkill = readText('templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md');
+	const bunSkill = readText('.mustflow/skills/bun-code-change/SKILL.md');
+	const templateBunSkill = readText('templates/default/locales/en/.mustflow/skills/bun-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(nodeSkill, templateNodeSkill);
+	assert.equal(bunSkill, templateBunSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(nodeSkill, /deployment runtime as the hard constraint/u);
+	assert.match(nodeSkill, /CI runtime as the verified constraint/u);
+	assert.match(nodeSkill, /package manager ownership/u);
+	assert.match(nodeSkill, /Adding `exports` can block deep imports/u);
+	assert.match(nodeSkill, /dual package hazards/u);
+	assert.match(nodeSkill, /Node native TypeScript execution is limited type stripping/u);
+	assert.match(nodeSkill, /does not typecheck, read `tsconfig`, resolve path aliases, emit declarations/u);
+	assert.match(nodeSkill, /Do not migrate Jest, Vitest, Playwright, or another runner to `node:test`/u);
+	assert.match(nodeSkill, /permission model as a trusted-code seatbelt/u);
+
+	assert.match(bunSkill, /Classify every Bun signal by role/u);
+	assert.match(bunSkill, /package manager signals/u);
+	assert.match(bunSkill, /runtime signals/u);
+	assert.match(bunSkill, /test runner signals/u);
+	assert.match(bunSkill, /bundler or compiler signals/u);
+	assert.match(bunSkill, /If `bun.lock` exists, treat Bun as the dependency owner/u);
+	assert.match(bunSkill, /Treat `trustedDependencies` as install-time code execution policy/u);
+	assert.match(bunSkill, /Do not claim Bun runs TypeScript as typecheck/u);
+	assert.match(bunSkill, /Bun build output proves bundling for the selected target and format/u);
+	assert.match(bunSkill, /A CLI with `#!\/usr\/bin\/env node` may execute under Node/u);
+
+	assert.match(skillIndex, /\.mustflow\/skills\/node-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/bun-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining Node\.js risk/u);
+	assert.match(skillIndex, /remaining Bun risk/u);
+	assert.match(routes, /\[routes\."node-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /\[routes\."bun-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/node-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/bun-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"node-code-change"/u);
+	assert.match(manifest, /"bun-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.node-code-change"\]/u);
+	assert.match(i18n, /\[documents\."skill\.bun-code-change"\]/u);
+});
+
 test('clarifying question gate keeps blocking questions evidence-based and bounded', () => {
 	const localSkill = readText('.mustflow/skills/clarifying-question-gate/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/clarifying-question-gate/SKILL.md');
