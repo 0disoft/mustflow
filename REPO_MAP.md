@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 123
+anchor_count: 124
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:8b88eee94627a961af35dd2cbb54c7709b875e09ee4b5079efe2116483e44d1b"
+source_fingerprint: "sha256:63d3641b2ee3265d6019903051cefba613f7f66038b5313ee9da16974c5bf6cb"
 ---
 
 # REPO_MAP.md
@@ -161,6 +161,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/diff-risk-review/
 
 - `.mustflow/skills/diff-risk-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/docker-code-change/
+
+- `.mustflow/skills/docker-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/docs-prose-review/
 

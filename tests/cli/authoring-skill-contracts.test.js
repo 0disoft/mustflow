@@ -128,11 +128,13 @@ test('cpp code change keeps target identity and compatibility risk explicit', ()
 	assert.match(manifest, /"cpp-code-change"/u);
 });
 
-test('Node and Bun code change skills keep runtime and toolchain ownership explicit', () => {
+test('Node, Bun, and Docker code change skills keep runtime and toolchain ownership explicit', () => {
 	const nodeSkill = readText('.mustflow/skills/node-code-change/SKILL.md');
 	const templateNodeSkill = readText('templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md');
 	const bunSkill = readText('.mustflow/skills/bun-code-change/SKILL.md');
 	const templateBunSkill = readText('templates/default/locales/en/.mustflow/skills/bun-code-change/SKILL.md');
+	const dockerSkill = readText('.mustflow/skills/docker-code-change/SKILL.md');
+	const templateDockerSkill = readText('templates/default/locales/en/.mustflow/skills/docker-code-change/SKILL.md');
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
 	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
 	const routes = readText('.mustflow/skills/routes.toml');
@@ -142,6 +144,7 @@ test('Node and Bun code change skills keep runtime and toolchain ownership expli
 
 	assert.equal(nodeSkill, templateNodeSkill);
 	assert.equal(bunSkill, templateBunSkill);
+	assert.equal(dockerSkill, templateDockerSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 
@@ -166,18 +169,39 @@ test('Node and Bun code change skills keep runtime and toolchain ownership expli
 	assert.match(bunSkill, /Bun build output proves bundling for the selected target and format/u);
 	assert.match(bunSkill, /A CLI with `#!\/usr\/bin\/env node` may execute under Node/u);
 
+	assert.match(dockerSkill, /Prevent container image accidents/u);
+	assert.match(dockerSkill, /This skill is not a Docker syntax guide/u);
+	assert.match(dockerSkill, /runtime-source app/u);
+	assert.match(dockerSkill, /compiled artifact app/u);
+	assert.match(dockerSkill, /Use Debian slim as a conservative default/u);
+	assert.match(dockerSkill, /Alpine\s+only after libc and native package behavior are verified/u);
+	assert.match(dockerSkill, /distroless or `scratch` only/u);
+	assert.match(dockerSkill, /Preserve build cache boundaries/u);
+	assert.match(dockerSkill, /Check `.dockerignore` whenever build context changes/u);
+	assert.match(dockerSkill, /Do not put tokens, passwords, SSH keys/u);
+	assert.match(dockerSkill, /Treat `USER` as a runtime proof obligation/u);
+	assert.match(dockerSkill, /Keep Compose scoped/u);
+	assert.match(dockerSkill, /PR and fork events should not push images/u);
+	assert.match(dockerSkill, /missing Docker-specific verification/u);
+
 	assert.match(skillIndex, /\.mustflow\/skills\/node-code-change\/SKILL\.md/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/bun-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/docker-code-change\/SKILL\.md/u);
 	assert.match(skillIndex, /remaining Node\.js risk/u);
 	assert.match(skillIndex, /remaining Bun risk/u);
+	assert.match(skillIndex, /remaining Docker risk/u);
 	assert.match(routes, /\[routes\."node-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(routes, /\[routes\."bun-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /\[routes\."docker-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/node-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/bun-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/docker-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"node-code-change"/u);
 	assert.match(manifest, /"bun-code-change"/u);
+	assert.match(manifest, /"docker-code-change"/u);
 	assert.match(i18n, /\[documents\."skill\.node-code-change"\]/u);
 	assert.match(i18n, /\[documents\."skill\.bun-code-change"\]/u);
+	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
 });
 
 test('clarifying question gate keeps blocking questions evidence-based and bounded', () => {

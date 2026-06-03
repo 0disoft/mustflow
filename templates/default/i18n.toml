@@ -56,7 +56,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 88
+revision = 89
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -207,6 +207,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/dart-code-change/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.docker-code-change"]
+source = "locales/en/.mustflow/skills/docker-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.elysia-code-change"]

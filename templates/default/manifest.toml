@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.26.0"
+version = "2.27.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -25,6 +25,7 @@ creates = [
   ".mustflow/skills/css-code-change/SKILL.md",
   ".mustflow/skills/cpp-code-change/SKILL.md",
   ".mustflow/skills/dart-code-change/SKILL.md",
+  ".mustflow/skills/docker-code-change/SKILL.md",
   ".mustflow/skills/elysia-code-change/SKILL.md",
   ".mustflow/skills/flutter-code-change/SKILL.md",
   ".mustflow/skills/go-code-change/SKILL.md",
@@ -135,6 +136,7 @@ minimal = [
   "css-code-change",
   "cpp-code-change",
   "dart-code-change",
+  "docker-code-change",
   "elysia-code-change",
   "flutter-code-change",
   "go-code-change",
@@ -190,6 +192,7 @@ patterns = [
   "css-code-change",
   "cpp-code-change",
   "dart-code-change",
+  "docker-code-change",
   "elysia-code-change",
   "flutter-code-change",
   "go-code-change",
@@ -256,6 +259,7 @@ oss = [
   "css-code-change",
   "cpp-code-change",
   "dart-code-change",
+  "docker-code-change",
   "elysia-code-change",
   "flutter-code-change",
   "go-code-change",
@@ -335,6 +339,7 @@ team = [
   "css-code-change",
   "cpp-code-change",
   "dart-code-change",
+  "docker-code-change",
   "elysia-code-change",
   "flutter-code-change",
   "go-code-change",
@@ -402,6 +407,7 @@ product = [
   "css-code-change",
   "cpp-code-change",
   "dart-code-change",
+  "docker-code-change",
   "elysia-code-change",
   "flutter-code-change",
   "go-code-change",
@@ -474,6 +480,7 @@ library = [
   "css-code-change",
   "cpp-code-change",
   "dart-code-change",
+  "docker-code-change",
   "elysia-code-change",
   "flutter-code-change",
   "go-code-change",

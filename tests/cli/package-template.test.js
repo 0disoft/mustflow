@@ -13,6 +13,7 @@ const technologySkillNames = [
 	'css-code-change',
 	'cpp-code-change',
 	'dart-code-change',
+	'docker-code-change',
 	'elysia-code-change',
 	'flutter-code-change',
 	'go-code-change',

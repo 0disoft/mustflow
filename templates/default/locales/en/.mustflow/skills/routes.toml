@@ -132,6 +132,12 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
 
+[routes."docker-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "public_api_change", "test_change", "security_change", "package_metadata_change", "release_risk"]
+
 [routes."api-contract-change"]
 category = "general_code"
 route_type = "primary"
