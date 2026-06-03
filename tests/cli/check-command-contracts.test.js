@@ -468,6 +468,7 @@ test('fails invalid command environment policy fields', () => {
 				'kill_after_seconds = 5',
 				'env_policy = "wide_open"',
 				'env_allowlist = "TOKEN"',
+				'allow_project_local_bin_bare_executables = [1]',
 				'',
 				'[intents.test]',
 				'status = "configured"',
@@ -482,6 +483,8 @@ test('fails invalid command environment policy fields', () => {
 				'writes = []',
 				'env_policy = "everything"',
 				'env_allowlist = [1]',
+				'allow_env_inheritance_risks = "yes"',
+				'allow_long_running_command_patterns = "yes"',
 				'network = false',
 				'destructive = false',
 				'',
@@ -493,8 +496,11 @@ test('fails invalid command environment policy fields', () => {
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /\[commands.defaults\]\.env_policy must be "inherit" or "minimal" or "allowlist"/);
 		assert.match(result.stderr, /\[commands.defaults\]\.env_allowlist must be a string array/);
+		assert.match(result.stderr, /\[commands.defaults\]\.allow_project_local_bin_bare_executables must be a string array/);
 		assert.match(result.stderr, /\[commands.intents.test\]\.env_policy must be "inherit" or "minimal" or "allowlist"/);
 		assert.match(result.stderr, /\[commands.intents.test\]\.env_allowlist must be a string array/);
+		assert.match(result.stderr, /\[commands.intents.test\]\.allow_env_inheritance_risks must be a boolean/);
+		assert.match(result.stderr, /\[commands.intents.test\]\.allow_long_running_command_patterns must be a boolean/);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -752,6 +758,67 @@ test('strict check fails high-risk inherited command environments', () => {
 	}
 });
 
+test('explicit command contract allowances suppress acknowledged strict blockers', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				readText(commandsPath),
+				'[intents.allowed_inherited_env]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run a bounded command with intentionally inherited environment and network."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'env_policy = "inherit"',
+				'allow_env_inheritance_risks = true',
+				'network = true',
+				'destructive = false',
+				'',
+				'[intents.allowed_long_running_name]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run a bounded command whose name matches a common long-running pattern."',
+				'argv = ["npm", "run", "dev"]',
+				'allow_long_running_command_patterns = true',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify({ name: 'example', version: '1.0.0', scripts: { dev: 'node --version' } }, null, 2)}\n`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(!check.issues.some((issue) => issue.includes('allowed_inherited_env uses env_policy = "inherit"')));
+		assert.ok(!check.warnings.some((warning) => warning.includes('allowed_inherited_env uses env_policy = "inherit"')));
+		assert.ok(!check.issues.some((issue) => issue.includes('allowed_long_running_name contains a blocked long-running')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails command contracts with out-of-range success exit codes', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 
@@ -799,7 +866,10 @@ test('strict check warns when bare argv executable resolves only through project
 		initProject(projectPath);
 		const localBinPath = path.join(projectPath, 'node_modules', '.bin');
 		mkdirSync(localBinPath, { recursive: true });
-		writeFileSync(path.join(localBinPath, process.platform === 'win32' ? 'eslint.cmd' : 'eslint'), '');
+		const executableExtension = process.platform === 'win32' ? '.cmd' : '';
+		writeFileSync(path.join(localBinPath, `eslint${executableExtension}`), '');
+		writeFileSync(path.join(localBinPath, `mf${executableExtension}`), '');
+		writeFileSync(path.join(localBinPath, `mustflow${executableExtension}`), '');
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 		writeFileSync(
 			commandsPath,
@@ -811,6 +881,34 @@ test('strict check warns when bare argv executable resolves only through project
 				'run_policy = "agent_allowed"',
 				'description = "Run a bare local tool name."',
 				'argv = ["eslint", "src/index.ts"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.bare_mf]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run the mustflow CLI through its conventional executable."',
+				'argv = ["mf", "check", "--strict"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.bare_mustflow]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run the mustflow CLI through its long executable name."',
+				'argv = ["mustflow", "check", "--strict"]',
 				'cwd = "."',
 				'timeout_seconds = 10',
 				'stdin = "closed"',
@@ -853,6 +951,8 @@ test('strict check warns when bare argv executable resolves only through project
 			),
 		);
 		assert.ok(!check.warnings.some((warning) => warning.includes('package_manager_exec uses bare executable')));
+		assert.ok(!check.warnings.some((warning) => warning.includes('bare_mf uses bare executable')));
+		assert.ok(!check.warnings.some((warning) => warning.includes('bare_mustflow uses bare executable')));
 		assertHasIssueDetail(check, 'mustflow.command_contract.project_local_bin_bare_executable');
 	} finally {
 		removeTempProject(projectPath);

@@ -5,6 +5,8 @@ import {
 	commandIntentNameIsSafe,
 } from './command-contract-rules.js';
 
+const ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY = 'allow_long_running_command_patterns';
+
 export type CommandIntentEligibilityCode =
 	| 'ok'
 	| 'intent_not_table'
@@ -133,7 +135,7 @@ export function evaluateCommandIntentEligibility(
 		};
 	}
 
-	if (blockedPattern?.code === 'long_running_command_pattern') {
+	if (blockedPattern?.code === 'long_running_command_pattern' && rawIntent[ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY] !== true) {
 		return {
 			ok: false,
 			code: 'blocked_long_running_command_pattern',

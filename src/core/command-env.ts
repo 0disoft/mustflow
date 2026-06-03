@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { readString, readStringArray, type CommandContract, type TomlTable } from './config-loading.js';
@@ -30,6 +31,9 @@ const BASE_MINIMAL_ENV_KEYS = [
 	'WINDIR',
 	'windir',
 ] as const;
+
+export const PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST_KEY = 'allow_project_local_bin_bare_executables';
+export const DEFAULT_PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST = new Set(['mf', 'mustflow']);
 
 export interface CommandEnvResolution {
 	readonly policy: CommandEnvPolicy;
@@ -66,6 +70,61 @@ function readEnvPolicy(table: TomlTable | undefined): CommandEnvPolicy | undefin
 
 function readEnvAllowlist(table: TomlTable | undefined): string[] {
 	return table ? (readStringArray(table, 'env_allowlist') ?? []) : [];
+}
+
+export function normalizeCommandExecutableName(executable: string): string {
+	return path.basename(executable).replace(/\.(?:cmd|exe|ps1)$/iu, '').toLowerCase();
+}
+
+export function readProjectLocalBinBareExecutableAllowlist(contractOrCommands: CommandContract | TomlTable | undefined): ReadonlySet<string> {
+	const defaults = contractOrCommands && typeof contractOrCommands === 'object' && 'defaults' in contractOrCommands
+		? contractOrCommands.defaults
+		: undefined;
+	const configuredAllowlist = defaults && typeof defaults === 'object'
+		? (defaults as TomlTable)[PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST_KEY]
+		: undefined;
+
+	if (!Array.isArray(configuredAllowlist)) {
+		return DEFAULT_PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST;
+	}
+
+	return new Set(
+		configuredAllowlist
+			.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+			.map((entry) => normalizeCommandExecutableName(entry)),
+	);
+}
+
+export function resolveAllowedProjectLocalBinExecutable(
+	projectRoot: string,
+	executable: string,
+	allowlist: ReadonlySet<string>,
+): string | null {
+	if (executable.includes('/') || executable.includes('\\')) {
+		return null;
+	}
+
+	const executableName = normalizeCommandExecutableName(executable);
+	if (!allowlist.has(executableName)) {
+		return null;
+	}
+
+	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
+	const candidates = [
+		executableName,
+		`${executableName}.cmd`,
+		`${executableName}.exe`,
+		`${executableName}.ps1`,
+	];
+
+	for (const candidate of candidates) {
+		const candidatePath = path.join(localBinPath, candidate);
+		if (existsSync(candidatePath)) {
+			return candidatePath;
+		}
+	}
+
+	return null;
 }
 
 function pickEnv(source: NodeJS.ProcessEnv, names: readonly string[]): NodeJS.ProcessEnv {

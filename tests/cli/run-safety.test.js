@@ -487,3 +487,41 @@ destructive = false
 		removeTempProject(projectPath);
 	}
 });
+
+test('resolves allowed project-local mustflow bare executable directly', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		createLocalBinShim(projectPath, 'mf', 'local-mf');
+		appendIntent(
+			projectPath,
+			`
+[intents.local_mf_bare]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a project-local mustflow executable by its conventional bare name."
+argv = ["mf", "doctor"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'local_mf_bare', '--json'], {
+			env: createEnvWithoutPathLookup(),
+		});
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(receipt.status, 'passed');
+		assert.match(receipt.stdout.tail, /local-mf doctor/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

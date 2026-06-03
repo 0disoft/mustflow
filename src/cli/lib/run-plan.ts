@@ -2,7 +2,12 @@ import path from 'node:path';
 
 import { isMustflowBinName } from '../../core/command-classification.js';
 import { resolveSafeProjectCwd } from '../../core/command-cwd.js';
-import { resolveCommandEnv, type CommandEnvPolicy } from '../../core/command-env.js';
+import {
+	readProjectLocalBinBareExecutableAllowlist,
+	resolveAllowedProjectLocalBinExecutable,
+	resolveCommandEnv,
+	type CommandEnvPolicy,
+} from '../../core/command-env.js';
 import {
 	getCommandMaxOutputBytesLimitDetail,
 	readEffectiveCommandCwd,
@@ -208,7 +213,7 @@ function resolveCurrentCliEntrypoint(): string | undefined {
 	return entrypoint ? path.resolve(entrypoint) : undefined;
 }
 
-function resolveArgvCommand(intent: TomlTable, commandArgv: readonly string[]): ResolvedArgvCommand {
+function resolveArgvCommand(projectRoot: string, contract: CommandContract, intent: TomlTable, commandArgv: readonly string[]): ResolvedArgvCommand {
 	const [command = '', ...args] = commandArgv;
 
 	if (isMustflowBuiltinIntent(intent) && isMustflowBinName(command)) {
@@ -221,6 +226,19 @@ function resolveArgvCommand(intent: TomlTable, commandArgv: readonly string[]): 
 				shell: false,
 			};
 		}
+	}
+
+	const localBinExecutable = resolveAllowedProjectLocalBinExecutable(
+		projectRoot,
+		command,
+		readProjectLocalBinBareExecutableAllowlist(contract),
+	);
+	if (localBinExecutable) {
+		return {
+			executable: localBinExecutable,
+			args,
+			shell: shouldUseShellForArgvExecutable(localBinExecutable),
+		};
 	}
 
 	return {
@@ -429,7 +447,7 @@ export function createRunPlan(
 		commandArgv,
 		shellCommand: metadata.shellCommand,
 		mode: metadata.mode,
-		argvCommand: commandArgv ? resolveArgvCommand(rawIntent, commandArgv) : undefined,
+		argvCommand: commandArgv ? resolveArgvCommand(projectRoot, contract, rawIntent, commandArgv) : undefined,
 		writes: metadata.writes,
 		effects: metadata.effects,
 		network: metadata.network,

@@ -31,6 +31,7 @@ on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
 env_policy = "minimal"
 env_allowlist = []
+allow_project_local_bin_bare_executables = ["mf", "mustflow"]
 
 [intents.test]
 status = "unknown"
@@ -58,6 +59,7 @@ required_after = ["code_change", "behavior_change"]
   override it with its own `kill_after_seconds`.
 - `defaults.env_policy`: Environment policy for command execution when an intent does not override it.
 - `defaults.env_allowlist`: Extra environment variable names passed when the effective policy is `allowlist`.
+- `defaults.allow_project_local_bin_bare_executables`: Bare executable names that may match project-local `.bin` files without a strict warning. `mf run` may also resolve those names directly from the project-local `.bin` directory instead of exposing the whole local bin directory through `PATH`. The installed template allows `mf` and `mustflow` so built-in mustflow intents stay concise.
 
 ## Intent Status
 
@@ -84,6 +86,7 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `mode`: Set to `shell` only when shell syntax is required.
 - `cmd`: Shell command string used when `mode = "shell"`.
 - `allow_shell`: Required as `true` before a shell-mode intent can use `run_policy = "agent_allowed"`.
+- `allow_long_running_command_patterns`: Optional acknowledgement for a bounded `oneshot` command whose executable name or arguments match a common long-running pattern. Background shell patterns remain blocked.
 - `cwd`: Working directory for the command.
 - `timeout_seconds`: Command timeout.
 - `kill_after_seconds`: Optional per-intent process-cleanup wait time after timeout.
@@ -91,6 +94,7 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `success_exit_codes`: Exit codes considered successful.
 - `env_policy`: Optional override for command environment handling. Use `minimal`, `allowlist`, or explicit `inherit`.
 - `env_allowlist`: Extra variable names allowed when `env_policy = "allowlist"`.
+- `allow_env_inheritance_risks`: Optional acknowledgement for an agent-runnable intent that intentionally uses `env_policy = "inherit"`.
 - `manual_start_hint`: Optional human-facing hint for starting a long-running command outside agent execution.
 - `health_check_url`: Optional URL a human can use to inspect a manually started long-running process.
 - `stop_instruction`: Optional human-facing instruction for stopping a manually started long-running process.
@@ -129,9 +133,9 @@ destructive = false
 - `allowlist`: start from the minimal environment, then add names from `defaults.env_allowlist` and the intent's `env_allowlist`.
 - `inherit`: pass the host process environment after removing the project-local `node_modules/.bin` path from `PATH`. Use this only when a command truly needs broad host state.
 
-Installed templates use `env_policy = "minimal"` by default. Existing configs without an environment policy keep the older inheritance behavior for compatibility, but new runnable intents should prefer `minimal` or `allowlist`. `mf check --strict` warns when a configured agent-runnable intent effectively uses `inherit`, and calls out the higher-risk case where that intent also has `network = true`.
+Installed templates use `env_policy = "minimal"` by default. Existing configs without an environment policy fall back to `minimal`. New runnable intents should prefer `minimal` or `allowlist`; use `inherit` only when the command really needs broad host state. `mf check --strict` warns when a configured agent-runnable intent uses `inherit`, and treats `inherit` with network, destructive, shell, or write behavior as a stricter risk unless the intent explicitly sets `allow_env_inheritance_risks = true`.
 
-Because the project-local `node_modules/.bin` path is removed from `PATH`, do not declare bare local tool names such as `eslint`, `tsc`, or `vitest` as the executable. Use a package-manager mediated command instead, for example `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, or `yarn exec eslint ...`. `mf check --strict` warns when an agent-runnable intent uses a bare executable name that matches a file under the project-local `.bin` directory.
+Because the project-local `node_modules/.bin` path is removed from `PATH`, do not declare bare local tool names such as `eslint`, `tsc`, or `vitest` as the executable. Use a package-manager mediated command instead, for example `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, or `yarn exec eslint ...`. `mf check --strict` warns when an agent-runnable intent uses a bare executable name that matches a file under the project-local `.bin` directory, except for names listed in `defaults.allow_project_local_bin_bare_executables`. When an allowed name exists locally, `mf run` resolves that executable directly instead of adding all project-local binaries to `PATH`.
 
 If a shell is required for an agent-runnable intent, set `mode = "shell"`, `cmd`, and
 `allow_shell = true`, then declare the command impact and write paths. Prefer `argv` when possible.
@@ -227,6 +231,8 @@ Agents should use this intent name when a skill or task needs image compression,
 Agents may run only `oneshot` intents by default. `server`, `watch`, `interactive`, `browser`, and `background` must not use `run_policy = "agent_allowed"`.
 
 Long-running intents may carry manual guidance metadata, but that metadata is informational only and does not make the intent runnable by agents.
+
+If a bounded `oneshot` command has a name that looks long-running, such as a repository script named `dev` that exits in CI mode, set `allow_long_running_command_patterns = true` on that intent. This does not allow background shell patterns or change the lifecycle requirement.
 
 ```toml
 [intents.dev_server]

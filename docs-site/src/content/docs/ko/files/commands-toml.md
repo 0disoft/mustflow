@@ -31,6 +31,7 @@ on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
 env_policy = "minimal"
 env_allowlist = []
+allow_project_local_bin_bare_executables = ["mf", "mustflow"]
 
 [intents.test]
 status = "unknown"
@@ -58,6 +59,7 @@ required_after = ["code_change", "behavior_change"]
   `kill_after_seconds`를 선언하면 이 값을 덮어씁니다.
 - `defaults.env_policy`: 의도별 설정이 없을 때 사용할 환경 변수 전달 정책입니다.
 - `defaults.env_allowlist`: 유효한 정책이 `allowlist`일 때 추가로 전달할 환경 변수 이름 목록입니다.
+- `defaults.allow_project_local_bin_bare_executables`: 프로젝트 로컬 `.bin` 파일과 이름이 같아도 strict 경고를 내지 않을 실행 파일 이름 목록입니다. `mf run`은 이 이름들을 프로젝트 로컬 `.bin`에서 직접 해석할 수 있으며, 이때 전체 로컬 `.bin` 디렉터리를 `PATH`에 열지는 않습니다. 설치 템플릿은 mustflow 내장 의도를 간결하게 유지하기 위해 `mf`와 `mustflow`를 기본 허용합니다.
 
 ## 의도 상태
 
@@ -83,6 +85,8 @@ required_after = ["code_change", "behavior_change"]
   에이전트가 실행하는 단발성 의도에서 거부됩니다.
 - `mode`: `argv`가 아니라 셸 문법을 써야 할 때 `shell`로 둡니다.
 - `cmd`: `mode = "shell"`일 때 실행할 셸 명령 문자열입니다.
+- `allow_shell`: 셸 모드 의도를 `run_policy = "agent_allowed"`로 실행 가능하게 만들 때 필요한 명시 허용값입니다.
+- `allow_long_running_command_patterns`: 실제로는 제한 시간 안에 끝나는 `oneshot` 명령이지만 실행 파일 이름이나 인자가 흔한 장기 실행 패턴과 겹칠 때 의도별로 명시하는 허용값입니다. 백그라운드 셸 패턴은 계속 차단됩니다.
 - `cwd`: 명령을 실행할 작업 디렉터리입니다.
 - `timeout_seconds`: 명령 제한 시간입니다.
 - `kill_after_seconds`: 시간 초과 뒤 프로세스 정리 단계에 사용할 의도별 추가 대기 시간입니다.
@@ -90,6 +94,7 @@ required_after = ["code_change", "behavior_change"]
 - `success_exit_codes`: 성공으로 볼 종료 코드 목록입니다.
 - `env_policy`: 환경 변수 전달 정책을 의도별로 덮어씁니다. 새 자동 실행 의도에는 `minimal` 또는 `allowlist`를 우선 사용하고, 전체 상속이 꼭 필요할 때만 `inherit`를 명시합니다.
 - `env_allowlist`: `env_policy = "allowlist"`일 때 추가로 허용할 환경 변수 이름 목록입니다.
+- `allow_env_inheritance_risks`: 자동 실행 의도에서 `env_policy = "inherit"`를 의도적으로 쓸 때 명시하는 허용값입니다.
 - `manual_start_hint`: 장기 실행 명령을 에이전트가 아니라 사람이 직접 시작할 때 참고할 안내입니다.
 - `health_check_url`: 사람이 직접 시작한 장기 실행 프로세스를 확인할 수 있는 선택 URL입니다.
 - `stop_instruction`: 사람이 직접 시작한 장기 실행 프로세스를 멈추는 방법입니다.
@@ -128,9 +133,9 @@ destructive = false
 - `allowlist`: `minimal`에 더해 `defaults.env_allowlist`와 의도의 `env_allowlist`에 적은 이름만 추가로 전달합니다.
 - `inherit`: 프로젝트 안의 `node_modules/.bin` 경로를 제거한 뒤 호스트 프로세스의 환경 변수를 넓게 전달합니다. 명령이 정말로 넓은 호스트 상태를 필요로 할 때만 사용합니다.
 
-설치 템플릿은 기본적으로 `env_policy = "minimal"`을 사용합니다. 환경 변수 정책이 없는 기존 설정은 호환성을 위해 예전처럼 전체 상속으로 동작하지만, 새 자동 실행 의도는 `minimal` 또는 `allowlist`로 옮기는 것이 좋습니다. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 결과적으로 `inherit`를 사용할 때 경고하며, 같은 의도에 `network = true`가 있으면 더 위험한 조합으로 함께 표시합니다.
+설치 템플릿은 기본적으로 `env_policy = "minimal"`을 사용합니다. 환경 변수 정책이 없는 설정도 `minimal`로 동작합니다. 새 자동 실행 의도는 `minimal` 또는 `allowlist`를 우선 사용하고, 명령이 정말 넓은 호스트 상태를 필요로 할 때만 `inherit`를 명시하세요. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 `inherit`를 사용할 때 경고하며, 네트워크, 파괴적 작업, 셸, 쓰기 작업과 함께 쓰이면 더 엄격한 위험으로 봅니다. 이 위험을 의도적으로 허용하려면 해당 의도에 `allow_env_inheritance_risks = true`를 둡니다.
 
-프로젝트 안의 `node_modules/.bin` 경로는 `PATH`에서 제거되므로, `eslint`, `tsc`, `vitest`처럼 로컬 의존성 실행 파일 이름만 `argv`의 첫 값으로 적지 마세요. 대신 `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, `yarn exec eslint ...`처럼 패키지 관리자를 거쳐 실행하도록 선언합니다. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 프로젝트 로컬 `.bin` 디렉터리에 있는 실행 파일 이름을 그대로 사용할 때 경고합니다.
+프로젝트 안의 `node_modules/.bin` 경로는 `PATH`에서 제거되므로, `eslint`, `tsc`, `vitest`처럼 로컬 의존성 실행 파일 이름만 `argv`의 첫 값으로 적지 마세요. 대신 `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, `yarn exec eslint ...`처럼 패키지 관리자를 거쳐 실행하도록 선언합니다. `mf check --strict`는 에이전트가 실행할 수 있는 의도가 프로젝트 로컬 `.bin` 디렉터리에 있는 실행 파일 이름을 그대로 사용할 때 경고합니다. 단, `defaults.allow_project_local_bin_bare_executables`에 적힌 이름은 예외입니다. 허용된 이름이 로컬에 있으면 `mf run`은 전체 로컬 `.bin`을 `PATH`에 추가하지 않고 그 실행 파일만 직접 해석합니다.
 
 복잡한 셸 기능이 필요하면 `mode = "shell"`과 `cmd`를 명시하고, 실행 영향과 쓰기 경로를 함께 적습니다.
 
@@ -218,6 +223,8 @@ required_after = ["image_asset_change", "web_asset_change"]
 에이전트가 기본으로 실행할 수 있는 생명주기는 `oneshot`뿐입니다. `server`, `watch`, `interactive`, `browser`, `background`는 `run_policy = "agent_allowed"`로 열면 안 됩니다.
 
 장기 실행 의도에는 사람이 직접 시작하고 확인하고 멈추는 방법을 설명하는 메타데이터를 둘 수 있습니다. 이 메타데이터는 설명용일 뿐이며, 에이전트 실행 권한을 만들지 않습니다.
+
+제한 시간 안에 끝나는 `oneshot` 명령인데 이름만 `dev`, `start`, `serve`, `watch` 같은 장기 실행 패턴과 겹치는 경우에는 해당 의도에 `allow_long_running_command_patterns = true`를 둘 수 있습니다. 이 값은 백그라운드 셸 패턴을 허용하지 않고, 생명주기 요구사항도 바꾸지 않습니다.
 
 ```toml
 [intents.dev_server]

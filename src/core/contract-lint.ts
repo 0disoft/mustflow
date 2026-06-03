@@ -167,6 +167,7 @@ const AGENT_WORKFLOW_PATH = '.mustflow/docs/agent-workflow.md';
 const PACKAGE_SCRIPT_RUNNERS = new Set(['bun', 'npm', 'pnpm', 'yarn']);
 const MAKEFILE_CANDIDATES = ['Makefile', 'makefile'];
 const JUSTFILE_CANDIDATES = ['justfile', 'Justfile'];
+const ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY = 'allow_long_running_command_patterns';
 
 interface CoverageIntent {
 	readonly name: string;
@@ -562,7 +563,7 @@ function lintIntent(name: string, value: unknown, issues: ContractLintIssue[]): 
 		);
 	}
 
-	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
+	if (blockedCommandPattern?.code === 'long_running_command_pattern' && value[ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY] !== true) {
 		pushIssue(
 			issues,
 			'error',

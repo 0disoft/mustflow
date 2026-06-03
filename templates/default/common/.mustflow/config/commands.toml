@@ -18,6 +18,7 @@ on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
 env_policy = "minimal"
 env_allowlist = []
+allow_project_local_bin_bare_executables = ["mf", "mustflow"]
 
 [resources.local_index_cache]
 description = "Generated mustflow SQLite local index under .mustflow/cache/."

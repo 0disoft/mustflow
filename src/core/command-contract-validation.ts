@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -9,7 +8,15 @@ import {
 	readStringArray,
 	type TomlTable,
 } from './config-loading.js';
-import { COMMAND_ENV_POLICIES, DEFAULT_COMMAND_ENV_POLICY, type CommandEnvPolicy } from './command-env.js';
+import {
+	COMMAND_ENV_POLICIES,
+	DEFAULT_COMMAND_ENV_POLICY,
+	PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST_KEY,
+	normalizeCommandExecutableName,
+	readProjectLocalBinBareExecutableAllowlist,
+	resolveAllowedProjectLocalBinExecutable,
+	type CommandEnvPolicy,
+} from './command-env.js';
 import type { CheckIssueId } from './check-issues.js';
 import {
 	COMMAND_EFFECT_CONCURRENCY,
@@ -33,6 +40,8 @@ const COMMAND_ARGV_PLACEHOLDER_PATTERN = /^\{([a-z][a-z0-9_]*)\}$/u;
 const COMMAND_ARGV_MIXED_PLACEHOLDER_PATTERN = /\{([a-z][a-z0-9_]*)\}/u;
 const WINDOWS_RESERVED_PATH_SEGMENTS = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu;
 const SAFE_PATH_EXTENSION_PATTERN = /^\.[A-Za-z0-9][A-Za-z0-9._-]*$/u;
+const ALLOW_ENV_INHERITANCE_RISKS_KEY = 'allow_env_inheritance_risks';
+const ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY = 'allow_long_running_command_patterns';
 
 export interface CommandContractValidationIssue {
 	readonly id?: CheckIssueId;
@@ -526,6 +535,12 @@ function validateCommandDefaults(commandsToml: TomlTable, issues: CommandContrac
 	validateStringField(defaults, 'on_timeout', '[commands.defaults].on_timeout', issues);
 	validateAllowedStringField(defaults, 'env_policy', '[commands.defaults].env_policy', COMMAND_ENV_POLICIES, issues);
 	validateStringArrayField(defaults, 'env_allowlist', '[commands.defaults].env_allowlist', issues);
+	validateStringArrayField(
+		defaults,
+		PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST_KEY,
+		`[commands.defaults].${PROJECT_LOCAL_BIN_BARE_EXECUTABLE_ALLOWLIST_KEY}`,
+		issues,
+	);
 	validatePositiveIntegerField(defaults, 'default_timeout_seconds', '[commands.defaults].default_timeout_seconds', issues);
 	validateMaxOutputBytesField(defaults, 'max_output_bytes', '[commands.defaults].max_output_bytes', issues);
 	validatePositiveIntegerField(defaults, 'kill_after_seconds', '[commands.defaults].kill_after_seconds', issues);
@@ -697,6 +712,18 @@ function validateCommandIntent(
 	);
 	validateBooleanField(intent, 'allow_shell', `[commands.intents.${intentName}].allow_shell`, issues);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
+	validateBooleanField(
+		intent,
+		ALLOW_ENV_INHERITANCE_RISKS_KEY,
+		`[commands.intents.${intentName}].${ALLOW_ENV_INHERITANCE_RISKS_KEY}`,
+		issues,
+	);
+	validateBooleanField(
+		intent,
+		ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY,
+		`[commands.intents.${intentName}].${ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY}`,
+		issues,
+	);
 	validateMaxOutputBytesField(intent, 'max_output_bytes', `[commands.intents.${intentName}].max_output_bytes`, issues);
 	validatePositiveIntegerField(intent, 'kill_after_seconds', `[commands.intents.${intentName}].kill_after_seconds`, issues);
 	validateCommandIntentSelection(intentName, intent, issues);
@@ -787,7 +814,7 @@ function validateCommandIntent(
 		);
 	}
 
-	if (blockedCommandPattern?.code === 'long_running_command_pattern') {
+	if (blockedCommandPattern?.code === 'long_running_command_pattern' && intent[ALLOW_LONG_RUNNING_COMMAND_PATTERNS_KEY] !== true) {
 		issues.push(
 			commandContractIssue(
 				`Intent ${intentName} contains a blocked long-running or background command pattern`,
@@ -870,6 +897,10 @@ export function findCommandEnvInheritanceWarnings(commandsToml: CommandEnvInheri
 			continue;
 		}
 
+		if (intent[ALLOW_ENV_INHERITANCE_RISKS_KEY] === true) {
+			continue;
+		}
+
 		const reasons = readCommandEnvInheritanceRiskReasons(intent);
 		warnings.push({
 			intentName,
@@ -932,16 +963,7 @@ function validateCommandEnvInheritanceWarnings(commandsToml: TomlTable | undefin
 }
 
 function projectLocalBinExecutableExists(projectRoot: string, executable: string): boolean {
-	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
-	const executableName = path.basename(executable).replace(/\.(?:cmd|exe|ps1)$/iu, '');
-	const candidates = [
-		executableName,
-		`${executableName}.cmd`,
-		`${executableName}.exe`,
-		`${executableName}.ps1`,
-	];
-
-	return candidates.some((candidate) => existsSync(path.join(localBinPath, candidate)));
+	return resolveAllowedProjectLocalBinExecutable(projectRoot, executable, new Set([normalizeCommandExecutableName(executable)])) !== null;
 }
 
 function validateProjectLocalBinWarnings(projectRoot: string, commandsToml: TomlTable | undefined): CommandContractValidationIssue[] {
@@ -950,6 +972,8 @@ function validateProjectLocalBinWarnings(projectRoot: string, commandsToml: Toml
 	if (!isRecord(commandsToml?.intents)) {
 		return issues;
 	}
+
+	const allowedBareExecutables = readProjectLocalBinBareExecutableAllowlist(commandsToml);
 
 	for (const [intentName, intent] of Object.entries(commandsToml.intents)) {
 		if (!isRecord(intent)) {
@@ -963,6 +987,10 @@ function validateProjectLocalBinWarnings(projectRoot: string, commandsToml: Toml
 		const argv = readStringArray(intent, 'argv');
 		const executable = argv?.[0];
 		if (!executable || executable.includes('/') || executable.includes('\\')) {
+			continue;
+		}
+
+		if (allowedBareExecutables.has(normalizeCommandExecutableName(executable))) {
 			continue;
 		}
 

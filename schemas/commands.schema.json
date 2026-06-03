@@ -36,7 +36,8 @@
         "on_timeout": { "type": "string" },
         "kill_after_seconds": { "type": "integer" },
         "env_policy": { "$ref": "#/$defs/envPolicy" },
-        "env_allowlist": { "$ref": "#/$defs/stringArray" }
+        "env_allowlist": { "$ref": "#/$defs/stringArray" },
+        "allow_project_local_bin_bare_executables": { "$ref": "#/$defs/stringArray" }
       }
     },
     "intents": {
@@ -172,6 +173,7 @@
         },
         "cmd": { "type": "string" },
         "allow_shell": { "type": "boolean" },
+        "allow_long_running_command_patterns": { "type": "boolean" },
         "cwd": { "type": "string" },
         "timeout_seconds": { "type": "integer" },
         "kill_after_seconds": { "type": "integer" },
@@ -185,6 +187,7 @@
         },
         "env_policy": { "$ref": "#/$defs/envPolicy" },
         "env_allowlist": { "$ref": "#/$defs/stringArray" },
+        "allow_env_inheritance_risks": { "type": "boolean" },
         "manual_start_hint": { "type": "string" },
         "health_check_url": { "type": "string" },
         "stop_instruction": { "type": "string" },
