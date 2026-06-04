@@ -16,7 +16,7 @@ This file does not represent the highest authority. Direct user instructions, hi
 - Provides fallback values for new repositories where established conventions are not yet visible.
 - Ensures that automatic staging, committing, and pushing remain disabled by default.
 - Distinguishes commit message suggestions from the authority to execute actual commits.
-- Tracks version-impact checks without granting release or version-bump authority.
+- Tracks version-impact checks without granting release authority.
 - Controls whether low-risk changes should avoid the full verification suite.
 - Guides how readily agents should author new tests without weakening required verification.
 - Enables `mf check` to validate preference configurations.
@@ -70,8 +70,8 @@ source = "git.commit_message"
 [release.versioning]
 impact_check = true
 suggest_bump = true
-auto_bump = false
-require_user_confirmation = true
+auto_bump = true
+require_user_confirmation = false
 sync_template_version = true
 sync_docs_examples = true
 sync_tests = true

@@ -16,7 +16,7 @@ description: agent language, style, Git reporting, और documentation के �
 - नई repositories के लिए fallback values घोषित करता है जहां कोई existing convention दिखाई नहीं देती।
 - automatic staging, committing, और pushing को डिफ़ॉल्ट रूप से disabled रखता है।
 - commit message suggestions को वास्तविक commit की permission से अलग करता है।
-- version impact checks को record करता है, लेकिन release या version bump की permission नहीं देता।
+- version impact checks को record करता है, लेकिन release की permission नहीं देता।
 - कम जोखिम वाले बदलावों में full verification suite से बचना है या नहीं, यह बताता है।
 - required verification को कमजोर किए बिना नए tests कितनी आसानी से लिखे जाएं, यह guide करता है।
 - `mf check` को validate करने के लिए machine-checkable preference file देता है।
@@ -70,8 +70,8 @@ source = "git.commit_message"
 [release.versioning]
 impact_check = true
 suggest_bump = true
-auto_bump = false
-require_user_confirmation = true
+auto_bump = true
+require_user_confirmation = false
 sync_template_version = true
 sync_docs_examples = true
 sync_tests = true

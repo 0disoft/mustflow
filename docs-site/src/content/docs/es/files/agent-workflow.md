@@ -176,7 +176,7 @@ La sugerencia de mensaje de commit forma parte del informe final, no del permiso
 
 Cuando cambian código, plantillas, esquemas, comportamiento de CLI, metadatos del paquete, documentación visible para usuarios, salida de instalación o pruebas, los agentes deben comprobar si el cambio parece requerir actualizar la versión del paquete o de la plantilla.
 
-De forma predeterminada, mustflow puede sugerir un cambio patch, minor o major cuando la evidencia es clara. Cuando `auto_bump = true` y `require_user_confirmation = false`, los agentes pueden aplicar el cambio de versión directamente salvo que una instrucción directa del usuario, una regla de seguridad del host o una política de aprobación lo bloquee.
+De forma predeterminada, mustflow puede aplicar un cambio patch, minor o major cuando la evidencia es clara, la fuente de versión está localizada y `auto_bump = true` con `require_user_confirmation = false`. Una instrucción directa del usuario, una regla de seguridad del host o una política de aprobación sigue bloqueando las ediciones automáticas de versión.
 
 Antes de sugerir o aplicar un cambio de versión, el agente debe encontrar la fuente real de versión del repositorio en vez de asumir que es `package.json`. Los candidatos comunes incluyen `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` junto con tags de release, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, manifiestos de aplicación, notas de release y manifiestos de plantillas mustflow.
 

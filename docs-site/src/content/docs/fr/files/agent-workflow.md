@@ -177,7 +177,7 @@ La suggestion de message de commit fait partie du rapport final, pas d’une per
 
 Lorsque le code, les modèles, les schémas, le comportement CLI, les métadonnées du paquet, la documentation visible par l’utilisateur, la sortie d’installation ou les tests changent, les agents doivent vérifier si le changement semble exiger une mise à jour de version du paquet ou du modèle.
 
-Par défaut, mustflow peut suggérer une montée patch, minor ou major lorsque les indices sont clairs. Lorsque `auto_bump = true` et `require_user_confirmation = false`, les agents peuvent appliquer directement la montée de version sauf si une instruction directe de l’utilisateur, une règle de sécurité de l’hôte ou une politique d’approbation le bloque.
+Par défaut, mustflow peut appliquer une montée patch, minor ou major lorsque les indices sont clairs, que la source de version est localisée et que `auto_bump = true` avec `require_user_confirmation = false`. Une instruction directe de l’utilisateur, une règle de sécurité de l’hôte ou une politique d’approbation bloque toujours les modifications automatiques de version.
 
 Avant de suggérer ou d’appliquer un changement de version, l’agent doit trouver la source de version réelle du dépôt au lieu de supposer qu’il s’agit de `package.json`. Les candidats courants incluent `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` avec les tags de release, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, les manifestes d’application, les notes de release et les manifestes de modèles mustflow.
 

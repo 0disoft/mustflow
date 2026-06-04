@@ -29,7 +29,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Test relevance policy`: Keeps tests aligned with the current behavior contract.
 - `Preference interpretation policy`: Explains how to apply language, formatting, commit, and logging defaults from `preferences.toml`.
 - `Git behavior policy`: Disables automatic staging, committing, and pushing, and treats commit message suggestions as report content.
-- `Version impact policy`: Checks whether a change should suggest a version bump while keeping automatic version edits disabled by default.
+- `Version impact policy`: Checks whether a change should apply or suggest a version bump according to repository preferences.
 - `Command execution policy`: Restricts execution to oneshot command intents defined in `commands.toml`.
 - `Edit policy`: Keeps changes limited to directly related files.
 - `Verification policy`: Explains which command intents to check after changes.
@@ -221,7 +221,7 @@ Commit message suggestions are intended for the final report and do not imply ex
 
 When code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation output, or tests change, agents should check whether the change appears to require a package or template version update.
 
-By default, mustflow may suggest a patch, minor, or major bump when the evidence is clear. When `auto_bump = true` and `require_user_confirmation = false`, agents may apply the version bump directly unless a direct user instruction, host safety rule, or approval policy blocks it.
+By default, mustflow may apply a patch, minor, or major bump when the evidence is clear, the version source is located, and `auto_bump = true` with `require_user_confirmation = false`. A direct user instruction, host safety rule, or approval policy still blocks automatic version edits.
 
 Before suggesting or applying a version change, agents must find the repository's actual version source instead of assuming `package.json`. Common candidates include `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod` plus release tags, `pom.xml`, `build.gradle`, `*.csproj`, `*.gemspec`, `composer.json`, `pubspec.yaml`, `Package.swift`, `Chart.yaml`, app manifests, release notes, and mustflow template manifests.
 

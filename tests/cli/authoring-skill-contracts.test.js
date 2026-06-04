@@ -292,10 +292,17 @@ test('ui quality gate folds external UI review lessons into mustflow boundaries'
 	assert.match(localSkill, /accessible names and states/u);
 	assert.match(localSkill, /form validation/u);
 	assert.match(localSkill, /micro-interaction feedback/u);
+	assert.match(localSkill, /visual geometry/u);
+	assert.match(localSkill, /wrapper size, intrinsic SVG or glyph box/u);
+	assert.match(localSkill, /`min-width: 0` or equivalent flex\/grid constraint/u);
+	assert.match(localSkill, /filtered empty, search empty, permission denied, quota/u);
+	assert.match(localSkill, /Search, filters, sorting, pagination/u);
+	assert.match(localSkill, /dirty state, autosave, optimistic updates, undo/u);
+	assert.match(localSkill, /collision and overflow handling/u);
 	assert.match(localSkill, /state architecture/u);
 	assert.match(localSkill, /dependency and API reality/u);
 	assert.match(localSkill, /high-risk widgets/u);
-	assert.match(localSkill, /view tree, data contract, interaction model, state model/u);
+	assert.match(localSkill, /view tree, data contract, interaction model, state model, geometry contract/u);
 	assert.match(localSkill, /component boundaries/u);
 	assert.match(localSkill, /text overlap/u);
 	assert.match(localSkill, /localization-safe labels/u);

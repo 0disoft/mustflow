@@ -70,8 +70,8 @@ source = "git.commit_message"
 [release.versioning]
 impact_check = true
 suggest_bump = true
-auto_bump = false
-require_user_confirmation = true
+auto_bump = true
+require_user_confirmation = false
 sync_template_version = true
 sync_docs_examples = true
 sync_tests = true
