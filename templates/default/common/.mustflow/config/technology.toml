@@ -1,0 +1,20 @@
+schema_version = "1"
+
+# Repository-local technology preferences for agents.
+# Entries here are low-authority hints. They do not authorize dependency installation,
+# migration, command execution, or ignoring current project style.
+#
+# [[preferences]]
+# id = "framework.frontend.nextjs"
+# kind = "framework"
+# name = "nextjs"
+# status = "preferred"
+# authority = "hint"
+# scope = ["frontend", "web", "react"]
+# ecosystem = "npm"
+# packages = ["next", "react", "react-dom"]
+# rationale = "Preferred React full-stack framework for product web apps."
+# constraints = [
+#   "Check existing project stack before proposing migration.",
+#   "Do not install packages without direct user approval or a configured command intent.",
+# ]

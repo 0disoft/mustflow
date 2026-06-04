@@ -6,6 +6,7 @@ import { readMustflowTomlFile } from '../toml.js';
 import {
 	REQUIRED_FILES,
 } from './constants.js';
+import { TECHNOLOGY_CONFIG_RELATIVE_PATH } from '../../../core/technology-preferences.js';
 import { VERSIONING_CONFIG_PATH } from '../../../core/version-sources.js';
 import type { CheckIssue, ParsedConfigFiles } from './types.js';
 
@@ -45,6 +46,7 @@ export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedC
 		mustflowToml?: TomlTable;
 		commandsToml?: TomlTable;
 		preferencesToml?: TomlTable;
+		technologyToml?: TomlTable;
 		versioningToml?: TomlTable;
 	} = {};
 
@@ -52,6 +54,7 @@ export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedC
 		'.mustflow/config/mustflow.toml',
 		'.mustflow/config/commands.toml',
 		'.mustflow/config/preferences.toml',
+		TECHNOLOGY_CONFIG_RELATIVE_PATH,
 		VERSIONING_CONFIG_PATH,
 	]) {
 		const filePath = path.join(projectRoot, relativePath);
@@ -78,6 +81,10 @@ export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedC
 
 			if (relativePath.endsWith('preferences.toml')) {
 				parsedFiles.preferencesToml = parsed;
+			}
+
+			if (relativePath.endsWith('technology.toml')) {
+				parsedFiles.technologyToml = parsed;
 			}
 
 			if (relativePath.endsWith('versioning.toml')) {

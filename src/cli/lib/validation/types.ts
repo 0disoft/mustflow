@@ -24,5 +24,6 @@ export interface ParsedConfigFiles {
 	readonly mustflowToml?: TomlTable;
 	readonly commandsToml?: TomlTable;
 	readonly preferencesToml?: TomlTable;
+	readonly technologyToml?: TomlTable;
 	readonly versioningToml?: TomlTable;
 }

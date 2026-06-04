@@ -42,6 +42,7 @@ export const enMessages = {
   "command.lineEndings.summary": "Inspect and normalize line-ending policy",
   "command.run.summary": "Run a configured oneshot command",
   "command.context.summary": "Print machine-readable agent context",
+  "command.tech.summary": "Manage technology preferences for agents",
   "command.doctor.summary": "Inspect mustflow health and next steps",
   "command.docs.summary": "Track documentation review queue entries",
   "command.handoff.summary": "Validate restricted work-item and handoff records",

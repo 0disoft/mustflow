@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 13
+revision: 14
 lifecycle: user-editable
 authority: binding
 ---
@@ -20,13 +20,14 @@ mustflow-managed details are under `.mustflow/`.
 3. `.mustflow/config/mustflow.toml`
 4. `.mustflow/config/commands.toml`
 5. `.mustflow/config/preferences.toml` if present
-6. `.mustflow/skills/INDEX.md`
-7. `.mustflow/context/INDEX.md` only when the task needs project, product, domain,
+6. `.mustflow/config/technology.toml` if present
+7. `.mustflow/skills/INDEX.md`
+8. `.mustflow/context/INDEX.md` only when the task needs project, product, domain,
    UI, backend, data, security, or operations context
-8. The matching `.mustflow/context/<name>.md` files, only when selected by the context index
-9. The matching `.mustflow/skills/<name>/SKILL.md`
-10. `REPO_MAP.md` only when broader repository navigation is needed
-11. Relevant source, test, and documentation files
+9. The matching `.mustflow/context/<name>.md` files, only when selected by the context index
+10. The matching `.mustflow/skills/<name>/SKILL.md`
+11. `REPO_MAP.md` only when broader repository navigation is needed
+12. Relevant source, test, and documentation files
 
 ## Core Rules
 

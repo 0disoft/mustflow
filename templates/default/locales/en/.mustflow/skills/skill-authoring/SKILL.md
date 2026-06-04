@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-authoring
 locale: en
 canonical: true
-revision: 7
+revision: 8
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-authoring
@@ -69,10 +69,12 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 2. Search existing skills before adding a new one. Prefer updating a matching skill over creating overlapping procedures.
 3. Use a stable folder name and matching frontmatter `name`. Set `mustflow_doc` to `skill.<name>`, `metadata.mustflow_schema` to `"1"`, `metadata.mustflow_kind` to `procedure`, `metadata.pack_id` to the package namespace, and `metadata.skill_id` to `<pack_id>.<name>`.
 4. Write the standard sections: Purpose, Use When, Do Not Use When, Required Inputs, Preconditions, Allowed Edits, Procedure, Postconditions, Verification, Failure Handling, and Output Format.
-5. Keep the procedure concrete and bounded. Include what to read, what to change, what to avoid, and what evidence to report.
-6. Reference command intent names only. Do not include raw shell command blocks or claim that the skill authorizes command execution.
-7. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
-8. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
+5. Run the skill quality gate before accepting the draft: trigger is concrete, non-use boundaries are explicit, required inputs are observable, allowed edits are narrow, procedure steps are actionable, verification names configured intents, failure handling says what to do when evidence is missing, output format matches the evidence expected, overlap with nearby skills is controlled, and template impact is decided.
+6. Reject broad advice disguised as a skill. A skill should not say only "be careful", "write better tests", "sync docs", or "think about security" unless it names a repeatable trigger, source files to inspect, allowed edits, verification, and reporting evidence.
+7. Keep the procedure concrete and bounded. Include what to read, what to change, what to avoid, and what evidence to report.
+8. Reference command intent names only. Do not include raw shell command blocks or claim that the skill authorizes command execution.
+9. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
+10. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -96,6 +98,7 @@ If the skill changes tests or behavior-sensitive template output, also use the r
 - If `mustflow_check` reports missing sections, metadata drift, unknown command intents, raw shell commands, or command-permission claims, fix the skill contract before changing unrelated files.
 - If two skills overlap, tighten their use and non-use conditions or merge the duplicate procedure.
 - If a needed command intent is missing, record the missing intent instead of inventing a command inside the skill.
+- If the draft can be applied to almost any task, narrow the trigger or turn the material into workflow guidance instead of a skill.
 - If translation confidence is low, keep the source skill authoritative and mark translations for review through template metadata.
 
 <!-- mustflow-section: output-format -->
@@ -103,6 +106,7 @@ If the skill changes tests or behavior-sensitive template output, also use the r
 
 - Skill files added, updated, renamed, or removed
 - Skill index routes changed
+- Quality gate result and overlap decision
 - Command intents referenced
 - Template or localization metadata updated
 - Command intents run

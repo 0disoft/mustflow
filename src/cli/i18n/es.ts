@@ -44,6 +44,7 @@ export const esMessages = {
   "command.lineEndings.summary": "Inspecciona y normaliza la política de finales de línea",
   "command.run.summary": "Ejecuta un comando configurado de una sola ejecución",
   "command.context.summary": "Imprime contexto de agente legible por máquinas",
+  "command.tech.summary": "Gestiona preferencias tecnológicas para agentes",
   "command.doctor.summary": "Inspecciona la salud de mustflow y los siguientes pasos",
   "command.docs.summary": "Rastrea la cola de revisión de documentación",
   "command.handoff.summary": "Valida registros restringidos de trabajo y handoff",

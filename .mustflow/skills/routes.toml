@@ -48,11 +48,35 @@ route_type = "authoring"
 priority = 80
 applies_to_reasons = ["mustflow_config_change", "mustflow_docs_change"]
 
+[routes."command-intent-mapping-gate"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 68
+applies_to_reasons = ["docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "security_change", "release_risk", "unknown_change"]
+
 [routes."cli-output-contract-review"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 65
 applies_to_reasons = ["public_api_change", "behavior_change", "docs_change"]
+
+[routes."public-json-contract-change"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 82
+applies_to_reasons = ["public_api_change", "behavior_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
+
+[routes."completion-evidence-gate"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 85
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "release_risk"]
+
+[routes."restricted-handoff-resume"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 64
+applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "workflow_change"]
 
 [routes."facade-pattern"]
 category = "architecture_patterns"
@@ -113,6 +137,18 @@ category = "general_code"
 route_type = "adjunct"
 priority = 42
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
+
+[routes."runtime-target-selection"]
+category = "general_code"
+route_type = "primary"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "migration_change", "package_metadata_change", "release_risk"]
+
+[routes."structure-first-engineering"]
+category = "general_code"
+route_type = "adjunct"
+priority = 76
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "data_change", "migration_change", "security_change", "performance_change"]
 
 [routes."cpp-code-change"]
 category = "general_code"
@@ -228,6 +264,12 @@ route_type = "adjunct"
 priority = 25
 applies_to_reasons = ["public_api_change", "package_metadata_change", "mustflow_config_change"]
 
+[routes."template-install-surface-sync"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 78
+applies_to_reasons = ["mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "docs_change", "test_change", "release_risk"]
+
 [routes."date-number-audit"]
 category = "workflow_contracts"
 route_type = "adjunct"
@@ -336,6 +378,18 @@ route_type = "primary"
 priority = 30
 applies_to_reasons = ["security_change", "privacy_change"]
 
+[routes."secret-exposure-response"]
+category = "security_privacy"
+route_type = "event"
+priority = 90
+applies_to_reasons = ["security_change", "privacy_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."provenance-license-gate"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 58
+applies_to_reasons = ["security_change", "docs_change", "code_change", "package_metadata_change", "release_risk"]
+
 [routes."config-env-change"]
 category = "security_privacy"
 route_type = "primary"
@@ -359,6 +413,12 @@ category = "bug_failure"
 route_type = "event"
 priority = 20
 applies_to_reasons = ["command_failure"]
+
+[routes."evidence-stall-breaker"]
+category = "bug_failure"
+route_type = "event"
+priority = 70
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_change", "mustflow_docs_change"]
 
 [routes."external-prompt-injection-defense"]
 category = "security_privacy"

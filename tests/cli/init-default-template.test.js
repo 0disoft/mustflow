@@ -42,6 +42,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'technology.toml')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'context', 'INDEX.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'context', 'PROJECT.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'docs', 'agent-workflow.md')));
@@ -108,6 +109,11 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(preferences, /new_test_policy = "evidence_required"/);
 		assert.match(preferences, /prefer_existing_tests = true/);
 
+		const technology = readFileSync(path.join(projectPath, '.mustflow', 'config', 'technology.toml'), 'utf8');
+		assert.match(technology, /schema_version = "1"/);
+		assert.match(technology, /low-authority hints/);
+		assert.match(technology, /authority = "hint"/);
+
 		const commands = readFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), 'utf8');
 		assert.match(commands, /\[intents\.mustflow_doctor\]/);
 		assert.match(commands, /argv = \["mf", "doctor", "--json"\]/);
@@ -146,6 +152,7 @@ test('copies the default agent workflow into an empty project', () => {
 
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));
 		assert.match(mustflowConfig, /optional_read_order = \[\n  "\.mustflow\/context\/INDEX\.md",/);
+		assert.match(mustflowConfig, /"\.mustflow\/config\/technology\.toml"/);
 		assert.match(mustflowConfig, /\[context\]/);
 		assert.match(mustflowConfig, /root = "\.mustflow\/context"/);
 		assert.match(mustflowConfig, /read_policy = "task_relevant_only"/);

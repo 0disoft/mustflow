@@ -2,7 +2,7 @@
 mustflow_doc: skill.codebase-orientation
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: codebase-orientation
@@ -74,18 +74,23 @@ Build a concise, evidence-based map of an unfamiliar repository area before plan
    - `REPO_MAP.md` only when broader repository navigation is needed;
    - file search for names, exported symbols, command ids, schema ids, route ids, and test names.
    Treat generated maps and docs as pointers, not proof.
-4. Identify entry points for the target area: CLI command registry entry, command runner, exported API, UI route, worker, schema, template, configuration, or documentation anchor.
-5. Trace one main flow through current files in this order when applicable: entry point, orchestration function, core decision module, adapters or side effects, state writer or generated output, schema or public contract, then the nearest test.
-6. Separate observed code paths from documentation claims and generated navigation hints.
-7. Map ownership boundaries:
+4. Watch for stalled observation.
+   - If the same file, path, list, search, or generated-map lookup repeats without new evidence,
+     stop that branch and switch to `evidence-stall-breaker`.
+   - Do not claim that a file is empty, absent, unused, or unimplemented from a failed read,
+     truncated output, directory listing, stale docs, or duplicate-call warning.
+5. Identify entry points for the target area: CLI command registry entry, command runner, exported API, UI route, worker, schema, template, configuration, or documentation anchor.
+6. Trace one main flow through current files in this order when applicable: entry point, orchestration function, core decision module, adapters or side effects, state writer or generated output, schema or public contract, then the nearest test.
+7. Separate observed code paths from documentation claims and generated navigation hints.
+8. Map ownership boundaries:
    - public CLI, JSON, schema, template, package, or docs contract;
    - core decision logic versus shell/adapters;
    - user-editable files versus mustflow-owned files;
    - generated output, cache, local state, and lock files;
    - security, privacy, filesystem, process, localization, release, or compatibility boundaries.
-8. Record verification surfaces already declared in `.mustflow/config/commands.toml`. Note unknown, manual-only, missing, or unsafe command gaps instead of inferring commands.
-9. Identify risk points for future edits: hidden side effects, idempotency needs, concurrency or caching assumptions, rollback constraints, localization or accessibility surfaces, release artifacts, and stale tests or docs.
-10. Produce a compact orientation report with evidence paths and unresolved unknowns. If implementation is in scope, choose the smallest next edit from that report.
+9. Record verification surfaces already declared in `.mustflow/config/commands.toml`. Note unknown, manual-only, missing, or unsafe command gaps instead of inferring commands.
+10. Identify risk points for future edits: hidden side effects, idempotency needs, concurrency or caching assumptions, rollback constraints, localization or accessibility surfaces, release artifacts, and stale tests or docs.
+11. Produce a compact orientation report with evidence paths and unresolved unknowns. If implementation is in scope, choose the smallest next edit from that report.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -112,6 +117,8 @@ Orientation itself is usually read-only. If it leads to edits, also use the narr
 - If docs and source disagree, treat current source and command contracts as higher-confidence evidence and report the drift.
 - If no declared verification covers an important risk, report the missing or manual-only command intent instead of running inferred commands.
 - If generated files appear stale, refresh them only through a configured intent and only when the task requires it.
+- If repeated observations stop making progress, use `evidence-stall-breaker` and report the
+  stalled branch instead of looping or inventing a source claim.
 
 <!-- mustflow-section: output-format -->
 ## Output Format

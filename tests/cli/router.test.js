@@ -96,6 +96,7 @@ test('prints top-level help', () => {
 	assert.match(result.stdout, /mf line-endings/);
 	assert.match(result.stdout, /mf run/);
 	assert.match(result.stdout, /mf context/);
+	assert.match(result.stdout, /mf tech/);
 	assert.match(result.stdout, /mf doctor/);
 	assert.match(result.stdout, /mf handoff/);
 	assert.match(result.stdout, /mf index/);
@@ -315,6 +316,7 @@ test('fails unknown command options with standardized guidance', async () => {
 		['line-endings', 'check', '--bad'],
 		['run', '--bad'],
 		['context', '--bad'],
+		['tech', 'list', '--bad'],
 		['doctor', '--bad'],
 		['handoff', 'validate', '--bad'],
 		['index', '--bad'],
@@ -372,6 +374,11 @@ test('prints installed mustflow help views', async () => {
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Preferences/);
 		assert.match(result.stdout, /No \.mustflow\/config\/preferences\.toml found/);
+
+		const technology = await runCli(['help', 'technology'], root);
+		assert.equal(technology.status, 0);
+		assert.match(technology.stdout, /Technology Preferences/);
+		assert.match(technology.stdout, /No \.mustflow\/config\/technology\.toml found/);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

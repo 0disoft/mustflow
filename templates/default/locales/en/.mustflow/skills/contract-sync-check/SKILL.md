@@ -2,7 +2,7 @@
 mustflow_doc: skill.contract-sync-check
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: contract-sync-check
@@ -47,7 +47,7 @@ Keep declared behavior, machine-readable contracts, installed templates, tests, 
 
 - Changed-file list and intended behavior change.
 - The primary contract source, such as code, schema, config, template metadata, or documentation.
-- Known derived surfaces: tests, README, docs site, localized templates, manifests, lock files, and JSON Schemas.
+- Known derived surfaces: tests, README, docs site, localized templates, manifests, lock files, JSON Schemas, language-level marker constants, source scanners, and validator allowlists.
 - Relevant command-intent contract entries.
 
 <!-- mustflow-section: preconditions -->
@@ -79,7 +79,12 @@ Keep declared behavior, machine-readable contracts, installed templates, tests, 
 3. List the expected synchronized surfaces for that contract: source code, schemas, command metadata, templates, manifests, lock files, tests, README, docs site, and localized copies.
 4. Compare the changed files with that list and add any missing required surface.
 5. Keep derived files mechanically aligned with the source of truth. If a surface is intentionally not updated, record the reason.
-6. Check that command intent names, schema ids, frontmatter revisions, template entries, version strings, and documented examples match exactly where they are meant to match.
+   - When a machine-readable contract defines policy, treat TypeScript constants, Rust or Go marker arrays, docs prose, fixtures, template copies, and linter allowlists as derived unless the repository explicitly declares otherwise.
+   - If the same security, privacy, cost, tier, ownership, or boundary decision appears in more than one place, choose the canonical identity and value first, then validate duplicate copies for consistency instead of reading the most convenient duplicate.
+   - Prefer removing duplicate constants or loading a shared contract over adding a second hand-maintained list. If duplication remains, add a drift check or name the remaining manual sync risk.
+   - In cross-language skeletons, prefer the existing parser, source scan, or contract validator when it can prove the drift cheaply. Add a new runtime dependency solely for cross-language drift only when the lighter guard cannot cover the contract and the tradeoff is reported.
+   - When the runtime is not implemented yet, add narrow first-line guards such as source-pattern tests only for forbidden paths that are observable now. Report that those guards prevent obvious drift but do not prove full runtime correctness.
+6. Check that command intent names, schema ids, frontmatter revisions, template entries, version strings, documented examples, marker constants, and source-pattern guards match exactly where they are meant to match.
 7. Use the narrowest configured verification that covers the contract and any packaging or documentation surface touched.
 8. In the final report, separate synchronized surfaces from skipped or deferred surfaces.
 
@@ -87,6 +92,7 @@ Keep declared behavior, machine-readable contracts, installed templates, tests, 
 ## Postconditions
 
 - The contract source and every required derived surface agree.
+- Duplicated policy constants, language markers, source scanners, and validator allowlists are synchronized with the canonical contract or explicitly reported as deferred drift risk.
 - Any intentionally stale, deferred, or review-needed surface is explicitly named.
 - The final report includes the command intents used to verify contract alignment.
 

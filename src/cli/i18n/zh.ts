@@ -44,6 +44,7 @@ export const zhMessages = {
   "command.lineEndings.summary": "检查并规范化换行符策略",
   "command.run.summary": "运行已配置的一次性命令",
   "command.context.summary": "输出机器可读的代理上下文",
+  "command.tech.summary": "管理代理使用的技术偏好",
   "command.doctor.summary": "检查 mustflow 健康状态和后续步骤",
   "command.docs.summary": "跟踪文档审阅队列条目",
   "command.handoff.summary": "验证受限的工作项和交接记录",

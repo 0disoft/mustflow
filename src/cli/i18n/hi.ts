@@ -44,6 +44,7 @@ export const hiMessages = {
   "command.lineEndings.summary": "लाइन-एंडिंग नीति की जाँच और सामान्यीकरण करें",
   "command.run.summary": "कॉन्फ़िगर की गई एक-बार चलने वाली कमांड चलाएँ",
   "command.context.summary": "मशीन-पठनीय एजेंट संदर्भ प्रिंट करें",
+  "command.tech.summary": "एजेंटों के लिए technology preferences प्रबंधित करें",
   "command.doctor.summary": "mustflow स्वास्थ्य और अगले कदम जाँचें",
   "command.docs.summary": "दस्तावेज़ review queue entries track करें",
   "command.handoff.summary": "Restricted work-item और handoff records validate करें",

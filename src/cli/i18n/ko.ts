@@ -45,6 +45,7 @@ export const koMessages = {
   "command.lineEndings.summary": "줄바꿈 정책을 검사하고 정규화합니다",
   "command.run.summary": "설정된 일회성 명령을 실행합니다",
   "command.context.summary": "에이전트 작업 맥락을 출력합니다",
+  "command.tech.summary": "에이전트용 기술 선호를 관리합니다",
   "command.doctor.summary": "mustflow 상태를 점검하고 후속 조치를 안내합니다",
   "command.docs.summary": "문서 검수 대기열 항목을 추적합니다",
   "command.handoff.summary": "제한된 작업 항목과 인수인계 기록을 검증합니다",

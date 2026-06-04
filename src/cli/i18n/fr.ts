@@ -44,6 +44,7 @@ export const frMessages = {
   "command.lineEndings.summary": "Inspecte et normalise la politique de fins de ligne",
   "command.run.summary": "Exécute une commande configurée à exécution unique",
   "command.context.summary": "Imprime le contexte d'agent lisible par machine",
+  "command.tech.summary": "Gère les préférences technologiques pour les agents",
   "command.doctor.summary": "Inspecte l'état de mustflow et les prochaines étapes",
   "command.docs.summary": "Suit la file de révision de documentation",
   "command.handoff.summary": "Valide les enregistrements restreints de travail et de handoff",

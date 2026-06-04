@@ -2,7 +2,7 @@
 mustflow_doc: skill.dependency-reality-check
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-reality-check
@@ -41,6 +41,7 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 - A framework feature such as server actions, route handlers, edge middleware, framework cache, ORM relation helpers, or hosted platform storage is proposed for core business logic rather than for delivery, persistence, or infrastructure glue.
 - Documentation or design claims that a technology has enough ecosystem support, production use, migration path, failure examples, security response, or maintainer coverage.
 - A generated instruction tells another agent or user to run a tool that may not be declared in the repository.
+- External copied source material introduces dependency names, package snippets, install guidance, lifecycle scripts, binary downloads, or supply-chain claims that must be checked against repository declarations.
 - A failure may be caused by a missing install, mismatched version, unsupported runtime, or unavailable command.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -49,6 +50,7 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 - The task only changes repository-local prose and does not mention tools, runtime behavior, package metadata, or commands.
 - The dependency is already proven by the current task context and no dependency-facing surface changes.
 - The user explicitly asks for a speculative design that should not be implemented or verified yet.
+- The task only decides whether external code, prose, assets, prompts, or examples may be copied into the repository; use `provenance-license-gate` for that part.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -108,8 +110,9 @@ Prevent code, docs, tests, and final reports from assuming unavailable packages,
 14. For vulnerability or audit output, separate runtime dependencies from fixture-only or intentionally vulnerable samples. Do not weaken audit gates, delete lockfiles, or add broad suppressions without a repository-owned reason.
 15. For new dependencies, prefer pinned or lockfile-backed versions according to project policy. Avoid widening ranges or removing lockfiles to satisfy generated code.
 16. Do not introduce new package-manager wrappers, vulnerability scanners, registry queries, or install commands inside this skill. Use configured command intents or report the missing verification surface.
-17. Keep all dependency-facing surfaces aligned: package metadata, lockfiles when intentionally updated, command contract, docs, tests, and installation notes.
-18. Run the narrowest configured verification that proves the dependency path used by the change.
+17. If external source material is copied or closely adapted, activate `provenance-license-gate` for source, license, attribution, and copy-extent decisions before preserving the material.
+18. Keep all dependency-facing surfaces aligned: package metadata, lockfiles when intentionally updated, command contract, docs, tests, and installation notes.
+19. Run the narrowest configured verification that proves the dependency path used by the change.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

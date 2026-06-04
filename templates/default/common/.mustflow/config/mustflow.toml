@@ -7,6 +7,7 @@ read_order = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
+  ".mustflow/config/technology.toml",
   ".mustflow/skills/INDEX.md",
 ]
 optional_read_order = [
@@ -20,6 +21,7 @@ repository_map = "REPO_MAP.md"
 skill_index = ".mustflow/skills/INDEX.md"
 command_contract = ".mustflow/config/commands.toml"
 workflow_preferences = ".mustflow/config/preferences.toml"
+technology_preferences = ".mustflow/config/technology.toml"
 workflow_reference = ".mustflow/docs/agent-workflow.md"
 context_index = ".mustflow/context/INDEX.md"
 project_context = ".mustflow/context/PROJECT.md"
@@ -35,6 +37,7 @@ anchor_files = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
+  ".mustflow/config/technology.toml",
   ".mustflow/skills/INDEX.md",
   "README.md",
   "PROJECT.md",
@@ -98,6 +101,7 @@ command_contract = true
 skills = true
 repo_map = "generated_optional"
 preferences = "optional"
+technology_preferences = "optional"
 context = "optional"
 local_index = "generated_optional"
 work_items = "disabled"
@@ -136,6 +140,7 @@ read = [
   ".mustflow/docs/agent-workflow.md",
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
+  ".mustflow/config/technology.toml",
   ".mustflow/skills/INDEX.md",
 ]
 
@@ -230,6 +235,7 @@ read = [
   "AGENTS.md",
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/preferences.toml",
+  ".mustflow/config/technology.toml",
 ]
 
 [refresh.levels.skill]
@@ -247,6 +253,7 @@ read = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
+  ".mustflow/config/technology.toml",
   ".mustflow/skills/INDEX.md",
 ]
 
@@ -369,6 +376,7 @@ canonical = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/preferences.toml",
+  ".mustflow/config/technology.toml",
   ".mustflow/context/**",
   ".mustflow/docs/**",
   ".mustflow/skills/**",

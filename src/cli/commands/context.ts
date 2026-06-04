@@ -101,6 +101,7 @@ export async function runContext(args: string[], reporter: Reporter, lang: CliLa
 	reporter.stdout(`${t(lang, 'label.mustflowRoot')}: ${context.mustflow_root}`);
 	reporter.stdout(`${t(lang, 'label.commandContract')}: ${context.command_contract.exists ? t(lang, 'value.present') : t(lang, 'value.missing')}`);
 	reporter.stdout(`${t(lang, 'label.runnableIntents')}: ${context.command_contract.runnable_intents.length}`);
+	reporter.stdout(`Technology preferences: ${context.technology_preferences.exists ? t(lang, 'value.present') : t(lang, 'value.missing')} (${context.technology_preferences.count})`);
 	reporter.stdout(`${t(lang, 'label.latestRun')}: ${context.latest_run.exists ? t(lang, 'value.present') : t(lang, 'value.missing')}`);
 
 	return 0;

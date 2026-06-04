@@ -5,6 +5,11 @@ import { readMustflowTextFileIfExists } from '../lib/mustflow-read.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readMustflowTomlFile } from '../lib/toml.js';
+import {
+	normalizeTechnologyPreferencesTable,
+	TECHNOLOGY_CONFIG_RELATIVE_PATH,
+	type TechnologyPreference,
+} from '../../core/technology-preferences.js';
 
 function readTextIfExists(projectRoot: string, relativePath: string): string | undefined {
 	return readMustflowTextFileIfExists(projectRoot, relativePath) ?? undefined;
@@ -77,6 +82,63 @@ function renderPreferencesHelp(projectRoot: string, lang: CliLang): string {
 	return lines.join('\n').trimEnd();
 }
 
+function renderTechnologyPreference(preference: TechnologyPreference): string[] {
+	const details = [
+		preference.scope.length > 0 ? `scope: ${preference.scope.join(', ')}` : null,
+		preference.ecosystem ? `ecosystem: ${preference.ecosystem}` : null,
+		preference.packages.length > 0 ? `packages: ${preference.packages.join(', ')}` : null,
+	].filter((value): value is string => value !== null);
+	const lines = [`- [${preference.status}] ${preference.kind} ${preference.name} (${preference.id})`];
+
+	if (details.length > 0) {
+		lines.push(`  ${details.join('; ')}`);
+	}
+
+	if (preference.rationale) {
+		lines.push(`  why: ${preference.rationale}`);
+	}
+
+	for (const constraint of preference.constraints) {
+		lines.push(`  constraint: ${constraint}`);
+	}
+
+	return lines;
+}
+
+function renderTechnologyHelp(projectRoot: string, lang: CliLang): string {
+	const technology = readTomlIfExists(projectRoot, TECHNOLOGY_CONFIG_RELATIVE_PATH);
+
+	if (!technology) {
+		return `Technology Preferences\n\n${renderMissing(TECHNOLOGY_CONFIG_RELATIVE_PATH, lang)}`;
+	}
+
+	const file = normalizeTechnologyPreferencesTable(technology, true);
+	const lines = [
+		'Technology Preferences',
+		'',
+		`Path: ${file.path}`,
+		`Authority: ${file.authority} (preferences only)`,
+		'Guidance:',
+		...file.guidance.map((item) => `- ${item}`),
+		'',
+		`Preferences: ${file.preferences.length}`,
+	];
+
+	if (file.preferences.length === 0) {
+		lines.push('No technology preferences recorded.');
+	}
+
+	for (const preference of file.preferences) {
+		lines.push(...renderTechnologyPreference(preference));
+	}
+
+	if (file.issues.length > 0) {
+		lines.push('', 'Issues:', ...file.issues.map((issue) => `- ${issue}`));
+	}
+
+	return lines.join('\n');
+}
+
 function renderPreferenceSection(lines: string[], sectionName: string, section: TomlTable): void {
 	const nestedSections: Array<[string, TomlTable]> = [];
 	const scalarLines: string[] = [];
@@ -123,9 +185,13 @@ export function getHelpHelp(lang: CliLang = 'en'): string {
 					label: 'preferences',
 					description: t(lang, 'help.topic.preferences'),
 				},
+				{
+					label: 'technology',
+					description: 'Show framework, library, runtime, and tool preferences',
+				},
 			],
 			options: [{ label: '-h, --help', description: t(lang, 'cli.option.help') }],
-			examples: ['mf help workflow', 'mf help skills', 'mf help preferences'],
+			examples: ['mf help workflow', 'mf help skills', 'mf help preferences', 'mf help technology'],
 			exitCodes: [
 				{
 					label: '0',
@@ -173,6 +239,11 @@ export function runHelp(args: string[], reporter: Reporter, lang: CliLang = 'en'
 
 	if (topic === 'preferences') {
 		reporter.stdout(renderPreferencesHelp(projectRoot, lang));
+		return 0;
+	}
+
+	if (topic === 'technology') {
+		reporter.stdout(renderTechnologyHelp(projectRoot, lang));
 		return 0;
 	}
 

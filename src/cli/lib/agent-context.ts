@@ -20,11 +20,17 @@ import {
 } from './mustflow-read.js';
 import { createRunPlan } from './run-plan.js';
 import { readMustflowTomlFile } from './toml.js';
+import {
+	normalizeTechnologyPreferencesTable,
+	TECHNOLOGY_CONFIG_RELATIVE_PATH,
+	type TechnologyPreference,
+} from '../../core/technology-preferences.js';
 
 const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const MUSTFLOW_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 const PREFERENCES_RELATIVE_PATH = '.mustflow/config/preferences.toml';
+const TECHNOLOGY_RELATIVE_PATH = TECHNOLOGY_CONFIG_RELATIVE_PATH;
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 const CACHE_RELATIVE_PATH = '.mustflow/cache/';
 const STATE_RELATIVE_PATH = '.mustflow/state/';
@@ -76,6 +82,16 @@ export interface CommandContractContext {
 	readonly exists: boolean;
 	readonly intents: readonly IntentContext[];
 	readonly runnable_intents: readonly string[];
+}
+
+export interface TechnologyPreferencesContext {
+	readonly path: string;
+	readonly exists: boolean;
+	readonly authority: 'hint';
+	readonly guidance: readonly string[];
+	readonly count: number;
+	readonly preferences: readonly TechnologyPreference[];
+	readonly issues: readonly string[];
 }
 
 export interface EffectivePolicyContext {
@@ -136,6 +152,7 @@ export interface AgentContext {
 	readonly read_order: readonly PathContext[];
 	readonly optional_read_order: readonly PathContext[];
 	readonly command_contract: CommandContractContext;
+	readonly technology_preferences: TechnologyPreferencesContext;
 	readonly effective_policy: EffectivePolicyContext;
 	readonly state_policy: StatePolicyContext;
 	readonly blocked_actions: readonly string[];
@@ -338,6 +355,21 @@ function readCommandContractContext(projectRoot: string): CommandContractContext
 		exists: true,
 		intents,
 		runnable_intents: runnableIntents,
+	};
+}
+
+function readTechnologyPreferencesContext(projectRoot: string): TechnologyPreferencesContext {
+	const technology = readTomlTableIfExists(projectRoot, TECHNOLOGY_RELATIVE_PATH);
+	const file = normalizeTechnologyPreferencesTable(technology, safeExists(projectRoot, TECHNOLOGY_RELATIVE_PATH));
+
+	return {
+		path: file.path,
+		exists: file.exists,
+		authority: file.authority,
+		guidance: file.guidance,
+		count: file.preferences.length,
+		preferences: file.preferences,
+		issues: file.issues,
 	};
 }
 
@@ -563,6 +595,7 @@ export function getAgentContext(projectRoot: string): AgentContext {
 		read_order: readPathContext(projectRoot, readOrder),
 		optional_read_order: readPathContext(projectRoot, optionalReadOrder),
 		command_contract: readCommandContractContext(projectRoot),
+		technology_preferences: readTechnologyPreferencesContext(projectRoot),
 		effective_policy: readEffectivePolicyContext(mustflow, preferences),
 		state_policy: readStatePolicyContext(),
 		blocked_actions: BLOCKED_ACTIONS,

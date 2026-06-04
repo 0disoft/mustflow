@@ -119,6 +119,12 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/context.js')).runContext,
 	},
 	{
+		id: 'tech',
+		usage: 'mf tech',
+		summaryKey: 'command.tech.summary',
+		loadRunner: async () => (await import('../commands/tech.js')).runTech,
+	},
+	{
 		id: 'doctor',
 		usage: 'mf doctor',
 		summaryKey: 'command.doctor.summary',

@@ -112,6 +112,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 			template.manifest.skillProfiles[profileName].includes('version-freshness-check'),
 			`${profileName} should include version-freshness-check`,
 		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('structure-first-engineering'),
+			`${profileName} should include structure-first-engineering`,
+		);
 	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('cli-output-contract-review'), false);

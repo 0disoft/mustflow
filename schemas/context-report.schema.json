@@ -47,6 +47,7 @@
           "items": { "$ref": "#/$defs/pathContext" }
         },
         "command_contract": { "$ref": "#/$defs/commandContractContext" },
+        "technology_preferences": { "$ref": "#/$defs/technologyPreferencesContext" },
         "effective_policy": { "$ref": "#/$defs/effectivePolicy" },
         "state_policy": { "$ref": "#/$defs/statePolicy" },
         "blocked_actions": {
@@ -144,6 +145,66 @@
           "items": { "$ref": "#/$defs/intentContext" }
         },
         "runnable_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "technologyPreference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "status",
+        "authority",
+        "scope",
+        "ecosystem",
+        "packages",
+        "rationale",
+        "constraints"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["language", "runtime", "framework", "library", "tool", "service", "platform"] },
+        "name": { "type": "string" },
+        "status": { "enum": ["preferred", "allowed", "avoid"] },
+        "authority": { "const": "hint" },
+        "scope": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ecosystem": { "type": ["string", "null"] },
+        "packages": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rationale": { "type": ["string", "null"] },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "technologyPreferencesContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "authority", "guidance", "count", "preferences", "issues"],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "authority": { "const": "hint" },
+        "guidance": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "count": { "type": "integer", "minimum": 0 },
+        "preferences": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/technologyPreference" }
+        },
+        "issues": {
           "type": "array",
           "items": { "type": "string" }
         }

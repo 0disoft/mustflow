@@ -10,8 +10,8 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 13
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 13, status = "current" }
+revision = 14
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 14, status = "current" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 11, status = "needs_review" }
@@ -53,10 +53,16 @@ source_locale = "en"
 revision = 4
 translations = {}
 
+[documents."config.technology"]
+source = "common/.mustflow/config/technology.toml"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 89
+revision = 94
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -92,13 +98,13 @@ translations = {}
 [documents."skill.code-review"]
 source = "locales/en/.mustflow/skills/code-review/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.contract-sync-check"]
 source = "locales/en/.mustflow/skills/contract-sync-check/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.date-number-audit"]
@@ -128,7 +134,7 @@ translations = {}
 [documents."skill.dependency-reality-check"]
 source = "locales/en/.mustflow/skills/dependency-reality-check/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.dependency-upgrade-review"]
@@ -164,7 +170,7 @@ translations = {}
 [documents."skill.codebase-orientation"]
 source = "locales/en/.mustflow/skills/codebase-orientation/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.astro-code-change"]
@@ -266,7 +272,19 @@ translations = {}
 [documents."skill.rust-code-change"]
 source = "locales/en/.mustflow/skills/rust-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
+translations = {}
+
+[documents."skill.runtime-target-selection"]
+source = "locales/en/.mustflow/skills/runtime-target-selection/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.structure-first-engineering"]
+source = "locales/en/.mustflow/skills/structure-first-engineering/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.svelte-code-change"]
@@ -303,6 +321,36 @@ translations = {}
 source = "locales/en/.mustflow/skills/cli-output-contract-review/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.completion-evidence-gate"]
+source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.evidence-stall-breaker"]
+source = "locales/en/.mustflow/skills/evidence-stall-breaker/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.command-intent-mapping-gate"]
+source = "locales/en/.mustflow/skills/command-intent-mapping-gate/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.public-json-contract-change"]
+source = "locales/en/.mustflow/skills/public-json-contract-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.provenance-license-gate"]
+source = "locales/en/.mustflow/skills/provenance-license-gate/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.composition-over-inheritance"]
@@ -362,7 +410,7 @@ translations = {}
 [documents."skill.external-prompt-injection-defense"]
 source = "locales/en/.mustflow/skills/external-prompt-injection-defense/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.external-skill-intake"]
@@ -463,7 +511,7 @@ translations = {}
 [documents."skill.source-freshness-check"]
 source = "locales/en/.mustflow/skills/source-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.source-anchor-authoring"]
@@ -499,7 +547,7 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 19
+revision = 21
 translations = {}
 
 [documents."skill.security-regression-tests"]
@@ -517,7 +565,25 @@ translations = {}
 [documents."skill.skill-authoring"]
 source = "locales/en/.mustflow/skills/skill-authoring/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
+translations = {}
+
+[documents."skill.template-install-surface-sync"]
+source = "locales/en/.mustflow/skills/template-install-surface-sync/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.restricted-handoff-resume"]
+source = "locales/en/.mustflow/skills/restricted-handoff-resume/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.secret-exposure-response"]
+source = "locales/en/.mustflow/skills/secret-exposure-response/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.test-design-guard"]

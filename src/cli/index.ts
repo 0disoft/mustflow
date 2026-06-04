@@ -54,6 +54,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf workspace status --json',
 				'mf workspace verify --changed --plan-only --json',
 				'mf context --json',
+				'mf tech suggest --scope frontend',
 				'mf map --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',

@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 124
+anchor_count: 134
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:63d3641b2ee3265d6019903051cefba613f7f66038b5313ee9da16974c5bf6cb"
+source_fingerprint: "sha256:8890a3e637cf48a37c53fd6ba9de9fb11118391fbee230d0ec1b0c555bc6163c"
 ---
 
 # REPO_MAP.md
@@ -102,9 +102,17 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/command-contract-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/command-intent-mapping-gate/
+
+- `.mustflow/skills/command-intent-mapping-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/command-pattern/
 
 - `.mustflow/skills/command-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/completion-evidence-gate/
+
+- `.mustflow/skills/completion-evidence-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/composition-over-inheritance/
 
@@ -177,6 +185,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/elysia-code-change/
 
 - `.mustflow/skills/elysia-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/evidence-stall-breaker/
+
+- `.mustflow/skills/evidence-stall-breaker/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/external-prompt-injection-defense/
 
@@ -270,6 +282,14 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/project-context-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/provenance-license-gate/
+
+- `.mustflow/skills/provenance-license-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/public-json-contract-change/
+
+- `.mustflow/skills/public-json-contract-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/pure-core-imperative-shell/
 
 - `.mustflow/skills/pure-core-imperative-shell/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -302,9 +322,17 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/requirement-regression-guard/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/restricted-handoff-resume/
+
+- `.mustflow/skills/restricted-handoff-resume/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/result-option/
 
 - `.mustflow/skills/result-option/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/runtime-target-selection/
+
+- `.mustflow/skills/runtime-target-selection/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/rust-code-change/
 
@@ -313,6 +341,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/search-ad-content-authoring/
 
 - `.mustflow/skills/search-ad-content-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/secret-exposure-response/
+
+- `.mustflow/skills/secret-exposure-response/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/security-privacy-review/
 
@@ -346,6 +378,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/structure-discovery-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/structure-first-engineering/
+
+- `.mustflow/skills/structure-first-engineering/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/svelte-code-change/
 
 - `.mustflow/skills/svelte-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -357,6 +393,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/tauri-code-change/
 
 - `.mustflow/skills/tauri-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/template-install-surface-sync/
+
+- `.mustflow/skills/template-install-surface-sync/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/test-design-guard/
 

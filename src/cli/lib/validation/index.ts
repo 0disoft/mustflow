@@ -51,6 +51,10 @@ import {
 	releaseVersioningIsEnabled,
 } from '../../../core/version-sources.js';
 import {
+	normalizeTechnologyPreferencesTable,
+	TECHNOLOGY_CONFIG_RELATIVE_PATH,
+} from '../../../core/technology-preferences.js';
+import {
 	ALLOWED_APPROVAL_ACTIONS,
 	ALLOWED_APPROVAL_GATES,
 	ALLOWED_BUDGET_LIMIT_ACTIONS,
@@ -876,6 +880,17 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 		);
 		validateStringArrayField(productI18n, 'target_locales', '[preferences.product_i18n].target_locales', issues);
 		validateStringArrayField(productI18n, 'do_not_translate', '[preferences.product_i18n].do_not_translate', issues);
+	}
+}
+
+function validateTechnologyConfig(technologyToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	if (!technologyToml) {
+		return;
+	}
+
+	const technology = normalizeTechnologyPreferencesTable(technologyToml, true);
+	for (const issue of technology.issues) {
+		issues.push({ message: `${TECHNOLOGY_CONFIG_RELATIVE_PATH}: ${issue}` });
 	}
 }
 
@@ -2556,6 +2571,7 @@ function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): Ch
 	const parsed = validateToml(projectRoot, issues);
 	validateMustflowConfig(parsed.mustflowToml, issues);
 	validatePreferencesConfig(parsed.preferencesToml, issues);
+	validateTechnologyConfig(parsed.technologyToml, issues);
 	validateVersioningConfig(parsed.versioningToml, issues);
 	validateCommandIntents(parsed.commandsToml, issues);
 	validateSkills(projectRoot, issues);

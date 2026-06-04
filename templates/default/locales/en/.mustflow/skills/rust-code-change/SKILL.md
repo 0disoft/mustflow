@@ -2,7 +2,7 @@
 mustflow_doc: skill.rust-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: rust-code-change
@@ -30,6 +30,11 @@ metadata:
 
 Preserve Rust ownership, error, trait, feature, async runtime, unsafe, and public crate boundaries while making a focused change. A Rust change is successful only when it clarifies ownership and contracts, not when it merely silences the borrow checker.
 
+Rust's compiler feedback can be especially useful for AI-assisted work because it rejects many
+invalid states with concrete errors. That benefit has a real cost: compile time, target-directory
+growth, native toolchain setup, release-profile slowness, and smoke-target selection must be managed
+instead of treated as incidental.
+
 <!-- mustflow-section: use-when -->
 ## Use When
 
@@ -45,10 +50,11 @@ Preserve Rust ownership, error, trait, feature, async runtime, unsafe, and publi
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
-- `Cargo.toml`, workspace manifests, lockfile policy, toolchain config, rustfmt, clippy, feature flags, docs.rs metadata, optional dependencies, and CI hints.
+- `Cargo.toml`, workspace manifests, lockfile policy, toolchain config, rustfmt, clippy, feature flags, docs.rs metadata, optional dependencies, build profiles, target directory or cache policy, and CI hints.
 - Relevant `src/lib.rs`, `src/main.rs`, modules, public re-exports, tests, examples, and docs examples.
 - Existing error handling convention and async runtime.
 - Public crate status, minimum supported Rust version, feature support policy, and downstream compatibility expectations when available.
+- Host and build-loop constraints: OS, shell, native toolchain prerequisites, VM or remote-builder use, release profile, LTO, workspace size, disk budget, and configured smoke or focused-check intents.
 - Configured verification intents.
 
 <!-- mustflow-section: preconditions -->
@@ -57,6 +63,9 @@ Preserve Rust ownership, error, trait, feature, async runtime, unsafe, and publi
 - Determine whether the change affects ownership flow, public API, feature gates, optional dependencies, error contract, async runtime, or unsafe invariants.
 - Read local patterns before adding traits, lifetimes, clones, locks, boxed errors, feature bounds, or `Send + Sync + 'static` constraints.
 - Treat `clone`, `Arc<Mutex<_>>`, explicit lifetimes, `'static`, `Box<dyn Error>`, `unwrap`, feature changes, and `unsafe` as suspicious until their contract impact is justified.
+- Identify the intended edit-check-test loop before choosing a broad build. Treat whole-workspace
+  checks, release builds, fat LTO, cross-compiles, and sanitizer-style runs as expensive evidence
+  unless the command contract declares them as the normal focused path.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -66,25 +75,38 @@ Preserve Rust ownership, error, trait, feature, async runtime, unsafe, and publi
 - Keep feature-gated code and public re-exports synchronized.
 - Touch unsafe code only with explicit invariants preserved in nearby comments.
 - Add feature, async, or unsafe verification notes when configured command intents are missing.
+- Keep build cache cleanup, remote compilation, VM escape hatches, and native toolchain repair as
+  explicit environment or manual maintenance decisions. Do not hide them inside ordinary code fixes
+  or verification.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Read Cargo metadata, features, optional dependencies, docs.rs metadata, toolchain config, public exports, relevant modules, and tests.
+1. Read Cargo metadata, features, optional dependencies, docs.rs metadata, toolchain config, build profiles, public exports, relevant modules, and tests.
 2. Classify the change as ownership, API, error, feature, async, unsafe, dependency, or test-only.
-3. Resolve ownership problems in this order: identify the real owner, shrink borrow scopes, fix function signatures to accept references or slices when ownership is unnecessary, distinguish transfer from sharing, then consider clone or shared ownership only when the semantics require it.
-4. Before adding `clone`, verify it is a cheap handle clone such as `Arc`, `Rc`, or `Bytes`, a small intentional value clone, or a true independent ownership split. Reject large collection clones, loop clones, clone-then-borrow code, and whole-state clones made only to satisfy `spawn`.
-5. Before adding `Arc<Mutex<_>>`, verify multiple owners truly need shared mutable state. Keep critical sections short, document lock order when relevant, and do not hold a lock guard across `.await`, I/O, callbacks, or user code.
-6. Use explicit lifetimes only to describe real borrow relationships. Do not add `'static` or `T: 'static` to public APIs merely because an internal task boundary requires it.
-7. Use concrete error enums for library APIs when callers need to classify failures. Keep `Box<dyn Error>` mostly to binaries, examples, tests, prototypes, or explicitly opaque error policies.
-8. Avoid `unwrap` and vague `expect` in production paths. They are allowed only for tests, examples, startup policy, or invariants already proven by nearby code.
-9. If feature flags change, treat default features, no-default builds, all-features builds, optional dependency implicit features, public re-exports, docs examples, and feature-gated trait impls as compatibility surfaces. Features should be additive.
-10. Treat public re-exports, public dependency types, generic bounds, trait item sets, error enum variants, `#[non_exhaustive]`, and MSRV as public API. Tightened bounds, added required trait methods, removed re-exports, or changed error variants require compatibility review.
-11. Do not mix async runtimes. A Tokio crate should not casually gain `async-std` or runtime-specific APIs in library core. Do not call blocking I/O or CPU-heavy work in async paths without an established boundary such as async-native APIs, a blocking pool, or a dedicated worker.
-12. For async spawning, avoid leaking internal `Send + Sync + 'static` requirements into public APIs. Prefer owned task state, smaller spawn boundaries, local task structures, or caller-owned runtime decisions.
-13. Touch `unsafe` only when a safe design cannot express the required behavior. Every unsafe block needs a nearby `SAFETY:` explanation; every public `unsafe fn` needs `# Safety` docs. Keep unsafe scopes small and wrap them in safe abstractions only when callers have no hidden safety obligations.
-14. For FFI, keep Rust ABI types out of C boundaries. Use explicit ownership, `#[repr(C)]` where required, raw pointer plus length pairs, `CStr`/`CString`, RAII wrappers, null handling, panic boundaries, and documented thread-safety evidence before manual `Send` or `Sync`.
-15. Choose configured verification intents that cover format, lint, build, tests, feature combinations, docs, public API, unsafe, and FFI risk when available.
+3. Model the build loop before broad edits:
+   - identify the smallest package, crate, feature set, smoke target, or test that covers the risk;
+   - check whether `target/` or an equivalent cache may grow enough to affect local disk budget;
+   - treat cleaning build caches as a manual maintenance tradeoff because it can turn later
+     compile checks into cold, expensive builds;
+   - on Windows native targets, distinguish ordinary shells from developer toolchain shells when
+     MSVC, SDK, linker, or environment setup is required;
+   - treat VM builds, remote builders, release profiles, fat LTO, and whole-workspace checks as
+     environment and verification choices that must be reported when they dominate iteration cost.
+4. Resolve ownership problems in this order: identify the real owner, shrink borrow scopes, fix function signatures to accept references or slices when ownership is unnecessary, distinguish transfer from sharing, then consider clone or shared ownership only when the semantics require it.
+5. Before adding `clone`, verify it is a cheap handle clone such as `Arc`, `Rc`, or `Bytes`, a small intentional value clone, or a true independent ownership split. Reject large collection clones, loop clones, clone-then-borrow code, and whole-state clones made only to satisfy `spawn`.
+6. Before adding `Arc<Mutex<_>>`, verify multiple owners truly need shared mutable state. Keep critical sections short, document lock order when relevant, and do not hold a lock guard across `.await`, I/O, callbacks, or user code.
+7. Use explicit lifetimes only to describe real borrow relationships. Do not add `'static` or `T: 'static` to public APIs merely because an internal task boundary requires it.
+8. Use concrete error enums for library APIs when callers need to classify failures. Keep `Box<dyn Error>` mostly to binaries, examples, tests, prototypes, or explicitly opaque error policies.
+9. Avoid `unwrap`, vague `expect`, and unbounded `panic!` in production paths. They are allowed only for tests, examples, startup policy, panic-boundary adapters, or invariants already proven by nearby code.
+10. If feature flags change, treat default features, no-default builds, all-features builds, optional dependency implicit features, public re-exports, docs examples, and feature-gated trait impls as compatibility surfaces. Features should be additive.
+11. Treat public re-exports, public dependency types, generic bounds, trait item sets, error enum variants, `#[non_exhaustive]`, and MSRV as public API. Tightened bounds, added required trait methods, removed re-exports, or changed error variants require compatibility review.
+12. Do not mix async runtimes. A Tokio crate should not casually gain `async-std` or runtime-specific APIs in library core. Do not call blocking I/O or CPU-heavy work in async paths without an established boundary such as async-native APIs, a blocking pool, or a dedicated worker.
+13. For async spawning, avoid leaking internal `Send + Sync + 'static` requirements into public APIs. Prefer owned task state, smaller spawn boundaries, local task structures, or caller-owned runtime decisions.
+14. Touch `unsafe` only when a safe design cannot express the required behavior. Every unsafe block needs a nearby `SAFETY:` explanation; every public `unsafe fn` needs `# Safety` docs. Keep unsafe scopes small and wrap them in safe abstractions only when callers have no hidden safety obligations.
+15. For FFI, keep Rust ABI types out of C boundaries. Use explicit ownership, `#[repr(C)]` where required, raw pointer plus length pairs, `CStr`/`CString`, RAII wrappers, null handling, panic boundaries, and documented thread-safety evidence before manual `Send` or `Sync`.
+16. Calibrate performance claims. Do not claim Rust made a system faster from compile success, empty-database timings, warm-cache microbenchmarks, local-only runs, or debug versus release confusion. Require representative data size, concurrency, target hardware, profile, and measurement method before reporting speed claims.
+17. Choose configured verification intents that cover format, lint, build, tests, feature combinations, docs, public API, unsafe, FFI, smoke targets, package artifact, and release-profile risk when available.
 
 <!-- mustflow-section: rejection-criteria -->
 ## Review Rejection Criteria
@@ -96,10 +118,13 @@ Reject or revise the patch when any of these appear without strong local justifi
 - New public `'static`, `Send`, or `Sync` bounds that exist only because an internal task was spawned.
 - New public `Box<dyn Error>` in a library where callers need typed failures.
 - New production `unwrap` or vague `expect` on I/O, parse, environment, network, FFI, lock, or user input paths.
+- New unbounded `panic!` paths, index assumptions, or unchecked slicing in production paths without a documented invariant or panic boundary.
 - Feature changes that remove APIs, change type meaning, rename features, expose internal optional dependency names, or fail default/no-default/all-features reasoning.
 - Public dependency types, re-exports, trait bounds, trait methods, or error enum variants changed without semver review.
 - Async runtime mixing, blocking I/O in async paths, or runtime ownership moved into a library core without a clear boundary.
 - Unsafe blocks without `SAFETY:` comments, unsafe functions without `# Safety`, undocumented manual `Send`/`Sync`, or FFI that exposes Rust layout types across C ABI.
+- Whole-workspace, release, or fat-LTO verification treated as the normal agent loop when a smaller configured smoke or related target should exist.
+- Performance superiority claims based on non-representative workloads, empty databases, local-only timings, or unspecified build profile.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -108,7 +133,9 @@ Reject or revise the patch when any of these appear without strong local justifi
 - Public API, features, optional dependencies, and error contracts are synchronized.
 - Async runtime ownership is preserved and blocking work is isolated.
 - Unsafe and FFI invariants are preserved or no unsafe code was touched.
-- Missing feature, semver, docs, unsafe, or FFI verification is reported.
+- Build-loop cost, target/cache impact, smoke-target coverage, and native toolchain prerequisites
+  are handled or reported.
+- Missing feature, semver, docs, unsafe, FFI, smoke, package, or performance verification is reported.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -122,16 +149,19 @@ Use configured oneshot command intents when available:
 - `docs_validate_fast`
 - `mustflow_check`
 
-Report whether configured feature-combination, documentation, semver, Miri, sanitizer, and downstream-style verification exists when those surfaces change.
+Report whether configured feature-combination, documentation, semver, Miri, sanitizer, smoke-target,
+package artifact, release-profile, and downstream-style verification exists when those surfaces change.
 
 When configured intents exist for these risks, prefer coverage equivalent to:
 
 - formatting and linting
 - workspace checks and tests
+- focused smoke targets for the changed crate, command, API route, or engine invariant
 - default, no-default, all-features, and relevant feature combinations
 - doctests and docs build for public crates
 - public API or semver compatibility checks for published crates
 - Miri or sanitizer-style checks for unsafe, raw pointer, FFI, or manual concurrency primitives
+- representative benchmark or load checks when performance claims are introduced
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -141,11 +171,18 @@ When configured intents exist for these risks, prefer coverage equivalent to:
 - If public API compatibility cannot be verified, report the exact exported symbols, trait bounds, feature gates, or errors at risk.
 - If async runtime or blocking boundaries are unclear, stop that part and inspect the runtime ownership before editing further.
 - If unsafe invariants are unclear, stop that part and request or inspect stronger evidence.
+- If the build loop is too expensive, reduce the verification scope to the configured related or
+  smoke intent when available, or report the missing command contract instead of running broad raw
+  builds.
+- If host toolchain setup is missing, report the prerequisite rather than running global installer,
+  repair, or shell-environment commands.
+- If performance claims lack representative evidence, downgrade or remove the claim.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
 
 - Boundary checked
+- Build-loop, cache, smoke target, and toolchain notes
 - Ownership, feature, async, or unsafe impact
 - Public API or error impact
 - Files changed
