@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 134
+anchor_count: 136
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:8890a3e637cf48a37c53fd6ba9de9fb11118391fbee230d0ec1b0c555bc6163c"
+source_fingerprint: "sha256:521712f88e65ef2a7f44ededd464af970b53481024c25c2e0b152821310855ae"
 ---
 
 # REPO_MAP.md
@@ -274,6 +274,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/performance-budget-check/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/postgresql-code-change/
+
+- `.mustflow/skills/postgresql-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/process-execution-safety/
 
 - `.mustflow/skills/process-execution-safety/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -365,6 +369,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/source-freshness-check/
 
 - `.mustflow/skills/source-freshness-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sqlite-code-change/
+
+- `.mustflow/skills/sqlite-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/state-machine-pattern/
 

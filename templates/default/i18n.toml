@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 95
+revision = 99
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -121,6 +121,18 @@ translations = {}
 
 [documents."skill.database-migration-change"]
 source = "locales/en/.mustflow/skills/database-migration-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sqlite-code-change"]
+source = "locales/en/.mustflow/skills/sqlite-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.postgresql-code-change"]
+source = "locales/en/.mustflow/skills/postgresql-code-change/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -457,7 +469,7 @@ translations = {}
 [documents."skill.performance-budget-check"]
 source = "locales/en/.mustflow/skills/performance-budget-check/SKILL.md"
 source_locale = "en"
-revision = 15
+revision = 19
 translations = {}
 
 [documents."skill.pattern-scout"]

@@ -288,6 +288,18 @@ route_type = "primary"
 priority = 82
 applies_to_reasons = ["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"]
 
+[routes."sqlite-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 86
+applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "test_change", "docs_change", "security_change", "performance_change"]
+
+[routes."postgresql-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 86
+applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
+
 [routes."dependency-upgrade-review"]
 category = "data_external"
 route_type = "primary"
@@ -352,7 +364,7 @@ applies_to_reasons = ["formatting_change"]
 category = "general_code"
 route_type = "adjunct"
 priority = 70
-applies_to_reasons = ["performance_change"]
+applies_to_reasons = ["performance_change", "code_change", "data_change", "ui_change", "behavior_change"]
 
 [routes."vertical-slice-tdd"]
 category = "tests"

@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.30.0"
+version = "2.31.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -55,6 +55,8 @@ creates = [
   ".mustflow/skills/date-number-audit/SKILL.md",
   ".mustflow/skills/database-change-safety/SKILL.md",
   ".mustflow/skills/database-migration-change/SKILL.md",
+  ".mustflow/skills/sqlite-code-change/SKILL.md",
+  ".mustflow/skills/postgresql-code-change/SKILL.md",
   ".mustflow/skills/dependency-injection/SKILL.md",
   ".mustflow/skills/dependency-reality-check/SKILL.md",
   ".mustflow/skills/dependency-upgrade-review/SKILL.md",
@@ -173,6 +175,8 @@ minimal = [
   "date-number-audit",
   "database-change-safety",
   "database-migration-change",
+  "sqlite-code-change",
+  "postgresql-code-change",
   "dependency-reality-check",
   "dependency-upgrade-review",
   "version-freshness-check",
@@ -239,6 +243,8 @@ patterns = [
   "date-number-audit",
   "database-change-safety",
   "database-migration-change",
+  "sqlite-code-change",
+  "postgresql-code-change",
   "dependency-injection",
   "dependency-reality-check",
   "dependency-upgrade-review",
@@ -316,6 +322,8 @@ oss = [
   "date-number-audit",
   "database-change-safety",
   "database-migration-change",
+  "sqlite-code-change",
+  "postgresql-code-change",
   "dependency-injection",
   "dependency-reality-check",
   "dependency-upgrade-review",
@@ -405,6 +413,8 @@ team = [
   "date-number-audit",
   "database-change-safety",
   "database-migration-change",
+  "sqlite-code-change",
+  "postgresql-code-change",
   "dependency-injection",
   "dependency-reality-check",
   "dependency-upgrade-review",
@@ -480,6 +490,8 @@ product = [
   "date-number-audit",
   "database-change-safety",
   "database-migration-change",
+  "sqlite-code-change",
+  "postgresql-code-change",
   "dependency-injection",
   "dependency-reality-check",
   "dependency-upgrade-review",
@@ -563,6 +575,8 @@ library = [
   "date-number-audit",
   "database-change-safety",
   "database-migration-change",
+  "sqlite-code-change",
+  "postgresql-code-change",
   "dependency-injection",
   "dependency-reality-check",
   "dependency-upgrade-review",

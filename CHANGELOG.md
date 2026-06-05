@@ -6,9 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.31.0 - 2026-06-05
+
 ### Added
 
 - `mf onboard commands` now suggests review-only command-intent snippets from package.json, Makefile, and justfile without writing files or granting command authority.
+- The `performance-budget-check` skill now starts performance investigations from numeric user-visible budgets, wall-time breakdowns, CPU-versus-wait classification, saturation signals, and resource bottleneck classes before choosing fixes.
+- The `performance-budget-check` skill now ranks performance work by user-perceived latency, tail-latency stability, server cost, DB/API round trips, query plans, caches, queues, payloads, media delivery, and shared-resource bottlenecks before micro-optimizing.
+- The `performance-budget-check` skill now covers Big-O constant-factor traps, CPU cache locality, hash and comparator costs, client/session churn, streaming boundaries, bounded async work, and language-specific LLM performance smells.
 - `mf next` now reports the next safe mustflow action from install health, changed-file verification requirements, runnable configured intents, and command-contract gaps.
 - `mf api serve --stdio` now serves read-only API reports as newline-delimited JSON responses without executing configured commands or exposing raw output.
 - `mf workspace status` now reports configured workspace roots and nested repository command-contract readiness without granting parent-to-child command authority, `mf workspace command-catalog --json` aggregates per-root intent availability without exposing raw command strings, and `mf workspace verify --changed --plan-only --json` aggregates per-root verification plans without running commands.
@@ -24,6 +29,7 @@ This file applies to the mustflow repository itself. It is not installed into us
 - The `vertical-slice-tdd` default skill so explicit TDD requests stay in small observable RED/GREEN behavior slices without forcing test-first work on every task.
 - The `source-freshness-check` skill now covers external research intake so outside methodology notes are split into evidence, recommendations, executable instructions, and repository-native adoption targets.
 - The `version-freshness-check` default skill so agents verify external version references against repository policy and approved upstream evidence before writing stale framework, runtime, CI action, Docker, package, or scaffold defaults.
+- The `sqlite-code-change` and `postgresql-code-change` default skills so agents check engine-specific runtime, concurrency, schema, query, migration, backup, and version-freshness risks before changing SQLite or PostgreSQL behavior.
 - The `external-skill-intake` skill now defers web-testing and session-handoff proposals unless they fit configured one-shot verification or restricted ledger boundaries.
 - The `date-number-audit` skill now classifies release version impact from explicit public-contract tags before choosing `major`, `minor`, `patch`, or `no_release`.
 - The `test-design-guard` default skill so agents classify RED evidence, choose evidence-backed test shapes, and avoid speculative or mock-only test coverage.
@@ -78,6 +84,7 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 - Reorganized README and documentation-site entry points around the no-guessing workflow contract, showing change classification, execution-free verification planning, command receipts, navigation-only source anchors, and dashboard non-execution boundaries before deeper reference material.
 - Strengthened the `ui-quality-gate` skill with task-essential control, keyboard and focus, accessible state, responsive text, localization, performance, and bounded visual-verification checks.
+- Strengthened the `performance-budget-check` skill with hot-path cost-multiplier review, N+1 and fan-out detection, allocation and serialization checks, UI rendering boundaries, cache discipline, backpressure, cancellation, and measurement wording.
 
 ### Fixed
 
