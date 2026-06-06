@@ -84,6 +84,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('api-contract-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('heuristic-candidate-selection'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('command-contract-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('config-env-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
@@ -115,6 +116,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('structure-first-engineering'),
 			`${profileName} should include structure-first-engineering`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('heuristic-candidate-selection'),
+			`${profileName} should include heuristic-candidate-selection`,
 		);
 	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);

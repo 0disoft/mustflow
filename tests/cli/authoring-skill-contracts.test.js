@@ -69,6 +69,40 @@ test('idea triage keeps brainstorming evidence-based and bounded', () => {
 	assert.match(manifest, /"idea-triage"/u);
 });
 
+test('heuristic candidate selection keeps broad scans cheap and bounded', () => {
+	const localSkill = readText('.mustflow/skills/heuristic-candidate-selection/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/heuristic-candidate-selection/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /cheap repository signals/u);
+	assert.match(localSkill, /without reading every full file/u);
+	assert.match(localSkill, /frontmatter, imports, exports, component wrappers/u);
+	assert.match(localSkill, /Calibrate small-file findings by file role/u);
+	assert.match(localSkill, /Limit candidates per folder or package/u);
+	assert.match(localSkill, /small random or representative sample/u);
+	assert.match(localSkill, /skipped_healthy/u);
+	assert.match(localSkill, /needs_source/u);
+	assert.match(localSkill, /Do not fill unknown source material/u);
+	assert.match(localSkill, /Compare the post-change state/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/heuristic-candidate-selection\/SKILL\.md/u);
+	assert.match(skillIndex, /cheap-signal candidate selection/u);
+	assert.match(routes, /\[routes\."heuristic-candidate-selection"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "docs_change", "test_change", "behavior_change", "performance_change", "ui_change", "data_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/heuristic-candidate-selection\/SKILL\.md"/u);
+	assert.match(manifest, /"heuristic-candidate-selection"/u);
+	assert.match(i18n, /\[documents\."skill\.heuristic-candidate-selection"\]/u);
+});
+
 test('github contribution quality gate keeps maintainer-facing GitHub posts evidence-based', () => {
 	const localSkill = readText('.mustflow/skills/github-contribution-quality-gate/SKILL.md');
 	const templateSkill = readText(
@@ -524,6 +558,10 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(securitySkill, /Required security-control declarations should validate meaningful values/u);
 	assert.match(securitySkill, /repository-local hooks, fsmonitor helpers, credential helpers/u);
 	assert.match(securitySkill, /scanner output as evidence/u);
+	assert.match(securitySkill, /domain-aware encoder/u);
+	assert.match(securitySkill, /single-occurrence string replacement/u);
+	assert.match(securitySkill, /encodeURI` versus `encodeURIComponent/u);
+	assert.match(securitySkill, /first-occurrence `\.replace`/u);
 	assert.match(securitySkill, /dependency-reality-check/u);
 	assert.match(regressionSkill, /BOLA\/IDOR-style/u);
 	assert.match(regressionSkill, /SSRF-style private network/u);
@@ -538,6 +576,9 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(regressionSkill, /policy-source mismatch/u);
 	assert.match(regressionSkill, /untrusted metadata override/u);
 	assert.match(regressionSkill, /invalid-but-present security control values/u);
+	assert.match(regressionSkill, /single-occurrence string replacement/u);
+	assert.match(regressionSkill, /repeated metacharacters/u);
+	assert.match(regressionSkill, /canonical output or denied side effect/u);
 	assert.match(regressionSkill, /no repository-local shim or Git helper is executed/u);
 	assert.match(regressionSkill, /no Git tree or archive path writes outside/u);
 	assert.match(dependencySkill, /hallucination and lookalike risk/u);

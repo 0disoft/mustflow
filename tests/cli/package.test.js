@@ -11,6 +11,7 @@ const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'defau
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
 const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
+const releaseVersionCheckScript = readFileSync(path.join(projectRoot, 'scripts', 'check-npm-release-version.mjs'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 const templateCreates = readTomlStringArrayBlock(templateManifest, 'creates');
 const templateSkillCreates = templateCreates.filter((relativePath) => relativePath.startsWith('.mustflow/skills/'));
@@ -37,7 +38,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.31.0');
+	assert.equal(packageJson.version, '2.32.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -111,6 +112,14 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /network = true/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
 	assert.match(sourceCommandContract, /MUSTFLOW_NPM_REGISTRY_URL/u);
+});
+
+test('npm registry release check fully encodes package lookup paths', () => {
+	assert.match(releaseVersionCheckScript, /function encodeRegistryPackagePath\(packageName\)/u);
+	assert.match(releaseVersionCheckScript, /encodeURIComponent\(packageName\)/u);
+	assert.match(releaseVersionCheckScript, /encodedScopedMarker = '%40'/u);
+	assert.doesNotMatch(releaseVersionCheckScript, /packageJson\.name\.replace\(/u);
+	assert.doesNotMatch(releaseVersionCheckScript, /\.replace\(['"]\/['"],\s*['"]%2F['"]\)/u);
 });
 
 test('CLI test runner keeps concurrency configurable', () => {

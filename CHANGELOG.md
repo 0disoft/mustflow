@@ -6,6 +6,20 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.32.0 - 2026-06-06
+
+### Added
+
+- Added the `heuristic-candidate-selection` skill so agents use cheap repository signals, scoring, sampling, and bounded batches before reading or editing broad file sets.
+
+### Changed
+
+- Strengthened security review and regression-test skills for scanner-driven incomplete escaping or encoding fixes.
+
+### Fixed
+
+- Fully encoded npm registry package lookup paths before release availability checks.
+
 ## 2.31.0 - 2026-06-05
 
 ### Added

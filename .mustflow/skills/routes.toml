@@ -132,6 +132,12 @@ route_type = "primary"
 priority = 20
 applies_to_reasons = ["unknown_change", "code_change"]
 
+[routes."heuristic-candidate-selection"]
+category = "general_code"
+route_type = "primary"
+priority = 55
+applies_to_reasons = ["unknown_change", "code_change", "docs_change", "test_change", "behavior_change", "performance_change", "ui_change", "data_change"]
+
 [routes."clarifying-question-gate"]
 category = "general_code"
 route_type = "adjunct"

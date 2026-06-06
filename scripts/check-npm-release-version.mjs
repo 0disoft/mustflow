@@ -24,8 +24,16 @@ if (typeof packageJson.version !== 'string' || packageJson.version.length === 0)
 	process.exit(2);
 }
 
+function encodeRegistryPackagePath(packageName) {
+	const encoded = encodeURIComponent(packageName);
+	const encodedScopedMarker = '%40';
+	return packageName.startsWith('@') && encoded.startsWith(encodedScopedMarker)
+		? `@${encoded.slice(encodedScopedMarker.length)}`
+		: encoded;
+}
+
 const registryUrl = new URL(process.env.MUSTFLOW_NPM_REGISTRY_URL || 'https://registry.npmjs.org/');
-const packagePath = packageJson.name.startsWith('@') ? packageJson.name.replace('/', '%2F') : encodeURIComponent(packageJson.name);
+const packagePath = encodeRegistryPackagePath(packageJson.name);
 const metadataUrl = new URL(packagePath, registryUrl);
 
 function readRegistryMetadata() {

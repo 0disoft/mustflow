@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 136
+anchor_count: 137
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:521712f88e65ef2a7f44ededd464af970b53481024c25c2e0b152821310855ae"
+source_fingerprint: "sha256:902cb8f68173977a4e6c2a44d7854841eabb96ddb17281a9a7fca3e94bcfecad"
 ---
 
 # REPO_MAP.md
@@ -221,6 +221,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/go-code-change/
 
 - `.mustflow/skills/go-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/heuristic-candidate-selection/
+
+- `.mustflow/skills/heuristic-candidate-selection/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/hono-code-change/
 

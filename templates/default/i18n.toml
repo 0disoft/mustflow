@@ -185,6 +185,12 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.heuristic-candidate-selection"]
+source = "locales/en/.mustflow/skills/heuristic-candidate-selection/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
@@ -559,13 +565,13 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 21
+revision = 22
 translations = {}
 
 [documents."skill.security-regression-tests"]
 source = "locales/en/.mustflow/skills/security-regression-tests/SKILL.md"
 source_locale = "en"
-revision = 11
+revision = 12
 translations = {}
 
 [documents."skill.search-ad-content-authoring"]

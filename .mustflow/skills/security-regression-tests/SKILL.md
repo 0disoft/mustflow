@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-regression-tests
 locale: en
 canonical: true
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: procedure
 name: security-regression-tests
@@ -63,6 +63,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 - Any project context or public contract that defines privacy, authorization, upload, callback, payment, or tenant rules.
 - The executable, shell, filesystem, package, or workflow boundary that should reject repository-controlled input.
 - Static-analysis rule identifier, flagged location, source-to-sink path, and the intended defensive outcome after the fix.
+- Escaping or encoding domain, dangerous metacharacters, repeated occurrences, existing encoded or reserved characters, and expected canonical output when the finding involves sanitization.
 - Existing fuzzing or property-based testing libraries, package metadata, lockfiles, and test-runner conventions when generated-input tests are added.
 
 <!-- mustflow-section: preconditions -->
@@ -111,7 +112,9 @@ Convert security-sensitive behavior changes into safe negative tests that preser
    - untrusted metadata override where a repository-controlled field, nested duplicate, component, owner, stage, tier, role, or exemption value is treated as trusted ownership or authorization evidence
    - invalid-but-present security control values where `false`, `0`, `{}`, `[]`, empty strings, or type-mismatched placeholders satisfy required policy fields
    - release or package-publishing pipeline code execution before artifact publication
-   - incomplete escaping, quoting, encoding, or sanitization where the safe behavior can be asserted without invoking a real shell or network target
+   - incomplete escaping, quoting, encoding, sanitization, or single-occurrence string replacement where the safe behavior can be asserted without invoking a real shell or network target
+     - Include repeated metacharacters, mixed safe and unsafe characters, leading or trailing separators, and domain-specific reserved characters in the smallest representative cases.
+     - Prefer asserting the canonical output or denied side effect from the project-owned encoder, URL builder, query binder, or renderer. Use source-pattern guards only when the runtime behavior is difficult to isolate, and do not assert scanner wording, line number, or severity.
    - stack trace or internal error exposure through a user-visible API, report, dashboard, or command output
    - insecure password storage, custom cryptography, weak hash use, insecure randomness, or predictable reset or invite tokens
    - disabled certificate validation, insecure HTTP downgrade, or missing HTTPS enforcement for sensitive traffic

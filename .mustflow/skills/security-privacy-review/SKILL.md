@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 21
+revision: 22
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -167,6 +167,8 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
    - Store processed event identifiers to avoid duplicate effects. Keep provider event payloads, request bodies, and response bodies out of ordinary logs and dead-letter records unless they are redacted and have a retention rule.
 22. For database-as-a-service, storage bucket, or realtime rules, check that server-side policies are default-deny, ownership-scoped, and not left in public read/write development mode.
 23. For input sinks, check parameterized queries, ORM binding, static command maps, output encoding, HTML/Markdown rendering boundaries, unsafe dynamic evaluation, XML/YAML/Markdown parser options, redirect and sort parameters, page-size limits, and framework escape hatches.
+   - For escaping, quoting, encoding, or sanitization alerts, identify the exact output domain first: URL component, URL path segment, HTML, SQL, shell argument, regular expression, Markdown, JSON, XML, YAML, log line, or filename. Prefer a structured, domain-aware encoder, parser, query binder, or URL API over manual string replacement.
+   - If custom escaping is unavoidable, prove that repeated metacharacters, backslashes, separators, quotes, existing encoded sequences, and reserved characters are handled according to that domain. Treat single-occurrence string replacement, non-global regular expressions, partial slash or quote handling, and `encodeURI` versus `encodeURIComponent` confusion as scanner-worthy patterns until reviewed.
 24. For file upload and download, check MIME and content signatures, size limits, storage outside executable web roots, SVG/HTML/PDF rendering rules, image or document metadata, filename controls, Unicode confusion, path traversal, download authorization, and resource limits for resizing, archive extraction, or document conversion.
    - Prefer server-generated asset ids or hash-like storage keys over user filenames in storage paths. Keep original filenames as metadata only.
    - For private files, avoid returning permanent public URLs or raw storage keys. Recheck authorization before issuing a short-lived signed download URL.
@@ -190,6 +192,7 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 31. For agent configuration, MCP/tool setup, prompt files, external instructions, or AI context settings, activate `external-prompt-injection-defense` and check hidden instruction text, suspicious Unicode controls, broad filesystem or shell permissions, network egress, sensitive context inclusion, and over-privileged service tokens.
 32. For filesystem changes, distinguish lexical containment from the real target. Check symlinks, generated state, package contents, and file APIs that may follow links before claiming a path stays inside the repository.
 33. For code-scanning alerts, group findings by root cause and rule. Fix the underlying pattern, not only the exact flagged line, and separate repository-setting alerts such as branch protection or maintainer activity from code changes.
+    - For incomplete escaping or encoding findings, search the same sink class for adjacent ad hoc sanitizer patterns such as first-occurrence `.replace`, non-global replacement, hand-escaped slashes, quotes, backslashes, path separators, or mixed URL encoders. Replace the pattern with a domain-owned transformation and add a regression test or narrow source-pattern guard when the behavior is release-sensitive.
 34. For workflow scanner alerts, check action pinning, `persist-credentials`, job-level permissions, reusable workflow permissions, fork pull-request secret exposure, artifact upload boundaries, and privileged identity timing before treating the warning as cosmetic.
 35. For pinned action references, distinguish tag objects from the commit that implements the tag. Verify pinned SHAs against the action repository so scanner tooling does not report an imposter or non-member commit.
 36. For dependency scanner alerts, separate production dependency manifests from fixtures, examples, generated test repositories, and intentionally vulnerable samples. Narrow the scan scope before treating fixture-only alerts as product vulnerabilities.
