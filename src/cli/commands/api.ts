@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { createInterface } from 'node:readline';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
 import {
@@ -9,6 +8,8 @@ import {
 	isApiReportAction,
 	type ApiReportAction,
 } from './api/actions.js';
+import { runChangedApiReport, runJsonOnlyApiReport } from './api/report-runner.js';
+import { runApiServe } from './api/serve.js';
 import { createRecommendedNextCommands } from './api/workspace-recommendations.js';
 import { listActiveRunLocks, type ActiveRunLockEffect } from '../../core/active-run-locks.js';
 import {
@@ -19,13 +20,7 @@ import {
 import { readUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import {
-	formatCliOptionParseError,
-	hasCliOptionToken,
-	hasParsedCliOption,
-	parseCliOptions,
-	type CliOptionSpec,
-} from '../lib/option-parser.js';
+import { hasCliOptionToken } from '../lib/option-parser.js';
 import { getAgentContext, type AgentContext } from '../lib/agent-context.js';
 import {
 	isRecord,
@@ -50,24 +45,10 @@ const API_LATEST_EVIDENCE_SCHEMA_VERSION = '1';
 const API_DIFF_RISK_SCHEMA_VERSION = '1';
 const API_HEALTH_SCHEMA_VERSION = '1';
 const API_LOCKS_SCHEMA_VERSION = '1';
-const API_SERVE_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 const LOCKS_RELATIVE_PATH = '.mustflow/state/locks';
 const MUSTFLOW_JSON_MAX_BYTES = 1024 * 1024;
-const API_JSON_ONLY_OPTIONS: readonly CliOptionSpec[] = [
-	{ name: '--json', kind: 'boolean' },
-	{ name: '--help', kind: 'boolean', aliases: ['-h'] },
-];
-const API_CHANGED_JSON_OPTIONS: readonly CliOptionSpec[] = [
-	{ name: '--changed', kind: 'boolean' },
-	{ name: '--json', kind: 'boolean' },
-	{ name: '--help', kind: 'boolean', aliases: ['-h'] },
-];
-const API_SERVE_OPTIONS: readonly CliOptionSpec[] = [
-	{ name: '--stdio', kind: 'boolean' },
-	{ name: '--help', kind: 'boolean', aliases: ['-h'] },
-];
 
 interface ApiWorkspaceSummaryCheck {
 	readonly ok: boolean;
@@ -440,51 +421,6 @@ type ApiReportOutput =
 	| ApiDiffRiskOutput
 	| ApiHealthOutput
 	| ApiLocksOutput;
-
-interface ApiServeRequest {
-	readonly id?: string | number | null;
-	readonly action?: unknown;
-	readonly changed?: unknown;
-}
-
-interface ApiServePolicy {
-	readonly mode: 'read_only';
-	readonly executes_commands: false;
-	readonly direct_commands_allowed: false;
-	readonly raw_output_included: false;
-	readonly hidden_reasoning_included: false;
-}
-
-interface ApiServeError {
-	readonly code:
-		| 'invalid_json'
-		| 'invalid_request'
-		| 'unknown_action'
-		| 'action_requires_changed'
-		| 'action_does_not_accept_changed'
-		| 'report_unavailable';
-	readonly message: string;
-}
-
-interface ApiServeResponseBase {
-	readonly schema_version: typeof API_SERVE_SCHEMA_VERSION;
-	readonly command: 'api serve';
-	readonly transport: 'stdio';
-	readonly id: string | number | null;
-	readonly policy: ApiServePolicy;
-}
-
-interface ApiServeSuccessResponse extends ApiServeResponseBase {
-	readonly ok: true;
-	readonly result: ApiReportOutput;
-}
-
-interface ApiServeErrorResponse extends ApiServeResponseBase {
-	readonly ok: false;
-	readonly error: ApiServeError;
-}
-
-type ApiServeResponse = ApiServeSuccessResponse | ApiServeErrorResponse;
 
 export function getApiHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -1525,234 +1461,6 @@ function writeApiReport(action: ApiReportAction, reporter: Reporter): void {
 	reporter.stdout(JSON.stringify(createApiReport(action), null, 2));
 }
 
-function createApiServePolicy(): ApiServePolicy {
-	return {
-		mode: 'read_only',
-		executes_commands: false,
-		direct_commands_allowed: false,
-		raw_output_included: false,
-		hidden_reasoning_included: false,
-	};
-}
-
-function createApiServeError(id: string | number | null, code: ApiServeError['code'], message: string): ApiServeErrorResponse {
-	return {
-		schema_version: API_SERVE_SCHEMA_VERSION,
-		command: 'api serve',
-		transport: 'stdio',
-		id,
-		ok: false,
-		policy: createApiServePolicy(),
-		error: {
-			code,
-			message,
-		},
-	};
-}
-
-function createApiServeSuccess(id: string | number | null, result: ApiReportOutput): ApiServeSuccessResponse {
-	return {
-		schema_version: API_SERVE_SCHEMA_VERSION,
-		command: 'api serve',
-		transport: 'stdio',
-		id,
-		ok: true,
-		policy: createApiServePolicy(),
-		result,
-	};
-}
-
-function readApiServeId(request: unknown): string | number | null {
-	if (!isRecord(request) || !Object.hasOwn(request, 'id')) {
-		return null;
-	}
-
-	const value = request.id;
-	if (typeof value === 'string' || typeof value === 'number' || value === null) {
-		return value;
-	}
-
-	return null;
-}
-
-function parseApiServeRequestLine(line: string): { readonly request: ApiServeRequest | null; readonly error: ApiServeErrorResponse | null } {
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(line);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		return {
-			request: null,
-			error: createApiServeError(null, 'invalid_json', `Invalid JSON request: ${message}`),
-		};
-	}
-
-	const id = readApiServeId(parsed);
-	if (!isRecord(parsed)) {
-		return {
-			request: null,
-			error: createApiServeError(id, 'invalid_request', 'Request must be a JSON object.'),
-		};
-	}
-
-	return {
-		request: {
-			id,
-			action: parsed.action,
-			changed: parsed.changed,
-		},
-		error: null,
-	};
-}
-
-function createApiServeResponse(request: ApiServeRequest): ApiServeResponse {
-	const id = typeof request.id === 'string' || typeof request.id === 'number' || request.id === null ? request.id : null;
-
-	if (typeof request.action !== 'string') {
-		return createApiServeError(id, 'invalid_request', 'Request field "action" must be a string.');
-	}
-
-	if (!isApiReportAction(request.action)) {
-		return createApiServeError(id, 'unknown_action', `Unknown api action: ${request.action}`);
-	}
-
-	const spec = apiReportActionSpec(request.action);
-	if (spec.requiresChanged && request.changed !== true) {
-		return createApiServeError(id, 'action_requires_changed', `${request.action} requires changed: true.`);
-	}
-
-	if (!spec.requiresChanged && request.changed === true) {
-		return createApiServeError(id, 'action_does_not_accept_changed', `${request.action} does not accept changed: true.`);
-	}
-
-	try {
-		return createApiServeSuccess(id, createApiReport(request.action));
-	} catch (error) {
-		return createApiServeError(id, 'report_unavailable', error instanceof Error ? error.message : String(error));
-	}
-}
-
-function writeApiServeResponse(response: ApiServeResponse, reporter: Reporter): void {
-	const line = `${JSON.stringify(response)}\n`;
-	if (reporter.writeStdout) {
-		reporter.writeStdout(line);
-		return;
-	}
-
-	reporter.stdout(line.trimEnd());
-}
-
-async function runApiServe(args: readonly string[], reporter: Reporter, lang: CliLang): Promise<number> {
-	const parsed = parseCliOptions(args, API_SERVE_OPTIONS);
-
-	if (hasParsedCliOption(parsed, '--help')) {
-		reporter.stdout(getApiHelp(lang));
-		return 0;
-	}
-
-	if (parsed.error) {
-		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf api --help', getApiHelp(lang), lang);
-		return 1;
-	}
-
-	if (!hasParsedCliOption(parsed, '--stdio')) {
-		printUsageError(reporter, t(lang, 'api.error.serveRequiresStdio'), 'mf api --help', getApiHelp(lang), lang);
-		return 1;
-	}
-
-	const input = createInterface({
-		input: process.stdin,
-		crlfDelay: Infinity,
-	});
-
-	for await (const rawLine of input) {
-		const line = rawLine.trim();
-		if (line.length === 0) {
-			continue;
-		}
-
-		const parsed = parseApiServeRequestLine(line);
-		if (parsed.error) {
-			writeApiServeResponse(parsed.error, reporter);
-			continue;
-		}
-
-		if (!parsed.request) {
-			writeApiServeResponse(createApiServeError(null, 'invalid_request', 'Request must be a JSON object.'), reporter);
-			continue;
-		}
-
-		writeApiServeResponse(createApiServeResponse(parsed.request), reporter);
-	}
-
-	return 0;
-}
-
-function validateJsonOnlyAction(action: string, args: readonly string[], reporter: Reporter, lang: CliLang): boolean {
-	const parsed = parseCliOptions(args, API_JSON_ONLY_OPTIONS);
-
-	if (hasParsedCliOption(parsed, '--help')) {
-		reporter.stdout(getApiHelp(lang));
-		return false;
-	}
-
-	if (parsed.error) {
-		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf api --help', getApiHelp(lang), lang);
-		return false;
-	}
-
-	if (!hasParsedCliOption(parsed, '--json')) {
-		printUsageError(reporter, t(lang, 'api.error.actionRequiresJson', { action }), 'mf api --help', getApiHelp(lang), lang);
-		return false;
-	}
-
-	return true;
-}
-
-function validateChangedJsonAction(action: string, args: readonly string[], reporter: Reporter, lang: CliLang): boolean {
-	const parsed = parseCliOptions(args, API_CHANGED_JSON_OPTIONS);
-
-	if (hasParsedCliOption(parsed, '--help')) {
-		reporter.stdout(getApiHelp(lang));
-		return false;
-	}
-
-	if (parsed.error) {
-		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf api --help', getApiHelp(lang), lang);
-		return false;
-	}
-
-	if (!hasParsedCliOption(parsed, '--json')) {
-		printUsageError(reporter, t(lang, 'api.error.actionRequiresJson', { action }), 'mf api --help', getApiHelp(lang), lang);
-		return false;
-	}
-
-	if (!hasParsedCliOption(parsed, '--changed')) {
-		printUsageError(reporter, t(lang, 'api.error.actionRequiresChanged', { action }), 'mf api --help', getApiHelp(lang), lang);
-		return false;
-	}
-
-	return true;
-}
-
-function runJsonOnlyApiReport(action: ApiReportAction, args: readonly string[], reporter: Reporter, lang: CliLang): number {
-	if (!validateJsonOnlyAction(action, args, reporter, lang)) {
-		return hasCliOptionToken(args, '--help', ['-h']) ? 0 : 1;
-	}
-
-	writeApiReport(action, reporter);
-	return 0;
-}
-
-function runChangedApiReport(action: ApiReportAction, args: readonly string[], reporter: Reporter, lang: CliLang): number {
-	if (!validateChangedJsonAction(action, args, reporter, lang)) {
-		return hasCliOptionToken(args, '--help', ['-h']) ? 0 : 1;
-	}
-
-	writeApiReport(action, reporter);
-	return 0;
-}
-
 export function runApi(args: string[], reporter: Reporter, lang: CliLang = 'en'): number | Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getApiHelp(lang));
@@ -1772,13 +1480,20 @@ export function runApi(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	}
 
 	if (action === 'serve') {
-		return runApiServe(rest, reporter, lang);
+		return runApiServe(rest, reporter, lang, {
+			createReport: createApiReport,
+			getHelp: getApiHelp,
+		});
 	}
 
 	if (isApiReportAction(action)) {
+		const reportRuntime = {
+			getHelp: getApiHelp,
+			writeReport: writeApiReport,
+		};
 		return apiReportActionSpec(action).requiresChanged
-			? runChangedApiReport(action, rest, reporter, lang)
-			: runJsonOnlyApiReport(action, rest, reporter, lang);
+			? runChangedApiReport(action, rest, reporter, lang, reportRuntime)
+			: runJsonOnlyApiReport(action, rest, reporter, lang, reportRuntime);
 	}
 
 	printUsageError(reporter, t(lang, 'api.error.unknownAction', { action }), 'mf api --help', getApiHelp(lang), lang);
