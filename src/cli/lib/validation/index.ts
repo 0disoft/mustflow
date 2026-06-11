@@ -133,7 +133,6 @@ import {
 	SKILL_RESOURCE_TYPE_BY_ROOT,
 	SKILL_ROUTE_CATEGORY_LABELS,
 	SKILL_ROUTES_METADATA_PATH,
-	SKILL_SECTION_MARKER_PATTERN,
 	SUPPORTED_SKILL_SCHEMA_VERSION,
 	TEST_AUTHORING_BOOLEAN_FIELDS,
 	TEST_SELECTION_CONFIG_PATH,
@@ -166,6 +165,7 @@ import {
 import type { CheckIssue, CheckOptions, ParsedConfigFiles, SkillRouteMetadata } from './types.js';
 export type { CheckOptions } from './types.js';
 import { isConfiguredCommandIntent, isDeclaredCommandIntent } from './command-intents.js';
+import { parseSimpleFrontmatter, readFrontmatterList, readSkillSectionIds } from './frontmatter.js';
 import { validateStrictTestSelectionConfig } from './test-selection.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../templates.js';
 
@@ -957,44 +957,6 @@ function validateSkills(projectRoot: string, issues: CheckIssue[]): void {
 	}
 }
 
-function readSkillSectionIds(content: string): Set<string> {
-	return new Set([...content.matchAll(SKILL_SECTION_MARKER_PATTERN)].map((match) => match[1]));
-}
-
-function findFrontmatterEnd(content: string): number {
-	const match = /\n---(?:\r?\n|$)/u.exec(content.slice(3));
-	return match ? 3 + match.index : -1;
-}
-
-function parseSimpleFrontmatter(content: string): Record<string, string> {
-	if (!content.startsWith('---')) {
-		return {};
-	}
-
-	const end = findFrontmatterEnd(content);
-	if (end === -1) {
-		return {};
-	}
-
-	const frontmatter: Record<string, string> = {};
-
-	for (const line of content.slice(3, end).split(/\r?\n/)) {
-		const separatorIndex = line.indexOf(':');
-		if (separatorIndex === -1) {
-			continue;
-		}
-
-		const key = line.slice(0, separatorIndex).trim();
-		const value = line.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, '');
-
-		if (key.length > 0 && value.length > 0) {
-			frontmatter[key] = value;
-		}
-	}
-
-	return frontmatter;
-}
-
 function readStrictMustflowText(
 	projectRoot: string,
 	relativePath: string,
@@ -1011,65 +973,6 @@ function readStrictMustflowText(
 	}
 
 	return undefined;
-}
-
-function readFrontmatterLines(content: string): string[] {
-	if (!content.startsWith('---')) {
-		return [];
-	}
-
-	const end = findFrontmatterEnd(content);
-	if (end === -1) {
-		return [];
-	}
-
-	return content
-		.slice(3, end)
-		.split(/\n/u)
-		.map((line) => line.replace(/\r$/u, ''));
-}
-
-function stripScalarMarkers(value: string): string {
-	return value.trim().replace(/^["'`]|["'`]$/g, '').trim();
-}
-
-function readFrontmatterList(content: string, key: string): string[] {
-	const lines = readFrontmatterLines(content);
-	const values: string[] = [];
-	let keyIndent: number | undefined;
-
-	for (const line of lines) {
-		const keyMatch = line.match(new RegExp(`^(\\s*)${key}:\\s*$`, 'u'));
-
-		if (keyIndent === undefined) {
-			if (keyMatch) {
-				keyIndent = keyMatch[1].length;
-			}
-
-			continue;
-		}
-
-		if (line.trim().length === 0) {
-			continue;
-		}
-
-		const lineIndent = line.match(/^\s*/u)?.[0].length ?? 0;
-		const itemMatch = line.match(/^\s*-\s+(.+)$/u);
-
-		if (lineIndent <= keyIndent && !itemMatch) {
-			break;
-		}
-
-		if (itemMatch) {
-			const value = stripScalarMarkers(itemMatch[1]);
-
-			if (value.length > 0) {
-				values.push(value);
-			}
-		}
-	}
-
-	return values;
 }
 
 function validateContextDocuments(projectRoot: string, issues: CheckIssue[]): void {
