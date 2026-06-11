@@ -201,13 +201,13 @@ enabled = false
 mode = "report_only"
 ```
 
-`capabilities` घोषित करता है कि इस repository में कौन सी agent work surfaces उपलब्ध हैं। `workflow`, `command_contract`, और `skills` core features हैं। `repo_map`, `preferences`, `local_index`, `work_items`, और `services` state-based extension points हैं। default template local index को optional generated data के रूप में देता है, लेकिन `mf init` index file create नहीं करता। Local work items और service management अभी install नहीं होते।
+`capabilities` घोषित करता है कि इस repository में कौन सी agent work surfaces उपलब्ध हैं। `workflow`, `command_contract`, और `skills` core features हैं। `repo_map`, `preferences`, `local_index`, `work_items`, और `services` state-based extension points हैं। default template local index को optional generated data के रूप में देता है, लेकिन `mf init` index file create नहीं करता। Local work items और service management तब तक inactive रहते हैं जब तक repository bounded lifecycle rules opt into न करे।
 
 `agent_loop.phases` standard agent work loop है: `orient`, `plan`, `act`, `verify`, `report`, और `handoff`। यह machine-checkable contract है, decorative prose नहीं।
 
 `verification` बताता है कि validation commands `.mustflow/config/commands.toml` से आती हैं। `allow_inferred_commands = false` का अर्थ है कि agents `package.json`, `Makefile`, या naming conventions से validation commands infer नहीं कर सकते।
 
-`handoff.enabled = false` का अर्थ है कि default template local work item files create नहीं करता। जो work सुरक्षित रूप से पूरा नहीं हो सकता, उसे final report में hand off करना चाहिए। Optional work item support बाद में separate feature के रूप में enable हो सकता है।
+`handoff.enabled = false` का अर्थ है कि current template local work-item writing inactive रखता है। जो work सुरक्षित रूप से पूरा नहीं हो सकता, उसे final report में hand off करना चाहिए, जब तक repository bounded work-item lifecycle enable न करे।
 
 `mf check` booleans, allowed capability states, standard loop, और validation command path validate करता है।
 
@@ -228,7 +228,7 @@ enabled = [
 ]
 ```
 
-`harness` बताता है कि mustflow full autonomous runtime के बजाय repository-local contracts देता है। `mode = "single_session"` conservative default है। Future optional harness उसी contract को `long_running_optional` के साथ पढ़ सकता है।
+`harness` agent harnesses के लिए default execution shape declare करता है। `mode = "single_session"` conservative default है; future या repository-specific harness modes lifecycle, approval, isolation, और retention rules explicit होने पर long-running coordination opt into कर सकते हैं।
 
 `harness.phases.enabled` वे phases define करता है जिन्हें long-running harness को अलग रखना चाहिए। ये phases हैं, default folders या default subagents नहीं।
 

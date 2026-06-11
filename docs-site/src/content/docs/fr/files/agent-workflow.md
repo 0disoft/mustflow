@@ -21,7 +21,7 @@ Les agents le lisent après `AGENTS.md` pour comprendre l’exécution des comma
 - `Input stability policy`: garde les données volatiles loin du haut des fichiers de lecture obligatoire.
 - `Instruction refresh policy`: définit quand les longues sessions doivent relire les instructions mustflow.
 - `Context compaction policy`: explique les limites et l’ordre d’autorité entre contexte récent dérivé, résumés intermédiaires et longs résumés.
-- `Harness contract boundary`: sépare les contrats du dépôt des environnements d’exécution des agents.
+- `Surfaces d’exécution et de runtime`: explique comment les fichiers de flux de travail locaux peuvent s’étendre vers des surfaces optionnelles de runtime, coordination, éléments de travail, adaptateurs et harness.
 - `Long-running task phases`: définit planification, travail, vérification, jugement et passage de relais.
 - `Verification ratchet`: empêche les agents d’affaiblir les contrôles pour paraître terminés.
 - `Test relevance policy`: garde les tests alignés avec le contrat de comportement actuel.
@@ -126,14 +126,15 @@ Les résumés compactés créés pendant de longues sessions sont une mémoire d
 
 Ne stockez pas de chaînes de raisonnement cachées, de secrets ni de transcriptions complètes de discussion sans limite dans le projet. Les connaissances partagées du projet ne doivent être promues que sous forme de décisions, d’investigations ou de résumés de passage de relais liés aux sources.
 
-## Frontière du contrat d’exécution
+## Surfaces d’exécution et de runtime
 
-mustflow n’est pas un environnement d’exécution autonome pour agents. Il fournit les contrats locaux au dépôt que les cadres d’exécution d’agents peuvent lire.
+mustflow commence par des fichiers de flux de travail locaux au dépôt et des limites d’exécution de commandes. Il peut s’étendre vers des surfaces optionnelles de runtime, de coordination, d’éléments de travail, d’adaptateurs et de harness lorsque ces surfaces sont explicites, bornées et vérifiables.
 
-- Contrat du cerveau: `AGENTS.md`, `agent-workflow.md` et documents de skill.
-- Contrat des mains: `commands.toml`, `mf run` et cycles de vie finis des commandes.
-- Contrat de session: reçus d’exécution bornés, résumés liés aux sources et enregistrements compacts de passage de relais.
-- Contrat de jugement: objectifs initiaux, critères d’acceptation, fichiers modifiés, contrats de commande et reçus.
+- Surface du cerveau: `AGENTS.md`, `agent-workflow.md` et documents de skill.
+- Surface des mains: `commands.toml`, `mf run` et cycles de vie finis des commandes.
+- Surface de session: reçus d’exécution bornés, résumés liés aux sources, enregistrements compacts de passage de relais et futurs éléments de travail.
+- Surface de jugement: objectifs initiaux, critères d’acceptation, fichiers modifiés, contrats de commande et reçus.
+- Surface runtime: workers, personas, flottes, processus de service et boucles autonomes exigent des règles déclarées de cycle de vie, rétention, isolation, approbation et vérification.
 
 ## Phases des tâches longue durée
 

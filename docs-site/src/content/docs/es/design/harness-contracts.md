@@ -1,13 +1,13 @@
 ---
 title: Contratos de ejecución de agentes
-description: Cómo mustflow admite sistemas de ejecución de agentes de larga duración sin convertirse en uno.
+description: Cómo mustflow admite sistemas de ejecución de agentes opcionales de larga duración manteniendo explícitos los límites de ciclo de vida y seguridad.
 ---
 
-mustflow no aloja agentes autónomos de larga duración. Proporciona a los sistemas de ejecución de agentes un contrato local del repositorio que pueden leer y validar.
+mustflow empieza con límites de flujo de trabajo y comandos locales al repositorio. También puede admitir sistemas de ejecución opcionales de larga duración cuando ciclo de vida, aprobación, aislamiento, retención y verificación están declarados.
 
 ## Límite
 
-- mustflow no crea procesos de trabajo, perfiles de agente, flotas ni entornos sandbox en la nube.
+- La plantilla predeterminada no crea procesos de trabajo, perfiles de agente, flotas ni entornos sandbox en la nube.
 - mustflow no almacena registros de sesión sin procesar de forma indefinida.
 - mustflow no reemplaza plataformas de agentes alojadas ni agentes de IDE.
 - mustflow define reglas, contratos de comando, puntos de refresco, políticas de compactación, recibos, presupuestos, aprobaciones y límites de traspaso.
@@ -29,6 +29,6 @@ Este encuadre garantiza que mustflow siga siendo neutral respecto a herramientas
 
 Los resúmenes compactados sirven como memoria auxiliar de baja prioridad. Las instrucciones actuales del usuario, los archivos actuales, los contratos de comando y los recibos de ejecución prevalecen sobre ellos. mustflow no almacena cadenas ocultas de razonamiento ni transcripciones completas de chat dentro del proyecto.
 
-## Diferido
+## Candidatos de expansión
 
-`completion-judge`, elementos de trabajo, comandos de escritura de traspaso, comandos de checkpoint y bucles autónomos siguen siendo capacidades futuras opcionales. No deben aparecer en la plantilla predeterminada hasta que los contratos de los que dependen sean estables.
+`completion-judge`, elementos de trabajo, comandos de escritura de traspaso, comandos de checkpoint y bucles autónomos son candidatos de expansión. Pueden moverse a la plantilla o la CLI cuando sus esquemas, contratos de comando, reglas de retención y límites de decisión humana sean estables.

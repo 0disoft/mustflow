@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 137
+anchor_count: 143
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:902cb8f68173977a4e6c2a44d7854841eabb96ddb17281a9a7fca3e94bcfecad"
+source_fingerprint: "sha256:4e65098a70bf6938359f7cf5b15c18c4678883068cc5bcd0eac1e6216c95bce1"
 ---
 
 # REPO_MAP.md
@@ -54,6 +54,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/adapter-boundary/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/ai-generated-code-hardening/
+
+- `.mustflow/skills/ai-generated-code-hardening/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/api-contract-change/
 
 - `.mustflow/skills/api-contract-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -73,6 +77,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/auth-permission-change/
 
 - `.mustflow/skills/auth-permission-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/backend-reliability-change/
+
+- `.mustflow/skills/backend-reliability-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/behavior-preserving-refactor/
 
@@ -214,6 +222,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/flutter-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/frontend-render-stability/
+
+- `.mustflow/skills/frontend-render-stability/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/github-contribution-quality-gate/
 
 - `.mustflow/skills/github-contribution-quality-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -233,6 +245,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/html-code-change/
 
 - `.mustflow/skills/html-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/http-delivery-streaming/
+
+- `.mustflow/skills/http-delivery-streaming/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/idea-triage/
 
@@ -281,6 +297,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/postgresql-code-change/
 
 - `.mustflow/skills/postgresql-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/proactive-risk-surfacing/
+
+- `.mustflow/skills/proactive-risk-surfacing/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/process-execution-safety/
 
@@ -361,6 +381,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/security-regression-tests/
 
 - `.mustflow/skills/security-regression-tests/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/service-boundary-architecture/
+
+- `.mustflow/skills/service-boundary-architecture/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/skill-authoring/
 

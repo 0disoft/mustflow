@@ -1,11 +1,11 @@
 ---
 title: Éléments de travail
-description: Pourquoi les éléments de travail locaux ne sont pas installés par défaut et comment mustflow pourrait les prendre en charge à l’avenir.
+description: Comment les éléments de travail locaux optionnels peuvent étendre mustflow tout en conservant des passages de relais bornés.
 ---
 
-Par défaut, mustflow ne crée pas de dossiers locaux d’issues ou de propositions.
+Les éléments de travail sont une surface optionnelle de mustflow pour capturer des issues différées, des propositions et des points de reprise dans le dépôt.
 
-Les éléments de travail fondés sur des fichiers peuvent être utiles, mais les installer par défaut ferait évoluer mustflow d’un flux de documents pour agents vers un gestionnaire local d’issues. Actuellement, `.mustflow/config/mustflow.toml` déclare seulement `work_items = "disabled"` et `handoff.mode = "report_only"`.
+Le modèle par défaut garde cette surface inactive avec `work_items = "disabled"` et `handoff.mode = "report_only"` jusqu’à ce que le projet choisisse un cycle de vie borné.
 
 ## Valeurs par défaut
 
@@ -20,16 +20,16 @@ mode = "report_only"
 
 Cela signifie que les agents doivent signaler le travail inachevé dans le passage de relais final au lieu de créer de nouveaux fichiers de backlog.
 
-## Pourquoi ils ne sont pas activés par défaut
+## Pourquoi la valeur par défaut est inactive
 
-- L’objectif principal de `mf init` est de mettre en place des fichiers de flux de travail réservés aux LLM.
+- L’installation par défaut doit rester petite jusqu’à ce qu’un projet choisisse un cycle de vie pour les éléments de travail.
 - Les fichiers d’issues locaux peuvent devenir obsolètes et dupliquer des gestionnaires d’issues existants.
 - Les journaux d’échec, chemins internes, noms de clients et fragments de secrets pourraient fuiter dans les documents.
 - Si les agents créent et ferment librement des éléments de travail, la frontière de décision humaine devient floue.
 
-## Orientation optionnelle
+## Orientation
 
-Si cela devient une fonctionnalité optionnelle à l’avenir, `.mustflow/work-items/` est plus clair que `.mustflow/pr/`. Les fichiers locaux représentent du travail proposé et des notes de solution, plutôt que de vraies demandes de fusion.
+Lorsque l’écriture d’éléments de travail est activée, `.mustflow/work-items/` est plus clair que `.mustflow/pr/`. Les fichiers locaux représentent du travail proposé et des notes de solution, plutôt que de vraies demandes de fusion.
 
 ```text
 .mustflow/
@@ -52,7 +52,7 @@ Même lorsque les éléments de travail optionnels sont activés, les permission
 - Les agents ne doivent pas prétendre qu’une vraie demande de fusion existe.
 - Les agents ne doivent pas stocker de secrets, de données client ni de journaux d’échec volumineux dans les éléments de travail.
 
-## Commandes candidates futures
+## Commandes candidates
 
 ```sh
 mf work list
@@ -61,4 +61,4 @@ mf work propose MF-0001
 mf work check
 ```
 
-Ces commandes sont hors du périmètre d’implémentation actuel. mustflow doit stabiliser le flux fondé sur des fichiers, le contrat de commande et le flux de validation avant d’ajouter cette interface optionnelle.
+Ajoutez les commandes d’écriture et de cycle de vie progressivement, avec des schémas bornés, des contrats de commande, de la rédaction et des règles d’approbation humaine avant que les agents puissent créer ou fermer des enregistrements automatiquement.

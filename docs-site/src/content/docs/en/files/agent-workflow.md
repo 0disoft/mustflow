@@ -23,7 +23,7 @@ Agents should consult this document after reading `AGENTS.md` to understand poli
 - `Prompt Cache and Host Context Assembly`: Guides host input assembly with stable, task, and volatile layers without treating cache state as authority.
 - `Instruction Refresh Policy`: Determines the checkpoints at which agents should reread instructions during extended sessions.
 - `Context Compaction Policy`: Outlines the hierarchy and authority of derived recent context, mid-level summaries, and long-term summaries.
-- `Harness Contract Boundary`: Distinguishes repository-local contracts from external agent execution environments.
+- `Harness and Runtime Surfaces`: Explains how repository-local workflow files can grow into optional runtime, coordination, work-item, adapter, and harness surfaces.
 - `Long-running task phases`: Defines plan, work, verify, judge, and handoff.
 - `Verification ratchet`: Prevents agents from weakening checks to look complete.
 - `Test relevance policy`: Keeps tests aligned with the current behavior contract.
@@ -160,14 +160,15 @@ Compacted summaries generated during long sessions are derived representations o
 
 Do not store hidden chain of thought, secrets, or unbounded chat transcripts in the project. Shared project knowledge should be documented as source-linked decisions, investigations, or handoff summaries.
 
-## Harness Contract Boundary
+## Harness and Runtime Surfaces
 
-mustflow is not an autonomous agent runtime. It provides repository-local contracts that agent harnesses can consult.
+mustflow starts from repository-local workflow files and command execution boundaries. It may grow optional runtime, coordination, work-item, adapter, and harness surfaces when those surfaces are explicit, bounded, and reviewable.
 
-- **Brain Contract**: `AGENTS.md`, `agent-workflow.md`, and skill documents define the expected logic and flow.
-- **Hands Contract**: `commands.toml`, `mf run`, and oneshot command lifecycles define safe execution boundaries.
-- **Session Contract**: Bounded run records, source-linked summaries, and compact handoff records provide recovery evidence.
-- **Judge Contract**: Original goals, acceptance criteria, modified files, command contracts, and run records serve as the basis for evaluation.
+- **Brain Surface**: `AGENTS.md`, `agent-workflow.md`, and skill documents define the expected logic and flow.
+- **Hands Surface**: `commands.toml`, `mf run`, and oneshot command lifecycles define safe execution boundaries.
+- **Session Surface**: Bounded run records, source-linked summaries, compact handoff records, and future work-item records provide recovery evidence.
+- **Judge Surface**: Original goals, acceptance criteria, modified files, command contracts, and run records serve as the basis for evaluation.
+- **Runtime Surface**: Workers, personas, fleets, service processes, and autonomous loops require declared lifecycle, retention, isolation, approval, and verification rules.
 
 ## Long-Running Task Phases
 

@@ -195,16 +195,75 @@ function sourceAnchorAuthority(): Pick<
 	};
 }
 
-function getSectionHeadings(database: SqlJsDatabase, documentPath: string): string[] {
-	return queryRows(database, 'SELECT heading FROM sections WHERE document_path = ? ORDER BY ordinal', [documentPath]).map((row) =>
-		toSearchString(row.heading),
-	);
+interface DocumentSearchMetadata {
+	readonly sectionHeadings: string[];
+	readonly documentTerms: string[];
 }
 
-function getDocumentTerms(database: SqlJsDatabase, documentPath: string): string[] {
-	return queryRows(database, 'SELECT term FROM document_terms WHERE document_path = ? ORDER BY term', [documentPath]).map((row) =>
-		toSearchString(row.term),
+function createEmptyDocumentSearchMetadata(): DocumentSearchMetadata {
+	return { sectionHeadings: [], documentTerms: [] };
+}
+
+function queryRowsByDocumentPath(
+	database: SqlJsDatabase,
+	sqlPrefix: string,
+	documentPaths: readonly string[],
+): Record<string, SqlValue>[] {
+	const rows: Record<string, SqlValue>[] = [];
+	const chunkSize = 200;
+
+	for (let start = 0; start < documentPaths.length; start += chunkSize) {
+		const chunk = documentPaths.slice(start, start + chunkSize);
+		rows.push(...queryRows(database, `${sqlPrefix} WHERE document_path IN (${sqlPlaceholders(chunk)})`, chunk));
+	}
+
+	return rows;
+}
+
+function readDocumentSearchMetadata(
+	database: SqlJsDatabase,
+	documentPaths: readonly string[],
+): ReadonlyMap<string, DocumentSearchMetadata> {
+	const uniquePaths = [...new Set(documentPaths)].filter((documentPath) => documentPath.length > 0);
+	const metadata = new Map<string, { sectionHeadings: string[]; documentTerms: string[] }>(
+		uniquePaths.map((documentPath) => [documentPath, { sectionHeadings: [], documentTerms: [] }]),
 	);
+
+	if (uniquePaths.length === 0) {
+		return metadata;
+	}
+
+	for (const row of queryRowsByDocumentPath(
+		database,
+		'SELECT document_path, ordinal, heading FROM sections',
+		uniquePaths,
+	).sort((left, right) => {
+		const leftPath = toSearchString(left.document_path);
+		const rightPath = toSearchString(right.document_path);
+		return leftPath.localeCompare(rightPath) || Number(left.ordinal ?? 0) - Number(right.ordinal ?? 0);
+	})) {
+		const entry = metadata.get(toSearchString(row.document_path));
+		if (entry) {
+			entry.sectionHeadings.push(toSearchString(row.heading));
+		}
+	}
+
+	for (const row of queryRowsByDocumentPath(
+		database,
+		'SELECT document_path, term FROM document_terms',
+		uniquePaths,
+	).sort((left, right) => {
+		const leftPath = toSearchString(left.document_path);
+		const rightPath = toSearchString(right.document_path);
+		return leftPath.localeCompare(rightPath) || toSearchString(left.term).localeCompare(toSearchString(right.term));
+	})) {
+		const entry = metadata.get(toSearchString(row.document_path));
+		if (entry) {
+			entry.documentTerms.push(toSearchString(row.term));
+		}
+	}
+
+	return metadata;
 }
 
 function commandEffectFromRow(row: Record<string, SqlValue>): NormalizedCommandEffect {
@@ -595,19 +654,26 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		}
 
 		if (scope === 'workflow' || scope === 'all') {
-			for (const row of queryCandidateRows(
+			const documentRows = queryCandidateRows(
 				database,
 				'SELECT path, type, title, content_snippet FROM documents',
 				'path',
 				indexedMatches.documents,
 				indexedMatches,
-			)) {
+			);
+			const metadataByDocument = readDocumentSearchMetadata(
+				database,
+				documentRows.map((row) => toSearchString(row.path)),
+			);
+
+			for (const row of documentRows) {
 				const pathValue = toSearchString(row.path);
 				const typeValue = toSearchString(row.type);
 				const title = toSearchString(row.title);
 				const contentSnippet = toSearchString(row.content_snippet);
-				const sectionHeadings = getSectionHeadings(database, pathValue);
-				const documentTerms = getDocumentTerms(database, pathValue);
+				const metadata = metadataByDocument.get(pathValue) ?? createEmptyDocumentSearchMetadata();
+				const sectionHeadings = metadata.sectionHeadings;
+				const documentTerms = metadata.documentTerms;
 				const primaryFields = [pathValue, title];
 				const secondaryFields = [typeValue, contentSnippet, ...sectionHeadings, ...documentTerms];
 				const fields = [...primaryFields, ...secondaryFields];

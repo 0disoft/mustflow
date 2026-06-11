@@ -10,7 +10,7 @@ description: mf init이 어떤 파일을 복사하고 충돌을 어떻게 처리
 ## 역할
 
 - 템플릿 식별자와 설명을 선언합니다.
-- 설치 범위가 LLM 전용 파일인지 선언합니다.
+- 에이전트 대상 작업 흐름 표면의 설치 범위를 선언합니다.
 - 복사할 파일 목록을 명시합니다.
 - 기존 파일과 충돌할 때 중단할지, 관리 블록만 병합할지, 백업 후 덮어쓸지 정합니다.
 - 설치 뒤 사람이 확인해야 할 다음 작업을 안내합니다.
@@ -56,13 +56,13 @@ generated_targets = [
 ]
 ```
 
-- `scope`: 이 템플릿이 LLM 에이전트용 작업 흐름만 설치한다는 뜻입니다.
+- `scope`: 이 템플릿이 사용하는 기본 에이전트 대상 설치 표면을 가리킵니다.
 - `copied_targets`: 템플릿에서 그대로 복사할 수 있는 경로입니다.
 - `generated_targets`: 저장소 구조를 읽은 뒤 생성할 수 있는 경로입니다.
 - `forbidden_targets`: 기본 템플릿에 넣으면 안 되는 경로입니다.
 
 기본 템플릿은 `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, `openapi.yaml` 같은 프로젝트 소유 루트 문서나 계약 파일을 만들지 않습니다. `.github/`, 일반 `docs/`, 일반 `skills/`, 소스 코드, 패키지 관리자 설정도 만들지 않습니다.
-`.mustflow/context/**`는 일반 프로젝트 문서가 아니라 LLM 에이전트 작업 맥락이므로 기본 템플릿에 포함될 수 있습니다.
+`.mustflow/context/**`는 일반 프로젝트 문서가 아니라 작업별 에이전트 작업 맥락이므로 기본 템플릿에 포함될 수 있습니다.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml`, `.mustflow/state/**`는 복사물이 아니라 생성물입니다.
 `.mustflow/state/**`에는 `mf run` 실행 기록처럼 사용 중 만들어지는 로컬 상태가 들어갑니다.
 

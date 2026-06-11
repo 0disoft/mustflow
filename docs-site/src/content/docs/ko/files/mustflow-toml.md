@@ -253,13 +253,13 @@ enabled = false
 mode = "report_only"
 ```
 
-`capabilities`는 mustflow가 이 저장소에서 무엇을 제공하는지 선언합니다. `workflow`, `command_contract`, `skills`는 기본 기능이고, `repo_map`, `preferences`, `local_index`, `work_items`, `services`는 상태값으로 켜고 끄는 확장 기능입니다. 기본 템플릿은 로컬 색인을 선택형 생성물로 제공하지만, `mf init` 시점에 색인 파일을 만들지는 않습니다. 작업 항목과 서비스 관리는 아직 설치하지 않습니다.
+`capabilities`는 mustflow가 이 저장소에서 무엇을 제공하는지 선언합니다. `workflow`, `command_contract`, `skills`는 기본 기능이고, `repo_map`, `preferences`, `local_index`, `work_items`, `services`는 상태값으로 켜고 끄는 확장 기능입니다. 기본 템플릿은 로컬 색인을 선택형 생성물로 제공하지만, `mf init` 시점에 색인 파일을 만들지는 않습니다. 작업 항목과 서비스 관리는 저장소가 제한된 생명주기 규칙을 선택하기 전까지 기본 템플릿에서 비활성 상태입니다.
 
 `agent_loop.phases`는 에이전트의 표준 작업 순환입니다. 각 단계는 `orient`, `plan`, `act`, `verify`, `report`, `handoff` 순서를 따릅니다. 이 값은 장식용 설명이 아니라 도구가 검사할 수 있는 계약입니다.
 
 `verification`은 검증의 기준 자료가 `.mustflow/config/commands.toml`임을 밝힙니다. `allow_inferred_commands = false`는 에이전트가 `package.json`, `Makefile`, 관습 이름을 보고 검증 명령을 추측하지 말라는 뜻입니다.
 
-`handoff.enabled = false`는 기본 템플릿이 로컬 작업 항목 파일을 만들지 않는다는 뜻입니다. 안전하게 끝낼 수 없는 작업은 최종 보고로 넘기며, 선택형 작업 항목 기능은 나중에 별도 기능으로 켤 수 있습니다.
+`handoff.enabled = false`는 현재 템플릿이 로컬 작업 항목 쓰기를 비활성 상태로 둔다는 뜻입니다. 안전하게 끝낼 수 없는 작업은 저장소가 제한된 작업 항목 생명주기를 켜지 않는 한 최종 보고로 넘깁니다.
 
 `mf check`는 이 영역의 참/거짓 값, 허용된 상태값, 표준 작업 순환, 검증 명령 경로를 확인합니다.
 
@@ -281,9 +281,9 @@ enabled = [
 ]
 ```
 
-`harness`는 mustflow가 자율 실행 환경이 아니라 저장소 안쪽 계약을 제공한다는 점을
-나타냅니다. `mode = "single_session"`은 보수적인 기본값입니다. 나중에 선택형 장기 실행
-하네스는 같은 계약을 `long_running_optional`로 읽을 수 있습니다.
+`harness`는 에이전트 하네스의 기본 실행 형태를 선언합니다. `mode = "single_session"`은
+보수적인 기본값이며, 향후 또는 저장소별 하네스 모드는 생명주기, 승인, 격리, 보존 규칙이
+명시될 때 더 긴 조정 흐름을 선택할 수 있습니다.
 
 `fresh_context_preferred = true`는 오래된 요약보다 현재 파일을 우선한다는 뜻입니다.
 `fresh_context_mode = "hash_check_before_reread"`는 전문을 다시 넣기 전에 내용 해시로 신선도를 확인할 수 있음을 명시합니다. 이렇게 하면 지침 최신성을 유지하면서도 프롬프트 캐시를 권위로 취급하지 않습니다.

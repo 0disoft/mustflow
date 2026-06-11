@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 19
+revision: 20
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -139,15 +139,23 @@ Do not write turn counters, message counts, or session activity into the reposit
 
 Do not store hidden reasoning, secrets, full chat transcripts, full terminal output, raw event logs, or raw command logs in the project. If a host creates compacted summaries in the future, they must be source-linked and remain lower authority than current files and direct user instructions.
 
-## Harness Contract Boundary
+## Harness and Runtime Surfaces
 
-mustflow is not an autonomous agent runtime. It is a repository-local contract layer for agent harnesses.
+mustflow starts from repository-local workflow files and command execution boundaries, but it may
+grow optional runtime, coordination, work-item, adapter, and harness surfaces. New surfaces must be
+explicit, bounded, and reviewable instead of being smuggled in through prose, generated state, or
+inferred commands.
 
-- Brain contract: `AGENTS.md`, this workflow file, and skill documents define the expected model behavior.
-- Hands contract: `.mustflow/config/commands.toml` and `mf run` define safe command execution.
-- Session contract: run records, bounded checkpoints, and compact handoffs provide evidence for recovery.
+- Brain surface: `AGENTS.md`, this workflow file, and skill documents define the expected model behavior.
+- Hands surface: `.mustflow/config/commands.toml` and `mf run` define safe command execution.
+- Session surface: run records, bounded checkpoints, compact handoffs, and future work-item records
+  provide evidence for recovery.
+- Runtime surface: worker folders, persona systems, fleet orchestration, service processes, and
+  autonomous loops require declared lifecycle, retention, isolation, approval, and verification rules.
 
-Do not create worker folders, persona systems, fleet orchestration, raw event logs, or autonomous loops unless the repository explicitly adds those optional surfaces.
+Do not operate runtime or coordination surfaces from implicit conventions. Add or enable them through
+explicit configuration, command contracts, tests, and documentation when the repository chooses to
+support that capability.
 
 ## Long-Running Task Phases
 

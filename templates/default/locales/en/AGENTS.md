@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 14
+revision: 15
 lifecycle: user-editable
 authority: binding
 ---
@@ -44,7 +44,8 @@ mustflow-managed details are under `.mustflow/`.
 - Do not directly start development servers, watchers, browser interfaces, interactive prompts,
   or background processes.
 - Do not start autonomous loops, worker processes, persona systems, or long-running harness
-  processes unless this repository explicitly configures them.
+  processes unless this repository explicitly configures their lifecycle, safety, and approval
+  boundaries.
 - Follow `[budget]`, `[approval]`, and `[isolation]` in `.mustflow/config/mustflow.toml` when a
   task may run for a long time or affect sensitive state.
 - Use `mf doctor` or `mf doctor --json` for a read-only health check before broad changes.

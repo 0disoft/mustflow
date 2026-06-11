@@ -201,13 +201,13 @@ enabled = false
 mode = "report_only"
 ```
 
-`capabilities` déclare quelles surfaces de travail d’agent sont disponibles dans ce dépôt. `workflow`, `command_contract` et `skills` sont des fonctionnalités de base. `repo_map`, `preferences`, `local_index`, `work_items` et `services` sont des points d’extension fondés sur l’état. Le modèle par défaut fournit l’index local comme donnée générée optionnelle, mais `mf init` ne crée pas le fichier d’index. Les éléments de travail locaux et la gestion de services ne sont pas encore installés.
+`capabilities` déclare quelles surfaces de travail d’agent sont disponibles dans ce dépôt. `workflow`, `command_contract` et `skills` sont des fonctionnalités de base. `repo_map`, `preferences`, `local_index`, `work_items` et `services` sont des points d’extension fondés sur l’état. Le modèle par défaut fournit l’index local comme donnée générée optionnelle, mais `mf init` ne crée pas le fichier d’index. Les éléments de travail locaux et la gestion de services restent inactifs jusqu’à ce que le dépôt adopte des règles de cycle de vie bornées.
 
 `agent_loop.phases` est la boucle standard de travail d’agent: `orient`, `plan`, `act`, `verify`, `report` et `handoff`. C’est un contrat vérifiable par machine, pas une prose décorative.
 
 `verification` indique que les commandes de validation viennent de `.mustflow/config/commands.toml`. `allow_inferred_commands = false` signifie que les agents ne doivent pas déduire les commandes de validation depuis `package.json`, `Makefile` ou des conventions de nommage.
 
-`handoff.enabled = false` signifie que le modèle par défaut ne crée pas de fichiers locaux d’éléments de travail. Le travail qui ne peut pas être terminé en sécurité doit être transmis dans le rapport final. La prise en charge optionnelle des éléments de travail pourra être activée plus tard comme fonctionnalité séparée.
+`handoff.enabled = false` signifie que le modèle actuel garde inactive l’écriture d’éléments de travail locaux. Le travail qui ne peut pas être terminé en sécurité doit être transmis dans le rapport final, sauf si le dépôt active un cycle de vie borné pour les éléments de travail.
 
 `mf check` valide les booléens, les états de capacité autorisés, la boucle standard et le chemin de la commande de validation.
 
@@ -228,7 +228,7 @@ enabled = [
 ]
 ```
 
-`harness` indique que mustflow fournit des contrats locaux au dépôt plutôt qu’un environnement d’exécution autonome complet. `mode = "single_session"` est la valeur par défaut prudente. Un futur cadre d’exécution optionnel pourra lire le même contrat avec `long_running_optional`.
+`harness` déclare la forme d’exécution par défaut pour les cadres d’agents. `mode = "single_session"` est la valeur prudente; des modes futurs ou propres au dépôt peuvent choisir une coordination longue durée lorsque le cycle de vie, l’approbation, l’isolation et la rétention sont déclarés.
 
 `harness.phases.enabled` définit les phases qu’un cadre d’exécution longue durée doit séparer. Ce sont des phases, pas des dossiers par défaut ni des sous-agents par défaut.
 

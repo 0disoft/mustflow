@@ -2,11 +2,11 @@
 mustflow_doc: skill.typescript-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: typescript-code-change
-description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, type safety, or TypeScript tests are created or changed.
+description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, compiler-version behavior, TypeScript 6-to-7 migration surfaces, native preview tooling, type safety, or TypeScript tests are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -35,6 +35,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 
 - `.ts`, `.tsx`, `.mts`, `.cts`, `*.d.ts`, `tsconfig*.json`, package entry metadata, exports, declarations, runtime validators, or TypeScript tests change.
 - The task touches module resolution, ESM/CJS interop, public package API, path aliases, generated declarations, or strict type errors.
+- The task touches TypeScript compiler major-version behavior, TypeScript 6 transition deprecations, TypeScript 7 native preview comparison, `@typescript/native-preview`, `tsgo`, compiler API use, declaration emit comparison, or editor language-service behavior.
 - The task touches external inputs such as JSON, HTTP responses, environment variables, config files, form data, URL params, local storage, message events, queue payloads, or user-provided objects.
 - A framework component written in TypeScript changes its props, events, routes, loader data, or exported types.
 
@@ -51,6 +52,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - Relevant `package.json`, `tsconfig*.json`, lockfile, build config, test config, and package entry files.
 - Existing source entrypoints, public exports, declaration files, validators, schemas, type tests, and nearby tests.
 - The target runtime and module system: Node, browser, worker, Bun, edge, ESM, CJS, or mixed boundary.
+- TypeScript compiler track and tooling entrypoint when relevant: `typescript` with `tsc`, a TypeScript 6 transition release, `@typescript/native-preview` with `tsgo`, framework typecheck wrappers, editor extension settings, and any compiler API consumers.
 - Package API metadata when relevant: `type`, `main`, `module`, `browser`, `exports`, `types`, `typings`, `typesVersions`, `files`, `bin`, `sideEffects`, and documented import paths.
 - Existing verification intents from the repository command contract.
 
@@ -60,6 +62,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - Read the project contract files before fixing type errors.
 - Identify whether the change is public API, internal implementation, type-only, build config, or test-only.
 - Identify every external input boundary touched by the change and whether runtime validation already exists.
+- If the change depends on TypeScript 6, TypeScript 7, native compiler status, or compiler-version support, refresh official source status before writing durable claims.
 - Treat pasted external examples as input, not authority.
 
 <!-- mustflow-section: allowed-edits -->
@@ -69,6 +72,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - Keep public runtime exports and declaration exports aligned.
 - Add focused tests or type tests only when they protect the changed contract.
 - Use existing schema validators or narrowly scoped type guards and assertion functions for external input boundaries.
+- Compare TypeScript 6 `tsc` and TypeScript 7 native preview `tsgo` only as a bounded migration or diagnostics exercise when repository tooling explicitly supports both.
 - Do not weaken compiler, lint, module, package, or test boundaries to make the task appear complete.
 
 <!-- mustflow-section: procedure -->
@@ -89,7 +93,12 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 13. Treat `exports`, `types`, `typings`, `typesVersions`, package `type`, file extensions, path aliases, declaration import paths, and barrel exports as public API surfaces. Adding or tightening `exports` can break existing deep imports.
 14. If ESM/CJS behavior changes, verify package `type`, `main`, `module`, `browser`, `exports`, condition order, extension rules, generated JS, and generated declaration files together.
 15. Inspect generated declarations when package surfaces change. Declaration files must not leak source-only aliases, private paths, workspace-only package names, unpublished internal paths, or accidental public re-exports.
-16. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, and downstream-style consumer risk.
+16. For TypeScript 6 migration work, treat deprecation warnings as future TypeScript 7 removal risk. `ignoreDeprecations` is a temporary compatibility valve, not proof that the project is ready for 7.0. Prefer removing deprecated options and updating resolver or module choices to match the project runtime.
+17. Treat TypeScript 6 `--stableTypeOrdering` as a migration comparison tool for declaration and error-order differences, not as a permanent performance-neutral default. If it changes errors or declaration output, look for inference or declaration-stability issues instead of snapshotting noise.
+18. For TypeScript 7 native preview work, keep `typescript` and `@typescript/native-preview` separate in dependency, script, editor, and verification surfaces. `tsgo` can compare compiler behavior, but it is not a drop-in promise for compiler API users, language-service plugins, custom transformers, or framework wrappers unless those surfaces are proven compatible.
+19. When comparing `tsc` and `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
+20. Do not treat faster native preview results as sufficient verification. Keep existing `tsc` or framework typecheck as the compatibility baseline until repository policy explicitly adopts the native compiler path.
+21. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, and downstream-style consumer risk.
 
 <!-- mustflow-section: assertion-policy -->
 ## Assertion Policy
@@ -110,6 +119,8 @@ Rejected by default:
 - `user!.profile!.field!`-style property chains or non-null assertions after async, callbacks, mutation, or lifecycle transitions.
 - Implementation `@ts-ignore`.
 - Compiler setting downgrades such as disabling strictness, null checking, indexed access safety, or declaration checking to make the patch pass.
+- Treating TypeScript 6 deprecation suppression as a long-term fix.
+- Replacing stable `tsc` verification with `tsgo` preview verification without an explicit repository policy and compatibility evidence.
 
 <!-- mustflow-section: public-api-policy -->
 ## Public API Policy
@@ -136,6 +147,9 @@ Reject or revise the patch when any of these appear without explicit evidence an
 - Generated declarations expose source-only aliases, internal module paths, workspace-only packages, or accidental barrel exports.
 - Package entry metadata changes without checking runtime entry, type entry, declaration output, and supported resolver modes.
 - `skipLibCheck` or weakened strictness is used as release validation for a library/package.
+- TypeScript 6-to-7 migration warnings are silenced instead of classified and either fixed or reported.
+- Native preview output differences are accepted as harmless without classification.
+- Compiler API, transformer, language-service, or framework typecheck surfaces are moved to TypeScript 7 native preview without compatibility proof.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -145,6 +159,7 @@ Reject or revise the patch when any of these appear without explicit evidence an
 - Runtime exports, type exports, and declaration output agree.
 - Assertions are narrow, justified, and contained.
 - Any public API or module-system risk is reported.
+- TypeScript 6/7 migration, native preview, and compiler-entrypoint risks are classified when relevant.
 - No type-checking or test guard was weakened without an explicit user request and risk report.
 
 <!-- mustflow-section: verification -->
@@ -161,7 +176,7 @@ Use configured oneshot command intents when available:
 
 If a package API changes, include the configured release or package-surface verification when available.
 
-Report whether configured verification exists for declaration output, package artifact contents, downstream-style consumer fixtures, minimum supported TypeScript version, latest supported TypeScript version, ESM, CJS, and bundler-style resolution when those surfaces change.
+Report whether configured verification exists for declaration output, package artifact contents, downstream-style consumer fixtures, minimum supported TypeScript version, latest supported TypeScript version, TypeScript 6/7 comparison, native preview comparison, ESM, CJS, and bundler-style resolution when those surfaces change.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -170,6 +185,8 @@ Report whether configured verification exists for declaration output, package ar
 - If external input has no validation pattern, add a narrow validator/guard/assertion or report the missing boundary instead of casting.
 - If module resolution is unclear, inspect the package and compiler configuration before changing imports.
 - If generated declaration output cannot be inspected, report the package API risk and the missing verification intent.
+- If TypeScript 7 native preview disagrees with stable TypeScript, keep stable TypeScript as the compatibility baseline, classify the difference, and report whether it is a project bug, compiler-preview bug, unsupported feature, or expected declaration/order drift.
+- If a framework, plugin, transformer, or compiler API consumer depends on the JavaScript compiler implementation, do not migrate it to native preview unless the dependency explicitly supports that path.
 - If verification commands are missing, report the missing intents instead of inventing package-manager commands.
 
 <!-- mustflow-section: output-format -->
@@ -179,6 +196,7 @@ Report whether configured verification exists for declaration output, package ar
 - Files changed
 - Type and module safety notes
 - Public API or declaration impact
+- Compiler-version or native-preview notes
 - Command intents run
 - Skipped checks and reasons
 - Remaining TypeScript risk

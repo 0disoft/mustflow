@@ -2,11 +2,11 @@
 mustflow_doc: skill.adapter-boundary
 locale: en
 canonical: true
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: procedure
 name: adapter-boundary
-description: Apply this skill when external systems, protocols, SDKs, databases, managed database features, authentication providers, webhooks, queues, files, object storage, public URL contracts, signed upload or download URLs, CDN transform rules, caches, API response models, framework requests or responses, server actions, route handlers, edge functions, worker handlers, AI models, AI gateway usage policy, AI provider cost and usage data, browser storage, search engines, analytics tools, email platforms, no-code tools, observability backends, trace or request context, or provider data cross into or out of core logic and need ports, adapters, translation, error mapping, timeout, retry, circuit-breaker, bulkhead, idempotency, security, cost attribution, reconciliation, core-state ownership, vendor portability, or observability boundaries.
+description: Apply this skill when external systems, protocols, SDKs, databases, managed database features, authentication providers, webhooks, queues, files, object storage, public URL contracts, signed upload or download URLs, CDN transform rules, HTTP delivery transports, SSE, WebTransport, caches, API response models, framework requests or responses, server actions, route handlers, edge functions, worker handlers, AI models, AI gateway usage policy, AI provider cost and usage data, browser storage, search engines, analytics tools, email platforms, no-code tools, observability backends, trace or request context, or provider data cross into or out of core logic and need ports, adapters, translation, error mapping, timeout, retry, circuit-breaker, bulkhead, idempotency, security, cost attribution, reconciliation, core-state ownership, vendor portability, or observability boundaries.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -37,11 +37,13 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 ## Use When
 
 - Code receives input from HTTP, CLI, webhooks, message queues, scheduled jobs, browser events, uploaded files, external databases, or external APIs.
+- Code receives or emits streaming protocol data through EventSource, SSE, WebTransport, WebSocket, HTTP streaming responses, browser transport fallbacks, proxy-mediated delivery, or CDN-delivered content variants.
 - Code calls external APIs, payment providers, email or SMS providers, file storage, object storage, databases, caches, search engines, analytics, AI models, queues, or browser storage.
 - Code would let a provider dashboard, SDK object, search engine setting, queue product, email tag, analytics cohort, no-code automation, or hosted storage URL define core business state instead of only processing, storing, indexing, or displaying product-owned state.
 - Code sends logs, metrics, traces, errors, request context, baggage, user context, job metadata, webhook metadata, or telemetry to an observability backend or passes those identifiers across HTTP, queue, cron, worker, or webhook boundaries.
 - Code issues signed upload or download URLs, translates uploaded file metadata, maps storage keys, handles object-storage callbacks, or exposes file download responses.
 - Code exposes file, image, avatar, attachment, export, or share URLs to browsers, emails, mobile apps, crawlers, Open Graph consumers, or API clients.
+- Code maps delivery details such as content coding, stream events, datagram loss, reconnect ids, fallback transports, cache keys, or proxy/CDN behavior into application behavior.
 - Code maps external authentication tokens, provider subjects, social identities, hosted auth metadata, managed database auth functions, or provider permission fields into the internal user, membership, entitlement, or authorization model.
 - Code maps database rows, ORM entities, internal model fields, storage keys, or provider payloads into public, mobile, admin, integration, or internal web API responses.
 - Provider SDK types, framework request or response objects, database rows, external event objects, raw model responses, or provider error types are visible in domain, application, service, or use-case code.
@@ -72,6 +74,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 - Provider-specific risk: write effects, duplicate delivery, unknown statuses, money, time, identifiers, secrets, personal data, files, untrusted URLs, rate limits, or provider version changes.
 - Public contract risk: whether provider ids, raw storage URLs, bucket names, object keys, CDN query parameters, image-transform syntax, provider template ids, provider event names, or provider auth metadata would become visible in persisted content, API responses, emails, mobile apps, search indexes, or browser caches.
 - Delivery contract risk: whether a server action, route handler, Web API adapter, edge function, queue consumer, CLI command, cron task, or admin operation should only parse/authenticate/map/call a use case, or whether it is currently becoming the place where business rules and provider calls live.
+- HTTP delivery boundary risk: whether SSE events, WebTransport streams, datagrams, content-coding variants, browser fallback paths, CDN cache keys, or proxy buffering details are leaking into core use cases instead of staying in delivery adapters.
 - Identity boundary risk: how provider subject ids, emails, token claims, user metadata, hosted-auth roles, and session state are normalized into app-owned user, organization, membership, and permission concepts.
 - Dependency and provider replacement risk: whether the SDK or platform is on a survival path, how widely provider names and types would spread, what internal contract would preserve product meaning, and which provider features are acceptable to depend on directly.
 - Core-state ownership risk: which customer, entitlement, consent, file, content, search, job, audit, or event facts must be represented in internal types and storage before or after the provider call.
@@ -90,6 +93,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 - The boundary direction and owner are clear enough to avoid putting provider names or external protocol terms into core logic.
 - If the local layout is unfamiliar, use `pattern-scout` or `codebase-orientation` before introducing new folders or naming conventions.
 - If the change also introduces hidden collaborators or concrete construction, use `dependency-injection` for that part of the work.
+- If the change alters HTTP content coding, streaming flush behavior, SSE, WebTransport, WebSocket fallback, CDN/proxy behavior, or browser delivery compatibility, use `http-delivery-streaming` for the transport contract and keep this skill focused on core-boundary containment.
 - If the integration is optional and disabled by explicit configuration, use `null-object-pattern` only when the neutral behavior is safe and honest; required providers must fail closed.
 
 <!-- mustflow-section: allowed-edits -->
@@ -124,6 +128,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
    - Map use-case results back to the protocol response.
    - Keep pricing, permission decisions, state transitions, inventory policy, subscription policy, and other business rules in the application or domain layer.
    - For server actions, route handlers, Web API adapters, edge functions, CLI commands, cron tasks, and worker handlers, keep framework-specific work to input parsing, trusted context creation, use-case invocation, response mapping, redirects, and cache invalidation. Move pricing, entitlement, payment, persistence orchestration, provider calls, and retry policy behind application commands or ports.
+   - For EventSource, SSE, WebTransport, WebSocket, and HTTP streaming adapters, translate protocol events into internal commands or read-model notifications. Keep event ids, reconnect tokens, datagram sequence numbers, fallback transport names, and proxy quirks out of core domain decisions unless they are explicitly product concepts.
 5. Build outbound adapters as provider translators, not pass-through wrappers.
    - Create provider requests from internal input.
    - Set timeouts and retry policy where appropriate.
@@ -204,6 +209,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 - Ports are named in internal business language and expose only internal input, output, and error types.
 - Provider dashboards, hosted settings, and SDK payloads do not become the only source for core business facts, search policy, queue failure policy, analytics event definitions, email customer state, or file ownership.
 - Public URLs, provider identity claims, image variants, entitlement decisions, and AI policy decisions are represented as product-owned contracts before provider-specific syntax reaches callers.
+- Streaming and delivery transport details such as SSE ids, WebTransport datagrams, content-coding variants, fallback paths, and CDN cache keys are contained at adapter boundaries before core logic receives product-level events or commands.
 - Critical external SDKs are contained behind internal use-case contracts so provider names, SDK types, and dashboard assumptions do not spread through core logic.
 - Inbound adapters validate and translate before calling use cases.
 - Outbound adapters translate internal requests, provider responses, and provider failures before returning.
@@ -247,6 +253,7 @@ Prefer the narrowest configured test or build intent that proves the affected bo
 - Boundary classified
 - Internal port or use-case input selected
 - Provider or protocol details contained
+- HTTP delivery, streaming, and fallback transport details contained when relevant
 - Public URL, identity, and provider-id details contained when relevant
 - Inbound validation and translation handled
 - Outbound request, response, and error mapping handled

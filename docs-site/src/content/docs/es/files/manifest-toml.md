@@ -10,7 +10,7 @@ Este archivo no se copia en los repositorios de usuario. Es la fuente de verdad 
 ## Función
 
 - Declara el identificador y la descripción de la plantilla.
-- Declara si el alcance de instalación se limita a archivos solo para LLM.
+- Declara el alcance de instalación para superficies de flujo de trabajo orientadas a agentes.
 - Enumera los archivos que crea la plantilla.
 - Define si los conflictos con archivos existentes abortan, fusionan un bloque gestionado o crean copia de seguridad y sobrescriben.
 - Enumera las comprobaciones de seguimiento que una persona debe hacer después de la instalación.
@@ -56,13 +56,13 @@ generated_targets = [
 ]
 ```
 
-- `scope`: significa que esta plantilla instala solo archivos de flujo de trabajo para agentes LLM.
+- `scope`: nombra la superficie de instalación predeterminada orientada a agentes que usa esta plantilla.
 - `copied_targets`: rutas copiadas directamente desde la plantilla.
 - `generated_targets`: rutas generadas después de leer la estructura del repositorio.
 - `forbidden_targets`: rutas que no deben agregarse a la plantilla predeterminada.
 
 La plantilla predeterminada no crea documentos raíz ni contratos propiedad del proyecto como `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json` u `openapi.yaml`; tampoco crea `.github/`, `docs/` en la raíz, `skills/` en la raíz, código fuente ni configuración de gestor de paquetes.
-Puede crear `.mustflow/context/**` porque esos archivos son contexto de flujo de trabajo para agentes LLM, no documentación general del proyecto.
+Puede crear `.mustflow/context/**` porque esos archivos son contexto de flujo de trabajo de agentes para tareas específicas, no documentación general del proyecto.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml` y `.mustflow/state/**` se generan; no se copian.
 `.mustflow/state/**` contiene estado local creado durante el uso, como recibos de `mf run`.
 

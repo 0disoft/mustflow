@@ -2,11 +2,11 @@
 mustflow_doc: skill.unocss-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: unocss-code-change
-description: Apply this skill when UnoCSS config, presets, extraction, content pipeline, shortcuts, rules, variants, safelist, blocklist, attributify, transformers, or utility usage are created or changed.
+description: Apply this skill when UnoCSS config, presets, Wind4 migration, theme extension, extraction, content pipeline, shortcuts, rules, variants, safelist, blocklist, attributify, transformers, icons, shadow DOM styling, or utility usage are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -33,7 +33,7 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 <!-- mustflow-section: use-when -->
 ## Use When
 
-- `uno.config.*`, `unocss.config.*`, presets, rules, shortcuts, variants, extractors, content pipeline, safelist, blocklist, transformers, attributify, icon utilities, or UnoCSS utility usage changes.
+- `uno.config.*`, `unocss.config.*`, presets, Wind4 preset migration, theme extension, rules, shortcuts, variants, extractors, content pipeline, safelist, blocklist, transformers, attributify, icon utilities, shadow DOM style injection, or UnoCSS utility usage changes.
 - The task touches Vue, Svelte, Astro, MDX, TSX, backend templates, markdown-generated HTML, runtime class maps, generated CSS visibility, static class maps in `.ts` or `.js`, or utility generation in shared files.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -45,7 +45,7 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
-- `uno.config.*` or `unocss.config.*`, package metadata, bundler integration, CSS entry, content extraction rules, presets, shortcuts, rules, variants, safelist, blocklist, transformers, attributify settings, and tests.
+- `uno.config.*` or `unocss.config.*`, package metadata, bundler integration, CSS entry, content extraction rules, presets, Wind4 or Wind3 compatibility signals, theme extension or `extendTheme`, shortcuts, rules, variants, safelist, blocklist, transformers, attributify settings, icon loader settings, and tests.
 - The file types that actually contain utilities, including static maps or variant helpers in `.ts` or `.js` files.
 - Approved token allowlists for intent, tone, size, color, spacing, theme, state, icon, and variant values.
 - Any runtime source for visual values: CMS, database, backend templates, user input, API data, generated markdown, or external components.
@@ -56,6 +56,7 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 
 - Confirm extraction targets before adding utilities or moving class maps.
 - Identify whether the project uses default pipeline extraction, explicit `content.pipeline.include`, `@unocss-include`, safelist, or custom extractors.
+- Identify whether the project uses the classic preset stack, `presetWind4`, theme compatibility tokens, shortcut layers, variant groups, icons, attributify, directives, or framework-specific plugin order.
 - Identify whether shortcuts, rules, variants, or safelist entries are design-system vocabulary or one-off hiding places.
 - If the config is unclear, do not introduce attributify, custom rules, custom variants, broad shortcuts, or broad safelists. Use plain `class` utilities with complete static strings.
 
@@ -68,33 +69,39 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 - Use blocklist or lint policy to prevent raw pixels, raw colors, non-canonical aliases, and uncontrolled arbitrary utilities when the project supports it.
 - Extend extraction only through narrow pipeline include patterns or a single-file include marker when static class maps live outside default scanned file types.
 - Add safelist entries only for finite candidates that cannot exist statically in source.
+- Add icon loaders, custom rules, and shadow DOM CSS only with explicit package, bundle-size, and injection ownership.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Read UnoCSS config, presets, extraction config, CSS import, framework integration, and nearby utility usage.
-2. Classify the change: extraction, preset, shortcut, rule, variant, safelist, blocklist, attributify, transformer, icon utility, or component usage.
+2. Classify the change: extraction, preset, Wind4 migration, theme extension, shortcut, rule, variant, safelist, blocklist, attributify, transformer, icon utility, shadow DOM styling, or component usage.
 3. Treat every UnoCSS utility as a build-time extraction token. Reject runtime interpolation, concatenation, array joins, broad template fragments, or values built only from API, CMS, database, backend, or user-input strings.
 4. If a missing utility comes from string interpolation, replace it with a finite static map. If that map lives in `.ts` or `.js`, ensure the file is included by a narrow content pipeline pattern or a single-file include marker.
 5. Use safelist only for classes that cannot appear statically in source, such as CMS schema values, external runtime input, backend-rendered fragments, or external components. Do not use safelist to cover a bad component API or forgotten extraction include.
 6. Keep safelists small, finite, named, and bounded by approved token lists and maximum generated count. Treat feature-local safelists over 50 classes, shared safelists over 200 classes, or total safelists over 300 classes as design/extraction failures unless explicitly justified.
 7. Do not generate safelists from whole theme objects, full color palettes, all shades, all spacing values, all breakpoints, or broad property and variant multiplication.
 8. Use token allowlists before writing shortcuts, rules, variants, or safelists. Do not use every theme key as an allowed product value.
-9. Add shortcuts only for repeated product primitives. Prefer static shortcuts when all combinations are known. Dynamic shortcuts must be anchored, token allowlisted, and free of broad catch-all groups.
-10. Do not use shortcuts as one-off wrappers for long class strings in a single screen.
-11. Add custom rules only for CSS primitives or token bridges that existing presets cannot express. Do not pass arbitrary raw values directly into CSS.
-12. Returning raw CSS strings from custom rules requires explicit review because escaping, variants, and generated CSS structure become the rule author's responsibility.
-13. Add custom variants only for stable team selector conventions such as known data states, ARIA states, or approved themes. Variants must be allowlisted and selector-scoped.
-14. Use blocklist policy to catch raw pixel utilities, raw color utilities, non-token arbitrary values, and non-canonical aliases when the project supports it. Pair blocklist entries with actionable messages and lint visibility when available.
-15. If attributify is used in JSX or TSX, require prefixed-only attributes, the JSX transformer, and framework type shims. Prefer a project prefix such as `un-`; do not introduce unprefixed `text`, `color`, `size`, or `border` attributes.
-16. If attributify transformer limitations make an attribute ambiguous, use valued prefixed attributes or plain `class` utilities.
-17. Choose configured verification intents that cover production build, extraction coverage, lint, component tests, generated CSS size risk, and visual risk when available.
+9. For Wind4 migration, verify preset choice, theme token migration, preflight ownership, variant behavior, and compatibility with existing Tailwind-like class vocabulary before changing utilities at call sites.
+10. Use `extendTheme` or equivalent merge hooks when preserving existing theme tokens matters. Do not replace the whole theme object if the local config expects extension semantics.
+11. Add shortcuts only for repeated product primitives. Prefer static shortcuts when all combinations are known. Dynamic shortcuts must be anchored, token allowlisted, and free of broad catch-all groups.
+12. Do not use shortcuts as one-off wrappers for long class strings in a single screen.
+13. Add custom rules only for CSS primitives or token bridges that existing presets cannot express. Do not pass arbitrary raw values directly into CSS.
+14. Returning raw CSS strings from custom rules requires explicit review because escaping, variants, and generated CSS structure become the rule author's responsibility.
+15. Add custom variants only for stable team selector conventions such as known data states, ARIA states, or approved themes. Variants must be allowlisted and selector-scoped.
+16. Use blocklist policy to catch raw pixel utilities, raw color utilities, non-token arbitrary values, and non-canonical aliases when the project supports it. Pair blocklist entries with actionable messages and lint visibility when available.
+17. If attributify is used in JSX or TSX, require prefixed-only attributes, the JSX transformer, and framework type shims. Prefer a project prefix such as `un-`; do not introduce unprefixed `text`, `color`, `size`, or `border` attributes.
+18. If attributify transformer limitations make an attribute ambiguous, use valued prefixed attributes or plain `class` utilities.
+19. For icons, verify package ownership, icon collection size, loader source, currentColor behavior, mask/background mode, and whether `FileSystemIconLoader` or custom loaders introduce file-system or bundling risk.
+20. For Svelte, Vue, Astro, MDX, shadow DOM, web components, or framework-scoped CSS, verify plugin order and style injection order before blaming missing utilities on class names.
+21. Choose configured verification intents that cover production build, extraction coverage, lint, component tests, generated CSS size risk, and visual risk when available.
 
 <!-- mustflow-section: extraction-policy -->
 ## Extraction Policy
 
 - Static class maps are valid only when UnoCSS actually scans the file that contains the full utility strings.
 - Default framework scanning may not include plain `.ts` or `.js` utility files. Check the project config before moving variants into helper files.
+- Extraction can come from file-system scans, `content.pipeline.include`, inline include markers, framework transforms, markdown/MDX pipelines, backend templates, or custom extractors. Name which owner makes each utility visible.
 - Prefer static maps for finite values such as intent, tone, size, density, column count, state, and theme.
 - Use narrow content pipeline includes for repeated helper-map locations.
 - Use a single-file include marker only for isolated files that intentionally hold extractable utilities.
@@ -109,6 +116,7 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 - Custom variants must not create arbitrary selector DSLs.
 - One-off names such as page-specific hero, pricing, landing, or copy wrappers do not belong in global shortcuts.
 - If all combinations are known, prefer generated static shortcut entries over runtime-like regex behavior.
+- Rules, shortcuts, and variants must remain layer-aware. Do not let a shortcut hide whether a style belongs in reset, preflight, tokens, utilities, components, or a local framework style block.
 
 <!-- mustflow-section: safelist-blocklist-policy -->
 ## Safelist And Blocklist Policy
@@ -119,6 +127,14 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 - Blocklist should reject raw pixel, raw hex, raw color-function, and non-token arbitrary utilities when those violate the design system.
 - Blocklist failures should explain the preferred token, scale value, CSS variable, or source file to change.
 - If blocklist only removes generated CSS without a lint or test signal, report the developer-experience risk.
+
+<!-- mustflow-section: preset-icon-shadow-policy -->
+## Preset, Icon, And Shadow DOM Policy
+
+- Wind4 migration must preserve theme tokens, preflight expectations, variant semantics, and generated CSS size before call-site cleanup.
+- Icon utilities are production assets. Verify the chosen icon collections, loader ownership, package footprint, currentColor inheritance, accessibility label path, and whether dynamic icon names require a finite safelist.
+- Shadow DOM and web component styles need an explicit injection owner. Do not assume global utility CSS reaches closed or separately injected roots.
+- Framework plugin order is part of extraction. Svelte, Vue, Astro, MDX, transformers, variant-group handling, and attributify can change whether the token exists before UnoCSS scans it.
 
 <!-- mustflow-section: attributify-policy -->
 ## Attributify Policy
@@ -142,12 +158,15 @@ Reject the change when:
 - Custom variants accept arbitrary selectors or themes.
 - Blocklist removes utilities without an actionable developer-facing signal.
 - JSX/TSX attributify lacks prefix, transformer, or type support.
+- Wind4 migration replaces theme or preflight behavior without compatibility review.
+- Icon utilities accept unbounded runtime icon names.
+- Shadow DOM utility usage has no style injection owner.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Utilities are extractable or intentionally safelisted.
-- Shortcut, variant, and rule additions are bounded and reviewable.
+- Preset, shortcut, variant, rule, icon, and shadow DOM additions are bounded and reviewable.
 - Safelist and blocklist changes are finite, token-aware, and visible to maintainers.
 - Production generated CSS risk is checked or reported.
 - Attributify conflicts are considered when relevant.

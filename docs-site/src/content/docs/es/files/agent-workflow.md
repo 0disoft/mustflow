@@ -21,7 +21,7 @@ Los agentes lo leen después de `AGENTS.md` para entender ejecución de comandos
 - `Política de estabilidad de entrada`: mantiene los datos volátiles lejos de la parte superior de los archivos de lectura obligatoria.
 - `Política de refresco de instrucciones`: define cuándo las sesiones largas deben releer instrucciones de mustflow.
 - `Política de compactación de contexto`: explica límites y orden de autoridad para contexto reciente derivado, resúmenes intermedios y resúmenes largos.
-- `Límite del contrato de ejecución de agentes`: separa los contratos del repositorio de los entornos de ejecución de agentes.
+- `Superficies de ejecución y runtime`: explica cómo los archivos de flujo de trabajo locales al repositorio pueden crecer hacia superficies opcionales de runtime, coordinación, elementos de trabajo, adaptadores y harness.
 - `Fases de tareas largas`: define planificar, trabajar, verificar, evaluar y traspasar.
 - `Trinquete de verificación`: impide que los agentes debiliten comprobaciones para aparentar que terminaron.
 - `Política de relevancia de pruebas`: mantiene las pruebas alineadas con el contrato de comportamiento actual.
@@ -125,14 +125,15 @@ Los resúmenes compactados creados durante sesiones largas son memoria auxiliar 
 
 No almacenes cadenas ocultas de razonamiento, secretos ni transcripciones completas e ilimitadas de chat en el proyecto. El conocimiento compartido del proyecto solo debe promoverse como decisiones, investigaciones o resúmenes de traspaso vinculados a fuentes.
 
-## Límite del contrato de ejecución de agentes
+## Superficies de ejecución y runtime
 
-mustflow no es un entorno autónomo de ejecución de agentes. Proporciona contratos locales del repositorio que los sistemas de ejecución de agentes pueden leer.
+mustflow empieza con archivos de flujo de trabajo locales al repositorio y límites de ejecución de comandos. Puede crecer hacia superficies opcionales de runtime, coordinación, elementos de trabajo, adaptadores y harness cuando esas superficies son explícitas, acotadas y revisables.
 
-- Contrato de cerebro: `AGENTS.md`, `agent-workflow.md` y documentos de skill.
-- Contrato de manos: `commands.toml`, `mf run` y ciclos de vida de comandos finitos.
-- Contrato de sesión: recibos de ejecución acotados, resúmenes vinculados a fuentes y registros compactos de traspaso.
-- Contrato de evaluación: objetivos originales, criterios de aceptación, archivos modificados, contratos de comando y recibos.
+- Superficie de cerebro: `AGENTS.md`, `agent-workflow.md` y documentos de skill.
+- Superficie de manos: `commands.toml`, `mf run` y ciclos de vida de comandos finitos.
+- Superficie de sesión: recibos de ejecución acotados, resúmenes vinculados a fuentes, registros compactos de traspaso y futuros registros de elementos de trabajo.
+- Superficie de evaluación: objetivos originales, criterios de aceptación, archivos modificados, contratos de comando y recibos.
+- Superficie de runtime: workers, perfiles de agente, flotas, procesos de servicio y bucles autónomos requieren reglas declaradas de ciclo de vida, retención, aislamiento, aprobación y verificación.
 
 ## Fases de tareas largas
 

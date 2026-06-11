@@ -158,7 +158,7 @@ function gitDiffLinesByPath(projectRoot: string, relativePaths: readonly string[
 		return new Map();
 	}
 
-	const result = spawnSync('git', ['diff', '--no-ext-diff', '--unified=0', '--', ...uniquePaths], {
+	const result = spawnSync('git', ['diff', 'HEAD', '--no-ext-diff', '--unified=0', '--', ...uniquePaths], {
 		cwd: projectRoot,
 		encoding: 'utf8',
 		env: createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),

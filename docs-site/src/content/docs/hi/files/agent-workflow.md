@@ -21,7 +21,7 @@ Agents इसे `AGENTS.md` के बाद पढ़ते हैं ता�
 - `Input stability policy`: volatile data को required reading files के ऊपर वाले हिस्से से दूर रखता है।
 - `Instruction refresh policy`: लंबी sessions में mustflow instructions कब फिर से पढ़ने हैं, परिभाषित करता है।
 - `Context compaction policy`: derived recent context, mid summaries, और long summaries के boundaries और authority order समझाता है।
-- `Harness contract boundary`: repository contracts को agent runtimes से अलग करता है।
+- `Harness और runtime surfaces`: repository-local workflow files optional runtime, coordination, work-item, adapter, और harness surfaces तक कैसे बढ़ सकते हैं।
 - `Long-running task phases`: plan, work, verify, judge, और handoff परिभाषित करता है।
 - `Verification ratchet`: agents को complete दिखने के लिए checks कमजोर करने से रोकता है।
 - `Test relevance policy`: tests को current behavior contract के साथ aligned रखता है।
@@ -125,14 +125,15 @@ Long sessions के दौरान बनी compacted summaries derived helpe
 
 Project में hidden chain of thought, secrets, या unbounded full chat transcripts store न करें। Shared project knowledge को केवल source-linked decisions, investigations, या handoff summaries के रूप में promote करना चाहिए।
 
-## Harness contract सीमा
+## Harness और runtime surfaces
 
-mustflow autonomous agent runtime नहीं है। यह repository-local contracts देता है जिन्हें agent harnesses पढ़ सकते हैं।
+mustflow repository-local workflow files और command execution boundaries से शुरू होता है। यह optional runtime, coordination, work-item, adapter, और harness surfaces तक बढ़ सकता है, जब वे surfaces explicit, bounded, और reviewable हों।
 
-- Brain contract: `AGENTS.md`, `agent-workflow.md`, और skill documents।
-- Hands contract: `commands.toml`, `mf run`, और finite command lifecycles।
-- Session contract: bounded run receipts, source-linked summaries, और compact handoff records।
-- Judge contract: original goals, acceptance criteria, changed files, command contracts, और receipts।
+- Brain surface: `AGENTS.md`, `agent-workflow.md`, और skill documents।
+- Hands surface: `commands.toml`, `mf run`, और finite command lifecycles।
+- Session surface: bounded run receipts, source-linked summaries, compact handoff records, और future work-item records।
+- Judge surface: original goals, acceptance criteria, changed files, command contracts, और receipts।
+- Runtime surface: workers, personas, fleets, service processes, और autonomous loops को declared lifecycle, retention, isolation, approval, और verification rules चाहिए।
 
 ## लंबे task phases
 

@@ -201,13 +201,13 @@ enabled = false
 mode = "report_only"
 ```
 
-`capabilities` 声明该仓库可用的 agent 工作表面。`workflow`、`command_contract` 和 `skills` 是核心功能。`repo_map`、`preferences`、`local_index`、`work_items` 和 `services` 是基于状态的扩展点。默认模板把本地索引作为可选生成数据提供，但 `mf init` 不会创建索引文件。本地工作项和服务管理尚未安装。
+`capabilities` 声明该仓库可用的 agent 工作表面。`workflow`、`command_contract` 和 `skills` 是核心功能。`repo_map`、`preferences`、`local_index`、`work_items` 和 `services` 是基于状态的扩展点。默认模板把本地索引作为可选生成数据提供，但 `mf init` 不会创建索引文件。本地工作项和服务管理在仓库选择有边界的生命周期规则之前保持 inactive。
 
 `agent_loop.phases` 是标准 agent 工作循环：`orient`、`plan`、`act`、`verify`、`report` 和 `handoff`。它是可由机器检查的合同，不是装饰性文字。
 
 `verification` 表明验证命令来自 `.mustflow/config/commands.toml`。`allow_inferred_commands = false` 表示 agent 不得从 `package.json`、`Makefile` 或命名约定推断验证命令。
 
-`handoff.enabled = false` 表示默认模板不会创建本地工作项文件。无法安全完成的工作应在最终报告中交接。可选工作项支持可以之后作为独立功能启用。
+`handoff.enabled = false` 表示当前模板保持本地工作项写入 inactive。无法安全完成的工作应在最终报告中交接，除非仓库启用了有边界的工作项生命周期。
 
 `mf check` 会验证布尔值、允许的能力状态、标准循环和验证命令路径。
 
@@ -228,7 +228,7 @@ enabled = [
 ]
 ```
 
-`harness` 表示 mustflow 提供仓库本地合同，而不是完整自主运行时。`mode = "single_session"` 是保守默认值。未来的可选 harness 可以使用 `long_running_optional` 读取同一合同。
+`harness` 声明 agent harness 的默认执行形态。`mode = "single_session"` 是保守默认值；未来或仓库特定的 harness 模式可以在生命周期、审批、隔离和保留规则明确时选择长时协调。
 
 `harness.phases.enabled` 定义长时间运行的 harness 应分开的阶段。它们是阶段，不是默认文件夹或默认子 agent。
 

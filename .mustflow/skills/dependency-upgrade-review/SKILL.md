@@ -2,11 +2,11 @@
 mustflow_doc: skill.dependency-upgrade-review
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-upgrade-review
-description: Apply this skill when dependency versions, lockfiles, package manager metadata, security advisory fixes, generated dependency outputs, runtime engine constraints, peer dependency contracts, framework plugins, CI actions, Docker base images, or toolchain versions are upgraded, downgraded, pinned, widened, regenerated, reviewed, or reported.
+description: Apply this skill when dependency versions, lockfiles, package manager metadata, security advisory fixes, generated dependency outputs, runtime engine constraints, Python runtime support, peer dependency contracts, framework plugins, TypeScript compiler tracks, CI actions, Docker base images, or toolchain versions are upgraded, downgraded, pinned, widened, regenerated, reviewed, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -39,6 +39,8 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 - A security advisory, vulnerability scanner, Dependabot, Renovate, package audit, language audit, CI action update, Docker base image update, framework plugin update, formatter/linter/bundler update, ORM update, code generator update, protobuf/OpenAPI generator update, or toolchain update is reviewed or applied.
 - A task claims a dependency change is "only patch", "only devDependency", "safe minor", "security-only", "transitive only", "lockfile only", or "no runtime change".
 - A dependency update touches installation, publish output, generated clients, SDKs, native binaries, browser bundles, serverless or edge runtime, ESM/CJS/module format, Python markers, Go module graph, Cargo features, JVM dependency mediation, .NET target frameworks, Ruby/PHP/Swift lockfiles, Docker images, or CI actions.
+- A Python runtime support floor, CI matrix, container image, `requires-python`, standard-library feature expectation, or security-default expectation changes as part of an upgrade.
+- A TypeScript upgrade touches TypeScript 6 transition deprecations, TypeScript 7 native preview, `@typescript/native-preview`, `tsgo`, compiler API consumers, declaration emit, framework typecheck wrappers, or editor language-service behavior.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -92,11 +94,15 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 9. Review the lockfile as a graph, not a blob. Check direct and transitive replacements, newly introduced packages, removed packages, optional/platform packages, source URLs, integrity or checksum changes, peer resolution, engine requirements, native prebuilds, and postinstall or lifecycle scripts.
 10. Review runtime boundaries that dependency upgrades commonly break: ESM/CJS and package `type`, `exports` and conditional exports, browser/node/edge conditions, Node engine support, Python dependency markers and extras, Go module path changes, Cargo feature unification, native builds, SSR/client split, WebView/native split, and generated client or SDK types.
 11. Treat framework, plugin, code generator, formatter, linter, bundler, ORM, protobuf, OpenAPI, GraphQL, database driver, and test-runner upgrades as behavior changes when their output, config schema, plugin API, CLI flags, or generated code can change.
-12. For new dependencies introduced by the upgrade, invoke the `dependency-reality-check` decision path: license, maintainer risk, provenance, lifecycle scripts, binary downloads, package age, transitive size, supply-chain risk, and replacement path.
-13. For Docker base images and CI actions, review them as dependencies. Check image/action source, version pinning policy, digest use when required, runtime version changes, security patch reason, cache impact, and deployment smoke coverage.
-14. Synchronize dependent surfaces: generated code, snapshots, mocks, fixtures, examples, SDK clients, OpenAPI or GraphQL artifacts, README install guidance, migration docs, changelog, Docker/CI docs, and package publish metadata.
-15. Select verification from the command contract based on risk. Patch and narrow transitive changes can use focused checks when they cover the touched path; major, framework, runtime-engine, generated-output, security-sensitive, Docker, or CI-action updates need broader checks.
-16. Report skipped checks explicitly. If the command contract lacks a dependency graph or package verification intent, do not invent raw package-manager commands; report the missing configured intent.
+12. For Python runtime upgrades, treat `requires-python`, CI matrices, base images, dependency markers, wheels, packaging output, standard-library API availability, and security-default changes as one compatibility contract. Review version-gated standard-library usage and changed defaults before assuming the upgrade is only a dependency resolution change.
+13. For Python upgrades that adopt newer standard-library behavior, call out affected paths such as archive extraction, subprocess handling, async lifecycle, import/resource loading, typing surfaces, data-class shapes, and diagnostic flags. Keep fallbacks or compatibility wording when the repository still supports older interpreters.
+14. For TypeScript upgrades, classify the compiler track explicitly: stable `typescript` and `tsc`, TypeScript 6 transition release, TypeScript 7 native preview via `@typescript/native-preview` and `tsgo`, editor extension preview, or framework-owned wrapper. Do not treat a native preview package as a stable replacement for the `typescript` package unless the repository policy says so.
+15. For TypeScript 6, review deprecations as future TypeScript 7 removals. For TypeScript 7 native preview, review unsupported compiler API, transformer, language-service plugin, watch/incremental, declaration emit, framework wrapper, and generated-output risks before changing dependency declarations or scripts.
+16. For new dependencies introduced by the upgrade, invoke the `dependency-reality-check` decision path: license, maintainer risk, provenance, lifecycle scripts, binary downloads, package age, transitive size, supply-chain risk, and replacement path.
+17. For Docker base images and CI actions, review them as dependencies. Check image/action source, version pinning policy, digest use when required, runtime version changes, security patch reason, cache impact, and deployment smoke coverage.
+18. Synchronize dependent surfaces: generated code, snapshots, mocks, fixtures, examples, SDK clients, OpenAPI or GraphQL artifacts, README install guidance, migration docs, changelog, Docker/CI docs, and package publish metadata.
+19. Select verification from the command contract based on risk. Patch and narrow transitive changes can use focused checks when they cover the touched path; major, framework, runtime-engine, generated-output, security-sensitive, Docker, CI-action, Python runtime, or TypeScript compiler-track updates need broader checks.
+20. Report skipped checks explicitly. If the command contract lacks a dependency graph, package verification, Python runtime matrix, TypeScript declaration, or compiler-comparison intent, do not invent raw package-manager commands; report the missing configured intent.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -105,6 +111,8 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 - The lockfile and declaration files agree.
 - Direct and transitive changes are understood, not hidden behind lockfile volume.
 - Runtime engine, peer dependency, optional/platform package, feature, module-format, generated-output, and publish-surface risks are classified.
+- Python runtime upgrades classify standard-library availability, changed defaults, packaging output, and security-behavior impact.
+- TypeScript compiler-track changes distinguish stable compiler upgrades from native-preview comparison work.
 - Security fixes are narrow unless the user explicitly accepted a broader modernization.
 - Tests and scanners were not weakened to pass the upgrade.
 
@@ -134,6 +142,7 @@ Prefer the narrowest configured intent that proves the actual upgraded dependenc
 - If tests fail after an upgrade, do not delete tests, skip tests, loosen assertions, lower coverage, disable scanners, or widen permissions unless the behavior contract intentionally changed and the report says so.
 - If a security upgrade requires broad modernization, split the minimum patch from the modernization when possible.
 - If generated output changes, regenerate from the official generator path and explain the generated diff. Do not hand-edit generated dependency output.
+- If TypeScript 7 native preview is introduced, keep stable TypeScript verification unless the repository explicitly adopts the preview path and all compiler API, framework wrapper, declaration, and generated-output risks are covered.
 - If configured verification is missing, report the missing command intent instead of inferring a package-manager command.
 
 <!-- mustflow-section: output-format -->
@@ -144,6 +153,8 @@ Prefer the narrowest configured intent that proves the actual upgraded dependenc
 - Direct and transitive graph changes
 - Compatibility classification: patch, minor, major, pre-1.0, security, toolchain, generated-output, Docker, or CI action
 - Runtime, peer, engine, module, feature, platform, generated-output, and publish-surface risks
+- Python runtime, standard-library, packaging, and changed-default risks when relevant
+- TypeScript compiler-track and native-preview risks when relevant
 - Security advisory and fixed-range notes when relevant
 - Surfaces synchronized
 - Command intents run

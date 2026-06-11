@@ -2,11 +2,11 @@
 mustflow_doc: skill.performance-budget-check
 locale: en
 canonical: true
-revision: 19
+revision: 20
 lifecycle: mustflow-owned
 authority: procedure
 name: performance-budget-check
-description: Apply this skill when runtime performance, hot paths, user-perceived latency, p95/p99 tail latency, throughput, infrastructure cost, memory, GC pressure, CPU cache locality, allocation churn, bundle size, payload size, media loading, build time, filesystem scanning, process spawning, IPC/RPC/DB/API fan-out, N+1 work, repeated filtering/sorting/parsing/serialization, caching, pagination, queues, virtualization, backpressure, or performance claims are planned, edited, reviewed, or reported.
+description: Apply this skill when runtime performance, hot paths, user-perceived latency, p95/p99 tail latency, throughput, infrastructure cost, memory, GC pressure, CPU cache locality, allocation churn, bundle size, payload size, HTTP delivery, compression, streaming latency, media loading, build time, filesystem scanning, process spawning, IPC/RPC/DB/API fan-out, N+1 work, repeated filtering/sorting/parsing/serialization, caching, pagination, queues, virtualization, backpressure, or performance claims are planned, edited, reviewed, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -27,17 +27,17 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Keep performance work focused on the places where cost multiplies: item count, request count, service fan-out, retry count, bytes transferred, bytes copied, objects allocated, rendered nodes, database round trips, filesystem walks, IPC calls, cache misses, branch misses, lock waits, queue backlog, and connection-pool waits.
+Keep performance work focused on the places where cost multiplies: item count, request count, service fan-out, retry count, bytes transferred, compression CPU, stream flushes, reconnects, bytes copied, objects allocated, rendered nodes, database round trips, filesystem walks, IPC calls, cache misses, branch misses, lock waits, queue backlog, and connection-pool waits.
 
 Prefer removing unnecessary work over making unnecessary work slightly faster. A performance change should preserve semantics, name the hot path, and report whether it is measured, inferred from complexity, or still unverified. Do not treat Big-O labels, "hash map", "indexed query", "cache", "queue", or "autoscaling" as proof that a path is fast enough; constant factors, memory layout, runtime dispatch, allocation, locks, external round trips, and shared resource bottlenecks often dominate.
 
 <!-- mustflow-section: use-when -->
 ## Use When
 
-- A task changes or reports latency, p95 or p99 tail latency, throughput, infrastructure cost, memory use, GC pressure, CPU cache locality, allocation churn, build time, bundle size, payload size, media loading, CLI duration, test scheduling, cache initialization, filesystem scanning, process spawning, or command execution duration.
+- A task changes or reports latency, p95 or p99 tail latency, throughput, infrastructure cost, memory use, GC pressure, CPU cache locality, allocation churn, build time, bundle size, payload size, HTTP delivery, compression, streaming latency, media loading, CLI duration, test scheduling, cache initialization, filesystem scanning, process spawning, or command execution duration.
 - Code introduces or reviews repeated external access such as DB queries, repository calls, HTTP/RPC calls, Redis calls, S3/object storage calls, IPC commands, filesystem `stat` or scan calls, or child processes.
 - Code filters, sorts, groups, joins, parses, serializes, clones, formats, normalizes, validates, allocates objects, builds DTOs, opens clients or sessions, renders UI lists, or computes projections inside loops or render paths.
-- A change adds caching, memoization, precomputation, derived stores, selectors, virtualized lists, batching, queues, concurrency limits, cancellation, backpressure, debounce, throttle, workers, background jobs, CDN or HTTP caching assumptions, payload reduction, or media optimization for performance reasons.
+- A change adds caching, memoization, precomputation, derived stores, selectors, virtualized lists, batching, queues, concurrency limits, cancellation, backpressure, debounce, throttle, workers, background jobs, CDN or HTTP caching assumptions, compression, content coding, streaming, payload reduction, or media optimization for performance reasons.
 - Code uses async work, goroutines, futures, workers, task queues, streams, regexes, date parsing, string construction, exception handling, or logging in a path whose input or traffic can grow.
 - A report claims a path is faster, optimized, efficient, lightweight, responsive, scalable, low-memory, low-overhead, or safe for large input.
 
@@ -72,6 +72,7 @@ Prefer removing unnecessary work over making unnecessary work slightly faster. A
 - If personal data, authorization, tenant isolation, secrets, logs, retention, or audit data is involved, also use `security-privacy-review`.
 - If database schema, query, index, migration, or transaction behavior changes, also use `database-change-safety`, `database-migration-change`, or the matching database engine skill.
 - If UI rendering, layout, accessibility, or user-facing interaction changes, also use `ui-quality-gate`.
+- If HTTP content coding, CDN or proxy delivery, SSE, WebTransport, streaming flush behavior, or browser transport fallback changes, also use `http-delivery-streaming`.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -105,6 +106,7 @@ Prefer removing unnecessary work over making unnecessary work slightly faster. A
 10. Preserve semantics while changing data structures. State whether order, duplicate handling, first versus last winner, tie-breakers, missing records, and stable IDs still match the old behavior.
 11. Bound reads and materialization. Avoid unbounded `SELECT *`, `findAll`, full filesystem scans, full JSON loads, full array materialization, whole response bodies, and API responses without pagination, projection, chunking, or streaming when data can grow.
 12. Reduce payload and media work before tuning rendering internals. Send only needed fields, avoid overfetching, split late or optional data, use HTTP caching or CDN only for cacheable assets or responses, and check image dimensions, formats, lazy loading, and fixed layout dimensions before adding component memoization.
+    - Treat compression and streaming as latency tradeoffs, not free wins. Check compression CPU, content-coding negotiation, dictionary fallback, proxy buffering, buffered stream latency, flush latency, reconnect pressure, and whether p95/p99 improves for the actual client path. Do not report a false compression win when smaller bytes increase CPU, buffering, or tail latency.
 13. Check sorting and top-k work. Do not sort entire collections when only a top subset is needed. Precompute sort keys when comparison logic parses dates, normalizes strings, computes scores, or reads paths.
 14. Check pagination semantics. Offset pagination can become linearly slower and can duplicate or skip items on changing data. Prefer stable keyset or cursor semantics when the product does not require arbitrary page jumps.
 15. Move repeated pure computation out of loops and renders. Normalize queries once, precompute search blobs or numeric timestamps, reuse regexes and formatters, and avoid repeated schema validation after data crosses a trusted boundary.
@@ -143,7 +145,7 @@ Prefer removing unnecessary work over making unnecessary work slightly faster. A
 - The wall-time breakdown, CPU-versus-wait classification, saturation signal, and resource bottleneck class are explicit when evidence exists.
 - Speed, memory, bundle, payload, query-count, render, CPU locality, allocation, lock, pool, queue, or I/O claims are backed by measurement or labeled as complexity-only.
 - N+1 work, hidden quadratic scans, unbounded materialization, repeated serialization, repeated allocation, client/session churn, broad rendering, and unbounded or accidentally sequential async work are removed or reported.
-- Caches, queues, batching, concurrency, workers, streams, CDN or HTTP caching, media optimization, and projections have invalidation, ordering, duplicate, partial-failure, cancellation, backpressure, capacity, stale-data, and memory behavior defined where relevant.
+- Caches, queues, batching, concurrency, workers, streams, compression, CDN or HTTP caching, media optimization, and projections have invalidation, ordering, duplicate, partial-failure, cancellation, backpressure, capacity, stale-data, CPU, and memory behavior defined where relevant.
 - Correctness, security, durability, privacy, and user-visible semantics remain intact or are explicitly reported as tradeoffs.
 
 <!-- mustflow-section: verification -->
@@ -180,7 +182,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Performance evidence: measured, complexity-only, or unverified
 - Semantics preserved: order, duplicates, IDs, consistency, partial failure, cancellation, and stale result handling
 - Optimization applied or recommended
-- Cache, queue, batching, concurrency, projection, UI, payload, media, memory, runtime, lock, pool, stream, retry, timeout, deployment, sharding, and I/O notes where relevant
+- Cache, queue, batching, concurrency, projection, UI, payload, compression, HTTP delivery, media, memory, runtime, lock, pool, stream, retry, timeout, deployment, sharding, and I/O notes where relevant
 - Command intents run
 - Skipped measurements and reasons
 - Remaining performance risk

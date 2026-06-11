@@ -2,7 +2,7 @@
 mustflow_doc: skill.tauri-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: tauri-code-change
@@ -35,8 +35,9 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 <!-- mustflow-section: use-when -->
 ## Use When
 
-- `src-tauri`, `tauri.conf.*`, `Cargo.toml`, `#[tauri::command]`, `invoke`, Tauri JavaScript APIs, plugin config, capabilities, permissions, scopes, fs, dialog, shell, opener, updater, sidecar, mobile manifests, or native permissions change.
+- `src-tauri`, `tauri.conf.*`, `Cargo.toml`, `#[tauri::command]`, `invoke`, Tauri JavaScript APIs, plugin config, capabilities, permissions, scopes, CSP, WebView bootstrap HTML, fs, dialog, shell, opener, updater, sidecar, mobile manifests, or native permissions change.
 - A frontend button, menu, or workflow calls native resources through Tauri.
+- A packaged Tauri app shows a blank or black WebView after release and browser console or built HTML may point to Content Security Policy blocking the frontend bootstrap.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -47,8 +48,8 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
-- Frontend package metadata, Tauri config, Rust manifests, main/lib command modules, command registration, capability and permission files, plugin config, updater config, sidecar config, mobile permissions, and tests.
-- Map of frontend calls to Rust commands or plugin APIs, permission scopes, exact window labels, exact webview labels, remote origins, and actual OS resources.
+- Frontend package metadata, static build output or generated entry HTML, Tauri config, Rust manifests, main/lib command modules, command registration, capability and permission files, plugin config, updater config, sidecar config, mobile permissions, and tests.
+- Map of frontend calls to Rust commands or plugin APIs, permission scopes, exact window labels, exact webview labels, CSP directives, remote origins, WebView custom protocols or IPC origins, and actual OS resources.
 - Permission diff: previous permissions, new permissions, newly reachable windows/webviews, new scopes, and native operations enabled.
 - Configured verification intents.
 
@@ -72,14 +73,15 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Read frontend call sites, Tauri config, Rust command registration, Rust command handlers, plugin config, capabilities, permissions, scopes, updater, sidecar, mobile native permissions, and tests.
+1. Read frontend call sites, built frontend entry HTML when relevant, Tauri config, Rust command registration, Rust command handlers, plugin config, capabilities, permissions, scopes, updater, sidecar, mobile native permissions, and tests.
 2. Build an IPC map: frontend function, command or plugin API, Rust handler, permission, scope, OS resource, and response data.
 3. Classify every native operation by trust boundary: frontend input, Rust validation, plugin permission, capability target, scope, OS resource, and returned data sensitivity.
 4. Do not trust frontend validation for filesystem paths, URLs, shell arguments, updater channels, identifiers, selected dialog paths, or server-provided links.
 5. Apply the capability and permission policy below before adding permissions, scopes, remote origins, default permission sets, or wildcard targets.
-6. Apply the command input policy below before adding or changing `#[tauri::command]` handlers or `invoke` wrappers.
-7. Apply the filesystem, dialog, shell, opener, updater, and sidecar policies below when those plugins or native operations are touched.
-8. Choose configured verification intents that cover Rust, frontend, Tauri build, permission/capability drift, and security-sensitive behavior when available.
+6. Apply the CSP and WebView bootstrap policy below before tightening `script-src`, `connect-src`, `style-src`, `worker-src`, `img-src`, `font-src`, or remote-origin policy.
+7. Apply the command input policy below before adding or changing `#[tauri::command]` handlers or `invoke` wrappers.
+8. Apply the filesystem, dialog, shell, opener, updater, and sidecar policies below when those plugins or native operations are touched.
+9. Choose configured verification intents that cover Rust, frontend, Tauri build, permission/capability drift, CSP behavior, and security-sensitive behavior when available.
 
 ## Capability And Permission Policy
 
@@ -92,6 +94,18 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 - Prefer app-owned paths with feature-specific names and narrow file patterns.
 - Do not rely on capability scope alone. Confirm the Rust command or plugin path actually enforces the intended path, URL, argument, or channel constraint.
 - Remote capabilities are denied by default. If unavoidable, keep them read-only or low-risk and isolated from filesystem, shell, updater, and opener privileges.
+
+## CSP And WebView Bootstrap Policy
+
+- Treat a packaged-app blank or black screen after a CSP change as a possible frontend bootstrap failure before assuming CSS, routing, or rendering logic is broken.
+- Inspect the generated entry HTML, not only source templates. Static frontend builders such as SvelteKit may inject inline bootstrap scripts or module imports after `app.html` or the equivalent source template is processed.
+- If the built entry HTML contains an inline bootstrap script, `script-src 'self'` can block the app before JavaScript starts. Prefer a supported nonce, hash, or externalized bootstrap design when practical.
+- For urgent hotfixes, `script-src 'self' 'unsafe-inline'` may be an explicit compatibility tradeoff only when the app cannot boot otherwise, the risk is recorded, and the policy does not also allow remote script origins, `unsafe-eval`, or wildcard script sources.
+- Keep development-server CSP and packaged-production CSP separate. Do not weaken production policy only to satisfy a local dev server, HMR, or debugging tool.
+- When Tauri IPC or custom protocols are used, make `connect-src` explicit for the required IPC scheme or local origin. Do not replace a specific IPC allowance with `connect-src *`, broad `http:`, broad `https:`, or arbitrary localhost ranges.
+- Do not use `default-src *`, `script-src *`, wildcard remote origins, or catch-all protocol allowances as a shortcut for boot failures.
+- Recheck other generated asset needs after CSP changes: styles, fonts, images, workers, wasm, media, and preload/module scripts may fail independently of the main bootstrap.
+- If a CSP relaxation is shipped as a hotfix, add a follow-up note for a stricter nonce, hash, or externalized-bootstrap design unless the framework or target platform makes that infeasible.
 
 ## Command Input Policy
 
@@ -138,6 +152,7 @@ Reject or revise a change when:
 - Frontend validation is presented as the authoritative security check.
 - A command is registered without checking which windows or webviews can reach it.
 - The response returns sensitive paths, tokens, command output, update metadata, or system details without a scoped need.
+- A packaged blank-screen fix widens CSP with wildcard script or connect sources, remote script origins, `unsafe-eval`, or broad protocol allowances instead of proving the generated bootstrap and IPC requirements.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -146,6 +161,7 @@ Reject or revise a change when:
 - Broad capabilities, permissions, scopes, shell access, updater exceptions, and sensitive returns are avoided or reported.
 - Rust/native validation does not rely only on frontend checks.
 - Permission and capability changes have a clear diff and native-operation justification.
+- CSP changes have been checked against the generated frontend entry HTML and required Tauri IPC or custom protocol origins.
 - Missing Tauri-specific verification is reported.
 
 <!-- mustflow-section: verification -->
@@ -160,7 +176,7 @@ Use configured oneshot command intents when available:
 - `docs_validate_fast`
 - `mustflow_check`
 
-Report missing native build, permission diff, updater, shell, sidecar, opener, dialog, filesystem, or mobile permission verification intents when relevant.
+Report missing native build, packaged WebView smoke, CSP violation, permission diff, updater, shell, sidecar, opener, dialog, filesystem, or mobile permission verification intents when relevant.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -169,6 +185,7 @@ Report missing native build, permission diff, updater, shell, sidecar, opener, d
 - If frontend and Rust command contracts drift, synchronize them before adding more UI.
 - If native permission behavior cannot be verified, report the platform-specific gap.
 - If a capability, scope, or plugin permission widens unexpectedly, stop and reduce it before changing unrelated UI.
+- If a CSP change breaks packaged app startup, inspect generated HTML and console CSP violations before widening policy; prefer nonce, hash, or externalized bootstrap before accepting `unsafe-inline`.
 - If a command accepts broad input, replace it with a typed request and Rust-side validation before exposing it to the frontend.
 - If updater, shell, opener, sidecar, or filesystem access cannot be narrowed, report the security boundary change instead of hiding it as a normal feature fix.
 
@@ -176,7 +193,7 @@ Report missing native build, permission diff, updater, shell, sidecar, opener, d
 ## Output Format
 
 - Boundary checked
-- IPC, command input, permission, capability, window/webview, and scope notes
+- IPC, command input, CSP, permission, capability, window/webview, and scope notes
 - Permission diff: old permissions, new permissions, newly reachable windows/webviews, new scopes, and native operation justification
 - Filesystem, dialog, shell, opener, updater, sidecar, or mobile risk
 - Files changed

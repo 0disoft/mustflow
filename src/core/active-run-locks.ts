@@ -24,6 +24,7 @@ const LOCK_MUTEX_STALE_MS = 30_000;
 const LOCK_MUTEX_WAIT_MS = 1_000;
 const LOCK_MUTEX_SLEEP_MS = 25;
 const LOCK_MUTEX_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
+const LOCK_MUTEX_RECOVERY_DIRECTORY = 'recovery';
 
 export interface ActiveRunLockEffect {
 	readonly source: string;
@@ -110,6 +111,10 @@ function activeLockDirectory(projectRoot: string): string {
 
 function activeLockMutexDirectory(projectRoot: string): string {
 	return path.join(activeLockRoot(projectRoot), 'mutex');
+}
+
+function activeLockMutexRecoveryDirectory(mutex: string): string {
+	return path.join(mutex, LOCK_MUTEX_RECOVERY_DIRECTORY);
 }
 
 function normalizeEffect(effect: NormalizedCommandEffect): ActiveRunLockEffect {
@@ -315,6 +320,110 @@ function createRecord(
 	};
 }
 
+interface ActiveMutexOwner {
+	readonly pid: number;
+	readonly startedAt: string;
+	readonly token: string;
+}
+
+function readMutexOwner(ownerPath: string): ActiveMutexOwner | null {
+	try {
+		const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; started_at?: unknown; token?: unknown };
+		if (typeof owner.started_at !== 'string' || typeof owner.token !== 'string') {
+			return null;
+		}
+
+		return {
+			pid: Number(owner.pid),
+			startedAt: owner.started_at,
+			token: owner.token,
+		};
+	} catch {
+		return null;
+	}
+}
+
+function sameMutexOwner(left: ActiveMutexOwner, right: ActiveMutexOwner | null): boolean {
+	return right !== null && left.pid === right.pid && left.startedAt === right.startedAt && left.token === right.token;
+}
+
+function mutexOwnerIsStale(owner: ActiveMutexOwner): boolean {
+	const ownerStartedAt = Date.parse(owner.startedAt);
+	const staleByAge = Number.isFinite(ownerStartedAt) && Date.now() - ownerStartedAt > LOCK_MUTEX_STALE_MS;
+	return !isProcessLive(owner.pid) || staleByAge;
+}
+
+function beginMutexRecovery(mutex: string): (() => void) | null {
+	const recoveryPath = activeLockMutexRecoveryDirectory(mutex);
+
+	try {
+		mkdirSync(recoveryPath);
+	} catch (error) {
+		if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'EEXIST') {
+			throw error;
+		}
+
+		try {
+			const recoveryStat = statSync(recoveryPath);
+			if (Date.now() - recoveryStat.mtimeMs > LOCK_MUTEX_STALE_MS) {
+				rmSync(recoveryPath, { recursive: true, force: true });
+			}
+		} catch {
+			// A concurrent recovery may have already finished.
+		}
+
+		return null;
+	}
+
+	let active = true;
+	return () => {
+		if (!active) {
+			return;
+		}
+		active = false;
+		rmSync(recoveryPath, { recursive: true, force: true });
+	};
+}
+
+function recoverStaleMutexWithOwner(mutex: string, ownerPath: string, staleOwner: ActiveMutexOwner): boolean {
+	const releaseRecovery = beginMutexRecovery(mutex);
+	if (!releaseRecovery) {
+		return false;
+	}
+
+	try {
+		if (!sameMutexOwner(staleOwner, readMutexOwner(ownerPath)) || !mutexOwnerIsStale(staleOwner)) {
+			return false;
+		}
+
+		rmSync(mutex, { recursive: true, force: true });
+		return true;
+	} finally {
+		releaseRecovery();
+	}
+}
+
+function recoverStaleMutexWithoutOwner(mutex: string): boolean {
+	const releaseRecovery = beginMutexRecovery(mutex);
+	if (!releaseRecovery) {
+		return false;
+	}
+
+	try {
+		const ownerPath = path.join(mutex, 'owner.json');
+		if (readMutexOwner(ownerPath) !== null) {
+			return false;
+		}
+
+		rmSync(mutex, { recursive: true, force: true });
+		return true;
+	} catch {
+		return false;
+	} finally {
+		releaseRecovery();
+	}
+}
+
 function acquireMutex(projectRoot: string): () => void {
 	const root = activeLockRoot(projectRoot);
 	const mutex = activeLockMutexDirectory(projectRoot);
@@ -349,21 +458,28 @@ function acquireMutex(projectRoot: string): () => void {
 			}
 
 			if (Date.now() - startedAt > LOCK_MUTEX_WAIT_MS) {
-				try {
-					const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; started_at?: unknown };
-					const ownerPid = Number(owner.pid);
-					const ownerStartedAt = typeof owner.started_at === 'string' ? Date.parse(owner.started_at) : Number.NaN;
-					const staleByAge = Number.isFinite(ownerStartedAt) && Date.now() - ownerStartedAt > LOCK_MUTEX_STALE_MS;
-					if (!isProcessLive(ownerPid) || staleByAge) {
-						rmSync(mutex, { recursive: true, force: true });
+				const owner = readMutexOwner(ownerPath);
+				if (owner) {
+					if (mutexOwnerIsStale(owner) && recoverStaleMutexWithOwner(mutex, ownerPath, owner)) {
 						startedAt = Date.now();
 						continue;
 					}
-				} catch {
+				} else {
+					const recoveryPath = activeLockMutexRecoveryDirectory(mutex);
+					try {
+						const recoveryStat = statSync(recoveryPath);
+						if (Date.now() - recoveryStat.mtimeMs <= LOCK_MUTEX_STALE_MS) {
+							throw new Error('active_run_lock_mutex_busy');
+						}
+					} catch (recoveryError) {
+						if (recoveryError instanceof Error && recoveryError.message === 'active_run_lock_mutex_busy') {
+							throw recoveryError;
+						}
+					}
+
 					try {
 						const mutexStat = statSync(mutex);
-						if (Date.now() - mutexStat.mtimeMs > LOCK_MUTEX_STALE_MS) {
-							rmSync(mutex, { recursive: true, force: true });
+						if (Date.now() - mutexStat.mtimeMs > LOCK_MUTEX_STALE_MS && recoverStaleMutexWithoutOwner(mutex)) {
 							startedAt = Date.now();
 							continue;
 						}

@@ -12,6 +12,12 @@ route_type = "primary"
 priority = 70
 applies_to_reasons = ["code_change", "cross_cutting_code_change"]
 
+[routes."service-boundary-architecture"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 82
+applies_to_reasons = ["code_change", "behavior_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "public_api_change"]
+
 [routes."code-review"]
 category = "general_code"
 route_type = "primary"
@@ -71,6 +77,12 @@ category = "workflow_contracts"
 route_type = "adjunct"
 priority = 85
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "release_risk"]
+
+[routes."proactive-risk-surfacing"]
+category = "workflow_contracts"
+route_type = "event"
+priority = 72
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "mustflow_docs_change", "public_api_change", "security_change", "privacy_change", "data_change", "performance_change", "ui_change", "release_risk"]
 
 [routes."restricted-handoff-resume"]
 category = "workflow_contracts"
@@ -138,6 +150,12 @@ route_type = "primary"
 priority = 55
 applies_to_reasons = ["unknown_change", "code_change", "docs_change", "test_change", "behavior_change", "performance_change", "ui_change", "data_change"]
 
+[routes."ai-generated-code-hardening"]
+category = "general_code"
+route_type = "adjunct"
+priority = 74
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"]
+
 [routes."clarifying-question-gate"]
 category = "general_code"
 route_type = "adjunct"
@@ -186,11 +204,23 @@ route_type = "primary"
 priority = 82
 applies_to_reasons = ["code_change", "public_api_change", "docs_change", "test_change"]
 
+[routes."backend-reliability-change"]
+category = "general_code"
+route_type = "primary"
+priority = 84
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
+
+[routes."http-delivery-streaming"]
+category = "general_code"
+route_type = "primary"
+priority = 84
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
+
 [routes."typescript-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
 
 [routes."javascript-code-change"]
 category = "general_code"
@@ -467,6 +497,12 @@ category = "data_external"
 route_type = "adjunct"
 priority = 60
 applies_to_reasons = ["migration_change"]
+
+[routes."frontend-render-stability"]
+category = "ui_assets"
+route_type = "primary"
+priority = 78
+applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change"]
 
 [routes."ui-quality-gate"]
 category = "ui_assets"

@@ -70,6 +70,15 @@ test('copies the default agent workflow into an empty project', () => {
 			false,
 		);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')), false);
+		assert.equal(
+			existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-render-stability', 'SKILL.md')),
+			false,
+		);
+		assert.equal(
+			existsSync(path.join(projectPath, '.mustflow', 'skills', 'service-boundary-architecture', 'SKILL.md')),
+			false,
+		);
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'backend-reliability-change', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-service-ux-review', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-quality-gate', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'visual-review-artifact', 'SKILL.md')), false);

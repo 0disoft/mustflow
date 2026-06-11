@@ -201,13 +201,13 @@ enabled = false
 mode = "report_only"
 ```
 
-`capabilities` declara qué superficies de trabajo de agentes están disponibles en este repositorio. `workflow`, `command_contract` y `skills` son funciones centrales. `repo_map`, `preferences`, `local_index`, `work_items` y `services` son puntos de extensión basados en estado. La plantilla predeterminada proporciona el índice local como datos generados opcionales, pero `mf init` no crea el archivo de índice. Los elementos de trabajo locales y la gestión de servicios aún no están instalados.
+`capabilities` declara qué superficies de trabajo de agentes están disponibles en este repositorio. `workflow`, `command_contract` y `skills` son funciones centrales. `repo_map`, `preferences`, `local_index`, `work_items` y `services` son puntos de extensión basados en estado. La plantilla predeterminada proporciona el índice local como datos generados opcionales, pero `mf init` no crea el archivo de índice. Los elementos de trabajo locales y la gestión de servicios permanecen inactivos hasta que el repositorio adopta reglas de ciclo de vida acotadas.
 
 `agent_loop.phases` es el bucle estándar de trabajo de agentes: `orient`, `plan`, `act`, `verify`, `report` y `handoff`. Es un contrato verificable por máquina, no texto decorativo.
 
 `verification` indica que los comandos de validación vienen de `.mustflow/config/commands.toml`. `allow_inferred_commands = false` significa que los agentes no deben inferir comandos de validación desde `package.json`, `Makefile` ni convenciones de nombres.
 
-`handoff.enabled = false` significa que la plantilla predeterminada no crea archivos locales de elementos de trabajo. El trabajo que no pueda terminarse de forma segura debe traspasarse en el informe final. La compatibilidad opcional con elementos de trabajo puede habilitarse más adelante como una función separada.
+`handoff.enabled = false` significa que la plantilla actual mantiene inactiva la escritura de elementos de trabajo locales. El trabajo que no pueda terminarse de forma segura debe traspasarse en el informe final salvo que el repositorio habilite un ciclo de vida acotado para elementos de trabajo.
 
 `mf check` valida booleanos, estados de capacidad permitidos, el bucle estándar y la ruta de comandos de validación.
 
@@ -228,7 +228,7 @@ enabled = [
 ]
 ```
 
-`harness` indica que mustflow proporciona contratos locales del repositorio en lugar de un entorno autónomo completo. `mode = "single_session"` es el valor predeterminado conservador. Un futuro sistema opcional de ejecución de larga duración puede leer el mismo contrato con `long_running_optional`.
+`harness` declara la forma de ejecución predeterminada para sistemas de agentes. `mode = "single_session"` es el valor conservador; modos futuros o específicos del repositorio pueden optar por coordinación de larga duración cuando ciclo de vida, aprobación, aislamiento y retención estén declarados.
 
 `harness.phases.enabled` define las fases que un sistema de ejecución de larga duración debe separar. Son fases, no carpetas predeterminadas ni subagentes predeterminados.
 

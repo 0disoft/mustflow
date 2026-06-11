@@ -262,13 +262,13 @@ enabled = false
 mode = "report_only"
 ```
 
-`capabilities` declares which agent work surfaces are available in this repository. `workflow`, `command_contract`, and `skills` are core features. `repo_map`, `preferences`, `local_index`, `work_items`, and `services` are state-based extension points. The default template provides the local index as optional generated data, but `mf init` does not create the index file. Local work items and service management are not installed yet.
+`capabilities` declares which agent work surfaces are available in this repository. `workflow`, `command_contract`, and `skills` are core features. `repo_map`, `preferences`, `local_index`, `work_items`, and `services` are state-based extension points. The default template provides the local index as optional generated data, but `mf init` does not create the index file. Local work items and service management are inactive in the default template until a repository opts into bounded lifecycle rules.
 
 `agent_loop.phases` is the standard agent work loop: `orient`, `plan`, `act`, `verify`, `report`, and `handoff`. It is a machine-checkable contract, not decorative prose.
 
 `verification` states that validation commands come from `.mustflow/config/commands.toml`. `allow_inferred_commands = false` means agents must not infer validation commands from `package.json`, `Makefile`, or naming conventions.
 
-`handoff.enabled = false` means the default template does not create local work item files. Work that cannot be finished safely should be handed off in the final report. Optional work item support can be enabled later as a separate feature.
+`handoff.enabled = false` means the current template keeps local work-item writing inactive. Work that cannot be finished safely should be handed off in the final report unless the repository enables a bounded work-item lifecycle.
 
 `mf check` validates booleans, allowed capability states, the standard loop, and the validation command path.
 
@@ -290,9 +290,9 @@ enabled = [
 ]
 ```
 
-`harness` states that mustflow provides repository-local contracts rather than a full autonomous
-runtime. `mode = "single_session"` is the conservative default. A future optional harness can read
-the same contract with `long_running_optional`.
+`harness` declares the default execution shape for agent harnesses. `mode = "single_session"` is
+the conservative default; future or repository-specific harness modes can opt into longer-running
+coordination when lifecycle, approval, isolation, and retention rules are explicit.
 
 `fresh_context_preferred = true` means agents should prefer current files over stale summaries.
 `fresh_context_mode = "hash_check_before_reread"` clarifies that freshness can be checked by content

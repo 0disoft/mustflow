@@ -1,11 +1,11 @@
 ---
 title: Work Items
-description: Why local work items are not installed by default and how mustflow validates restricted handoff records.
+description: How optional local work items can extend mustflow while preserving bounded handoff records.
 ---
 
-By default, mustflow does not create local issue or proposal folders.
+Work items are an optional mustflow surface for capturing deferred issues, proposals, and restart points inside the repository.
 
-File-based work items can be useful, but installing them by default would expand mustflow from an agent document flow into a local issue tracker. Currently, `.mustflow/config/mustflow.toml` only declares `work_items = "disabled"` and `handoff.mode = "report_only"`.
+The default template keeps this surface inactive with `work_items = "disabled"` and `handoff.mode = "report_only"` until a project chooses a bounded lifecycle.
 
 ## Defaults
 
@@ -18,7 +18,7 @@ enabled = false
 mode = "report_only"
 ```
 
-This means agents should report unfinished work in the final handoff instead of creating new backlog files. mustflow now provides only a read-only validator for optional records:
+With those defaults, agents should report unfinished work in the final handoff instead of creating new backlog files. mustflow includes a read-only validator for optional records:
 
 ```sh
 npx mf handoff validate .mustflow/work-items/MF-0001.json
@@ -26,16 +26,16 @@ npx mf handoff validate .mustflow/work-items/MF-0001.json
 
 Validation does not create the file, update lifecycle state, run commands, or make a skipped check count as passed.
 
-## Why They Are Not Default
+## Why The Default Is Inactive
 
-- The primary purpose of `mf init` is to set up LLM-only workflow files.
+- The default install should stay small until a project opts into a work-item lifecycle.
 - Local issue files can become stale and may duplicate existing issue trackers.
 - Failure logs, internal paths, customer names, and secret fragments could leak into documents.
 - If agents create and close work items freely, the human decision boundary becomes unclear.
 
-## Optional Direction
+## Direction
 
-If writing work items becomes an optional feature in the future, `.mustflow/work-items/` is clearer than `.mustflow/pr/`. Local files represent proposed work and solution notes, rather than actual pull requests.
+When writing work items is enabled, `.mustflow/work-items/` is clearer than `.mustflow/pr/`. Local files represent proposed work and solution notes, rather than actual pull requests.
 
 ```text
 .mustflow/
@@ -80,7 +80,7 @@ Forbidden content includes hidden reasoning, raw chat transcripts, full terminal
 
 `verification_plan` entries use `status: planned`, `run`, or `skipped`. A skipped entry needs `skip_reason`, and only a `run` entry may include `receipt_path`.
 
-## Future Command Candidates
+## Command Candidates
 
 ```sh
 mf work list
@@ -88,4 +88,4 @@ mf work show MF-0001
 mf work propose MF-0001
 ```
 
-These writer and lifecycle commands are outside the current implementation scope. mustflow should stabilize the file-based workflow, command contract, and validation flow before adding this optional surface.
+Add writer and lifecycle commands incrementally with bounded schemas, command contracts, redaction, and human approval rules before agents can create or close records automatically.

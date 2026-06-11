@@ -1,6 +1,6 @@
 # mustflow Roadmap
 
-Last reviewed: 2026-05-22
+Last reviewed: 2026-06-11
 
 This roadmap lists only remaining work. Completed items are removed after verification so agents can focus on upcoming decisions instead of reviewing project history.
 
@@ -8,11 +8,11 @@ This file is a planning surface, not current product behavior. Items below are r
 
 ## Product Direction
 
-mustflow should become a repository-local safety layer for AI coding work: it should make agents explain what they read, which commands are allowed, why a verification path was chosen, and what evidence remains. It should not become an autonomous agent runtime, task runner replacement, project management system, or broad memory store.
+mustflow should become a repository-local safety layer for AI coding work: it should make agents explain what they read, which commands are allowed, why a verification path was chosen, and what evidence remains. It can grow runtime, coordination, work-item, adapter, and harness surfaces when those surfaces keep explicit lifecycle, safety, approval, retention, and verification boundaries.
 
 Strong product framing to preserve:
 
-- mustflow is an agent work contract and verification layer, not an agent runtime.
+- mustflow starts as an agent workflow and verification layer; optional runtime or coordination features must stay bounded by repository-local policy and command contracts.
 - `AGENTS.md` starts the workflow, but `.mustflow/config/commands.toml` remains the only source of runnable command authority.
 - Skills guide procedure; they never grant command permission.
 - mustflow should coexist cleanly with agent hosts and coding agents such as Codex, Claude Code, OpenClaw,
@@ -24,8 +24,8 @@ Strong product framing to preserve:
 
 ## Non-Goals
 
-- Do not make mustflow an autonomous agent runtime.
-- Do not add multi-agent orchestration, persona fleets, background workers, or always-on agent loops.
+- Do not make autonomous loops, multi-agent orchestration, persona fleets, background workers, or long-running harnesses implicit defaults.
+- Do not add runtime, coordination, work-item, adapter, or service-management features without declared lifecycle, approval, isolation, retention, and verification rules.
 - Do not make `mf init` generate application source code.
 - Do not make `mf init` generate CI, GitHub, GitLab, `Makefile`, `justfile`, or package-manager files by default.
 - Do not treat `.mustflow/cache/` or `.mustflow/state/` as versioned project truth.
@@ -36,7 +36,7 @@ Strong product framing to preserve:
 - Do not introduce a broad `policy.toml` that weakens built-in rules, grants command permission, skips validation, or instructs agents.
 - Do not add a public skill marketplace or community registry until trust, packaging, provenance, and review boundaries are explicit.
 - Do not install, vendor, or execute third-party skill packs by default.
-- Do not add external-skill review, adapter reconciliation, work-item lifecycle, task-routing, failure-triage, freshness, evidence-pack, or harness-synthesis commands unless an existing surface cannot safely cover the need.
+- Do not add external-skill review, adapter reconciliation, work-item lifecycle, task-routing, failure-triage, freshness, evidence-pack, or harness-synthesis commands without a bounded schema, command contract, tests, and human decision boundary.
 - Do not make external skill installers, SaaS automation skills, or framework-specific skill packs part of the default mustflow workflow.
 - Do not make live AI evaluation, network access, or external service credentials required for the default quality gate.
 - Do not require host-specific agent features, overwrite host-specific instruction files, or assume one coding

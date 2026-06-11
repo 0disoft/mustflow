@@ -1,14 +1,14 @@
 ---
 title: Harness Contracts
-description: How mustflow supports long-running agent harnesses without becoming a harness itself.
+description: How mustflow supports optional long-running agent harnesses while keeping lifecycle and safety boundaries explicit.
 ---
 
-mustflow does not host autonomous long-running agents. It provides agent harnesses with a
-repository-local contract they can read and validate.
+mustflow starts with repository-local workflow and command boundaries. It can also support optional
+long-running harnesses when lifecycle, approval, isolation, retention, and verification rules are explicit.
 
 ## Boundary
 
-- mustflow does not spawn workers, personas, fleets, or cloud sandboxes.
+- The default template does not spawn workers, personas, fleets, or cloud sandboxes.
 - mustflow does not store unbounded raw session logs.
 - mustflow is not a replacement for hosted agent platforms or IDE agents.
 - mustflow defines rules, command contracts, refresh checkpoints, compaction policies, receipts,
@@ -36,8 +36,8 @@ Compacted summaries serve as lower-priority auxiliary memory. Current user instr
 files, command contracts, and run receipts override them. mustflow does not store hidden chains of
 thought or full chat transcripts in the project.
 
-## Deferred
+## Expansion Candidates
 
 `completion-judge`, work items, handoff writing commands, checkpoint commands, and autonomous loops
-remain optional future capabilities. They should not appear in the default template until the contracts
-they depend on are stable.
+are expansion candidates. They can move into the template or CLI when their schemas, command
+contracts, retention rules, and human decision boundaries are stable.

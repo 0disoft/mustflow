@@ -2,11 +2,11 @@
 mustflow_doc: skill.auth-permission-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-permission-change
-description: Apply this skill when authentication, authorization, permissions, roles, tenants, sessions, JWTs, OAuth or OIDC, API keys, route guards, admin access, database policies, or object-level access control are created or changed.
+description: Apply this skill when authentication, authorization, permissions, roles, tenants, sessions, JWTs, OAuth or OIDC, API keys, route guards, admin access, database policies, object-level access control, signed delivery URLs, credentialed event streams, or private cache behavior are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -39,6 +39,7 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Authentication, authorization, role, permission, capability, policy, tenant, workspace, organization, session, JWT, OAuth, OIDC, API key, invite, reset token, route guard, admin, impersonation, audit, or database policy behavior changes.
 - A route, resolver, controller, service, command handler, job, webhook, API client, generated SDK, UI guard, or database query starts relying on user, tenant, role, ownership, membership, or resource identity.
 - A change affects object-level access control, multi-tenant isolation, shared resources, signed URLs, exports, search, autocomplete, background jobs, webhooks, or admin/support tooling.
+- A change affects credentialed EventSource/SSE streams, WebTransport sessions, WebSocket fallback, signed delivery URLs, private file delivery, CDN/proxy cache keys, CORS credentials, cookies, or auth tokens embedded in delivery URLs.
 - A change modifies status code behavior for auth failures, especially 401, 403, or policy-driven 404.
 - A permission model, role matrix, API docs, admin docs, migration, or tests need to stay aligned with authorization behavior.
 
@@ -56,7 +57,7 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Auth middleware, framework hooks, gateway checks, session config, cookie config, JWT verifier, OAuth/OIDC callback, API key verifier, and logout or revocation code when relevant.
 - Route guards, client guards, server controllers, resolvers, command handlers, services, policy functions, role or permission tables, database queries, RLS, views, stored procedures, and ORM scopes.
 - Tenant, organization, workspace, project, membership, invite, suspension, ownership, sharing, and admin-support data models.
-- Background jobs, queue payloads, webhooks, import/export flows, search or autocomplete indexes, signed URL generation, storage keys, CDN cache, and permission caches when they can expose protected data.
+- Background jobs, queue payloads, webhooks, import/export flows, search or autocomplete indexes, signed URL generation, storage keys, SSE or streaming channels, WebTransport sessions, WebSocket fallback, CDN cache, proxy cache, and permission caches when they can expose protected data.
 - Audit logs, admin action logs, impersonation records, denied-access logs, API docs, role matrix docs, migrations, and tests.
 - Configured verification intents.
 
@@ -68,6 +69,7 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Treat client-provided `userId`, `tenantId`, `workspaceId`, `role`, `isAdmin`, object id, API key label, token claim, and local storage value as untrusted.
 - Find the current policy source of truth. If authorization is scattered across routes, do not add another scattered condition without first considering a central policy function.
 - Know whether the product intentionally hides resource existence with 404 or exposes permission denial with 403.
+- If SSE, WebTransport, WebSocket fallback, signed URL, CORS, cookie, CDN cache, proxy cache, or streaming delivery behavior changes, use `http-delivery-streaming` for the transport contract while this skill checks access control.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -88,7 +90,7 @@ Authentication answers who the requester is. Authorization answers what that pri
    - route guards, client redirects, server controllers, resolvers, services, command handlers, policy calls, and admin tools;
    - tenant resolver, membership schema, role assignment, invite flow, suspension, ownership, sharing, and impersonation model;
    - database queries, tenant scopes, ownership joins, soft-delete filters, RLS, views, stored procedures, and ORM helpers;
-   - background jobs, queues, webhooks, import/export, file storage, signed URLs, search, autocomplete, caches, audit logs, docs, migrations, and tests.
+   - background jobs, queues, webhooks, import/export, file storage, signed URLs, SSE or streaming channels, WebTransport sessions, WebSocket fallback, search, autocomplete, caches, CDN or proxy cache rules, audit logs, docs, migrations, and tests.
 3. Write the permission decision inputs for each protected action: principal, tenant, resource, action, and context.
 4. Separate identity from permission:
    - `req.user`, a valid session, verified email, valid JWT, OAuth scope, or API key proves identity only;
@@ -104,12 +106,14 @@ Authentication answers who the requester is. Authorization answers what that pri
    - tenant-scoped queries must include tenant or membership constraints;
    - pending, suspended, removed, revoked, deleted, disabled, and invited states must not be treated as active access;
    - shared links, exports, signed URLs, previews, search, cache, and CDN entries must stay inside the permission model.
+   - event streams, WebTransport sessions, WebSocket fallback channels, private downloads, and reconnect URLs must not bypass tenant, resource, role, token expiry, or revocation policy.
 10. Check session, JWT, OAuth/OIDC, and API key contracts when touched:
    - sessions need expiry, refresh, rotation, logout, revocation, cookie flags, and CSRF posture;
    - JWTs need signature verification, algorithm allowlist, issuer, audience, subject, expiry, not-before, key rotation, and stale-claim handling;
    - OAuth/OIDC needs exact redirect binding, state, nonce, PKCE when relevant, provider account binding, and safe account linking;
    - API keys need hashing, prefix-only display, owner type, scope, tenant/resource constraints, expiry, rotation, revocation, last-used, rate limit, and audit.
 11. Check dependent surfaces: API routes, controllers, services, DB schema, DB queries, RLS, UI navigation, UI actions, API clients, audit logs, notifications, jobs, webhooks, search, file storage, docs, migrations, monitoring, and tests.
+    - For credentialed delivery surfaces, check whether EventSource can supply the intended credentials, whether CORS and cookies match the policy, whether signed URLs expire and scope correctly, and whether caches vary on auth, tenant, and private response dimensions.
 12. Require denial-first tests for changed protected actions when the project has a usable test surface. Cover anonymous, expired, revoked, no role, wrong tenant, wrong owner, suspended or removed member, stale cache, shared-link, read-only API key, org admin, global admin, and impersonating admin cases as applicable.
 13. Update docs and role matrices when external behavior, status codes, role names, permission names, admin scope, or API errors change.
 14. Report the policy source of truth, server/database enforcement, client UX-only guards, test coverage, skipped checks, and remaining permission risk.
@@ -139,6 +143,7 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Relaxing permissions without denial-case tests or a written migration and audit plan.
 - Letting role changes ship without permission-cache or token-staleness handling.
 - Creating shared links, signed URLs, exports, search results, or CDN responses outside tenant and resource policy.
+- Creating credentialed event streams, WebTransport sessions, WebSocket fallback channels, signed delivery URLs, or private caches outside tenant and resource policy.
 - Logging impersonation without separate actor and subject.
 - Backfilling broad permissions to every existing user because migration is easier.
 
@@ -150,6 +155,7 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Tenant isolation, resource ownership, sharing, admin scope, and status-code behavior are explicit.
 - Client guards are described as UX only.
 - Session, token, OAuth/OIDC, API key, cache, audit, docs, migration, and tests are synchronized when touched.
+- Signed URL, event-stream, WebTransport, WebSocket fallback, CORS, cookie, CDN/proxy cache, and reconnect behavior remains inside the permission model when touched.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -187,6 +193,7 @@ Prefer the narrowest configured test intent that covers the changed protected ac
 - Server/database enforcement notes
 - Client guard UX-only notes
 - Tenant, ownership, sharing, admin, token/session/API-key, cache, and audit notes
+- Event stream, WebTransport, WebSocket fallback, signed URL, CORS, cookie, and CDN/proxy cache notes when relevant
 - Tests or denial cases covered
 - Files changed
 - Command intents run

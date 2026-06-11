@@ -10,8 +10,8 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 14
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 14, status = "current" }
+revision = 15
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 15, status = "current" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 11, status = "needs_review" }
@@ -40,8 +40,8 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 19
-translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 19, status = "current" }
+revision = 20
+translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 20, status = "current" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
@@ -62,13 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 99
+revision = 108
 translations = {}
 
 [documents."skill.adapter-boundary"]
 source = "locales/en/.mustflow/skills/adapter-boundary/SKILL.md"
 source_locale = "en"
-revision = 11
+revision = 12
 translations = {}
 
 [documents."skill.artifact-integrity-check"]
@@ -86,6 +86,18 @@ translations = {}
 [documents."skill.api-contract-change"]
 source = "locales/en/.mustflow/skills/api-contract-change/SKILL.md"
 source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.backend-reliability-change"]
+source = "locales/en/.mustflow/skills/backend-reliability-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.http-delivery-streaming"]
+source = "locales/en/.mustflow/skills/http-delivery-streaming/SKILL.md"
+source_locale = "en"
 revision = 1
 translations = {}
 
@@ -99,6 +111,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/code-review/SKILL.md"
 source_locale = "en"
 revision = 6
+translations = {}
+
+[documents."skill.ai-generated-code-hardening"]
+source = "locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.contract-sync-check"]
@@ -152,13 +170,13 @@ translations = {}
 [documents."skill.dependency-upgrade-review"]
 source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 6
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -171,6 +189,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md"
 source_locale = "en"
 revision = 4
+translations = {}
+
+[documents."skill.frontend-render-stability"]
+source = "locales/en/.mustflow/skills/frontend-render-stability/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.diff-risk-review"]
@@ -200,7 +224,7 @@ translations = {}
 [documents."skill.auth-permission-change"]
 source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.config-env-change"]
@@ -212,7 +236,7 @@ translations = {}
 [documents."skill.css-code-change"]
 source = "locales/en/.mustflow/skills/css-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.bun-code-change"]
@@ -254,7 +278,7 @@ translations = {}
 [documents."skill.go-code-change"]
 source = "locales/en/.mustflow/skills/go-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.hono-code-change"]
@@ -266,7 +290,7 @@ translations = {}
 [documents."skill.html-code-change"]
 source = "locales/en/.mustflow/skills/html-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.javascript-code-change"]
@@ -284,13 +308,13 @@ translations = {}
 [documents."skill.python-code-change"]
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.rust-code-change"]
 source = "locales/en/.mustflow/skills/rust-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.runtime-target-selection"]
@@ -314,25 +338,31 @@ translations = {}
 [documents."skill.tailwind-code-change"]
 source = "locales/en/.mustflow/skills/tailwind-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.tauri-code-change"]
 source = "locales/en/.mustflow/skills/tauri-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.unocss-code-change"]
 source = "locales/en/.mustflow/skills/unocss-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
+translations = {}
+
+[documents."skill.service-boundary-architecture"]
+source = "locales/en/.mustflow/skills/service-boundary-architecture/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.cli-output-contract-review"]
@@ -475,13 +505,19 @@ translations = {}
 [documents."skill.performance-budget-check"]
 source = "locales/en/.mustflow/skills/performance-budget-check/SKILL.md"
 source_locale = "en"
-revision = 19
+revision = 20
 translations = {}
 
 [documents."skill.pattern-scout"]
 source = "locales/en/.mustflow/skills/pattern-scout/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.proactive-risk-surfacing"]
+source = "locales/en/.mustflow/skills/proactive-risk-surfacing/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.process-execution-safety"]

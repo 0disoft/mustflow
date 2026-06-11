@@ -10,7 +10,7 @@ This file is not copied into user repositories. It is the package-side source of
 ## Role
 
 - Declares the template identifier and description.
-- Declares whether the install scope is limited to LLM-only files.
+- Declares the install scope for agent-facing workflow surfaces.
 - Lists the files the template creates.
 - Defines whether existing-file conflicts abort, merge a managed block, or back up and overwrite.
 - Lists the follow-up checks a human should make after installation.
@@ -56,13 +56,13 @@ generated_targets = [
 ]
 ```
 
-- `scope`: Means this template installs only LLM-agent workflow files.
+- `scope`: Names the default agent-facing install surface used by this template.
 - `copied_targets`: Paths copied directly from the template.
 - `generated_targets`: Paths generated after reading the repository structure.
 - `forbidden_targets`: Paths that must not be added to the default template.
 
 The default template does not create project-owned root documents or contract files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `API.md`, `project.contract.json`, or `openapi.yaml`; it also does not create `.github/`, root `docs/`, root `skills/`, source code, or package-manager configuration.
-It may create `.mustflow/context/**` because those files are LLM-agent workflow context, not general project documentation.
+It may create `.mustflow/context/**` because those files are task-specific agent workflow context, not general project documentation.
 `REPO_MAP.md`, `.mustflow/config/manifest.lock.toml`, and `.mustflow/state/**` are generated, not copied.
 `.mustflow/state/**` contains local state created during use, such as `mf run` receipts.
 

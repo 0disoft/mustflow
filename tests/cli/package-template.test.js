@@ -82,6 +82,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.defaultProfile, 'minimal');
 	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('api-contract-change'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-reliability-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('heuristic-candidate-selection'));
@@ -121,6 +122,14 @@ test('default template declares profile-specific skill surfaces', async () => {
 			template.manifest.skillProfiles[profileName].includes('heuristic-candidate-selection'),
 			`${profileName} should include heuristic-candidate-selection`,
 		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('http-delivery-streaming'),
+			`${profileName} should include http-delivery-streaming`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('backend-reliability-change'),
+			`${profileName} should include backend-reliability-change`,
+		);
 	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('cli-output-contract-review'), false);
@@ -137,8 +146,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.minimal.includes('release-notes-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('release-publish-change'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('result-option'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('service-boundary-architecture'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('state-machine-pattern'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('strategy-pattern'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('frontend-render-stability'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('llm-service-ux-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('search-ad-content-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
@@ -151,6 +162,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.patterns.includes('null-object-pattern'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('pure-core-imperative-shell'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('result-option'));
+	assert.ok(template.manifest.skillProfiles.patterns.includes('service-boundary-architecture'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('state-machine-pattern'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('strategy-pattern'));
 	assert.equal(template.manifest.skillProfiles.product.includes('architecture-deepening-review'), false);
@@ -159,8 +171,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.product.includes('process-execution-safety'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-publish-change'), false);
+	assert.ok(template.manifest.skillProfiles.product.includes('frontend-render-stability'));
 	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('search-ad-content-authoring'));
+	assert.ok(template.manifest.skillProfiles.product.includes('service-boundary-architecture'));
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
 	assert.ok(template.manifest.skillProfiles.product.includes('visual-review-artifact'));
 	assert.ok(template.manifest.skillProfiles.product.includes('github-contribution-quality-gate'));
@@ -173,6 +187,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.team.includes('release-publish-change'), false);
 	assert.ok(template.manifest.skillProfiles.team.includes('github-contribution-quality-gate'));
 	assert.ok(template.manifest.skillProfiles.team.includes('multi-agent-work-coordination'));
+	assert.ok(template.manifest.skillProfiles.team.includes('service-boundary-architecture'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('architecture-deepening-review'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('cli-output-contract-review'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('command-contract-authoring'));
@@ -182,6 +197,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.oss.includes('process-execution-safety'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('release-notes-authoring'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('release-publish-change'));
+	assert.ok(template.manifest.skillProfiles.oss.includes('service-boundary-architecture'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('skill-authoring'));
 	assert.ok(template.manifest.skillProfiles.oss.includes('vertical-slice-tdd'));
 	assert.ok(template.manifest.skillProfiles.library.includes('architecture-deepening-review'));
@@ -193,6 +209,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.library.includes('process-execution-safety'));
 	assert.ok(template.manifest.skillProfiles.library.includes('release-notes-authoring'));
 	assert.ok(template.manifest.skillProfiles.library.includes('release-publish-change'));
+	assert.ok(template.manifest.skillProfiles.library.includes('service-boundary-architecture'));
 });
 
 test('default template locales use localized workflow docs and canonical English skills', async () => {

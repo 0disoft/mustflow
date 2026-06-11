@@ -3,7 +3,7 @@ mustflow_doc: context.project
 kind: mustflow-context
 locale: en
 canonical: true
-revision: 1
+revision: 2
 name: project
 authority: contextual
 lifecycle: user-editable
@@ -31,13 +31,13 @@ If a field is unknown, leave it unset; do not assume or invent details.
 
 ## Current Goal
 
-mustflow is a repository-local workflow contract and verification CLI for LLM coding agents.
-It keeps agent operating instructions, command authority, task procedures, context, and
-verification evidence in explicit files under the repository root.
+mustflow is a repository-local workflow and verification CLI for LLM coding agents.
+It starts with explicit files for agent operating instructions, command authority, task procedures,
+context, and verification evidence, and it may add bounded runtime, work-item, adapter, and
+coordination surfaces when those capabilities have explicit lifecycle and safety contracts.
 
 ## Non-Goals
 
-- mustflow is not an autonomous agent runtime.
 - mustflow does not replace host sandboxing, host approval policy, or operating-system isolation.
 - Source anchors, search results, generated maps, caches, state files, dashboards, and API output do
   not grant command execution authority.

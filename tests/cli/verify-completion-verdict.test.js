@@ -895,6 +895,80 @@ test.pending('deferred failure coverage');
 	}
 });
 
+test('detects validation ratchet risks from staged-only changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const testFilePath = path.join(projectPath, 'tests', 'ratchet-staged.test.js');
+		mkdirSync(path.dirname(testFilePath), { recursive: true });
+		writeFileSync(
+			testFilePath,
+			`
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test('keeps exception coverage', () => {
+	assert.throws(() => {
+		throw new Error('expected');
+	});
+});
+`,
+		);
+		commitProjectBaseline(projectPath);
+		writeFileSync(
+			testFilePath,
+			`
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test('keeps exception coverage', () => {
+	assert.ok(true);
+});
+`,
+		);
+		runGit(projectPath, ['add', 'tests/ratchet-staged.test.js']);
+
+		const risks = createValidationRatchetRisks(
+			{
+				source: 'changed',
+				files: ['tests/ratchet-staged.test.js'],
+				classifications: [
+					{
+						path: 'tests/ratchet-staged.test.js',
+						changeKinds: ['test'],
+						surface: {
+							kind: 'test_contract',
+							category: 'test',
+							isPublicSurface: false,
+							validationReasons: ['ratchet_change'],
+							affectedContracts: ['test behavior contract'],
+							updatePolicy: 'not_applicable',
+							driftChecks: ['related test selection'],
+						},
+					},
+				],
+				summary: {
+					fileCount: 1,
+					publicSurfaceCount: 0,
+					changeKinds: ['test'],
+					validationReasons: ['ratchet_change'],
+					updatePolicies: [],
+					driftChecks: ['related test selection'],
+					affectedContracts: ['test behavior contract'],
+				},
+			},
+			projectPath,
+		);
+
+		assert.deepEqual(
+			risks.map((risk) => risk.code),
+			['assertion_matcher_weakened', 'exception_assertion_removed'],
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('detects command contract validation weakening from changed diffs', async () => {
 	const projectPath = createTempProject();
 

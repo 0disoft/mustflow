@@ -69,6 +69,39 @@ test('idea triage keeps brainstorming evidence-based and bounded', () => {
 	assert.match(manifest, /"idea-triage"/u);
 });
 
+test('proactive risk surfacing permits bounded evidence-backed intervention', () => {
+	const localSkill = readText('.mustflow/skills/proactive-risk-surfacing/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/proactive-risk-surfacing/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /scope-adjacent risk/u);
+	assert.match(localSkill, /fix_now/u);
+	assert.match(localSkill, /report_only/u);
+	assert.match(localSkill, /ask_first/u);
+	assert.match(localSkill, /ignore/u);
+	assert.match(localSkill, /same root cause/u);
+	assert.match(localSkill, /high_severity_adjacent/u);
+	assert.match(localSkill, /Do not perform broad unrelated refactors/u);
+	assert.match(localSkill, /No current repository evidence supports the extra concern/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/proactive-risk-surfacing\/SKILL\.md/u);
+	assert.match(skillIndex, /fix now, report only, ask first, or ignore/u);
+	assert.match(routes, /\[routes\."proactive-risk-surfacing"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "event"/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "mustflow_docs_change", "public_api_change", "security_change", "privacy_change", "data_change", "performance_change", "ui_change", "release_risk"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/proactive-risk-surfacing\/SKILL\.md"/u);
+	assert.match(manifest, /"proactive-risk-surfacing"/u);
+	assert.match(i18n, /\[documents\."skill\.proactive-risk-surfacing"\]/u);
+});
+
 test('heuristic candidate selection keeps broad scans cheap and bounded', () => {
 	const localSkill = readText('.mustflow/skills/heuristic-candidate-selection/SKILL.md');
 	const templateSkill = readText(
@@ -101,6 +134,49 @@ test('heuristic candidate selection keeps broad scans cheap and bounded', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/heuristic-candidate-selection\/SKILL\.md"/u);
 	assert.match(manifest, /"heuristic-candidate-selection"/u);
 	assert.match(i18n, /\[documents\."skill\.heuristic-candidate-selection"\]/u);
+});
+
+test('AI-generated code hardening catches duplicate, coupling, error, and test debt', () => {
+	const localSkill = readText('.mustflow/skills/ai-generated-code-hardening/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /AI-generated/u);
+	assert.match(localSkill, /duplicate helpers/u);
+	assert.match(localSkill, /single source of truth/u);
+	assert.match(localSkill, /hidden coupling/u);
+	assert.match(localSkill, /circular dependencies/u);
+	assert.match(localSkill, /barrel exports/u);
+	assert.match(localSkill, /re-export drift/u);
+	assert.match(localSkill, /swallowed errors/u);
+	assert.match(localSkill, /empty `catch`/u);
+	assert.match(localSkill, /god function/u);
+	assert.match(localSkill, /god file/u);
+	assert.match(localSkill, /fan-in and fan-out/u);
+	assert.match(localSkill, /behavior and side effects/u);
+	assert.match(localSkill, /strings, snapshots/u);
+	assert.match(localSkill, /Mock only external boundaries/u);
+	assert.match(localSkill, /edge cases/u);
+	assert.match(localSkill, /does not authorize adding new dependencies, CI gates, or\s+command contracts/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md/u);
+	assert.match(skillIndex, /AI-generated, vibe-coded, copied, or broad code changes/u);
+	assert.match(skillIndex, /string-only tests, over-mocking, fallback sprawl/u);
+	assert.match(routes, /\[routes\."ai-generated-code-hardening"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md"/u);
+	assert.match(manifest, /"ai-generated-code-hardening"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 1/u);
 });
 
 test('github contribution quality gate keeps maintainer-facing GitHub posts evidence-based', () => {
@@ -238,6 +314,378 @@ test('Node, Bun, and Docker code change skills keep runtime and toolchain owners
 	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
 });
 
+test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () => {
+	const tauriSkill = readText('.mustflow/skills/tauri-code-change/SKILL.md');
+	const templateTauriSkill = readText('templates/default/locales/en/.mustflow/skills/tauri-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(tauriSkill, templateTauriSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(tauriSkill, /CSP, WebView bootstrap HTML/u);
+	assert.match(tauriSkill, /blank or black WebView/u);
+	assert.match(tauriSkill, /Content Security Policy blocking the frontend bootstrap/u);
+	assert.match(tauriSkill, /generated entry HTML/u);
+	assert.match(tauriSkill, /SvelteKit may inject inline bootstrap scripts/u);
+	assert.match(tauriSkill, /`script-src 'self'` can block the app before JavaScript starts/u);
+	assert.match(tauriSkill, /nonce, hash, or externalized bootstrap/u);
+	assert.match(tauriSkill, /`script-src 'self' 'unsafe-inline'` may be an explicit compatibility tradeoff/u);
+	assert.match(tauriSkill, /does not also allow remote script origins, `unsafe-eval`, or wildcard script sources/u);
+	assert.match(tauriSkill, /make `connect-src` explicit for the required IPC scheme or local origin/u);
+	assert.match(tauriSkill, /Do not replace a specific IPC allowance with `connect-src \*`/u);
+	assert.match(tauriSkill, /packaged WebView smoke, CSP violation/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/tauri-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /WebView\/native boundary drift/u);
+	assert.match(routes, /\[routes\."tauri-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/tauri-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"tauri-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.tauri-code-change"\][\s\S]*?revision = 3/u);
+});
+
+test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain traps by Go version', () => {
+	const goSkill = readText('.mustflow/skills/go-code-change/SKILL.md');
+	const templateGoSkill = readText('templates/default/locales/en/.mustflow/skills/go-code-change/SKILL.md');
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(goSkill, templateGoSkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(goSkill, /go` directive as a language and module compatibility switch/u);
+	assert.match(goSkill, /`new\(expr\)`/u);
+	assert.match(goSkill, /`errors\.AsType`/u);
+	assert.match(goSkill, /`sync\.WaitGroup\.Go` only for tasks that do not return errors and must not panic/u);
+	assert.match(goSkill, /errgroup-style boundary/u);
+	assert.match(goSkill, /cancellation causes/u);
+	assert.match(goSkill, /`context\.WithoutCancel` only for short bounded cleanup/u);
+	assert.match(goSkill, /`context\.AfterFunc`/u);
+	assert.match(goSkill, /http\.Client` and `http\.Server` timeouts/u);
+	assert.match(goSkill, /reverse-proxy rewrite hooks/u);
+	assert.match(goSkill, /`omitempty` versus `omitzero`/u);
+	assert.match(goSkill, /`encoding\/json\/v2` and `jsontext` as experimental/u);
+	assert.match(goSkill, /traversal-resistant root APIs/u);
+	assert.match(goSkill, /`net\/netip`/u);
+	assert.match(goSkill, /`net\.JoinHostPort`/u);
+	assert.match(goSkill, /`GOMEMLIMIT` or `debug\.SetMemoryLimit`/u);
+	assert.match(goSkill, /manual `GOMAXPROCS` pins in containers/u);
+	assert.match(goSkill, /goroutine leak profiling/u);
+	assert.match(goSkill, /`-race` only finds races on executed paths/u);
+	assert.match(goSkill, /`testing\/synctest`/u);
+	assert.match(goSkill, /`testing\.B\.Loop`/u);
+	assert.match(goSkill, /`tool` directive over `tools\.go`/u);
+	assert.match(goSkill, /`go fix` modernizers/u);
+
+	assert.match(freshnessSkill, /Go release, toolchain, standard-library, runtime, or experiment references/u);
+	assert.match(freshnessSkill, /official Go release notes or package documentation/u);
+	assert.match(freshnessSkill, /expression operands to `new`/u);
+	assert.match(freshnessSkill, /goroutine leak profiles/u);
+	assert.match(freshnessSkill, /`GOEXPERIMENT` APIs/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/go-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /HTTP clients or servers, reverse proxies, JSON encoding/u);
+	assert.match(skillIndex, /unsupported Go feature/u);
+	assert.match(routes, /\[routes\."go-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/go-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"go-code-change"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
+});
+
+test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-profile traps by Rust version', () => {
+	const rustSkill = readText('.mustflow/skills/rust-code-change/SKILL.md');
+	const templateRustSkill = readText('templates/default/locales/en/.mustflow/skills/rust-code-change/SKILL.md');
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(rustSkill, templateRustSkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(rustSkill, /`rust-version`, edition, `rust-toolchain\.toml`/u);
+	assert.match(rustSkill, /1\.95\+ APIs such as `cfg_select!`, match `if let` guards, or `Vec::push_mut`/u);
+	assert.match(rustSkill, /1\.96\+ APIs such as `assert_matches!` and `core::range`/u);
+	assert.match(rustSkill, /guard patterns do not satisfy match exhaustiveness/u);
+	assert.match(rustSkill, /Import it explicitly from `std` or `core`/u);
+	assert.match(rustSkill, /`Arc::make_mut`/u);
+	assert.match(rustSkill, /`LazyLock` for no-argument static lazy values/u);
+	assert.match(rustSkill, /`OnceLock` when boot-time or test-time code supplies the value/u);
+	assert.match(rustSkill, /`Cow<'_, str>`/u);
+	assert.match(rustSkill, /query `HashMap<String, V>` with `&str`/u);
+	assert.match(rustSkill, /`Option::take`, `take_if`, or `as_slice`/u);
+	assert.match(rustSkill, /`ControlFlow`, `try_for_each`, or `try_fold`/u);
+	assert.match(rustSkill, /`spare_capacity_mut`/u);
+	assert.match(rustSkill, /avoid repeated `String::insert`/u);
+	assert.match(rustSkill, /argument-position `impl Trait` removes caller turbofish control/u);
+	assert.match(rustSkill, /implement `Deref` only for pointer-like wrappers/u);
+	assert.match(rustSkill, /use GATs for borrowing iterator\/view traits/u);
+	assert.match(rustSkill, /`workspace\.package`, `workspace\.dependencies`, `workspace\.lints`/u);
+	assert.match(rustSkill, /`resolver = "2"`/u);
+	assert.match(rustSkill, /Rust 2024 or when `unsafe_op_in_unsafe_fn` is enabled/u);
+	assert.match(rustSkill, /`opt-level`, LTO, `panic`, `codegen-units`, and `strip`/u);
+
+	assert.match(freshnessSkill, /Rust release, toolchain, standard-library, Cargo, edition, MSRV, lint, or target references/u);
+	assert.match(freshnessSkill, /official Rust release notes, standard-library docs, the Cargo Book, Rust Reference, or rustc book/u);
+	assert.match(freshnessSkill, /let chains, match `if let` guards, `cfg_select!`, `assert_matches!`, `core::range`, `Vec::push_mut`/u);
+	assert.match(freshnessSkill, /Rust 2024 `unsafe_op_in_unsafe_fn`/u);
+	assert.match(freshnessSkill, /Do not call a Rust 1\.95\+ or 1\.96\+ API a general Rust best practice/u);
+
+	assert.match(skillIndex, /\.mustflow\/skills\/rust-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /unsupported Rust feature/u);
+	assert.match(skillIndex, /Rust stable\/nightly\/MSRV confusion/u);
+	assert.match(routes, /\[routes\."rust-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/rust-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"rust-code-change"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
+});
+
+test('TypeScript and dependency freshness skills distinguish stable compiler and native preview tracks', () => {
+	const tsSkill = readText('.mustflow/skills/typescript-code-change/SKILL.md');
+	const templateTsSkill = readText('templates/default/locales/en/.mustflow/skills/typescript-code-change/SKILL.md');
+	const dependencySkill = readText('.mustflow/skills/dependency-upgrade-review/SKILL.md');
+	const templateDependencySkill = readText(
+		'templates/default/locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md',
+	);
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(tsSkill, templateTsSkill);
+	assert.equal(dependencySkill, templateDependencySkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(tsSkill, /TypeScript 6 transition deprecations/u);
+	assert.match(tsSkill, /TypeScript 7 native preview comparison/u);
+	assert.match(tsSkill, /`@typescript\/native-preview`/u);
+	assert.match(tsSkill, /`tsgo`/u);
+	assert.match(tsSkill, /`ignoreDeprecations` is a temporary compatibility valve/u);
+	assert.match(tsSkill, /`--stableTypeOrdering` as a migration comparison tool/u);
+	assert.match(tsSkill, /Keep existing `tsc` or framework typecheck as the compatibility baseline/u);
+	assert.match(tsSkill, /Compiler API, transformer, language-service, or framework typecheck surfaces/u);
+
+	assert.match(dependencySkill, /TypeScript compiler tracks/u);
+	assert.match(dependencySkill, /stable `typescript` and `tsc`/u);
+	assert.match(dependencySkill, /native preview via `@typescript\/native-preview` and `tsgo`/u);
+	assert.match(dependencySkill, /Do not treat a native preview package as a stable replacement/u);
+	assert.match(dependencySkill, /unsupported compiler API, transformer, language-service plugin/u);
+
+	assert.match(freshnessSkill, /TypeScript compiler-track references/u);
+	assert.match(freshnessSkill, /Do not call native preview output "latest stable TypeScript"/u);
+	assert.match(freshnessSkill, /side-by-side comparison, beta testing, editor preview, or repository adoption/u);
+	assert.match(freshnessSkill, /TypeScript 6 stable, TypeScript 7 beta\/native-preview/u);
+
+	assert.match(skillIndex, /TypeScript 6-to-7 migration surfaces/u);
+	assert.match(skillIndex, /native-preview over-adoption/u);
+	assert.match(skillIndex, /TypeScript beta\/native-preview track confusion/u);
+	assert.match(
+		routes,
+		/\[routes\."typescript-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85\r?\napplies_to_reasons = \["code_change", "public_api_change", "test_change", "package_metadata_change"\]/u,
+	);
+	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
+});
+
+test('HTTP delivery streaming skill keeps compression and browser transports explicit', () => {
+	const deliverySkill = readText('.mustflow/skills/http-delivery-streaming/SKILL.md');
+	const templateDeliverySkill = readText('templates/default/locales/en/.mustflow/skills/http-delivery-streaming/SKILL.md');
+	const apiSkill = readText('.mustflow/skills/api-contract-change/SKILL.md');
+	const templateApiSkill = readText('templates/default/locales/en/.mustflow/skills/api-contract-change/SKILL.md');
+	const performanceSkill = readText('.mustflow/skills/performance-budget-check/SKILL.md');
+	const templatePerformanceSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/performance-budget-check/SKILL.md',
+	);
+	const adapterSkill = readText('.mustflow/skills/adapter-boundary/SKILL.md');
+	const templateAdapterSkill = readText('templates/default/locales/en/.mustflow/skills/adapter-boundary/SKILL.md');
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const authSkill = readText('.mustflow/skills/auth-permission-change/SKILL.md');
+	const templateAuthSkill = readText('templates/default/locales/en/.mustflow/skills/auth-permission-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(deliverySkill, templateDeliverySkill);
+	assert.equal(apiSkill, templateApiSkill);
+	assert.equal(performanceSkill, templatePerformanceSkill);
+	assert.equal(adapterSkill, templateAdapterSkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(authSkill, templateAuthSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(deliverySkill, /Content-Encoding/u);
+	assert.match(deliverySkill, /Vary: Accept-Encoding/u);
+	assert.match(deliverySkill, /compression dictionary transport/u);
+	assert.match(deliverySkill, /Server-Sent Events/u);
+	assert.match(deliverySkill, /EventSource/u);
+	assert.match(deliverySkill, /proxy buffering/u);
+	assert.match(deliverySkill, /WebTransport/u);
+	assert.match(deliverySkill, /datagrams only for lossy latest-state/u);
+	assert.match(deliverySkill, /WebSocket, SSE, or long-poll fallback/u);
+	assert.match(deliverySkill, /delivery ledger/u);
+
+	assert.match(apiSkill, /http-delivery-streaming/u);
+	assert.match(apiSkill, /content negotiation/u);
+	assert.match(apiSkill, /streaming flush/u);
+	assert.match(performanceSkill, /false compression win/u);
+	assert.match(performanceSkill, /buffered stream latency/u);
+	assert.match(adapterSkill, /WebTransport streams, datagrams/u);
+	assert.match(adapterSkill, /fallback transport names/u);
+	assert.match(freshnessSkill, /HTTP standard or browser-support references/u);
+	assert.match(freshnessSkill, /WebTransport, compression dictionary transport, zstd content coding/u);
+	assert.match(authSkill, /credentialed EventSource\/SSE streams/u);
+	assert.match(authSkill, /CDN\/proxy cache keys/u);
+
+	assert.match(skillIndex, /\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md/u);
+	assert.match(skillIndex, /wrong content decoding, cache poisoning/u);
+	assert.match(routes, /\[routes\."http-delivery-streaming"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /applies_to_reasons = \["code_change", "behavior_change", "public_api_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md"/u);
+	assert.match(manifest, /"http-delivery-streaming"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 12/u);
+	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 20/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
+	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 2/u);
+});
+
+test('backend reliability skill keeps retry, idempotency, health, cache, and queue traps explicit', () => {
+	const localSkill = readText('.mustflow/skills/backend-reliability-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/backend-reliability-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /idempotency ledger/u);
+	assert.match(localSkill, /same key with a different request fingerprint/u);
+	assert.match(localSkill, /end-to-end deadline/u);
+	assert.match(localSkill, /connect, request, read, and write timeouts/u);
+	assert.match(localSkill, /exponential backoff, jitter, and a retry budget/u);
+	assert.match(localSkill, /put database, cache, or external-provider checks in liveness/u);
+	assert.match(localSkill, /`\/live` shallow/u);
+	assert.match(localSkill, /`\/ready` only/u);
+	assert.match(localSkill, /`\/startup` or an equivalent startup probe/u);
+	assert.match(localSkill, /unique constraint or unique index/u);
+	assert.match(localSkill, /partial unique index/u);
+	assert.match(localSkill, /`EXPLAIN ANALYZE` with buffer evidence/u);
+	assert.match(localSkill, /stable compound cursor/u);
+	assert.match(localSkill, /low-cardinality/u);
+	assert.match(localSkill, /Do not put secrets, tokens, raw request bodies/u);
+	assert.match(localSkill, /OpenTelemetry baggage/u);
+	assert.match(localSkill, /same correlation\s+or trace id/u);
+	assert.match(localSkill, /request coalescing/u);
+	assert.match(localSkill, /TTL jitter/u);
+	assert.match(localSkill, /negative caching/u);
+	assert.match(localSkill, /inbox table/u);
+	assert.match(localSkill, /outbox pattern/u);
+	assert.match(localSkill, /`FOR UPDATE SKIP LOCKED`/u);
+	assert.match(localSkill, /distributed locks as a last resort/u);
+	assert.match(localSkill, /object-level authorization/u);
+	assert.match(localSkill, /allowlisted DTOs/u);
+	assert.match(localSkill, /server-side feature flags/u);
+	assert.match(localSkill, /kill switch/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/backend-reliability-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining backend reliability risk/u);
+	assert.match(routes, /\[routes\."backend-reliability-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["code_change", "behavior_change", "public_api_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/backend-reliability-change\/SKILL\.md"/u);
+	assert.match(manifest, /"backend-reliability-change"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skill\.backend-reliability-change"\][\s\S]*?revision = 1/u);
+});
+
+test('Python skills gate standard-library APIs and runtime upgrade defaults by supported version', () => {
+	const pythonSkill = readText('.mustflow/skills/python-code-change/SKILL.md');
+	const templatePythonSkill = readText('templates/default/locales/en/.mustflow/skills/python-code-change/SKILL.md');
+	const dependencySkill = readText('.mustflow/skills/dependency-upgrade-review/SKILL.md');
+	const templateDependencySkill = readText(
+		'templates/default/locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md',
+	);
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(pythonSkill, templatePythonSkill);
+	assert.equal(dependencySkill, templateDependencySkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+
+	assert.match(pythonSkill, /standard-library feature usage/u);
+	assert.match(pythonSkill, /Python 3\.14\+ `map\(strict=True\)`/u);
+	assert.match(pythonSkill, /`itertools\.batched\(\.\.\., strict=True\)`/u);
+	assert.match(pythonSkill, /`functools\.cache`, `lru_cache`, `cached_property`, `partial`, and Python 3\.14\+ `Placeholder`/u);
+	assert.match(pythonSkill, /archive extraction, including `tarfile`/u);
+	assert.match(pythonSkill, /Interpreter or library diagnostics such as import timing, `tracemalloc`, `faulthandler`/u);
+
+	assert.match(freshnessSkill, /Python standard-library\/API references/u);
+	assert.match(freshnessSkill, /Python 3\.14\+ standard-library APIs/u);
+	assert.match(freshnessSkill, /official Python documentation/u);
+	assert.match(freshnessSkill, /Python 3\.14\+ `map\(strict=True\)`/u);
+	assert.match(freshnessSkill, /`functools\.Placeholder`/u);
+	assert.match(freshnessSkill, /`heapq` max-heap helpers/u);
+
+	assert.match(dependencySkill, /Python runtime support/u);
+	assert.match(dependencySkill, /Python runtime upgrades/u);
+	assert.match(dependencySkill, /standard-library API availability/u);
+	assert.match(dependencySkill, /changed defaults/u);
+	assert.match(dependencySkill, /archive extraction, subprocess handling, async lifecycle/u);
+
+	assert.match(i18n, /\[documents\."skill\.python-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
+});
+
 test('clarifying question gate keeps blocking questions evidence-based and bounded', () => {
 	const localSkill = readText('.mustflow/skills/clarifying-question-gate/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/clarifying-question-gate/SKILL.md');
@@ -343,6 +791,130 @@ test('ui quality gate folds external UI review lessons into mustflow boundaries'
 	assert.match(localSkill, /performance and asset-size/u);
 	assert.match(localSkill, /configured one-shot command or approved browser workflow/u);
 	assert.match(localSkill, /Do not start development servers, watchers, or browser sessions directly/u);
+});
+
+test('frontend render stability keeps flicker diagnosis symptom-first and template-synced', () => {
+	const localSkill = readText('.mustflow/skills/frontend-render-stability/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/frontend-render-stability/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /document navigation, theme or CSS application, hydration/u);
+	assert.match(localSkill, /Prove or rule out a full document reload/u);
+	assert.match(localSkill, /`data-astro-reload`/u);
+	assert.match(localSkill, /`transition:persist`/u);
+	assert.match(localSkill, /`astro:before-swap` or `astro:after-swap`/u);
+	assert.match(localSkill, /`data-sveltekit-reload`/u);
+	assert.match(localSkill, /`data-sveltekit-preload-data` or `data-sveltekit-preload-code`/u);
+	assert.match(localSkill, /`onNavigate` view-transition/u);
+	assert.match(localSkill, /Do not rely on component mount or a late store subscription/u);
+	assert.match(localSkill, /CSP/u);
+	assert.match(localSkill, /avoid duplicate rendered `view-transition-name` values/u);
+	assert.match(localSkill, /BFCache/u);
+	assert.match(localSkill, /abort stale requests/u);
+	assert.match(localSkill, /Pointer Events/u);
+	assert.match(localSkill, /passive event listeners/u);
+	assert.match(localSkill, /Native browser contracts are preserved/u);
+	assert.match(localSkill, /Do not migrate frameworks, disable SSR, convert the app to an SPA/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/frontend-render-stability\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining render-stability risk/u);
+	assert.match(routes, /\[routes\."frontend-render-stability"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/frontend-render-stability\/SKILL\.md"/u);
+	assert.match(manifest, /"frontend-render-stability"/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-render-stability"\]/u);
+});
+
+test('utility and browser-native styling skills cover modern extraction and platform traps', () => {
+	const tailwindSkill = readText('.mustflow/skills/tailwind-code-change/SKILL.md');
+	const templateTailwindSkill = readText('templates/default/locales/en/.mustflow/skills/tailwind-code-change/SKILL.md');
+	const unocssSkill = readText('.mustflow/skills/unocss-code-change/SKILL.md');
+	const templateUnocssSkill = readText('templates/default/locales/en/.mustflow/skills/unocss-code-change/SKILL.md');
+	const cssSkill = readText('.mustflow/skills/css-code-change/SKILL.md');
+	const templateCssSkill = readText('templates/default/locales/en/.mustflow/skills/css-code-change/SKILL.md');
+	const htmlSkill = readText('.mustflow/skills/html-code-change/SKILL.md');
+	const templateHtmlSkill = readText('templates/default/locales/en/.mustflow/skills/html-code-change/SKILL.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(tailwindSkill, templateTailwindSkill);
+	assert.equal(unocssSkill, templateUnocssSkill);
+	assert.equal(cssSkill, templateCssSkill);
+	assert.equal(htmlSkill, templateHtmlSkill);
+
+	assert.match(tailwindSkill, /CSS-first configuration/u);
+	assert.match(tailwindSkill, /`@source inline`/u);
+	assert.match(tailwindSkill, /`@source not inline`/u);
+	assert.match(tailwindSkill, /`source\(none\)`/u);
+	assert.match(tailwindSkill, /`@reference`/u);
+	assert.match(tailwindSkill, /`space-\*`/u);
+	assert.match(tailwindSkill, /`dvh`, `svh`, or `lvh`/u);
+
+	assert.match(unocssSkill, /Wind4 migration/u);
+	assert.match(unocssSkill, /`presetWind4`/u);
+	assert.match(unocssSkill, /`extendTheme`/u);
+	assert.match(unocssSkill, /`content\.pipeline\.include`/u);
+	assert.match(unocssSkill, /`@unocss-include`/u);
+	assert.match(unocssSkill, /`FileSystemIconLoader`/u);
+	assert.match(unocssSkill, /Shadow DOM and web component styles/u);
+
+	assert.match(cssSkill, /`:where`/u);
+	assert.match(cssSkill, /`:has`/u);
+	assert.match(cssSkill, /container queries/u);
+	assert.match(cssSkill, /`content-visibility`/u);
+	assert.match(cssSkill, /`contain-intrinsic-size`/u);
+	assert.match(cssSkill, /`color-scheme`/u);
+
+	assert.match(htmlSkill, /popovers/u);
+	assert.match(htmlSkill, /native constraint validation/u);
+	assert.match(htmlSkill, /`inputmode`/u);
+	assert.match(htmlSkill, /`enterkeyhint`/u);
+	assert.match(htmlSkill, /inert background/u);
+
+	assert.match(i18n, /\[documents\."skill\.tailwind-code-change"\]\r?\nsource = "locales\/en\/\.mustflow\/skills\/tailwind-code-change\/SKILL\.md"\r?\nsource_locale = "en"\r?\nrevision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.unocss-code-change"\]\r?\nsource = "locales\/en\/\.mustflow\/skills\/unocss-code-change\/SKILL\.md"\r?\nsource_locale = "en"\r?\nrevision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.css-code-change"\]\r?\nsource = "locales\/en\/\.mustflow\/skills\/css-code-change\/SKILL\.md"\r?\nsource_locale = "en"\r?\nrevision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.html-code-change"\]\r?\nsource = "locales\/en\/\.mustflow\/skills\/html-code-change\/SKILL\.md"\r?\nsource_locale = "en"\r?\nrevision = 3/u);
+});
+
+test('service boundary architecture keeps large-system boundaries ownership-first and template-synced', () => {
+	const localSkill = readText('.mustflow/skills/service-boundary-architecture/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/service-boundary-architecture/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Start by identifying ownership and failure pressure/u);
+	assert.match(localSkill, /source of truth/u);
+	assert.match(localSkill, /Split first by reason to change, not by noun/u);
+	assert.match(localSkill, /Reject shared database ownership/u);
+	assert.match(localSkill, /Design failure flows before the happy path/u);
+	assert.match(localSkill, /Require idempotency/u);
+	assert.match(localSkill, /Treat queues as storage and backpressure/u);
+	assert.match(localSkill, /Treat caches as a consistency tradeoff/u);
+	assert.match(localSkill, /past-tense fact events/u);
+	assert.match(localSkill, /Tenant ID must travel/u);
+	assert.match(localSkill, /p95, p99, error rate, queue age/u);
+	assert.match(localSkill, /manual changes with audit and approval/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/service-boundary-architecture\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining service-boundary risk/u);
+	assert.match(routes, /\[routes\."service-boundary-architecture"\]\r?\ncategory = "architecture_patterns"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/service-boundary-architecture\/SKILL\.md"/u);
+	assert.match(manifest, /"service-boundary-architecture"/u);
+	assert.match(i18n, /\[documents\."skill\.service-boundary-architecture"\]/u);
 });
 
 test('llm service UX review captures controllable AI interaction states', () => {

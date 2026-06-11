@@ -1,11 +1,11 @@
 ---
 title: Elementos de trabajo
-description: Por qué los elementos de trabajo locales no se instalan por defecto y cómo mustflow podría admitirlos en el futuro.
+description: Cómo los elementos de trabajo locales opcionales pueden ampliar mustflow sin perder traspasos acotados.
 ---
 
-De forma predeterminada, mustflow no crea carpetas locales de issues ni propuestas.
+Los elementos de trabajo son una superficie opcional de mustflow para capturar issues diferidos, propuestas y puntos de reinicio dentro del repositorio.
 
-Los elementos de trabajo basados en archivos pueden ser útiles, pero instalarlos por defecto expandiría mustflow desde un flujo de documentos para agentes hasta un gestor local de issues. Actualmente, `.mustflow/config/mustflow.toml` solo declara `work_items = "disabled"` y `handoff.mode = "report_only"`.
+La plantilla predeterminada mantiene esta superficie inactiva con `work_items = "disabled"` y `handoff.mode = "report_only"` hasta que el proyecto elija un ciclo de vida acotado.
 
 ## Valores predeterminados
 
@@ -20,16 +20,16 @@ mode = "report_only"
 
 Esto significa que los agentes deben informar trabajo inacabado en el traspaso final, en lugar de crear nuevos archivos de backlog.
 
-## Por qué no son predeterminados
+## Por qué el valor predeterminado está inactivo
 
-- El propósito principal de `mf init` es configurar archivos de flujo de trabajo solo para LLM.
+- La instalación predeterminada debe seguir siendo pequeña hasta que un proyecto opte por un ciclo de vida de elementos de trabajo.
 - Los archivos locales de issues pueden quedar obsoletos y duplicar gestores de issues existentes.
 - Registros de fallos, rutas internas, nombres de clientes y fragmentos de secretos podrían filtrarse en documentos.
 - Si los agentes crean y cierran elementos de trabajo libremente, el límite de decisión humana se vuelve confuso.
 
-## Dirección opcional
+## Dirección
 
-Si esto se convierte en una función opcional en el futuro, `.mustflow/work-items/` es más claro que `.mustflow/pr/`. Los archivos locales representan trabajo propuesto y notas de solución, no pull requests reales.
+Cuando se habilita la escritura de elementos de trabajo, `.mustflow/work-items/` es más claro que `.mustflow/pr/`. Los archivos locales representan trabajo propuesto y notas de solución, no pull requests reales.
 
 ```text
 .mustflow/
@@ -52,7 +52,7 @@ Incluso cuando se habiliten elementos de trabajo opcionales, los permisos deben 
 - Los agentes no deben afirmar que existe un pull request real.
 - Los agentes no deben almacenar secretos, datos de clientes ni registros extensos de fallos en elementos de trabajo.
 
-## Candidatos a comandos futuros
+## Candidatos a comandos
 
 ```sh
 mf work list
@@ -61,4 +61,4 @@ mf work propose MF-0001
 mf work check
 ```
 
-Estos comandos están fuera del alcance de implementación actual. mustflow debe estabilizar el flujo basado en archivos, el contrato de comando y el flujo de validación antes de añadir esta superficie opcional.
+Agrega comandos de escritura y ciclo de vida de forma incremental, con esquemas acotados, contratos de comando, redacción y reglas de aprobación humana antes de que los agentes puedan crear o cerrar registros automáticamente.

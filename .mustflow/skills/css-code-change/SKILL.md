@@ -2,11 +2,11 @@
 mustflow_doc: skill.css-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: css-code-change
-description: Apply this skill when CSS, Sass, Less, CSS Modules, CSS-in-JS, global styles, cascade layers, selector specificity, design tokens, layout, responsive behavior, focus styles, animation, color, or component styling are created or changed.
+description: Apply this skill when CSS, Sass, Less, CSS Modules, CSS-in-JS, global styles, cascade layers, selector specificity, design tokens, container queries, browser-native state selectors, layout, responsive behavior, focus styles, animation, color, or component styling are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -34,7 +34,7 @@ Preserve cascade order, specificity discipline, resilient responsive layout, des
 ## Use When
 
 - `.css`, Sass, Less, CSS Modules, CSS-in-JS, global styles, reset, theme variables, cascade layers, selectors, design tokens, component styles, animations, or responsive rules change.
-- The task touches specificity, `!important`, inline styles, negative margins, layout shift, browser compatibility, dark mode, focus style, contrast, typography, zoom, text scaling, or motion preference.
+- The task touches specificity, `!important`, inline styles, negative margins, layout shift, browser compatibility, dark mode, focus style, contrast, typography, zoom, text scaling, container queries, browser-native state selectors, viewport units, content visibility, or motion preference.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -48,6 +48,7 @@ Preserve cascade order, specificity discipline, resilient responsive layout, des
 - Global CSS entrypoints, reset/base styles, cascade layer strategy, token files, theme config, component CSS, parent layout styles, browserslist, build config, and style lint config.
 - Existing responsive, dark mode, accessibility, focus, reduced-motion, breakpoint, and design-token conventions.
 - Target surfaces for narrow viewports, 200% zoom, text scaling, delayed media, third-party markup, and browser compatibility.
+- Browser-native capabilities in use or available for the target: cascade layers, `:where`, `:is`, `:has`, container queries, logical properties, `dvh`/`svh`/`lvh`, `color-scheme`, `content-visibility`, `contain-intrinsic-size`, `text-wrap`, and view-transition styling.
 - Configured verification intents.
 
 <!-- mustflow-section: preconditions -->
@@ -62,6 +63,7 @@ Preserve cascade order, specificity discipline, resilient responsive layout, des
 
 - Add styles in the correct layer or module.
 - Use class-level selectors, custom properties, design tokens, intrinsic sizing, flex, grid, container queries, or media queries according to local patterns.
+- Use browser-native selectors, layout, and containment features as progressive enhancement when they reduce JavaScript ownership and fit the browser target.
 - Preserve visible focus, contrast, text scaling, reduced motion, and reserved space for late-loaded media.
 - Use narrow exceptions for legacy/third-party markup, runtime geometry, rich text/prose wrappers, and urgent accessibility overrides when lower-specificity or token-based fixes cannot solve the issue.
 
@@ -77,17 +79,22 @@ Preserve cascade order, specificity discipline, resilient responsive layout, des
 7. Use existing color, spacing, font, radius, shadow, z-index, and breakpoint tokens before adding literals.
 8. Keep raw color values out of component CSS. Add or reuse semantic tokens for surfaces, text, borders, actions, danger states, focus, disabled states, and dark mode.
 9. Avoid raw pixel values for typography, spacing, layout dimensions, and radius. Allow narrow values such as one-pixel borders, intrinsic icon/media dimensions, and established breakpoint tokens.
-10. Make layout responsive through constraints, `min-width: 0`, min/max sizing, flex/grid, wrapping, gap, intrinsic media dimensions, container/media queries, and content-based rules rather than fixed viewport assumptions.
-11. Do not set fixed width on page, section, container, card, modal, or form layouts. Do not set fixed height on components that contain text.
-12. Do not use viewport-only typography. Use bounded responsive type patterns that survive small screens and large displays.
-13. Do not use `overflow: hidden` to hide layout bugs. Allow it only for intentional clipping such as avatars, media crops, masks, or animation containers.
-14. Reserve dimensions or aspect ratio for images, videos, iframes, ads, embeds, skeletons, fonts, and lazy content that could cause layout shift.
-15. Preserve visible focus, sufficient contrast, 200% text resize behavior, text-spacing stress, keyboard navigation, and reduced-motion behavior.
-16. If hover styling changes an interactive affordance, provide a matching focus-visible affordance.
-17. Prefer outline and outline-offset for focus indicators. Do not rely only on shadows when ancestors may clip overflow.
-18. Respect reduced motion for parallax, large transforms, auto-scroll, route transitions, autoplay carousels, skeleton shimmer, and looping decorative animation.
-19. Check browser compatibility before adding new CSS features. Use progressive enhancement for newly available features and avoid limited-availability features unless the project browser target allows them.
-20. Choose configured verification intents that cover style lint, build, visual states, accessibility, and browser target risk when available.
+10. Make layout responsive through constraints, `min-width: 0`, `min-height: 0`, min/max sizing, flex/grid, wrapping, gap, intrinsic media dimensions, container/media queries, logical properties, and content-based rules rather than fixed viewport assumptions.
+11. Prefer named containers and container queries when a component responds to its actual slot, not the whole viewport. Keep media queries for page-level viewport decisions.
+12. Do not set fixed width on page, section, container, card, modal, or form layouts. Do not set fixed height on components that contain text.
+13. Use dynamic viewport units intentionally: `dvh` for current viewport height, `svh` for stable small viewport layout, and `lvh` only when the larger viewport behavior is intended. Avoid hard `100vh` for mobile app shells unless the target proves safe.
+14. Do not use viewport-only typography. Use bounded responsive type patterns that survive small screens and large displays.
+15. Do not use `overflow: hidden` to hide layout bugs. Allow it only for intentional clipping such as avatars, media crops, masks, or animation containers.
+16. Reserve dimensions or aspect ratio for images, videos, iframes, ads, embeds, skeletons, fonts, and lazy content that could cause layout shift.
+17. Prefer `:where` to keep wrapper and rich-text selector specificity low. Use `:has` only when it improves state ownership and the fallback remains usable for target browsers.
+18. Use `content-visibility` only for offscreen or below-the-fold content whose skipped rendering will not hide focus targets, search-relevant initial content, or accessibility-critical relationships. Pair it with `contain-intrinsic-size` to avoid layout jumps.
+19. Use `color-scheme` with theme tokens so native controls, scrollbars, and form UI match the active theme before component JavaScript runs.
+20. Preserve visible focus, sufficient contrast, 200% text resize behavior, text-spacing stress, keyboard navigation, and reduced-motion behavior.
+21. If hover styling changes an interactive affordance, provide a matching focus-visible affordance.
+22. Prefer outline and outline-offset for focus indicators. Do not rely only on shadows when ancestors may clip overflow.
+23. Respect reduced motion for parallax, large transforms, auto-scroll, route transitions, autoplay carousels, skeleton shimmer, and looping decorative animation.
+24. Check browser compatibility before adding new CSS features. Use progressive enhancement for newly available features and avoid limited-availability features unless the project browser target allows them.
+25. Choose configured verification intents that cover style lint, build, visual states, accessibility, and browser target risk when available.
 
 <!-- mustflow-section: cascade-specificity-policy -->
 ## Cascade And Specificity Policy
@@ -96,6 +103,7 @@ Preserve cascade order, specificity discipline, resilient responsive layout, des
 - Do not use IDs as styling weight. IDs are for anchors, form/ARIA relationships, or JavaScript hooks.
 - Do not write DOM-path selectors that break when markup gains or loses a wrapper.
 - Use low-specificity contextual selectors for rich text or CMS areas. Prefer patterns that keep specificity easy to override.
+- Use `:where` for low-specificity grouping and `@layer` for order. Do not use `:is` or `:has` to smuggle in heavy selectors when a class boundary would be clearer.
 - Do not add global overrides for local component problems when component-scoped styling or tokens can solve the issue.
 - New `!important` requires an explicit exception for immutable third-party/legacy markup, third-party inline style override, urgent accessibility protection, or equivalent narrow reason.
 
@@ -107,6 +115,7 @@ Preserve cascade order, specificity discipline, resilient responsive layout, des
 - Prefer min-height, padding, and line-height over fixed height for text-containing controls.
 - Prefer content-based layout, flex/grid, `minmax`, wrapping, and `clamp` over breakpoint patching.
 - Avoid `100vw` except for deliberate full-bleed designs; otherwise prefer normal containing-block width.
+- Avoid `100vh` for mobile app shells when browser chrome can change the visual viewport. Choose `dvh`, `svh`, or a layout-owned min-height intentionally.
 - Avoid absolute positioning for normal document flow. Use it only for overlays, decorative placement, controls anchored to known boxes, or measured geometry.
 
 <!-- mustflow-section: token-accessibility-policy -->
@@ -151,6 +160,7 @@ Reject the change when:
 - It uses fixed width for containers or fixed height for text-containing UI.
 - It hides layout bugs with `overflow: hidden`.
 - It adds unsized media, embeds, ads, or lazy content that can shift layout.
+- It uses `content-visibility` without an intrinsic-size fallback or on content that must be immediately reachable.
 - It hardcodes raw component colors, spacing, font sizes, radius, or shadows without an exception.
 - It removes focus styling, creates hover-only affordances, or clips the focus indicator.
 - It adds motion without reduced-motion behavior.

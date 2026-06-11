@@ -2,11 +2,11 @@
 mustflow_doc: skill.version-freshness-check
 locale: en
 canonical: true
-revision: 1
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: version-freshness-check
-description: Apply this skill when generated or edited code, configuration, CI workflows, package metadata, install instructions, examples, Docker images, framework setup, runtime declarations, toolchain declarations, or migration-sensitive snippets introduce explicit external version references that may be stale.
+description: Apply this skill when generated or edited code, configuration, CI workflows, package metadata, install instructions, examples, Docker images, framework setup, runtime declarations, toolchain declarations, Python standard-library/API references, TypeScript compiler-track references, Go release, toolchain, standard-library, runtime, or experiment references, Rust release, toolchain, standard-library, Cargo, edition, MSRV, lint, or target references, HTTP standard or browser-support references, or migration-sensitive snippets introduce explicit external version references that may be stale.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -34,6 +34,11 @@ Prevent agents from writing stale external version references from memory, while
 
 - Generated or edited files introduce explicit external version references, action refs, package ranges, runtime versions, framework majors, Docker image tags, toolchain versions, setup actions, scaffold commands, install commands, or migration examples.
 - CI workflows, release workflows, Dockerfiles, package metadata, lockfiles, runtime files, framework configuration, README examples, docs, tests, fixtures, or templates mention external versions such as GitHub Actions refs, Node, Bun, Deno, Python, Rust, Tauri, Astro, Next, SvelteKit, Electron, Docker images, package managers, SDKs, plugins, or generators.
+- Python wording mentions current/stable/support status, Python 3.14+ standard-library APIs, runtime flags, changed default behavior, security defaults, or examples that depend on `requires-python`.
+- TypeScript wording mentions current/stable/beta/native preview status for TypeScript 6, TypeScript 7, `@typescript/native-preview`, `tsgo`, compiler API compatibility, or migration readiness.
+- Go wording mentions current/stable/support status, Go release numbers, `go.mod` language version behavior, `toolchain` behavior, standard-library APIs, `GOEXPERIMENT`, runtime defaults, container behavior, JSON experiments, or examples that depend on a specific Go version.
+- Rust wording mentions current/stable/support status, Rust release numbers, `rust-version`, edition behavior, `rust-toolchain`, Cargo resolver or workspace behavior, standard-library APIs, compiler lints, target behavior, release profiles, or examples that depend on a specific Rust version.
+- HTTP delivery wording mentions current support, baseline status, default behavior, standard status, or compatibility for zstd content coding, compression dictionary transport, SSE/EventSource, WebTransport, WebSocket fallback, HTTP/2, HTTP/3, QUIC, CDN behavior, proxy buffering, or browser transport APIs.
 - An agent proposes a versioned dependency, tool, framework, action, image, or runtime based on memory, copied snippets, older project examples, or user-provided text that may be stale.
 - The task asks whether a newer stable, recommended, LTS, or security-patched version should replace a version the agent was about to write.
 - A patch claims a version is latest, current, recommended, stable, LTS, supported, deprecated, end-of-life, or migration-safe.
@@ -89,9 +94,19 @@ Prevent agents from writing stale external version references from memory, while
 10. For patch, security-minimum, and low-risk minor differences, update only when the declaration, examples, lockfile policy, and verification surface can stay aligned. Otherwise report the proposed change and leave the pinned value unchanged.
 11. For GitHub Actions and CI tools, review the action source, major tag policy, runtime support, cache behavior, permissions, and organization pinning rule. Do not assume a newer major is safe only because it exists.
 12. For framework and runtime majors such as Astro, Tauri, Electron, Next, SvelteKit, Node, Bun, Deno, Python, Rust, or Java, check migration notes, config schema, plugin and adapter compatibility, generated files, security model, deployment target, and rollback path before recommending a major change.
-13. For Docker images, decide whether the project prefers semver tags, distro tags, LTS tags, date tags, or digests. Do not replace a digest or pinned base image with a floating tag unless the repository policy says so.
-14. Synchronize every accepted version decision across package metadata, lockfiles when intentionally updated, CI, Docker, runtime files, docs, examples, templates, tests, and release notes.
-15. Run the narrowest configured verification that covers the changed versioned surface. Use broader verification for major, migration-required, runtime, framework, generated-output, package-publish, Docker, CI, or security-sensitive changes.
+13. For Python standard-library or runtime-behavior claims, refresh official Python documentation before writing durable wording. Check `requires-python`, CI/runtime matrices, and container images before using or recommending version-gated features such as Python 3.14+ `map(strict=True)`, `functools.Placeholder`, `heapq` max-heap helpers, import-timing flag behavior, or changed security defaults.
+14. For Python examples that use newer standard-library APIs, either keep the example behind an explicit runtime floor or provide a supported fallback. Do not call a Python 3.14-only API a general Python best practice when the repository declares lower support.
+15. For TypeScript 6 and 7 claims, refresh official TypeScript sources before writing durable wording. Treat TypeScript 6 stable releases, TypeScript 7 native preview or beta packages, `@typescript/native-preview`, `tsgo`, and future stable `typescript` package behavior as distinct tracks. Do not call native preview output "latest stable TypeScript" just because it is newer.
+16. For TypeScript native-preview examples, make the selected track explicit: side-by-side comparison, beta testing, editor preview, or repository adoption. If the project has compiler API consumers, transformers, framework wrappers, or declaration snapshots, classify the reference as migration-sensitive.
+17. For Go release, toolchain, standard-library, runtime, or experiment claims, refresh official Go release notes or package documentation before writing durable wording. Check the repository's `go` directive, `toolchain` directive, CI/runtime matrix, and container target before using or recommending version-gated features such as expression operands to `new`, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `os.Root`, `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `ReverseProxy.Rewrite`, container-aware `GOMAXPROCS`, goroutine leak profiles, `encoding/json/v2`, or `GOEXPERIMENT` APIs.
+18. For Go examples that use newer standard-library APIs or runtime defaults, either keep the example behind an explicit Go version floor or provide a supported fallback. Do not call an experimental `GOEXPERIMENT` feature or a newer `go` directive behavior a general Go best practice when the repository declares lower support.
+19. For Rust release, toolchain, standard-library, Cargo, edition, lint, target, or MSRV claims, refresh official Rust release notes, standard-library docs, the Cargo Book, Rust Reference, or rustc book before writing durable wording. Check `rust-version`, edition, `rust-toolchain.toml`, CI toolchain matrix, target triples, docs.rs metadata, and crate publish policy before using or recommending version-gated features such as let chains, match `if let` guards, `cfg_select!`, `assert_matches!`, `core::range`, `Vec::push_mut`, `HashMap::get_disjoint_mut`, `Option::take_if`, `LazyLock`, `OnceLock`, `workspace.lints`, `resolver = "2"`, Rust 2024 `unsafe_op_in_unsafe_fn`, or release-profile defaults.
+20. For Rust examples that use newer language or standard-library APIs, either keep the example behind an explicit Rust version floor or provide a supported fallback. Do not call a Rust 1.95+ or 1.96+ API a general Rust best practice when the repository declares a lower MSRV, and do not treat nightly-only behavior or target-specific linker behavior as stable without explicit evidence.
+21. For HTTP standards, browser APIs, proxy defaults, CDN defaults, and transport support claims, prefer official RFCs, standards bodies, MDN or browser vendor docs, and vendor-owned proxy/CDN documentation. Keep WebTransport, compression dictionary transport, zstd content coding, SSE/EventSource, HTTP/2, HTTP/3, QUIC, and proxy-buffering claims track-specific and dated when support is changing.
+22. For HTTP delivery examples that depend on newer or unevenly supported behavior, require feature detection, fallback behavior, or explicit deployment constraints. Do not present WebTransport, dictionary compression, or zstd negotiation as a universal default when the project still needs browsers, proxies, CDNs, or networks that may not support it.
+23. For Docker images, decide whether the project prefers semver tags, distro tags, LTS tags, date tags, or digests. Do not replace a digest or pinned base image with a floating tag unless the repository policy says so.
+24. Synchronize every accepted version decision across package metadata, lockfiles when intentionally updated, CI, Docker, runtime files, docs, examples, templates, tests, and release notes.
+25. Run the narrowest configured verification that covers the changed versioned surface. Use broader verification for major, migration-required, runtime, framework, generated-output, package-publish, Docker, CI, TypeScript compiler-track, Go toolchain or runtime support, Rust toolchain or MSRV support, HTTP delivery compatibility, or security-sensitive changes.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -100,6 +115,11 @@ Prevent agents from writing stale external version references from memory, while
 - Stale model defaults are not silently written as if they were current.
 - Repository-pinned versions are preserved unless the task, policy, and compatibility classification support changing them.
 - Major or migration-required changes are either explicitly approved, deferred with a recommendation, or left unchanged with the risk reported.
+- Python standard-library examples and runtime-default claims match the declared Python support matrix or name the required runtime floor.
+- TypeScript 6 stable, TypeScript 7 beta/native-preview, and future stable TypeScript tracks are not collapsed into one generic "latest TypeScript" claim.
+- Go release, `go.mod` language version, standard-library API, runtime-default, and `GOEXPERIMENT` claims match the declared Go support matrix or name the required runtime floor.
+- Rust release, `rust-version`, edition, standard-library API, Cargo resolver, lint-default, target, and nightly/stable claims match the declared Rust support matrix or name the required runtime floor.
+- HTTP standard, browser-support, proxy-default, CDN-default, and transport-support claims are not written from stale memory and keep feature detection or fallback boundaries explicit where support varies.
 - Docs and examples do not make unverifiable current-version claims.
 
 <!-- mustflow-section: verification -->
@@ -124,6 +144,10 @@ Choose the narrowest configured intent that proves the changed versioned surface
 - If official sources conflict, prefer the source that owns the artifact being referenced and report the conflict.
 - If a freshness check requires network, credentials, or a connector that is not available, report the boundary and avoid current-version claims.
 - If a proposed major or migration-required version is better for greenfield work but risky for the existing project, present both choices and ask before changing the project.
+- If TypeScript 7 native preview freshness changes during the task, update wording to a dated or track-specific claim and keep repository adoption separate from preview comparison.
+- If Go release or experiment freshness changes during the task, update wording to a dated or track-specific claim and keep official release status, `go` directive adoption, CI support, and `GOEXPERIMENT` adoption separate.
+- If Rust release or toolchain freshness changes during the task, update wording to a dated or track-specific claim and keep official release status, MSRV adoption, edition adoption, CI support, target support, and nightly or unstable features separate.
+- If HTTP delivery support changes during the task, update wording to a dated or track-specific claim and keep standards, browser support, CDN behavior, proxy defaults, and repository adoption separate.
 - If verification fails after a freshness update, do not weaken tests, lower type checks, delete lockfiles, or widen ranges to make the update pass. Revert or narrow the version decision unless the behavior change is intentional.
 
 <!-- mustflow-section: output-format -->

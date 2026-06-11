@@ -421,13 +421,26 @@ function serializedHistorySize(samples: readonly RunPerformanceSample[], today: 
 }
 
 function enforceSizeLimit(samples: readonly RunPerformanceSample[], today: string): readonly RunPerformanceSample[] {
-	if (serializedHistorySize(samples, today) <= MAX_TOTAL_BYTES) {
+	const currentSize = serializedHistorySize(samples, today);
+	if (currentSize <= MAX_TOTAL_BYTES) {
 		return samples;
 	}
 
+	const averageBytesPerSample = Math.max(1, currentSize / Math.max(1, samples.length));
+	const estimatedDropCount = Math.floor((currentSize - MAX_TOTAL_BYTES) / averageBytesPerSample);
 	let low = 1;
 	let high = samples.length;
 	let firstFittingIndex = samples.length;
+	const probeIndex = Math.max(1, Math.min(samples.length, estimatedDropCount));
+
+	if (probeIndex > 1) {
+		if (serializedHistorySize(samples.slice(probeIndex), today) <= MAX_TOTAL_BYTES) {
+			firstFittingIndex = probeIndex;
+			high = probeIndex - 1;
+		} else {
+			low = probeIndex + 1;
+		}
+	}
 
 	while (low <= high) {
 		const middle = Math.floor((low + high) / 2);

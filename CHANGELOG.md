@@ -6,6 +6,75 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.37.1 - 2026-06-11
+
+### Changed
+
+- Strengthened the `tauri-code-change` skill for packaged WebView blank-screen failures caused by CSP blocking static frontend bootstrap scripts, including SvelteKit-style inline bootstrap handling, Tauri IPC `connect-src` scoping, and hotfix guidance that avoids broad script or protocol allowances.
+
+## 2.37.0 - 2026-06-11
+
+### Added
+
+- Added the `ai-generated-code-hardening` skill so agents can harden AI-authored or broad code changes against duplicate helpers and shapes, hidden coupling, accidental re-exports, swallowed errors, complexity growth, weak tests, and uncontracted enforcement drift.
+
+## 2.36.0 - 2026-06-11
+
+### Added
+
+- Added the `proactive-risk-surfacing` skill so agents can classify scope-adjacent risks as fix now, report only, ask first, or ignore instead of either staying too literal or drifting into unrelated cleanup.
+
+## 2.35.3 - 2026-06-11
+
+### Added
+
+- Added the `backend-reliability-change` skill for backend idempotency, retry and timeout policy, health probes, database-enforced facts, observability hygiene, cache stampede prevention, queue outbox/inbox handling, DTO boundaries, object-level authorization, and rollout kill switches.
+
+## 2.35.2 - 2026-06-11
+
+### Changed
+
+- Strengthened Rust and version-freshness skills for Rust MSRV gates, Rust 1.95/1.96 standard-library APIs, Cargo workspace and resolver behavior, initialization primitives, allocation traps, unsafe lints, release-profile tuning, and stable-versus-nightly wording.
+
+## 2.35.1 - 2026-06-11
+
+### Changed
+
+- Strengthened Go and version-freshness skills for Go language-version gates, goroutine leaks, context causes, HTTP timeouts, reverse proxies, JSON tags, container runtime limits, race detection, PGO, benchmarks, tool directives, and experimental Go features.
+
+## 2.35.0 - 2026-06-11
+
+### Added
+
+- Added the `http-delivery-streaming` skill for HTTP content coding, zstd and dictionary negotiation, CDN/proxy cache behavior, SSE, WebTransport, browser fallback, reconnect, buffering, and delivery observability.
+
+### Changed
+
+- Cross-linked API contract, performance budget, adapter boundary, auth permission, and version freshness skills to treat HTTP delivery, streaming, and browser transport behavior as explicit contract, security, performance, and freshness surfaces.
+
+## 2.34.0 - 2026-06-11
+
+### Added
+
+- Added the `service-boundary-architecture` skill for service/module boundary design, data ownership, failure flows, queues, idempotency, tenancy, observability, and operational recovery.
+
+### Changed
+
+- Strengthened Tailwind, UnoCSS, CSS, HTML, and frontend render-stability skills with current browser-native, extraction, and CSS-first configuration checks.
+- Strengthened TypeScript, dependency-upgrade, and version-freshness skills for TypeScript 6 transition releases, TypeScript 7 native-preview beta work, `tsgo` comparison, declaration emit drift, and compiler-track adoption risk.
+
+## 2.33.0 - 2026-06-11
+
+### Added
+
+- Added the `frontend-render-stability` product-profile skill so agents diagnose navigation flicker, theme flash, hydration flash, blank first render, loading layout shifts, and route-transition jank from the visible render phase before changing framework, CSS, or data-loading code.
+
+## 2.32.1 - 2026-06-11
+
+### Changed
+
+- Reframed mustflow documentation to allow optional runtime, work-item, adapter, coordination, and harness surfaces when explicit lifecycle and safety contracts exist.
+
 ## 2.32.0 - 2026-06-06
 
 ### Added
