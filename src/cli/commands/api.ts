@@ -3,6 +3,13 @@ import path from 'node:path';
 import { createInterface } from 'node:readline';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
+import {
+	API_REPORT_ACTIONS,
+	apiReportActionSpec,
+	isApiReportAction,
+	type ApiReportAction,
+} from './api/actions.js';
+import { createRecommendedNextCommands } from './api/workspace-recommendations.js';
 import { listActiveRunLocks, type ActiveRunLockEffect } from '../../core/active-run-locks.js';
 import {
 	createChangeVerificationReport,
@@ -425,15 +432,6 @@ interface ApiStaleLockRecord {
 	readonly reason: string;
 }
 
-type ApiReportAction =
-	| 'workspace-summary'
-	| 'command-catalog'
-	| 'verification-plan'
-	| 'latest-evidence'
-	| 'diff-risk'
-	| 'health'
-	| 'locks';
-
 type ApiReportOutput =
 	| ApiWorkspaceSummaryOutput
 	| ApiCommandCatalogOutput
@@ -487,81 +485,6 @@ interface ApiServeErrorResponse extends ApiServeResponseBase {
 }
 
 type ApiServeResponse = ApiServeSuccessResponse | ApiServeErrorResponse;
-
-interface ApiReportActionSpec {
-	readonly action: ApiReportAction;
-	readonly requiresChanged: boolean;
-	readonly helpKey:
-		| 'api.help.action.workspaceSummary'
-		| 'api.help.action.commandCatalog'
-		| 'api.help.action.verificationPlan'
-		| 'api.help.action.latestEvidence'
-		| 'api.help.action.diffRisk'
-		| 'api.help.action.health'
-		| 'api.help.action.locks';
-	readonly example: string;
-}
-
-const API_REPORT_ACTIONS: readonly ApiReportActionSpec[] = [
-	{
-		action: 'workspace-summary',
-		requiresChanged: false,
-		helpKey: 'api.help.action.workspaceSummary',
-		example: 'mf api workspace-summary --json',
-	},
-	{
-		action: 'command-catalog',
-		requiresChanged: false,
-		helpKey: 'api.help.action.commandCatalog',
-		example: 'mf api command-catalog --json',
-	},
-	{
-		action: 'verification-plan',
-		requiresChanged: true,
-		helpKey: 'api.help.action.verificationPlan',
-		example: 'mf api verification-plan --changed --json',
-	},
-	{
-		action: 'latest-evidence',
-		requiresChanged: false,
-		helpKey: 'api.help.action.latestEvidence',
-		example: 'mf api latest-evidence --json',
-	},
-	{
-		action: 'diff-risk',
-		requiresChanged: true,
-		helpKey: 'api.help.action.diffRisk',
-		example: 'mf api diff-risk --changed --json',
-	},
-	{
-		action: 'health',
-		requiresChanged: false,
-		helpKey: 'api.help.action.health',
-		example: 'mf api health --json',
-	},
-	{
-		action: 'locks',
-		requiresChanged: false,
-		helpKey: 'api.help.action.locks',
-		example: 'mf api locks --json',
-	},
-];
-
-const API_REPORT_ACTION_NAMES = new Set(API_REPORT_ACTIONS.map((spec) => spec.action));
-
-function isApiReportAction(value: string): value is ApiReportAction {
-	return API_REPORT_ACTION_NAMES.has(value as ApiReportAction);
-}
-
-function apiReportActionSpec(action: ApiReportAction): ApiReportActionSpec {
-	const spec = API_REPORT_ACTIONS.find((candidate) => candidate.action === action);
-
-	if (!spec) {
-		throw new Error(`Unknown API report action: ${action}`);
-	}
-
-	return spec;
-}
 
 export function getApiHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -678,24 +601,6 @@ function createRecommendedReadSurfaces(context: AgentContext): readonly string[]
 	];
 
 	return [...new Set(surfaces)];
-}
-
-function createRecommendedNextCommands(output: Pick<ApiWorkspaceSummaryOutput, 'installed' | 'check' | 'git_state'>): readonly string[] {
-	if (!output.installed) {
-		return ['mf init --dry-run', 'mf init --yes'];
-	}
-
-	if (!output.check.ok) {
-		return ['mf check', 'mf status --json', 'mf update --dry-run'];
-	}
-
-	const commands = ['mf context --json', 'mf doctor --json', 'mf check --strict'];
-
-	if (output.git_state.status === 'available' && output.git_state.changed_file_count !== null && output.git_state.changed_file_count > 0) {
-		commands.push('mf classify --changed --json', 'mf verify --changed --plan-only --json');
-	}
-
-	return commands;
 }
 
 function isSafeIntentName(value: string): boolean {
