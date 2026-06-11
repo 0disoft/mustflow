@@ -36,10 +36,7 @@ import { readGitChangedFiles } from '../git-changes.js';
 import { inspectManifestLock } from '../manifest-lock.js';
 import { generateRepoMap } from '../repo-map.js';
 import { parseTomlText, readMustflowTomlFile } from '../toml.js';
-import {
-	MUSTFLOW_JSON_MAX_BYTES,
-	readMustflowTextFileResult,
-} from '../mustflow-read.js';
+import { MUSTFLOW_JSON_MAX_BYTES } from '../mustflow-read.js';
 import {
 	getContractModelDefinitions,
 	validateCandidateContractModelConfig,
@@ -166,6 +163,7 @@ import type { CheckIssue, CheckOptions, ParsedConfigFiles, SkillRouteMetadata } 
 export type { CheckOptions } from './types.js';
 import { isConfiguredCommandIntent, isDeclaredCommandIntent } from './command-intents.js';
 import { parseSimpleFrontmatter, readFrontmatterList, readSkillSectionIds } from './frontmatter.js';
+import { readStrictMustflowText } from './safe-read.js';
 import { validateStrictTestSelectionConfig } from './test-selection.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../templates.js';
 
@@ -955,24 +953,6 @@ function validateSkills(projectRoot: string, issues: CheckIssue[]): void {
 			});
 		}
 	}
-}
-
-function readStrictMustflowText(
-	projectRoot: string,
-	relativePath: string,
-	issues: CheckIssue[],
-	options: { readonly maxBytes?: number } = {},
-): string | undefined {
-	const result = readMustflowTextFileResult(projectRoot, relativePath, options);
-	if (result.ok) {
-		return result.content;
-	}
-
-	if (result.exists && result.error) {
-		pushStrictIssue(issues, `${toPosixPath(relativePath)} could not be read safely: ${result.error}`);
-	}
-
-	return undefined;
 }
 
 function validateContextDocuments(projectRoot: string, issues: CheckIssue[]): void {
