@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.38.0 - 2026-06-11
+
+### Added
+
+- Added the `powershell-code-change` skill for PowerShell parser layering, quoting, here-strings, splatting, native argv passing, `--%`, `-Command`, regex/wildcard/replacement parsing, and command-injection-safe script changes.
+
 ## 2.37.1 - 2026-06-11
 
 ### Changed

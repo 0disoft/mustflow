@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 108
+revision = 109
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -309,6 +309,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.powershell-code-change"]
+source = "locales/en/.mustflow/skills/powershell-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.rust-code-change"]

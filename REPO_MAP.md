@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 143
+anchor_count: 144
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:4e65098a70bf6938359f7cf5b15c18c4678883068cc5bcd0eac1e6216c95bce1"
+source_fingerprint: "sha256:c9779bc882228786a478c90d464653eb771542ae261b1a56cf3c29e252f1b95c"
 ---
 
 # REPO_MAP.md
@@ -297,6 +297,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/postgresql-code-change/
 
 - `.mustflow/skills/postgresql-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/powershell-code-change/
+
+- `.mustflow/skills/powershell-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/proactive-risk-surfacing/
 

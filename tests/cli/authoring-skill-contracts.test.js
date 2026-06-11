@@ -175,7 +175,7 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md"/u);
 	assert.match(manifest, /"ai-generated-code-hardening"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
 	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 1/u);
 });
 
@@ -401,7 +401,7 @@ test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain
 	assert.match(routes, /\[routes\."go-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/go-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"go-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
 	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
 });
@@ -459,7 +459,7 @@ test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-p
 	assert.match(routes, /\[routes\."rust-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/rust-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"rust-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
 	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 4/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
 });
@@ -517,6 +517,50 @@ test('TypeScript and dependency freshness skills distinguish stable compiler and
 	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
+});
+
+test('PowerShell code change skill keeps quoting, parser layers, and native argv explicit', () => {
+	const localSkill = readText('.mustflow/skills/powershell-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/powershell-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /parser layering/u);
+	assert.match(localSkill, /PowerShell expression or argument mode/u);
+	assert.match(localSkill, /native program parser/u);
+	assert.match(localSkill, /single-quoted strings for literal values/u);
+	assert.match(localSkill, /double-quoted strings only when variable or subexpression expansion is required/u);
+	assert.match(localSkill, /subexpressions for member access/u);
+	assert.match(localSkill, /`\$\{name\}`/u);
+	assert.match(localSkill, /single-quoted here-strings/u);
+	assert.match(localSkill, /Avoid line-ending backticks/u);
+	assert.match(localSkill, /splatting/u);
+	assert.match(localSkill, /Use `--` only/u);
+	assert.match(localSkill, /Use `--%` only as a narrow Windows-native stop-parsing fallback/u);
+	assert.match(localSkill, /outer quotation marks are normally consumed/u);
+	assert.match(localSkill, /Build native command arguments as arrays/u);
+	assert.match(localSkill, /call operator/u);
+	assert.match(localSkill, /\$PSNativeCommandArgumentPassing/u);
+	assert.match(localSkill, /Prefer direct native invocation over `Start-Process`/u);
+	assert.match(localSkill, /Do not use `Invoke-Expression`/u);
+	assert.match(localSkill, /regex, wildcard, and replacement operations/u);
+	assert.match(localSkill, /Prefer `-File`, stdin, or an encoded command/u);
+	assert.match(localSkill, /command-injection risk/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/powershell-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /parser-layer confusion, quote loss/u);
+	assert.match(routes, /\[routes\."powershell-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /applies_to_reasons = \["code_change", "test_change", "docs_change", "package_metadata_change", "workflow_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/powershell-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"powershell-code-change"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skill\.powershell-code-change"\][\s\S]*?revision = 1/u);
 });
 
 test('HTTP delivery streaming skill keeps compression and browser transports explicit', () => {
@@ -581,7 +625,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(routes, /applies_to_reasons = \["code_change", "behavior_change", "public_api_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md"/u);
 	assert.match(manifest, /"http-delivery-streaming"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
 	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
 	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 2/u);
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 12/u);
@@ -640,7 +684,7 @@ test('backend reliability skill keeps retry, idempotency, health, cache, and que
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/backend-reliability-change\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-reliability-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 108/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
 	assert.match(i18n, /\[documents\."skill\.backend-reliability-change"\][\s\S]*?revision = 1/u);
 });
 

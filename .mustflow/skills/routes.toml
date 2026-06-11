@@ -234,6 +234,12 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 
+[routes."powershell-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "test_change", "docs_change", "package_metadata_change", "workflow_change"]
+
 [routes."go-code-change"]
 category = "general_code"
 route_type = "primary"
