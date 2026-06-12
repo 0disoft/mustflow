@@ -133,7 +133,13 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(commands, /\[intents\.changes_status\]/);
 		assert.match(commands, /argv = \["git", "status", "--short"\]/);
 		assert.match(commands, /\[intents\.changes_diff_summary\]/);
+		assert.match(commands, /\[intents\.test\][\s\S]*?status = "configured"/);
+		assert.match(commands, /\[intents\.test\][\s\S]*?argv = \["bun", "test"\]/);
 		assert.match(commands, /\[intents\.test_related\]/);
+		assert.match(commands, /\[intents\.test_related\][\s\S]*?status = "configured"/);
+		assert.match(commands, /\[intents\.test_related\][\s\S]*?argv = \["bun", "test"\]/);
+		assert.match(commands, /\[intents\.test_fast\][\s\S]*?status = "configured"/);
+		assert.match(commands, /\[intents\.test_fast\][\s\S]*?argv = \["bun", "test"\]/);
 		assert.match(commands, /\[intents\.test_audit\]/);
 		assert.match(commands, /\[intents\.snapshot_update\]/);
 		assert.match(commands, /\[intents\.asset_optimize\]/);

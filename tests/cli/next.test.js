@@ -97,7 +97,7 @@ test('next reports idle when no changed files need verification', async () => {
 	}
 });
 
-test('next points command-contract gaps to onboarding instead of guessed commands', async () => {
+test('next recommends default template verification instead of blocking on missing test commands', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -109,17 +109,18 @@ test('next points command-contract gaps to onboarding instead of guessed command
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.status, 'blocked');
-		assert.equal(output.decision.kind, 'configure_commands');
-		assert.equal(output.decision.command, 'mf onboard commands');
+		assert.equal(output.status, 'needs_verification');
+		assert.equal(output.decision.kind, 'verify');
+		assert.equal(output.decision.command, 'mf verify --changed --json');
 		assert.ok(output.state.validation_reasons.includes('code_change'));
-		assert.ok(output.gaps.some((gap) => gap.reason === 'code_change'));
-		assert.ok(output.recommended_commands.includes('mf onboard commands'));
+		assert.ok(output.state.selected_intents.includes('test_related'));
+		assert.equal(output.gaps.length, 0);
+		assert.ok(output.recommended_commands.includes('mf verify --changed --json'));
 		assert.ok(!output.recommended_commands.some((command) => /npm test|bun test|node --test/u.test(command)));
 
 		const text = await runCli(projectPath, ['next']);
 		assert.equal(text.status, 0, text.stderr || text.stdout);
-		assert.match(text.stdout, /mf onboard commands/u);
+		assert.match(text.stdout, /mf verify --changed --json/u);
 		assert.doesNotMatch(text.stdout, /npm test|bun test|node --test/u);
 	} finally {
 		removeTempProject(projectPath);
@@ -160,7 +161,8 @@ required_after = ["code_change"]
 		assert.equal(output.status, 'needs_verification');
 		assert.equal(output.decision.kind, 'verify');
 		assert.equal(output.decision.command, 'mf verify --changed --json');
-		assert.deepEqual(output.state.selected_intents, ['code_probe']);
+		assert.ok(output.state.selected_intents.includes('code_probe'));
+		assert.ok(output.state.selected_intents.includes('test_related'));
 		assert.deepEqual(output.gaps, []);
 	} finally {
 		removeTempProject(projectPath);

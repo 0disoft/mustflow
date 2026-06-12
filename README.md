@@ -299,6 +299,9 @@ Automation and agents should use `--json` output or `mf api serve --stdio` JSONL
 ## Command execution policy
 
 Runnable work is declared in `.mustflow/config/commands.toml` so agents do not guess commands.
+New projects start with Bun-backed `test`, `test_related`, and `test_fast` intents so agents can run
+basic verification immediately after `mf init`. Replace those defaults with narrower project-specific
+commands when a repository uses another runner or has a faster related-test entrypoint.
 
 `mf run` executes only commands that meet all these conditions:
 

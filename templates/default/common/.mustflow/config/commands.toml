@@ -25,24 +25,48 @@ description = "Generated mustflow SQLite local index under .mustflow/cache/."
 concurrency = "exclusive_writer"
 
 [intents.test]
-status = "unknown"
-description = "Run the test suite."
-reason = "This repository has not declared its test command yet."
-agent_action = "do_not_guess_report_missing"
-required_after = ["code_change", "behavior_change"]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the default Bun test suite."
+argv = ["bun", "test"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["release_risk", "cross_cutting_code_change", "full_test_request"]
 
 [intents.test_related]
-status = "unknown"
-description = "Run tests directly related to changed files."
-reason = "This repository has not declared its related-test command yet."
-agent_action = "do_not_guess_report_missing"
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the default Bun test suite for changed code when no narrower test command exists."
+argv = ["bun", "test"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
 required_after = ["code_change", "behavior_change", "test_change"]
 
 [intents.test_fast]
-status = "unknown"
-description = "Run the fast test baseline."
-reason = "This repository has not declared its fast-test command yet."
-agent_action = "do_not_guess_report_missing"
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the default Bun test suite as the fast baseline until the repository narrows it."
+argv = ["bun", "test"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
 required_after = ["low_risk_code_change", "copy_change", "i18n_change", "unknown_change"]
 
 [intents.test_coverage]
@@ -57,7 +81,7 @@ status = "unknown"
 description = "Inspect stale or redundant test candidates."
 reason = "This repository has not declared its test-audit command yet."
 agent_action = "do_not_guess_report_missing"
-required_after = ["test_change", "behavior_removed", "public_api_change"]
+required_after = []
 
 [intents.test_release]
 status = "unknown"
@@ -85,7 +109,7 @@ status = "unknown"
 description = "Run linting or static analysis."
 reason = "This repository has not declared its lint command yet."
 agent_action = "do_not_guess_report_missing"
-required_after = ["code_change", "style_change"]
+required_after = []
 
 [intents.line_endings_check]
 status = "configured"

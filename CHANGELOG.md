@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.39.0 - 2026-06-12
+
+### Changed
+
+- Default `mf init` templates now install runnable Bun-backed `test`, `test_related`, and `test_fast` command intents so new projects can run basic test verification without first hand-authoring a command contract.
+
 ## 2.38.0 - 2026-06-11
 
 ### Added
