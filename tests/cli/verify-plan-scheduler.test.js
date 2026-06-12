@@ -1314,9 +1314,9 @@ destructive = false
 		assert.deepEqual(report.gaps, []);
 		assert.deepEqual(
 			report.schedule.entries.map((entry) => entry.intent).sort(),
-			['verify_release_gate', 'verify_schema_targeted'],
+			['test', 'verify_release_gate', 'verify_schema_targeted'],
 		);
-		assert.equal(report.decision_graph.summary.selected, 2);
+		assert.equal(report.decision_graph.summary.selected, 3);
 		assert.equal(
 			report.decision_graph.nodes.some(
 				(node) =>

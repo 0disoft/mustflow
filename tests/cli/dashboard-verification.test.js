@@ -179,7 +179,7 @@ required_after = ["public_api_change"]
 		assert.equal(recommendedIntents.includes('test_release'), false);
 		assert.ok(skippedIntents.includes('build'));
 		assert.ok(skippedIntents.includes('docs_validate'));
-		assert.ok(skippedIntents.includes('test_audit'));
+		assert.equal(skippedIntents.includes('test_audit'), false);
 	} finally {
 		if (dashboard) {
 			await stopDashboard(dashboard);

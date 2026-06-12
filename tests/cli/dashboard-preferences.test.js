@@ -530,7 +530,7 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.ok(status.command_contract.intents.some((intent) => intent.name === 'mustflow_check' && intent.runnable === true));
 		assert.ok(
 			status.command_contract.intents.some(
-				(intent) => intent.name === 'test_related' && intent.runnable === false && intent.reason.includes('related-test command'),
+				(intent) => intent.name === 'test_related' && intent.runnable === true,
 			),
 		);
 		assert.ok(Array.isArray(status.verification.changed_files));

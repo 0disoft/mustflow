@@ -429,7 +429,7 @@ test('explains blocked command intents without allowing guessed execution', () =
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /command intent "lint" is not agent-runnable/);
 		assert.match(result.stdout, /status is unknown, not configured/);
-		assert.match(result.stdout, /required_after: code_change, style_change/);
+		assert.match(result.stdout, /required_after: none/);
 		assert.match(result.stdout, /Counts as mustflow verification: no/);
 	} finally {
 		removeTempProject(projectPath);

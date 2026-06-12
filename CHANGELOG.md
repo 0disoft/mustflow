@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.39.1 - 2026-06-12
+
+### Fixed
+
+- Updated the command explanation test contract for the relaxed default `lint` intent trigger set.
+
 ## 2.39.0 - 2026-06-12
 
 ### Changed

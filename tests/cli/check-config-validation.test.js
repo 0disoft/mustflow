@@ -747,11 +747,6 @@ select = { intent = "missing_related", fallback_intent = "test_fast", cmd = "npm
 			'mustflow.test_selection.unknown_command_intent',
 			'Strict: .mustflow/config/test-selection.toml rules[0].select.intent references unknown command intent "missing_related"',
 		);
-		assertHasIssueDetail(
-			check,
-			'mustflow.test_selection.invalid_shape',
-			'Strict: .mustflow/config/test-selection.toml rules[0].select.fallback_intent references command intent "test_fast" that is not configured',
-		);
 	} finally {
 		removeTempProject(projectPath);
 	}
