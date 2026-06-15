@@ -40,6 +40,8 @@ Keep LLM service interfaces clear, controllable, responsive, readable, and recov
 ## Do Not Use When
 
 - The task changes a non-AI UI surface with no prompt, generation, model, citation, or conversation behavior; use `ui-quality-gate`.
+- The task changes backend response latency mechanics such as time to first token, first useful output, LLM round trips, tool wait, prompt-cache latency, model routing speed, priority tier, realtime continuation, or predicted outputs; use `llm-response-latency-review`.
+- The task changes backend agent execution control such as planner/executor/verifier separation, tool-call gates, approval or interrupt state, durable resume behavior, loop budgets, retry classification, handoffs, guardrails, or trace outcome evaluation; use `agent-execution-control-review`.
 - The task changes only backend model orchestration, prompts, retrieval, or tool calls with no user-facing state; use the narrower backend, security, data, or test skill that matches the changed surface.
 - The task is only general copy editing or documentation; use the relevant documentation skill.
 - Visual or interactive inspection is unavailable; report that gap instead of claiming UX verification.

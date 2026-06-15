@@ -36,6 +36,14 @@ interface SpawnedCommandInput {
 	readonly shell: boolean;
 }
 
+function createEmptyOutputSnapshot(maxBytes: number): BoundedOutputSnapshot {
+	return new BoundedOutputBuffer(maxBytes).toSnapshot();
+}
+
+function createInvalidExecutableError(): NodeJS.ErrnoException {
+	return Object.assign(new Error('Command executable must not be empty'), { code: 'EINVAL' });
+}
+
 function runSpawnedCommandStreaming(
 	command: SpawnedCommandInput,
 	cwd: string,
@@ -49,6 +57,17 @@ function runSpawnedCommandStreaming(
 	streamOutput: boolean,
 	enforceOutputLimit: boolean,
 ): Promise<CommandResult> {
+	if (command.executable.trim().length === 0) {
+		return Promise.resolve({
+			status: null,
+			signal: null,
+			error: createInvalidExecutableError(),
+			stdout: createEmptyOutputSnapshot(stdoutTailBytes),
+			stderr: createEmptyOutputSnapshot(stderrTailBytes),
+			termination: null,
+		});
+	}
+
 	return new Promise((resolve) => {
 		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
 		const stderr = new BoundedOutputBuffer(stderrTailBytes);

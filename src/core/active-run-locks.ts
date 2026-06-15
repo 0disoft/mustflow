@@ -2,12 +2,10 @@ import { createHash } from 'node:crypto';
 import {
 	existsSync,
 	mkdirSync,
-	readFileSync,
 	readdirSync,
 	renameSync,
 	rmSync,
 	statSync,
-	writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
 
@@ -17,6 +15,10 @@ import {
 	type NormalizedCommandEffect,
 } from './command-effects.js';
 import type { CommandContract } from './config-loading.js';
+import {
+	readUtf8FileInsideWithoutSymlinks,
+	writeJsonFileInsideWithoutSymlinks,
+} from './safe-filesystem.js';
 
 const ACTIVE_LOCK_SCHEMA_VERSION = '1';
 const ACTIVE_LOCK_KIND = 'active_run_lock';
@@ -26,6 +28,8 @@ const LOCK_MUTEX_WAIT_MS = 1_000;
 const LOCK_MUTEX_SLEEP_MS = 25;
 const LOCK_MUTEX_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
 const LOCK_MUTEX_RECOVERY_DIRECTORY = 'mutex.recovery';
+const ACTIVE_LOCK_RECORD_MAX_BYTES = 256 * 1024;
+const ACTIVE_LOCK_OWNER_MAX_BYTES = 16 * 1024;
 
 export interface ActiveRunLockEffect {
 	readonly source: string;
@@ -233,9 +237,21 @@ function readActiveRecords(projectRoot: string): readonly ActiveRunLockRecord[] 
 	}
 
 	const records: ActiveRunLockRecord[] = [];
-	for (const name of readdirSync(directory).filter((entry) => entry.endsWith('.json')).sort()) {
+	const entries = readdirSync(directory, { withFileTypes: true })
+		.filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+		.map((entry) => entry.name)
+		.sort();
+
+	for (const name of entries) {
 		try {
-			const record = parseRecord(JSON.parse(readFileSync(path.join(directory, name), 'utf8')));
+			const recordPath = path.join(directory, name);
+			const record = parseRecord(
+				JSON.parse(
+					readUtf8FileInsideWithoutSymlinks(directory, recordPath, {
+						maxBytes: ACTIVE_LOCK_RECORD_MAX_BYTES,
+					}),
+				),
+			);
 			if (record) {
 				records.push(record);
 			}
@@ -346,7 +362,11 @@ interface ActiveMutexOwner {
 
 function readMutexOwner(ownerPath: string): ActiveMutexOwner | null {
 	try {
-		const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; started_at?: unknown; token?: unknown };
+		const owner = JSON.parse(
+			readUtf8FileInsideWithoutSymlinks(path.dirname(ownerPath), ownerPath, {
+				maxBytes: ACTIVE_LOCK_OWNER_MAX_BYTES,
+			}),
+		) as { pid?: unknown; started_at?: unknown; token?: unknown };
 		if (typeof owner.started_at !== 'string' || typeof owner.token !== 'string') {
 			return null;
 		}
@@ -483,14 +503,18 @@ function acquireMutex(projectRoot: string): () => void {
 			mkdirSync(mutex);
 			const ownerRecord = { pid: process.pid, started_at: new Date().toISOString(), token: ownerToken };
 			try {
-				writeFileSync(ownerPath, JSON.stringify(ownerRecord, null, 2));
+				writeJsonFileInsideWithoutSymlinks(root, ownerPath, ownerRecord);
 			} catch (error) {
 				rmSync(mutex, { recursive: true, force: true });
 				throw error;
 			}
 			return () => {
 				try {
-					const owner = JSON.parse(readFileSync(ownerPath, 'utf8')) as { pid?: unknown; token?: unknown };
+					const owner = JSON.parse(
+						readUtf8FileInsideWithoutSymlinks(path.dirname(ownerPath), ownerPath, {
+							maxBytes: ACTIVE_LOCK_OWNER_MAX_BYTES,
+						}),
+					) as { pid?: unknown; token?: unknown };
 					if (Number(owner.pid) === ownerRecord.pid && owner.token === ownerRecord.token) {
 						rmSync(mutex, { recursive: true, force: true });
 					}
@@ -613,7 +637,7 @@ export function acquireActiveRunLock(
 
 		const record = createRecord(projectRoot, intentName, effects, options.commandHash ?? null);
 		const recordPath = activeLockRecordPath(projectRoot, record.run_id);
-		writeFileSync(recordPath, JSON.stringify(record, null, 2));
+		writeJsonFileInsideWithoutSymlinks(activeLockDirectory(projectRoot), recordPath, record);
 		let released = false;
 
 		return {

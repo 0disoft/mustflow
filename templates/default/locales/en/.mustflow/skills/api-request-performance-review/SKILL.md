@@ -49,6 +49,7 @@ The core question is: "For one request, how many times do we repeat the same I/O
 - The task is primarily cache correctness, stale data spread, permission leakage, or invalidation order; use `cache-integrity-review`.
 - The task is primarily reliability, retry, timeout, queue, health-check, or operational failure handling rather than per-request latency; use `backend-reliability-change`.
 - The task is a full measurement, benchmark, production profiling, load-test, service-level objective, or p95/p99 performance-budget project; use `performance-budget-check` as the main route.
+- The route-level request path is slow mainly because of LLM response latency, time to first token, first useful output, streaming, LLM round trips, tool-call wait, prompt-cache latency, model routing speed, realtime continuation, priority tier, or predicted-output behavior; use `llm-response-latency-review`.
 - The API path is explicitly tiny, hard-capped, offline-only, or manual-only and the bounded request size is documented.
 
 <!-- mustflow-section: required-inputs -->

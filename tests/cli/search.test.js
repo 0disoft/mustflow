@@ -172,6 +172,16 @@ test('search narrows indexed command candidates before loading command effects i
 	assert.doesNotMatch(source, /getCommandEffects\(database,\s*name\)/u);
 });
 
+test('search reuses query ngrams when building match snippets', () => {
+	const searchTextSource = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'search-text.ts'), 'utf8');
+	const searchReadModelSource = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'search-read-model.ts'), 'utf8');
+
+	assert.match(searchTextSource, /queryNgrams = buildSearchNgrams\(\[query\]\)/u);
+	assert.match(searchReadModelSource, /const querySnippetNgrams = buildSearchNgrams\(\[normalizedQuery\]\)/u);
+	assert.doesNotMatch(searchReadModelSource, /getMatchSnippet\(fields,\s*normalizedQuery\)(?!,)/u);
+	assert.doesNotMatch(searchTextSource, /buildSearchNgrams\(\[query\]\)\.filter/u);
+});
+
 test('prints cache-layer hints for task-scoped search results', async () => {
 	const projectPath = cloneIndexedProject();
 

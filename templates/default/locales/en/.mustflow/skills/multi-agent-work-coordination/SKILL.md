@@ -54,6 +54,7 @@ Do not use this skill when:
 - one agent is doing a small linear task
 - the user only asks for a normal code change, review, or test run
 - the requested work is a production automation runtime rather than repository coordination
+- the requested work designs an LLM product agent's planner, executor, verifier, tool gates, approval or interrupt state, durable resume behavior, loop budgets, handoffs, guardrails, or trace outcome evaluation; use `agent-execution-control-review`
 - the repository or host instructions forbid starting workers or long-running processes
 
 <!-- mustflow-section: required-inputs -->

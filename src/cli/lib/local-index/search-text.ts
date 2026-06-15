@@ -46,14 +46,14 @@ export function buildSearchNgrams(values: readonly string[]): string[] {
 	return [...grams].sort((left, right) => left.localeCompare(right));
 }
 
-export function getMatchSnippet(fields: readonly string[], query: string): string {
+export function getMatchSnippet(fields: readonly string[], query: string, queryNgrams = buildSearchNgrams([query])): string {
 	const normalized = normalizeSearchText(fields.join(' '));
 	const lower = normalized.toLowerCase();
 	let start = lower.indexOf(query.toLowerCase());
 	let matchLength = query.length;
 
 	if (start === -1) {
-		const [firstGram] = buildSearchNgrams([query]).filter((gram) => lower.includes(gram));
+		const firstGram = queryNgrams.find((gram) => lower.includes(gram));
 
 		if (!firstGram) {
 			return truncateSearchMatchSnippet(normalized);

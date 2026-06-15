@@ -60,6 +60,59 @@ destructive = false
 	);
 }
 
+async function importRunExecutor() {
+	return import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run', 'executor.js')).href);
+}
+
+function createSilentReporter() {
+	return {
+		stdout() {},
+		stderr() {},
+	};
+}
+
+test('executor rejects an empty argv executable before spawning', async () => {
+	const { getRunStatus, runArgvCommandStreaming } = await importRunExecutor();
+	const result = await runArgvCommandStreaming(
+		undefined,
+		projectRoot,
+		process.env,
+		10,
+		1,
+		1024,
+		1024,
+		1024,
+		createSilentReporter(),
+		false,
+		true,
+	);
+
+	assert.equal(result.status, null);
+	assert.equal(result.error?.code, 'EINVAL');
+	assert.equal(getRunStatus(result.error, result.status, [0]), 'start_failed');
+});
+
+test('executor rejects an empty shell command before spawning', async () => {
+	const { getRunStatus, runShellCommandStreaming } = await importRunExecutor();
+	const result = await runShellCommandStreaming(
+		' ',
+		projectRoot,
+		process.env,
+		10,
+		1,
+		1024,
+		1024,
+		1024,
+		createSilentReporter(),
+		false,
+		true,
+	);
+
+	assert.equal(result.status, null);
+	assert.equal(result.error?.code, 'EINVAL');
+	assert.equal(getRunStatus(result.error, result.status, [0]), 'start_failed');
+});
+
 test('runs a configured oneshot command intent', () => {
 	const projectPath = createTempProject();
 

@@ -86,6 +86,13 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('idempotency-integrity-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-memory-footprint-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-background-process-stability-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-auto-update-safety-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-log-evidence-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('observability-debuggability-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('incident-triage-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('deployment-rollout-safety-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('queue-processing-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('transaction-boundary-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('api-request-performance-review'));
@@ -95,8 +102,17 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('config-env-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-migration-change'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('database-json-modeling-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('deletion-lifecycle-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('database-lock-contention-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-upgrade-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('version-freshness-check'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('prompt-contract-quality-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('llm-hallucination-control-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('llm-token-cost-control-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('llm-response-latency-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('agent-execution-control-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('agent-eval-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('file-path-cross-platform-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('source-anchor-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
@@ -140,8 +156,48 @@ test('default template declares profile-specific skill surfaces', async () => {
 			`${profileName} should include api-request-performance-review`,
 		);
 		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('llm-response-latency-review'),
+			`${profileName} should include llm-response-latency-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('agent-execution-control-review'),
+			`${profileName} should include agent-execution-control-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('agent-eval-integrity-review'),
+			`${profileName} should include agent-eval-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('desktop-memory-footprint-review'),
+			`${profileName} should include desktop-memory-footprint-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('desktop-background-process-stability-review'),
+			`${profileName} should include desktop-background-process-stability-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('desktop-auto-update-safety-review'),
+			`${profileName} should include desktop-auto-update-safety-review`,
+		);
+		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('idempotency-integrity-review'),
 			`${profileName} should include idempotency-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('backend-log-evidence-review'),
+			`${profileName} should include backend-log-evidence-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('observability-debuggability-review'),
+			`${profileName} should include observability-debuggability-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('incident-triage-review'),
+			`${profileName} should include incident-triage-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('deployment-rollout-safety-review'),
+			`${profileName} should include deployment-rollout-safety-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('retry-policy-integrity-review'),
@@ -154,6 +210,18 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('transaction-boundary-integrity-review'),
 			`${profileName} should include transaction-boundary-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('database-lock-contention-review'),
+			`${profileName} should include database-lock-contention-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('database-json-modeling-review'),
+			`${profileName} should include database-json-modeling-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('deletion-lifecycle-review'),
+			`${profileName} should include deletion-lifecycle-review`,
 		);
 	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
@@ -207,6 +275,12 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.product.includes('release-publish-change'), false);
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-render-stability'));
 	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('prompt-contract-quality-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('llm-hallucination-control-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('llm-token-cost-control-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('llm-response-latency-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('agent-execution-control-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('agent-eval-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('search-ad-content-authoring'));
 	assert.ok(template.manifest.skillProfiles.product.includes('service-boundary-architecture'));
 	assert.ok(template.manifest.skillProfiles.product.includes('web-render-performance-review'));

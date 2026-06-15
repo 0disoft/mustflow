@@ -204,6 +204,12 @@ route_type = "adjunct"
 priority = 73
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change"]
 
+[routes."desktop-memory-footprint-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 74
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
+
 [routes."hot-path-performance-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -215,6 +221,36 @@ category = "general_code"
 route_type = "adjunct"
 priority = 73
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change"]
+
+[routes."app-startup-performance-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."desktop-background-process-stability-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."desktop-auto-update-safety-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."low-end-device-support-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."mobile-energy-efficiency-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."cache-integrity-review"]
 category = "general_code"
@@ -251,6 +287,42 @@ category = "general_code"
 route_type = "adjunct"
 priority = 78
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"]
+
+[routes."backend-log-evidence-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."observability-debuggability-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."incident-triage-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 77
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."deployment-rollout-safety-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."cloud-cost-guardrail-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 77
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."rate-limit-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."idempotency-integrity-review"]
 category = "general_code"
@@ -420,6 +492,42 @@ route_type = "primary"
 priority = 65
 applies_to_reasons = ["ui_change", "product_change"]
 
+[routes."prompt-contract-quality-review"]
+category = "general_code"
+route_type = "primary"
+priority = 66
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."llm-hallucination-control-review"]
+category = "general_code"
+route_type = "primary"
+priority = 67
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."llm-token-cost-control-review"]
+category = "general_code"
+route_type = "primary"
+priority = 68
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."llm-response-latency-review"]
+category = "general_code"
+route_type = "primary"
+priority = 69
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."agent-execution-control-review"]
+category = "general_code"
+route_type = "primary"
+priority = 70
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."agent-eval-integrity-review"]
+category = "general_code"
+route_type = "primary"
+priority = 71
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
 [routes."diff-risk-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -461,6 +569,24 @@ category = "data_external"
 route_type = "adjunct"
 priority = 67
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "test_change", "docs_change"]
+
+[routes."database-json-modeling-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 69
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "migration_change", "test_change", "docs_change", "security_change", "privacy_change"]
+
+[routes."deletion-lifecycle-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 70
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "migration_change", "test_change", "docs_change", "security_change", "privacy_change"]
+
+[routes."database-lock-contention-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 68
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "migration_change", "test_change", "docs_change"]
 
 [routes."sqlite-code-change"]
 category = "data_external"

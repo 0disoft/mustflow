@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 178
+anchor_count: 199
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:dc90654a949289e73fd554d088f8d577d7defcd9c48a8f9a6ab0e88fe17de2ff"
+source_fingerprint: "sha256:6bb6a9e9252c6158900ca89b2b1a3c9bc55ac1e333b21ac1164c262cd2d03920"
 ---
 
 # REPO_MAP.md
@@ -54,6 +54,14 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/adapter-boundary/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/agent-eval-integrity-review/
+
+- `.mustflow/skills/agent-eval-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/agent-execution-control-review/
+
+- `.mustflow/skills/agent-execution-control-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/ai-generated-code-hardening/
 
 - `.mustflow/skills/ai-generated-code-hardening/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -74,6 +82,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/api-request-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/app-startup-performance-review/
+
+- `.mustflow/skills/app-startup-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/architecture-deepening-review/
 
 - `.mustflow/skills/architecture-deepening-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -89,6 +101,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/auth-permission-change/
 
 - `.mustflow/skills/auth-permission-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/backend-log-evidence-review/
+
+- `.mustflow/skills/backend-log-evidence-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/backend-reliability-change/
 
@@ -125,6 +141,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/client-bundle-pruning-review/
 
 - `.mustflow/skills/client-bundle-pruning-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/cloud-cost-guardrail-review/
+
+- `.mustflow/skills/cloud-cost-guardrail-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/code-review/
 
@@ -194,6 +214,14 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/database-change-safety/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/database-json-modeling-review/
+
+- `.mustflow/skills/database-json-modeling-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/database-lock-contention-review/
+
+- `.mustflow/skills/database-lock-contention-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/database-migration-change/
 
 - `.mustflow/skills/database-migration-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -206,6 +234,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/date-number-audit/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/deletion-lifecycle-review/
+
+- `.mustflow/skills/deletion-lifecycle-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/dependency-injection/
 
 - `.mustflow/skills/dependency-injection/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -217,6 +249,22 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/dependency-upgrade-review/
 
 - `.mustflow/skills/dependency-upgrade-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/deployment-rollout-safety-review/
+
+- `.mustflow/skills/deployment-rollout-safety-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/desktop-auto-update-safety-review/
+
+- `.mustflow/skills/desktop-auto-update-safety-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/desktop-background-process-stability-review/
+
+- `.mustflow/skills/desktop-background-process-stability-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/desktop-memory-footprint-review/
+
+- `.mustflow/skills/desktop-memory-footprint-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/diff-risk-review/
 
@@ -342,6 +390,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/image-delivery-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/incident-triage-review/
+
+- `.mustflow/skills/incident-triage-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/instruction-conflict-scope-check/
 
 - `.mustflow/skills/instruction-conflict-scope-check/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -354,9 +406,25 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/line-ending-hygiene/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/llm-hallucination-control-review/
+
+- `.mustflow/skills/llm-hallucination-control-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/llm-response-latency-review/
+
+- `.mustflow/skills/llm-response-latency-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/llm-service-ux-review/
 
 - `.mustflow/skills/llm-service-ux-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/llm-token-cost-control-review/
+
+- `.mustflow/skills/llm-token-cost-control-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/low-end-device-support-review/
+
+- `.mustflow/skills/low-end-device-support-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/memory-lifetime-review/
 
@@ -365,6 +433,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/migration-safety-check/
 
 - `.mustflow/skills/migration-safety-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/mobile-energy-efficiency-review/
+
+- `.mustflow/skills/mobile-energy-efficiency-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/module-boundary-review/
 
@@ -381,6 +453,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/null-object-pattern/
 
 - `.mustflow/skills/null-object-pattern/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/observability-debuggability-review/
+
+- `.mustflow/skills/observability-debuggability-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/pattern-scout/
 
@@ -414,6 +490,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/project-context-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/prompt-contract-quality-review/
+
+- `.mustflow/skills/prompt-contract-quality-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/provenance-license-gate/
 
 - `.mustflow/skills/provenance-license-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -441,6 +521,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/race-condition-review/
 
 - `.mustflow/skills/race-condition-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/rate-limit-integrity-review/
+
+- `.mustflow/skills/rate-limit-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/readme-authoring/
 

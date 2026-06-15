@@ -65,6 +65,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'file-upload-security-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'error-message-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'memory-lifetime-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'desktop-memory-footprint-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'hot-path-performance-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'api-request-performance-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'web-render-performance-review', 'SKILL.md')));
@@ -72,6 +73,12 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'image-delivery-performance-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'client-bundle-pruning-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frame-render-performance-review', 'SKILL.md')));
+		assert.ok(
+			existsSync(
+				path.join(projectPath, '.mustflow', 'skills', 'desktop-background-process-stability-review', 'SKILL.md'),
+			),
+		);
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'desktop-auto-update-safety-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-state-ownership-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-stress-layout-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-accessibility-tree-review', 'SKILL.md')));
@@ -83,6 +90,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'concurrency-invariant-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'failure-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'idempotency-integrity-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'observability-debuggability-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'incident-triage-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'deployment-rollout-safety-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'retry-policy-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'queue-processing-integrity-review', 'SKILL.md')));
 		assert.ok(
@@ -90,6 +100,9 @@ test('copies the default agent workflow into an empty project', () => {
 		);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'testability-boundary-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-query-bottleneck-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-json-modeling-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'deletion-lifecycle-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-lock-contention-review', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'external-skill-intake', 'SKILL.md')), false);
 		assert.equal(
@@ -115,6 +128,13 @@ test('copies the default agent workflow into an empty project', () => {
 			false,
 		);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'backend-reliability-change', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'backend-log-evidence-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'prompt-contract-quality-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-hallucination-control-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-token-cost-control-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-response-latency-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'agent-execution-control-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'agent-eval-integrity-review', 'SKILL.md')));
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-service-ux-review', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-quality-gate', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'visual-review-artifact', 'SKILL.md')), false);
@@ -193,6 +213,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/database-query-bottleneck-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/database-json-modeling-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/deletion-lifecycle-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/database-lock-contention-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/cache-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/security-flow-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/module-boundary-review\/SKILL\.md/);
@@ -204,11 +227,16 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/api-access-control-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/file-upload-security-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-memory-footprint-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/api-request-performance-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/race-condition-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/failure-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/backend-log-evidence-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/observability-debuggability-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/incident-triage-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/deployment-rollout-safety-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/queue-processing-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md/);
@@ -220,6 +248,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/image-delivery-performance-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-background-process-stability-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-auto-update-safety-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md/);
@@ -229,20 +259,30 @@ test('copies the default agent workflow into an empty project', () => {
 		const skillRoutes = readText(path.join(projectPath, '.mustflow', 'skills', 'routes.toml'));
 		assert.match(skillRoutes, /\[routes\."code-review"\]/);
 		assert.match(skillRoutes, /category = "general_code"/);
+		assert.match(skillRoutes, /\[routes\."desktop-memory-footprint-review"\]/);
 		assert.match(skillRoutes, /\[routes\."api-request-performance-review"\]/);
 		assert.match(skillRoutes, /\[routes\."web-render-performance-review"\]/);
 		assert.match(skillRoutes, /\[routes\."core-web-vitals-field-review"\]/);
 		assert.match(skillRoutes, /\[routes\."image-delivery-performance-review"\]/);
 		assert.match(skillRoutes, /\[routes\."client-bundle-pruning-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frame-render-performance-review"\]/);
+		assert.match(skillRoutes, /\[routes\."desktop-background-process-stability-review"\]/);
+		assert.match(skillRoutes, /\[routes\."desktop-auto-update-safety-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-state-ownership-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-stress-layout-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-accessibility-tree-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-localization-review"\]/);
 		assert.match(skillRoutes, /\[routes\."idempotency-integrity-review"\]/);
+		assert.match(skillRoutes, /\[routes\."backend-log-evidence-review"\]/);
+		assert.match(skillRoutes, /\[routes\."observability-debuggability-review"\]/);
+		assert.match(skillRoutes, /\[routes\."incident-triage-review"\]/);
+		assert.match(skillRoutes, /\[routes\."deployment-rollout-safety-review"\]/);
 		assert.match(skillRoutes, /\[routes\."retry-policy-integrity-review"\]/);
 		assert.match(skillRoutes, /\[routes\."queue-processing-integrity-review"\]/);
 		assert.match(skillRoutes, /\[routes\."transaction-boundary-integrity-review"\]/);
+		assert.match(skillRoutes, /\[routes\."database-json-modeling-review"\]/);
+		assert.match(skillRoutes, /\[routes\."deletion-lifecycle-review"\]/);
+		assert.match(skillRoutes, /\[routes\."database-lock-contention-review"\]/);
 		assert.doesNotMatch(skillRoutes, /\[routes\."architecture-deepening-review"\]/);
 		assert.doesNotMatch(skillRoutes, /\[routes\."web-asset-optimization"\]/);
 

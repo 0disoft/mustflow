@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 142
+revision = 167
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -116,7 +116,7 @@ translations = {}
 [documents."skill.ai-generated-code-hardening"]
 source = "locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.module-boundary-review"]
@@ -179,6 +179,12 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.desktop-memory-footprint-review"]
+source = "locales/en/.mustflow/skills/desktop-memory-footprint-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.hot-path-performance-review"]
 source = "locales/en/.mustflow/skills/hot-path-performance-review/SKILL.md"
 source_locale = "en"
@@ -217,6 +223,36 @@ translations = {}
 
 [documents."skill.frame-render-performance-review"]
 source = "locales/en/.mustflow/skills/frame-render-performance-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.app-startup-performance-review"]
+source = "locales/en/.mustflow/skills/app-startup-performance-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.desktop-background-process-stability-review"]
+source = "locales/en/.mustflow/skills/desktop-background-process-stability-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.desktop-auto-update-safety-review"]
+source = "locales/en/.mustflow/skills/desktop-auto-update-safety-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.low-end-device-support-review"]
+source = "locales/en/.mustflow/skills/low-end-device-support-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.mobile-energy-efficiency-review"]
+source = "locales/en/.mustflow/skills/mobile-energy-efficiency-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -281,6 +317,42 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.backend-log-evidence-review"]
+source = "locales/en/.mustflow/skills/backend-log-evidence-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.observability-debuggability-review"]
+source = "locales/en/.mustflow/skills/observability-debuggability-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.incident-triage-review"]
+source = "locales/en/.mustflow/skills/incident-triage-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.deployment-rollout-safety-review"]
+source = "locales/en/.mustflow/skills/deployment-rollout-safety-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.cloud-cost-guardrail-review"]
+source = "locales/en/.mustflow/skills/cloud-cost-guardrail-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.rate-limit-integrity-review"]
+source = "locales/en/.mustflow/skills/rate-limit-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.idempotency-integrity-review"]
 source = "locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md"
 source_locale = "en"
@@ -332,13 +404,30 @@ translations = {}
 [documents."skill.database-migration-change"]
 source = "locales/en/.mustflow/skills/database-migration-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.database-query-bottleneck-review"]
 source = "locales/en/.mustflow/skills/database-query-bottleneck-review/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.database-json-modeling-review"]
+source = "locales/en/.mustflow/skills/database-json-modeling-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.deletion-lifecycle-review"]
+source = "locales/en/.mustflow/skills/deletion-lifecycle-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+[documents."skill.database-lock-contention-review"]
+source = "locales/en/.mustflow/skills/database-lock-contention-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.sqlite-code-change"]
@@ -872,6 +961,42 @@ translations = {}
 source = "locales/en/.mustflow/skills/llm-service-ux-review/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.prompt-contract-quality-review"]
+source = "locales/en/.mustflow/skills/prompt-contract-quality-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.llm-hallucination-control-review"]
+source = "locales/en/.mustflow/skills/llm-hallucination-control-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.llm-token-cost-control-review"]
+source = "locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.llm-response-latency-review"]
+source = "locales/en/.mustflow/skills/llm-response-latency-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.agent-execution-control-review"]
+source = "locales/en/.mustflow/skills/agent-execution-control-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.agent-eval-integrity-review"]
+source = "locales/en/.mustflow/skills/agent-eval-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.ui-quality-gate"]

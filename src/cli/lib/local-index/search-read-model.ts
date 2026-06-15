@@ -526,6 +526,7 @@ function searchLocalWorkflowFilesDirectly(
 	scope: LocalSearchScope,
 ): LocalSearchResult {
 	const cacheLayers = readCacheLayerSets(projectRoot);
+	const querySnippetNgrams = buildSearchNgrams([normalizedQuery]);
 	const results: LocalSearchItem[] = [];
 
 	if (scope === 'workflow' || scope === 'all') {
@@ -553,13 +554,13 @@ function searchLocalWorkflowFilesDirectly(
 					{
 						kind: 'document',
 						path: document.path,
-						title: document.title,
-						document_type: document.type,
-						...workflowAuthorityForDocument(document.type),
-						match: getMatchSnippet(fields, normalizedQuery),
-						score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
-					},
-					cacheLayers,
+							title: document.title,
+							document_type: document.type,
+							...workflowAuthorityForDocument(document.type),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
+							score: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
+						},
+						cacheLayers,
 				),
 			);
 		}
@@ -575,14 +576,14 @@ function searchLocalWorkflowFilesDirectly(
 				withCacheHint(
 					{
 						kind: 'skill',
-						name: skill.name,
-						path: skill.path,
-						title: skill.title,
-						...skillAuthority(),
-						match: getMatchSnippet(fields, normalizedQuery),
-						score: scoreMatch(fields, [], normalizedQuery),
-					},
-					cacheLayers,
+							name: skill.name,
+							path: skill.path,
+							title: skill.title,
+							...skillAuthority(),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
+							score: scoreMatch(fields, [], normalizedQuery),
+						},
+						cacheLayers,
 				),
 			);
 		}
@@ -646,6 +647,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		const stalePaths = getStalePaths(projectRoot, database);
 		capabilities = readStoredSearchCapabilities(database);
 		const indexedMatches = getIndexedSearchMatches(database, normalizedQuery);
+		const querySnippetNgrams = buildSearchNgrams([normalizedQuery]);
 
 		if (stalePaths.length > 0) {
 			throw new Error(
@@ -690,7 +692,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							title,
 							document_type: typeValue,
 							...workflowAuthorityForDocument(typeValue),
-							match: getMatchSnippet(fields, normalizedQuery),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
 							score: scoreIndexedOrTableScan(
 								primaryFields,
 								secondaryFields,
@@ -729,7 +731,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							path: pathValue,
 							title,
 							...skillAuthority(),
-							match: getMatchSnippet(fields, normalizedQuery),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
 							score: scoreIndexedOrTableScan(
 								[name, pathValue, title],
 								[],
@@ -782,7 +784,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							route_risk: risk,
 							verification_intents: verificationIntents,
 							...skillAuthority(),
-							match: getMatchSnippet(fields, normalizedQuery),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
 							score: indexedRouteMatch
 								? Math.max(scoreMatch(primaryFields, secondaryFields, normalizedQuery), 20)
 								: scoreMatch(primaryFields, secondaryFields, normalizedQuery),
@@ -838,7 +840,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							effect_paths: effectPaths,
 							effect_modes: effectModes,
 							...commandIntentAuthority(),
-							match: getMatchSnippet(fields, normalizedQuery),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
 							score: scoreIndexedOrTableScan(
 								primaryFields,
 								secondaryFields,
@@ -889,7 +891,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 							...sourceAnchorAuthority(),
 							stale_status: toSearchString(row.status) as SourceAnchorStatus,
 							stale_confidence: Number(row.confidence),
-							match: getMatchSnippet(fields, normalizedQuery),
+							match: getMatchSnippet(fields, normalizedQuery, querySnippetNgrams),
 							score: scoreIndexedOrTableScan(
 								primaryFields,
 								secondaryFields,
