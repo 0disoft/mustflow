@@ -85,6 +85,9 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-reliability-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('idempotency-integrity-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('transaction-boundary-integrity-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('api-request-performance-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('heuristic-candidate-selection'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('command-contract-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('config-env-change'));
@@ -130,6 +133,18 @@ test('default template declares profile-specific skill surfaces', async () => {
 			template.manifest.skillProfiles[profileName].includes('backend-reliability-change'),
 			`${profileName} should include backend-reliability-change`,
 		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('api-request-performance-review'),
+			`${profileName} should include api-request-performance-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('idempotency-integrity-review'),
+			`${profileName} should include idempotency-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('transaction-boundary-integrity-review'),
+			`${profileName} should include transaction-boundary-integrity-review`,
+		);
 	}
 	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('cli-output-contract-review'), false);
@@ -152,6 +167,15 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.minimal.includes('frontend-render-stability'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('llm-service-ux-review'), false);
 	assert.equal(template.manifest.skillProfiles.minimal.includes('search-ad-content-authoring'), false);
+	assert.ok(template.manifest.skillProfiles.minimal.includes('web-render-performance-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('core-web-vitals-field-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('image-delivery-performance-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('client-bundle-pruning-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('frame-render-performance-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-state-ownership-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-stress-layout-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-accessibility-tree-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-localization-review'));
 	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
 	assert.ok(template.manifest.skillProfiles.patterns.includes('architecture-deepening-review'));
 	assert.ok(template.manifest.skillProfiles.patterns.includes('command-contract-authoring'));
@@ -175,6 +199,15 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('search-ad-content-authoring'));
 	assert.ok(template.manifest.skillProfiles.product.includes('service-boundary-architecture'));
+	assert.ok(template.manifest.skillProfiles.product.includes('web-render-performance-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('core-web-vitals-field-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('image-delivery-performance-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('client-bundle-pruning-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('frame-render-performance-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('frontend-state-ownership-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('frontend-stress-layout-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('frontend-accessibility-tree-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('frontend-localization-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
 	assert.ok(template.manifest.skillProfiles.product.includes('visual-review-artifact'));
 	assert.ok(template.manifest.skillProfiles.product.includes('github-contribution-quality-gate'));

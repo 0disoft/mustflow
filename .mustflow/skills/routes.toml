@@ -156,6 +156,120 @@ route_type = "adjunct"
 priority = 74
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"]
 
+[routes."module-boundary-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 70
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
+[routes."change-blast-radius-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 75
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
+
+[routes."business-rule-leakage-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change"]
+
+[routes."payment-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."credit-ledger-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."api-misuse-resistance-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 69
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change"]
+
+[routes."error-message-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 68
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "docs_change", "package_metadata_change"]
+
+[routes."memory-lifetime-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 73
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change"]
+
+[routes."hot-path-performance-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 72
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"]
+
+[routes."api-request-performance-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 73
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change"]
+
+[routes."cache-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 74
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
+[routes."quadratic-scan-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 71
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"]
+
+[routes."type-state-modeling-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 75
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"]
+
+[routes."race-condition-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 77
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
+[routes."concurrency-invariant-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 76
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
+[routes."failure-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"]
+
+[routes."idempotency-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."transaction-boundary-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change"]
+
+[routes."testability-boundary-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 74
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
 [routes."clarifying-question-gate"]
 category = "general_code"
 route_type = "adjunct"
@@ -330,6 +444,12 @@ route_type = "primary"
 priority = 82
 applies_to_reasons = ["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"]
 
+[routes."database-query-bottleneck-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 67
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "test_change", "docs_change"]
+
 [routes."sqlite-code-change"]
 category = "data_external"
 route_type = "primary"
@@ -456,6 +576,24 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
 
+[routes."api-access-control-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 77
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."file-upload-security-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."security-flow-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 76
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "package_metadata_change", "release_risk"]
+
 [routes."security-regression-tests"]
 category = "security_privacy"
 route_type = "adjunct"
@@ -503,6 +641,60 @@ category = "data_external"
 route_type = "adjunct"
 priority = 60
 applies_to_reasons = ["migration_change"]
+
+[routes."web-render-performance-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"]
+
+[routes."core-web-vitals-field-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "docs_change", "release_risk"]
+
+[routes."image-delivery-performance-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "security_change", "privacy_change"]
+
+[routes."client-bundle-pruning-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "package_metadata_change", "web_asset_change"]
+
+[routes."frame-render-performance-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"]
+
+[routes."frontend-state-ownership-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change"]
+
+[routes."frontend-stress-layout-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "web_asset_change", "test_change", "docs_change"]
+
+[routes."frontend-accessibility-tree-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "web_asset_change"]
+
+[routes."frontend-localization-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 84
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "i18n_change", "web_asset_change"]
 
 [routes."frontend-render-stability"]
 category = "ui_assets"

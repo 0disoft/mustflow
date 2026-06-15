@@ -175,8 +175,1748 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md"/u);
 	assert.match(manifest, /"ai-generated-code-hardening"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
 	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 1/u);
+});
+
+test('module boundary review traces change spread, ownership, and leakage', () => {
+	const localSkill = readText('.mustflow/skills/module-boundary-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/module-boundary-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /change spread/u);
+	assert.match(localSkill, /Change reason/u);
+	assert.match(localSkill, /Co-change evidence/u);
+	assert.match(localSkill, /import direction/u);
+	assert.match(localSkill, /cycles/u);
+	assert.match(localSkill, /DTO infection/u);
+	assert.match(localSkill, /`common`, `shared`, `utils`, and `helpers`/u);
+	assert.match(localSkill, /many mocks/u);
+	assert.match(localSkill, /Repeated `isPremium`/u);
+	assert.match(localSkill, /Check enum spread/u);
+	assert.match(localSkill, /`findRefundableOrders`/u);
+	assert.match(localSkill, /anemic/u);
+	assert.match(localSkill, /domain object that sends email/u);
+	assert.match(localSkill, /transactionally mutate many owners/u);
+	assert.match(localSkill, /`UserTableUpdated`/u);
+	assert.match(localSkill, /public module API/u);
+	assert.match(localSkill, /callers must call `create`/u);
+	assert.match(localSkill, /"Used in many places"/u);
+	assert.match(localSkill, /Recent commits/u);
+	assert.match(localSkill, /bug location/u);
+	assert.match(localSkill, /Raw `process\.env`/u);
+	assert.match(localSkill, /Logs that mention another module/u);
+	assert.match(localSkill, /Translate exceptions/u);
+	assert.match(localSkill, /Cache invalidation belongs near the data owner/u);
+	assert.match(localSkill, /Authorization checks repeated/u);
+	assert.match(localSkill, /Frontend code should receive allowed actions/u);
+	assert.match(localSkill, /Batch, cron, worker, and admin tools/u);
+	assert.match(localSkill, /temporary exceptions/u);
+	assert.match(localSkill, /module deleted/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/module-boundary-review\/SKILL\.md/u);
+	assert.match(skillIndex, /module-boundary triage/u);
+	assert.match(skillIndex, /change spread, co-change clusters, data ownership/u);
+	assert.match(skillIndex, /caller sequencing, premature common helpers/u);
+	assert.match(routes, /\[routes\."module-boundary-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 70/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/module-boundary-review\/SKILL\.md"/u);
+	assert.match(manifest, /"module-boundary-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 1/u);
+});
+
+test('change blast radius review predicts maintainability spread and deletion cost', () => {
+	const localSkill = readText('.mustflow/skills/change-blast-radius-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/change-blast-radius-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /next-change blast radius/u);
+	assert.match(localSkill, /deletion path/u);
+	assert.match(localSkill, /policy owner/u);
+	assert.match(localSkill, /workflow owner/u);
+	assert.match(localSkill, /Change-reason ledger/u);
+	assert.match(localSkill, /Blast-radius ledger/u);
+	assert.match(localSkill, /Ownership ledger/u);
+	assert.match(localSkill, /Deleteability ledger/u);
+	assert.match(localSkill, /Controllers should parse requests/u);
+	assert.match(localSkill, /Reject junk-drawer services/u);
+	assert.match(localSkill, /boolean mode flags/u);
+	assert.match(localSkill, /option objects/u);
+	assert.match(localSkill, /Find the policy source of truth/u);
+	assert.match(localSkill, /Centralize authorization policy/u);
+	assert.match(localSkill, /Make state transitions visible/u);
+	assert.match(localSkill, /`new Date\(\)`/u);
+	assert.match(localSkill, /`Date\.now\(\)`/u);
+	assert.match(localSkill, /retry idempotency/u);
+	assert.match(localSkill, /cache-as-truth/u);
+	assert.match(localSkill, /config flag combinations/u);
+	assert.match(localSkill, /tenant, partner, country, product, and app-version exceptions/u);
+	assert.match(localSkill, /legacy compatibility/u);
+	assert.match(localSkill, /DB entities, API DTOs, view models/u);
+	assert.match(localSkill, /nullable values/u);
+	assert.match(localSkill, /Do not hide exceptions as normal data/u);
+	assert.match(localSkill, /Make logs traceable/u);
+	assert.match(localSkill, /implementation-coupled tests/u);
+	assert.match(localSkill, /Five or more mocks/u);
+	assert.match(localSkill, /decorative interfaces/u);
+	assert.match(localSkill, /Do not DRY together different futures/u);
+	assert.match(localSkill, /Make required ordering explicit/u);
+	assert.match(localSkill, /Treat events as invisible function calls/u);
+	assert.match(localSkill, /Pair migrations with runtime compatibility/u);
+	assert.match(localSkill, /Run the deletion test/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/change-blast-radius-review\/SKILL\.md/u);
+	assert.match(skillIndex, /change-blast-radius triage/u);
+	assert.match(skillIndex, /hard-to-delete features/u);
+	assert.match(routes, /\[routes\."change-blast-radius-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 75/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/change-blast-radius-review\/SKILL\.md"/u);
+	assert.match(manifest, /"change-blast-radius-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.change-blast-radius-review"\][\s\S]*?revision = 1/u);
+});
+
+test('business rule leakage review follows domain rules through every entrypoint', () => {
+	const localSkill = readText('.mustflow/skills/business-rule-leakage-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/business-rule-leakage-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /money, permission, ownership, state, settlement, discount/u);
+	assert.match(localSkill, /Rule ledger/u);
+	assert.match(localSkill, /Entrypoint ledger/u);
+	assert.match(localSkill, /Enforcement ledger/u);
+	assert.match(localSkill, /Consistency ledger/u);
+	assert.match(localSkill, /Reject UI-only enforcement/u);
+	assert.match(localSkill, /Keep controllers from judging business eligibility/u);
+	assert.match(localSkill, /Review state changes as business commands/u);
+	assert.match(localSkill, /Direct `status = "DONE"`/u);
+	assert.match(localSkill, /Compare list and detail rules/u);
+	assert.match(localSkill, /Treat query predicates as policy/u);
+	assert.match(localSkill, /`deleted_at is null`/u);
+	assert.match(localSkill, /`tenant_id = \?`/u);
+	assert.match(localSkill, /Treat admin paths as business paths/u);
+	assert.match(localSkill, /Review batches and schedulers/u);
+	assert.match(localSkill, /Place tests at the rule owner/u);
+	assert.match(localSkill, /Hunt duplicated business constants/u);
+	assert.match(localSkill, /Review date and timezone policy/u);
+	assert.match(localSkill, /`isActive`, `isValid`, and `canUse`/u);
+	assert.match(localSkill, /Separate authentication, authorization, ownership, and eligibility/u);
+	assert.match(localSkill, /Restrict mutable fields after creation/u);
+	assert.match(localSkill, /Make PATCH semantics explicit/u);
+	assert.match(localSkill, /Keep mappers mechanical/u);
+	assert.match(localSkill, /Own defaults in one place/u);
+	assert.match(localSkill, /Check error messages against actual checks/u);
+	assert.match(localSkill, /Do not swallow business failures/u);
+	assert.match(localSkill, /Align transaction boundary with the business action/u);
+	assert.match(localSkill, /Review event timing/u);
+	assert.match(localSkill, /Assume duplicate requests/u);
+	assert.match(localSkill, /Treat webhooks as external APIs/u);
+	assert.match(localSkill, /Check out-of-order events/u);
+	assert.match(localSkill, /Treat cache invalidation as policy/u);
+	assert.match(localSkill, /Compare search index and database truth/u);
+	assert.match(localSkill, /Review reports and settlement harder than services/u);
+	assert.match(localSkill, /Finish with the bypass question/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/business-rule-leakage-review\/SKILL\.md/u);
+	assert.match(skillIndex, /business-rule-leakage triage/u);
+	assert.match(skillIndex, /other bypass entrances/u);
+	assert.match(routes, /\[routes\."business-rule-leakage-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 79/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/business-rule-leakage-review\/SKILL\.md"/u);
+	assert.match(manifest, /"business-rule-leakage-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.business-rule-leakage-review"\][\s\S]*?revision = 1/u);
+});
+
+test('payment integrity review keeps money events idempotent and auditable', () => {
+	const localSkill = readText('.mustflow/skills/payment-integrity-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/payment-integrity-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /money-event integrity/u);
+	assert.match(localSkill, /Money-event ledger/u);
+	assert.match(localSkill, /Provider interaction ledger/u);
+	assert.match(localSkill, /State-transition ledger/u);
+	assert.match(localSkill, /Idempotency and uniqueness ledger/u);
+	assert.match(localSkill, /Amount and currency ledger/u);
+	assert.match(localSkill, /Ownership ledger/u);
+	assert.match(localSkill, /Fulfillment and entitlement ledger/u);
+	assert.match(localSkill, /Webhook and retry ledger/u);
+	assert.match(localSkill, /Audit and sensitive-data ledger/u);
+	assert.match(localSkill, /Model payment as a state machine/u);
+	assert.match(localSkill, /Calculate amount on the server/u);
+	assert.match(localSkill, /Use integer minor units/u);
+	assert.match(localSkill, /Bind every payment object to its owner/u);
+	assert.match(localSkill, /Compare every amount ledger/u);
+	assert.match(localSkill, /Make payment creation idempotent/u);
+	assert.match(localSkill, /Use database uniqueness as the last gate/u);
+	assert.match(localSkill, /Assume webhooks are duplicated/u);
+	assert.match(localSkill, /Assume webhooks are out of order/u);
+	assert.match(localSkill, /Verify webhook signatures on the raw body/u);
+	assert.match(localSkill, /Return from webhook endpoints quickly/u);
+	assert.match(localSkill, /Never use success redirects as proof/u);
+	assert.match(localSkill, /Run fulfillment exactly once/u);
+	assert.match(localSkill, /Handle asynchronous payment methods/u);
+	assert.match(localSkill, /Separate authorization from capture/u);
+	assert.match(localSkill, /Review refunds as money-out events/u);
+	assert.match(localSkill, /Handle disputes and chargebacks/u);
+	assert.match(localSkill, /Review subscriptions as state machines/u);
+	assert.match(localSkill, /Reserve inventory before confirming it/u);
+	assert.match(localSkill, /Reserve coupons before consuming them/u);
+	assert.match(localSkill, /Treat timeouts as unknown outcomes/u);
+	assert.match(localSkill, /Classify retries by failure kind/u);
+	assert.match(localSkill, /Keep an append-only money ledger/u);
+	assert.match(localSkill, /Reconcile provider and internal state/u);
+	assert.match(localSkill, /Redact payment-sensitive data/u);
+	assert.match(localSkill, /Separate test and live payment planes/u);
+	assert.match(localSkill, /Audit manual payment operations/u);
+	assert.match(localSkill, /Search for stale payment endpoints/u);
+	assert.match(localSkill, /Test the nightmare paths/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/payment-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /payment-integrity triage/u);
+	assert.match(skillIndex, /happy-path-only payment tests/u);
+	assert.match(routes, /\[routes\."payment-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 80/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/payment-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"payment-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.payment-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('credit ledger integrity review keeps balance changes atomic and reconcilable', () => {
+	const localSkill = readText('.mustflow/skills/credit-ledger-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/credit-ledger-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /accounting ledger/u);
+	assert.match(localSkill, /Balance surface ledger/u);
+	assert.match(localSkill, /Ledger-entry ledger/u);
+	assert.match(localSkill, /Source identity ledger/u);
+	assert.match(localSkill, /Atomicity ledger/u);
+	assert.match(localSkill, /Amount and unit ledger/u);
+	assert.match(localSkill, /Ownership ledger/u);
+	assert.match(localSkill, /Expiry and lot ledger/u);
+	assert.match(localSkill, /Reservation ledger/u);
+	assert.match(localSkill, /Queue and cache ledger/u);
+	assert.match(localSkill, /Audit and reconciliation ledger/u);
+	assert.match(localSkill, /Treat balance as a derived fact/u);
+	assert.match(localSkill, /Require an external source key/u);
+	assert.match(localSkill, /Compare idempotency payloads/u);
+	assert.match(localSkill, /Make insufficient-balance checks atomic/u);
+	assert.match(localSkill, /Verify affected rows/u);
+	assert.match(localSkill, /Follow the transaction boundary/u);
+	assert.match(localSkill, /Lock the contested resource/u);
+	assert.match(localSkill, /Classify optimistic-lock retries/u);
+	assert.match(localSkill, /Use exact amount units/u);
+	assert.match(localSkill, /Centralize rounding policy/u);
+	assert.match(localSkill, /Validate amount shape at every entrypoint/u);
+	assert.match(localSkill, /Add database-level invariants/u);
+	assert.match(localSkill, /Enforce unique ledger identity/u);
+	assert.match(localSkill, /Model refunds as reversals/u);
+	assert.match(localSkill, /Test partial use and partial refund/u);
+	assert.match(localSkill, /Consume expiry lots deliberately/u);
+	assert.match(localSkill, /Race expiry and usage/u);
+	assert.match(localSkill, /Separate reservation from capture/u);
+	assert.match(localSkill, /Draw allowed state transitions/u);
+	assert.match(localSkill, /Preserve queue ordering or tolerate reordering/u);
+	assert.match(localSkill, /Treat message redelivery as normal/u);
+	assert.match(localSkill, /Do not decide deduction from cache/u);
+	assert.match(localSkill, /Handle read-replica lag/u);
+	assert.match(localSkill, /Route admin adjustments through the same ledger/u);
+	assert.match(localSkill, /Bind actor to wallet ownership/u);
+	assert.match(localSkill, /Snapshot price and policy inputs/u);
+	assert.match(localSkill, /Inject failure at split points/u);
+	assert.match(localSkill, /Reconcile ledger and balance independently/u);
+	assert.match(localSkill, /Log evidence, not vibes/u);
+	assert.match(localSkill, /Test the nightmare paths/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /credit-ledger-integrity triage/u);
+	assert.match(skillIndex, /happy-path-only credit tests/u);
+	assert.match(routes, /\[routes\."credit-ledger-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 81/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"credit-ledger-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('error message integrity review keeps failures actionable and safe', () => {
+	const localSkill = readText('.mustflow/skills/error-message-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/error-message-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /recovery and evidence contracts/u);
+	assert.match(localSkill, /Error audience ledger/u);
+	assert.match(localSkill, /Error contract ledger/u);
+	assert.match(localSkill, /Disclosure ledger/u);
+	assert.match(localSkill, /Recovery ledger/u);
+	assert.match(localSkill, /Reject empty failure labels/u);
+	assert.match(localSkill, /Require `expected` and `actual`/u);
+	assert.match(localSkill, /Put the failed action in the message/u);
+	assert.match(localSkill, /Explain cause, not only result/u);
+	assert.match(localSkill, /Add human-readable work context/u);
+	assert.match(localSkill, /Split public and internal messages/u);
+	assert.match(localSkill, /Redact sensitive values/u);
+	assert.match(localSkill, /Keep safe identifiers/u);
+	assert.match(localSkill, /Expose retryability deliberately/u);
+	assert.match(localSkill, /Stop abusing "try again later"/u);
+	assert.match(localSkill, /Separate stable error codes from messages/u);
+	assert.match(localSkill, /Avoid overbroad error code buckets/u);
+	assert.match(localSkill, /Choose validation aggregation intentionally/u);
+	assert.match(localSkill, /Put location in parse errors/u);
+	assert.match(localSkill, /Put bounds in range errors/u);
+	assert.match(localSkill, /Include time basis in time errors/u);
+	assert.match(localSkill, /Preserve provider diagnostics/u);
+	assert.match(localSkill, /Preserve original causes/u);
+	assert.match(localSkill, /Control template string composition/u);
+	assert.match(localSkill, /Structure logs for machines/u);
+	assert.match(localSkill, /Keep user messages free of internal jargon/u);
+	assert.match(localSkill, /Make permission errors intentionally safe/u);
+	assert.match(localSkill, /Ban vague impossible-state text/u);
+	assert.match(localSkill, /Name concurrency conflict facts/u);
+	assert.match(localSkill, /Include idempotency history/u);
+	assert.match(localSkill, /Put attempts in job and queue errors/u);
+	assert.match(localSkill, /Represent partial failure honestly/u);
+	assert.match(localSkill, /Test error contracts/u);
+	assert.match(localSkill, /Ask the 30-second action question/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /error-message-integrity triage/u);
+	assert.match(skillIndex, /call-site-specific taxonomy drift/u);
+	assert.match(routes, /\[routes\."error-message-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 68/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "docs_change", "package_metadata_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"error-message-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('api misuse resistance review keeps caller contracts hard to misuse', () => {
+	const localSkill = readText('.mustflow/skills/api-misuse-resistance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/api-misuse-resistance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /caller's side/u);
+	assert.match(localSkill, /caller ergonomics/u);
+	assert.match(localSkill, /hidden state machines/u);
+	assert.match(localSkill, /Caller ledger/u);
+	assert.match(localSkill, /Operation ledger/u);
+	assert.match(localSkill, /Shape ledger/u);
+	assert.match(localSkill, /Read the call site aloud/u);
+	assert.match(localSkill, /Separate purpose from mechanism in names/u);
+	assert.match(localSkill, /Expose hidden state machines/u);
+	assert.match(localSkill, /Hunt boolean parameters/u);
+	assert.match(localSkill, /Audit option objects as mode bags/u);
+	assert.match(localSkill, /Give absence one meaning per boundary/u);
+	assert.match(localSkill, /Stop leaking storage rows as response DTOs/u);
+	assert.match(localSkill, /Treat error shape as part of usability/u);
+	assert.match(localSkill, /Model failure as carefully as success/u);
+	assert.match(localSkill, /Require idempotency for networked creation with side effects/u);
+	assert.match(localSkill, /Make pagination stable under moving data/u);
+	assert.match(localSkill, /Define sorting and filtering as contracts/u);
+	assert.match(localSkill, /Show authorization shape in the API/u);
+	assert.match(localSkill, /Review state changes as commands/u);
+	assert.match(localSkill, /Keep PATCH from becoming a command bus/u);
+	assert.match(localSkill, /Specify time values fully/u);
+	assert.match(localSkill, /Keep money out of floating-point shapes/u);
+	assert.match(localSkill, /Treat external enums as open/u);
+	assert.match(localSkill, /Draw the sync or async boundary/u);
+	assert.match(localSkill, /Represent partial failure honestly/u);
+	assert.match(localSkill, /Ask whether the response can be cached/u);
+	assert.match(localSkill, /Balance response size and call count by caller task/u);
+	assert.match(localSkill, /Separate internal and external APIs/u);
+	assert.match(localSkill, /Treat version labels as policy, not decoration/u);
+	assert.match(localSkill, /Make deprecation measurable/u);
+	assert.match(localSkill, /Define rate limits and retry hints/u);
+	assert.match(localSkill, /Make the API observable/u);
+	assert.match(localSkill, /Test through the caller contract/u);
+	assert.match(localSkill, /Check SDK ergonomics/u);
+	assert.match(localSkill, /Finish with the first-time caller question/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /api-misuse-resistance triage/u);
+	assert.match(skillIndex, /first-time caller trap/u);
+	assert.match(routes, /\[routes\."api-misuse-resistance-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 69/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md"/u);
+	assert.match(manifest, /"api-misuse-resistance-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.api-misuse-resistance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('api access control review keeps API authorization object scoped', () => {
+	const localSkill = readText('.mustflow/skills/api-access-control-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/api-access-control-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /API security as an access-control proof/u);
+	assert.match(localSkill, /Subject-object-action-context ledger/u);
+	assert.match(localSkill, /Object authorization ledger/u);
+	assert.match(localSkill, /Property authorization ledger/u);
+	assert.match(localSkill, /Function authorization ledger/u);
+	assert.match(localSkill, /Authentication proof ledger/u);
+	assert.match(localSkill, /Ask the full permission question/u);
+	assert.match(localSkill, /Treat request-supplied identity as hostile/u);
+	assert.match(localSkill, /Bind authorization to the data lookup/u);
+	assert.match(localSkill, /Separate authentication from authorization/u);
+	assert.match(localSkill, /Replace role-only checks/u);
+	assert.match(localSkill, /Compare list and detail scopes/u);
+	assert.match(localSkill, /Review write APIs harder than read APIs/u);
+	assert.match(localSkill, /Stop mass assignment at the boundary/u);
+	assert.match(localSkill, /Check response DTOs for property-level exposure/u);
+	assert.match(localSkill, /Treat client-side admin UI as decoration/u);
+	assert.match(localSkill, /Search for temporary public holes/u);
+	assert.match(localSkill, /Review router and middleware order/u);
+	assert.match(localSkill, /Review GraphQL per resolver/u);
+	assert.match(localSkill, /Review batch APIs per item/u);
+	assert.match(localSkill, /Review export, download, preview, thumbnail, and share paths/u);
+	assert.match(localSkill, /Treat signed storage URLs as outputs of authorization/u);
+	assert.match(localSkill, /Enforce tenant boundaries in every query and cache/u);
+	assert.match(localSkill, /Revalidate asynchronous jobs/u);
+	assert.match(localSkill, /Separate webhook authenticity from authorization/u);
+	assert.match(localSkill, /Keep OAuth and OIDC purposes distinct/u);
+	assert.match(localSkill, /Verify JWTs completely/u);
+	assert.match(localSkill, /Treat token claims as snapshots/u);
+	assert.match(localSkill, /Regenerate session identity after privilege changes/u);
+	assert.match(localSkill, /Check authentication cookies/u);
+	assert.match(localSkill, /Require reauthentication for sensitive actions/u);
+	assert.match(localSkill, /Review reset and magic-link tokens/u);
+	assert.match(localSkill, /Compare account-enumeration responses/u);
+	assert.match(localSkill, /Treat automation defense as part of authentication/u);
+	assert.match(localSkill, /Separate internal and external identity planes/u);
+	assert.match(localSkill, /Test the denial matrix/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/api-access-control-review\/SKILL\.md/u);
+	assert.match(skillIndex, /api-access-control triage/u);
+	assert.match(skillIndex, /happy-path-only auth tests/u);
+	assert.match(routes, /\[routes\."api-access-control-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 77/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/api-access-control-review\/SKILL\.md"/u);
+	assert.match(manifest, /"api-access-control-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 1/u);
+});
+
+test('file upload security review follows uploaded files through storage and serving', () => {
+	const localSkill = readText('.mustflow/skills/file-upload-security-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/file-upload-security-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /full lifecycle/u);
+	assert.match(localSkill, /Upload entrypoint ledger/u);
+	assert.match(localSkill, /File identity ledger/u);
+	assert.match(localSkill, /Validation ledger/u);
+	assert.match(localSkill, /Processing ledger/u);
+	assert.match(localSkill, /Serving ledger/u);
+	assert.match(localSkill, /Draw the file lifecycle/u);
+	assert.match(localSkill, /Treat frontend restrictions as usability only/u);
+	assert.match(localSkill, /Decode and normalize before extension checks/u);
+	assert.match(localSkill, /Prefer allowlists over blocklists/u);
+	assert.match(localSkill, /Validate the final storage name and key/u);
+	assert.match(localSkill, /Prove path containment/u);
+	assert.match(localSkill, /Prevent overwrite and key guessing/u);
+	assert.match(localSkill, /Keep uploaded bytes outside executable web roots/u);
+	assert.match(localSkill, /Do not trust request MIME labels/u);
+	assert.match(localSkill, /Treat magic bytes as necessary but not sufficient/u);
+	assert.match(localSkill, /Re-encode images when possible/u);
+	assert.match(localSkill, /Treat SVG and HTML as active content/u);
+	assert.match(localSkill, /Treat PDF and Office documents as active document bundles/u);
+	assert.match(localSkill, /Review archive extraction as the main feature/u);
+	assert.match(localSkill, /Review CSV import and export for formula injection/u);
+	assert.match(localSkill, /Review remote URL import as SSRF plus upload/u);
+	assert.match(localSkill, /Keep scanner and conversion work behind a publication gate/u);
+	assert.match(localSkill, /Sandbox file parsers and scanners/u);
+	assert.match(localSkill, /Validate direct-to-storage uploads in two phases/u);
+	assert.match(localSkill, /Treat presigned URLs as delegated authority/u);
+	assert.match(localSkill, /Enforce tenant boundaries in storage keys and metadata/u);
+	assert.match(localSkill, /Recheck authorization at download and preview time/u);
+	assert.match(localSkill, /Set response headers deliberately/u);
+	assert.match(localSkill, /Treat filename display as an injection surface/u);
+	assert.match(localSkill, /Apply resource limits at every layer/u);
+	assert.match(localSkill, /Revalidate chunked and multipart uploads at assembly time/u);
+	assert.match(localSkill, /Review upload endpoint auth, CSRF, and rate limits/u);
+	assert.match(localSkill, /Check storage cleanup without breaking authorization/u);
+	assert.match(localSkill, /Test denial cases from the attacker's path/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/file-upload-security-review\/SKILL\.md/u);
+	assert.match(skillIndex, /file-upload-security triage/u);
+	assert.match(skillIndex, /happy-path-only upload tests/u);
+	assert.match(routes, /\[routes\."file-upload-security-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 78/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/file-upload-security-review\/SKILL\.md"/u);
+	assert.match(manifest, /"file-upload-security-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 1/u);
+});
+
+test('security flow review traces source-to-sink security boundaries', () => {
+	const localSkill = readText('.mustflow/skills/security-flow-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/security-flow-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /source-to-sink/u);
+	assert.match(localSkill, /real sink/u);
+	assert.match(localSkill, /authentication from authorization/u);
+	assert.match(localSkill, /IDOR or BOLA/u);
+	assert.match(localSkill, /UUID is a long address, not a lock/u);
+	assert.match(localSkill, /findMany/u);
+	assert.match(localSkill, /exportCsv/u);
+	assert.match(localSkill, /state-changing operations/u);
+	assert.match(localSkill, /mass assignment/u);
+	assert.match(localSkill, /admin-only/u);
+	assert.match(localSkill, /cache keys/u);
+	assert.ok(localSkill.includes('`ORDER BY ${sort}`'));
+	assert.match(localSkill, /shell wrappers/u);
+	assert.match(localSkill, /SSRF candidate/u);
+	assert.match(localSkill, /Zip Slip/u);
+	assert.match(localSkill, /decompression bombs/u);
+	assert.match(localSkill, /path traversal/u);
+	assert.match(localSkill, /XSS/u);
+	assert.match(localSkill, /CSRF/u);
+	assert.match(localSkill, /OAuth needs `state`/u);
+	assert.match(localSkill, /JWT validation/u);
+	assert.match(localSkill, /Cookies need `HttpOnly`/u);
+	assert.match(localSkill, /homegrown cryptography/u);
+	assert.match(localSkill, /fail-open/u);
+	assert.match(localSkill, /queued work/u);
+	assert.match(localSkill, /race conditions/u);
+	assert.ok(localSkill.includes('supply-chain and CI/CD'));
+	assert.match(skillIndex, /\.mustflow\/skills\/security-flow-review\/SKILL\.md/u);
+	assert.match(skillIndex, /security-flow triage/u);
+	assert.match(skillIndex, /IDOR or BOLA risk/u);
+	assert.match(skillIndex, /postinstall or CI secret exposure/u);
+	assert.match(routes, /\[routes\."security-flow-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 76/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/security-flow-review\/SKILL\.md"/u);
+	assert.match(manifest, /"security-flow-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.security-flow-review"\][\s\S]*?revision = 1/u);
+});
+
+test('memory lifetime review traces retained owners, cleanup symmetry, and repeated lifecycles', () => {
+	const localSkill = readText('.mustflow/skills/memory-lifetime-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/memory-lifetime-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /retainer ledger/u);
+	assert.match(localSkill, /long-lived owner/u);
+	assert.match(localSkill, /short-lived object/u);
+	assert.match(localSkill, /setup and cleanup symmetry/u);
+	assert.match(localSkill, /addEventListener/u);
+	assert.match(localSkill, /AbortSignal/u);
+	assert.match(localSkill, /EventEmitter listeners/u);
+	assert.match(localSkill, /setMaxListeners/u);
+	assert.match(localSkill, /Promise\.race/u);
+	assert.match(localSkill, /ThreadLocal/u);
+	assert.match(localSkill, /context\.WithCancel/u);
+	assert.match(localSkill, /shared_ptr/u);
+	assert.match(localSkill, /Rc/u);
+	assert.match(localSkill, /weak references/u);
+	assert.match(localSkill, /finalizers/u);
+	assert.match(localSkill, /repeated-lifecycle proof/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md/u);
+	assert.match(skillIndex, /Object lifetime, retained references, cleanup symmetry/u);
+	assert.match(skillIndex, /timeout without cancellation, unbounded cache or queue/u);
+	assert.match(routes, /\[routes\."memory-lifetime-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 73/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md"/u);
+	assert.match(manifest, /"memory-lifetime-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 1/u);
+});
+
+test('hot path performance review counts repeated work, boundaries, and tail-risk smells', () => {
+	const localSkill = readText('.mustflow/skills/hot-path-performance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/hot-path-performance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /cost ledger/u);
+	assert.match(localSkill, /iteration count, data size, round-trip count, wait time/u);
+	assert.match(localSkill, /repeated external access/u);
+	assert.match(localSkill, /ORM relation access/u);
+	assert.match(localSkill, /multi-pass collection code/u);
+	assert.match(localSkill, /hidden quadratic lookup/u);
+	assert.match(localSkill, /`SELECT \*`/u);
+	assert.match(localSkill, /`OFFSET \.\.\. LIMIT \.\.\.`/u);
+	assert.match(localSkill, /transaction and lock hold time/u);
+	assert.match(localSkill, /Sequential `await`/u);
+	assert.match(localSkill, /`Promise\.all` over thousands/u);
+	assert.match(localSkill, /cache stampede/u);
+	assert.match(localSkill, /`JSON\.parse\(JSON\.stringify\(\.\.\.\)\)`/u);
+	assert.match(localSkill, /retry and timeout multiplication/u);
+	assert.match(localSkill, /p95 or p99/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /Code review or implementation needs hot-path triage/u);
+	assert.match(skillIndex, /repeated I\/O in loops, N\+1 query, multi-pass array traversal/u);
+	assert.match(routes, /\[routes\."hot-path-performance-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 72/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md"/u);
+	assert.match(manifest, /"hot-path-performance-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('api request performance review counts per-request fan-out and latency evidence', () => {
+	const localSkill = readText('.mustflow/skills/api-request-performance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/api-request-performance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /per-request I\/O/u);
+	assert.match(localSkill, /Request cost ledger/u);
+	assert.match(localSkill, /DB query count/u);
+	assert.match(localSkill, /Redis/u);
+	assert.match(localSkill, /external API/u);
+	assert.match(localSkill, /ORM serializer/u);
+	assert.match(localSkill, /lazy loading/u);
+	assert.match(localSkill, /Django/u);
+	assert.match(localSkill, /select_related/u);
+	assert.match(localSkill, /prefetch_related/u);
+	assert.match(localSkill, /Rails/u);
+	assert.match(localSkill, /strict_loading/u);
+	assert.match(localSkill, /eager loading/u);
+	assert.match(localSkill, /`SELECT \*`/u);
+	assert.match(localSkill, /deep `OFFSET`/u);
+	assert.match(localSkill, /`COUNT\(\*\)`/u);
+	assert.match(localSkill, /EXPLAIN/u);
+	assert.match(localSkill, /estimated rows/u);
+	assert.match(localSkill, /actual rows/u);
+	assert.match(localSkill, /pool acquire/u);
+	assert.match(localSkill, /MGET/u);
+	assert.match(localSkill, /pipeline/u);
+	assert.match(localSkill, /cache miss/u);
+	assert.match(localSkill, /JSON serialization/u);
+	assert.match(localSkill, /response bytes/u);
+	assert.match(localSkill, /transaction/u);
+	assert.match(localSkill, /OpenTelemetry/u);
+	assert.match(localSkill, /span/u);
+	assert.match(localSkill, /route span/u);
+	assert.match(localSkill, /Node/u);
+	assert.match(localSkill, /flame graph/u);
+	assert.match(localSkill, /Go/u);
+	assert.match(localSkill, /pprof/u);
+	assert.match(localSkill, /MongoDB/u);
+	assert.match(localSkill, /explain\(\)/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/api-request-performance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /per-request latency review/u);
+	assert.match(skillIndex, /general hot-path repetition/u);
+	assert.match(routes, /\[routes\."api-request-performance-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 73/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/api-request-performance-review\/SKILL\.md"/u);
+	assert.match(manifest, /"api-request-performance-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.api-request-performance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('web render performance review protects first render and Core Web Vitals', () => {
+	const localSkill = readText('.mustflow/skills/web-render-performance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/web-render-performance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /critical rendering path/u);
+	assert.match(localSkill, /First viewport and LCP candidate ledger/u);
+	assert.match(localSkill, /Critical resource discovery ledger/u);
+	assert.match(localSkill, /CSS and render-blocking ledger/u);
+	assert.match(localSkill, /Font loading ledger/u);
+	assert.match(localSkill, /Image, video, and iframe ledger/u);
+	assert.match(localSkill, /Third-party script ledger/u);
+	assert.match(localSkill, /JavaScript bundle and hydration ledger/u);
+	assert.match(localSkill, /Data and HTML delivery ledger/u);
+	assert.match(localSkill, /Cache, compression, and resource-hint ledger/u);
+	assert.match(localSkill, /Main-thread and long-task ledger/u);
+	assert.match(localSkill, /Identify the LCP candidate/u);
+	assert.match(localSkill, /Do not lazy-load the LCP image/u);
+	assert.match(localSkill, /Preload background hero images/u);
+	assert.match(localSkill, /Budget `fetchpriority`/u);
+	assert.match(localSkill, /Inline only critical CSS/u);
+	assert.match(localSkill, /Split route CSS/u);
+	assert.match(localSkill, /Choose `font-display` deliberately/u);
+	assert.match(localSkill, /Preload only first-view fonts/u);
+	assert.match(localSkill, /Subset Korean and CJK fonts/u);
+	assert.match(localSkill, /Use `srcset` and `sizes`/u);
+	assert.match(localSkill, /Reserve space for lazy media/u);
+	assert.match(localSkill, /Gate third-party scripts/u);
+	assert.match(localSkill, /Keep `use client` boundaries narrow/u);
+	assert.match(localSkill, /Lazy-load heavy interactive widgets/u);
+	assert.match(localSkill, /Do not fetch first-view data in a client effect/u);
+	assert.match(localSkill, /Stream HTML and shell early/u);
+	assert.match(localSkill, /Split static shells from dynamic holes/u);
+	assert.match(localSkill, /Investigate slow TTFB/u);
+	assert.match(localSkill, /Cache HTML at the edge/u);
+	assert.match(localSkill, /Cache fingerprinted assets/u);
+	assert.match(localSkill, /Enable text compression/u);
+	assert.match(localSkill, /Use Early Hints and preconnect sparingly/u);
+	assert.match(localSkill, /Use `content-visibility: auto`/u);
+	assert.match(localSkill, /Break long main-thread tasks/u);
+	assert.match(localSkill, /Audit route prefetch behavior/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/web-render-performance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /web-render-performance triage/u);
+	assert.match(skillIndex, /lab-only perf claim/u);
+	assert.match(routes, /\[routes\."web-render-performance-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 79/u);
+	assert.match(routes, /applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/web-render-performance-review\/SKILL\.md"/u);
+	assert.match(manifest, /"web-render-performance-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('core web vitals field review treats CWV as real-user percentile operations', () => {
+	const localSkill = readText('.mustflow/skills/core-web-vitals-field-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/core-web-vitals-field-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /field-data operating contract/u);
+	assert.match(localSkill, /75th percentile/u);
+	assert.match(localSkill, /mobile and desktop separately/u);
+	assert.match(localSkill, /LCP at or below 2\.5 seconds/u);
+	assert.match(localSkill, /INP at or below 200 milliseconds/u);
+	assert.match(localSkill, /CLS at or below 0\.1/u);
+	assert.match(localSkill, /INP replaced FID/u);
+	assert.match(localSkill, /2024-03-12/u);
+	assert.match(localSkill, /RUM/u);
+	assert.match(localSkill, /CrUX/u);
+	assert.match(localSkill, /Search Console/u);
+	assert.match(localSkill, /Lighthouse-versus-field gaps/u);
+	assert.match(localSkill, /TTFB, resource load delay, resource load duration, and element render delay/u);
+	assert.match(localSkill, /Long Animation Frames/u);
+	assert.match(localSkill, /GTM and marketing tags/u);
+	assert.match(localSkill, /skeletons to final geometry/u);
+	assert.match(localSkill, /bfcache eligibility/u);
+	assert.match(localSkill, /speculation rules/u);
+	assert.match(localSkill, /p75 INP/u);
+	assert.match(localSkill, /field, lab, configured-test evidence, static risk/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md/u);
+	assert.match(skillIndex, /Core Web Vitals needs field-data/u);
+	assert.match(skillIndex, /Lighthouse trophy claim/u);
+	assert.match(routes, /\[routes\."core-web-vitals-field-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 81/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "docs_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md"/u);
+	assert.match(manifest, /"core-web-vitals-field-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.core-web-vitals-field-review"\][\s\S]*?revision = 1/u);
+});
+
+test('image delivery performance review catches discovery, candidate, cache, and safety risks', () => {
+	const localSkill = readText('.mustflow/skills/image-delivery-performance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/image-delivery-performance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /delivery and discovery problem/u);
+	assert.match(localSkill, /Image role ledger/u);
+	assert.match(localSkill, /Discovery and priority ledger/u);
+	assert.match(localSkill, /Responsive candidate ledger/u);
+	assert.match(localSkill, /Layout stability ledger/u);
+	assert.match(localSkill, /Format and quality ledger/u);
+	assert.match(localSkill, /Pipeline and metadata ledger/u);
+	assert.match(localSkill, /CDN and cache ledger/u);
+	assert.match(localSkill, /Safety and abuse ledger/u);
+	assert.match(localSkill, /Do not lazy-load the LCP image/u);
+	assert.match(localSkill, /`fetchpriority="high"`/u);
+	assert.match(localSkill, /responsive preload/u);
+	assert.match(localSkill, /`imagesrcset` and `imagesizes`/u);
+	assert.match(localSkill, /Do not preload every format/u);
+	assert.match(localSkill, /Treat `sizes` as the slot contract/u);
+	assert.match(localSkill, /fill-style responsive images/u);
+	assert.match(localSkill, /`sizes="auto"`/u);
+	assert.match(localSkill, /Reserve image geometry/u);
+	assert.match(localSkill, /DPR and width buckets/u);
+	assert.match(localSkill, /cache-key confetti/u);
+	assert.match(localSkill, /Choose format by image content/u);
+	assert.match(localSkill, /JPEG fallback/u);
+	assert.match(localSkill, /quality per format and image role/u);
+	assert.match(localSkill, /byte budgets and visual evidence/u);
+	assert.match(localSkill, /Apply orientation before stripping metadata/u);
+	assert.match(localSkill, /Preserve color intentionally/u);
+	assert.match(localSkill, /user-uploaded SVG/u);
+	assert.match(localSkill, /Use markup for meaningful images/u);
+	assert.match(localSkill, /Preload CSS background LCP images/u);
+	assert.match(localSkill, /Lazy-load below-fold images/u);
+	assert.match(localSkill, /giant lazy gallery/u);
+	assert.match(localSkill, /`decoding="async"`/u);
+	assert.match(localSkill, /Keep blur placeholders tiny/u);
+	assert.match(localSkill, /Inline base64 only for tiny assets/u);
+	assert.match(localSkill, /content-hash URLs/u);
+	assert.match(localSkill, /Keep originals/u);
+	assert.match(localSkill, /Preserve `Accept`/u);
+	assert.match(localSkill, /Lock down image optimization APIs/u);
+	assert.match(localSkill, /Check the waterfall/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/image-delivery-performance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /image-delivery-performance triage/u);
+	assert.match(skillIndex, /dropped `Accept` header/u);
+	assert.match(routes, /\[routes\."image-delivery-performance-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 82/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "security_change", "privacy_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/image-delivery-performance-review\/SKILL\.md"/u);
+	assert.match(manifest, /"image-delivery-performance-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.image-delivery-performance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('client bundle pruning review catches tree-shaking blockers and initial JS bloat', () => {
+	const localSkill = readText('.mustflow/skills/client-bundle-pruning-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/client-bundle-pruning-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /code shapes that keep bundlers from deleting unused client code/u);
+	assert.match(localSkill, /Bundle target ledger/u);
+	assert.match(localSkill, /Entry and import graph ledger/u);
+	assert.match(localSkill, /Dependency format ledger/u);
+	assert.match(localSkill, /Framework boundary ledger/u);
+	assert.match(localSkill, /Heavy-feature ledger/u);
+	assert.match(localSkill, /Polyfill and target ledger/u);
+	assert.match(localSkill, /first-route JavaScript/u);
+	assert.match(localSkill, /failing bundle budget/u);
+	assert.match(localSkill, /non-ESM packages/u);
+	assert.match(localSkill, /broad utility imports/u);
+	assert.match(localSkill, /barrel files on hot client paths/u);
+	assert.match(localSkill, /subpath exports/u);
+	assert.match(localSkill, /`sideEffects` metadata/u);
+	assert.match(localSkill, /`moduleSideEffects: false`/u);
+	assert.match(localSkill, /PURE annotations/u);
+	assert.match(localSkill, /Move client boundaries inward/u);
+	assert.match(localSkill, /Server Components or server-only code/u);
+	assert.match(localSkill, /dynamic imports statically analyzable/u);
+	assert.match(localSkill, /`React\.lazy`/u);
+	assert.match(localSkill, /optional heavy widgets/u);
+	assert.match(localSkill, /event or visibility point/u);
+	assert.match(localSkill, /Angular `@defer`/u);
+	assert.match(localSkill, /Vue route lazy loading/u);
+	assert.match(localSkill, /import modularization/u);
+	assert.match(localSkill, /Audit icon imports/u);
+	assert.match(localSkill, /Audit date locales/u);
+	assert.match(localSkill, /syntax highlighters, markdown processors, and code editors/u);
+	assert.match(localSkill, /Node polyfills/u);
+	assert.match(localSkill, /Modernize browser targets/u);
+	assert.match(localSkill, /broad Babel polyfill imports/u);
+	assert.match(localSkill, /dev-only branches fold/u);
+	assert.match(localSkill, /Remove console calls safely/u);
+	assert.match(localSkill, /one giant vendor chunk/u);
+	assert.match(localSkill, /Vite modulepreload behavior/u);
+	assert.match(localSkill, /Tailwind and utility extraction/u);
+	assert.match(localSkill, /inline asset thresholds/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md/u);
+	assert.match(skillIndex, /client-bundle-pruning triage/u);
+	assert.match(skillIndex, /unmeasured bundle claim/u);
+	assert.match(routes, /\[routes\."client-bundle-pruning-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 80/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change", "package_metadata_change", "web_asset_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md"/u);
+	assert.match(manifest, /"client-bundle-pruning-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 1/u);
+});
+
+test('frame render performance review catches layout, paint, and INP frame risks', () => {
+	const localSkill = readText('.mustflow/skills/frame-render-performance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/frame-render-performance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /per-frame work/u);
+	assert.match(localSkill, /Interaction and frame ledger/u);
+	assert.match(localSkill, /DOM and layout ledger/u);
+	assert.match(localSkill, /Style and CSS ledger/u);
+	assert.match(localSkill, /Paint and compositing ledger/u);
+	assert.match(localSkill, /Event and scheduling ledger/u);
+	assert.match(localSkill, /Framework render ledger/u);
+	assert.match(localSkill, /forced synchronous layout/u);
+	assert.match(localSkill, /layout thrashing/u);
+	assert.match(localSkill, /Prefer `transform` and `opacity`/u);
+	assert.match(localSkill, /temporary hint/u);
+	assert.match(localSkill, /content-visibility: auto/u);
+	assert.match(localSkill, /contain-intrinsic-size/u);
+	assert.match(localSkill, /Virtualize long lists/u);
+	assert.match(localSkill, /DOM depth and breadth/u);
+	assert.match(localSkill, /Simplify selectors/u);
+	assert.match(localSkill, /global class toggles/u);
+	assert.match(localSkill, /CSS variables/u);
+	assert.match(localSkill, /Reserve media, ad, and embed geometry/u);
+	assert.match(localSkill, /native lazy loading/u);
+	assert.match(localSkill, /IntersectionObserver/u);
+	assert.match(localSkill, /passive wheel, touch, and scroll listeners/u);
+	assert.match(localSkill, /overscroll-behavior/u);
+	assert.match(localSkill, /requestAnimationFrame/u);
+	assert.match(localSkill, /Split long tasks/u);
+	assert.match(localSkill, /worker/u);
+	assert.match(localSkill, /OffscreenCanvas/u);
+	assert.match(localSkill, /ResizeObserver/u);
+	assert.match(localSkill, /runtime CSS rule churn/u);
+	assert.match(localSkill, /React `memo`/u);
+	assert.match(localSkill, /Split React context/u);
+	assert.match(localSkill, /deferred rendering or transitions/u);
+	assert.match(localSkill, /Narrow hydration/u);
+	assert.match(localSkill, /DevTools Performance/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /frame-render-performance triage/u);
+	assert.match(skillIndex, /Lighthouse-score-only claim/u);
+	assert.match(routes, /\[routes\."frame-render-performance-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 81/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md"/u);
+	assert.match(manifest, /"frame-render-performance-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.frame-render-performance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('cache integrity review catches stale truth and source-protection risks', () => {
+	const localSkill = readText('.mustflow/skills/cache-integrity-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/cache-integrity-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /second truth store/u);
+	assert.match(localSkill, /viewer context/u);
+	assert.match(localSkill, /login state/u);
+	assert.match(localSkill, /membership tier/u);
+	assert.match(localSkill, /country/u);
+	assert.match(localSkill, /language/u);
+	assert.match(localSkill, /A\/B test/u);
+	assert.match(localSkill, /adult verification/u);
+	assert.match(localSkill, /inventory policy/u);
+	assert.match(localSkill, /query normalization/u);
+	assert.match(localSkill, /`JSON\.stringify\(query\)`/u);
+	assert.match(localSkill, /key version/u);
+	assert.match(localSkill, /schema version/u);
+	assert.match(localSkill, /TTL is not a guess/u);
+	assert.match(localSkill, /jitter/u);
+	assert.match(localSkill, /soft TTL/u);
+	assert.match(localSkill, /hard TTL/u);
+	assert.match(localSkill, /stale-while-revalidate/u);
+	assert.match(localSkill, /singleflight/u);
+	assert.match(localSkill, /request coalescing/u);
+	assert.match(localSkill, /Negative cache/u);
+	assert.match(localSkill, /`404`/u);
+	assert.match(localSkill, /`403`/u);
+	assert.match(localSkill, /temporary failure/u);
+	assert.match(localSkill, /Delete-before-commit/u);
+	assert.match(localSkill, /outbox-driven invalidation/u);
+	assert.match(localSkill, /version compare/u);
+	assert.match(localSkill, /CAS/u);
+	assert.match(localSkill, /List caches/u);
+	assert.match(localSkill, /cursor keys/u);
+	assert.match(localSkill, /snapshot token/u);
+	assert.match(localSkill, /tag-based invalidation/u);
+	assert.match(localSkill, /global flush/u);
+	assert.match(localSkill, /Local in-memory cache/u);
+	assert.match(localSkill, /L1, L2, and DB/u);
+	assert.match(localSkill, /rate limit/u);
+	assert.match(localSkill, /load shedding/u);
+	assert.match(localSkill, /circuit breaker/u);
+	assert.match(localSkill, /Hit rate alone lies/u);
+	assert.match(localSkill, /key-pattern/u);
+	assert.match(localSkill, /tenant/u);
+	assert.match(localSkill, /status-code/u);
+	assert.match(localSkill, /miss cost/u);
+	assert.match(localSkill, /value size/u);
+	assert.match(localSkill, /eviction policy/u);
+	assert.match(localSkill, /TTL-less keys/u);
+	assert.match(localSkill, /`KEYS \*`/u);
+	assert.match(localSkill, /`SCAN`/u);
+	assert.match(localSkill, /hot key/u);
+	assert.match(localSkill, /hash tags/u);
+	assert.match(localSkill, /`Vary`/u);
+	assert.match(localSkill, /`no-cache`/u);
+	assert.match(localSkill, /`no-store`/u);
+	assert.match(localSkill, /permission cache/u);
+	assert.match(localSkill, /cache warming/u);
+	assert.match(localSkill, /deploy rollback/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/cache-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /cache-integrity triage/u);
+	assert.match(skillIndex, /stale data spread/u);
+	assert.match(skillIndex, /Redis and HTTP cache semantics/u);
+	assert.match(routes, /\[routes\."cache-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 74/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/cache-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"cache-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('quadratic scan review catches disguised pairwise scans and indexable joins', () => {
+	const localSkill = readText('.mustflow/skills/quadratic-scan-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/quadratic-scan-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /hidden O\(N\^2\)/u);
+	assert.match(localSkill, /same growing data from the beginning again/u);
+	assert.match(localSkill, /`map` plus `filter`/u);
+	assert.match(localSkill, /`map` plus `find`/u);
+	assert.match(localSkill, /`forEach` plus `includes`/u);
+	assert.match(localSkill, /`filter` plus `indexOf`/u);
+	assert.match(localSkill, /`Set\.has` or `Map\.has`/u);
+	assert.match(localSkill, /code joins by ID/u);
+	assert.match(localSkill, /duplicate removal/u);
+	assert.match(localSkill, /Sorting does not make `find` fast/u);
+	assert.match(localSkill, /`reduce` with `\[\.\.\.acc, item\]`/u);
+	assert.match(localSkill, /repeated string `\+=`/u);
+	assert.match(localSkill, /Repeated `JSON\.stringify`/u);
+	assert.match(localSkill, /helper bodies called from loops or render paths/u);
+	assert.match(localSkill, /ORM and lazy relations/u);
+	assert.match(localSkill, /GraphQL and nested resolvers/u);
+	assert.match(localSkill, /render-time lookup/u);
+	assert.match(localSkill, /tree and graph construction/u);
+	assert.match(localSkill, /event-log and time-window scans/u);
+	assert.match(localSkill, /interval overlap/u);
+	assert.match(localSkill, /index from cache/u);
+	assert.match(localSkill, /hard cap/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md/u);
+	assert.match(skillIndex, /specifically needs to catch hidden O\(N\^2\), pairwise work/u);
+	assert.match(skillIndex, /array membership over growing data, ID join without index/u);
+	assert.match(routes, /\[routes\."quadratic-scan-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 71/u);
+	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md"/u);
+	assert.match(manifest, /"quadratic-scan-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 1/u);
+});
+
+test('type state modeling review makes impossible states unrepresentable', () => {
+	const localSkill = readText('.mustflow/skills/type-state-modeling-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/type-state-modeling-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /impossible states unrepresentable/u);
+	assert.match(localSkill, /branded types/u);
+	assert.match(localSkill, /newtypes/u);
+	assert.match(localSkill, /unit confusion/u);
+	assert.match(localSkill, /currency/u);
+	assert.match(localSkill, /boolean flag soup/u);
+	assert.match(localSkill, /discriminated unions/u);
+	assert.match(localSkill, /nullable and optional fields by state/u);
+	assert.match(localSkill, /`status: string`/u);
+	assert.match(localSkill, /Raw external API/u);
+	assert.match(localSkill, /partial update inputs/u);
+	assert.match(localSkill, /DTO\/domain\/response split/u);
+	assert.match(localSkill, /Record<string, unknown>/u);
+	assert.match(localSkill, /`any`/u);
+	assert.match(localSkill, /non-null assertions/u);
+	assert.match(localSkill, /Result<T, E>/u);
+	assert.match(localSkill, /NonEmpty/u);
+	assert.match(localSkill, /permission-result types/u);
+	assert.match(localSkill, /createdAt\?/u);
+	assert.match(localSkill, /`never`/u);
+	assert.match(localSkill, /type-level tests/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/type-state-modeling-review\/SKILL\.md/u);
+	assert.match(skillIndex, /make impossible states unrepresentable/u);
+	assert.match(skillIndex, /swapped IDs, unit or currency confusion/u);
+	assert.match(routes, /\[routes\."type-state-modeling-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 75/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/type-state-modeling-review\/SKILL\.md"/u);
+	assert.match(manifest, /"type-state-modeling-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.type-state-modeling-review"\][\s\S]*?revision = 1/u);
+});
+
+test('race condition review traces stale shared-state interleavings', () => {
+	const localSkill = readText('.mustflow/skills/race-condition-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/race-condition-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /shared state/u);
+	assert.match(localSkill, /check-then-act/u);
+	assert.match(localSkill, /read-modify-write/u);
+	assert.match(localSkill, /stale read/u);
+	assert.match(localSkill, /`await`/u);
+	assert.match(localSkill, /lock scope/u);
+	assert.match(localSkill, /global lock order/u);
+	assert.match(localSkill, /`tryLock`/u);
+	assert.match(localSkill, /idempotency/u);
+	assert.match(localSkill, /cache miss fill/u);
+	assert.match(localSkill, /lazy initialization/u);
+	assert.match(localSkill, /double-checked locking/u);
+	assert.match(localSkill, /atomic/u);
+	assert.match(localSkill, /memory ordering/u);
+	assert.match(localSkill, /conditional updates/u);
+	assert.match(localSkill, /unique constraint/u);
+	assert.match(localSkill, /distributed locks/u);
+	assert.match(localSkill, /atomic create/u);
+	assert.match(localSkill, /outbox/u);
+	assert.match(localSkill, /Queue consumers/u);
+	assert.match(localSkill, /Shutdown/u);
+	assert.match(localSkill, /Cancellation/u);
+	assert.match(localSkill, /Timers/u);
+	assert.match(localSkill, /close\/send/u);
+	assert.match(localSkill, /shared collections/u);
+	assert.match(localSkill, /iterator/u);
+	assert.match(localSkill, /snapshot/u);
+	assert.match(localSkill, /Object pooling/u);
+	assert.match(localSkill, /Fake immutable/u);
+	assert.match(localSkill, /`sleep`-based race tests/u);
+	assert.match(localSkill, /log order/iu);
+	assert.match(localSkill, /state-machine review/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/race-condition-review\/SKILL\.md/u);
+	assert.match(skillIndex, /race-condition triage for shared state/u);
+	assert.match(skillIndex, /stale read after await/u);
+	assert.match(skillIndex, /queue duplicate or out-of-order damage/u);
+	assert.match(routes, /\[routes\."race-condition-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 77/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/race-condition-review\/SKILL\.md"/u);
+	assert.match(manifest, /"race-condition-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 1/u);
+});
+
+test('concurrency invariant review checks time-order ownership and primitive discipline', () => {
+	const localSkill = readText('.mustflow/skills/concurrency-invariant-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/concurrency-invariant-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /time order/u);
+	assert.match(localSkill, /Shared state inventory/u);
+	assert.match(localSkill, /owner/u);
+	assert.match(localSkill, /invariant/u);
+	assert.match(localSkill, /hidden writes/u);
+	assert.match(localSkill, /getters/u);
+	assert.match(localSkill, /lazy init/u);
+	assert.match(localSkill, /check-then-act/u);
+	assert.match(localSkill, /read-modify-write/u);
+	assert.match(localSkill, /lock identity/u);
+	assert.match(localSkill, /lock scope/u);
+	assert.match(localSkill, /lock-order table/u);
+	assert.match(localSkill, /condition variable/u);
+	assert.match(localSkill, /lost notification/u);
+	assert.match(localSkill, /spurious wakeup/u);
+	assert.match(localSkill, /`AtomicBoolean closed`/u);
+	assert.match(localSkill, /ordinary `socket`, `buffer`, or `currentUser`/u);
+	assert.match(localSkill, /ABA/u);
+	assert.match(localSkill, /Double-checked locking/u);
+	assert.match(localSkill, /object publication/u);
+	assert.match(localSkill, /publish `this`/u);
+	assert.match(localSkill, /fake immutability/u);
+	assert.match(localSkill, /concurrent collection/u);
+	assert.match(localSkill, /Cache `get-or-load`/u);
+	assert.match(localSkill, /Application locks do not protect multi-instance uniqueness/u);
+	assert.match(localSkill, /isolation level/u);
+	assert.match(localSkill, /fencing tokens/u);
+	assert.match(localSkill, /Retries and timeouts/u);
+	assert.match(localSkill, /Queue consumers/u);
+	assert.match(localSkill, /Status fields need allowed transitions/u);
+	assert.match(localSkill, /scheduler/u);
+	assert.match(localSkill, /shutdown/u);
+	assert.match(localSkill, /permits must release/u);
+	assert.match(localSkill, /Thread-local context is hidden global state/u);
+	assert.match(localSkill, /every `await`/u);
+	assert.match(localSkill, /`Thread\.sleep\(100\)` is not deterministic proof/u);
+	assert.match(localSkill, /barriers, latches, fake schedulers, deterministic executors/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md/u);
+	assert.match(skillIndex, /concurrency-invariant triage for shared ownership/u);
+	assert.match(skillIndex, /condition-variable `while` predicates/u);
+	assert.match(skillIndex, /thread-local tenant leak/u);
+	assert.match(routes, /\[routes\."concurrency-invariant-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 76/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md"/u);
+	assert.match(manifest, /"concurrency-invariant-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 1/u);
+});
+
+test('failure integrity review catches false-success error handling', () => {
+	const localSkill = readText('.mustflow/skills/failure-integrity-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/failure-integrity-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /what lie the system tells/u);
+	assert.match(localSkill, /`try`\/`catch`/u);
+	assert.match(localSkill, /broad `catch \(Exception\)`/u);
+	assert.match(localSkill, /log-and-continue/u);
+	assert.match(localSkill, /`return null`/u);
+	assert.match(localSkill, /`return false`/u);
+	assert.match(localSkill, /`return \[\]`/u);
+	assert.match(localSkill, /`finally`/u);
+	assert.match(localSkill, /cleanup masking/u);
+	assert.match(localSkill, /safe identifiers/u);
+	assert.match(localSkill, /tokens, session cookies, payment details/u);
+	assert.match(localSkill, /transaction/u);
+	assert.match(localSkill, /compensation, reconciliation/u);
+	assert.match(localSkill, /Unknown provider outcomes/u);
+	assert.match(localSkill, /retry/u);
+	assert.match(localSkill, /timeout/u);
+	assert.match(localSkill, /idempotent/u);
+	assert.match(localSkill, /cancellation/u);
+	assert.match(localSkill, /`InterruptedException`/u);
+	assert.match(localSkill, /`AbortError`/u);
+	assert.match(localSkill, /async failure ownership/u);
+	assert.match(localSkill, /fire-and-forget/u);
+	assert.match(localSkill, /Ack after failure drops work/u);
+	assert.match(localSkill, /dead-letter/u);
+	assert.match(localSkill, /retain the cause/u);
+	assert.match(localSkill, /stable machine-readable codes/u);
+	assert.match(localSkill, /business rejections from system failures/u);
+	assert.match(localSkill, /partial state/u);
+	assert.match(localSkill, /lock\(\)/u);
+	assert.match(localSkill, /resource cleanup/u);
+	assert.match(localSkill, /dangerous default value/u);
+	assert.match(localSkill, /fail-open/u);
+	assert.match(localSkill, /Cache failure/u);
+	assert.match(localSkill, /Fallback must be a safe degraded value/u);
+	assert.match(localSkill, /failure-path evidence/u);
+	assert.match(localSkill, /retry exhaustion/u);
+	assert.match(localSkill, /fallback activation/u);
+	assert.match(localSkill, /data inconsistency/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/failure-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /failure-integrity triage for exception or failure handling/u);
+	assert.match(skillIndex, /false success, swallowed exceptions/u);
+	assert.match(skillIndex, /missing failure-path observability/u);
+	assert.match(routes, /\[routes\."failure-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 78/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/failure-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"failure-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.failure-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('idempotency integrity review catches duplicate-intent side effects', () => {
+	const localSkill = readText('.mustflow/skills/idempotency-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /duplicate intent integrity/u);
+	assert.match(localSkill, /Operation identity ledger/u);
+	assert.match(localSkill, /Side-effect ledger/u);
+	assert.match(localSkill, /Durable dedupe evidence/u);
+	assert.match(localSkill, /Duplicate response policy/u);
+	assert.match(localSkill, /Concurrency and recovery evidence/u);
+	assert.match(localSkill, /Idempotency-Key/u);
+	assert.match(localSkill, /request body hash/u);
+	assert.match(localSkill, /actor, tenant, operation type, target resource/u);
+	assert.match(localSkill, /memory-only stores/u);
+	assert.match(localSkill, /Redis TTL alone/u);
+	assert.match(localSkill, /unique constraint/u);
+	assert.match(localSkill, /exists return` followed by `insert/u);
+	assert.match(localSkill, /response replay/u);
+	assert.match(localSkill, /duplicate in-progress request/u);
+	assert.match(localSkill, /Treat timeouts as unknown outcomes/u);
+	assert.match(localSkill, /provider idempotency/u);
+	assert.match(localSkill, /WHERE id = \? AND status = PENDING/u);
+	assert.match(localSkill, /\+=/u);
+	assert.match(localSkill, /DELETE/u);
+	assert.match(localSkill, /GET endpoints/u);
+	assert.match(localSkill, /at-least-once/u);
+	assert.match(localSkill, /Ack before durable commit/u);
+	assert.match(localSkill, /webhook handlers as replay surfaces/u);
+	assert.match(localSkill, /settlement_date \+ merchant_id/u);
+	assert.match(localSkill, /outbox and inbox/u);
+	assert.match(localSkill, /Compensation actions/u);
+	assert.match(localSkill, /PROCESSING/u);
+	assert.match(localSkill, /lease, heartbeat, timeout, owner/u);
+	assert.match(localSkill, /Distributed locks/u);
+	assert.match(localSkill, /same request twice/u);
+	assert.match(localSkill, /duplicate key with changed payload/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /idempotency-integrity triage/u);
+	assert.match(skillIndex, /duplicate business commands/u);
+	assert.match(routes, /\[routes\."idempotency-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 80/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"idempotency-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('transaction boundary integrity review catches atomicity and side-effect traps', () => {
+	const localSkill = readText('.mustflow/skills/transaction-boundary-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/transaction-boundary-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /read -> decision -> write/u);
+	assert.match(localSkill, /Business invariant/u);
+	assert.match(localSkill, /Decision ledger/u);
+	assert.match(localSkill, /Durable guard evidence/u);
+	assert.match(localSkill, /exists\(\)/u);
+	assert.match(localSkill, /insert\(\)/u);
+	assert.match(localSkill, /count < limit/u);
+	assert.match(localSkill, /SELECT \.\.\. FOR UPDATE/u);
+	assert.match(localSkill, /SKIP LOCKED/u);
+	assert.match(localSkill, /READ COMMITTED/u);
+	assert.match(localSkill, /REPEATABLE READ/u);
+	assert.match(localSkill, /SERIALIZABLE/u);
+	assert.match(localSkill, /serialization_failure/u);
+	assert.match(localSkill, /deadlock_detected/u);
+	assert.match(localSkill, /rollbackFor/u);
+	assert.match(localSkill, /self-invocation/u);
+	assert.match(localSkill, /readOnly/u);
+	assert.match(localSkill, /rollback-only/u);
+	assert.match(localSkill, /UnexpectedRollbackException/u);
+	assert.match(localSkill, /REQUIRES_NEW/u);
+	assert.match(localSkill, /NESTED/u);
+	assert.match(localSkill, /Django/u);
+	assert.match(localSkill, /atomic\(\)/u);
+	assert.match(localSkill, /transaction\.on_commit\(\)/u);
+	assert.match(localSkill, /afterCommit/u);
+	assert.match(localSkill, /outbox/u);
+	assert.match(localSkill, /idempotency key/u);
+	assert.match(localSkill, /HTTP API/u);
+	assert.match(localSkill, /flush is not commit/u);
+	assert.match(localSkill, /SQLAlchemy/u);
+	assert.match(localSkill, /optimistic lock/u);
+	assert.match(localSkill, /@Version/u);
+	assert.match(localSkill, /advisory locks/u);
+	assert.match(localSkill, /transaction manager/u);
+	assert.match(localSkill, /transactional tests/u);
+	assert.match(localSkill, /commit-time constraints/u);
+	assert.match(localSkill, /after-commit callback/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md/u);
+	assert.match(skillIndex, /transaction-boundary integrity triage/u);
+	assert.match(skillIndex, /read-decision-write integrity/u);
+	assert.match(routes, /\[routes\."transaction-boundary-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 79/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"transaction-boundary-integrity-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.transaction-boundary-integrity-review"\][\s\S]*?revision = 1/u);
+});
+
+test('testability boundary review exposes hidden decisions and test friction', () => {
+	const localSkill = readText('.mustflow/skills/testability-boundary-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/testability-boundary-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /stop time/u);
+	assert.match(localSkill, /force failure/u);
+	assert.match(localSkill, /replace the external world/u);
+	assert.match(localSkill, /fix random output/u);
+	assert.match(localSkill, /without peeking through private seams/u);
+	assert.match(localSkill, /Decision-input ledger/u);
+	assert.match(localSkill, /Side-effect ledger/u);
+	assert.match(localSkill, /Observability ledger/u);
+	assert.match(localSkill, /Test friction evidence/u);
+	assert.match(localSkill, /`new Date\(\)`/u);
+	assert.match(localSkill, /`Date\.now\(\)`/u);
+	assert.match(localSkill, /`LocalDateTime\.now\(\)`/u);
+	assert.match(localSkill, /`System\.currentTimeMillis\(\)`/u);
+	assert.match(localSkill, /`Math\.random\(\)`/u);
+	assert.match(localSkill, /Constructors should accept ingredients, not start cooking\./u);
+	assert.match(localSkill, /static, singleton, and global state/u);
+	assert.match(localSkill, /large private methods/u);
+	assert.match(localSkill, /boolean mode flags/u);
+	assert.match(localSkill, /`RequestOptions`/u);
+	assert.match(localSkill, /Void functions/u);
+	assert.ok(localSkill.includes('`catch { log.warn(...) }`'));
+	assert.match(localSkill, /cache outside the policy/u);
+	assert.match(localSkill, /ORM behavior/u);
+	assert.match(localSkill, /transaction and external-call coupling/u);
+	assert.match(localSkill, /Hidden event publication/u);
+	assert.match(localSkill, /fire-and-forget/u);
+	assert.match(localSkill, /`setTimeout`/u);
+	assert.match(localSkill, /retry, backoff, timeout, and expiration/u);
+	assert.match(localSkill, /Stabilize collection ordering/u);
+	assert.match(localSkill, /Make defaults explicit/u);
+	assert.match(localSkill, /input shape validation/u);
+	assert.match(localSkill, /Centralize authorization evidence/u);
+	assert.match(localSkill, /framework magic/u);
+	assert.match(localSkill, /controllers as translators/u);
+	assert.match(localSkill, /conditional DTO mapping/u);
+	assert.match(localSkill, /five or more mocks/u);
+	assert.match(localSkill, /outcome assertions/u);
+	assert.match(localSkill, /deep inheritance/u);
+	assert.match(localSkill, /reflection-only tests/u);
+	assert.match(localSkill, /`test-design-guard`/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/testability-boundary-review\/SKILL\.md/u);
+	assert.match(skillIndex, /testability-boundary triage/u);
+	assert.match(skillIndex, /hidden decision inputs/u);
+	assert.match(skillIndex, /reflection-only tests/u);
+	assert.match(routes, /\[routes\."testability-boundary-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 74/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/testability-boundary-review\/SKILL\.md"/u);
+	assert.match(manifest, /"testability-boundary-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.testability-boundary-review"\][\s\S]*?revision = 1/u);
+});
+
+test('database query bottleneck review catches diff-visible query path risks', () => {
+	const localSkill = readText('.mustflow/skills/database-query-bottleneck-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/database-query-bottleneck-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /cardinality explosion/u);
+	assert.match(localSkill, /N\+1 candidates/u);
+	assert.match(localSkill, /eager loading/u);
+	assert.match(localSkill, /`SELECT \*`/u);
+	assert.match(localSkill, /stable `ORDER BY`/u);
+	assert.match(localSkill, /`OFFSET \.\.\. LIMIT \.\.\.`/u);
+	assert.match(localSkill, /composite indexes/u);
+	assert.match(localSkill, /range predicates/u);
+	assert.match(localSkill, /Functions or casts around columns/u);
+	assert.match(localSkill, /parameter and type mismatch/u);
+	assert.match(localSkill, /Leading wildcard/u);
+	assert.match(localSkill, /`OR` across different columns/u);
+	assert.match(localSkill, /Very large `IN` lists/u);
+	assert.match(localSkill, /`EXISTS` for existence checks/u);
+	assert.match(localSkill, /`NOT IN` with NULLs/u);
+	assert.match(localSkill, /`LEFT JOIN` followed by `WHERE right_table\.col/u);
+	assert.match(localSkill, /Aggregate before join fan-out/u);
+	assert.match(localSkill, /latest-row and per-parent subqueries/u);
+	assert.match(localSkill, /wide rows with large text, JSON, or blob columns/u);
+	assert.match(localSkill, /JSON filters/u);
+	assert.match(localSkill, /tenant and soft-delete scope/u);
+	assert.match(localSkill, /estimated rows and actual rows/u);
+	assert.match(localSkill, /extended statistics/u);
+	assert.match(localSkill, /PostgreSQL `EXPLAIN ANALYZE`/u);
+	assert.match(localSkill, /MySQL `EXPLAIN ANALYZE`/u);
+	assert.match(localSkill, /SQL Server actual execution plans/u);
+	assert.match(localSkill, /Query Store history/u);
+	assert.match(localSkill, /Missing-index recommendations are candidates/u);
+	assert.match(localSkill, /Plan forcing is a last resort/u);
+	assert.match(localSkill, /Check transaction scope/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/database-query-bottleneck-review\/SKILL\.md/u);
+	assert.match(skillIndex, /Database query review needs to catch bottlenecks visible in the diff/u);
+	assert.match(skillIndex, /cardinality explosion, ORM N\+1, eager-load overfetch/u);
+	assert.match(routes, /\[routes\."database-query-bottleneck-review"\]\r?\ncategory = "data_external"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 67/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "test_change", "docs_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/database-query-bottleneck-review\/SKILL\.md"/u);
+	assert.match(manifest, /"database-query-bottleneck-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.database-query-bottleneck-review"\][\s\S]*?revision = 2/u);
 });
 
 test('github contribution quality gate keeps maintainer-facing GitHub posts evidence-based', () => {
@@ -401,7 +2141,7 @@ test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain
 	assert.match(routes, /\[routes\."go-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/go-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"go-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
 	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
 });
@@ -459,7 +2199,7 @@ test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-p
 	assert.match(routes, /\[routes\."rust-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/rust-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"rust-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
 	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 4/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 6/u);
 });
@@ -559,7 +2299,7 @@ test('PowerShell code change skill keeps quoting, parser layers, and native argv
 	assert.match(routes, /applies_to_reasons = \["code_change", "test_change", "docs_change", "package_metadata_change", "workflow_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/powershell-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"powershell-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
 	assert.match(i18n, /\[documents\."skill\.powershell-code-change"\][\s\S]*?revision = 1/u);
 });
 
@@ -625,7 +2365,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(routes, /applies_to_reasons = \["code_change", "behavior_change", "public_api_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md"/u);
 	assert.match(manifest, /"http-delivery-streaming"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
 	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
 	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 2/u);
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 12/u);
@@ -684,7 +2424,7 @@ test('backend reliability skill keeps retry, idempotency, health, cache, and que
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/backend-reliability-change\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-reliability-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 109/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
 	assert.match(i18n, /\[documents\."skill\.backend-reliability-change"\][\s\S]*?revision = 1/u);
 });
 
@@ -875,6 +2615,231 @@ test('frontend render stability keeps flicker diagnosis symptom-first and templa
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-render-stability\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-render-stability"/u);
 	assert.match(i18n, /\[documents\."skill\.frontend-render-stability"\]/u);
+});
+
+test('frontend state ownership review maps source-of-truth drift', () => {
+	const localSkill = readText('.mustflow/skills/frontend-state-ownership-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/frontend-state-ownership-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /State owner ledger/u);
+	assert.match(localSkill, /server data, URL-owned state, local UI state, form draft/u);
+	assert.match(localSkill, /`useState\(props`/u);
+	assert.match(localSkill, /derived values/u);
+	assert.match(localSkill, /`useEffect\(\(\) => setX/u);
+	assert.match(localSkill, /one `status`, `mode`, state machine, or discriminated union/u);
+	assert.match(localSkill, /Store identifiers, not stale objects/u);
+	assert.match(localSkill, /`selectedId`/u);
+	assert.match(localSkill, /Do not copy TanStack Query, SWR, Apollo/u);
+	assert.match(localSkill, /query key includes every condition/u);
+	assert.match(localSkill, /URL-owned state/u);
+	assert.match(localSkill, /form draft/u);
+	assert.match(localSkill, /optimistic update needs rollback/u);
+	assert.match(localSkill, /AbortController/u);
+	assert.match(localSkill, /Mutation invalidation/u);
+	assert.match(localSkill, /index keys/u);
+	assert.match(localSkill, /Use `key` resets/u);
+	assert.match(localSkill, /Context value identity/u);
+	assert.match(localSkill, /raw setters/u);
+	assert.match(localSkill, /Persisted stores need serializable values, schema versioning, migrations/u);
+	assert.match(localSkill, /useSyncExternalStore/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md/u);
+	assert.match(skillIndex, /frontend state can drift across props/u);
+	assert.match(skillIndex, /props-to-state drift/u);
+	assert.match(routes, /\[routes\."frontend-state-ownership-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 80/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md"/u);
+	assert.match(manifest, /"frontend-state-ownership-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-state-ownership-review"\][\s\S]*?revision = 1/u);
+});
+
+test('frontend stress layout review catches hostile content and container breakage', () => {
+	const localSkill = readText('.mustflow/skills/frontend-stress-layout-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/frontend-stress-layout-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /stress fixture/u);
+	assert.match(localSkill, /parent container/u);
+	assert.match(localSkill, /container queries/u);
+	assert.match(localSkill, /`min-width: 0`/u);
+	assert.match(localSkill, /`minmax\(0, 1fr\)`/u);
+	assert.match(localSkill, /`overflow-wrap: anywhere`/u);
+	assert.match(localSkill, /`aspect-ratio`/u);
+	assert.match(localSkill, /skeleton/u);
+	assert.match(localSkill, /empty state/u);
+	assert.match(localSkill, /permission/u);
+	assert.match(localSkill, /`scrollbar-gutter: stable`/u);
+	assert.match(localSkill, /`100vh`/u);
+	assert.match(localSkill, /safe-area-inset/u);
+	assert.match(localSkill, /line-height/u);
+	assert.match(localSkill, /logical properties/u);
+	assert.match(localSkill, /prefers-reduced-motion/u);
+	assert.match(localSkill, /ResizeObserver/u);
+	assert.match(localSkill, /portal/u);
+	assert.match(localSkill, /z-index/u);
+	assert.match(localSkill, /table/u);
+	assert.match(localSkill, /chart/u);
+	assert.match(localSkill, /browser zoom/u);
+	assert.match(localSkill, /@layer/u);
+	assert.match(localSkill, /reproducible break condition/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md/u);
+	assert.match(skillIndex, /hostile-content and\s+layout-resilience review/u);
+	assert.match(skillIndex, /vague non-reproducible visual complaint/u);
+	assert.match(routes, /\[routes\."frontend-stress-layout-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 80/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "behavior_change", "code_change", "performance_change", "web_asset_change", "test_change", "docs_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md"/u);
+	assert.match(manifest, /"frontend-stress-layout-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-stress-layout-review"\][\s\S]*?revision = 1/u);
+});
+
+test('frontend accessibility tree review catches semantic, keyboard, and name drift', () => {
+	const localSkill = readText('.mustflow/skills/frontend-accessibility-tree-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/frontend-accessibility-tree-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /accessibility tree/u);
+	assert.match(localSkill, /native HTML/u);
+	assert.match(localSkill, /accessible name/u);
+	assert.match(localSkill, /visible label/u);
+	assert.match(localSkill, /Semantic ledger/u);
+	assert.match(localSkill, /Keyboard ledger/u);
+	assert.match(localSkill, /Assistive-technology ledger/u);
+	assert.match(localSkill, /Form ledger/u);
+	assert.match(localSkill, /`onClick`/u);
+	assert.match(localSkill, /`role="button"`/u);
+	assert.match(localSkill, /`href="#"`/u);
+	assert.match(localSkill, /positive tabindex/u);
+	assert.match(localSkill, /`:focus-visible`/u);
+	assert.match(localSkill, /dialog needs a name, initial focus/u);
+	assert.match(localSkill, /speech input users/u);
+	assert.match(localSkill, /`aria-labelledby` and `aria-describedby`/u);
+	assert.match(localSkill, /`aria-hidden="true"`/u);
+	assert.match(localSkill, /SVG and icon defaults/u);
+	assert.match(localSkill, /image alt/u);
+	assert.match(localSkill, /Placeholder is not a label/u);
+	assert.match(localSkill, /fieldset` and `legend/u);
+	assert.match(localSkill, /`aria-invalid`/u);
+	assert.match(localSkill, /live region/u);
+	assert.match(localSkill, /Menus, menu buttons, tabs, comboboxes/u);
+	assert.match(localSkill, /custom select/u);
+	assert.match(localSkill, /non-text contrast/u);
+	assert.match(localSkill, /target size/u);
+	assert.match(localSkill, /drag-only/u);
+	assert.match(localSkill, /axe/u);
+	assert.match(localSkill, /Playwright accessibility snapshots/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md/u);
+	assert.match(skillIndex, /browser accessibility tree/u);
+	assert.match(skillIndex, /ARIA attributes exist/u);
+	assert.match(routes, /\[routes\."frontend-accessibility-tree-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 82/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "web_asset_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md"/u);
+	assert.match(manifest, /"frontend-accessibility-tree-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-accessibility-tree-review"\][\s\S]*?revision = 1/u);
+});
+
+test('frontend localization review catches hidden strings, locale formatting, and export drift', () => {
+	const localSkill = readText('.mustflow/skills/frontend-localization-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/frontend-localization-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /String exposure ledger/u);
+	assert.match(localSkill, /visible JSX text/u);
+	assert.match(localSkill, /`placeholder`/u);
+	assert.match(localSkill, /`aria-label`/u);
+	assert.match(localSkill, /Open Graph/u);
+	assert.match(localSkill, /SVG `<text>`/u);
+	assert.match(localSkill, /canvas text/u);
+	assert.match(localSkill, /CSV headers/u);
+	assert.match(localSkill, /full-sentence/u);
+	assert.match(localSkill, /named interpolation/u);
+	assert.match(localSkill, /`t\('hello'\) \+ name \+ t\('welcome'\)`/u);
+	assert.match(localSkill, /`Delete \{item\}`/u);
+	assert.match(localSkill, /ICU plural/u);
+	assert.match(localSkill, /zero-result/u);
+	assert.match(localSkill, /Korean particles/u);
+	assert.match(localSkill, /tone and formality/u);
+	assert.match(localSkill, /`new Date\(\)`/u);
+	assert.match(localSkill, /currency/u);
+	assert.match(localSkill, /`Number\(input\)`/u);
+	assert.match(localSkill, /language, region, currency, time zone, and measurement unit/u);
+	assert.match(localSkill, /default `sort\(\)`/u);
+	assert.match(localSkill, /plain `toLowerCase\(\)`/u);
+	assert.match(localSkill, /Unicode normalization/u);
+	assert.match(localSkill, /grapheme-safe/u);
+	assert.match(localSkill, /RTL and bidirectional/u);
+	assert.match(localSkill, /`dir="auto"`/u);
+	assert.match(localSkill, /font fallback/u);
+	assert.match(localSkill, /pseudo localization/u);
+	assert.match(localSkill, /SSR and hydration locale agreement/u);
+	assert.match(localSkill, /silent English fallback/u);
+	assert.match(localSkill, /raw backend prose/u);
+	assert.match(localSkill, /export, share, and notification surfaces/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/frontend-localization-review\/SKILL\.md/u);
+	assert.match(skillIndex, /all\s+user-visible strings/u);
+	assert.match(skillIndex, /visible JSX text scan/u);
+	assert.match(routes, /\[routes\."frontend-localization-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 84/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "i18n_change", "web_asset_change"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/frontend-localization-review\/SKILL\.md"/u);
+	assert.match(manifest, /"frontend-localization-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 140/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-localization-review"\][\s\S]*?revision = 1/u);
 });
 
 test('utility and browser-native styling skills cover modern extraction and platform traps', () => {
