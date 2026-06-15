@@ -2,13 +2,17 @@ import { spawn, spawnSync } from 'node:child_process';
 
 import type { RunTerminationReceipt } from '../../../core/run-receipt.js';
 
+function windowsTaskkillArgs(pid: number, signal: NodeJS.Signals): string[] {
+	return signal === 'SIGKILL' ? ['/PID', String(pid), '/T', '/F'] : ['/PID', String(pid), '/T'];
+}
+
 function signalProcessTree(pid: number | undefined, signal: NodeJS.Signals): void {
 	if (!pid || pid <= 0) {
 		return;
 	}
 
 	if (process.platform === 'win32') {
-		spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], {
+		spawnSync('taskkill', windowsTaskkillArgs(pid, signal), {
 			stdio: 'ignore',
 			windowsHide: true,
 		});
@@ -39,7 +43,7 @@ function signalProcessTreeNonBlocking(pid: number | undefined, signal: NodeJS.Si
 	}
 
 	if (process.platform === 'win32') {
-		const killer = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
+		const killer = spawn('taskkill', windowsTaskkillArgs(pid, signal), {
 			stdio: 'ignore',
 			windowsHide: true,
 			detached: true,
@@ -84,7 +88,7 @@ export function forceTerminateProcessTreeNonBlocking(pid: number | undefined): v
 }
 
 export function getKillMethod(): string {
-	return process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm';
+	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
 }
 
 export function createPendingTimeoutTermination(method: string, forcedKillAttempted = false): RunTerminationReceipt {

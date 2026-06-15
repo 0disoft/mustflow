@@ -23,7 +23,15 @@ export type MustflowReadResult =
 	  };
 
 export function mustflowProjectPath(projectRoot: string, relativePath: string): string {
-	return path.join(projectRoot, ...relativePath.split('/'));
+	const normalizedRoot = path.resolve(projectRoot);
+	const resolvedPath = path.resolve(normalizedRoot, ...relativePath.split('/'));
+	const relative = path.relative(normalizedRoot, resolvedPath);
+
+	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+		throw new Error(`Path escapes mustflow project root: ${relativePath}`);
+	}
+
+	return resolvedPath;
 }
 
 function missingPath(error: unknown): boolean {
@@ -47,7 +55,12 @@ export function readMustflowTextFileResult(
 	relativePath: string,
 	options: MustflowReadOptions = {},
 ): MustflowReadResult {
-	const filePath = mustflowProjectPath(projectRoot, relativePath);
+	let filePath: string;
+	try {
+		filePath = mustflowProjectPath(projectRoot, relativePath);
+	} catch (error) {
+		return { ok: false, exists: false, error: error instanceof Error ? error.message : String(error) };
+	}
 
 	if (!existsSync(filePath)) {
 		return { ok: false, exists: false, error: null };

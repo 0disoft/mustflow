@@ -62,6 +62,7 @@ function gitList(projectRoot: string, args: readonly string[]): readonly string[
 		encoding: 'buffer',
 		env: createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
 		stdio: ['ignore', 'pipe', 'pipe'],
+		timeout: 30_000,
 		windowsHide: true,
 	});
 
@@ -127,23 +128,26 @@ function detectLineEnding(buffer: Buffer): LineEndingKind {
 }
 
 function normalizeLf(buffer: Buffer): Buffer {
-	const bytes: number[] = [];
+	const bytes = Buffer.allocUnsafe(buffer.length);
+	let writeIndex = 0;
 
 	for (let index = 0; index < buffer.length; index += 1) {
 		const byte = buffer[index];
 
 		if (byte === 0x0d) {
-			bytes.push(0x0a);
+			bytes[writeIndex] = 0x0a;
+			writeIndex += 1;
 			if (buffer[index + 1] === 0x0a) {
 				index += 1;
 			}
 			continue;
 		}
 
-		bytes.push(byte);
+		bytes[writeIndex] = byte;
+		writeIndex += 1;
 	}
 
-	return Buffer.from(bytes);
+	return bytes.subarray(0, writeIndex);
 }
 
 export function inspectLineEndings(projectRoot: string, mode: 'check' | 'normalize', options: LineEndingOptions = {}): LineEndingReport {

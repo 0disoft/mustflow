@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
@@ -206,6 +206,56 @@ escalate_to = ["test"]
 			true,
 		);
 		assert.equal(existsSync(markerPath), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('artifact freshness preconditions support single-character source globs', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'dist', 'out.js'), 'old artifact\n');
+		writeFileSync(path.join(projectPath, 'src', 'a1.ts'), 'matched source\n');
+		writeFileSync(path.join(projectPath, 'src', 'abc.ts'), 'unmatched newer source\n');
+		utimesSync(path.join(projectPath, 'dist', 'out.js'), new Date('2020-01-01T00:00:00.000Z'), new Date('2020-01-01T00:00:00.000Z'));
+		utimesSync(path.join(projectPath, 'src', 'a1.ts'), new Date('2021-01-01T00:00:00.000Z'), new Date('2021-01-01T00:00:00.000Z'));
+		utimesSync(path.join(projectPath, 'src', 'abc.ts'), new Date('2022-01-01T00:00:00.000Z'), new Date('2022-01-01T00:00:00.000Z'));
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_freshness_glob]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify artifact freshness source glob handling."
+argv = ['${process.execPath}', '-e', 'console.log("ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+preconditions = [
+  { kind = "artifact_freshness", artifact = "dist/out.js", sources = ["src/a?.ts"] },
+]
+network = false
+destructive = false
+required_after = ["freshness_glob"]
+`,
+		);
+
+		const result = await runCli(projectPath, ['verify', '--reason', 'freshness_glob', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const precondition = report.schedule.entries[0].preconditions[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(precondition.kind, 'artifact_freshness');
+		assert.equal(precondition.status, 'stale');
+		assert.equal(precondition.newestSource, 'src/a1.ts');
+		assert.equal(precondition.detail, 'artifact "dist/out.js" is older than source "src/a1.ts".');
 	} finally {
 		removeTempProject(projectPath);
 	}

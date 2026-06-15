@@ -39,7 +39,14 @@ function tempFilePath(targetPath: string): string {
 }
 
 function sleep(milliseconds: number): void {
-	Atomics.wait(WRITE_SLEEP_BUFFER, 0, 0, milliseconds);
+	try {
+		Atomics.wait(WRITE_SLEEP_BUFFER, 0, 0, milliseconds);
+	} catch {
+		const end = Date.now() + milliseconds;
+		while (Date.now() < end) {
+			// Fall back only for short retry delays when Atomics.wait is unavailable on this runtime.
+		}
+	}
 }
 
 function isRetryableWindowsRenameError(error: unknown): boolean {

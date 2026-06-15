@@ -56,7 +56,16 @@ export function readGitChangedFiles(projectRoot: string): GitChangedFilesResult 
 		};
 	}
 
-	return { ok: true, files: parseGitStatusOutput(result.stdout) };
+	try {
+		return { ok: true, files: parseGitStatusOutput(result.stdout) };
+	} catch (error) {
+		return {
+			ok: false,
+			message: error instanceof Error ? error.message : String(error),
+			status: result.status,
+			stderr: '',
+		};
+	}
 }
 
 export function requireGitChangedFiles(projectRoot: string): readonly string[] {

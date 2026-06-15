@@ -4,6 +4,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	readdirSync,
+	renameSync,
 	rmSync,
 	statSync,
 	writeFileSync,
@@ -24,7 +25,7 @@ const LOCK_MUTEX_STALE_MS = 30_000;
 const LOCK_MUTEX_WAIT_MS = 1_000;
 const LOCK_MUTEX_SLEEP_MS = 25;
 const LOCK_MUTEX_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
-const LOCK_MUTEX_RECOVERY_DIRECTORY = 'recovery';
+const LOCK_MUTEX_RECOVERY_DIRECTORY = 'mutex.recovery';
 
 export interface ActiveRunLockEffect {
 	readonly source: string;
@@ -94,7 +95,14 @@ export type ActiveRunLockAcquireResult =
 	};
 
 function sleep(milliseconds: number): void {
-	Atomics.wait(LOCK_MUTEX_SLEEP_BUFFER, 0, 0, milliseconds);
+	try {
+		Atomics.wait(LOCK_MUTEX_SLEEP_BUFFER, 0, 0, milliseconds);
+	} catch {
+		const end = Date.now() + milliseconds;
+		while (Date.now() < end) {
+			// Fall back only for short mutex retry delays when Atomics.wait is unavailable on this runtime.
+		}
+	}
 }
 
 function sha256(value: string): string {
@@ -114,7 +122,7 @@ function activeLockMutexDirectory(projectRoot: string): string {
 }
 
 function activeLockMutexRecoveryDirectory(mutex: string): string {
-	return path.join(mutex, LOCK_MUTEX_RECOVERY_DIRECTORY);
+	return path.join(path.dirname(mutex), LOCK_MUTEX_RECOVERY_DIRECTORY);
 }
 
 function normalizeEffect(effect: NormalizedCommandEffect): ActiveRunLockEffect {
@@ -266,10 +274,20 @@ function findConflicts(
 	records: readonly ActiveRunLockRecord[],
 ): readonly ActiveRunLockConflict[] {
 	const conflicts: ActiveRunLockConflict[] = [];
+	const effectsByLock = new Map<string, NormalizedCommandEffect[]>();
+
+	for (const effect of effects) {
+		const existing = effectsByLock.get(effect.lock);
+		if (existing) {
+			existing.push(effect);
+		} else {
+			effectsByLock.set(effect.lock, [effect]);
+		}
+	}
 
 	for (const record of records) {
 		for (const activeEffect of commandEffectsFromRecord(record)) {
-			for (const effect of effects) {
+			for (const effect of effectsByLock.get(activeEffect.lock) ?? []) {
 				if (!commandEffectsConflict(effect, activeEffect)) {
 					continue;
 				}
@@ -385,6 +403,24 @@ function beginMutexRecovery(mutex: string): (() => void) | null {
 	};
 }
 
+function moveMutexAsideForRecovery(mutex: string, owner: ActiveMutexOwner | null): string | null {
+	const tokenSource = owner ? `${owner.pid}:${owner.startedAt}:${owner.token}` : `${process.pid}:${Date.now()}:${process.hrtime.bigint()}`;
+	const stalePath = path.join(path.dirname(mutex), `mutex.stale-${sha256(tokenSource)}`);
+
+	try {
+		rmSync(stalePath, { recursive: true, force: true });
+		renameSync(mutex, stalePath);
+		return stalePath;
+	} catch {
+		try {
+			rmSync(stalePath, { recursive: true, force: true });
+		} catch {
+			// Best-effort cleanup for a failed stale mutex move.
+		}
+		return null;
+	}
+}
+
 function recoverStaleMutexWithOwner(mutex: string, ownerPath: string, staleOwner: ActiveMutexOwner): boolean {
 	const releaseRecovery = beginMutexRecovery(mutex);
 	if (!releaseRecovery) {
@@ -396,7 +432,12 @@ function recoverStaleMutexWithOwner(mutex: string, ownerPath: string, staleOwner
 			return false;
 		}
 
-		rmSync(mutex, { recursive: true, force: true });
+		const stalePath = moveMutexAsideForRecovery(mutex, staleOwner);
+		if (!stalePath) {
+			return false;
+		}
+
+		rmSync(stalePath, { recursive: true, force: true });
 		return true;
 	} finally {
 		releaseRecovery();
@@ -415,7 +456,12 @@ function recoverStaleMutexWithoutOwner(mutex: string): boolean {
 			return false;
 		}
 
-		rmSync(mutex, { recursive: true, force: true });
+		const stalePath = moveMutexAsideForRecovery(mutex, null);
+		if (!stalePath) {
+			return false;
+		}
+
+		rmSync(stalePath, { recursive: true, force: true });
 		return true;
 	} catch {
 		return false;
@@ -430,7 +476,7 @@ function acquireMutex(projectRoot: string): () => void {
 	const ownerPath = path.join(mutex, 'owner.json');
 	const ownerToken = sha256(`${process.pid}:${Date.now()}:${process.hrtime.bigint()}`);
 	mkdirSync(root, { recursive: true });
-	let startedAt = Date.now();
+	const startedAt = Date.now();
 
 	while (true) {
 		try {
@@ -461,7 +507,6 @@ function acquireMutex(projectRoot: string): () => void {
 				const owner = readMutexOwner(ownerPath);
 				if (owner) {
 					if (mutexOwnerIsStale(owner) && recoverStaleMutexWithOwner(mutex, ownerPath, owner)) {
-						startedAt = Date.now();
 						continue;
 					}
 				} else {
@@ -480,11 +525,9 @@ function acquireMutex(projectRoot: string): () => void {
 					try {
 						const mutexStat = statSync(mutex);
 						if (Date.now() - mutexStat.mtimeMs > LOCK_MUTEX_STALE_MS && recoverStaleMutexWithoutOwner(mutex)) {
-							startedAt = Date.now();
 							continue;
 						}
 					} catch {
-						startedAt = Date.now();
 						continue;
 					}
 				}
@@ -505,7 +548,8 @@ export function inspectActiveRunLocks(
 	const effects = normalizeCommandEffects(projectRoot, contract, intentName);
 	const records = readActiveRecords(projectRoot);
 	const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
-	const liveRecords = records.filter((record) => !staleRecords.some((stale) => stale.runId === record.run_id));
+	const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
+	const liveRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
 
 	return {
 		conflicts: findConflicts(intentName, effects, liveRecords),
@@ -516,7 +560,8 @@ export function inspectActiveRunLocks(
 export function listActiveRunLocks(projectRoot: string): ActiveRunLockState {
 	const records = readActiveRecords(projectRoot);
 	const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
-	const activeRecords = records.filter((record) => !staleRecords.some((stale) => stale.runId === record.run_id));
+	const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
+	const activeRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
 
 	return {
 		records,
@@ -559,7 +604,8 @@ export function acquireActiveRunLock(
 			}
 		}
 
-		const liveRecords = records.filter((record) => !staleRecords.some((stale) => stale.runId === record.run_id));
+		const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
+		const liveRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
 		const conflicts = findConflicts(intentName, effects, liveRecords);
 		if (conflicts.length > 0) {
 			return { ok: false, conflicts, recoveredStaleRecords: staleRecords };

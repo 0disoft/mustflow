@@ -78,6 +78,7 @@ export interface VerifyCompletionVerdictInput {
 	readonly failedIntents: number;
 	readonly skippedIntents: number;
 	readonly receiptCount: number;
+	readonly gapCount?: number;
 	readonly sourceAnchorRiskCount?: number;
 	readonly scopeDiffRiskCount?: number;
 	readonly repeatedFailureCount?: number;
@@ -387,7 +388,7 @@ export function createVerifyCompletionVerdict(input: VerifyCompletionVerdictInpu
 			failed_intents: normalizedInput.failedIntents,
 			skipped_intents: normalizedInput.skippedIntents,
 			receipt_count: normalizedInput.receiptCount,
-			gap_count: normalizedInput.skippedIntents,
+			gap_count: normalizedInput.gapCount ?? 0,
 			source_anchor_risk_count: normalizedInput.sourceAnchorRiskCount ?? 0,
 			scope_diff_risk_count: normalizedInput.scopeDiffRiskCount ?? 0,
 			repeated_failure_count: normalizedInput.repeatedFailureCount ?? 0,

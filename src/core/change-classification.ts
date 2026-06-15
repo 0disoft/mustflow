@@ -110,6 +110,10 @@ function parseGitPorcelainStatusOutput(output: string): string[] {
 		}
 
 		if (status.includes('R') || status.includes('C')) {
+			const targetPath = normalizePorcelainStatusPath(parts[index + 1] ?? '');
+			if (targetPath.length > 0) {
+				paths.push(targetPath);
+			}
 			index += 1;
 		}
 	}

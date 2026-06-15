@@ -1077,7 +1077,7 @@ export function validateCommandContractStrictDefaults(
 	issues.push(...validateCommandEnvInheritanceWarnings(commandsToml));
 	issues.push(...validateProjectLocalBinWarnings(projectRoot, commandsToml));
 	issues.push(...validateCommandEffects(projectRoot, commandsToml));
-	issues.push(...validateCommandEffectLockWarnings(commandsToml));
+	issues.push(...validateCommandEffectLockWarnings(projectRoot, commandsToml));
 
 	return issues;
 }

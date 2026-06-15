@@ -459,16 +459,17 @@ export function getTemplateFiles(
 		const commonPath = path.join(commonRoot, ...relativePath.split('/'));
 		const localizedPath = localePath && existsSync(localePath) ? localePath : undefined;
 		const fallbackLocalePath = sourceLocalePath && existsSync(sourceLocalePath) ? sourceLocalePath : undefined;
-		const indexSourcePath = localizedPath ?? fallbackLocalePath ?? commonPath;
+		const commonSourcePath = existsSync(commonPath) ? commonPath : undefined;
+		const selectedSourcePath = localizedPath ?? fallbackLocalePath ?? commonSourcePath;
 		const content =
-			relativePath === '.mustflow/skills/INDEX.md'
+			selectedSourcePath && relativePath === '.mustflow/skills/INDEX.md'
 				? filterSkillIndexContent(
-						readFileSync(indexSourcePath, 'utf8'),
+						readFileSync(selectedSourcePath, 'utf8'),
 						selectedSkills,
 					)
-				: relativePath === '.mustflow/skills/routes.toml'
+				: selectedSourcePath && relativePath === '.mustflow/skills/routes.toml'
 					? filterSkillRouteMetadataContent(
-							readFileSync(indexSourcePath, 'utf8'),
+							readFileSync(selectedSourcePath, 'utf8'),
 							selectedSkills,
 						)
 					: undefined;
@@ -491,10 +492,10 @@ export function getTemplateFiles(
 			};
 		}
 
-		if (existsSync(commonPath)) {
+		if (commonSourcePath) {
 			return {
 				relativePath,
-				sourcePath: commonPath,
+				sourcePath: commonSourcePath,
 				sourceKind: template.manifest.localesRoot ? 'common' : 'legacy',
 				content,
 			};

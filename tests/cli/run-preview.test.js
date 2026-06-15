@@ -616,6 +616,22 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
+
+[intents.shell_zig_build_then_echo_watch]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a bounded zig build before an unrelated watch word."
+mode = "shell"
+cmd = "zig build && echo watch"
+allow_shell = true
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
 `,
 		);
 
@@ -657,6 +673,8 @@ destructive = false
 		});
 		const shellDevResult = runCli(projectPath, ['run', 'shell_dev', '--dry-run', '--json']);
 		const shellDevPreview = JSON.parse(shellDevResult.stdout);
+		const shellSafeZigResult = runCli(projectPath, ['run', 'shell_zig_build_then_echo_watch', '--dry-run', '--json']);
+		const shellSafeZigPreview = JSON.parse(shellSafeZigResult.stdout);
 
 		assert.equal(result.status, 1);
 		assert.equal(preview.runnable, false);
@@ -692,6 +710,9 @@ destructive = false
 		assert.equal(safeGoResult.status, 0);
 		assert.equal(safeGoPreview.runnable, true);
 		assert.equal(safeGoPreview.reason_code, null);
+		assert.equal(shellSafeZigResult.status, 0);
+		assert.equal(shellSafeZigPreview.runnable, true);
+		assert.equal(shellSafeZigPreview.reason_code, null);
 	} finally {
 		removeTempProject(projectPath);
 	}

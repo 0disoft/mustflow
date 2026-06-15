@@ -240,12 +240,17 @@ export function validateCommandEffects(projectRoot: string, commandsToml: TomlTa
 	return issues;
 }
 
-export function validateCommandEffectLockWarnings(commandsToml: TomlTable | undefined): CommandEffectIssue[] {
+export function validateCommandEffectLockWarnings(projectRoot: string, commandsToml: TomlTable | undefined): CommandEffectIssue[] {
 	const issues: CommandEffectIssue[] = [];
 	if (!commandsToml || !isRecord(commandsToml.intents)) {
 		return issues;
 	}
 
+	const commandContract: CommandContract = {
+		defaults: isRecord(commandsToml.defaults) ? commandsToml.defaults : {},
+		intents: commandsToml.intents,
+		resources: isRecord(commandsToml.resources) ? commandsToml.resources : {},
+	};
 	const lockToIntents = new Map<string, string[]>();
 
 	for (const [intentName, intent] of Object.entries(commandsToml.intents)) {
@@ -262,9 +267,21 @@ export function validateCommandEffectLockWarnings(commandsToml: TomlTable | unde
 			continue;
 		}
 
-		for (const rawPath of readStringArray(intent, 'writes') ?? []) {
-			const lock = pathLockKey(rawPath);
-			lockToIntents.set(lock, [...(lockToIntents.get(lock) ?? []), intentName]);
+		let effects: readonly NormalizedCommandEffect[];
+		try {
+			effects = normalizeCommandEffects(projectRoot, commandContract, intentName).filter((effect) => effect.source === 'writes');
+		} catch {
+			continue;
+		}
+
+		for (const effect of effects) {
+			const lock = effect.lock;
+			const intents = lockToIntents.get(lock);
+			if (intents) {
+				intents.push(intentName);
+			} else {
+				lockToIntents.set(lock, [intentName]);
+			}
 		}
 	}
 

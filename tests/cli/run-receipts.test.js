@@ -830,13 +830,13 @@ destructive = false
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
-		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm');
+		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
 		assert.deepEqual(receipt.termination, {
 			reason: 'timeout',
-			method: process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm',
+			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
 			graceful_signal: 'SIGTERM',
 			forced_signal: 'SIGKILL',
-			forced_kill_attempted: false,
+			forced_kill_attempted: process.platform === 'win32',
 			confirmed: true,
 			cleanup_pending: false,
 		});
@@ -886,13 +886,13 @@ destructive = false
 		assert.equal(receipt.timed_out, true);
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
-		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm');
+		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
 		assert.deepEqual(receipt.termination, {
 			reason: 'timeout',
-			method: process.platform === 'win32' ? 'taskkill_process_tree_forced' : 'process_group_sigterm',
+			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
 			graceful_signal: 'SIGTERM',
 			forced_signal: 'SIGKILL',
-			forced_kill_attempted: process.platform !== 'win32',
+			forced_kill_attempted: true,
 			confirmed: true,
 			cleanup_pending: false,
 		});

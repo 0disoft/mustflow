@@ -499,24 +499,27 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	if (!dryRun && !reusedExisting) {
 		const database = new SQL.Database();
 
-		createSchema(database, capabilities);
-		populateDatabase(
-			database,
-			capabilities,
-			documents,
-			skills,
-			skillRoutes,
-			commandIntents,
-			sourceAnchors,
-			indexedFiles,
-			verificationEvidence,
-			indexMode,
-			sourceScopeHash,
-			includeSource,
-			new Date().toISOString(),
-		);
-		writeFileInsideWithoutSymlinks(projectRoot, databasePath, database.export());
-		database.close();
+		try {
+			createSchema(database, capabilities);
+			populateDatabase(
+				database,
+				capabilities,
+				documents,
+				skills,
+				skillRoutes,
+				commandIntents,
+				sourceAnchors,
+				indexedFiles,
+				verificationEvidence,
+				indexMode,
+				sourceScopeHash,
+				includeSource,
+				new Date().toISOString(),
+			);
+			writeFileInsideWithoutSymlinks(projectRoot, databasePath, database.export());
+		} finally {
+			database.close();
+		}
 	}
 
 	return {

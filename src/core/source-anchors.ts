@@ -437,11 +437,16 @@ export function collectSourceAnchorSummaries(projectRoot: string): SourceAnchorS
 	for (const relativePath of listSourceAnchorFiles(projectRoot)) {
 		const filePath = path.join(projectRoot, ...relativePath.split('/'));
 
-		if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+		let content: string;
+		try {
+			if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+				continue;
+			}
+
+			content = readFileSync(filePath, 'utf8');
+		} catch {
 			continue;
 		}
-
-		const content = readFileSync(filePath, 'utf8');
 
 		for (const anchor of parseSourceAnchorsInContent(relativePath, content)) {
 			if (!anchor.idValid || sourceAnchorTextContainsSecretLike(anchor.rawText)) {

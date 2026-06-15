@@ -1081,3 +1081,64 @@ test('strict check warns when configured intents share writes without effects', 
 		removeTempProject(projectPath);
 	}
 });
+
+test('strict check normalizes intent cwd before warning about shared writes without effects', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'packages', 'app'), { recursive: true });
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			[
+				readText(commandsPath),
+				'[intents.root_writer]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Write from root."',
+				`argv = ['${process.execPath}', '-e', 'console.log("root")']`,
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = ["dist/"]',
+				'network = false',
+				'destructive = false',
+				'',
+				'[intents.package_writer]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Write from package cwd."',
+				`argv = ['${process.execPath}', '-e', 'console.log("package")']`,
+				'cwd = "packages/app"',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = ["../../dist/"]',
+				'network = false',
+				'destructive = false',
+				'',
+			].join('\n'),
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(
+			path.join(projectPath, 'pyproject.toml'),
+			['[project]', 'name = "example"', 'version = "1.0.0"', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes('package_writer, root_writer share path:dist through writes without explicit effects or resource locks'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

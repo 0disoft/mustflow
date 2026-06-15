@@ -497,12 +497,13 @@ async function runVerificationEntriesInParallelChunks(
 				),
 			),
 		);
+		const chunkResultsByIntent = new Map(chunkResults.map((result) => [result.intent, result]));
 		const writeDriftByIntent = finishRunWriteBatchTracking(
 			batchTracker,
 			chunk.map((entry) => ({
 				intentName: entry.intent,
 				declaredPaths: declaredWritePathsForScheduleEntry(entry),
-				observedPaths: observedWriteDriftPaths(chunkResults.find((result) => result.intent === entry.intent)),
+				observedPaths: observedWriteDriftPaths(chunkResultsByIntent.get(entry.intent)),
 			} satisfies RunWriteBatchIntent)),
 		);
 
@@ -905,6 +906,7 @@ function createCompletionVerdictForResults(input: {
 		failedIntents: input.summary.failed,
 		skippedIntents: input.summary.skipped,
 		receiptCount: input.results.filter((result) => result.receipt !== null).length,
+		gapCount: input.report.gaps.length,
 		sourceAnchorRiskCount: input.sourceAnchorRiskCount,
 		scopeDiffRiskCount: input.scopeDiffRiskCount,
 		repeatedFailureCount: input.repeatedFailureRisks.length,

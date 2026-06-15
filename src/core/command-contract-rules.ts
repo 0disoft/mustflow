@@ -45,7 +45,7 @@ export const LONG_RUNNING_COMMAND_TEXT_PATTERNS = [
 	/\bturbo\s+dev\b/iu,
 	/\btsx\s+(?:watch|--watch|-w)\b/iu,
 	/\bcargo\s+(?:watch|tauri\s+dev)\b/iu,
-	/\bzig\s+build\b(?=.*(?:--watch|-w|\bwatch\b))/iu,
+	/\bzig\s+build\b(?=[^\r\n;&|]*?(?:--watch(?:=|\b)|-w\b|\bwatch\b))/iu,
 	/\btauri\s+dev\b/iu,
 	/\bgh\s+(?:run\s+watch|codespace\s+ssh|codespace\s+logs\b.*(?:--follow|-f))\b/iu,
 	/\bdeno\s+(?:serve|task\s+(?:dev|start|serve|watch|preview)|run\b.*(?:--watch|-w))\b/iu,

@@ -276,20 +276,35 @@ interface GitFileDiscovery {
 	readonly status: GitLsFilesStatus;
 }
 
+interface GitLsFilesSpawnOptions {
+	readonly cwd: string;
+	readonly encoding: 'utf8';
+	readonly maxBuffer: number;
+	readonly timeout: number;
+	readonly windowsHide: true;
+}
+
 interface GitLsFilesOptions {
 	readonly maxBuffer?: number;
 	readonly timeout?: number;
 	readonly spawnGit?: (
 		command: string,
 		args: readonly string[],
-		options: {
-			readonly cwd: string;
-			readonly encoding: 'utf8';
-			readonly maxBuffer: number;
-			readonly timeout: number;
-			readonly windowsHide: true;
-		},
+		options: GitLsFilesSpawnOptions,
 	) => GitLsFilesResult;
+}
+
+function spawnGitLsFiles(
+	command: string,
+	args: readonly string[],
+	options: GitLsFilesSpawnOptions,
+): GitLsFilesResult {
+	const result = spawnSync(command, [...args], options);
+	return {
+		status: result.status,
+		error: result.error,
+		stdout: result.stdout,
+	};
 }
 
 interface RepositoryFiles {
@@ -370,10 +385,7 @@ function classifyGitLsFilesFailure(result: GitLsFilesResult): GitLsFilesStatus {
 }
 
 export function discoverGitFilesForRepoMap(projectRoot: string, options: GitLsFilesOptions = {}): GitFileDiscovery {
-	const spawnGit =
-		options.spawnGit ??
-		((command, args, spawnOptions) =>
-			spawnSync(command, [...args], spawnOptions) as GitLsFilesResult);
+	const spawnGit = options.spawnGit ?? spawnGitLsFiles;
 	const result = spawnGit('git', ['ls-files', '-z'], {
 		cwd: projectRoot,
 		encoding: 'utf8',
@@ -584,7 +596,12 @@ function renderDirectoryAnchors(anchors: readonly AnchorFile[]): string[] {
 }
 
 function hasGitMarker(directoryPath: string): boolean {
-	return existsSync(path.join(directoryPath, '.git'));
+	try {
+		const marker = lstatSync(path.join(directoryPath, '.git'));
+		return marker.isDirectory() || marker.isFile();
+	} catch {
+		return false;
+	}
 }
 
 function isRealPathInside(parentRealPath: string, childRealPath: string): boolean {

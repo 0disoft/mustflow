@@ -193,7 +193,12 @@ export function validateSourceAnchorsInProject(projectRoot: string): SourceAncho
 
 	for (const relativePath of sourceFiles) {
 		const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
-		const content = readFileSync(absolutePath, 'utf8');
+		let content: string;
+		try {
+			content = readFileSync(absolutePath, 'utf8');
+		} catch {
+			continue;
+		}
 		const anchors = parseSourceAnchorsInContent(relativePath, content);
 		issues.push(...validateSourceAnchorDensity(relativePath, content, anchors));
 

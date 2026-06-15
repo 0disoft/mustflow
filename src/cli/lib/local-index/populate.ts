@@ -107,6 +107,24 @@ function populatePathSurfaceReadModel(database: SqlJsDatabase): void {
 	}
 }
 
+function readDocumentTermsByPath(database: SqlJsDatabase): Map<string, string[]> {
+	const termsByPath = new Map<string, string[]>();
+
+	for (const row of queryRows(database, 'SELECT document_path, term FROM document_terms ORDER BY document_path, term')) {
+		const documentPath = toSearchString(row.document_path);
+		const term = toSearchString(row.term);
+		const terms = termsByPath.get(documentPath);
+
+		if (terms) {
+			terms.push(term);
+		} else {
+			termsByPath.set(documentPath, [term]);
+		}
+	}
+
+	return termsByPath;
+}
+
 function populateSearchTables(
 	database: SqlJsDatabase,
 	capabilities: LocalSearchCapabilities,
@@ -116,10 +134,10 @@ function populateSearchTables(
 	commandIntents: readonly IndexCommandIntent[],
 	sourceAnchors: readonly SourceAnchorIndexRecord[],
 ): void {
+	const documentTermsByPath = readDocumentTermsByPath(database);
+
 	for (const document of documents) {
-		const documentTerms = queryRows(database, 'SELECT term FROM document_terms WHERE document_path = ? ORDER BY term', [
-			document.path,
-		]).map((row) => toSearchString(row.term));
+		const documentTerms = documentTermsByPath.get(document.path) ?? [];
 		insertSearchNgrams(
 			database,
 			'document',

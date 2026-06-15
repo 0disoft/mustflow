@@ -17,11 +17,20 @@ export function resolveSafeProjectCwd(projectRoot: string, rawCwd: string | unde
 	const resolved = path.resolve(projectRoot, cwd);
 	const rootRealPath = realpathSync.native(projectRoot);
 
-	if (!existsSync(resolved) || !statSync(resolved).isDirectory()) {
+	try {
+		if (!existsSync(resolved) || !statSync(resolved).isDirectory()) {
+			throw new Error();
+		}
+	} catch {
 		throw new Error(`Intent cwd must stay inside the current root and resolve to an existing directory: ${cwd}`);
 	}
 
-	const cwdRealPath = realpathSync.native(resolved);
+	let cwdRealPath: string;
+	try {
+		cwdRealPath = realpathSync.native(resolved);
+	} catch {
+		throw new Error(`Intent cwd must stay inside the current root and resolve to an existing directory: ${cwd}`);
+	}
 
 	if (!isInsideOrEqual(rootRealPath, cwdRealPath)) {
 		throw new Error(`Intent cwd must stay inside the current root and resolve to an existing directory: ${cwd}`);

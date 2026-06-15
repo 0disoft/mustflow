@@ -78,11 +78,19 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return !!value && typeof value === 'object';
 }
 
+function isMissingPathError(error: unknown): boolean {
+	return error instanceof Error && 'code' in error && error.code === 'ENOENT';
+}
+
 function readJsonFile(projectRoot: string, filePath: string): unknown {
 	try {
 		return JSON.parse(readUtf8FileInsideWithoutSymlinks(projectRoot, filePath, { maxBytes: MUSTFLOW_JSON_MAX_BYTES }));
-	} catch {
-		return null;
+	} catch (error) {
+		if (isMissingPathError(error)) {
+			return null;
+		}
+
+		throw error;
 	}
 }
 

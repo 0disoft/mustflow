@@ -56,7 +56,7 @@ test('active run locks do not delete a mutex while another recovery owns it', as
 		started_at: '2000-01-01T00:00:00.000Z',
 		token: 'stale-owner',
 	});
-	const recoveryPath = path.join(mutexPath, 'recovery');
+	const recoveryPath = path.join(path.dirname(mutexPath), 'mutex.recovery');
 	mkdirSync(recoveryPath);
 
 	try {

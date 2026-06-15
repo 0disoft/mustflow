@@ -85,14 +85,32 @@ function parseFrontmatter(content: string): Record<string, string> {
 		return {};
 	}
 
-	const end = content.indexOf('\n---', 3);
+	const firstLineEnd = content.indexOf('\n');
+	if (firstLineEnd === -1) {
+		return {};
+	}
+
+	let end = -1;
+	let lineStart = firstLineEnd + 1;
+	while (lineStart < content.length) {
+		const lineEnd = content.indexOf('\n', lineStart);
+		const nextLineStart = lineEnd === -1 ? content.length : lineEnd + 1;
+		const line = content.slice(lineStart, lineEnd === -1 ? content.length : lineEnd).replace(/\r$/u, '');
+
+		if (line.trim() === '---') {
+			end = lineStart;
+			break;
+		}
+
+		lineStart = nextLineStart;
+	}
 
 	if (end === -1) {
 		return {};
 	}
 
 	const result: Record<string, string> = {};
-	const rawFrontmatter = content.slice(3, end);
+	const rawFrontmatter = content.slice(firstLineEnd + 1, end);
 
 	for (const line of rawFrontmatter.split(/\r?\n/)) {
 		const separatorIndex = line.indexOf(':');

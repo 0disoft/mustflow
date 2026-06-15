@@ -43,7 +43,7 @@ function interpolate(template: string, params: MessageParams): string {
 }
 
 export function t(lang: CliLang, key: MessageKey, params: MessageParams = {}): string {
-	return interpolate(MESSAGE_CATALOGS[lang][key] ?? enMessages[key], params);
+	return interpolate(MESSAGE_CATALOGS[lang][key] ?? enMessages[key] ?? key, params);
 }
 
 export function localeMessage(locale: string, key: MessageKey, params: MessageParams = {}): string {

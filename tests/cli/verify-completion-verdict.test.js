@@ -119,6 +119,37 @@ test('does not verify when selected commands pass without bound receipts', async
 	assert.deepEqual(verdict.limitations, ['receipt_binding_requires_review']);
 });
 
+test('reports verification gaps separately from skipped intents', async () => {
+	const verdict = createVerifyCompletionVerdict({
+		verificationPlanId: `sha256:${'0'.repeat(64)}`,
+		matchedIntents: 1,
+		ranIntents: 1,
+		passedIntents: 1,
+		failedIntents: 0,
+		skippedIntents: 3,
+		receiptCount: 1,
+		gapCount: 1,
+	});
+
+	assert.equal(verdict.evidence.skipped_intents, 3);
+	assert.equal(verdict.evidence.gap_count, 1);
+});
+
+test('defaults verification gap count to zero when callers have no gap evidence', async () => {
+	const verdict = createVerifyCompletionVerdict({
+		verificationPlanId: `sha256:${'0'.repeat(64)}`,
+		matchedIntents: 1,
+		ranIntents: 1,
+		passedIntents: 1,
+		failedIntents: 0,
+		skippedIntents: 3,
+		receiptCount: 1,
+	});
+
+	assert.equal(verdict.evidence.skipped_intents, 3);
+	assert.equal(verdict.evidence.gap_count, 0);
+});
+
 test('treats plan-receipt mismatch as a contradiction before lower verdict states', async () => {
 	const verdict = createVerifyCompletionVerdict({
 		verificationPlanId: `sha256:${'1'.repeat(64)}`,

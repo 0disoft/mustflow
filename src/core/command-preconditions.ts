@@ -154,6 +154,11 @@ function globToRegExp(pattern: string): RegExp {
 			continue;
 		}
 
+		if (character === '?') {
+			expression += '[^/]';
+			continue;
+		}
+
 		expression += escapeRegExp(character);
 	}
 
@@ -323,11 +328,31 @@ function evaluateArtifactFreshness(
 		};
 	}
 
-	const artifactMtime = statSync(artifactPath).mtimeMs;
+	let artifactMtime: number;
+	try {
+		artifactMtime = statSync(artifactPath).mtimeMs;
+	} catch {
+		return {
+			kind: declaration.kind,
+			label: declaration.label,
+			status: 'missing',
+			detail: `artifact "${artifact}" is missing.`,
+			path: null,
+			artifact,
+			sources: declaration.sources,
+			newestSource: null,
+			satisfyIntent,
+		};
+	}
 	let newest: { source: string; mtime: number } | null = null;
 
 	for (const source of sourceFiles) {
-		const mtime = statSync(path.join(projectRoot, ...source.split('/'))).mtimeMs;
+		let mtime: number;
+		try {
+			mtime = statSync(path.join(projectRoot, ...source.split('/'))).mtimeMs;
+		} catch {
+			continue;
+		}
 		if (!newest || mtime > newest.mtime) {
 			newest = { source, mtime };
 		}

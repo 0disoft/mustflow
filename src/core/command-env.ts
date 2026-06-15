@@ -145,16 +145,18 @@ function removeProjectLocalBinFromPath(env: NodeJS.ProcessEnv, projectRoot: stri
 	const currentPath = env[pathKey];
 
 	if (!currentPath) {
-		return env;
+		return { ...env };
 	}
 
 	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
-	env[pathKey] = currentPath
-		.split(path.delimiter)
-		.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath))
-		.join(path.delimiter);
 
-	return env;
+	return {
+		...env,
+		[pathKey]: currentPath
+			.split(path.delimiter)
+			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath))
+			.join(path.delimiter),
+	};
 }
 
 export function resolveCommandEnv(contract: CommandContract, intent: TomlTable | undefined): CommandEnvResolution {

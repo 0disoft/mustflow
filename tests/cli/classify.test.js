@@ -165,7 +165,7 @@ test('parses nul-delimited git status without treating arrows in filenames as re
 		'',
 	].join('\0');
 
-	assert.deepEqual(parseGitStatusOutput(output), ['docs/a -> b.md', 'docs/new name.md', 'README.md']);
+	assert.deepEqual(parseGitStatusOutput(output), ['docs/a -> b.md', 'docs/new name.md', 'docs/old name.md', 'README.md']);
 });
 
 test('classifies changed git status paths', async () => {
