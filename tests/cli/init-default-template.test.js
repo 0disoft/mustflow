@@ -83,6 +83,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'concurrency-invariant-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'failure-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'idempotency-integrity-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'retry-policy-integrity-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'queue-processing-integrity-review', 'SKILL.md')));
 		assert.ok(
 			existsSync(path.join(projectPath, '.mustflow', 'skills', 'transaction-boundary-integrity-review', 'SKILL.md')),
 		);
@@ -207,6 +209,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/failure-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/queue-processing-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/testability-boundary-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
@@ -236,6 +240,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillRoutes, /\[routes\."frontend-accessibility-tree-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-localization-review"\]/);
 		assert.match(skillRoutes, /\[routes\."idempotency-integrity-review"\]/);
+		assert.match(skillRoutes, /\[routes\."retry-policy-integrity-review"\]/);
+		assert.match(skillRoutes, /\[routes\."queue-processing-integrity-review"\]/);
 		assert.match(skillRoutes, /\[routes\."transaction-boundary-integrity-review"\]/);
 		assert.doesNotMatch(skillRoutes, /\[routes\."architecture-deepening-review"\]/);
 		assert.doesNotMatch(skillRoutes, /\[routes\."web-asset-optimization"\]/);

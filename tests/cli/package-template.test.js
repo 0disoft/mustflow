@@ -86,10 +86,12 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('idempotency-integrity-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('queue-processing-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('transaction-boundary-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('api-request-performance-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('heuristic-candidate-selection'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('command-contract-authoring'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('retry-policy-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('config-env-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('database-migration-change'));
@@ -140,6 +142,14 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('idempotency-integrity-review'),
 			`${profileName} should include idempotency-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('retry-policy-integrity-review'),
+			`${profileName} should include retry-policy-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('queue-processing-integrity-review'),
+			`${profileName} should include queue-processing-integrity-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('transaction-boundary-integrity-review'),

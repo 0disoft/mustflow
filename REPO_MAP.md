@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 176
+anchor_count: 178
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:8dc007b697cd93ef67027a7ed526b5e76eea8b8367af9203a55e5de65ceada9f"
+source_fingerprint: "sha256:dc90654a949289e73fd554d088f8d577d7defcd9c48a8f9a6ab0e88fe17de2ff"
 ---
 
 # REPO_MAP.md
@@ -434,6 +434,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/quadratic-scan-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/queue-processing-integrity-review/
+
+- `.mustflow/skills/queue-processing-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/race-condition-review/
 
 - `.mustflow/skills/race-condition-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -469,6 +473,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/result-option/
 
 - `.mustflow/skills/result-option/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/retry-policy-integrity-review/
+
+- `.mustflow/skills/retry-policy-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/runtime-target-selection/
 

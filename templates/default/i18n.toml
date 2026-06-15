@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 140
+revision = 142
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -286,6 +286,19 @@ source = "locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
+
+[documents."skill.retry-policy-integrity-review"]
+source = "locales/en/.mustflow/skills/retry-policy-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.queue-processing-integrity-review"]
+source = "locales/en/.mustflow/skills/queue-processing-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.transaction-boundary-integrity-review"]
 source = "locales/en/.mustflow/skills/transaction-boundary-integrity-review/SKILL.md"
 source_locale = "en"

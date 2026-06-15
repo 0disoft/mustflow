@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.40.0"
+version = "2.42.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -51,6 +51,8 @@ creates = [
   ".mustflow/skills/concurrency-invariant-review/SKILL.md",
   ".mustflow/skills/failure-integrity-review/SKILL.md",
   ".mustflow/skills/idempotency-integrity-review/SKILL.md",
+  ".mustflow/skills/retry-policy-integrity-review/SKILL.md",
+  ".mustflow/skills/queue-processing-integrity-review/SKILL.md",
   ".mustflow/skills/transaction-boundary-integrity-review/SKILL.md",
   ".mustflow/skills/testability-boundary-review/SKILL.md",
   ".mustflow/skills/codebase-orientation/SKILL.md",
@@ -216,6 +218,8 @@ minimal = [
   "concurrency-invariant-review",
   "failure-integrity-review",
   "idempotency-integrity-review",
+  "retry-policy-integrity-review",
+  "queue-processing-integrity-review",
   "transaction-boundary-integrity-review",
   "testability-boundary-review",
   "codebase-orientation",
@@ -321,6 +325,8 @@ patterns = [
   "concurrency-invariant-review",
   "failure-integrity-review",
   "idempotency-integrity-review",
+  "retry-policy-integrity-review",
+  "queue-processing-integrity-review",
   "transaction-boundary-integrity-review",
   "testability-boundary-review",
   "codebase-orientation",
@@ -437,6 +443,8 @@ oss = [
   "concurrency-invariant-review",
   "failure-integrity-review",
   "idempotency-integrity-review",
+  "retry-policy-integrity-review",
+  "queue-processing-integrity-review",
   "transaction-boundary-integrity-review",
   "testability-boundary-review",
   "codebase-orientation",
@@ -568,6 +576,8 @@ team = [
   "concurrency-invariant-review",
   "failure-integrity-review",
   "idempotency-integrity-review",
+  "retry-policy-integrity-review",
+  "queue-processing-integrity-review",
   "transaction-boundary-integrity-review",
   "testability-boundary-review",
   "codebase-orientation",
@@ -685,6 +695,8 @@ product = [
   "concurrency-invariant-review",
   "failure-integrity-review",
   "idempotency-integrity-review",
+  "retry-policy-integrity-review",
+  "queue-processing-integrity-review",
   "transaction-boundary-integrity-review",
   "testability-boundary-review",
   "codebase-orientation",
@@ -808,6 +820,8 @@ library = [
   "concurrency-invariant-review",
   "failure-integrity-review",
   "idempotency-integrity-review",
+  "retry-policy-integrity-review",
+  "queue-processing-integrity-review",
   "transaction-boundary-integrity-review",
   "testability-boundary-review",
   "codebase-orientation",

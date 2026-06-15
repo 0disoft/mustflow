@@ -258,6 +258,18 @@ route_type = "adjunct"
 priority = 80
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."retry-policy-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."queue-processing-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
 [routes."transaction-boundary-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
