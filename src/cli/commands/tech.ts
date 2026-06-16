@@ -4,6 +4,7 @@ import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.j
 import { writeUtf8FileInsideWithoutSymlinks } from '../lib/filesystem.js';
 import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { t, type CliLang } from '../lib/i18n.js';
+import { checkNpmPackageExists, type NpmPackageRealityCheck } from '../lib/npm-version-check.js';
 import {
 	formatCliOptionParseError,
 	getParsedCliStringOption,
@@ -41,6 +42,7 @@ const TECH_OPTIONS = [
 	{ name: '--status', kind: 'string' },
 	{ name: '--ecosystem', kind: 'string' },
 	{ name: '--package', kind: 'string' },
+	{ name: '--verify', kind: 'boolean' },
 	{ name: '--why', kind: 'string' },
 	{ name: '--constraint', kind: 'string' },
 ] as const satisfies readonly CliOptionSpec[];
@@ -54,6 +56,7 @@ interface ParsedTechOptions {
 	readonly status: string | null;
 	readonly ecosystem: string | null;
 	readonly packages: readonly string[];
+	readonly verify: boolean;
 	readonly why: string | null;
 	readonly constraints: readonly string[];
 	readonly error?: string;
@@ -89,13 +92,14 @@ export function getTechHelp(lang: CliLang = 'en'): string {
 				{ label: '--status <status>', description: `Preference status: ${TECHNOLOGY_STATUSES.join(', ')}` },
 				{ label: '--ecosystem <ecosystem>', description: 'Package ecosystem or platform, such as npm, cargo, pip, go, or deno' },
 				{ label: '--package <package>', description: 'Package name to associate with the preference. Repeatable.' },
+				{ label: '--verify', description: 'Verify listed npm packages exist before writing the preference' },
 				{ label: '--why <text>', description: 'Short rationale for the preference' },
 				{ label: '--constraint <text>', description: 'Guardrail agents must keep in mind. Repeatable.' },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
 				'mf tech list',
-				'mf tech add framework nextjs --scope frontend --ecosystem npm --package next --package react --why "Preferred React app framework"',
+				'mf tech add framework nextjs --scope frontend --ecosystem npm --package next --package react --verify --why "Preferred React app framework"',
 				'mf tech add language rust --scope backend --status preferred --why "Use for correctness-critical engines"',
 				'mf tech add library jquery --scope frontend --status avoid --why "Avoid new usage"',
 				'mf tech suggest --scope frontend',
@@ -124,6 +128,7 @@ function parseTechOptions(args: readonly string[], lang: CliLang): ParsedTechOpt
 			status: null,
 			ecosystem: null,
 			packages: [],
+			verify: false,
 			why: null,
 			constraints: [],
 			error: actionToken ? `Unknown tech action: ${actionToken}` : 'Specify a tech action: list, add, remove, or suggest',
@@ -141,6 +146,7 @@ function parseTechOptions(args: readonly string[], lang: CliLang): ParsedTechOpt
 			status: null,
 			ecosystem: null,
 			packages: [],
+			verify: hasParsedCliOption(parsed, '--verify'),
 			why: null,
 			constraints: [],
 			error: formatCliOptionParseError(parsed.error, lang),
@@ -167,6 +173,7 @@ function parseTechOptions(args: readonly string[], lang: CliLang): ParsedTechOpt
 		status,
 		ecosystem: getParsedCliStringOption(parsed, '--ecosystem'),
 		packages: getRepeatedStringOptions(parsed.occurrences, '--package'),
+		verify: hasParsedCliOption(parsed, '--verify'),
 		why: getParsedCliStringOption(parsed, '--why'),
 		constraints: getRepeatedStringOptions(parsed.occurrences, '--constraint'),
 	};
@@ -187,6 +194,7 @@ function invalidParsed(
 		status: null,
 		ecosystem: null,
 		packages: [],
+		verify: false,
 		why: null,
 		constraints: [],
 		error,
@@ -329,7 +337,53 @@ function findExistingIndex(preferences: readonly TechnologyPreference[], candida
 	});
 }
 
-function runAdd(projectRoot: string, options: ParsedTechOptions, reporter: Reporter): number {
+async function verifyNpmPackages(
+	options: ParsedTechOptions,
+	reporter: Reporter,
+): Promise<readonly NpmPackageRealityCheck[] | null> {
+	if (!options.verify) {
+		return [];
+	}
+
+	if (options.action !== 'add') {
+		reporter.stderr(renderCliError('--verify is only supported with mf tech add', 'mf tech --help'));
+		return null;
+	}
+
+	if (options.packages.length === 0) {
+		reporter.stderr(renderCliError('--verify requires at least one --package value', 'mf tech --help'));
+		return null;
+	}
+
+	if (options.ecosystem !== 'npm') {
+		reporter.stderr(renderCliError('--verify currently supports --ecosystem npm only', 'mf tech --help'));
+		return null;
+	}
+
+	const checks: NpmPackageRealityCheck[] = [];
+	for (const packageName of options.packages) {
+		try {
+			const check = await checkNpmPackageExists(packageName);
+			if (!check.exists) {
+				reporter.stderr(renderCliError(`npm package not found: ${packageName}`, 'mf tech --help'));
+				return null;
+			}
+			checks.push(check);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			reporter.stderr(renderCliError(`Could not verify npm package ${packageName}: ${message}`, 'mf tech --help'));
+			return null;
+		}
+	}
+
+	return checks;
+}
+
+function renderVerifiedPackageNames(checks: readonly NpmPackageRealityCheck[]): string {
+	return checks.map((check) => check.resolvedName ?? check.packageName).join(', ');
+}
+
+async function runAdd(projectRoot: string, options: ParsedTechOptions, reporter: Reporter): Promise<number> {
 	const [kindToken, nameToken] = options.positionals;
 	if (!isTechnologyKind(kindToken ?? null)) {
 		reporter.stderr(renderCliError('Missing or unsupported technology kind', 'mf tech --help'));
@@ -371,6 +425,11 @@ function runAdd(projectRoot: string, options: ParsedTechOptions, reporter: Repor
 	const preferences = [...file.preferences];
 	const existingIndex = findExistingIndex(preferences, candidate);
 	const action = existingIndex === -1 ? 'created' : 'updated';
+	const verifiedPackages = await verifyNpmPackages(options, reporter);
+
+	if (verifiedPackages === null) {
+		return 1;
+	}
 
 	if (existingIndex === -1) {
 		preferences.push(candidate);
@@ -381,10 +440,18 @@ function runAdd(projectRoot: string, options: ParsedTechOptions, reporter: Repor
 	writeTechnologyPreferences(projectRoot, preferences);
 
 	if (options.json) {
-		reporter.stdout(JSON.stringify({ action, preference: candidate, path: TECHNOLOGY_CONFIG_RELATIVE_PATH }, null, 2));
+		reporter.stdout(JSON.stringify({
+			action,
+			preference: candidate,
+			path: TECHNOLOGY_CONFIG_RELATIVE_PATH,
+			verified_packages: verifiedPackages,
+		}, null, 2));
 		return 0;
 	}
 
+	if (verifiedPackages.length > 0) {
+		reporter.stdout(`Verified npm packages: ${renderVerifiedPackageNames(verifiedPackages)}`);
+	}
 	reporter.stdout(`${action === 'created' ? 'Created' : 'Updated'} ${candidate.id} in ${TECHNOLOGY_CONFIG_RELATIVE_PATH}`);
 	return 0;
 }
@@ -430,7 +497,7 @@ function runRemove(projectRoot: string, options: ParsedTechOptions, reporter: Re
 	return 0;
 }
 
-export function runTech(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runTech(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getTechHelp(lang));
 		return 0;

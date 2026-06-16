@@ -61,6 +61,13 @@ export interface PackageInstallCommand {
 	readonly recommended: boolean;
 }
 
+export interface NpmPackageRealityCheck {
+	readonly packageName: string;
+	readonly registryUrl: string;
+	readonly exists: boolean;
+	readonly resolvedName: string | null;
+}
+
 interface ParsedSemver {
 	readonly major: number;
 	readonly minor: number;
@@ -199,6 +206,50 @@ function buildLatestPackageUrl(registryUrl: string, packageName: string): string
 		: encodeURIComponent(packageName);
 
 	return `${trimmedRegistryUrl}/${encodedPackageName}/latest`;
+}
+
+function buildPackageMetadataUrl(registryUrl: string, packageName: string): string {
+	const trimmedRegistryUrl = registryUrl.replace(/\/+$/u, '');
+	const encodedPackageName = packageName.startsWith('@')
+		? `@${encodeURIComponent(packageName.slice(1))}`
+		: encodeURIComponent(packageName);
+
+	return `${trimmedRegistryUrl}/${encodedPackageName}`;
+}
+
+export async function checkNpmPackageExists(packageName: string): Promise<NpmPackageRealityCheck> {
+	const registryUrl = getRegistryUrl();
+	const response = await fetch(buildPackageMetadataUrl(registryUrl, packageName), {
+		headers: { accept: 'application/json' },
+		signal: AbortSignal.timeout(getTimeoutMs()),
+	});
+
+	if (response.status === 404) {
+		return {
+			packageName,
+			registryUrl,
+			exists: false,
+			resolvedName: null,
+		};
+	}
+
+	if (!response.ok) {
+		throw new Error(`npm registry returned HTTP ${response.status}`);
+	}
+
+	const body: unknown = await response.json();
+	const resolvedName = isRecord(body) && typeof body.name === 'string' ? body.name : null;
+
+	if (!resolvedName) {
+		throw new Error('npm registry response did not include a package name');
+	}
+
+	return {
+		packageName,
+		registryUrl,
+		exists: true,
+		resolvedName,
+	};
 }
 
 export async function checkNpmLatestVersion(metadata: PackageMetadata): Promise<PackageVersionCheck> {

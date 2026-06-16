@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -9,6 +10,45 @@ import { fileURLToPath } from 'node:url';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 
+function listen(server) {
+	return new Promise((resolve) => {
+		server.listen(0, '127.0.0.1', () => resolve(server.address()));
+	});
+}
+
+function closeServer(server) {
+	return new Promise((resolve, reject) => {
+		server.close((error) => {
+			if (error) reject(error);
+			else resolve();
+		});
+	});
+}
+
+async function withNpmPackages(packages, callback) {
+	const packageSet = new Set(packages);
+	const server = createServer((request, response) => {
+		const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
+		const packageName = decodeURIComponent(pathname.replace(/^\/+/u, ''));
+
+		if (!packageSet.has(packageName)) {
+			response.writeHead(404, { 'content-type': 'application/json' });
+			response.end(JSON.stringify({ error: 'not_found' }));
+			return;
+		}
+
+		response.writeHead(200, { 'content-type': 'application/json' });
+		response.end(JSON.stringify({ name: packageName, version: '1.0.0' }));
+	});
+	const address = await listen(server);
+
+	try {
+		return await callback(`http://127.0.0.1:${address.port}`);
+	} finally {
+		await closeServer(server);
+	}
+}
+
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-tech-'));
 }
@@ -17,10 +57,37 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runCli(cwd, args) {
+function runCli(cwd, args, env = {}) {
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
+		env: { ...process.env, ...env },
+	});
+}
+
+function runCliAsync(cwd, args, env = {}) {
+	return new Promise((resolve, reject) => {
+		const child = spawn(process.execPath, [cliPath, ...args], {
+			cwd,
+			env: { ...process.env, ...env },
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+		const stdout = [];
+		const stderr = [];
+
+		child.stdout.setEncoding('utf8');
+		child.stderr.setEncoding('utf8');
+		child.stdout.on('data', (chunk) => stdout.push(chunk));
+		child.stderr.on('data', (chunk) => stderr.push(chunk));
+		child.on('error', reject);
+		child.on('close', (status, signal) => {
+			resolve({
+				status,
+				signal,
+				stdout: stdout.join(''),
+				stderr: stderr.join(''),
+			});
+		});
 	});
 }
 
@@ -90,6 +157,90 @@ test('tech command records low-authority technology preferences', () => {
 		const empty = runCli(projectPath, ['tech', 'list', '--json']);
 		assert.equal(empty.status, 0);
 		assert.equal(parseJson(empty.stdout).preferences.length, 0);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('tech add verifies npm packages before writing the preference', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+
+		const add = await withNpmPackages(['next', 'react'], (registryUrl) =>
+			runCliAsync(
+				projectPath,
+				[
+					'tech',
+					'add',
+					'framework',
+					'nextjs',
+					'--scope',
+					'frontend',
+					'--ecosystem',
+					'npm',
+					'--package',
+					'next',
+					'--package',
+					'react',
+					'--verify',
+					'--json',
+				],
+				{ MUSTFLOW_NPM_REGISTRY_URL: registryUrl },
+			),
+		);
+
+		assert.equal(add.status, 0, add.stderr || add.stdout);
+		const payload = parseJson(add.stdout);
+		assert.equal(payload.action, 'created');
+		assert.deepEqual(
+			payload.verified_packages.map((entry) => entry.resolvedName),
+			['next', 'react'],
+		);
+
+		const list = runCli(projectPath, ['tech', 'list', '--json']);
+		assert.equal(list.status, 0);
+		assert.equal(parseJson(list.stdout).preferences.length, 1);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('tech add verify refuses missing npm packages without writing preferences', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+
+		const add = await withNpmPackages(['next'], (registryUrl) =>
+			runCliAsync(
+				projectPath,
+				[
+					'tech',
+					'add',
+					'framework',
+					'broken-stack',
+					'--scope',
+					'frontend',
+					'--ecosystem',
+					'npm',
+					'--package',
+					'next',
+					'--package',
+					'not-a-real-package',
+					'--verify',
+				],
+				{ MUSTFLOW_NPM_REGISTRY_URL: registryUrl },
+			),
+		);
+
+		assert.equal(add.status, 1);
+		assert.match(add.stderr, /npm package not found: not-a-real-package/);
+
+		const list = runCli(projectPath, ['tech', 'list', '--json']);
+		assert.equal(list.status, 0);
+		assert.equal(parseJson(list.stdout).preferences.length, 0);
 	} finally {
 		removeTempProject(projectPath);
 	}
