@@ -39,12 +39,15 @@ The stable profile reports stable instruction paths, existence flags, content ha
 
 The task profile reports task-selective sources such as the context index, full route metadata, repository map, matching skill, and relevant source files. It also reports the local-index status so a host can reuse fresh task metadata or show a targeted `mf index` refresh hint when the index is missing, stale, or unreadable. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
 
+Pass `--task <text>`, repeated `--path <path>`, repeated `--reason <reason>`, and optionally `--max-candidates <count>` with `--json` to resolve task-layer skill context for a concrete task. When these route signals select a matching skill, `prompt_bundle` and `cache_audit` add measured `SKILL.md` file blocks after the `matching_skill` placeholder instead of leaving that skill body entirely dynamic.
+
 Add `--cache-audit` to include a `cache_audit` block. The audit measures the stable files using
 mustflow's deterministic reference bundle format, reports UTF-8 rendered bytes, rough byte-based
 token estimates, configured budget status, and largest stable blocks. Task-layer file candidates are
 measured as selectable reference-bundle blocks with existence flags, content hashes, and largest
 candidate blocks; dynamic task sources and volatile sources remain runtime-only placeholders until a
-host supplies the actual selected content. The audit also includes a `summary` object with static
+host supplies the actual selected content. If route signals are provided, selected skill files are
+measured as task-layer blocks with source `matching_skill`. The audit also includes a `summary` object with static
 invariant counters such as measured blocks, dynamic sources, unresolved references, and volatile
 layers that appear before the stable layer. The token estimate is not provider billing data and does
 not prove that OpenAI, Anthropic, Gemini, or another provider reused a cache entry.
@@ -61,6 +64,7 @@ source content.
 npx mf context --json
 npx mf context --json --cache-profile stable
 npx mf context --json --cache-audit
+npx mf context --json --cache-audit --task "change TypeScript CLI output" --path src/cli/commands/context.ts --reason code_change
 npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseline-context.json
 ```
 
@@ -99,6 +103,7 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `volatile_suffix.sources` (`string[]`): Volatile sources that belong after the stable prefix.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.
 - `prompt_bundle` (`object`): Ordered prompt-block manifest for the selected profile. It reports block boundaries, source paths, source placeholders, selection policy, cacheability, reload triggers, byte estimates, and hashes without embedding prompt text.
+- `prompt_bundle.layers[].blocks[]` with source `matching_skill` (`object[]`): When route signals are provided, selected `SKILL.md` files appear as measured task-layer file blocks after the `matching_skill` placeholder.
 - `prompt_bundle.request_shape_hash` (`string`): Hash of the layer order and block shape. Use it to spot stable ordering or boundary drift that would change provider cache eligibility.
 - `prompt_bundle.bundle_hash` (`string`): Hash of ordered block identities, measured content hashes, rendered digests, and block issues. Use it to compare two bundle manifests without exposing source text.
 - `prompt_bundle.layers[].blocks[].content_included` (`false`): The context report never emits the actual prompt block body.
@@ -127,6 +132,7 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `cache_audit.layers[].blocks[].selection_policy` (`string | undefined`): Whether the block is always rendered, selected only for a task, used only as fallback metadata, selected at runtime, or volatile runtime state.
 - `cache_audit.layers[].blocks[].measurement_status` (`string | undefined`): `measured`, `hash_only_deferred`, or `dynamic_unmeasured`.
 - `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): File-candidate existence and hash when the task source is a selectable file reference. Measured task candidates still may be omitted from a real task bundle.
+- `cache_audit.layers[].blocks[]` with source `matching_skill` (`object[]`): Selected skill files are measured when route signals are provided through `--task`, `--path`, or `--reason`.
 
 Repeated and nested fields use these shapes:
 

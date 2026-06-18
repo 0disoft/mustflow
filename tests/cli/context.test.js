@@ -511,6 +511,70 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 	}
 });
 
+test('resolves selected task skills into prompt bundle and audit blocks', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, [
+			'context',
+			'--json',
+			'--cache-audit',
+			'--task',
+			'change TypeScript CLI output',
+			'--path',
+			'src/cli/commands/context.ts',
+			'--reason',
+			'code_change',
+			'--max-candidates',
+			'5',
+		]);
+		const context = JSON.parse(result.stdout);
+		const taskBundle = context.prompt_bundle.layers.find((layer) => layer.cache_layer === 'task');
+		const taskAudit = context.cache_audit.layers.find((layer) => layer.cache_layer === 'task');
+		const bundleSkillBlock = taskBundle.blocks.find((block) =>
+			block.source === 'matching_skill' &&
+			block.path === '.mustflow/skills/typescript-code-change/SKILL.md'
+		);
+		const auditSkillBlock = taskAudit.blocks.find((block) =>
+			block.source === 'matching_skill' &&
+			block.path === '.mustflow/skills/typescript-code-change/SKILL.md'
+		);
+		const matchingSkillPlaceholder = taskAudit.blocks.find((block) =>
+			block.source === 'matching_skill' &&
+			block.path === null &&
+			block.kind === 'source_placeholder'
+		);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.cache_profile, 'all');
+		assert.ok(bundleSkillBlock);
+		assert.equal(bundleSkillBlock.kind, 'file');
+		assert.equal(bundleSkillBlock.source_kind, 'file_reference');
+		assert.equal(bundleSkillBlock.selection_policy, 'selected_at_runtime');
+		assert.equal(bundleSkillBlock.cacheability, 'runtime_selection');
+		assert.ok(bundleSkillBlock.rendered_bytes > 0);
+		assert.match(bundleSkillBlock.content_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.equal(bundleSkillBlock.issue, null);
+		assert.ok(auditSkillBlock);
+		assert.equal(auditSkillBlock.kind, 'file');
+		assert.equal(auditSkillBlock.source_kind, 'file_reference');
+		assert.equal(auditSkillBlock.measurement_status, 'measured');
+		assert.equal(auditSkillBlock.candidate_exists, true);
+		assert.equal(auditSkillBlock.exists, true);
+		assert.ok(auditSkillBlock.rendered_bytes > 0);
+		assert.equal(auditSkillBlock.issue, null);
+		assert.equal(matchingSkillPlaceholder.issue, null);
+		assert.equal(
+			taskAudit.issues.some((issue) => /matching_skill/u.test(issue)),
+			false,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('context cache-profile options use the shared CLI option rules', () => {
 	const projectPath = createTempProject();
 
@@ -522,6 +586,8 @@ test('context cache-profile options use the shared CLI option rules', () => {
 		const withoutJson = runCli(projectPath, ['context', '--cache-profile', 'stable']);
 		const auditWithoutJson = runCli(projectPath, ['context', '--cache-audit']);
 		const compareWithoutJson = runCli(projectPath, ['context', '--cache-compare', '.mustflow/cache/context.json']);
+		const routeSignalWithoutJson = runCli(projectPath, ['context', '--task', 'change TypeScript CLI output']);
+		const badMaxCandidates = runCli(projectPath, ['context', '--json', '--task', 'change TypeScript CLI output', '--max-candidates', 'bad']);
 		const unknownOption = runCli(projectPath, ['context', '--bad']);
 
 		assert.equal(inlineProfile.status, 0, inlineProfile.stderr || inlineProfile.stdout);
@@ -534,6 +600,10 @@ test('context cache-profile options use the shared CLI option rules', () => {
 		assert.match(auditWithoutJson.stderr, /Unexpected argument: --cache-audit/u);
 		assert.equal(compareWithoutJson.status, 1);
 		assert.match(compareWithoutJson.stderr, /Unexpected argument: --cache-compare/u);
+		assert.equal(routeSignalWithoutJson.status, 1);
+		assert.match(routeSignalWithoutJson.stderr, /Unexpected argument: --task\/--path\/--reason\/--max-candidates/u);
+		assert.equal(badMaxCandidates.status, 1);
+		assert.match(badMaxCandidates.stderr, /Unexpected value for --max-candidates/u);
 		assert.equal(unknownOption.status, 1);
 		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
 	} finally {

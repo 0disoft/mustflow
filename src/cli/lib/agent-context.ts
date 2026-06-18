@@ -31,6 +31,7 @@ import {
 	measurePromptCacheReferenceBlockBytes,
 	renderPromptCacheReferenceBlock,
 } from '../../core/prompt-cache-rendering.js';
+import { resolveSkillRoutes, type SkillRouteResolveReport } from '../../core/skill-route-resolution.js';
 
 const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
@@ -88,6 +89,14 @@ export type PromptBundleCacheability =
 export interface PromptCacheProfileOptions {
 	readonly includeAudit?: boolean;
 	readonly comparePath?: string | null;
+	readonly routeInput?: PromptCacheRouteInput | null;
+}
+
+export interface PromptCacheRouteInput {
+	readonly taskText: string | null;
+	readonly paths: readonly string[];
+	readonly reasons: readonly string[];
+	readonly maxCandidates?: number;
 }
 
 export interface PathContext {
@@ -626,6 +635,29 @@ function taskSourceIssue(source: string, measurementStatus: PromptCacheAuditMeas
 	return `task source is selected at runtime and cannot be measured before the current task is assembled: ${source}`;
 }
 
+function hasPromptCacheRouteInput(input: PromptCacheRouteInput | null | undefined): input is PromptCacheRouteInput {
+	return Boolean(input?.taskText?.trim() || input?.paths.length || input?.reasons.length);
+}
+
+function resolvePromptCacheSkillRoutes(
+	projectRoot: string,
+	input: PromptCacheRouteInput | null | undefined,
+): SkillRouteResolveReport | null {
+	if (!hasPromptCacheRouteInput(input)) {
+		return null;
+	}
+
+	return resolveSkillRoutes(projectRoot, input);
+}
+
+function selectedSkillRoutePaths(routeReport: SkillRouteResolveReport | null): readonly string[] {
+	return routeReport?.read_plan.selected_skill_paths ?? [];
+}
+
+function selectedTaskBlockOrder(sourceIndex: number, selectedIndex: number): number {
+	return ((sourceIndex + 1) * 100) + selectedIndex + 1;
+}
+
 function readCommandContractContext(projectRoot: string): CommandContractContext {
 	const commands = readTomlTableIfExists(projectRoot, COMMANDS_RELATIVE_PATH);
 
@@ -953,21 +985,29 @@ function readStablePromptBundleLayer(projectRoot: string, mustflow: TomlTable | 
 	};
 }
 
-function readTaskPromptBundleLayer(projectRoot: string, mustflow: TomlTable | undefined): PromptBundleLayerContext {
+function readTaskPromptBundleLayer(
+	projectRoot: string,
+	mustflow: TomlTable | undefined,
+	routeReport: SkillRouteResolveReport | null,
+): PromptBundleLayerContext {
 	const layer = readPromptCacheLayer(mustflow, 'task');
 	const sources = readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES];
+	const selectedSkillPaths = selectedSkillRoutePaths(routeReport);
 
 	return {
 		cache_layer: 'task',
-		blocks: sources.map((source, index) => {
+		blocks: sources.flatMap((source, index) => {
 			const selectionPolicy = taskSourceSelectionPolicy(source);
 			const sourceKind = taskSourceKind(source);
 			const referencePath = taskSourceReferencePath(source);
 			const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
 			const renderedBytes = content === null || referencePath === null ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
-			const issue = content === null ? taskSourceIssue(source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured') : null;
+			const hasResolvedMatchingSkill = source === 'matching_skill' && selectedSkillPaths.length > 0;
+			const issue = !hasResolvedMatchingSkill && content === null
+				? taskSourceIssue(source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured')
+				: null;
 
-			return {
+			const baseBlock = {
 				id: `task:${index + 1}:${source}`,
 				cache_layer: 'task',
 				order: index + 1,
@@ -985,6 +1025,40 @@ function readTaskPromptBundleLayer(projectRoot: string, mustflow: TomlTable | un
 				reload_on: taskSourceReloadOn(source, selectionPolicy),
 				issue,
 			} satisfies PromptBundleBlockContext;
+
+			if (source !== 'matching_skill') {
+				return [baseBlock];
+			}
+
+			const selectedBlocks = selectedSkillPaths.map((skillPath, selectedIndex) => {
+				const normalizedPath = toPosixPath(skillPath);
+				const skillContent = safeRead(projectRoot, normalizedPath);
+				const skillRenderedBytes = skillContent === null ? null : measurePromptCacheReferenceBlockBytes(normalizedPath, skillContent);
+				const skillIssue = skillContent === null
+					? taskSourceIssue(normalizedPath, 'hash_only_deferred')
+					: null;
+
+				return {
+					id: `task:${index + 1}:matching_skill:${selectedIndex + 1}:${normalizedPath}`,
+					cache_layer: 'task',
+					order: selectedTaskBlockOrder(index, selectedIndex),
+					kind: skillContent === null ? 'source_placeholder' : 'file',
+					path: skillContent === null ? null : normalizedPath,
+					source,
+					source_kind: skillContent === null ? 'dynamic_selection' : 'file_reference',
+					selection_policy: 'selected_at_runtime',
+					content_included: false,
+					content_hash: skillContent === null ? null : sha256(skillContent),
+					rendered_digest: skillContent === null ? null : renderedDigest(normalizedPath, skillContent),
+					rendered_bytes: skillRenderedBytes,
+					estimated_tokens: skillRenderedBytes === null ? null : estimateTokens(skillRenderedBytes),
+					cacheability: 'runtime_selection',
+					reload_on: ['route_resolution_changed', 'source_file_hash_changed'],
+					issue: skillIssue,
+				} satisfies PromptBundleBlockContext;
+			});
+
+			return [baseBlock, ...selectedBlocks];
 		}),
 	};
 }
@@ -1021,6 +1095,7 @@ function readPromptBundle(
 	projectRoot: string,
 	mustflow: TomlTable | undefined,
 	profile: PromptCacheProfile,
+	routeReport: SkillRouteResolveReport | null = null,
 ): PromptBundleContext {
 	const layers: PromptBundleLayerContext[] = [];
 
@@ -1029,7 +1104,7 @@ function readPromptBundle(
 	}
 
 	if (profile === 'task' || profile === 'all') {
-		layers.push(readTaskPromptBundleLayer(projectRoot, mustflow));
+		layers.push(readTaskPromptBundleLayer(projectRoot, mustflow, routeReport));
 	}
 
 	if (profile === 'volatile' || profile === 'all') {
@@ -1487,10 +1562,12 @@ function readTaskSourceAuditLayer(
 	projectRoot: string,
 	sources: readonly string[],
 	budgetKb: number | null,
+	routeReport: SkillRouteResolveReport | null,
 ): PromptCacheAuditLayerContext {
 	const budget = budgetBytes(budgetKb);
 	const issues = new Set<string>();
-	const blocks = sources.map((source, index) => {
+	const selectedSkillPaths = selectedSkillRoutePaths(routeReport);
+	const blocks = sources.flatMap((source, index) => {
 		const selectionPolicy = taskSourceSelectionPolicy(source);
 		const sourceKind = taskSourceKind(source);
 		const referencePath = taskSourceReferencePath(source);
@@ -1502,17 +1579,18 @@ function readTaskSourceAuditLayer(
 					: 'measured'
 				: 'dynamic_unmeasured';
 		const renderedBytes = content === null || referencePath === null ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
-		const issue = content === null ? taskSourceIssue(source, measurementStatus) : null;
+		const hasResolvedMatchingSkill = source === 'matching_skill' && selectedSkillPaths.length > 0;
+		const issue = !hasResolvedMatchingSkill && content === null ? taskSourceIssue(source, measurementStatus) : null;
 
 		if (issue) {
 			issues.add(issue);
 		}
 
-		if (sourceKind === 'dynamic_selection') {
+		if (!hasResolvedMatchingSkill && sourceKind === 'dynamic_selection') {
 			issues.add(taskSourceIssue(source, measurementStatus));
 		}
 
-		return {
+		const baseBlock = {
 			id: `task:${index + 1}:${source}`,
 			kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
 			path: sourceKind === 'file_reference' && content !== null ? referencePath : null,
@@ -1529,6 +1607,44 @@ function readTaskSourceAuditLayer(
 			budget_share: calculateBudgetShare(renderedBytes, budget),
 			issue,
 		} satisfies PromptCacheAuditBlockContext;
+
+		if (source !== 'matching_skill') {
+			return [baseBlock];
+		}
+
+		const selectedBlocks = selectedSkillPaths.map((skillPath, selectedIndex) => {
+			const normalizedPath = toPosixPath(skillPath);
+			const skillContent = safeRead(projectRoot, normalizedPath);
+			const skillRenderedBytes = skillContent === null ? null : measurePromptCacheReferenceBlockBytes(normalizedPath, skillContent);
+			const skillMeasurementStatus: PromptCacheAuditMeasurementStatus = skillContent === null
+				? 'hash_only_deferred'
+				: 'measured';
+			const skillIssue = skillContent === null ? taskSourceIssue(normalizedPath, skillMeasurementStatus) : null;
+
+			if (skillIssue) {
+				issues.add(skillIssue);
+			}
+
+			return {
+				id: `task:${index + 1}:matching_skill:${selectedIndex + 1}:${normalizedPath}`,
+				kind: skillContent === null ? 'source_placeholder' : 'file',
+				path: skillContent === null ? null : normalizedPath,
+				source,
+				source_kind: skillContent === null ? 'dynamic_selection' : 'file_reference',
+				selection_policy: 'selected_at_runtime',
+				measurement_status: skillMeasurementStatus,
+				candidate_exists: skillContent !== null,
+				candidate_content_hash: skillContent === null ? null : sha256(skillContent),
+				exists: skillContent !== null,
+				content_hash: skillContent === null ? null : sha256(skillContent),
+				rendered_bytes: skillRenderedBytes,
+				estimated_tokens: skillRenderedBytes === null ? null : estimateTokens(skillRenderedBytes),
+				budget_share: calculateBudgetShare(skillRenderedBytes, budget),
+				issue: skillIssue,
+			} satisfies PromptCacheAuditBlockContext;
+		});
+
+		return [baseBlock, ...selectedBlocks];
 	});
 	const measuredBytes = blocks.reduce((total, block) => total + (block.rendered_bytes ?? 0), 0);
 	const renderedBytes = measuredBytes > 0 ? measuredBytes : null;
@@ -1650,6 +1766,7 @@ function readPromptCacheAudit(
 	mustflow: TomlTable | undefined,
 	profile: PromptCacheProfile,
 	settings: PromptCacheSettingsContext,
+	routeReport: SkillRouteResolveReport | null = null,
 ): PromptCacheAuditContext {
 	const layers: PromptCacheAuditLayerContext[] = [];
 
@@ -1664,6 +1781,7 @@ function readPromptCacheAudit(
 				projectRoot,
 				readOptionalStringArray(taskLayer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
 				settings.max_task_context_kb,
+				routeReport,
 			),
 		);
 	}
@@ -1705,7 +1823,8 @@ export async function getPromptCacheProfileContext(
 	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
 	const lockInspection = inspectManifestLock(projectRoot);
 	const promptCacheSettings = readPromptCacheSettings(mustflow);
-	const promptBundle = readPromptBundle(projectRoot, mustflow, profile);
+	const routeReport = resolvePromptCacheSkillRoutes(projectRoot, options.routeInput);
+	const promptBundle = readPromptBundle(projectRoot, mustflow, profile, routeReport);
 	const output: PromptCacheProfileContext = {
 		schema_version: CONTEXT_SCHEMA_VERSION,
 		command: 'context',
@@ -1719,7 +1838,7 @@ export async function getPromptCacheProfileContext(
 			: {}),
 		...(options.includeAudit
 			? {
-					cache_audit: readPromptCacheAudit(projectRoot, mustflow, profile, promptCacheSettings),
+					cache_audit: readPromptCacheAudit(projectRoot, mustflow, profile, promptCacheSettings, routeReport),
 			  }
 			: {}),
 		issues: lockInspection.issues,
