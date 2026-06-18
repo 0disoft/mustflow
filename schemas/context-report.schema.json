@@ -378,7 +378,62 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "route_read_plan": { "$ref": "#/$defs/taskRouteReadPlan" },
         "local_index": { "$ref": "#/$defs/promptCacheLocalIndex" }
+      }
+    },
+    "taskRouteReadPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resolver_command",
+        "stable_kernel",
+        "route_sources",
+        "selected_skill_paths_source",
+        "route_metadata_fallback",
+        "expanded_index_fallback",
+        "selection_limits"
+      ],
+      "properties": {
+        "resolver_command": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "stable_kernel": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "route_sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selected_skill_paths_source": { "type": "string" },
+        "route_metadata_fallback": { "$ref": "#/$defs/taskRouteFallback" },
+        "expanded_index_fallback": { "$ref": "#/$defs/taskRouteFallback" },
+        "selection_limits": { "$ref": "#/$defs/taskRouteSelectionLimits" }
+      }
+    },
+    "taskRouteFallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "read_when", "avoid_by_default"],
+      "properties": {
+        "path": { "type": "string" },
+        "read_when": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "avoid_by_default": { "type": "boolean" }
+      }
+    },
+    "taskRouteSelectionLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidates", "main", "adjuncts"],
+      "properties": {
+        "candidates": { "type": "integer", "minimum": 0 },
+        "main": { "type": "integer", "minimum": 0 },
+        "adjuncts": { "type": "integer", "minimum": 0 }
       }
     },
     "promptCacheLocalIndex": {

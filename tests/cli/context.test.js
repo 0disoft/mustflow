@@ -213,6 +213,23 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.task_context.sources.includes('.mustflow/skills/routes.toml'), false);
 		assert.equal(context.task_context.sources.includes('.mustflow/skills/INDEX.md'), false);
 		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
+		assert.deepEqual(context.task_context.route_read_plan.resolver_command, ['mf', 'skill', 'route', '--json']);
+		assert.deepEqual(context.task_context.route_read_plan.stable_kernel, ['.mustflow/skills/router.toml']);
+		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/routes.toml'));
+		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/*/SKILL.md frontmatter'));
+		assert.equal(
+			context.task_context.route_read_plan.selected_skill_paths_source,
+			'mf skill route --json read_plan.selected_skill_paths',
+		);
+		assert.equal(context.task_context.route_read_plan.route_metadata_fallback.path, '.mustflow/skills/routes.toml');
+		assert.equal(context.task_context.route_read_plan.route_metadata_fallback.avoid_by_default, true);
+		assert.equal(context.task_context.route_read_plan.expanded_index_fallback.path, '.mustflow/skills/INDEX.md');
+		assert.equal(context.task_context.route_read_plan.expanded_index_fallback.avoid_by_default, true);
+		assert.deepEqual(context.task_context.route_read_plan.selection_limits, {
+			candidates: 5,
+			main: 1,
+			adjuncts: 2,
+		});
 		assert.equal(context.task_context.local_index.source, 'local_index');
 		assert.equal(context.task_context.local_index.status, 'missing');
 		assert.equal(context.task_context.local_index.index_fresh, false);

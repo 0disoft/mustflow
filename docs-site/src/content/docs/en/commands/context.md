@@ -93,6 +93,7 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `stable_prefix.documents[]` (`object[]`): Stable document paths, existence flags, and content hashes.
 - `stable_prefix.volatile_excluded` (`string[]`): Volatile sources that must not appear before the stable prefix.
 - `task_context.sources` (`string[]`): Task-selective context sources.
+- `task_context.route_read_plan` (`object`): Static read plan for resolving task-layer skill placeholders. It names the `mf skill route --json` resolver, the stable router kernel, compact route sources, selected skill path source, fallback route metadata, expanded-index fallback, and route selection limits.
 - `task_context.local_index` (`object`): Read-only local-index status for task context. `status` is `fresh`, `missing`, `stale`, or `unreadable`; stale or unavailable states include a `refresh_hint` for `mf index`.
 - `volatile_suffix.sources` (`string[]`): Volatile sources that belong after the stable prefix.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.

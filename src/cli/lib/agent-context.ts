@@ -36,6 +36,7 @@ const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const MUSTFLOW_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 const PREFERENCES_RELATIVE_PATH = '.mustflow/config/preferences.toml';
+const SKILL_ROUTER_RELATIVE_PATH = '.mustflow/skills/router.toml';
 const TECHNOLOGY_RELATIVE_PATH = TECHNOLOGY_CONFIG_RELATIVE_PATH;
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 const CACHE_RELATIVE_PATH = '.mustflow/cache/';
@@ -216,7 +217,30 @@ export interface TaskPromptCacheLayerContext {
 	readonly cache_layer: 'task';
 	readonly read_policy: string | null;
 	readonly sources: readonly string[];
+	readonly route_read_plan: TaskPromptCacheRouteReadPlanContext;
 	readonly local_index: TaskPromptCacheLocalIndexContext;
+}
+
+export interface TaskPromptCacheRouteReadPlanContext {
+	readonly resolver_command: readonly string[];
+	readonly stable_kernel: readonly string[];
+	readonly route_sources: readonly string[];
+	readonly selected_skill_paths_source: string;
+	readonly route_metadata_fallback: TaskPromptCacheFallbackContext;
+	readonly expanded_index_fallback: TaskPromptCacheFallbackContext;
+	readonly selection_limits: TaskPromptCacheSelectionLimitsContext;
+}
+
+export interface TaskPromptCacheFallbackContext {
+	readonly path: string;
+	readonly read_when: readonly string[];
+	readonly avoid_by_default: boolean;
+}
+
+export interface TaskPromptCacheSelectionLimitsContext {
+	readonly candidates: number;
+	readonly main: number;
+	readonly adjuncts: number;
 }
 
 export interface TaskPromptCacheLocalIndexContext {
@@ -777,6 +801,47 @@ function mapLocalIndexPromptContext(context: LocalIndexPromptContext): TaskPromp
 	};
 }
 
+function readSkillRouterTable(projectRoot: string): TomlTable | undefined {
+	try {
+		const parsed = readMustflowTomlFile(projectRoot, SKILL_ROUTER_RELATIVE_PATH);
+		return isRecord(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function readTaskPromptCacheRouteReadPlan(projectRoot: string): TaskPromptCacheRouteReadPlanContext {
+	const router = readSkillRouterTable(projectRoot);
+	const readWhen = readNestedTable(router, 'read_when');
+	const fullRoutes = readOptionalString(router, 'full_routes') ?? '.mustflow/skills/routes.toml';
+	const expandedIndex = readOptionalString(router, 'expanded_index') ?? '.mustflow/skills/INDEX.md';
+	const skillRoot = readOptionalString(router, 'skill_root') ?? '.mustflow/skills';
+	const candidates = readNumber(router, 'selection_limit') ?? 5;
+	const main = readNumber(router, 'main_limit') ?? 1;
+	const adjuncts = readNumber(router, 'adjunct_limit') ?? 2;
+
+	return {
+		resolver_command: ['mf', 'skill', 'route', '--json'],
+		stable_kernel: [toPosixPath(SKILL_ROUTER_RELATIVE_PATH)],
+		route_sources: [
+			toPosixPath(fullRoutes),
+			`${toPosixPath(skillRoot)}/*/SKILL.md frontmatter`,
+		],
+		selected_skill_paths_source: 'mf skill route --json read_plan.selected_skill_paths',
+		route_metadata_fallback: {
+			path: toPosixPath(fullRoutes),
+			read_when: readOptionalStringArray(readWhen, 'full_routes') ?? [],
+			avoid_by_default: true,
+		},
+		expanded_index_fallback: {
+			path: toPosixPath(expandedIndex),
+			read_when: readOptionalStringArray(readWhen, 'expanded_index') ?? [],
+			avoid_by_default: true,
+		},
+		selection_limits: { candidates, main, adjuncts },
+	};
+}
+
 async function readTaskPromptCacheLayer(projectRoot: string, mustflow: TomlTable | undefined): Promise<TaskPromptCacheLayerContext> {
 	const layer = readPromptCacheLayer(mustflow, 'task');
 	const localIndex = await readLocalIndexPromptContext(projectRoot);
@@ -785,6 +850,7 @@ async function readTaskPromptCacheLayer(projectRoot: string, mustflow: TomlTable
 		cache_layer: 'task',
 		read_policy: readOptionalString(layer, 'read_policy'),
 		sources: readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
+		route_read_plan: readTaskPromptCacheRouteReadPlan(projectRoot),
 		local_index: mapLocalIndexPromptContext(localIndex),
 	};
 }
