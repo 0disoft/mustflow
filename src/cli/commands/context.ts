@@ -34,12 +34,17 @@ export function getContextHelp(lang: CliLang = 'en'): string {
 					label: '--cache-audit',
 					description: t(lang, 'context.help.option.cacheAudit'),
 				},
+				{
+					label: '--cache-compare <path>',
+					description: 'Compare the current prompt bundle with a prior context JSON report inside the mustflow root.',
+				},
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
 				'mf context --json',
 				'mf context --json --cache-profile stable',
 				'mf context --json --cache-audit',
+				'mf context --json --cache-profile all --cache-compare .mustflow/cache/baseline-context.json',
 			],
 			exitCodes: [
 				{
@@ -57,6 +62,7 @@ const CONTEXT_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--cache-profile', kind: 'string' },
 	{ name: '--cache-audit', kind: 'boolean' },
+	{ name: '--cache-compare', kind: 'string' },
 ] as const satisfies readonly CliOptionSpec[];
 const CACHE_PROFILES = new Set<PromptCacheProfile>(['stable', 'task', 'volatile', 'all']);
 
@@ -92,6 +98,7 @@ export async function runContext(args: string[], reporter: Reporter, lang: CliLa
 
 	const jsonRequested = hasParsedCliOption(parsed, '--json');
 	const cacheAudit = hasParsedCliOption(parsed, '--cache-audit');
+	const cacheComparePath = getParsedCliStringOption(parsed, '--cache-compare');
 
 	if (cacheProfile.profile && !jsonRequested) {
 		printUsageError(
@@ -115,14 +122,26 @@ export async function runContext(args: string[], reporter: Reporter, lang: CliLa
 		return 1;
 	}
 
+	if (cacheComparePath && !jsonRequested) {
+		printUsageError(
+			reporter,
+			t(lang, 'cli.error.unexpectedArgument', { argument: '--cache-compare' }),
+			'mf context --help',
+			getContextHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
 	const mustflowRoot = resolveMustflowRoot();
 
 	if (jsonRequested) {
-		if (cacheProfile.profile || cacheAudit) {
+			if (cacheProfile.profile || cacheAudit || cacheComparePath) {
 			reporter.stdout(
 				JSON.stringify(
 					await getPromptCacheProfileContext(mustflowRoot, cacheProfile.profile ?? 'all', {
 						includeAudit: cacheAudit,
+						comparePath: cacheComparePath,
 					}),
 					null,
 					2,

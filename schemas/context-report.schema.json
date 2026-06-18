@@ -80,6 +80,7 @@
         "task_context": { "$ref": "#/$defs/taskContextLayer" },
         "volatile_suffix": { "$ref": "#/$defs/volatileSuffixLayer" },
         "prompt_bundle": { "$ref": "#/$defs/promptBundle" },
+        "prompt_bundle_diff": { "$ref": "#/$defs/promptBundleDiff" },
         "cache_audit": { "$ref": "#/$defs/promptCacheAudit" },
         "issues": {
           "type": "array",
@@ -546,6 +547,81 @@
           "items": { "type": "string" }
         },
         "issue": { "type": ["string", "null"] }
+      }
+    },
+    "promptBundleDiff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_path",
+        "status",
+        "baseline_request_shape_hash",
+        "current_request_shape_hash",
+        "request_shape_changed",
+        "baseline_bundle_hash",
+        "current_bundle_hash",
+        "bundle_changed",
+        "first_difference",
+        "changed_blocks",
+        "issues"
+      ],
+      "properties": {
+        "baseline_path": { "type": "string" },
+        "status": {
+          "enum": [
+            "unchanged",
+            "changed",
+            "baseline_missing",
+            "baseline_unreadable",
+            "baseline_invalid",
+            "baseline_without_prompt_bundle"
+          ]
+        },
+        "baseline_request_shape_hash": { "type": ["string", "null"] },
+        "current_request_shape_hash": { "type": "string" },
+        "request_shape_changed": { "type": ["boolean", "null"] },
+        "baseline_bundle_hash": { "type": ["string", "null"] },
+        "current_bundle_hash": { "type": "string" },
+        "bundle_changed": { "type": ["boolean", "null"] },
+        "first_difference": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/promptBundleBlockDiff" }
+          ]
+        },
+        "changed_blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptBundleBlockDiff" }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promptBundleBlockDiff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "cache_layer",
+        "order",
+        "current_id",
+        "baseline_id",
+        "reason",
+        "fields"
+      ],
+      "properties": {
+        "kind": { "enum": ["added", "removed", "changed"] },
+        "cache_layer": { "type": ["string", "null"], "enum": ["stable", "task", "volatile", null] },
+        "order": { "type": ["integer", "null"], "minimum": 1 },
+        "current_id": { "type": ["string", "null"] },
+        "baseline_id": { "type": ["string", "null"] },
+        "reason": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
       }
     },
     "promptCacheAuditEstimator": {

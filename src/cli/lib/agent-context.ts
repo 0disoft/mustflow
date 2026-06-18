@@ -18,6 +18,7 @@ import {
 	MUSTFLOW_JSON_MAX_BYTES,
 	readMustflowTextFile,
 	readMustflowTextFileIfExists,
+	readMustflowTextFileResult,
 } from './mustflow-read.js';
 import { createRunPlan } from './run-plan.js';
 import { readMustflowTomlFile } from './toml.js';
@@ -82,6 +83,7 @@ export type PromptBundleCacheability =
 
 export interface PromptCacheProfileOptions {
 	readonly includeAudit?: boolean;
+	readonly comparePath?: string | null;
 }
 
 export interface PathContext {
@@ -241,6 +243,7 @@ export interface PromptCacheProfileContext {
 	readonly task_context?: TaskPromptCacheLayerContext;
 	readonly volatile_suffix?: VolatilePromptCacheLayerContext;
 	readonly prompt_bundle: PromptBundleContext;
+	readonly prompt_bundle_diff?: PromptBundleDiffContext;
 	readonly cache_audit?: PromptCacheAuditContext;
 	readonly issues: readonly string[];
 }
@@ -323,6 +326,36 @@ export interface PromptBundleContext {
 	readonly request_shape_hash: string;
 	readonly bundle_hash: string;
 	readonly layers: readonly PromptBundleLayerContext[];
+	readonly issues: readonly string[];
+}
+
+export interface PromptBundleBlockDiffContext {
+	readonly kind: 'added' | 'removed' | 'changed';
+	readonly cache_layer: 'stable' | 'task' | 'volatile' | null;
+	readonly order: number | null;
+	readonly current_id: string | null;
+	readonly baseline_id: string | null;
+	readonly reason: string;
+	readonly fields: readonly string[];
+}
+
+export interface PromptBundleDiffContext {
+	readonly baseline_path: string;
+	readonly status:
+		| 'unchanged'
+		| 'changed'
+		| 'baseline_missing'
+		| 'baseline_unreadable'
+		| 'baseline_invalid'
+		| 'baseline_without_prompt_bundle';
+	readonly baseline_request_shape_hash: string | null;
+	readonly current_request_shape_hash: string;
+	readonly request_shape_changed: boolean | null;
+	readonly baseline_bundle_hash: string | null;
+	readonly current_bundle_hash: string;
+	readonly bundle_changed: boolean | null;
+	readonly first_difference: PromptBundleBlockDiffContext | null;
+	readonly changed_blocks: readonly PromptBundleBlockDiffContext[];
 	readonly issues: readonly string[];
 }
 
@@ -881,6 +914,238 @@ function readPromptBundle(
 	};
 }
 
+function isPromptBundleBlock(value: unknown): value is PromptBundleBlockContext {
+	return isRecord(value) && typeof value.id === 'string' && typeof value.cache_layer === 'string' && typeof value.order === 'number';
+}
+
+function isPromptBundleLayer(value: unknown): value is PromptBundleLayerContext {
+	return isRecord(value) && typeof value.cache_layer === 'string' && Array.isArray(value.blocks) && value.blocks.every(isPromptBundleBlock);
+}
+
+function isPromptBundleContext(value: unknown): value is PromptBundleContext {
+	return (
+		isRecord(value) &&
+		typeof value.request_shape_hash === 'string' &&
+		typeof value.bundle_hash === 'string' &&
+		Array.isArray(value.layers) &&
+		value.layers.every(isPromptBundleLayer)
+	);
+}
+
+function readBaselinePromptBundle(projectRoot: string, baselinePath: string): {
+	readonly status: PromptBundleDiffContext['status'];
+	readonly bundle: PromptBundleContext | null;
+	readonly issues: readonly string[];
+} {
+	const normalizedPath = toPosixPath(baselinePath);
+	const readResult = readMustflowTextFileResult(projectRoot, normalizedPath, { maxBytes: MUSTFLOW_JSON_MAX_BYTES });
+
+	if (!readResult.ok) {
+		if (!readResult.exists) {
+			return {
+				status: 'baseline_missing',
+				bundle: null,
+				issues: [`baseline context report is missing: ${normalizedPath}`],
+			};
+		}
+
+		return {
+			status: 'baseline_unreadable',
+			bundle: null,
+			issues: [`baseline context report is unreadable: ${readResult.error ?? normalizedPath}`],
+		};
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(readResult.content) as unknown;
+	} catch (error) {
+		return {
+			status: 'baseline_invalid',
+			bundle: null,
+			issues: [`baseline context report is not valid JSON: ${error instanceof Error ? error.message : String(error)}`],
+		};
+	}
+
+	if (!isRecord(parsed) || !('prompt_bundle' in parsed)) {
+		return {
+			status: 'baseline_without_prompt_bundle',
+			bundle: null,
+			issues: [`baseline context report does not contain prompt_bundle: ${normalizedPath}`],
+		};
+	}
+
+	if (!isPromptBundleContext(parsed.prompt_bundle)) {
+		return {
+			status: 'baseline_invalid',
+			bundle: null,
+			issues: [`baseline prompt_bundle has an unsupported shape: ${normalizedPath}`],
+		};
+	}
+
+	return { status: 'unchanged', bundle: parsed.prompt_bundle, issues: [] };
+}
+
+function blockKey(block: PromptBundleBlockContext): string {
+	return `${block.cache_layer}:${block.order}`;
+}
+
+function compareStringArray(left: readonly string[], right: readonly string[]): boolean {
+	return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
+
+function changedBlockFields(current: PromptBundleBlockContext, baseline: PromptBundleBlockContext): readonly string[] {
+	const fields: string[] = [];
+
+	if (current.id !== baseline.id) {
+		fields.push('id');
+	}
+	if (current.kind !== baseline.kind) {
+		fields.push('kind');
+	}
+	if (current.path !== baseline.path) {
+		fields.push('path');
+	}
+	if (current.source !== baseline.source) {
+		fields.push('source');
+	}
+	if (current.source_kind !== baseline.source_kind) {
+		fields.push('source_kind');
+	}
+	if (current.selection_policy !== baseline.selection_policy) {
+		fields.push('selection_policy');
+	}
+	if (current.content_hash !== baseline.content_hash) {
+		fields.push('content_hash');
+	}
+	if (current.rendered_digest !== baseline.rendered_digest) {
+		fields.push('rendered_digest');
+	}
+	if (current.rendered_bytes !== baseline.rendered_bytes) {
+		fields.push('rendered_bytes');
+	}
+	if (current.estimated_tokens !== baseline.estimated_tokens) {
+		fields.push('estimated_tokens');
+	}
+	if (current.cacheability !== baseline.cacheability) {
+		fields.push('cacheability');
+	}
+	if (!compareStringArray(current.reload_on, baseline.reload_on)) {
+		fields.push('reload_on');
+	}
+	if (current.issue !== baseline.issue) {
+		fields.push('issue');
+	}
+
+	return fields;
+}
+
+function flattenBundleBlocks(bundle: PromptBundleContext): readonly PromptBundleBlockContext[] {
+	return bundle.layers.flatMap((layer) => layer.blocks);
+}
+
+function comparePromptBundles(current: PromptBundleContext, baseline: PromptBundleContext): readonly PromptBundleBlockDiffContext[] {
+	const currentBlocks = flattenBundleBlocks(current);
+	const baselineBlocks = flattenBundleBlocks(baseline);
+	const currentByKey = new Map(currentBlocks.map((block) => [blockKey(block), block]));
+	const baselineByKey = new Map(baselineBlocks.map((block) => [blockKey(block), block]));
+	const keys = [...new Set([...baselineBlocks.map(blockKey), ...currentBlocks.map(blockKey)])].sort();
+	const diffs: PromptBundleBlockDiffContext[] = [];
+
+	for (const key of keys) {
+		const currentBlock = currentByKey.get(key);
+		const baselineBlock = baselineByKey.get(key);
+
+		if (currentBlock && !baselineBlock) {
+			diffs.push({
+				kind: 'added',
+				cache_layer: currentBlock.cache_layer,
+				order: currentBlock.order,
+				current_id: currentBlock.id,
+				baseline_id: null,
+				reason: `prompt bundle block added at ${key}`,
+				fields: [],
+			});
+			continue;
+		}
+
+		if (!currentBlock && baselineBlock) {
+			diffs.push({
+				kind: 'removed',
+				cache_layer: baselineBlock.cache_layer,
+				order: baselineBlock.order,
+				current_id: null,
+				baseline_id: baselineBlock.id,
+				reason: `prompt bundle block removed at ${key}`,
+				fields: [],
+			});
+			continue;
+		}
+
+		if (!currentBlock || !baselineBlock) {
+			continue;
+		}
+
+		const fields = changedBlockFields(currentBlock, baselineBlock);
+		if (fields.length > 0) {
+			diffs.push({
+				kind: 'changed',
+				cache_layer: currentBlock.cache_layer,
+				order: currentBlock.order,
+				current_id: currentBlock.id,
+				baseline_id: baselineBlock.id,
+				reason: `prompt bundle block changed at ${key}: ${fields.join(', ')}`,
+				fields,
+			});
+		}
+	}
+
+	return diffs;
+}
+
+function readPromptBundleDiff(
+	projectRoot: string,
+	currentBundle: PromptBundleContext,
+	baselinePath: string,
+): PromptBundleDiffContext {
+	const normalizedPath = toPosixPath(baselinePath);
+	const baseline = readBaselinePromptBundle(projectRoot, normalizedPath);
+
+	if (!baseline.bundle) {
+		return {
+			baseline_path: normalizedPath,
+			status: baseline.status,
+			baseline_request_shape_hash: null,
+			current_request_shape_hash: currentBundle.request_shape_hash,
+			request_shape_changed: null,
+			baseline_bundle_hash: null,
+			current_bundle_hash: currentBundle.bundle_hash,
+			bundle_changed: null,
+			first_difference: null,
+			changed_blocks: [],
+			issues: baseline.issues,
+		};
+	}
+
+	const changedBlocks = comparePromptBundles(currentBundle, baseline.bundle);
+	const requestShapeChanged = baseline.bundle.request_shape_hash !== currentBundle.request_shape_hash;
+	const bundleChanged = baseline.bundle.bundle_hash !== currentBundle.bundle_hash;
+
+	return {
+		baseline_path: normalizedPath,
+		status: requestShapeChanged || bundleChanged || changedBlocks.length > 0 ? 'changed' : 'unchanged',
+		baseline_request_shape_hash: baseline.bundle.request_shape_hash,
+		current_request_shape_hash: currentBundle.request_shape_hash,
+		request_shape_changed: requestShapeChanged,
+		baseline_bundle_hash: baseline.bundle.bundle_hash,
+		current_bundle_hash: currentBundle.bundle_hash,
+		bundle_changed: bundleChanged,
+		first_difference: changedBlocks[0] ?? null,
+		changed_blocks: changedBlocks.slice(0, 20),
+		issues: [],
+	};
+}
+
 function readStablePromptCacheAuditLayer(
 	projectRoot: string,
 	mustflow: TomlTable | undefined,
@@ -1140,12 +1405,18 @@ export async function getPromptCacheProfileContext(
 	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
 	const lockInspection = inspectManifestLock(projectRoot);
 	const promptCacheSettings = readPromptCacheSettings(mustflow);
+	const promptBundle = readPromptBundle(projectRoot, mustflow, profile);
 	const output: PromptCacheProfileContext = {
 		schema_version: CONTEXT_SCHEMA_VERSION,
 		command: 'context',
 		cache_profile: profile,
 		prompt_cache: promptCacheSettings,
-		prompt_bundle: readPromptBundle(projectRoot, mustflow, profile),
+		prompt_bundle: promptBundle,
+		...(options.comparePath
+			? {
+					prompt_bundle_diff: readPromptBundleDiff(projectRoot, promptBundle, options.comparePath),
+			  }
+			: {}),
 		...(options.includeAudit
 			? {
 					cache_audit: readPromptCacheAudit(projectRoot, mustflow, profile, promptCacheSettings),

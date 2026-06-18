@@ -256,6 +256,83 @@ test('prints all prompt-cache layers when requested', () => {
 	}
 });
 
+test('compares prompt bundle manifests against a previous context report', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const baselinePath = path.join(projectPath, '.mustflow', 'cache', 'baseline-context.json');
+		mkdirSync(path.dirname(baselinePath), { recursive: true });
+
+		const baseline = runCli(projectPath, ['context', '--json', '--cache-profile', 'all']);
+		assert.equal(baseline.status, 0, baseline.stderr || baseline.stdout);
+		writeFileSync(baselinePath, baseline.stdout);
+
+		const unchanged = runCli(projectPath, [
+			'context',
+			'--json',
+			'--cache-profile',
+			'all',
+			'--cache-compare',
+			'.mustflow/cache/baseline-context.json',
+		]);
+		const unchangedContext = JSON.parse(unchanged.stdout);
+		assert.equal(unchanged.status, 0, unchanged.stderr || unchanged.stdout);
+		assert.equal(unchangedContext.prompt_bundle_diff.status, 'unchanged');
+		assert.equal(unchangedContext.prompt_bundle_diff.request_shape_changed, false);
+		assert.equal(unchangedContext.prompt_bundle_diff.bundle_changed, false);
+		assert.equal(unchangedContext.prompt_bundle_diff.first_difference, null);
+
+		const agentsPath = path.join(projectPath, 'AGENTS.md');
+		writeFileSync(agentsPath, `${readFileSync(agentsPath, 'utf8')}\n<!-- test cache diff anchor -->\n`);
+
+		const changed = runCli(projectPath, [
+			'context',
+			'--json',
+			'--cache-profile',
+			'all',
+			'--cache-compare',
+			'.mustflow/cache/baseline-context.json',
+		]);
+		const changedContext = JSON.parse(changed.stdout);
+		assert.equal(changed.status, 0, changed.stderr || changed.stdout);
+		assert.equal(changedContext.prompt_bundle_diff.status, 'changed');
+		assert.equal(changedContext.prompt_bundle_diff.request_shape_changed, false);
+		assert.equal(changedContext.prompt_bundle_diff.bundle_changed, true);
+		assert.equal(changedContext.prompt_bundle_diff.first_difference.cache_layer, 'stable');
+		assert.equal(changedContext.prompt_bundle_diff.first_difference.current_id, 'stable:1:AGENTS.md');
+		assert.ok(changedContext.prompt_bundle_diff.first_difference.fields.includes('content_hash'));
+		assert.ok(changedContext.prompt_bundle_diff.first_difference.fields.includes('rendered_digest'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reports missing prompt bundle comparison baselines without failing context output', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, [
+			'context',
+			'--json',
+			'--cache-profile',
+			'all',
+			'--cache-compare',
+			'.mustflow/cache/missing-context.json',
+		]);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.prompt_bundle_diff.status, 'baseline_missing');
+		assert.equal(context.prompt_bundle_diff.bundle_changed, null);
+		assert.match(context.prompt_bundle_diff.issues.join('\n'), /baseline context report is missing/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints prompt-cache audit sizes and budget status when requested', () => {
 	const projectPath = createTempProject();
 
@@ -363,6 +440,7 @@ test('context cache-profile options use the shared CLI option rules', () => {
 		const missingValue = runCli(projectPath, ['context', '--json', '--cache-profile']);
 		const withoutJson = runCli(projectPath, ['context', '--cache-profile', 'stable']);
 		const auditWithoutJson = runCli(projectPath, ['context', '--cache-audit']);
+		const compareWithoutJson = runCli(projectPath, ['context', '--cache-compare', '.mustflow/cache/context.json']);
 		const unknownOption = runCli(projectPath, ['context', '--bad']);
 
 		assert.equal(inlineProfile.status, 0, inlineProfile.stderr || inlineProfile.stdout);
@@ -373,6 +451,8 @@ test('context cache-profile options use the shared CLI option rules', () => {
 		assert.match(withoutJson.stderr, /Unexpected argument: --cache-profile/u);
 		assert.equal(auditWithoutJson.status, 1);
 		assert.match(auditWithoutJson.stderr, /Unexpected argument: --cache-audit/u);
+		assert.equal(compareWithoutJson.status, 1);
+		assert.match(compareWithoutJson.stderr, /Unexpected argument: --cache-compare/u);
 		assert.equal(unknownOption.status, 1);
 		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
 	} finally {

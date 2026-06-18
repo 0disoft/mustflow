@@ -48,12 +48,17 @@ host supplies the actual selected content. The token estimate is not provider bi
 not prove that OpenAI,
 Anthropic, Gemini, or another provider reused a cache entry.
 
+Use `--cache-compare <path>` with a prior `mf context --json --cache-profile ...` report inside the
+mustflow root to compare prompt-bundle hashes and locate the first changed prompt block without
+emitting prompt text.
+
 ## Example
 
 ```sh
 npx mf context --json
 npx mf context --json --cache-profile stable
 npx mf context --json --cache-audit
+npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseline-context.json
 ```
 
 ## JSON Fields
@@ -92,6 +97,8 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `prompt_bundle.request_shape_hash` (`string`): Hash of the layer order and block shape. Use it to spot stable ordering or boundary drift that would change provider cache eligibility.
 - `prompt_bundle.bundle_hash` (`string`): Hash of ordered block identities, measured content hashes, rendered digests, and block issues. Use it to compare two bundle manifests without exposing source text.
 - `prompt_bundle.layers[].blocks[].content_included` (`false`): The context report never emits the actual prompt block body.
+- `prompt_bundle_diff` (`object | undefined`): Present only with `--cache-compare`. It compares the current `prompt_bundle` with a baseline context JSON report and reports `unchanged`, `changed`, `baseline_missing`, `baseline_unreadable`, `baseline_invalid`, or `baseline_without_prompt_bundle`.
+- `prompt_bundle_diff.first_difference` (`object | null`): First added, removed, or changed block by layer and order. Changed blocks list changed fields such as `content_hash`, `rendered_digest`, `cacheability`, or `reload_on`.
 - `cache_audit.measurement` (`string`): Measurement mode. Currently `reference_bundle`.
 - `cache_audit.estimator` (`object`): Rough byte-to-token estimator and caveat.
 - `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, hard budget settings, target settings, status fields, blocks, largest blocks, and issues.
