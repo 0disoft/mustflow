@@ -550,6 +550,24 @@ function isDirectPromptCacheSource(source: string): boolean {
 	);
 }
 
+function taskSourceReferencePath(source: string): string | null {
+	const normalized = toPosixPath(source);
+
+	if (normalized === 'route_metadata_fallback') {
+		return '.mustflow/skills/routes.toml';
+	}
+
+	if (normalized === 'expanded_skill_index_fallback') {
+		return '.mustflow/skills/INDEX.md';
+	}
+
+	if (isDirectPromptCacheSource(normalized)) {
+		return normalized;
+	}
+
+	return null;
+}
+
 function taskSourceSelectionPolicy(source: string): PromptCacheAuditSelectionPolicy {
 	const normalized = toPosixPath(source);
 
@@ -570,7 +588,7 @@ function taskSourceSelectionPolicy(source: string): PromptCacheAuditSelectionPol
 }
 
 function taskSourceKind(source: string): PromptCacheAuditSourceKind {
-	return isDirectPromptCacheSource(toPosixPath(source)) ? 'file_reference' : 'dynamic_selection';
+	return taskSourceReferencePath(source) === null ? 'dynamic_selection' : 'file_reference';
 }
 
 function taskSourceCacheability(source: string, selectionPolicy: PromptCacheAuditSelectionPolicy): PromptBundleCacheability {
@@ -945,8 +963,9 @@ function readTaskPromptBundleLayer(projectRoot: string, mustflow: TomlTable | un
 		blocks: sources.map((source, index) => {
 			const selectionPolicy = taskSourceSelectionPolicy(source);
 			const sourceKind = taskSourceKind(source);
-			const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
-			const renderedBytes = content === null ? null : measurePromptCacheReferenceBlockBytes(source, content);
+			const referencePath = taskSourceReferencePath(source);
+			const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
+			const renderedBytes = content === null || referencePath === null ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
 			const issue = content === null ? taskSourceIssue(source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured') : null;
 
 			return {
@@ -954,13 +973,13 @@ function readTaskPromptBundleLayer(projectRoot: string, mustflow: TomlTable | un
 				cache_layer: 'task',
 				order: index + 1,
 				kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
-				path: sourceKind === 'file_reference' && content !== null ? toPosixPath(source) : null,
+				path: sourceKind === 'file_reference' && content !== null ? referencePath : null,
 				source,
 				source_kind: sourceKind,
 				selection_policy: selectionPolicy,
 				content_included: false,
 				content_hash: content === null ? null : sha256(content),
-				rendered_digest: content === null ? null : renderedDigest(source, content),
+				rendered_digest: content === null || referencePath === null ? null : renderedDigest(referencePath, content),
 				rendered_bytes: renderedBytes,
 				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
 				cacheability: taskSourceCacheability(source, selectionPolicy),
@@ -1475,14 +1494,15 @@ function readTaskSourceAuditLayer(
 	const blocks = sources.map((source, index) => {
 		const selectionPolicy = taskSourceSelectionPolicy(source);
 		const sourceKind = taskSourceKind(source);
-		const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
+		const referencePath = taskSourceReferencePath(source);
+		const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
 		const measurementStatus: PromptCacheAuditMeasurementStatus =
 			sourceKind === 'file_reference'
 				? content === null
 					? 'hash_only_deferred'
 					: 'measured'
 				: 'dynamic_unmeasured';
-		const renderedBytes = content === null ? null : measurePromptCacheReferenceBlockBytes(source, content);
+		const renderedBytes = content === null || referencePath === null ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
 		const issue = content === null ? taskSourceIssue(source, measurementStatus) : null;
 
 		if (issue) {
@@ -1496,7 +1516,7 @@ function readTaskSourceAuditLayer(
 		return {
 			id: `task:${index + 1}:${source}`,
 			kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
-			path: sourceKind === 'file_reference' && content !== null ? toPosixPath(source) : null,
+			path: sourceKind === 'file_reference' && content !== null ? referencePath : null,
 			source,
 			source_kind: sourceKind,
 			selection_policy: selectionPolicy,
@@ -1518,6 +1538,12 @@ function readTaskSourceAuditLayer(
 	const status: PromptCacheBudgetStatus = measuredStatus === 'over_budget' || !hasDynamicSources
 		? measuredStatus
 		: 'unknown';
+
+	if (measuredStatus === 'over_budget' && renderedBytes !== null && budget !== null) {
+		issues.add(
+			`task context measured sources exceed max_task_context_kb: ${renderedBytes} rendered bytes > ${budget} budget bytes`,
+		);
+	}
 
 	return {
 		cache_layer: 'task',

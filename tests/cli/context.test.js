@@ -260,11 +260,11 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.ok(context.prompt_bundle.layers[0].blocks.every((block) => block.content_included === false));
 		assert.equal(
 			context.prompt_bundle.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
-			false,
+			true,
 		);
 		assert.equal(
 			context.prompt_bundle.layers[1].blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
-			false,
+			true,
 		);
 		assert.equal(
 			context.prompt_bundle.layers[1].blocks.some((block) => block.path === 'REPO_MAP.md'),
@@ -445,7 +445,7 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		);
 		assert.ok(context.cache_audit.layers[1].rendered_bytes > 0);
 		assert.ok(context.cache_audit.layers[1].estimated_tokens > 0);
-		assert.ok(['within_budget', 'unknown'].includes(context.cache_audit.layers[1].budget_status));
+		assert.ok(['within_budget', 'over_budget', 'unknown'].includes(context.cache_audit.layers[1].budget_status));
 		assert.equal(context.cache_audit.layers[1].target_status, 'unknown');
 		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'file');
 		assert.ok(context.cache_audit.layers[1].blocks[0].rendered_bytes > 0);
@@ -468,9 +468,26 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		assert.equal(routeCandidatesBlock.selection_policy, 'selected_at_runtime');
 		assert.equal(routeCandidatesBlock.measurement_status, 'dynamic_unmeasured');
 		assert.equal(routeFallbackBlock.selection_policy, 'fallback_when_needed');
-		assert.equal(routeFallbackBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(routeFallbackBlock.measurement_status, 'measured');
+		assert.equal(routeFallbackBlock.source_kind, 'file_reference');
+		assert.equal(routeFallbackBlock.path, '.mustflow/skills/routes.toml');
+		assert.ok(routeFallbackBlock.rendered_bytes > 0);
 		assert.equal(expandedIndexFallbackBlock.selection_policy, 'fallback_when_needed');
-		assert.equal(expandedIndexFallbackBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(expandedIndexFallbackBlock.measurement_status, 'measured');
+		assert.equal(expandedIndexFallbackBlock.source_kind, 'file_reference');
+		assert.equal(expandedIndexFallbackBlock.path, '.mustflow/skills/INDEX.md');
+		assert.ok(expandedIndexFallbackBlock.rendered_bytes > 0);
+		assert.equal(
+			context.cache_audit.layers[1].largest_blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
+			true,
+		);
+		if (context.cache_audit.layers[1].budget_status === 'over_budget') {
+			assert.ok(
+				context.cache_audit.layers[1].issues.some((issue) =>
+					/task context measured sources exceed max_task_context_kb/u.test(issue)
+				),
+			);
+		}
 		assert.equal(repoMapBlock.kind, 'source_placeholder');
 		assert.equal(repoMapBlock.source_kind, 'dynamic_selection');
 		assert.equal(repoMapBlock.selection_policy, 'selected_at_runtime');
@@ -478,11 +495,11 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		assert.equal(repoMapBlock.rendered_bytes, null);
 		assert.equal(
 			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
-			false,
+			true,
 		);
 		assert.equal(
 			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
-			false,
+			true,
 		);
 		assert.equal(
 			context.cache_audit.layers[1].blocks.some((block) => block.path === 'REPO_MAP.md'),
