@@ -538,9 +538,15 @@ test('resolves selected task skills into prompt bundle and audit blocks', () => 
 			block.source === 'matching_skill' &&
 			block.path === '.mustflow/skills/typescript-code-change/SKILL.md'
 		);
+		const bundleRouteCandidatesBlock = taskBundle.blocks.find((block) =>
+			block.source === 'skill_route_candidates'
+		);
 		const auditSkillBlock = taskAudit.blocks.find((block) =>
 			block.source === 'matching_skill' &&
 			block.path === '.mustflow/skills/typescript-code-change/SKILL.md'
+		);
+		const auditRouteCandidatesBlock = taskAudit.blocks.find((block) =>
+			block.source === 'skill_route_candidates'
 		);
 		const matchingSkillPlaceholder = taskAudit.blocks.find((block) =>
 			block.source === 'matching_skill' &&
@@ -558,6 +564,14 @@ test('resolves selected task skills into prompt bundle and audit blocks', () => 
 		assert.ok(bundleSkillBlock.rendered_bytes > 0);
 		assert.match(bundleSkillBlock.content_hash, /^sha256:[a-f0-9]{64}$/u);
 		assert.equal(bundleSkillBlock.issue, null);
+		assert.ok(bundleRouteCandidatesBlock);
+		assert.equal(bundleRouteCandidatesBlock.kind, 'source_placeholder');
+		assert.equal(bundleRouteCandidatesBlock.source_kind, 'dynamic_selection');
+		assert.equal(bundleRouteCandidatesBlock.selection_policy, 'selected_at_runtime');
+		assert.ok(bundleRouteCandidatesBlock.rendered_bytes > 0);
+		assert.match(bundleRouteCandidatesBlock.content_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(bundleRouteCandidatesBlock.rendered_digest, /^sha256:[a-f0-9]{64}$/u);
+		assert.equal(bundleRouteCandidatesBlock.issue, null);
 		assert.ok(auditSkillBlock);
 		assert.equal(auditSkillBlock.kind, 'file');
 		assert.equal(auditSkillBlock.source_kind, 'file_reference');
@@ -566,9 +580,20 @@ test('resolves selected task skills into prompt bundle and audit blocks', () => 
 		assert.equal(auditSkillBlock.exists, true);
 		assert.ok(auditSkillBlock.rendered_bytes > 0);
 		assert.equal(auditSkillBlock.issue, null);
+		assert.ok(auditRouteCandidatesBlock);
+		assert.equal(auditRouteCandidatesBlock.kind, 'source_placeholder');
+		assert.equal(auditRouteCandidatesBlock.source_kind, 'dynamic_selection');
+		assert.equal(auditRouteCandidatesBlock.measurement_status, 'measured');
+		assert.ok(auditRouteCandidatesBlock.rendered_bytes > 0);
+		assert.match(auditRouteCandidatesBlock.content_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.equal(auditRouteCandidatesBlock.issue, null);
 		assert.equal(matchingSkillPlaceholder.issue, null);
 		assert.equal(
 			taskAudit.issues.some((issue) => /matching_skill/u.test(issue)),
+			false,
+		);
+		assert.equal(
+			taskAudit.issues.some((issue) => /skill_route_candidates/u.test(issue)),
 			false,
 		);
 	} finally {

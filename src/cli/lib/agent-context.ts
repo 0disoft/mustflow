@@ -38,6 +38,7 @@ const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
 const MUSTFLOW_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 const PREFERENCES_RELATIVE_PATH = '.mustflow/config/preferences.toml';
 const SKILL_ROUTER_RELATIVE_PATH = '.mustflow/skills/router.toml';
+const SKILL_ROUTE_CANDIDATES_VIRTUAL_PATH = '.mustflow/generated/skill-route-candidates.compact.json';
 const TECHNOLOGY_RELATIVE_PATH = TECHNOLOGY_CONFIG_RELATIVE_PATH;
 const LATEST_RUN_RELATIVE_PATH = '.mustflow/state/runs/latest.json';
 const CACHE_RELATIVE_PATH = '.mustflow/cache/';
@@ -662,6 +663,45 @@ function selectedTaskBlockOrder(sourceIndex: number, selectedIndex: number): num
 	return ((sourceIndex + 1) * 100) + selectedIndex + 1;
 }
 
+function compactSkillRouteCandidate(candidate: SkillRouteResolveReport['candidates'][number]) {
+	return {
+		skill: candidate.skill,
+		skill_path: candidate.skill_path,
+		category: candidate.category,
+		route_type: candidate.route_type,
+		score: Number(candidate.score.toFixed(3)),
+		selection_reasons: candidate.selection_reasons,
+		verification_intents: candidate.verification_intents,
+	};
+}
+
+function readCompactSkillRouteCandidateContent(routeReport: SkillRouteResolveReport | null): string | null {
+	if (routeReport === null) {
+		return null;
+	}
+
+	return `${JSON.stringify({
+		schema_version: '1',
+		kind: 'skill_route_candidates_compact',
+		input: routeReport.input,
+		signals: {
+			task_terms: routeReport.signals.task_terms,
+			path_terms: routeReport.signals.path_terms,
+			reasons: routeReport.signals.reasons,
+		},
+		selected: {
+			main: routeReport.selected.main === null ? null : compactSkillRouteCandidate(routeReport.selected.main),
+			adjuncts: routeReport.selected.adjuncts.map(compactSkillRouteCandidate),
+		},
+		candidates: routeReport.candidates.map(compactSkillRouteCandidate),
+		read_plan: {
+			selected_skill_paths: routeReport.read_plan.selected_skill_paths,
+			candidate_skill_paths: routeReport.read_plan.candidate_skill_paths,
+			avoid_by_default: routeReport.read_plan.avoid_by_default,
+		},
+	}, null, 2)}\n`;
+}
+
 function readCommandContractContext(projectRoot: string): CommandContractContext {
 	const commands = readTomlTableIfExists(projectRoot, COMMANDS_RELATIVE_PATH);
 
@@ -1005,13 +1045,33 @@ function readTaskPromptBundleLayer(
 			const sourceKind = taskSourceKind(source);
 			const referencePath = taskSourceReferencePath(source);
 			const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
+			const routeCandidateContent = source === 'skill_route_candidates'
+				? readCompactSkillRouteCandidateContent(routeReport)
+				: null;
 			const deferFallback = isDeferredTaskFallback(selectionPolicy);
-			const contentHash = content === null ? null : sha256(content);
-			const renderedBytes = content === null || referencePath === null || deferFallback
-				? null
-				: measurePromptCacheReferenceBlockBytes(referencePath, content);
+			let contentHash: string | null = null;
+			let renderedBytes: number | null = null;
+			let blockRenderedDigest: string | null = null;
+
+			if (routeCandidateContent !== null) {
+				contentHash = sha256(routeCandidateContent);
+				renderedBytes = measurePromptCacheReferenceBlockBytes(
+					SKILL_ROUTE_CANDIDATES_VIRTUAL_PATH,
+					routeCandidateContent,
+				);
+				blockRenderedDigest = renderedDigest(SKILL_ROUTE_CANDIDATES_VIRTUAL_PATH, routeCandidateContent);
+			} else if (content !== null) {
+				contentHash = sha256(content);
+
+				if (referencePath !== null && !deferFallback) {
+					renderedBytes = measurePromptCacheReferenceBlockBytes(referencePath, content);
+					blockRenderedDigest = renderedDigest(referencePath, content);
+				}
+			}
+
 			const hasResolvedMatchingSkill = source === 'matching_skill' && selectedSkillPaths.length > 0;
-			const issue = !hasResolvedMatchingSkill && (content === null || deferFallback)
+			const hasResolvedDynamicSource = hasResolvedMatchingSkill || routeCandidateContent !== null;
+			const issue = !hasResolvedDynamicSource && (content === null || deferFallback)
 				? taskSourceIssue(referencePath ?? source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured')
 				: null;
 
@@ -1026,7 +1086,7 @@ function readTaskPromptBundleLayer(
 				selection_policy: selectionPolicy,
 				content_included: false,
 				content_hash: contentHash,
-				rendered_digest: content === null || referencePath === null || deferFallback ? null : renderedDigest(referencePath, content),
+				rendered_digest: blockRenderedDigest,
 				rendered_bytes: renderedBytes,
 				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
 				cacheability: taskSourceCacheability(source, selectionPolicy),
@@ -1580,17 +1640,38 @@ function readTaskSourceAuditLayer(
 		const sourceKind = taskSourceKind(source);
 		const referencePath = taskSourceReferencePath(source);
 		const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
+		const routeCandidateContent = source === 'skill_route_candidates'
+			? readCompactSkillRouteCandidateContent(routeReport)
+			: null;
 		const deferFallback = isDeferredTaskFallback(selectionPolicy);
-		const contentHash = content === null ? null : sha256(content);
+		let contentHash: string | null = null;
+		let renderedBytes: number | null = null;
+
+		if (routeCandidateContent !== null) {
+			contentHash = sha256(routeCandidateContent);
+			renderedBytes = measurePromptCacheReferenceBlockBytes(
+				SKILL_ROUTE_CANDIDATES_VIRTUAL_PATH,
+				routeCandidateContent,
+			);
+		} else if (content !== null) {
+			contentHash = sha256(content);
+
+			if (referencePath !== null && !deferFallback) {
+				renderedBytes = measurePromptCacheReferenceBlockBytes(referencePath, content);
+			}
+		}
+
 		const measurementStatus: PromptCacheAuditMeasurementStatus =
-			sourceKind === 'file_reference'
+			routeCandidateContent !== null
+				? 'measured'
+				: sourceKind === 'file_reference'
 				? content === null || deferFallback
 					? 'hash_only_deferred'
 					: 'measured'
 				: 'dynamic_unmeasured';
-		const renderedBytes = content === null || referencePath === null || deferFallback ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
 		const hasResolvedMatchingSkill = source === 'matching_skill' && selectedSkillPaths.length > 0;
-		const issue = !hasResolvedMatchingSkill && (content === null || deferFallback)
+		const hasResolvedDynamicSource = hasResolvedMatchingSkill || routeCandidateContent !== null;
+		const issue = !hasResolvedDynamicSource && (content === null || deferFallback)
 			? taskSourceIssue(referencePath ?? source, measurementStatus)
 			: null;
 
@@ -1598,7 +1679,7 @@ function readTaskSourceAuditLayer(
 			issues.add(issue);
 		}
 
-		if (!hasResolvedMatchingSkill && sourceKind === 'dynamic_selection') {
+		if (!hasResolvedDynamicSource && sourceKind === 'dynamic_selection') {
 			issues.add(taskSourceIssue(source, measurementStatus));
 		}
 

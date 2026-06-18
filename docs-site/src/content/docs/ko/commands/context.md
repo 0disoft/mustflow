@@ -39,7 +39,7 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 
 `task` 프로필은 맥락 색인, 전체 라우트 메타데이터, 저장소 지도, 선택된 스킬, 관련 소스 파일처럼 작업별로 고르는 출처를 보여줍니다. 또한 로컬 색인 상태도 함께 제공하므로, 호스트는 신선한 작업 메타데이터를 재사용하거나 색인이 없거나 오래되었거나 읽을 수 없을 때 `mf index` 재생성 안내를 표시할 수 있습니다. `volatile` 프로필은 안정 계층 뒤에 붙어야 하는 변동 상태를 보여주며, `all` 프로필은 세 계층을 모두 포함합니다.
 
-`--json`과 함께 `--task <text>`, 반복 가능한 `--path <path>`, 반복 가능한 `--reason <reason>`, 선택적인 `--max-candidates <count>`를 넘기면 특정 작업 기준으로 task 계층의 skill 맥락을 해석합니다. 이 라우팅 신호로 matching skill이 선택되면 `prompt_bundle`과 `cache_audit`는 `matching_skill` placeholder 뒤에 측정된 `SKILL.md` 파일 block을 추가합니다.
+`--json`과 함께 `--task <text>`, 반복 가능한 `--path <path>`, 반복 가능한 `--reason <reason>`, 선택적인 `--max-candidates <count>`를 넘기면 특정 작업 기준으로 task 계층의 skill 맥락을 해석합니다. 이 라우팅 신호가 있으면 `prompt_bundle`과 `cache_audit`는 compact `skill_route_candidates` block을 측정하고, `matching_skill` placeholder 뒤에 측정된 `SKILL.md` 파일 block을 추가합니다.
 
 `--cache-audit`를 추가하면 `cache_audit` 블록을 포함합니다. 이 감사는 mustflow reference
 bundle 형식으로 안정 파일을 측정해 UTF-8 렌더링 바이트, 거친 바이트 기반 토큰 추정, 설정된
@@ -102,6 +102,7 @@ npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseli
 - `volatile_suffix.sources` (`string[]`): 안정 계층 뒤에 붙여야 하는 변동 출처입니다.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
 - `prompt_bundle` (`object`): 선택한 프로필의 순서 있는 prompt block manifest입니다. 실제 prompt 본문은 넣지 않고 block 경계, 출처 경로, source placeholder, 선택 정책, cacheability, reload 조건, byte 추정치, hash를 보고합니다.
+- `prompt_bundle.layers[].blocks[]` 중 `skill_route_candidates` 출처 block (`object[]`): 라우팅 신호가 제공되면 route resolver의 compact 후보 요약이 측정된 task 계층 placeholder block으로 나옵니다.
 - `prompt_bundle.layers[].blocks[]` 중 `matching_skill` 출처 block (`object[]`): 라우팅 신호가 제공되면 선택된 `SKILL.md` 파일이 `matching_skill` placeholder 뒤의 측정된 task 계층 파일 block으로 나옵니다.
 - `prompt_bundle.request_shape_hash` (`string`): 계층 순서와 block 형태의 hash입니다. provider cache eligibility에 영향을 주는 stable ordering 또는 boundary drift를 찾을 때 씁니다.
 - `prompt_bundle.bundle_hash` (`string`): 순서 있는 block id, 측정된 content hash, rendered digest, block issue를 묶은 hash입니다. source text를 노출하지 않고 두 bundle manifest를 비교할 때 씁니다.
@@ -131,6 +132,7 @@ npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseli
 - `cache_audit.layers[].blocks[].selection_policy` (`string | undefined`): 항상 렌더링되는지, 작업에서 선택될 때만 읽는지, fallback 메타데이터인지, 런타임에 선택되는지, volatile 런타임 상태인지 나타냅니다.
 - `cache_audit.layers[].blocks[].measurement_status` (`string | undefined`): `measured`, `hash_only_deferred`, `dynamic_unmeasured` 중 하나입니다.
 - `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): 작업 출처가 선택형 파일 참조일 때의 파일 존재 여부와 내용 해시입니다. 측정된 task 후보도 실제 작업 묶음에서는 제외될 수 있습니다.
+- `cache_audit.layers[].blocks[]` 중 `skill_route_candidates` 출처 block (`object[]`): `--task`, `--path`, `--reason`으로 라우팅 신호가 제공되면 route 후보 요약을 측정합니다.
 - `cache_audit.layers[].blocks[]` 중 `matching_skill` 출처 block (`object[]`): `--task`, `--path`, `--reason`으로 라우팅 신호가 제공되면 선택된 skill 파일을 측정합니다.
 
 배열 안 객체의 세부 필드는 다음과 같습니다.
