@@ -1,5 +1,9 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { getAgentContext, getPromptCacheProfileContext, type PromptCacheProfile } from '../lib/agent-context.js';
+import {
+	getAgentContext,
+	getPromptCacheProfileContext,
+	type PromptCacheProfile,
+} from '../lib/agent-context.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	formatCliOptionParseError,
@@ -26,9 +30,17 @@ export function getContextHelp(lang: CliLang = 'en'): string {
 					label: '--cache-profile <profile>',
 					description: t(lang, 'context.help.option.cacheProfile'),
 				},
+				{
+					label: '--cache-audit',
+					description: t(lang, 'context.help.option.cacheAudit'),
+				},
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf context --json', 'mf context --json --cache-profile stable'],
+			examples: [
+				'mf context --json',
+				'mf context --json --cache-profile stable',
+				'mf context --json --cache-audit',
+			],
 			exitCodes: [
 				{
 					label: '0',
@@ -44,6 +56,7 @@ export function getContextHelp(lang: CliLang = 'en'): string {
 const CONTEXT_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--cache-profile', kind: 'string' },
+	{ name: '--cache-audit', kind: 'boolean' },
 ] as const satisfies readonly CliOptionSpec[];
 const CACHE_PROFILES = new Set<PromptCacheProfile>(['stable', 'task', 'volatile', 'all']);
 
@@ -77,16 +90,44 @@ export async function runContext(args: string[], reporter: Reporter, lang: CliLa
 		return 1;
 	}
 
-	if (cacheProfile.profile && !hasParsedCliOption(parsed, '--json')) {
-		printUsageError(reporter, t(lang, 'cli.error.unexpectedArgument', { argument: '--cache-profile' }), 'mf context --help', getContextHelp(lang), lang);
+	const jsonRequested = hasParsedCliOption(parsed, '--json');
+	const cacheAudit = hasParsedCliOption(parsed, '--cache-audit');
+
+	if (cacheProfile.profile && !jsonRequested) {
+		printUsageError(
+			reporter,
+			t(lang, 'cli.error.unexpectedArgument', { argument: '--cache-profile' }),
+			'mf context --help',
+			getContextHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
+	if (cacheAudit && !jsonRequested) {
+		printUsageError(
+			reporter,
+			t(lang, 'cli.error.unexpectedArgument', { argument: '--cache-audit' }),
+			'mf context --help',
+			getContextHelp(lang),
+			lang,
+		);
 		return 1;
 	}
 
 	const mustflowRoot = resolveMustflowRoot();
 
-	if (hasParsedCliOption(parsed, '--json')) {
-		if (cacheProfile.profile) {
-			reporter.stdout(JSON.stringify(await getPromptCacheProfileContext(mustflowRoot, cacheProfile.profile), null, 2));
+	if (jsonRequested) {
+		if (cacheProfile.profile || cacheAudit) {
+			reporter.stdout(
+				JSON.stringify(
+					await getPromptCacheProfileContext(mustflowRoot, cacheProfile.profile ?? 'all', {
+						includeAudit: cacheAudit,
+					}),
+					null,
+					2,
+				),
+			);
 			return 0;
 		}
 

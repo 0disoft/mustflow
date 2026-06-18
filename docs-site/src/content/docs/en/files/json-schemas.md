@@ -25,7 +25,7 @@ building automation around `--json` output.
 ## Current Schemas
 
 - `doctor-report.schema.json`: `mf doctor --json`
-- `context-report.schema.json`: `mf context --json`
+- `context-report.schema.json`: `mf context --json`, including prompt-cache profiles and optional cache audit data
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `onboard-commands-report.schema.json`: `mf onboard commands --json`
 - `next-report.schema.json`: `mf next --json`

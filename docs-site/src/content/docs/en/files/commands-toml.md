@@ -271,6 +271,23 @@ stdin = "closed"
 writes = []
 ```
 
+`prompt_cache_audit` runs the read-only prompt-cache profile audit exposed by `mf context`. It reports
+reference-bundle byte sizes, rough token estimates, configured budget status, and unresolved task or
+volatile placeholders without writing files or proving provider cache hits.
+
+```toml
+[intents.prompt_cache_audit]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["mf", "context", "--json", "--cache-profile", "all", "--cache-audit"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+writes = []
+```
+
 `repo_map` generates or updates `REPO_MAP.md`.
 
 ```toml

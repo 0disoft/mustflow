@@ -166,6 +166,8 @@ export const hiMessages = {
   "context.help.option.json": "मशीन-पठनीय संदर्भ JSON प्रिंट करें",
   "context.help.option.cacheProfile":
     "prompt cache profile प्रिंट करें: stable, task, volatile, या all",
+  "context.help.option.cacheAudit":
+    "prompt cache rendered bytes, token estimate, और budget audit data शामिल करें",
   "context.help.exit.ok": "संदर्भ जाँचा और प्रिंट किया गया",
   "context.title": "mustflow संदर्भ",
   "api.help.summary": "वर्तमान mustflow रूट के लिए स्थिर machine-readable API रिपोर्ट प्रिंट करें।",

@@ -165,6 +165,8 @@ export const koMessages = {
   "context.help.option.json": "맥락을 JSON 형식으로 출력합니다",
   "context.help.option.cacheProfile":
     "프롬프트 캐시 프로필을 출력합니다: stable, task, volatile, all",
+  "context.help.option.cacheAudit":
+    "프롬프트 캐시의 렌더링 바이트, 토큰 추정, 예산 감사 데이터를 포함합니다",
   "context.help.exit.ok": "맥락을 확인하고 출력했습니다",
   "context.title": "mustflow 맥락",
   "api.help.summary": "현재 mustflow 루트의 안정적 JSON API 보고서를 출력합니다.",

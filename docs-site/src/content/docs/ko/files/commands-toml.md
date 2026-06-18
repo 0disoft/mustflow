@@ -264,6 +264,23 @@ stdin = "closed"
 writes = []
 ```
 
+`prompt_cache_audit`는 `mf context`가 제공하는 읽기 전용 프롬프트 캐시 프로필 감사를 실행합니다.
+reference bundle 기준 바이트 크기, 거친 토큰 추정, 설정된 예산 상태, 아직 실제 본문이 풀리지
+않은 task/volatile placeholder를 보고하며 파일을 쓰거나 provider 캐시 적중을 증명하지 않습니다.
+
+```toml
+[intents.prompt_cache_audit]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["mf", "context", "--json", "--cache-profile", "all", "--cache-audit"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+writes = []
+```
+
 `repo_map`은 `REPO_MAP.md`를 생성하거나 갱신하는 의도입니다.
 
 ```toml

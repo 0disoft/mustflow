@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
@@ -63,6 +64,11 @@ const BLOCKED_ACTIONS = [
 type JsonScalar = string | number | boolean | null;
 type JsonObject = Record<string, JsonScalar | JsonScalar[]>;
 export type PromptCacheProfile = 'stable' | 'task' | 'volatile' | 'all';
+export type PromptCacheBudgetStatus = 'within_budget' | 'over_budget' | 'unknown';
+
+export interface PromptCacheProfileOptions {
+	readonly includeAudit?: boolean;
+}
 
 export interface PathContext {
 	readonly path: string;
@@ -220,6 +226,46 @@ export interface PromptCacheProfileContext {
 	readonly stable_prefix?: StablePromptCacheLayerContext;
 	readonly task_context?: TaskPromptCacheLayerContext;
 	readonly volatile_suffix?: VolatilePromptCacheLayerContext;
+	readonly cache_audit?: PromptCacheAuditContext;
+	readonly issues: readonly string[];
+}
+
+export interface PromptCacheAuditEstimatorContext {
+	readonly name: 'reference_bundle_utf8_lf_v1';
+	readonly estimated_bytes_per_token: number;
+	readonly caveat: string;
+}
+
+export interface PromptCacheAuditBlockContext {
+	readonly id: string;
+	readonly kind: 'file' | 'source_placeholder';
+	readonly path: string | null;
+	readonly source: string | null;
+	readonly exists: boolean | null;
+	readonly content_hash: string | null;
+	readonly rendered_bytes: number | null;
+	readonly estimated_tokens: number | null;
+	readonly budget_share: number | null;
+	readonly issue: string | null;
+}
+
+export interface PromptCacheAuditLayerContext {
+	readonly cache_layer: 'stable' | 'task' | 'volatile';
+	readonly budget_kb: number | null;
+	readonly budget_bytes: number | null;
+	readonly rendered_bytes: number | null;
+	readonly estimated_tokens: number | null;
+	readonly budget_status: PromptCacheBudgetStatus;
+	readonly blocks: readonly PromptCacheAuditBlockContext[];
+	readonly largest_blocks: readonly PromptCacheAuditBlockContext[];
+	readonly issues: readonly string[];
+}
+
+export interface PromptCacheAuditContext {
+	readonly measurement: 'reference_bundle';
+	readonly estimator: PromptCacheAuditEstimatorContext;
+	readonly canonicalization: readonly string[];
+	readonly layers: readonly PromptCacheAuditLayerContext[];
 	readonly issues: readonly string[];
 }
 
@@ -306,6 +352,43 @@ function readScalarObject(table: TomlTable | undefined): JsonObject {
 
 function sha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function bytesForUtf8(content: string): number {
+	return Buffer.byteLength(content, 'utf8');
+}
+
+function estimateTokens(renderedBytes: number): number {
+	return Math.ceil(renderedBytes / 4);
+}
+
+function budgetBytes(budgetKb: number | null): number | null {
+	return budgetKb === null ? null : Math.round(budgetKb * 1024);
+}
+
+function budgetStatus(renderedBytes: number | null, budget: number | null): PromptCacheBudgetStatus {
+	if (renderedBytes === null || budget === null) {
+		return 'unknown';
+	}
+
+	return renderedBytes <= budget ? 'within_budget' : 'over_budget';
+}
+
+function normalizeReferenceBundleContent(content: string): string {
+	const normalized = content.replace(/\r\n?/gu, '\n').replace(/\n*$/u, '');
+	return `${normalized}\n`;
+}
+
+function renderReferenceBundleBlock(relativePath: string, content: string): string {
+	return `--- mustflow-cache-block: ${toPosixPath(relativePath)} ---\n${normalizeReferenceBundleContent(content)}`;
+}
+
+function calculateBudgetShare(renderedBytes: number | null, budget: number | null): number | null {
+	if (renderedBytes === null || budget === null || budget <= 0) {
+		return null;
+	}
+
+	return Number((renderedBytes / budget).toFixed(6));
 }
 
 function readCommandContractContext(projectRoot: string): CommandContractContext {
@@ -536,14 +619,182 @@ function readVolatilePromptCacheLayer(mustflow: TomlTable | undefined): Volatile
 	};
 }
 
-export async function getPromptCacheProfileContext(projectRoot: string, profile: PromptCacheProfile): Promise<PromptCacheProfileContext> {
+function readStablePromptCacheAuditLayer(
+	projectRoot: string,
+	mustflow: TomlTable | undefined,
+	settings: PromptCacheSettingsContext,
+): PromptCacheAuditLayerContext {
+	const layer = readPromptCacheLayer(mustflow, 'stable');
+	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+	const budget = budgetBytes(settings.max_stable_prefix_kb);
+	const issues: string[] = [];
+	const blocks = read.map((relativePath, index) => {
+		const content = safeRead(projectRoot, relativePath);
+		const id = `stable:${index + 1}:${toPosixPath(relativePath)}`;
+
+		if (content === null) {
+			const issue = `stable prefix document is missing: ${toPosixPath(relativePath)}`;
+			issues.push(issue);
+
+			return {
+				id,
+				kind: 'file',
+				path: toPosixPath(relativePath),
+				source: null,
+				exists: false,
+				content_hash: null,
+				rendered_bytes: 0,
+				estimated_tokens: 0,
+				budget_share: calculateBudgetShare(0, budget),
+				issue,
+			} satisfies PromptCacheAuditBlockContext;
+		}
+
+		const renderedBytes = bytesForUtf8(renderReferenceBundleBlock(relativePath, content));
+
+		return {
+			id,
+			kind: 'file',
+			path: toPosixPath(relativePath),
+			source: null,
+			exists: true,
+			content_hash: sha256(content),
+			rendered_bytes: renderedBytes,
+			estimated_tokens: estimateTokens(renderedBytes),
+			budget_share: calculateBudgetShare(renderedBytes, budget),
+			issue: null,
+		} satisfies PromptCacheAuditBlockContext;
+	});
+	const renderedBytes = blocks.reduce((total, block) => total + (block.rendered_bytes ?? 0), 0);
+	const estimatedTokens = estimateTokens(renderedBytes);
+	const status = budgetStatus(renderedBytes, budget);
+
+	if (status === 'over_budget') {
+		issues.push(
+			`stable prefix exceeds max_stable_prefix_kb: ${renderedBytes} rendered bytes > ${budget} budget bytes`,
+		);
+	}
+
+	return {
+		cache_layer: 'stable',
+		budget_kb: settings.max_stable_prefix_kb,
+		budget_bytes: budget,
+		rendered_bytes: renderedBytes,
+		estimated_tokens: estimatedTokens,
+		budget_status: status,
+		blocks,
+		largest_blocks: [...blocks]
+			.sort((left, right) => (right.rendered_bytes ?? 0) - (left.rendered_bytes ?? 0))
+			.slice(0, 5),
+		issues,
+	};
+}
+
+function readSourcePlaceholderAuditLayer(
+	cacheLayer: 'task' | 'volatile',
+	sources: readonly string[],
+	budgetKb: number | null,
+): PromptCacheAuditLayerContext {
+	const issue =
+		cacheLayer === 'task'
+			? 'task context sources are unresolved; run a future prompt-bundle resolver to measure selected content'
+			: 'volatile suffix sources are unresolved; current task, changed files, and command tails are not rendered here';
+	const blocks = sources.map((source, index) => ({
+		id: `${cacheLayer}:${index + 1}:${source}`,
+		kind: 'source_placeholder',
+		path: null,
+		source,
+		exists: null,
+		content_hash: null,
+		rendered_bytes: null,
+		estimated_tokens: null,
+		budget_share: null,
+		issue,
+	})) satisfies PromptCacheAuditBlockContext[];
+
+	return {
+		cache_layer: cacheLayer,
+		budget_kb: budgetKb,
+		budget_bytes: budgetBytes(budgetKb),
+		rendered_bytes: null,
+		estimated_tokens: null,
+		budget_status: 'unknown',
+		blocks,
+		largest_blocks: [],
+		issues: [issue],
+	};
+}
+
+function readPromptCacheAudit(
+	projectRoot: string,
+	mustflow: TomlTable | undefined,
+	profile: PromptCacheProfile,
+	settings: PromptCacheSettingsContext,
+): PromptCacheAuditContext {
+	const layers: PromptCacheAuditLayerContext[] = [];
+
+	if (profile === 'stable' || profile === 'all') {
+		layers.push(readStablePromptCacheAuditLayer(projectRoot, mustflow, settings));
+	}
+
+	if (profile === 'task' || profile === 'all') {
+		const taskLayer = readPromptCacheLayer(mustflow, 'task');
+		layers.push(
+			readSourcePlaceholderAuditLayer(
+				'task',
+				readOptionalStringArray(taskLayer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
+				settings.max_task_context_kb,
+			),
+		);
+	}
+
+	if (profile === 'volatile' || profile === 'all') {
+		const volatileLayer = readPromptCacheLayer(mustflow, 'volatile');
+		layers.push(
+			readSourcePlaceholderAuditLayer(
+				'volatile',
+				readOptionalStringArray(volatileLayer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES],
+				settings.max_volatile_suffix_kb,
+			),
+		);
+	}
+
+	return {
+		measurement: 'reference_bundle',
+		estimator: {
+			name: 'reference_bundle_utf8_lf_v1',
+			estimated_bytes_per_token: 4,
+			caveat: 'Token counts are rough byte-based estimates, not provider billing or tokenizer output.',
+		},
+		canonicalization: [
+			'UTF-8 byte length',
+			'LF line endings',
+			'trim trailing blank lines',
+			'stable document path header before each block',
+		],
+		layers,
+		issues: layers.flatMap((layer) => layer.issues),
+	};
+}
+
+export async function getPromptCacheProfileContext(
+	projectRoot: string,
+	profile: PromptCacheProfile,
+	options: PromptCacheProfileOptions = {},
+): Promise<PromptCacheProfileContext> {
 	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
 	const lockInspection = inspectManifestLock(projectRoot);
+	const promptCacheSettings = readPromptCacheSettings(mustflow);
 	const output: PromptCacheProfileContext = {
 		schema_version: CONTEXT_SCHEMA_VERSION,
 		command: 'context',
 		cache_profile: profile,
-		prompt_cache: readPromptCacheSettings(mustflow),
+		prompt_cache: promptCacheSettings,
+		...(options.includeAudit
+			? {
+					cache_audit: readPromptCacheAudit(projectRoot, mustflow, profile, promptCacheSettings),
+			  }
+			: {}),
 		issues: lockInspection.issues,
 	};
 

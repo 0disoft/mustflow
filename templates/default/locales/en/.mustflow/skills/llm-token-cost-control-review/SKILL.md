@@ -2,7 +2,7 @@
 mustflow_doc: skill.llm-token-cost-control-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: llm-token-cost-control-review
@@ -19,6 +19,7 @@ metadata:
     - build
     - test_related
     - test
+    - prompt_cache_audit
     - docs_validate_fast
     - test_release
     - mustflow_check
@@ -102,7 +103,8 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
 15. Treat predicted outputs as a latency tool unless current provider docs and usage evidence show cost behavior for the exact model and endpoint. Use `llm-response-latency-review` when the main goal is faster completion rather than cost control. Watch rejected prediction tokens or equivalent fields when exposed.
 16. Reduce image and file input before the model. Crop screenshots, downsample where acceptable, extract DOM text or OCR first, and count the actual payload tokens when the provider supports it.
 17. Instrument cost per success. Track endpoint, model, prompt version, tool version, schema version, input tokens, cached tokens, output tokens, reasoning tokens, retry count, validation failure rate, cache hit rate, and successful-task denominator.
-18. Verify with the narrowest configured tests, fixtures, docs validation, release checks, and mustflow validation that cover request assembly, cache keys, budget guards, routing, retry repair, telemetry, and installed skill surfaces.
+18. When prompt-cache layout changes, run the configured prompt-cache audit intent if available and treat byte or token estimates as static layout evidence rather than provider billing proof.
+19. Verify with the narrowest configured tests, fixtures, docs validation, release checks, and mustflow validation that cover request assembly, cache keys, budget guards, routing, retry repair, telemetry, and installed skill surfaces.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -124,6 +126,7 @@ Use configured oneshot command intents when available:
 - `build`
 - `test_related`
 - `test`
+- `prompt_cache_audit`
 - `docs_validate_fast`
 - `test_release`
 - `mustflow_check`

@@ -37,6 +37,13 @@ function appendIntent(projectPath, text) {
 	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
 }
 
+function replaceInMustflowToml(projectPath, pattern, replacement) {
+	const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+	const config = readFileSync(configPath, 'utf8');
+	writeFileSync(configPath, config.replace(pattern, replacement));
+	refreshManifestLockHash(projectPath, '.mustflow/config/mustflow.toml');
+}
+
 function refreshManifestLockHash(projectPath, relativePath) {
 	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
 	const filePath = path.join(projectPath, ...relativePath.split('/'));
@@ -214,6 +221,58 @@ test('prints all prompt-cache layers when requested', () => {
 	}
 });
 
+test('prints prompt-cache audit sizes and budget status when requested', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		replaceInMustflowToml(projectPath, /max_stable_prefix_kb = 96/u, 'max_stable_prefix_kb = 1');
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'stable', '--cache-audit']);
+		const context = JSON.parse(result.stdout);
+		const stableAudit = context.cache_audit.layers.find((layer) => layer.cache_layer === 'stable');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.cache_profile, 'stable');
+		assert.equal(context.cache_audit.measurement, 'reference_bundle');
+		assert.equal(context.cache_audit.estimator.estimated_bytes_per_token, 4);
+		assert.ok(stableAudit.rendered_bytes > 0);
+		assert.ok(stableAudit.estimated_tokens > 0);
+		assert.equal(stableAudit.budget_kb, 1);
+		assert.equal(stableAudit.budget_bytes, 1024);
+		assert.equal(stableAudit.budget_status, 'over_budget');
+		assert.ok(stableAudit.issues.some((issue) => issue.includes('stable prefix exceeds max_stable_prefix_kb')));
+		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'));
+		assert.ok(stableAudit.largest_blocks.length > 0);
+		assert.ok(stableAudit.largest_blocks[0].rendered_bytes >= stableAudit.largest_blocks.at(-1).rendered_bytes);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints all prompt-cache audit layers without requiring an explicit profile', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-audit']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.cache_profile, 'all');
+		assert.deepEqual(
+			context.cache_audit.layers.map((layer) => layer.cache_layer),
+			['stable', 'task', 'volatile'],
+		);
+		assert.equal(context.cache_audit.layers[1].budget_status, 'unknown');
+		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'source_placeholder');
+		assert.match(context.cache_audit.layers[1].blocks[0].issue, /unresolved/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('context cache-profile options use the shared CLI option rules', () => {
 	const projectPath = createTempProject();
 
@@ -223,6 +282,7 @@ test('context cache-profile options use the shared CLI option rules', () => {
 		const inlineProfile = runCli(projectPath, ['context', '--json', '--cache-profile=stable']);
 		const missingValue = runCli(projectPath, ['context', '--json', '--cache-profile']);
 		const withoutJson = runCli(projectPath, ['context', '--cache-profile', 'stable']);
+		const auditWithoutJson = runCli(projectPath, ['context', '--cache-audit']);
 		const unknownOption = runCli(projectPath, ['context', '--bad']);
 
 		assert.equal(inlineProfile.status, 0, inlineProfile.stderr || inlineProfile.stdout);
@@ -231,6 +291,8 @@ test('context cache-profile options use the shared CLI option rules', () => {
 		assert.match(missingValue.stderr, /Missing value for --cache-profile/u);
 		assert.equal(withoutJson.status, 1);
 		assert.match(withoutJson.stderr, /Unexpected argument: --cache-profile/u);
+		assert.equal(auditWithoutJson.status, 1);
+		assert.match(auditWithoutJson.stderr, /Unexpected argument: --cache-audit/u);
 		assert.equal(unknownOption.status, 1);
 		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
 	} finally {

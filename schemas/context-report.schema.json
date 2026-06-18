@@ -79,6 +79,7 @@
         "stable_prefix": { "$ref": "#/$defs/stablePrefixLayer" },
         "task_context": { "$ref": "#/$defs/taskContextLayer" },
         "volatile_suffix": { "$ref": "#/$defs/volatileSuffixLayer" },
+        "cache_audit": { "$ref": "#/$defs/promptCacheAudit" },
         "issues": {
           "type": "array",
           "items": { "type": "string" }
@@ -424,6 +425,100 @@
         "never_place_before_stable_prefix": { "type": "boolean" },
         "include_absolute_root": { "const": false },
         "include_latest_run": { "const": false }
+      }
+    },
+    "promptCacheAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["measurement", "estimator", "canonicalization", "layers", "issues"],
+      "properties": {
+        "measurement": { "const": "reference_bundle" },
+        "estimator": { "$ref": "#/$defs/promptCacheAuditEstimator" },
+        "canonicalization": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "layers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptCacheAuditLayer" }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promptCacheAuditEstimator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "estimated_bytes_per_token", "caveat"],
+      "properties": {
+        "name": { "const": "reference_bundle_utf8_lf_v1" },
+        "estimated_bytes_per_token": { "const": 4 },
+        "caveat": { "type": "string" }
+      }
+    },
+    "promptCacheAuditLayer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cache_layer",
+        "budget_kb",
+        "budget_bytes",
+        "rendered_bytes",
+        "estimated_tokens",
+        "budget_status",
+        "blocks",
+        "largest_blocks",
+        "issues"
+      ],
+      "properties": {
+        "cache_layer": { "enum": ["stable", "task", "volatile"] },
+        "budget_kb": { "type": ["integer", "null"] },
+        "budget_bytes": { "type": ["integer", "null"] },
+        "rendered_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "estimated_tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "budget_status": { "enum": ["within_budget", "over_budget", "unknown"] },
+        "blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptCacheAuditBlock" }
+        },
+        "largest_blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptCacheAuditBlock" }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promptCacheAuditBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "source",
+        "exists",
+        "content_hash",
+        "rendered_bytes",
+        "estimated_tokens",
+        "budget_share",
+        "issue"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["file", "source_placeholder"] },
+        "path": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "exists": { "type": ["boolean", "null"] },
+        "content_hash": { "type": ["string", "null"] },
+        "rendered_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "estimated_tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "budget_share": { "type": ["number", "null"], "minimum": 0 },
+        "issue": { "type": ["string", "null"] }
       }
     }
   }

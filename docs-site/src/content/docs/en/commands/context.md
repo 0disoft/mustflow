@@ -39,11 +39,19 @@ The stable profile reports stable instruction paths, existence flags, content ha
 
 The task profile reports task-selective sources such as the context index, repository map, matching skill, and relevant source files. It also reports the local-index status so a host can reuse fresh task metadata or show a targeted `mf index` refresh hint when the index is missing, stale, or unreadable. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
 
+Add `--cache-audit` to include a `cache_audit` block. The audit measures the stable files using
+mustflow's deterministic reference bundle format, reports UTF-8 rendered bytes, rough byte-based
+token estimates, configured budget status, and largest stable blocks. Task and volatile layers are
+reported as unresolved placeholders until a host or future resolver supplies the actual selected
+content. The token estimate is not provider billing data and does not prove that OpenAI, Anthropic,
+Gemini, or another provider reused a cache entry.
+
 ## Example
 
 ```sh
 npx mf context --json
 npx mf context --json --cache-profile stable
+npx mf context --json --cache-audit
 ```
 
 ## JSON Fields
@@ -78,6 +86,11 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `task_context.local_index` (`object`): Read-only local-index status for task context. `status` is `fresh`, `missing`, `stale`, or `unreadable`; stale or unavailable states include a `refresh_hint` for `mf index`.
 - `volatile_suffix.sources` (`string[]`): Volatile sources that belong after the stable prefix.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.
+- `cache_audit.measurement` (`string`): Measurement mode. Currently `reference_bundle`.
+- `cache_audit.estimator` (`object`): Rough byte-to-token estimator and caveat.
+- `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, budget settings, budget status, blocks, largest blocks, and issues.
+- `cache_audit.layers[].budget_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`.
+- `cache_audit.layers[].blocks[]` (`object[]`): File or source-placeholder blocks with path or source, content hash, rendered bytes, estimated tokens, budget share, and any issue.
 
 Repeated and nested fields use these shapes:
 

@@ -203,6 +203,14 @@ summarized context.
 stable prompt prefix. `mf check --strict` reports a problem when volatile sources appear in the stable
 read layer.
 
+`mf context --json --cache-audit` uses these budgets to report whether the mustflow reference bundle
+would fit the configured stable, task, and volatile limits. The stable layer is measured from the
+configured file contents after deterministic UTF-8/LF canonicalization. Task and volatile layers are
+reported as unresolved placeholders unless actual selected content is available to a resolver. The
+audit is a static prompt-layout check; provider tokenizer counts, billing tokens, TTL behavior, tool
+schema caching, and runtime cache hit evidence still require provider-specific adapters or usage
+telemetry.
+
 ## Workspace Fields
 
 ```toml

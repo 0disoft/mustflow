@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 168
+revision = 169
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -984,7 +984,7 @@ translations = {}
 [documents."skill.llm-token-cost-control-review"]
 source = "locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.llm-response-latency-review"]

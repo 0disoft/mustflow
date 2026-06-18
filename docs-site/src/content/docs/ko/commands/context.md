@@ -39,11 +39,19 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 
 `task` 프로필은 맥락 색인, 저장소 지도, 선택된 스킬, 관련 소스 파일처럼 작업별로 고르는 출처를 보여줍니다. 또한 로컬 색인 상태도 함께 제공하므로, 호스트는 신선한 작업 메타데이터를 재사용하거나 색인이 없거나 오래되었거나 읽을 수 없을 때 `mf index` 재생성 안내를 표시할 수 있습니다. `volatile` 프로필은 안정 계층 뒤에 붙어야 하는 변동 상태를 보여주며, `all` 프로필은 세 계층을 모두 포함합니다.
 
+`--cache-audit`를 추가하면 `cache_audit` 블록을 포함합니다. 이 감사는 mustflow reference
+bundle 형식으로 안정 파일을 측정해 UTF-8 렌더링 바이트, 거친 바이트 기반 토큰 추정, 설정된
+예산 상태, 가장 큰 안정 블록을 보고합니다. task와 volatile 계층은 호스트나 future resolver가
+실제 선택 본문을 제공하기 전까지 unresolved placeholder로 표시됩니다. 이 토큰 추정은 provider
+청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른 provider의 실제 캐시 적중을 증명하지
+않습니다.
+
 ## 예시
 
 ```sh
 npx mf context --json
 npx mf context --json --cache-profile stable
+npx mf context --json --cache-audit
 ```
 
 ## JSON 필드
@@ -78,6 +86,11 @@ npx mf context --json --cache-profile stable
 - `task_context.local_index` (`object`): 작업 맥락용 읽기 전용 로컬 색인 상태입니다. `status`는 `fresh`, `missing`, `stale`, `unreadable` 중 하나이며, 색인이 오래되었거나 사용할 수 없으면 `mf index`용 `refresh_hint`를 함께 제공합니다.
 - `volatile_suffix.sources` (`string[]`): 안정 계층 뒤에 붙여야 하는 변동 출처입니다.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
+- `cache_audit.measurement` (`string`): 측정 방식입니다. 현재는 `reference_bundle`입니다.
+- `cache_audit.estimator` (`object`): 거친 byte-to-token 추정기와 주의 문구입니다.
+- `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, 예산 설정, 예산 상태, 블록, 가장 큰 블록, 이슈입니다.
+- `cache_audit.layers[].budget_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다.
+- `cache_audit.layers[].blocks[]` (`object[]`): 파일 또는 source placeholder 블록이며, 경로 또는 출처, 내용 해시, 렌더링 바이트, 추정 토큰, 예산 비율, 이슈를 포함합니다.
 
 배열 안 객체의 세부 필드는 다음과 같습니다.
 

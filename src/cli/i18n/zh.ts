@@ -166,6 +166,8 @@ export const zhMessages = {
   "context.help.option.json": "输出机器可读的上下文 JSON",
   "context.help.option.cacheProfile":
     "输出提示缓存配置文件：stable、task、volatile 或 all",
+  "context.help.option.cacheAudit":
+    "包含提示缓存渲染字节、token 估算和预算审计数据",
   "context.help.exit.ok": "已检查并输出上下文",
   "context.title": "mustflow 上下文",
   "api.help.summary": "为当前 mustflow 根目录输出稳定的机器可读 API 报告。",

@@ -164,6 +164,8 @@ export const enMessages = {
   "context.help.option.json": "Print machine-readable context JSON",
   "context.help.option.cacheProfile":
     "Print a prompt-cache profile: stable, task, volatile, or all",
+  "context.help.option.cacheAudit":
+    "Include prompt-cache rendered byte, token estimate, and budget audit data",
   "context.help.exit.ok": "Context was inspected and printed",
   "context.title": "mustflow context",
   "api.help.summary": "Print stable machine-readable API reports for the current mustflow root.",

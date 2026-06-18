@@ -275,6 +275,22 @@ network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "unknown_change"]
 
+[intents.prompt_cache_audit]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Measure prompt-cache profile sizes and configured budget status read-only."
+argv = ["node", "dist/cli/index.js", "context", "--json", "--cache-profile", "all", "--cache-audit"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change", "public_api_change", "performance_change", "unknown_change"]
+
 [intents.local_index]
 status = "configured"
 kind = "mustflow_builtin"

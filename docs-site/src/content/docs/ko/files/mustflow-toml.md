@@ -194,6 +194,13 @@ never_place_before_stable_prefix = true
 
 `exclude_volatile_state_from_prefix = true`와 `prompt_cache.layers.volatile.never_place_before_stable_prefix = true`는 변동 상태가 안정 프롬프트 앞부분에 섞이지 않게 합니다. `mf check --strict`는 변동 소스가 안정 읽기 계층에 들어가면 문제로 보고합니다.
 
+`mf context --json --cache-audit`는 이 예산을 사용해 mustflow reference bundle이 설정된
+stable, task, volatile 한도에 맞는지 보고합니다. 안정 계층은 설정된 파일 본문을 UTF-8/LF로
+결정적으로 정규화한 뒤 측정합니다. task와 volatile 계층은 실제 선택 본문이 resolver에 제공되기
+전까지 unresolved placeholder로 표시됩니다. 이 감사는 정적 프롬프트 배치 검사이며, provider
+tokenizer count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit 증거는 별도 provider
+adapter나 usage telemetry가 필요합니다.
+
 ## 작업대 필드
 
 ```toml

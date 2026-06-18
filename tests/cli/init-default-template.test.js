@@ -182,6 +182,8 @@ test('copies the default agent workflow into an empty project', () => {
 		const commands = readFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), 'utf8');
 		assert.match(commands, /\[intents\.mustflow_doctor\]/);
 		assert.match(commands, /argv = \["mf", "doctor", "--json"\]/);
+		assert.match(commands, /\[intents\.prompt_cache_audit\]/);
+		assert.match(commands, /argv = \["mf", "context", "--json", "--cache-profile", "all", "--cache-audit"\]/);
 		assert.match(commands, /\[intents\.mustflow_update_dry_run\]/);
 		assert.match(commands, /argv = \["mf", "update", "--dry-run", "--json"\]/);
 		assert.match(commands, /\[intents\.mustflow_update_apply\]/);

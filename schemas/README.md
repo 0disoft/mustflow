@@ -7,7 +7,7 @@ Current schemas:
 
 - `doctor-report.schema.json`: output of `mf doctor --json`
 - `adapter-compatibility-report.schema.json`: output of `mf adapters status --json`
-- `context-report.schema.json`: output of `mf context --json`
+- `context-report.schema.json`: output of `mf context --json`, including prompt-cache profiles and optional cache audit data
 - `workspace-summary.schema.json`: output of `mf api workspace-summary --json`
 - `command-catalog.schema.json`: output of `mf api command-catalog --json`
 - `verification-plan.schema.json`: output of `mf api verification-plan --changed --json`

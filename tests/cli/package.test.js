@@ -38,7 +38,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.59.0');
+	assert.equal(packageJson.version, '2.60.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -112,6 +112,15 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /network = true/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
 	assert.match(sourceCommandContract, /MUSTFLOW_NPM_REGISTRY_URL/u);
+});
+
+test('source repository declares bounded prompt-cache audit checks', () => {
+	assert.match(sourceCommandContract, /\[intents\.prompt_cache_audit\]/u);
+	assert.match(sourceCommandContract, /"context", "--json", "--cache-profile", "all", "--cache-audit"/u);
+	assert.match(sourceCommandContract, /Measure prompt-cache profile sizes and configured budget status read-only/u);
+	assert.match(sourceCommandContract, /writes = \[\]/u);
+	assert.match(sourceCommandContract, /network = false/u);
+	assert.match(sourceCommandContract, /destructive = false/u);
 });
 
 test('npm registry release check fully encodes package lookup paths', () => {

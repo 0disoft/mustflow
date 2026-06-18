@@ -166,6 +166,8 @@ export const frMessages = {
   "context.help.option.json": "Imprime le JSON de contexte lisible par machine",
   "context.help.option.cacheProfile":
     "Imprime un profil de cache de prompt : stable, task, volatile ou all",
+  "context.help.option.cacheAudit":
+    "Inclut les octets rendus, l'estimation de tokens et l'audit de budget du cache de prompt",
   "context.help.exit.ok": "Le contexte a été inspecté et imprimé",
   "context.title": "contexte mustflow",
   "api.help.summary": "Imprime des rapports API stables lisibles par machine pour la racine mustflow actuelle.",
