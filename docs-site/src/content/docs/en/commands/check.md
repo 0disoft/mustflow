@@ -44,6 +44,7 @@ npx mf check --strict
 - Command intents listed in `.mustflow/skills/INDEX.md` must be declared by the referenced skill frontmatter.
 - Skill bodies must not claim permission to run commands directly; command permissions stay in `.mustflow/config/commands.toml`.
 - Optional candidate path-classification files at `.mustflow/config/changes.toml` and `.mustflow/config/surfaces.toml`, when present, must stay narrow: `[[rules]]` entries may use only `exact`, `prefix`, or `glob` matches and may not define command authority. `.mustflow/config/policy.toml` remains deferred and fails strict validation if present.
+- Prompt-cache stable-prefix entries must exist, stay out of the volatile source set, and fit the configured `prompt_cache.max_stable_prefix_kb` hard budget after deterministic reference-bundle rendering.
 - When version-impact preferences are enabled, a declared version source or detectable package/template version source must exist.
 
 
@@ -54,7 +55,7 @@ Strict mode is optional to ensure the normal workflow remains lightweight. It is
 `mf check` treats structural violations as blocking errors. Blocking issues exit with code `1`; warnings are reported separately and do not fail the command.
 
 - Base errors come from required files, parse failures, unsafe configuration values, command-contract violations, missing skill section identifiers, invalid context document identity, and manifest-lock drift.
-- Strict errors come from additional document identity, routing, skill metadata, source-anchor, command-boundary, repository-map, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
+- Strict errors come from additional document identity, routing, skill metadata, prompt-cache budget, source-anchor, command-boundary, repository-map, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
 - Non-blocking observations may appear as `warnings` in JSON output or as warning lines in human-readable output. Use `mf doctor` diagnostics when automation needs broader informational health signals.
 
 ## Configuration Rules

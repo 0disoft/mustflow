@@ -51,6 +51,7 @@ import {
 	normalizeTechnologyPreferencesTable,
 	TECHNOLOGY_CONFIG_RELATIVE_PATH,
 } from '../../../core/technology-preferences.js';
+import { measurePromptCacheReferenceBlockBytes } from '../../../core/prompt-cache-rendering.js';
 import {
 	ALLOWED_APPROVAL_ACTIONS,
 	ALLOWED_APPROVAL_GATES,
@@ -990,7 +991,48 @@ function validateManifestLock(projectRoot: string, issues: CheckIssue[]): void {
 	}
 }
 
-function validateStrictPromptCachePolicy(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+function validateStrictStablePromptCacheBudget(
+	projectRoot: string,
+	promptCache: TomlTable,
+	stableRead: readonly unknown[],
+	issues: CheckIssue[],
+): void {
+	if (!isPositiveInteger(promptCache.max_stable_prefix_kb)) {
+		return;
+	}
+
+	const budgetBytes = Number(promptCache.max_stable_prefix_kb) * 1024;
+	let renderedBytes = 0;
+
+	for (const entry of stableRead) {
+		if (typeof entry !== 'string' || !isSafeRelativePath(entry)) {
+			continue;
+		}
+
+		const normalizedPath = toPosixPath(entry);
+		const absolutePath = path.join(projectRoot, entry);
+		if (!existsSync(absolutePath)) {
+			pushStrictIssue(issues, `stable prefix document is missing: ${normalizedPath}`);
+			continue;
+		}
+
+		const content = readStrictMustflowText(projectRoot, entry, issues);
+		if (content === undefined) {
+			continue;
+		}
+
+		renderedBytes += measurePromptCacheReferenceBlockBytes(entry, content);
+	}
+
+	if (renderedBytes > budgetBytes) {
+		pushStrictIssue(
+			issues,
+			`stable prefix exceeds [prompt_cache].max_stable_prefix_kb: ${renderedBytes} rendered bytes > ${budgetBytes} budget bytes`,
+		);
+	}
+}
+
+function validateStrictPromptCachePolicy(projectRoot: string, mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!mustflowToml || !isRecord(mustflowToml.prompt_cache)) {
 		pushStrictIssue(issues, '[prompt_cache] table is required');
 		return;
@@ -1017,6 +1059,8 @@ function validateStrictPromptCachePolicy(mustflowToml: TomlTable | undefined, is
 			pushStrictIssue(issues, `[prompt_cache.layers.stable].read must not include volatile path "${entry}"`);
 		}
 	}
+
+	validateStrictStablePromptCacheBudget(projectRoot, promptCache, stable.read, issues);
 
 	if (promptCache.exclude_volatile_state_from_prefix !== true) {
 		pushStrictIssue(issues, '[prompt_cache].exclude_volatile_state_from_prefix should be true');
@@ -2427,7 +2471,7 @@ function validateStrictStorage(projectRoot: string, limits: RetentionLimits, iss
 
 function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[]): void {
 	const retentionLimits = validateStrictRetentionPolicy(parsed.mustflowToml, issues);
-	validateStrictPromptCachePolicy(parsed.mustflowToml, issues);
+	validateStrictPromptCachePolicy(projectRoot, parsed.mustflowToml, issues);
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);

@@ -21,6 +21,8 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.project_local_bin_bare_executable'
 	| 'mustflow.prompt_cache.required'
 	| 'mustflow.prompt_cache.volatile_in_stable'
+	| 'mustflow.prompt_cache.stable_file_missing'
+	| 'mustflow.prompt_cache.stable_prefix_over_budget'
 	| 'mustflow.refresh.hash_method_required'
 	| 'mustflow.release.template_version_mismatch'
 	| 'mustflow.release.template_version_ahead'
@@ -115,6 +117,8 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.project_local_bin_bare_executable', /^Strict warning: configured agent-runnable intent [^\s]+ uses bare executable "[^"]+" that matches project-local node_modules\/\.bin/u],
 	['mustflow.prompt_cache.required', /^Strict: \[prompt_cache\] table is required$/u],
 	['mustflow.prompt_cache.volatile_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include volatile path /u],
+	['mustflow.prompt_cache.stable_file_missing', /^Strict: stable prefix document is missing: /u],
+	['mustflow.prompt_cache.stable_prefix_over_budget', /^Strict: stable prefix exceeds \[prompt_cache\]\.max_stable_prefix_kb: \d+ rendered bytes > \d+ budget bytes$/u],
 	['mustflow.refresh.hash_method_required', /^Strict: \[refresh\]\.default_method should be "hash_check" for cache-friendly refresh$/u],
 	['mustflow.release.template_version_mismatch', /^Strict: templates\/default\/manifest\.toml version "[^"]+" must match package\.json version "[^"]+" when \[release\.versioning\]\.sync_template_version is true$/u],
 	['mustflow.release.template_version_ahead', /^Strict: templates\/default\/manifest\.toml version "[^"]+" must not be ahead of package\.json version "[^"]+"$/u],

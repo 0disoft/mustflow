@@ -225,7 +225,9 @@ adapters or usage telemetry.
 
 `prompt_cache.layers.stable.target_kb` is a preferred size target for the stable layer. The cache
 audit reports it as `target_status`, so oversized-but-still-valid stable prefixes remain visible
-while `max_stable_prefix_kb` stays the hard budget.
+while `max_stable_prefix_kb` stays the hard budget. `mf check --strict` fails when the rendered
+stable reference bundle exceeds that hard budget, so the limit can be used as a CI ratchet instead
+of only a reporting hint.
 
 ## Workspace Fields
 

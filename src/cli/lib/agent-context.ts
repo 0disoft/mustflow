@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer';
 import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
@@ -27,6 +26,10 @@ import {
 	TECHNOLOGY_CONFIG_RELATIVE_PATH,
 	type TechnologyPreference,
 } from '../../core/technology-preferences.js';
+import {
+	measurePromptCacheReferenceBlockBytes,
+	renderPromptCacheReferenceBlock,
+} from '../../core/prompt-cache-rendering.js';
 
 const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
@@ -444,10 +447,6 @@ function sha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
 
-function bytesForUtf8(content: string): number {
-	return Buffer.byteLength(content, 'utf8');
-}
-
 function estimateTokens(renderedBytes: number): number {
 	return Math.ceil(renderedBytes / 4);
 }
@@ -464,17 +463,8 @@ function budgetStatus(renderedBytes: number | null, budget: number | null): Prom
 	return renderedBytes <= budget ? 'within_budget' : 'over_budget';
 }
 
-function normalizeReferenceBundleContent(content: string): string {
-	const normalized = content.replace(/\r\n?/gu, '\n').replace(/\n*$/u, '');
-	return `${normalized}\n`;
-}
-
-function renderReferenceBundleBlock(relativePath: string, content: string): string {
-	return `--- mustflow-cache-block: ${toPosixPath(relativePath)} ---\n${normalizeReferenceBundleContent(content)}`;
-}
-
 function renderedDigest(relativePath: string, content: string): string {
-	return sha256(renderReferenceBundleBlock(relativePath, content));
+	return sha256(renderPromptCacheReferenceBlock(relativePath, content));
 }
 
 function calculateBudgetShare(renderedBytes: number | null, budget: number | null): number | null {
@@ -788,7 +778,7 @@ function readStablePromptBundleLayer(projectRoot: string, mustflow: TomlTable | 
 		blocks: read.map((relativePath, index) => {
 			const path = toPosixPath(relativePath);
 			const content = safeRead(projectRoot, relativePath);
-			const renderedBytes = content === null ? null : bytesForUtf8(renderReferenceBundleBlock(relativePath, content));
+			const renderedBytes = content === null ? null : measurePromptCacheReferenceBlockBytes(relativePath, content);
 			const issue = content === null ? `stable prefix document is missing: ${path}` : null;
 
 			return {
@@ -823,7 +813,7 @@ function readTaskPromptBundleLayer(projectRoot: string, mustflow: TomlTable | un
 			const selectionPolicy = taskSourceSelectionPolicy(source);
 			const sourceKind = taskSourceKind(source);
 			const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
-			const renderedBytes = content === null ? null : bytesForUtf8(renderReferenceBundleBlock(source, content));
+			const renderedBytes = content === null ? null : measurePromptCacheReferenceBlockBytes(source, content);
 			const issue = content === null ? taskSourceIssue(source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured') : null;
 
 			return {
@@ -1184,7 +1174,7 @@ function readStablePromptCacheAuditLayer(
 			} satisfies PromptCacheAuditBlockContext;
 		}
 
-		const renderedBytes = bytesForUtf8(renderReferenceBundleBlock(relativePath, content));
+		const renderedBytes = measurePromptCacheReferenceBlockBytes(relativePath, content);
 		const contentHash = sha256(content);
 
 		return {
@@ -1251,7 +1241,7 @@ function readTaskSourceAuditLayer(
 					? 'hash_only_deferred'
 					: 'measured'
 				: 'dynamic_unmeasured';
-		const renderedBytes = content === null ? null : bytesForUtf8(renderReferenceBundleBlock(source, content));
+		const renderedBytes = content === null ? null : measurePromptCacheReferenceBlockBytes(source, content);
 		const issue = content === null ? taskSourceIssue(source, measurementStatus) : null;
 
 		if (issue) {

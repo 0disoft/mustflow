@@ -277,6 +277,30 @@ test('strict check fails when prompt cache policy would put volatile state in th
 	}
 });
 
+test('strict check fails when rendered stable prompt cache prefix exceeds the hard budget', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readText(configPath).replace('max_stable_prefix_kb = 48', 'max_stable_prefix_kb = 1');
+		writeFileSync(configPath, config);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(check, 'mustflow.prompt_cache.stable_prefix_over_budget');
+		assert.ok(
+			check.issues.some((issue) =>
+				/^Strict: stable prefix exceeds \[prompt_cache\]\.max_stable_prefix_kb: \d+ rendered bytes > 1024 budget bytes$/u.test(issue),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails when long-running harness policy fields are invalid', () => {
 	const projectPath = createTempProject();
 

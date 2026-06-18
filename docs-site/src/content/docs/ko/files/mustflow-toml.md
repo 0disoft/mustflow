@@ -210,7 +210,7 @@ stable, task, volatile 한도에 맞는지 보고합니다. 안정 계층은 설
 남습니다. 이 감사는 정적 프롬프트 배치 검사이며, provider tokenizer count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit
 증거는 별도 provider adapter나 usage telemetry가 필요합니다.
 
-`prompt_cache.layers.stable.target_kb`는 안정 계층의 선호 크기 목표입니다. cache audit은 이를 `target_status`로 보고하므로 hard budget은 넘지 않았지만 아직 비싼 stable prefix를 계속 볼 수 있습니다. `max_stable_prefix_kb`는 hard budget으로 남습니다.
+`prompt_cache.layers.stable.target_kb`는 안정 계층의 선호 크기 목표입니다. cache audit은 이를 `target_status`로 보고하므로 hard budget은 넘지 않았지만 아직 비싼 stable prefix를 계속 볼 수 있습니다. `max_stable_prefix_kb`는 hard budget으로 남습니다. `mf check --strict`는 렌더링된 안정 reference bundle이 이 hard budget을 넘으면 실패하므로, 이 제한을 단순 리포트 힌트가 아니라 CI ratchet으로 사용할 수 있습니다.
 
 ## 작업대 필드
 
