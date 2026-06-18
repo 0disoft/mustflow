@@ -16,6 +16,8 @@ Use `--json` when automation or an agent needs to parse the results.
 - `[map]`, `[workspace]`, and `[context]` fields in `.mustflow/config/mustflow.toml` use valid types and safe relative paths.
 - `.mustflow/config/preferences.toml`, if present, uses valid basic types for language, formatting, code style, git, docs, and logging preferences.
 - `.mustflow/config/manifest.lock.toml`, if present, is validated against current file contents.
+- `.mustflow/skills/router.toml` exists.
+- `.mustflow/skills/routes.toml` exists.
 - `.mustflow/skills/INDEX.md` exists.
 - `.mustflow/skills/*/SKILL.md` files contain the required stable section identifiers.
 - `.mustflow/context/*.md` files, if present, are correctly identified as mustflow context documents.

@@ -183,7 +183,8 @@ test('prints cache-profile context without volatile stable-prefix fields', () =>
 		assert.equal(context.stable_prefix.cache_layer, 'stable');
 		assert.match(context.stable_prefix.cache_key, /^sha256:[a-f0-9]{64}$/);
 		assert.ok(context.stable_prefix.documents.some((document) => document.path === 'AGENTS.md'));
-		assert.ok(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/routes.toml'));
+		assert.ok(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/router.toml'));
+		assert.equal(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/routes.toml'), false);
 		assert.equal(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/INDEX.md'), false);
 		assert.ok(context.stable_prefix.documents.every((document) => document.content_hash === null || /^sha256:[a-f0-9]{64}$/.test(document.content_hash)));
 		assert.ok(context.stable_prefix.volatile_excluded.includes('.mustflow/state/runs/latest.json'));
@@ -206,6 +207,7 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.stable_prefix.cache_layer, 'stable');
 		assert.equal(context.task_context.cache_layer, 'task');
 		assert.equal(context.task_context.read_policy, 'task_relevant_only');
+		assert.ok(context.task_context.sources.includes('.mustflow/skills/routes.toml'));
 		assert.ok(context.task_context.sources.includes('.mustflow/skills/INDEX.md'));
 		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
 		assert.equal(context.task_context.local_index.source, 'local_index');
@@ -229,7 +231,7 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 
 	try {
 		initProject(projectPath);
-		replaceInMustflowToml(projectPath, /max_stable_prefix_kb = 96/u, 'max_stable_prefix_kb = 1');
+		replaceInMustflowToml(projectPath, /max_stable_prefix_kb = 48/u, 'max_stable_prefix_kb = 1');
 
 		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'stable', '--cache-audit']);
 		const context = JSON.parse(result.stdout);
@@ -244,12 +246,13 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 		assert.equal(stableAudit.budget_kb, 1);
 		assert.equal(stableAudit.budget_bytes, 1024);
 		assert.equal(stableAudit.budget_status, 'over_budget');
-		assert.equal(stableAudit.target_kb, 48);
-		assert.equal(stableAudit.target_bytes, 49152);
+		assert.equal(stableAudit.target_kb, 32);
+		assert.equal(stableAudit.target_bytes, 32768);
 		assert.equal(stableAudit.target_status, 'within_budget');
 		assert.ok(stableAudit.rendered_bytes <= stableAudit.target_bytes);
 		assert.ok(stableAudit.issues.some((issue) => issue.includes('stable prefix exceeds max_stable_prefix_kb')));
-		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/routes.toml'));
+		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/router.toml'));
+		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/routes.toml'), false);
 		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'), false);
 		assert.ok(stableAudit.largest_blocks.length > 0);
 		assert.ok(stableAudit.largest_blocks[0].rendered_bytes >= stableAudit.largest_blocks.at(-1).rendered_bytes);

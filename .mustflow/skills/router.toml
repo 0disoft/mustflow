@@ -1,0 +1,67 @@
+schema_version = "1"
+purpose = "Stable skill-routing kernel for prompt-cache-friendly first-pass selection."
+full_routes = ".mustflow/skills/routes.toml"
+expanded_index = ".mustflow/skills/INDEX.md"
+skill_root = ".mustflow/skills"
+selection_limit = 5
+main_limit = 1
+adjunct_limit = 2
+fallback_policy = "read_full_routes_when_uncertain"
+
+[read_when]
+full_routes = [
+  "router taxonomy is insufficient",
+  "task edits skill routing",
+  "detailed route metadata is needed",
+  "category or confidence is ambiguous",
+]
+expanded_index = [
+  "full route metadata is insufficient",
+  "task edits the expanded route table",
+  "human-readable trigger evidence is needed",
+]
+
+[algorithm]
+steps = [
+  "Classify the task by file paths, user intent, discovered technology, and event signals.",
+  "Pick at most one primary route category and at most two adjunct categories.",
+  "Read full_routes only when this kernel cannot identify a narrow route set.",
+  "Read selected SKILL.md files before editing the matching scope.",
+  "Reroute when changed files, command failures, security, data, tests, docs, or release risk appears.",
+]
+
+[categories.bug_failure]
+label = "Bug and Failure"
+signals = ["command_failure", "failing_test", "repro", "regression", "crash", "error_log"]
+
+[categories.general_code]
+label = "General Code"
+signals = ["code_change", "behavior_change", "public_api_change", "runtime", "performance"]
+
+[categories.tests]
+label = "Tests"
+signals = ["test_change", "regression_guard", "fixture", "snapshot", "coverage"]
+
+[categories.docs_release]
+label = "Documentation and Release"
+signals = ["docs_change", "copy_change", "release_risk", "readme", "changelog"]
+
+[categories.security_privacy]
+label = "Security and Privacy"
+signals = ["security_change", "privacy_change", "auth", "secret", "permission", "exposure"]
+
+[categories.data_external]
+label = "Data and External I/O"
+signals = ["data_change", "migration_change", "database", "filesystem", "process", "dependency"]
+
+[categories.ui_assets]
+label = "UI and Assets"
+signals = ["ui_change", "web_asset_change", "image_asset_change", "layout", "accessibility"]
+
+[categories.architecture_patterns]
+label = "Architecture and Patterns"
+signals = ["cross_cutting_code_change", "refactor", "boundary", "pattern", "module_split"]
+
+[categories.workflow_contracts]
+label = "Workflow and Contracts"
+signals = ["mustflow_config_change", "mustflow_docs_change", "workflow_change", "package_metadata_change"]

@@ -48,7 +48,8 @@ description: 에이전트가 저장소에서 작업을 시작하고 마무리하
 - `.mustflow/config/preferences.toml`: 낮은 권위의 저장소 기본값이며 권한이 아닙니다.
 - `.mustflow/context/INDEX.md`: 선택형 작업 문맥을 고르는 라우터입니다.
 - `.mustflow/context/PROJECT.md`: 코드, 테스트, 명령 계약, 설정된 정책보다 낮은 프로젝트 사실과 모르는 점입니다.
-- `.mustflow/skills/routes.toml`: 작업별 절차 문서 후보를 고르는 압축 라우트 메타데이터입니다.
+- `.mustflow/skills/router.toml`: 첫 절차 선택을 위한 안정적인 압축 라우트 범주와 fallback 규칙입니다.
+- `.mustflow/skills/routes.toml`: 압축 router만으로 부족할 때 사용하는 전체 라우트 메타데이터입니다.
 - `.mustflow/skills/INDEX.md`: 상세 선택과 라우트 유지보수를 위한 확장 라우트 표입니다.
 - `.mustflow/skills/<name>/SKILL.md`: 경계가 정해진 반복 절차이며 명령 실행 권한을 줄 수 없습니다.
 - `REPO_MAP.md`: 설정된 `repo_map` 의도나 `mf map`으로 갱신하는 생성 앵커 지도입니다.
@@ -98,8 +99,10 @@ mustflow 문서 흐름, 스킬, 명령 계약, 저장소 지도 생성 규칙을
 따른다는 뜻입니다.
 
 작업 시작 시점과 첫 수정 전, 에이전트는 사용자 요청과 예상 변경 파일을
-`.mustflow/skills/routes.toml`의 메타데이터와 비교합니다. 압축 메타데이터만으로 부족하거나
-스킬 라우팅을 수정하거나 상세 트리거 표가 필요하면 `.mustflow/skills/INDEX.md`를 읽습니다.
+`.mustflow/skills/router.toml`의 범주 신호와 비교합니다. 압축 router만으로 부족하거나
+스킬 라우팅을 수정하거나 상세 라우트 메타데이터가 필요하거나 라우트 확신도가 애매하면
+`.mustflow/skills/routes.toml`을 읽습니다. 전체 라우트 메타데이터만으로도 부족하거나 확장
+라우트 표를 수정하거나 사람이 읽을 트리거 근거가 필요하면 `.mustflow/skills/INDEX.md`를 읽습니다.
 맞는 시나리오가 하나 이상이면 해당 범위를 수정하기 전에 각 `SKILL.md`를 읽습니다.
 명령 실패, 테스트 계약 변경, 문서 변경처럼 작업 중 새 근거가 생기면 잠시 멈추고 새로 맞는 스킬을 읽은 뒤 계속합니다.
 
@@ -133,7 +136,7 @@ mustflow 문서 흐름, 스킬, 명령 계약, 저장소 지도 생성 규칙을
 사용자 직접 지시, 현재 파일, 현재 명령 계약, 호스트 안전 규칙, 가장 가까운 `AGENTS.md`
 보다 낮은 권위를 가집니다.
 
-호스트가 모델 입력을 조립할 때는 안정적인 저장소 지침과 압축 라우트 메타데이터를 앞에 두고,
+호스트가 모델 입력을 조립할 때는 안정적인 저장소 지침과 압축 route kernel을 앞에 두고,
 선택된 작업별 맥락을 그다음에 두며, 자주 바뀌는 상태는 마지막에 둡니다. 안정 접두부에는
 `mf context --json --cache-profile stable` 결과를 사용하고, 작업 맥락에는 선택된 파일과
 `cache_layer`가 `task`인 `mf search --json` 결과를 사용합니다. 현재 사용자 요청, 변경 파일,

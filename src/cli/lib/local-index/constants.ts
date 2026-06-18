@@ -32,14 +32,11 @@ export const MUSTFLOW_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 export const INDEX_CONFIG_RELATIVE_PATH = '.mustflow/config/index.toml';
 export const DEFAULT_PROMPT_CACHE_STABLE_READ = [
 	'AGENTS.md',
-	'.mustflow/docs/agent-workflow.md',
-	'.mustflow/config/mustflow.toml',
-	'.mustflow/config/commands.toml',
-	'.mustflow/config/technology.toml',
-	'.mustflow/skills/routes.toml',
+	'.mustflow/skills/router.toml',
 ] as const;
 export const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
 	'.mustflow/context/INDEX.md',
+	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/INDEX.md',
 	'REPO_MAP.md',
 	'matching_skill',

@@ -47,6 +47,7 @@ test('prints a read-only workspace summary api report', () => {
 		assert.equal(output.state_policy.stores_hidden_chain_of_thought, false);
 		assert.ok(output.blocked_actions.includes('unconfigured_project_command'));
 		assert.ok(output.recommended_read_surfaces.includes('AGENTS.md'));
+		assert.ok(output.recommended_read_surfaces.includes('.mustflow/skills/router.toml'));
 		assert.ok(output.recommended_read_surfaces.includes('.mustflow/skills/routes.toml'));
 		assert.ok(output.recommended_next_commands.includes('mf context --json'));
 		assert.ok(output.recommended_next_commands.includes('mf doctor --json'));

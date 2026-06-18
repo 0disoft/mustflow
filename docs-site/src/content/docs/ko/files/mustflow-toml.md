@@ -51,10 +51,11 @@ read_order = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 optional_read_order = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
 ]
@@ -68,7 +69,7 @@ optional_read_order = [
 
 `.mustflow/context/INDEX.md`도 `optional_read_order`에 속합니다. 프로젝트, 제품, 도메인, UI, 백엔드, 데이터, 보안, 운영 맥락이 작업과 관련 있을 때만 읽습니다.
 
-`.mustflow/skills/routes.toml`은 압축 라우트 메타데이터라서 `read_order`에 속합니다. `.mustflow/skills/INDEX.md`는 압축 메타데이터만으로 부족하거나, 스킬 라우팅을 수정하거나, 상세 트리거 문구가 필요할 때만 읽는 확장 라우트 표이므로 `optional_read_order`에 둡니다.
+`.mustflow/skills/router.toml`은 안정적인 압축 route kernel이므로 `read_order`에 속합니다. `.mustflow/skills/routes.toml`은 압축 router만으로 부족하거나, 스킬 라우팅을 수정하거나, 상세 라우트 메타데이터가 필요하거나, 라우트 확신도가 애매할 때만 읽는 전체 라우트 메타데이터이므로 `optional_read_order`에 둡니다. `.mustflow/skills/INDEX.md`도 전체 라우트 메타데이터만으로 부족하거나, 확장 라우트 표를 수정하거나, 사람이 읽을 트리거 근거가 필요할 때만 읽는 확장 라우트 표이므로 `optional_read_order`에 둡니다.
 
 `.mustflow/cache/**`와 `.mustflow/state/**`도 생성 경로입니다. 캐시는 `mf index`가 만드는 SQLite 색인처럼 다시 만들 수 있는 보조 파일을 담고, 상태 경로는 `mf run` 실행 기록처럼 사용 중 만들어지는 로컬 상태를 담습니다. 둘 다 처음 읽어야 하는 기준 문서가 아닙니다.
 
@@ -88,6 +89,7 @@ anchor_files = [
   ".mustflow/config/preferences.toml",
   ".mustflow/context/INDEX.md",
   ".mustflow/context/PROJECT.md",
+  ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "README.md",
@@ -157,21 +159,22 @@ stable_prefix_policy = "hash_verified"
 prefer_references_when_unchanged = true
 exclude_volatile_state_from_prefix = true
 include_content_hashes = true
-max_stable_prefix_kb = 96
+max_stable_prefix_kb = 48
 max_task_context_kb = 48
 max_volatile_suffix_kb = 24
 
 [prompt_cache.layers.stable]
-target_kb = 48
+target_kb = 32
 read = [
   "AGENTS.md",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 
 [prompt_cache.layers.task]
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
   "matching_skill",
@@ -191,7 +194,7 @@ never_place_before_stable_prefix = true
 `prompt_cache`는 특정 LLM 제공자가 실제로 입력을 캐시한다는 보장이 아니라, 프롬프트 배치 계약입니다.
 반복되는 프롬프트 앞부분을 안정적으로 유지할 수 있도록 안정 지시문, 작업별 맥락, 변동 상태를 분리합니다.
 
-안정 계층은 저장소 진입 규칙과 압축 스킬 라우트 메타데이터처럼 같은 순서로 앞쪽에 둘 수 있는 항목입니다. 워크플로 정책, 구성, 명령 계약, 기술 선호도, 확장 라우트 표는 항상 켜지는 안정 prefix가 아니라 작업 선택이나 refresh checkpoint에서 읽어야 합니다. 작업 계층은 작업마다 선택하며 필요할 때만 확장 스킬 색인을 포함합니다. 변동 계층은 현재 사용자 요청, 변경 파일 목록, 명령 출력 일부, 실행 기록, 시각, 로컬 경로처럼 자주 바뀌는 값입니다.
+안정 계층은 저장소 진입 규칙과 압축 스킬 route kernel처럼 같은 순서로 앞쪽에 둘 수 있는 항목입니다. 워크플로 정책, 구성, 명령 계약, 기술 선호도, 전체 라우트 메타데이터, 확장 라우트 표는 항상 켜지는 안정 prefix가 아니라 작업 선택이나 refresh checkpoint에서 읽어야 합니다. 작업 계층은 작업마다 선택하며 필요할 때만 전체 라우트 메타데이터와 확장 스킬 색인을 포함합니다. 변동 계층은 현재 사용자 요청, 변경 파일 목록, 명령 출력 일부, 실행 기록, 시각, 로컬 경로처럼 자주 바뀌는 값입니다.
 
 `stable_prefix_policy = "hash_verified"`는 호스트가 지원할 때 변경되지 않은 파일을 내용 해시로 참조할 수 있음을 뜻합니다. 그래도 현재 파일과 현재 사용자 지시는 캐시나 요약 맥락보다 우선합니다.
 
@@ -361,7 +364,7 @@ read = [
 method = "hash_check"
 read = [
   "AGENTS.md",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 
 [refresh.levels.full]
@@ -373,6 +376,7 @@ read = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
+  ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
 ]
 ```

@@ -1,21 +1,21 @@
 ---
 title: .mustflow/skills/INDEX.md
-description: An expanded route table that directs agents to the appropriate skill document when compact route metadata is not enough.
+description: An expanded route table that directs agents to the appropriate skill document when the compact router and full route metadata are not enough.
 ---
 
-`.mustflow/skills/INDEX.md` is the expanded human-readable route table for selecting the correct skill document when `.mustflow/skills/routes.toml` is not detailed enough.
+`.mustflow/skills/INDEX.md` is the expanded human-readable route table for selecting the correct skill document when `.mustflow/skills/router.toml` and `.mustflow/skills/routes.toml` are not detailed enough.
 
 ## Usage
 
-After consulting the shared rules, command contract, and compact route metadata, agents refer to this index only when detailed trigger evidence is needed or when maintaining skill routing.
+After consulting the shared rules, command contract, compact route kernel, and full route metadata, agents refer to this index only when detailed trigger evidence is needed or when maintaining skill routing.
 
 This file should not contain full procedure details. It maps compact route fields to skill paths: trigger, required input, edit scope, risk, verification intents, and expected output.
 `mf check --strict` compares these routes with the referenced `SKILL.md` files so missing skill documents, unlisted skills, unknown command intents, command-intent drift, and route-table shape drift are visible.
 
 ## Selection Behavior
 
-Agents use compact route metadata at task start and before the first edit. They use this expanded
-index when compact metadata is insufficient, compare the user request and expected changed files
+Agents use the compact route kernel at task start and before the first edit. They use this expanded
+index when full route metadata is insufficient, compare the user request and expected changed files
 with the listed triggers, then read each matching `SKILL.md` before editing that scope.
 
 When a skill is used, or when a plausible skill is intentionally skipped, agents should leave a

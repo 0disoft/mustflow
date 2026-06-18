@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 30
+revision: 31
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -44,7 +44,8 @@ mustflow 문서는 각각 명확한 역할을 갖습니다. 단순히 편하게 
 | `.mustflow/config/preferences.toml` | 스타일, 언어, Git 제안, 테스트 작성 성향, 검증 선택, 버전 영향의 기본값입니다. | 권한이 아닌 낮은 권위의 선호 설정입니다. | 저장소별로 사용자가 조정할 수 있는 TOML 파일입니다. |
 | `.mustflow/context/INDEX.md` | 작업별 컨텍스트 파일을 선택하는 라우터입니다. | 선택형 컨텍스트만 고르며 정책 설명서는 아닙니다. | mustflow가 소유하는 Markdown 문서입니다. |
 | `.mustflow/context/PROJECT.md` | 신중한 프로젝트 사실, 미지점, 도메인 관습을 기록합니다. | 사용자 지시, 코드, 테스트, 명령 계약, 설정된 정책보다 낮은 권위의 참고 자료입니다. | 사용자가 수정 가능한 컨텍스트 문서입니다. |
-| `.mustflow/skills/routes.toml` | 작업에 맞는 절차 문서 후보를 고르는 압축 라우트 메타데이터입니다. | 선택 힌트만 담당하며 자세한 절차는 `SKILL.md`에 둡니다. | mustflow가 소유하는 TOML 파일입니다. |
+| `.mustflow/skills/router.toml` | 프롬프트 캐시에 친화적인 첫 스킬 선택을 위한 안정적인 압축 라우트 범주와 fallback 규칙입니다. | 선택 kernel만 담당하며 자세한 절차는 `SKILL.md`에 둡니다. | mustflow가 소유하는 TOML 파일입니다. |
+| `.mustflow/skills/routes.toml` | 압축 router만으로 부족할 때 사용하는 전체 라우트 메타데이터입니다. | 선택 힌트만 담당하며 자세한 절차는 `SKILL.md`에 둡니다. | mustflow가 소유하는 TOML 파일입니다. |
 | `.mustflow/skills/INDEX.md` | 상세 스킬 선택과 라우트 유지보수를 위한 사람이 읽는 확장 라우트 표입니다. | 선택 계약만 담당하며 자세한 절차는 `SKILL.md`에 둡니다. | mustflow가 소유하는 Markdown 문서입니다. |
 | `.mustflow/skills/<name>/SKILL.md` | 반복 작업의 입력, 허용 범위, 검사, 보고 형식을 담은 절차입니다. | 절차 안내일 뿐이며 명령 실행 권한을 부여하거나 다른 규칙을 덮어쓰지 않습니다. | mustflow가 소유하는 Markdown 문서이며, 필요 시 언어별로 설치됩니다. |
 | `REPO_MAP.md` | 넓은 탐색과 하위 저장소 진입점을 위한 생성 앵커 지도입니다. | 현재 파일과 현재 지시보다 낮은 생성 탐색 보조 자료입니다. | 생성 파일이며 `repo_map` 인텐트 또는 `mf map`으로 갱신합니다. |
@@ -69,10 +70,11 @@ mustflow 문서는 각각 명확한 역할을 갖습니다. 단순히 편하게 
 3. `.mustflow/config/mustflow.toml`
 4. `.mustflow/config/commands.toml`
 5. `.mustflow/config/preferences.toml`이 있으면 읽기
-6. `.mustflow/skills/routes.toml`
-7. 압축 라우트 메타데이터만으로 부족하거나 스킬 라우팅을 수정하거나 상세 트리거 표가 필요할 때 `.mustflow/skills/INDEX.md`
-8. 현재 작업과 맞는 `.mustflow/skills/<name>/SKILL.md`
-9. 관련 소스, 테스트, 문서 파일
+6. `.mustflow/skills/router.toml`
+7. 압축 router만으로 부족하거나 스킬 라우팅을 수정하거나 상세 라우트 메타데이터가 필요하거나 라우트 확신도가 애매할 때 `.mustflow/skills/routes.toml`
+8. 전체 라우트 메타데이터만으로도 부족하거나 확장 라우트 표를 수정하거나 사람이 읽을 트리거 근거가 필요할 때 `.mustflow/skills/INDEX.md`
+9. 현재 작업과 맞는 `.mustflow/skills/<name>/SKILL.md`
+10. 관련 소스, 테스트, 문서 파일
 
 `REPO_MAP.md`는 넓은 저장소 탐색이 필요할 때만 읽습니다. 이 파일은 전체 파일 목록이 아니라 `AGENTS.md`, `README.md`, `package.json`, `SKILL.md`, 주요 설정 파일 같은 앵커를 찾아 에이전트가 처음 볼 위치를 줄이기 위한 생성 지도입니다. 전체 파일 목록이 필요하면 `git ls-files`나 편집기 파일 탐색기를 사용합니다. `node_modules`, `dist`, `build`, `.git`, 캐시, 대용량 산출물은 제외합니다.
 
@@ -97,11 +99,12 @@ mustflow 문서는 각각 명확한 역할을 갖습니다. 단순히 편하게 
 
 작업 시작 시점과 첫 수정 전에는 다음 순서를 따릅니다.
 
-1. `.mustflow/skills/routes.toml`에서 압축 라우트 목록을 읽습니다.
-2. 현재 사용자 요청과 예상 변경 파일을 라우트 이름, 범주, 라우트 종류, 우선순위, 변경 이유 메타데이터와 비교합니다.
-3. 압축 메타데이터만으로 부족하거나 스킬 라우팅을 수정하거나 상세 트리거 표가 필요하면 `.mustflow/skills/INDEX.md`를 읽습니다.
-4. 맞는 시나리오가 하나 이상 있으면 해당 `SKILL.md`를 읽은 뒤 그 범위를 수정합니다.
-5. 맞는 스킬이 없으면 새 스킬을 추측하지 않고 `AGENTS.md`와 `.mustflow/config/commands.toml`을 기준으로 가장 작은 안전한 변경을 수행합니다.
+1. `.mustflow/skills/router.toml`에서 안정적인 라우트 범주, 범주 신호, 선택 제한, fallback 규칙을 읽습니다.
+2. 현재 사용자 요청, 예상 변경 파일, 발견한 기술 스택, 이벤트 신호를 범주 신호와 비교합니다.
+3. 압축 router만으로 부족하거나 스킬 라우팅을 수정하거나 상세 라우트 메타데이터가 필요하거나 라우트 확신도가 애매하면 `.mustflow/skills/routes.toml`을 읽습니다.
+4. 전체 라우트 메타데이터만으로도 부족하거나 확장 라우트 표를 수정하거나 사람이 읽을 트리거 근거가 필요하면 `.mustflow/skills/INDEX.md`를 읽습니다.
+5. 맞는 시나리오가 하나 이상 있으면 해당 `SKILL.md`를 읽은 뒤 그 범위를 수정합니다.
+6. 맞는 스킬이 없으면 새 스킬을 추측하지 않고 `AGENTS.md`와 `.mustflow/config/commands.toml`을 기준으로 가장 작은 안전한 변경을 수행합니다.
 
 작업 중 새 근거가 생겨 작업 유형이 바뀌면 그때 스킬을 다시 선택합니다. 예를 들어 설정된 명령이 실패하면 실패 원인 추적 스킬을, 테스트 계약이 바뀌면 테스트 유지보수 스킬을, 문서나 워크플로가 바뀌면 문서 수정 스킬을 읽습니다.
 
@@ -163,8 +166,8 @@ mustflow는 LLM 제공자의 입력 캐시 적중을 보장하지 않습니다. 
 
 호스트나 에이전트 실행 하네스가 모델 입력을 조립할 때는 다음 순서를 지켜야 합니다.
 
-1. 안정 접두부: `mf context --json --cache-profile stable`에서 얻은 저장소 진입 규칙과 압축 라우트 메타데이터입니다.
-2. 작업 컨텍스트: 선택된 컨텍스트 파일, 작업 흐름과 구성 refresh 조각, 명령 인텐트 정의, 상세 스킬 색인 fallback, 맞는 스킬, 저장소 지도 앵커, 관련 소스 파일, 그리고 `cache_layer`가 `task`인 `mf search --json` 결과입니다.
+1. 안정 접두부: `mf context --json --cache-profile stable`에서 얻은 저장소 진입 규칙과 압축 route kernel입니다.
+2. 작업 컨텍스트: 선택된 컨텍스트 파일, 작업 흐름과 구성 refresh 조각, 명령 인텐트 정의, 전체 라우트 메타데이터 fallback, 상세 스킬 색인 fallback, 맞는 스킬, 저장소 지도 앵커, 관련 소스 파일, 그리고 `cache_layer`가 `task`인 `mf search --json` 결과입니다.
 3. 변동 접미부: 현재 사용자 요청, 변경 파일 목록, 명령 출력 끝부분, 최신 실행 기록 메타데이터, 시각 정보, 그리고 `volatile` 값이 `true`인 `mf search --json` 결과입니다.
 
 안정 접두부를 재사용하기 전에는 보고된 콘텐츠 해시를 현재 파일과 비교합니다. 안정 문서의 해시가 하나라도 바뀌면 캐시된 텍스트를 재사용하지 말고 해당 문서를 다시 읽어야 합니다. 절대로 로컬 경로, 실행 기록 시각, 명령 출력, 변경 파일, 현재 사용자 작업 문구는 안정 접두부보다 앞에 두지 않습니다.
@@ -207,7 +210,7 @@ mustflow 지침은 다음 지점에서 다시 확인합니다.
 - `command`: `AGENTS.md`와 `.mustflow/config/commands.toml`을 다시 읽습니다.
 - `edit`: 민감한 수정 전에 `AGENTS.md`, `.mustflow/config/mustflow.toml`, `.mustflow/docs/agent-workflow.md`를 다시 읽습니다.
 - `report`: 최종 보고 전에 `AGENTS.md`, `.mustflow/config/mustflow.toml`, `.mustflow/config/preferences.toml`을 다시 읽습니다.
-- `skill`: `AGENTS.md`와 `.mustflow/skills/routes.toml`을 다시 읽습니다.
+- `skill`: `AGENTS.md`와 `.mustflow/skills/router.toml`을 다시 읽습니다.
 - `full`: mustflow 필수 읽기 순서 전체를 다시 읽습니다.
 
 `before_command_run`은 현재 명령 인텐트에 대한 최신성 확인 지점입니다. 명령 계약이 바뀌지 않았다면 같은 명령을 반복할 때마다 모든 파일을 다시 읽으라는 뜻이 아닙니다.

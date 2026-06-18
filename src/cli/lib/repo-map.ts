@@ -34,6 +34,7 @@ const DEFAULT_PRIORITY_PATHS = [
 	'.mustflow/config/commands.toml',
 	'.mustflow/config/preferences.toml',
 	'.mustflow/context/INDEX.md',
+	'.mustflow/skills/router.toml',
 	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/INDEX.md',
 ];
@@ -88,6 +89,7 @@ const DEFAULT_NESTED_ANCHOR_FILES = [
 	'.mustflow/config/preferences.toml',
 	'.mustflow/context/INDEX.md',
 	'.mustflow/context/PROJECT.md',
+	'.mustflow/skills/router.toml',
 	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/INDEX.md',
 	...ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES,
@@ -199,7 +201,8 @@ const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['.mustflow/context/INDEX.md', 'Task-specific project context router. Read only when context is needed.'],
 	['.mustflow/context/PROJECT.md', 'Project goals, non-goals, terms, and repository-wide promises for agents.'],
 	['.mustflow/docs/agent-workflow.md', 'Shared workflow policy for agent work.'],
-	['.mustflow/skills/routes.toml', 'Compact skill-routing metadata for selecting procedures without loading the expanded route table.'],
+	['.mustflow/skills/router.toml', 'Stable compact skill-routing kernel for prompt-cache-friendly first-pass selection.'],
+	['.mustflow/skills/routes.toml', 'Full skill-routing metadata for detailed procedure selection.'],
 	['.mustflow/skills/INDEX.md', 'Expanded route table for detailed skill selection and route maintenance.'],
 ]);
 

@@ -37,7 +37,7 @@ Use `--cache-profile stable|task|volatile|all` with `--json` when a host needs c
 
 The stable profile reports stable instruction paths, existence flags, content hashes, and a `stable_prefix.cache_key`. It deliberately omits the absolute mustflow root, latest run receipt, timestamps, changed files, command output tails, and the current user task.
 
-The task profile reports task-selective sources such as the context index, repository map, matching skill, and relevant source files. It also reports the local-index status so a host can reuse fresh task metadata or show a targeted `mf index` refresh hint when the index is missing, stale, or unreadable. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
+The task profile reports task-selective sources such as the context index, full route metadata, repository map, matching skill, and relevant source files. It also reports the local-index status so a host can reuse fresh task metadata or show a targeted `mf index` refresh hint when the index is missing, stale, or unreadable. The volatile profile reports state that must stay after the stable prefix. The `all` profile includes all three layers.
 
 Add `--cache-audit` to include a `cache_audit` block. The audit measures the stable files using
 mustflow's deterministic reference bundle format, reports UTF-8 rendered bytes, rough byte-based

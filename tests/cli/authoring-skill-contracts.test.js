@@ -30,11 +30,16 @@ test('README and project context authoring routes stay separated', () => {
 test('skill route selection convention treats authoring as a main route', () => {
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
 	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const router = readText('.mustflow/skills/router.toml');
+	const templateRouter = readText('templates/default/locales/en/.mustflow/skills/router.toml');
 	const routes = readText('.mustflow/skills/routes.toml');
 	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
 
 	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(router, templateRouter);
 	assert.equal(routes, templateRoutes);
+	assert.match(router, /purpose = "Stable skill-routing kernel for prompt-cache-friendly first-pass selection\."/u);
+	assert.match(router, /fallback_policy = "read_full_routes_when_uncertain"/u);
 	assert.match(skillIndex, /Choose one main route: a `primary` route/u);
 	assert.match(skillIndex, /Treat `authoring` routes as selectable main routes, not adjunct routes/u);
 	assert.match(skillIndex, /choose one main route \(`primary` or `authoring`\) and at most two adjunct/u);

@@ -48,7 +48,8 @@ The installed workflow keeps authority narrow:
 - `.mustflow/config/preferences.toml`: lower-authority repository defaults, not permissions.
 - `.mustflow/context/INDEX.md`: router for optional task-specific context.
 - `.mustflow/context/PROJECT.md`: cautious project facts and unknowns below code, tests, commands, and configured policies.
-- `.mustflow/skills/routes.toml`: compact route metadata for task-specific procedure selection.
+- `.mustflow/skills/router.toml`: stable compact route taxonomy and fallback rules for first-pass procedure selection.
+- `.mustflow/skills/routes.toml`: full route metadata for detailed procedure selection when the compact router is insufficient.
 - `.mustflow/skills/INDEX.md`: expanded route table for detailed selection and route maintenance.
 - `.mustflow/skills/<name>/SKILL.md`: bounded repeatable procedure; it cannot authorize commands.
 - `REPO_MAP.md`: generated anchor map, refreshed by the configured `repo_map` intent or `mf map`.
@@ -90,8 +91,10 @@ Skills are task procedures, not autonomous tools. Activating a skill means readi
 `.mustflow/skills/<name>/SKILL.md` and following that procedure within the current command contract.
 
 At task start and before the first edit, agents compare the user request and expected changed files
-with `.mustflow/skills/routes.toml`. If compact metadata is insufficient, the task edits skill
-routing, or a detailed trigger table is needed, they read `.mustflow/skills/INDEX.md`. If one or
+with `.mustflow/skills/router.toml`. If the compact router is insufficient, the task edits skill
+routing, detailed route metadata is needed, or route confidence is ambiguous, they read
+`.mustflow/skills/routes.toml`. If full route metadata is still insufficient, the task edits the
+expanded route table, or human-readable trigger evidence is needed, they read `.mustflow/skills/INDEX.md`. If one or
 more scenarios match, the matching `SKILL.md` files are read before editing that scope. If new
 evidence appears later, such as a command failure, test contract change, or documentation change,
 agents pause and activate the newly relevant skill.
@@ -121,8 +124,8 @@ Prompt caching is only a performance optimization. Cached instructions, summarie
 and generated maps stay below direct user instructions, current files, current command contracts,
 host safety rules, and the nearest `AGENTS.md`.
 
-Hosts that assemble model input should keep stable repository instructions and compact route
-metadata first, selected task-specific context next, and volatile state last. Use
+Hosts that assemble model input should keep stable repository instructions and the compact route
+kernel first, selected task-specific context next, and volatile state last. Use
 `mf context --json --cache-profile stable` for the stable prefix, task-selected files and
 `mf search --json` results with `cache_layer: "task"` for task context, and current user requests,
 changed files, command output tails, timestamps, latest run metadata, and `volatile: true` search

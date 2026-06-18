@@ -51,10 +51,11 @@ read_order = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 optional_read_order = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
 ]
@@ -68,7 +69,7 @@ This file reduces agent guesswork and helps prevent accidental edits to generate
 
 `.mustflow/context/INDEX.md` belongs to `optional_read_order` because agents should read it only when project, product, domain, UI, backend, data, security, or operations context is relevant to the task.
 
-`.mustflow/skills/routes.toml` belongs to `read_order` as compact route metadata. `.mustflow/skills/INDEX.md` belongs to `optional_read_order` because agents should read the expanded route table only when compact metadata is insufficient, the task edits skill routing, or detailed trigger text is needed.
+`.mustflow/skills/router.toml` belongs to `read_order` as the stable compact route kernel. `.mustflow/skills/routes.toml` belongs to `optional_read_order` because agents should read full route metadata only when the compact router is insufficient, the task edits skill routing, detailed route metadata is needed, or route confidence is ambiguous. `.mustflow/skills/INDEX.md` also belongs to `optional_read_order` because agents should read the expanded route table only when full route metadata is insufficient, the task edits the expanded route table, or human-readable trigger evidence is needed.
 
 `.mustflow/cache/**` and `.mustflow/state/**` are generated paths. The cache contains rebuildable supporting files such as the SQLite index written by `mf index`; state contains local state created during use, such as `mf run` receipts. Neither path is part of the first required reading order.
 
@@ -88,6 +89,7 @@ anchor_files = [
   ".mustflow/config/preferences.toml",
   ".mustflow/context/INDEX.md",
   ".mustflow/context/PROJECT.md",
+  ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "README.md",
@@ -157,21 +159,22 @@ stable_prefix_policy = "hash_verified"
 prefer_references_when_unchanged = true
 exclude_volatile_state_from_prefix = true
 include_content_hashes = true
-max_stable_prefix_kb = 96
+max_stable_prefix_kb = 48
 max_task_context_kb = 48
 max_volatile_suffix_kb = 24
 
 [prompt_cache.layers.stable]
-target_kb = 48
+target_kb = 32
 read = [
   "AGENTS.md",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 
 [prompt_cache.layers.task]
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
   "matching_skill",
@@ -192,10 +195,10 @@ never_place_before_stable_prefix = true
 the input. It separates stable instructions from task-specific context and volatile state so hosts can
 keep repeated prompt prefixes stable when they support caching.
 
-The stable layer contains repository entrypoint rules and compact skill-route metadata that should be
+The stable layer contains repository entrypoint rules and the compact skill-route kernel that should be
 placed before task-specific material in a consistent order. Workflow policy, configuration, command
 contracts, technology preferences, and expanded route tables should be loaded through task selection
-or refresh checkpoints instead of being placed in the always-on stable prefix. The task layer is selected per task and may include the expanded skill index only when needed. The volatile layer
+or refresh checkpoints instead of being placed in the always-on stable prefix. The task layer is selected per task and may include full route metadata and the expanded skill index only when needed. The volatile layer
 contains changing values such as current user requests, changed-file lists, command output tails, run
 receipts, timestamps, and local paths.
 
@@ -377,7 +380,7 @@ read = [
 method = "hash_check"
 read = [
   "AGENTS.md",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 
 [refresh.levels.full]
@@ -389,6 +392,7 @@ read = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
+  ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
 ]
 ```

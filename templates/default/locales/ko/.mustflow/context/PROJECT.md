@@ -3,7 +3,7 @@ mustflow_doc: context.project
 kind: mustflow-context
 locale: ko
 canonical: false
-revision: 3
+revision: 4
 name: project
 authority: contextual
 lifecycle: user-editable
@@ -58,8 +58,9 @@ source_refs:
 - `.mustflow/docs/agent-workflow.md`  
 - `.mustflow/config/mustflow.toml`  
 - `.mustflow/config/commands.toml`  
-- `.mustflow/skills/routes.toml`
-- 상세 라우트 근거가 필요할 때만 `.mustflow/skills/INDEX.md`
+- `.mustflow/skills/router.toml`
+- 상세 라우트 메타데이터가 필요할 때만 `.mustflow/skills/routes.toml`
+- 사람이 읽을 라우트 근거가 필요할 때만 `.mustflow/skills/INDEX.md`
 
 ## 오래된 내용 확인
 

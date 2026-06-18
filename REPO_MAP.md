@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 201
+anchor_count: 202
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:d3f85b13793f6347cab985f6a3b1296e6fdafc51a64c9b9752e27e2dfa5a6cd0"
+source_fingerprint: "sha256:3217841c8fc2be38e71dee2e27d6031e81a3112e161fadbc83f6d02912837cb2"
 ---
 
 # REPO_MAP.md
@@ -29,8 +29,9 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 - `.mustflow/config/mustflow.toml`: Mustflow read order, authority, document roots, and protected paths.
 - `.mustflow/config/commands.toml`: Command intent contract. Check this before running project commands.
 - `.mustflow/config/preferences.toml`: Repository-level agent preferences. Treat them as defaults below user instructions and local style.
-- `.mustflow/skills/routes.toml`: Compact skill-routing metadata for selecting procedures without loading the expanded route table.
+- `.mustflow/skills/router.toml`: Stable compact skill-routing kernel for prompt-cache-friendly first-pass selection.
 - `.mustflow/context/INDEX.md`: Task-specific project context router. Read only when context is needed.
+- `.mustflow/skills/routes.toml`: Full skill-routing metadata for detailed procedure selection.
 - `.mustflow/skills/INDEX.md`: Expanded route table for detailed skill selection and route maintenance.
 
 ## Directory Anchors

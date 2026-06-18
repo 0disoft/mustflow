@@ -27,6 +27,7 @@ export const REQUIRED_FILES = [
 	'AGENTS.md',
 	'.mustflow/config/mustflow.toml',
 	'.mustflow/config/commands.toml',
+	'.mustflow/skills/router.toml',
 	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/INDEX.md',
 ];
@@ -189,6 +190,7 @@ export const ROUTER_INDEX_PROCEDURE_SECTION_PATTERN =
 	/^##\s+(?:Use When|Do Not Use When|Required Inputs|Preconditions|Allowed Edits|Procedure|Postconditions|Verification|Failure Handling|Output Format|사용 조건|사용하지 않는 경우|필요한 입력|사전 조건|허용 수정 범위|절차|사후 조건|검증|실패 대응|출력 형식)\s*$/imu;
 export const ROUTER_INDEX_FILES = ['.mustflow/skills/INDEX.md', '.mustflow/context/INDEX.md'] as const;
 export const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
+export const SKILL_ROUTER_PATH = '.mustflow/skills/router.toml';
 export const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
 export const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
 export const SKILL_PACK_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;

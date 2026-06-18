@@ -18,9 +18,10 @@ description: 에이전트가 저장소에서 가장 먼저 읽는 짧은 작업 
 - 명령 추측 금지, 기존 변경 보존, 비밀정보 보호 같은 절대 규칙만 남깁니다.
 - 세부 작업 흐름은 `.mustflow/docs/agent-workflow.md`로 연결합니다.
 - 실행 가능 여부는 `.mustflow/config/commands.toml`의 명령 의도 상태로 판단하게 합니다.
-- 에이전트가 `.mustflow/skills/routes.toml`의 압축 라우트 메타데이터에서 작업과 맞는
-  스킬을 고르고, 상세 라우팅이 필요할 때만 `.mustflow/skills/INDEX.md`를 읽은 뒤,
-  해당 범위를 수정하기 전에 맞는 `SKILL.md`를 읽게 합니다.
+- 에이전트가 `.mustflow/skills/router.toml`의 안정 route kernel에서 먼저 범주를 고르고,
+  상세 라우트 메타데이터가 필요할 때만 `.mustflow/skills/routes.toml`을 읽으며,
+  사람이 읽을 트리거 근거가 필요할 때만 `.mustflow/skills/INDEX.md`를 읽은 뒤, 해당
+  범위를 수정하기 전에 맞는 `SKILL.md`를 읽게 합니다.
 - `mf doctor`는 수정 전 읽기 전용 진단 명령이라고 밝힙니다.
 - `mf context --json`은 읽기 전용 맥락 색인일 뿐, 실제 문서 읽기를 대신하지 않는다고 밝힙니다.
 - 길게 실행되거나 민감한 상태에 영향을 주는 작업은 `mustflow.toml`의 `[budget]`, `[approval]`, `[isolation]`을 따르게 합니다.
@@ -33,10 +34,11 @@ AGENTS.md
 .mustflow/config/mustflow.toml
 .mustflow/config/commands.toml
 .mustflow/config/preferences.toml  # 있으면 읽기
-.mustflow/skills/routes.toml
+.mustflow/skills/router.toml
 .mustflow/context/INDEX.md  # 작업별 맥락이 필요할 때만
 .mustflow/context/<name>.md  # 맥락 색인이 고른 파일만
-.mustflow/skills/INDEX.md  # 상세 스킬 라우팅이 필요할 때만
+.mustflow/skills/routes.toml  # 상세 라우트 메타데이터가 필요할 때만
+.mustflow/skills/INDEX.md  # 사람이 읽을 트리거 근거가 필요할 때만
 .mustflow/skills/<name>/SKILL.md
 REPO_MAP.md  # 넓은 탐색이 필요할 때만
 ```
@@ -66,8 +68,9 @@ revision: 4
 
 언어, 주석, 커밋 메시지, 문서화, 로그, 서식 같은 기본 선호값은 `AGENTS.md`에 길게 쓰지 않고 `.mustflow/config/preferences.toml`에 둡니다.
 
-`AGENTS.md`는 `.mustflow/skills/routes.toml`을 통한 스킬 선택 의무만 짧게 선언하고,
-자세한 선택 기준은 `.mustflow/skills/INDEX.md`와 `.mustflow/docs/agent-workflow.md`에 둡니다.
+`AGENTS.md`는 `.mustflow/skills/router.toml`을 통한 첫 스킬 선택 의무만 짧게 선언합니다.
+전체 라우트 메타데이터는 `.mustflow/skills/routes.toml`에 두고, 사람이 읽을 자세한 선택
+기준은 `.mustflow/skills/INDEX.md`와 `.mustflow/docs/agent-workflow.md`에 둡니다.
 
 자율 반복 실행기, 여러 작업자 조정, 페르소나 시스템, 장기 실행 하네스는 `AGENTS.md`에서
 바로 시작하지 않습니다. 이런 기능이 필요하다면 mustflow 설정과 보조 문서에서 명시적으로

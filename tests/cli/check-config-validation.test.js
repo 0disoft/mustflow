@@ -133,10 +133,10 @@ test('fails when prompt cache configuration fields are invalid', () => {
 			.replace('prefer_references_when_unchanged = true', 'prefer_references_when_unchanged = "yes"')
 			.replace('exclude_volatile_state_from_prefix = true', 'exclude_volatile_state_from_prefix = "yes"')
 			.replace('include_content_hashes = true', 'include_content_hashes = "yes"')
-			.replace('max_stable_prefix_kb = 96', 'max_stable_prefix_kb = 0')
+			.replace('max_stable_prefix_kb = 48', 'max_stable_prefix_kb = 0')
 			.replace('max_task_context_kb = 48', 'max_task_context_kb = "large"')
 			.replace('max_volatile_suffix_kb = 24', 'max_volatile_suffix_kb = -1')
-			.replace('[prompt_cache.layers.stable]\ntarget_kb = 48\nread = [', '[prompt_cache.layers.stable]\ntarget_kb = "48"\nread = [\n  "../AGENTS.md",')
+			.replace('[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [', '[prompt_cache.layers.stable]\ntarget_kb = "32"\nread = [\n  "../AGENTS.md",')
 			.replace(
 				/\[prompt_cache\.layers\.task\]\nread_policy = "task_relevant_only"\nsources = \[\n(?:  "[^"]+",\n)+\]/u,
 				'[prompt_cache.layers.task]\nread_policy = "read_all"\nsources = "all"',
@@ -249,8 +249,8 @@ test('strict check fails when prompt cache policy would put volatile state in th
 		const config = readText(configPath)
 			.replace('exclude_volatile_state_from_prefix = true', 'exclude_volatile_state_from_prefix = false')
 			.replace(
-				'[prompt_cache.layers.stable]\ntarget_kb = 48\nread = [',
-				'[prompt_cache.layers.stable]\ntarget_kb = 48\nread = [\n  ".mustflow/state/runs/latest.json",',
+				'[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [',
+				'[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [\n  ".mustflow/state/runs/latest.json",',
 			)
 			.replace('default_method = "hash_check"', 'default_method = "reread_if_changed"');
 		writeFileSync(configPath, config);

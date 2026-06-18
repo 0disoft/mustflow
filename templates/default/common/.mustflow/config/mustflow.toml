@@ -8,10 +8,11 @@ read_order = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 optional_read_order = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
 ]
@@ -20,6 +21,7 @@ optional_read_order = [
 primary_instruction = "AGENTS.md"
 repository_map = "REPO_MAP.md"
 skill_index = ".mustflow/skills/INDEX.md"
+skill_router = ".mustflow/skills/router.toml"
 skill_routes = ".mustflow/skills/routes.toml"
 command_contract = ".mustflow/config/commands.toml"
 workflow_preferences = ".mustflow/config/preferences.toml"
@@ -40,6 +42,7 @@ anchor_files = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
+  ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "README.md",
@@ -133,21 +136,22 @@ stable_prefix_policy = "hash_verified"
 prefer_references_when_unchanged = true
 exclude_volatile_state_from_prefix = true
 include_content_hashes = true
-max_stable_prefix_kb = 96
+max_stable_prefix_kb = 48
 max_task_context_kb = 48
 max_volatile_suffix_kb = 24
 
 [prompt_cache.layers.stable]
-target_kb = 48
+target_kb = 32
 read = [
   "AGENTS.md",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 
 [prompt_cache.layers.task]
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
   "matching_skill",
@@ -243,7 +247,7 @@ read = [
 method = "hash_check"
 read = [
   "AGENTS.md",
-  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/router.toml",
 ]
 
 [refresh.levels.full]
@@ -255,6 +259,7 @@ read = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
+  ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
 ]
 

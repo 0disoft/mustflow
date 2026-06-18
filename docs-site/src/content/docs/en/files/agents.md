@@ -18,9 +18,10 @@ It serves as the gateway to the mustflow document flow. Detailed policies reside
 - **Enforces core rules**: Maintains absolute constraints, such as prohibiting command guessing, preserving user modifications, and ensuring sensitive data protection.
 - **Delegates detail**: Defers complex workflow policies to `.mustflow/docs/agent-workflow.md`.
 - **Governs execution**: Restricts command execution to valid intents defined in `.mustflow/config/commands.toml`.
-- **Activates skills**: Requires agents to check compact `.mustflow/skills/routes.toml` metadata,
-  read `.mustflow/skills/INDEX.md` only when detailed routing is needed, and read matching
-  `SKILL.md` files before editing the affected scope.
+- **Activates skills**: Requires agents to check the stable `.mustflow/skills/router.toml` kernel,
+  read `.mustflow/skills/routes.toml` only when detailed route metadata is needed, read
+  `.mustflow/skills/INDEX.md` only when human-readable trigger evidence is needed, and read
+  matching `SKILL.md` files before editing the affected scope.
 - **Diagnostic orientation**: Specifies `mf doctor` as the recommended read-only diagnostic tool before initiating edits.
 - **Contextual indexing**: Defines `mf context --json` as a machine-readable index rather than a replacement for full document review.
 - **Safety boundaries**: Directs long-running or sensitive tasks to the `[budget]`, `[approval]`, and `[isolation]` policies in `mustflow.toml`.
@@ -33,10 +34,11 @@ AGENTS.md
 .mustflow/config/mustflow.toml
 .mustflow/config/commands.toml
 .mustflow/config/preferences.toml  # when present
-.mustflow/skills/routes.toml
+.mustflow/skills/router.toml
 .mustflow/context/INDEX.md  # only when task-specific context is needed
 .mustflow/context/<name>.md  # only when selected by the context index
-.mustflow/skills/INDEX.md  # only when detailed skill routing is needed
+.mustflow/skills/routes.toml  # only when detailed route metadata is needed
+.mustflow/skills/INDEX.md  # only when human-readable trigger evidence is needed
 .mustflow/skills/<name>/SKILL.md
 REPO_MAP.md  # only when broad navigation is needed
 ```
@@ -65,7 +67,8 @@ Do not hard-code specific test or build commands, file trees, recent modificatio
 
 Preferences for language, code comments, commit messages, documentation, and logging should be defined in `.mustflow/config/preferences.toml` rather than being described as prose in `AGENTS.md`.
 
-`AGENTS.md` should require skill selection through `.mustflow/skills/routes.toml`; detailed
-selection rules belong in `.mustflow/skills/INDEX.md` and `.mustflow/docs/agent-workflow.md`.
+`AGENTS.md` should require first-pass skill selection through `.mustflow/skills/router.toml`.
+Full route metadata belongs in `.mustflow/skills/routes.toml`; expanded human-readable selection
+rules belong in `.mustflow/skills/INDEX.md` and `.mustflow/docs/agent-workflow.md`.
 
 Autonomous loops, worker fleets, persona systems, and long-running harnesses must not be initiated from `AGENTS.md`. If a repository requires these capabilities, they should be explicitly defined in the mustflow configuration and supporting documentation.

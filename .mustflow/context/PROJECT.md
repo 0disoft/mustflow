@@ -83,8 +83,9 @@ coordination surfaces when those capabilities have explicit lifecycle and safety
 - `.mustflow/docs/agent-workflow.md`  
 - `.mustflow/config/mustflow.toml`  
 - `.mustflow/config/commands.toml`  
-- `.mustflow/skills/routes.toml`
-- `.mustflow/skills/INDEX.md` only when detailed route evidence is needed
+- `.mustflow/skills/router.toml`
+- `.mustflow/skills/routes.toml` only when detailed route metadata is needed
+- `.mustflow/skills/INDEX.md` only when human-readable route evidence is needed
 
 ## Staleness Check
 

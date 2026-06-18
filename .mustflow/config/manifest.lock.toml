@@ -9,7 +9,7 @@ locale = "en"
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:bc4be5030089882157d8060e69c6bd7926390381e6e4d8d4aa24bcc71c7ac3b4"
+content_hash = "sha256:56ec13b21a71535cb9427aa0e69410d3cb99c8950f37f6480fe14bf8b2cd1b90"
 
 [files.".mustflow/config/commands.toml"]
 source = "repository"
@@ -19,14 +19,19 @@ content_hash = "sha256:e5f7296dc9d1abb14b9f7f44e2d943a10fbd82380744efe2c7e2a57e7
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:b42d5a38fdfccfd5c19432fe3d8874ab81fcc1076fff0abdd6eb90a37203cd91"
+content_hash = "sha256:fc6905cf2da26f213684335ae8f6db287bd2e9099b60253a103938730a761314"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:2c97b8b70546491c421ad988535af65660704afbcb7e57f144ba5e50d0fbb1ad"
+content_hash = "sha256:428ecc901701e20f4ccad8c3ced53636f4854909f7ceccd9cbde6fae0d9fe82b"
 
 [files.".mustflow/context/PROJECT.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:04a2e5f66446a7518209914c13ee83d8612671c44926cb5b3a6644518ee56c35"
+content_hash = "sha256:7a375a484e441d2ba82adabe4e98ca09cc6cfaa19ccb32642cba7474c7e5d80b"
+
+[files.".mustflow/skills/router.toml"]
+source = "template_locale"
+last_action = "customized"
+content_hash = "sha256:f02d5a92a5fe3adbd109f10992703414b9451c97e1457fa3174916d9df04dab1"
