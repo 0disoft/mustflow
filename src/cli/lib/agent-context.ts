@@ -760,6 +760,7 @@ function readTaskSourceAuditLayer(
 	sources: readonly string[],
 	budgetKb: number | null,
 ): PromptCacheAuditLayerContext {
+	const budget = budgetBytes(budgetKb);
 	const issues = new Set<string>();
 	const blocks = sources.map((source, index) => {
 		const selectionPolicy = taskSourceSelectionPolicy(source);
@@ -767,41 +768,63 @@ function readTaskSourceAuditLayer(
 			selectionPolicy === 'selected_at_runtime' ? 'dynamic_selection' : 'file_reference';
 		const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
 		const measurementStatus: PromptCacheAuditMeasurementStatus =
-			sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured';
-		const issue = taskSourceIssue(source, measurementStatus);
-		issues.add(issue);
+			sourceKind === 'file_reference'
+				? content === null
+					? 'hash_only_deferred'
+					: 'measured'
+				: 'dynamic_unmeasured';
+		const renderedBytes = content === null ? null : bytesForUtf8(renderReferenceBundleBlock(source, content));
+		const issue = content === null ? taskSourceIssue(source, measurementStatus) : null;
+
+		if (issue) {
+			issues.add(issue);
+		}
+
+		if (sourceKind === 'dynamic_selection') {
+			issues.add(taskSourceIssue(source, measurementStatus));
+		}
 
 		return {
 			id: `task:${index + 1}:${source}`,
-			kind: 'source_placeholder',
-			path: null,
+			kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
+			path: sourceKind === 'file_reference' && content !== null ? toPosixPath(source) : null,
 			source,
 			source_kind: sourceKind,
 			selection_policy: selectionPolicy,
 			measurement_status: measurementStatus,
 			candidate_exists: sourceKind === 'file_reference' ? content !== null : null,
 			candidate_content_hash: content === null ? null : sha256(content),
-			exists: null,
-			content_hash: null,
-			rendered_bytes: null,
-			estimated_tokens: null,
-			budget_share: null,
+			exists: sourceKind === 'file_reference' ? content !== null : null,
+			content_hash: content === null ? null : sha256(content),
+			rendered_bytes: renderedBytes,
+			estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
+			budget_share: calculateBudgetShare(renderedBytes, budget),
 			issue,
 		} satisfies PromptCacheAuditBlockContext;
 	});
+	const measuredBytes = blocks.reduce((total, block) => total + (block.rendered_bytes ?? 0), 0);
+	const renderedBytes = measuredBytes > 0 ? measuredBytes : null;
+	const hasDynamicSources = blocks.some((block) => block.measurement_status === 'dynamic_unmeasured');
+	const measuredStatus = budgetStatus(renderedBytes, budget);
+	const status: PromptCacheBudgetStatus = measuredStatus === 'over_budget' || !hasDynamicSources
+		? measuredStatus
+		: 'unknown';
 
 	return {
 		cache_layer: 'task',
 		budget_kb: budgetKb,
-		budget_bytes: budgetBytes(budgetKb),
+		budget_bytes: budget,
 		target_kb: null,
 		target_bytes: null,
 		target_status: 'unknown',
-		rendered_bytes: null,
-		estimated_tokens: null,
-		budget_status: 'unknown',
+		rendered_bytes: renderedBytes,
+		estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
+		budget_status: status,
 		blocks,
-		largest_blocks: [],
+		largest_blocks: [...blocks]
+			.filter((block) => block.rendered_bytes !== null)
+			.sort((left, right) => (right.rendered_bytes ?? 0) - (left.rendered_bytes ?? 0))
+			.slice(0, 5),
 		issues: [...issues],
 	};
 }

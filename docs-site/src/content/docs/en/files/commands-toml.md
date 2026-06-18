@@ -272,8 +272,9 @@ writes = []
 ```
 
 `prompt_cache_audit` runs the read-only prompt-cache profile audit exposed by `mf context`. It reports
-reference-bundle byte sizes, rough token estimates, configured budget status, and unresolved task or
-volatile placeholders without writing files or proving provider cache hits.
+reference-bundle byte sizes, rough token estimates, configured budget status, measured task file
+candidates, and unresolved dynamic task or volatile placeholders without writing files or proving
+provider cache hits.
 
 ```toml
 [intents.prompt_cache_audit]

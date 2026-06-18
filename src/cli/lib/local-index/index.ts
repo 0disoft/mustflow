@@ -596,7 +596,7 @@ export async function readLocalIndexPromptContext(projectRoot: string): Promise<
 		const SQL = await loadSqlJs();
 		database = new SQL.Database(readFileSync(databasePath));
 		const capabilities = readStoredSearchCapabilities(database);
-		const stalePaths = getStalePaths(projectRoot, database);
+		const stalePaths = getStalePaths(projectRoot, database, { includeState: false });
 
 		if (stalePaths.length > 0) {
 			return createLocalIndexPromptContextStatus(databasePath, 'stale', stalePaths, capabilities);

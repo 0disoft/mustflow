@@ -214,11 +214,12 @@ read layer.
 `mf context --json --cache-audit` uses these budgets to report whether the mustflow reference bundle
 would fit the configured stable, task, and volatile limits. The stable layer is measured from the
 configured file contents after deterministic UTF-8/LF canonicalization. Task file candidates are
-reported as selection-gated placeholders with existence flags and content hashes so hosts can detect
-drift without rendering unselected context. Dynamic task sources and volatile sources remain
-runtime-only placeholders until actual selected content is available to a host resolver. The audit is
-a static prompt-layout check; provider tokenizer counts, billing tokens, TTL behavior, tool schema
-caching, and runtime cache hit evidence still require provider-specific adapters or usage telemetry.
+measured as selectable reference-bundle blocks with existence flags, content hashes, and largest-block
+ordering so hosts can see the cost of fallback documents before choosing them. Dynamic task sources
+and volatile sources remain runtime-only placeholders until actual selected content is available to a
+host resolver. The audit is a static prompt-layout check; provider tokenizer counts, billing tokens,
+TTL behavior, tool schema caching, and runtime cache hit evidence still require provider-specific
+adapters or usage telemetry.
 
 `prompt_cache.layers.stable.target_kb` is a preferred size target for the stable layer. The cache
 audit reports it as `target_status`, so oversized-but-still-valid stable prefixes remain visible

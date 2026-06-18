@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -278,21 +278,26 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 			context.cache_audit.layers.map((layer) => layer.cache_layer),
 			['stable', 'task', 'volatile'],
 		);
-		assert.equal(context.cache_audit.layers[1].budget_status, 'unknown');
+		assert.ok(context.cache_audit.layers[1].rendered_bytes > 0);
+		assert.ok(context.cache_audit.layers[1].estimated_tokens > 0);
+		assert.ok(['within_budget', 'over_budget', 'unknown'].includes(context.cache_audit.layers[1].budget_status));
 		assert.equal(context.cache_audit.layers[1].target_status, 'unknown');
-		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'source_placeholder');
+		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'file');
+		assert.ok(context.cache_audit.layers[1].blocks[0].rendered_bytes > 0);
 		assert.equal(context.cache_audit.layers[1].blocks[0].source_kind, 'file_reference');
 		assert.equal(context.cache_audit.layers[1].blocks[0].selection_policy, 'read_when_selected');
-		assert.equal(context.cache_audit.layers[1].blocks[0].measurement_status, 'hash_only_deferred');
+		assert.equal(context.cache_audit.layers[1].blocks[0].measurement_status, 'measured');
 		assert.equal(context.cache_audit.layers[1].blocks[0].candidate_exists, true);
 		assert.match(context.cache_audit.layers[1].blocks[0].candidate_content_hash, /^sha256:[a-f0-9]{64}$/u);
-		assert.match(context.cache_audit.layers[1].blocks[0].issue, /selection-gated/u);
+		assert.equal(context.cache_audit.layers[1].blocks[0].issue, null);
 		const routesBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === '.mustflow/skills/routes.toml');
 		const dynamicBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'matching_skill');
 		assert.ok(routesBlock);
 		assert.ok(dynamicBlock);
 		assert.equal(routesBlock.selection_policy, 'fallback_when_needed');
-		assert.equal(routesBlock.measurement_status, 'hash_only_deferred');
+		assert.equal(routesBlock.measurement_status, 'measured');
+		assert.ok(routesBlock.rendered_bytes > 0);
+		assert.ok(context.cache_audit.layers[1].largest_blocks.length > 0);
 		assert.equal(dynamicBlock.source_kind, 'dynamic_selection');
 		assert.equal(dynamicBlock.selection_policy, 'selected_at_runtime');
 		assert.equal(dynamicBlock.measurement_status, 'dynamic_unmeasured');
@@ -350,6 +355,18 @@ test('prints prompt-cache task local-index status when the index is fresh or sta
 		assert.ok(['fts5', 'table_scan'].includes(freshContext.task_context.local_index.search_backend));
 		assert.equal(typeof freshContext.task_context.local_index.search_fts5_available, 'boolean');
 		assert.equal(freshContext.task_context.local_index.refresh_hint, null);
+
+		const stateRunPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
+		mkdirSync(path.dirname(stateRunPath), { recursive: true });
+		writeFileSync(stateRunPath, JSON.stringify({ intent: 'volatile_probe', status: 'passed' }));
+
+		const volatileOnlyResult = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const volatileOnlyContext = JSON.parse(volatileOnlyResult.stdout);
+
+		assert.equal(volatileOnlyResult.status, 0, volatileOnlyResult.stderr || volatileOnlyResult.stdout);
+		assert.equal(volatileOnlyContext.task_context.local_index.status, 'fresh');
+		assert.equal(volatileOnlyContext.task_context.local_index.index_fresh, true);
+		assert.deepEqual(volatileOnlyContext.task_context.local_index.stale_paths, []);
 
 		const agentsPath = path.join(projectPath, 'AGENTS.md');
 		writeFileSync(agentsPath, `${readFileSync(agentsPath, 'utf8')}\n<!-- context stale probe -->\n`);

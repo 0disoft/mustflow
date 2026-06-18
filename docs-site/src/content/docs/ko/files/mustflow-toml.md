@@ -202,12 +202,12 @@ never_place_before_stable_prefix = true
 
 `mf context --json --cache-audit`는 이 예산을 사용해 mustflow reference bundle이 설정된
 stable, task, volatile 한도에 맞는지 보고합니다. 안정 계층은 설정된 파일 본문을 UTF-8/LF로
-결정적으로 정규화한 뒤 측정합니다. task 파일 후보는 선택형 placeholder로 표시하면서 존재 여부와
-내용 해시를 함께 제공하므로, 호스트는 선택되지 않은 맥락을 렌더링하지 않고도 drift를 감지할 수
-있습니다. 동적 task 출처와 volatile 출처는 실제 선택 본문이 호스트 resolver에 제공되기 전까지
-runtime-only placeholder로 남습니다. 이 감사는 정적 프롬프트 배치 검사이며, provider tokenizer
-count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit 증거는 별도 provider adapter나
-usage telemetry가 필요합니다.
+결정적으로 정규화한 뒤 측정합니다. task 파일 후보도 선택 가능한 reference bundle 블록으로
+측정해 존재 여부, 내용 해시, 가장 큰 후보 블록 순서를 보여주므로, 호스트는 fallback 문서를
+고르기 전에 비용을 볼 수 있습니다. 동적 task 출처와 volatile 출처는 실제 선택 본문이 호스트
+resolver에 제공되기 전까지 runtime-only placeholder로 남습니다. 이 감사는 정적 프롬프트 배치
+검사이며, provider tokenizer count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit
+증거는 별도 provider adapter나 usage telemetry가 필요합니다.
 
 `prompt_cache.layers.stable.target_kb`는 안정 계층의 선호 크기 목표입니다. cache audit은 이를 `target_status`로 보고하므로 hard budget은 넘지 않았지만 아직 비싼 stable prefix를 계속 볼 수 있습니다. `max_stable_prefix_kb`는 hard budget으로 남습니다.
 

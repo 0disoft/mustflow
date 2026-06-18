@@ -4,12 +4,17 @@ import type { SqlJsDatabase } from './sql.js';
 import { normalizeIndexedFileSourceScope, readIndexedFileRecord } from './source-index.js';
 import { collectDocuments } from './workflow-documents.js';
 
+interface StalePathOptions {
+	readonly includeState?: boolean;
+}
+
 export function readStoredSchemaVersion(database: SqlJsDatabase): string | undefined {
 	return readMetadataValue(database, 'schema_version');
 }
 
-export function getStalePaths(projectRoot: string, database: SqlJsDatabase): string[] {
+export function getStalePaths(projectRoot: string, database: SqlJsDatabase, options: StalePathOptions = {}): string[] {
 	const schemaVersion = readStoredSchemaVersion(database);
+	const includeState = options.includeState ?? true;
 
 	if (schemaVersion !== LOCAL_INDEX_SCHEMA_VERSION) {
 		return ['.mustflow/cache/mustflow.sqlite'];
@@ -23,6 +28,10 @@ export function getStalePaths(projectRoot: string, database: SqlJsDatabase): str
 		for (const row of indexedRows) {
 			const indexedPath = toSearchString(row.path);
 			const sourceScope = normalizeIndexedFileSourceScope(toSearchString(row.source_scope));
+
+			if (!includeState && sourceScope === 'state') {
+				continue;
+			}
 
 			try {
 				const current = readIndexedFileRecord(projectRoot, indexedPath, sourceScope);

@@ -42,9 +42,10 @@ The task profile reports task-selective sources such as the context index, full 
 Add `--cache-audit` to include a `cache_audit` block. The audit measures the stable files using
 mustflow's deterministic reference bundle format, reports UTF-8 rendered bytes, rough byte-based
 token estimates, configured budget status, and largest stable blocks. Task-layer file candidates are
-reported as selection-gated placeholders with existence flags and content hashes, while dynamic task
-sources and volatile sources are marked as runtime-only placeholders until a host supplies the actual
-selected content. The token estimate is not provider billing data and does not prove that OpenAI,
+measured as selectable reference-bundle blocks with existence flags, content hashes, and largest
+candidate blocks; dynamic task sources and volatile sources remain runtime-only placeholders until a
+host supplies the actual selected content. The token estimate is not provider billing data and does
+not prove that OpenAI,
 Anthropic, Gemini, or another provider reused a cache entry.
 
 ## Example
@@ -96,7 +97,7 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `cache_audit.layers[].blocks[].source_kind` (`string | undefined`): Placeholder source class, such as `file_reference`, `dynamic_selection`, or `runtime_volatile`.
 - `cache_audit.layers[].blocks[].selection_policy` (`string | undefined`): Whether the block is always rendered, selected only for a task, used only as fallback metadata, selected at runtime, or volatile runtime state.
 - `cache_audit.layers[].blocks[].measurement_status` (`string | undefined`): `measured`, `hash_only_deferred`, or `dynamic_unmeasured`.
-- `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): File-candidate existence and hash when the task source is a selectable file reference whose content is not rendered by the audit.
+- `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): File-candidate existence and hash when the task source is a selectable file reference. Measured task candidates still may be omitted from a real task bundle.
 
 Repeated and nested fields use these shapes:
 

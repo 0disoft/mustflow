@@ -41,11 +41,11 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 
 `--cache-audit`를 추가하면 `cache_audit` 블록을 포함합니다. 이 감사는 mustflow reference
 bundle 형식으로 안정 파일을 측정해 UTF-8 렌더링 바이트, 거친 바이트 기반 토큰 추정, 설정된
-예산 상태, 가장 큰 안정 블록을 보고합니다. task 계층의 파일 후보는 선택형 placeholder로
-표시하되 존재 여부와 내용 해시를 함께 제공합니다. 동적 task 출처와 volatile 출처는 호스트가
-실제 선택 본문을 제공하기 전까지 runtime-only placeholder로 표시됩니다. 이 토큰 추정은 provider
-청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른 provider의 실제 캐시 적중을
-증명하지 않습니다.
+예산 상태, 가장 큰 안정 블록을 보고합니다. task 계층의 파일 후보도 선택 가능한 reference
+bundle 블록으로 측정해 존재 여부, 내용 해시, 가장 큰 후보 블록을 함께 보여줍니다. 동적 task
+출처와 volatile 출처는 호스트가 실제 선택 본문을 제공하기 전까지 runtime-only placeholder로
+남습니다. 이 토큰 추정은 provider 청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른
+provider의 실제 캐시 적중을 증명하지 않습니다.
 
 ## 예시
 
@@ -96,7 +96,7 @@ npx mf context --json --cache-audit
 - `cache_audit.layers[].blocks[].source_kind` (`string | undefined`): `file_reference`, `dynamic_selection`, `runtime_volatile` 같은 placeholder 출처 분류입니다.
 - `cache_audit.layers[].blocks[].selection_policy` (`string | undefined`): 항상 렌더링되는지, 작업에서 선택될 때만 읽는지, fallback 메타데이터인지, 런타임에 선택되는지, volatile 런타임 상태인지 나타냅니다.
 - `cache_audit.layers[].blocks[].measurement_status` (`string | undefined`): `measured`, `hash_only_deferred`, `dynamic_unmeasured` 중 하나입니다.
-- `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): 작업 출처가 선택형 파일 참조라서 감사가 본문을 렌더링하지 않을 때의 파일 존재 여부와 내용 해시입니다.
+- `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): 작업 출처가 선택형 파일 참조일 때의 파일 존재 여부와 내용 해시입니다. 측정된 task 후보도 실제 작업 묶음에서는 제외될 수 있습니다.
 
 배열 안 객체의 세부 필드는 다음과 같습니다.
 
