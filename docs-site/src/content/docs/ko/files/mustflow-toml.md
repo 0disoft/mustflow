@@ -165,10 +165,6 @@ max_volatile_suffix_kb = 24
 target_kb = 48
 read = [
   "AGENTS.md",
-  ".mustflow/docs/agent-workflow.md",
-  ".mustflow/config/mustflow.toml",
-  ".mustflow/config/commands.toml",
-  ".mustflow/config/technology.toml",
   ".mustflow/skills/routes.toml",
 ]
 
@@ -195,7 +191,7 @@ never_place_before_stable_prefix = true
 `prompt_cache`는 특정 LLM 제공자가 실제로 입력을 캐시한다는 보장이 아니라, 프롬프트 배치 계약입니다.
 반복되는 프롬프트 앞부분을 안정적으로 유지할 수 있도록 안정 지시문, 작업별 맥락, 변동 상태를 분리합니다.
 
-안정 계층은 저장소 규칙, 워크플로 설정, 압축 스킬 라우트 메타데이터처럼 같은 순서로 앞쪽에 둘 수 있는 항목입니다. 작업 계층은 작업마다 선택하며 필요할 때만 확장 스킬 색인을 포함합니다. 변동 계층은 현재 사용자 요청, 변경 파일 목록, 명령 출력 일부, 실행 기록, 시각, 로컬 경로처럼 자주 바뀌는 값입니다.
+안정 계층은 저장소 진입 규칙과 압축 스킬 라우트 메타데이터처럼 같은 순서로 앞쪽에 둘 수 있는 항목입니다. 워크플로 정책, 구성, 명령 계약, 기술 선호도, 확장 라우트 표는 항상 켜지는 안정 prefix가 아니라 작업 선택이나 refresh checkpoint에서 읽어야 합니다. 작업 계층은 작업마다 선택하며 필요할 때만 확장 스킬 색인을 포함합니다. 변동 계층은 현재 사용자 요청, 변경 파일 목록, 명령 출력 일부, 실행 기록, 시각, 로컬 경로처럼 자주 바뀌는 값입니다.
 
 `stable_prefix_policy = "hash_verified"`는 호스트가 지원할 때 변경되지 않은 파일을 내용 해시로 참조할 수 있음을 뜻합니다. 그래도 현재 파일과 현재 사용자 지시는 캐시나 요약 맥락보다 우선합니다.
 

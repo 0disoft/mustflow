@@ -141,10 +141,6 @@ max_volatile_suffix_kb = 24
 target_kb = 48
 read = [
   "AGENTS.md",
-  ".mustflow/docs/agent-workflow.md",
-  ".mustflow/config/mustflow.toml",
-  ".mustflow/config/commands.toml",
-  ".mustflow/config/technology.toml",
   ".mustflow/skills/routes.toml",
 ]
 

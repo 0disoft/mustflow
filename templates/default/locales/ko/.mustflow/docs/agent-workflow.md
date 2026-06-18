@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: ko
 canonical: false
-revision: 29
+revision: 30
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -163,8 +163,8 @@ mustflow는 LLM 제공자의 입력 캐시 적중을 보장하지 않습니다. 
 
 호스트나 에이전트 실행 하네스가 모델 입력을 조립할 때는 다음 순서를 지켜야 합니다.
 
-1. 안정 접두부: `mf context --json --cache-profile stable`에서 얻은 저장소 규칙, 작업 흐름 문서, 압축 라우트 메타데이터입니다.
-2. 작업 컨텍스트: 선택된 컨텍스트 파일, 상세 스킬 색인 fallback, 맞는 스킬, 저장소 지도 앵커, 관련 소스 파일, 그리고 `cache_layer`가 `task`인 `mf search --json` 결과입니다.
+1. 안정 접두부: `mf context --json --cache-profile stable`에서 얻은 저장소 진입 규칙과 압축 라우트 메타데이터입니다.
+2. 작업 컨텍스트: 선택된 컨텍스트 파일, 작업 흐름과 구성 refresh 조각, 명령 인텐트 정의, 상세 스킬 색인 fallback, 맞는 스킬, 저장소 지도 앵커, 관련 소스 파일, 그리고 `cache_layer`가 `task`인 `mf search --json` 결과입니다.
 3. 변동 접미부: 현재 사용자 요청, 변경 파일 목록, 명령 출력 끝부분, 최신 실행 기록 메타데이터, 시각 정보, 그리고 `volatile` 값이 `true`인 `mf search --json` 결과입니다.
 
 안정 접두부를 재사용하기 전에는 보고된 콘텐츠 해시를 현재 파일과 비교합니다. 안정 문서의 해시가 하나라도 바뀌면 캐시된 텍스트를 재사용하지 말고 해당 문서를 다시 읽어야 합니다. 절대로 로컬 경로, 실행 기록 시각, 명령 출력, 변경 파일, 현재 사용자 작업 문구는 안정 접두부보다 앞에 두지 않습니다.

@@ -165,10 +165,6 @@ max_volatile_suffix_kb = 24
 target_kb = 48
 read = [
   "AGENTS.md",
-  ".mustflow/docs/agent-workflow.md",
-  ".mustflow/config/mustflow.toml",
-  ".mustflow/config/commands.toml",
-  ".mustflow/config/technology.toml",
   ".mustflow/skills/routes.toml",
 ]
 
@@ -196,8 +192,10 @@ never_place_before_stable_prefix = true
 the input. It separates stable instructions from task-specific context and volatile state so hosts can
 keep repeated prompt prefixes stable when they support caching.
 
-The stable layer contains repository rules, workflow configuration, and compact skill-route metadata
-that should be placed before task-specific material in a consistent order. The task layer is selected per task and may include the expanded skill index only when needed. The volatile layer
+The stable layer contains repository entrypoint rules and compact skill-route metadata that should be
+placed before task-specific material in a consistent order. Workflow policy, configuration, command
+contracts, technology preferences, and expanded route tables should be loaded through task selection
+or refresh checkpoints instead of being placed in the always-on stable prefix. The task layer is selected per task and may include the expanded skill index only when needed. The volatile layer
 contains changing values such as current user requests, changed-file lists, command output tails, run
 receipts, timestamps, and local paths.
 

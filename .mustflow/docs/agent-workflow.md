@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 21
+revision: 22
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -84,8 +84,8 @@ Prompt caching is a performance optimization, not an authority source. A cached 
 
 Hosts and agent harnesses assembling model input should keep context in this order:
 
-1. Stable prefix: repository rules, workflow files, and compact route metadata from `mf context --json --cache-profile stable`.
-2. Task context: selected context files, detailed skill index fallback, matching skills, repository-map anchors, relevant source files, and `mf search --json` results with `cache_layer` set to `task`.
+1. Stable prefix: repository entrypoint rules and compact route metadata from `mf context --json --cache-profile stable`.
+2. Task context: selected context files, workflow/configuration refresh slices, command intent definitions, detailed skill index fallback, matching skills, repository-map anchors, relevant source files, and `mf search --json` results with `cache_layer` set to `task`.
 3. Volatile suffix: current user request, changed-file lists, command output tails, latest run receipt metadata, timestamps, and any `mf search --json` result whose `volatile` field is `true`.
 
 Before reusing a stable prefix, compare the reported content hashes with the current files. If any stable document hash changes, reread the document instead of reusing cached text. Do not place absolute local paths, run receipt timestamps, command output, changed files, or current user task text before the stable prefix.

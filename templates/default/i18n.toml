@@ -40,8 +40,8 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 21
-translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 21, status = "current" }
+revision = 22
+translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 22, status = "current" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }

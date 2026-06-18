@@ -37,10 +37,6 @@ const CACHE_RELATIVE_PATH = '.mustflow/cache/';
 const STATE_RELATIVE_PATH = '.mustflow/state/';
 const DEFAULT_PROMPT_CACHE_STABLE_READ = [
 	'AGENTS.md',
-	'.mustflow/docs/agent-workflow.md',
-	'.mustflow/config/mustflow.toml',
-	'.mustflow/config/commands.toml',
-	'.mustflow/config/technology.toml',
 	'.mustflow/skills/routes.toml',
 ] as const;
 const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
