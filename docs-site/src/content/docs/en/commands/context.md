@@ -88,8 +88,9 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.
 - `cache_audit.measurement` (`string`): Measurement mode. Currently `reference_bundle`.
 - `cache_audit.estimator` (`object`): Rough byte-to-token estimator and caveat.
-- `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, budget settings, budget status, blocks, largest blocks, and issues.
+- `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, hard budget settings, target settings, status fields, blocks, largest blocks, and issues.
 - `cache_audit.layers[].budget_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`.
+- `cache_audit.layers[].target_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`; this reports preferred target fit without making the command fail.
 - `cache_audit.layers[].blocks[]` (`object[]`): File or source-placeholder blocks with path or source, content hash, rendered bytes, estimated tokens, budget share, and any issue.
 
 Repeated and nested fields use these shapes:

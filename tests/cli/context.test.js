@@ -244,6 +244,9 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 		assert.equal(stableAudit.budget_kb, 1);
 		assert.equal(stableAudit.budget_bytes, 1024);
 		assert.equal(stableAudit.budget_status, 'over_budget');
+		assert.equal(stableAudit.target_kb, 48);
+		assert.equal(stableAudit.target_bytes, 49152);
+		assert.equal(stableAudit.target_status, 'over_budget');
 		assert.ok(stableAudit.issues.some((issue) => issue.includes('stable prefix exceeds max_stable_prefix_kb')));
 		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/routes.toml'));
 		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'), false);
@@ -270,6 +273,7 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 			['stable', 'task', 'volatile'],
 		);
 		assert.equal(context.cache_audit.layers[1].budget_status, 'unknown');
+		assert.equal(context.cache_audit.layers[1].target_status, 'unknown');
 		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'source_placeholder');
 		assert.match(context.cache_audit.layers[1].blocks[0].issue, /unresolved/u);
 	} finally {

@@ -255,6 +255,9 @@ export interface PromptCacheAuditLayerContext {
 	readonly cache_layer: 'stable' | 'task' | 'volatile';
 	readonly budget_kb: number | null;
 	readonly budget_bytes: number | null;
+	readonly target_kb: number | null;
+	readonly target_bytes: number | null;
+	readonly target_status: PromptCacheBudgetStatus;
 	readonly rendered_bytes: number | null;
 	readonly estimated_tokens: number | null;
 	readonly budget_status: PromptCacheBudgetStatus;
@@ -629,6 +632,8 @@ function readStablePromptCacheAuditLayer(
 	const layer = readPromptCacheLayer(mustflow, 'stable');
 	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
 	const budget = budgetBytes(settings.max_stable_prefix_kb);
+	const targetKb = readNumber(layer, 'target_kb');
+	const target = budgetBytes(targetKb);
 	const issues: string[] = [];
 	const blocks = read.map((relativePath, index) => {
 		const content = safeRead(projectRoot, relativePath);
@@ -670,6 +675,7 @@ function readStablePromptCacheAuditLayer(
 	const renderedBytes = blocks.reduce((total, block) => total + (block.rendered_bytes ?? 0), 0);
 	const estimatedTokens = estimateTokens(renderedBytes);
 	const status = budgetStatus(renderedBytes, budget);
+	const targetStatus = budgetStatus(renderedBytes, target);
 
 	if (status === 'over_budget') {
 		issues.push(
@@ -681,6 +687,9 @@ function readStablePromptCacheAuditLayer(
 		cache_layer: 'stable',
 		budget_kb: settings.max_stable_prefix_kb,
 		budget_bytes: budget,
+		target_kb: targetKb,
+		target_bytes: target,
+		target_status: targetStatus,
 		rendered_bytes: renderedBytes,
 		estimated_tokens: estimatedTokens,
 		budget_status: status,
@@ -718,6 +727,9 @@ function readSourcePlaceholderAuditLayer(
 		cache_layer: cacheLayer,
 		budget_kb: budgetKb,
 		budget_bytes: budgetBytes(budgetKb),
+		target_kb: null,
+		target_bytes: null,
+		target_status: 'unknown',
 		rendered_bytes: null,
 		estimated_tokens: null,
 		budget_status: 'unknown',

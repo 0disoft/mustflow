@@ -88,8 +88,9 @@ npx mf context --json --cache-audit
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
 - `cache_audit.measurement` (`string`): 측정 방식입니다. 현재는 `reference_bundle`입니다.
 - `cache_audit.estimator` (`object`): 거친 byte-to-token 추정기와 주의 문구입니다.
-- `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, 예산 설정, 예산 상태, 블록, 가장 큰 블록, 이슈입니다.
+- `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, hard 예산 설정, 목표 설정, 상태 필드, 블록, 가장 큰 블록, 이슈입니다.
 - `cache_audit.layers[].budget_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다.
+- `cache_audit.layers[].target_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다. 명령 실패 조건이 아니라 선호 목표에 맞는지 보여줍니다.
 - `cache_audit.layers[].blocks[]` (`object[]`): 파일 또는 source placeholder 블록이며, 경로 또는 출처, 내용 해시, 렌더링 바이트, 추정 토큰, 예산 비율, 이슈를 포함합니다.
 
 배열 안 객체의 세부 필드는 다음과 같습니다.

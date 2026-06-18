@@ -162,6 +162,7 @@ max_task_context_kb = 48
 max_volatile_suffix_kb = 24
 
 [prompt_cache.layers.stable]
+target_kb = 48
 read = [
   "AGENTS.md",
   ".mustflow/docs/agent-workflow.md",
@@ -216,6 +217,10 @@ reported as unresolved placeholders unless actual selected content is available 
 audit is a static prompt-layout check; provider tokenizer counts, billing tokens, TTL behavior, tool
 schema caching, and runtime cache hit evidence still require provider-specific adapters or usage
 telemetry.
+
+`prompt_cache.layers.stable.target_kb` is a preferred size target for the stable layer. The cache
+audit reports it as `target_status`, so oversized-but-still-valid stable prefixes remain visible
+while `max_stable_prefix_kb` stays the hard budget.
 
 ## Workspace Fields
 

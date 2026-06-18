@@ -162,6 +162,7 @@ max_task_context_kb = 48
 max_volatile_suffix_kb = 24
 
 [prompt_cache.layers.stable]
+target_kb = 48
 read = [
   "AGENTS.md",
   ".mustflow/docs/agent-workflow.md",
@@ -206,6 +207,8 @@ stable, task, volatile 한도에 맞는지 보고합니다. 안정 계층은 설
 전까지 unresolved placeholder로 표시됩니다. 이 감사는 정적 프롬프트 배치 검사이며, provider
 tokenizer count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit 증거는 별도 provider
 adapter나 usage telemetry가 필요합니다.
+
+`prompt_cache.layers.stable.target_kb`는 안정 계층의 선호 크기 목표입니다. cache audit은 이를 `target_status`로 보고하므로 hard budget은 넘지 않았지만 아직 비싼 stable prefix를 계속 볼 수 있습니다. `max_stable_prefix_kb`는 hard budget으로 남습니다.
 
 ## 작업대 필드
 

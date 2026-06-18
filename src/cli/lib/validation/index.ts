@@ -235,6 +235,7 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 			const stable = validateNestedTable(layers, 'stable', '[prompt_cache.layers.stable]', issues);
 			if (stable) {
 				validatePathArrayField(stable, 'read', '[prompt_cache.layers.stable].read', issues);
+				validatePositiveIntegerField(stable, 'target_kb', '[prompt_cache.layers.stable].target_kb', issues);
 			}
 
 			const task = validateNestedTable(layers, 'task', '[prompt_cache.layers.task]', issues);

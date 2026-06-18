@@ -136,7 +136,7 @@ test('fails when prompt cache configuration fields are invalid', () => {
 			.replace('max_stable_prefix_kb = 96', 'max_stable_prefix_kb = 0')
 			.replace('max_task_context_kb = 48', 'max_task_context_kb = "large"')
 			.replace('max_volatile_suffix_kb = 24', 'max_volatile_suffix_kb = -1')
-			.replace('[prompt_cache.layers.stable]\nread = [', '[prompt_cache.layers.stable]\nread = [\n  "../AGENTS.md",')
+			.replace('[prompt_cache.layers.stable]\ntarget_kb = 48\nread = [', '[prompt_cache.layers.stable]\ntarget_kb = "48"\nread = [\n  "../AGENTS.md",')
 			.replace(
 				/\[prompt_cache\.layers\.task\]\nread_policy = "task_relevant_only"\nsources = \[\n(?:  "[^"]+",\n)+\]/u,
 				'[prompt_cache.layers.task]\nread_policy = "read_all"\nsources = "all"',
@@ -157,6 +157,7 @@ test('fails when prompt cache configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[prompt_cache\]\.max_task_context_kb must be a positive integer/);
 		assert.match(result.stderr, /\[prompt_cache\]\.max_volatile_suffix_kb must be a positive integer/);
 		assert.match(result.stderr, /\[prompt_cache\.layers\.stable\]\.read entries must be non-empty relative paths/);
+		assert.match(result.stderr, /\[prompt_cache\.layers\.stable\]\.target_kb must be a positive integer/);
 		assert.match(result.stderr, /\[prompt_cache\.layers\.task\]\.read_policy must be "task_relevant_only"/);
 		assert.match(result.stderr, /\[prompt_cache\.layers\.task\]\.sources must be a string array/);
 		assert.match(result.stderr, /\[prompt_cache\.layers\.volatile\]\.never_place_before_stable_prefix must be a boolean/);
@@ -248,8 +249,8 @@ test('strict check fails when prompt cache policy would put volatile state in th
 		const config = readText(configPath)
 			.replace('exclude_volatile_state_from_prefix = true', 'exclude_volatile_state_from_prefix = false')
 			.replace(
-				'[prompt_cache.layers.stable]\nread = [',
-				'[prompt_cache.layers.stable]\nread = [\n  ".mustflow/state/runs/latest.json",',
+				'[prompt_cache.layers.stable]\ntarget_kb = 48\nread = [',
+				'[prompt_cache.layers.stable]\ntarget_kb = 48\nread = [\n  ".mustflow/state/runs/latest.json",',
 			)
 			.replace('default_method = "hash_check"', 'default_method = "reread_if_changed"');
 		writeFileSync(configPath, config);

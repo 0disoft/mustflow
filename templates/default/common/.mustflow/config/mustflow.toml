@@ -138,6 +138,7 @@ max_task_context_kb = 48
 max_volatile_suffix_kb = 24
 
 [prompt_cache.layers.stable]
+target_kb = 48
 read = [
   "AGENTS.md",
   ".mustflow/docs/agent-workflow.md",
