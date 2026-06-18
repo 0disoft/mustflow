@@ -207,8 +207,11 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.stable_prefix.cache_layer, 'stable');
 		assert.equal(context.task_context.cache_layer, 'task');
 		assert.equal(context.task_context.read_policy, 'task_relevant_only');
-		assert.ok(context.task_context.sources.includes('.mustflow/skills/routes.toml'));
-		assert.ok(context.task_context.sources.includes('.mustflow/skills/INDEX.md'));
+		assert.ok(context.task_context.sources.includes('skill_route_candidates'));
+		assert.ok(context.task_context.sources.includes('route_metadata_fallback'));
+		assert.ok(context.task_context.sources.includes('expanded_skill_index_fallback'));
+		assert.equal(context.task_context.sources.includes('.mustflow/skills/routes.toml'), false);
+		assert.equal(context.task_context.sources.includes('.mustflow/skills/INDEX.md'), false);
 		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
 		assert.equal(context.task_context.local_index.source, 'local_index');
 		assert.equal(context.task_context.local_index.status, 'missing');
@@ -280,7 +283,7 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		);
 		assert.ok(context.cache_audit.layers[1].rendered_bytes > 0);
 		assert.ok(context.cache_audit.layers[1].estimated_tokens > 0);
-		assert.ok(['within_budget', 'over_budget', 'unknown'].includes(context.cache_audit.layers[1].budget_status));
+		assert.ok(['within_budget', 'unknown'].includes(context.cache_audit.layers[1].budget_status));
 		assert.equal(context.cache_audit.layers[1].target_status, 'unknown');
 		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'file');
 		assert.ok(context.cache_audit.layers[1].blocks[0].rendered_bytes > 0);
@@ -290,13 +293,28 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		assert.equal(context.cache_audit.layers[1].blocks[0].candidate_exists, true);
 		assert.match(context.cache_audit.layers[1].blocks[0].candidate_content_hash, /^sha256:[a-f0-9]{64}$/u);
 		assert.equal(context.cache_audit.layers[1].blocks[0].issue, null);
-		const routesBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === '.mustflow/skills/routes.toml');
+		const routeCandidatesBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'skill_route_candidates');
+		const routeFallbackBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'route_metadata_fallback');
+		const expandedIndexFallbackBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'expanded_skill_index_fallback');
 		const dynamicBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'matching_skill');
-		assert.ok(routesBlock);
+		assert.ok(routeCandidatesBlock);
+		assert.ok(routeFallbackBlock);
+		assert.ok(expandedIndexFallbackBlock);
 		assert.ok(dynamicBlock);
-		assert.equal(routesBlock.selection_policy, 'fallback_when_needed');
-		assert.equal(routesBlock.measurement_status, 'measured');
-		assert.ok(routesBlock.rendered_bytes > 0);
+		assert.equal(routeCandidatesBlock.selection_policy, 'selected_at_runtime');
+		assert.equal(routeCandidatesBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(routeFallbackBlock.selection_policy, 'fallback_when_needed');
+		assert.equal(routeFallbackBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(expandedIndexFallbackBlock.selection_policy, 'fallback_when_needed');
+		assert.equal(expandedIndexFallbackBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(
+			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
+			false,
+		);
+		assert.equal(
+			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
+			false,
+		);
 		assert.ok(context.cache_audit.layers[1].largest_blocks.length > 0);
 		assert.equal(dynamicBlock.source_kind, 'dynamic_selection');
 		assert.equal(dynamicBlock.selection_policy, 'selected_at_runtime');

@@ -41,8 +41,9 @@ const DEFAULT_PROMPT_CACHE_STABLE_READ = [
 ] as const;
 const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
 	'.mustflow/context/INDEX.md',
-	'.mustflow/skills/routes.toml',
-	'.mustflow/skills/INDEX.md',
+	'skill_route_candidates',
+	'route_metadata_fallback',
+	'expanded_skill_index_fallback',
 	'REPO_MAP.md',
 	'matching_skill',
 	'relevant_source_files',
@@ -420,7 +421,12 @@ function isDirectPromptCacheSource(source: string): boolean {
 function taskSourceSelectionPolicy(source: string): PromptCacheAuditSelectionPolicy {
 	const normalized = toPosixPath(source);
 
-	if (normalized === '.mustflow/skills/routes.toml' || normalized === '.mustflow/skills/INDEX.md') {
+	if (
+		normalized === '.mustflow/skills/routes.toml' ||
+		normalized === '.mustflow/skills/INDEX.md' ||
+		normalized === 'route_metadata_fallback' ||
+		normalized === 'expanded_skill_index_fallback'
+	) {
 		return 'fallback_when_needed';
 	}
 
@@ -429,6 +435,10 @@ function taskSourceSelectionPolicy(source: string): PromptCacheAuditSelectionPol
 	}
 
 	return 'selected_at_runtime';
+}
+
+function taskSourceKind(source: string): PromptCacheAuditSourceKind {
+	return isDirectPromptCacheSource(toPosixPath(source)) ? 'file_reference' : 'dynamic_selection';
 }
 
 function taskSourceIssue(source: string, measurementStatus: PromptCacheAuditMeasurementStatus): string {
@@ -764,8 +774,7 @@ function readTaskSourceAuditLayer(
 	const issues = new Set<string>();
 	const blocks = sources.map((source, index) => {
 		const selectionPolicy = taskSourceSelectionPolicy(source);
-		const sourceKind: PromptCacheAuditSourceKind =
-			selectionPolicy === 'selected_at_runtime' ? 'dynamic_selection' : 'file_reference';
+		const sourceKind = taskSourceKind(source);
 		const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
 		const measurementStatus: PromptCacheAuditMeasurementStatus =
 			sourceKind === 'file_reference'

@@ -174,8 +174,9 @@ read = [
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
-  ".mustflow/skills/routes.toml",
-  ".mustflow/skills/INDEX.md",
+  "skill_route_candidates",
+  "route_metadata_fallback",
+  "expanded_skill_index_fallback",
   "REPO_MAP.md",
   "matching_skill",
   "relevant_source_files",
@@ -194,7 +195,7 @@ never_place_before_stable_prefix = true
 `prompt_cache`는 특정 LLM 제공자가 실제로 입력을 캐시한다는 보장이 아니라, 프롬프트 배치 계약입니다.
 반복되는 프롬프트 앞부분을 안정적으로 유지할 수 있도록 안정 지시문, 작업별 맥락, 변동 상태를 분리합니다.
 
-안정 계층은 저장소 진입 규칙과 압축 스킬 route kernel처럼 같은 순서로 앞쪽에 둘 수 있는 항목입니다. 워크플로 정책, 구성, 명령 계약, 기술 선호도, 전체 라우트 메타데이터, 확장 라우트 표는 항상 켜지는 안정 prefix가 아니라 작업 선택이나 refresh checkpoint에서 읽어야 합니다. 작업 계층은 작업마다 선택하며 필요할 때만 전체 라우트 메타데이터와 확장 스킬 색인을 포함합니다. 변동 계층은 현재 사용자 요청, 변경 파일 목록, 명령 출력 일부, 실행 기록, 시각, 로컬 경로처럼 자주 바뀌는 값입니다.
+안정 계층은 저장소 진입 규칙과 압축 스킬 route kernel처럼 같은 순서로 앞쪽에 둘 수 있는 항목입니다. 워크플로 정책, 구성, 명령 계약, 기술 선호도, 전체 라우트 메타데이터, 확장 라우트 표는 항상 켜지는 안정 prefix가 아니라 작업 선택이나 refresh checkpoint에서 읽어야 합니다. 작업 계층은 작업마다 선택하며 compact `mf skill route` 후보에서 시작해야 합니다. 전체 라우트 메타데이터와 확장 스킬 색인은 기본 렌더링 블록이 아니라 런타임 fallback placeholder입니다. 변동 계층은 현재 사용자 요청, 변경 파일 목록, 명령 출력 일부, 실행 기록, 시각, 로컬 경로처럼 자주 바뀌는 값입니다.
 
 `stable_prefix_policy = "hash_verified"`는 호스트가 지원할 때 변경되지 않은 파일을 내용 해시로 참조할 수 있음을 뜻합니다. 그래도 현재 파일과 현재 사용자 지시는 캐시나 요약 맥락보다 우선합니다.
 
@@ -202,11 +203,11 @@ never_place_before_stable_prefix = true
 
 `mf context --json --cache-audit`는 이 예산을 사용해 mustflow reference bundle이 설정된
 stable, task, volatile 한도에 맞는지 보고합니다. 안정 계층은 설정된 파일 본문을 UTF-8/LF로
-결정적으로 정규화한 뒤 측정합니다. task 파일 후보도 선택 가능한 reference bundle 블록으로
-측정해 존재 여부, 내용 해시, 가장 큰 후보 블록 순서를 보여주므로, 호스트는 fallback 문서를
-고르기 전에 비용을 볼 수 있습니다. 동적 task 출처와 volatile 출처는 실제 선택 본문이 호스트
-resolver에 제공되기 전까지 runtime-only placeholder로 남습니다. 이 감사는 정적 프롬프트 배치
-검사이며, provider tokenizer count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit
+결정적으로 정규화한 뒤 측정합니다. 직접 task 파일 후보는 선택 가능한 reference bundle 블록으로
+측정해 존재 여부, 내용 해시, 가장 큰 후보 블록 순서를 보여줍니다. `skill_route_candidates`,
+`route_metadata_fallback`, `expanded_skill_index_fallback`, 선택된 skill, 관련 소스 파일, volatile
+출처 같은 런타임 task 출처는 실제 선택 본문이 호스트 resolver에 제공되기 전까지 placeholder로
+남습니다. 이 감사는 정적 프롬프트 배치 검사이며, provider tokenizer count, 청구 토큰, TTL 동작, tool schema caching, 런타임 cache hit
 증거는 별도 provider adapter나 usage telemetry가 필요합니다.
 
 `prompt_cache.layers.stable.target_kb`는 안정 계층의 선호 크기 목표입니다. cache audit은 이를 `target_status`로 보고하므로 hard budget은 넘지 않았지만 아직 비싼 stable prefix를 계속 볼 수 있습니다. `max_stable_prefix_kb`는 hard budget으로 남습니다.

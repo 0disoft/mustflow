@@ -174,8 +174,9 @@ read = [
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
-  ".mustflow/skills/routes.toml",
-  ".mustflow/skills/INDEX.md",
+  "skill_route_candidates",
+  "route_metadata_fallback",
+  "expanded_skill_index_fallback",
   "REPO_MAP.md",
   "matching_skill",
   "relevant_source_files",
@@ -198,7 +199,7 @@ keep repeated prompt prefixes stable when they support caching.
 The stable layer contains repository entrypoint rules and the compact skill-route kernel that should be
 placed before task-specific material in a consistent order. Workflow policy, configuration, command
 contracts, technology preferences, and expanded route tables should be loaded through task selection
-or refresh checkpoints instead of being placed in the always-on stable prefix. The task layer is selected per task and may include full route metadata and the expanded skill index only when needed. The volatile layer
+or refresh checkpoints instead of being placed in the always-on stable prefix. The task layer is selected per task and should start from compact `mf skill route` candidates. Full route metadata and the expanded skill index are runtime fallback placeholders, not default rendered task blocks. The volatile layer
 contains changing values such as current user requests, changed-file lists, command output tails, run
 receipts, timestamps, and local paths.
 
@@ -213,11 +214,12 @@ read layer.
 
 `mf context --json --cache-audit` uses these budgets to report whether the mustflow reference bundle
 would fit the configured stable, task, and volatile limits. The stable layer is measured from the
-configured file contents after deterministic UTF-8/LF canonicalization. Task file candidates are
+configured file contents after deterministic UTF-8/LF canonicalization. Direct task file candidates are
 measured as selectable reference-bundle blocks with existence flags, content hashes, and largest-block
-ordering so hosts can see the cost of fallback documents before choosing them. Dynamic task sources
-and volatile sources remain runtime-only placeholders until actual selected content is available to a
-host resolver. The audit is a static prompt-layout check; provider tokenizer counts, billing tokens,
+ordering. Runtime task sources such as `skill_route_candidates`, `route_metadata_fallback`,
+`expanded_skill_index_fallback`, selected skills, relevant source files, and volatile sources remain
+placeholders until actual selected content is available to a host resolver. The audit is a static
+prompt-layout check; provider tokenizer counts, billing tokens,
 TTL behavior, tool schema caching, and runtime cache hit evidence still require provider-specific
 adapters or usage telemetry.
 

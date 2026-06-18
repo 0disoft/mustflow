@@ -151,8 +151,9 @@ read = [
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
-  ".mustflow/skills/routes.toml",
-  ".mustflow/skills/INDEX.md",
+  "skill_route_candidates",
+  "route_metadata_fallback",
+  "expanded_skill_index_fallback",
   "REPO_MAP.md",
   "matching_skill",
   "relevant_source_files",
