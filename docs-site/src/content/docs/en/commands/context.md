@@ -44,9 +44,10 @@ mustflow's deterministic reference bundle format, reports UTF-8 rendered bytes, 
 token estimates, configured budget status, and largest stable blocks. Task-layer file candidates are
 measured as selectable reference-bundle blocks with existence flags, content hashes, and largest
 candidate blocks; dynamic task sources and volatile sources remain runtime-only placeholders until a
-host supplies the actual selected content. The token estimate is not provider billing data and does
-not prove that OpenAI,
-Anthropic, Gemini, or another provider reused a cache entry.
+host supplies the actual selected content. The audit also includes a `summary` object with static
+invariant counters such as measured blocks, dynamic sources, unresolved references, and volatile
+layers that appear before the stable layer. The token estimate is not provider billing data and does
+not prove that OpenAI, Anthropic, Gemini, or another provider reused a cache entry.
 
 Use `--cache-compare <path>` with a prior `mf context --json --cache-profile ...` report inside the
 mustflow root to compare prompt-bundle hashes and locate the first changed prompt block without
@@ -101,6 +102,11 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `prompt_bundle_diff.first_difference` (`object | null`): First added, removed, or changed block by layer and order. Changed blocks list changed fields such as `content_hash`, `rendered_digest`, `cacheability`, or `reload_on`.
 - `cache_audit.measurement` (`string`): Measurement mode. Currently `reference_bundle`.
 - `cache_audit.estimator` (`object`): Rough byte-to-token estimator and caveat.
+- `cache_audit.summary` (`object`): Static audit totals and invariants for the rendered reference bundle.
+- `cache_audit.summary.dynamic_source_count` (`number`): Runtime-selected or volatile sources that cannot be fully measured before task assembly.
+- `cache_audit.summary.unresolved_reference_count` (`number`): File references that could not be measured as concrete reference blocks.
+- `cache_audit.summary.volatile_before_stable_count` (`number`): Volatile layers found before the stable layer. This should normally be `0`.
+- `cache_audit.summary.serialization_deterministic` (`true`): Indicates that the reference bundle uses deterministic serialization rules.
 - `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, hard budget settings, target settings, status fields, blocks, largest blocks, and issues.
 - `cache_audit.layers[].budget_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`.
 - `cache_audit.layers[].target_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`; this reports preferred target fit without making the command fail.

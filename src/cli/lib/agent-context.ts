@@ -290,10 +290,27 @@ export interface PromptCacheAuditLayerContext {
 	readonly issues: readonly string[];
 }
 
+export interface PromptCacheAuditSummaryContext {
+	readonly rendered_bytes: number | null;
+	readonly estimated_tokens: number | null;
+	readonly measured_block_count: number;
+	readonly dynamic_source_count: number;
+	readonly unresolved_reference_count: number;
+	readonly volatile_before_stable_count: number;
+	readonly serialization_deterministic: true;
+	readonly stable_rendered_bytes: number | null;
+	readonly stable_estimated_tokens: number | null;
+	readonly stable_budget_status: PromptCacheBudgetStatus | null;
+	readonly stable_largest_block_budget_share: number | null;
+	readonly task_budget_status: PromptCacheBudgetStatus | null;
+	readonly volatile_budget_status: PromptCacheBudgetStatus | null;
+}
+
 export interface PromptCacheAuditContext {
 	readonly measurement: 'reference_bundle';
 	readonly estimator: PromptCacheAuditEstimatorContext;
 	readonly canonicalization: readonly string[];
+	readonly summary: PromptCacheAuditSummaryContext;
 	readonly layers: readonly PromptCacheAuditLayerContext[];
 	readonly issues: readonly string[];
 }
@@ -1336,6 +1353,41 @@ function readVolatileSourceAuditLayer(
 	};
 }
 
+function readPromptCacheAuditSummary(layers: readonly PromptCacheAuditLayerContext[]): PromptCacheAuditSummaryContext {
+	const blocks = layers.flatMap((layer) => layer.blocks);
+	const measuredBytes = blocks.reduce((total, block) => total + (block.rendered_bytes ?? 0), 0);
+	const measuredBlockCount = blocks.filter((block) => block.measurement_status === 'measured').length;
+	const stableLayer = layers.find((layer) => layer.cache_layer === 'stable') ?? null;
+	const taskLayer = layers.find((layer) => layer.cache_layer === 'task') ?? null;
+	const volatileLayer = layers.find((layer) => layer.cache_layer === 'volatile') ?? null;
+	const stableLayerIndex = layers.findIndex((layer) => layer.cache_layer === 'stable');
+	const volatileBeforeStableCount = stableLayerIndex === -1
+		? 0
+		: layers.slice(0, stableLayerIndex).filter((layer) => layer.cache_layer === 'volatile').length;
+	const stableLargestBlockBudgetShare = stableLayer?.largest_blocks
+		.map((block) => block.budget_share)
+		.filter((share): share is number => share !== null)
+		.sort((left, right) => right - left)[0] ?? null;
+
+	return {
+		rendered_bytes: measuredBlockCount === 0 ? null : measuredBytes,
+		estimated_tokens: measuredBlockCount === 0 ? null : estimateTokens(measuredBytes),
+		measured_block_count: measuredBlockCount,
+		dynamic_source_count: blocks.filter((block) => block.source_kind !== 'file_reference').length,
+		unresolved_reference_count: blocks.filter((block) =>
+			block.source_kind === 'file_reference' && block.measurement_status !== 'measured'
+		).length,
+		volatile_before_stable_count: volatileBeforeStableCount,
+		serialization_deterministic: true,
+		stable_rendered_bytes: stableLayer?.rendered_bytes ?? null,
+		stable_estimated_tokens: stableLayer?.estimated_tokens ?? null,
+		stable_budget_status: stableLayer?.budget_status ?? null,
+		stable_largest_block_budget_share: stableLargestBlockBudgetShare,
+		task_budget_status: taskLayer?.budget_status ?? null,
+		volatile_budget_status: volatileLayer?.budget_status ?? null,
+	};
+}
+
 function readPromptCacheAudit(
 	projectRoot: string,
 	mustflow: TomlTable | undefined,
@@ -1382,6 +1434,7 @@ function readPromptCacheAudit(
 			'trim trailing blank lines',
 			'stable document path header before each block',
 		],
+		summary: readPromptCacheAuditSummary(layers),
 		layers,
 		issues: layers.flatMap((layer) => layer.issues),
 	};

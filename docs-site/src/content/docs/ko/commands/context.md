@@ -44,8 +44,10 @@ bundle 형식으로 안정 파일을 측정해 UTF-8 렌더링 바이트, 거친
 예산 상태, 가장 큰 안정 블록을 보고합니다. task 계층의 파일 후보도 선택 가능한 reference
 bundle 블록으로 측정해 존재 여부, 내용 해시, 가장 큰 후보 블록을 함께 보여줍니다. 동적 task
 출처와 volatile 출처는 호스트가 실제 선택 본문을 제공하기 전까지 runtime-only placeholder로
-남습니다. 이 토큰 추정은 provider 청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른
-provider의 실제 캐시 적중을 증명하지 않습니다.
+남습니다. 또한 `summary` 객체로 측정된 블록 수, 동적 출처 수, 해석되지 않은 파일 참조 수,
+stable 계층 앞에 나온 volatile 계층 수 같은 정적 불변식도 보여줍니다. 이 토큰 추정은 provider
+청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른 provider의 실제 캐시 적중을 증명하지
+않습니다.
 
 `--cache-compare <path>`는 mustflow root 안에 저장해 둔 이전 `mf context --json --cache-profile ...`
 보고서와 현재 prompt bundle을 비교합니다. 실제 prompt 본문을 출력하지 않고 hash 변화와 첫 번째
@@ -100,6 +102,11 @@ npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseli
 - `prompt_bundle_diff.first_difference` (`object | null`): 계층과 순서 기준으로 처음 추가, 삭제, 변경된 block입니다. 변경 block은 `content_hash`, `rendered_digest`, `cacheability`, `reload_on` 같은 변경 필드를 보여줍니다.
 - `cache_audit.measurement` (`string`): 측정 방식입니다. 현재는 `reference_bundle`입니다.
 - `cache_audit.estimator` (`object`): 거친 byte-to-token 추정기와 주의 문구입니다.
+- `cache_audit.summary` (`object`): 렌더링된 reference bundle의 정적 합계와 불변식입니다.
+- `cache_audit.summary.dynamic_source_count` (`number`): 작업 묶음 생성 전에는 완전히 측정할 수 없는 런타임 선택 또는 volatile 출처 수입니다.
+- `cache_audit.summary.unresolved_reference_count` (`number`): 실제 reference block으로 측정하지 못한 파일 참조 수입니다.
+- `cache_audit.summary.volatile_before_stable_count` (`number`): stable 계층 앞에 나온 volatile 계층 수입니다. 보통 `0`이어야 합니다.
+- `cache_audit.summary.serialization_deterministic` (`true`): reference bundle이 결정적 직렬화 규칙을 사용함을 나타냅니다.
 - `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, hard 예산 설정, 목표 설정, 상태 필드, 블록, 가장 큰 블록, 이슈입니다.
 - `cache_audit.layers[].budget_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다.
 - `cache_audit.layers[].target_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다. 명령 실패 조건이 아니라 선호 목표에 맞는지 보여줍니다.
