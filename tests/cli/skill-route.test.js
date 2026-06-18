@@ -58,6 +58,7 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.equal(report.kind, 'skill_route_resolution');
 		assert.equal(report.selected.main.skill, 'typescript-code-change');
 		assert.equal(report.selected.main.skill_path, '.mustflow/skills/typescript-code-change/SKILL.md');
+		assert.deepEqual(report.selected.adjuncts, []);
 		assert.ok(report.selected.main.score > 0);
 		assert.ok(report.selected.main.score_breakdown.reason_match > 0);
 		assert.ok(report.selected.main.score_breakdown.task_text_match > 0);
@@ -66,13 +67,18 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.equal(report.read_plan.selection_limits.main, 1);
 		assert.equal(report.read_plan.selection_limits.adjuncts, 2);
 		assert.deepEqual(report.read_plan.stable_kernel, ['.mustflow/skills/router.toml']);
+		assert.deepEqual(report.read_plan.selected_skill_paths, ['.mustflow/skills/typescript-code-change/SKILL.md']);
 		assert.ok(report.read_plan.selected_skill_paths.includes('.mustflow/skills/typescript-code-change/SKILL.md'));
 		assert.ok(report.read_plan.candidate_skill_paths.includes('.mustflow/skills/typescript-code-change/SKILL.md'));
 		assert.equal(report.read_plan.fallback_route_metadata.path, '.mustflow/skills/routes.toml');
 		assert.equal(report.read_plan.expanded_index.path, '.mustflow/skills/INDEX.md');
 		assert.ok(report.read_plan.avoid_by_default.includes('.mustflow/skills/INDEX.md'));
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/routes.toml'));
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'));
+		assert.equal(report.signals.read_shards.includes('.mustflow/skills/INDEX.md'), false);
 		assert.ok(report.source_files.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.source_files.includes('.mustflow/skills/INDEX.md'));
+		assert.ok(report.source_files.includes('.mustflow/skills/*/SKILL.md'));
+		assert.equal(report.source_files.includes('.mustflow/skills/INDEX.md'), false);
 		assert.match(report.gap_notes.join('\n'), /does not replace reading the selected SKILL\.md/);
 	} finally {
 		removeTempProject(projectPath);
@@ -107,6 +113,8 @@ test('keeps LLM token cost routes discoverable without reading the full index in
 		assert.ok(report.signals.task_terms.includes('cache'));
 		assert.ok(report.signals.task_terms.includes('token'));
 		assert.ok(report.signals.read_shards.includes('.mustflow/skills/routes.toml'));
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'));
+		assert.equal(report.signals.read_shards.includes('.mustflow/skills/INDEX.md'), false);
 		assert.equal(report.read_plan.selection_limits.candidates, 3);
 		assert.ok(report.read_plan.candidate_skill_paths.length <= 3);
 		assert.ok(
@@ -142,6 +150,7 @@ test('prints a compact text skill route report', () => {
 		assert.match(result.stdout, /Read plan/);
 		assert.match(result.stdout, /avoid by default: \.mustflow\/skills\/INDEX\.md/);
 		assert.match(result.stdout, /\.mustflow\/skills\/routes\.toml/);
+		assert.match(result.stdout, /\.mustflow\/skills\/\*\/SKILL\.md/);
 	} finally {
 		removeTempProject(projectPath);
 	}

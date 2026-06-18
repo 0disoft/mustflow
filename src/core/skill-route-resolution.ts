@@ -1,21 +1,19 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
 import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
-import {
-	parseSkillIndexRoutes,
-	type SkillIndexRoute,
-	type SkillRouteCategory,
-} from './skill-route-alignment.js';
+import { type SkillIndexRoute, type SkillRouteCategory } from './skill-route-alignment.js';
 
 const MUSTFLOW_TEXT_MAX_BYTES = 1024 * 1024;
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
 const SKILL_ROUTER_PATH = '.mustflow/skills/router.toml';
 const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
+const SKILL_FRONTMATTER_SOURCE = '.mustflow/skills/*/SKILL.md';
 const DEFAULT_MAX_CANDIDATES = 5;
 const DEFAULT_MAX_MAIN = 1;
 const DEFAULT_MAX_ADJUNCTS = 2;
+const PATH_SKILL_HINT_SCORE = 25;
 const DOCS_TREE_MARKDOWN_PATH_PATTERN =
 	/(?:^|\/)(?:docs|docs-site|documentation|\.mustflow\/docs|\.mustflow\/context)\/.+\.(?:md|mdx)$/u;
 const ROOT_DOCUMENT_BASENAMES = [
@@ -124,6 +122,12 @@ interface SkillRouteMetadata {
 	readonly mutuallyExclusiveWith: readonly string[];
 }
 
+interface SkillFrontmatterSummary {
+	readonly name: string | null;
+	readonly description: string | null;
+	readonly commandIntents: readonly string[];
+}
+
 const ROUTE_TYPE_WEIGHTS: Readonly<Record<string, number>> = {
 	primary: 18,
 	authoring: 16,
@@ -211,6 +215,76 @@ function readStringArrayFromTable(table: TomlTable, key: string): string[] {
 		: [];
 }
 
+function readFrontmatterBlock(content: string): string[] {
+	if (!content.startsWith('---')) {
+		return [];
+	}
+
+	const firstLineEnd = content.indexOf('\n');
+	if (firstLineEnd < 0) {
+		return [];
+	}
+
+	const end = content.indexOf('\n---', firstLineEnd + 1);
+	if (end < 0) {
+		return [];
+	}
+
+	return content.slice(firstLineEnd + 1, end).split(/\r?\n/u);
+}
+
+function readFrontmatterScalar(lines: readonly string[], key: string): string | null {
+	for (const line of lines) {
+		const match = /^([a-zA-Z0-9_]+):\s*(.*)$/u.exec(line);
+		if (match?.[1] === key) {
+			return match[2].trim().replace(/^["']|["']$/gu, '') || null;
+		}
+	}
+
+	return null;
+}
+
+function readFrontmatterList(lines: readonly string[], key: string): string[] {
+	const values: string[] = [];
+	let inList = false;
+	let baseIndent = 0;
+
+	for (const line of lines) {
+		const keyMatch = new RegExp(`^(\\s*)${key}:\\s*$`, 'u').exec(line);
+		if (keyMatch) {
+			inList = true;
+			baseIndent = keyMatch[1].length;
+			continue;
+		}
+
+		if (!inList) {
+			continue;
+		}
+
+		const itemMatch = /^(\s*)-\s+(.+?)\s*$/u.exec(line);
+		if (itemMatch && itemMatch[1].length > baseIndent) {
+			values.push(itemMatch[2].trim().replace(/^["']|["']$/gu, ''));
+			continue;
+		}
+
+		if (line.trim() && !line.startsWith(' '.repeat(baseIndent + 1))) {
+			break;
+		}
+	}
+
+	return values;
+}
+
+function readSkillFrontmatterSummary(content: string): SkillFrontmatterSummary {
+	const lines = readFrontmatterBlock(content);
+
+	return {
+		name: readFrontmatterScalar(lines, 'name'),
+		description: readFrontmatterScalar(lines, 'description'),
+		commandIntents: readFrontmatterList(lines, 'command_intents'),
+	};
+}
+
 function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMetadata> {
 	const metadata = new Map<string, SkillRouteMetadata>();
 
@@ -240,13 +314,43 @@ function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMeta
 	return metadata;
 }
 
-function readSkillIndexRoutes(projectRoot: string): SkillIndexRoute[] {
-	const indexPath = path.join(projectRoot, ...SKILL_INDEX_PATH.split('/'));
-	const indexContent = existsSync(indexPath)
-		? readUtf8FileInsideWithoutSymlinks(projectRoot, indexPath, { maxBytes: MUSTFLOW_TEXT_MAX_BYTES })
-		: '';
+function readSkillFrontmatterRoutes(projectRoot: string): SkillIndexRoute[] {
+	const skillRoot = path.join(projectRoot, '.mustflow', 'skills');
+	if (!existsSync(skillRoot)) {
+		return [];
+	}
 
-	return parseSkillIndexRoutes(indexContent);
+	const routes: SkillIndexRoute[] = [];
+	const skillDirectories = readdirSync(skillRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.sort((left, right) => left.localeCompare(right));
+
+	for (const skillDirectory of skillDirectories) {
+		const skillPath = `.mustflow/skills/${skillDirectory}/SKILL.md`;
+		const absoluteSkillPath = path.join(projectRoot, ...skillPath.split('/'));
+		if (!existsSync(absoluteSkillPath)) {
+			continue;
+		}
+
+		const content = readUtf8FileInsideWithoutSymlinks(projectRoot, absoluteSkillPath, {
+			maxBytes: MUSTFLOW_TEXT_MAX_BYTES,
+		});
+		const summary = readSkillFrontmatterSummary(content);
+		const skillName = summary.name ?? skillDirectory;
+
+		routes.push({
+			trigger: summary.description ?? skillName,
+			skillPath,
+			requiredInput: '',
+			editScope: '',
+			risk: '',
+			commandIntents: summary.commandIntents,
+			expectedOutput: '',
+		});
+	}
+
+	return routes;
 }
 
 function countMatches(needles: readonly string[], haystack: readonly string[]): number {
@@ -283,8 +387,8 @@ function createCandidate(
 	const pathSkillHintMatched = pathSkillHints.has(skill);
 	const breakdown = {
 		reason_match: matchedReasons.length * 35,
-		task_text_match: taskMatches * 4,
-		path_match: pathMatches * 6 + (pathSkillHintMatched ? 45 : 0),
+		task_text_match: taskMatches * 6,
+		path_match: pathMatches * 6 + (pathSkillHintMatched ? PATH_SKILL_HINT_SCORE : 0),
 		route_type_weight: ROUTE_TYPE_WEIGHTS[metadata.routeType] ?? 0,
 		priority_weight: Math.max(0, Math.min(metadata.priority, 100)) / 5,
 	} satisfies SkillRouteScoreBreakdown;
@@ -424,7 +528,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const taskTerms = tokenize(input.taskText ?? '');
 	const pathTerms = tokenize(paths.join(' '));
 	const pathSkillHints = collectPathSkillHints(paths);
-	const routes = readSkillIndexRoutes(projectRoot);
+	const routes = readSkillFrontmatterRoutes(projectRoot);
 	const metadata = readSkillRouteMetadata(projectRoot);
 	const allCandidates = routes
 		.map((route) => {
@@ -448,7 +552,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 		.sort(sortCandidates);
 	const candidates = allCandidates.slice(0, maxCandidates);
 	const main = candidates.find(isSelectableMain) ?? null;
-	const adjuncts = selectAdjuncts(main, allCandidates, metadata);
+	const adjuncts = selectAdjuncts(main, candidates, metadata);
 	const selected = {
 		main,
 		adjuncts,
@@ -467,14 +571,18 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 			task_terms: taskTerms,
 			path_terms: pathTerms,
 			reasons,
-			read_shards: [SKILL_ROUTES_METADATA_PATH, SKILL_INDEX_PATH],
+			read_shards: [SKILL_ROUTES_METADATA_PATH, SKILL_FRONTMATTER_SOURCE],
 		},
 		selected,
 		candidates,
 		read_plan: createReadPlan(maxCandidates, selected, candidates),
-		source_files: [SKILL_ROUTES_METADATA_PATH, SKILL_INDEX_PATH],
+		source_files: [SKILL_ROUTES_METADATA_PATH, SKILL_FRONTMATTER_SOURCE],
 		gap_notes: [
-			'This resolver is a read-only routing prepass. It narrows skill candidates but does not replace reading the selected SKILL.md.',
+			[
+				'This resolver is a read-only routing prepass.',
+				'It narrows skill candidates from route metadata and skill frontmatter',
+				'but does not replace reading the selected SKILL.md.',
+			].join(' '),
 			'Command execution authority still comes only from .mustflow/config/commands.toml.',
 		],
 	};
