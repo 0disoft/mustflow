@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { listSourceAnchorFiles } from '../../dist/core/source-anchors.js';
+import { listSourceAnchorFiles, parseSourceAnchorsInContent } from '../../dist/core/source-anchors.js';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
 
 function assertHasIssueDetail(check, expectedId, expectedMessage) {
@@ -119,6 +119,31 @@ test('strict check fails invalid source anchors', () => {
 	} finally {
 		removeTempProject(projectPath);
 	}
+});
+
+test('source anchor parser ignores fixture text outside source comments', () => {
+	const anchors = parseSourceAnchorsInContent(
+		'tests/fixture.ts',
+		[
+			'const fixture = `/**',
+			' * mf:anchor fixture.fake',
+			' * purpose: This looks like an anchor but is fixture text.',
+			' */`;',
+			'',
+			'/**',
+			' * mf:anchor fixture.real',
+			' * purpose: This is a real source comment anchor.',
+			' * search: source comment anchor',
+			' */',
+			'export const realAnchor = true;',
+			'',
+		].join('\n'),
+	);
+
+	assert.deepEqual(
+		anchors.map((anchor) => ({ id: anchor.rawId, lineStart: anchor.lineStart, purpose: anchor.fields.get('purpose') })),
+		[{ id: 'fixture.real', lineStart: 7, purpose: 'This is a real source comment anchor.' }],
+	);
 });
 
 test('strict check reports source anchor quality warnings without failing', () => {

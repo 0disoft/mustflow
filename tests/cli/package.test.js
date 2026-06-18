@@ -8,6 +8,7 @@ import path from 'node:path';
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
+const templateCommandContract = readFileSync(path.join(projectRoot, 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml'), 'utf8');
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
 const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
@@ -38,7 +39,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.68.0');
+	assert.equal(packageJson.version, '2.68.1');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -121,6 +122,15 @@ test('source repository declares bounded prompt-cache audit checks', () => {
 	assert.match(sourceCommandContract, /writes = \[\]/u);
 	assert.match(sourceCommandContract, /network = false/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
+});
+
+test('local index command contracts include bounded source-anchor indexing', () => {
+	assert.match(sourceCommandContract, /\[intents\.local_index\][\s\S]*"index", "--source"/u);
+	assert.match(templateCommandContract, /\[intents\.local_index\][\s\S]*"mf", "index", "--source"/u);
+	assert.match(sourceCommandContract, /including bounded source anchors/u);
+	assert.match(templateCommandContract, /including bounded source anchors/u);
+	assert.match(sourceCommandContract, /writes = \["\.mustflow\/cache\/\*\*"\]/u);
+	assert.match(templateCommandContract, /writes = \["\.mustflow\/cache\/\*\*"\]/u);
 });
 
 test('npm registry release check fully encodes package lookup paths', () => {

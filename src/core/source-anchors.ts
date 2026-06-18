@@ -365,12 +365,115 @@ export function sourceAnchorTextContainsSecretLike(value: string): boolean {
 	return textContainsSecretLike(value);
 }
 
-export function parseSourceAnchorsInContent(relativePath: string, content: string): ParsedSourceAnchor[] {
+interface SourceAnchorCommentLine {
+	readonly lineNumber: number;
+	readonly text: string;
+}
+
+function collectCommentLines(content: string): SourceAnchorCommentLine[] {
 	const lines = content.split(/\r?\n/);
+	const commentLines: SourceAnchorCommentLine[] = [];
+	let insideBlockComment = false;
+	let stringQuote: '"' | "'" | '`' | null = null;
+	let escaped = false;
+
+	let lineIndex = 0;
+	while (lineIndex < lines.length) {
+		const line = lines[lineIndex] ?? '';
+		let index = 0;
+
+		while (index < line.length) {
+			if (insideBlockComment) {
+				const endIndex = line.indexOf('*/', index);
+				const segmentEnd = endIndex === -1 ? line.length : endIndex;
+				commentLines.push({ lineNumber: lineIndex + 1, text: line.slice(index, segmentEnd) });
+
+				if (endIndex === -1) {
+					index = line.length;
+					continue;
+				}
+
+				insideBlockComment = false;
+				index = endIndex + 2;
+				continue;
+			}
+
+			const character = line[index];
+			const nextCharacter = line[index + 1];
+
+			if (stringQuote) {
+				if (escaped) {
+					escaped = false;
+					index += 1;
+					continue;
+				}
+
+				if (character === '\\') {
+					escaped = true;
+					index += 1;
+					continue;
+				}
+
+				if (character === stringQuote) {
+					stringQuote = null;
+				}
+
+				index += 1;
+				continue;
+			}
+
+			if (character === '"' || character === "'" || character === '`') {
+				stringQuote = character;
+				index += 1;
+				continue;
+			}
+
+			if (character === '/' && nextCharacter === '*') {
+				const commentStart = index + 2;
+				const endIndex = line.indexOf('*/', commentStart);
+				const segmentEnd = endIndex === -1 ? line.length : endIndex;
+				commentLines.push({ lineNumber: lineIndex + 1, text: line.slice(commentStart, segmentEnd) });
+
+				if (endIndex === -1) {
+					insideBlockComment = true;
+					index = line.length;
+					continue;
+				}
+
+				index = endIndex + 2;
+				continue;
+			}
+
+			if (character === '/' && nextCharacter === '/') {
+				commentLines.push({ lineNumber: lineIndex + 1, text: line.slice(index + 2) });
+				break;
+			}
+
+			if (character === '#' && line.slice(0, index).trim().length === 0) {
+				commentLines.push({ lineNumber: lineIndex + 1, text: line.slice(index + 1) });
+				break;
+			}
+
+			index += 1;
+		}
+
+		if (stringQuote !== '`') {
+			stringQuote = null;
+		}
+		escaped = false;
+		lineIndex += 1;
+	}
+
+	return commentLines;
+}
+
+export function parseSourceAnchorsInContent(relativePath: string, content: string): ParsedSourceAnchor[] {
+	const lines = collectCommentLines(content);
 	const anchors: ParsedSourceAnchor[] = [];
 
 	for (let index = 0; index < lines.length; index += 1) {
-		const normalized = stripSourceAnchorCommentPrefix(lines[index] ?? '');
+		const commentLine = lines[index];
+		const normalized = stripSourceAnchorCommentPrefix(commentLine?.text ?? '');
 
 		if (!normalized.startsWith('mf:anchor')) {
 			continue;
@@ -381,15 +484,23 @@ export function parseSourceAnchorsInContent(relativePath: string, content: strin
 		const fields = new Map<string, string>();
 		const unsupportedFields: string[] = [];
 		const rawLines = [normalized];
+		let previousLineNumber = commentLine?.lineNumber ?? 0;
 
 		for (let fieldIndex = index + 1; fieldIndex < lines.length; fieldIndex += 1) {
-			const fieldLine = stripSourceAnchorCommentPrefix(lines[fieldIndex] ?? '');
+			const nextCommentLine = lines[fieldIndex];
+
+			if (!nextCommentLine || nextCommentLine.lineNumber > previousLineNumber + 1) {
+				break;
+			}
+
+			const fieldLine = stripSourceAnchorCommentPrefix(nextCommentLine.text);
 
 			if (fieldLine.length === 0) {
+				previousLineNumber = nextCommentLine.lineNumber;
 				continue;
 			}
 
-			if (fieldLine.startsWith('@') || /^[A-Za-z_$][\w$]*\s/u.test(fieldLine)) {
+			if (fieldLine.startsWith('mf:anchor') || fieldLine.startsWith('@') || /^[A-Za-z_$][\w$]*\s/u.test(fieldLine)) {
 				break;
 			}
 
@@ -400,6 +511,7 @@ export function parseSourceAnchorsInContent(relativePath: string, content: strin
 			}
 
 			rawLines.push(fieldLine);
+			previousLineNumber = nextCommentLine.lineNumber;
 
 			if (!SOURCE_ANCHOR_ALLOWED_FIELDS.has(field.key)) {
 				unsupportedFields.push(field.key);
@@ -414,7 +526,7 @@ export function parseSourceAnchorsInContent(relativePath: string, content: strin
 			rawId,
 			idValid: SOURCE_ANCHOR_ID_PATTERN.test(rawId),
 			path: relativePath,
-			lineStart: index + 1,
+			lineStart: commentLine?.lineNumber ?? index + 1,
 			fields,
 			unsupportedFields,
 			rawText: rawLines.join('\n'),
