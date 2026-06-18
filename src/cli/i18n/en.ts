@@ -40,6 +40,7 @@ export const enMessages = {
   "command.upgrade.summary": "Check the package version and safely update installed workflow files",
   "command.map.summary": "Generate REPO_MAP.md",
   "command.lineEndings.summary": "Inspect and normalize line-ending policy",
+  "command.quality.summary": "Inspect changed files for quality-gaming patterns",
   "command.run.summary": "Run a configured oneshot command",
   "command.context.summary": "Print machine-readable agent context",
   "command.tech.summary": "Manage technology preferences for agents",
@@ -834,6 +835,20 @@ Read these files before working:
   "lineEndings.error.unknownAction": "Unknown line-endings action: {action}",
   "lineEndings.error.checkModeOption": "check does not accept --apply or --dry-run",
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
+  "quality.help.summary":
+    "Inspect changed files for quality-gaming patterns such as line stuffing, validation suppressions, " +
+    "test bypass markers, type escapes, and placeholder implementations.",
+  "quality.help.option.all": "Inspect every tracked text file instead of only changed files",
+  "quality.help.exit.ok": "Quality-gaming risks were inspected and no risk was found",
+  "quality.help.exit.fail": "Quality-gaming risks, repository issues, or invalid input were found",
+  "quality.title": "mustflow quality check",
+  "quality.label.checkedFiles": "Checked files",
+  "quality.label.riskCount": "Risks",
+  "quality.label.riskyFiles": "Risky files",
+  "quality.label.issues": "Issues",
+  "quality.clean": "No quality-gaming risks found.",
+  "quality.error.missingAction": "Specify a quality action: check",
+  "quality.error.unknownAction": "Unknown quality action: {action}",
   "run.help.summary":
     "Run a configured oneshot command from .mustflow/config/commands.toml.",
   "run.help.option.dryRun": "Print a non-executing command plan",

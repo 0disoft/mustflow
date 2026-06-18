@@ -41,6 +41,7 @@ building automation around `--json` output.
   `mf impact <path...> --json`
 - `line-endings-report.schema.json`: `mf line-endings check --json` and
   `mf line-endings normalize --json`
+- `quality-gaming-report.schema.json`: `mf quality check --json`
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify`
   writes a pointer to the latest verify run bundle, including the verify completion verdict, evidence model,
   and coverage matrix

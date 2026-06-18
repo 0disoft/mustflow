@@ -49,6 +49,9 @@ Current schemas:
   `mf impact <path...> --json`
 - `line-endings-report.schema.json`: output of `mf line-endings check --json` and  
   `mf line-endings normalize --json`
+- `quality-gaming-report.schema.json`: output of `mf quality check --json`, containing changed-file
+  quality-gaming risks such as line stuffing, validation suppressions, test bypass markers, type
+  escapes, generated/vendor logic, and placeholder implementations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a
   pointer to the latest verify run bundle, including the verify completion verdict, evidence model,
   and coverage matrix

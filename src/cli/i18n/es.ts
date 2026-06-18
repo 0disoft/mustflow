@@ -42,6 +42,7 @@ export const esMessages = {
   "command.upgrade.summary": "Comprueba la versión del paquete y actualiza con seguridad los archivos de flujo instalados",
   "command.map.summary": "Genera REPO_MAP.md",
   "command.lineEndings.summary": "Inspecciona y normaliza la política de finales de línea",
+  "command.quality.summary": "Inspect changed files for quality-gaming patterns",
   "command.run.summary": "Ejecuta un comando configurado de una sola ejecución",
   "command.context.summary": "Imprime contexto de agente legible por máquinas",
   "command.tech.summary": "Gestiona preferencias tecnológicas para agentes",
@@ -836,6 +837,20 @@ Lee estos archivos antes de trabajar:
   "lineEndings.error.unknownAction": "Unknown line-endings action: {action}",
   "lineEndings.error.checkModeOption": "check does not accept --apply or --dry-run",
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
+  "quality.help.summary":
+    "Inspect changed files for quality-gaming patterns such as line stuffing, validation suppressions, " +
+    "test bypass markers, type escapes, and placeholder implementations.",
+  "quality.help.option.all": "Inspect every tracked text file instead of only changed files",
+  "quality.help.exit.ok": "Quality-gaming risks were inspected and no risk was found",
+  "quality.help.exit.fail": "Quality-gaming risks, repository issues, or invalid input were found",
+  "quality.title": "mustflow quality check",
+  "quality.label.checkedFiles": "Checked files",
+  "quality.label.riskCount": "Risks",
+  "quality.label.riskyFiles": "Risky files",
+  "quality.label.issues": "Issues",
+  "quality.clean": "No quality-gaming risks found.",
+  "quality.error.missingAction": "Specify a quality action: check",
+  "quality.error.unknownAction": "Unknown quality action: {action}",
   "run.help.summary":
     "Ejecuta un comando configurado de una sola ejecución desde .mustflow/config/commands.toml.",
   "run.help.option.dryRun": "Imprime un plan de comando sin ejecutarlo",

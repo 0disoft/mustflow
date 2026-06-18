@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 199
+anchor_count: 200
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:6bb6a9e9252c6158900ca89b2b1a3c9bc55ac1e333b21ac1164c262cd2d03920"
+source_fingerprint: "sha256:7d85b21d689db83c2742679d0630ab323b0025a3e04f3c9b40c5bfb495839336"
 ---
 
 # REPO_MAP.md
@@ -513,6 +513,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/quadratic-scan-review/
 
 - `.mustflow/skills/quadratic-scan-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/quality-gaming-guard/
+
+- `.mustflow/skills/quality-gaming-guard/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/queue-processing-integrity-review/
 

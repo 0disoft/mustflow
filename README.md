@@ -122,6 +122,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Checks installation health and configuration structure with `mf check` and `mf doctor`.
 - Reports host adapter compatibility with `mf adapters status` without generating host-specific files or treating them as command authority.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
+- Inspects changed files for quality-gaming patterns such as line stuffing, suppressions, test bypass markers, type escapes, and placeholder implementations with `mf quality check`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a machine-readable verification decision graph and read-only local-index lock explanations when available.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Writes command receipts under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`.
@@ -271,6 +272,8 @@ mf run mustflow_update_apply
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
+| `mf quality check` | Inspect changed files for quality-gaming patterns without writing files. |
+| `mf quality check --all` | Inspect every tracked text file for quality-gaming patterns. |
 | `mf run <intent>` | Run an allowed one-shot command. |
 | `mf run <intent> --wait` | Wait for conflicting active run locks before executing the command. |
 | `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |

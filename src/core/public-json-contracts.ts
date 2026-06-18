@@ -209,6 +209,15 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'quality-gaming-report',
+		schemaFile: 'quality-gaming-report.schema.json',
+		producer: 'mf quality check --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'quality', 'check', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'latest-run-pointer',
 		schemaFile: 'latest-run-pointer.schema.json',
 		producer: '.mustflow/state/runs/latest.json when written by mf verify',

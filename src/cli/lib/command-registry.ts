@@ -107,6 +107,12 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/line-endings.js')).runLineEndings,
 	},
 	{
+		id: 'quality',
+		usage: 'mf quality',
+		summaryKey: 'command.quality.summary',
+		loadRunner: async () => (await import('../commands/quality.js')).runQuality,
+	},
+	{
 		id: 'run',
 		usage: 'mf run',
 		summaryKey: 'command.run.summary',

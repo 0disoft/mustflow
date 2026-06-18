@@ -42,6 +42,7 @@ export const hiMessages = {
   "command.upgrade.summary": "Package version जाँचें और installed workflow files सुरक्षित रूप से update करें",
   "command.map.summary": "REPO_MAP.md बनाएँ",
   "command.lineEndings.summary": "लाइन-एंडिंग नीति की जाँच और सामान्यीकरण करें",
+  "command.quality.summary": "Inspect changed files for quality-gaming patterns",
   "command.run.summary": "कॉन्फ़िगर की गई एक-बार चलने वाली कमांड चलाएँ",
   "command.context.summary": "मशीन-पठनीय एजेंट संदर्भ प्रिंट करें",
   "command.tech.summary": "एजेंटों के लिए technology preferences प्रबंधित करें",
@@ -836,6 +837,20 @@ export const hiMessages = {
   "lineEndings.error.unknownAction": "Unknown line-endings action: {action}",
   "lineEndings.error.checkModeOption": "check does not accept --apply or --dry-run",
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
+  "quality.help.summary":
+    "Inspect changed files for quality-gaming patterns such as line stuffing, validation suppressions, " +
+    "test bypass markers, type escapes, and placeholder implementations.",
+  "quality.help.option.all": "Inspect every tracked text file instead of only changed files",
+  "quality.help.exit.ok": "Quality-gaming risks were inspected and no risk was found",
+  "quality.help.exit.fail": "Quality-gaming risks, repository issues, or invalid input were found",
+  "quality.title": "mustflow quality check",
+  "quality.label.checkedFiles": "Checked files",
+  "quality.label.riskCount": "Risks",
+  "quality.label.riskyFiles": "Risky files",
+  "quality.label.issues": "Issues",
+  "quality.clean": "No quality-gaming risks found.",
+  "quality.error.missingAction": "Specify a quality action: check",
+  "quality.error.unknownAction": "Unknown quality action: {action}",
   "run.help.summary":
     ".mustflow/config/commands.toml से कॉन्फ़िगर की गई एक-बार चलने वाली कमांड चलाएँ।",
   "run.help.option.dryRun": "कमांड चलाए बिना उसका plan प्रिंट करें",

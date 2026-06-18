@@ -38,7 +38,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.58.1');
+	assert.equal(packageJson.version, '2.59.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -246,9 +246,11 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/commands/docs.js'));
 	assert.ok(files.has('dist/cli/commands/index.js'));
 	assert.ok(files.has('dist/cli/commands/line-endings.js'));
+	assert.ok(files.has('dist/cli/commands/quality.js'));
 	assert.ok(files.has('dist/cli/commands/explain.js'));
 	assert.ok(files.has('dist/cli/commands/handoff.js'));
 	assert.ok(files.has('dist/core/line-endings.js'));
+	assert.ok(files.has('dist/core/quality-gaming.js'));
 	assert.ok(files.has('dist/core/source-anchor-explanation.js'));
 	assert.ok(files.has('dist/core/source-anchors.js'));
 	assert.ok(files.has('dist/cli/commands/impact.js'));
@@ -285,6 +287,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/handoff-validation-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/line-endings-report.schema.json'));
+	assert.ok(files.has('schemas/quality-gaming-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const contract of publicJsonContracts) {
 		assert.ok(files.has(`schemas/${contract.schemaFile}`), `${contract.schemaFile} should be packaged`);

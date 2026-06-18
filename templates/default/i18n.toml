@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 167
+revision = 168
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -117,6 +117,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.quality-gaming-guard"]
+source = "locales/en/.mustflow/skills/quality-gaming-guard/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.module-boundary-review"]

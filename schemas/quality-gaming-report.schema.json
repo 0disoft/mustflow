@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/quality-gaming-report.schema.json",
+  "title": "mustflow quality-gaming report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mode",
+    "scope",
+    "ok",
+    "mustflow_root",
+    "git_tracked",
+    "checked_files",
+    "risk_count",
+    "risky_files",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "quality" },
+    "mode": { "const": "check" },
+    "scope": { "enum": ["changed", "tracked"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "git_tracked": { "type": "boolean" },
+    "checked_files": { "type": "integer", "minimum": 0 },
+    "risk_count": { "type": "integer", "minimum": 0 },
+    "risky_files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/riskyFile" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "threshold"],
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "type": "number" },
+        "threshold": { "type": "number" }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "path", "line", "detail", "metric"],
+      "properties": {
+        "code": {
+          "enum": [
+            "line_stuffing_added",
+            "multiple_statements_per_line_added",
+            "suppression_added",
+            "type_escape_added",
+            "test_bypass_marker_added",
+            "placeholder_added",
+            "generated_or_vendor_logic_added",
+            "large_helper_container_added"
+          ]
+        },
+        "severity": { "enum": ["medium", "high", "critical"] },
+        "path": { "type": "string" },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "detail": { "type": "string" },
+        "metric": {
+          "anyOf": [
+            { "$ref": "#/$defs/metric" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "riskyFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "checked_lines", "risk_count", "risks"],
+      "properties": {
+        "path": { "type": "string" },
+        "checked_lines": { "type": "integer", "minimum": 0 },
+        "risk_count": { "type": "integer", "minimum": 1 },
+        "risks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/risk" },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

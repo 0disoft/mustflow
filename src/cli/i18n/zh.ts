@@ -42,6 +42,7 @@ export const zhMessages = {
   "command.upgrade.summary": "检查包版本并安全更新已安装的工作流文件",
   "command.map.summary": "生成 REPO_MAP.md",
   "command.lineEndings.summary": "检查并规范化换行符策略",
+  "command.quality.summary": "Inspect changed files for quality-gaming patterns",
   "command.run.summary": "运行已配置的一次性命令",
   "command.context.summary": "输出机器可读的代理上下文",
   "command.tech.summary": "管理代理使用的技术偏好",
@@ -826,6 +827,20 @@ export const zhMessages = {
   "lineEndings.error.unknownAction": "Unknown line-endings action: {action}",
   "lineEndings.error.checkModeOption": "check does not accept --apply or --dry-run",
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
+  "quality.help.summary":
+    "Inspect changed files for quality-gaming patterns such as line stuffing, validation suppressions, " +
+    "test bypass markers, type escapes, and placeholder implementations.",
+  "quality.help.option.all": "Inspect every tracked text file instead of only changed files",
+  "quality.help.exit.ok": "Quality-gaming risks were inspected and no risk was found",
+  "quality.help.exit.fail": "Quality-gaming risks, repository issues, or invalid input were found",
+  "quality.title": "mustflow quality check",
+  "quality.label.checkedFiles": "Checked files",
+  "quality.label.riskCount": "Risks",
+  "quality.label.riskyFiles": "Risky files",
+  "quality.label.issues": "Issues",
+  "quality.clean": "No quality-gaming risks found.",
+  "quality.error.missingAction": "Specify a quality action: check",
+  "quality.error.unknownAction": "Unknown quality action: {action}",
   "run.help.summary":
     "从 .mustflow/config/commands.toml 运行已配置的一次性命令。",
   "run.help.option.dryRun": "输出命令计划但不执行",

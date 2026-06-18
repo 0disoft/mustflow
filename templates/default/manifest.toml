@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.58.1"
+version = "2.59.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -23,6 +23,7 @@ creates = [
   ".mustflow/skills/behavior-preserving-refactor/SKILL.md",
   ".mustflow/skills/code-review/SKILL.md",
   ".mustflow/skills/ai-generated-code-hardening/SKILL.md",
+  ".mustflow/skills/quality-gaming-guard/SKILL.md",
   ".mustflow/skills/module-boundary-review/SKILL.md",
   ".mustflow/skills/change-blast-radius-review/SKILL.md",
   ".mustflow/skills/business-rule-leakage-review/SKILL.md",
@@ -211,6 +212,7 @@ minimal = [
   "behavior-preserving-refactor",
   "code-review",
   "ai-generated-code-hardening",
+  "quality-gaming-guard",
   "module-boundary-review",
   "change-blast-radius-review",
   "business-rule-leakage-review",
@@ -339,6 +341,7 @@ patterns = [
   "behavior-preserving-refactor",
   "code-review",
   "ai-generated-code-hardening",
+  "quality-gaming-guard",
   "module-boundary-review",
   "change-blast-radius-review",
   "business-rule-leakage-review",
@@ -478,6 +481,7 @@ oss = [
   "behavior-preserving-refactor",
   "code-review",
   "ai-generated-code-hardening",
+  "quality-gaming-guard",
   "module-boundary-review",
   "change-blast-radius-review",
   "business-rule-leakage-review",
@@ -632,6 +636,7 @@ team = [
   "behavior-preserving-refactor",
   "code-review",
   "ai-generated-code-hardening",
+  "quality-gaming-guard",
   "module-boundary-review",
   "change-blast-radius-review",
   "business-rule-leakage-review",
@@ -772,6 +777,7 @@ product = [
   "behavior-preserving-refactor",
   "code-review",
   "ai-generated-code-hardening",
+  "quality-gaming-guard",
   "module-boundary-review",
   "change-blast-radius-review",
   "business-rule-leakage-review",
@@ -918,6 +924,7 @@ library = [
   "behavior-preserving-refactor",
   "code-review",
   "ai-generated-code-hardening",
+  "quality-gaming-guard",
   "module-boundary-review",
   "change-blast-radius-review",
   "business-rule-leakage-review",

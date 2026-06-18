@@ -64,6 +64,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf verify --changed --plan-only --json',
 				'mf verify --reason code_change',
 				'mf line-endings check',
+				'mf quality check',
 				'mf version --check',
 				'mf version-sources --json',
 			],

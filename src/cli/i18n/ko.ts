@@ -43,6 +43,7 @@ export const koMessages = {
   "command.upgrade.summary": "패키지 버전을 확인하고 설치된 워크플로우 파일을 안전하게 갱신합니다",
   "command.map.summary": "REPO_MAP.md를 작성합니다",
   "command.lineEndings.summary": "줄바꿈 정책을 검사하고 정규화합니다",
+  "command.quality.summary": "변경 파일의 품질 지표 꼼수를 검사합니다",
   "command.run.summary": "설정된 일회성 명령을 실행합니다",
   "command.context.summary": "에이전트 작업 맥락을 출력합니다",
   "command.tech.summary": "에이전트용 기술 선호를 관리합니다",
@@ -830,6 +831,20 @@ export const koMessages = {
   "lineEndings.error.unknownAction": "알 수 없는 line-endings 작업: {action}",
   "lineEndings.error.checkModeOption": "check에는 --apply 또는 --dry-run을 사용할 수 없습니다",
   "lineEndings.error.conflictingModes": "--apply와 --dry-run은 함께 사용할 수 없습니다",
+  "quality.help.summary":
+    "긴 줄 몰아넣기, 검증 억제, 테스트 우회 표시, 타입 회피, 미완성 구현 같은 " +
+    "품질 지표 꼼수를 변경 파일에서 검사합니다.",
+  "quality.help.option.all": "변경 파일만이 아니라 추적 중인 모든 텍스트 파일을 검사합니다",
+  "quality.help.exit.ok": "품질 지표 꼼수를 검사했고 위험이 발견되지 않았습니다",
+  "quality.help.exit.fail": "품질 지표 꼼수, 저장소 문제, 또는 잘못된 입력이 발견되었습니다",
+  "quality.title": "mustflow quality check",
+  "quality.label.checkedFiles": "검사한 파일",
+  "quality.label.riskCount": "위험",
+  "quality.label.riskyFiles": "위험 파일",
+  "quality.label.issues": "문제",
+  "quality.clean": "품질 지표 꼼수가 발견되지 않았습니다.",
+  "quality.error.missingAction": "quality 작업을 지정하세요: check",
+  "quality.error.unknownAction": "알 수 없는 quality 작업: {action}",
   "run.help.summary":
     ".mustflow/config/commands.toml에 설정된 일회성 명령을 실행합니다.",
   "run.help.option.dryRun": "실행하지 않고 명령 계획을 출력합니다",
