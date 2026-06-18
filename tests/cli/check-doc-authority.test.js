@@ -167,7 +167,7 @@ test('strict check fails managed markdown metadata drift', () => {
 		writeFileSync(
 			projectContextPath,
 			readText(projectContextPath)
-				.replace('revision: 1', 'revision: latest')
+				.replace(/^revision: [1-9]\d*$/mu, 'revision: latest')
 				.replace('authority: contextual', 'authority: binding'),
 		);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));

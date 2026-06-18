@@ -41,7 +41,7 @@ test('prints matching documents skills and command intents from the local index'
 				(item) =>
 					item.kind === 'command_intent' &&
 					item.name === 'mustflow_check' &&
-					item.cache_layer === 'stable' &&
+					item.cache_layer === 'task' &&
 					item.volatile === false,
 			),
 		);
@@ -50,7 +50,7 @@ test('prints matching documents skills and command intents from the local index'
 				(item) =>
 					item.kind === 'document' &&
 					item.path === '.mustflow/config/commands.toml' &&
-					item.cache_layer === 'stable' &&
+					item.cache_layer === 'task' &&
 					item.volatile === false,
 			),
 		);
@@ -84,7 +84,7 @@ test('preserves authority and cache semantics for workflow search result kinds',
 			source_scope: 'workflow',
 			navigation_only: false,
 			can_instruct_agent: true,
-			cache_layer: 'stable',
+			cache_layer: 'task',
 			volatile: false,
 		});
 		assert.ok(authorityDocument);
@@ -94,7 +94,7 @@ test('preserves authority and cache semantics for workflow search result kinds',
 			source_scope: 'workflow',
 			navigation_only: false,
 			can_instruct_agent: true,
-			cache_layer: 'stable',
+			cache_layer: 'task',
 			volatile: false,
 		});
 		assert.ok(contextDocument);
