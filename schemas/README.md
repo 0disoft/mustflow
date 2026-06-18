@@ -53,8 +53,8 @@ Current schemas:
   quality-gaming risks such as line stuffing, validation suppressions, test bypass markers, type
   escapes, generated/vendor logic, empty catch swallowing, and placeholder implementations
 - `skill-route-report.schema.json`: output of `mf skill route --json`, containing compact route
-  candidates, selected main and adjunct skills, score breakdowns, and source route shards without
-  granting command authority or replacing selected `SKILL.md` reads
+  candidates, selected main and adjunct skills, score breakdowns, route read plans, and source
+  route shards without granting command authority or replacing selected `SKILL.md` reads
 - `route-fixture.schema.json`: parsed `.mustflow/skills/route-fixtures.json`, containing strict
   skill-route golden cases with required and forbidden route expectations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a

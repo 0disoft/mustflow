@@ -10,6 +10,11 @@ returns a small ranked set of skill route candidates. This keeps agents from loa
 `.mustflow/skills/INDEX.md` table into the prompt when a compact resolver result is enough to decide
 which skill documents to read next.
 
+JSON output also includes a `read_plan` so host integrations can assemble cache-friendly prompts:
+keep `.mustflow/skills/router.toml` in the stable prefix, load selected `SKILL.md` files in task
+context, and treat `.mustflow/skills/INDEX.md` as a fallback-only file unless the report names a
+fallback reason.
+
 The command does not replace the mandatory skill-selection gate. Agents must still read the selected
 `.mustflow/skills/<name>/SKILL.md` before editing matching files. Command execution authority still
 comes only from `.mustflow/config/commands.toml`.
@@ -50,6 +55,9 @@ Machine-readable output uses these fields:
 - `selected.main` (`object | null`): Highest ranked primary or authoring route.
 - `selected.adjuncts` (`object[]`): Up to two compatible adjunct routes from the same category.
 - `candidates` (`object[]`): Ranked candidate routes, each with score breakdown and selection reasons.
+- `read_plan` (`object`): Stable kernel files, selected and candidate skill paths, fallback route
+  metadata, expanded-index fallback rules, avoid-by-default files, and selection limits for
+  cache-friendly prompt assembly.
 - `source_files` (`string[]`): Route source files used by the resolver.
 - `gap_notes` (`string[]`): Boundaries the caller must preserve.
 

@@ -107,7 +107,16 @@ function renderSkillRouteReport(report: ReturnType<typeof resolveSkillRoutes>, l
 		}
 	}
 
-	lines.push('', 'Source files', ...report.source_files.map((sourceFile) => `- ${sourceFile}`));
+	lines.push(
+		'',
+		'Read plan',
+		...report.read_plan.selected_skill_paths.map((skillPath) => `- read selected skill: ${skillPath}`),
+		`- avoid by default: ${report.read_plan.avoid_by_default.join(', ') || t(lang, 'value.none')}`,
+		`- fallback route metadata: ${report.read_plan.fallback_route_metadata.path}`,
+		'',
+		'Source files',
+		...report.source_files.map((sourceFile) => `- ${sourceFile}`),
+	);
 	return lines.join('\n');
 }
 

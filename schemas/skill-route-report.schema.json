@@ -86,6 +86,66 @@
       "type": "array",
       "items": { "$ref": "#/$defs/candidate" }
     },
+    "read_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selection_limits",
+        "stable_kernel",
+        "selected_skill_paths",
+        "candidate_skill_paths",
+        "fallback_route_metadata",
+        "expanded_index",
+        "avoid_by_default",
+        "notes"
+      ],
+      "properties": {
+        "selection_limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidates", "main", "adjuncts"],
+          "properties": {
+            "candidates": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "main": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "adjuncts": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            }
+          }
+        },
+        "stable_kernel": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selected_skill_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "candidate_skill_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fallback_route_metadata": { "$ref": "#/$defs/readPlanFile" },
+        "expanded_index": { "$ref": "#/$defs/readPlanFile" },
+        "avoid_by_default": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "source_files": {
       "type": "array",
       "items": { "type": "string" }
@@ -161,6 +221,18 @@
           "items": { "type": "string" }
         },
         "verification_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "readPlanFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "read_when"],
+      "properties": {
+        "path": { "type": "string" },
+        "read_when": {
           "type": "array",
           "items": { "type": "string" }
         }

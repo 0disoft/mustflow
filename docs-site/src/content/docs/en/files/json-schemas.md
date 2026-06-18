@@ -43,7 +43,7 @@ building automation around `--json` output.
   `mf line-endings normalize --json`
 - `quality-gaming-report.schema.json`: `mf quality check --json`
 - `skill-route-report.schema.json`: `mf skill route --json`, including compact route candidates,
-  selected main and adjunct skills, score breakdowns, and route source shards
+  selected main and adjunct skills, score breakdowns, route read plans, and route source shards
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify`
   writes a pointer to the latest verify run bundle, including the verify completion verdict, evidence model,
   and coverage matrix

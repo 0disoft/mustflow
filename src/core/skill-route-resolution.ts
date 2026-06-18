@@ -11,8 +11,10 @@ import {
 
 const MUSTFLOW_TEXT_MAX_BYTES = 1024 * 1024;
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
+const SKILL_ROUTER_PATH = '.mustflow/skills/router.toml';
 const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
 const DEFAULT_MAX_CANDIDATES = 5;
+const DEFAULT_MAX_MAIN = 1;
 const DEFAULT_MAX_ADJUNCTS = 2;
 const DOCS_TREE_MARKDOWN_PATH_PATTERN =
 	/(?:^|\/)(?:docs|docs-site|documentation|\.mustflow\/docs|\.mustflow\/context)\/.+\.(?:md|mdx)$/u;
@@ -77,6 +79,26 @@ export interface SkillRouteSelectedSummary {
 	readonly adjuncts: readonly SkillRouteResolvedCandidate[];
 }
 
+export interface SkillRouteReadPlanFile {
+	readonly path: string;
+	readonly read_when: readonly string[];
+}
+
+export interface SkillRouteReadPlan {
+	readonly selection_limits: {
+		readonly candidates: number;
+		readonly main: number;
+		readonly adjuncts: number;
+	};
+	readonly stable_kernel: readonly string[];
+	readonly selected_skill_paths: readonly string[];
+	readonly candidate_skill_paths: readonly string[];
+	readonly fallback_route_metadata: SkillRouteReadPlanFile;
+	readonly expanded_index: SkillRouteReadPlanFile;
+	readonly avoid_by_default: readonly string[];
+	readonly notes: readonly string[];
+}
+
 export interface SkillRouteResolveReport {
 	readonly schema_version: '1';
 	readonly kind: 'skill_route_resolution';
@@ -89,6 +111,7 @@ export interface SkillRouteResolveReport {
 	readonly signals: SkillRouteSignalSummary;
 	readonly selected: SkillRouteSelectedSummary;
 	readonly candidates: readonly SkillRouteResolvedCandidate[];
+	readonly read_plan: SkillRouteReadPlan;
 	readonly source_files: readonly string[];
 	readonly gap_notes: readonly string[];
 }
@@ -335,6 +358,55 @@ function selectAdjuncts(
 		.slice(0, DEFAULT_MAX_ADJUNCTS);
 }
 
+function uniqueCandidatePaths(candidates: readonly SkillRouteResolvedCandidate[]): string[] {
+	return [...new Set(candidates.map((candidate) => candidate.skill_path))];
+}
+
+function createReadPlan(
+	maxCandidates: number,
+	selected: SkillRouteSelectedSummary,
+	candidates: readonly SkillRouteResolvedCandidate[],
+): SkillRouteReadPlan {
+	const selectedCandidates = [selected.main, ...selected.adjuncts].filter(
+		(candidate): candidate is SkillRouteResolvedCandidate => candidate !== null,
+	);
+
+	return {
+		selection_limits: {
+			candidates: maxCandidates,
+			main: DEFAULT_MAX_MAIN,
+			adjuncts: DEFAULT_MAX_ADJUNCTS,
+		},
+		stable_kernel: [SKILL_ROUTER_PATH],
+		selected_skill_paths: uniqueCandidatePaths(selectedCandidates),
+		candidate_skill_paths: uniqueCandidatePaths(candidates),
+		fallback_route_metadata: {
+			path: SKILL_ROUTES_METADATA_PATH,
+			read_when: [
+				'router taxonomy is insufficient',
+				'task edits skill routing',
+				'detailed route metadata is needed',
+				'category or confidence is ambiguous',
+				'selected skill paths are empty',
+			],
+		},
+		expanded_index: {
+			path: SKILL_INDEX_PATH,
+			read_when: [
+				'full route metadata is insufficient',
+				'task edits the expanded route table',
+				'human-readable trigger evidence is needed',
+			],
+		},
+		avoid_by_default: [SKILL_INDEX_PATH],
+		notes: [
+			'Keep the router kernel in the stable prefix and load selected SKILL.md files in task context.',
+			'Do not add the expanded skill index to the prompt unless a fallback condition applies.',
+			'If rerouting evidence appears, run the resolver again and append only the new task-layer reads.',
+		],
+	};
+}
+
 function clampCandidateLimit(value: number | undefined): number {
 	if (value === undefined || !Number.isInteger(value)) {
 		return DEFAULT_MAX_CANDIDATES;
@@ -377,6 +449,10 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const candidates = allCandidates.slice(0, maxCandidates);
 	const main = candidates.find(isSelectableMain) ?? null;
 	const adjuncts = selectAdjuncts(main, allCandidates, metadata);
+	const selected = {
+		main,
+		adjuncts,
+	} satisfies SkillRouteSelectedSummary;
 
 	return {
 		schema_version: '1',
@@ -393,11 +469,9 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 			reasons,
 			read_shards: [SKILL_ROUTES_METADATA_PATH, SKILL_INDEX_PATH],
 		},
-		selected: {
-			main,
-			adjuncts,
-		},
+		selected,
 		candidates,
+		read_plan: createReadPlan(maxCandidates, selected, candidates),
 		source_files: [SKILL_ROUTES_METADATA_PATH, SKILL_INDEX_PATH],
 		gap_notes: [
 			'This resolver is a read-only routing prepass. It narrows skill candidates but does not replace reading the selected SKILL.md.',
