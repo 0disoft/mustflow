@@ -38,8 +38,22 @@ function readStringArray(value: unknown, options: { allowEmpty?: boolean } = {})
 	return value.map((entry) => entry.trim());
 }
 
-function readOptionalStringArray(value: unknown): string[] {
-	return readStringArray(value, { allowEmpty: true }) ?? [];
+function readOptionalStringArray(
+	value: unknown,
+	pointer: string,
+	issues: SkillRouteFixtureValidationIssue[],
+): string[] | null {
+	if (value === undefined) {
+		return [];
+	}
+
+	const entries = readStringArray(value);
+	if (!entries) {
+		issues.push({ kind: 'invalid', message: `${pointer} must be a non-empty string array when present` });
+		return null;
+	}
+
+	return entries;
 }
 
 function readOptionalString(value: unknown): string | undefined {
@@ -93,6 +107,13 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		return null;
 	}
 
+	const requiredCandidates = readOptionalStringArray(value.required_candidates, `${pointer}.required_candidates`, issues);
+	const requiredAdjuncts = readOptionalStringArray(value.required_adjuncts, `${pointer}.required_adjuncts`, issues);
+	const forbiddenCandidates = readOptionalStringArray(value.forbidden_candidates, `${pointer}.forbidden_candidates`, issues);
+	if (!requiredCandidates || !requiredAdjuncts || !forbiddenCandidates) {
+		return null;
+	}
+
 	const fixture = {
 		id,
 		task,
@@ -100,9 +121,9 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		reasons,
 		maxCandidates,
 		requiredMain: readOptionalString(value.required_main),
-		requiredCandidates: readOptionalStringArray(value.required_candidates),
-		requiredAdjuncts: readOptionalStringArray(value.required_adjuncts),
-		forbiddenCandidates: readOptionalStringArray(value.forbidden_candidates),
+		requiredCandidates,
+		requiredAdjuncts,
+		forbiddenCandidates,
 	} satisfies SkillRouteFixtureCase;
 
 	if (

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/route-fixture.schema.json",
+  "title": "mustflow skill route fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cases"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonEmptyStringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "paths", "reasons"],
+      "anyOf": [
+        { "required": ["required_main"] },
+        { "required": ["required_candidates"] },
+        { "required": ["required_adjuncts"] },
+        { "required": ["forbidden_candidates"] }
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "task": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonEmptyString" },
+            { "type": "null" }
+          ]
+        },
+        "paths": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "reasons": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "max_candidates": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "required_main": { "$ref": "#/$defs/nonEmptyString" },
+        "required_candidates": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "required_adjuncts": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "forbidden_candidates": { "$ref": "#/$defs/nonEmptyStringArray" }
+      }
+    }
+  }
+}

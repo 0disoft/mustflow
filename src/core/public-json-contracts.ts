@@ -237,6 +237,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		],
 	},
 	{
+		id: 'route-fixture',
+		schemaFile: 'route-fixture.schema.json',
+		producer: 'parsed .mustflow/skills/route-fixtures.json',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'latest-run-pointer',
 		schemaFile: 'latest-run-pointer.schema.json',
 		producer: '.mustflow/state/runs/latest.json when written by mf verify',

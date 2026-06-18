@@ -370,6 +370,46 @@ test('strict check fails invalid skill route golden fixture shape', () => {
 	}
 });
 
+test('strict check fails invalid skill route fixture expectation arrays', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'skills', 'route-fixtures.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					cases: [
+						{
+							id: 'invalid-expectation-array',
+							task: 'Update public docs for strict check behavior',
+							paths: ['docs-site/src/content/docs/en/commands/check.md'],
+							reasons: ['docs_change'],
+							required_candidates: 'docs-update',
+						},
+					],
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(check, 'mustflow.skill.route_fixture_invalid');
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes('required_candidates must be a non-empty string array when present'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails generated template profiles without selectable main routes', () => {
 	const projectPath = createTempProject();
 	const templatePath = cloneProjectFixture(path.join(projectRoot, 'templates', 'default'), 'mustflow-template-');

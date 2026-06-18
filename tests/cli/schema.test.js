@@ -147,6 +147,12 @@ test('verification skip reason schemas stay aligned with core plan reasons', asy
 	assert.deepEqual(explainReasons, expectedReasons);
 });
 
+test('source skill route fixtures match the published schema', () => {
+	const fixture = JSON.parse(readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'route-fixtures.json'), 'utf8'));
+
+	assertMatchesSchema(schemaRoot, 'route-fixture.schema.json', fixture);
+});
+
 test('public json schema backward-compatibility fixtures match current schemas', async () => {
 	const contracts = await readPublicJsonContracts();
 	const contractsBySchemaFile = new Map(contracts.map((contract) => [contract.schemaFile, contract]));
