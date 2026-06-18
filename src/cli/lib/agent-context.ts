@@ -50,7 +50,7 @@ const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
 	'skill_route_candidates',
 	'route_metadata_fallback',
 	'expanded_skill_index_fallback',
-	'REPO_MAP.md',
+	'repo_map_navigation',
 	'matching_skill',
 	'relevant_source_files',
 ] as const;
@@ -218,6 +218,7 @@ export interface TaskPromptCacheLayerContext {
 	readonly read_policy: string | null;
 	readonly sources: readonly string[];
 	readonly route_read_plan: TaskPromptCacheRouteReadPlanContext;
+	readonly repo_map_read_plan: TaskPromptCacheRepoMapReadPlanContext;
 	readonly local_index: TaskPromptCacheLocalIndexContext;
 }
 
@@ -241,6 +242,13 @@ export interface TaskPromptCacheSelectionLimitsContext {
 	readonly candidates: number;
 	readonly main: number;
 	readonly adjuncts: number;
+}
+
+export interface TaskPromptCacheRepoMapReadPlanContext {
+	readonly source: 'repo_map_navigation';
+	readonly strategy: 'select_anchors_or_spans_before_full_map';
+	readonly anchor_sources: readonly string[];
+	readonly fallback: TaskPromptCacheFallbackContext;
 }
 
 export interface TaskPromptCacheLocalIndexContext {
@@ -578,6 +586,10 @@ function taskSourceReloadOn(source: string, selectionPolicy: PromptCacheAuditSel
 		return ['route_resolution_changed'];
 	}
 
+	if (source === 'repo_map_navigation') {
+		return ['navigation_scope_changed', 'source_anchor_selection_changed'];
+	}
+
 	if (taskSourceKind(source) === 'file_reference') {
 		return ['task_selection_changed', 'source_file_hash_changed'];
 	}
@@ -842,6 +854,28 @@ function readTaskPromptCacheRouteReadPlan(projectRoot: string): TaskPromptCacheR
 	};
 }
 
+function readTaskPromptCacheRepoMapReadPlan(): TaskPromptCacheRepoMapReadPlanContext {
+	return {
+		source: 'repo_map_navigation',
+		strategy: 'select_anchors_or_spans_before_full_map',
+		anchor_sources: [
+			'local_index source anchors',
+			'REPO_MAP.md Priority Anchors',
+			'REPO_MAP.md Source Anchors',
+		],
+		fallback: {
+			path: 'REPO_MAP.md',
+			read_when: [
+				'broader repository navigation is needed',
+				'local index is missing, stale, or unavailable',
+				'selected anchors or spans do not identify the needed files',
+				'task edits the repository map generator or generated map contract',
+			],
+			avoid_by_default: true,
+		},
+	};
+}
+
 async function readTaskPromptCacheLayer(projectRoot: string, mustflow: TomlTable | undefined): Promise<TaskPromptCacheLayerContext> {
 	const layer = readPromptCacheLayer(mustflow, 'task');
 	const localIndex = await readLocalIndexPromptContext(projectRoot);
@@ -851,6 +885,7 @@ async function readTaskPromptCacheLayer(projectRoot: string, mustflow: TomlTable
 		read_policy: readOptionalString(layer, 'read_policy'),
 		sources: readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
 		route_read_plan: readTaskPromptCacheRouteReadPlan(projectRoot),
+		repo_map_read_plan: readTaskPromptCacheRepoMapReadPlan(),
 		local_index: mapLocalIndexPromptContext(localIndex),
 	};
 }

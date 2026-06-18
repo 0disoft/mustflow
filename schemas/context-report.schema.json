@@ -379,6 +379,7 @@
           "items": { "type": "string" }
         },
         "route_read_plan": { "$ref": "#/$defs/taskRouteReadPlan" },
+        "repo_map_read_plan": { "$ref": "#/$defs/taskRepoMapReadPlan" },
         "local_index": { "$ref": "#/$defs/promptCacheLocalIndex" }
       }
     },
@@ -434,6 +435,20 @@
         "candidates": { "type": "integer", "minimum": 0 },
         "main": { "type": "integer", "minimum": 0 },
         "adjuncts": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "taskRepoMapReadPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "strategy", "anchor_sources", "fallback"],
+      "properties": {
+        "source": { "const": "repo_map_navigation" },
+        "strategy": { "const": "select_anchors_or_spans_before_full_map" },
+        "anchor_sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fallback": { "$ref": "#/$defs/taskRouteFallback" }
       }
     },
     "promptCacheLocalIndex": {

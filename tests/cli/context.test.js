@@ -212,7 +212,8 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.ok(context.task_context.sources.includes('expanded_skill_index_fallback'));
 		assert.equal(context.task_context.sources.includes('.mustflow/skills/routes.toml'), false);
 		assert.equal(context.task_context.sources.includes('.mustflow/skills/INDEX.md'), false);
-		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
+		assert.equal(context.task_context.sources.includes('REPO_MAP.md'), false);
+		assert.ok(context.task_context.sources.includes('repo_map_navigation'));
 		assert.deepEqual(context.task_context.route_read_plan.resolver_command, ['mf', 'skill', 'route', '--json']);
 		assert.deepEqual(context.task_context.route_read_plan.stable_kernel, ['.mustflow/skills/router.toml']);
 		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/routes.toml'));
@@ -230,6 +231,12 @@ test('prints all prompt-cache layers when requested', () => {
 			main: 1,
 			adjuncts: 2,
 		});
+		assert.equal(context.task_context.repo_map_read_plan.source, 'repo_map_navigation');
+		assert.equal(context.task_context.repo_map_read_plan.strategy, 'select_anchors_or_spans_before_full_map');
+		assert.ok(context.task_context.repo_map_read_plan.anchor_sources.includes('local_index source anchors'));
+		assert.ok(context.task_context.repo_map_read_plan.anchor_sources.includes('REPO_MAP.md Priority Anchors'));
+		assert.equal(context.task_context.repo_map_read_plan.fallback.path, 'REPO_MAP.md');
+		assert.equal(context.task_context.repo_map_read_plan.fallback.avoid_by_default, true);
 		assert.equal(context.task_context.local_index.source, 'local_index');
 		assert.equal(context.task_context.local_index.status, 'missing');
 		assert.equal(context.task_context.local_index.index_fresh, false);
@@ -258,6 +265,14 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(
 			context.prompt_bundle.layers[1].blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
 			false,
+		);
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.some((block) => block.path === 'REPO_MAP.md'),
+			false,
+		);
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.find((block) => block.source === 'repo_map_navigation').cacheability,
+			'runtime_selection',
 		);
 		assert.equal(
 			context.prompt_bundle.layers[1].blocks.find((block) => block.source === 'route_metadata_fallback').cacheability,
@@ -443,10 +458,12 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		const routeCandidatesBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'skill_route_candidates');
 		const routeFallbackBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'route_metadata_fallback');
 		const expandedIndexFallbackBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'expanded_skill_index_fallback');
+		const repoMapBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'repo_map_navigation');
 		const dynamicBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'matching_skill');
 		assert.ok(routeCandidatesBlock);
 		assert.ok(routeFallbackBlock);
 		assert.ok(expandedIndexFallbackBlock);
+		assert.ok(repoMapBlock);
 		assert.ok(dynamicBlock);
 		assert.equal(routeCandidatesBlock.selection_policy, 'selected_at_runtime');
 		assert.equal(routeCandidatesBlock.measurement_status, 'dynamic_unmeasured');
@@ -454,12 +471,21 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		assert.equal(routeFallbackBlock.measurement_status, 'dynamic_unmeasured');
 		assert.equal(expandedIndexFallbackBlock.selection_policy, 'fallback_when_needed');
 		assert.equal(expandedIndexFallbackBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(repoMapBlock.kind, 'source_placeholder');
+		assert.equal(repoMapBlock.source_kind, 'dynamic_selection');
+		assert.equal(repoMapBlock.selection_policy, 'selected_at_runtime');
+		assert.equal(repoMapBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(repoMapBlock.rendered_bytes, null);
 		assert.equal(
 			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
 			false,
 		);
 		assert.equal(
 			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
+			false,
+		);
+		assert.equal(
+			context.cache_audit.layers[1].blocks.some((block) => block.path === 'REPO_MAP.md'),
 			false,
 		);
 		assert.ok(context.cache_audit.layers[1].largest_blocks.length > 0);

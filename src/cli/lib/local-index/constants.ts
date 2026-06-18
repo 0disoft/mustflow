@@ -36,9 +36,10 @@ export const DEFAULT_PROMPT_CACHE_STABLE_READ = [
 ] as const;
 export const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
 	'.mustflow/context/INDEX.md',
-	'.mustflow/skills/routes.toml',
-	'.mustflow/skills/INDEX.md',
-	'REPO_MAP.md',
+	'skill_route_candidates',
+	'route_metadata_fallback',
+	'expanded_skill_index_fallback',
+	'repo_map_navigation',
 	'matching_skill',
 	'relevant_source_files',
 ] as const;

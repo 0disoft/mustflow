@@ -93,6 +93,7 @@ npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseli
 - `stable_prefix.volatile_excluded` (`string[]`): 안정 계층 앞에 두면 안 되는 변동 출처입니다.
 - `task_context.sources` (`string[]`): 작업별로 선택하는 맥락 출처입니다.
 - `task_context.route_read_plan` (`object`): 작업 계층의 skill placeholder를 해석하기 위한 정적 read plan입니다. `mf skill route --json` resolver, 안정 router kernel, compact route source, 선택된 skill 경로 출처, route metadata fallback, expanded-index fallback, route 선택 한도를 보고합니다.
+- `task_context.repo_map_read_plan` (`object`): `repo_map_navigation`용 정적 read plan입니다. 전체 `REPO_MAP.md`로 fallback하기 전에 local-index source anchor와 선택된 `REPO_MAP.md` anchor span을 우선 사용하며, 전체 파일 fallback은 avoid-by-default로 표시됩니다.
 - `task_context.local_index` (`object`): 작업 맥락용 읽기 전용 로컬 색인 상태입니다. `status`는 `fresh`, `missing`, `stale`, `unreadable` 중 하나이며, 색인이 오래되었거나 사용할 수 없으면 `mf index`용 `refresh_hint`를 함께 제공합니다.
 - `volatile_suffix.sources` (`string[]`): 안정 계층 뒤에 붙여야 하는 변동 출처입니다.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
