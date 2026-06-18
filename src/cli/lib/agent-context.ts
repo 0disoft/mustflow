@@ -64,6 +64,14 @@ type JsonScalar = string | number | boolean | null;
 type JsonObject = Record<string, JsonScalar | JsonScalar[]>;
 export type PromptCacheProfile = 'stable' | 'task' | 'volatile' | 'all';
 export type PromptCacheBudgetStatus = 'within_budget' | 'over_budget' | 'unknown';
+export type PromptCacheAuditSourceKind = 'file_reference' | 'dynamic_selection' | 'runtime_volatile';
+export type PromptCacheAuditSelectionPolicy =
+	| 'always_rendered'
+	| 'read_when_selected'
+	| 'fallback_when_needed'
+	| 'selected_at_runtime'
+	| 'volatile_runtime';
+export type PromptCacheAuditMeasurementStatus = 'measured' | 'hash_only_deferred' | 'dynamic_unmeasured';
 
 export interface PromptCacheProfileOptions {
 	readonly includeAudit?: boolean;
@@ -240,6 +248,11 @@ export interface PromptCacheAuditBlockContext {
 	readonly kind: 'file' | 'source_placeholder';
 	readonly path: string | null;
 	readonly source: string | null;
+	readonly source_kind?: PromptCacheAuditSourceKind;
+	readonly selection_policy?: PromptCacheAuditSelectionPolicy;
+	readonly measurement_status?: PromptCacheAuditMeasurementStatus;
+	readonly candidate_exists?: boolean | null;
+	readonly candidate_content_hash?: string | null;
 	readonly exists: boolean | null;
 	readonly content_hash: string | null;
 	readonly rendered_bytes: number | null;
@@ -391,6 +404,39 @@ function calculateBudgetShare(renderedBytes: number | null, budget: number | nul
 	}
 
 	return Number((renderedBytes / budget).toFixed(6));
+}
+
+function isDirectPromptCacheSource(source: string): boolean {
+	return (
+		source.includes('/') ||
+		source.endsWith('.md') ||
+		source.endsWith('.toml') ||
+		source.endsWith('.json') ||
+		source.endsWith('.yaml') ||
+		source.endsWith('.yml')
+	);
+}
+
+function taskSourceSelectionPolicy(source: string): PromptCacheAuditSelectionPolicy {
+	const normalized = toPosixPath(source);
+
+	if (normalized === '.mustflow/skills/routes.toml' || normalized === '.mustflow/skills/INDEX.md') {
+		return 'fallback_when_needed';
+	}
+
+	if (isDirectPromptCacheSource(normalized)) {
+		return 'read_when_selected';
+	}
+
+	return 'selected_at_runtime';
+}
+
+function taskSourceIssue(source: string, measurementStatus: PromptCacheAuditMeasurementStatus): string {
+	if (measurementStatus === 'hash_only_deferred') {
+		return `task source is selection-gated; hash is recorded, but content is measured only when selected: ${toPosixPath(source)}`;
+	}
+
+	return `task source is selected at runtime and cannot be measured before the current task is assembled: ${source}`;
 }
 
 function readCommandContractContext(projectRoot: string): CommandContractContext {
@@ -645,6 +691,11 @@ function readStablePromptCacheAuditLayer(
 				kind: 'file',
 				path: toPosixPath(relativePath),
 				source: null,
+				source_kind: 'file_reference',
+				selection_policy: 'always_rendered',
+				measurement_status: 'measured',
+				candidate_exists: false,
+				candidate_content_hash: null,
 				exists: false,
 				content_hash: null,
 				rendered_bytes: 0,
@@ -655,14 +706,20 @@ function readStablePromptCacheAuditLayer(
 		}
 
 		const renderedBytes = bytesForUtf8(renderReferenceBundleBlock(relativePath, content));
+		const contentHash = sha256(content);
 
 		return {
 			id,
 			kind: 'file',
 			path: toPosixPath(relativePath),
 			source: null,
+			source_kind: 'file_reference',
+			selection_policy: 'always_rendered',
+			measurement_status: 'measured',
+			candidate_exists: true,
+			candidate_content_hash: contentHash,
 			exists: true,
-			content_hash: sha256(content),
+			content_hash: contentHash,
 			rendered_bytes: renderedBytes,
 			estimated_tokens: estimateTokens(renderedBytes),
 			budget_share: calculateBudgetShare(renderedBytes, budget),
@@ -698,20 +755,72 @@ function readStablePromptCacheAuditLayer(
 	};
 }
 
-function readSourcePlaceholderAuditLayer(
-	cacheLayer: 'task' | 'volatile',
+function readTaskSourceAuditLayer(
+	projectRoot: string,
 	sources: readonly string[],
 	budgetKb: number | null,
 ): PromptCacheAuditLayerContext {
-	const issue =
-		cacheLayer === 'task'
-			? 'task context sources are unresolved; run a future prompt-bundle resolver to measure selected content'
-			: 'volatile suffix sources are unresolved; current task, changed files, and command tails are not rendered here';
+	const issues = new Set<string>();
+	const blocks = sources.map((source, index) => {
+		const selectionPolicy = taskSourceSelectionPolicy(source);
+		const sourceKind: PromptCacheAuditSourceKind =
+			selectionPolicy === 'selected_at_runtime' ? 'dynamic_selection' : 'file_reference';
+		const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
+		const measurementStatus: PromptCacheAuditMeasurementStatus =
+			sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured';
+		const issue = taskSourceIssue(source, measurementStatus);
+		issues.add(issue);
+
+		return {
+			id: `task:${index + 1}:${source}`,
+			kind: 'source_placeholder',
+			path: null,
+			source,
+			source_kind: sourceKind,
+			selection_policy: selectionPolicy,
+			measurement_status: measurementStatus,
+			candidate_exists: sourceKind === 'file_reference' ? content !== null : null,
+			candidate_content_hash: content === null ? null : sha256(content),
+			exists: null,
+			content_hash: null,
+			rendered_bytes: null,
+			estimated_tokens: null,
+			budget_share: null,
+			issue,
+		} satisfies PromptCacheAuditBlockContext;
+	});
+
+	return {
+		cache_layer: 'task',
+		budget_kb: budgetKb,
+		budget_bytes: budgetBytes(budgetKb),
+		target_kb: null,
+		target_bytes: null,
+		target_status: 'unknown',
+		rendered_bytes: null,
+		estimated_tokens: null,
+		budget_status: 'unknown',
+		blocks,
+		largest_blocks: [],
+		issues: [...issues],
+	};
+}
+
+function readVolatileSourceAuditLayer(
+	sources: readonly string[],
+	budgetKb: number | null,
+): PromptCacheAuditLayerContext {
+	const issue = 'volatile suffix sources are runtime-only; current task, changed files, and command tails are not rendered here';
 	const blocks = sources.map((source, index) => ({
-		id: `${cacheLayer}:${index + 1}:${source}`,
+		id: `volatile:${index + 1}:${source}`,
 		kind: 'source_placeholder',
 		path: null,
 		source,
+		source_kind: 'runtime_volatile',
+		selection_policy: 'volatile_runtime',
+		measurement_status: 'dynamic_unmeasured',
+		candidate_exists: null,
+		candidate_content_hash: null,
 		exists: null,
 		content_hash: null,
 		rendered_bytes: null,
@@ -721,7 +830,7 @@ function readSourcePlaceholderAuditLayer(
 	})) satisfies PromptCacheAuditBlockContext[];
 
 	return {
-		cache_layer: cacheLayer,
+		cache_layer: 'volatile',
 		budget_kb: budgetKb,
 		budget_bytes: budgetBytes(budgetKb),
 		target_kb: null,
@@ -751,8 +860,8 @@ function readPromptCacheAudit(
 	if (profile === 'task' || profile === 'all') {
 		const taskLayer = readPromptCacheLayer(mustflow, 'task');
 		layers.push(
-			readSourcePlaceholderAuditLayer(
-				'task',
+			readTaskSourceAuditLayer(
+				projectRoot,
 				readOptionalStringArray(taskLayer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES],
 				settings.max_task_context_kb,
 			),
@@ -762,8 +871,7 @@ function readPromptCacheAudit(
 	if (profile === 'volatile' || profile === 'all') {
 		const volatileLayer = readPromptCacheLayer(mustflow, 'volatile');
 		layers.push(
-			readSourcePlaceholderAuditLayer(
-				'volatile',
+			readVolatileSourceAuditLayer(
 				readOptionalStringArray(volatileLayer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES],
 				settings.max_volatile_suffix_kb,
 			),

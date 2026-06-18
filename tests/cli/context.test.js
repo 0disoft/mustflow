@@ -254,6 +254,8 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/router.toml'));
 		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/routes.toml'), false);
 		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'), false);
+		assert.ok(stableAudit.blocks.every((block) => block.selection_policy === 'always_rendered'));
+		assert.ok(stableAudit.blocks.every((block) => block.measurement_status === 'measured'));
 		assert.ok(stableAudit.largest_blocks.length > 0);
 		assert.ok(stableAudit.largest_blocks[0].rendered_bytes >= stableAudit.largest_blocks.at(-1).rendered_bytes);
 	} finally {
@@ -279,7 +281,23 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		assert.equal(context.cache_audit.layers[1].budget_status, 'unknown');
 		assert.equal(context.cache_audit.layers[1].target_status, 'unknown');
 		assert.equal(context.cache_audit.layers[1].blocks[0].kind, 'source_placeholder');
-		assert.match(context.cache_audit.layers[1].blocks[0].issue, /unresolved/u);
+		assert.equal(context.cache_audit.layers[1].blocks[0].source_kind, 'file_reference');
+		assert.equal(context.cache_audit.layers[1].blocks[0].selection_policy, 'read_when_selected');
+		assert.equal(context.cache_audit.layers[1].blocks[0].measurement_status, 'hash_only_deferred');
+		assert.equal(context.cache_audit.layers[1].blocks[0].candidate_exists, true);
+		assert.match(context.cache_audit.layers[1].blocks[0].candidate_content_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(context.cache_audit.layers[1].blocks[0].issue, /selection-gated/u);
+		const routesBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === '.mustflow/skills/routes.toml');
+		const dynamicBlock = context.cache_audit.layers[1].blocks.find((block) => block.source === 'matching_skill');
+		assert.ok(routesBlock);
+		assert.ok(dynamicBlock);
+		assert.equal(routesBlock.selection_policy, 'fallback_when_needed');
+		assert.equal(routesBlock.measurement_status, 'hash_only_deferred');
+		assert.equal(dynamicBlock.source_kind, 'dynamic_selection');
+		assert.equal(dynamicBlock.selection_policy, 'selected_at_runtime');
+		assert.equal(dynamicBlock.measurement_status, 'dynamic_unmeasured');
+		assert.equal(context.cache_audit.layers[2].blocks[0].source_kind, 'runtime_volatile');
+		assert.equal(context.cache_audit.layers[2].blocks[0].selection_policy, 'volatile_runtime');
 	} finally {
 		removeTempProject(projectPath);
 	}

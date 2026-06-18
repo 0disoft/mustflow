@@ -41,10 +41,11 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 
 `--cache-audit`를 추가하면 `cache_audit` 블록을 포함합니다. 이 감사는 mustflow reference
 bundle 형식으로 안정 파일을 측정해 UTF-8 렌더링 바이트, 거친 바이트 기반 토큰 추정, 설정된
-예산 상태, 가장 큰 안정 블록을 보고합니다. task와 volatile 계층은 호스트나 future resolver가
-실제 선택 본문을 제공하기 전까지 unresolved placeholder로 표시됩니다. 이 토큰 추정은 provider
-청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른 provider의 실제 캐시 적중을 증명하지
-않습니다.
+예산 상태, 가장 큰 안정 블록을 보고합니다. task 계층의 파일 후보는 선택형 placeholder로
+표시하되 존재 여부와 내용 해시를 함께 제공합니다. 동적 task 출처와 volatile 출처는 호스트가
+실제 선택 본문을 제공하기 전까지 runtime-only placeholder로 표시됩니다. 이 토큰 추정은 provider
+청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른 provider의 실제 캐시 적중을
+증명하지 않습니다.
 
 ## 예시
 
@@ -91,7 +92,11 @@ npx mf context --json --cache-audit
 - `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, hard 예산 설정, 목표 설정, 상태 필드, 블록, 가장 큰 블록, 이슈입니다.
 - `cache_audit.layers[].budget_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다.
 - `cache_audit.layers[].target_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다. 명령 실패 조건이 아니라 선호 목표에 맞는지 보여줍니다.
-- `cache_audit.layers[].blocks[]` (`object[]`): 파일 또는 source placeholder 블록이며, 경로 또는 출처, 내용 해시, 렌더링 바이트, 추정 토큰, 예산 비율, 이슈를 포함합니다.
+- `cache_audit.layers[].blocks[]` (`object[]`): 파일 또는 source placeholder 블록이며, 경로 또는 출처, 내용 해시, 렌더링 바이트, 추정 토큰, 예산 비율, 선택 메타데이터, 이슈를 포함합니다.
+- `cache_audit.layers[].blocks[].source_kind` (`string | undefined`): `file_reference`, `dynamic_selection`, `runtime_volatile` 같은 placeholder 출처 분류입니다.
+- `cache_audit.layers[].blocks[].selection_policy` (`string | undefined`): 항상 렌더링되는지, 작업에서 선택될 때만 읽는지, fallback 메타데이터인지, 런타임에 선택되는지, volatile 런타임 상태인지 나타냅니다.
+- `cache_audit.layers[].blocks[].measurement_status` (`string | undefined`): `measured`, `hash_only_deferred`, `dynamic_unmeasured` 중 하나입니다.
+- `cache_audit.layers[].blocks[].candidate_exists`, `candidate_content_hash` (`boolean | null`, `string | null`): 작업 출처가 선택형 파일 참조라서 감사가 본문을 렌더링하지 않을 때의 파일 존재 여부와 내용 해시입니다.
 
 배열 안 객체의 세부 필드는 다음과 같습니다.
 

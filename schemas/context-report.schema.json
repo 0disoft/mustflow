@@ -516,6 +516,19 @@
         "kind": { "enum": ["file", "source_placeholder"] },
         "path": { "type": ["string", "null"] },
         "source": { "type": ["string", "null"] },
+        "source_kind": { "enum": ["file_reference", "dynamic_selection", "runtime_volatile"] },
+        "selection_policy": {
+          "enum": [
+            "always_rendered",
+            "read_when_selected",
+            "fallback_when_needed",
+            "selected_at_runtime",
+            "volatile_runtime"
+          ]
+        },
+        "measurement_status": { "enum": ["measured", "hash_only_deferred", "dynamic_unmeasured"] },
+        "candidate_exists": { "type": ["boolean", "null"] },
+        "candidate_content_hash": { "type": ["string", "null"] },
         "exists": { "type": ["boolean", "null"] },
         "content_hash": { "type": ["string", "null"] },
         "rendered_bytes": { "type": ["integer", "null"], "minimum": 0 },
