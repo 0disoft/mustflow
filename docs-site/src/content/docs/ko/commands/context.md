@@ -87,6 +87,10 @@ npx mf context --json --cache-audit
 - `task_context.local_index` (`object`): 작업 맥락용 읽기 전용 로컬 색인 상태입니다. `status`는 `fresh`, `missing`, `stale`, `unreadable` 중 하나이며, 색인이 오래되었거나 사용할 수 없으면 `mf index`용 `refresh_hint`를 함께 제공합니다.
 - `volatile_suffix.sources` (`string[]`): 안정 계층 뒤에 붙여야 하는 변동 출처입니다.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): 변동 필드가 안정 계층에 섞이지 않도록 고정한 안전 플래그입니다.
+- `prompt_bundle` (`object`): 선택한 프로필의 순서 있는 prompt block manifest입니다. 실제 prompt 본문은 넣지 않고 block 경계, 출처 경로, source placeholder, 선택 정책, cacheability, reload 조건, byte 추정치, hash를 보고합니다.
+- `prompt_bundle.request_shape_hash` (`string`): 계층 순서와 block 형태의 hash입니다. provider cache eligibility에 영향을 주는 stable ordering 또는 boundary drift를 찾을 때 씁니다.
+- `prompt_bundle.bundle_hash` (`string`): 순서 있는 block id, 측정된 content hash, rendered digest, block issue를 묶은 hash입니다. source text를 노출하지 않고 두 bundle manifest를 비교할 때 씁니다.
+- `prompt_bundle.layers[].blocks[].content_included` (`false`): context report는 실제 prompt block 본문을 출력하지 않습니다.
 - `cache_audit.measurement` (`string`): 측정 방식입니다. 현재는 `reference_bundle`입니다.
 - `cache_audit.estimator` (`object`): 거친 byte-to-token 추정기와 주의 문구입니다.
 - `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, hard 예산 설정, 목표 설정, 상태 필드, 블록, 가장 큰 블록, 이슈입니다.

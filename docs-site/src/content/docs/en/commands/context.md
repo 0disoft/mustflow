@@ -88,6 +88,10 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `task_context.local_index` (`object`): Read-only local-index status for task context. `status` is `fresh`, `missing`, `stale`, or `unreadable`; stale or unavailable states include a `refresh_hint` for `mf index`.
 - `volatile_suffix.sources` (`string[]`): Volatile sources that belong after the stable prefix.
 - `volatile_suffix.include_absolute_root`, `volatile_suffix.include_latest_run` (`false`): Stable-profile safety flags that keep volatile fields out of the stable layer.
+- `prompt_bundle` (`object`): Ordered prompt-block manifest for the selected profile. It reports block boundaries, source paths, source placeholders, selection policy, cacheability, reload triggers, byte estimates, and hashes without embedding prompt text.
+- `prompt_bundle.request_shape_hash` (`string`): Hash of the layer order and block shape. Use it to spot stable ordering or boundary drift that would change provider cache eligibility.
+- `prompt_bundle.bundle_hash` (`string`): Hash of ordered block identities, measured content hashes, rendered digests, and block issues. Use it to compare two bundle manifests without exposing source text.
+- `prompt_bundle.layers[].blocks[].content_included` (`false`): The context report never emits the actual prompt block body.
 - `cache_audit.measurement` (`string`): Measurement mode. Currently `reference_bundle`.
 - `cache_audit.estimator` (`object`): Rough byte-to-token estimator and caveat.
 - `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, hard budget settings, target settings, status fields, blocks, largest blocks, and issues.

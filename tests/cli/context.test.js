@@ -224,6 +224,33 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.volatile_suffix.never_place_before_stable_prefix, true);
 		assert.equal(context.volatile_suffix.include_absolute_root, false);
 		assert.equal(context.volatile_suffix.include_latest_run, false);
+		assert.equal(context.prompt_bundle.renderer, 'reference_bundle_utf8_lf_v1');
+		assert.equal(context.prompt_bundle.content_included, false);
+		assert.match(context.prompt_bundle.request_shape_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(context.prompt_bundle.bundle_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.deepEqual(
+			context.prompt_bundle.layers.map((layer) => layer.cache_layer),
+			['stable', 'task', 'volatile'],
+		);
+		assert.ok(context.prompt_bundle.layers[0].blocks.every((block) => block.cacheability === 'provider_prefix_candidate'));
+		assert.ok(context.prompt_bundle.layers[0].blocks.every((block) => block.content_included === false));
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
+			false,
+		);
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
+			false,
+		);
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.find((block) => block.source === 'route_metadata_fallback').cacheability,
+			'task_fallback',
+		);
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.find((block) => block.source === 'matching_skill').cacheability,
+			'runtime_selection',
+		);
+		assert.ok(context.prompt_bundle.layers[2].blocks.every((block) => block.cacheability === 'volatile_suffix'));
 	} finally {
 		removeTempProject(projectPath);
 	}

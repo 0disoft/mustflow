@@ -73,6 +73,12 @@ export type PromptCacheAuditSelectionPolicy =
 	| 'selected_at_runtime'
 	| 'volatile_runtime';
 export type PromptCacheAuditMeasurementStatus = 'measured' | 'hash_only_deferred' | 'dynamic_unmeasured';
+export type PromptBundleCacheability =
+	| 'provider_prefix_candidate'
+	| 'task_selective'
+	| 'task_fallback'
+	| 'runtime_selection'
+	| 'volatile_suffix';
 
 export interface PromptCacheProfileOptions {
 	readonly includeAudit?: boolean;
@@ -234,6 +240,7 @@ export interface PromptCacheProfileContext {
 	readonly stable_prefix?: StablePromptCacheLayerContext;
 	readonly task_context?: TaskPromptCacheLayerContext;
 	readonly volatile_suffix?: VolatilePromptCacheLayerContext;
+	readonly prompt_bundle: PromptBundleContext;
 	readonly cache_audit?: PromptCacheAuditContext;
 	readonly issues: readonly string[];
 }
@@ -282,6 +289,40 @@ export interface PromptCacheAuditContext {
 	readonly estimator: PromptCacheAuditEstimatorContext;
 	readonly canonicalization: readonly string[];
 	readonly layers: readonly PromptCacheAuditLayerContext[];
+	readonly issues: readonly string[];
+}
+
+export interface PromptBundleBlockContext {
+	readonly id: string;
+	readonly cache_layer: 'stable' | 'task' | 'volatile';
+	readonly order: number;
+	readonly kind: 'file' | 'source_placeholder';
+	readonly path: string | null;
+	readonly source: string | null;
+	readonly source_kind: PromptCacheAuditSourceKind;
+	readonly selection_policy: PromptCacheAuditSelectionPolicy;
+	readonly content_included: false;
+	readonly content_hash: string | null;
+	readonly rendered_digest: string | null;
+	readonly rendered_bytes: number | null;
+	readonly estimated_tokens: number | null;
+	readonly cacheability: PromptBundleCacheability;
+	readonly reload_on: readonly string[];
+	readonly issue: string | null;
+}
+
+export interface PromptBundleLayerContext {
+	readonly cache_layer: 'stable' | 'task' | 'volatile';
+	readonly blocks: readonly PromptBundleBlockContext[];
+}
+
+export interface PromptBundleContext {
+	readonly schema_version: '1';
+	readonly renderer: 'reference_bundle_utf8_lf_v1';
+	readonly content_included: false;
+	readonly request_shape_hash: string;
+	readonly bundle_hash: string;
+	readonly layers: readonly PromptBundleLayerContext[];
 	readonly issues: readonly string[];
 }
 
@@ -399,6 +440,10 @@ function renderReferenceBundleBlock(relativePath: string, content: string): stri
 	return `--- mustflow-cache-block: ${toPosixPath(relativePath)} ---\n${normalizeReferenceBundleContent(content)}`;
 }
 
+function renderedDigest(relativePath: string, content: string): string {
+	return sha256(renderReferenceBundleBlock(relativePath, content));
+}
+
 function calculateBudgetShare(renderedBytes: number | null, budget: number | null): number | null {
 	if (renderedBytes === null || budget === null || budget <= 0) {
 		return null;
@@ -439,6 +484,30 @@ function taskSourceSelectionPolicy(source: string): PromptCacheAuditSelectionPol
 
 function taskSourceKind(source: string): PromptCacheAuditSourceKind {
 	return isDirectPromptCacheSource(toPosixPath(source)) ? 'file_reference' : 'dynamic_selection';
+}
+
+function taskSourceCacheability(source: string, selectionPolicy: PromptCacheAuditSelectionPolicy): PromptBundleCacheability {
+	if (selectionPolicy === 'fallback_when_needed') {
+		return 'task_fallback';
+	}
+
+	return taskSourceKind(source) === 'file_reference' ? 'task_selective' : 'runtime_selection';
+}
+
+function taskSourceReloadOn(source: string, selectionPolicy: PromptCacheAuditSelectionPolicy): readonly string[] {
+	if (selectionPolicy === 'fallback_when_needed') {
+		return ['route_resolution_changed'];
+	}
+
+	if (taskSourceKind(source) === 'file_reference') {
+		return ['task_selection_changed', 'source_file_hash_changed'];
+	}
+
+	if (source === 'relevant_source_files') {
+		return ['source_selection_changed'];
+	}
+
+	return ['route_resolution_changed'];
 }
 
 function taskSourceIssue(source: string, measurementStatus: PromptCacheAuditMeasurementStatus): string {
@@ -674,6 +743,141 @@ function readVolatilePromptCacheLayer(mustflow: TomlTable | undefined): Volatile
 		never_place_before_stable_prefix: readBoolean(layer, 'never_place_before_stable_prefix', false),
 		include_absolute_root: false,
 		include_latest_run: false,
+	};
+}
+
+function readStablePromptBundleLayer(projectRoot: string, mustflow: TomlTable | undefined): PromptBundleLayerContext {
+	const layer = readPromptCacheLayer(mustflow, 'stable');
+	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+
+	return {
+		cache_layer: 'stable',
+		blocks: read.map((relativePath, index) => {
+			const path = toPosixPath(relativePath);
+			const content = safeRead(projectRoot, relativePath);
+			const renderedBytes = content === null ? null : bytesForUtf8(renderReferenceBundleBlock(relativePath, content));
+			const issue = content === null ? `stable prefix document is missing: ${path}` : null;
+
+			return {
+				id: `stable:${index + 1}:${path}`,
+				cache_layer: 'stable',
+				order: index + 1,
+				kind: content === null ? 'source_placeholder' : 'file',
+				path: content === null ? null : path,
+				source: null,
+				source_kind: 'file_reference',
+				selection_policy: 'always_rendered',
+				content_included: false,
+				content_hash: content === null ? null : sha256(content),
+				rendered_digest: content === null ? null : renderedDigest(relativePath, content),
+				rendered_bytes: renderedBytes,
+				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
+				cacheability: 'provider_prefix_candidate',
+				reload_on: ['stable_file_hash_changed'],
+				issue,
+			} satisfies PromptBundleBlockContext;
+		}),
+	};
+}
+
+function readTaskPromptBundleLayer(projectRoot: string, mustflow: TomlTable | undefined): PromptBundleLayerContext {
+	const layer = readPromptCacheLayer(mustflow, 'task');
+	const sources = readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_TASK_SOURCES];
+
+	return {
+		cache_layer: 'task',
+		blocks: sources.map((source, index) => {
+			const selectionPolicy = taskSourceSelectionPolicy(source);
+			const sourceKind = taskSourceKind(source);
+			const content = sourceKind === 'file_reference' ? safeRead(projectRoot, source) : null;
+			const renderedBytes = content === null ? null : bytesForUtf8(renderReferenceBundleBlock(source, content));
+			const issue = content === null ? taskSourceIssue(source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured') : null;
+
+			return {
+				id: `task:${index + 1}:${source}`,
+				cache_layer: 'task',
+				order: index + 1,
+				kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
+				path: sourceKind === 'file_reference' && content !== null ? toPosixPath(source) : null,
+				source,
+				source_kind: sourceKind,
+				selection_policy: selectionPolicy,
+				content_included: false,
+				content_hash: content === null ? null : sha256(content),
+				rendered_digest: content === null ? null : renderedDigest(source, content),
+				rendered_bytes: renderedBytes,
+				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
+				cacheability: taskSourceCacheability(source, selectionPolicy),
+				reload_on: taskSourceReloadOn(source, selectionPolicy),
+				issue,
+			} satisfies PromptBundleBlockContext;
+		}),
+	};
+}
+
+function readVolatilePromptBundleLayer(mustflow: TomlTable | undefined): PromptBundleLayerContext {
+	const layer = readPromptCacheLayer(mustflow, 'volatile');
+	const sources = readOptionalStringArray(layer, 'sources') ?? [...DEFAULT_PROMPT_CACHE_VOLATILE_SOURCES];
+	const issue = 'volatile suffix sources are runtime-only; current task, changed files, and command tails are not rendered here';
+
+	return {
+		cache_layer: 'volatile',
+		blocks: sources.map((source, index) => ({
+			id: `volatile:${index + 1}:${source}`,
+			cache_layer: 'volatile',
+			order: index + 1,
+			kind: 'source_placeholder',
+			path: null,
+			source,
+			source_kind: 'runtime_volatile',
+			selection_policy: 'volatile_runtime',
+			content_included: false,
+			content_hash: null,
+			rendered_digest: null,
+			rendered_bytes: null,
+			estimated_tokens: null,
+			cacheability: 'volatile_suffix',
+			reload_on: ['volatile_state_changed'],
+			issue,
+		})) satisfies PromptBundleBlockContext[],
+	};
+}
+
+function readPromptBundle(
+	projectRoot: string,
+	mustflow: TomlTable | undefined,
+	profile: PromptCacheProfile,
+): PromptBundleContext {
+	const layers: PromptBundleLayerContext[] = [];
+
+	if (profile === 'stable' || profile === 'all') {
+		layers.push(readStablePromptBundleLayer(projectRoot, mustflow));
+	}
+
+	if (profile === 'task' || profile === 'all') {
+		layers.push(readTaskPromptBundleLayer(projectRoot, mustflow));
+	}
+
+	if (profile === 'volatile' || profile === 'all') {
+		layers.push(readVolatilePromptBundleLayer(mustflow));
+	}
+
+	const blocks = layers.flatMap((layer) => layer.blocks);
+	const shapeMaterial = blocks
+		.map((block) => [block.cache_layer, block.order, block.kind, block.path ?? '', block.source ?? '', block.selection_policy, block.cacheability].join('\0'))
+		.join('\n');
+	const bundleMaterial = blocks
+		.map((block) => [block.id, block.content_hash ?? '', block.rendered_digest ?? '', block.issue ?? ''].join('\0'))
+		.join('\n');
+
+	return {
+		schema_version: '1',
+		renderer: 'reference_bundle_utf8_lf_v1',
+		content_included: false,
+		request_shape_hash: sha256(shapeMaterial),
+		bundle_hash: sha256(bundleMaterial),
+		layers,
+		issues: [...new Set(blocks.flatMap((block) => (block.issue === null ? [] : [block.issue])))],
 	};
 }
 
@@ -941,6 +1145,7 @@ export async function getPromptCacheProfileContext(
 		command: 'context',
 		cache_profile: profile,
 		prompt_cache: promptCacheSettings,
+		prompt_bundle: readPromptBundle(projectRoot, mustflow, profile),
 		...(options.includeAudit
 			? {
 					cache_audit: readPromptCacheAudit(projectRoot, mustflow, profile, promptCacheSettings),

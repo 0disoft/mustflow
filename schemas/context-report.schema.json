@@ -79,6 +79,7 @@
         "stable_prefix": { "$ref": "#/$defs/stablePrefixLayer" },
         "task_context": { "$ref": "#/$defs/taskContextLayer" },
         "volatile_suffix": { "$ref": "#/$defs/volatileSuffixLayer" },
+        "prompt_bundle": { "$ref": "#/$defs/promptBundle" },
         "cache_audit": { "$ref": "#/$defs/promptCacheAudit" },
         "issues": {
           "type": "array",
@@ -446,6 +447,105 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "promptBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "renderer",
+        "content_included",
+        "request_shape_hash",
+        "bundle_hash",
+        "layers",
+        "issues"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "renderer": { "const": "reference_bundle_utf8_lf_v1" },
+        "content_included": { "const": false },
+        "request_shape_hash": { "type": "string" },
+        "bundle_hash": { "type": "string" },
+        "layers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptBundleLayer" }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promptBundleLayer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cache_layer", "blocks"],
+      "properties": {
+        "cache_layer": { "enum": ["stable", "task", "volatile"] },
+        "blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptBundleBlock" }
+        }
+      }
+    },
+    "promptBundleBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "cache_layer",
+        "order",
+        "kind",
+        "path",
+        "source",
+        "source_kind",
+        "selection_policy",
+        "content_included",
+        "content_hash",
+        "rendered_digest",
+        "rendered_bytes",
+        "estimated_tokens",
+        "cacheability",
+        "reload_on",
+        "issue"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "cache_layer": { "enum": ["stable", "task", "volatile"] },
+        "order": { "type": "integer", "minimum": 1 },
+        "kind": { "enum": ["file", "source_placeholder"] },
+        "path": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "source_kind": { "enum": ["file_reference", "dynamic_selection", "runtime_volatile"] },
+        "selection_policy": {
+          "enum": [
+            "always_rendered",
+            "read_when_selected",
+            "fallback_when_needed",
+            "selected_at_runtime",
+            "volatile_runtime"
+          ]
+        },
+        "content_included": { "const": false },
+        "content_hash": { "type": ["string", "null"] },
+        "rendered_digest": { "type": ["string", "null"] },
+        "rendered_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "estimated_tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "cacheability": {
+          "enum": [
+            "provider_prefix_candidate",
+            "task_selective",
+            "task_fallback",
+            "runtime_selection",
+            "volatile_suffix"
+          ]
+        },
+        "reload_on": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "issue": { "type": ["string", "null"] }
       }
     },
     "promptCacheAuditEstimator": {
