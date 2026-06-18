@@ -14,6 +14,7 @@ export type QualityGamingRiskCode =
 	| 'type_escape_added'
 	| 'test_bypass_marker_added'
 	| 'placeholder_added'
+	| 'empty_catch_swallow_added'
 	| 'generated_or_vendor_logic_added'
 	| 'large_helper_container_added';
 
@@ -81,6 +82,7 @@ const TEST_BYPASS_PATTERN = /(?:\.skip\b|\.only\b|@Disabled\b|@Ignore\b|\bxfail\
 const PLACEHOLDER_PATTERN =
 	/(?:TODO|FIXME|HACK|not\s+implemented|unimplemented|throw\s+new\s+Error\(["'`](?:not implemented|todo|unsupported)|\bpass\s*$)/iu;
 const THROW_PLACEHOLDER_MESSAGE_PATTERN = /(?:not\s+implemented|unimplemented|todo|unsupported)/iu;
+const EMPTY_CATCH_PATTERN = /\bcatch\s*(?:\([^)]*\))?\s*\{\s*\}/u;
 
 function toPosixPath(value: string): string {
 	return value.split(path.sep).join('/');
@@ -377,6 +379,10 @@ function inspectLine(relativePath: string, candidate: LineCandidate, risks: Qual
 			(/\bthrow\s+new\s+Error\s*\(/u.test(codeSurface) && THROW_PLACEHOLDER_MESSAGE_PATTERN.test(text)))
 	) {
 		addRisk(risks, 'placeholder_added', 'medium', relativePath, candidate.line, 'Added line looks like a placeholder or unfinished implementation.', null);
+	}
+
+	if (isCode && EMPTY_CATCH_PATTERN.test(codeSurface)) {
+		addRisk(risks, 'empty_catch_swallow_added', 'high', relativePath, candidate.line, 'Added line contains an empty catch block that swallows failures.', null);
 	}
 
 	if (GENERATED_OR_VENDOR_PATTERN.test(relativePath) && isCode && isMeaningfulCodeLine(text)) {

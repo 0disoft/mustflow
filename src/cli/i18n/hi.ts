@@ -841,7 +841,7 @@ export const hiMessages = {
   "lineEndings.error.conflictingModes": "Cannot combine --apply and --dry-run",
   "quality.help.summary":
     "Inspect changed files for quality-gaming patterns such as line stuffing, validation suppressions, " +
-    "test bypass markers, type escapes, and placeholder implementations.",
+    "test bypass markers, type escapes, empty catch blocks, and placeholder implementations.",
   "quality.help.option.all": "Inspect every tracked text file instead of only changed files",
   "quality.help.exit.ok": "Quality-gaming risks were inspected and no risk was found",
   "quality.help.exit.fail": "Quality-gaming risks, repository issues, or invalid input were found",

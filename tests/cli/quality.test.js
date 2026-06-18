@@ -77,6 +77,7 @@ test('quality check detects changed-file gaming patterns', () => {
 		const typeEscape = 'as ' + 'any';
 		const bypass = 'test.' + 'skip';
 		const placeholder = 'not ' + 'implemented';
+		const emptyCatch = 'catch (error) ' + '{}';
 		const longExpression = Array.from({ length: 50 }, (_, index) => `value${index}`).join(' + ');
 		writeFileSync(
 			path.join(projectPath, 'src', 'gaming.ts'),
@@ -87,6 +88,7 @@ test('quality check detects changed-file gaming patterns', () => {
 				`const escaped = value ${typeEscape};`,
 				`${bypass}("hidden behavior", () => {});`,
 				`throw new Error("${placeholder}");`,
+				`try { risky(); } ${emptyCatch}`,
 				'',
 			].join('\n'),
 		);
@@ -105,6 +107,7 @@ test('quality check detects changed-file gaming patterns', () => {
 		assert.ok(codes.has('type_escape_added'));
 		assert.ok(codes.has('test_bypass_marker_added'));
 		assert.ok(codes.has('placeholder_added'));
+		assert.ok(codes.has('empty_catch_swallow_added'));
 		assert.ok(codes.has('generated_or_vendor_logic_added'));
 	} finally {
 		removeTempProject(projectPath);

@@ -17,7 +17,8 @@ npx mf quality check --json
 
 The default scope is changed text files from Git. Findings include long-line stuffing, multiple
 statements on one line, new suppressions, type escapes, test bypass markers, placeholder
-implementations, and executable-looking logic under generated or vendor paths.
+implementations, empty catch blocks that swallow failures, and executable-looking logic under
+generated or vendor paths.
 
 ## Audit Tracked Files
 

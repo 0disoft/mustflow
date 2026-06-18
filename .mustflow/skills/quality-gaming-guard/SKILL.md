@@ -2,7 +2,7 @@
 mustflow_doc: skill.quality-gaming-guard
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: quality-gaming-guard
@@ -29,7 +29,7 @@ metadata:
 
 Prevent agents from satisfying visible quality metrics through cheaper evasions such as line
 stuffing, validation suppressions, placeholder implementations, test bypass markers, broad type
-escapes, junk-drawer helpers, or generated/vendor logic hiding.
+escapes, empty catch swallowing, junk-drawer helpers, or generated/vendor logic hiding.
 
 This skill treats numeric limits as smoke alarms, not as the whole design objective. The target is
 the underlying engineering contract: responsibility separation, readable diffs, meaningful tests,
@@ -42,7 +42,8 @@ preserved validation, and maintainable ownership.
   errors, test coverage, benchmark thresholds, or quality gates.
 - Assistant-authored code could satisfy a visible metric while making maintainability worse.
 - A change adds or touches tests, validators, lint/type suppressions, generated files, vendor files,
-  helper/util/manager/common containers, configuration-as-logic, or placeholder behavior.
+  helper/util/manager/common containers, configuration-as-logic, placeholder behavior, or error
+  swallowing.
 - A repository has a configured `quality_gaming_check` intent or the command contract should expose
   one.
 
@@ -97,7 +98,8 @@ preserved validation, and maintainable ownership.
    - new lint, type, coverage, or formatter suppressions;
    - `.skip`, `.only`, disabled, xfail, or todo test markers;
    - broad `any`, double assertions, or unsafe non-null assertions;
-   - placeholder returns, `not implemented`, `pass`, empty fallbacks, or broad catch swallowing;
+   - placeholder returns, `not implemented`, `pass`, empty fallbacks, empty catch blocks, or broad
+     catch swallowing;
    - logic moved into generated/vendor files, giant config blobs, regex tables, dispatch maps, or
      helper/util/manager/common containers.
 3. When a gaming pattern exists, fix the underlying design rather than only deleting the marker.
@@ -117,8 +119,8 @@ preserved validation, and maintainable ownership.
 ## Postconditions
 
 - The visible metric and the underlying engineering goal are both addressed.
-- No new validation suppression, test bypass, type escape, placeholder, long-line stuffing, or
-  generated/vendor hiding remains without an explicit risk note.
+- No new validation suppression, test bypass, type escape, placeholder, empty catch swallowing,
+  long-line stuffing, or generated/vendor hiding remains without an explicit risk note.
 - Any helper/util/manager/common extraction has a real domain responsibility or is reported as a
   remaining design risk.
 - Quality-gaming check results and skipped verification are visible in the final report.

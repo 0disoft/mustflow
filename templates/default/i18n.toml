@@ -122,7 +122,7 @@ translations = {}
 [documents."skill.quality-gaming-guard"]
 source = "locales/en/.mustflow/skills/quality-gaming-guard/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.module-boundary-review"]

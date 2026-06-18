@@ -60,6 +60,7 @@
             "type_escape_added",
             "test_bypass_marker_added",
             "placeholder_added",
+            "empty_catch_swallow_added",
             "generated_or_vendor_logic_added",
             "large_helper_container_added"
           ]

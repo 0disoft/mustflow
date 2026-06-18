@@ -834,7 +834,7 @@ export const koMessages = {
   "lineEndings.error.checkModeOption": "check에는 --apply 또는 --dry-run을 사용할 수 없습니다",
   "lineEndings.error.conflictingModes": "--apply와 --dry-run은 함께 사용할 수 없습니다",
   "quality.help.summary":
-    "긴 줄 몰아넣기, 검증 억제, 테스트 우회 표시, 타입 회피, 미완성 구현 같은 " +
+    "긴 줄 몰아넣기, 검증 억제, 테스트 우회 표시, 타입 회피, 빈 catch, 미완성 구현 같은 " +
     "품질 지표 꼼수를 변경 파일에서 검사합니다.",
   "quality.help.option.all": "변경 파일만이 아니라 추적 중인 모든 텍스트 파일을 검사합니다",
   "quality.help.exit.ok": "품질 지표 꼼수를 검사했고 위험이 발견되지 않았습니다",

@@ -215,6 +215,7 @@ test('quality gaming guard catches metric evasions and stays template-synced', (
 	assert.match(localSkill, /test bypass markers/u);
 	assert.match(localSkill, /type escapes/u);
 	assert.match(localSkill, /placeholder implementations/u);
+	assert.match(localSkill, /empty catch swallowing/u);
 	assert.match(localSkill, /generated\/vendor logic hiding/u);
 	assert.match(localSkill, /helper\/util\/manager\/common containers/u);
 	assert.match(localSkill, /quality_gaming_check/u);
@@ -227,7 +228,7 @@ test('quality gaming guard catches metric evasions and stays template-synced', (
 	assert.match(manifest, /"\.mustflow\/skills\/quality-gaming-guard\/SKILL\.md"/u);
 	assert.match(manifest, /"quality-gaming-guard"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 169/u);
-	assert.match(i18n, /\[documents\."skill\.quality-gaming-guard"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.quality-gaming-guard"\][\s\S]*?revision = 2/u);
 });
 
 test('module boundary review traces change spread, ownership, and leakage', () => {
