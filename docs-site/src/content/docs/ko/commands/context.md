@@ -44,9 +44,10 @@ description: 현재 mustflow 루트의 작업 맥락 정보를 JSON으로 출력
 `--cache-audit`를 추가하면 `cache_audit` 블록을 포함합니다. 이 감사는 mustflow reference
 bundle 형식으로 안정 파일을 측정해 UTF-8 렌더링 바이트, 거친 바이트 기반 토큰 추정, 설정된
 예산 상태, 가장 큰 안정 블록을 보고합니다. task 계층의 파일 후보도 선택 가능한 reference
-bundle 블록으로 측정해 존재 여부, 내용 해시, 가장 큰 후보 블록을 함께 보여줍니다. 동적 task
-출처와 volatile 출처는 호스트가 실제 선택 본문을 제공하기 전까지 runtime-only placeholder로
-남습니다. 라우팅 신호가 제공되면 선택된 skill 파일은 `matching_skill` 출처를 가진 task 계층 block으로 측정됩니다. 또한 `summary` 객체로 측정된 블록 수, 동적 출처 수, 해석되지 않은 파일 참조 수,
+bundle 참조로 보고해 존재 여부와 내용 해시를 함께 보여줍니다. fallback metadata 출처는 기본적으로
+hash-only deferred 참조로 남기고, 선택되었거나 직접 지정된 task 파일 block만 materialize될 때
+측정합니다. 동적 task 출처와 volatile 출처는 호스트가 실제 선택 본문을 제공하기 전까지 runtime-only
+placeholder로 남습니다. 라우팅 신호가 제공되면 선택된 skill 파일은 `matching_skill` 출처를 가진 task 계층 block으로 측정됩니다. 또한 `summary` 객체로 측정된 블록 수, 동적 출처 수, 해석되지 않은 파일 참조 수,
 stable 계층 앞에 나온 volatile 계층 수 같은 정적 불변식도 보여줍니다. 이 토큰 추정은 provider
 청구 데이터가 아니며 OpenAI, Anthropic, Gemini 또는 다른 provider의 실제 캐시 적중을 증명하지
 않습니다.

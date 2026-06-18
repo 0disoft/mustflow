@@ -627,6 +627,10 @@ function taskSourceReloadOn(source: string, selectionPolicy: PromptCacheAuditSel
 	return ['route_resolution_changed'];
 }
 
+function isDeferredTaskFallback(selectionPolicy: PromptCacheAuditSelectionPolicy): boolean {
+	return selectionPolicy === 'fallback_when_needed';
+}
+
 function taskSourceIssue(source: string, measurementStatus: PromptCacheAuditMeasurementStatus): string {
 	if (measurementStatus === 'hash_only_deferred') {
 		return `task source is selection-gated; hash is recorded, but content is measured only when selected: ${toPosixPath(source)}`;
@@ -1001,24 +1005,28 @@ function readTaskPromptBundleLayer(
 			const sourceKind = taskSourceKind(source);
 			const referencePath = taskSourceReferencePath(source);
 			const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
-			const renderedBytes = content === null || referencePath === null ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
+			const deferFallback = isDeferredTaskFallback(selectionPolicy);
+			const contentHash = content === null ? null : sha256(content);
+			const renderedBytes = content === null || referencePath === null || deferFallback
+				? null
+				: measurePromptCacheReferenceBlockBytes(referencePath, content);
 			const hasResolvedMatchingSkill = source === 'matching_skill' && selectedSkillPaths.length > 0;
-			const issue = !hasResolvedMatchingSkill && content === null
-				? taskSourceIssue(source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured')
+			const issue = !hasResolvedMatchingSkill && (content === null || deferFallback)
+				? taskSourceIssue(referencePath ?? source, sourceKind === 'file_reference' ? 'hash_only_deferred' : 'dynamic_unmeasured')
 				: null;
 
 			const baseBlock = {
 				id: `task:${index + 1}:${source}`,
 				cache_layer: 'task',
 				order: index + 1,
-				kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
+				kind: sourceKind === 'file_reference' && content !== null && !deferFallback ? 'file' : 'source_placeholder',
 				path: sourceKind === 'file_reference' && content !== null ? referencePath : null,
 				source,
 				source_kind: sourceKind,
 				selection_policy: selectionPolicy,
 				content_included: false,
-				content_hash: content === null ? null : sha256(content),
-				rendered_digest: content === null || referencePath === null ? null : renderedDigest(referencePath, content),
+				content_hash: contentHash,
+				rendered_digest: content === null || referencePath === null || deferFallback ? null : renderedDigest(referencePath, content),
 				rendered_bytes: renderedBytes,
 				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
 				cacheability: taskSourceCacheability(source, selectionPolicy),
@@ -1572,15 +1580,19 @@ function readTaskSourceAuditLayer(
 		const sourceKind = taskSourceKind(source);
 		const referencePath = taskSourceReferencePath(source);
 		const content = referencePath === null ? null : safeRead(projectRoot, referencePath);
+		const deferFallback = isDeferredTaskFallback(selectionPolicy);
+		const contentHash = content === null ? null : sha256(content);
 		const measurementStatus: PromptCacheAuditMeasurementStatus =
 			sourceKind === 'file_reference'
-				? content === null
+				? content === null || deferFallback
 					? 'hash_only_deferred'
 					: 'measured'
 				: 'dynamic_unmeasured';
-		const renderedBytes = content === null || referencePath === null ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
+		const renderedBytes = content === null || referencePath === null || deferFallback ? null : measurePromptCacheReferenceBlockBytes(referencePath, content);
 		const hasResolvedMatchingSkill = source === 'matching_skill' && selectedSkillPaths.length > 0;
-		const issue = !hasResolvedMatchingSkill && content === null ? taskSourceIssue(source, measurementStatus) : null;
+		const issue = !hasResolvedMatchingSkill && (content === null || deferFallback)
+			? taskSourceIssue(referencePath ?? source, measurementStatus)
+			: null;
 
 		if (issue) {
 			issues.add(issue);
@@ -1592,16 +1604,16 @@ function readTaskSourceAuditLayer(
 
 		const baseBlock = {
 			id: `task:${index + 1}:${source}`,
-			kind: sourceKind === 'file_reference' && content !== null ? 'file' : 'source_placeholder',
+			kind: sourceKind === 'file_reference' && content !== null && !deferFallback ? 'file' : 'source_placeholder',
 			path: sourceKind === 'file_reference' && content !== null ? referencePath : null,
 			source,
 			source_kind: sourceKind,
 			selection_policy: selectionPolicy,
 			measurement_status: measurementStatus,
 			candidate_exists: sourceKind === 'file_reference' ? content !== null : null,
-			candidate_content_hash: content === null ? null : sha256(content),
+			candidate_content_hash: contentHash,
 			exists: sourceKind === 'file_reference' ? content !== null : null,
-			content_hash: content === null ? null : sha256(content),
+			content_hash: contentHash,
 			rendered_bytes: renderedBytes,
 			estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
 			budget_share: calculateBudgetShare(renderedBytes, budget),

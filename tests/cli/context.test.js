@@ -468,10 +468,11 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 		assert.equal(routeCandidatesBlock.selection_policy, 'selected_at_runtime');
 		assert.equal(routeCandidatesBlock.measurement_status, 'dynamic_unmeasured');
 		assert.equal(routeFallbackBlock.selection_policy, 'fallback_when_needed');
-		assert.equal(routeFallbackBlock.measurement_status, 'measured');
+		assert.equal(routeFallbackBlock.measurement_status, 'hash_only_deferred');
 		assert.equal(routeFallbackBlock.source_kind, 'file_reference');
 		assert.equal(routeFallbackBlock.path, '.mustflow/skills/routes.toml');
-		assert.ok(routeFallbackBlock.rendered_bytes > 0);
+		assert.match(routeFallbackBlock.candidate_content_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.equal(routeFallbackBlock.rendered_bytes, null);
 		assert.equal(
 			context.cache_audit.layers[1].largest_blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'),
 			false,
@@ -493,8 +494,8 @@ test('prints all prompt-cache audit layers without requiring an explicit profile
 			false,
 		);
 		assert.equal(
-			context.cache_audit.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
-			true,
+			context.cache_audit.layers[1].largest_blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
+			false,
 		);
 		assert.equal(
 			context.cache_audit.layers[1].blocks.some((block) => block.path === 'REPO_MAP.md'),

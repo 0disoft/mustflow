@@ -44,9 +44,10 @@ Pass `--task <text>`, repeated `--path <path>`, repeated `--reason <reason>`, an
 Add `--cache-audit` to include a `cache_audit` block. The audit measures the stable files using
 mustflow's deterministic reference bundle format, reports UTF-8 rendered bytes, rough byte-based
 token estimates, configured budget status, and largest stable blocks. Task-layer file candidates are
-measured as selectable reference-bundle blocks with existence flags, content hashes, and largest
-candidate blocks; dynamic task sources and volatile sources remain runtime-only placeholders until a
-host supplies the actual selected content. If route signals are provided, selected skill files are
+reported with existence flags and content hashes. Fallback metadata sources are hash-only deferred
+references by default, while selected or direct task file blocks are measured when they are materialized.
+Dynamic task sources and volatile sources remain runtime-only placeholders until a host supplies the actual
+selected content. If route signals are provided, selected skill files are
 measured as task-layer blocks with source `matching_skill`. The audit also includes a `summary` object with static
 invariant counters such as measured blocks, dynamic sources, unresolved references, and volatile
 layers that appear before the stable layer. The token estimate is not provider billing data and does
