@@ -39,6 +39,7 @@ npx mf check --strict
 - Source anchors tagged with high-risk classes such as authorization, personal data, payment, migration, data loss, secrets, or security use lower warning thresholds and are marked for review when the anchor lacks an `invariant`.
 - `.mustflow/skills/INDEX.md` and `.mustflow/context/INDEX.md` must remain routing indexes rather than procedure documents.
 - `.mustflow/skills/INDEX.md` routes must point to existing `SKILL.md` files, and every installed skill must be listed.
+- Optional `.mustflow/skills/route-fixtures.json` cases must keep their expected main route, required candidates, required adjuncts, and forbidden candidates aligned with `mf skill route`.
 - `SKILL.md` frontmatter must use `metadata.mustflow_schema: "1"`, `metadata.mustflow_kind: procedure`, and a `name` matching its `.mustflow/skills/<name>/` folder.
 - `metadata.command_intents` entries in skill frontmatter must reference command intents declared in `.mustflow/config/commands.toml`.
 - Command intents listed in `.mustflow/skills/INDEX.md` must be declared by the referenced skill frontmatter.

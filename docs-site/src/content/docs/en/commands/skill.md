@@ -14,6 +14,10 @@ The command does not replace the mandatory skill-selection gate. Agents must sti
 `.mustflow/skills/<name>/SKILL.md` before editing matching files. Command execution authority still
 comes only from `.mustflow/config/commands.toml`.
 
+Projects may add `.mustflow/skills/route-fixtures.json` to pin important routing expectations.
+When that file exists, `mf check --strict` re-runs those cases and fails if the selected main route,
+required candidates, selected adjuncts, or forbidden candidates drift.
+
 ## Usage
 
 ```sh

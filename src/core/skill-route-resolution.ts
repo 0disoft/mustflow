@@ -14,6 +14,27 @@ const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
 const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
 const DEFAULT_MAX_CANDIDATES = 5;
 const DEFAULT_MAX_ADJUNCTS = 2;
+const DOCS_TREE_MARKDOWN_PATH_PATTERN =
+	/(?:^|\/)(?:docs|docs-site|documentation|\.mustflow\/docs|\.mustflow\/context)\/.+\.(?:md|mdx)$/u;
+const ROOT_DOCUMENT_BASENAMES = [
+	'readme',
+	'changelog',
+	'contributing',
+	'security',
+	'support',
+	'governance',
+	'maintainers',
+	'releasing',
+	'release',
+	'testing',
+	'deployment',
+	'operations',
+	'runbook',
+	'configuration',
+	'troubleshooting',
+	'architecture',
+	'api',
+] as const;
 
 export interface SkillRouteResolveInput {
 	readonly taskText: string | null;
@@ -139,9 +160,24 @@ function collectPathSkillHints(paths: readonly string[]): Set<string> {
 		if (/\.ps1$/u.test(lower)) {
 			hints.add('powershell-code-change');
 		}
+
+		if (DOCS_TREE_MARKDOWN_PATH_PATTERN.test(lower) || isRootDocumentationPath(lower)) {
+			hints.add('docs-update');
+		}
 	}
 
 	return hints;
+}
+
+function isRootDocumentationPath(lowercasePath: string): boolean {
+	const basename = lowercasePath.split('/').pop();
+	if (!basename?.endsWith('.md')) {
+		return false;
+	}
+
+	const rootName = basename.replace(/\.md$/u, '');
+
+	return ROOT_DOCUMENT_BASENAMES.includes(rootName as (typeof ROOT_DOCUMENT_BASENAMES)[number]);
 }
 
 function readStringArrayFromTable(table: TomlTable, key: string): string[] {

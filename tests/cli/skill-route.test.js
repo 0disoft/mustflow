@@ -129,3 +129,32 @@ test('prints a compact text skill route report', () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('prefers docs-update for documentation-only paths over implementation framework routes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const result = runCli(projectPath, [
+			'skill',
+			'route',
+			'--task',
+			'Update public docs for strict check behavior',
+			'--path',
+			'docs-site/src/content/docs/en/commands/check.md',
+			'--reason',
+			'docs_change',
+			'--json',
+		]);
+		const report = JSON.parse(result.stdout);
+		const skills = report.candidates.map((candidate) => candidate.skill);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.selected.main.skill, 'docs-update');
+		assert.ok(skills.includes('docs-update'), skills.join(', '));
+		assert.equal(report.selected.main.skill === 'astro-code-change', false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

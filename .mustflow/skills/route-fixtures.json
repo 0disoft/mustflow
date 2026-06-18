@@ -1,0 +1,77 @@
+{
+  "schema_version": "1",
+  "cases": [
+    {
+      "id": "typescript-public-cli-json",
+      "task": "Change TypeScript CLI JSON output and tests",
+      "paths": [
+        "src/cli/commands/context.ts",
+        "tests/cli/context.test.js"
+      ],
+      "reasons": [
+        "code_change",
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "typescript-code-change",
+      "required_candidates": [
+        "typescript-code-change"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "prompt-cache-cost-review",
+      "task": "Review prompt cache token budgets, provider tool schemas, and volatile context placement",
+      "paths": [
+        "src/cli/lib/agent-context.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "llm-token-cost-control-review",
+      "required_candidates": [
+        "llm-token-cost-control-review"
+      ]
+    },
+    {
+      "id": "public-docs-strict-check",
+      "task": "Update public docs for strict check behavior",
+      "paths": [
+        "docs-site/src/content/docs/en/commands/check.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "docs-update",
+      "required_candidates": [
+        "docs-update"
+      ],
+      "forbidden_candidates": [
+        "auth-permission-change"
+      ]
+    },
+    {
+      "id": "payment-refund-authorization",
+      "task": "Fix payment authorization for refund API",
+      "paths": [
+        "src/server/refunds.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "payment-integrity-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "api-access-control-review"
+      ]
+    }
+  ]
+}

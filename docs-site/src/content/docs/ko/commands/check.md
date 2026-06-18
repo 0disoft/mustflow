@@ -39,6 +39,7 @@ npx mf check --strict
 - 권한 부여, 개인정보, 결제, 마이그레이션, 데이터 손실, 비밀값, 보안처럼 고위험 태그가 붙은 소스 앵커는 더 낮은 기준으로 경고하며, `invariant`가 없으면 검수 필요 경고를 표시합니다.
 - `.mustflow/skills/INDEX.md`와 `.mustflow/context/INDEX.md`가 절차 문서로 변하지 않고 라우팅 색인 역할만 유지하는지 확인합니다.
 - `.mustflow/skills/INDEX.md`의 경로가 실제 `SKILL.md`를 가리키는지, 설치된 모든 스킬이 색인에 들어 있는지 확인합니다.
+- 선택적 `.mustflow/skills/route-fixtures.json` 케이스의 예상 main route, 필수 후보, 필수 adjunct, 금지 후보가 `mf skill route` 결과와 맞는지 확인합니다.
 - `SKILL.md` 앞부분 메타데이터의 `metadata.mustflow_schema`는 `"1"`, `metadata.mustflow_kind`는 `procedure`, `name`은 `.mustflow/skills/<name>/` 폴더 이름과 일치해야 합니다.
 - 스킬 앞부분 메타데이터의 `metadata.command_intents`는 `.mustflow/config/commands.toml`에 선언된 명령 의도만 참조해야 합니다.
 - `.mustflow/skills/INDEX.md`에 적은 명령 의도는 해당 스킬 앞부분 메타데이터에도 선언되어 있어야 합니다.

@@ -50,6 +50,8 @@ export type CheckIssueId =
 	| 'mustflow.skill.route_metadata_category_mismatch'
 	| 'mustflow.skill.route_metadata_unknown_reference'
 	| 'mustflow.skill.route_metadata_asymmetric_exclusion'
+	| 'mustflow.skill.route_fixture_invalid'
+	| 'mustflow.skill.route_fixture_mismatch'
 	| 'mustflow.skill.template_profile_empty_category'
 	| 'mustflow.skill.template_profile_dead_route'
 	| 'mustflow.skill.template_profile_missing_main_route'
@@ -146,6 +148,8 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.skill.route_metadata_category_mismatch', /^Strict: \.mustflow\/skills\/INDEX\.md route "[^"]+" must appear under the .+ category section from \.mustflow\/skills\/routes\.toml$/u],
 	['mustflow.skill.route_metadata_unknown_reference', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" references unknown mutually exclusive route "[^"]+"$/u],
 	['mustflow.skill.route_metadata_asymmetric_exclusion', /^Strict warning: \.mustflow\/skills\/routes\.toml route "[^"]+" lists "[^"]+" as mutually exclusive but the reverse route does not$/u],
+	['mustflow.skill.route_fixture_invalid', /^Strict: \.mustflow\/skills\/route-fixtures\.json (?:must|is not valid JSON|cases\[\d+\])/u],
+	['mustflow.skill.route_fixture_mismatch', /^Strict: Skill route fixture "[^"]+" (?:expected|forbids)/u],
 	['mustflow.skill.template_profile_empty_category', /^Strict: template profile "[^"]+" (?:skill index category ".+" has no route rows|route category gate references ".+" without route rows)$/u],
 	['mustflow.skill.template_profile_dead_route', /^Strict: template profile "[^"]+" (?:\.mustflow\/skills\/INDEX\.md route "[^"]+" points to a skill not installed by that profile|\.mustflow\/skills\/routes\.toml route "[^"]+" points to a skill not installed by that profile|skill "[^"]+" is installed but not listed in \.mustflow\/skills\/INDEX\.md)$/u],
 	['mustflow.skill.template_profile_missing_main_route', /^Strict: template profile "[^"]+" skill category ".+" must include at least one primary or authoring route$/u],

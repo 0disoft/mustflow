@@ -52,6 +52,7 @@ import {
 	TECHNOLOGY_CONFIG_RELATIVE_PATH,
 } from '../../../core/technology-preferences.js';
 import { measurePromptCacheReferenceBlockBytes } from '../../../core/prompt-cache-rendering.js';
+import { validateSkillRouteFixtures } from '../../../core/skill-route-fixtures.js';
 import {
 	ALLOWED_APPROVAL_ACTIONS,
 	ALLOWED_APPROVAL_GATES,
@@ -1144,6 +1145,12 @@ function validateStrictRouterIndexes(projectRoot: string, issues: CheckIssue[]):
 		if (ROUTER_INDEX_PROCEDURE_SECTION_PATTERN.test(content)) {
 			pushStrictIssue(issues, `${relativePath} must stay a routing index and must not embed skill procedure sections`);
 		}
+	}
+}
+
+function validateStrictSkillRouteFixtures(projectRoot: string, issues: CheckIssue[]): void {
+	for (const issue of validateSkillRouteFixtures(projectRoot)) {
+		pushStrictIssue(issues, issue.message);
 	}
 }
 
@@ -2483,6 +2490,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictTemplateVersionSync(projectRoot, parsed.preferencesToml, issues);
 	validateStrictManagedMarkdownIdentities(projectRoot, issues);
 	validateStrictRouterIndexes(projectRoot, issues);
+	validateStrictSkillRouteFixtures(projectRoot, issues);
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
 	validateStrictTemplateSkillProfiles(issues);
 	validateStrictRepoMap(projectRoot, issues);

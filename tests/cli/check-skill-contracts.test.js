@@ -305,6 +305,71 @@ test('strict check fails skill route category section drift', () => {
 	}
 });
 
+test('strict check fails skill route golden fixture mismatches', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'skills', 'route-fixtures.json'),
+			JSON.stringify(
+				{
+					schema_version: '1',
+					cases: [
+						{
+							id: 'wrong-main',
+							task: 'Change TypeScript CLI JSON output and tests',
+							paths: ['src/cli/commands/context.ts'],
+							reasons: ['code_change'],
+							required_main: 'docs-update',
+						},
+					],
+				},
+				null,
+				2,
+			),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(check, 'mustflow.skill.route_fixture_mismatch');
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes('Skill route fixture "wrong-main" expected selected main "docs-update"'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check fails invalid skill route golden fixture shape', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'skills', 'route-fixtures.json'),
+			JSON.stringify({ schema_version: '1', cases: [{ id: 'missing-paths' }] }, null, 2),
+		);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(check, 'mustflow.skill.route_fixture_invalid');
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes('.mustflow/skills/route-fixtures.json cases[0].paths must be a non-empty string array'),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails generated template profiles without selectable main routes', () => {
 	const projectPath = createTempProject();
 	const templatePath = cloneProjectFixture(path.join(projectRoot, 'templates', 'default'), 'mustflow-template-');
