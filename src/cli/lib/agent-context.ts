@@ -359,6 +359,16 @@ export interface PromptBundleBlockDiffContext {
 	readonly fields: readonly string[];
 }
 
+export interface PromptBundleStableDiffContext {
+	readonly stable_block_count: number;
+	readonly baseline_stable_block_count: number | null;
+	readonly matching_prefix_blocks: number;
+	readonly matching_prefix_ratio: number | null;
+	readonly stable_prefix_preserved: boolean | null;
+	readonly first_stable_difference: PromptBundleBlockDiffContext | null;
+	readonly first_stable_invalidation_reason: string | null;
+}
+
 export interface PromptBundleDiffContext {
 	readonly baseline_path: string;
 	readonly status:
@@ -375,6 +385,7 @@ export interface PromptBundleDiffContext {
 	readonly current_bundle_hash: string;
 	readonly bundle_changed: boolean | null;
 	readonly first_difference: PromptBundleBlockDiffContext | null;
+	readonly stable_diff: PromptBundleStableDiffContext;
 	readonly changed_blocks: readonly PromptBundleBlockDiffContext[];
 	readonly issues: readonly string[];
 }
@@ -997,6 +1008,10 @@ function blockKey(block: PromptBundleBlockContext): string {
 	return `${block.cache_layer}:${block.order}`;
 }
 
+function blockLocation(block: PromptBundleBlockContext): string {
+	return [blockKey(block), block.path ?? block.source ?? block.id].join(':');
+}
+
 function compareStringArray(left: readonly string[], right: readonly string[]): boolean {
 	return left.length === right.length && left.every((entry, index) => entry === right[index]);
 }
@@ -1049,6 +1064,14 @@ function changedBlockFields(current: PromptBundleBlockContext, baseline: PromptB
 
 function flattenBundleBlocks(bundle: PromptBundleContext): readonly PromptBundleBlockContext[] {
 	return bundle.layers.flatMap((layer) => layer.blocks);
+}
+
+function stableBundleBlocks(bundle: PromptBundleContext): readonly PromptBundleBlockContext[] {
+	return flattenBundleBlocks(bundle).filter((block) => block.cache_layer === 'stable');
+}
+
+function promptBundleBlocksMatch(current: PromptBundleBlockContext, baseline: PromptBundleBlockContext): boolean {
+	return changedBlockFields(current, baseline).length === 0;
 }
 
 function comparePromptBundles(current: PromptBundleContext, baseline: PromptBundleContext): readonly PromptBundleBlockDiffContext[] {
@@ -1110,6 +1133,100 @@ function comparePromptBundles(current: PromptBundleContext, baseline: PromptBund
 	return diffs;
 }
 
+function emptyStableDiff(currentBundle: PromptBundleContext): PromptBundleStableDiffContext {
+	return {
+		stable_block_count: stableBundleBlocks(currentBundle).length,
+		baseline_stable_block_count: null,
+		matching_prefix_blocks: 0,
+		matching_prefix_ratio: null,
+		stable_prefix_preserved: null,
+		first_stable_difference: null,
+		first_stable_invalidation_reason: null,
+	};
+}
+
+function readStablePrefixDifference(
+	currentBlock: PromptBundleBlockContext | undefined,
+	baselineBlock: PromptBundleBlockContext | undefined,
+	index: number,
+): PromptBundleBlockDiffContext {
+	const key = `stable prefix block ${index + 1}`;
+	if (currentBlock && !baselineBlock) {
+		return {
+			kind: 'added',
+			cache_layer: currentBlock.cache_layer,
+			order: currentBlock.order,
+			current_id: currentBlock.id,
+			baseline_id: null,
+			reason: `${key} added at ${blockLocation(currentBlock)}`,
+			fields: [],
+		};
+	}
+
+	if (!currentBlock && baselineBlock) {
+		return {
+			kind: 'removed',
+			cache_layer: baselineBlock.cache_layer,
+			order: baselineBlock.order,
+			current_id: null,
+			baseline_id: baselineBlock.id,
+			reason: `${key} removed at ${blockLocation(baselineBlock)}`,
+			fields: [],
+		};
+	}
+
+	if (!currentBlock || !baselineBlock) {
+		throw new Error('stable prefix comparison reached an impossible block state');
+	}
+
+	const fields = changedBlockFields(currentBlock, baselineBlock);
+	return {
+		kind: 'changed',
+		cache_layer: currentBlock.cache_layer,
+		order: currentBlock.order,
+		current_id: currentBlock.id,
+		baseline_id: baselineBlock.id,
+		reason: `${key} changed at ${blockLocation(currentBlock)}: ${fields.join(', ')}`,
+		fields,
+	};
+}
+
+function readPromptBundleStableDiff(
+	currentBundle: PromptBundleContext,
+	baselineBundle: PromptBundleContext,
+): PromptBundleStableDiffContext {
+	const currentStableBlocks = stableBundleBlocks(currentBundle);
+	const baselineStableBlocks = stableBundleBlocks(baselineBundle);
+	const comparedBlockCount = Math.max(currentStableBlocks.length, baselineStableBlocks.length);
+	let matchingPrefixBlocks = 0;
+	let firstStableDifference: PromptBundleBlockDiffContext | null = null;
+	let index = 0;
+
+	while (index < comparedBlockCount) {
+		const currentBlock = currentStableBlocks[index];
+		const baselineBlock = baselineStableBlocks[index];
+		if (!currentBlock || !baselineBlock || !promptBundleBlocksMatch(currentBlock, baselineBlock)) {
+			firstStableDifference = readStablePrefixDifference(currentBlock, baselineBlock, index);
+			break;
+		}
+
+		matchingPrefixBlocks += 1;
+		index += 1;
+	}
+
+	return {
+		stable_block_count: currentStableBlocks.length,
+		baseline_stable_block_count: baselineStableBlocks.length,
+		matching_prefix_blocks: matchingPrefixBlocks,
+		matching_prefix_ratio: comparedBlockCount === 0
+			? null
+			: Number((matchingPrefixBlocks / comparedBlockCount).toFixed(6)),
+		stable_prefix_preserved: firstStableDifference === null && currentStableBlocks.length === baselineStableBlocks.length,
+		first_stable_difference: firstStableDifference,
+		first_stable_invalidation_reason: firstStableDifference?.reason ?? null,
+	};
+}
+
 function readPromptBundleDiff(
 	projectRoot: string,
 	currentBundle: PromptBundleContext,
@@ -1129,6 +1246,7 @@ function readPromptBundleDiff(
 			current_bundle_hash: currentBundle.bundle_hash,
 			bundle_changed: null,
 			first_difference: null,
+			stable_diff: emptyStableDiff(currentBundle),
 			changed_blocks: [],
 			issues: baseline.issues,
 		};
@@ -1148,6 +1266,7 @@ function readPromptBundleDiff(
 		current_bundle_hash: currentBundle.bundle_hash,
 		bundle_changed: bundleChanged,
 		first_difference: changedBlocks[0] ?? null,
+		stable_diff: readPromptBundleStableDiff(currentBundle, baseline.bundle),
 		changed_blocks: changedBlocks.slice(0, 20),
 		issues: [],
 	};

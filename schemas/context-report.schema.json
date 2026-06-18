@@ -563,6 +563,7 @@
         "current_bundle_hash",
         "bundle_changed",
         "first_difference",
+        "stable_diff",
         "changed_blocks",
         "issues"
       ],
@@ -590,6 +591,7 @@
             { "$ref": "#/$defs/promptBundleBlockDiff" }
           ]
         },
+        "stable_diff": { "$ref": "#/$defs/promptBundleStableDiff" },
         "changed_blocks": {
           "type": "array",
           "items": { "$ref": "#/$defs/promptBundleBlockDiff" }
@@ -598,6 +600,33 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "promptBundleStableDiff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stable_block_count",
+        "baseline_stable_block_count",
+        "matching_prefix_blocks",
+        "matching_prefix_ratio",
+        "stable_prefix_preserved",
+        "first_stable_difference",
+        "first_stable_invalidation_reason"
+      ],
+      "properties": {
+        "stable_block_count": { "type": "integer", "minimum": 0 },
+        "baseline_stable_block_count": { "type": ["integer", "null"], "minimum": 0 },
+        "matching_prefix_blocks": { "type": "integer", "minimum": 0 },
+        "matching_prefix_ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "stable_prefix_preserved": { "type": ["boolean", "null"] },
+        "first_stable_difference": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/promptBundleBlockDiff" }
+          ]
+        },
+        "first_stable_invalidation_reason": { "type": ["string", "null"] }
       }
     },
     "promptBundleBlockDiff": {

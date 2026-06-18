@@ -51,7 +51,9 @@ not prove that OpenAI, Anthropic, Gemini, or another provider reused a cache ent
 
 Use `--cache-compare <path>` with a prior `mf context --json --cache-profile ...` report inside the
 mustflow root to compare prompt-bundle hashes and locate the first changed prompt block without
-emitting prompt text.
+emitting prompt text. The comparison also reports stable-prefix preservation, matching stable prefix
+blocks, and the first stable invalidation reason so cache misses can be traced without exposing
+source content.
 
 ## Example
 
@@ -100,6 +102,11 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `prompt_bundle.layers[].blocks[].content_included` (`false`): The context report never emits the actual prompt block body.
 - `prompt_bundle_diff` (`object | undefined`): Present only with `--cache-compare`. It compares the current `prompt_bundle` with a baseline context JSON report and reports `unchanged`, `changed`, `baseline_missing`, `baseline_unreadable`, `baseline_invalid`, or `baseline_without_prompt_bundle`.
 - `prompt_bundle_diff.first_difference` (`object | null`): First added, removed, or changed block by layer and order. Changed blocks list changed fields such as `content_hash`, `rendered_digest`, `cacheability`, or `reload_on`.
+- `prompt_bundle_diff.stable_diff` (`object`): Stable-prefix comparison summary for the current and baseline prompt bundles.
+- `prompt_bundle_diff.stable_diff.baseline_stable_block_count` (`number | null`): Stable block count from the baseline bundle. It is `null` when no valid baseline bundle is available.
+- `prompt_bundle_diff.stable_diff.matching_prefix_blocks` (`number`): Stable blocks that match from the beginning of the stable prefix.
+- `prompt_bundle_diff.stable_diff.stable_prefix_preserved` (`boolean | null`): Whether the stable prefix is fully preserved. It is `null` when no valid baseline bundle is available.
+- `prompt_bundle_diff.stable_diff.first_stable_invalidation_reason` (`string | null`): First stable block change reason, if the stable prefix changed.
 - `cache_audit.measurement` (`string`): Measurement mode. Currently `reference_bundle`.
 - `cache_audit.estimator` (`object`): Rough byte-to-token estimator and caveat.
 - `cache_audit.summary` (`object`): Static audit totals and invariants for the rendered reference bundle.

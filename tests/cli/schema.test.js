@@ -295,8 +295,48 @@ test('context cache-compare json output matches the published schema', () => {
 			'.mustflow/cache/schema-baseline-context.json',
 		]);
 
+		const report = JSON.parse(result.stdout);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assertMatchesSchema(schemaRoot, 'context-report.schema.json', JSON.parse(result.stdout));
+		assertMatchesSchema(schemaRoot, 'context-report.schema.json', report);
+		assert.equal(report.prompt_bundle_diff.stable_diff.baseline_stable_block_count, 2);
+		assert.equal(report.prompt_bundle_diff.stable_diff.stable_prefix_preserved, true);
+		assert.equal(report.prompt_bundle_diff.stable_diff.first_stable_invalidation_reason, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('context cache-compare reports stable prefix invalidation', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const baseline = runCli(projectPath, ['context', '--json', '--cache-profile', 'all']);
+		assert.equal(baseline.status, 0, baseline.stderr || baseline.stdout);
+		const baselinePath = path.join(projectPath, '.mustflow', 'cache', 'schema-baseline-context.json');
+		mkdirSync(path.dirname(baselinePath), { recursive: true });
+		writeFileSync(baselinePath, baseline.stdout);
+		const agentsPath = path.join(projectPath, 'AGENTS.md');
+		writeFileSync(agentsPath, `${readFileSync(agentsPath, 'utf8')}\n\nCache compare drift fixture.\n`);
+
+		const result = runCli(projectPath, [
+			'context',
+			'--json',
+			'--cache-profile',
+			'all',
+			'--cache-compare',
+			'.mustflow/cache/schema-baseline-context.json',
+		]);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'context-report.schema.json', report);
+		assert.equal(report.prompt_bundle_diff.stable_diff.stable_prefix_preserved, false);
+		assert.equal(report.prompt_bundle_diff.stable_diff.first_stable_difference.cache_layer, 'stable');
+		assert.match(
+			report.prompt_bundle_diff.stable_diff.first_stable_invalidation_reason,
+			/stable prefix block 1 changed at stable:1:AGENTS\.md/u,
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
