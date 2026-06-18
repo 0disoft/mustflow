@@ -278,6 +278,46 @@ test('context cache-audit json output matches the published schema', () => {
 	}
 });
 
+test('context route-selected cache-audit json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'context',
+			'--json',
+			'--cache-audit',
+			'--task',
+			'Change TypeScript CLI output and tests',
+			'--path',
+			'src/cli/commands/context.ts',
+			'--reason',
+			'code_change',
+		]);
+		const report = JSON.parse(result.stdout);
+		const taskBundle = report.prompt_bundle.layers.find((layer) => layer.cache_layer === 'task');
+		const taskAudit = report.cache_audit.layers.find((layer) => layer.cache_layer === 'task');
+		const bundleRouteCandidatesBlock = taskBundle.blocks.find((block) => block.source === 'skill_route_candidates');
+		const auditRouteCandidatesBlock = taskAudit.blocks.find((block) => block.source === 'skill_route_candidates');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'context-report.schema.json', report);
+		assert.equal(bundleRouteCandidatesBlock.kind, 'source_placeholder');
+		assert.equal(bundleRouteCandidatesBlock.source_kind, 'dynamic_selection');
+		assert.equal(bundleRouteCandidatesBlock.selection_policy, 'selected_at_runtime');
+		assert.equal(bundleRouteCandidatesBlock.issue, null);
+		assert.ok(bundleRouteCandidatesBlock.rendered_bytes > 0);
+		assert.match(bundleRouteCandidatesBlock.content_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(bundleRouteCandidatesBlock.rendered_digest, /^sha256:[a-f0-9]{64}$/u);
+		assert.equal(auditRouteCandidatesBlock.measurement_status, 'measured');
+		assert.equal(auditRouteCandidatesBlock.issue, null);
+		assert.ok(auditRouteCandidatesBlock.rendered_bytes > 0);
+		assert.match(auditRouteCandidatesBlock.content_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('context cache-compare json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
