@@ -267,6 +267,9 @@ test('context cache-audit json output matches the published schema', () => {
 		assertMatchesSchema(schemaRoot, 'context-report.schema.json', report);
 		assert.equal(report.cache_audit.summary.serialization_deterministic, true);
 		assert.equal(report.cache_audit.summary.volatile_before_stable_count, 0);
+		assert.equal(report.cache_audit.summary.stable_leaf_skill_isolated, true);
+		assert.deepEqual(report.cache_audit.summary.stable_leaf_skill_risk_paths, []);
+		assert.equal(report.cache_audit.summary.leaf_skill_change_stable_hash_delta, 0);
 		assert.equal(typeof report.cache_audit.summary.measured_block_count, 'number');
 		assert.equal(typeof report.cache_audit.summary.dynamic_source_count, 'number');
 		assert.equal(typeof report.cache_audit.summary.unresolved_reference_count, 'number');

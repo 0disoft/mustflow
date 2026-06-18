@@ -212,6 +212,11 @@ stable, task, volatile 한도에 맞는지 보고합니다. 안정 계층은 설
 
 `prompt_cache.layers.stable.target_kb`는 안정 계층의 선호 크기 목표입니다. cache audit은 이를 `target_status`로 보고하므로 hard budget은 넘지 않았지만 아직 비싼 stable prefix를 계속 볼 수 있습니다. `max_stable_prefix_kb`는 hard budget으로 남습니다. `mf check --strict`는 렌더링된 안정 reference bundle이 이 hard budget을 넘으면 실패하므로, 이 제한을 단순 리포트 힌트가 아니라 CI ratchet으로 사용할 수 있습니다.
 
+stable 계층은 compact routing kernel로 제한합니다. stable `read` 항목에 `.mustflow/skills/INDEX.md`,
+`.mustflow/skills/routes.toml`, 또는 leaf `.mustflow/skills/<name>/` 디렉터리 아래 파일이 들어가면
+일반 skill 수정만으로 stable prefix가 무효화되므로 `mf check --strict`가 실패합니다. 자세한 skill
+절차 본문은 task 계층의 route 후보와 선택된 `SKILL.md` 파일로 읽습니다.
+
 ## 작업대 필드
 
 ```toml

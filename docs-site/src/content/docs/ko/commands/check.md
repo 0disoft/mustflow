@@ -53,7 +53,7 @@ npx mf check --strict
 - `REPO_MAP.md`에 원격 저장소 주소, 브랜치 정보 같은 민감 정보가 노출되지 않았는지 확인합니다.
 - `commands.toml`에 `max_output_bytes`, `on_timeout` 설정이 있는지 확인합니다.
 - `mustflow.toml`에 `[retention]` 보존 정책이 정의되어 있는지 확인합니다.
-- 프롬프트 캐시 stable prefix 항목이 실제 파일인지, volatile source set에 섞이지 않는지, 결정적 reference bundle 렌더링 후 `prompt_cache.max_stable_prefix_kb` hard budget 안에 들어가는지 확인합니다.
+- 프롬프트 캐시 stable prefix 항목이 실제 파일인지, volatile source set에 섞이지 않는지, 확장 skill index, route metadata, leaf skill 파일을 포함하지 않는지, 결정적 reference bundle 렌더링 후 `prompt_cache.max_stable_prefix_kb` hard budget 안에 들어가는지 확인합니다.
 - 버전 영향 선호값이 켜져 있을 때, 선언된 버전 기준 파일이나 감지 가능한 패키지/템플릿 버전 원본이 있는지 확인합니다.
 - 생성 파일(`REPO_MAP.md`, `latest.json` 등)이 보존 크기 제한을 지키는지 확인합니다.
 - `.mustflow/context/*.md`가 크기 제한을 넘기거나 절대 경로, 민감한 키/값, 중복된 디자인 토큰 등을 담고 있지 않은지 검사합니다.

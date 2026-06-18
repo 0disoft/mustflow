@@ -45,7 +45,7 @@ npx mf check --strict
 - Command intents listed in `.mustflow/skills/INDEX.md` must be declared by the referenced skill frontmatter.
 - Skill bodies must not claim permission to run commands directly; command permissions stay in `.mustflow/config/commands.toml`.
 - Optional candidate path-classification files at `.mustflow/config/changes.toml` and `.mustflow/config/surfaces.toml`, when present, must stay narrow: `[[rules]]` entries may use only `exact`, `prefix`, or `glob` matches and may not define command authority. `.mustflow/config/policy.toml` remains deferred and fails strict validation if present.
-- Prompt-cache stable-prefix entries must exist, stay out of the volatile source set, and fit the configured `prompt_cache.max_stable_prefix_kb` hard budget after deterministic reference-bundle rendering.
+- Prompt-cache stable-prefix entries must exist, stay out of the volatile source set, avoid expanded skill indexes, route metadata, and leaf skill files, and fit the configured `prompt_cache.max_stable_prefix_kb` hard budget after deterministic reference-bundle rendering.
 - When version-impact preferences are enabled, a declared version source or detectable package/template version source must exist.
 
 

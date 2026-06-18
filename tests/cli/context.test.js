@@ -358,6 +358,9 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 		assert.equal(stableAudit.target_status, 'within_budget');
 		assert.ok(stableAudit.rendered_bytes <= stableAudit.target_bytes);
 		assert.ok(stableAudit.issues.some((issue) => issue.includes('stable prefix exceeds max_stable_prefix_kb')));
+		assert.equal(context.cache_audit.summary.stable_leaf_skill_isolated, true);
+		assert.deepEqual(context.cache_audit.summary.stable_leaf_skill_risk_paths, []);
+		assert.equal(context.cache_audit.summary.leaf_skill_change_stable_hash_delta, 0);
 		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/router.toml'));
 		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/routes.toml'), false);
 		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'), false);
@@ -365,6 +368,29 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 		assert.ok(stableAudit.blocks.every((block) => block.measurement_status === 'measured'));
 		assert.ok(stableAudit.largest_blocks.length > 0);
 		assert.ok(stableAudit.largest_blocks[0].rendered_bytes >= stableAudit.largest_blocks.at(-1).rendered_bytes);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prompt-cache audit reports stable leaf skill risk paths', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		replaceInMustflowToml(
+			projectPath,
+			'[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [',
+			'[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [\n  ".mustflow/skills/INDEX.md",',
+		);
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'stable', '--cache-audit']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.cache_audit.summary.stable_leaf_skill_isolated, false);
+		assert.deepEqual(context.cache_audit.summary.stable_leaf_skill_risk_paths, ['.mustflow/skills/INDEX.md']);
+		assert.equal(context.cache_audit.summary.leaf_skill_change_stable_hash_delta, null);
 	} finally {
 		removeTempProject(projectPath);
 	}

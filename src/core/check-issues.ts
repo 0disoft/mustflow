@@ -21,6 +21,7 @@ export type CheckIssueId =
 	| 'mustflow.command_contract.project_local_bin_bare_executable'
 	| 'mustflow.prompt_cache.required'
 	| 'mustflow.prompt_cache.volatile_in_stable'
+	| 'mustflow.prompt_cache.leaf_skill_in_stable'
 	| 'mustflow.prompt_cache.stable_file_missing'
 	| 'mustflow.prompt_cache.stable_prefix_over_budget'
 	| 'mustflow.refresh.hash_method_required'
@@ -119,6 +120,7 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.project_local_bin_bare_executable', /^Strict warning: configured agent-runnable intent [^\s]+ uses bare executable "[^"]+" that matches project-local node_modules\/\.bin/u],
 	['mustflow.prompt_cache.required', /^Strict: \[prompt_cache\] table is required$/u],
 	['mustflow.prompt_cache.volatile_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include volatile path /u],
+	['mustflow.prompt_cache.leaf_skill_in_stable', /^Strict: \[prompt_cache\.layers\.stable\]\.read must not include leaf skill or expanded route surface /u],
 	['mustflow.prompt_cache.stable_file_missing', /^Strict: stable prefix document is missing: /u],
 	['mustflow.prompt_cache.stable_prefix_over_budget', /^Strict: stable prefix exceeds \[prompt_cache\]\.max_stable_prefix_kb: \d+ rendered bytes > \d+ budget bytes$/u],
 	['mustflow.refresh.hash_method_required', /^Strict: \[refresh\]\.default_method should be "hash_check" for cache-friendly refresh$/u],

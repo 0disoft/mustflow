@@ -229,6 +229,12 @@ while `max_stable_prefix_kb` stays the hard budget. `mf check --strict` fails wh
 stable reference bundle exceeds that hard budget, so the limit can be used as a CI ratchet instead
 of only a reporting hint.
 
+Keep the stable layer to the compact routing kernel. `mf check --strict` fails if stable `read`
+entries include `.mustflow/skills/INDEX.md`, `.mustflow/skills/routes.toml`, or files under a leaf
+`.mustflow/skills/<name>/` directory, because those paths make ordinary skill edits invalidate the
+stable prefix. Use task-layer route candidates and selected `SKILL.md` files for detailed skill
+procedure content.
+
 ## Workspace Fields
 
 ```toml

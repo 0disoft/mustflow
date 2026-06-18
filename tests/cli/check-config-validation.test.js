@@ -301,6 +301,32 @@ test('strict check fails when rendered stable prompt cache prefix exceeds the ha
 	}
 });
 
+test('strict check fails when stable prompt cache reads leaf skill surfaces', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readText(configPath).replace(
+			'[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [',
+			'[prompt_cache.layers.stable]\ntarget_kb = 32\nread = [\n  ".mustflow/skills/INDEX.md",',
+		);
+		writeFileSync(configPath, config);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assertHasIssueDetail(
+			check,
+			'mustflow.prompt_cache.leaf_skill_in_stable',
+			'Strict: [prompt_cache.layers.stable].read must not include leaf skill or expanded route surface ".mustflow/skills/INDEX.md"',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails when long-running harness policy fields are invalid', () => {
 	const projectPath = createTempProject();
 

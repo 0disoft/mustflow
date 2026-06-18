@@ -675,6 +675,9 @@
         "unresolved_reference_count",
         "volatile_before_stable_count",
         "serialization_deterministic",
+        "stable_leaf_skill_isolated",
+        "stable_leaf_skill_risk_paths",
+        "leaf_skill_change_stable_hash_delta",
         "stable_rendered_bytes",
         "stable_estimated_tokens",
         "stable_budget_status",
@@ -690,6 +693,15 @@
         "unresolved_reference_count": { "type": "integer", "minimum": 0 },
         "volatile_before_stable_count": { "type": "integer", "minimum": 0 },
         "serialization_deterministic": { "const": true },
+        "stable_leaf_skill_isolated": { "type": ["boolean", "null"] },
+        "stable_leaf_skill_risk_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "leaf_skill_change_stable_hash_delta": {
+          "type": ["integer", "null"],
+          "enum": [0, null]
+        },
         "stable_rendered_bytes": { "type": ["integer", "null"], "minimum": 0 },
         "stable_estimated_tokens": { "type": ["integer", "null"], "minimum": 0 },
         "stable_budget_status": {

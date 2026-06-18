@@ -27,6 +27,7 @@ import {
 	type TechnologyPreference,
 } from '../../core/technology-preferences.js';
 import {
+	isPromptCacheStableLeafSkillSurface,
 	measurePromptCacheReferenceBlockBytes,
 	renderPromptCacheReferenceBlock,
 } from '../../core/prompt-cache-rendering.js';
@@ -298,6 +299,9 @@ export interface PromptCacheAuditSummaryContext {
 	readonly unresolved_reference_count: number;
 	readonly volatile_before_stable_count: number;
 	readonly serialization_deterministic: true;
+	readonly stable_leaf_skill_isolated: boolean | null;
+	readonly stable_leaf_skill_risk_paths: readonly string[];
+	readonly leaf_skill_change_stable_hash_delta: 0 | null;
 	readonly stable_rendered_bytes: number | null;
 	readonly stable_estimated_tokens: number | null;
 	readonly stable_budget_status: PromptCacheBudgetStatus | null;
@@ -1487,6 +1491,11 @@ function readPromptCacheAuditSummary(layers: readonly PromptCacheAuditLayerConte
 		.map((block) => block.budget_share)
 		.filter((share): share is number => share !== null)
 		.sort((left, right) => right - left)[0] ?? null;
+	const stableLeafSkillRiskPaths = stableLayer?.blocks
+		.map((block) => block.path)
+		.filter((blockPath): blockPath is string =>
+			blockPath !== null && isPromptCacheStableLeafSkillSurface(blockPath)
+		) ?? [];
 
 	return {
 		rendered_bytes: measuredBlockCount === 0 ? null : measuredBytes,
@@ -1498,6 +1507,9 @@ function readPromptCacheAuditSummary(layers: readonly PromptCacheAuditLayerConte
 		).length,
 		volatile_before_stable_count: volatileBeforeStableCount,
 		serialization_deterministic: true,
+		stable_leaf_skill_isolated: stableLayer === null ? null : stableLeafSkillRiskPaths.length === 0,
+		stable_leaf_skill_risk_paths: stableLeafSkillRiskPaths,
+		leaf_skill_change_stable_hash_delta: stableLeafSkillRiskPaths.length === 0 ? 0 : null,
 		stable_rendered_bytes: stableLayer?.rendered_bytes ?? null,
 		stable_estimated_tokens: stableLayer?.estimated_tokens ?? null,
 		stable_budget_status: stableLayer?.budget_status ?? null,

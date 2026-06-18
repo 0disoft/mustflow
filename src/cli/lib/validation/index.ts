@@ -51,7 +51,10 @@ import {
 	normalizeTechnologyPreferencesTable,
 	TECHNOLOGY_CONFIG_RELATIVE_PATH,
 } from '../../../core/technology-preferences.js';
-import { measurePromptCacheReferenceBlockBytes } from '../../../core/prompt-cache-rendering.js';
+import {
+	isPromptCacheStableLeafSkillSurface,
+	measurePromptCacheReferenceBlockBytes,
+} from '../../../core/prompt-cache-rendering.js';
 import { validateSkillRouteFixtures } from '../../../core/skill-route-fixtures.js';
 import {
 	ALLOWED_APPROVAL_ACTIONS,
@@ -1058,6 +1061,12 @@ function validateStrictPromptCachePolicy(projectRoot: string, mustflowToml: Toml
 	for (const entry of stable.read) {
 		if (typeof entry === 'string' && volatileSources.has(entry)) {
 			pushStrictIssue(issues, `[prompt_cache.layers.stable].read must not include volatile path "${entry}"`);
+		}
+		if (typeof entry === 'string' && isPromptCacheStableLeafSkillSurface(entry)) {
+			pushStrictIssue(
+				issues,
+				`[prompt_cache.layers.stable].read must not include leaf skill or expanded route surface "${toPosixPath(entry)}"`,
+			);
 		}
 	}
 

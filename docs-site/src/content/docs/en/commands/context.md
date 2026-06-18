@@ -114,6 +114,9 @@ When `--cache-profile` is used, output switches to a prompt-cache profile report
 - `cache_audit.summary.unresolved_reference_count` (`number`): File references that could not be measured as concrete reference blocks.
 - `cache_audit.summary.volatile_before_stable_count` (`number`): Volatile layers found before the stable layer. This should normally be `0`.
 - `cache_audit.summary.serialization_deterministic` (`true`): Indicates that the reference bundle uses deterministic serialization rules.
+- `cache_audit.summary.stable_leaf_skill_isolated` (`boolean | null`): Whether stable prompt blocks avoid expanded skill indexes, route metadata, and leaf skill files.
+- `cache_audit.summary.stable_leaf_skill_risk_paths` (`string[]`): Stable prompt paths that would make leaf skill edits invalidate the stable prefix.
+- `cache_audit.summary.leaf_skill_change_stable_hash_delta` (`0 | null`): `0` when leaf skill edits cannot affect the stable hash through configured stable paths; `null` when risky stable paths are present.
 - `cache_audit.layers[]` (`object[]`): Per-layer rendered bytes, estimated tokens, hard budget settings, target settings, status fields, blocks, largest blocks, and issues.
 - `cache_audit.layers[].budget_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`.
 - `cache_audit.layers[].target_status` (`string`): One of `within_budget`, `over_budget`, or `unknown`; this reports preferred target fit without making the command fail.

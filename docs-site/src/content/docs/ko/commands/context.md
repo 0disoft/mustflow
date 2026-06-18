@@ -113,6 +113,9 @@ npx mf context --json --cache-profile all --cache-compare .mustflow/cache/baseli
 - `cache_audit.summary.unresolved_reference_count` (`number`): 실제 reference block으로 측정하지 못한 파일 참조 수입니다.
 - `cache_audit.summary.volatile_before_stable_count` (`number`): stable 계층 앞에 나온 volatile 계층 수입니다. 보통 `0`이어야 합니다.
 - `cache_audit.summary.serialization_deterministic` (`true`): reference bundle이 결정적 직렬화 규칙을 사용함을 나타냅니다.
+- `cache_audit.summary.stable_leaf_skill_isolated` (`boolean | null`): stable prompt block이 확장 skill index, route metadata, leaf skill 파일을 피하는지 여부입니다.
+- `cache_audit.summary.stable_leaf_skill_risk_paths` (`string[]`): leaf skill 수정이 stable prefix를 무효화할 수 있게 만드는 stable prompt 경로입니다.
+- `cache_audit.summary.leaf_skill_change_stable_hash_delta` (`0 | null`): leaf skill 수정이 설정된 stable 경로를 통해 stable hash에 영향을 주지 않으면 `0`, 위험 경로가 있으면 `null`입니다.
 - `cache_audit.layers[]` (`object[]`): 계층별 렌더링 바이트, 추정 토큰, hard 예산 설정, 목표 설정, 상태 필드, 블록, 가장 큰 블록, 이슈입니다.
 - `cache_audit.layers[].budget_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다.
 - `cache_audit.layers[].target_status` (`string`): `within_budget`, `over_budget`, `unknown` 중 하나입니다. 명령 실패 조건이 아니라 선호 목표에 맞는지 보여줍니다.
