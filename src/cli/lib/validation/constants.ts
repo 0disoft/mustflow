@@ -27,6 +27,7 @@ export const REQUIRED_FILES = [
 	'AGENTS.md',
 	'.mustflow/config/mustflow.toml',
 	'.mustflow/config/commands.toml',
+	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/INDEX.md',
 ];
 export const ALLOWED_MAP_MODES = new Set(['anchors_only']);

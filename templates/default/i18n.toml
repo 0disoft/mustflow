@@ -10,8 +10,8 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 15
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 15, status = "current" }
+revision = 16
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 16, status = "current" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 11, status = "needs_review" }
@@ -30,8 +30,8 @@ translations.hi = { path = "locales/hi/.mustflow/context/INDEX.md", source_revis
 [documents."context.project"]
 source = "locales/en/.mustflow/context/PROJECT.md"
 source_locale = "en"
-revision = 1
-translations.ko = { path = "locales/ko/.mustflow/context/PROJECT.md", source_revision = 1, status = "current" }
+revision = 2
+translations.ko = { path = "locales/ko/.mustflow/context/PROJECT.md", source_revision = 2, status = "current" }
 translations.zh = { path = "locales/zh/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/context/PROJECT.md", source_revision = 1, status = "needs_review" }
@@ -40,8 +40,8 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 20
-translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 20, status = "current" }
+revision = 21
+translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 21, status = "current" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }

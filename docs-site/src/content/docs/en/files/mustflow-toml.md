@@ -51,10 +51,11 @@ read_order = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
 ]
 optional_read_order = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
 ]
 ```
@@ -66,6 +67,8 @@ This file reduces agent guesswork and helps prevent accidental edits to generate
 `REPO_MAP.md` belongs to `optional_read_order` and `document_roots.generated`. Agents should read it only when broad repository navigation is needed, treat it as an anchor-file map rather than a complete file list, and regenerate it when needed.
 
 `.mustflow/context/INDEX.md` belongs to `optional_read_order` because agents should read it only when project, product, domain, UI, backend, data, security, or operations context is relevant to the task.
+
+`.mustflow/skills/routes.toml` belongs to `read_order` as compact route metadata. `.mustflow/skills/INDEX.md` belongs to `optional_read_order` because agents should read the expanded route table only when compact metadata is insufficient, the task edits skill routing, or detailed trigger text is needed.
 
 `.mustflow/cache/**` and `.mustflow/state/**` are generated paths. The cache contains rebuildable supporting files such as the SQLite index written by `mf index`; state contains local state created during use, such as `mf run` receipts. Neither path is part of the first required reading order.
 
@@ -85,6 +88,7 @@ anchor_files = [
   ".mustflow/config/preferences.toml",
   ".mustflow/context/INDEX.md",
   ".mustflow/context/PROJECT.md",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "README.md",
   "DESIGN.md",
@@ -163,13 +167,15 @@ read = [
   ".mustflow/docs/agent-workflow.md",
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/config/technology.toml",
+  ".mustflow/skills/routes.toml",
 ]
 
 [prompt_cache.layers.task]
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
   "matching_skill",
   "relevant_source_files",
@@ -189,8 +195,8 @@ never_place_before_stable_prefix = true
 the input. It separates stable instructions from task-specific context and volatile state so hosts can
 keep repeated prompt prefixes stable when they support caching.
 
-The stable layer contains repository rules and workflow configuration that should be placed before
-task-specific material in a consistent order. The task layer is selected per task. The volatile layer
+The stable layer contains repository rules, workflow configuration, and compact skill-route metadata
+that should be placed before task-specific material in a consistent order. The task layer is selected per task and may include the expanded skill index only when needed. The volatile layer
 contains changing values such as current user requests, changed-file lists, command output tails, run
 receipts, timestamps, and local paths.
 
@@ -368,7 +374,7 @@ read = [
 method = "hash_check"
 read = [
   "AGENTS.md",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
 ]
 
 [refresh.levels.full]
@@ -379,7 +385,8 @@ read = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/config/technology.toml",
+  ".mustflow/skills/routes.toml",
 ]
 ```
 

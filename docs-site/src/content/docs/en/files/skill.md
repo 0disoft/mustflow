@@ -7,7 +7,7 @@ description: A procedural document defining repeatable tasks for agents.
 
 ## Usage
 
-Agents identify the appropriate skill from `.mustflow/skills/INDEX.md` and consult its documentation before performing repeatable tasks.
+Agents identify the appropriate skill from `.mustflow/skills/routes.toml`, read `.mustflow/skills/INDEX.md` only when detailed route evidence is needed, and consult the selected `SKILL.md` before performing repeatable tasks.
 
 Skill documents encompass procedures such as code review, test maintenance, failure triage, and documentation updates. They reference the global policies defined in `.mustflow/docs/agent-workflow.md` rather than duplicating them.
 

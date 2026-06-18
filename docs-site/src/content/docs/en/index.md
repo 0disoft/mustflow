@@ -49,6 +49,7 @@ REPO_MAP.md  # optional generated file
 ├─ docs/
 │  └─ agent-workflow.md
 ├─ skills/
+│  ├─ routes.toml
 │  ├─ INDEX.md
 │  └─ */SKILL.md
 └─ state/  # generated during use
@@ -69,7 +70,8 @@ REPO_MAP.md  # optional generated file
 3. **`.mustflow/config/mustflow.toml`**: Authoritative document paths and boundaries.
 4. **`.mustflow/config/commands.toml`**: Executable command intent contracts.
 5. **`.mustflow/config/preferences.toml`**: Repository-level defaults (if present).
-6. **`.mustflow/skills/INDEX.md`**: Skill selection guide for repeatable tasks.
-7. **`.mustflow/context/INDEX.md`**: Task-specific project context routing.
+6. **`.mustflow/skills/routes.toml`**: Compact skill-routing metadata for repeatable tasks.
+7. **`.mustflow/skills/INDEX.md`**: Expanded skill route table, read only when detailed routing is needed.
+8. **`.mustflow/context/INDEX.md`**: Task-specific project context routing.
 
 This site serves as reference documentation and is not installed into user projects via `mf init`.

@@ -49,6 +49,7 @@ REPO_MAP.md  # 선택 생성
 ├─ docs/
 │  └─ agent-workflow.md
 ├─ skills/
+│  ├─ routes.toml
 │  ├─ INDEX.md
 │  └─ */SKILL.md
 └─ state/  # 사용 중 생성
@@ -69,7 +70,8 @@ REPO_MAP.md  # 선택 생성
 3. `.mustflow/config/mustflow.toml`에서 기준 문서와 보호 경로를 확인합니다.
 4. `.mustflow/config/commands.toml`에서 실행 가능한 명령 의도를 확인합니다.
 5. `.mustflow/config/preferences.toml`이 있으면 저장소별 기본 선호값을 확인합니다.
-6. `.mustflow/skills/INDEX.md`에서 작업과 맞는 스킬을 찾습니다.
-7. 작업별 프로젝트 맥락이 필요할 때만 `.mustflow/context/INDEX.md`를 확인합니다.
+6. `.mustflow/skills/routes.toml`에서 작업과 맞는 스킬 라우트를 압축 메타데이터로 고릅니다.
+7. 상세 라우팅이 필요할 때만 `.mustflow/skills/INDEX.md`를 확인합니다.
+8. 작업별 프로젝트 맥락이 필요할 때만 `.mustflow/context/INDEX.md`를 확인합니다.
 
 이 사이트는 `mf init`으로 사용자 프로젝트에 설치되지 않습니다. mustflow 구조를 이해하기 위한 참조 문서입니다.

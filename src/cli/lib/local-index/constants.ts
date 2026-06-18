@@ -35,10 +35,12 @@ export const DEFAULT_PROMPT_CACHE_STABLE_READ = [
 	'.mustflow/docs/agent-workflow.md',
 	'.mustflow/config/mustflow.toml',
 	'.mustflow/config/commands.toml',
-	'.mustflow/skills/INDEX.md',
+	'.mustflow/config/technology.toml',
+	'.mustflow/skills/routes.toml',
 ] as const;
 export const DEFAULT_PROMPT_CACHE_TASK_SOURCES = [
 	'.mustflow/context/INDEX.md',
+	'.mustflow/skills/INDEX.md',
 	'REPO_MAP.md',
 	'matching_skill',
 	'relevant_source_files',

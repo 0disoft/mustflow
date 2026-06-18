@@ -3,7 +3,7 @@ mustflow_doc: context.project
 kind: mustflow-context
 locale: en
 canonical: true
-revision: 1
+revision: 2
 name: project
 authority: contextual
 lifecycle: user-editable
@@ -58,7 +58,8 @@ Unset. List paths, public APIs, generated files, migrations, secrets, or compati
 - `.mustflow/docs/agent-workflow.md`  
 - `.mustflow/config/mustflow.toml`  
 - `.mustflow/config/commands.toml`  
-- `.mustflow/skills/INDEX.md`
+- `.mustflow/skills/routes.toml`
+- `.mustflow/skills/INDEX.md` only when detailed route evidence is needed
 
 ## Staleness Check
 

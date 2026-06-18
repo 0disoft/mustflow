@@ -1,22 +1,22 @@
 ---
 title: .mustflow/skills/INDEX.md
-description: An index that directs agents to the appropriate skill document for a given task.
+description: An expanded route table that directs agents to the appropriate skill document when compact route metadata is not enough.
 ---
 
-`.mustflow/skills/INDEX.md` assists agents in selecting the correct skill document before initiating repeatable tasks.
+`.mustflow/skills/INDEX.md` is the expanded human-readable route table for selecting the correct skill document when `.mustflow/skills/routes.toml` is not detailed enough.
 
 ## Usage
 
-After consulting the shared rules and command contract, agents refer to this index when a task matches a predefined procedure.
+After consulting the shared rules, command contract, and compact route metadata, agents refer to this index only when detailed trigger evidence is needed or when maintaining skill routing.
 
 This file should not contain full procedure details. It maps compact route fields to skill paths: trigger, required input, edit scope, risk, verification intents, and expected output.
 `mf check --strict` compares these routes with the referenced `SKILL.md` files so missing skill documents, unlisted skills, unknown command intents, command-intent drift, and route-table shape drift are visible.
 
 ## Selection Behavior
 
-Agents use this index at task start and before the first edit. They compare the user request and
-expected changed files with the listed triggers, then read each matching `SKILL.md` before editing
-that scope.
+Agents use compact route metadata at task start and before the first edit. They use this expanded
+index when compact metadata is insufficient, compare the user request and expected changed files
+with the listed triggers, then read each matching `SKILL.md` before editing that scope.
 
 When a skill is used, or when a plausible skill is intentionally skipped, agents should leave a
 short selection note in the next user-facing update or final report. The note belongs in the

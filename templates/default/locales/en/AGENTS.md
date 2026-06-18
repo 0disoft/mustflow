@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 15
+revision: 16
 lifecycle: user-editable
 authority: binding
 ---
@@ -21,13 +21,15 @@ mustflow-managed details are under `.mustflow/`.
 4. `.mustflow/config/commands.toml`
 5. `.mustflow/config/preferences.toml` if present
 6. `.mustflow/config/technology.toml` if present
-7. `.mustflow/skills/INDEX.md`
+7. `.mustflow/skills/routes.toml`
 8. `.mustflow/context/INDEX.md` only when the task needs project, product, domain,
    UI, backend, data, security, or operations context
 9. The matching `.mustflow/context/<name>.md` files, only when selected by the context index
-10. The matching `.mustflow/skills/<name>/SKILL.md`
-11. `REPO_MAP.md` only when broader repository navigation is needed
-12. Relevant source, test, and documentation files
+10. `.mustflow/skills/INDEX.md` only when route metadata is insufficient, the task edits skill
+    routing, or a detailed route table is needed
+11. The matching `.mustflow/skills/<name>/SKILL.md`
+12. `REPO_MAP.md` only when broader repository navigation is needed
+13. Relevant source, test, and documentation files
 
 ## Core Rules
 
@@ -65,8 +67,10 @@ mustflow-managed details are under `.mustflow/`.
 - If `DESIGN.md` exists, read it only for UI, visual design, layout, design-token, or accessibility
   work. Do not create a `DESIGN.md` if one does not exist.
 - Read the matching skill document when one applies to the task.
-- Before creating or modifying any file, use `.mustflow/skills/INDEX.md` to decide whether one or more skills apply.
-  This skill-selection gate is mandatory even for small or seemingly obvious tasks.
+- Before creating or modifying any file, use `.mustflow/skills/routes.toml` to decide whether one or
+  more skills apply. Read `.mustflow/skills/INDEX.md` only when the compact route metadata is
+  insufficient, the task edits skill routing, or a detailed route table is needed. This
+  skill-selection gate is mandatory even for small or seemingly obvious tasks.
 - `mf doctor`, `mf check`, and other health checks do not satisfy the skill-selection gate. They
   confirm repository health; they do not determine which task procedure applies.
 - If a matching skill applies, read the matching `SKILL.md` before editing that scope. After

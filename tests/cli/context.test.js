@@ -183,6 +183,8 @@ test('prints cache-profile context without volatile stable-prefix fields', () =>
 		assert.equal(context.stable_prefix.cache_layer, 'stable');
 		assert.match(context.stable_prefix.cache_key, /^sha256:[a-f0-9]{64}$/);
 		assert.ok(context.stable_prefix.documents.some((document) => document.path === 'AGENTS.md'));
+		assert.ok(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/routes.toml'));
+		assert.equal(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/INDEX.md'), false);
 		assert.ok(context.stable_prefix.documents.every((document) => document.content_hash === null || /^sha256:[a-f0-9]{64}$/.test(document.content_hash)));
 		assert.ok(context.stable_prefix.volatile_excluded.includes('.mustflow/state/runs/latest.json'));
 	} finally {
@@ -204,6 +206,7 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.equal(context.stable_prefix.cache_layer, 'stable');
 		assert.equal(context.task_context.cache_layer, 'task');
 		assert.equal(context.task_context.read_policy, 'task_relevant_only');
+		assert.ok(context.task_context.sources.includes('.mustflow/skills/INDEX.md'));
 		assert.ok(context.task_context.sources.includes('REPO_MAP.md'));
 		assert.equal(context.task_context.local_index.source, 'local_index');
 		assert.equal(context.task_context.local_index.status, 'missing');
@@ -242,7 +245,8 @@ test('prints prompt-cache audit sizes and budget status when requested', () => {
 		assert.equal(stableAudit.budget_bytes, 1024);
 		assert.equal(stableAudit.budget_status, 'over_budget');
 		assert.ok(stableAudit.issues.some((issue) => issue.includes('stable prefix exceeds max_stable_prefix_kb')));
-		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'));
+		assert.ok(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/routes.toml'));
+		assert.equal(stableAudit.blocks.some((block) => block.path === '.mustflow/skills/INDEX.md'), false);
 		assert.ok(stableAudit.largest_blocks.length > 0);
 		assert.ok(stableAudit.largest_blocks[0].rendered_bytes >= stableAudit.largest_blocks.at(-1).rendered_bytes);
 	} finally {

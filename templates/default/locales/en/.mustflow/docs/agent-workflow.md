@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 20
+revision: 21
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -31,7 +31,8 @@ mustflow documents have specific, narrow roles. Do not move a rule into a lower-
 | `.mustflow/config/preferences.toml` | Repository-level defaults for style, language, Git suggestions, testing tendency, verification selection, and version-impact handling. | Lower-authority preferences; not permissions. | Repository-local TOML, user-customizable. |
 | `.mustflow/context/INDEX.md` | Router for task-specific context files. | Selects optional context only; not a policy manual. | mustflow-owned Markdown. |
 | `.mustflow/context/PROJECT.md` | Cautious project facts, unknowns, and domain conventions. | Contextual reference below user instructions, code, tests, commands, and configured policies. | User-editable context. |
-| `.mustflow/skills/INDEX.md` | Router that selects which procedure document to read for a task. | Selection contract only; procedure detail remains in `SKILL.md`. | mustflow-owned Markdown. |
+| `.mustflow/skills/routes.toml` | Compact route metadata for selecting likely procedure documents. | Selection hint only; procedure detail remains in `SKILL.md`. | mustflow-owned TOML. |
+| `.mustflow/skills/INDEX.md` | Expanded human-readable route table for detailed skill selection and route maintenance. | Selection contract only; procedure detail remains in `SKILL.md`. | mustflow-owned Markdown. |
 | `.mustflow/skills/<name>/SKILL.md` | Repeatable task procedure with inputs, allowed scope, checks, and reporting format. | Procedure guidance only; cannot authorize commands or override rules. | mustflow-owned Markdown, optionally localized. |
 | `REPO_MAP.md` | Generated anchor map for broad navigation and nested repository entry points. | Generated navigation aid below current files and instructions. | Generated; refresh with the configured `repo_map` intent or `mf map`. |
 
@@ -53,10 +54,11 @@ Skills are task procedures, not autonomous tools. Activating a skill means readi
 
 At task start and before the first edit:
 
-1. Read `.mustflow/skills/INDEX.md`.
-2. Match the current task against the listed scenarios.
-3. Read every matching `SKILL.md` before editing that part of the work.
-4. If no skill applies, proceed with the smallest safe change under `AGENTS.md` and `.mustflow/config/commands.toml`.
+1. Read `.mustflow/skills/routes.toml` for the compact route list.
+2. Match the current task against route names, categories, route types, priority, and reason metadata.
+3. Read `.mustflow/skills/INDEX.md` when compact metadata is insufficient, the task edits skill routing, or a detailed trigger table is needed.
+4. Read every matching `SKILL.md` before editing that part of the work.
+5. If no skill applies, proceed with the smallest safe change under `AGENTS.md` and `.mustflow/config/commands.toml`.
 
 Activate a skill later if new evidence changes the task type. For example, a failing configured command activates failure triage; a test contract change activates test maintenance; and a documentation or workflow change activates documentation update.
 
@@ -82,8 +84,8 @@ Prompt caching is a performance optimization, not an authority source. A cached 
 
 Hosts and agent harnesses assembling model input should keep context in this order:
 
-1. Stable prefix: repository rules and workflow files from `mf context --json --cache-profile stable`.
-2. Task context: selected context files, matching skills, repository-map anchors, relevant source files, and `mf search --json` results with `cache_layer` set to `task`.
+1. Stable prefix: repository rules, workflow files, and compact route metadata from `mf context --json --cache-profile stable`.
+2. Task context: selected context files, detailed skill index fallback, matching skills, repository-map anchors, relevant source files, and `mf search --json` results with `cache_layer` set to `task`.
 3. Volatile suffix: current user request, changed-file lists, command output tails, latest run receipt metadata, timestamps, and any `mf search --json` result whose `volatile` field is `true`.
 
 Before reusing a stable prefix, compare the reported content hashes with the current files. If any stable document hash changes, reread the document instead of reusing cached text. Do not place absolute local paths, run receipt timestamps, command output, changed files, or current user task text before the stable prefix.
@@ -126,7 +128,7 @@ Use `.mustflow/config/mustflow.toml` `[refresh]` to determine the refresh level:
 - `command`: reread `AGENTS.md` and `.mustflow/config/commands.toml`
 - `edit`: reread `AGENTS.md`, `.mustflow/config/mustflow.toml`, and `.mustflow/docs/agent-workflow.md` before sensitive edits
 - `report`: reread `AGENTS.md`, `.mustflow/config/mustflow.toml`, and `.mustflow/config/preferences.toml` before the final report
-- `skill`: reread `AGENTS.md` and `.mustflow/skills/INDEX.md`
+- `skill`: reread `AGENTS.md` and `.mustflow/skills/routes.toml`
 - `full`: reread the full mustflow read sequence
 
 `before_command_run` is a freshness checkpoint for the current command intent, not a requirement to reread every file before every repeated command when the command contract has not changed.

@@ -8,10 +8,11 @@ read_order = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
 ]
 optional_read_order = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
 ]
 
@@ -19,6 +20,7 @@ optional_read_order = [
 primary_instruction = "AGENTS.md"
 repository_map = "REPO_MAP.md"
 skill_index = ".mustflow/skills/INDEX.md"
+skill_routes = ".mustflow/skills/routes.toml"
 command_contract = ".mustflow/config/commands.toml"
 workflow_preferences = ".mustflow/config/preferences.toml"
 technology_preferences = ".mustflow/config/technology.toml"
@@ -38,6 +40,7 @@ anchor_files = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
+  ".mustflow/skills/routes.toml",
   ".mustflow/skills/INDEX.md",
   "README.md",
   "PROJECT.md",
@@ -141,13 +144,14 @@ read = [
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
   ".mustflow/config/technology.toml",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
 ]
 
 [prompt_cache.layers.task]
 read_policy = "task_relevant_only"
 sources = [
   ".mustflow/context/INDEX.md",
+  ".mustflow/skills/INDEX.md",
   "REPO_MAP.md",
   "matching_skill",
   "relevant_source_files",
@@ -242,7 +246,7 @@ read = [
 method = "hash_check"
 read = [
   "AGENTS.md",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
 ]
 
 [refresh.levels.full]
@@ -254,7 +258,7 @@ read = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
-  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
 ]
 
 [compaction]

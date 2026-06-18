@@ -26,6 +26,7 @@ AGENTS.md
 .mustflow/config/preferences.toml
 .mustflow/context/INDEX.md
 .mustflow/context/PROJECT.md
+.mustflow/skills/routes.toml
 .mustflow/skills/INDEX.md
 README.md
 DESIGN.md
