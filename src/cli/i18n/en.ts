@@ -49,6 +49,7 @@ export const enMessages = {
   "command.handoff.summary": "Validate restricted work-item and handoff records",
   "command.index.summary": "Build the local mustflow SQLite index",
   "command.search.summary": "Search the local mustflow SQLite index",
+  "command.skill.summary": "Resolve compact skill route candidates",
   "command.dashboard.summary":
     "Start the local mustflow dashboard",
   "command.version.summary": "Show package version and optional npm update status",

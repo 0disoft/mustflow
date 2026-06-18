@@ -51,6 +51,7 @@ export const hiMessages = {
   "command.handoff.summary": "Restricted work-item और handoff records validate करें",
   "command.index.summary": "स्थानीय mustflow SQLite इंडेक्स बनाएँ",
   "command.search.summary": "स्थानीय mustflow SQLite इंडेक्स में खोजें",
+  "command.skill.summary": "छोटे skill route उम्मीदवार चुनें",
   "command.dashboard.summary":
     "स्थानीय mustflow डैशबोर्ड शुरू करें",
   "command.version.summary": "Package version और npm update status दिखाएँ",

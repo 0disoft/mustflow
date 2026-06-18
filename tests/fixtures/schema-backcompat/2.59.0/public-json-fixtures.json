@@ -1905,6 +1905,138 @@
       }
     },
     {
+      "id": "skill-route-report",
+      "schema_file": "skill-route-report.schema.json",
+      "producer": "mf skill route --json",
+      "fixture": {
+        "schema_version": "1",
+        "kind": "skill_route_resolution",
+        "input": {
+          "task_text_present": true,
+          "paths": [
+            "src/cli/index.ts"
+          ],
+          "reasons": [
+            "code_change"
+          ],
+          "max_candidates": 5
+        },
+        "signals": {
+          "task_terms": [
+            "change",
+            "cli",
+            "output",
+            "typescript"
+          ],
+          "path_terms": [
+            "cli",
+            "index",
+            "src"
+          ],
+          "reasons": [
+            "code_change"
+          ],
+          "read_shards": [
+            ".mustflow/skills/routes.toml",
+            ".mustflow/skills/INDEX.md"
+          ]
+        },
+        "selected": {
+          "main": {
+            "skill": "typescript-code-change",
+            "skill_path": ".mustflow/skills/typescript-code-change/SKILL.md",
+            "trigger": "TypeScript source, declarations, tsconfig, package exports, module resolution, public API, compiler-version behavior, TypeScript 6-to-7 migration surfaces, native preview tooling, or TypeScript tests are created or changed",
+            "category": "general_code",
+            "route_type": "primary",
+            "priority": 85,
+            "applies_to_reasons": [
+              "code_change",
+              "public_api_change",
+              "test_change",
+              "package_metadata_change"
+            ],
+            "score": 120,
+            "score_breakdown": {
+              "reason_match": 35,
+              "task_text_match": 16,
+              "path_match": 45,
+              "route_type_weight": 18,
+              "priority_weight": 17
+            },
+            "selection_reasons": [
+              "reason:code_change",
+              "task_terms:4",
+              "path_skill_hint:typescript-code-change",
+              "route_type:primary",
+              "priority:85"
+            ],
+            "verification_intents": [
+              "changes_status",
+              "changes_diff_summary",
+              "lint",
+              "build",
+              "test_related",
+              "test",
+              "docs_validate_fast",
+              "mustflow_check"
+            ]
+          },
+          "adjuncts": []
+        },
+        "candidates": [
+          {
+            "skill": "typescript-code-change",
+            "skill_path": ".mustflow/skills/typescript-code-change/SKILL.md",
+            "trigger": "TypeScript source, declarations, tsconfig, package exports, module resolution, public API, compiler-version behavior, TypeScript 6-to-7 migration surfaces, native preview tooling, or TypeScript tests are created or changed",
+            "category": "general_code",
+            "route_type": "primary",
+            "priority": 85,
+            "applies_to_reasons": [
+              "code_change",
+              "public_api_change",
+              "test_change",
+              "package_metadata_change"
+            ],
+            "score": 120,
+            "score_breakdown": {
+              "reason_match": 35,
+              "task_text_match": 16,
+              "path_match": 45,
+              "route_type_weight": 18,
+              "priority_weight": 17
+            },
+            "selection_reasons": [
+              "reason:code_change",
+              "task_terms:4",
+              "path_skill_hint:typescript-code-change",
+              "route_type:primary",
+              "priority:85"
+            ],
+            "verification_intents": [
+              "changes_status",
+              "changes_diff_summary",
+              "lint",
+              "build",
+              "test_related",
+              "test",
+              "docs_validate_fast",
+              "mustflow_check"
+            ]
+          }
+        ],
+        "source_files": [
+          ".mustflow/skills/routes.toml",
+          ".mustflow/skills/INDEX.md"
+        ],
+        "gap_notes": [
+          "This resolver is a read-only routing prepass. It narrows skill candidates but does not replace reading the selected SKILL.md.",
+          "Command execution authority still comes only from .mustflow/config/commands.toml."
+        ],
+        "command": "skill",
+        "action": "route"
+      }
+    },
+    {
       "id": "latest-run-pointer",
       "schema_file": "latest-run-pointer.schema.json",
       "producer": ".mustflow/state/runs/latest.json when written by mf verify",

@@ -52,6 +52,7 @@ export const koMessages = {
   "command.handoff.summary": "제한된 작업 항목과 인수인계 기록을 검증합니다",
   "command.index.summary": "로컬 mustflow SQLite 색인을 만듭니다",
   "command.search.summary": "로컬 mustflow SQLite 색인을 검색합니다",
+  "command.skill.summary": "간결한 skill route 후보를 고릅니다",
   "command.dashboard.summary":
     "로컬 mustflow 대시보드를 시작합니다",
   "command.version.summary": "패키지 버전과 npm 업데이트 상태를 출력합니다",

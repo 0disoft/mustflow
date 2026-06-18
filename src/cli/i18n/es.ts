@@ -51,6 +51,7 @@ export const esMessages = {
   "command.handoff.summary": "Valida registros restringidos de trabajo y handoff",
   "command.index.summary": "Construye el índice SQLite local de mustflow",
   "command.search.summary": "Busca en el índice SQLite local de mustflow",
+  "command.skill.summary": "Resuelve candidatos compactos de ruta de skill",
   "command.dashboard.summary":
     "Inicia el dashboard local de mustflow",
   "command.version.summary": "Muestra la versión del paquete y el estado de actualización en npm",

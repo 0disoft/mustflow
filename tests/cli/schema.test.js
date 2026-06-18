@@ -643,6 +643,30 @@ test('quality json output matches the published schema', () => {
 	}
 });
 
+test('skill route json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'skill',
+			'route',
+			'--task',
+			'Change TypeScript CLI output',
+			'--path',
+			'src/cli/index.ts',
+			'--reason',
+			'code_change',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'skill-route-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('handoff validation json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

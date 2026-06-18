@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/skill-route-report.schema.json",
+  "title": "mustflow skill route report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "input",
+    "signals",
+    "selected",
+    "candidates",
+    "source_files",
+    "gap_notes",
+    "command",
+    "action"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "kind": { "const": "skill_route_resolution" },
+    "command": { "const": "skill" },
+    "action": { "const": "route" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_text_present", "paths", "reasons", "max_candidates"],
+      "properties": {
+        "task_text_present": { "type": "boolean" },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "max_candidates": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_terms", "path_terms", "reasons", "read_shards"],
+      "properties": {
+        "task_terms": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "path_terms": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "read_shards": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "selected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["main", "adjuncts"],
+      "properties": {
+        "main": {
+          "oneOf": [
+            { "$ref": "#/$defs/candidate" },
+            { "type": "null" }
+          ]
+        },
+        "adjuncts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/candidate" }
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "source_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gap_notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skill",
+        "skill_path",
+        "trigger",
+        "category",
+        "route_type",
+        "priority",
+        "applies_to_reasons",
+        "score",
+        "score_breakdown",
+        "selection_reasons",
+        "verification_intents"
+      ],
+      "properties": {
+        "skill": { "type": "string" },
+        "skill_path": { "type": "string" },
+        "trigger": { "type": "string" },
+        "category": {
+          "type": ["string", "null"],
+          "enum": [
+            "bug_failure",
+            "general_code",
+            "tests",
+            "docs_release",
+            "security_privacy",
+            "data_external",
+            "ui_assets",
+            "architecture_patterns",
+            "workflow_contracts",
+            null
+          ]
+        },
+        "route_type": { "type": "string" },
+        "priority": { "type": "integer" },
+        "applies_to_reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "score": { "type": "number" },
+        "score_breakdown": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reason_match",
+            "task_text_match",
+            "path_match",
+            "route_type_weight",
+            "priority_weight"
+          ],
+          "properties": {
+            "reason_match": { "type": "number" },
+            "task_text_match": { "type": "number" },
+            "path_match": { "type": "number" },
+            "route_type_weight": { "type": "number" },
+            "priority_weight": { "type": "number" }
+          }
+        },
+        "selection_reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "verification_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -51,6 +51,7 @@ export const frMessages = {
   "command.handoff.summary": "Valide les enregistrements restreints de travail et de handoff",
   "command.index.summary": "Construit l'index SQLite local de mustflow",
   "command.search.summary": "Recherche dans l'index SQLite local de mustflow",
+  "command.skill.summary": "Résout des candidats compacts de route de skill",
   "command.dashboard.summary":
     "Démarre le tableau de bord mustflow local",
   "command.version.summary": "Affiche la version du paquet et l'état de mise à jour npm",

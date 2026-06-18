@@ -161,6 +161,12 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/search.js')).runSearch,
 	},
 	{
+		id: 'skill',
+		usage: 'mf skill',
+		summaryKey: 'command.skill.summary',
+		loadRunner: async () => (await import('../commands/skill.js')).runSkill,
+	},
+	{
 		id: 'dashboard',
 		usage: 'mf dashboard',
 		summaryKey: 'command.dashboard.summary',

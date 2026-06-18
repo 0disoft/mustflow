@@ -270,6 +270,7 @@ mf run mustflow_update_apply
 | `mf docs review approve <path>` | Mark review complete and hide the document from the default queue. |
 | `mf handoff validate <path>` | Validate a restricted work-item or handoff JSON record without writing files. |
 | `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
+| `mf skill route` | Resolve compact skill route candidates from task text, paths, and reasons before reading selected skill documents. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf quality check` | Inspect changed files for quality-gaming patterns without writing files. |
