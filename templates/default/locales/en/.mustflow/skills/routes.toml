@@ -924,6 +924,12 @@ route_type = "authoring"
 priority = 62
 applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change"]
 
+[routes."design-implementation-handoff"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 64
+applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change"]
+
 [routes."project-context-authoring"]
 category = "workflow_contracts"
 route_type = "authoring"

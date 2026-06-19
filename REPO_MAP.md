@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 204
+anchor_count: 205
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:f7f308cc993b005ca0b77c1dd36a2c3af46cdac8baf5d392df00cfa556de8aac"
+source_fingerprint: "sha256:00cbdb6808e43eab1408909641a95dd9a670fdab1c51a94165d33b4efef2d943"
 ---
 
 # REPO_MAP.md
@@ -255,6 +255,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/deployment-rollout-safety-review/
 
 - `.mustflow/skills/deployment-rollout-safety-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/design-implementation-handoff/
+
+- `.mustflow/skills/design-implementation-handoff/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/desktop-auto-update-safety-review/
 

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 170
+revision = 171
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -399,6 +399,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/date-number-audit/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.design-implementation-handoff"]
+source = "locales/en/.mustflow/skills/design-implementation-handoff/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.database-change-safety"]

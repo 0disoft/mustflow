@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.70.0 - 2026-06-19
+
+### Added
+
+- Added the `design-implementation-handoff` built-in skill so agents can structure Agent A design
+  packages for Agent B implementation with public product specs, private `.agent` handoff ledgers,
+  ownership gates, ignored-file protection, remote-agent transfer limits, and completion evidence.
+
 ## 2.69.0 - 2026-06-19
 
 ### Added
