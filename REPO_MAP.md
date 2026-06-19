@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 202
+anchor_count: 204
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:3217841c8fc2be38e71dee2e27d6031e81a3112e161fadbc83f6d02912837cb2"
+source_fingerprint: "sha256:f7f308cc993b005ca0b77c1dd36a2c3af46cdac8baf5d392df00cfa556de8aac"
 ---
 
 # REPO_MAP.md
@@ -604,6 +604,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/skill-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/skill-refresh/
+
+- `.mustflow/skills/skill-refresh/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/source-anchor-authoring/
 
 - `.mustflow/skills/source-anchor-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -639,6 +643,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/tailwind-code-change/
 
 - `.mustflow/skills/tailwind-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/task-instruction-authoring/
+
+- `.mustflow/skills/task-instruction-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/tauri-code-change/
 

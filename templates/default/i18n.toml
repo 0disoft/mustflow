@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 169
+revision = 170
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -921,10 +921,22 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.skill-refresh"]
+source = "locales/en/.mustflow/skills/skill-refresh/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.skill-authoring"]
 source = "locales/en/.mustflow/skills/skill-authoring/SKILL.md"
 source_locale = "en"
 revision = 8
+translations = {}
+
+[documents."skill.task-instruction-authoring"]
+source = "locales/en/.mustflow/skills/task-instruction-authoring/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.template-install-surface-sync"]

@@ -918,11 +918,23 @@ route_type = "adjunct"
 priority = 65
 applies_to_reasons = ["docs_change"]
 
+[routes."task-instruction-authoring"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 62
+applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change"]
+
 [routes."project-context-authoring"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 65
 applies_to_reasons = ["mustflow_docs_change"]
+
+[routes."skill-refresh"]
+category = "workflow_contracts"
+route_type = "authoring"
+priority = 66
+applies_to_reasons = ["mustflow_docs_change", "docs_change", "package_metadata_change"]
 
 [routes."skill-authoring"]
 category = "workflow_contracts"

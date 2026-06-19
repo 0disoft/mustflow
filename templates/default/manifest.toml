@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.68.6"
+version = "2.69.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -170,7 +170,9 @@ creates = [
   ".mustflow/skills/security-regression-tests/SKILL.md",
   ".mustflow/skills/secret-exposure-response/SKILL.md",
   ".mustflow/skills/search-ad-content-authoring/SKILL.md",
+  ".mustflow/skills/skill-refresh/SKILL.md",
   ".mustflow/skills/skill-authoring/SKILL.md",
+  ".mustflow/skills/task-instruction-authoring/SKILL.md",
   ".mustflow/skills/template-install-surface-sync/SKILL.md",
   ".mustflow/skills/visual-review-artifact/SKILL.md",
   ".mustflow/skills/visual-review-artifact/resources.toml",
@@ -324,6 +326,7 @@ minimal = [
   "secret-exposure-response",
   "source-anchor-authoring",
   "source-freshness-check",
+  "task-instruction-authoring",
   "structure-discovery-gate",
   "structure-first-engineering",
   "test-design-guard",
@@ -461,6 +464,7 @@ patterns = [
   "secret-exposure-response",
   "source-anchor-authoring",
   "source-freshness-check",
+  "task-instruction-authoring",
   "state-machine-pattern",
   "strategy-pattern",
   "structure-discovery-gate",
@@ -613,10 +617,12 @@ oss = [
   "security-privacy-review",
   "security-regression-tests",
   "secret-exposure-response",
+  "skill-refresh",
   "skill-authoring",
   "template-install-surface-sync",
   "source-anchor-authoring",
   "source-freshness-check",
+  "task-instruction-authoring",
   "state-machine-pattern",
   "strategy-pattern",
   "structure-discovery-gate",
@@ -759,6 +765,7 @@ team = [
   "secret-exposure-response",
   "source-anchor-authoring",
   "source-freshness-check",
+  "task-instruction-authoring",
   "state-machine-pattern",
   "strategy-pattern",
   "structure-discovery-gate",
@@ -901,6 +908,7 @@ product = [
   "search-ad-content-authoring",
   "source-anchor-authoring",
   "source-freshness-check",
+  "task-instruction-authoring",
   "state-machine-pattern",
   "strategy-pattern",
   "structure-discovery-gate",
@@ -1054,9 +1062,11 @@ library = [
   "security-privacy-review",
   "security-regression-tests",
   "secret-exposure-response",
+  "skill-refresh",
   "template-install-surface-sync",
   "source-anchor-authoring",
   "source-freshness-check",
+  "task-instruction-authoring",
   "state-machine-pattern",
   "strategy-pattern",
   "structure-discovery-gate",

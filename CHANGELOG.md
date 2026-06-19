@@ -6,6 +6,17 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.69.0 - 2026-06-19
+
+### Added
+
+- Added the `skill-refresh` built-in skill so agents can refresh stale `SKILL.md`
+  procedures and skill packages while preserving behavior contracts, checking source freshness,
+  synchronizing helper files and template surfaces, and reporting runtime or provenance risk.
+- Added the `task-instruction-authoring` built-in skill so agents can draft and review coding-agent
+  work instructions across implementation, fixes, reviews, proofs, cleanup, operational readiness,
+  and interactive CLI picker contracts.
+
 ## 2.58.0 - 2026-06-15
 
 ### Changed
