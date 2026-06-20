@@ -103,6 +103,7 @@ export interface PromptCacheRouteInput {
 export interface PathContext {
 	readonly path: string;
 	readonly exists: boolean;
+	readonly trust: ContextTrustMetadata;
 }
 
 export interface IntentContext {
@@ -212,6 +213,7 @@ export interface PromptCacheDocumentContext {
 	readonly path: string;
 	readonly exists: boolean;
 	readonly content_hash: string | null;
+	readonly trust: ContextTrustMetadata;
 }
 
 export interface StablePromptCacheLayerContext {
@@ -376,7 +378,45 @@ export interface PromptBundleBlockContext {
 	readonly estimated_tokens: number | null;
 	readonly cacheability: PromptBundleCacheability;
 	readonly reload_on: readonly string[];
+	readonly trust: ContextTrustMetadata;
 	readonly issue: string | null;
+}
+
+export type ContextTrustSourceKind =
+	| 'workflow_file'
+	| 'command_contract'
+	| 'skill_file'
+	| 'context_file'
+	| 'generated_cache'
+	| 'generated_state'
+	| 'source_placeholder'
+	| 'runtime_volatile'
+	| 'unknown_file';
+
+export type ContextTrustAuthority =
+	| 'binding'
+	| 'workflow_policy'
+	| 'configuration'
+	| 'command_contract'
+	| 'procedure'
+	| 'contextual'
+	| 'hint'
+	| 'generated'
+	| 'evidence_only'
+	| 'volatile'
+	| 'unknown';
+
+export type ContextTrustFreshness = 'hash_verified' | 'missing' | 'dynamic' | 'runtime_volatile' | 'unchecked';
+
+export interface ContextTrustMetadata {
+	readonly source_kind: ContextTrustSourceKind;
+	readonly authority: ContextTrustAuthority;
+	readonly cache_layer: 'stable' | 'task' | 'volatile' | null;
+	readonly freshness: ContextTrustFreshness;
+	readonly content_hash: string | null;
+	readonly can_instruct_agent: boolean;
+	readonly grants_command_authority: boolean;
+	readonly notes: readonly string[];
 }
 
 export interface PromptBundleLayerContext {
@@ -489,10 +529,21 @@ function readNumber(table: TomlTable | undefined, key: string): number | null {
 }
 
 function readPathContext(projectRoot: string, paths: readonly string[]): readonly PathContext[] {
-	return paths.map((relativePath) => ({
-		path: toPosixPath(relativePath),
-		exists: safeExists(projectRoot, relativePath),
-	}));
+	return paths.map((relativePath) => {
+		const normalizedPath = toPosixPath(relativePath);
+		const content = safeRead(projectRoot, normalizedPath);
+
+		return {
+			path: normalizedPath,
+			exists: content !== null,
+			trust: createContextTrust({
+				relativePath: normalizedPath,
+				cacheLayer: null,
+				contentHash: content === null ? null : sha256(content),
+				exists: content !== null,
+			}),
+		};
+	});
 }
 
 function readScalarObject(table: TomlTable | undefined): JsonObject {
@@ -518,6 +569,135 @@ function readScalarObject(table: TomlTable | undefined): JsonObject {
 
 function sha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function trustSourceKind(relativePath: string | null, sourceKind: PromptCacheAuditSourceKind | null): ContextTrustSourceKind {
+	if (sourceKind === 'runtime_volatile') {
+		return 'runtime_volatile';
+	}
+
+	if (relativePath === null) {
+		return sourceKind === 'dynamic_selection' ? 'source_placeholder' : 'unknown_file';
+	}
+
+	if (relativePath === COMMANDS_RELATIVE_PATH) {
+		return 'command_contract';
+	}
+
+	if (relativePath === LATEST_RUN_RELATIVE_PATH || relativePath.startsWith('.mustflow/state/')) {
+		return 'generated_state';
+	}
+
+	if (relativePath.startsWith('.mustflow/cache/')) {
+		return 'generated_cache';
+	}
+
+	if (relativePath.startsWith('.mustflow/skills/') && relativePath.endsWith('/SKILL.md')) {
+		return 'skill_file';
+	}
+
+	if (relativePath.startsWith('.mustflow/context/')) {
+		return 'context_file';
+	}
+
+	if (
+		relativePath === 'AGENTS.md' ||
+		relativePath.startsWith('.mustflow/docs/') ||
+		relativePath.startsWith('.mustflow/config/') ||
+		relativePath.startsWith('.mustflow/skills/')
+	) {
+		return 'workflow_file';
+	}
+
+	return 'unknown_file';
+}
+
+function trustAuthority(relativePath: string | null, sourceKind: ContextTrustSourceKind): ContextTrustAuthority {
+	if (relativePath === 'AGENTS.md') {
+		return 'binding';
+	}
+
+	if (relativePath === COMMANDS_RELATIVE_PATH) {
+		return 'command_contract';
+	}
+
+	if (
+		relativePath === MUSTFLOW_RELATIVE_PATH ||
+		relativePath === PREFERENCES_RELATIVE_PATH ||
+		relativePath === TECHNOLOGY_RELATIVE_PATH
+	) {
+		return 'configuration';
+	}
+
+	if (relativePath?.startsWith('.mustflow/docs/')) {
+		return 'workflow_policy';
+	}
+
+	if (relativePath?.startsWith('.mustflow/skills/') && relativePath.endsWith('/SKILL.md')) {
+		return 'procedure';
+	}
+
+	if (relativePath?.startsWith('.mustflow/context/')) {
+		return 'contextual';
+	}
+
+	if (sourceKind === 'generated_cache') {
+		return 'generated';
+	}
+
+	if (sourceKind === 'generated_state') {
+		return 'evidence_only';
+	}
+
+	if (sourceKind === 'runtime_volatile') {
+		return 'volatile';
+	}
+
+	if (sourceKind === 'source_placeholder') {
+		return 'hint';
+	}
+
+	return 'unknown';
+}
+
+function createContextTrust(input: {
+	readonly relativePath: string | null;
+	readonly cacheLayer: 'stable' | 'task' | 'volatile' | null;
+	readonly contentHash: string | null;
+	readonly exists: boolean | null;
+	readonly sourceKind?: PromptCacheAuditSourceKind | null;
+	readonly notes?: readonly string[];
+}): ContextTrustMetadata {
+	const normalizedPath = input.relativePath === null ? null : toPosixPath(input.relativePath);
+	const sourceKind = trustSourceKind(normalizedPath, input.sourceKind ?? null);
+	const authority = trustAuthority(normalizedPath, sourceKind);
+	const freshness: ContextTrustFreshness =
+		sourceKind === 'runtime_volatile'
+			? 'runtime_volatile'
+			: input.contentHash !== null
+			? 'hash_verified'
+			: input.exists === false
+			? 'missing'
+			: sourceKind === 'source_placeholder'
+			? 'dynamic'
+			: 'unchecked';
+
+	return {
+		source_kind: sourceKind,
+		authority,
+		cache_layer: input.cacheLayer,
+		freshness,
+		content_hash: input.contentHash,
+		can_instruct_agent:
+			authority === 'binding' ||
+			authority === 'workflow_policy' ||
+			authority === 'configuration' ||
+			authority === 'command_contract' ||
+			authority === 'procedure' ||
+			authority === 'contextual',
+		grants_command_authority: authority === 'command_contract',
+		notes: input.notes ?? [],
+	};
 }
 
 function estimateTokens(renderedBytes: number): number {
@@ -873,11 +1053,20 @@ function readStablePromptCacheLayer(projectRoot: string, mustflow: TomlTable | u
 	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
 	const documents = read.map((relativePath) => {
 		const content = safeRead(projectRoot, relativePath);
+		const contentHash = content === null ? null : sha256(content);
+		const normalizedPath = toPosixPath(relativePath);
 
 		return {
-			path: toPosixPath(relativePath),
+			path: normalizedPath,
 			exists: content !== null,
-			content_hash: content === null ? null : sha256(content),
+			content_hash: contentHash,
+			trust: createContextTrust({
+				relativePath: normalizedPath,
+				cacheLayer: 'stable',
+				contentHash,
+				exists: content !== null,
+				sourceKind: 'file_reference',
+			}),
 		};
 	});
 	const cacheMaterial = documents
@@ -1004,6 +1193,7 @@ function readStablePromptBundleLayer(projectRoot: string, mustflow: TomlTable | 
 		blocks: read.map((relativePath, index) => {
 			const path = toPosixPath(relativePath);
 			const content = safeRead(projectRoot, relativePath);
+			const contentHash = content === null ? null : sha256(content);
 			const renderedBytes = content === null ? null : measurePromptCacheReferenceBlockBytes(relativePath, content);
 			const issue = content === null ? `stable prefix document is missing: ${path}` : null;
 
@@ -1017,12 +1207,19 @@ function readStablePromptBundleLayer(projectRoot: string, mustflow: TomlTable | 
 				source_kind: 'file_reference',
 				selection_policy: 'always_rendered',
 				content_included: false,
-				content_hash: content === null ? null : sha256(content),
+				content_hash: contentHash,
 				rendered_digest: content === null ? null : renderedDigest(relativePath, content),
 				rendered_bytes: renderedBytes,
 				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
 				cacheability: 'provider_prefix_candidate',
 				reload_on: ['stable_file_hash_changed'],
+				trust: createContextTrust({
+					relativePath: path,
+					cacheLayer: 'stable',
+					contentHash,
+					exists: content !== null,
+					sourceKind: 'file_reference',
+				}),
 				issue,
 			} satisfies PromptBundleBlockContext;
 		}),
@@ -1091,6 +1288,14 @@ function readTaskPromptBundleLayer(
 				estimated_tokens: renderedBytes === null ? null : estimateTokens(renderedBytes),
 				cacheability: taskSourceCacheability(source, selectionPolicy),
 				reload_on: taskSourceReloadOn(source, selectionPolicy),
+				trust: createContextTrust({
+					relativePath: routeCandidateContent !== null ? SKILL_ROUTE_CANDIDATES_VIRTUAL_PATH : referencePath,
+					cacheLayer: 'task',
+					contentHash,
+					exists: routeCandidateContent !== null || content !== null ? true : sourceKind === 'file_reference' ? false : null,
+					sourceKind,
+					notes: source === 'skill_route_candidates' ? ['derived from route resolver input'] : [],
+				}),
 				issue,
 			} satisfies PromptBundleBlockContext;
 
@@ -1101,6 +1306,7 @@ function readTaskPromptBundleLayer(
 			const selectedBlocks = selectedSkillPaths.map((skillPath, selectedIndex) => {
 				const normalizedPath = toPosixPath(skillPath);
 				const skillContent = safeRead(projectRoot, normalizedPath);
+				const skillContentHash = skillContent === null ? null : sha256(skillContent);
 				const skillRenderedBytes = skillContent === null ? null : measurePromptCacheReferenceBlockBytes(normalizedPath, skillContent);
 				const skillIssue = skillContent === null
 					? taskSourceIssue(normalizedPath, 'hash_only_deferred')
@@ -1116,12 +1322,20 @@ function readTaskPromptBundleLayer(
 					source_kind: skillContent === null ? 'dynamic_selection' : 'file_reference',
 					selection_policy: 'selected_at_runtime',
 					content_included: false,
-					content_hash: skillContent === null ? null : sha256(skillContent),
+					content_hash: skillContentHash,
 					rendered_digest: skillContent === null ? null : renderedDigest(normalizedPath, skillContent),
 					rendered_bytes: skillRenderedBytes,
 					estimated_tokens: skillRenderedBytes === null ? null : estimateTokens(skillRenderedBytes),
 					cacheability: 'runtime_selection',
 					reload_on: ['route_resolution_changed', 'source_file_hash_changed'],
+					trust: createContextTrust({
+						relativePath: normalizedPath,
+						cacheLayer: 'task',
+						contentHash: skillContentHash,
+						exists: skillContent !== null,
+						sourceKind: skillContent === null ? 'dynamic_selection' : 'file_reference',
+						notes: ['selected by task route resolver'],
+					}),
 					issue: skillIssue,
 				} satisfies PromptBundleBlockContext;
 			});
@@ -1154,6 +1368,14 @@ function readVolatilePromptBundleLayer(mustflow: TomlTable | undefined): PromptB
 			estimated_tokens: null,
 			cacheability: 'volatile_suffix',
 			reload_on: ['volatile_state_changed'],
+			trust: createContextTrust({
+				relativePath: null,
+				cacheLayer: 'volatile',
+				contentHash: null,
+				exists: null,
+				sourceKind: 'runtime_volatile',
+				notes: ['not rendered in stable or task prompt cache layers'],
+			}),
 			issue,
 		})) satisfies PromptBundleBlockContext[],
 	};
@@ -1181,10 +1403,27 @@ function readPromptBundle(
 
 	const blocks = layers.flatMap((layer) => layer.blocks);
 	const shapeMaterial = blocks
-		.map((block) => [block.cache_layer, block.order, block.kind, block.path ?? '', block.source ?? '', block.selection_policy, block.cacheability].join('\0'))
+		.map((block) => [
+			block.cache_layer,
+			block.order,
+			block.kind,
+			block.path ?? '',
+			block.source ?? '',
+			block.selection_policy,
+			block.cacheability,
+			block.trust.authority,
+			block.trust.source_kind,
+		].join('\0'))
 		.join('\n');
 	const bundleMaterial = blocks
-		.map((block) => [block.id, block.content_hash ?? '', block.rendered_digest ?? '', block.issue ?? ''].join('\0'))
+		.map((block) => [
+			block.id,
+			block.content_hash ?? '',
+			block.rendered_digest ?? '',
+			block.trust.freshness,
+			block.trust.content_hash ?? '',
+			block.issue ?? '',
+		].join('\0'))
 		.join('\n');
 
 	return {
@@ -1282,6 +1521,10 @@ function compareStringArray(left: readonly string[], right: readonly string[]): 
 	return left.length === right.length && left.every((entry, index) => entry === right[index]);
 }
 
+function contextTrustMatches(left: ContextTrustMetadata | undefined, right: ContextTrustMetadata | undefined): boolean {
+	return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+}
+
 function changedBlockFields(current: PromptBundleBlockContext, baseline: PromptBundleBlockContext): readonly string[] {
 	const fields: string[] = [];
 
@@ -1317,6 +1560,9 @@ function changedBlockFields(current: PromptBundleBlockContext, baseline: PromptB
 	}
 	if (current.cacheability !== baseline.cacheability) {
 		fields.push('cacheability');
+	}
+	if (!contextTrustMatches(current.trust, baseline.trust)) {
+		fields.push('trust');
 	}
 	if (!compareStringArray(current.reload_on, baseline.reload_on)) {
 		fields.push('reload_on');

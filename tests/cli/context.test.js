@@ -122,6 +122,15 @@ destructive = false
 		assert.equal(context.authority.primary_instruction, 'AGENTS.md');
 		assert.equal(context.read_order[0].path, 'AGENTS.md');
 		assert.equal(context.read_order[0].exists, true);
+		assert.equal(context.read_order[0].trust.authority, 'binding');
+		assert.equal(context.read_order[0].trust.freshness, 'hash_verified');
+		assert.equal(context.read_order[0].trust.can_instruct_agent, true);
+		assert.equal(context.read_order[0].trust.grants_command_authority, false);
+		assert.match(context.read_order[0].trust.content_hash, /^sha256:[a-f0-9]{64}$/u);
+		const commandContractReadOrder = context.read_order.find((entry) => entry.path === '.mustflow/config/commands.toml');
+		assert.equal(commandContractReadOrder.trust.source_kind, 'command_contract');
+		assert.equal(commandContractReadOrder.trust.authority, 'command_contract');
+		assert.equal(commandContractReadOrder.trust.grants_command_authority, true);
 		assert.equal(context.command_contract.path, '.mustflow/config/commands.toml');
 		assert.equal(echoIntent.status, 'configured');
 		assert.equal(echoIntent.lifecycle, 'oneshot');
@@ -187,6 +196,8 @@ test('prints cache-profile context without volatile stable-prefix fields', () =>
 		assert.equal(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/routes.toml'), false);
 		assert.equal(context.stable_prefix.documents.some((document) => document.path === '.mustflow/skills/INDEX.md'), false);
 		assert.ok(context.stable_prefix.documents.every((document) => document.content_hash === null || /^sha256:[a-f0-9]{64}$/.test(document.content_hash)));
+		assert.ok(context.stable_prefix.documents.every((document) => document.trust.cache_layer === 'stable'));
+		assert.ok(context.stable_prefix.documents.every((document) => document.trust.freshness === 'hash_verified'));
 		assert.ok(context.stable_prefix.volatile_excluded.includes('.mustflow/state/runs/latest.json'));
 	} finally {
 		removeTempProject(projectPath);
@@ -258,6 +269,11 @@ test('prints all prompt-cache layers when requested', () => {
 		);
 		assert.ok(context.prompt_bundle.layers[0].blocks.every((block) => block.cacheability === 'provider_prefix_candidate'));
 		assert.ok(context.prompt_bundle.layers[0].blocks.every((block) => block.content_included === false));
+		assert.ok(context.prompt_bundle.layers[0].blocks.every((block) => block.trust.cache_layer === 'stable'));
+		assert.equal(
+			context.prompt_bundle.layers[0].blocks.find((block) => block.path === 'AGENTS.md').trust.can_instruct_agent,
+			true,
+		);
 		assert.equal(
 			context.prompt_bundle.layers[1].blocks.some((block) => block.path === '.mustflow/skills/routes.toml'),
 			true,
@@ -282,7 +298,12 @@ test('prints all prompt-cache layers when requested', () => {
 			context.prompt_bundle.layers[1].blocks.find((block) => block.source === 'matching_skill').cacheability,
 			'runtime_selection',
 		);
+		assert.equal(
+			context.prompt_bundle.layers[1].blocks.find((block) => block.source === 'skill_route_candidates').trust.authority,
+			'hint',
+		);
 		assert.ok(context.prompt_bundle.layers[2].blocks.every((block) => block.cacheability === 'volatile_suffix'));
+		assert.ok(context.prompt_bundle.layers[2].blocks.every((block) => block.trust.authority === 'volatile'));
 	} finally {
 		removeTempProject(projectPath);
 	}

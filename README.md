@@ -124,6 +124,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
 - Inspects changed files for quality-gaming patterns such as line stuffing, suppressions, test bypass markers, type escapes, and placeholder implementations with `mf quality check`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a risk-priced evidence assessment, machine-readable verification decision graph, and read-only local-index lock explanations when available.
+- Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Stores bounded failure replay capsules for failed `mf verify` runs so future agents can reproduce the intent, receipt, command fingerprint, and changed-file state without copying raw command output.
 - Writes command receipts under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`.
@@ -270,7 +271,7 @@ mf run mustflow_update_apply
 | `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
 | `mf docs review approve <path>` | Mark review complete and hide the document from the default queue. |
 | `mf handoff validate <path>` | Validate a restricted work-item or handoff JSON record without writing files. |
-| `mf context --json` | Print read order, command rules, available capabilities, and recent run summary as JSON. |
+| `mf context --json` | Print read order, command rules, context trust metadata, available capabilities, prompt-cache bundles, and recent run summary as JSON. |
 | `mf skill route` | Resolve compact skill route candidates from task text, paths, and reasons before reading selected skill documents. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |

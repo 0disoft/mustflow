@@ -121,7 +121,61 @@
       "required": ["path", "exists"],
       "properties": {
         "path": { "type": "string" },
-        "exists": { "type": "boolean" }
+        "exists": { "type": "boolean" },
+        "trust": { "$ref": "#/$defs/contextTrust" }
+      }
+    },
+    "contextTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_kind",
+        "authority",
+        "cache_layer",
+        "freshness",
+        "content_hash",
+        "can_instruct_agent",
+        "grants_command_authority",
+        "notes"
+      ],
+      "properties": {
+        "source_kind": {
+          "enum": [
+            "workflow_file",
+            "command_contract",
+            "skill_file",
+            "context_file",
+            "generated_cache",
+            "generated_state",
+            "source_placeholder",
+            "runtime_volatile",
+            "unknown_file"
+          ]
+        },
+        "authority": {
+          "enum": [
+            "binding",
+            "workflow_policy",
+            "configuration",
+            "command_contract",
+            "procedure",
+            "contextual",
+            "hint",
+            "generated",
+            "evidence_only",
+            "volatile",
+            "unknown"
+          ]
+        },
+        "cache_layer": { "enum": ["stable", "task", "volatile", null] },
+        "freshness": { "enum": ["hash_verified", "missing", "dynamic", "runtime_volatile", "unchecked"] },
+        "content_hash": { "type": ["string", "null"] },
+        "can_instruct_agent": { "type": "boolean" },
+        "grants_command_authority": { "type": "boolean" },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
       }
     },
     "intentContext": {
@@ -364,7 +418,8 @@
       "properties": {
         "path": { "type": "string" },
         "exists": { "type": "boolean" },
-        "content_hash": { "type": ["string", "null"] }
+        "content_hash": { "type": ["string", "null"] },
+        "trust": { "$ref": "#/$defs/contextTrust" }
       }
     },
     "taskContextLayer": {
@@ -617,6 +672,7 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "trust": { "$ref": "#/$defs/contextTrust" },
         "issue": { "type": ["string", "null"] }
       }
     },
