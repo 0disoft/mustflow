@@ -37,6 +37,12 @@
     "update_policies": { "$ref": "#/$defs/stringArray" },
     "drift_checks": { "$ref": "#/$defs/stringArray" },
     "required_verification": { "$ref": "#/$defs/stringArray" },
+    "complexity_budget": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "verify-report.schema.json#/$defs/complexityBudget" }
+      ]
+    },
     "residual_corrections": { "$ref": "#/$defs/residualCorrections" },
     "gap_count": { "type": "integer", "minimum": 0 },
     "gaps": {

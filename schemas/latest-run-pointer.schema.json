@@ -332,6 +332,7 @@
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceGap" }
         },
+        "complexity_budget": { "$ref": "verify-report.schema.json#/$defs/complexityBudget" },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
         "failure_replay_capsule": { "$ref": "verify-report.schema.json#/$defs/failureReplayCapsule" },
         "conflict_ledger": { "$ref": "verify-report.schema.json#/$defs/conflictLedger" },

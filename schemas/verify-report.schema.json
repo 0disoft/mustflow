@@ -204,6 +204,68 @@
         "surfaces": { "$ref": "#/$defs/stringArray" }
       }
     },
+    "complexityBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "status",
+        "score",
+        "budget",
+        "metrics",
+        "risks",
+        "review_prompts"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "source": { "const": "change_classification" },
+        "status": { "enum": ["within_budget", "review_required"] },
+        "score": { "type": "integer", "minimum": 0 },
+        "budget": { "type": "integer", "minimum": 0 },
+        "metrics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/complexityBudgetMetric" }
+        },
+        "risks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/complexityBudgetRisk" }
+        },
+        "review_prompts": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "complexityBudgetMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "weight", "weighted_score"],
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "type": "integer", "minimum": 0 },
+        "weight": { "type": "integer", "minimum": 0 },
+        "weighted_score": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "complexityBudgetRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "detail", "count", "limit", "paths"],
+      "properties": {
+        "code": {
+          "enum": [
+            "complexity_score_budget_exceeded",
+            "dependency_surface_requires_justification",
+            "helper_container_requires_justification",
+            "configuration_surface_budget_exceeded",
+            "schema_surface_budget_exceeded"
+          ]
+        },
+        "severity": { "const": "warning" },
+        "detail": { "type": "string" },
+        "count": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 0 },
+        "paths": { "$ref": "#/$defs/stringArray" }
+      }
+    },
     "parallelism": {
       "type": "object",
       "additionalProperties": false,
@@ -481,6 +543,7 @@
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceGap" }
         },
+        "complexity_budget": { "$ref": "#/$defs/complexityBudget" },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
         "failure_replay_capsule": { "$ref": "#/$defs/failureReplayCapsule" },
         "conflict_ledger": { "$ref": "#/$defs/conflictLedger" },

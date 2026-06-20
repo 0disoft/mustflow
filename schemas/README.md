@@ -13,7 +13,8 @@ Current schemas:
 - `verification-plan.schema.json`: output of `mf api verification-plan --changed --json`, including
   risk-priced evidence assessment for the changed surfaces and selected command contract
 - `latest-evidence.schema.json`: output of `mf api latest-evidence --json`
-- `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`
+- `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`, including a read-only
+  complexity budget for structural additions
 - `health.schema.json`: output of `mf api health --json`
 - `locks.schema.json`: output of `mf api locks --json`
 - `api-serve-response.schema.json`: each newline-delimited response from `mf api serve --stdio`
@@ -44,8 +45,8 @@ Current schemas:
   parent-to-child command authority
 - `dashboard-export.schema.json`: bounded static export written by `mf dashboard --export-json <path>`,
   including output policy, redaction and truncation metadata, the dashboard harness report, and
-  the evidence-based completion verdict, conflict ledger, evidence model, and conservative coverage
-  matrix for the exported snapshot
+  the evidence-based completion verdict, conflict ledger, complexity budget, evidence model, and
+  conservative coverage matrix for the exported snapshot
 - `classify-report.schema.json`: output of `mf classify --changed --json` and  
   `mf classify <path...> --json`
 - `impact-report.schema.json`: output of `mf impact --changed --json` and  
@@ -62,7 +63,7 @@ Current schemas:
   skill-route golden cases with required and forbidden route expectations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a
   pointer to the latest verify run bundle, including the verify completion verdict, evidence model,
-  failure replay capsule, conflict ledger, and coverage matrix
+  complexity budget, failure replay capsule, conflict ledger, and coverage matrix
 - `handoff-validation-report.schema.json`: output of  
   `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
@@ -73,11 +74,11 @@ Current schemas:
   `decisionGraph` evidence model; latest-failure explanations include bounded latest-run metadata only.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`, including an
   explicit execution aggregate, risk-priced evidence assessment, evidence-based completion verdict,
-  failure replay capsule, conflict ledger, and evidence model with a conservative coverage matrix for
-  the selected receipts and skipped checks
+  failure replay capsule, conflict ledger, and evidence model with a read-only complexity budget and
+  conservative coverage matrix for the selected receipts and skipped checks
 - `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`, including
   the same execution aggregate, risk assessment, completion verdict, failure replay capsule,
-  conflict ledger, evidence model, and coverage matrix as the verify report
+  conflict ledger, evidence model, complexity budget, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
   `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links
   changed surfaces, classification reasons, command candidates, eligibility, selected or not-selected state,

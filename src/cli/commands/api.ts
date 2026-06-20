@@ -17,6 +17,10 @@ import {
 	type ChangeVerificationReport,
 	type VerificationRequirement,
 } from '../../core/change-verification.js';
+import {
+	createComplexityBudgetReport,
+	type ComplexityBudgetReport,
+} from '../../core/complexity-budget.js';
 import { readUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
 import type { VerificationRiskAssessment } from '../../core/risk-priced-evidence.js';
@@ -325,6 +329,7 @@ interface ApiDiffRiskOutput {
 	readonly update_policies: readonly string[];
 	readonly drift_checks: readonly string[];
 	readonly required_verification: readonly string[];
+	readonly complexity_budget: ComplexityBudgetReport | null;
 	readonly residual_corrections: ApiResidualCorrections;
 	readonly gap_count: number;
 	readonly gaps: readonly ApiVerificationPlanGap[];
@@ -1296,6 +1301,7 @@ function createDiffRiskOutput(): ApiDiffRiskOutput {
 			update_policies: [],
 			drift_checks: [],
 			required_verification: [],
+			complexity_budget: null,
 			residual_corrections: createResidualCorrections(mustflowRoot, null),
 			gap_count: 0,
 			gaps: [],
@@ -1323,6 +1329,10 @@ function createDiffRiskOutput(): ApiDiffRiskOutput {
 
 	const requiredVerification = report ? report.schedule.entries.map((entry) => entry.intent) : [];
 	const verificationPlanId = report && contract ? createVerificationPlanId(report, contract) : null;
+	const complexityBudget = createComplexityBudgetReport({
+		files: classification.files,
+		summary: classification.summary,
+	});
 
 	return {
 		schema_version: API_DIFF_RISK_SCHEMA_VERSION,
@@ -1338,6 +1348,7 @@ function createDiffRiskOutput(): ApiDiffRiskOutput {
 		update_policies: classification.summary.updatePolicies,
 		drift_checks: classification.summary.driftChecks,
 		required_verification: requiredVerification,
+		complexity_budget: complexityBudget,
 		residual_corrections: createResidualCorrections(mustflowRoot, verificationPlanId),
 		gap_count: report?.gaps.length ?? 0,
 		gaps: report?.gaps.map((gap) => ({

@@ -124,6 +124,9 @@ mustflow installs and validates an agent workflow for user projects.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
 - Inspects changed files for quality-gaming patterns such as line stuffing, suppressions, test bypass markers, type escapes, and placeholder implementations with `mf quality check`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a risk-priced evidence assessment, machine-readable verification decision graph, and read-only local-index lock explanations when available.
+- Reports a read-only complexity budget in `mf api diff-risk --changed --json`, `mf verify`
+  evidence, and dashboard exports so agents justify new dependencies, helper-style surfaces,
+  config/schema churn, and broad structural changes before treating added complexity as free.
 - Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
@@ -263,7 +266,7 @@ mf run mustflow_update_apply
 | `mf api command-catalog --json` | Print command intent availability and safe `mf run` entrypoints without exposing raw command strings. |
 | `mf api verification-plan --changed --json` | Print a stable, read-only verification plan for changed files without executing commands. |
 | `mf api latest-evidence --json` | Print bounded latest run or verify evidence without raw command output. |
-| `mf api diff-risk --changed --json` | Print a compact changed-file risk, verification summary, and read-only residual correction signals. |
+| `mf api diff-risk --changed --json` | Print a compact changed-file risk, verification summary, read-only complexity budget, and residual correction signals. |
 | `mf api health --json` | Print a compact workspace health report for quick agent gating. |
 | `mf api locks --json` | Print active `mf run` locks for multi-session coordination. |
 | `mf api serve --stdio` | Serve the same read-only API reports as newline-delimited JSON responses over stdin/stdout. |

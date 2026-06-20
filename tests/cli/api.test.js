@@ -292,6 +292,9 @@ test('prints a compact diff risk api report', () => {
 			assert.ok(['low', 'medium', 'high', 'none'].includes(output.risk_level));
 			assert.ok(output.changed_files.includes('diff-risk-probe.js'));
 			assert.ok(output.changed_file_count > 0);
+			assert.equal(output.complexity_budget.source, 'change_classification');
+			assert.equal(output.complexity_budget.status, 'within_budget');
+			assert.ok(output.complexity_budget.metrics.some((metric) => metric.name === 'changed_files'));
 			assert.ok(Array.isArray(output.required_verification));
 			assert.equal(output.residual_corrections.mode, 'read_only');
 			assert.equal(output.residual_corrections.grants_command_authority, false);
@@ -303,6 +306,38 @@ test('prints a compact diff risk api report', () => {
 			assert.equal(output.risk_level, 'unknown');
 			assert.ok(output.issues.length > 0);
 		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('api diff-risk reports complexity budget review prompts for structural additions', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const hasGitBaseline = commitGitBaseline(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'package.json'), '{"dependencies":{"left-pad":"1.3.0"}}\n');
+		writeFileSync(path.join(projectPath, 'src', 'common-utils.ts'), 'export const value = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'misc-manager.ts'), 'export const other = 2;\n');
+
+		const result = runCli(projectPath, ['api', 'diff-risk', '--changed', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		if (!hasGitBaseline) {
+			assert.equal(output.status, 'unavailable');
+			return;
+		}
+
+		const riskCodes = output.complexity_budget.risks.map((risk) => risk.code);
+		assert.equal(output.complexity_budget.status, 'review_required');
+		assert.ok(output.complexity_budget.score > output.complexity_budget.budget);
+		assert.ok(riskCodes.includes('complexity_score_budget_exceeded'));
+		assert.ok(riskCodes.includes('dependency_surface_requires_justification'));
+		assert.ok(riskCodes.includes('helper_container_requires_justification'));
+		assert.ok(output.complexity_budget.review_prompts.length > 0);
 	} finally {
 		removeTempProject(projectPath);
 	}

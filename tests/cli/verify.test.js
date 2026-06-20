@@ -193,6 +193,9 @@ required_after = ["custom_verify"]
 		assert.deepEqual(report.evidence_model.requirements[0].candidate_intents, ['verify_echo']);
 		assert.deepEqual(report.evidence_model.requirements[0].selected_intents, ['verify_echo']);
 		assert.equal(report.evidence_model.requirements[0].outcome, 'verified');
+		assert.equal(report.evidence_model.complexity_budget.source, 'change_classification');
+		assert.equal(report.evidence_model.complexity_budget.status, 'within_budget');
+		assert.ok(report.evidence_model.complexity_budget.metrics.some((metric) => metric.name === 'changed_files'));
 		assert.deepEqual(report.evidence_model.coverage_matrix[0], {
 			criterion_id: 'verification_requirement:1:custom_verify',
 			source: 'verification_requirement',

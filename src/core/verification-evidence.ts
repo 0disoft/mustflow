@@ -1,4 +1,9 @@
 import type { ChangeVerificationReport } from './change-verification.js';
+import {
+	createComplexityBudgetReport,
+	createComplexityBudgetReportFromVerification,
+	type ComplexityBudgetReport,
+} from './complexity-budget.js';
 import { createConflictLedger, type ConflictLedger } from './conflict-ledger.js';
 import type { CompletionVerdict, CompletionVerdictStatus } from './completion-verdict.js';
 import type { ExternalEvidenceCheck, ExternalEvidenceRisk } from './external-evidence.js';
@@ -104,6 +109,7 @@ export interface VerificationEvidenceModel {
 	readonly receipts: readonly VerificationEvidenceReceipt[];
 	readonly skipped_checks: readonly VerificationEvidenceSkippedCheck[];
 	readonly gaps: readonly VerificationEvidenceGap[];
+	readonly complexity_budget: ComplexityBudgetReport;
 	readonly risk_assessment?: VerificationRiskAssessment;
 	readonly failure_replay_capsule?: FailureReplayCapsule;
 	readonly remaining_risks: readonly VerificationEvidenceRemainingRisk[];
@@ -429,6 +435,7 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 		receipts,
 		skipped_checks: skippedCheckEntries(input.results),
 		gaps,
+		complexity_budget: createComplexityBudgetReportFromVerification(input.report),
 		risk_assessment: input.report.risk_assessment,
 		...(input.failureReplayCapsule ? { failure_replay_capsule: input.failureReplayCapsule } : {}),
 		remaining_risks: remainingRisks,
@@ -483,6 +490,18 @@ export function createDashboardEvidenceModel(input: CreateDashboardEvidenceModel
 		receipts,
 		skipped_checks: input.skippedChecks,
 		gaps: input.gaps,
+		complexity_budget: createComplexityBudgetReport({
+			files: [],
+			summary: {
+				fileCount: 0,
+				publicSurfaceCount: input.changedSurfaces.length,
+				changeKinds: input.changedSurfaces.length > 0 ? ['unknown'] : [],
+				validationReasons: [],
+				updatePolicies: [],
+				driftChecks: [],
+				affectedContracts: [],
+			},
+		}),
 		remaining_risks: remainingRisks,
 		conflict_ledger: createConflictLedger({
 			verdict: input.verdict,
