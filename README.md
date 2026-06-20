@@ -127,6 +127,8 @@ mustflow installs and validates an agent workflow for user projects.
 - Reports a read-only complexity budget in `mf api diff-risk --changed --json`, `mf verify`
   evidence, and dashboard exports so agents justify new dependencies, helper-style surfaces,
   config/schema churn, and broad structural changes before treating added complexity as free.
+- Lists and runs bundled utility scripts through `mf script-pack`, including `core/text-budget` for
+  exact file and JSON-field length budgets, so future checks do not sprawl into top-level commands.
 - Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
@@ -281,6 +283,9 @@ mf run mustflow_update_apply
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf quality check` | Inspect changed files for quality-gaming patterns without writing files. |
 | `mf quality check --all` | Inspect every tracked text file for quality-gaming patterns. |
+| `mf script-pack list` | List bundled script packs and script refs such as `core/text-budget`. |
+| `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |
+| `mf script-pack run core/text-budget check package.json --json-pointer /description --max <count> --json` | Check a JSON string field and print the stable report schema. |
 | `mf run <intent>` | Run an allowed one-shot command. |
 | `mf run <intent> --wait` | Wait for conflicting active run locks before executing the command. |
 | `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |
@@ -305,6 +310,9 @@ mf run mustflow_update_apply
 | `mf explain surface [path]` | Explain how a path maps to public-surface and validation categories. |
 
 Automation and agents should use `--json` output or `mf api serve --stdio` JSONL responses instead of parsing human-facing text. Published JSON Schemas for stable outputs live in `schemas/`.
+
+`core/text-budget` counts `line` units by splitting text on line breaks; a trailing line break
+therefore contributes an empty final line.
 
 ## Command execution policy
 

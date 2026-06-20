@@ -765,6 +765,44 @@ test('quality json output matches the published schema', () => {
 	}
 });
 
+test('script-pack catalog json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['script-pack', 'list', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'script-pack-catalog.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('text-budget json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'intro.txt'), 'short intro');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'core/text-budget',
+			'check',
+			'intro.txt',
+			'--max',
+			'20',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'text-budget-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('skill route json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

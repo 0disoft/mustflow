@@ -65,6 +65,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf verify --reason code_change',
 				'mf line-endings check',
 				'mf quality check',
+				'mf script-pack run core/text-budget check README.md --max 5000',
 				'mf version --check',
 				'mf version-sources --json',
 			],

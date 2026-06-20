@@ -113,6 +113,12 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/quality.js')).runQuality,
 	},
 	{
+		id: 'script-pack',
+		usage: 'mf script-pack',
+		summaryKey: 'command.scriptPack.summary',
+		loadRunner: async () => (await import('../commands/script-pack.js')).runScriptPack,
+	},
+	{
 		id: 'run',
 		usage: 'mf run',
 		summaryKey: 'command.run.summary',

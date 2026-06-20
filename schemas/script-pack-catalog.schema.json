@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/script-pack-catalog.schema.json",
+  "title": "mustflow script-pack catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "action",
+    "ok",
+    "mustflow_root",
+    "packs",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "action": { "const": "list" },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "packs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pack" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "summary_key", "scripts"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "summary_key": { "type": "string" },
+        "scripts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/script" }
+        }
+      }
+    },
+    "script": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ref", "usage", "summary_key", "actions", "report_schema_file"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "ref": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "usage": { "type": "string" },
+        "summary_key": { "type": "string" },
+        "actions": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "minItems": 1
+        },
+        "report_schema_file": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-z0-9-]+\\.schema\\.json$" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

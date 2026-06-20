@@ -56,6 +56,12 @@ Current schemas:
 - `quality-gaming-report.schema.json`: output of `mf quality check --json`, containing changed-file
   quality-gaming risks such as line stuffing, validation suppressions, test bypass markers, type
   escapes, generated/vendor logic, empty catch swallowing, and placeholder implementations
+- `script-pack-catalog.schema.json`: output of `mf script-pack list --json`, containing bundled
+  script-pack ids, script refs, action names, usage strings, and associated report schemas
+- `text-budget-report.schema.json`: output of
+  `mf script-pack run core/text-budget check <path...> --json`, containing
+  exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field
+  checks for bounded user-facing strings and generated text
 - `skill-route-report.schema.json`: output of `mf skill route --json`, containing compact route
   candidates, selected main and adjunct skills, score breakdowns, route read plans, and source
   route shards without granting command authority or replacing selected `SKILL.md` reads

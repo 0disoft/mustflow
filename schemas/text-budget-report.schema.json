@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/text-budget-report.schema.json",
+  "title": "mustflow text-budget report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "metrics",
+    "findings",
+    "artifacts",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "core" },
+    "script_id": { "const": "text-budget" },
+    "script_ref": { "const": "core/text-budget" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "metrics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "unit": {
+      "description": "Counting unit. The line unit counts line segments after splitting on line breaks, so a trailing line break contributes an empty final line.",
+      "enum": ["grapheme", "code-point", "utf16", "utf8-byte", "word", "line"]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max", "exact", "unit", "json_pointer", "max_file_bytes"],
+      "properties": {
+        "min": { "type": ["integer", "null"], "minimum": 0 },
+        "max": { "type": ["integer", "null"], "minimum": 0 },
+        "exact": { "type": ["integer", "null"], "minimum": 0 },
+        "unit": { "$ref": "#/$defs/unit" },
+        "json_pointer": { "type": ["string", "null"] },
+        "max_file_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "unit", "path", "json_pointer", "content_sha256"],
+      "properties": {
+        "name": { "const": "text_length" },
+        "value": { "type": "integer", "minimum": 0 },
+        "unit": { "$ref": "#/$defs/unit" },
+        "path": { "type": "string" },
+        "json_pointer": { "type": ["string", "null"] },
+        "content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "json_pointer", "metric", "actual", "expected"],
+      "properties": {
+        "code": {
+          "enum": [
+            "text_budget_above_max",
+            "text_budget_below_min",
+            "text_budget_not_exact",
+            "text_budget_unreadable",
+            "text_budget_json_parse_failed",
+            "text_budget_json_pointer_invalid",
+            "text_budget_json_pointer_missing",
+            "text_budget_json_pointer_not_string"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": {
+          "anyOf": [
+            { "const": "text_length" },
+            { "type": "null" }
+          ]
+        },
+        "actual": { "type": ["integer", "null"], "minimum": 0 },
+        "expected": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "sha256", "size_bytes"],
+      "properties": {
+        "kind": { "const": "input" },
+        "path": { "type": "string" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
