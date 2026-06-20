@@ -55,6 +55,9 @@
         "$ref": "#/$defs/verificationGap"
       }
     },
+    "risk_assessment": {
+      "$ref": "#/$defs/riskAssessment"
+    },
     "schedule": {
       "$ref": "#/$defs/verificationSchedule"
     },
@@ -326,6 +329,32 @@
         "detail": {
           "type": "string"
         }
+      }
+    },
+    "riskAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "level",
+        "reasons",
+        "required_evidence",
+        "blocking_gaps",
+        "rollback_required",
+        "human_approval_required",
+        "manual_review_required"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "source": { "const": "change_classification_and_command_contract" },
+        "level": { "enum": ["low", "medium", "high", "critical"] },
+        "reasons": { "$ref": "#/$defs/stringArray" },
+        "required_evidence": { "$ref": "#/$defs/stringArray" },
+        "blocking_gaps": { "$ref": "#/$defs/stringArray" },
+        "rollback_required": { "type": "boolean" },
+        "human_approval_required": { "type": "boolean" },
+        "manual_review_required": { "type": "boolean" }
       }
     },
     "testSelectionReport": {

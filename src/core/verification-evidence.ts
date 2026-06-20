@@ -3,6 +3,7 @@ import type { CompletionVerdict, CompletionVerdictStatus } from './completion-ve
 import type { ExternalEvidenceCheck, ExternalEvidenceRisk } from './external-evidence.js';
 import type { RepeatedFailureRisk } from './repeated-failure.js';
 import type { ReproEvidenceReport, ReproEvidenceRisk } from './repro-evidence.js';
+import type { VerificationRiskAssessment } from './risk-priced-evidence.js';
 import type { ScopeDiffRisk } from './scope-risk.js';
 import type { ValidationRatchetRisk } from './validation-ratchet.js';
 
@@ -101,6 +102,7 @@ export interface VerificationEvidenceModel {
 	readonly receipts: readonly VerificationEvidenceReceipt[];
 	readonly skipped_checks: readonly VerificationEvidenceSkippedCheck[];
 	readonly gaps: readonly VerificationEvidenceGap[];
+	readonly risk_assessment?: VerificationRiskAssessment;
 	readonly remaining_risks: readonly VerificationEvidenceRemainingRisk[];
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
@@ -326,6 +328,22 @@ function externalEvidenceRemainingRisks(
 	}));
 }
 
+function riskPricedEvidenceRemainingRisks(
+	assessment: VerificationRiskAssessment | undefined,
+): VerificationEvidenceRemainingRisk[] {
+	if (!assessment?.manual_review_required) {
+		return [];
+	}
+
+	return [
+		{
+			code: 'risk_priced_evidence_requires_review',
+			severity: assessment.level,
+			detail: `Verification risk is ${assessment.level}; required evidence: ${assessment.required_evidence.join(', ')}.`,
+		},
+	];
+}
+
 export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput): VerificationEvidenceModel {
 	const requirements = input.report.requirements.map((requirement) => {
 		const candidates = input.report.candidates.filter((candidate) => candidate.reason === requirement.reason);
@@ -366,6 +384,13 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 	const reproEvidenceRisks = input.reproEvidenceRisks ?? [];
 	const externalChecks = input.externalChecks ?? [];
 	const externalEvidenceRisks = input.externalEvidenceRisks ?? [];
+	const hasSpecificRemainingRisks =
+		sourceAnchorRisks.length > 0 ||
+		scopeDiffRisks.length > 0 ||
+		repeatedFailureRisks.length > 0 ||
+		validationRatchetRisks.length > 0 ||
+		reproEvidenceRisks.length > 0 ||
+		externalEvidenceRisks.length > 0;
 	const gaps = input.report.gaps.map((gap) => ({
 		reason: gap.reason,
 		intent: null,
@@ -390,6 +415,7 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 		receipts,
 		skipped_checks: skippedCheckEntries(input.results),
 		gaps,
+		risk_assessment: input.report.risk_assessment,
 		remaining_risks: [
 			...sourceAnchorRemainingRisks(sourceAnchorRisks),
 			...scopeDiffRemainingRisks(scopeDiffRisks),
@@ -397,6 +423,7 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 			...validationRatchetRemainingRisks(validationRatchetRisks),
 			...reproEvidenceRemainingRisks(reproEvidenceRisks),
 			...externalEvidenceRemainingRisks(externalEvidenceRisks),
+			...(hasSpecificRemainingRisks ? [] : riskPricedEvidenceRemainingRisks(input.report.risk_assessment)),
 		],
 		...(reproEvidence ? { repro_evidence: reproEvidence } : {}),
 		...(externalChecks.length > 0 ? { external_checks: externalChecks } : {}),

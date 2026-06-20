@@ -36,6 +36,10 @@ import {
 import { createVerifyEvidenceModel, type VerificationEvidenceModel } from '../../core/verification-evidence.js';
 import { createScopeDiffRisks, type ScopeDiffRisk } from '../../core/scope-risk.js';
 import {
+	riskPricedEvidenceRiskCount,
+	type VerificationRiskAssessment,
+} from '../../core/risk-priced-evidence.js';
+import {
 	countValidationRatchetVerdictEffects,
 	createValidationRatchetRisks,
 	type ValidationRatchetRisk,
@@ -153,6 +157,7 @@ interface VerificationOutput {
 	readonly verification_plan_id: string;
 	readonly execution_status: VerificationStatus;
 	readonly status: VerificationStatus;
+	readonly risk_assessment: VerificationRiskAssessment;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
@@ -185,6 +190,7 @@ interface VerifyRunReceiptManifest {
 	readonly verification_plan_id: string;
 	readonly execution_status: VerificationStatus;
 	readonly status: VerificationStatus;
+	readonly risk_assessment: VerificationRiskAssessment;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
@@ -206,6 +212,7 @@ interface VerifyLatestRunPointer {
 	readonly verification_plan_id: string;
 	readonly execution_status: VerificationStatus;
 	readonly status: VerificationStatus;
+	readonly risk_assessment: VerificationRiskAssessment;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
@@ -898,6 +905,18 @@ function createCompletionVerdictForResults(input: {
 	const receiptBinding = createReceiptBindingEvidence(input.results, input.verificationPlanId);
 	const receiptBindingRiskCount = receiptBinding.plan_unbound_count + receiptBinding.fingerprint_unbound_count;
 	const repeatedFailureBlockerCount = input.repeatedFailureRisks.filter((risk) => risk.verdict_effect === 'blocker').length;
+	const writeDriftRiskCount = countUndeclaredWriteDrift(input.results);
+	const specificReviewRiskCount =
+		input.sourceAnchorRiskCount +
+		input.scopeDiffRiskCount +
+		input.validationRatchetRiskCount +
+		input.reproEvidenceRiskCount +
+		input.externalEvidenceRiskCount +
+		writeDriftRiskCount +
+		receiptBindingRiskCount +
+		receiptBinding.stale_count;
+	const genericRiskPricedEvidenceRiskCount =
+		specificReviewRiskCount === 0 ? riskPricedEvidenceRiskCount(input.report.risk_assessment) : 0;
 	return createVerifyCompletionVerdict({
 		verificationPlanId: input.verificationPlanId,
 		matchedIntents: input.summary.matched,
@@ -917,7 +936,8 @@ function createCompletionVerdictForResults(input: {
 		reproEvidenceContradictionCount: input.reproEvidenceContradictionCount,
 		reproEvidenceUnverifiedCount: input.reproEvidenceUnverifiedCount,
 		externalEvidenceRiskCount: input.externalEvidenceRiskCount,
-		writeDriftRiskCount: countUndeclaredWriteDrift(input.results),
+		riskPricedEvidenceRiskCount: genericRiskPricedEvidenceRiskCount,
+		writeDriftRiskCount,
 		receiptBindingRiskCount,
 		staleReceiptCount: receiptBinding.stale_count,
 		planMismatchCount: receiptBinding.plan_mismatch_count,
@@ -1150,6 +1170,7 @@ function writeVerifyRunReceipts(
 		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
 		execution_status: outputWithReceiptPaths.execution_status,
 		status: outputWithReceiptPaths.status,
+		risk_assessment: outputWithReceiptPaths.risk_assessment,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
 		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
@@ -1173,6 +1194,7 @@ function writeVerifyRunReceipts(
 		verification_plan_id: outputWithReceiptPaths.verification_plan_id,
 		execution_status: outputWithReceiptPaths.execution_status,
 		status: outputWithReceiptPaths.status,
+		risk_assessment: outputWithReceiptPaths.risk_assessment,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
 		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
@@ -1276,6 +1298,7 @@ async function createVerifyOutput(
 		verification_plan_id: verificationPlanId,
 		execution_status: status,
 		status,
+		risk_assessment: report.risk_assessment,
 		completion_verdict: completionVerdict,
 		evidence_model: evidenceModel,
 		failure_fingerprint: failureFingerprint,

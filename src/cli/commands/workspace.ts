@@ -6,6 +6,7 @@ import {
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
+import type { VerificationRiskAssessment } from '../../core/risk-priced-evidence.js';
 import type { TomlTable } from '../lib/command-contract.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -166,6 +167,7 @@ interface WorkspaceVerificationPlanRepository {
 	readonly changed_file_count: number | null;
 	readonly changed_files: readonly string[];
 	readonly verification_plan_id: string | null;
+	readonly risk_assessment: VerificationRiskAssessment | null;
 	readonly requirement_count: number;
 	readonly candidate_count: number;
 	readonly selected_intent_count: number;
@@ -536,6 +538,7 @@ function createUnavailableVerificationRepository(
 		changed_file_count: classification ? classification.summary.fileCount : null,
 		changed_files: classification ? classification.files : [],
 		verification_plan_id: null,
+		risk_assessment: null,
 		requirement_count: 0,
 		candidate_count: 0,
 		selected_intent_count: 0,
@@ -604,6 +607,7 @@ function createVerificationRepository(projectRoot: string, repository: NestedRep
 		changed_file_count: classification.summary.fileCount,
 		changed_files: classification.files,
 		verification_plan_id: createVerificationPlanId(report, contract),
+		risk_assessment: report.risk_assessment,
 		requirement_count: report.requirements.length,
 		candidate_count: report.candidates.length,
 		selected_intent_count: report.schedule.entries.length,

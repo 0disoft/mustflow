@@ -31,6 +31,10 @@ import {
 	createProjectTestSelectionPlan,
 	type TestSelectionReport,
 } from './test-selection.js';
+import {
+	createVerificationRiskAssessment,
+	type VerificationRiskAssessment,
+} from './risk-priced-evidence.js';
 
 export const CHANGE_VERIFICATION_SCHEMA_VERSION = '1';
 
@@ -76,6 +80,7 @@ export interface ChangeVerificationReport {
 	readonly requirements: readonly VerificationRequirement[];
 	readonly candidates: readonly ChangeVerificationCandidate[];
 	readonly gaps: readonly ChangeVerificationGap[];
+	readonly risk_assessment: VerificationRiskAssessment;
 	readonly schedule: VerificationSchedule;
 	readonly decision_graph: VerificationDecisionGraph;
 	readonly test_selection: TestSelectionReport;
@@ -548,6 +553,14 @@ export function createChangeVerificationReport(
 	const gaps = requirements
 		.map((requirement) => gapForRequirement(requirement, candidates))
 		.filter((gap): gap is ChangeVerificationGap => gap !== null);
+	const riskAssessment = createVerificationRiskAssessment({
+		classificationSummary: classificationReport.summary,
+		requirements,
+		candidates,
+		gaps,
+		commandContract,
+		selectedIntents: schedule.entries.map((entry) => entry.intent),
+	});
 
 	return {
 		schema_version: CHANGE_VERIFICATION_SCHEMA_VERSION,
@@ -557,6 +570,7 @@ export function createChangeVerificationReport(
 		requirements,
 		candidates,
 		gaps,
+		risk_assessment: riskAssessment,
 		schedule,
 		decision_graph: createVerificationDecisionGraph(commandContract, requirements, candidates, gaps, schedule),
 		test_selection: testSelectionPlan.report,

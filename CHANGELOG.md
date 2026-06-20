@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.72.0 - 2026-06-20
+
+### Added
+
+- Added risk-priced evidence assessment to verification plans, verify run manifests, latest run
+  pointers, evidence reports, API verification plans, and workspace verification summaries so
+  high-risk changes require explicit review evidence even when configured checks pass.
+
 ## 2.71.0 - 2026-06-20
 
 ### Changed

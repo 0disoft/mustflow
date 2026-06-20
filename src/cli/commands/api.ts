@@ -19,6 +19,7 @@ import {
 } from '../../core/change-verification.js';
 import { readUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
+import type { VerificationRiskAssessment } from '../../core/risk-priced-evidence.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { hasCliOptionToken } from '../lib/option-parser.js';
 import { getAgentContext, type AgentContext } from '../lib/agent-context.js';
@@ -266,6 +267,7 @@ interface ApiVerificationPlanOutput {
 	readonly requirements: readonly ApiVerificationPlanRequirement[];
 	readonly candidates: readonly ApiVerificationPlanCandidate[];
 	readonly gaps: readonly ApiVerificationPlanGap[];
+	readonly risk_assessment: VerificationRiskAssessment | null;
 	readonly schedule: ApiVerificationPlanSchedule | null;
 	readonly test_selection: ApiVerificationPlanTestSelection | null;
 	readonly execution_policy: ApiVerificationPlanExecutionPolicy;
@@ -864,6 +866,7 @@ function createUnavailableVerificationPlanOutput(
 		requirements: [],
 		candidates: [],
 		gaps: [],
+		risk_assessment: null,
 		schedule: null,
 		test_selection: null,
 		execution_policy: createVerificationPlanExecutionPolicy(),
@@ -923,6 +926,7 @@ function createVerificationPlanOutput(): ApiVerificationPlanOutput {
 			surfaces: gap.surfaces,
 			detail: gap.detail,
 		})),
+		risk_assessment: report.risk_assessment,
 		schedule: toVerificationPlanSchedule(report),
 		test_selection: toVerificationPlanTestSelection(report),
 		execution_policy: createVerificationPlanExecutionPolicy(),
@@ -1069,6 +1073,17 @@ function getRiskLevel(classification: ClassifyOutput | null, report: ChangeVerif
 
 	if (classification.summary.fileCount === 0) {
 		return 'none';
+	}
+
+	if (report.risk_assessment.level === 'critical') {
+		return 'high';
+	}
+	if (
+		report.risk_assessment.level === 'high' ||
+		report.risk_assessment.level === 'medium' ||
+		report.risk_assessment.level === 'low'
+	) {
+		return report.risk_assessment.level;
 	}
 
 	const reasons = new Set(classification.summary.validationReasons);

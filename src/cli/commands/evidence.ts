@@ -10,6 +10,7 @@ import {
 } from '../../core/change-verification.js';
 import { readUtf8FileInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
+import type { VerificationRiskAssessment, VerificationRiskLevel } from '../../core/risk-priced-evidence.js';
 import {
 	isRecord,
 	readCommandContract,
@@ -108,6 +109,7 @@ interface EvidencePlanReport {
 	readonly changed_files: readonly string[];
 	readonly validation_reasons: readonly string[];
 	readonly selected_intents: readonly string[];
+	readonly risk_assessment: VerificationRiskAssessment;
 	readonly requirement_count: number;
 	readonly gap_count: number;
 	readonly requirements: readonly EvidenceRequirementReport[];
@@ -149,6 +151,7 @@ interface EvidenceLatestReport {
 	readonly receipt_count: number | null;
 	readonly skipped_check_count: number;
 	readonly remaining_risk_count: number;
+	readonly risk_assessment: VerificationRiskAssessment | null;
 	readonly requirements: readonly EvidenceLatestRequirement[];
 	readonly receipts: readonly EvidenceLatestReceipt[];
 	readonly skipped_checks: readonly EvidenceGapReport[];
@@ -445,6 +448,7 @@ function createPlanFromReport(
 		changed_files: classification.files,
 		validation_reasons: classification.summary.validationReasons,
 		selected_intents: report.schedule.entries.map((entry) => entry.intent),
+		risk_assessment: report.risk_assessment,
 		requirement_count: requirements.length,
 		gap_count: gaps.length,
 		requirements,
@@ -490,6 +494,7 @@ function unavailablePlan(source: EvidencePlanSource, error: unknown, classificat
 		changed_files: classification?.files ?? [],
 		validation_reasons: classification?.summary.validationReasons ?? [],
 		selected_intents: [],
+		risk_assessment: fallbackRiskAssessment('Plan unavailable; risk assessment could not be computed.'),
 		requirement_count: 0,
 		gap_count: 0,
 		requirements: [],
@@ -518,6 +523,7 @@ function createPlanFromFile(mustflowRoot: string, planPath: string, latest: Evid
 	const schedule = isRecord(parsed.schedule) ? parsed.schedule : null;
 	const testSelection = isRecord(parsed.test_selection) ? parsed.test_selection : null;
 	const classification = isRecord(parsed.classification) ? parsed.classification : null;
+	const riskAssessment = readRiskAssessment(parsed.risk_assessment);
 	const selectedIntents = schedule
 		? uniqueSorted([
 			...readStringArrayField(schedule, 'selected_intents'),
@@ -539,6 +545,7 @@ function createPlanFromFile(mustflowRoot: string, planPath: string, latest: Evid
 		changed_files: classification ? readStringArrayField(classification, 'files') : readStringArrayField(parsed, 'files'),
 		validation_reasons: classification ? readStringArrayField(classification, 'validation_reasons') : [],
 		selected_intents: selectedIntents,
+		risk_assessment: riskAssessment ?? fallbackRiskAssessment('Plan file does not include risk_assessment.'),
 		requirement_count: requirementReports.length,
 		gap_count: gaps.length,
 		requirements: requirementReports,
@@ -593,6 +600,47 @@ function readLatestRequirement(record: Record<string, unknown>): EvidenceLatestR
 	};
 }
 
+function isRiskLevel(value: string | undefined): value is VerificationRiskLevel {
+	return value === 'low' || value === 'medium' || value === 'high' || value === 'critical';
+}
+
+function readRiskAssessment(value: unknown): VerificationRiskAssessment | null {
+	if (!isRecord(value)) {
+		return null;
+	}
+
+	const level = readString(value, 'level');
+	if (value.schema_version !== '1' || value.source !== 'change_classification_and_command_contract' || !isRiskLevel(level)) {
+		return null;
+	}
+
+	return {
+		schema_version: '1',
+		source: 'change_classification_and_command_contract',
+		level,
+		reasons: readStringArrayField(value, 'reasons'),
+		required_evidence: readStringArrayField(value, 'required_evidence'),
+		blocking_gaps: readStringArrayField(value, 'blocking_gaps'),
+		rollback_required: readBooleanField(value, 'rollback_required') ?? false,
+		human_approval_required: readBooleanField(value, 'human_approval_required') ?? false,
+		manual_review_required: readBooleanField(value, 'manual_review_required') ?? false,
+	};
+}
+
+function fallbackRiskAssessment(reason: string): VerificationRiskAssessment {
+	return {
+		schema_version: '1',
+		source: 'change_classification_and_command_contract',
+		level: 'low',
+		reasons: [reason],
+		required_evidence: ['changed_file_review'],
+		blocking_gaps: [],
+		rollback_required: false,
+		human_approval_required: false,
+		manual_review_required: false,
+	};
+}
+
 function createLatestReport(mustflowRoot: string, expectedPlanId: string | null, requested: boolean): EvidenceLatestReport {
 	if (!requested) {
 		return latestNotRequested();
@@ -616,6 +664,7 @@ function createLatestReport(mustflowRoot: string, expectedPlanId: string | null,
 
 	const evidenceModel = isRecord(parsed.evidence_model) ? parsed.evidence_model : null;
 	const completionVerdict = isRecord(parsed.completion_verdict) ? parsed.completion_verdict : null;
+	const latestRiskAssessment = readRiskAssessment(parsed.risk_assessment) ?? (evidenceModel ? readRiskAssessment(evidenceModel.risk_assessment) : null);
 	const requirements = evidenceModel ? recordArray(evidenceModel.requirements).map(readLatestRequirement) : [];
 	const receipts = evidenceModel ? recordArray(evidenceModel.receipts).map(readLatestReceipt) : [];
 	const skippedChecks = evidenceModel ? recordArray(evidenceModel.skipped_checks).map(toGapReport) : [];
@@ -632,6 +681,7 @@ function createLatestReport(mustflowRoot: string, expectedPlanId: string | null,
 		receipt_count: receipts.length,
 		skipped_check_count: skippedChecks.length,
 		remaining_risk_count: remainingRisks.length,
+		risk_assessment: latestRiskAssessment,
 		requirements,
 		receipts,
 		skipped_checks: skippedChecks,
@@ -654,6 +704,7 @@ function latestEmpty(status: EvidenceLatestReport['status']): EvidenceLatestRepo
 		receipt_count: null,
 		skipped_check_count: 0,
 		remaining_risk_count: 0,
+		risk_assessment: null,
 		requirements: [],
 		receipts: [],
 		skipped_checks: [],

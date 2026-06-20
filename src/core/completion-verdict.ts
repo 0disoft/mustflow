@@ -11,6 +11,7 @@ export interface CompletionVerdictRiskEvidence {
 	readonly receipt_binding: number;
 	readonly stale_receipt: number;
 	readonly plan_mismatch: number;
+	readonly risk_priced_evidence: number;
 }
 
 export interface CompletionVerdictReceiptBindingEvidence {
@@ -55,6 +56,7 @@ export interface CompletionVerdictEvidence {
 	readonly receipt_binding_risk_count: number;
 	readonly stale_receipt_count: number;
 	readonly plan_mismatch_count: number;
+	readonly risk_priced_evidence_risk_count: number;
 	readonly risks: CompletionVerdictRiskEvidence;
 	readonly receipt_binding: CompletionVerdictReceiptBindingEvidence;
 	readonly latest_run_status: string | null;
@@ -93,6 +95,7 @@ export interface VerifyCompletionVerdictInput {
 	readonly receiptBindingRiskCount?: number;
 	readonly staleReceiptCount?: number;
 	readonly planMismatchCount?: number;
+	readonly riskPricedEvidenceRiskCount?: number;
 	readonly criteria?: CompletionVerdictCriteriaEvidence;
 	readonly receiptBinding?: CompletionVerdictReceiptBindingEvidence;
 }
@@ -119,6 +122,7 @@ export interface DashboardCompletionVerdictInput {
 	readonly receiptBindingRiskCount?: number;
 	readonly staleReceiptCount?: number;
 	readonly planMismatchCount?: number;
+	readonly riskPricedEvidenceRiskCount?: number;
 	readonly criteria?: CompletionVerdictCriteriaEvidence;
 	readonly receiptBinding?: CompletionVerdictReceiptBindingEvidence;
 }
@@ -134,6 +138,7 @@ function createRiskEvidence(input: {
 	readonly receiptBindingRiskCount?: number;
 	readonly staleReceiptCount?: number;
 	readonly planMismatchCount?: number;
+	readonly riskPricedEvidenceRiskCount?: number;
 }): CompletionVerdictRiskEvidence {
 	return {
 		source_anchor: input.sourceAnchorRiskCount ?? 0,
@@ -146,6 +151,7 @@ function createRiskEvidence(input: {
 		receipt_binding: input.receiptBindingRiskCount ?? 0,
 		stale_receipt: input.staleReceiptCount ?? 0,
 		plan_mismatch: input.planMismatchCount ?? 0,
+		risk_priced_evidence: input.riskPricedEvidenceRiskCount ?? 0,
 	};
 }
 
@@ -322,6 +328,9 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 	if ((input.externalEvidenceRiskCount ?? 0) > 0) {
 		downgradeLimitations.push('external_evidence_requires_review');
 	}
+	if ((input.riskPricedEvidenceRiskCount ?? 0) > 0) {
+		downgradeLimitations.push('risk_priced_evidence_requires_review');
+	}
 
 	if (downgradeLimitations.length > 0) {
 		return {
@@ -341,7 +350,9 @@ function verifyStatus(input: VerifyCompletionVerdictInput): {
 										? 'stale_receipt_review_required'
 										: (input.reproEvidenceRiskCount ?? 0) > 0
 											? 'repro_evidence_missing'
-											: 'external_evidence_review_required',
+											: (input.externalEvidenceRiskCount ?? 0) > 0
+												? 'external_evidence_review_required'
+												: 'risk_priced_evidence_review_required',
 			blockers: [],
 			contradictions: [],
 			limitations: downgradeLimitations,
@@ -399,6 +410,7 @@ export function createVerifyCompletionVerdict(input: VerifyCompletionVerdictInpu
 			receipt_binding_risk_count: normalizedInput.receiptBindingRiskCount ?? 0,
 			stale_receipt_count: normalizedInput.staleReceiptCount ?? 0,
 			plan_mismatch_count: normalizedInput.planMismatchCount ?? 0,
+			risk_priced_evidence_risk_count: normalizedInput.riskPricedEvidenceRiskCount ?? 0,
 			risks,
 			receipt_binding: receiptBinding,
 			latest_run_status: null,
@@ -439,6 +451,10 @@ export function createDashboardCompletionVerdict(input: DashboardCompletionVerdi
 		status = 'partially_verified';
 		primaryReason = 'scope_diff_review_required';
 		limitations.push('scope_diff_risk_requires_review');
+	} else if ((input.riskPricedEvidenceRiskCount ?? 0) > 0) {
+		status = 'partially_verified';
+		primaryReason = 'risk_priced_evidence_review_required';
+		limitations.push('risk_priced_evidence_requires_review');
 	} else if (input.gapCount > 0) {
 		status = 'blocked';
 		primaryReason = 'verification_gaps_present';
@@ -500,6 +516,7 @@ export function createDashboardCompletionVerdict(input: DashboardCompletionVerdi
 			receipt_binding_risk_count: input.receiptBindingRiskCount ?? 0,
 			stale_receipt_count: input.staleReceiptCount ?? 0,
 			plan_mismatch_count: input.planMismatchCount ?? 0,
+			risk_priced_evidence_risk_count: input.riskPricedEvidenceRiskCount ?? 0,
 			risks,
 			receipt_binding: receiptBinding,
 			latest_run_status: input.latestRunStatus,

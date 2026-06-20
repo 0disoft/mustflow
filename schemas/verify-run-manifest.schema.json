@@ -36,6 +36,7 @@
     },
     "execution_status": { "enum": ["passed", "partial", "failed", "blocked"] },
     "status": { "enum": ["passed", "partial", "failed", "blocked"] },
+    "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
     "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
     "evidence_model": { "$ref": "#/$defs/evidenceModel" },
     "failure_fingerprint": {
@@ -184,6 +185,7 @@
             "receipt_binding_risk_count": { "type": "integer" },
             "stale_receipt_count": { "type": "integer" },
             "plan_mismatch_count": { "type": "integer" },
+            "risk_priced_evidence_risk_count": { "type": "integer" },
             "risks": { "$ref": "#/$defs/completionVerdictRisks" },
             "receipt_binding": { "$ref": "#/$defs/completionVerdictReceiptBinding" },
             "latest_run_status": { "type": ["string", "null"] }
@@ -241,7 +243,8 @@
         "write_drift": { "type": "integer" },
         "receipt_binding": { "type": "integer" },
         "stale_receipt": { "type": "integer" },
-        "plan_mismatch": { "type": "integer" }
+        "plan_mismatch": { "type": "integer" },
+        "risk_priced_evidence": { "type": "integer" }
       }
     },
     "summary": {
@@ -348,6 +351,7 @@
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceGap" }
         },
+        "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
         "remaining_risks": {
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceRemainingRisk" }
@@ -491,6 +495,41 @@
         "code": { "type": "string" },
         "severity": { "type": "string" },
         "detail": { "type": "string" }
+      }
+    },
+    "riskAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "level",
+        "reasons",
+        "required_evidence",
+        "blocking_gaps",
+        "rollback_required",
+        "human_approval_required",
+        "manual_review_required"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "source": { "const": "change_classification_and_command_contract" },
+        "level": { "enum": ["low", "medium", "high", "critical"] },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blocking_gaps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rollback_required": { "type": "boolean" },
+        "human_approval_required": { "type": "boolean" },
+        "manual_review_required": { "type": "boolean" }
       }
     },
     "reproEvidence": {

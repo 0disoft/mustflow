@@ -100,8 +100,11 @@ test('evidence changed report links verification requirements to latest evidence
 		assert.equal(firstOutput.plan.status, 'available');
 		assert.match(firstOutput.plan.verification_plan_id, /^sha256:[0-9a-f]{64}$/u);
 		assert.ok(firstOutput.plan.changed_files.includes('evidence-probe.js'));
+		assert.equal(firstOutput.plan.risk_assessment.source, 'change_classification_and_command_contract');
+		assert.ok(['low', 'medium', 'high', 'critical'].includes(firstOutput.plan.risk_assessment.level));
 		assert.ok(firstOutput.plan.requirement_count > 0);
 		assert.equal(firstOutput.latest.status, 'missing');
+		assert.equal(firstOutput.latest.risk_assessment, null);
 
 		writeLatestVerifyEvidence(projectPath, firstOutput.plan.verification_plan_id, firstOutput.plan.requirements);
 		const secondResult = runCli(projectPath, ['evidence', '--changed', '--json']);

@@ -10,7 +10,8 @@ Current schemas:
 - `context-report.schema.json`: output of `mf context --json`, including prompt-cache profiles and optional cache audit data
 - `workspace-summary.schema.json`: output of `mf api workspace-summary --json`
 - `command-catalog.schema.json`: output of `mf api command-catalog --json`
-- `verification-plan.schema.json`: output of `mf api verification-plan --changed --json`
+- `verification-plan.schema.json`: output of `mf api verification-plan --changed --json`, including
+  risk-priced evidence assessment for the changed surfaces and selected command contract
 - `latest-evidence.schema.json`: output of `mf api latest-evidence --json`
 - `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`
 - `health.schema.json`: output of `mf api health --json`
@@ -29,7 +30,8 @@ Current schemas:
 - `next-report.schema.json`: output of `mf next --json`, containing the next safe action,
   changed-file verification gaps, and read-only command recommendations
 - `evidence-report.schema.json`: output of `mf evidence --changed --json`, containing verification
-  requirements, latest bounded evidence, receipts, remaining risks, and gaps without running commands
+  requirements, risk-priced evidence assessment, latest bounded evidence, receipts, remaining risks,
+  and gaps without running commands
 - `workspace-status.schema.json`: output of `mf workspace status --json`, containing configured
   workspace roots, discovered nested repositories, and per-root command-contract readiness without
   granting command authority
@@ -38,7 +40,8 @@ Current schemas:
   strings
 - `workspace-verification-plan.schema.json`: output of
   `mf workspace verify --changed --plan-only --json`, containing per-root changed-file
-  verification plans without running commands or granting parent-to-child command authority
+  verification plans and risk-priced evidence assessment without running commands or granting
+  parent-to-child command authority
 - `dashboard-export.schema.json`: bounded static export written by `mf dashboard --export-json <path>`,
   including output policy, redaction and truncation metadata, the dashboard harness report, and
   the evidence-based completion verdict, evidence model, and conservative coverage matrix for the
@@ -69,14 +72,15 @@ Current schemas:
   `mf explain surface --json`, and `mf explain why <target> --json`. Verify explanations include the shared
   `decisionGraph` evidence model; latest-failure explanations include bounded latest-run metadata only.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`, including an
-  explicit execution aggregate, evidence-based completion verdict, and evidence model with a
-  conservative coverage matrix for the selected receipts and skipped checks
+  explicit execution aggregate, risk-priced evidence assessment, evidence-based completion verdict,
+  and evidence model with a conservative coverage matrix for the selected receipts and skipped checks
 - `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`, including
-  the same execution aggregate, completion verdict, evidence model, and coverage matrix as the verify report
+  the same execution aggregate, risk assessment, completion verdict, evidence model, and coverage
+  matrix as the verify report
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
   `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links
   changed surfaces, classification reasons, command candidates, eligibility, selected or not-selected state,
-  effects, and gaps.
+  effects, gaps, and risk-priced evidence requirements.
   Local-index command-effect graphs and command preconditions are explanation-only and cannot grant command authority.
 
 These schemas define stable, automation-facing fields. Human-readable command  

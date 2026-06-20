@@ -111,6 +111,7 @@ required_after = ["custom_verify"]
 				receipt_binding_risk_count: 0,
 				stale_receipt_count: 0,
 				plan_mismatch_count: 0,
+				risk_priced_evidence_risk_count: 0,
 				risks: {
 					source_anchor: 0,
 					scope_diff: 0,
@@ -122,6 +123,7 @@ required_after = ["custom_verify"]
 					receipt_binding: 0,
 					stale_receipt: 0,
 					plan_mismatch: 0,
+					risk_priced_evidence: 0,
 				},
 				receipt_binding: {
 					plan_bound_count: 1,
@@ -139,6 +141,8 @@ required_after = ["custom_verify"]
 			contradictions: [],
 			limitations: [],
 		});
+		assert.equal(report.risk_assessment.level, 'low');
+		assert.deepEqual(report.risk_assessment.required_evidence, ['changed_file_review']);
 		assert.deepEqual(report.summary, {
 			matched: 1,
 			ran: 1,
@@ -170,6 +174,7 @@ required_after = ["custom_verify"]
 		assert.equal(manifest.execution_status, 'passed');
 		assert.equal(manifest.status, 'passed');
 		assert.equal(manifest.status, manifest.execution_status);
+		assert.deepEqual(manifest.risk_assessment, report.risk_assessment);
 		assert.deepEqual(manifest.completion_verdict, report.completion_verdict);
 		assert.deepEqual(manifest.reasons, ['custom_verify']);
 		assert.equal(manifest.receipts[0].intent, 'verify_echo');
@@ -181,6 +186,7 @@ required_after = ["custom_verify"]
 		assert.equal(report.results[0].receipt_sha256, receiptSha256);
 		assert.equal(report.results[0].receipt.receipt_path, manifest.receipts[0].receipt_path);
 		assert.equal(report.evidence_model.source, 'mf_verify');
+		assert.deepEqual(report.evidence_model.risk_assessment, report.risk_assessment);
 		assert.equal(report.evidence_model.verification_plan_id, report.verification_plan_id);
 		assert.equal(report.evidence_model.requirements[0].reason, 'custom_verify');
 		assert.deepEqual(report.evidence_model.requirements[0].candidate_intents, ['verify_echo']);
@@ -215,6 +221,7 @@ required_after = ["custom_verify"]
 		assert.equal(latest.execution_status, 'passed');
 		assert.equal(latest.status, 'passed');
 		assert.equal(latest.status, latest.execution_status);
+		assert.deepEqual(latest.risk_assessment, report.risk_assessment);
 		assert.deepEqual(latest.completion_verdict, report.completion_verdict);
 		assert.deepEqual(manifest.evidence_model, report.evidence_model);
 		assert.deepEqual(latest.evidence_model, report.evidence_model);
@@ -258,6 +265,66 @@ required_after = ["custom_verify"]
 		assert.match(result.stdout, /실행: 1/);
 		assert.match(result.stdout, /통과: 1/);
 		assert.doesNotMatch(result.stdout, /completion verdict:/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('downgrades passing verification when risk-priced evidence requires review', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_security_change]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify a security change."
+argv = ['${process.execPath}', '-e', 'console.log("security ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["security_change"]
+`,
+		);
+
+		const result = await runCli(projectPath, ['verify', '--reason', 'security_change', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(report.execution_status, 'passed');
+		assert.equal(report.risk_assessment.level, 'high');
+		assert.equal(report.risk_assessment.manual_review_required, true);
+		assert.deepEqual(report.risk_assessment.required_evidence, [
+			'configured_mf_run_receipt',
+			'receipt_bound_to_current_plan',
+			'synchronized_contract_surfaces',
+			'remaining_risk_review',
+		]);
+		assert.equal(report.completion_verdict.status, 'partially_verified');
+		assert.equal(report.completion_verdict.primary_reason, 'risk_priced_evidence_review_required');
+		assert.equal(report.completion_verdict.evidence.risk_priced_evidence_risk_count, 1);
+		assert.equal(report.completion_verdict.evidence.risks.risk_priced_evidence, 1);
+		assert.deepEqual(report.completion_verdict.limitations, ['risk_priced_evidence_requires_review']);
+		assert.deepEqual(report.evidence_model.risk_assessment, report.risk_assessment);
+		assert.deepEqual(report.evidence_model.remaining_risks, [
+			{
+				code: 'risk_priced_evidence_requires_review',
+				severity: 'high',
+				detail: [
+					'Verification risk is high; required evidence:',
+					'configured_mf_run_receipt, receipt_bound_to_current_plan,',
+					'synchronized_contract_surfaces, remaining_risk_review.',
+				].join(' '),
+			},
+		]);
 	} finally {
 		removeTempProject(projectPath);
 	}
