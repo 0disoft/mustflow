@@ -30,8 +30,8 @@ Current schemas:
 - `next-report.schema.json`: output of `mf next --json`, containing the next safe action,
   changed-file verification gaps, and read-only command recommendations
 - `evidence-report.schema.json`: output of `mf evidence --changed --json`, containing verification
-  requirements, risk-priced evidence assessment, latest bounded evidence, receipts, remaining risks,
-  and gaps without running commands
+  requirements, risk-priced evidence assessment, latest bounded evidence, failure replay capsules,
+  receipts, remaining risks, and gaps without running commands
 - `workspace-status.schema.json`: output of `mf workspace status --json`, containing configured
   workspace roots, discovered nested repositories, and per-root command-contract readiness without
   granting command authority
@@ -62,7 +62,7 @@ Current schemas:
   skill-route golden cases with required and forbidden route expectations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a
   pointer to the latest verify run bundle, including the verify completion verdict, evidence model,
-  and coverage matrix
+  failure replay capsule, and coverage matrix
 - `handoff-validation-report.schema.json`: output of  
   `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
@@ -73,10 +73,11 @@ Current schemas:
   `decisionGraph` evidence model; latest-failure explanations include bounded latest-run metadata only.
 - `verify-report.schema.json`: output of `mf verify --reason <event> --json`, including an
   explicit execution aggregate, risk-priced evidence assessment, evidence-based completion verdict,
-  and evidence model with a conservative coverage matrix for the selected receipts and skipped checks
+  failure replay capsule, and evidence model with a conservative coverage matrix for the selected
+  receipts and skipped checks
 - `verify-run-manifest.schema.json`: `.mustflow/state/runs/verify-*/manifest.json`, including
-  the same execution aggregate, risk assessment, completion verdict, evidence model, and coverage
-  matrix as the verify report
+  the same execution aggregate, risk assessment, completion verdict, failure replay capsule,
+  evidence model, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: output of `mf verify --reason <event> --plan-only --json` and  
   `mf verify --from-classification <classify-report.json> --plan-only --json`, including the `decision_graph` that links
   changed surfaces, classification reasons, command candidates, eligibility, selected or not-selected state,

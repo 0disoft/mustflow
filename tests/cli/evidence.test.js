@@ -105,6 +105,7 @@ test('evidence changed report links verification requirements to latest evidence
 		assert.ok(firstOutput.plan.requirement_count > 0);
 		assert.equal(firstOutput.latest.status, 'missing');
 		assert.equal(firstOutput.latest.risk_assessment, null);
+		assert.equal(firstOutput.latest.failure_replay_capsule, null);
 
 		writeLatestVerifyEvidence(projectPath, firstOutput.plan.verification_plan_id, firstOutput.plan.requirements);
 		const secondResult = runCli(projectPath, ['evidence', '--changed', '--json']);

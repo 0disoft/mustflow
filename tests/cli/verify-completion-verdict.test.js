@@ -397,6 +397,7 @@ test('flags repeated unresolved verification failures for the same plan', async 
 
 	try {
 		await initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'README.md'), '# Replay fixture\n');
 		appendIntent(
 			projectPath,
 			`
@@ -433,6 +434,23 @@ required_after = ["repeat_failure"]
 		assert.equal(firstReport.completion_verdict.evidence.risks.repeated_failure, 0);
 		assert.match(firstReport.failure_fingerprint.fingerprint, /^sha256:/);
 		assert.equal(firstReport.failure_fingerprint.verification_plan_id, firstReport.verification_plan_id);
+		assert.equal(firstReport.failure_replay_capsule.source, 'mf_verify_failure');
+		assert.equal(firstReport.failure_replay_capsule.authority, 'replay_supporting_evidence');
+		assert.equal(firstReport.failure_replay_capsule.failure_fingerprint, firstReport.failure_fingerprint.fingerprint);
+		assert.deepEqual(firstReport.failure_replay_capsule.replay_commands, [
+			'mf run verify_repeat_failure',
+			'mf verify --reason repeat_failure --json',
+		]);
+		assert.equal(firstReport.failure_replay_capsule.failed_results[0].intent, 'verify_repeat_failure');
+		assert.equal(firstReport.failure_replay_capsule.failed_results[0].status, 'failed');
+		assert.equal(firstReport.failure_replay_capsule.failed_results[0].replay_command, 'mf run verify_repeat_failure');
+		assert.match(firstReport.failure_replay_capsule.failed_results[0].command_fingerprint, /^sha256:/u);
+		assert.equal(firstReport.failure_replay_capsule.affected_files[0].path, 'README.md');
+		assert.equal(firstReport.failure_replay_capsule.affected_files[0].status, 'present');
+		assert.match(firstReport.failure_replay_capsule.affected_files[0].sha256, /^sha256:/u);
+		assert.equal(firstReport.failure_replay_capsule.environment.platform_family, process.platform);
+		assert.equal(firstReport.failure_replay_capsule.privacy.raw_output_included, false);
+		assert.equal(firstReport.failure_replay_capsule.privacy.env_values_included, false);
 		assert.equal(firstReport.repeated_failure_summary.fingerprint, firstReport.failure_fingerprint.fingerprint);
 		assert.equal(firstReport.repeated_failure_summary.seen_count, 1);
 		assert.equal(firstReport.repeated_failure_summary.requires_new_evidence, false);
@@ -479,6 +497,8 @@ required_after = ["repeat_failure"]
 		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
 		assert.equal(latest.verification_plan_id, thirdReport.verification_plan_id);
 		assert.equal(latest.failure_fingerprint.fingerprint, thirdReport.failure_fingerprint.fingerprint);
+		assert.deepEqual(latest.failure_replay_capsule, thirdReport.failure_replay_capsule);
+		assert.deepEqual(latest.evidence_model.failure_replay_capsule, thirdReport.failure_replay_capsule);
 		assert.deepEqual(latest.repeated_failure_summary, thirdReport.repeated_failure_summary);
 		assert.equal(latest.completion_verdict.evidence.repeated_failure_count, 2);
 		assert.deepEqual(latest.evidence_model.remaining_risks, thirdReport.evidence_model.remaining_risks);

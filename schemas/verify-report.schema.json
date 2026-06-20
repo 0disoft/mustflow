@@ -49,6 +49,12 @@
         { "type": "null" }
       ]
     },
+    "failure_replay_capsule": {
+      "anyOf": [
+        { "$ref": "#/$defs/failureReplayCapsule" },
+        { "type": "null" }
+      ]
+    },
     "repeated_failure_summary": {
       "anyOf": [
         { "$ref": "#/$defs/repeatedFailureSummary" },
@@ -119,6 +125,10 @@
     }
   },
   "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "parallelism": {
       "type": "object",
       "additionalProperties": false,
@@ -397,6 +407,7 @@
           "items": { "$ref": "#/$defs/evidenceGap" }
         },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
+        "failure_replay_capsule": { "$ref": "#/$defs/failureReplayCapsule" },
         "remaining_risks": {
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceRemainingRisk" }
@@ -575,6 +586,176 @@
         "rollback_required": { "type": "boolean" },
         "human_approval_required": { "type": "boolean" },
         "manual_review_required": { "type": "boolean" }
+      }
+    },
+    "failureReplayCapsule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "authority",
+        "created_at",
+        "verification_plan_id",
+        "failure_fingerprint",
+        "reasons",
+        "status",
+        "replay_commands",
+        "failed_results",
+        "affected_files",
+        "affected_surfaces",
+        "risk_codes",
+        "environment",
+        "privacy",
+        "hashes"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "source": { "const": "mf_verify_failure" },
+        "authority": { "const": "replay_supporting_evidence" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "verification_plan_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "failure_fingerprint": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "reasons": { "$ref": "#/$defs/stringArray" },
+        "status": { "type": "string" },
+        "replay_commands": { "$ref": "#/$defs/stringArray" },
+        "failed_results": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/failureReplayResult" }
+        },
+        "affected_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/failureReplayFile" }
+        },
+        "affected_surfaces": { "$ref": "#/$defs/stringArray" },
+        "risk_codes": { "$ref": "#/$defs/stringArray" },
+        "environment": { "$ref": "#/$defs/failureReplayEnvironment" },
+        "privacy": { "$ref": "#/$defs/failureReplayPrivacy" },
+        "hashes": { "$ref": "#/$defs/failureReplayHashes" }
+      }
+    },
+    "failureReplayResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "status",
+        "exit_code",
+        "exit_code_class",
+        "error_kind",
+        "timed_out",
+        "receipt_path",
+        "receipt_sha256",
+        "command_fingerprint",
+        "contract_fingerprint",
+        "stdout_tail_hash",
+        "stderr_tail_hash",
+        "output_truncated",
+        "replay_command"
+      ],
+      "properties": {
+        "intent": { "type": "string" },
+        "status": { "type": "string" },
+        "exit_code": { "type": ["integer", "null"] },
+        "exit_code_class": { "type": ["string", "null"] },
+        "error_kind": { "type": ["string", "null"] },
+        "timed_out": { "type": "boolean" },
+        "receipt_path": { "type": ["string", "null"] },
+        "receipt_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "command_fingerprint": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "contract_fingerprint": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "stdout_tail_hash": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "stderr_tail_hash": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "output_truncated": { "type": "boolean" },
+        "replay_command": { "type": "string" }
+      }
+    },
+    "failureReplayFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "status", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string" },
+        "status": { "enum": ["present", "missing", "unreadable", "outside_root"] },
+        "sha256": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "failureReplayEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform_family", "arch_family", "runtimes", "env_policies", "env_allowlist", "timeout_seconds"],
+      "properties": {
+        "platform_family": { "type": ["string", "null"] },
+        "arch_family": { "type": ["string", "null"] },
+        "runtimes": { "$ref": "#/$defs/stringArray" },
+        "env_policies": { "$ref": "#/$defs/stringArray" },
+        "env_allowlist": { "$ref": "#/$defs/stringArray" },
+        "timeout_seconds": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "failureReplayPrivacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_output_included",
+        "env_values_included",
+        "receipt_paths_only",
+        "redacted",
+        "redaction_count",
+        "redaction_kinds",
+        "redaction_fields"
+      ],
+      "properties": {
+        "raw_output_included": { "const": false },
+        "env_values_included": { "const": false },
+        "receipt_paths_only": { "const": true },
+        "redacted": { "type": "boolean" },
+        "redaction_count": { "type": "integer", "minimum": 0 },
+        "redaction_kinds": { "$ref": "#/$defs/stringArray" },
+        "redaction_fields": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "failureReplayHashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capsule_fingerprint",
+        "changed_files_hash",
+        "failed_results_hash",
+        "command_fingerprints_hash",
+        "output_tails_hash"
+      ],
+      "properties": {
+        "capsule_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "changed_files_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "failed_results_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "command_fingerprints_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "output_tails_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
       }
     },
     "reproEvidence": {

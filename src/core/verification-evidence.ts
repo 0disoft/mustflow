@@ -1,6 +1,7 @@
 import type { ChangeVerificationReport } from './change-verification.js';
 import type { CompletionVerdict, CompletionVerdictStatus } from './completion-verdict.js';
 import type { ExternalEvidenceCheck, ExternalEvidenceRisk } from './external-evidence.js';
+import type { FailureReplayCapsule } from './failure-replay-capsule.js';
 import type { RepeatedFailureRisk } from './repeated-failure.js';
 import type { ReproEvidenceReport, ReproEvidenceRisk } from './repro-evidence.js';
 import type { VerificationRiskAssessment } from './risk-priced-evidence.js';
@@ -103,6 +104,7 @@ export interface VerificationEvidenceModel {
 	readonly skipped_checks: readonly VerificationEvidenceSkippedCheck[];
 	readonly gaps: readonly VerificationEvidenceGap[];
 	readonly risk_assessment?: VerificationRiskAssessment;
+	readonly failure_replay_capsule?: FailureReplayCapsule;
 	readonly remaining_risks: readonly VerificationEvidenceRemainingRisk[];
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
@@ -122,6 +124,7 @@ export interface CreateVerifyEvidenceModelInput {
 	readonly reproEvidenceRisks?: readonly ReproEvidenceRisk[];
 	readonly externalChecks?: readonly ExternalEvidenceCheck[];
 	readonly externalEvidenceRisks?: readonly ExternalEvidenceRisk[];
+	readonly failureReplayCapsule?: FailureReplayCapsule | null;
 }
 
 export interface CreateDashboardEvidenceModelInput {
@@ -416,6 +419,7 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 		skipped_checks: skippedCheckEntries(input.results),
 		gaps,
 		risk_assessment: input.report.risk_assessment,
+		...(input.failureReplayCapsule ? { failure_replay_capsule: input.failureReplayCapsule } : {}),
 		remaining_risks: [
 			...sourceAnchorRemainingRisks(sourceAnchorRisks),
 			...scopeDiffRemainingRisks(scopeDiffRisks),

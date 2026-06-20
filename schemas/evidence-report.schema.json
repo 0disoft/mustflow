@@ -206,6 +206,12 @@
             { "$ref": "#/$defs/riskAssessment" }
           ]
         },
+        "failure_replay_capsule": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "verify-report.schema.json#/$defs/failureReplayCapsule" }
+          ]
+        },
         "requirements": {
           "type": "array",
           "items": { "$ref": "#/$defs/latestRequirement" }

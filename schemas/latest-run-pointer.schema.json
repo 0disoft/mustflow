@@ -48,6 +48,12 @@
         { "type": "null" }
       ]
     },
+    "failure_replay_capsule": {
+      "anyOf": [
+        { "$ref": "verify-report.schema.json#/$defs/failureReplayCapsule" },
+        { "type": "null" }
+      ]
+    },
     "repeated_failure_summary": {
       "anyOf": [
         { "$ref": "#/$defs/repeatedFailureSummary" },
@@ -326,6 +332,7 @@
           "items": { "$ref": "#/$defs/evidenceGap" }
         },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
+        "failure_replay_capsule": { "$ref": "verify-report.schema.json#/$defs/failureReplayCapsule" },
         "remaining_risks": {
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceRemainingRisk" }

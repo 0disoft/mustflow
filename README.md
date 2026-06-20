@@ -125,6 +125,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Inspects changed files for quality-gaming patterns such as line stuffing, suppressions, test bypass markers, type escapes, and placeholder implementations with `mf quality check`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a risk-priced evidence assessment, machine-readable verification decision graph, and read-only local-index lock explanations when available.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
+- Stores bounded failure replay capsules for failed `mf verify` runs so future agents can reproduce the intent, receipt, command fingerprint, and changed-file state without copying raw command output.
 - Writes command receipts under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
 - Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, command-authority source, or source-content database.
@@ -251,7 +252,7 @@ mf run mustflow_update_apply
 | `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. Add `--suggest` to print non-runnable candidate snippets from existing command files. |
 | `mf onboard commands` | Suggest review-only command-intent snippets from package.json, Makefile, or justfile without writing files or granting command authority. |
 | `mf next` | Inspect install state, changed files, verification coverage, and command-contract gaps, then print the next safe mustflow action without running commands. |
-| `mf evidence` | Summarize changed-file verification requirements, risk-priced evidence assessment, latest evidence, receipts, remaining risks, and gaps without running commands. |
+| `mf evidence` | Summarize changed-file verification requirements, risk-priced evidence assessment, latest failure replay capsule, receipts, remaining risks, and gaps without running commands. |
 | `mf workspace status` | Inspect configured workspace roots and nested repository contract readiness without granting parent-to-child command authority. |
 | `mf workspace command-catalog` | Aggregate per-repository command intent availability with safe `mf run` entrypoints and no raw command strings. |
 | `mf workspace verify --changed --plan-only` | Aggregate per-repository changed-file verification plans without running commands or granting parent-to-child command authority. |

@@ -20,6 +20,10 @@ import {
 	type ExternalEvidenceCheck,
 } from '../../core/external-evidence.js';
 import {
+	createFailureReplayCapsule,
+	type FailureReplayCapsule,
+} from '../../core/failure-replay-capsule.js';
+import {
 	createRepeatedFailureRisks,
 	createVerificationFailureFingerprint,
 	updateRepeatedFailureState,
@@ -161,6 +165,7 @@ interface VerificationOutput {
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
+	readonly failure_replay_capsule: FailureReplayCapsule | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
 	readonly parallelism?: VerificationParallelismReport;
@@ -194,6 +199,7 @@ interface VerifyRunReceiptManifest {
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
+	readonly failure_replay_capsule: FailureReplayCapsule | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
 	readonly repro_evidence?: ReproEvidenceReport;
@@ -216,6 +222,7 @@ interface VerifyLatestRunPointer {
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
+	readonly failure_replay_capsule: FailureReplayCapsule | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
 	readonly summary: VerificationSummary;
 	readonly repro_evidence?: ReproEvidenceReport;
@@ -1108,6 +1115,15 @@ function writeVerifyRunReceipts(
 			results,
 		}),
 	});
+	const failureReplayCapsule = createFailureReplayCapsule({
+		projectRoot,
+		verificationPlanId: output.verification_plan_id,
+		status: output.status,
+		reasons: output.reasons,
+		report,
+		results,
+		failureFingerprint,
+	});
 	const repeatedFailureSummary = updateRepeatedFailureState({
 		projectRoot,
 		failureFingerprint,
@@ -1140,6 +1156,7 @@ function writeVerifyRunReceipts(
 		...output,
 		completion_verdict: completionVerdict,
 		failure_fingerprint: failureFingerprint,
+		failure_replay_capsule: failureReplayCapsule,
 		repeated_failure_summary: repeatedFailureSummary,
 		run_dir: statePaths.runDir,
 		manifest_path: statePaths.manifestPath,
@@ -1157,6 +1174,7 @@ function writeVerifyRunReceipts(
 			reproEvidenceRisks,
 			externalChecks,
 			externalEvidenceRisks,
+			failureReplayCapsule,
 		}),
 	};
 
@@ -1174,6 +1192,7 @@ function writeVerifyRunReceipts(
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
 		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
+		failure_replay_capsule: outputWithReceiptPaths.failure_replay_capsule,
 		repeated_failure_summary: outputWithReceiptPaths.repeated_failure_summary,
 		summary: outputWithReceiptPaths.summary,
 		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
@@ -1198,6 +1217,7 @@ function writeVerifyRunReceipts(
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
 		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
+		failure_replay_capsule: outputWithReceiptPaths.failure_replay_capsule,
 		repeated_failure_summary: outputWithReceiptPaths.repeated_failure_summary,
 		summary: outputWithReceiptPaths.summary,
 		...(outputWithReceiptPaths.repro_evidence ? { repro_evidence: outputWithReceiptPaths.repro_evidence } : {}),
@@ -1302,6 +1322,7 @@ async function createVerifyOutput(
 		completion_verdict: completionVerdict,
 		evidence_model: evidenceModel,
 		failure_fingerprint: failureFingerprint,
+		failure_replay_capsule: null,
 		repeated_failure_summary: null,
 		summary,
 		...(parallelismReport ? { parallelism: parallelismReport } : {}),
