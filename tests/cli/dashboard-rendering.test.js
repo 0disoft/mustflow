@@ -274,6 +274,10 @@ required_after = ["public_api_change"]
 		assert.equal(report.verification.evidence_model.coverage_matrix[0].evidence.gap_reasons.length > 1, true);
 		assert.ok(report.verification.evidence_model.gaps.some((gap) => gap.status === 'manual_only'));
 		assert.ok(report.verification.evidence_model.remaining_risks.some((risk) => risk.code === 'docs_review_pending'));
+		assert.deepEqual(report.verification.conflict_ledger, report.verification.evidence_model.conflict_ledger);
+		assert.equal(report.verification.conflict_ledger.status, 'open');
+		assert.ok(report.verification.conflict_ledger.items.some((item) => item.kind === 'verification_gap'));
+		assert.ok(report.verification.conflict_ledger.items.some((item) => item.kind === 'remaining_risk'));
 		assert.equal(report.verification.changed_file_count > 0, true);
 		assert.ok(report.verification.changed_surfaces.includes('schema_contract'));
 		assert.equal(report.verification.decision_graph_summary.root, 'verification_decision');

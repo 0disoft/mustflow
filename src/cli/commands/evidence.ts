@@ -153,6 +153,7 @@ interface EvidenceLatestReport {
 	readonly remaining_risk_count: number;
 	readonly risk_assessment: VerificationRiskAssessment | null;
 	readonly failure_replay_capsule: Readonly<Record<string, unknown>> | null;
+	readonly conflict_ledger: Readonly<Record<string, unknown>> | null;
 	readonly requirements: readonly EvidenceLatestRequirement[];
 	readonly receipts: readonly EvidenceLatestReceipt[];
 	readonly skipped_checks: readonly EvidenceGapReport[];
@@ -644,6 +645,18 @@ function readFailureReplayCapsule(value: unknown): Readonly<Record<string, unkno
 	return value;
 }
 
+function readConflictLedger(value: unknown): Readonly<Record<string, unknown>> | null {
+	if (!isRecord(value)) {
+		return null;
+	}
+
+	if (value.schema_version !== '1' || value.source !== 'verification_evidence_model' || !Array.isArray(value.items)) {
+		return null;
+	}
+
+	return value;
+}
+
 function fallbackRiskAssessment(reason: string): VerificationRiskAssessment {
 	return {
 		schema_version: '1',
@@ -685,6 +698,9 @@ function createLatestReport(mustflowRoot: string, expectedPlanId: string | null,
 	const failureReplayCapsule =
 		readFailureReplayCapsule(parsed.failure_replay_capsule) ??
 		(evidenceModel ? readFailureReplayCapsule(evidenceModel.failure_replay_capsule) : null);
+	const conflictLedger =
+		readConflictLedger(parsed.conflict_ledger) ??
+		(evidenceModel ? readConflictLedger(evidenceModel.conflict_ledger) : null);
 	const requirements = evidenceModel ? recordArray(evidenceModel.requirements).map(readLatestRequirement) : [];
 	const receipts = evidenceModel ? recordArray(evidenceModel.receipts).map(readLatestReceipt) : [];
 	const skippedChecks = evidenceModel ? recordArray(evidenceModel.skipped_checks).map(toGapReport) : [];
@@ -703,6 +719,7 @@ function createLatestReport(mustflowRoot: string, expectedPlanId: string | null,
 		remaining_risk_count: remainingRisks.length,
 		risk_assessment: latestRiskAssessment,
 		failure_replay_capsule: failureReplayCapsule,
+		conflict_ledger: conflictLedger,
 		requirements,
 		receipts,
 		skipped_checks: skippedChecks,
@@ -727,6 +744,7 @@ function latestEmpty(status: EvidenceLatestReport['status']): EvidenceLatestRepo
 		remaining_risk_count: 0,
 		risk_assessment: null,
 		failure_replay_capsule: null,
+		conflict_ledger: null,
 		requirements: [],
 		receipts: [],
 		skipped_checks: [],

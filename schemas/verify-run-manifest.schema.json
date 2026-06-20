@@ -39,6 +39,7 @@
     "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
     "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
     "evidence_model": { "$ref": "#/$defs/evidenceModel" },
+    "conflict_ledger": { "$ref": "verify-report.schema.json#/$defs/conflictLedger" },
     "failure_fingerprint": {
       "anyOf": [
         { "$ref": "#/$defs/failureFingerprint" },
@@ -359,6 +360,7 @@
         },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
         "failure_replay_capsule": { "$ref": "verify-report.schema.json#/$defs/failureReplayCapsule" },
+        "conflict_ledger": { "$ref": "verify-report.schema.json#/$defs/conflictLedger" },
         "remaining_risks": {
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceRemainingRisk" }

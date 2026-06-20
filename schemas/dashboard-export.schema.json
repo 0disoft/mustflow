@@ -198,6 +198,7 @@
           "items": { "$ref": "#/$defs/evidenceGap" }
         },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
+        "conflict_ledger": { "$ref": "verify-report.schema.json#/$defs/conflictLedger" },
         "remaining_risks": {
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceRemainingRisk" }
@@ -543,6 +544,7 @@
           "properties": {
             "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
             "evidence_model": { "$ref": "#/$defs/evidenceModel" },
+            "conflict_ledger": { "$ref": "verify-report.schema.json#/$defs/conflictLedger" },
             "changed_file_count": { "type": "integer" },
             "changed_surfaces": { "$ref": "#/$defs/stringArray" },
             "decision_graph_summary": {

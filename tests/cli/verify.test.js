@@ -176,6 +176,7 @@ required_after = ["custom_verify"]
 		assert.equal(manifest.status, manifest.execution_status);
 		assert.deepEqual(manifest.risk_assessment, report.risk_assessment);
 		assert.deepEqual(manifest.completion_verdict, report.completion_verdict);
+		assert.deepEqual(manifest.conflict_ledger, report.conflict_ledger);
 		assert.deepEqual(manifest.reasons, ['custom_verify']);
 		assert.equal(manifest.receipts[0].intent, 'verify_echo');
 		assert.equal(manifest.receipts[0].status, 'passed');
@@ -208,6 +209,9 @@ required_after = ["custom_verify"]
 		assert.equal(report.evidence_model.receipts[0].intent, 'verify_echo');
 		assert.equal(report.evidence_model.receipts[0].receipt_path, manifest.receipts[0].receipt_path);
 		assert.equal(report.evidence_model.receipts[0].receipt_sha256, receiptSha256);
+		assert.equal(report.evidence_model.conflict_ledger.status, 'clear');
+		assert.equal(report.evidence_model.conflict_ledger.item_count, 0);
+		assert.deepEqual(report.conflict_ledger, report.evidence_model.conflict_ledger);
 		assert.deepEqual(report.evidence_model.explanation.verified_by, ['all_selected_verification_passed']);
 		assert.equal(perIntentReceipt.intent, 'verify_echo');
 		assert.equal(perIntentReceipt.correlation_id, report.correlation_id);
@@ -225,6 +229,7 @@ required_after = ["custom_verify"]
 		assert.deepEqual(latest.completion_verdict, report.completion_verdict);
 		assert.deepEqual(manifest.evidence_model, report.evidence_model);
 		assert.deepEqual(latest.evidence_model, report.evidence_model);
+		assert.deepEqual(latest.conflict_ledger, report.conflict_ledger);
 		assert.equal(latest.run_dir, report.run_dir);
 		assert.equal(latest.manifest_path, report.manifest_path);
 	} finally {
@@ -325,6 +330,11 @@ required_after = ["security_change"]
 				].join(' '),
 			},
 		]);
+		assert.equal(report.conflict_ledger.status, 'open');
+		assert.equal(report.conflict_ledger.blocking_count, 1);
+		assert.equal(report.conflict_ledger.items[0].kind, 'remaining_risk');
+		assert.equal(report.conflict_ledger.items[0].summary, 'risk_priced_evidence_requires_review');
+		assert.deepEqual(report.evidence_model.conflict_ledger, report.conflict_ledger);
 	} finally {
 		removeTempProject(projectPath);
 	}

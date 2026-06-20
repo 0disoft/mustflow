@@ -95,6 +95,7 @@ export interface DashboardHarnessReport {
 	readonly verification: {
 		readonly completion_verdict: CompletionVerdict;
 		readonly evidence_model: VerificationEvidenceModel;
+		readonly conflict_ledger: VerificationEvidenceModel['conflict_ledger'];
 		readonly changed_file_count: number;
 		readonly changed_surfaces: readonly string[];
 		readonly decision_graph_summary: DashboardHarnessDecisionGraphSummary | null;
@@ -668,6 +669,7 @@ function createDashboardHarnessReport(statusValue: unknown, docsReviewValue: unk
 		verification: {
 			completion_verdict: completionVerdict,
 			evidence_model: evidenceModel,
+			conflict_ledger: evidenceModel.conflict_ledger,
 			changed_file_count: changedFileCount,
 			changed_surfaces: changedSurfaces,
 			decision_graph_summary: decisionGraphSummary,

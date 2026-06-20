@@ -56,6 +56,15 @@ function writeLatestVerifyEvidence(projectPath, planId, requirements) {
 					skipped_checks: [],
 					gaps: [],
 					remaining_risks: [],
+					conflict_ledger: {
+						schema_version: '1',
+						source: 'verification_evidence_model',
+						status: 'clear',
+						item_count: 0,
+						blocking_count: 0,
+						contradiction_count: 0,
+						items: [],
+					},
 					explanation: {
 						verified_by: ['all_selected_verification_passed'],
 						downgraded_by: [],
@@ -106,6 +115,7 @@ test('evidence changed report links verification requirements to latest evidence
 		assert.equal(firstOutput.latest.status, 'missing');
 		assert.equal(firstOutput.latest.risk_assessment, null);
 		assert.equal(firstOutput.latest.failure_replay_capsule, null);
+		assert.equal(firstOutput.latest.conflict_ledger, null);
 
 		writeLatestVerifyEvidence(projectPath, firstOutput.plan.verification_plan_id, firstOutput.plan.requirements);
 		const secondResult = runCli(projectPath, ['evidence', '--changed', '--json']);
@@ -114,6 +124,8 @@ test('evidence changed report links verification requirements to latest evidence
 		assert.equal(secondResult.status, 0, secondResult.stderr || secondResult.stdout);
 		assert.equal(secondOutput.latest.status, 'available');
 		assert.equal(secondOutput.latest.applies_to_plan, true);
+		assert.equal(secondOutput.latest.conflict_ledger.status, 'clear');
+		assert.equal(secondOutput.latest.conflict_ledger.item_count, 0);
 		assert.equal(secondOutput.status, 'verified');
 		assert.equal(secondOutput.coverage.covered_by_latest_count, secondOutput.plan.requirement_count);
 	} finally {

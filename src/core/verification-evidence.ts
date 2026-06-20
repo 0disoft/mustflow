@@ -1,4 +1,5 @@
 import type { ChangeVerificationReport } from './change-verification.js';
+import { createConflictLedger, type ConflictLedger } from './conflict-ledger.js';
 import type { CompletionVerdict, CompletionVerdictStatus } from './completion-verdict.js';
 import type { ExternalEvidenceCheck, ExternalEvidenceRisk } from './external-evidence.js';
 import type { FailureReplayCapsule } from './failure-replay-capsule.js';
@@ -106,6 +107,7 @@ export interface VerificationEvidenceModel {
 	readonly risk_assessment?: VerificationRiskAssessment;
 	readonly failure_replay_capsule?: FailureReplayCapsule;
 	readonly remaining_risks: readonly VerificationEvidenceRemainingRisk[];
+	readonly conflict_ledger: ConflictLedger;
 	readonly repro_evidence?: ReproEvidenceReport;
 	readonly external_checks?: readonly ExternalEvidenceCheck[];
 	readonly explanation: VerificationEvidenceExplanation;
@@ -402,6 +404,15 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 		files: [...gap.files],
 		surfaces: [...gap.surfaces],
 	}));
+	const remainingRisks = [
+		...sourceAnchorRemainingRisks(sourceAnchorRisks),
+		...scopeDiffRemainingRisks(scopeDiffRisks),
+		...repeatedFailureRemainingRisks(repeatedFailureRisks),
+		...validationRatchetRemainingRisks(validationRatchetRisks),
+		...reproEvidenceRemainingRisks(reproEvidenceRisks),
+		...externalEvidenceRemainingRisks(externalEvidenceRisks),
+		...(hasSpecificRemainingRisks ? [] : riskPricedEvidenceRemainingRisks(input.report.risk_assessment)),
+	];
 
 	return {
 		schema_version: '1',
@@ -420,15 +431,12 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 		gaps,
 		risk_assessment: input.report.risk_assessment,
 		...(input.failureReplayCapsule ? { failure_replay_capsule: input.failureReplayCapsule } : {}),
-		remaining_risks: [
-			...sourceAnchorRemainingRisks(sourceAnchorRisks),
-			...scopeDiffRemainingRisks(scopeDiffRisks),
-			...repeatedFailureRemainingRisks(repeatedFailureRisks),
-			...validationRatchetRemainingRisks(validationRatchetRisks),
-			...reproEvidenceRemainingRisks(reproEvidenceRisks),
-			...externalEvidenceRemainingRisks(externalEvidenceRisks),
-			...(hasSpecificRemainingRisks ? [] : riskPricedEvidenceRemainingRisks(input.report.risk_assessment)),
-		],
+		remaining_risks: remainingRisks,
+		conflict_ledger: createConflictLedger({
+			verdict: input.verdict,
+			gaps,
+			remainingRisks,
+		}),
 		...(reproEvidence ? { repro_evidence: reproEvidence } : {}),
 		...(externalChecks.length > 0 ? { external_checks: externalChecks } : {}),
 		explanation: explanationFromVerdict(input.verdict),
@@ -454,6 +462,11 @@ export function createDashboardEvidenceModel(input: CreateDashboardEvidenceModel
 	const receipts = input.latestReceipt ? [input.latestReceipt] : [];
 	const sourceAnchorRisks = input.sourceAnchorRisks ?? [];
 	const scopeDiffRisks = input.scopeDiffRisks ?? [];
+	const remainingRisks = [
+		...input.remainingRisks,
+		...sourceAnchorRemainingRisks(sourceAnchorRisks),
+		...scopeDiffRemainingRisks(scopeDiffRisks),
+	];
 
 	return {
 		schema_version: '1',
@@ -470,11 +483,12 @@ export function createDashboardEvidenceModel(input: CreateDashboardEvidenceModel
 		receipts,
 		skipped_checks: input.skippedChecks,
 		gaps: input.gaps,
-		remaining_risks: [
-			...input.remainingRisks,
-			...sourceAnchorRemainingRisks(sourceAnchorRisks),
-			...scopeDiffRemainingRisks(scopeDiffRisks),
-		],
+		remaining_risks: remainingRisks,
+		conflict_ledger: createConflictLedger({
+			verdict: input.verdict,
+			gaps: input.gaps,
+			remainingRisks,
+		}),
 		explanation: explanationFromVerdict(input.verdict),
 	};
 }

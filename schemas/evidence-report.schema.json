@@ -212,6 +212,12 @@
             { "$ref": "verify-report.schema.json#/$defs/failureReplayCapsule" }
           ]
         },
+        "conflict_ledger": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "verify-report.schema.json#/$defs/conflictLedger" }
+          ]
+        },
         "requirements": {
           "type": "array",
           "items": { "$ref": "#/$defs/latestRequirement" }

@@ -43,6 +43,7 @@
     "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
     "completion_verdict": { "$ref": "#/$defs/completionVerdict" },
     "evidence_model": { "$ref": "#/$defs/evidenceModel" },
+    "conflict_ledger": { "$ref": "#/$defs/conflictLedger" },
     "failure_fingerprint": {
       "anyOf": [
         { "$ref": "#/$defs/failureFingerprint" },
@@ -128,6 +129,80 @@
     "stringArray": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "conflictLedger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source",
+        "status",
+        "item_count",
+        "blocking_count",
+        "contradiction_count",
+        "items"
+      ],
+      "properties": {
+        "schema_version": { "const": "1" },
+        "source": { "const": "verification_evidence_model" },
+        "status": { "enum": ["clear", "open"] },
+        "item_count": { "type": "integer", "minimum": 0 },
+        "blocking_count": { "type": "integer", "minimum": 0 },
+        "contradiction_count": { "type": "integer", "minimum": 0 },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/conflictLedgerItem" }
+        }
+      }
+    },
+    "conflictLedgerItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "severity",
+        "summary",
+        "detail",
+        "sources",
+        "affected_paths",
+        "affected_surfaces",
+        "blocks_completion",
+        "resolution",
+        "owner",
+        "expires_at"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^conflict:[0-9a-f]{16}$" },
+        "kind": { "enum": ["blocker", "contradiction", "verification_gap", "remaining_risk"] },
+        "status": { "const": "open" },
+        "severity": { "enum": ["info", "warning", "error", "critical"] },
+        "summary": { "type": "string" },
+        "detail": { "type": "string" },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/conflictLedgerSource" }
+        },
+        "affected_paths": { "$ref": "#/$defs/stringArray" },
+        "affected_surfaces": { "$ref": "#/$defs/stringArray" },
+        "blocks_completion": { "type": "boolean" },
+        "resolution": { "type": "string" },
+        "owner": { "const": "user_or_maintainer" },
+        "expires_at": { "type": "null" }
+      }
+    },
+    "conflictLedgerSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "authority", "key", "paths", "surfaces"],
+      "properties": {
+        "kind": { "enum": ["completion_verdict", "verification_gap", "remaining_risk"] },
+        "authority": { "enum": ["verdict", "verification_plan", "evidence_model"] },
+        "key": { "type": ["string", "null"] },
+        "paths": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "$ref": "#/$defs/stringArray" }
+      }
     },
     "parallelism": {
       "type": "object",
@@ -408,6 +483,7 @@
         },
         "risk_assessment": { "$ref": "#/$defs/riskAssessment" },
         "failure_replay_capsule": { "$ref": "#/$defs/failureReplayCapsule" },
+        "conflict_ledger": { "$ref": "#/$defs/conflictLedger" },
         "remaining_risks": {
           "type": "array",
           "items": { "$ref": "#/$defs/evidenceRemainingRisk" }

@@ -164,6 +164,7 @@ interface VerificationOutput {
 	readonly risk_assessment: VerificationRiskAssessment;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
+	readonly conflict_ledger: VerificationEvidenceModel['conflict_ledger'];
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
 	readonly failure_replay_capsule: FailureReplayCapsule | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
@@ -198,6 +199,7 @@ interface VerifyRunReceiptManifest {
 	readonly risk_assessment: VerificationRiskAssessment;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
+	readonly conflict_ledger: VerificationEvidenceModel['conflict_ledger'];
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
 	readonly failure_replay_capsule: FailureReplayCapsule | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
@@ -221,6 +223,7 @@ interface VerifyLatestRunPointer {
 	readonly risk_assessment: VerificationRiskAssessment;
 	readonly completion_verdict: CompletionVerdict;
 	readonly evidence_model: VerificationEvidenceModel;
+	readonly conflict_ledger: VerificationEvidenceModel['conflict_ledger'];
 	readonly failure_fingerprint: VerificationFailureFingerprint | null;
 	readonly failure_replay_capsule: FailureReplayCapsule | null;
 	readonly repeated_failure_summary: RepeatedFailureSummary | null;
@@ -1152,30 +1155,32 @@ function writeVerifyRunReceipts(
 		reproEvidenceUnverifiedCount: reproEvidenceVerdictEffects.unverified,
 		externalEvidenceRiskCount: externalEvidenceRisks.length,
 	});
+	const evidenceModel = createVerifyEvidenceModel({
+		report,
+		results,
+		verificationPlanId: output.verification_plan_id,
+		verdict: completionVerdict,
+		sourceAnchorRisks,
+		scopeDiffRisks,
+		repeatedFailureRisks: finalRepeatedFailureRisks,
+		validationRatchetRisks,
+		reproEvidence,
+		reproEvidenceRisks,
+		externalChecks,
+		externalEvidenceRisks,
+		failureReplayCapsule,
+	});
 	const outputWithReceiptPaths: VerificationOutput = {
 		...output,
 		completion_verdict: completionVerdict,
+		evidence_model: evidenceModel,
+		conflict_ledger: evidenceModel.conflict_ledger,
 		failure_fingerprint: failureFingerprint,
 		failure_replay_capsule: failureReplayCapsule,
 		repeated_failure_summary: repeatedFailureSummary,
 		run_dir: statePaths.runDir,
 		manifest_path: statePaths.manifestPath,
 		results,
-		evidence_model: createVerifyEvidenceModel({
-			report,
-			results,
-			verificationPlanId: output.verification_plan_id,
-			verdict: completionVerdict,
-			sourceAnchorRisks,
-			scopeDiffRisks,
-			repeatedFailureRisks: finalRepeatedFailureRisks,
-			validationRatchetRisks,
-			reproEvidence,
-			reproEvidenceRisks,
-			externalChecks,
-			externalEvidenceRisks,
-			failureReplayCapsule,
-		}),
 	};
 
 	const manifest: VerifyRunReceiptManifest = {
@@ -1191,6 +1196,7 @@ function writeVerifyRunReceipts(
 		risk_assessment: outputWithReceiptPaths.risk_assessment,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
+		conflict_ledger: outputWithReceiptPaths.conflict_ledger,
 		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
 		failure_replay_capsule: outputWithReceiptPaths.failure_replay_capsule,
 		repeated_failure_summary: outputWithReceiptPaths.repeated_failure_summary,
@@ -1216,6 +1222,7 @@ function writeVerifyRunReceipts(
 		risk_assessment: outputWithReceiptPaths.risk_assessment,
 		completion_verdict: outputWithReceiptPaths.completion_verdict,
 		evidence_model: outputWithReceiptPaths.evidence_model,
+		conflict_ledger: outputWithReceiptPaths.conflict_ledger,
 		failure_fingerprint: outputWithReceiptPaths.failure_fingerprint,
 		failure_replay_capsule: outputWithReceiptPaths.failure_replay_capsule,
 		repeated_failure_summary: outputWithReceiptPaths.repeated_failure_summary,
@@ -1321,6 +1328,7 @@ async function createVerifyOutput(
 		risk_assessment: report.risk_assessment,
 		completion_verdict: completionVerdict,
 		evidence_model: evidenceModel,
+		conflict_ledger: evidenceModel.conflict_ledger,
 		failure_fingerprint: failureFingerprint,
 		failure_replay_capsule: null,
 		repeated_failure_summary: null,
