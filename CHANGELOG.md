@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.71.0 - 2026-06-20
+
+### Changed
+
+- Strengthened the `adapter-boundary` built-in skill so agents must identify the volatile side,
+  preserved consumer contract, adapter-only change path, and evidence that implementation changes
+  stay behind the port instead of forcing caller changes.
+
 ## 2.70.0 - 2026-06-19
 
 ### Added

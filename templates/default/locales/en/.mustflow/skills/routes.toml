@@ -640,7 +640,7 @@ applies_to_reasons = ["code_change", "security_change", "migration_change"]
 category = "data_external"
 route_type = "primary"
 priority = 55
-applies_to_reasons = ["code_change", "behavior_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "cross_cutting_code_change"]
 
 [routes."tauri-code-change"]
 category = "data_external"

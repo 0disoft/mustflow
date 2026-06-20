@@ -2,11 +2,11 @@
 mustflow_doc: skill.adapter-boundary
 locale: en
 canonical: true
-revision: 12
+revision: 13
 lifecycle: mustflow-owned
 authority: procedure
 name: adapter-boundary
-description: Apply this skill when external systems, protocols, SDKs, databases, managed database features, authentication providers, webhooks, queues, files, object storage, public URL contracts, signed upload or download URLs, CDN transform rules, HTTP delivery transports, SSE, WebTransport, caches, API response models, framework requests or responses, server actions, route handlers, edge functions, worker handlers, AI models, AI gateway usage policy, AI provider cost and usage data, browser storage, search engines, analytics tools, email platforms, no-code tools, observability backends, trace or request context, or provider data cross into or out of core logic and need ports, adapters, translation, error mapping, timeout, retry, circuit-breaker, bulkhead, idempotency, security, cost attribution, reconciliation, core-state ownership, vendor portability, or observability boundaries.
+description: Apply this skill when external systems, protocols, SDKs, databases, managed database features, authentication providers, webhooks, queues, files, object storage, public URL contracts, signed upload or download URLs, CDN transform rules, HTTP delivery transports, SSE, WebTransport, caches, API response models, framework requests or responses, server actions, route handlers, edge functions, worker handlers, AI models, AI gateway usage policy, AI provider cost and usage data, browser storage, search engines, analytics tools, email platforms, no-code tools, observability backends, trace or request context, provider data, or a volatile component implementation cross into or out of core logic and need stable ports, adapters, translation, error mapping, timeout, retry, circuit-breaker, bulkhead, idempotency, security, cost attribution, reconciliation, core-state ownership, vendor portability, change isolation, or observability boundaries.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -33,6 +33,8 @@ Keep external-world language, protocols, failures, and operational concerns out 
 
 This skill is not just a wrapper pattern. A good adapter boundary absorbs provider details, validates or maps untrusted input, classifies failures, applies timeouts and retry policy, preserves idempotency where needed, and records safe observability evidence without leaking secrets or personal data.
 
+Use the port as a change-isolation contract. Before changing the implementation behind the adapter, name which side is allowed to vary, which consumer contract must stay stable, and what evidence proves the opposite side did not have to change.
+
 <!-- mustflow-section: use-when -->
 ## Use When
 
@@ -49,6 +51,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 - Provider SDK types, framework request or response objects, database rows, external event objects, raw model responses, or provider error types are visible in domain, application, service, or use-case code.
 - Delivery-layer tools such as server actions, route handlers, Web-standard handlers, edge middleware, CLI commands, cron handlers, workers, or admin actions are about to contain pricing rules, authorization policy, payment state transitions, entitlement decisions, external provider calls, or database transactions directly.
 - A new or changed port, repository, gateway, provider module, controller, worker, webhook handler, mapper, or integration test is needed.
+- A volatile component, provider, persistence detail, delivery surface, or algorithm should change behind a port without forcing callers, consumers, tests, public DTOs, stored data, or neighboring modules to change for the same reason.
 - The boundary needs timeout, retry, rate-limit, idempotency, signature verification, duplicate handling, logging, metrics, redaction, or provider-version decisions.
 - External calls can be slow, rate-limited, duplicated, partially completed, or ambiguous, and the system needs timeout, limited retry, backoff, circuit-breaker, queue isolation, dead-letter, or reconciliation behavior.
 - AI provider calls need a single internal boundary for model selection, prompt assembly, token usage, provider-call identity, request-to-call grouping, pricing snapshot, cache-hit classification, retry cost, plan limits, and redacted observability.
@@ -60,6 +63,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 ## Do Not Use When
 
 - The change is a pure calculation, value object, internal formatter, or data-only refactor with no external boundary.
+- The task only needs broad ownership, cohesion, or future-change spread review before deciding whether a port is the right repair; use `module-boundary-review` or `change-blast-radius-review` first.
 - The only problem is hidden construction or global lookup of a dependency; use `dependency-injection` first, then return here only if external data, errors, or protocol behavior also need a boundary.
 - The operation coordinates several already-translated ports, repositories, queues, caches, or providers behind one caller-facing workflow; use `facade-pattern` for that high-level entry point while keeping this skill for each external boundary.
 - The task is a disposable one-off script that is not imported, repeated, tested, used in production, or connected to external systems.
@@ -69,6 +73,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 ## Required Inputs
 
 - The external system or protocol and whether it is inbound, outbound, or both.
+- Change-isolation ledger: the volatile side, the stable consumer side, current callers, public contracts, compatibility constraints, and the smallest adapter-only change that should avoid caller edits.
 - The internal use case, domain action, or read model that should receive translated data.
 - Existing local patterns for ports, adapters, repositories, controllers, workers, mappers, result types, retries, idempotency, logging, and tests.
 - Provider-specific risk: write effects, duplicate delivery, unknown statuses, money, time, identifiers, secrets, personal data, files, untrusted URLs, rate limits, or provider version changes.
@@ -91,6 +96,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 - The boundary direction and owner are clear enough to avoid putting provider names or external protocol terms into core logic.
+- The preserved consumer contract is clear enough to test or report. If a caller-facing type, status, event, DTO, stored shape, or public behavior must change, classify that as a public-contract or migration change instead of hiding it inside an adapter refactor.
 - If the local layout is unfamiliar, use `pattern-scout` or `codebase-orientation` before introducing new folders or naming conventions.
 - If the change also introduces hidden collaborators or concrete construction, use `dependency-injection` for that part of the work.
 - If the change alters HTTP content coding, streaming flush behavior, SSE, WebTransport, WebSocket fallback, CDN/proxy behavior, or browser delivery compatibility, use `http-delivery-streaming` for the transport contract and keep this skill focused on core-boundary containment.
@@ -105,6 +111,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 - Add mapper, error-mapper, fixture, fake-port, contract-test, and adapter-test files directly needed by the boundary.
 - Add or update assembly-root wiring when a new adapter implementation is introduced.
 - Do not copy provider APIs into ports, return provider SDK objects, expose database rows as domain objects, or add a broad catch-all `ExternalAdapter`.
+- Do not make callers change just because the adapter implementation, provider, storage shape, framework surface, or algorithm changed behind the port. If callers must change, name the missing contract or the intentional breaking change.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
@@ -112,12 +119,16 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 1. Classify the boundary.
    - Inbound: HTTP route, controller, webhook, CLI command, queue consumer, scheduler, browser event, uploaded file, or external data import.
    - Outbound: provider SDK, HTTP API, database, cache, file storage, search engine, message publisher, email/SMS/push provider, payment provider, AI model, or browser storage.
+   - Change-isolation: a volatile component or implementation detail is expected to change behind a stable internal port while the consuming side should keep the same contract.
 2. Name the internal capability in business language. Use names such as `PaymentGateway`, `EmailSender`, `ObjectStorage`, `UserStore`, `OrderReader`, `SummaryGenerator`, or `EventPublisher`. Keep provider names such as Stripe, Prisma, SendGrid, S3, OpenAI, or Redis inside adapter implementation names.
    Treat external services as processors or presenters unless the architecture explicitly accepts them as a system of record. A payment provider can process money, an email tool can send messages, a search engine can rank derived documents, and an analytics tool can visualize events, but internal code should still own the facts needed to explain customers, rights, money, files, content, and important events.
 3. Design the port from the consumer's need, not from the provider's API.
    - Keep ports small and split unrelated reasons to change.
    - Use internal input and output types only.
    - Do not include SDK types, ORM model types, HTTP request objects, provider response objects, or provider error classes.
+   - Write down the preserved consumer contract before changing implementation code: accepted input, returned output, local error kinds, side effects, timing or ordering expectations, idempotency behavior, and observable public result.
+   - Make the adapter absorb representation changes. Provider response fields, table columns, wire envelopes, framework request objects, model output shapes, cache key syntax, or algorithm-specific options should change inside adapter or mapper files before consumer code sees them.
+   - If preserving the port would require lying about new behavior, stop and classify the change as a public API, migration, event, or workflow-contract change rather than stretching the adapter.
    - For survival-path providers, define the internal operation first, such as create checkout, grant entitlement, store file, send transactional email, enqueue job, or generate summary. Let adapter implementations translate that operation to Stripe, Supabase, S3, Resend, OpenAI, or another provider.
    - Do not build a fake "replace every vendor tomorrow" abstraction. Keep the boundary thin, but ensure provider names, dashboards, response shapes, and SDK errors do not become the language of the core use case.
    - Abstract product contracts, not every technology. Prefer boundaries such as user identity, permission checks, public URLs, file objects, entitlements, usage metering, AI generation, and billing rights over broad catch-all adapters that still leak provider concepts.
@@ -131,6 +142,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
    - For EventSource, SSE, WebTransport, WebSocket, and HTTP streaming adapters, translate protocol events into internal commands or read-model notifications. Keep event ids, reconnect tokens, datagram sequence numbers, fallback transport names, and proxy quirks out of core domain decisions unless they are explicitly product concepts.
 5. Build outbound adapters as provider translators, not pass-through wrappers.
    - Create provider requests from internal input.
+   - Keep adapter-only changes adapter-only. When a provider swap, storage rewrite, framework move, model routing change, or algorithm replacement forces caller edits, treat that as evidence the port mirrored the implementation instead of the consumer need.
    - Set timeouts and retry policy where appropriate.
    - Pass idempotency keys for writes when the provider supports them.
    - Use limited retries with backoff and jitter for transient failures. Do not retry malformed requests, denied authorization, or domain rejections.
@@ -199,6 +211,8 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 13. Test at the right layer.
     - Use fake ports in use-case tests; they should not call real external systems.
     - Test adapters with provider fixtures, mock clients, or local test doubles for request mapping, response mapping, error mapping, timeout, retry, idempotency, redaction, and duplicate handling.
+    - Add or reuse preserved-consumer tests that prove callers use the port contract and do not import provider SDKs, framework request types, raw rows, adapter-only enums, or mapper internals.
+    - When the implementation behind the port changes, run or report tests that compare the old and new adapter behavior at the port boundary, not only tests that exercise the new provider happy path.
     - Add contract or sandbox tests for critical providers when local fixtures cannot catch provider drift.
 14. Verify with the narrowest configured command intents that cover changed source, tests, templates, docs, release metadata, and mustflow checks.
 
@@ -207,6 +221,7 @@ This skill is not just a wrapper pattern. A good adapter boundary absorbs provid
 
 - Core logic has no provider SDK imports, framework request or response objects, ORM clients, database rows, provider response objects, or provider error classes.
 - Ports are named in internal business language and expose only internal input, output, and error types.
+- Preserved consumer contracts are explicit, and implementation changes behind adapters do not force unrelated caller, DTO, test, workflow, or neighboring-module edits.
 - Provider dashboards, hosted settings, and SDK payloads do not become the only source for core business facts, search policy, queue failure policy, analytics event definitions, email customer state, or file ownership.
 - Public URLs, provider identity claims, image variants, entitlement decisions, and AI policy decisions are represented as product-owned contracts before provider-specific syntax reaches callers.
 - Streaming and delivery transport details such as SSE ids, WebTransport datagrams, content-coding variants, fallback paths, and CDN cache keys are contained at adapter boundaries before core logic receives product-level events or commands.
@@ -251,6 +266,7 @@ Prefer the narrowest configured test or build intent that proves the affected bo
 ## Output Format
 
 - Boundary classified
+- Change-isolation ledger and preserved consumer contract
 - Internal port or use-case input selected
 - Provider or protocol details contained
 - HTTP delivery, streaming, and fallback transport details contained when relevant
@@ -263,6 +279,7 @@ Prefer the narrowest configured test or build intent that proves the affected bo
 - Security and redaction surfaces checked
 - Observability identifier propagation and backend portability checked when relevant
 - Tests, fixtures, fakes, or contract checks added or reused
+- Evidence that implementation changes stayed behind the port, or the intentional breaking-change boundary
 - Command intents run
 - Skipped checks and reasons
 - Remaining boundary leakage or provider risk

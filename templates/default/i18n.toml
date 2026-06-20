@@ -62,13 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 171
+revision = 172
 translations = {}
 
 [documents."skill.adapter-boundary"]
 source = "locales/en/.mustflow/skills/adapter-boundary/SKILL.md"
 source_locale = "en"
-revision = 12
+revision = 13
 translations = {}
 
 [documents."skill.artifact-integrity-check"]
