@@ -1,4 +1,9 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
+import {
+	acquireActiveCommandLock,
+	LOCAL_INDEX_WRITE_EFFECTS,
+	reportActiveCommandLockConflict,
+} from '../lib/active-command-lock.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { createLocalIndex } from '../lib/local-index.js';
 import {
@@ -102,17 +107,32 @@ export async function runIndex(args: string[], reporter: Reporter, lang: CliLang
 		return 1;
 	}
 
-	const result = await createLocalIndex(resolveMustflowRoot(), {
-		dryRun: hasParsedCliOption(parsed, '--dry-run'),
-		includeSource: hasParsedCliOption(parsed, '--source'),
-		incremental: hasParsedCliOption(parsed, '--incremental'),
-	});
+	const dryRun = hasParsedCliOption(parsed, '--dry-run');
+	const projectRoot = resolveMustflowRoot();
+	const activeLock = dryRun ? null : acquireActiveCommandLock(projectRoot, 'mf index', LOCAL_INDEX_WRITE_EFFECTS);
 
-	if (hasParsedCliOption(parsed, '--json')) {
-		reporter.stdout(JSON.stringify(result, null, 2));
-		return 0;
+	if (activeLock && !activeLock.ok) {
+		reportActiveCommandLockConflict(reporter, 'mf index', activeLock.conflicts, 'mf index --help', lang);
+		return 1;
 	}
 
-	reporter.stdout(renderIndexSummary(result, lang));
-	return 0;
+	try {
+		const result = await createLocalIndex(projectRoot, {
+			dryRun,
+			includeSource: hasParsedCliOption(parsed, '--source'),
+			incremental: hasParsedCliOption(parsed, '--incremental'),
+		});
+
+		if (hasParsedCliOption(parsed, '--json')) {
+			reporter.stdout(JSON.stringify(result, null, 2));
+			return 0;
+		}
+
+		reporter.stdout(renderIndexSummary(result, lang));
+		return 0;
+	} finally {
+		if (activeLock?.ok) {
+			activeLock.handle.release();
+		}
+	}
 }

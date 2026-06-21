@@ -1,4 +1,9 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
+import {
+	acquireActiveCommandLock,
+	GENERATED_SURFACE_READ_EFFECTS,
+	reportActiveCommandLockConflict,
+} from '../lib/active-command-lock.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	formatCliOptionParseError,
@@ -57,49 +62,61 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 	}
 
 	const strict = hasParsedCliOption(options, '--strict');
-	const report = checkMustflowProjectReport(resolveMustflowRoot(), { strict });
-	const issues = report.issues;
-	const warnings = report.warnings;
-	const ok = issues.length === 0;
+	const projectRoot = resolveMustflowRoot();
+	const activeLock = acquireActiveCommandLock(projectRoot, 'mf check', GENERATED_SURFACE_READ_EFFECTS);
 
-	if (hasParsedCliOption(options, '--json')) {
-		reporter.stdout(
-			JSON.stringify(
-				{
-					ok,
-					strict,
-					issueCount: issues.length,
-					issues,
-					warningCount: warnings.length,
-					warnings,
-					issueDetails: report.issueDetails,
-				},
-				null,
-				2,
-			),
-		);
-		return ok ? 0 : 1;
+	if (!activeLock.ok) {
+		reportActiveCommandLockConflict(reporter, 'mf check', activeLock.conflicts, 'mf check --help', lang);
+		return 1;
 	}
 
-	if (ok) {
-		for (const warning of warnings) {
-			reporter.stderr(warning);
+	try {
+		const report = checkMustflowProjectReport(projectRoot, { strict });
+		const issues = report.issues;
+		const warnings = report.warnings;
+		const ok = issues.length === 0;
+
+		if (hasParsedCliOption(options, '--json')) {
+			reporter.stdout(
+				JSON.stringify(
+					{
+						ok,
+						strict,
+						issueCount: issues.length,
+						issues,
+						warningCount: warnings.length,
+						warnings,
+						issueDetails: report.issueDetails,
+					},
+					null,
+					2,
+				),
+			);
+			return ok ? 0 : 1;
 		}
 
-		if (strict) {
-			reporter.stdout(t(lang, 'check.result.strictPassed'));
+		if (ok) {
+			for (const warning of warnings) {
+				reporter.stderr(warning);
+			}
+
+			if (strict) {
+				reporter.stdout(t(lang, 'check.result.strictPassed'));
+				return 0;
+			}
+
+			reporter.stdout(t(lang, 'check.result.passed'));
 			return 0;
 		}
 
-		reporter.stdout(t(lang, 'check.result.passed'));
-		return 0;
+		for (const issue of issues) {
+			reporter.stderr(issue);
+		}
+
+		reporter.stderr(t(lang, 'check.result.failed', { count: issues.length }));
+
+		return 1;
+	} finally {
+		activeLock.handle.release();
 	}
-
-	for (const issue of issues) {
-		reporter.stderr(issue);
-	}
-
-	reporter.stderr(t(lang, 'check.result.failed', { count: issues.length }));
-
-	return 1;
 }

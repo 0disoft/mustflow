@@ -3,6 +3,11 @@ import path from 'node:path';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import {
+	acquireActiveCommandLock,
+	GENERATED_SURFACE_READ_EFFECTS,
+	reportActiveCommandLockConflict,
+} from '../lib/active-command-lock.js';
+import {
 	getAgentContext,
 	type EffectivePolicyContext,
 	type StatePolicyContext,
@@ -403,13 +408,25 @@ export function runDoctor(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 1;
 	}
 
-	const output = createDoctorOutput(hasParsedCliOption(options, '--strict'));
+	const projectRoot = resolveMustflowRoot();
+	const activeLock = acquireActiveCommandLock(projectRoot, 'mf doctor', GENERATED_SURFACE_READ_EFFECTS);
 
-	if (hasParsedCliOption(options, '--json')) {
-		reporter.stdout(JSON.stringify(output, null, 2));
-		return output.ok ? 0 : 1;
+	if (!activeLock.ok) {
+		reportActiveCommandLockConflict(reporter, 'mf doctor', activeLock.conflicts, 'mf doctor --help', lang);
+		return 1;
 	}
 
-	reporter.stdout(renderDoctorOutput(output, lang));
-	return output.ok ? 0 : 1;
+	try {
+		const output = createDoctorOutput(hasParsedCliOption(options, '--strict'));
+
+		if (hasParsedCliOption(options, '--json')) {
+			reporter.stdout(JSON.stringify(output, null, 2));
+			return output.ok ? 0 : 1;
+		}
+
+		reporter.stdout(renderDoctorOutput(output, lang));
+		return output.ok ? 0 : 1;
+	} finally {
+		activeLock.handle.release();
+	}
 }

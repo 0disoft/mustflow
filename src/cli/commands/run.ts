@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 
-import { acquireActiveRunLock, type ActiveRunLockConflict } from '../../core/active-run-locks.js';
+import { ACTIVE_RUN_LOCK_ID_ENV, acquireActiveRunLock, type ActiveRunLockConflict } from '../../core/active-run-locks.js';
 import { createCommandEnv } from '../../core/command-env.js';
 import { createCorrelationId } from '../../core/correlation-id.js';
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
@@ -488,6 +488,7 @@ export async function runRun(
 	const env = profiler.measure('environment', () =>
 		createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
 	);
+	env[ACTIVE_RUN_LOCK_ID_ENV] = activeRunLock.handle.record.run_id;
 	const writeTracker = profiler.measure('write_drift_before', () =>
 		startRunWriteTracking(projectRoot, contract, intentName, {
 			additionalDeclaredPaths: options.additionalDeclaredWritePaths,

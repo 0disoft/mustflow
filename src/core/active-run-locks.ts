@@ -23,6 +23,7 @@ import {
 const ACTIVE_LOCK_SCHEMA_VERSION = '1';
 const ACTIVE_LOCK_KIND = 'active_run_lock';
 const LOCK_ROOT_RELATIVE_PATH = '.mustflow/state/locks';
+export const ACTIVE_RUN_LOCK_ID_ENV = 'MUSTFLOW_ACTIVE_RUN_LOCK_ID';
 const LOCK_MUTEX_STALE_MS = 30_000;
 const LOCK_MUTEX_WAIT_MS = 1_000;
 const LOCK_MUTEX_SLEEP_MS = 25;
@@ -598,7 +599,11 @@ export function acquireActiveRunLock(
 	projectRoot: string,
 	contract: CommandContract,
 	intentName: string,
-	options: { readonly commandHash?: string | null } = {},
+	options: {
+		readonly commandHash?: string | null;
+		readonly ignoreRunId?: string | null;
+		readonly ignorePid?: number | null;
+	} = {},
 ): ActiveRunLockAcquireResult {
 	const effects = normalizeCommandEffects(projectRoot, contract, intentName);
 	if (effects.length === 0) {
@@ -629,7 +634,13 @@ export function acquireActiveRunLock(
 		}
 
 		const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
-		const liveRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
+		const liveRecords = records.filter((record) => {
+			if (staleRecordIds.has(record.run_id)) {
+				return false;
+			}
+
+			return record.run_id !== options.ignoreRunId || record.pid !== options.ignorePid;
+		});
 		const conflicts = findConflicts(intentName, effects, liveRecords);
 		if (conflicts.length > 0) {
 			return { ok: false, conflicts, recoveredStaleRecords: staleRecords };

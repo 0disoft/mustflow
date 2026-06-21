@@ -10,6 +10,11 @@ import {
 } from '../lib/filesystem.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File, type LockedFile } from '../lib/manifest-lock.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
+import {
+	acquireActiveCommandLock,
+	MUSTFLOW_UPDATE_APPLY_EFFECTS,
+	reportActiveCommandLockConflict,
+} from '../lib/active-command-lock.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	formatCliOptionParseError,
@@ -607,66 +612,79 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 	}
 
 	const projectRoot = resolveMustflowRoot();
-	const plan = createUpdatePlan(projectRoot);
+	const activeLock = wantsApply ? acquireActiveCommandLock(projectRoot, 'mf update --apply', MUSTFLOW_UPDATE_APPLY_EFFECTS) : null;
 
-	if (plan.error) {
-		if (wantsJson) {
-			reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), plan.error, false), requestedMode), null, 2));
-			return 1;
-		}
-
-		reporter.stderr(plan.error);
+	if (activeLock && !activeLock.ok) {
+		reportActiveCommandLockConflict(reporter, 'mf update --apply', activeLock.conflicts, 'mf update --help', lang);
 		return 1;
 	}
 
-	const outputItems = wantsDiff ? withDiffPreviews(projectRoot, plan.items) : publicPlanItems(plan.items);
-	const dryRunOutput = withMode(planOutput(outputItems, undefined, false), requestedMode);
+	try {
+		const plan = createUpdatePlan(projectRoot);
 
-	if (wantsDryRun) {
-		if (wantsJson) {
-			reporter.stdout(JSON.stringify(dryRunOutput, null, 2));
+		if (plan.error) {
+			if (wantsJson) {
+				reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), plan.error, false), requestedMode), null, 2));
+				return 1;
+			}
+
+			reporter.stderr(plan.error);
+			return 1;
+		}
+
+		const outputItems = wantsDiff ? withDiffPreviews(projectRoot, plan.items) : publicPlanItems(plan.items);
+		const dryRunOutput = withMode(planOutput(outputItems, undefined, false), requestedMode);
+
+		if (wantsDryRun) {
+			if (wantsJson) {
+				reporter.stdout(JSON.stringify(dryRunOutput, null, 2));
+				return dryRunOutput.ok ? 0 : 1;
+			}
+
+			printPlan(dryRunOutput, reporter, lang);
+			if (wantsDiff) {
+				printDiffPreviews(dryRunOutput.items, reporter, lang);
+			}
+			reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
 			return dryRunOutput.ok ? 0 : 1;
 		}
 
-		printPlan(dryRunOutput, reporter, lang);
-		if (wantsDiff) {
-			printDiffPreviews(dryRunOutput.items, reporter, lang);
-		}
-		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
-		return dryRunOutput.ok ? 0 : 1;
-	}
+		if (!dryRunOutput.ok) {
+			if (wantsJson) {
+				reporter.stdout(JSON.stringify(dryRunOutput, null, 2));
+				return 1;
+			}
 
-	if (!dryRunOutput.ok) {
-		if (wantsJson) {
-			reporter.stdout(JSON.stringify(dryRunOutput, null, 2));
+			printPlan(dryRunOutput, reporter, lang);
+			reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
 			return 1;
 		}
 
-		printPlan(dryRunOutput, reporter, lang);
-		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
-		return 1;
-	}
+		if (wantsJson) {
+			const applicableItems = plan.items.filter((item) => item.action === 'create' || item.action === 'update');
+			const applyResult = applyUpdate(projectRoot, applicableItems, {
+				stdout: () => undefined,
+				stderr: (message) => reporter.stderr(message),
+			}, lang);
+			reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), undefined, applyResult.wroteFiles), 'apply'), null, 2));
+			return 0;
+		}
 
-	if (wantsJson) {
-		const applicableItems = plan.items.filter((item) => item.action === 'create' || item.action === 'update');
-		const applyResult = applyUpdate(projectRoot, applicableItems, {
-			stdout: () => undefined,
-			stderr: (message) => reporter.stderr(message),
-		}, lang);
-		reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), undefined, applyResult.wroteFiles), 'apply'), null, 2));
+		const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang);
+
+		if (!applyResult.wroteFiles) {
+			reporter.stdout(t(lang, 'update.plan.noUpdates'));
+			reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
+			return 0;
+		}
+
+		reporter.stdout(
+			t(lang, 'update.complete', { updated: applyResult.updated, created: applyResult.created }),
+		);
 		return 0;
+	} finally {
+		if (activeLock?.ok) {
+			activeLock.handle.release();
+		}
 	}
-
-	const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang);
-
-	if (!applyResult.wroteFiles) {
-		reporter.stdout(t(lang, 'update.plan.noUpdates'));
-		reporter.stdout(t(lang, 'update.plan.noFilesWritten'));
-		return 0;
-	}
-
-	reporter.stdout(
-		t(lang, 'update.complete', { updated: applyResult.updated, created: applyResult.created }),
-	);
-	return 0;
 }

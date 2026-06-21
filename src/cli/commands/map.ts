@@ -2,6 +2,11 @@ import type { Reporter } from '../lib/reporter.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
+	acquireActiveCommandLock,
+	REPO_MAP_WRITE_EFFECTS,
+	reportActiveCommandLockConflict,
+} from '../lib/active-command-lock.js';
+import {
 	formatCliOptionParseError,
 	getParsedCliStringOption,
 	hasCliOptionToken,
@@ -94,16 +99,29 @@ export function runMap(args: string[], reporter: Reporter, lang: CliLang = 'en')
 	}
 
 	const projectRoot = resolveMustflowRoot();
-	const content = generateRepoMap(projectRoot, { depth, includeNested });
+	const activeLock = shouldWrite ? acquireActiveCommandLock(projectRoot, 'mf map --write', REPO_MAP_WRITE_EFFECTS) : null;
 
-	if (shouldWrite) {
-		writeRepoMap(projectRoot, content);
-		reporter.stdout(t(lang, 'map.wrote'));
+	if (activeLock && !activeLock.ok) {
+		reportActiveCommandLockConflict(reporter, 'mf map --write', activeLock.conflicts, 'mf map --help', lang);
+		return 1;
 	}
 
-	if (shouldPrint) {
-		reporter.stdout(content);
-	}
+	try {
+		const content = generateRepoMap(projectRoot, { depth, includeNested });
 
-	return 0;
+		if (shouldWrite) {
+			writeRepoMap(projectRoot, content);
+			reporter.stdout(t(lang, 'map.wrote'));
+		}
+
+		if (shouldPrint) {
+			reporter.stdout(content);
+		}
+
+		return 0;
+	} finally {
+		if (activeLock?.ok) {
+			activeLock.handle.release();
+		}
+	}
 }

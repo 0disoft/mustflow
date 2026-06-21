@@ -334,7 +334,7 @@ Command environments remove the project-local `node_modules/.bin` path from `PAT
 
 Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, risk-priced evidence requirements, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
 
-Each executed command run writes a run record under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr.
+Each executed command run writes a run record under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr. `latest.json` is a root-scoped convenience pointer, not session-scoped proof; in multi-agent or multi-terminal workflows, use the per-run `receipt_path` or `mf run <intent> --json` output as the evidence for a specific run.
 
 ## Language and profiles
 
