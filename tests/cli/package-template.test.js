@@ -140,6 +140,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 			`${profileName} should include structure-first-engineering`,
 		);
 		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('support-surface-advisor'),
+			`${profileName} should include support-surface-advisor`,
+		);
+		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('heuristic-candidate-selection'),
 			`${profileName} should include heuristic-candidate-selection`,
 		);

@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 205
+anchor_count: 206
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:00cbdb6808e43eab1408909641a95dd9a670fdab1c51a94165d33b4efef2d943"
+source_fingerprint: "sha256:cc359af5c9f574e88f8eaf40c85a084cbd4cdb1e5a6831776613cf4a7119c2c1"
 ---
 
 # REPO_MAP.md
@@ -639,6 +639,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/structure-first-engineering/
 
 - `.mustflow/skills/structure-first-engineering/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/support-surface-advisor/
+
+- `.mustflow/skills/support-surface-advisor/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/svelte-code-change/
 

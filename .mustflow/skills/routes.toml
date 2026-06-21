@@ -366,6 +366,12 @@ route_type = "adjunct"
 priority = 42
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
 
+[routes."support-surface-advisor"]
+category = "general_code"
+route_type = "primary"
+priority = 67
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "docs_change", "product_change", "package_metadata_change"]
+
 [routes."runtime-target-selection"]
 category = "general_code"
 route_type = "primary"

@@ -184,6 +184,7 @@ test('applies profile locale agent language and product locale preferences', () 
 		assert.match(preferences, /translation_policy = "update_source_mark_targets_stale"/);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-service-ux-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'backend-reliability-change', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'support-surface-advisor', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-render-stability', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'search-ad-content-authoring', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'service-boundary-architecture', 'SKILL.md')));
@@ -194,6 +195,7 @@ test('applies profile locale agent language and product locale preferences', () 
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'multi-agent-work-coordination', 'SKILL.md')), false);
 		assert.match(skillsIndex, /\.mustflow\/skills\/llm-service-ux-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/backend-reliability-change\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/support-surface-advisor\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-render-stability\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/search-ad-content-authoring\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/service-boundary-architecture\/SKILL\.md/);

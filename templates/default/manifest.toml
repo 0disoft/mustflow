@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.74.1"
+version = "2.74.2"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -93,6 +93,7 @@ creates = [
   ".mustflow/skills/rust-code-change/SKILL.md",
   ".mustflow/skills/runtime-target-selection/SKILL.md",
   ".mustflow/skills/structure-first-engineering/SKILL.md",
+  ".mustflow/skills/support-surface-advisor/SKILL.md",
   ".mustflow/skills/svelte-code-change/SKILL.md",
   ".mustflow/skills/tailwind-code-change/SKILL.md",
   ".mustflow/skills/tauri-code-change/SKILL.md",
@@ -331,6 +332,7 @@ minimal = [
   "task-instruction-authoring",
   "structure-discovery-gate",
   "structure-first-engineering",
+  "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
   "vertical-slice-tdd",
@@ -472,6 +474,7 @@ patterns = [
   "strategy-pattern",
   "structure-discovery-gate",
   "structure-first-engineering",
+  "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
   "vertical-slice-tdd",
@@ -631,6 +634,7 @@ oss = [
   "strategy-pattern",
   "structure-discovery-gate",
   "structure-first-engineering",
+  "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
   "vertical-slice-tdd",
@@ -775,6 +779,7 @@ team = [
   "strategy-pattern",
   "structure-discovery-gate",
   "structure-first-engineering",
+  "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
   "vertical-slice-tdd",
@@ -919,6 +924,7 @@ product = [
   "strategy-pattern",
   "structure-discovery-gate",
   "structure-first-engineering",
+  "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
   "vertical-slice-tdd",
@@ -1078,6 +1084,7 @@ library = [
   "strategy-pattern",
   "structure-discovery-gate",
   "structure-first-engineering",
+  "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
   "vertical-slice-tdd",

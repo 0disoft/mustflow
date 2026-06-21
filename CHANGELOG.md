@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.74.2 - 2026-06-21
+
+### Added
+
+- Added the `support-surface-advisor` built-in skill so agents can help users choose product
+  support surfaces as explicit maintenance contracts, name unsupported channels, and keep UI,
+  CLI, API, and automation shells thin around a shared core engine.
+
 ## 2.72.0 - 2026-06-20
 
 ### Added
