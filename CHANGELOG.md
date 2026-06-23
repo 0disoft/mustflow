@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.74.3 - 2026-06-22
+
+### Changed
+
+- Refreshed built-in skill guidance for current TypeScript 7 compiler tracks, Rust API MSRV
+  checks, Astro 6 dynamic route params, Tailwind v4 source directives, RateLimit draft status,
+  Elysia validation lifecycle, UnoCSS Wind4 migration, and external skill portability workflows.
+
 ## 2.74.2 - 2026-06-21
 
 ### Added

@@ -2,7 +2,7 @@
 mustflow_doc: skill.rust-code-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: rust-code-change
@@ -98,7 +98,8 @@ instead of treated as incidental.
      environment and verification choices that must be reported when they dominate iteration cost.
 4. Determine the Rust version contract before using newer syntax or standard-library APIs:
    - treat `rust-version`, edition, `rust-toolchain.toml`, CI matrix, docs.rs metadata, and downstream compatibility notes as the MSRV evidence ledger;
-   - do not use 1.95+ APIs such as `cfg_select!`, match `if let` guards, or `Vec::push_mut`, or 1.96+ APIs such as `assert_matches!` and `core::range`, unless the declared MSRV and toolchain path support them;
+   - before using newer APIs, build an API-specific MSRV ledger instead of relying on a broad release bucket. Examples that need exact checking include `cfg_select!`, match `if let` guards, `core::range` items, `Vec::push_mut`, `assert_matches!`, and `debug_assert_matches!`;
+   - do not use any newer API unless the declared MSRV, edition, CI matrix, docs.rs metadata, and toolchain path support that exact API;
    - keep experimental, nightly-only, target-specific, or edition-specific behavior behind explicit gates or fallbacks instead of calling it general Rust advice.
 5. Prefer flatter control flow when the MSRV supports it: use `let else` for early validation, let chains for related optional/result guards, and match `if let` guards for state-machine refinements. Remember that guard patterns do not satisfy match exhaustiveness; keep the fallback arm meaningful.
 6. In tests, prefer `assert_matches!` over `assert!(matches!(...))` when the MSRV supports it and the failed value has useful `Debug` output. Import it explicitly from `std` or `core`; do not assume it is in the prelude.
@@ -133,7 +134,7 @@ Reject or revise the patch when any of these appear without strong local justifi
 
 - New large `clone()` calls, clone-then-borrow code, loop clones, or state clones used only to appease ownership errors.
 - New `Arc<Mutex<AppState>>`-style shared bags, locks held across `.await`, or async I/O resources shared mainly by mutex.
-- New Rust 1.95+ or 1.96+ API usage without MSRV, `rust-version`, edition, toolchain, CI, or fallback evidence.
+- New version-gated Rust API usage without API-specific MSRV, `rust-version`, edition, toolchain, CI, or fallback evidence.
 - New `LazyLock` initialization for recoverable runtime configuration where permanent panic poisoning would be the wrong failure policy.
 - New `spare_capacity_mut` plus `set_len` without a narrow, proven initialization invariant.
 - New public `impl Trait`, `Deref`, GAT, workspace resolver, feature, or `rust-version` change without public API and compatibility review.

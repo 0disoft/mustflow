@@ -2,7 +2,7 @@
 mustflow_doc: skill.astro-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: astro-code-change
@@ -57,6 +57,7 @@ The default is no-hydration. Add browser JavaScript only after proving that nati
 ## Preconditions
 
 - Read Astro config, content config, and the affected route tree before changing routing, content, canonical, RSS, sitemap, or hydration behavior.
+- Identify the Astro major version before applying migration rules. Astro v6 changes must be checked against the v6 upgrade guide instead of inferred from older routing or adapter habits.
 - Identify build-time versus request-time data before adding data access.
 - Identify which UI truly needs browser JavaScript and which UI truly needs framework state before adding a framework island.
 - Treat file movement under `src/pages`, route parameter changes, and content slug changes as URL contract changes.
@@ -73,6 +74,7 @@ The default is no-hydration. Add browser JavaScript only after proving that nati
 ## Procedure
 
 1. Read package metadata and Astro config first. Record Astro version, framework integrations, `site`, `base`, `trailingSlash`, `output`, adapter, sitemap integration, MDX integration, and any framework integration.
+   - For Astro v6 migrations, check removed or changed surfaces before editing call sites: `Astro.glob()` replacement with `import.meta.glob()` or content collections, `.cjs` and `.cts` config removal, `astro:ssr-manifest`, `RouteData.generate()`, old adapter hooks, old `NodeApp` paths, Zod 4 schema effects, and numeric dynamic route params.
 2. Read `src/content.config.*` when content, docs, blog, RSS, sitemap, canonical, or route generation is involved. Record each collection name, loader base, schema fields, slug/id policy, draft field, and date fields.
 3. Build a route ledger from `src/pages`: static pages, dynamic pages, rest routes, endpoints, prerendered routes, on-demand routes, and possible route-priority collisions.
 4. Classify the change: static route, dynamic route, endpoint, content collection, integration, adapter, SSR/on-demand, island, script, asset, RSS, sitemap, canonical, or docs/content.
@@ -100,7 +102,7 @@ The default is no-hydration. Add browser JavaScript only after proving that nati
 
 - In static output, every dynamic route must have `getStaticPaths`.
 - In on-demand or SSR dynamic routes, do not use `getStaticPaths`; read `Astro.params`, perform the request-time lookup, and handle missing entries with an explicit 404 or redirect path.
-- `getStaticPaths` params must match bracket parameter names exactly and must be strings.
+- `getStaticPaths` params must match bracket parameter names exactly. Param values must be strings, except rest parameters may use `undefined`; numeric params are invalid in Astro 6.
 - Custom slugs containing `/` require a rest route such as a catch-all route. Do not force slash-containing slugs into a single named parameter route.
 - Treat changes under `src/pages` as public URL changes, including endpoint names and extension-bearing endpoint paths.
 - Check route priority when adding static routes, named parameters, rest parameters, catch-all routes, and endpoints that could claim the same URL.
@@ -132,7 +134,7 @@ Reject or revise a change when:
 - `client:only` is used because SSR broke, instead of isolating the browser-only dependency.
 - Static output dynamic routes lack `getStaticPaths`.
 - On-demand or SSR dynamic routes use `getStaticPaths`.
-- Route params do not match bracket names or are not strings.
+- Route params do not match bracket names, non-rest params are not strings, rest params use values other than strings or `undefined`, or Astro 6 routes still rely on numeric params.
 - A content slug with `/` is mapped through a non-rest route.
 - Draft filtering differs between lists, detail pages, RSS, sitemap, or pagination.
 - Canonical URLs are built by ad hoc string concatenation.

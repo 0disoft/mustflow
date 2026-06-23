@@ -2,11 +2,11 @@
 mustflow_doc: skill.elysia-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: elysia-code-change
-description: Apply this skill when Elysia routes, schemas, plugins, decorators, derives, guards, auth, error handling, OpenAPI output, Eden clients, or Bun server behavior are created or changed.
+description: Apply this skill when Elysia routes, schemas, plugins, decorators, derives, resolves, guards, auth, error handling, OpenAPI output, Eden clients, or Bun server behavior are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -33,7 +33,7 @@ Preserve Elysia schema-first runtime validation, type inference, plugin, auth, e
 <!-- mustflow-section: use-when -->
 ## Use When
 
-- `new Elysia`, route methods, `t.Object`, request or response schemas, `.use`, `.guard`, `.derive`, `.decorate`, `.onError`, auth middleware, OpenAPI, Eden, or Bun server tests change.
+- `new Elysia`, route methods, `t.Object`, request or response schemas, `.use`, `.guard`, `.derive`, `.resolve`, `.decorate`, `.onError`, auth middleware, OpenAPI, Eden, or Bun server tests change.
 - The task adds API routes, plugins, validators, error envelopes, authentication, or generated client contracts.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -59,7 +59,8 @@ Preserve Elysia schema-first runtime validation, type inference, plugin, auth, e
 
 - Define request and response schemas with the route.
 - Keep framework context at the route boundary and move only framework-free business logic into services.
-- Preserve plugin, decorator, derive, and store inference through Elysia chaining.
+- Preserve plugin, decorator, derive, resolve, and store inference through Elysia chaining.
+- Use `.derive` only for intentional pre-validation context shaping. Use `.resolve` by default for auth, session, user, tenant, permission, or other request-derived values that depend on validated headers, body, query, or params.
 - Keep OpenAPI and Eden clients aligned with route schemas when present.
 
 <!-- mustflow-section: procedure -->
@@ -70,9 +71,14 @@ Preserve Elysia schema-first runtime validation, type inference, plugin, auth, e
 3. Add or update schemas for every external input and meaningful response status.
 4. Do not annotate handlers with broad `any`, duplicated manual interfaces, or imported `Context` types that erase inference.
 5. Keep request-specific state out of module-level mutable globals.
-6. Centralize expected error envelope and auth failure behavior.
-7. If OpenAPI or Eden is used, confirm the generated contract follows the schema change.
-8. Choose configured verification intents that cover types, server boot, route happy path, validation failure, auth failure, OpenAPI, and Eden inference when available.
+6. For request-derived context, choose the lifecycle hook by validation dependency:
+   - use `.derive` only when transforming raw request context before validation is intentional;
+   - use `.guard()` to apply schema and auth-related validation around a route group;
+   - use `.resolve()` inside the validated chain for user, session, tenant, permission, or other values that depend on validated input;
+   - check the order between `.resolve()` and `beforeHandle` before relying on a value in an auth or permission hook.
+7. Centralize expected error envelope and auth failure behavior.
+8. If OpenAPI or Eden is used, confirm the generated contract follows the schema change.
+9. Choose configured verification intents that cover types, server boot, route happy path, validation failure, auth failure, OpenAPI, and Eden inference when available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -80,7 +86,7 @@ Preserve Elysia schema-first runtime validation, type inference, plugin, auth, e
 - Schemas, runtime validation, and inferred types remain one contract.
 - Error and auth responses are consistent.
 - OpenAPI and Eden impact is known.
-- No route relies on unvalidated input or erased context types.
+- No route relies on unvalidated input, pre-validation auth context, or erased context types.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -101,6 +107,7 @@ Report missing route, OpenAPI, or Eden verification intents when relevant.
 
 - If schema and manual types diverge, make schema the source of truth or report the competing contract.
 - If plugin inference breaks after extraction, return context-sensitive code to the Elysia chain or narrow the extraction.
+- If auth or session state is derived before validation through `.derive`, move it to a validated `.guard()` plus `.resolve()` chain or report the validation-order risk.
 - If auth behavior is unclear, stop the route change and inspect or request the auth contract.
 
 <!-- mustflow-section: output-format -->

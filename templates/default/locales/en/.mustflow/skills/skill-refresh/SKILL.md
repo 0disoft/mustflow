@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-refresh
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-refresh
@@ -65,7 +65,7 @@ source freshness, routing metadata, helper-file alignment, and verification evid
 - Existing behavior contract: trigger, non-trigger, required inputs, allowed edits, outputs,
   command intents, forbidden actions, runtime assumptions, and package boundaries.
 - Runtime target: mustflow-native, Codex-native, Claude-native, portable Agent Skills compatible,
-  or intentionally product-specific.
+  GitHub CLI `gh skill` lifecycle, or intentionally product-specific.
 - Source ledger: repository-owned sources, official upstream sources, external recommendations,
   checked date or revision, and any source that could not be refreshed.
 - Package ledger: `scripts/`, `references/`, `assets/`, relative links, UI metadata, route metadata,
@@ -97,6 +97,8 @@ source freshness, routing metadata, helper-file alignment, and verification evid
 - Do not copy external prose verbatim without a provenance and license decision.
 - Do not add product-specific fields to a portable skill unless the runtime mode intentionally
   supports them.
+- Do not make a mustflow-native canonical skill pretend to be portable by deleting mustflow
+  lifecycle metadata. Export portable Agent Skills as a derived profile instead.
 - Do not write research logs, broad changelogs, or freshness ledgers into the executable skill
   package unless they are required inputs for the skill's operation.
 
@@ -136,6 +138,15 @@ source freshness, routing metadata, helper-file alignment, and verification evid
 6. Decide runtime mode before editing frontmatter or fields. Keep mustflow-native metadata for
    mustflow skills. For cross-runtime skills, separate portable guidance from Codex-native,
    Claude-native, or other product-specific extensions instead of mixing incompatible fields.
+   - mustflow-native canonical skills may keep `mustflow_doc`, `locale`, `canonical`, `revision`,
+     `lifecycle`, `authority`, and structured `metadata.command_intents`.
+   - portable Agent Skills exports should contain only portable top-level fields such as `name`,
+     `description`, optional `license`, optional `compatibility`, optional string-to-string
+     `metadata`, and optional `allowed-tools`.
+   - When exporting portable skills, serialize mustflow-only fields into namespaced string metadata
+     only when useful, convert arrays such as `command_intents` to JSON strings or omit them, and
+     run portable validation only against the exported artifact.
+   - Do not run portable fixers against canonical mustflow sources.
 7. Treat `description` as routing code. Put the strongest positive trigger and the most important
    exclusion near the front. Avoid generic descriptions that overlap with broad authoring, docs, or
    review skills.
@@ -157,6 +168,10 @@ source freshness, routing metadata, helper-file alignment, and verification evid
     laundering, hidden network use, credential access, absolute paths, home-directory scanning,
     prompt injection, symlink escape, broad file writes, or mismatch between prose and script
     behavior.
+    For GitHub CLI skill flows, compare installed tree SHA, current upstream tree SHA, and local
+    modifications as a three-way refresh problem. Treat `gh skill update --dry-run` as read-only
+    evidence when available, and never make `--force` automatic for mustflow-owned or modified
+    skills.
 13. Preserve user edits through a three-way mindset:
     - old baseline;
     - current user-edited skill;
@@ -209,6 +224,8 @@ package output, public docs, or release-sensitive template output changed.
 
 - If the target runtime cannot be identified, keep the refresh portable and report product-specific
   claims as deferred.
+- If portable Agent Skills compatibility is requested, validate a derived export profile instead of
+  weakening the mustflow-native canonical schema.
 - If a source cannot be refreshed and the claim is high drift, omit the claim or mark it as
   snapshot-only instead of embedding it as current.
 - If route overlap is detected, tighten `description`, Use When, and Do Not Use When before adding

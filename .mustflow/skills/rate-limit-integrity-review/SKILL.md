@@ -2,7 +2,7 @@
 mustflow_doc: skill.rate-limit-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: rate-limit-integrity-review
@@ -209,9 +209,12 @@ contract, observability, and operator escape hatch?"
     - Emit a machine-readable error code and `Retry-After` when a well-behaved client can wait.
     - If `Retry-After` and `RateLimit` hints disagree, `Retry-After` should govern immediate client
       behavior.
-    - Standards-track `RateLimit` and `RateLimit-Policy` headers may coexist with legacy
-      `X-RateLimit-*`, but do not assume every client or proxy gives legacy headers the same
-      meaning.
+    - `RateLimit` and `RateLimit-Policy` are defined by the active IETF Internet-Draft
+      `draft-ietf-httpapi-ratelimit-headers-11`, intended for Standards Track but not yet an RFC.
+      Treat their structured field details as draft-revision-specific, and refresh the draft before
+      writing durable standards claims.
+    - `RateLimit` and `RateLimit-Policy` may coexist with legacy `X-RateLimit-*`, but do not assume
+      every client or proxy gives legacy headers the same meaning.
     - Do not reveal exact internal capacity, shard counts, provider quotas, attack thresholds, or
       sensitive account state in public responses.
     - During active abuse, silent drop, generic denial, or coarser hints can be safer than a perfect

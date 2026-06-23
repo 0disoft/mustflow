@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-authoring
 locale: en
 canonical: true
-revision: 8
+revision: 9
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-authoring
@@ -75,6 +75,7 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 8. Reference command intent names only. Do not include raw shell command blocks or claim that the skill authorizes command execution.
 9. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
 10. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
+11. If a portable Agent Skills artifact is part of the task, create or validate it as a derived export, not as the mustflow-native canonical source. Use portable-only top-level fields and string-to-string metadata. A `gh skill publish --dry-run` check may validate the export artifact when available, but `gh skill publish --fix` must be limited to the export directory because it can remove installed provenance metadata and mustflow-native fields.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -109,6 +110,7 @@ If the skill changes tests or behavior-sensitive template output, also use the r
 - Quality gate result and overlap decision
 - Command intents referenced
 - Template or localization metadata updated
+- Portable export validation result when relevant
 - Command intents run
 - Skipped command intents and reasons
 - Remaining overlap, translation, or validation risks

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 173
+revision = 174
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -356,7 +356,7 @@ translations = {}
 [documents."skill.rate-limit-integrity-review"]
 source = "locales/en/.mustflow/skills/rate-limit-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.idempotency-integrity-review"]
@@ -469,13 +469,13 @@ translations = {}
 [documents."skill.dependency-upgrade-review"]
 source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -517,7 +517,7 @@ translations = {}
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.auth-permission-change"]
@@ -571,7 +571,7 @@ translations = {}
 [documents."skill.elysia-code-change"]
 source = "locales/en/.mustflow/skills/elysia-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.flutter-code-change"]
@@ -625,7 +625,7 @@ translations = {}
 [documents."skill.rust-code-change"]
 source = "locales/en/.mustflow/skills/rust-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.runtime-target-selection"]
@@ -655,7 +655,7 @@ translations = {}
 [documents."skill.tailwind-code-change"]
 source = "locales/en/.mustflow/skills/tailwind-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.tauri-code-change"]
@@ -667,13 +667,13 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.unocss-code-change"]
 source = "locales/en/.mustflow/skills/unocss-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.service-boundary-architecture"]
@@ -781,7 +781,7 @@ translations = {}
 [documents."skill.external-skill-intake"]
 source = "locales/en/.mustflow/skills/external-skill-intake/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.github-contribution-quality-gate"]
@@ -936,13 +936,13 @@ translations = {}
 [documents."skill.skill-refresh"]
 source = "locales/en/.mustflow/skills/skill-refresh/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.skill-authoring"]
 source = "locales/en/.mustflow/skills/skill-authoring/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.task-instruction-authoring"]

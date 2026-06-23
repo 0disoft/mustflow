@@ -2,7 +2,7 @@
 mustflow_doc: skill.unocss-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: unocss-code-change
@@ -56,7 +56,7 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 
 - Confirm extraction targets before adding utilities or moving class maps.
 - Identify whether the project uses default pipeline extraction, explicit `content.pipeline.include`, `@unocss-include`, safelist, or custom extractors.
-- Identify whether the project uses the classic preset stack, `presetWind4`, theme compatibility tokens, shortcut layers, variant groups, icons, attributify, directives, or framework-specific plugin order.
+- Identify whether the project uses the classic preset stack, `presetWind4`, theme compatibility tokens, shortcut layers, variant groups, icons, attributify, directives, reset packages, compatibility presets, or framework-specific plugin order.
 - Identify whether shortcuts, rules, variants, or safelist entries are design-system vocabulary or one-off hiding places.
 - If the config is unclear, do not introduce attributify, custom rules, custom variants, broad shortcuts, or broad safelists. Use plain `class` utilities with complete static strings.
 
@@ -82,7 +82,16 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 6. Keep safelists small, finite, named, and bounded by approved token lists and maximum generated count. Treat feature-local safelists over 50 classes, shared safelists over 200 classes, or total safelists over 300 classes as design/extraction failures unless explicitly justified.
 7. Do not generate safelists from whole theme objects, full color palettes, all shades, all spacing values, all breakpoints, or broad property and variant multiplication.
 8. Use token allowlists before writing shortcuts, rules, variants, or safelists. Do not use every theme key as an allowed product value.
-9. For Wind4 migration, verify preset choice, theme token migration, preflight ownership, variant behavior, and compatibility with existing Tailwind-like class vocabulary before changing utilities at call sites.
+9. For Wind4 migration, verify preset choice, theme token migration, reset ownership, variant behavior, and compatibility with existing Tailwind-like class vocabulary before changing utilities at call sites. Use a token rename matrix instead of vague "theme review":
+   - `fontFamily` -> `font`;
+   - `borderRadius` -> `radius`;
+   - `easing` -> `ease`;
+   - `breakpoints` -> `breakpoint`;
+   - `verticalBreakpoints` -> `verticalBreakpoint`;
+   - `boxShadow` -> `shadow`;
+   - size scale families that now share spacing -> `spacing`;
+   - `container.maxWidth` -> `containers.maxWidth`.
+   Also check duplicate resets from existing `@unocss/reset` or `normalize.css`, remove `presetRemToPx` when Wind4 covers the behavior internally, and do not combine `presetLegacyCompat` with Wind4 OKLCH color behavior.
 10. Use `extendTheme` or equivalent merge hooks when preserving existing theme tokens matters. Do not replace the whole theme object if the local config expects extension semantics.
 11. Add shortcuts only for repeated product primitives. Prefer static shortcuts when all combinations are known. Dynamic shortcuts must be anchored, token allowlisted, and free of broad catch-all groups.
 12. Do not use shortcuts as one-off wrappers for long class strings in a single screen.
@@ -131,7 +140,9 @@ Preserve UnoCSS extraction, preset, shortcut, rule, safelist, blocklist, variant
 <!-- mustflow-section: preset-icon-shadow-policy -->
 ## Preset, Icon, And Shadow DOM Policy
 
-- Wind4 migration must preserve theme tokens, preflight expectations, variant semantics, and generated CSS size before call-site cleanup.
+- Wind4 migration must preserve theme tokens, reset ownership, variant semantics, generated CSS size, and color behavior before call-site cleanup.
+- Wind4 includes Tailwind 4-style reset behavior. Existing `@unocss/reset` or `normalize.css` imports need duplicate-reset review.
+- Wind4 migration should remove obsolete `presetRemToPx` usage and avoid `presetLegacyCompat` when OKLCH color compatibility matters.
 - Icon utilities are production assets. Verify the chosen icon collections, loader ownership, package footprint, currentColor inheritance, accessibility label path, and whether dynamic icon names require a finite safelist.
 - Shadow DOM and web component styles need an explicit injection owner. Do not assume global utility CSS reaches closed or separately injected roots.
 - Framework plugin order is part of extraction. Svelte, Vue, Astro, MDX, transformers, variant-group handling, and attributify can change whether the token exists before UnoCSS scans it.
@@ -158,7 +169,7 @@ Reject the change when:
 - Custom variants accept arbitrary selectors or themes.
 - Blocklist removes utilities without an actionable developer-facing signal.
 - JSX/TSX attributify lacks prefix, transformer, or type support.
-- Wind4 migration replaces theme or preflight behavior without compatibility review.
+- Wind4 migration replaces theme, reset, color, or preflight behavior without compatibility review.
 - Icon utilities accept unbounded runtime icon names.
 - Shadow DOM utility usage has no style injection owner.
 

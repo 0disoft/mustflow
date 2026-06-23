@@ -2,7 +2,7 @@
 mustflow_doc: skill.tailwind-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: tailwind-code-change
@@ -34,7 +34,7 @@ Preserve Tailwind static class detection, design tokens, bounded variants, respo
 ## Use When
 
 - Tailwind `class`, `className`, `@apply`, `@theme`, `@source`, `@reference`, config, source scanning, safelist, theme tokens, variants, arbitrary values, or component class composition change.
-- The task touches Tailwind v3/v4 migration, CSS-first configuration, token addition, responsive modifiers, state modifiers, `clsx`/`cn`, CVA-style variant helpers, `source(none)`, `@source inline`, `@source not inline`, or production CSS generation risk.
+- The task touches Tailwind v3/v4 migration, CSS-first configuration, token addition, responsive modifiers, state modifiers, `clsx`/`cn`, CVA-style variant helpers, `source(none)`, `@source inline()`, `@source not inline()`, path `@source`, path `@source not`, or production CSS generation risk.
 - Component APIs accept status, tone, intent, size, column count, color, spacing, or class-related props that affect Tailwind utilities.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -57,7 +57,8 @@ Preserve Tailwind static class detection, design tokens, bounded variants, respo
 
 - Confirm how Tailwind detects source classes before changing class composition, helper-file location, or CSS entry imports.
 - Identify whether the project is using Tailwind v3 config safelists or Tailwind v4 CSS source directives.
-- Identify whether Tailwind v4 source detection is automatic, disabled with `source(none)`, extended with `@source`, or narrowed with `@source not inline`.
+- Identify whether Tailwind v4 source detection is automatic, disabled with `source(none)`, extended with path `@source`, narrowed with path `@source not`, expanded with candidate `@source inline()`, or narrowed with candidate `@source not inline()`.
+- For Tailwind v4 migration, check browser support floors before recommending v4. If the project still supports browsers below Safari 16.4, Chrome 111, or Firefox 128, keep v3.4 as the safer maintenance track unless project policy changes.
 - Identify tokens, variant helpers, and semantic visual states before adding arbitrary values or raw colors.
 - Confirm whether affected components are local one-offs, shared components, or public design-system surfaces.
 
@@ -67,8 +68,9 @@ Preserve Tailwind static class detection, design tokens, bounded variants, respo
 - Use full static class strings that the build can detect.
 - Use existing theme tokens before arbitrary values or raw colors.
 - Use static maps, component extraction, or variant helpers for finite repeated variants.
-- Use safelists or `@source inline` only for finite class candidates that cannot appear in scanned source.
-- Use `@source not inline` or equivalent source policy to block known false-positive candidates when generated CSS would otherwise include unwanted utilities.
+- Use safelists or `@source inline()` only for finite class candidates that cannot appear in scanned source.
+- Use `@source not inline()` to block known false-positive class candidates when generated CSS would otherwise include unwanted utilities.
+- Use path `@source` to add scan sources and path `@source not` to exclude scan sources. Do not confuse those with candidate safelist or blocklist directives.
 - Use `@reference` when component-scoped styles need access to Tailwind theme variables, custom utilities, or variants without duplicating emitted CSS.
 - Use inline styles plus CSS variables for unbounded runtime values such as tenant, database, or user-provided colors.
 - Keep hover, focus-visible, disabled, aria/data, dark, and motion variants aligned with existing component behavior.
@@ -78,12 +80,12 @@ Preserve Tailwind static class detection, design tokens, bounded variants, respo
 
 1. Read Tailwind config or CSS entry, scanning rules, theme tokens, helpers, and nearby components.
 2. Classify the change: token, utility usage, dynamic variant, component extraction, responsive state, accessibility state, or migration.
-3. For Tailwind v4, classify CSS-first configuration before touching utility usage: `@theme`, `@utility`, `@variant`, `@custom-variant`, `@source`, `@source inline`, `@source not inline`, `source(none)`, and `@reference`. Do not apply v3 config instincts to a v4 CSS entry without checking the project pattern.
+3. For Tailwind v4, classify CSS-first configuration before touching utility usage: `@theme`, `@utility`, `@variant`, `@custom-variant`, path `@source`, path `@source not`, candidate `@source inline()`, candidate `@source not inline()`, `source(none)`, and `@reference`. Do not apply v3 config instincts to a v4 CSS entry without checking the project pattern.
 4. Treat every Tailwind class as a complete build-time token. Reject runtime interpolation, concatenation, array joins, or fragment assembly for utilities such as color, spacing, grid count, span, tone, or arbitrary values.
 5. For finite choices, use a static map with semantic keys and full class strings. Good keys describe UI meaning such as `danger`, `muted`, `compact`, or `featured`; bad keys store Tailwind fragments such as `red`, `600`, or `cols-3` for later assembly.
 6. Use a CVA-style variant helper only when a shared component has multiple variant axes, defaults, or compound variants. The helper must still contain full static class strings.
 7. Use safelists only as a last resort for finite candidates that cannot be present in source files. Tailwind v4 projects should express this through the project's CSS source policy; Tailwind v3 maintenance projects may use config safelists when that is the existing pattern. Do not safelist broad palettes or unbounded ranges to avoid fixing a bad component API.
-8. Keep `@source inline` bounded, named, and close to the CSS entry policy. If `source(none)` disables automatic detection, require explicit source includes for every package, app, and external component source that owns utilities. Use `@source not inline` for known false positives instead of relying on accidental absence.
+8. Keep `@source inline()` bounded, named, and close to the CSS entry policy. If `source(none)` disables automatic detection, require explicit path `@source` includes for every package, app, and external component source that owns utilities. Use `@source not inline()` for known false-positive class candidates, and path `@source not` for excluded scan locations, instead of relying on accidental absence.
 9. Use inline style plus a CSS variable bridge for unbounded runtime values from databases, APIs, tenants, CMS content, or user input. Do not try to mint Tailwind class names from unbounded values.
 10. Treat arbitrary values as escape hatches. Allow them for one-off asset alignment, complex grid templates, complex calculations, local CSS variable assignment, or values that cannot be expressed with regular utilities.
 11. Reject arbitrary raw colors in component markup, arbitrary spacing that approximates existing scale values, arbitrary container widths, arbitrary radius or shadow used as a hidden token, and repeated arbitrary values. Repeated values must be promoted to a semantic design token or component variant.
@@ -106,7 +108,7 @@ Preserve Tailwind static class detection, design tokens, bounded variants, respo
 - Dynamic visual state must be represented by exactly one of: static map entry, variant helper entry, explicit safelist entry, or CSS variable bridge.
 - Status, tone, intent, size, density, and column props are closed sets until proven otherwise. Model them as finite typed variants, not string fragments.
 - Production CSS is the contract. If a class only exists after runtime string construction, assume production CSS may omit it.
-- `@source inline`, `@source not inline`, and `source(none)` are part of the production CSS generation contract. Review them as carefully as code that uses utilities.
+- Path `@source`, path `@source not`, candidate `@source inline()`, candidate `@source not inline()`, and `source(none)` are part of the production CSS generation contract. Review them as carefully as code that uses utilities.
 
 <!-- mustflow-section: token-policy -->
 ## Token Policy
@@ -130,7 +132,8 @@ Reject the change when:
 - Component-scoped `@apply` or `@variant` relies on Tailwind globals without the needed `@reference` boundary.
 - A public component exposes unconstrained Tailwind class fragments.
 - A safelist covers broad palettes, broad numeric ranges, or unknown runtime values.
-- `@source inline` covers broad palettes, broad numeric ranges, or unknown runtime values.
+- `@source inline()` covers broad palettes, broad numeric ranges, or unknown runtime values.
+- Tailwind v4 is recommended while the project still promises browsers below the v4 floor such as Safari 16.4, Chrome 111, or Firefox 128.
 - `source(none)` is used without explicit source includes for all utility-owning files.
 - `space-*` is used where wrapped or reordered children require `gap`.
 - Conflicting utilities are present on the same element.
