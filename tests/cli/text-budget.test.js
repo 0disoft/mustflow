@@ -172,6 +172,11 @@ test('code-outline scans source symbols with stable path, line, and hash metadat
 		assert.equal(loadThing.start_line, 1);
 		assert.equal(loadThing.end_line, 3);
 		assert.equal(loadThing.path, 'src/sample.ts');
+		assert.equal(loadThing.return_type, null);
+		assert.equal(loadThing.return_behavior, 'value');
+		assert.equal(loadThing.return_count, 1);
+		assert.deepEqual(loadThing.return_lines, [2]);
+		assert.equal(loadThing.return_preview, 'id.toUpperCase()');
 		assert.match(loadThing.content_sha256, /^sha256:[a-f0-9]{64}$/u);
 
 		const thingBox = report.symbols.find((symbol) => symbol.name === 'ThingBox');
@@ -179,6 +184,78 @@ test('code-outline scans source symbols with stable path, line, and hash metadat
 		assert.equal(thingBox.kind, 'class');
 		assert.equal(thingBox.start_line, 5);
 		assert.equal(thingBox.end_line, 7);
+		assert.equal(thingBox.return_type, null);
+		assert.equal(thingBox.return_behavior, 'unknown');
+		assert.equal(thingBox.return_count, 0);
+		assert.deepEqual(thingBox.return_lines, []);
+		assert.equal(thingBox.return_preview, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-outline reports explicit return annotations and return behavior metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'returns.ts'),
+			[
+				'export async function loadThing(id: string): Promise<string> {',
+				'  return id.toUpperCase();',
+				'}',
+				'',
+				'export function maybe(flag: boolean): string | undefined {',
+				'  if (flag) return "yes";',
+				'  return;',
+				'}',
+				'',
+				'const expression = (value: number): number => value + 1;',
+				'',
+				'export function failFast(): never {',
+				'  throw new Error("boom");',
+				'}',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['src/returns.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const loadThing = report.symbols.find((symbol) => symbol.name === 'loadThing');
+		assert.ok(loadThing, 'loadThing should be outlined');
+		assert.equal(loadThing.return_type, 'Promise<string>');
+		assert.equal(loadThing.return_behavior, 'value');
+		assert.equal(loadThing.return_count, 1);
+		assert.deepEqual(loadThing.return_lines, [2]);
+		assert.equal(loadThing.return_preview, 'id.toUpperCase()');
+
+		const maybe = report.symbols.find((symbol) => symbol.name === 'maybe');
+		assert.ok(maybe, 'maybe should be outlined');
+		assert.equal(maybe.return_type, 'string | undefined');
+		assert.equal(maybe.return_behavior, 'mixed');
+		assert.equal(maybe.return_count, 2);
+		assert.deepEqual(maybe.return_lines, [6, 7]);
+		assert.equal(maybe.return_preview, '"yes"');
+
+		const expression = report.symbols.find((symbol) => symbol.name === 'expression');
+		assert.ok(expression, 'expression should be outlined');
+		assert.equal(expression.return_type, 'number');
+		assert.equal(expression.return_behavior, 'value');
+		assert.equal(expression.return_count, 0);
+		assert.deepEqual(expression.return_lines, []);
+		assert.equal(expression.return_preview, 'value + 1');
+
+		const failFast = report.symbols.find((symbol) => symbol.name === 'failFast');
+		assert.ok(failFast, 'failFast should be outlined');
+		assert.equal(failFast.return_type, 'never');
+		assert.equal(failFast.return_behavior, 'throws_only');
+		assert.equal(failFast.return_count, 0);
+		assert.deepEqual(failFast.return_lines, []);
+		assert.equal(failFast.return_preview, null);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -195,7 +272,7 @@ test('code-symbol-read resolves a symbol by start line and returns only the boun
 			[
 				'const before = 1;',
 				'',
-				'export function target(value: string) {',
+				'export function target(value: string): string {',
 				'  return value.trim();',
 				'}',
 				'',
@@ -225,6 +302,11 @@ test('code-symbol-read resolves a symbol by start line and returns only the boun
 		assert.equal(report.target.context_start_line, 2);
 		assert.equal(report.target.context_end_line, 6);
 		assert.equal(report.target.symbol.name, 'target');
+		assert.equal(report.target.symbol.return_type, 'string');
+		assert.equal(report.target.symbol.return_behavior, 'value');
+		assert.equal(report.target.symbol.return_count, 1);
+		assert.deepEqual(report.target.symbol.return_lines, [4]);
+		assert.equal(report.target.symbol.return_preview, 'value.trim()');
 		assert.equal(report.snippet.start_line, 2);
 		assert.equal(report.snippet.end_line, 6);
 		assert.match(report.snippet.text, /export function target/u);

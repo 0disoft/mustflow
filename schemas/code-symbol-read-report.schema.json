@@ -91,6 +91,11 @@
         "signature",
         "exported",
         "async",
+        "return_type",
+        "return_behavior",
+        "return_count",
+        "return_lines",
+        "return_preview",
         "parent",
         "content_sha256"
       ],
@@ -105,6 +110,16 @@
         "signature": { "type": "string" },
         "exported": { "type": "boolean" },
         "async": { "type": "boolean" },
+        "return_type": { "type": ["string", "null"] },
+        "return_behavior": {
+          "enum": ["value", "void", "implicit_undefined", "mixed", "throws_only", "unknown"]
+        },
+        "return_count": { "type": "integer", "minimum": 0 },
+        "return_lines": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "return_preview": { "type": ["string", "null"] },
         "parent": { "type": ["string", "null"] },
         "content_sha256": { "$ref": "#/$defs/sha256" }
       }

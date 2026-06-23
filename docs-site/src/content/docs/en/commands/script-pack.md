@@ -64,8 +64,11 @@ npx mf script-pack run code/outline scan src/cli/commands/script-pack.ts --max-f
 
 `code/outline` is read-only. It scans supported TypeScript and JavaScript files for declaration
 headers, then reports each symbol's path, language, kind, name, start line, end line, signature,
-export flag, async flag, and content hash. Use it before reading large source files line window by
-line. The outline is an orientation aid, not an AST refactoring engine.
+export flag, async flag, static return metadata, and content hash. Return metadata includes
+explicit return annotations when present, return statement lines, a short return-expression preview,
+and conservative behavior labels such as `value`, `void`, `mixed`, `implicit_undefined`,
+`throws_only`, or `unknown`. Use it before reading large source files line window by line. The
+outline is an orientation aid, not an AST refactoring engine or runtime value tracer.
 
 Supported extensions are `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, and `.cjs`.
 Directory scans skip common generated, cache, vendor, and build directories such as `.git`,
@@ -185,8 +188,9 @@ The code-outline report includes:
 - `policy`: File size, file count, extension, and ignored-directory limits used for scanning.
 - `input_hash`: Hash of the scanned input state.
 - `files`: Per-file language, content hash, size, line count, and symbol count.
-- `symbols`: Per-symbol path, line range, kind, name, signature, export flag, async flag, parent,
-  and content hash.
+- `symbols`: Per-symbol path, line range, kind, name, signature, export flag, async flag, static
+  return type, return behavior, return count, return lines, return preview, parent, and content
+  hash.
 - `findings`: Stable finding codes for outside-root paths, unreadable paths, unsupported files,
   file-size limits, and file-count limits.
 - `issues`: Human-readable issue summaries.

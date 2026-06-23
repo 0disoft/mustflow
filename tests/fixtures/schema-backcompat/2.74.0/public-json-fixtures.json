@@ -3066,6 +3066,13 @@
             "signature": "export function loadExample() {",
             "exported": true,
             "async": false,
+            "return_type": null,
+            "return_behavior": "value",
+            "return_count": 1,
+            "return_lines": [
+              2
+            ],
+            "return_preview": "1",
             "parent": null,
             "content_sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
           }
@@ -3119,6 +3126,13 @@
             "signature": "export function loadExample() {",
             "exported": true,
             "async": false,
+            "return_type": null,
+            "return_behavior": "value",
+            "return_count": 1,
+            "return_lines": [
+              2
+            ],
+            "return_preview": "1",
             "parent": null,
             "content_sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
           }

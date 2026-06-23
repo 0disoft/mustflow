@@ -14,6 +14,9 @@ This file applies to the mustflow repository itself. It is not installed into us
   changed-file, phase, and related-skill evidence without running the suggested scripts.
 - Added optional read-only script-pack helper suggestions to `mf skill route --json` so agents can
   discover useful helper scripts while choosing the skill documents for a task.
+- Added static return metadata to `code/outline` and embedded `code/symbol-read` symbols so agents
+  can inspect declared return types, return lines, behavior labels, and short return previews
+  without reading whole files line by line.
 
 ### Changed
 

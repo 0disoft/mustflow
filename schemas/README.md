@@ -67,11 +67,11 @@ Current schemas:
 - `code-outline-report.schema.json`: output of
   `mf script-pack run code/outline scan <path...> --json`, containing a bounded TypeScript and
   JavaScript source outline with file hashes, symbol names, declaration kinds, line ranges,
-  signatures, export flags, and stable input-limit finding codes
+  signatures, export flags, static return metadata, and stable input-limit finding codes
 - `code-symbol-read-report.schema.json`: output of
   `mf script-pack run code/symbol-read read <path> --start-line <line> --json`, containing a
   focused source snippet selected by outline symbol line or explicit line range with file hash,
-  resolved line metadata, optional symbol metadata, and stable range/read finding codes
+  resolved line metadata, optional symbol and static return metadata, and stable range/read finding codes
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field

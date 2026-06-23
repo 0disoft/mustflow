@@ -25,6 +25,7 @@ export type CodeOutlineLanguage =
 	| 'javascript-commonjs';
 
 export type CodeSymbolKind = 'function' | 'class' | 'interface' | 'type' | 'enum' | 'variable';
+export type CodeReturnBehavior = 'value' | 'void' | 'implicit_undefined' | 'mixed' | 'throws_only' | 'unknown';
 
 export type CodeOutlineFindingCode =
 	| 'code_outline_path_outside_root'
@@ -67,6 +68,11 @@ export interface CodeOutlineSymbol {
 	readonly signature: string;
 	readonly exported: boolean;
 	readonly async: boolean;
+	readonly return_type: string | null;
+	readonly return_behavior: CodeReturnBehavior;
+	readonly return_count: number;
+	readonly return_lines: readonly number[];
+	readonly return_preview: string | null;
 	readonly parent: string | null;
 	readonly content_sha256: string;
 }
@@ -181,6 +187,7 @@ const DEFAULT_MAX_FILE_BYTES = 1024 * 1024;
 const DEFAULT_MAX_FILES = 200;
 const DEFAULT_CONTEXT_LINES = 0;
 const DEFAULT_MAX_SNIPPET_LINES = 250;
+const RETURN_PREVIEW_MAX_CHARS = 120;
 const CODE_FILE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const IGNORED_DIRECTORIES = [
 	'.git',
@@ -508,6 +515,204 @@ function buildSignature(lines: readonly string[], startLine: number, endLine: nu
 	return signature.length > 240 ? `${signature.slice(0, 237)}...` : signature;
 }
 
+function normalizeReturnType(value: string): string {
+	return value.replace(/\s+/gu, ' ').replace(/[;{]\s*$/u, '').trim();
+}
+
+function extractExplicitReturnType(signature: string, match: DeclarationMatch): string | null {
+	if (match.kind !== 'function') {
+		return null;
+	}
+
+	const functionReturnMatch =
+		/\bfunction(?:\s+[$A-Z_a-z][$\w]*)?\s*\([^)]*\)\s*:\s*(?<returnType>[^={;]+?)(?=\s*(?:\{|$))/u.exec(
+			signature,
+		);
+	if (functionReturnMatch?.groups?.returnType) {
+		return normalizeReturnType(functionReturnMatch.groups.returnType);
+	}
+
+	const arrowReturnMatch = /\)\s*:\s*(?<returnType>[^=]+?)\s*=>/u.exec(signature);
+	if (arrowReturnMatch?.groups?.returnType) {
+		return normalizeReturnType(arrowReturnMatch.groups.returnType);
+	}
+
+	const arrowTypeAnnotationMatch = /:\s*(?:async\s*)?\([^)]*\)\s*=>\s*(?<returnType>[^=;]+?)\s*=/u.exec(signature);
+	if (arrowTypeAnnotationMatch?.groups?.returnType) {
+		return normalizeReturnType(arrowTypeAnnotationMatch.groups.returnType);
+	}
+
+	return null;
+}
+
+function truncateReturnPreview(value: string): string {
+	const preview = value.replace(/\s+/gu, ' ').trim();
+	return preview.length > RETURN_PREVIEW_MAX_CHARS
+		? `${preview.slice(0, RETURN_PREVIEW_MAX_CHARS - 3)}...`
+		: preview;
+}
+
+function extractArrowExpressionReturnPreview(signature: string): string | null {
+	const arrowIndex = signature.lastIndexOf('=>');
+	if (arrowIndex < 0) {
+		return null;
+	}
+
+	const expression = signature.slice(arrowIndex + 2).trim().replace(/;\s*$/u, '');
+	if (expression.length === 0 || expression.startsWith('{')) {
+		return null;
+	}
+
+	return truncateReturnPreview(expression);
+}
+
+function isIdentifierCharacter(value: string | undefined): boolean {
+	return typeof value === 'string' && /[$\w]/u.test(value);
+}
+
+function findReturnKeywordIndex(line: string): number {
+	let quote: '"' | "'" | '`' | null = null;
+	let escaped = false;
+
+	for (let index = 0; index < line.length; index += 1) {
+		const character = line[index];
+		const nextCharacter = line[index + 1];
+
+		if (quote !== null) {
+			if (escaped) {
+				escaped = false;
+				continue;
+			}
+			if (character === '\\') {
+				escaped = true;
+				continue;
+			}
+			if (character === quote) {
+				quote = null;
+			}
+			continue;
+		}
+
+		if (character === '/' && nextCharacter === '/') {
+			return -1;
+		}
+		if (character === '"' || character === "'" || character === '`') {
+			quote = character;
+			continue;
+		}
+		if (
+			line.startsWith('return', index) &&
+			!isIdentifierCharacter(line[index - 1]) &&
+			!isIdentifierCharacter(line[index + 'return'.length])
+		) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function extractReturnExpressionPreview(line: string): string | null {
+	const returnIndex = findReturnKeywordIndex(line);
+	if (returnIndex < 0) {
+		return null;
+	}
+
+	const expression = line
+		.slice(returnIndex + 'return'.length)
+		.replace(/\/\/.*$/u, '')
+		.trim()
+		.replace(/;\s*$/u, '')
+		.trim();
+	return expression.length === 0 ? null : truncateReturnPreview(expression);
+}
+
+function hasReturnStatement(line: string): boolean {
+	return findReturnKeywordIndex(line) >= 0;
+}
+
+function simpleBodyThrowsOnly(lines: readonly string[], startLine: number, endLine: number, returnType: string | null): boolean {
+	let sawThrow = false;
+	let sawOtherExecutableLine = false;
+
+	for (let index = startLine; index < endLine - 1; index += 1) {
+		const bodyLine = stripLineForBraceScan(lines[index] ?? '')
+			.replace(/[{};]/gu, '')
+			.trim();
+		if (bodyLine.length === 0) {
+			continue;
+		}
+		if (/^throw\b/u.test(bodyLine)) {
+			sawThrow = true;
+			continue;
+		}
+		sawOtherExecutableLine = true;
+	}
+
+	return sawThrow && (!sawOtherExecutableLine || returnType === 'never');
+}
+
+function extractReturnMetadata(
+	lines: readonly string[],
+	startLine: number,
+	endLine: number,
+	signature: string,
+	match: DeclarationMatch,
+): Pick<CodeOutlineSymbol, 'return_type' | 'return_behavior' | 'return_count' | 'return_lines' | 'return_preview'> {
+	const returnType = extractExplicitReturnType(signature, match);
+	if (match.kind !== 'function') {
+		return {
+			return_type: null,
+			return_behavior: 'unknown',
+			return_count: 0,
+			return_lines: [],
+			return_preview: null,
+		};
+	}
+
+	const returnLines: number[] = [];
+	const valueReturnPreviews: string[] = [];
+	let voidReturnCount = 0;
+
+	for (let index = startLine - 1; index < endLine; index += 1) {
+		const line = lines[index] ?? '';
+		if (!hasReturnStatement(line)) {
+			continue;
+		}
+
+		returnLines.push(index + 1);
+		const preview = extractReturnExpressionPreview(line);
+		if (preview === null) {
+			voidReturnCount += 1;
+		} else {
+			valueReturnPreviews.push(preview);
+		}
+	}
+
+	const arrowExpressionPreview = returnLines.length === 0 ? extractArrowExpressionReturnPreview(signature) : null;
+	let returnBehavior: CodeReturnBehavior;
+
+	if (valueReturnPreviews.length > 0 && voidReturnCount > 0) {
+		returnBehavior = 'mixed';
+	} else if (valueReturnPreviews.length > 0 || arrowExpressionPreview !== null) {
+		returnBehavior = 'value';
+	} else if (voidReturnCount > 0) {
+		returnBehavior = 'void';
+	} else if (simpleBodyThrowsOnly(lines, startLine, endLine, returnType)) {
+		returnBehavior = 'throws_only';
+	} else {
+		returnBehavior = 'implicit_undefined';
+	}
+
+	return {
+		return_type: returnType,
+		return_behavior: returnBehavior,
+		return_count: returnLines.length,
+		return_lines: returnLines,
+		return_preview: valueReturnPreviews[0] ?? arrowExpressionPreview,
+	};
+}
+
 function extractSymbols(relativePath: string, language: CodeOutlineLanguage, contentSha256: string, text: string): readonly CodeOutlineSymbol[] {
 	const lines = text.split(/\r\n|\r|\n/u);
 	const symbols: CodeOutlineSymbol[] = [];
@@ -520,6 +725,8 @@ function extractSymbols(relativePath: string, language: CodeOutlineLanguage, con
 
 		const startLine = index + 1;
 		const endLine = findDeclarationEndLine(lines, index);
+		const signature = buildSignature(lines, startLine, endLine);
+		const returnMetadata = extractReturnMetadata(lines, startLine, endLine, signature, match);
 		symbols.push({
 			id: `${relativePath}:${startLine}:${match.kind}:${match.name}`,
 			path: relativePath,
@@ -528,9 +735,10 @@ function extractSymbols(relativePath: string, language: CodeOutlineLanguage, con
 			name: match.name,
 			start_line: startLine,
 			end_line: endLine,
-			signature: buildSignature(lines, startLine, endLine),
+			signature,
 			exported: match.exported,
 			async: match.async,
+			...returnMetadata,
 			parent: null,
 			content_sha256: contentSha256,
 		});
