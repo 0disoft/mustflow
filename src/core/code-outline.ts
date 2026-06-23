@@ -214,12 +214,24 @@ interface DeclarationMatch {
 	readonly async: boolean;
 }
 
+interface CodeOutlineLanguageAdapter {
+	readonly id: string;
+	readonly extensions: readonly string[];
+	languageForPath(filePath: string): CodeOutlineLanguage | null;
+	extractSymbols(
+		relativePath: string,
+		language: CodeOutlineLanguage,
+		contentSha256: string,
+		text: string,
+	): readonly CodeOutlineSymbol[];
+}
+
 const DEFAULT_MAX_FILE_BYTES = 1024 * 1024;
 const DEFAULT_MAX_FILES = 200;
 const DEFAULT_CONTEXT_LINES = 0;
 const DEFAULT_MAX_SNIPPET_LINES = 250;
 const RETURN_PREVIEW_MAX_CHARS = 120;
-const CODE_FILE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
+const TYPESCRIPT_JAVASCRIPT_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const IGNORED_DIRECTORIES = [
 	'.git',
 	'.mustflow/cache',
@@ -260,7 +272,7 @@ function sha256Tagged(buffer: Buffer | string): string {
 	return `sha256:${createHash('sha256').update(buffer).digest('hex')}`;
 }
 
-function languageForPath(filePath: string): CodeOutlineLanguage | null {
+function typescriptJavascriptLanguageForPath(filePath: string): CodeOutlineLanguage | null {
 	switch (path.extname(filePath).toLowerCase()) {
 		case '.ts':
 		case '.mts':
@@ -279,6 +291,14 @@ function languageForPath(filePath: string): CodeOutlineLanguage | null {
 		default:
 			return null;
 	}
+}
+
+function languageAdapterForPath(filePath: string): CodeOutlineLanguageAdapter | null {
+	return CODE_OUTLINE_LANGUAGE_ADAPTERS.find((adapter) => adapter.languageForPath(filePath) !== null) ?? null;
+}
+
+function languageForPath(filePath: string): CodeOutlineLanguage | null {
+	return languageAdapterForPath(filePath)?.languageForPath(filePath) ?? null;
 }
 
 function isIgnoredDirectory(relativePath: string): boolean {
@@ -747,7 +767,12 @@ function extractReturnMetadata(
 	};
 }
 
-function extractSymbols(relativePath: string, language: CodeOutlineLanguage, contentSha256: string, text: string): readonly CodeOutlineSymbol[] {
+function extractTypescriptJavascriptSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
 	const lines = text.split(/\r\n|\r|\n/u);
 	const symbols: CodeOutlineSymbol[] = [];
 
@@ -779,6 +804,27 @@ function extractSymbols(relativePath: string, language: CodeOutlineLanguage, con
 	}
 
 	return symbols;
+}
+
+const TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
+	id: 'typescript-javascript',
+	extensions: TYPESCRIPT_JAVASCRIPT_EXTENSIONS,
+	languageForPath: typescriptJavascriptLanguageForPath,
+	extractSymbols: extractTypescriptJavascriptSymbols,
+};
+
+const CODE_OUTLINE_LANGUAGE_ADAPTERS: readonly CodeOutlineLanguageAdapter[] = [TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER];
+
+const CODE_FILE_EXTENSIONS = CODE_OUTLINE_LANGUAGE_ADAPTERS.flatMap((adapter) => adapter.extensions);
+
+function extractSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	const adapter = CODE_OUTLINE_LANGUAGE_ADAPTERS.find((candidate) => candidate.languageForPath(relativePath) === language);
+	return adapter?.extractSymbols(relativePath, language, contentSha256, text) ?? [];
 }
 
 function sourceAnchorEndLine(lineStart: number, rawText: string): number {
