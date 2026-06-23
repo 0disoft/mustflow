@@ -876,7 +876,47 @@ test('script-pack suggest ranks helpers from path, skill, and phase evidence', (
 		assert.ok(first.matched_skills.includes('template-install-surface-sync'));
 		assert.ok(first.matched_surfaces.includes('generated'));
 		assert.equal(first.report_schema_file, 'generated-boundary-report.schema.json');
-		assert.match(first.run_hint, /repo\/generated-boundary/u);
+		assert.equal(
+			first.run_hint,
+			'mf script-pack run repo/generated-boundary check .mustflow/config/manifest.lock.toml --json',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest returns concrete code helper hints for source paths', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'session.ts'), 'export function resolveSession() { return true; }\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/session.ts',
+			'--skill',
+			'typescript-code-change',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
+		const symbolRead = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/symbol-read');
+
+		assert.ok(outline, 'code/outline should be suggested for source paths');
+		assert.ok(symbolRead, 'code/symbol-read should be suggested as a source follow-up');
+		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan src/session.ts --json');
+		assert.match(symbolRead.run_hint, /After code\/outline returns a symbol line or anchor/u);
+		assert.match(symbolRead.run_hint, /src\/session\.ts --start-line <line> --json/u);
+		assert.ok(
+			report.suggestions.findIndex((suggestion) => suggestion.script_ref === 'code/outline') <
+				report.suggestions.findIndex((suggestion) => suggestion.script_ref === 'code/symbol-read'),
+			'code/outline should rank before code/symbol-read for initial source-path orientation',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -895,7 +935,9 @@ test('script-pack suggest can use current changed files without running scripts'
 		assert.equal(report.input.changed, true);
 		assert.ok(report.input.paths.includes('README.md'));
 		assert.ok(report.analyzed_paths.some((entry) => entry.path === 'README.md' && entry.surfaces.includes('docs')));
-		assert.ok(report.suggestions.some((suggestion) => suggestion.script_ref === 'core/text-budget'));
+		const textBudget = report.suggestions.find((suggestion) => suggestion.script_ref === 'core/text-budget');
+		assert.ok(textBudget);
+		assert.equal(textBudget.run_hint, 'mf script-pack run core/text-budget check README.md --json');
 		assert.equal(report.issues.length, 0);
 	} finally {
 		removeTempProject(projectPath);

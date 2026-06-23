@@ -39,6 +39,12 @@ template, skill, config, package, test, and generated output, then scores bundle
 the requested phase, related skill names, and path surfaces. It recommends optional helpers only;
 it does not run the scripts.
 
+When enough path evidence is available, each suggestion's `run_hint` is a concrete read-only
+command for the current path, such as `code/outline`, `core/text-budget`, or
+`repo/generated-boundary` with `--json`. Helpers that need data from another helper keep that
+dependency explicit; for example, `code/symbol-read` is presented as a follow-up after
+`code/outline` identifies a symbol line or source anchor.
+
 Use repeated `--path`, repeated `--skill`, and repeated `--phase` options to describe the current
 work. `--changed` adds current Git working-tree paths to the suggestion input. If changed-file
 discovery is unavailable, the command reports that limitation in `issues` instead of treating the
@@ -181,7 +187,8 @@ The script-pack suggestion report includes:
 - `input`: Requested phases, skills, paths, and whether `--changed` was used.
 - `analyzed_paths`: Path surface classifications used for scoring.
 - `suggestions`: Ranked script refs with score, confidence, matched evidence, side-effect flags,
-  report schema, and run hint.
+  report schema, and `run_hint`. `run_hint` is a concrete command when path evidence is sufficient,
+  or a follow-up instruction when another script must first identify a line or anchor.
 - `issues`: Human-readable limitations such as unavailable changed-file discovery.
 
 The code-outline report includes:

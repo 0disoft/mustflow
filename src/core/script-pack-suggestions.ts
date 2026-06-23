@@ -103,6 +103,10 @@ function uniqueSortedSurfaces(values: Iterable<ScriptPackSurface>): ScriptPackSu
 	return uniqueSortedStrings(values) as ScriptPackSurface[];
 }
 
+function quoteCliArg(value: string): string {
+	return /^[A-Za-z0-9_./:@=-]+$/u.test(value) ? value : JSON.stringify(value);
+}
+
 function normalizeReportPath(mustflowRoot: string, value: string): string {
 	const absolute = path.resolve(mustflowRoot, value);
 	const relative = path.relative(mustflowRoot, absolute);
@@ -230,6 +234,73 @@ function confidenceForScore(score: number): 'low' | 'medium' | 'high' {
 	return 'low';
 }
 
+function pathsWithSurface(
+	analyzedPaths: readonly ScriptPackSuggestionPath[],
+	surface: ScriptPackSurface,
+): readonly string[] {
+	return analyzedPaths.filter((entry) => entry.surfaces.includes(surface)).map((entry) => entry.path);
+}
+
+function firstAvailablePath(
+	analyzedPaths: readonly ScriptPackSuggestionPath[],
+	preferredSurfaces: readonly ScriptPackSurface[],
+): string | null {
+	for (const surface of preferredSurfaces) {
+		const [candidate] = pathsWithSurface(analyzedPaths, surface);
+		if (candidate) {
+			return candidate;
+		}
+	}
+	return analyzedPaths[0]?.path ?? null;
+}
+
+function createConcretePathHint(commandPrefix: string, paths: readonly string[], fallbackUsage: string): string {
+	if (paths.length === 0) {
+		return fallbackUsage;
+	}
+	return `${commandPrefix} ${paths.map(quoteCliArg).join(' ')} --json`;
+}
+
+function createRunHint(
+	script: ScriptPackSuggestionScript,
+	analyzedPaths: readonly ScriptPackSuggestionPath[],
+): string {
+	if (script.ref === 'code/outline') {
+		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
+		return createConcretePathHint('mf script-pack run code/outline scan', sourcePaths, script.usage);
+	}
+
+	if (script.ref === 'code/symbol-read') {
+		const sourcePath = firstAvailablePath(analyzedPaths, ['source']);
+		if (sourcePath) {
+			return `After code/outline returns a symbol line or anchor, run: mf script-pack run code/symbol-read read ${quoteCliArg(
+				sourcePath,
+			)} --start-line <line> --json`;
+		}
+		return 'After code/outline returns a source anchor, run: mf script-pack run code/symbol-read read --anchor <anchor-id> --json';
+	}
+
+	if (script.ref === 'core/text-budget') {
+		const packageJson = analyzedPaths.find((entry) => entry.path === 'package.json');
+		if (packageJson) {
+			return 'mf script-pack run core/text-budget check package.json --json-pointer /description --max 80 --json';
+		}
+
+		const textPaths = analyzedPaths
+			.filter((entry) =>
+				entry.surfaces.some((surface) => surface === 'docs' || surface === 'package' || surface === 'schema'),
+			)
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run core/text-budget check', textPaths, script.usage);
+	}
+
+	if (script.ref === 'repo/generated-boundary') {
+		return createConcretePathHint('mf script-pack run repo/generated-boundary check', analyzedPaths.map((entry) => entry.path), script.usage);
+	}
+
+	return script.usage;
+}
+
 export function createScriptPackSuggestionReport(
 	mustflowRoot: string,
 	options: CreateScriptPackSuggestionReportOptions,
@@ -267,6 +338,11 @@ export function createScriptPackSuggestionReport(
 				reasons.push('Accepts explicit path inputs.');
 			}
 
+			if (script.ref === 'code/symbol-read' && inputPaths.length > 0) {
+				score = Math.max(1, score - 1);
+				reasons.push('Follow-up helper after code/outline identifies a symbol line or source anchor.');
+			}
+
 			if (script.readOnly && !script.mutates && !script.network) {
 				score += 1;
 				reasons.push('Read-only, non-mutating, offline helper.');
@@ -292,7 +368,7 @@ export function createScriptPackSuggestionReport(
 				risk_level: script.riskLevel,
 				cost: script.cost,
 				report_schema_file: script.reportSchemaFile,
-				run_hint: script.usage,
+				run_hint: createRunHint(script, analyzedPaths),
 			};
 		})
 		.filter((suggestion): suggestion is ScriptPackSuggestion => suggestion !== null)

@@ -2999,7 +2999,7 @@
             "risk_level": "low",
             "cost": "low",
             "report_schema_file": "generated-boundary-report.schema.json",
-            "run_hint": "mf script-pack run repo/generated-boundary check <path...> [options]"
+            "run_hint": "mf script-pack run repo/generated-boundary check .mustflow/config/manifest.lock.toml --json"
           }
         ],
         "issues": []

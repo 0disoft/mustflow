@@ -37,6 +37,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added optional read-only script-pack helper recommendations to `mf api verification-plan --changed --json`
   so machine consumers can surface relevant bundled scripts alongside the verification plan without
   running those scripts.
+- Made `script-pack suggest` run hints path-aware so agents receive concrete read-only helper
+  commands when path evidence is available, while follow-up helpers such as `code/symbol-read`
+  keep their `code/outline` dependency explicit.
 
 ## 2.74.3 - 2026-06-22
 
