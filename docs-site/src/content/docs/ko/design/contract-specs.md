@@ -24,6 +24,8 @@ mustflow의 버전 있는 계약 명세는 저장소의
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `onboard-commands-report.schema.json`: `mf onboard commands --json`
 - `next-report.schema.json`: `mf next --json`, 선택적 script-pack helper 추천 포함
+- `verification-plan.schema.json`: `mf api verification-plan --changed --json`, 선택적 읽기 전용
+  script-pack helper 추천 포함
 - `evidence-report.schema.json`: `mf evidence --changed --json`
 - `api-serve-response.schema.json`: `mf api serve --stdio`의 줄 단위 응답
 - `workspace-status.schema.json`: `mf workspace status --json`

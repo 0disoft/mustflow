@@ -29,6 +29,8 @@ JSON Schema 合同。
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `onboard-commands-report.schema.json`: `mf onboard commands --json`
 - `next-report.schema.json`: `mf next --json`, including optional script-pack helper suggestions
+- `verification-plan.schema.json`: `mf api verification-plan --changed --json`, including optional
+  read-only script-pack helper suggestions
 - `evidence-report.schema.json`: `mf evidence --changed --json`
 - `api-serve-response.schema.json`: `mf api serve --stdio` 的每一条按行分隔响应
 - `workspace-status.schema.json`: `mf workspace status --json`

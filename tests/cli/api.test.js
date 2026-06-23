@@ -189,10 +189,22 @@ test('prints a read-only verification plan api report', () => {
 			if (output.schedule.entries.length > 0) {
 				assert.equal(output.schedule.entries[0].run_command.startsWith('mf run '), true);
 			}
+			assert.equal(output.script_pack_suggestions.status, 'suggested');
+			assert.ok(
+				output.script_pack_suggestions.suggestions.some(
+					(suggestion) => suggestion.script_ref === 'repo/generated-boundary',
+				),
+			);
+			assert.ok(
+				output.script_pack_suggestions.suggestions.every(
+					(suggestion) => suggestion.read_only && !suggestion.mutates && !suggestion.network,
+				),
+			);
 			assert.equal(output.issues.length, 0);
 		} else {
 			assert.equal(output.status, 'unavailable');
 			assert.equal(output.verification_plan_id, null);
+			assert.equal(output.script_pack_suggestions.status, 'empty');
 			assert.ok(output.issues.length > 0);
 		}
 	} finally {

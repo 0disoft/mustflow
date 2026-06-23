@@ -11,7 +11,8 @@ Current schemas:
 - `workspace-summary.schema.json`: output of `mf api workspace-summary --json`
 - `command-catalog.schema.json`: output of `mf api command-catalog --json`
 - `verification-plan.schema.json`: output of `mf api verification-plan --changed --json`, including
-  risk-priced evidence assessment for the changed surfaces and selected command contract
+  risk-priced evidence assessment for the changed surfaces, selected command contract, and optional
+  read-only script-pack helper suggestions
 - `latest-evidence.schema.json`: output of `mf api latest-evidence --json`
 - `diff-risk.schema.json`: output of `mf api diff-risk --changed --json`, including a read-only
   complexity budget for structural additions

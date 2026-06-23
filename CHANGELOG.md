@@ -25,6 +25,9 @@ This file applies to the mustflow repository itself. It is not installed into us
   script-pack recommendations.
 - Added optional read-only script-pack helper recommendations to `mf next` so agents can discover
   relevant bundled scripts from changed-file evidence without running those scripts.
+- Added optional read-only script-pack helper recommendations to `mf api verification-plan --changed --json`
+  so machine consumers can surface relevant bundled scripts alongside the verification plan without
+  running those scripts.
 
 ## 2.74.3 - 2026-06-22
 

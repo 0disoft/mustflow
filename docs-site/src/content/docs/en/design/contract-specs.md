@@ -25,6 +25,8 @@ installed-package JSON command output.
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `onboard-commands-report.schema.json`: `mf onboard commands --json`
 - `next-report.schema.json`: `mf next --json`, including optional script-pack helper suggestions
+- `verification-plan.schema.json`: `mf api verification-plan --changed --json`, including optional
+  read-only script-pack helper suggestions
 - `evidence-report.schema.json`: `mf evidence --changed --json`
 - `api-serve-response.schema.json`: each newline-delimited response from `mf api serve --stdio`
 - `workspace-status.schema.json`: `mf workspace status --json`

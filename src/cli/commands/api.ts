@@ -22,6 +22,10 @@ import {
 	type ComplexityBudgetReport,
 } from '../../core/complexity-budget.js';
 import { readUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
+import {
+	createScriptPackSuggestionReport,
+	type ScriptPackSuggestionReport,
+} from '../../core/script-pack-suggestions.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
 import type { VerificationRiskAssessment } from '../../core/risk-priced-evidence.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
@@ -41,6 +45,7 @@ import { t, type CliLang } from '../lib/i18n.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import { createRunPlan, type RunPlan } from '../lib/run-plan.js';
 import type { Reporter } from '../lib/reporter.js';
+import { listScriptPackScripts } from '../lib/script-pack-registry.js';
 import { checkMustflowProjectReport } from '../lib/validation.js';
 
 const API_WORKSPACE_SUMMARY_SCHEMA_VERSION = '1';
@@ -260,6 +265,11 @@ interface ApiVerificationPlanExecutionPolicy {
 	readonly selected_intents_run_via: 'mf run <intent>';
 }
 
+type ApiScriptPackSuggestions = Pick<
+	ScriptPackSuggestionReport,
+	'status' | 'input' | 'analyzed_paths' | 'suggestions' | 'issues'
+>;
+
 interface ApiVerificationPlanOutput {
 	readonly schema_version: string;
 	readonly command: 'api verification-plan';
@@ -274,6 +284,7 @@ interface ApiVerificationPlanOutput {
 	readonly risk_assessment: VerificationRiskAssessment | null;
 	readonly schedule: ApiVerificationPlanSchedule | null;
 	readonly test_selection: ApiVerificationPlanTestSelection | null;
+	readonly script_pack_suggestions: ApiScriptPackSuggestions;
 	readonly execution_policy: ApiVerificationPlanExecutionPolicy;
 	readonly issues: readonly string[];
 }
@@ -855,6 +866,46 @@ function toVerificationPlanTestSelection(report: ChangeVerificationReport): ApiV
 	};
 }
 
+function createEmptyScriptPackSuggestions(): ApiScriptPackSuggestions {
+	return {
+		status: 'empty',
+		input: {
+			phases: [],
+			skills: [],
+			paths: [],
+			changed: false,
+		},
+		analyzed_paths: [],
+		suggestions: [],
+		issues: [],
+	};
+}
+
+function createApiScriptPackSuggestions(
+	mustflowRoot: string,
+	classification: ClassifyOutput | null,
+): ApiScriptPackSuggestions {
+	if (!classification || classification.files.length === 0) {
+		return createEmptyScriptPackSuggestions();
+	}
+
+	const report = createScriptPackSuggestionReport(mustflowRoot, {
+		changed: false,
+		phases: ['after_change', 'review'],
+		skills: [],
+		paths: classification.files,
+		scripts: listScriptPackScripts(),
+	});
+
+	return {
+		status: report.status,
+		input: report.input,
+		analyzed_paths: report.analyzed_paths,
+		suggestions: report.suggestions,
+		issues: report.issues,
+	};
+}
+
 function createUnavailableVerificationPlanOutput(
 	mustflowRoot: string,
 	classification: ClassifyOutput | null,
@@ -874,6 +925,7 @@ function createUnavailableVerificationPlanOutput(
 		risk_assessment: null,
 		schedule: null,
 		test_selection: null,
+		script_pack_suggestions: createApiScriptPackSuggestions(mustflowRoot, classification),
 		execution_policy: createVerificationPlanExecutionPolicy(),
 		issues: [issue],
 	};
@@ -934,6 +986,7 @@ function createVerificationPlanOutput(): ApiVerificationPlanOutput {
 		risk_assessment: report.risk_assessment,
 		schedule: toVerificationPlanSchedule(report),
 		test_selection: toVerificationPlanTestSelection(report),
+		script_pack_suggestions: createApiScriptPackSuggestions(mustflowRoot, classification),
 		execution_policy: createVerificationPlanExecutionPolicy(),
 		issues: [],
 	};
