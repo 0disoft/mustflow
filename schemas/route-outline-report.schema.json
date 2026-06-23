@@ -56,13 +56,28 @@
       "pattern": "^sha256:[a-f0-9]{64}$"
     },
     "language": {
-      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs"]
+      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs", "rust"]
     },
     "framework": {
-      "enum": ["hono", "elysia", "unknown"]
+      "enum": ["hono", "elysia", "axum", "unknown"]
     },
     "method": {
-      "enum": ["get", "post", "put", "patch", "delete", "options", "all", "use", "route"]
+      "enum": [
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete",
+        "options",
+        "head",
+        "all",
+        "any",
+        "use",
+        "route",
+        "nest",
+        "merge",
+        "fallback"
+      ]
     },
     "lifecycle": {
       "enum": [
@@ -149,6 +164,7 @@
         "chain_start_line": { "type": "integer", "minimum": 1 },
         "chain_end_line": { "type": "integer", "minimum": 1 },
         "handler_line": { "type": "integer", "minimum": 1 },
+        "handler_name": { "type": ["string", "null"] },
         "lifecycle": {
           "type": "array",
           "items": { "$ref": "#/$defs/lifecycle" }

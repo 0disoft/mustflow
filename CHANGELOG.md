@@ -31,6 +31,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added the built-in `code/route-outline` script-pack helper so agents can scan Hono and Elysia
   route methods, paths, lifecycle chains, line ranges, and content hashes before paging through
   large route modules.
+- Added Axum route extraction to `code/route-outline`, including Rust `.rs` scanning and first-pass
+  `Router::route`, `nest`, `merge`, and `fallback` handler metadata.
 - Added the built-in `code/export-diff` script-pack helper so agents can compare exported
   TypeScript and JavaScript signatures, return metadata, and package surface hints against a git
   base after public-ish API edits.

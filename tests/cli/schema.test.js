@@ -883,13 +883,13 @@ test('route-outline json output matches the published schema', () => {
 		initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'));
 		writeFileSync(
-			path.join(projectPath, 'src', 'schema-routes.ts'),
+			path.join(projectPath, 'src', 'schema-routes.rs'),
 			[
-				'import { Elysia } from "elysia";',
-				'export const api = new Elysia()',
-				'  .guard({ headers: {} })',
-				'  .resolve(({ headers }) => ({ user: headers.authorization }))',
-				'  .get("/schema-route", ({ user }) => user);',
+				'use axum::{routing::get, Router};',
+				'async fn schema_route() {}',
+				'pub fn app() -> Router {',
+				'  Router::new().route("/schema-route", get(schema_route))',
+				'}',
 				'',
 			].join('\n'),
 		);
@@ -898,7 +898,7 @@ test('route-outline json output matches the published schema', () => {
 			'run',
 			'code/route-outline',
 			'scan',
-			'src/schema-routes.ts',
+			'src/schema-routes.rs',
 			'--json',
 		]);
 

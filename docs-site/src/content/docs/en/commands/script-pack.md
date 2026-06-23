@@ -8,8 +8,8 @@ top-level command.
 
 The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
 symbol headers, line ranges, and source-anchor metadata, `code/symbol-read`, which reads a focused source snippet by
-source anchor, symbol line, or explicit line range, `code/route-outline`, which scans Hono and
-Elysia route metadata, `code/export-diff`, which compares exported TypeScript and JavaScript
+source anchor, symbol line, or explicit line range, `code/route-outline`, which scans Hono,
+Elysia, and Axum route metadata, `code/export-diff`, which compares exported TypeScript and JavaScript
 signatures against a git base, `docs/reference-drift`, which checks documented references against
 current local surfaces, `core/text-budget`, which checks exact text length budgets for plain text
 files or JSON string fields, `repo/config-chain`, which inspects nearby static config inheritance,
@@ -113,8 +113,8 @@ surrounding context without paging through the entire file.
 npx mf script-pack run code/route-outline scan src/cli/index.ts --json
 ```
 
-`code/route-outline` is read-only. It scans Hono and Elysia TypeScript or JavaScript files for
-route methods, paths, lifecycle chains, line ranges, framework evidence, and content hashes. Use it
+`code/route-outline` is read-only. It scans Hono, Elysia, and Axum route files for route
+methods, paths, handlers, lifecycle chains, line ranges, framework evidence, and content hashes. Use it
 before reading large route modules when the useful first question is "which handlers and lifecycle
 hooks are here?"
 
@@ -325,7 +325,7 @@ The route-outline report includes:
 - `policy`: File size, file count, extension, and ignored-directory limits used for scanning.
 - `input_hash`: Hash of the scanned input state.
 - `files`: Per-file language, content hash, framework evidence, size, line count, and route count.
-- `routes`: Route method, route path, framework, line range, handler summary, lifecycle chain, and
+- `routes`: Route method, route path, framework, line range, optional handler name, lifecycle chain, and
   content hash metadata.
 - `findings`: Stable finding codes for outside-root paths, unreadable paths, unsupported files,
   file-size limits, and file-count limits.

@@ -127,10 +127,11 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(codeRouteOutline.mutates, false);
 		assert.equal(codeRouteOutline.network, false);
 		assert.deepEqual(codeRouteOutline.phases, ['before_change', 'during_change', 'after_change', 'review']);
-		assert.ok(codeRouteOutline.use_when.some((hint) => hint.includes('Hono and Elysia')));
+		assert.ok(codeRouteOutline.use_when.some((hint) => hint.includes('Hono, Elysia, and Axum')));
 		assert.ok(codeRouteOutline.inputs.includes('max_files'));
 		assert.ok(codeRouteOutline.outputs.includes('route_outline'));
 		assert.ok(codeRouteOutline.outputs.includes('route_lifecycle'));
+		assert.ok(codeRouteOutline.related_skills.includes('axum-code-change'));
 		assert.ok(codeRouteOutline.related_skills.includes('hono-code-change'));
 		assert.ok(codeRouteOutline.related_skills.includes('elysia-code-change'));
 		assert.equal(codeRouteOutline.risk_level, 'low');
@@ -1624,6 +1625,7 @@ test('code-route-outline scans Hono and Elysia routes with lifecycle metadata', 
 		assert.equal(honoRoute.line, 5);
 		assert.equal(honoRoute.chain_start_line, 5);
 		assert.equal(honoRoute.chain_end_line, 5);
+		assert.equal(honoRoute.handler_name, null);
 		assert.deepEqual(honoRoute.lifecycle, []);
 		assert.match(honoRoute.content_sha256, /^sha256:[a-f0-9]{64}$/u);
 
@@ -1634,8 +1636,82 @@ test('code-route-outline scans Hono and Elysia routes with lifecycle metadata', 
 		assert.equal(elysiaRoute.line, 10);
 		assert.equal(elysiaRoute.chain_start_line, 7);
 		assert.equal(elysiaRoute.chain_end_line, 10);
+		assert.equal(elysiaRoute.handler_name, null);
 		assert.deepEqual(elysiaRoute.lifecycle, ['guard', 'resolve']);
 		assert.match(elysiaRoute.signature, /new Elysia/u);
+		assert.deepEqual(report.findings, []);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-route-outline scans Axum Router routes with handler metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'main.rs'),
+			[
+				'use axum::{routing::{delete, get}, Router};',
+				'',
+				'async fn list_users() {}',
+				'async fn create_user() {}',
+				'async fn delete_user() {}',
+				'async fn not_found() {}',
+				'fn admin_router() -> Router { Router::new() }',
+				'',
+				'pub fn app() -> Router {',
+				'  Router::new()',
+				'    .route("/users", get(list_users).post(create_user))',
+				'    .route("/users/:id", delete(delete_user))',
+				'    .nest("/admin", admin_router())',
+				'    .fallback(not_found)',
+				'}',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeRouteOutlineJson(projectPath, ['src/main.rs']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.files[0].path, 'src/main.rs');
+		assert.equal(report.files[0].language, 'rust');
+		assert.deepEqual(report.files[0].framework_evidence, ['axum']);
+		assert.equal(report.files[0].route_count, 5);
+		assert.ok(report.policy.extensions.includes('.rs'));
+
+		const usersGet = report.routes.find(
+			(route) => route.framework === 'axum' && route.method === 'get' && route.route_path === '/users',
+		);
+		assert.ok(usersGet, 'Axum GET route should be outlined');
+		assert.equal(usersGet.line, 11);
+		assert.equal(usersGet.handler_line, 11);
+		assert.equal(usersGet.handler_name, 'list_users');
+
+		const usersPost = report.routes.find(
+			(route) => route.framework === 'axum' && route.method === 'post' && route.route_path === '/users',
+		);
+		assert.ok(usersPost, 'Axum POST chained route should be outlined');
+		assert.equal(usersPost.handler_name, 'create_user');
+
+		const userDelete = report.routes.find(
+			(route) => route.framework === 'axum' && route.method === 'delete' && route.route_path === '/users/:id',
+		);
+		assert.ok(userDelete, 'Axum DELETE route should be outlined');
+		assert.equal(userDelete.handler_name, 'delete_user');
+
+		const nested = report.routes.find((route) => route.framework === 'axum' && route.method === 'nest');
+		assert.ok(nested, 'Axum nest route should be outlined');
+		assert.equal(nested.route_path, '/admin');
+		assert.equal(nested.handler_name, 'admin_router');
+
+		const fallback = report.routes.find((route) => route.framework === 'axum' && route.method === 'fallback');
+		assert.ok(fallback, 'Axum fallback route should be outlined');
+		assert.equal(fallback.route_path, null);
+		assert.equal(fallback.handler_name, 'not_found');
 		assert.deepEqual(report.findings, []);
 		assert.deepEqual(report.issues, []);
 	} finally {
@@ -2055,7 +2131,7 @@ test('script-pack suggest recommends config-chain for config, package, source, a
 	}
 });
 
-test('script-pack suggest recommends route outline for Hono and Elysia source work', () => {
+test('script-pack suggest recommends route outline for Hono Elysia and Axum source work', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -2077,10 +2153,40 @@ test('script-pack suggest recommends route outline for Hono and Elysia source wo
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 
 		const routeOutline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/route-outline');
-		assert.ok(routeOutline, 'code/route-outline should be suggested for Hono and Elysia route work');
+		assert.ok(routeOutline, 'code/route-outline should be suggested for route work');
 		assert.equal(routeOutline.run_hint, 'mf script-pack run code/route-outline scan src/server.ts --json');
 		assert.ok(routeOutline.matched_skills.includes('hono-code-change'));
 		assert.ok(routeOutline.matched_skills.includes('elysia-code-change'));
+		assert.ok(routeOutline.matched_phases.includes('before_change'));
+		assert.equal(routeOutline.report_schema_file, 'route-outline-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends route outline for Axum source work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'main.rs'), 'use axum::{routing::get, Router};\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/main.rs',
+			'--skill',
+			'axum-code-change',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const routeOutline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/route-outline');
+		assert.ok(routeOutline, 'code/route-outline should be suggested for Axum route work');
+		assert.equal(routeOutline.run_hint, 'mf script-pack run code/route-outline scan src/main.rs --json');
+		assert.ok(routeOutline.matched_skills.includes('axum-code-change'));
 		assert.ok(routeOutline.matched_phases.includes('before_change'));
 		assert.equal(routeOutline.report_schema_file, 'route-outline-report.schema.json');
 	} finally {

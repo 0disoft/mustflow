@@ -18,8 +18,9 @@ export type RouteOutlineLanguage =
 	| 'javascript'
 	| 'jsx'
 	| 'javascript-module'
-	| 'javascript-commonjs';
-export type RouteOutlineFramework = 'hono' | 'elysia' | 'unknown';
+	| 'javascript-commonjs'
+	| 'rust';
+export type RouteOutlineFramework = 'hono' | 'elysia' | 'axum' | 'unknown';
 export type RouteOutlineMethod =
 	| 'get'
 	| 'post'
@@ -27,9 +28,14 @@ export type RouteOutlineMethod =
 	| 'patch'
 	| 'delete'
 	| 'options'
+	| 'head'
 	| 'all'
+	| 'any'
 	| 'use'
-	| 'route';
+	| 'route'
+	| 'nest'
+	| 'merge'
+	| 'fallback';
 export type RouteOutlineLifecycle =
 	| 'guard'
 	| 'resolve'
@@ -78,6 +84,7 @@ export interface RouteOutlineRoute {
 	readonly chain_start_line: number;
 	readonly chain_end_line: number;
 	readonly handler_line: number;
+	readonly handler_name?: string | null;
 	readonly lifecycle: readonly RouteOutlineLifecycle[];
 	readonly signature: string;
 	readonly content_sha256: string;
@@ -122,8 +129,25 @@ type FrameworkBindings = ReadonlyMap<string, RouteOutlineFramework>;
 
 const DEFAULT_MAX_FILE_BYTES = 1024 * 1024;
 const DEFAULT_MAX_FILES = 200;
-const ROUTE_OUTLINE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
-const ROUTE_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'all', 'use', 'route'] as const;
+const ROUTE_OUTLINE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.rs'] as const;
+const ROUTE_METHODS = [
+	'get',
+	'post',
+	'put',
+	'patch',
+	'delete',
+	'options',
+	'head',
+	'all',
+	'any',
+	'use',
+	'route',
+	'nest',
+	'merge',
+	'fallback',
+] as const;
+const AXUM_ROUTER_METHODS = ['route', 'nest', 'merge', 'fallback'] as const;
+const AXUM_HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'any'] as const;
 const LIFECYCLE_METHODS = [
 	'guard',
 	'resolve',
@@ -178,6 +202,8 @@ function languageForPath(filePath: string): RouteOutlineLanguage | null {
 			return 'javascript-module';
 		case '.cjs':
 			return 'javascript-commonjs';
+		case '.rs':
+			return 'rust';
 		default:
 			return null;
 	}
@@ -346,6 +372,9 @@ function frameworkEvidence(text: string): readonly RouteOutlineFramework[] {
 	if (/(?:from\s+['"]elysia['"]|new\s+Elysia\b|\bt\.(?:Object|String|Number|Boolean)\s*\()/u.test(text)) {
 		evidence.add('elysia');
 	}
+	if (/(?:use\s+axum::|\baxum::Router\b|\bRouter::new\s*\(|\brouting::\{[^}]*\bget\b)/u.test(text)) {
+		evidence.add('axum');
+	}
 	return [...evidence].sort((left, right) => left.localeCompare(right));
 }
 
@@ -378,7 +407,7 @@ function findChainStartLine(lines: readonly string[], routeIndex: number): numbe
 		if (trimmed.length === 0 || trimmed.endsWith(';')) {
 			break;
 		}
-		if (/^(?:\.|const\b|let\b|var\b|export\b|return\b)|new\s+Elysia\b|new\s+Hono\b/u.test(trimmed)) {
+		if (/^(?:\.|const\b|let\b|var\b|export\b|return\b)|new\s+Elysia\b|new\s+Hono\b|Router::new\s*\(/u.test(trimmed)) {
 			start = index;
 			index -= 1;
 			continue;
@@ -416,6 +445,15 @@ function lineContainsRouteMethod(line: string): RouteOutlineMethod | null {
 	return null;
 }
 
+function lineContainsAxumRouterMethod(line: string): (typeof AXUM_ROUTER_METHODS)[number] | null {
+	for (const method of AXUM_ROUTER_METHODS) {
+		if (new RegExp(`\\.\\s*${method}\\s*\\(`, 'u').test(line)) {
+			return method;
+		}
+	}
+	return null;
+}
+
 function extractRoutePath(statement: string, method: RouteOutlineMethod): string | null {
 	const match = new RegExp(`\\.\\s*${method}\\s*\\(\\s*(?<quote>['"\`])(?<path>(?:\\\\.|(?!\\k<quote>)[^\\\\])*)\\k<quote>`, 'u').exec(statement);
 	if (!match?.groups?.path) {
@@ -423,6 +461,85 @@ function extractRoutePath(statement: string, method: RouteOutlineMethod): string
 	}
 	const routePath = match.groups.path.replace(/\\(['"`\\/])/gu, '$1');
 	return routePath.includes('${') ? null : routePath;
+}
+
+function extractRustStringRoutePath(statement: string, method: RouteOutlineMethod): string | null {
+	const match = new RegExp(`\\.\\s*${method}\\s*\\(\\s*"(?<path>(?:\\\\.|[^"\\\\])*)"`, 'u').exec(statement);
+	if (!match?.groups?.path) {
+		return null;
+	}
+	return match.groups.path.replace(/\\"/gu, '"').replace(/\\\\/gu, '\\');
+}
+
+function offsetForStatementLine(lines: readonly string[], lineOffset: number): number {
+	if (lineOffset <= 0) {
+		return 0;
+	}
+	return lines.slice(0, lineOffset).join('\n').length + 1;
+}
+
+function findMatchingParenEnd(value: string, openParenIndex: number): number {
+	let depth = 0;
+	let quote: '"' | "'" | '`' | null = null;
+	let escaped = false;
+
+	let index = openParenIndex;
+	while (index < value.length) {
+		const character = value[index];
+
+		if (quote) {
+			if (escaped) {
+				escaped = false;
+			} else if (character === '\\') {
+				escaped = true;
+			} else if (character === quote) {
+				quote = null;
+			}
+			index += 1;
+			continue;
+		}
+
+		if (character === '"' || character === "'" || character === '`') {
+			quote = character;
+			index += 1;
+			continue;
+		}
+
+		if (character === '(') {
+			depth += 1;
+			index += 1;
+			continue;
+		}
+
+		if (character === ')') {
+			depth -= 1;
+			if (depth === 0) {
+				return index + 1;
+			}
+		}
+
+		index += 1;
+	}
+
+	return value.length;
+}
+
+function extractMethodCallSegment(
+	statement: string,
+	statementLines: readonly string[],
+	method: RouteOutlineMethod,
+	routeLineOffset: number,
+): { readonly value: string; readonly startOffset: number } {
+	const searchStart = offsetForStatementLine(statementLines, routeLineOffset);
+	const callMatch = new RegExp(`\\.\\s*${method}\\s*\\(`, 'u').exec(statement.slice(searchStart));
+	if (!callMatch) {
+		return { value: statement, startOffset: 0 };
+	}
+
+	const startOffset = searchStart + callMatch.index;
+	const openParenIndex = startOffset + callMatch[0].lastIndexOf('(');
+	const endOffset = findMatchingParenEnd(statement, openParenIndex);
+	return { value: statement.slice(startOffset, endOffset), startOffset };
 }
 
 function extractLifecycle(statementBeforeRoute: string): readonly RouteOutlineLifecycle[] {
@@ -433,6 +550,129 @@ function extractLifecycle(statementBeforeRoute: string): readonly RouteOutlineLi
 		}
 	}
 	return values;
+}
+
+function lineNumberForOffset(statement: string, startLine: number, offset: number): number {
+	return startLine + statement.slice(0, offset).split('\n').length - 1;
+}
+
+function extractLeadingRustExpressionName(value: string): string | null {
+	const match = /^\s*(?<name>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\b/u.exec(value);
+	return match?.groups?.name ?? null;
+}
+
+function extractAxumAdapterHandler(statement: string, method: RouteOutlineMethod): string | null {
+	const callStart = new RegExp(`\\.\\s*${method}\\s*\\(`, 'u').exec(statement);
+	if (!callStart) {
+		return null;
+	}
+
+	const afterCall = statement.slice(callStart.index + callStart[0].length);
+	if (method === 'fallback' || method === 'merge') {
+		return extractLeadingRustExpressionName(afterCall);
+	}
+
+	const commaIndex = afterCall.indexOf(',');
+	if (commaIndex === -1) {
+		return null;
+	}
+
+	return extractLeadingRustExpressionName(afterCall.slice(commaIndex + 1));
+}
+
+function extractAxumRouteEntries(
+	relativePath: string,
+	language: RouteOutlineLanguage,
+	contentSha256: string,
+	lines: readonly string[],
+	index: number,
+	method: (typeof AXUM_ROUTER_METHODS)[number],
+): readonly RouteOutlineRoute[] {
+	const chainStartLine = findChainStartLine(lines, index);
+	const chainEndLine = findChainEndLine(lines, index);
+	const statementLines = lines.slice(chainStartLine - 1, chainEndLine);
+	const statement = statementLines.join('\n');
+	const routeLineOffset = index - (chainStartLine - 1);
+	const callSegment = extractMethodCallSegment(statement, statementLines, method, routeLineOffset);
+	const routePath = extractRustStringRoutePath(callSegment.value, method);
+	const signature = compactSignature(lines, chainStartLine, chainEndLine);
+
+	if (method !== 'route') {
+		const handlerName = extractAxumAdapterHandler(callSegment.value, method);
+		return [
+			{
+				id: `${relativePath}:${index + 1}:axum:${method}:${routePath ?? '<dynamic>'}`,
+				path: relativePath,
+				language,
+				framework: 'axum',
+				method,
+				route_path: routePath,
+				line: index + 1,
+				chain_start_line: chainStartLine,
+				chain_end_line: chainEndLine,
+				handler_line: index + 1,
+				handler_name: handlerName,
+				lifecycle: [],
+				signature,
+				content_sha256: contentSha256,
+			},
+		];
+	}
+
+	const entries: RouteOutlineRoute[] = [];
+	const methodPattern = new RegExp(
+		`\\b(?<method>${AXUM_HTTP_METHODS.join('|')})\\s*\\(\\s*(?<handler>[A-Za-z_]\\w*(?:::[A-Za-z_]\\w*)*)`,
+		'gu',
+	);
+	for (const match of callSegment.value.matchAll(methodPattern)) {
+		const httpMethod = match.groups?.method as (typeof AXUM_HTTP_METHODS)[number] | undefined;
+		const handlerName = match.groups?.handler;
+		if (!httpMethod || !handlerName) {
+			continue;
+		}
+		const handlerLine = lineNumberForOffset(statement, chainStartLine, callSegment.startOffset + (match.index ?? 0));
+		const routeKey = routePath ?? '<dynamic>';
+		entries.push({
+			id: `${relativePath}:${handlerLine}:axum:${httpMethod}:${routeKey}:${handlerName}`,
+			path: relativePath,
+			language,
+			framework: 'axum',
+			method: httpMethod,
+			route_path: routePath,
+			line: index + 1,
+			chain_start_line: chainStartLine,
+			chain_end_line: chainEndLine,
+			handler_line: handlerLine,
+			handler_name: handlerName,
+			lifecycle: [],
+			signature,
+			content_sha256: contentSha256,
+		});
+	}
+
+	if (entries.length > 0) {
+		return entries;
+	}
+
+	const handlerName = extractAxumAdapterHandler(callSegment.value, method);
+	return [
+		{
+			id: `${relativePath}:${index + 1}:axum:${method}:${routePath ?? '<dynamic>'}`,
+			path: relativePath,
+			language,
+			framework: 'axum',
+			method,
+			route_path: routePath,
+			line: index + 1,
+			chain_start_line: chainStartLine,
+			chain_end_line: chainEndLine,
+			handler_line: index + 1,
+			handler_name: handlerName,
+			lifecycle: [],
+			signature,
+			content_sha256: contentSha256,
+		},
+	];
 }
 
 function frameworkBindings(lines: readonly string[]): FrameworkBindings {
@@ -474,6 +714,9 @@ function inferFramework(
 	if (/new\s+Hono\b|from\s+['"]hono['"]/u.test(statement)) {
 		return 'hono';
 	}
+	if (/\bRouter::new\s*\(|\brouting::\{|\b(?:get|post|put|patch|delete|options|head|any)\s*\(/u.test(statement)) {
+		return 'axum';
+	}
 	if (fileEvidence.length === 1) {
 		return fileEvidence[0] ?? 'unknown';
 	}
@@ -511,6 +754,17 @@ function extractRoutesFromFile(
 	const bindings = frameworkBindings(lines);
 
 	for (const [index, line] of lines.entries()) {
+		if (language === 'rust') {
+			const axumMethod = lineContainsAxumRouterMethod(line);
+			if (!axumMethod) {
+				continue;
+			}
+			routes.push(
+				...extractAxumRouteEntries(relativePath, language, contentSha256, lines, index, axumMethod),
+			);
+			continue;
+		}
+
 		const method = lineContainsRouteMethod(line);
 		if (!method) {
 			continue;
@@ -536,6 +790,7 @@ function extractRoutesFromFile(
 			chain_start_line: chainStartLine,
 			chain_end_line: chainEndLine,
 			handler_line: index + 1,
+			handler_name: null,
 			lifecycle: extractLifecycle(statementBeforeRoute),
 			signature: compactSignature(lines, chainStartLine, chainEndLine),
 			content_sha256: contentSha256,
