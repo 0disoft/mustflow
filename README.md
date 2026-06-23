@@ -129,7 +129,7 @@ mustflow installs and validates an agent workflow for user projects.
   config/schema churn, and broad structural changes before treating added complexity as free.
 - Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
   `code/outline` for source symbol maps, `code/symbol-read` for focused source snippets,
-  `code/route-outline` for Hono, Elysia, and Axum route maps, `docs/reference-drift` for stale
+  `code/route-outline` for Hono, Elysia, Axum, and NestJS route maps, `docs/reference-drift` for stale
   documentation references, `repo/config-chain` for nearby config inheritance,
   `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
   for exact file and JSON-field length budgets, so future checks do not sprawl into top-level
@@ -294,7 +294,7 @@ mf run mustflow_update_apply
 | `mf script-pack run code/outline scan <path...> --json` | Scan supported source files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
-| `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono, Elysia, and Axum files for route methods, paths, handlers, lifecycle chains, line ranges, and content hashes. |
+| `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono, Elysia, Axum, and NestJS files for route methods, paths, handlers, lifecycle chains, line ranges, and content hashes. |
 | `mf script-pack run code/export-diff compare --base HEAD --json` | Compare exported TypeScript or JavaScript declarations, return metadata, and package surface hints against a git base. |
 | `mf script-pack run docs/reference-drift check [path...] --json` | Check documentation references to `mf` commands, script-pack refs, schema files, and repository paths against current local surfaces. |
 | `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |

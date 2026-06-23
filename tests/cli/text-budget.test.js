@@ -127,11 +127,12 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(codeRouteOutline.mutates, false);
 		assert.equal(codeRouteOutline.network, false);
 		assert.deepEqual(codeRouteOutline.phases, ['before_change', 'during_change', 'after_change', 'review']);
-		assert.ok(codeRouteOutline.use_when.some((hint) => hint.includes('Hono, Elysia, and Axum')));
+		assert.ok(codeRouteOutline.use_when.some((hint) => hint.includes('Hono, Elysia, Axum, and NestJS')));
 		assert.ok(codeRouteOutline.inputs.includes('max_files'));
 		assert.ok(codeRouteOutline.outputs.includes('route_outline'));
 		assert.ok(codeRouteOutline.outputs.includes('route_lifecycle'));
 		assert.ok(codeRouteOutline.related_skills.includes('axum-code-change'));
+		assert.ok(codeRouteOutline.related_skills.includes('nestjs-code-change'));
 		assert.ok(codeRouteOutline.related_skills.includes('hono-code-change'));
 		assert.ok(codeRouteOutline.related_skills.includes('elysia-code-change'));
 		assert.equal(codeRouteOutline.risk_level, 'low');
@@ -1719,6 +1720,88 @@ test('code-route-outline scans Axum Router routes with handler metadata', () => 
 	}
 });
 
+test('code-route-outline scans NestJS controllers with method and lifecycle metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'users.controller.ts'),
+			[
+				'import { Controller, Get, Post, Put, Delete, UseGuards, UseInterceptors } from "@nestjs/common";',
+				'',
+				'@Controller("users")',
+				'@UseGuards(AuthGuard)',
+				'export class UsersController {',
+				'  @Get()',
+				'  list() { return []; }',
+				'',
+				'  @Post()',
+				'  @UseInterceptors(AuditInterceptor)',
+				'  create() { return {}; }',
+				'',
+				'  @Get(":id")',
+				'  show() { return {}; }',
+				'',
+				'  @Delete(":id")',
+				'  remove() { return true; }',
+				'',
+				'  @Put()',
+				'  replace() { return {}; }',
+				'}',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeRouteOutlineJson(projectPath, ['src/users.controller.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.files[0].path, 'src/users.controller.ts');
+		assert.equal(report.files[0].language, 'typescript');
+		assert.deepEqual(report.files[0].framework_evidence, ['nestjs']);
+		assert.equal(report.files[0].route_count, 5);
+
+		const list = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'get' && route.route_path === '/users',
+		);
+		assert.ok(list, 'NestJS list route should be outlined');
+		assert.equal(list.handler_name, 'list');
+		assert.deepEqual(list.lifecycle, ['useGuards']);
+
+		const create = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'post' && route.route_path === '/users',
+		);
+		assert.ok(create, 'NestJS create route should be outlined');
+		assert.equal(create.handler_name, 'create');
+		assert.deepEqual(create.lifecycle, ['useGuards', 'useInterceptors']);
+
+		const show = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'get' && route.route_path === '/users/:id',
+		);
+		assert.ok(show, 'NestJS show route should be outlined');
+		assert.equal(show.handler_name, 'show');
+		assert.deepEqual(show.lifecycle, ['useGuards']);
+
+		const remove = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'delete' && route.route_path === '/users/:id',
+		);
+		assert.ok(remove, 'NestJS remove route should be outlined');
+		assert.equal(remove.handler_name, 'remove');
+		assert.deepEqual(remove.lifecycle, ['useGuards']);
+
+		const replace = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'put' && route.route_path === '/users',
+		);
+		assert.ok(replace, 'NestJS replace route should be outlined');
+		assert.equal(replace.handler_name, 'replace');
+		assert.deepEqual(report.findings, []);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files maps imports, importers, siblings, and parent config without deciding verification scope', () => {
 	const projectPath = createTempProject();
 
@@ -2131,7 +2214,7 @@ test('script-pack suggest recommends config-chain for config, package, source, a
 	}
 });
 
-test('script-pack suggest recommends route outline for Hono Elysia and Axum source work', () => {
+test('script-pack suggest recommends route outline for Hono Elysia Axum and NestJS source work', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -2422,6 +2505,41 @@ test('text-budget is not exposed as a top-level command', () => {
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.match(result.stderr, /Unknown command: text-budget/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+test('script-pack suggest recommends route outline for NestJS source work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'users.controller.ts'),
+			'import { Controller, Get } from "@nestjs/common";\n',
+		);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/users.controller.ts',
+			'--skill',
+			'nestjs-code-change',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const routeOutline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/route-outline');
+		assert.ok(routeOutline, 'code/route-outline should be suggested for NestJS route work');
+		assert.equal(
+			routeOutline.run_hint,
+			'mf script-pack run code/route-outline scan src/users.controller.ts --json',
+		);
+		assert.ok(routeOutline.matched_skills.includes('nestjs-code-change'));
+		assert.ok(routeOutline.matched_phases.includes('before_change'));
+		assert.equal(routeOutline.report_schema_file, 'route-outline-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}

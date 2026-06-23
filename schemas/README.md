@@ -76,8 +76,9 @@ Current schemas:
   range/read finding codes
 - `route-outline-report.schema.json`: output of
   `mf script-pack run code/route-outline scan <path...> --json`, containing a bounded Hono,
-  Elysia, and Axum route outline with file hashes, framework evidence, route methods, route paths,
-  optional handler names, line ranges, lifecycle-chain metadata, and stable input-limit finding codes
+  Elysia, Axum, and NestJS route outline with file hashes, framework evidence, route methods,
+  route paths, optional handler names, line ranges, lifecycle-chain metadata, and stable input-limit
+  finding codes
 - `export-diff-report.schema.json`: output of
   `mf script-pack run code/export-diff compare [path...] --json`, containing a bounded git-based
   comparison of exported TypeScript and JavaScript declarations, signatures, return metadata,

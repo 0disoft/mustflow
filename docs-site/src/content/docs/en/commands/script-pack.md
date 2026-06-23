@@ -113,8 +113,8 @@ surrounding context without paging through the entire file.
 npx mf script-pack run code/route-outline scan src/cli/index.ts --json
 ```
 
-`code/route-outline` is read-only. It scans Hono, Elysia, and Axum route files for route
-methods, paths, handlers, lifecycle chains, line ranges, framework evidence, and content hashes. Use it
+`code/route-outline` is read-only. It scans Hono, Elysia, Axum, and NestJS route files for
+route methods, paths, handlers, lifecycle chains, line ranges, framework evidence, and content hashes. Use it
 before reading large route modules when the useful first question is "which handlers and lifecycle
 hooks are here?"
 

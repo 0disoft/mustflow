@@ -33,6 +33,9 @@ This file applies to the mustflow repository itself. It is not installed into us
   large route modules.
 - Added Axum route extraction to `code/route-outline`, including Rust `.rs` scanning and first-pass
   `Router::route`, `nest`, `merge`, and `fallback` handler metadata.
+- Added NestJS controller and method route extraction to `code/route-outline`, including
+  `@Controller`, `@Get/@Post/@Put/@Patch/@Delete/@Options/@Head/@All` method decorators, and
+  `@UseGuards`, `@UseInterceptors`, `@UsePipes`, and `@UseFilters` lifecycle hooks.
 - Added the built-in `code/export-diff` script-pack helper so agents can compare exported
   TypeScript and JavaScript signatures, return metadata, and package surface hints against a git
   base after public-ish API edits.

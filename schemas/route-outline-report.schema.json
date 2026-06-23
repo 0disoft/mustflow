@@ -59,7 +59,7 @@
       "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs", "rust"]
     },
     "framework": {
-      "enum": ["hono", "elysia", "axum", "unknown"]
+      "enum": ["hono", "elysia", "axum", "nestjs", "unknown"]
     },
     "method": {
       "enum": [
@@ -90,7 +90,11 @@
         "beforeHandle",
         "onRequest",
         "onAfterHandle",
-        "onError"
+        "onError",
+        "useGuards",
+        "useInterceptors",
+        "usePipes",
+        "useFilters"
       ]
     },
     "stringArray": {

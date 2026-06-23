@@ -115,7 +115,7 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				summaryKey: 'scriptPack.script.codeRouteOutline.summary',
 				actions: ['scan'],
 				useWhen: [
-					'Scan Hono, Elysia, and Axum route source files for method, path, framework, lifecycle, handler, and line metadata before reading whole modules.',
+					'Scan Hono, Elysia, Axum, and NestJS route source files for method, path, framework, lifecycle, handler, and line metadata before reading whole modules.',
 					'Build a bounded first-pass route outline with paths, line ranges, lifecycle calls, and content hashes for HTTP route orientation.',
 				],
 				phases: ['before_change', 'during_change', 'after_change', 'review'],
@@ -130,6 +130,7 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 					'axum-code-change',
 					'elysia-code-change',
 					'hono-code-change',
+					'nestjs-code-change',
 					'http-delivery-streaming',
 				],
 				riskLevel: 'low',

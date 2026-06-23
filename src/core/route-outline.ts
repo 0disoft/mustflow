@@ -20,7 +20,7 @@ export type RouteOutlineLanguage =
 	| 'javascript-module'
 	| 'javascript-commonjs'
 	| 'rust';
-export type RouteOutlineFramework = 'hono' | 'elysia' | 'axum' | 'unknown';
+export type RouteOutlineFramework = 'hono' | 'elysia' | 'axum' | 'nestjs' | 'unknown';
 export type RouteOutlineMethod =
 	| 'get'
 	| 'post'
@@ -46,7 +46,11 @@ export type RouteOutlineLifecycle =
 	| 'beforeHandle'
 	| 'onRequest'
 	| 'onAfterHandle'
-	| 'onError';
+	| 'onError'
+	| 'useGuards'
+	| 'useInterceptors'
+	| 'usePipes'
+	| 'useFilters';
 
 export type RouteOutlineFindingCode =
 	| 'code_route_outline_path_outside_root'
@@ -148,6 +152,8 @@ const ROUTE_METHODS = [
 ] as const;
 const AXUM_ROUTER_METHODS = ['route', 'nest', 'merge', 'fallback'] as const;
 const AXUM_HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'any'] as const;
+const NESTJS_CONTROLLER_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all'] as const;
+const NESTJS_LIFECYCLE_DECORATORS = ['useGuards', 'useInterceptors', 'usePipes', 'useFilters'] as const;
 const LIFECYCLE_METHODS = [
 	'guard',
 	'resolve',
@@ -374,6 +380,9 @@ function frameworkEvidence(text: string): readonly RouteOutlineFramework[] {
 	}
 	if (/(?:use\s+axum::|\baxum::Router\b|\bRouter::new\s*\(|\brouting::\{[^}]*\bget\b)/u.test(text)) {
 		evidence.add('axum');
+	}
+	if (/(?:from\s+['"]@nestjs\/(?:common|core)['"]|@Controller\s*\(|@Get\s*\(|@UseGuards\s*\(|NestFactory\.create\s*\()/u.test(text)) {
+		evidence.add('nestjs');
 	}
 	return [...evidence].sort((left, right) => left.localeCompare(right));
 }
@@ -717,6 +726,9 @@ function inferFramework(
 	if (/\bRouter::new\s*\(|\brouting::\{|\b(?:get|post|put|patch|delete|options|head|any)\s*\(/u.test(statement)) {
 		return 'axum';
 	}
+	if (/@(?:Controller|Get|Post|Put|Patch|Delete|Options|Head|All)\b/u.test(statement)) {
+		return 'nestjs';
+	}
 	if (fileEvidence.length === 1) {
 		return fileEvidence[0] ?? 'unknown';
 	}
@@ -752,6 +764,10 @@ function extractRoutesFromFile(
 	const lines = text.split(/\r\n|\r|\n/u);
 	const routes: RouteOutlineRoute[] = [];
 	const bindings = frameworkBindings(lines);
+	const nestjsBlocks = evidence.includes('nestjs') ? findNestjsControllerBlocks(lines) : [];
+	for (const block of nestjsBlocks) {
+		routes.push(...extractNestjsRouteEntries(relativePath, language, contentSha256, lines, block));
+	}
 
 	for (const [index, line] of lines.entries()) {
 		if (language === 'rust') {
@@ -767,6 +783,10 @@ function extractRoutesFromFile(
 
 		const method = lineContainsRouteMethod(line);
 		if (!method) {
+			continue;
+		}
+
+		if (nestjsBlocks.some((block) => index + 1 >= block.startLine && index + 1 <= block.endLine)) {
 			continue;
 		}
 
@@ -900,4 +920,310 @@ export function inspectRouteOutline(projectRoot: string, options: InspectRouteOu
 		findings,
 		issues,
 	};
+}
+interface NestjsControllerBlock {
+	readonly startLine: number;
+	readonly endLine: number;
+	readonly className: string;
+	readonly controllerPath: string;
+}
+
+function findNestjsControllerBlocks(lines: readonly string[]): readonly NestjsControllerBlock[] {
+	const blocks: NestjsControllerBlock[] = [];
+
+	let index = 0;
+	while (index < lines.length) {
+		const line = lines[index] ?? '';
+		if (!/@Controller\s*\(/.test(line)) {
+			index += 1;
+			continue;
+		}
+
+		const controllerPath = extractNestjsControllerPath(line);
+		if (controllerPath === null) {
+			index += 1;
+			continue;
+		}
+
+		const classLine = findNextClassDeclaration(lines, index + 1);
+		if (classLine === null) {
+			index += 1;
+			continue;
+		}
+
+		const endLine = findClassBodyEnd(lines, classLine);
+		if (endLine === null) {
+			index += 1;
+			continue;
+		}
+
+		const className = extractClassName(lines[classLine] ?? '') ?? '<anonymous>';
+		blocks.push({
+			startLine: index + 1,
+			endLine: endLine + 1,
+			className,
+			controllerPath,
+		});
+		index = endLine + 1;
+	}
+
+	return blocks;
+}
+
+function extractNestjsControllerPath(decoratorLine: string): string | null {
+	const callStart = /@Controller\s*\(/.exec(decoratorLine);
+	if (!callStart) {
+		return null;
+	}
+
+	const openParenIndex = callStart.index + callStart[0].lastIndexOf('(');
+	const endIndex = findMatchingParenEnd(decoratorLine, openParenIndex);
+	if (endIndex <= openParenIndex) {
+		return null;
+	}
+
+	const argument = decoratorLine.slice(openParenIndex + 1, endIndex - 1).trim();
+	if (argument.length === 0) {
+		return '';
+	}
+
+	const quoted = argument.match(/^(['"])((?:\\.|(?!\1)[^\\])*)\1/u);
+	if (quoted?.[2] !== undefined) {
+		return quoted[2].replace(/\\(['"`\\/])/gu, '$1');
+	}
+
+	const optionsMatch = argument.match(/path\s*:\s*(['"])((?:\\.|(?!\2)[^\\])*)\2/u);
+	if (optionsMatch?.[2] !== undefined) {
+		return optionsMatch[2].replace(/\\(['"`\\/])/gu, '$1');
+	}
+
+	return null;
+}
+
+function findNextClassDeclaration(lines: readonly string[], fromIndex: number): number | null {
+	let index = fromIndex;
+	while (index < lines.length) {
+		const trimmed = (lines[index] ?? '').trim();
+		if (trimmed.length === 0) {
+			index += 1;
+			continue;
+		}
+		if (/\b(?:export\s+)?(?:abstract\s+)?class\s+[$A-Z_a-z][$\w]*/u.test(trimmed)) {
+			return index;
+		}
+		if (/@[A-Z]\w*/u.test(trimmed)) {
+			index += 1;
+			continue;
+		}
+		return null;
+	}
+	return null;
+}
+
+function findClassBodyEnd(lines: readonly string[], classLine: number): number | null {
+	const openBraceIndex = (lines[classLine] ?? '').indexOf('{');
+	if (openBraceIndex === -1) {
+		return null;
+	}
+
+	let depth = 0;
+	let index = classLine;
+	while (index < lines.length) {
+		depth += countCharacterDelta(lines[index] ?? '', '{', '}');
+		if (depth <= 0) {
+			return index;
+		}
+		index += 1;
+	}
+	return null;
+}
+
+function extractClassName(classLine: string): string | null {
+	const match = /\bclass\s+(?<name>[$A-Z_a-z][$\w]*)/u.exec(classLine);
+	return match?.groups?.name ?? null;
+}
+
+function extractNestjsMethodPath(decoratorLine: string): string | null {
+	const callStart = /(?:^|\s)@(?<method>Get|Post|Put|Patch|Delete|Options|Head|All)\s*\(/.exec(decoratorLine);
+	if (!callStart) {
+		return null;
+	}
+
+	const openParenIndex = callStart.index + callStart[0].lastIndexOf('(');
+	const endIndex = findMatchingParenEnd(decoratorLine, openParenIndex);
+	if (endIndex <= openParenIndex) {
+		return null;
+	}
+
+	const argument = decoratorLine.slice(openParenIndex + 1, endIndex - 1).trim();
+	if (argument.length === 0) {
+		return '';
+	}
+
+	const quoted = argument.match(/^(['"])((?:\\.|(?!\1)[^\\])*)\1/u);
+	if (quoted?.[2] !== undefined) {
+		return quoted[2].replace(/\\(['"`\\/])/gu, '$1');
+	}
+
+	const pathMatch = argument.match(/path\s*:\s*(['"])((?:\\.|(?!\2)[^\\])*)\2/u);
+	if (pathMatch?.[2] !== undefined) {
+		return pathMatch[2].replace(/\\(['"`\\/])/gu, '$1');
+	}
+
+	return null;
+}
+
+function joinNestjsRoutePath(controllerPath: string, methodPath: string): string {
+	const left = controllerPath.replace(/\/+$/u, '');
+	const right = methodPath.replace(/^\/+/u, '');
+	if (left.length === 0) {
+		return right.length === 0 ? '/' : `/${right}`;
+	}
+	if (right.length === 0) {
+		return `/${left}`;
+	}
+	return `/${left}/${right}`;
+}
+function mergeNestjsLifecycle(
+	left: readonly RouteOutlineLifecycle[],
+	right: readonly RouteOutlineLifecycle[],
+): readonly RouteOutlineLifecycle[] {
+	const values: RouteOutlineLifecycle[] = [];
+	const seen = new Set<RouteOutlineLifecycle>();
+	for (const value of [...left, ...right]) {
+		if (seen.has(value)) {
+			continue;
+		}
+		seen.add(value);
+		values.push(value);
+	}
+	return values;
+}
+
+function extractNestjsLifecycleDecorator(line: string): RouteOutlineLifecycle | null {
+	const match = /@(?<decorator>UseGuards|UseInterceptors|UsePipes|UseFilters)\b/u.exec(line);
+	if (!match?.groups?.decorator) {
+		return null;
+	}
+	const lifecycle = `${match.groups.decorator.charAt(0).toLowerCase()}${match.groups.decorator.slice(1)}`;
+	return NESTJS_LIFECYCLE_DECORATORS.includes(lifecycle as (typeof NESTJS_LIFECYCLE_DECORATORS)[number])
+		? (lifecycle as RouteOutlineLifecycle)
+		: null;
+}
+
+function extractNestjsHandlerName(line: string): string | null {
+	const match = /^\s*(?:public\s+|private\s+|protected\s+|async\s+|static\s+|readonly\s+|\*?\s*)*[$A-Z_a-z][$\w]*\s*\(/u.exec(line);
+	if (!match) {
+		return null;
+	}
+	const named = /(?<name>[$A-Z_a-z][$\w]*)\s*\(/u.exec(line);
+	const name = named?.groups?.name;
+	if (!name) {
+		return null;
+	}
+	if (/\b(?:if|for|while|switch|return|class|interface|function|new|throw|typeof|in|of)\b/u.test(name)) {
+		return null;
+	}
+	return name;
+}
+
+function extractNestjsRouteEntries(
+	relativePath: string,
+	language: RouteOutlineLanguage,
+	contentSha256: string,
+	lines: readonly string[],
+	block: NestjsControllerBlock,
+): readonly RouteOutlineRoute[] {
+	const routes: RouteOutlineRoute[] = [];
+
+	let controllerLifecycle: readonly RouteOutlineLifecycle[] = [];
+	let method: (typeof NESTJS_CONTROLLER_METHODS)[number] | null = null;
+	let methodPath: string | null = null;
+	let methodLifecycle: readonly RouteOutlineLifecycle[] = [];
+	let handlerName: string | null = null;
+	let decoratorLocalLine = 0;
+	let handlerLocalLine = 0;
+
+	const relativeLine = (localLine: number) => block.startLine + localLine;
+
+	const commit = () => {
+		if (method === null) {
+			return;
+		}
+		const fullPath = joinNestjsRoutePath(block.controllerPath, methodPath === null ? '' : methodPath);
+		const signature = compactSignature(lines, relativeLine(decoratorLocalLine), relativeLine(handlerLocalLine));
+		const lifecycle = mergeNestjsLifecycle(controllerLifecycle, methodLifecycle);
+		const resolvedHandler = handlerName ?? '<anonymous>';
+		routes.push({
+			id: `${relativePath}:${relativeLine(decoratorLocalLine)}:nestjs:${method}:${fullPath || '<root>'}`,
+			path: relativePath,
+			language,
+			framework: 'nestjs',
+			method,
+			route_path: fullPath,
+			line: relativeLine(decoratorLocalLine),
+			chain_start_line: block.startLine,
+			chain_end_line: relativeLine(handlerLocalLine),
+			handler_line: relativeLine(handlerLocalLine),
+			handler_name: resolvedHandler,
+			lifecycle,
+			signature,
+			content_sha256: contentSha256,
+		});
+	};
+
+	const beginMethod = (
+		nextMethod: (typeof NESTJS_CONTROLLER_METHODS)[number],
+		nextMethodPath: string | null,
+		localLine: number,
+	) => {
+		commit();
+		method = nextMethod;
+		methodPath = nextMethodPath;
+		methodLifecycle = [];
+		handlerName = null;
+		decoratorLocalLine = localLine;
+		handlerLocalLine = localLine;
+	};
+
+	const blockLines = lines.slice(block.startLine - 1, block.endLine);
+
+	let index = 0;
+	while (index < blockLines.length) {
+		const line = blockLines[index] ?? '';
+
+		const decoratorMatch = /@(?<method>Get|Post|Put|Patch|Delete|Options|Head|All)\s*\(/.exec(line);
+		if (decoratorMatch?.groups?.method) {
+			beginMethod(
+				(decoratorMatch.groups.method as string).toLowerCase() as (typeof NESTJS_CONTROLLER_METHODS)[number],
+				extractNestjsMethodPath(line),
+				index,
+			);
+			index += 1;
+			continue;
+		}
+
+		const lifecycle = extractNestjsLifecycleDecorator(line);
+		if (method === null) {
+			if (lifecycle !== null) {
+				controllerLifecycle = mergeNestjsLifecycle(controllerLifecycle, [lifecycle]);
+			}
+			index += 1;
+			continue;
+		}
+
+		if (lifecycle !== null) {
+			methodLifecycle = mergeNestjsLifecycle(methodLifecycle, [lifecycle]);
+		}
+
+		const name = extractNestjsHandlerName(line);
+		if (name !== null) {
+			handlerName = name;
+			handlerLocalLine = index;
+		}
+		index += 1;
+	}
+
+	commit();
+	return routes;
 }
