@@ -46,6 +46,11 @@ function runCodeExportDiffJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runDocsReferenceDriftJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'docs/reference-drift', 'check', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -164,6 +169,22 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(textBudget.risk_level, 'low');
 		assert.equal(textBudget.cost, 'low');
 		assert.equal(textBudget.report_schema_file, 'text-budget-report.schema.json');
+
+		const docsPack = report.packs.find((pack) => pack.id === 'docs');
+		const referenceDrift = docsPack?.scripts.find((script) => script.ref === 'docs/reference-drift');
+
+		assert.ok(referenceDrift, 'docs/reference-drift should be listed');
+		assert.equal(referenceDrift.read_only, true);
+		assert.equal(referenceDrift.mutates, false);
+		assert.equal(referenceDrift.network, false);
+		assert.deepEqual(referenceDrift.phases, ['after_change', 'review']);
+		assert.ok(referenceDrift.use_when.some((hint) => hint.includes('documentation references')));
+		assert.ok(referenceDrift.inputs.includes('max_files'));
+		assert.ok(referenceDrift.outputs.includes('reference_drift'));
+		assert.ok(referenceDrift.related_skills.includes('public-json-contract-change'));
+		assert.equal(referenceDrift.risk_level, 'low');
+		assert.equal(referenceDrift.cost, 'low');
+		assert.equal(referenceDrift.report_schema_file, 'reference-drift-report.schema.json');
 
 		const repoPack = report.packs.find((pack) => pack.id === 'repo');
 		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
@@ -1789,6 +1810,88 @@ test('config-chain inspects package and tsconfig inheritance without executing d
 	}
 });
 
+test('reference-drift validates documented commands, script refs, schemas, and repo paths', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'schemas'));
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'schemas', 'doctor-report.schema.json'), '{}\n');
+		writeFileSync(path.join(projectPath, 'src', 'index.ts'), 'export const ok = true;\n');
+		writeFileSync(
+			path.join(projectPath, 'README.md'),
+			[
+				'# Reference docs',
+				'',
+				'Run `mf script-pack run code/outline scan src/index.ts --json` before reading all source.',
+				'See `doctor-report.schema.json` and `src/index.ts`.',
+				'Bad examples: `mf no-such-command --json`, `mf script-pack run docs/missing check --json`, `missing.schema.json`, `src/missing.ts`.',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runDocsReferenceDriftJson(projectPath, ['README.md']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'docs');
+		assert.equal(report.script_id, 'reference-drift');
+		assert.equal(report.script_ref, 'docs/reference-drift');
+		assert.equal(report.action, 'check');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.files[0].path, 'README.md');
+		assert.match(report.files[0].sha256, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.ok(report.policy.default_paths.includes('README.md'));
+		assert.equal(report.summary.files_checked, 1);
+		assert.ok(report.summary.references_checked >= 8);
+
+		const references = new Map(report.references.map((reference) => [`${reference.kind}:${reference.target}`, reference]));
+		assert.equal(references.get('mf_command:script-pack')?.status, 'ok');
+		assert.equal(references.get('script_pack_ref:code/outline')?.status, 'ok');
+		assert.equal(references.get('schema_file:doctor-report.schema.json')?.status, 'ok');
+		assert.equal(references.get('repo_path:src/index.ts')?.status, 'ok');
+		assert.equal(references.get('mf_command:no-such-command')?.status, 'unknown');
+		assert.equal(references.get('script_pack_ref:docs/missing')?.status, 'unknown');
+		assert.equal(references.get('schema_file:missing.schema.json')?.status, 'unknown');
+		assert.equal(references.get('repo_path:src/missing.ts')?.status, 'missing');
+		assert.ok(report.findings.some((finding) => finding.code === 'reference_drift_unknown_command'));
+		assert.ok(report.findings.some((finding) => finding.code === 'reference_drift_unknown_script_pack'));
+		assert.ok(report.findings.some((finding) => finding.code === 'reference_drift_unknown_schema'));
+		assert.ok(report.findings.some((finding) => finding.code === 'reference_drift_missing_path'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reference-drift defaults to README and schemas docs when no path is provided', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'schemas'));
+		writeFileSync(path.join(projectPath, 'schemas', 'doctor-report.schema.json'), '{}\n');
+		writeFileSync(path.join(projectPath, 'README.md'), 'Run `mf doctor --json`.\n');
+		writeFileSync(path.join(projectPath, 'schemas', 'README.md'), 'Schema: `doctor-report.schema.json`.\n');
+
+		const { result, report } = runDocsReferenceDriftJson(projectPath, []);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.deepEqual(
+			report.files.map((file) => file.path),
+			['README.md', 'schemas/README.md'],
+		);
+		assert.equal(report.summary.files_checked, 2);
+		assert.equal(report.findings.length, 0);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest ranks helpers from path, skill, and phase evidence', () => {
 	const projectPath = createTempProject();
 
@@ -2111,6 +2214,40 @@ test('script-pack suggest can use current changed files without running scripts'
 	}
 });
 
+test('script-pack suggest recommends reference drift checks after docs or schema changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'README.md',
+			'--path',
+			'schemas/README.md',
+			'--skill',
+			'public-json-contract-change',
+			'--phase',
+			'after_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const referenceDrift = report.suggestions.find((suggestion) => suggestion.script_ref === 'docs/reference-drift');
+		assert.ok(referenceDrift, 'docs/reference-drift should be suggested for docs/schema references');
+		assert.ok(referenceDrift.matched_phases.includes('after_change'));
+		assert.ok(referenceDrift.matched_skills.includes('public-json-contract-change'));
+		assert.ok(referenceDrift.matched_surfaces.includes('docs'));
+		assert.ok(referenceDrift.matched_surfaces.includes('schema'));
+		assert.equal(
+			referenceDrift.run_hint,
+			'mf script-pack run docs/reference-drift check README.md schemas/README.md --json',
+		);
+		assert.equal(referenceDrift.report_schema_file, 'reference-drift-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest rejects missing and unknown selection inputs', () => {
 	const projectPath = createTempProject();
 
@@ -2158,7 +2295,8 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack suggest --path src\/cli\/index\.ts --phase before_change/);
 		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
-		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/server\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run docs\/reference-drift check README\.md schemas\/README\.md --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/config-chain inspect src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);

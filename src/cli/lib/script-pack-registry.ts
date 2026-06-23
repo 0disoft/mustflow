@@ -202,6 +202,42 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 		],
 	},
 	{
+		id: 'docs',
+		summaryKey: 'scriptPack.pack.docs.summary',
+		scripts: [
+			{
+				packId: 'docs',
+				id: 'reference-drift',
+				ref: scriptRef('docs', 'reference-drift'),
+				usage: 'mf script-pack run docs/reference-drift check [path...] [options]',
+				summaryKey: 'scriptPack.script.referenceDrift.summary',
+				actions: ['check'],
+				useWhen: [
+					'Check documentation references to mf commands, script-pack refs, schema files, and repository paths against current local surfaces.',
+					'Review docs after CLI, schema, script-pack, or repository structure changes before claiming references are synchronized.',
+				],
+				phases: ['after_change', 'review'],
+				readOnly: true,
+				mutates: false,
+				network: false,
+				inputs: ['path', 'max_files', 'max_file_bytes'],
+				outputs: ['human_summary', 'json_report', 'reference_drift', 'stale_reference_findings'],
+				relatedSkills: [
+					'cli-output-contract-review',
+					'docs-prose-review',
+					'public-json-contract-change',
+					'readme-authoring',
+					'release-notes-authoring',
+				],
+				riskLevel: 'low',
+				cost: 'low',
+				reportSchemaFile: 'reference-drift-report.schema.json',
+				loadRunner: async () =>
+					(await import('../script-packs/docs-reference-drift.js')).runDocsReferenceDriftScript,
+			},
+		],
+	},
+	{
 		id: 'repo',
 		summaryKey: 'scriptPack.pack.repo.summary',
 		scripts: [

@@ -950,6 +950,27 @@ test('export-diff json output matches the published schema', () => {
 	}
 });
 
+test('reference-drift json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'docs/reference-drift',
+			'check',
+			'README.md',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'reference-drift-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('text-budget json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

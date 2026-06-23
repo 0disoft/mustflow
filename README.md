@@ -129,8 +129,9 @@ mustflow installs and validates an agent workflow for user projects.
   config/schema churn, and broad structural changes before treating added complexity as free.
 - Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
   `code/outline` for source symbol maps, `code/symbol-read` for focused source snippets,
-  `code/route-outline` for Hono and Elysia route maps, `repo/config-chain` for nearby config
-  inheritance, `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
+  `code/route-outline` for Hono and Elysia route maps, `docs/reference-drift` for stale
+  documentation references, `repo/config-chain` for nearby config inheritance,
+  `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
   for exact file and JSON-field length budgets, so future checks do not sprawl into top-level
   commands.
 - Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
@@ -295,6 +296,7 @@ mf run mustflow_update_apply
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
 | `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono and Elysia TypeScript or JavaScript files for route methods, paths, lifecycle chains, line ranges, and content hashes. |
 | `mf script-pack run code/export-diff compare --base HEAD --json` | Compare exported TypeScript or JavaScript declarations, return metadata, and package surface hints against a git base. |
+| `mf script-pack run docs/reference-drift check [path...] --json` | Check documentation references to `mf` commands, script-pack refs, schema files, and repository paths against current local surfaces. |
 | `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
 | `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
@@ -330,9 +332,11 @@ explicit `--path`. The suggestion report is only a ranking aid: it does not run 
 verification, or bypass `.mustflow/config/commands.toml`. A common source-orientation flow is
 `code/outline` first, then `code/symbol-read` for the chosen symbol line or source anchor. After
 public-ish TypeScript or JavaScript changes, use `code/export-diff` to review exported signatures
-and return metadata against a git base. For config-sensitive source or test work, use
-`repo/config-chain` before assuming effective inherited rules. For generated or protected paths, use
-`repo/generated-boundary` before editing or when reviewing a changed-file set. See the full
+and return metadata against a git base. After docs, schema, CLI, or script-pack surface changes, use
+`docs/reference-drift` to catch stale references before treating docs as synchronized. For
+config-sensitive source or test work, use `repo/config-chain` before assuming effective inherited
+rules. For generated or protected paths, use `repo/generated-boundary` before editing or when
+reviewing a changed-file set. See the full
 [`mf script-pack` documentation](https://0disoft.github.io/mustflow/commands/script-pack/).
 
 `core/text-budget` counts `line` units by splitting text on line breaks; a trailing line break

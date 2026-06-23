@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/reference-drift-report.schema.json",
+  "title": "mustflow reference-drift report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "files",
+    "references",
+    "summary",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "docs" },
+    "script_id": { "const": "reference-drift" },
+    "script_ref": { "const": "docs/reference-drift" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "nullableSha256": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "referenceKind": {
+      "enum": ["mf_command", "script_pack_ref", "schema_file", "repo_path"]
+    },
+    "referenceStatus": {
+      "enum": ["ok", "missing", "unknown", "skipped"]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_files",
+        "max_file_bytes",
+        "default_paths",
+        "path_filters",
+        "checked_reference_kinds"
+      ],
+      "properties": {
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "default_paths": { "$ref": "#/$defs/stringArray" },
+        "path_filters": { "$ref": "#/$defs/stringArray" },
+        "checked_reference_kinds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/referenceKind" }
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "sha256",
+        "size_bytes",
+        "line_count",
+        "reference_count"
+      ],
+      "properties": {
+        "kind": { "const": "document" },
+        "path": { "type": "string" },
+        "sha256": { "$ref": "#/$defs/nullableSha256" },
+        "size_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "line_count": { "type": ["integer", "null"], "minimum": 0 },
+        "reference_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "line", "value", "target", "status", "message"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/referenceKind" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "value": { "type": "string" },
+        "target": { "type": "string" },
+        "status": { "$ref": "#/$defs/referenceStatus" },
+        "message": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_checked", "references_checked", "ok", "missing", "unknown", "skipped"],
+      "properties": {
+        "files_checked": { "type": "integer", "minimum": 0 },
+        "references_checked": { "type": "integer", "minimum": 0 },
+        "ok": { "type": "integer", "minimum": 0 },
+        "missing": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "reference_drift_path_outside_root",
+            "reference_drift_unreadable_path",
+            "reference_drift_file_too_large",
+            "reference_drift_max_files_exceeded",
+            "reference_drift_unknown_command",
+            "reference_drift_unknown_script_pack",
+            "reference_drift_unknown_schema",
+            "reference_drift_missing_path"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

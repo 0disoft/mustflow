@@ -326,6 +326,15 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run core/text-budget check', textPaths, script.usage);
 	}
 
+	if (script.ref === 'docs/reference-drift') {
+		const docsPaths = analyzedPaths
+			.filter((entry) =>
+				entry.surfaces.some((surface) => surface === 'docs' || surface === 'schema' || surface === 'package'),
+			)
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run docs/reference-drift check', docsPaths, script.usage);
+	}
+
 	if (script.ref === 'repo/generated-boundary') {
 		return createConcretePathHint('mf script-pack run repo/generated-boundary check', analyzedPaths.map((entry) => entry.path), script.usage);
 	}

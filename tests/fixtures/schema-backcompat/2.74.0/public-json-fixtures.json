@@ -3749,6 +3749,100 @@
         "findings": [],
         "issues": []
       }
+    },
+    {
+      "id": "reference-drift-report",
+      "schema_file": "reference-drift-report.schema.json",
+      "producer": "mf script-pack run docs/reference-drift check [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "docs",
+        "script_id": "reference-drift",
+        "script_ref": "docs/reference-drift",
+        "action": "check",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_files": 200,
+          "max_file_bytes": 524288,
+          "default_paths": [
+            "README.md",
+            "schemas/README.md",
+            "docs-site/src/content/docs"
+          ],
+          "path_filters": [
+            "*.md",
+            "*.mdx"
+          ],
+          "checked_reference_kinds": [
+            "mf_command",
+            "script_pack_ref",
+            "schema_file",
+            "repo_path"
+          ]
+        },
+        "input_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "files": [
+          {
+            "kind": "document",
+            "path": "README.md",
+            "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "size_bytes": 128,
+            "line_count": 4,
+            "reference_count": 4
+          }
+        ],
+        "references": [
+          {
+            "kind": "mf_command",
+            "path": "README.md",
+            "line": 2,
+            "value": "mf doctor --json",
+            "target": "doctor",
+            "status": "ok",
+            "message": "mf command exists: doctor"
+          },
+          {
+            "kind": "script_pack_ref",
+            "path": "README.md",
+            "line": 3,
+            "value": "mf script-pack run code/outline",
+            "target": "code/outline",
+            "status": "ok",
+            "message": "script-pack ref exists: code/outline"
+          },
+          {
+            "kind": "schema_file",
+            "path": "README.md",
+            "line": 4,
+            "value": "doctor-report.schema.json",
+            "target": "doctor-report.schema.json",
+            "status": "ok",
+            "message": "schema file exists: doctor-report.schema.json"
+          },
+          {
+            "kind": "repo_path",
+            "path": "README.md",
+            "line": 4,
+            "value": "src/index.ts",
+            "target": "src/index.ts",
+            "status": "ok",
+            "message": "repo path exists: src/index.ts"
+          }
+        ],
+        "summary": {
+          "files_checked": 1,
+          "references_checked": 4,
+          "ok": 4,
+          "missing": 0,
+          "unknown": 0,
+          "skipped": 0
+        },
+        "findings": [],
+        "issues": []
+      }
     }
   ]
 }
