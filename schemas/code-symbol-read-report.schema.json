@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/code-symbol-read-report.schema.json",
+  "title": "mustflow code-symbol-read report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "target",
+    "snippet",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "code" },
+    "script_id": { "const": "symbol-read" },
+    "script_ref": { "const": "code/symbol-read" },
+    "action": { "const": "read" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "target": {
+      "anyOf": [
+        { "$ref": "#/$defs/target" },
+        { "type": "null" }
+      ]
+    },
+    "snippet": {
+      "anyOf": [
+        { "$ref": "#/$defs/snippet" },
+        { "type": "null" }
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "language": {
+      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs"]
+    },
+    "symbolKind": {
+      "enum": ["function", "class", "interface", "type", "enum", "variable"]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_line", "end_line", "context_lines", "max_file_bytes", "max_snippet_lines"],
+      "properties": {
+        "start_line": { "type": "integer", "minimum": 1 },
+        "end_line": { "type": ["integer", "null"], "minimum": 1 },
+        "context_lines": { "type": "integer", "minimum": 0 },
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_snippet_lines": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "symbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "language",
+        "kind",
+        "name",
+        "start_line",
+        "end_line",
+        "signature",
+        "exported",
+        "async",
+        "parent",
+        "content_sha256"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "language": { "$ref": "#/$defs/language" },
+        "kind": { "$ref": "#/$defs/symbolKind" },
+        "name": { "type": "string" },
+        "start_line": { "type": "integer", "minimum": 1 },
+        "end_line": { "type": "integer", "minimum": 1 },
+        "signature": { "type": "string" },
+        "exported": { "type": "boolean" },
+        "async": { "type": "boolean" },
+        "parent": { "type": ["string", "null"] },
+        "content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "language",
+        "sha256",
+        "size_bytes",
+        "line_count",
+        "requested_start_line",
+        "requested_end_line",
+        "resolved_start_line",
+        "resolved_end_line",
+        "context_start_line",
+        "context_end_line",
+        "symbol"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "language": { "$ref": "#/$defs/language" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size_bytes": { "type": "integer", "minimum": 0 },
+        "line_count": { "type": "integer", "minimum": 0 },
+        "requested_start_line": { "type": "integer", "minimum": 1 },
+        "requested_end_line": { "type": ["integer", "null"], "minimum": 1 },
+        "resolved_start_line": { "type": ["integer", "null"], "minimum": 1 },
+        "resolved_end_line": { "type": ["integer", "null"], "minimum": 1 },
+        "context_start_line": { "type": ["integer", "null"], "minimum": 1 },
+        "context_end_line": { "type": ["integer", "null"], "minimum": 1 },
+        "symbol": {
+          "anyOf": [
+            { "$ref": "#/$defs/symbol" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "snippet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "start_line", "end_line", "text"],
+      "properties": {
+        "path": { "type": "string" },
+        "start_line": { "type": "integer", "minimum": 1 },
+        "end_line": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "start_line", "end_line"],
+      "properties": {
+        "code": {
+          "enum": [
+            "code_symbol_read_path_outside_root",
+            "code_symbol_read_unreadable_path",
+            "code_symbol_read_invalid_range",
+            "code_symbol_read_no_symbol_at_line",
+            "code_symbol_read_snippet_too_large"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "start_line": { "type": ["integer", "null"], "minimum": 1 },
+        "end_line": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    }
+  }
+}

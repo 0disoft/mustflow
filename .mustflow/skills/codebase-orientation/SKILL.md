@@ -2,7 +2,7 @@
 mustflow_doc: skill.codebase-orientation
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: codebase-orientation
@@ -71,9 +71,15 @@ Build a concise, evidence-based map of an unfamiliar repository area before plan
 2. Read the nearest repository instructions and matching skill routes before inspecting source files.
 3. Use navigation aids in order:
    - current changed files or user-named paths;
+   - read-only script-pack helpers such as `code/outline` and `code/symbol-read` when the
+     installed CLI exposes them and repository or host policy allows running the read-only helper;
    - `REPO_MAP.md` only when broader repository navigation is needed;
    - file search for names, exported symbols, command ids, schema ids, route ids, and test names.
    Treat generated maps and docs as pointers, not proof.
+   Prefer `code/outline` before reading large TypeScript or JavaScript files in repeated line
+   windows, then use `code/symbol-read` to read the selected symbol range or a bounded explicit
+   line range. If script-pack execution is not authorized, fall back to ordinary file search and
+   targeted reads instead of inventing script output.
 4. Watch for stalled observation.
    - If the same file, path, list, search, or generated-map lookup repeats without new evidence,
      stop that branch and switch to `evidence-stall-breaker`.

@@ -6,9 +6,11 @@ description: Lists and runs bundled mustflow utility scripts under one command n
 `mf script-pack` exposes bundled utility scripts without turning every small checker into a new
 top-level command.
 
-The bundled scripts include `core/text-budget`, which checks exact text length budgets for plain
-text files or JSON string fields, and `repo/generated-boundary`, which checks whether candidate
-paths cross generated, ignored, protected, vendor, or cache boundaries.
+The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
+symbol headers and line ranges, `code/symbol-read`, which reads a focused source snippet by
+symbol line or explicit line range, `core/text-budget`, which checks exact text length budgets for
+plain text files or JSON string fields, and `repo/generated-boundary`, which checks whether
+candidate paths cross generated, ignored, protected, vendor, or cache boundaries.
 
 ## List Scripts
 
@@ -52,6 +54,34 @@ The command exits successfully only when every checked target stays within the d
 
 Use `--min`, `--max`, or `--exact` to declare the budget. `--exact` cannot be combined with
 `--min` or `--max`.
+
+## Outline Source Files
+
+```sh
+npx mf script-pack run code/outline scan src --json
+npx mf script-pack run code/outline scan src/cli/commands/script-pack.ts --max-files 20
+```
+
+`code/outline` is read-only. It scans supported TypeScript and JavaScript files for declaration
+headers, then reports each symbol's path, language, kind, name, start line, end line, signature,
+export flag, async flag, and content hash. Use it before reading large source files line window by
+line. The outline is an orientation aid, not an AST refactoring engine.
+
+Supported extensions are `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, and `.cjs`.
+Directory scans skip common generated, cache, vendor, and build directories such as `.git`,
+`.mustflow/cache`, `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.turbo`.
+
+## Read Source Symbols
+
+```sh
+npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --json
+npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 1 --end-line 40 --context-lines 2 --json
+```
+
+`code/symbol-read` is read-only. When `--end-line` is omitted, it resolves `--start-line` to the
+outline symbol that starts at or contains that line and returns only that symbol range. When
+`--end-line` is present, it returns the explicit bounded range. Use `--context-lines` to include a
+small amount of surrounding context without paging through the entire file.
 
 ## Check Generated Boundaries
 
@@ -97,6 +127,8 @@ as stable finding codes in JSON mode.
 ```sh
 npx mf script-pack list --json
 npx mf script-pack suggest --path AGENTS.md --phase before_change --json
+npx mf script-pack run code/outline scan src --json
+npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --json
 npx mf script-pack run core/text-budget check package.json --json-pointer /description --max 80 --json
 npx mf script-pack run repo/generated-boundary check AGENTS.md .mustflow/config/manifest.lock.toml --json
 ```
@@ -104,6 +136,9 @@ npx mf script-pack run repo/generated-boundary check AGENTS.md .mustflow/config/
 `mf script-pack list --json` is validated by `schemas/script-pack-catalog.schema.json`.
 `mf script-pack suggest --json` is validated by
 `schemas/script-pack-suggestion-report.schema.json`.
+`code/outline` JSON reports are validated by `schemas/code-outline-report.schema.json`.
+`code/symbol-read` JSON reports are validated by
+`schemas/code-symbol-read-report.schema.json`.
 `core/text-budget` JSON reports are validated by `schemas/text-budget-report.schema.json`.
 `repo/generated-boundary` JSON reports are validated by
 `schemas/generated-boundary-report.schema.json`.
@@ -137,6 +172,41 @@ The script-pack suggestion report includes:
 - `suggestions`: Ranked script refs with score, confidence, matched evidence, side-effect flags,
   report schema, and run hint.
 - `issues`: Human-readable limitations such as unavailable changed-file discovery.
+
+The code-outline report includes:
+
+- `schema_version`: Output format version.
+- `command`: Always `script-pack`.
+- `pack_id`, `script_id`, and `script_ref`: The script identity.
+- `action`: Always `scan`.
+- `status`: `passed`, `failed`, or `error`.
+- `ok`: Whether the status is `passed`.
+- `mustflow_root`: Current mustflow root.
+- `policy`: File size, file count, extension, and ignored-directory limits used for scanning.
+- `input_hash`: Hash of the scanned input state.
+- `files`: Per-file language, content hash, size, line count, and symbol count.
+- `symbols`: Per-symbol path, line range, kind, name, signature, export flag, async flag, parent,
+  and content hash.
+- `findings`: Stable finding codes for outside-root paths, unreadable paths, unsupported files,
+  file-size limits, and file-count limits.
+- `issues`: Human-readable issue summaries.
+
+The code-symbol-read report includes:
+
+- `schema_version`: Output format version.
+- `command`: Always `script-pack`.
+- `pack_id`, `script_id`, and `script_ref`: The script identity.
+- `action`: Always `read`.
+- `status`: `passed`, `failed`, or `error`.
+- `ok`: Whether the status is `passed`.
+- `mustflow_root`: Current mustflow root.
+- `policy`: Requested start line, optional end line, context, file-size limit, and snippet-size limit.
+- `input_hash`: Hash of the read input state.
+- `target`: File hash, requested lines, resolved lines, context lines, and optional matched symbol.
+- `snippet`: The bounded source text and its start/end lines, or `null` when no snippet was produced.
+- `findings`: Stable finding codes for outside-root paths, unreadable files, invalid ranges,
+  missing symbols, and too-large snippets.
+- `issues`: Human-readable issue summaries.
 
 The text-budget report includes:
 

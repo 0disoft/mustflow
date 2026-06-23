@@ -505,7 +505,7 @@ translations = {}
 [documents."skill.codebase-orientation"]
 source = "locales/en/.mustflow/skills/codebase-orientation/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.heuristic-candidate-selection"]

@@ -16,6 +16,16 @@ function runGeneratedBoundaryJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeOutlineJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/outline', 'scan', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runCodeSymbolReadJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/symbol-read', 'read', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -52,6 +62,36 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		const report = JSON.parse(result.stdout);
+		const codePack = report.packs.find((pack) => pack.id === 'code');
+		const codeOutline = codePack?.scripts.find((script) => script.ref === 'code/outline');
+
+		assert.ok(codeOutline, 'code/outline should be listed');
+		assert.equal(codeOutline.read_only, true);
+		assert.equal(codeOutline.mutates, false);
+		assert.equal(codeOutline.network, false);
+		assert.deepEqual(codeOutline.phases, ['before_change', 'during_change', 'review']);
+		assert.ok(codeOutline.use_when.some((hint) => hint.includes('symbol headers')));
+		assert.ok(codeOutline.inputs.includes('max_files'));
+		assert.ok(codeOutline.outputs.includes('symbol_outline'));
+		assert.ok(codeOutline.related_skills.includes('codebase-orientation'));
+		assert.equal(codeOutline.risk_level, 'low');
+		assert.equal(codeOutline.cost, 'low');
+		assert.equal(codeOutline.report_schema_file, 'code-outline-report.schema.json');
+
+		const codeSymbolRead = codePack?.scripts.find((script) => script.ref === 'code/symbol-read');
+
+		assert.ok(codeSymbolRead, 'code/symbol-read should be listed');
+		assert.equal(codeSymbolRead.read_only, true);
+		assert.equal(codeSymbolRead.mutates, false);
+		assert.equal(codeSymbolRead.network, false);
+		assert.deepEqual(codeSymbolRead.phases, ['before_change', 'during_change', 'review']);
+		assert.ok(codeSymbolRead.inputs.includes('start_line'));
+		assert.ok(codeSymbolRead.outputs.includes('source_snippet'));
+		assert.ok(codeSymbolRead.related_skills.includes('typescript-code-change'));
+		assert.equal(codeSymbolRead.risk_level, 'low');
+		assert.equal(codeSymbolRead.cost, 'low');
+		assert.equal(codeSymbolRead.report_schema_file, 'code-symbol-read-report.schema.json');
+
 		const corePack = report.packs.find((pack) => pack.id === 'core');
 		const textBudget = corePack?.scripts.find((script) => script.ref === 'core/text-budget');
 
@@ -83,6 +123,207 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(generatedBoundary.risk_level, 'low');
 		assert.equal(generatedBoundary.cost, 'low');
 		assert.equal(generatedBoundary.report_schema_file, 'generated-boundary-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-outline scans source symbols with stable path, line, and hash metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'sample.ts'),
+			[
+				'export async function loadThing(id: string) {',
+				'  return id.toUpperCase();',
+				'}',
+				'',
+				'export class ThingBox {',
+				'  value = 1;',
+				'}',
+				'',
+				'type LocalShape = { value: number };',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['src']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'code');
+		assert.equal(report.script_id, 'outline');
+		assert.equal(report.script_ref, 'code/outline');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.files[0].path, 'src/sample.ts');
+		assert.equal(report.files[0].language, 'typescript');
+		assert.match(report.files[0].sha256, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		const loadThing = report.symbols.find((symbol) => symbol.name === 'loadThing');
+		assert.ok(loadThing, 'loadThing should be outlined');
+		assert.equal(loadThing.kind, 'function');
+		assert.equal(loadThing.exported, true);
+		assert.equal(loadThing.async, true);
+		assert.equal(loadThing.start_line, 1);
+		assert.equal(loadThing.end_line, 3);
+		assert.equal(loadThing.path, 'src/sample.ts');
+		assert.match(loadThing.content_sha256, /^sha256:[a-f0-9]{64}$/u);
+
+		const thingBox = report.symbols.find((symbol) => symbol.name === 'ThingBox');
+		assert.ok(thingBox, 'ThingBox should be outlined');
+		assert.equal(thingBox.kind, 'class');
+		assert.equal(thingBox.start_line, 5);
+		assert.equal(thingBox.end_line, 7);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read resolves a symbol by start line and returns only the bounded snippet', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'sample.ts'),
+			[
+				'const before = 1;',
+				'',
+				'export function target(value: string) {',
+				'  return value.trim();',
+				'}',
+				'',
+				'const after = 2;',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeSymbolReadJson(projectPath, [
+			'src/sample.ts',
+			'--start-line',
+			'3',
+			'--context-lines',
+			'1',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'code');
+		assert.equal(report.script_id, 'symbol-read');
+		assert.equal(report.script_ref, 'code/symbol-read');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.target.path, 'src/sample.ts');
+		assert.equal(report.target.resolved_start_line, 3);
+		assert.equal(report.target.resolved_end_line, 5);
+		assert.equal(report.target.context_start_line, 2);
+		assert.equal(report.target.context_end_line, 6);
+		assert.equal(report.target.symbol.name, 'target');
+		assert.equal(report.snippet.start_line, 2);
+		assert.equal(report.snippet.end_line, 6);
+		assert.match(report.snippet.text, /export function target/u);
+		assert.doesNotMatch(report.snippet.text, /const after = 2/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read can read an explicit line range when no symbol starts there', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'sample.js'), 'const one = 1;\nconst two = 2;\n');
+
+		const { result, report } = runCodeSymbolReadJson(projectPath, [
+			'src/sample.js',
+			'--start-line',
+			'1',
+			'--end-line',
+			'1',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.target.language, 'javascript');
+		assert.equal(report.target.symbol, null);
+		assert.equal(report.snippet.text, 'const one = 1;');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-outline reports unsupported files with a stable finding code', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'notes.md'), '# Notes\n');
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['notes.md']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.findings[0].code, 'code_outline_unsupported_file');
+		assert.equal(report.findings[0].path, 'notes.md');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-outline reports max-files truncation with a stable finding code', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'one.ts'), 'export const one = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'two.ts'), 'export const two = 2;\n');
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['src', '--max-files', '1']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'error');
+		assert.equal(report.ok, false);
+		assert.equal(report.files.length, 1);
+		assert.ok(report.findings.some((finding) => finding.code === 'code_outline_max_files_exceeded'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read rejects explicit ranges outside the file', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'sample.ts'), 'export const one = 1;\n');
+
+		const { result, report } = runCodeSymbolReadJson(projectPath, [
+			'src/sample.ts',
+			'--start-line',
+			'10',
+			'--end-line',
+			'10',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'error');
+		assert.equal(report.ok, false);
+		assert.equal(report.target, null);
+		assert.equal(report.snippet, null);
+		assert.equal(report.findings[0].code, 'code_symbol_read_invalid_range');
+		assert.equal(report.findings[0].start_line, 10);
+		assert.equal(report.findings[0].end_line, 10);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -448,6 +689,8 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /Usage: mf script-pack/);
 		assert.match(result.stdout, /mf script-pack suggest --path src\/cli\/index\.ts --phase before_change/);
+		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
+		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);
 		assert.equal(result.stderr, '');

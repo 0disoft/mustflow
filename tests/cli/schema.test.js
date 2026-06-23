@@ -801,6 +801,54 @@ test('script-pack suggestion json output matches the published schema', () => {
 	}
 });
 
+test('code-outline json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'outline.ts'), 'export function outlineProbe() {\n  return 1;\n}\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/outline',
+			'scan',
+			'src/outline.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'code-outline-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'symbol.ts'), 'export function symbolProbe() {\n  return 1;\n}\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/symbol-read',
+			'read',
+			'src/symbol.ts',
+			'--start-line',
+			'1',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'code-symbol-read-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('text-budget json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

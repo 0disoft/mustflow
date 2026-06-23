@@ -123,6 +123,8 @@ export function getScriptPackHelp(lang: CliLang = 'en'): string {
 				'mf script-pack list --json',
 				'mf script-pack suggest --path src/cli/index.ts --phase before_change',
 				'mf script-pack suggest --changed --phase after_change --json',
+				'mf script-pack run code/outline scan src --json',
+				'mf script-pack run code/symbol-read read src/cli/index.ts --start-line 25 --json',
 				'mf script-pack run core/text-budget check README.md --max 5000',
 				'mf script-pack run repo/generated-boundary check src/cli/index.ts --json',
 				'mf script-pack run core/text-budget --help',

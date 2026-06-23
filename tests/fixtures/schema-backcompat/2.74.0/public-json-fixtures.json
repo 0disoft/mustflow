@@ -2757,6 +2757,91 @@
         "mustflow_root": "C:/repo",
         "packs": [
           {
+            "id": "code",
+            "summary_key": "scriptPack.pack.code.summary",
+            "scripts": [
+              {
+                "id": "outline",
+                "ref": "code/outline",
+                "usage": "mf script-pack run code/outline scan <path...> [options]",
+                "summary_key": "scriptPack.script.codeOutline.summary",
+                "actions": [
+                  "scan"
+                ],
+                "use_when": [
+                  "Scan TypeScript or JavaScript files for symbol headers before reading large source files chunk by chunk."
+                ],
+                "phases": [
+                  "before_change",
+                  "during_change",
+                  "review"
+                ],
+                "read_only": true,
+                "mutates": false,
+                "network": false,
+                "inputs": [
+                  "path",
+                  "max_files",
+                  "max_file_bytes"
+                ],
+                "outputs": [
+                  "human_summary",
+                  "json_report",
+                  "symbol_outline"
+                ],
+                "related_skills": [
+                  "codebase-orientation",
+                  "javascript-code-change",
+                  "typescript-code-change"
+                ],
+                "risk_level": "low",
+                "cost": "low",
+                "report_schema_file": "code-outline-report.schema.json"
+              },
+              {
+                "id": "symbol-read",
+                "ref": "code/symbol-read",
+                "usage": "mf script-pack run code/symbol-read read <path> --start-line <line> [options]",
+                "summary_key": "scriptPack.script.codeSymbolRead.summary",
+                "actions": [
+                  "read"
+                ],
+                "use_when": [
+                  "Read only the resolved symbol range or an explicit bounded line range after a code outline identifies the relevant line."
+                ],
+                "phases": [
+                  "before_change",
+                  "during_change",
+                  "review"
+                ],
+                "read_only": true,
+                "mutates": false,
+                "network": false,
+                "inputs": [
+                  "path",
+                  "start_line",
+                  "end_line",
+                  "context_lines",
+                  "max_file_bytes",
+                  "max_snippet_lines"
+                ],
+                "outputs": [
+                  "human_summary",
+                  "json_report",
+                  "source_snippet"
+                ],
+                "related_skills": [
+                  "codebase-orientation",
+                  "javascript-code-change",
+                  "typescript-code-change"
+                ],
+                "risk_level": "low",
+                "cost": "low",
+                "report_schema_file": "code-symbol-read-report.schema.json"
+              }
+            ]
+          },
+          {
             "id": "core",
             "summary_key": "scriptPack.pack.core.summary",
             "scripts": [
@@ -2768,7 +2853,77 @@
                 "actions": [
                   "check"
                 ],
+                "use_when": [
+                  "Check exact text budgets for docs, package metadata, prompts, release notes, or user-facing copy."
+                ],
+                "phases": [
+                  "before_change",
+                  "after_change",
+                  "review"
+                ],
+                "read_only": true,
+                "mutates": false,
+                "network": false,
+                "inputs": [
+                  "path",
+                  "json_pointer",
+                  "budget",
+                  "unit"
+                ],
+                "outputs": [
+                  "human_summary",
+                  "json_report"
+                ],
+                "related_skills": [
+                  "docs-prose-review",
+                  "public-json-contract-change",
+                  "readme-authoring",
+                  "release-notes-authoring"
+                ],
+                "risk_level": "low",
+                "cost": "low",
                 "report_schema_file": "text-budget-report.schema.json"
+              }
+            ]
+          },
+          {
+            "id": "repo",
+            "summary_key": "scriptPack.pack.repo.summary",
+            "scripts": [
+              {
+                "id": "generated-boundary",
+                "ref": "repo/generated-boundary",
+                "usage": "mf script-pack run repo/generated-boundary check <path...> [options]",
+                "summary_key": "scriptPack.script.generatedBoundary.summary",
+                "actions": [
+                  "check"
+                ],
+                "use_when": [
+                  "Check candidate edit paths before changing files that may be generated, ignored, protected, vendor, or cache output."
+                ],
+                "phases": [
+                  "before_change",
+                  "after_change",
+                  "review"
+                ],
+                "read_only": true,
+                "mutates": false,
+                "network": false,
+                "inputs": [
+                  "path"
+                ],
+                "outputs": [
+                  "human_summary",
+                  "json_report"
+                ],
+                "related_skills": [
+                  "completion-evidence-gate",
+                  "repo-improvement-loop",
+                  "template-install-surface-sync"
+                ],
+                "risk_level": "low",
+                "cost": "low",
+                "report_schema_file": "generated-boundary-report.schema.json"
               }
             ]
           }
@@ -2845,6 +3000,136 @@
             "run_hint": "mf script-pack run repo/generated-boundary check <path...> [options]"
           }
         ],
+        "issues": []
+      }
+    },
+    {
+      "id": "code-outline-report",
+      "schema_file": "code-outline-report.schema.json",
+      "producer": "mf script-pack run code/outline scan <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "outline",
+        "script_ref": "code/outline",
+        "action": "scan",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 1048576,
+          "max_files": 200,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ]
+        },
+        "input_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "files": [
+          {
+            "kind": "source_file",
+            "path": "src/example.ts",
+            "language": "typescript",
+            "sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "size_bytes": 48,
+            "line_count": 3,
+            "symbol_count": 1
+          }
+        ],
+        "symbols": [
+          {
+            "id": "src/example.ts:1:function:loadExample",
+            "path": "src/example.ts",
+            "language": "typescript",
+            "kind": "function",
+            "name": "loadExample",
+            "start_line": 1,
+            "end_line": 3,
+            "signature": "export function loadExample() {",
+            "exported": true,
+            "async": false,
+            "parent": null,
+            "content_sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        ],
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "code-symbol-read-report",
+      "schema_file": "code-symbol-read-report.schema.json",
+      "producer": "mf script-pack run code/symbol-read read <path> --start-line <line> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "symbol-read",
+        "script_ref": "code/symbol-read",
+        "action": "read",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "start_line": 1,
+          "end_line": null,
+          "context_lines": 0,
+          "max_file_bytes": 1048576,
+          "max_snippet_lines": 250
+        },
+        "input_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "target": {
+          "path": "src/example.ts",
+          "language": "typescript",
+          "sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "size_bytes": 48,
+          "line_count": 3,
+          "requested_start_line": 1,
+          "requested_end_line": null,
+          "resolved_start_line": 1,
+          "resolved_end_line": 3,
+          "context_start_line": 1,
+          "context_end_line": 3,
+          "symbol": {
+            "id": "src/example.ts:1:function:loadExample",
+            "path": "src/example.ts",
+            "language": "typescript",
+            "kind": "function",
+            "name": "loadExample",
+            "start_line": 1,
+            "end_line": 3,
+            "signature": "export function loadExample() {",
+            "exported": true,
+            "async": false,
+            "parent": null,
+            "content_sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        },
+        "snippet": {
+          "path": "src/example.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "text": "export function loadExample() {\n  return 1;\n}"
+        },
+        "findings": [],
         "issues": []
       }
     },
