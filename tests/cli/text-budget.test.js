@@ -73,6 +73,7 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.ok(codeOutline.use_when.some((hint) => hint.includes('symbol headers')));
 		assert.ok(codeOutline.inputs.includes('max_files'));
 		assert.ok(codeOutline.outputs.includes('symbol_outline'));
+		assert.ok(codeOutline.outputs.includes('source_anchors'));
 		assert.ok(codeOutline.related_skills.includes('codebase-orientation'));
 		assert.equal(codeOutline.risk_level, 'low');
 		assert.equal(codeOutline.cost, 'low');
@@ -163,6 +164,7 @@ test('code-outline scans source symbols with stable path, line, and hash metadat
 		assert.equal(report.files[0].language, 'typescript');
 		assert.match(report.files[0].sha256, /^sha256:[a-f0-9]{64}$/u);
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.deepEqual(report.anchors, []);
 
 		const loadThing = report.symbols.find((symbol) => symbol.name === 'loadThing');
 		assert.ok(loadThing, 'loadThing should be outlined');
@@ -189,6 +191,57 @@ test('code-outline scans source symbols with stable path, line, and hash metadat
 		assert.equal(thingBox.return_count, 0);
 		assert.deepEqual(thingBox.return_lines, []);
 		assert.equal(thingBox.return_preview, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-outline reports source anchors with conservative target symbol metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'anchored.ts'),
+			[
+				'/**',
+				' * mf:anchor auth.session.resolve',
+				' * purpose: Resolve validated auth session.',
+				' * search: auth, session, resolve',
+				' * invariant: Session resolution must stay after request validation.',
+				' * risk: authz, security',
+				' */',
+				'export function resolveSession(token: string): string {',
+				'  return token.trim();',
+				'}',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['src/anchored.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.anchors.length, 1);
+
+		const anchor = report.anchors[0];
+		assert.equal(anchor.id, 'auth.session.resolve');
+		assert.equal(anchor.path, 'src/anchored.ts');
+		assert.equal(anchor.line_start, 2);
+		assert.equal(anchor.line_end, 6);
+		assert.equal(anchor.purpose, 'Resolve validated auth session.');
+		assert.deepEqual(anchor.search, ['auth', 'session', 'resolve']);
+		assert.equal(anchor.invariant, 'Session resolution must stay after request validation.');
+		assert.deepEqual(anchor.risk, ['authz', 'security']);
+		assert.equal(anchor.navigation_only, true);
+		assert.equal(anchor.can_instruct_agent, false);
+		assert.equal(anchor.target_kind, 'function');
+		assert.equal(anchor.target_name, 'resolveSession');
+		assert.equal(anchor.target_start_line, 8);
+
+		const target = report.symbols.find((symbol) => symbol.name === 'resolveSession');
+		assert.ok(target, 'resolveSession should be outlined');
+		assert.equal(anchor.target_symbol_id, target.id);
 	} finally {
 		removeTempProject(projectPath);
 	}

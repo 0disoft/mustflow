@@ -17,6 +17,7 @@
     "policy",
     "input_hash",
     "files",
+    "anchors",
     "symbols",
     "findings",
     "issues"
@@ -36,6 +37,10 @@
     "files": {
       "type": "array",
       "items": { "$ref": "#/$defs/file" }
+    },
+    "anchors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/anchor" }
     },
     "symbols": {
       "type": "array",
@@ -88,6 +93,47 @@
         "size_bytes": { "type": "integer", "minimum": 0 },
         "line_count": { "type": "integer", "minimum": 0 },
         "symbol_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "line_start",
+        "line_end",
+        "purpose",
+        "search",
+        "invariant",
+        "risk",
+        "navigation_only",
+        "can_instruct_agent",
+        "target_symbol_id",
+        "target_kind",
+        "target_name",
+        "target_start_line"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "purpose": { "type": ["string", "null"] },
+        "search": { "$ref": "#/$defs/stringArray" },
+        "invariant": { "type": ["string", "null"] },
+        "risk": { "$ref": "#/$defs/stringArray" },
+        "navigation_only": { "const": true },
+        "can_instruct_agent": { "const": false },
+        "target_symbol_id": { "type": ["string", "null"] },
+        "target_kind": {
+          "anyOf": [
+            { "$ref": "#/$defs/symbolKind" },
+            { "type": "null" }
+          ]
+        },
+        "target_name": { "type": ["string", "null"] },
+        "target_start_line": { "type": ["integer", "null"], "minimum": 1 }
       }
     },
     "symbol": {

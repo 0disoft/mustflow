@@ -807,7 +807,21 @@ test('code-outline json output matches the published schema', () => {
 	try {
 		initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'));
-		writeFileSync(path.join(projectPath, 'src', 'outline.ts'), 'export function outlineProbe() {\n  return 1;\n}\n');
+		writeFileSync(
+			path.join(projectPath, 'src', 'outline.ts'),
+			[
+				'/**',
+				' * mf:anchor schema.outline.probe',
+				' * purpose: Exercise code outline source-anchor metadata.',
+				' * search: schema, outline',
+				' * risk: config',
+				' */',
+				'export function outlineProbe() {',
+				'  return 1;',
+				'}',
+				'',
+			].join('\n'),
+		);
 		const result = runCli(projectPath, [
 			'script-pack',
 			'run',

@@ -2787,7 +2787,8 @@
                 "outputs": [
                   "human_summary",
                   "json_report",
-                  "symbol_outline"
+                  "symbol_outline",
+                  "source_anchors"
                 ],
                 "related_skills": [
                   "codebase-orientation",
@@ -3054,6 +3055,7 @@
             "symbol_count": 1
           }
         ],
+        "anchors": [],
         "symbols": [
           {
             "id": "src/example.ts:1:function:loadExample",

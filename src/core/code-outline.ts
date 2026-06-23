@@ -9,6 +9,11 @@ import {
 	type ScriptCheckStatus,
 } from './script-check-result.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
+import {
+	parseSourceAnchorsInContent,
+	sourceAnchorTextContainsSecretLike,
+	splitSourceAnchorList,
+} from './source-anchors.js';
 
 export const CODE_PACK_ID = 'code';
 export const CODE_OUTLINE_SCRIPT_ID = 'outline';
@@ -77,6 +82,23 @@ export interface CodeOutlineSymbol {
 	readonly content_sha256: string;
 }
 
+export interface CodeOutlineAnchor {
+	readonly id: string;
+	readonly path: string;
+	readonly line_start: number;
+	readonly line_end: number;
+	readonly purpose: string | null;
+	readonly search: readonly string[];
+	readonly invariant: string | null;
+	readonly risk: readonly string[];
+	readonly navigation_only: true;
+	readonly can_instruct_agent: false;
+	readonly target_symbol_id: string | null;
+	readonly target_kind: CodeSymbolKind | null;
+	readonly target_name: string | null;
+	readonly target_start_line: number | null;
+}
+
 export interface CodeOutlineFinding extends ScriptCheckFinding {
 	readonly code: CodeOutlineFindingCode;
 	readonly path: string;
@@ -95,6 +117,7 @@ export interface CodeOutlineReport {
 	readonly policy: CodeOutlinePolicy;
 	readonly input_hash: string;
 	readonly files: readonly CodeOutlineFile[];
+	readonly anchors: readonly CodeOutlineAnchor[];
 	readonly symbols: readonly CodeOutlineSymbol[];
 	readonly findings: readonly CodeOutlineFinding[];
 	readonly issues: readonly string[];
@@ -747,9 +770,79 @@ function extractSymbols(relativePath: string, language: CodeOutlineLanguage, con
 	return symbols;
 }
 
+function sourceAnchorEndLine(lineStart: number, rawText: string): number {
+	return lineStart + rawText.split(/\r\n|\r|\n/u).length - 1;
+}
+
+function canBridgeAnchorToSymbol(lines: readonly string[], anchorEndLine: number, symbolStartLine: number): boolean {
+	if (symbolStartLine <= anchorEndLine) {
+		return false;
+	}
+
+	for (let lineNumber = anchorEndLine + 1; lineNumber < symbolStartLine; lineNumber += 1) {
+		const trimmed = (lines[lineNumber - 1] ?? '').trim();
+		if (trimmed.length === 0 || trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('@')) {
+			continue;
+		}
+		return false;
+	}
+
+	return true;
+}
+
+function findAnchorTargetSymbol(
+	relativePath: string,
+	lines: readonly string[],
+	anchorEndLine: number,
+	symbols: readonly CodeOutlineSymbol[],
+): CodeOutlineSymbol | null {
+	const followingSymbols = symbols
+		.filter((symbol) => symbol.path === relativePath && symbol.start_line > anchorEndLine)
+		.sort((left, right) => left.start_line - right.start_line);
+	const target = followingSymbols[0] ?? null;
+
+	if (!target || !canBridgeAnchorToSymbol(lines, anchorEndLine, target.start_line)) {
+		return null;
+	}
+
+	return target;
+}
+
+function extractAnchors(relativePath: string, lines: readonly string[], text: string, symbols: readonly CodeOutlineSymbol[]): readonly CodeOutlineAnchor[] {
+	const anchors: CodeOutlineAnchor[] = [];
+
+	for (const anchor of parseSourceAnchorsInContent(relativePath, text)) {
+		if (!anchor.idValid || sourceAnchorTextContainsSecretLike(anchor.rawText)) {
+			continue;
+		}
+
+		const lineEnd = sourceAnchorEndLine(anchor.lineStart, anchor.rawText);
+		const target = findAnchorTargetSymbol(relativePath, lines, lineEnd, symbols);
+		anchors.push({
+			id: anchor.rawId,
+			path: relativePath,
+			line_start: anchor.lineStart,
+			line_end: lineEnd,
+			purpose: anchor.fields.get('purpose') ?? null,
+			search: splitSourceAnchorList(anchor.fields.get('search')),
+			invariant: anchor.fields.get('invariant') ?? null,
+			risk: splitSourceAnchorList(anchor.fields.get('risk')),
+			navigation_only: true,
+			can_instruct_agent: false,
+			target_symbol_id: target?.id ?? null,
+			target_kind: target?.kind ?? null,
+			target_name: target?.name ?? null,
+			target_start_line: target?.start_line ?? null,
+		});
+	}
+
+	return anchors;
+}
+
 function createOutlineInputHash(
 	policy: CodeOutlinePolicy,
 	files: readonly CodeOutlineFile[],
+	anchors: readonly CodeOutlineAnchor[],
 	findings: readonly CodeOutlineFinding[],
 ): string {
 	const inputState = {
@@ -759,6 +852,13 @@ function createOutlineInputHash(
 			sha256: file.sha256,
 			size_bytes: file.size_bytes,
 			symbol_count: file.symbol_count,
+		})),
+		anchors: anchors.map((anchor) => ({
+			id: anchor.id,
+			path: anchor.path,
+			line_start: anchor.line_start,
+			line_end: anchor.line_end,
+			target_symbol_id: anchor.target_symbol_id,
 		})),
 		input_errors: findings
 			.filter((finding) => ERROR_OUTLINE_CODES.has(finding.code))
@@ -784,6 +884,7 @@ export function inspectCodeOutline(projectRoot: string, options: InspectCodeOutl
 		ignored_directories: [...IGNORED_DIRECTORIES],
 	};
 	const files: CodeOutlineFile[] = [];
+	const anchors: CodeOutlineAnchor[] = [];
 	const symbols: CodeOutlineSymbol[] = [];
 	const findings: CodeOutlineFinding[] = [];
 	const issues: string[] = [];
@@ -805,15 +906,18 @@ export function inspectCodeOutline(projectRoot: string, options: InspectCodeOutl
 
 		const contentSha256 = sha256Tagged(buffer);
 		const text = buffer.toString('utf8');
+		const lines = text.split(/\r\n|\r|\n/u);
 		const fileSymbols = extractSymbols(candidate.relativePath, candidate.language, contentSha256, text);
+		const fileAnchors = extractAnchors(candidate.relativePath, lines, text, fileSymbols);
 		symbols.push(...fileSymbols);
+		anchors.push(...fileAnchors);
 		files.push({
 			kind: 'source_file',
 			path: candidate.relativePath,
 			language: candidate.language,
 			sha256: contentSha256,
 			size_bytes: buffer.byteLength,
-			line_count: text.split(/\r\n|\r|\n/u).length,
+			line_count: lines.length,
 			symbol_count: fileSymbols.length,
 		});
 	}
@@ -830,8 +934,9 @@ export function inspectCodeOutline(projectRoot: string, options: InspectCodeOutl
 		ok: status === 'passed',
 		mustflow_root: root,
 		policy,
-		input_hash: createOutlineInputHash(policy, files, findings),
+		input_hash: createOutlineInputHash(policy, files, anchors, findings),
 		files,
+		anchors: anchors.sort((left, right) => left.path.localeCompare(right.path) || left.line_start - right.line_start),
 		symbols: symbols.sort((left, right) => left.path.localeCompare(right.path) || left.start_line - right.start_line),
 		findings,
 		issues,

@@ -7,7 +7,7 @@ description: Lists and runs bundled mustflow utility scripts under one command n
 top-level command.
 
 The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
-symbol headers and line ranges, `code/symbol-read`, which reads a focused source snippet by
+symbol headers, line ranges, and source-anchor metadata, `code/symbol-read`, which reads a focused source snippet by
 symbol line or explicit line range, `core/text-budget`, which checks exact text length budgets for
 plain text files or JSON string fields, and `repo/generated-boundary`, which checks whether
 candidate paths cross generated, ignored, protected, vendor, or cache boundaries.
@@ -63,8 +63,11 @@ npx mf script-pack run code/outline scan src/cli/commands/script-pack.ts --max-f
 ```
 
 `code/outline` is read-only. It scans supported TypeScript and JavaScript files for declaration
-headers, then reports each symbol's path, language, kind, name, start line, end line, signature,
-export flag, async flag, static return metadata, and content hash. Return metadata includes
+headers and `mf:anchor` comments, then reports each symbol's path, language, kind, name, start
+line, end line, signature, export flag, async flag, static return metadata, and content hash.
+Anchor metadata is reported separately from symbols and includes id, path, metadata line range,
+purpose, search terms, invariant, risk tags, navigation-only authority flags, and a conservative
+target symbol when the anchor sits directly above a declaration. Return metadata includes
 explicit return annotations when present, return statement lines, a short return-expression preview,
 and conservative behavior labels such as `value`, `void`, `mixed`, `implicit_undefined`,
 `throws_only`, or `unknown`. Use it before reading large source files line window by line. The
@@ -188,6 +191,8 @@ The code-outline report includes:
 - `policy`: File size, file count, extension, and ignored-directory limits used for scanning.
 - `input_hash`: Hash of the scanned input state.
 - `files`: Per-file language, content hash, size, line count, and symbol count.
+- `anchors`: Per-anchor id, path, metadata line range, purpose, search terms, invariant, risk
+  tags, navigation-only authority flags, and conservative target symbol metadata.
 - `symbols`: Per-symbol path, line range, kind, name, signature, export flag, async flag, static
   return type, return behavior, return count, return lines, return preview, parent, and content
   hash.

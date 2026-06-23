@@ -56,15 +56,15 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				summaryKey: 'scriptPack.script.codeOutline.summary',
 				actions: ['scan'],
 				useWhen: [
-					'Scan TypeScript or JavaScript files for symbol headers before reading large source files chunk by chunk.',
-					'Build a bounded source outline with file paths, line ranges, signatures, export flags, and content hashes for codebase orientation.',
+					'Scan TypeScript or JavaScript files for symbol headers and source anchors before reading large source files chunk by chunk.',
+					'Build a bounded source outline with file paths, line ranges, signatures, export flags, source-anchor metadata, and content hashes for codebase orientation.',
 				],
 				phases: ['before_change', 'during_change', 'review'],
 				readOnly: true,
 				mutates: false,
 				network: false,
 				inputs: ['path', 'max_files', 'max_file_bytes'],
-				outputs: ['human_summary', 'json_report', 'symbol_outline'],
+				outputs: ['human_summary', 'json_report', 'symbol_outline', 'source_anchors'],
 				relatedSkills: [
 					'codebase-orientation',
 					'javascript-code-change',
