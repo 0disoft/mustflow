@@ -128,8 +128,9 @@ test('related selection covers the selector script itself', () => {
 test('related selection maps code outline implementation changes to script-pack contract tests', () => {
 	const coreSelected = selectedFor(['src/core/code-outline.ts']);
 	const wrapperSelected = selectedFor(['src/cli/script-packs/code-outline.ts']);
+	const suggestionSelected = selectedFor(['src/core/script-pack-suggestions.ts']);
 
-	for (const selected of [coreSelected, wrapperSelected]) {
+	for (const selected of [coreSelected, wrapperSelected, suggestionSelected]) {
 		assert.equal(selected.has('text-budget.test.js'), true);
 		assert.equal(selected.has('schema.test.js'), true);
 		assert.equal(selected.has('schema-command-contracts.test.js'), true);

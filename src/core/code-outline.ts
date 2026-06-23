@@ -28,7 +28,10 @@ export type CodeOutlineLanguage =
 	| 'javascript'
 	| 'jsx'
 	| 'javascript-module'
-	| 'javascript-commonjs';
+	| 'javascript-commonjs'
+	| 'go'
+	| 'rust'
+	| 'python';
 
 export type CodeSymbolKind = 'function' | 'class' | 'interface' | 'type' | 'enum' | 'variable';
 export type CodeReturnBehavior = 'value' | 'void' | 'implicit_undefined' | 'mixed' | 'throws_only' | 'unknown';
@@ -212,6 +215,7 @@ interface DeclarationMatch {
 	readonly name: string;
 	readonly exported: boolean;
 	readonly async: boolean;
+	readonly returnType: string | null;
 }
 
 interface CodeOutlineLanguageAdapter {
@@ -232,6 +236,9 @@ const DEFAULT_CONTEXT_LINES = 0;
 const DEFAULT_MAX_SNIPPET_LINES = 250;
 const RETURN_PREVIEW_MAX_CHARS = 120;
 const TYPESCRIPT_JAVASCRIPT_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
+const GO_EXTENSIONS = ['.go'] as const;
+const RUST_EXTENSIONS = ['.rs'] as const;
+const PYTHON_EXTENSIONS = ['.py'] as const;
 const IGNORED_DIRECTORIES = [
 	'.git',
 	'.mustflow/cache',
@@ -291,6 +298,18 @@ function typescriptJavascriptLanguageForPath(filePath: string): CodeOutlineLangu
 		default:
 			return null;
 	}
+}
+
+function goLanguageForPath(filePath: string): CodeOutlineLanguage | null {
+	return path.extname(filePath).toLowerCase() === '.go' ? 'go' : null;
+}
+
+function rustLanguageForPath(filePath: string): CodeOutlineLanguage | null {
+	return path.extname(filePath).toLowerCase() === '.rs' ? 'rust' : null;
+}
+
+function pythonLanguageForPath(filePath: string): CodeOutlineLanguage | null {
+	return path.extname(filePath).toLowerCase() === '.py' ? 'python' : null;
 }
 
 function languageAdapterForPath(filePath: string): CodeOutlineLanguageAdapter | null {
@@ -500,6 +519,7 @@ function declarationFromLine(line: string): DeclarationMatch | null {
 			name: functionMatch.groups.name ?? '<anonymous>',
 			exported: Boolean(functionMatch.groups.exported),
 			async: Boolean(functionMatch.groups.async),
+			returnType: null,
 		};
 	}
 
@@ -510,6 +530,7 @@ function declarationFromLine(line: string): DeclarationMatch | null {
 			name: shapeMatch.groups.name ?? '<anonymous>',
 			exported: Boolean(shapeMatch.groups.exported),
 			async: false,
+			returnType: null,
 		};
 	}
 
@@ -520,6 +541,7 @@ function declarationFromLine(line: string): DeclarationMatch | null {
 			name: variableMatch.groups.name ?? '<anonymous>',
 			exported: Boolean(variableMatch.groups.exported),
 			async: /async\s*(?:\(|[A-Z_a-z_$])/u.test(trimmed),
+			returnType: null,
 		};
 	}
 
@@ -560,7 +582,7 @@ function buildSignature(lines: readonly string[], startLine: number, endLine: nu
 		if (trimmed.length > 0) {
 			parts.push(trimmed);
 		}
-		if (/[{;]\s*$/u.test(trimmed) || /=>/u.test(trimmed)) {
+		if (/[{;]\s*$/u.test(trimmed) || /=>/u.test(trimmed) || /^(?:async\s+)?(?:def|class)\b.*:\s*$/u.test(trimmed)) {
 			break;
 		}
 	}
@@ -576,6 +598,9 @@ function normalizeReturnType(value: string): string {
 function extractExplicitReturnType(signature: string, match: DeclarationMatch): string | null {
 	if (match.kind !== 'function') {
 		return null;
+	}
+	if (match.returnType !== null) {
+		return match.returnType;
 	}
 
 	const functionReturnMatch =
@@ -624,7 +649,7 @@ function isIdentifierCharacter(value: string | undefined): boolean {
 	return typeof value === 'string' && /[$\w]/u.test(value);
 }
 
-function findReturnKeywordIndex(line: string): number {
+function findReturnKeywordIndex(line: string, lineCommentStart: '//' | '#'): number {
 	let quote: '"' | "'" | '`' | null = null;
 	let escaped = false;
 
@@ -647,7 +672,10 @@ function findReturnKeywordIndex(line: string): number {
 			continue;
 		}
 
-		if (character === '/' && nextCharacter === '/') {
+		if (
+			(lineCommentStart === '//' && character === '/' && nextCharacter === '/') ||
+			(lineCommentStart === '#' && character === '#')
+		) {
 			return -1;
 		}
 		if (character === '"' || character === "'" || character === '`') {
@@ -666,23 +694,23 @@ function findReturnKeywordIndex(line: string): number {
 	return -1;
 }
 
-function extractReturnExpressionPreview(line: string): string | null {
-	const returnIndex = findReturnKeywordIndex(line);
+function extractReturnExpressionPreview(line: string, lineCommentStart: '//' | '#'): string | null {
+	const returnIndex = findReturnKeywordIndex(line, lineCommentStart);
 	if (returnIndex < 0) {
 		return null;
 	}
 
-	const expression = line
-		.slice(returnIndex + 'return'.length)
-		.replace(/\/\/.*$/u, '')
+	const rawExpression = line.slice(returnIndex + 'return'.length);
+	const commentIndex = rawExpression.indexOf(lineCommentStart);
+	const expression = (commentIndex >= 0 ? rawExpression.slice(0, commentIndex) : rawExpression)
 		.trim()
 		.replace(/;\s*$/u, '')
 		.trim();
 	return expression.length === 0 ? null : truncateReturnPreview(expression);
 }
 
-function hasReturnStatement(line: string): boolean {
-	return findReturnKeywordIndex(line) >= 0;
+function hasReturnStatement(line: string, lineCommentStart: '//' | '#'): boolean {
+	return findReturnKeywordIndex(line, lineCommentStart) >= 0;
 }
 
 function simpleBodyThrowsOnly(lines: readonly string[], startLine: number, endLine: number, returnType: string | null): boolean {
@@ -706,12 +734,36 @@ function simpleBodyThrowsOnly(lines: readonly string[], startLine: number, endLi
 	return sawThrow && (!sawOtherExecutableLine || returnType === 'never');
 }
 
+function stripLineComment(line: string, lineCommentStart: '//' | '#'): string {
+	const commentIndex = line.indexOf(lineCommentStart);
+	return commentIndex >= 0 ? line.slice(0, commentIndex) : line;
+}
+
+function extractTailExpressionReturnPreview(lines: readonly string[], startLine: number, endLine: number): string | null {
+	let index = endLine - 2;
+	while (index >= startLine) {
+		const trimmed = stripLineComment(lines[index] ?? '', '//').trim();
+		if (trimmed.length === 0 || trimmed === '{' || trimmed === '}') {
+			index -= 1;
+			continue;
+		}
+		if (trimmed.endsWith(';') || /^(?:let|return|if|for|while|loop|match)\b/u.test(trimmed)) {
+			return null;
+		}
+		return truncateReturnPreview(trimmed.replace(/,\s*$/u, ''));
+	}
+
+	return null;
+}
+
 function extractReturnMetadata(
 	lines: readonly string[],
 	startLine: number,
 	endLine: number,
 	signature: string,
 	match: DeclarationMatch,
+	lineCommentStart: '//' | '#' = '//',
+	tailExpressionReturn = false,
 ): Pick<CodeOutlineSymbol, 'return_type' | 'return_behavior' | 'return_count' | 'return_lines' | 'return_preview'> {
 	const returnType = extractExplicitReturnType(signature, match);
 	if (match.kind !== 'function') {
@@ -730,12 +782,12 @@ function extractReturnMetadata(
 
 	for (let index = startLine - 1; index < endLine; index += 1) {
 		const line = lines[index] ?? '';
-		if (!hasReturnStatement(line)) {
+		if (!hasReturnStatement(line, lineCommentStart)) {
 			continue;
 		}
 
 		returnLines.push(index + 1);
-		const preview = extractReturnExpressionPreview(line);
+		const preview = extractReturnExpressionPreview(line, lineCommentStart);
 		if (preview === null) {
 			voidReturnCount += 1;
 		} else {
@@ -744,11 +796,13 @@ function extractReturnMetadata(
 	}
 
 	const arrowExpressionPreview = returnLines.length === 0 ? extractArrowExpressionReturnPreview(signature) : null;
+	const tailExpressionPreview =
+		tailExpressionReturn && returnLines.length === 0 && returnType !== null ? extractTailExpressionReturnPreview(lines, startLine, endLine) : null;
 	let returnBehavior: CodeReturnBehavior;
 
 	if (valueReturnPreviews.length > 0 && voidReturnCount > 0) {
 		returnBehavior = 'mixed';
-	} else if (valueReturnPreviews.length > 0 || arrowExpressionPreview !== null) {
+	} else if (valueReturnPreviews.length > 0 || arrowExpressionPreview !== null || tailExpressionPreview !== null) {
 		returnBehavior = 'value';
 	} else if (voidReturnCount > 0) {
 		returnBehavior = 'void';
@@ -763,29 +817,171 @@ function extractReturnMetadata(
 		return_behavior: returnBehavior,
 		return_count: returnLines.length,
 		return_lines: returnLines,
-		return_preview: valueReturnPreviews[0] ?? arrowExpressionPreview,
+		return_preview: valueReturnPreviews[0] ?? arrowExpressionPreview ?? tailExpressionPreview,
 	};
 }
 
-function extractTypescriptJavascriptSymbols(
+function startsWithUppercase(value: string): boolean {
+	const [first] = value;
+	return typeof first === 'string' && first.toLocaleUpperCase() === first && first.toLocaleLowerCase() !== first;
+}
+
+function goDeclarationFromLine(line: string): DeclarationMatch | null {
+	const trimmed = line.trim();
+	const functionMatch =
+		/^func\s+(?:\([^)]*\)\s*)?(?<name>[A-Z_a-z]\w*)\s*\([^)]*\)\s*(?<returnType>[^{]+?)?\s*(?:\{|$)/u.exec(trimmed);
+	if (functionMatch?.groups) {
+		const returnType = functionMatch.groups.returnType?.trim() ?? '';
+		return {
+			kind: 'function',
+			name: functionMatch.groups.name ?? '<anonymous>',
+			exported: startsWithUppercase(functionMatch.groups.name ?? ''),
+			async: false,
+			returnType: returnType.length > 0 ? normalizeReturnType(returnType) : null,
+		};
+	}
+
+	const typeMatch = /^type\s+(?<name>[A-Z_a-z]\w*)\s+(?<shape>struct|interface)?\b/u.exec(trimmed);
+	if (typeMatch?.groups) {
+		return {
+			kind: typeMatch.groups.shape === 'interface' ? 'interface' : 'type',
+			name: typeMatch.groups.name ?? '<anonymous>',
+			exported: startsWithUppercase(typeMatch.groups.name ?? ''),
+			async: false,
+			returnType: null,
+		};
+	}
+
+	return null;
+}
+
+function rustDeclarationFromLine(line: string): DeclarationMatch | null {
+	const trimmed = line.trim();
+	const visibility = String.raw`(?:pub(?:\([^)]*\))?\s+)?`;
+	const functionPattern = [
+		String.raw`^${visibility}`,
+		String.raw`(?:(?:async|const|unsafe)\s+)*`,
+		String.raw`(?:extern\s+"[^"]+"\s+)?`,
+		String.raw`fn\s+(?<name>[A-Z_a-z]\w*)\s*[^{;]*?`,
+		String.raw`(?:->\s*(?<returnType>[^{]+?))?\s*(?:where\b|\{|$)`,
+	].join('');
+	const functionMatch = new RegExp(functionPattern, 'u').exec(trimmed);
+	if (functionMatch?.groups) {
+		const returnType = functionMatch.groups.returnType?.replace(/\bwhere\b.*$/u, '').trim() ?? '';
+		return {
+			kind: 'function',
+			name: functionMatch.groups.name ?? '<anonymous>',
+			exported: /^pub\b/u.test(trimmed),
+			async: /\basync\s+fn\b/u.test(trimmed) || /\basync\s+(?:const\s+|unsafe\s+)*fn\b/u.test(trimmed),
+			returnType: returnType.length > 0 ? normalizeReturnType(returnType) : null,
+		};
+	}
+
+	const shapeMatch = new RegExp(
+		String.raw`^${visibility}(?<shape>struct|trait|type|enum)\s+(?<name>[A-Z_a-z]\w*)\b`,
+		'u',
+	).exec(trimmed);
+	if (shapeMatch?.groups) {
+		const shape = shapeMatch.groups.shape;
+		return {
+			kind: shape === 'trait' ? 'interface' : shape === 'enum' ? 'enum' : 'type',
+			name: shapeMatch.groups.name ?? '<anonymous>',
+			exported: /^pub\b/u.test(trimmed),
+			async: false,
+			returnType: null,
+		};
+	}
+
+	return null;
+}
+
+function pythonDeclarationFromLine(line: string): DeclarationMatch | null {
+	const trimmed = line.trim();
+	const functionMatch = /^(?<async>async\s+)?def\s+(?<name>[A-Z_a-z]\w*)\s*\([^)]*\)\s*(?:->\s*(?<returnType>[^:]+))?:/u.exec(
+		trimmed,
+	);
+	if (functionMatch?.groups) {
+		const returnType = functionMatch.groups.returnType?.trim() ?? '';
+		return {
+			kind: 'function',
+			name: functionMatch.groups.name ?? '<anonymous>',
+			exported: !functionMatch.groups.name?.startsWith('_'),
+			async: Boolean(functionMatch.groups.async),
+			returnType: returnType.length > 0 ? normalizeReturnType(returnType) : null,
+		};
+	}
+
+	const classMatch = /^class\s+(?<name>[A-Z_a-z]\w*)\b/u.exec(trimmed);
+	if (classMatch?.groups) {
+		return {
+			kind: 'class',
+			name: classMatch.groups.name ?? '<anonymous>',
+			exported: !classMatch.groups.name?.startsWith('_'),
+			async: false,
+			returnType: null,
+		};
+	}
+
+	return null;
+}
+
+function leadingWhitespaceWidth(line: string): number {
+	let width = 0;
+	for (const character of line) {
+		if (character === ' ') {
+			width += 1;
+		} else if (character === '\t') {
+			width += 4;
+		} else {
+			break;
+		}
+	}
+	return width;
+}
+
+function findPythonDeclarationEndLine(lines: readonly string[], startIndex: number): number {
+	const startIndent = leadingWhitespaceWidth(lines[startIndex] ?? '');
+
+	let index = startIndex + 1;
+	while (index < lines.length) {
+		const line = lines[index] ?? '';
+		const trimmed = line.trim();
+		if (trimmed.length === 0 || trimmed.startsWith('#')) {
+			index += 1;
+			continue;
+		}
+		if (leadingWhitespaceWidth(line) <= startIndent) {
+			return index;
+		}
+		index += 1;
+	}
+
+	return lines.length;
+}
+
+function extractSymbolsFromDeclarations(
 	relativePath: string,
 	language: CodeOutlineLanguage,
 	contentSha256: string,
 	text: string,
+	declarationForLine: (line: string) => DeclarationMatch | null,
+	endLineForMatch: (lines: readonly string[], startIndex: number) => number,
+	lineCommentStart: '//' | '#',
+	tailExpressionReturn = false,
 ): readonly CodeOutlineSymbol[] {
 	const lines = text.split(/\r\n|\r|\n/u);
 	const symbols: CodeOutlineSymbol[] = [];
 
 	for (const [index, line] of lines.entries()) {
-		const match = declarationFromLine(line);
+		const match = declarationForLine(line);
 		if (!match) {
 			continue;
 		}
 
 		const startLine = index + 1;
-		const endLine = findDeclarationEndLine(lines, index);
+		const endLine = endLineForMatch(lines, index);
 		const signature = buildSignature(lines, startLine, endLine);
-		const returnMetadata = extractReturnMetadata(lines, startLine, endLine, signature, match);
+		const returnMetadata = extractReturnMetadata(lines, startLine, endLine, signature, match, lineCommentStart, tailExpressionReturn);
 		symbols.push({
 			id: `${relativePath}:${startLine}:${match.kind}:${match.name}`,
 			path: relativePath,
@@ -806,6 +1002,58 @@ function extractTypescriptJavascriptSymbols(
 	return symbols;
 }
 
+function extractTypescriptJavascriptSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	return extractSymbolsFromDeclarations(
+		relativePath,
+		language,
+		contentSha256,
+		text,
+		declarationFromLine,
+		findDeclarationEndLine,
+		'//',
+	);
+}
+
+function extractGoSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	return extractSymbolsFromDeclarations(relativePath, language, contentSha256, text, goDeclarationFromLine, findDeclarationEndLine, '//');
+}
+
+function extractRustSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	return extractSymbolsFromDeclarations(relativePath, language, contentSha256, text, rustDeclarationFromLine, findDeclarationEndLine, '//', true);
+}
+
+function extractPythonSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	return extractSymbolsFromDeclarations(
+		relativePath,
+		language,
+		contentSha256,
+		text,
+		pythonDeclarationFromLine,
+		findPythonDeclarationEndLine,
+		'#',
+	);
+}
+
 const TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
 	id: 'typescript-javascript',
 	extensions: TYPESCRIPT_JAVASCRIPT_EXTENSIONS,
@@ -813,7 +1061,33 @@ const TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
 	extractSymbols: extractTypescriptJavascriptSymbols,
 };
 
-const CODE_OUTLINE_LANGUAGE_ADAPTERS: readonly CodeOutlineLanguageAdapter[] = [TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER];
+const GO_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
+	id: 'go',
+	extensions: GO_EXTENSIONS,
+	languageForPath: goLanguageForPath,
+	extractSymbols: extractGoSymbols,
+};
+
+const RUST_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
+	id: 'rust',
+	extensions: RUST_EXTENSIONS,
+	languageForPath: rustLanguageForPath,
+	extractSymbols: extractRustSymbols,
+};
+
+const PYTHON_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
+	id: 'python',
+	extensions: PYTHON_EXTENSIONS,
+	languageForPath: pythonLanguageForPath,
+	extractSymbols: extractPythonSymbols,
+};
+
+const CODE_OUTLINE_LANGUAGE_ADAPTERS: readonly CodeOutlineLanguageAdapter[] = [
+	TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER,
+	GO_LANGUAGE_ADAPTER,
+	RUST_LANGUAGE_ADAPTER,
+	PYTHON_LANGUAGE_ADAPTER,
+];
 
 const CODE_FILE_EXTENSIONS = CODE_OUTLINE_LANGUAGE_ADAPTERS.flatMap((adapter) => adapter.extensions);
 

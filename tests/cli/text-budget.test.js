@@ -336,6 +336,115 @@ test('code-outline reports explicit return annotations and return behavior metad
 	}
 });
 
+test('code-outline scans Go, Rust, and Python symbols with return metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'session.go'),
+			[
+				'package demo',
+				'',
+				'type Session struct {',
+				'  ID string',
+				'}',
+				'',
+				'func ResolveSession(token string) (string, error) {',
+				'  return token, nil',
+				'}',
+				'',
+				'func (s Session) privateValue() string {',
+				'  return s.ID',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'session.rs'),
+			[
+				'pub struct Session { pub id: String }',
+				'',
+				'pub async fn resolve_session(token: &str) -> Result<String, Error> {',
+				'    Ok(token.to_owned())',
+				'}',
+				'',
+				'pub enum Error { Empty }',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'session.py'),
+			[
+				'class Session:',
+				'    pass',
+				'',
+				'async def resolve_session(token: str) -> str:',
+				'    if not token:',
+				'        return ""',
+				'    return token.strip()',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['src']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(
+			report.files.map((file) => [file.path, file.language]).sort(),
+			[
+				['src/session.go', 'go'],
+				['src/session.py', 'python'],
+				['src/session.rs', 'rust'],
+			],
+		);
+		assert.ok(report.policy.extensions.includes('.go'));
+		assert.ok(report.policy.extensions.includes('.rs'));
+		assert.ok(report.policy.extensions.includes('.py'));
+
+		const goFunction = report.symbols.find((symbol) => symbol.path === 'src/session.go' && symbol.name === 'ResolveSession');
+		assert.ok(goFunction, 'Go function should be outlined');
+		assert.equal(goFunction.language, 'go');
+		assert.equal(goFunction.kind, 'function');
+		assert.equal(goFunction.exported, true);
+		assert.equal(goFunction.return_type, '(string, error)');
+		assert.equal(goFunction.return_behavior, 'value');
+		assert.deepEqual(goFunction.return_lines, [8]);
+		assert.equal(goFunction.return_preview, 'token, nil');
+
+		const goMethod = report.symbols.find((symbol) => symbol.path === 'src/session.go' && symbol.name === 'privateValue');
+		assert.ok(goMethod, 'Go method should be outlined');
+		assert.equal(goMethod.exported, false);
+		assert.equal(goMethod.return_type, 'string');
+		assert.deepEqual(goMethod.return_lines, [12]);
+
+		const rustFunction = report.symbols.find((symbol) => symbol.path === 'src/session.rs' && symbol.name === 'resolve_session');
+		assert.ok(rustFunction, 'Rust function should be outlined');
+		assert.equal(rustFunction.language, 'rust');
+		assert.equal(rustFunction.kind, 'function');
+		assert.equal(rustFunction.exported, true);
+		assert.equal(rustFunction.async, true);
+		assert.equal(rustFunction.return_type, 'Result<String, Error>');
+		assert.equal(rustFunction.return_behavior, 'value');
+		assert.deepEqual(rustFunction.return_lines, []);
+		assert.equal(rustFunction.return_preview, 'Ok(token.to_owned())');
+
+		const pythonFunction = report.symbols.find((symbol) => symbol.path === 'src/session.py' && symbol.name === 'resolve_session');
+		assert.ok(pythonFunction, 'Python function should be outlined');
+		assert.equal(pythonFunction.language, 'python');
+		assert.equal(pythonFunction.kind, 'function');
+		assert.equal(pythonFunction.exported, true);
+		assert.equal(pythonFunction.async, true);
+		assert.equal(pythonFunction.return_type, 'str');
+		assert.equal(pythonFunction.return_behavior, 'value');
+		assert.deepEqual(pythonFunction.return_lines, [6, 7]);
+		assert.equal(pythonFunction.return_preview, '""');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('code-symbol-read resolves a symbol by start line and returns only the bounded snippet', () => {
 	const projectPath = createTempProject();
 
@@ -1086,6 +1195,41 @@ test('script-pack suggest treats JavaScript test files as code navigation target
 		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
 		assert.ok(outline, 'code/outline should be suggested for JavaScript test paths');
 		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan tests/cli/package.test.js --json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest treats Go, Rust, and Python files as code navigation targets', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'service.go'), 'func Resolve() string { return "ok" }\n');
+		writeFileSync(path.join(projectPath, 'src', 'service.rs'), 'pub fn resolve() -> String { "ok".to_owned() }\n');
+		writeFileSync(path.join(projectPath, 'src', 'service.py'), 'def resolve() -> str:\n    return "ok"\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/service.go',
+			'--path',
+			'src/service.rs',
+			'--path',
+			'src/service.py',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(report.analyzed_paths.every((entry) => entry.surfaces.includes('source')));
+
+		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
+		assert.ok(outline, 'code/outline should be suggested for Go, Rust, and Python paths');
+		assert.equal(
+			outline.run_hint,
+			'mf script-pack run code/outline scan src/service.go src/service.py src/service.rs --json',
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

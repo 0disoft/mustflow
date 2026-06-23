@@ -242,6 +242,7 @@ const relatedRules = [
 	{ match: /^src\/core\/authority-resolution\.ts$/u, tests: ['check-doc-authority.test.js', 'explain-authority.test.js'] },
 	{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: ['schema.test.js'] },
+	{ match: /^src\/core\/script-pack-suggestions\.ts$/u, tests: codeOutlineContractTests },
 	{ match: /^src\/core\/public-surface-explanation\.ts$/u, tests: ['explain-surface.test.js'] },
 	{ match: /^src\/core\/command-effects\.ts$/u, tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index-workflow.test.js', ...runTests] },
 	{ match: /^src\/core\/command-explanation\.ts$/u, tests: ['explain-command.test.js', 'explain-retention-asset.test.js'] },
