@@ -39,7 +39,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.75.4');
+	assert.equal(packageJson.version, '2.75.5');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -138,6 +138,16 @@ test('default template exposes script-pack catalog discovery as a read-only comm
 	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*writes = \[\]/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*network = false/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*destructive = false/u);
+});
+
+test('default template exposes changed-document review queueing as a bounded command intent', () => {
+	assert.match(templateCommandContract, /\[resources\.documentation_review_queue\]/u);
+	assert.match(templateCommandContract, /\[intents\.docs_review_add_changed\][\s\S]*"mf", "docs", "review", "add", "--changed"/u);
+	assert.match(templateCommandContract, /Add changed documentation review candidates from git status to the review queue/u);
+	assert.match(templateCommandContract, /\[intents\.docs_review_add_changed\][\s\S]*writes = \["\.mustflow\/review\/docs\.toml"\]/u);
+	assert.match(templateCommandContract, /\[intents\.docs_review_add_changed\][\s\S]*network = false/u);
+	assert.match(templateCommandContract, /\[intents\.docs_review_add_changed\][\s\S]*destructive = false/u);
+	assert.match(sourceCommandContract, /\[intents\.docs_review_add_changed\][\s\S]*"node", "dist\/cli\/index\.js", "docs", "review", "add", "--changed"/u);
 });
 
 test('local index command contracts include bounded source-anchor indexing', () => {

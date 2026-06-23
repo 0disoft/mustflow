@@ -1,6 +1,14 @@
 schema_version = "1"
 
 [[documents]]
+path = ".mustflow/docs/agent-workflow.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-23T08:00:14.018Z"
+last_touched_at = "2026-06-23T08:00:14.018Z"
+
+[[documents]]
 path = ".mustflow/skills/INDEX.md"
 status = "pending"
 origin = "llm_modified"
@@ -21,6 +29,14 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "CHANGELOG.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-23T08:00:14.025Z"
+last_touched_at = "2026-06-23T08:00:14.025Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
 status = "pending"
 origin = "llm_modified"
@@ -39,6 +55,14 @@ first_seen_at = "2026-06-18T06:23:51.255Z"
 last_touched_at = "2026-06-18T07:20:14.274Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
+
+[[documents]]
+path = "docs-site/src/content/docs/en/commands/docs.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-23T08:00:14.030Z"
+last_touched_at = "2026-06-23T08:00:14.030Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/skill.md"
@@ -129,3 +153,11 @@ first_seen_at = "2026-06-18T06:17:56.747Z"
 last_touched_at = "2026-06-18T06:56:52.278Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/docs/agent-workflow.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-23T08:00:14.035Z"
+last_touched_at = "2026-06-23T08:00:14.035Z"

@@ -247,7 +247,7 @@ Use existing project style. If style is unclear, apply the defaults in `.mustflo
 
 ## Documentation Review Queue
 
-When an agent creates or modifies user-facing, workflow, template, context, or skill documentation, record the touched document with `mf docs review add <path>` unless the user explicitly says not to track it. The queue is stored in `.mustflow/review/docs.toml` and is created only when needed.
+When an agent creates or modifies user-facing, workflow, template, context, or skill documentation, record the touched document with `mf docs review add <path>` unless the user explicitly says not to track it. When the command contract exposes a configured `docs_review_add_changed` intent, agents may use it to run `mf docs review add --changed` and queue every changed documentation candidate from `git status` in one bounded step. The queue is stored in `.mustflow/review/docs.toml` and is created only when needed.
 
 Review completion may come from a human, an LLM, a tool, or an external process. Record only the broad reviewer kind plus free-form identifiers such as reviewer ID, provider, model, command intent, and summary. Do not maintain a fixed list of specific LLM products.
 

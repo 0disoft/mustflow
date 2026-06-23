@@ -24,6 +24,10 @@ allow_project_local_bin_bare_executables = ["mf", "mustflow"]
 description = "Generated mustflow SQLite local index under .mustflow/cache/."
 concurrency = "exclusive_writer"
 
+[resources.documentation_review_queue]
+description = "Repository-local documentation review queue under .mustflow/review/docs.toml."
+concurrency = "exclusive_writer"
+
 [intents.test]
 status = "configured"
 lifecycle = "oneshot"
@@ -218,6 +222,23 @@ description = "Validate documentation navigation and localized content links wit
 reason = "This repository has not declared its fast documentation validation command yet."
 agent_action = "do_not_guess_report_missing"
 required_after = ["docs_change", "copy_change", "i18n_change"]
+
+[intents.docs_review_add_changed]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Add changed documentation review candidates from git status to the review queue."
+argv = ["mf", "docs", "review", "add", "--changed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/review/docs.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/review/docs.toml", lock = "documentation_review_queue", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["docs_change", "mustflow_docs_change", "i18n_change", "copy_change"]
 
 [intents.mustflow_doctor]
 status = "configured"

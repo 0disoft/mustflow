@@ -21,6 +21,8 @@ This file applies to the mustflow repository itself. It is not installed into us
   navigation markers and their nearby target declarations without paging through whole files.
 - Added `--anchor <id>` to `code/symbol-read` so agents can read a source anchor's target symbol
   directly without manually copying line numbers from `code/outline`.
+- Added `mf docs review add --changed` and a bounded `docs_review_add_changed` command intent so
+  agents can queue changed documentation review candidates without inventing per-path commands.
 
 ### Changed
 

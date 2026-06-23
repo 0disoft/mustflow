@@ -41,6 +41,10 @@ concurrency = "exclusive_writer"
 description = "Generated mustflow SQLite local index under .mustflow/cache/."
 concurrency = "exclusive_writer"
 
+[resources.documentation_review_queue]
+description = "Repository-local documentation review queue under .mustflow/review/docs.toml."
+concurrency = "exclusive_writer"
+
 [intents.build]
 status = "configured"
 lifecycle = "oneshot"
@@ -194,6 +198,23 @@ writes = ["docs-site/dist/**", "docs-site/.astro/**"]
 network = false
 destructive = false
 required_after = ["docs_change", "release_risk", "before_publish"]
+
+[intents.docs_review_add_changed]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Add changed documentation review candidates from git status to the review queue."
+argv = ["node", "dist/cli/index.js", "docs", "review", "add", "--changed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/review/docs.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/review/docs.toml", lock = "documentation_review_queue", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["docs_change", "mustflow_docs_change", "i18n_change", "copy_change"]
 
 [intents.mustflow_doctor]
 status = "configured"

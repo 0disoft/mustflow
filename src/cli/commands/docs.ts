@@ -15,6 +15,7 @@ import {
 	type ReviewerKind,
 } from '../lib/doc-review-ledger.js';
 import { ensureInside, readUtf8FileInsideWithoutSymlinks } from '../lib/filesystem.js';
+import { GitChangedFilesError, requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	getParsedCliStringOption,
@@ -37,6 +38,7 @@ interface ParsedOptions {
 
 const LIST_FLAGS = new Set(['--json', '--all']);
 const LIST_VALUE_OPTIONS = new Set(['--status']);
+const ADD_FLAGS = new Set(['--changed']);
 const ADD_VALUE_OPTIONS = new Set(['--reason', '--origin', '--actor-kind', '--actor-id', '--comment', '--comment-file']);
 const COMMENT_VALUE_OPTIONS = new Set(['--comment', '--comment-file', '--actor-kind', '--actor-id']);
 const REVIEW_VALUE_OPTIONS = new Set([
@@ -58,6 +60,7 @@ export function getDocsHelp(lang: CliLang = 'en'): string {
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '--all', description: t(lang, 'docs.help.option.all') },
 				{ label: '--status <status>', description: t(lang, 'docs.help.option.status') },
+				{ label: '--changed', description: t(lang, 'docs.help.option.changed') },
 				{ label: '--reason <text>', description: t(lang, 'docs.help.option.reason') },
 				{ label: '--origin <value>', description: t(lang, 'docs.help.option.origin') },
 				{ label: '--actor-kind <kind>', description: t(lang, 'docs.help.option.actorKind') },
@@ -72,6 +75,7 @@ export function getDocsHelp(lang: CliLang = 'en'): string {
 			examples: [
 				'mf docs review list',
 				'mf docs review add docs/guide.md --reason llm_modified --actor-kind llm --actor-id codex',
+				'mf docs review add --changed --actor-kind llm --actor-id codex',
 				'mf docs review comment docs/guide.md --comment-file review-note.md --actor-kind human --actor-id cherr',
 				'mf docs review approve docs/guide.md --reviewer-kind llm --reviewer-id opencode --summary "Rewritten for natural tone."',
 			],
@@ -254,6 +258,23 @@ function renderEntryAction(action: string, path: string, lang: CliLang): string 
 	return `${t(lang, 'docs.review.wrote')}: ${DOC_REVIEW_LEDGER_RELATIVE_PATH}\n${action}: ${path}`;
 }
 
+function renderChangedAddAction(paths: readonly string[], lang: CliLang): string {
+	if (paths.length === 0) {
+		return t(lang, 'docs.review.changed.none');
+	}
+
+	const lines = [
+		`${t(lang, 'docs.review.wrote')}: ${DOC_REVIEW_LEDGER_RELATIVE_PATH}`,
+		t(lang, 'docs.review.changed.added', { count: paths.length }),
+	];
+
+	for (const path of paths) {
+		lines.push(`- ${path}`);
+	}
+
+	return lines.join('\n');
+}
+
 function getMarkedAction(status: Extract<DocReviewStatus, 'approved' | 'needs_human' | 'ignored'>, lang: CliLang): string {
 	if (status === 'approved') {
 		return t(lang, 'docs.review.marked.approved');
@@ -269,6 +290,56 @@ function getMarkedAction(status: Extract<DocReviewStatus, 'approved' | 'needs_hu
 function usageError(reporter: Reporter, message: string, lang: CliLang): number {
 	printUsageError(reporter, message, 'mf docs --help', getDocsHelp(lang), lang);
 	return 1;
+}
+
+function normalizeChangedDocumentPath(relativePath: string): string {
+	return relativePath.replace(/\\/gu, '/').replace(/^\.\//u, '');
+}
+
+function isChangedDocReviewPath(relativePath: string): boolean {
+	const normalized = normalizeChangedDocumentPath(relativePath);
+
+	if (['AGENTS.md', 'CHANGELOG.md', 'README.md'].includes(normalized)) {
+		return true;
+	}
+
+	if (normalized === 'schemas/README.md') {
+		return true;
+	}
+
+	if (/^\.mustflow\/(?:context|docs)\/.+\.md$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^\.mustflow\/skills\/(?:INDEX\.md|[^/]+\/SKILL\.md)$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^docs-site\/src\/content\/docs\/.+\.md$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^templates\/default\/locales\/[^/]+\/AGENTS\.md$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^templates\/default\/locales\/[^/]+\/\.mustflow\/(?:context|docs)\/.+\.md$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^templates\/default\/locales\/[^/]+\/\.mustflow\/skills\/(?:INDEX\.md|[^/]+\/SKILL\.md)$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^templates\/default\/common\/\.mustflow\/(?:context|docs)\/.+\.md$/u.test(normalized)) {
+		return true;
+	}
+
+	if (/^tests\/fixtures\/.+\.md$/u.test(normalized)) {
+		return true;
+	}
+
+	return false;
 }
 
 function runReviewList(args: string[], reporter: Reporter, lang: CliLang): number {
@@ -324,7 +395,7 @@ function runReviewList(args: string[], reporter: Reporter, lang: CliLang): numbe
  * risk: state, data_consistency
  */
 function runReviewAdd(args: string[], reporter: Reporter, lang: CliLang): number {
-	const parsed = parseOptions(args, ADD_VALUE_OPTIONS, new Set());
+	const parsed = parseOptions(args, ADD_VALUE_OPTIONS, ADD_FLAGS);
 
 	if (parsed.error) {
 		const message = parsed.error.missingValue
@@ -333,8 +404,18 @@ function runReviewAdd(args: string[], reporter: Reporter, lang: CliLang): number
 		return usageError(reporter, message, lang);
 	}
 
+	const addChanged = parsed.flags.has('--changed');
 	const [documentPath, unexpected] = parsed.positionals;
-	if (!documentPath) {
+
+	if (addChanged && documentPath) {
+		return usageError(reporter, t(lang, 'docs.error.changedPathConflict'), lang);
+	}
+
+	if (addChanged && (parsed.values.has('--comment') || parsed.values.has('--comment-file'))) {
+		return usageError(reporter, t(lang, 'docs.error.changedCommentConflict'), lang);
+	}
+
+	if (!addChanged && !documentPath) {
 		return usageError(reporter, t(lang, 'docs.error.missingPath'), lang);
 	}
 
@@ -348,6 +429,35 @@ function runReviewAdd(args: string[], reporter: Reporter, lang: CliLang): number
 	}
 
 	const projectRoot = resolveMustflowRoot();
+
+	if (addChanged) {
+		let changedPaths: readonly string[];
+		try {
+			changedPaths = requireGitChangedFiles(projectRoot);
+		} catch (error) {
+			if (error instanceof GitChangedFilesError) {
+				reporter.stderr(renderCliError(t(lang, 'docs.error.changedFilesUnavailable', { message: error.result.message }), 'mf docs --help', lang));
+				return 1;
+			}
+
+			throw error;
+		}
+
+		const reviewPaths = changedPaths.map(normalizeChangedDocumentPath).filter(isChangedDocReviewPath);
+		const entries = reviewPaths.map((changedPath) =>
+			addDocReviewEntry(projectRoot, {
+				path: changedPath,
+				reason: parsed.values.get('--reason'),
+				origin: parsed.values.get('--origin'),
+				actorKind,
+				actorId: parsed.values.get('--actor-id'),
+			}),
+		);
+
+		reporter.stdout(renderChangedAddAction(entries.map((entry) => entry.path), lang));
+		return 0;
+	}
+
 	const commentResult = readReviewComment(projectRoot, parsed, lang);
 	if (commentResult.error) {
 		return usageError(reporter, commentResult.error, lang);

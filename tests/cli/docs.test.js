@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
@@ -54,6 +55,36 @@ function writeDoc(projectPath, relativePath) {
 	const filePath = path.join(projectPath, relativePath);
 	mkdirSync(path.dirname(filePath), { recursive: true });
 	writeFileSync(filePath, '# Guide\n\nDraft prose.\n');
+}
+
+function runGit(projectPath, args) {
+	return spawnSync('git', ['-C', projectPath, ...args], {
+		cwd: projectPath,
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'pipe'],
+		windowsHide: true,
+	});
+}
+
+function commitGitBaseline(projectPath) {
+	let result = runGit(projectPath, ['init']);
+	if (result.status !== 0) {
+		return false;
+	}
+
+	for (const args of [
+		['config', 'user.email', 'mustflow-tests@example.invalid'],
+		['config', 'user.name', 'mustflow tests'],
+		['add', '.'],
+		['commit', '-m', 'baseline'],
+	]) {
+		result = runGit(projectPath, args);
+		if (result.status !== 0) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 function trySymlink(target, linkPath, type) {
@@ -155,6 +186,83 @@ test('adds LLM-modified documentation to the review queue', () => {
 		assert.equal(output.documents[0].last_touched_by_id, 'codex');
 		assert.match(ledger, /path = "docs\/guide\.md"/);
 		assert.match(ledger, /status = "pending"/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('adds changed documentation review candidates from git status', (t) => {
+	const projectPath = createDocsProject();
+
+	try {
+		if (!commitGitBaseline(projectPath)) {
+			t.skip('git baseline could not be created in this environment');
+			return;
+		}
+
+		writeDoc(projectPath, 'README.md');
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'index.ts'), 'export const value = 1;\n');
+
+		const result = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'--changed',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+		]);
+		const listResult = runCli(projectPath, ['docs', 'review', 'list', '--json']);
+		const output = JSON.parse(listResult.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Added changed documents: 1/u);
+		assert.match(result.stdout, /- README\.md/u);
+		assert.equal(listResult.status, 0, listResult.stderr || listResult.stdout);
+		assert.equal(output.count, 1);
+		assert.equal(output.documents[0].path, 'README.md');
+		assert.equal(output.documents[0].last_touched_by_kind, 'llm');
+		assert.equal(output.documents[0].last_touched_by_id, 'codex');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not create a review ledger when changed files contain no documentation candidates', (t) => {
+	const projectPath = createDocsProject();
+
+	try {
+		if (!commitGitBaseline(projectPath)) {
+			t.skip('git baseline could not be created in this environment');
+			return;
+		}
+
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'index.ts'), 'export const value = 1;\n');
+
+		const result = runCli(projectPath, ['docs', 'review', 'add', '--changed']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /No changed documents require review\./u);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'review', 'docs.toml')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects --changed when a path or shared comment is supplied', () => {
+	const projectPath = createDocsProject();
+
+	try {
+		const pathConflict = runCli(projectPath, ['docs', 'review', 'add', 'README.md', '--changed']);
+		const commentConflict = runCli(projectPath, ['docs', 'review', 'add', '--changed', '--comment', 'Review this.']);
+
+		assert.equal(pathConflict.status, 1);
+		assert.match(pathConflict.stderr, /Use --changed without a document path/u);
+		assert.equal(commentConflict.status, 1);
+		assert.match(commentConflict.stderr, /Use --changed without --comment or --comment-file/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

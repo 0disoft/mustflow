@@ -51,9 +51,15 @@ translations and test fixtures.
 ```sh
 npx mf docs review add docs/guide.md --reason llm_modified --actor-kind llm --actor-id codex
 npx mf docs review add docs/guide.md --comment "Rewrite the literal translation in the intro."
+npx mf docs review add --changed --actor-kind llm --actor-id codex
 ```
 
 Adding a document creates or updates its queue entry and marks it `pending`.
+
+Use `--changed` to inspect `git status` and add every changed documentation review candidate in one step.
+This is the stable command behind the default `docs_review_add_changed` command intent. It does not accept
+a document path, `--comment`, or `--comment-file`; add shared review guidance afterward with
+`mf docs review comment <path>` when needed.
 
 ## Add Review Guidance
 
