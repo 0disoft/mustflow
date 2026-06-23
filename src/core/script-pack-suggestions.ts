@@ -19,6 +19,8 @@ export type ScriptPackSurface =
 
 export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 
+const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read']);
+
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
 	readonly usage: string;
@@ -163,7 +165,10 @@ export function classifyScriptPackPathSurface(relativePath: string): readonly Sc
 	) {
 		surfaces.push('package');
 	}
-	if (normalized.startsWith('src/') || normalized.endsWith('.ts') || normalized.endsWith('.tsx')) {
+	if (
+		normalized.startsWith('src/') ||
+		/\.(?:cjs|js|jsx|mjs|ts|tsx)$/u.test(normalized)
+	) {
 		surfaces.push('source');
 	}
 
@@ -219,7 +224,7 @@ function surfacesForScript(script: ScriptPackSuggestionScript): readonly ScriptP
 	addIf('generated', /generated|protected|vendor|cache|boundary/u);
 	addIf('config', /config|command/u);
 	addIf('package', /package|release/u);
-	addIf('source', /code|source|path/u);
+	addIf('source', /code|source|symbol/u);
 
 	return uniqueSortedSurfaces(surfaces);
 }
@@ -239,6 +244,13 @@ function pathsWithSurface(
 	surface: ScriptPackSurface,
 ): readonly string[] {
 	return analyzedPaths.filter((entry) => entry.surfaces.includes(surface)).map((entry) => entry.path);
+}
+
+function hasPathWithSurface(
+	analyzedPaths: readonly ScriptPackSuggestionPath[],
+	surface: ScriptPackSurface,
+): boolean {
+	return analyzedPaths.some((entry) => entry.surfaces.includes(surface));
 }
 
 function firstAvailablePath(
@@ -310,8 +322,13 @@ export function createScriptPackSuggestionReport(
 	const inputPaths = uniqueSortedStrings([...options.paths, ...changedPaths].map((value) => normalizeReportPath(mustflowRoot, value)));
 	const analyzedPaths = inputPaths.map((entry) => ({ path: entry, surfaces: classifyScriptPackPathSurface(entry) }));
 	const requestedSurfaces = new Set(analyzedPaths.flatMap((entry) => entry.surfaces));
+	const hasSourcePath = hasPathWithSurface(analyzedPaths, 'source');
 	const suggestions = options.scripts
 		.map((script): ScriptPackSuggestion | null => {
+			if (CODE_NAVIGATION_SCRIPT_REFS.has(script.ref) && inputPaths.length > 0 && !hasSourcePath) {
+				return null;
+			}
+
 			let score = 0;
 			const reasons: string[] = [];
 			const matchedPhases = options.phases.filter((phase) => script.phases.includes(phase));
@@ -343,7 +360,7 @@ export function createScriptPackSuggestionReport(
 				reasons.push('Follow-up helper after code/outline identifies a symbol line or source anchor.');
 			}
 
-			if (script.readOnly && !script.mutates && !script.network) {
+			if (score > 0 && script.readOnly && !script.mutates && !script.network) {
 				score += 1;
 				reasons.push('Read-only, non-mutating, offline helper.');
 			}

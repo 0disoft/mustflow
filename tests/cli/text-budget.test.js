@@ -885,6 +885,46 @@ test('script-pack suggest ranks helpers from path, skill, and phase evidence', (
 	}
 });
 
+test('script-pack suggest does not recommend code navigation for config-generated paths', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'.mustflow/config/commands.toml',
+			'--path',
+			'.mustflow/config/manifest.lock.toml',
+			'--phase',
+			'after_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'suggested');
+		assert.ok(report.analyzed_paths.some((entry) => entry.path === '.mustflow/config/commands.toml'));
+		assert.ok(
+			report.analyzed_paths.some(
+				(entry) => entry.path === '.mustflow/config/manifest.lock.toml' && entry.surfaces.includes('generated'),
+			),
+		);
+		assert.equal(report.suggestions[0].script_ref, 'repo/generated-boundary');
+		assert.equal(
+			report.suggestions.some((suggestion) => suggestion.script_ref === 'code/outline'),
+			false,
+		);
+		assert.equal(
+			report.suggestions.some((suggestion) => suggestion.script_ref === 'code/symbol-read'),
+			false,
+		);
+		assert.equal(
+			report.suggestions[0].run_hint,
+			'mf script-pack run repo/generated-boundary check .mustflow/config/commands.toml .mustflow/config/manifest.lock.toml --json',
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest returns concrete code helper hints for source paths', () => {
 	const projectPath = createTempProject();
 
@@ -917,6 +957,39 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 				report.suggestions.findIndex((suggestion) => suggestion.script_ref === 'code/symbol-read'),
 			'code/outline should rank before code/symbol-read for initial source-path orientation',
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest treats JavaScript test files as code navigation targets', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'tests', 'cli'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'tests', 'cli', 'package.test.js'), 'test("package", () => {});\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'tests/cli/package.test.js',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			report.analyzed_paths.some(
+				(entry) =>
+					entry.path === 'tests/cli/package.test.js' &&
+					entry.surfaces.includes('test') &&
+					entry.surfaces.includes('source'),
+			),
+		);
+
+		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
+		assert.ok(outline, 'code/outline should be suggested for JavaScript test paths');
+		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan tests/cli/package.test.js --json');
 	} finally {
 		removeTempProject(projectPath);
 	}
