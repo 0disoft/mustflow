@@ -82,10 +82,12 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		const codeSymbolRead = codePack?.scripts.find((script) => script.ref === 'code/symbol-read');
 
 		assert.ok(codeSymbolRead, 'code/symbol-read should be listed');
+		assert.match(codeSymbolRead.usage, /--anchor <id>/u);
 		assert.equal(codeSymbolRead.read_only, true);
 		assert.equal(codeSymbolRead.mutates, false);
 		assert.equal(codeSymbolRead.network, false);
 		assert.deepEqual(codeSymbolRead.phases, ['before_change', 'during_change', 'review']);
+		assert.ok(codeSymbolRead.inputs.includes('anchor_id'));
 		assert.ok(codeSymbolRead.inputs.includes('start_line'));
 		assert.ok(codeSymbolRead.outputs.includes('source_snippet'));
 		assert.ok(codeSymbolRead.related_skills.includes('typescript-code-change'));
@@ -365,6 +367,127 @@ test('code-symbol-read resolves a symbol by start line and returns only the boun
 		assert.match(report.snippet.text, /export function target/u);
 		assert.doesNotMatch(report.snippet.text, /const after = 2/u);
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read resolves a source anchor to its target symbol snippet', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'anchored.ts'),
+			[
+				'const before = 1;',
+				'',
+				'/**',
+				' * mf:anchor auth.session.resolve',
+				' * purpose: Resolve validated auth session.',
+				' * search: auth, session, resolve',
+				' * invariant: Session resolution must stay after request validation.',
+				' * risk: authz, security',
+				' */',
+				'export function resolveSession(token: string): string {',
+				'  return token.trim();',
+				'}',
+				'',
+				'const after = 2;',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeSymbolReadJson(projectPath, [
+			'--anchor',
+			'auth.session.resolve',
+			'--context-lines',
+			'1',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.policy.anchor_id, 'auth.session.resolve');
+		assert.equal(report.policy.start_line, null);
+		assert.equal(report.target.requested_anchor_id, 'auth.session.resolve');
+		assert.equal(report.target.requested_start_line, null);
+		assert.equal(report.target.anchor.id, 'auth.session.resolve');
+		assert.equal(report.target.anchor.navigation_only, true);
+		assert.equal(report.target.anchor.can_instruct_agent, false);
+		assert.equal(report.target.path, 'src/anchored.ts');
+		assert.equal(report.target.resolved_start_line, 10);
+		assert.equal(report.target.resolved_end_line, 12);
+		assert.equal(report.target.context_start_line, 9);
+		assert.equal(report.target.context_end_line, 13);
+		assert.equal(report.target.symbol.name, 'resolveSession');
+		assert.equal(report.target.symbol.return_type, 'string');
+		assert.equal(report.target.symbol.return_preview, 'token.trim()');
+		assert.equal(report.snippet.start_line, 9);
+		assert.equal(report.snippet.end_line, 13);
+		assert.match(report.snippet.text, /export function resolveSession/u);
+		assert.doesNotMatch(report.snippet.text, /const before = 1/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read rejects source anchors without a target symbol', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'floating.ts'),
+			[
+				'/**',
+				' * mf:anchor auth.session.floating',
+				' * purpose: This anchor intentionally has no declaration target.',
+				' * search: auth, floating',
+				' * risk: security',
+				' */',
+				'const ordinaryValue = 1;',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeSymbolReadJson(projectPath, ['--anchor', 'auth.session.floating']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'error');
+		assert.equal(report.ok, false);
+		assert.equal(report.target.anchor.id, 'auth.session.floating');
+		assert.equal(report.target.resolved_start_line, null);
+		assert.equal(report.target.symbol, null);
+		assert.equal(report.snippet, null);
+		assert.equal(report.findings[0].code, 'code_symbol_read_anchor_without_symbol');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read rejects mixing source-anchor and explicit line selection modes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'sample.ts'), 'export const one = 1;\n');
+
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/symbol-read',
+			'read',
+			'src/sample.ts',
+			'--anchor',
+			'auth.session.resolve',
+			'--start-line',
+			'1',
+		]);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Use either --anchor <id> or <path> with --start-line/);
 	} finally {
 		removeTempProject(projectPath);
 	}

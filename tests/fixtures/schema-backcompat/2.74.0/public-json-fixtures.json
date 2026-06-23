@@ -2802,7 +2802,7 @@
               {
                 "id": "symbol-read",
                 "ref": "code/symbol-read",
-                "usage": "mf script-pack run code/symbol-read read <path> --start-line <line> [options]",
+                "usage": "mf script-pack run code/symbol-read read (<path> --start-line <line> | --anchor <id>) [options]",
                 "summary_key": "scriptPack.script.codeSymbolRead.summary",
                 "actions": [
                   "read"
@@ -2820,6 +2820,7 @@
                 "network": false,
                 "inputs": [
                   "path",
+                  "anchor_id",
                   "start_line",
                   "end_line",
                   "context_lines",
@@ -3098,6 +3099,7 @@
         "ok": true,
         "mustflow_root": "C:/repo",
         "policy": {
+          "anchor_id": null,
           "start_line": 1,
           "end_line": null,
           "context_lines": 0,
@@ -3111,12 +3113,14 @@
           "sha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
           "size_bytes": 48,
           "line_count": 3,
+          "requested_anchor_id": null,
           "requested_start_line": 1,
           "requested_end_line": null,
           "resolved_start_line": 1,
           "resolved_end_line": 3,
           "context_start_line": 1,
           "context_end_line": 3,
+          "anchor": null,
           "symbol": {
             "id": "src/example.ts:1:function:loadExample",
             "path": "src/example.ts",

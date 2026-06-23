@@ -68,9 +68,10 @@
     "policy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["start_line", "end_line", "context_lines", "max_file_bytes", "max_snippet_lines"],
+      "required": ["anchor_id", "start_line", "end_line", "context_lines", "max_file_bytes", "max_snippet_lines"],
       "properties": {
-        "start_line": { "type": "integer", "minimum": 1 },
+        "anchor_id": { "type": ["string", "null"] },
+        "start_line": { "type": ["integer", "null"], "minimum": 1 },
         "end_line": { "type": ["integer", "null"], "minimum": 1 },
         "context_lines": { "type": "integer", "minimum": 0 },
         "max_file_bytes": { "type": "integer", "minimum": 1 },
@@ -124,6 +125,53 @@
         "content_sha256": { "$ref": "#/$defs/sha256" }
       }
     },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "line_start",
+        "line_end",
+        "purpose",
+        "search",
+        "invariant",
+        "risk",
+        "navigation_only",
+        "can_instruct_agent",
+        "target_symbol_id",
+        "target_kind",
+        "target_name",
+        "target_start_line"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "purpose": { "type": ["string", "null"] },
+        "search": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "invariant": { "type": ["string", "null"] },
+        "risk": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "navigation_only": { "const": true },
+        "can_instruct_agent": { "const": false },
+        "target_symbol_id": { "type": ["string", "null"] },
+        "target_kind": {
+          "anyOf": [
+            { "$ref": "#/$defs/symbolKind" },
+            { "type": "null" }
+          ]
+        },
+        "target_name": { "type": ["string", "null"] },
+        "target_start_line": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
     "target": {
       "type": "object",
       "additionalProperties": false,
@@ -133,12 +181,14 @@
         "sha256",
         "size_bytes",
         "line_count",
+        "requested_anchor_id",
         "requested_start_line",
         "requested_end_line",
         "resolved_start_line",
         "resolved_end_line",
         "context_start_line",
         "context_end_line",
+        "anchor",
         "symbol"
       ],
       "properties": {
@@ -147,12 +197,19 @@
         "sha256": { "$ref": "#/$defs/sha256" },
         "size_bytes": { "type": "integer", "minimum": 0 },
         "line_count": { "type": "integer", "minimum": 0 },
-        "requested_start_line": { "type": "integer", "minimum": 1 },
+        "requested_anchor_id": { "type": ["string", "null"] },
+        "requested_start_line": { "type": ["integer", "null"], "minimum": 1 },
         "requested_end_line": { "type": ["integer", "null"], "minimum": 1 },
         "resolved_start_line": { "type": ["integer", "null"], "minimum": 1 },
         "resolved_end_line": { "type": ["integer", "null"], "minimum": 1 },
         "context_start_line": { "type": ["integer", "null"], "minimum": 1 },
         "context_end_line": { "type": ["integer", "null"], "minimum": 1 },
+        "anchor": {
+          "anyOf": [
+            { "$ref": "#/$defs/anchor" },
+            { "type": "null" }
+          ]
+        },
         "symbol": {
           "anyOf": [
             { "$ref": "#/$defs/symbol" },
@@ -183,6 +240,9 @@
             "code_symbol_read_unreadable_path",
             "code_symbol_read_invalid_range",
             "code_symbol_read_no_symbol_at_line",
+            "code_symbol_read_anchor_not_found",
+            "code_symbol_read_anchor_ambiguous",
+            "code_symbol_read_anchor_without_symbol",
             "code_symbol_read_snippet_too_large"
           ]
         },

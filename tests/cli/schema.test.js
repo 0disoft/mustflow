@@ -844,15 +844,28 @@ test('code-symbol-read json output matches the published schema', () => {
 	try {
 		initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'));
-		writeFileSync(path.join(projectPath, 'src', 'symbol.ts'), 'export function symbolProbe() {\n  return 1;\n}\n');
+		writeFileSync(
+			path.join(projectPath, 'src', 'symbol.ts'),
+			[
+				'/**',
+				' * mf:anchor schema.symbol.probe',
+				' * purpose: Exercise code symbol read source-anchor metadata.',
+				' * search: schema, symbol',
+				' * risk: config',
+				' */',
+				'export function symbolProbe() {',
+				'  return 1;',
+				'}',
+				'',
+			].join('\n'),
+		);
 		const result = runCli(projectPath, [
 			'script-pack',
 			'run',
 			'code/symbol-read',
 			'read',
-			'src/symbol.ts',
-			'--start-line',
-			'1',
+			'--anchor',
+			'schema.symbol.probe',
 			'--json',
 		]);
 

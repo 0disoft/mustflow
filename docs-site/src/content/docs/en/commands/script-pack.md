@@ -8,7 +8,7 @@ top-level command.
 
 The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
 symbol headers, line ranges, and source-anchor metadata, `code/symbol-read`, which reads a focused source snippet by
-symbol line or explicit line range, `core/text-budget`, which checks exact text length budgets for
+source anchor, symbol line, or explicit line range, `core/text-budget`, which checks exact text length budgets for
 plain text files or JSON string fields, and `repo/generated-boundary`, which checks whether
 candidate paths cross generated, ignored, protected, vendor, or cache boundaries.
 
@@ -81,13 +81,17 @@ Directory scans skip common generated, cache, vendor, and build directories such
 
 ```sh
 npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --json
+npx mf script-pack run code/symbol-read read --anchor auth.session.resolve --json
 npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 1 --end-line 40 --context-lines 2 --json
 ```
 
-`code/symbol-read` is read-only. When `--end-line` is omitted, it resolves `--start-line` to the
-outline symbol that starts at or contains that line and returns only that symbol range. When
-`--end-line` is present, it returns the explicit bounded range. Use `--context-lines` to include a
-small amount of surrounding context without paging through the entire file.
+`code/symbol-read` is read-only. `--anchor <id>` resolves a structured source anchor to its
+conservative target symbol and returns only that symbol range. If the anchor is missing,
+duplicated, or not directly attached to a readable symbol, the command fails instead of guessing a
+nearby range. When `--end-line` is omitted in path mode, it resolves `--start-line` to the outline
+symbol that starts at or contains that line and returns only that symbol range. When `--end-line` is
+present, it returns the explicit bounded range. Use `--context-lines` to include a small amount of
+surrounding context without paging through the entire file.
 
 ## Check Generated Boundaries
 
@@ -135,6 +139,7 @@ npx mf script-pack list --json
 npx mf script-pack suggest --path AGENTS.md --phase before_change --json
 npx mf script-pack run code/outline scan src --json
 npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --json
+npx mf script-pack run code/symbol-read read --anchor auth.session.resolve --json
 npx mf script-pack run core/text-budget check package.json --json-pointer /description --max 80 --json
 npx mf script-pack run repo/generated-boundary check AGENTS.md .mustflow/config/manifest.lock.toml --json
 ```
@@ -209,9 +214,10 @@ The code-symbol-read report includes:
 - `status`: `passed`, `failed`, or `error`.
 - `ok`: Whether the status is `passed`.
 - `mustflow_root`: Current mustflow root.
-- `policy`: Requested start line, optional end line, context, file-size limit, and snippet-size limit.
+- `policy`: Requested source anchor or line range, context, file-size limit, and snippet-size limit.
 - `input_hash`: Hash of the read input state.
-- `target`: File hash, requested lines, resolved lines, context lines, and optional matched symbol.
+- `target`: File hash, requested anchor id, requested lines, resolved lines, context lines, optional
+  anchor metadata, and optional matched symbol.
 - `snippet`: The bounded source text and its start/end lines, or `null` when no snippet was produced.
 - `findings`: Stable finding codes for outside-root paths, unreadable files, invalid ranges,
   missing symbols, and too-large snippets.

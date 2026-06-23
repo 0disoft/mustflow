@@ -27,6 +27,7 @@ const CODE_OUTLINE_OPTIONS = [
 
 const CODE_SYMBOL_READ_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
+	{ name: '--anchor', kind: 'string' },
 	{ name: '--start-line', kind: 'string' },
 	{ name: '--end-line', kind: 'string' },
 	{ name: '--context-lines', kind: 'string' },
@@ -47,6 +48,7 @@ interface ParsedCodeSymbolReadOptions {
 	readonly action: 'read';
 	readonly json: boolean;
 	readonly path: string | null;
+	readonly anchorId: string | null;
 	readonly startLine: number | null;
 	readonly endLine: number | null;
 	readonly contextLines: number | null;
@@ -125,9 +127,10 @@ export function getCodeOutlineHelp(lang: CliLang = 'en'): string {
 export function getCodeSymbolReadHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
-			usage: 'mf script-pack run code/symbol-read read <path> --start-line <line> [options]',
+			usage: 'mf script-pack run code/symbol-read read (<path> --start-line <line> | --anchor <id>) [options]',
 			summary: t(lang, 'codeSymbolRead.help.summary'),
 			options: [
+				{ label: '--anchor <id>', description: t(lang, 'codeSymbolRead.help.option.anchor') },
 				{ label: '--start-line <line>', description: t(lang, 'codeSymbolRead.help.option.startLine') },
 				{ label: '--end-line <line>', description: t(lang, 'codeSymbolRead.help.option.endLine') },
 				{ label: '--context-lines <count>', description: t(lang, 'codeSymbolRead.help.option.contextLines') },
@@ -138,6 +141,7 @@ export function getCodeSymbolReadHelp(lang: CliLang = 'en'): string {
 			],
 			examples: [
 				'mf script-pack run code/symbol-read read src/cli/commands/script-pack.ts --start-line 100',
+				'mf script-pack run code/symbol-read read --anchor auth.session.resolve --json',
 				'mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --context-lines 2 --json',
 				'mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 1 --end-line 40 --json',
 			],
@@ -216,6 +220,7 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 	const [action, ...rest] = args;
 	const parsed = parseCliOptions(rest, CODE_SYMBOL_READ_OPTIONS, { allowPositionals: true });
 	const json = hasParsedCliOption(parsed, '--json');
+	const anchorId = getParsedCliStringOption(parsed, '--anchor');
 	const startLine = parsePositiveInteger(getParsedCliStringOption(parsed, '--start-line'), '--start-line', lang);
 	const endLine = parsePositiveInteger(getParsedCliStringOption(parsed, '--end-line'), '--end-line', lang);
 	const contextLines = parseNonNegativeInteger(getParsedCliStringOption(parsed, '--context-lines'), '--context-lines', lang);
@@ -232,6 +237,7 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 			action: 'read',
 			json,
 			path: inputPath,
+			anchorId,
 			startLine: startLine.value,
 			endLine: endLine.value,
 			contextLines: contextLines.value,
@@ -246,6 +252,7 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 			action,
 			json,
 			path: inputPath,
+			anchorId,
 			startLine: startLine.value,
 			endLine: endLine.value,
 			contextLines: contextLines.value,
@@ -261,6 +268,7 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 				action,
 				json,
 				path: inputPath,
+				anchorId,
 				startLine: startLine.value,
 				endLine: endLine.value,
 				contextLines: contextLines.value,
@@ -271,11 +279,30 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 		}
 	}
 
-	if (parsed.positionals.length === 0) {
+	const hasAnchor = anchorId !== null;
+	const hasLineSelection = startLine.value !== null || endLine.value !== null;
+
+	if (hasAnchor && (parsed.positionals.length > 0 || hasLineSelection)) {
+		return {
+			action,
+			json,
+			path: inputPath,
+			anchorId,
+			startLine: startLine.value,
+			endLine: endLine.value,
+			contextLines: contextLines.value,
+			maxFileBytes: maxFileBytes.value,
+			maxSnippetLines: maxSnippetLines.value,
+			error: t(lang, 'codeSymbolRead.error.anchorConflict'),
+		};
+	}
+
+	if (!hasAnchor && parsed.positionals.length === 0) {
 		return {
 			action,
 			json,
 			path: null,
+			anchorId,
 			startLine: startLine.value,
 			endLine: endLine.value,
 			contextLines: contextLines.value,
@@ -285,11 +312,12 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 		};
 	}
 
-	if (parsed.positionals.length > 1) {
+	if (!hasAnchor && parsed.positionals.length > 1) {
 		return {
 			action,
 			json,
 			path: inputPath,
+			anchorId,
 			startLine: startLine.value,
 			endLine: endLine.value,
 			contextLines: contextLines.value,
@@ -299,11 +327,12 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 		};
 	}
 
-	if (startLine.value === null) {
+	if (!hasAnchor && startLine.value === null) {
 		return {
 			action,
 			json,
 			path: inputPath,
+			anchorId,
 			startLine: null,
 			endLine: endLine.value,
 			contextLines: contextLines.value,
@@ -317,6 +346,7 @@ function parseCodeSymbolReadOptions(args: readonly string[], lang: CliLang): Par
 		action,
 		json,
 		path: inputPath,
+		anchorId,
 		startLine: startLine.value,
 		endLine: endLine.value,
 		contextLines: contextLines.value,
@@ -437,7 +467,7 @@ export function runCodeSymbolReadScript(args: string[], reporter: Reporter, lang
 	}
 
 	const options = parseCodeSymbolReadOptions(args, lang);
-	if (options.error || options.path === null || options.startLine === null) {
+	if (options.error || (options.anchorId === null && (options.path === null || options.startLine === null))) {
 		printUsageError(
 			reporter,
 			options.error ?? t(lang, 'cli.common.invalidInput'),
@@ -450,6 +480,7 @@ export function runCodeSymbolReadScript(args: string[], reporter: Reporter, lang
 
 	const report = readCodeSymbol(resolveMustflowRoot(), {
 		path: options.path,
+		anchorId: options.anchorId,
 		startLine: options.startLine,
 		endLine: options.endLine,
 		contextLines: options.contextLines ?? undefined,

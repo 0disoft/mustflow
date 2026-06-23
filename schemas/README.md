@@ -71,8 +71,9 @@ Current schemas:
   input-limit finding codes
 - `code-symbol-read-report.schema.json`: output of
   `mf script-pack run code/symbol-read read <path> --start-line <line> --json`, containing a
-  focused source snippet selected by outline symbol line or explicit line range with file hash,
-  resolved line metadata, optional symbol and static return metadata, and stable range/read finding codes
+  focused source snippet selected by source anchor, outline symbol line, or explicit line range with
+  file hash, resolved line metadata, optional anchor, symbol and static return metadata, and stable
+  range/read finding codes
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field

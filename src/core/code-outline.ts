@@ -10,6 +10,7 @@ import {
 } from './script-check-result.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 import {
+	listSourceAnchorFiles,
 	parseSourceAnchorsInContent,
 	sourceAnchorTextContainsSecretLike,
 	splitSourceAnchorList,
@@ -44,6 +45,9 @@ export type CodeSymbolReadFindingCode =
 	| 'code_symbol_read_unreadable_path'
 	| 'code_symbol_read_invalid_range'
 	| 'code_symbol_read_no_symbol_at_line'
+	| 'code_symbol_read_anchor_not_found'
+	| 'code_symbol_read_anchor_ambiguous'
+	| 'code_symbol_read_anchor_without_symbol'
 	| 'code_symbol_read_snippet_too_large';
 
 export interface CodeOutlinePolicy {
@@ -124,7 +128,8 @@ export interface CodeOutlineReport {
 }
 
 export interface CodeSymbolReadPolicy {
-	readonly start_line: number;
+	readonly anchor_id: string | null;
+	readonly start_line: number | null;
 	readonly end_line: number | null;
 	readonly context_lines: number;
 	readonly max_file_bytes: number;
@@ -137,12 +142,14 @@ export interface CodeSymbolReadTarget {
 	readonly sha256: string;
 	readonly size_bytes: number;
 	readonly line_count: number;
-	readonly requested_start_line: number;
+	readonly requested_anchor_id: string | null;
+	readonly requested_start_line: number | null;
 	readonly requested_end_line: number | null;
 	readonly resolved_start_line: number | null;
 	readonly resolved_end_line: number | null;
 	readonly context_start_line: number | null;
 	readonly context_end_line: number | null;
+	readonly anchor: CodeOutlineAnchor | null;
 	readonly symbol: CodeOutlineSymbol | null;
 }
 
@@ -185,8 +192,9 @@ export interface InspectCodeOutlineOptions {
 }
 
 export interface ReadCodeSymbolOptions {
-	readonly path: string;
-	readonly startLine: number;
+	readonly path?: string | null;
+	readonly anchorId?: string | null;
+	readonly startLine?: number | null;
 	readonly endLine?: number | null;
 	readonly contextLines?: number;
 	readonly maxFileBytes?: number;
@@ -234,6 +242,9 @@ const ERROR_SYMBOL_READ_CODES = new Set<CodeSymbolReadFindingCode>([
 	'code_symbol_read_unreadable_path',
 	'code_symbol_read_invalid_range',
 	'code_symbol_read_no_symbol_at_line',
+	'code_symbol_read_anchor_not_found',
+	'code_symbol_read_anchor_ambiguous',
+	'code_symbol_read_anchor_without_symbol',
 	'code_symbol_read_snippet_too_large',
 ]);
 
@@ -982,10 +993,12 @@ function createSymbolReadInputHash(
 				: {
 						path: target.path,
 						sha256: target.sha256,
+						requested_anchor_id: target.requested_anchor_id,
 						requested_start_line: target.requested_start_line,
 						requested_end_line: target.requested_end_line,
 						context_start_line: target.context_start_line,
 						context_end_line: target.context_end_line,
+						anchor_id: target.anchor?.id ?? null,
 					},
 		input_errors: findings
 			.filter((finding) => ERROR_SYMBOL_READ_CODES.has(finding.code))
@@ -999,73 +1012,62 @@ function createSymbolReadInputHash(
 	return sha256Tagged(JSON.stringify(inputState));
 }
 
-export function readCodeSymbol(projectRoot: string, options: ReadCodeSymbolOptions): CodeSymbolReadReport {
-	const root = path.resolve(projectRoot);
-	const policy: CodeSymbolReadPolicy = {
-		start_line: options.startLine,
-		end_line: options.endLine ?? null,
-		context_lines: options.contextLines ?? DEFAULT_CONTEXT_LINES,
-		max_file_bytes: options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES,
-		max_snippet_lines: options.maxSnippetLines ?? DEFAULT_MAX_SNIPPET_LINES,
-	};
-	const findings: CodeSymbolReadFinding[] = [];
-	const issues: string[] = [];
+interface AnchorReadCandidate {
+	readonly relativePath: string;
+	readonly anchor: CodeOutlineAnchor;
+}
 
-	if (policy.start_line < 1 || (policy.end_line !== null && policy.end_line < policy.start_line) || policy.context_lines < 0) {
-		findings.push(
-			makeSymbolReadFinding(
-				'code_symbol_read_invalid_range',
-				'high',
-				options.path,
-				policy.start_line,
-				policy.end_line,
-				'Line range must use 1-based positive lines, and end_line must be greater than or equal to start_line.',
-			),
-		);
-		return createEmptySymbolReadReport(root, policy, findings, issues);
+function collectAnchorReadCandidates(root: string, anchorId: string, maxFileBytes: number): readonly AnchorReadCandidate[] {
+	const candidates: AnchorReadCandidate[] = [];
+
+	for (const relativePath of listSourceAnchorFiles(root, { allowedExtensions: CODE_FILE_EXTENSIONS, maxFileBytes })) {
+		const absolutePath = path.join(root, ...relativePath.split('/'));
+		const language = languageForPath(absolutePath);
+		if (!language || !existsSync(absolutePath)) {
+			continue;
+		}
+
+		let buffer: Buffer;
+		try {
+			buffer = readFileInsideWithoutSymlinks(root, absolutePath, { maxBytes: maxFileBytes });
+		} catch {
+			continue;
+		}
+
+		const contentSha256 = sha256Tagged(buffer);
+		const text = buffer.toString('utf8');
+		const lines = text.split(/\r\n|\r|\n/u);
+		const symbols = extractSymbols(relativePath, language, contentSha256, text);
+		const anchors = extractAnchors(relativePath, lines, text, symbols);
+		for (const anchor of anchors) {
+			if (anchor.id === anchorId) {
+				candidates.push({ relativePath, anchor });
+			}
+		}
 	}
 
-	let absolutePath: string;
-	let relativePath: string;
-	try {
-		const normalized = normalizeTargetPath(root, options.path);
-		absolutePath = normalized.absolutePath;
-		relativePath = normalized.relativePath;
-		ensureInsideWithoutSymlinks(root, absolutePath);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		issues.push(message);
-		findings.push(makeSymbolReadFinding('code_symbol_read_path_outside_root', 'high', options.path, policy.start_line, policy.end_line, message));
-		return createEmptySymbolReadReport(root, policy, findings, issues);
-	}
+	return candidates.sort((left, right) => left.relativePath.localeCompare(right.relativePath) || left.anchor.line_start - right.anchor.line_start);
+}
 
-	const language = languageForPath(absolutePath);
-	if (!language || !existsSync(absolutePath)) {
-		const message = `${relativePath} is not a supported existing code file.`;
-		issues.push(message);
-		findings.push(
-			makeSymbolReadFinding('code_symbol_read_unreadable_path', 'high', relativePath, policy.start_line, policy.end_line, message),
-		);
-		return createEmptySymbolReadReport(root, policy, findings, issues);
-	}
-
-	let buffer: Buffer;
-	try {
-		buffer = readFileInsideWithoutSymlinks(root, absolutePath, { maxBytes: policy.max_file_bytes });
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		issues.push(`${relativePath}: ${message}`);
-		findings.push(
-			makeSymbolReadFinding('code_symbol_read_unreadable_path', 'high', relativePath, policy.start_line, policy.end_line, message),
-		);
-		return createEmptySymbolReadReport(root, policy, findings, issues);
-	}
-
+function createSymbolReadReportFromFile(
+	root: string,
+	policy: CodeSymbolReadPolicy,
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	buffer: Buffer,
+	findings: CodeSymbolReadFinding[],
+	issues: string[],
+	anchor: CodeOutlineAnchor | null,
+): CodeSymbolReadReport {
 	const contentSha256 = sha256Tagged(buffer);
 	const text = buffer.toString('utf8');
 	const lines = text.split(/\r\n|\r|\n/u);
-	if (policy.start_line > lines.length || (policy.end_line !== null && policy.end_line > lines.length)) {
-		const message = `Line range ${policy.start_line}${policy.end_line === null ? '' : `-${policy.end_line}`} is outside ${relativePath}, which has ${lines.length} lines.`;
+	if ((policy.start_line !== null && policy.start_line > lines.length) || (policy.end_line !== null && policy.end_line > lines.length)) {
+		const requestedRange =
+			policy.start_line === null
+				? `anchor ${policy.anchor_id ?? '<unknown>'}`
+				: `${policy.start_line}${policy.end_line === null ? '' : `-${policy.end_line}`}`;
+		const message = `Line range ${requestedRange} is outside ${relativePath}, which has ${lines.length} lines.`;
 		issues.push(message);
 		findings.push(
 			makeSymbolReadFinding(
@@ -1081,31 +1083,36 @@ export function readCodeSymbol(projectRoot: string, options: ReadCodeSymbolOptio
 	}
 
 	const symbols = extractSymbols(relativePath, language, contentSha256, text);
-	const matchedSymbol =
-		policy.end_line === null
-			? (symbols.find((symbol) => symbol.start_line === policy.start_line) ??
-				symbols.find((symbol) => symbol.start_line <= policy.start_line && symbol.end_line >= policy.start_line) ??
+	const requestedStartLine = policy.start_line;
+	const matchedSymbol = anchor
+		? (symbols.find((symbol) => symbol.id === anchor.target_symbol_id) ?? null)
+		: policy.end_line === null && requestedStartLine !== null
+			? (symbols.find((symbol) => symbol.start_line === requestedStartLine) ??
+				symbols.find((symbol) => symbol.start_line <= requestedStartLine && symbol.end_line >= requestedStartLine) ??
 				null)
 			: null;
-	const resolvedStartLine = matchedSymbol?.start_line ?? policy.start_line;
+	const resolvedStartLine = matchedSymbol?.start_line ?? requestedStartLine;
 	const resolvedEndLine = matchedSymbol?.end_line ?? policy.end_line;
 
 	if (resolvedEndLine === null) {
-		const message = `No outline symbol starts at or contains line ${policy.start_line} in ${relativePath}. Pass --end-line to read an explicit range.`;
+		const message = anchor
+			? `Source anchor ${anchor.id} in ${relativePath}:${anchor.line_start} does not target a readable outline symbol.`
+			: `No outline symbol starts at or contains line ${policy.start_line} in ${relativePath}. Pass --end-line to read an explicit range.`;
 		issues.push(message);
 		findings.push(
 			makeSymbolReadFinding(
-				'code_symbol_read_no_symbol_at_line',
+				anchor ? 'code_symbol_read_anchor_without_symbol' : 'code_symbol_read_no_symbol_at_line',
 				'high',
 				relativePath,
-				policy.start_line,
+				policy.start_line ?? anchor?.line_start ?? null,
 				null,
 				message,
 			),
 		);
 	}
 
-	const contextStartLine = resolvedEndLine === null ? null : Math.max(1, resolvedStartLine - policy.context_lines);
+	const contextStartLine =
+		resolvedEndLine === null || resolvedStartLine === null ? null : Math.max(1, resolvedStartLine - policy.context_lines);
 	const contextEndLine =
 		resolvedEndLine === null ? null : Math.min(lines.length, resolvedEndLine + policy.context_lines);
 	const target: CodeSymbolReadTarget = {
@@ -1114,12 +1121,14 @@ export function readCodeSymbol(projectRoot: string, options: ReadCodeSymbolOptio
 		sha256: contentSha256,
 		size_bytes: buffer.byteLength,
 		line_count: lines.length,
+		requested_anchor_id: policy.anchor_id,
 		requested_start_line: policy.start_line,
 		requested_end_line: policy.end_line,
 		resolved_start_line: resolvedEndLine === null ? null : resolvedStartLine,
 		resolved_end_line: resolvedEndLine,
 		context_start_line: contextStartLine,
 		context_end_line: contextEndLine,
+		anchor,
 		symbol: matchedSymbol,
 	};
 
@@ -1169,4 +1178,137 @@ export function readCodeSymbol(projectRoot: string, options: ReadCodeSymbolOptio
 		findings,
 		issues,
 	};
+}
+
+export function readCodeSymbol(projectRoot: string, options: ReadCodeSymbolOptions): CodeSymbolReadReport {
+	const root = path.resolve(projectRoot);
+	const policy: CodeSymbolReadPolicy = {
+		anchor_id: options.anchorId ?? null,
+		start_line: options.startLine ?? null,
+		end_line: options.endLine ?? null,
+		context_lines: options.contextLines ?? DEFAULT_CONTEXT_LINES,
+		max_file_bytes: options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES,
+		max_snippet_lines: options.maxSnippetLines ?? DEFAULT_MAX_SNIPPET_LINES,
+	};
+	const findings: CodeSymbolReadFinding[] = [];
+	const issues: string[] = [];
+
+	if (
+		policy.context_lines < 0 ||
+		(policy.start_line !== null && policy.start_line < 1) ||
+		(policy.end_line !== null && (policy.start_line === null || policy.end_line < policy.start_line))
+	) {
+		findings.push(
+			makeSymbolReadFinding(
+				'code_symbol_read_invalid_range',
+				'high',
+				options.path ?? '.',
+				policy.start_line,
+				policy.end_line,
+				'Line range must use 1-based positive lines, and end_line must be greater than or equal to start_line.',
+			),
+		);
+		return createEmptySymbolReadReport(root, policy, findings, issues);
+	}
+
+	if (policy.anchor_id !== null) {
+		const anchorCandidates = collectAnchorReadCandidates(root, policy.anchor_id, policy.max_file_bytes);
+		if (anchorCandidates.length === 0) {
+			const message = `No source anchor found with id ${policy.anchor_id}.`;
+			issues.push(message);
+			findings.push(makeSymbolReadFinding('code_symbol_read_anchor_not_found', 'high', '.', null, null, message));
+			return createEmptySymbolReadReport(root, policy, findings, issues);
+		}
+
+		if (anchorCandidates.length > 1) {
+			const locations = anchorCandidates.map((candidate) => `${candidate.relativePath}:${candidate.anchor.line_start}`).join(', ');
+			const message = `Source anchor id ${policy.anchor_id} is ambiguous: ${locations}.`;
+			issues.push(message);
+			findings.push(makeSymbolReadFinding('code_symbol_read_anchor_ambiguous', 'high', '.', null, null, message));
+			return createEmptySymbolReadReport(root, policy, findings, issues);
+		}
+
+		const candidate = anchorCandidates[0];
+		const anchor = candidate?.anchor ?? null;
+		const relativePath = candidate?.relativePath ?? '.';
+		const absolutePath = path.join(root, ...relativePath.split('/'));
+		const language = languageForPath(absolutePath);
+		if (!anchor || !language || !existsSync(absolutePath)) {
+			const message = `${relativePath} is not a supported existing code file.`;
+			issues.push(message);
+			findings.push(makeSymbolReadFinding('code_symbol_read_unreadable_path', 'high', relativePath, null, null, message));
+			return createEmptySymbolReadReport(root, policy, findings, issues);
+		}
+
+		let buffer: Buffer;
+		try {
+			buffer = readFileInsideWithoutSymlinks(root, absolutePath, { maxBytes: policy.max_file_bytes });
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			issues.push(`${relativePath}: ${message}`);
+			findings.push(makeSymbolReadFinding('code_symbol_read_unreadable_path', 'high', relativePath, null, null, message));
+			return createEmptySymbolReadReport(root, policy, findings, issues);
+		}
+
+		const anchorPolicy: CodeSymbolReadPolicy = {
+			...policy,
+			start_line: null,
+			end_line: null,
+		};
+		return createSymbolReadReportFromFile(root, anchorPolicy, relativePath, language, buffer, findings, issues, anchor);
+	}
+
+	if (!options.path || policy.start_line === null) {
+		findings.push(
+			makeSymbolReadFinding(
+				'code_symbol_read_invalid_range',
+				'high',
+				options.path ?? '.',
+				policy.start_line,
+				policy.end_line,
+				'Path and --start-line are required unless --anchor is provided.',
+			),
+		);
+		return createEmptySymbolReadReport(root, policy, findings, issues);
+	}
+
+	let absolutePath: string;
+	let relativePath: string;
+	try {
+		const normalized = normalizeTargetPath(root, options.path);
+		absolutePath = normalized.absolutePath;
+		relativePath = normalized.relativePath;
+		ensureInsideWithoutSymlinks(root, absolutePath);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		issues.push(message);
+		findings.push(
+			makeSymbolReadFinding('code_symbol_read_path_outside_root', 'high', options.path, policy.start_line, policy.end_line, message),
+		);
+		return createEmptySymbolReadReport(root, policy, findings, issues);
+	}
+
+	const language = languageForPath(absolutePath);
+	if (!language || !existsSync(absolutePath)) {
+		const message = `${relativePath} is not a supported existing code file.`;
+		issues.push(message);
+		findings.push(
+			makeSymbolReadFinding('code_symbol_read_unreadable_path', 'high', relativePath, policy.start_line, policy.end_line, message),
+		);
+		return createEmptySymbolReadReport(root, policy, findings, issues);
+	}
+
+	let buffer: Buffer;
+	try {
+		buffer = readFileInsideWithoutSymlinks(root, absolutePath, { maxBytes: policy.max_file_bytes });
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		issues.push(`${relativePath}: ${message}`);
+		findings.push(
+			makeSymbolReadFinding('code_symbol_read_unreadable_path', 'high', relativePath, policy.start_line, policy.end_line, message),
+		);
+		return createEmptySymbolReadReport(root, policy, findings, issues);
+	}
+
+	return createSymbolReadReportFromFile(root, policy, relativePath, language, buffer, findings, issues, null);
 }

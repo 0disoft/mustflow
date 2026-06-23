@@ -19,6 +19,8 @@ This file applies to the mustflow repository itself. It is not installed into us
   without reading whole files line by line.
 - Added source-anchor metadata to `code/outline` JSON reports so agents can discover `mf:anchor`
   navigation markers and their nearby target declarations without paging through whole files.
+- Added `--anchor <id>` to `code/symbol-read` so agents can read a source anchor's target symbol
+  directly without manually copying line numbers from `code/outline`.
 
 ### Changed
 
