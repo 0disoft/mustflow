@@ -57,11 +57,18 @@ Current schemas:
   quality-gaming risks such as line stuffing, validation suppressions, test bypass markers, type
   escapes, generated/vendor logic, empty catch swallowing, and placeholder implementations
 - `script-pack-catalog.schema.json`: output of `mf script-pack list --json`, containing bundled
-  script-pack ids, script refs, action names, usage strings, and associated report schemas
+  script-pack ids, script refs, action names, usage strings, workflow phases, read-only and
+  side-effect flags, input and output capability labels, related skill names, cost and risk hints,
+  and associated report schemas
+- `script-pack-suggestion-report.schema.json`: output of `mf script-pack suggest --json`, containing
+  path, skill, phase, and changed-file evidence used to recommend optional script-pack helpers
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field
   checks for bounded user-facing strings and generated text
+- `generated-boundary-report.schema.json`: output of
+  `mf script-pack run repo/generated-boundary check <path...> --json`, containing candidate path
+  classifications for generated, ignored, protected, vendor, and cache boundaries before or after edits
 - `skill-route-report.schema.json`: output of `mf skill route --json`, containing compact route
   candidates, selected main and adjunct skills, score breakdowns, route read plans, and source
   route shards without granting command authority or replacing selected `SKILL.md` reads

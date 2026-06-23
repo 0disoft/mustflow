@@ -2777,6 +2777,78 @@
       }
     },
     {
+      "id": "script-pack-suggestion-report",
+      "schema_file": "script-pack-suggestion-report.schema.json",
+      "producer": "mf script-pack suggest --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "action": "suggest",
+        "status": "suggested",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "phases": [
+            "before_change"
+          ],
+          "skills": [
+            "template-install-surface-sync"
+          ],
+          "paths": [
+            ".mustflow/config/manifest.lock.toml"
+          ],
+          "changed": false
+        },
+        "analyzed_paths": [
+          {
+            "path": ".mustflow/config/manifest.lock.toml",
+            "surfaces": [
+              "config",
+              "generated"
+            ]
+          }
+        ],
+        "suggestions": [
+          {
+            "script_ref": "repo/generated-boundary",
+            "score": 12,
+            "confidence": "high",
+            "usage": "mf script-pack run repo/generated-boundary check <path...> [options]",
+            "phases": [
+              "before_change",
+              "after_change",
+              "review"
+            ],
+            "matched_phases": [
+              "before_change"
+            ],
+            "matched_skills": [
+              "template-install-surface-sync"
+            ],
+            "matched_surfaces": [
+              "config",
+              "generated"
+            ],
+            "reasons": [
+              "Matches requested phase: before_change",
+              "Matches related skill: template-install-surface-sync",
+              "Matches changed surface: config, generated",
+              "Accepts explicit path inputs.",
+              "Read-only, non-mutating, offline helper."
+            ],
+            "read_only": true,
+            "mutates": false,
+            "network": false,
+            "risk_level": "low",
+            "cost": "low",
+            "report_schema_file": "generated-boundary-report.schema.json",
+            "run_hint": "mf script-pack run repo/generated-boundary check <path...> [options]"
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "text-budget-report",
       "schema_file": "text-budget-report.schema.json",
       "producer": "mf script-pack run core/text-budget check <path...> --json",
@@ -2816,6 +2888,101 @@
             "path": "package.json",
             "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "size_bytes": 128
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "generated-boundary-report",
+      "schema_file": "generated-boundary-report.schema.json",
+      "producer": "mf script-pack run repo/generated-boundary check <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "generated-boundary",
+        "script_ref": "repo/generated-boundary",
+        "action": "check",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "config_path": ".mustflow/config/mustflow.toml",
+          "config_loaded": true,
+          "generated_patterns": [
+            "REPO_MAP.md",
+            ".mustflow/config/manifest.lock.toml",
+            ".mustflow/cache/**",
+            ".mustflow/state/**"
+          ],
+          "ignored_patterns": [
+            "node_modules/**",
+            "dist/**",
+            "coverage/**"
+          ],
+          "protected_patterns": [
+            ".git/**",
+            "**/*.pem",
+            "**/*.key",
+            "**/.env"
+          ],
+          "builtin_generated_patterns": [
+            "REPO_MAP.md",
+            ".mustflow/config/manifest.lock.toml",
+            ".mustflow/state/**",
+            ".mustflow/cache/**",
+            "dist/**",
+            "build/**",
+            "coverage/**",
+            ".next/**",
+            ".turbo/**"
+          ],
+          "builtin_vendor_patterns": [
+            "node_modules/**",
+            "vendor/**",
+            "third_party/**"
+          ],
+          "builtin_cache_patterns": [
+            ".cache/**",
+            ".parcel-cache/**",
+            ".pytest_cache/**"
+          ],
+          "builtin_protected_patterns": [
+            ".git/**",
+            "**/*.pem",
+            "**/*.key",
+            "**/.env"
+          ]
+        },
+        "input_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "targets": [
+          {
+            "input": ".mustflow/config/manifest.lock.toml",
+            "path": ".mustflow/config/manifest.lock.toml",
+            "exists": true,
+            "kind": "file",
+            "matched_boundaries": [
+              "generated"
+            ],
+            "matched_patterns": [
+              {
+                "category": "generated",
+                "pattern": ".mustflow/config/manifest.lock.toml",
+                "source": "mustflow_config"
+              }
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "code": "generated_boundary_generated_path",
+            "severity": "medium",
+            "message": ".mustflow/config/manifest.lock.toml matches generated boundary pattern .mustflow/config/manifest.lock.toml.",
+            "path": ".mustflow/config/manifest.lock.toml",
+            "boundary": "generated",
+            "pattern": ".mustflow/config/manifest.lock.toml",
+            "source": "mustflow_config"
           }
         ],
         "issues": []

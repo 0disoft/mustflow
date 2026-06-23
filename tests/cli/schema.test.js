@@ -779,6 +779,28 @@ test('script-pack catalog json output matches the published schema', () => {
 	}
 });
 
+test('script-pack suggestion json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'suggest',
+			'--path',
+			'AGENTS.md',
+			'--phase',
+			'before_change',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'script-pack-suggestion-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('text-budget json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
@@ -798,6 +820,28 @@ test('text-budget json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'text-budget-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('generated-boundary json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/generated-boundary',
+			'check',
+			'AGENTS.md',
+			'.mustflow/config/manifest.lock.toml',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'generated-boundary-report.schema.json', JSON.parse(result.stdout));
 	} finally {
 		removeTempProject(projectPath);
 	}

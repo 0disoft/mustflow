@@ -56,6 +56,38 @@
           "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
           "minItems": 1
         },
+        "use_when": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["before_change", "during_change", "after_change", "review"]
+          },
+          "minItems": 1
+        },
+        "read_only": { "type": "boolean" },
+        "mutates": { "type": "boolean" },
+        "network": { "type": "boolean" },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$" },
+          "minItems": 1
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$" },
+          "minItems": 1
+        },
+        "related_skills": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+        "cost": { "type": "string", "enum": ["low", "medium", "high"] },
         "report_schema_file": {
           "anyOf": [
             { "type": "string", "pattern": "^[a-z0-9-]+\\.schema\\.json$" },

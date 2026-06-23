@@ -2,7 +2,7 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
@@ -67,6 +67,7 @@ missing, blocked, failed, stale, or only partially relevant.
 - Requirement, bug, issue, or external-advice sources that influenced the work.
 - Command intents run, exit status, and whether the evidence came from `mf run` receipts or lower-confidence direct shell output.
 - Command intents skipped, missing, unknown, manual-only, failed, timed out, or judged not applicable.
+- Optional script-pack discovery evidence when the command contract exposes `script_pack_list`.
 - Synchronized surfaces expected by the changed contract: source, tests, fixtures, schemas, templates, manifests, docs, release metadata, generated output, and localized copies.
 - Known remaining risks, unverified assumptions, blocked decisions, and rollback notes.
 
@@ -108,6 +109,8 @@ missing, blocked, failed, stale, or only partially relevant.
      `evidence-stall-breaker` when that pattern affected the task.
 5. Check synchronization coverage.
    - For behavior or contract changes, verify whether code, tests, schemas, templates, manifests, docs, fixtures, examples, package metadata, release notes, and localized copies agree.
+   - When `.mustflow/config/commands.toml` exposes `script_pack_list`, use it as read-only discovery before choosing optional script-pack checks for the changed surfaces.
+   - Treat `repo/generated-boundary` as a useful candidate before or after path-sensitive edits, but run any selected script only when the repository command contract and script metadata allow it.
    - Use `contract-sync-check`, `cli-output-contract-review`, `api-contract-change`, `release-publish-change`, or a narrower skill when a missing surface needs real follow-up work.
 6. Calibrate completion language.
    - Use `verified` only when the relevant configured checks passed and every required surface is covered.

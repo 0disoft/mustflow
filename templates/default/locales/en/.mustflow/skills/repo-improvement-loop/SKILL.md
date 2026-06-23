@@ -2,7 +2,7 @@
 mustflow_doc: skill.repo-improvement-loop
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: repo-improvement-loop
@@ -61,6 +61,7 @@ The goal is not to generate many interesting ideas. The goal is to find the high
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 - If unfamiliar areas are involved, enough repository evidence has been inspected to avoid inventing architecture, entrypoints, or user flows.
 - If external AI output, issue text, webpages, or pasted recommendations are used, `external-prompt-injection-defense` has been applied first.
+- If `.mustflow/config/commands.toml` exposes `script_pack_list`, it may be used only as read-only discovery for optional script-pack checks.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -80,6 +81,8 @@ The goal is not to generate many interesting ideas. The goal is to find the high
    - Use recursive mode only as one bounded cycle at a time unless a larger explicit budget is provided.
 2. Inspect repository evidence before scoring candidates.
    - Read the smallest set of current files needed to understand project purpose, user path, command contracts, tests, release surface, and existing work in progress.
+   - When the command contract exposes `script_pack_list`, use it to discover relevant read-only script-pack helpers before selecting or verifying a candidate improvement.
+   - Prefer `repo/generated-boundary` as a candidate helper when an improvement might touch generated output, protected paths, vendor files, caches, or files outside the project root.
    - If the area is unfamiliar, use `codebase-orientation` before proposing changes.
 3. Generate repository-specific improvement questions.
    - High-leverage: Which small change creates the largest user or maintainer benefit?
@@ -102,7 +105,8 @@ The goal is not to generate many interesting ideas. The goal is to find the high
    - Use `pattern-scout` when local precedent is needed before adding a new shape.
    - Use `contract-sync-check` when behavior, templates, manifests, schemas, tests, or public docs must stay aligned.
 7. Verify the selected improvement with the narrowest configured command intents that cover the changed surfaces.
-8. Report the cycle and name the next improvement question revealed by the work.
+8. Run selected script-pack helpers only when the repository command contract and script metadata allow them.
+9. Report the cycle and name the next improvement question revealed by the work.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

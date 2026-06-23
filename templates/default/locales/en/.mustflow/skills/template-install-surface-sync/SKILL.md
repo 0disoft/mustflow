@@ -2,7 +2,7 @@
 mustflow_doc: skill.template-install-surface-sync
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: template-install-surface-sync
@@ -61,6 +61,7 @@ Keep the source repository's mustflow workflow files, install templates, manifes
 - Canonical source locale and template locale policy are known.
 - Existing template manifest and nearby tests have been inspected before adding or removing installed files.
 - Command execution remains governed by `.mustflow/config/commands.toml`; this skill does not authorize raw commands.
+- If `.mustflow/config/commands.toml` exposes `script_pack_list`, it may be used only as read-only discovery for optional script-pack checks.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -85,8 +86,10 @@ Keep the source repository's mustflow workflow files, install templates, manifes
 8. Check install/update behavior. If new files, profile membership, conflict policy, or managed targets change, inspect init/update tests and package tests that assert installed output, manifest lock behavior, backups, or diff previews.
 9. Check package and release surfaces. Installed template files must be included in package output and covered by release-sensitive tests when the package includes templates.
 10. Check public docs and examples only when they list installed files, profiles, init/update behavior, or workflow expectations.
-11. Keep generated files generated. Refresh generated maps or package output only with configured intents, and report generated surfaces that are stale but outside the current allowed command set.
-12. Verify with related tests first, then release and docs checks when package, template, manifest, or docs surfaces changed.
+11. When the command contract exposes `script_pack_list`, use it to discover optional script-pack helpers before editing or verifying template surfaces. `repo/generated-boundary` is useful for checking candidate template, manifest, generated-output, vendor, cache, or protected paths.
+12. Keep generated files generated. Refresh generated maps or package output only with configured intents, and report generated surfaces that are stale but outside the current allowed command set.
+13. Run selected script-pack helpers only when the repository command contract and script metadata allow them.
+14. Verify with related tests first, then release and docs checks when package, template, manifest, or docs surfaces changed.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

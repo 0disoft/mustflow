@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/script-pack-suggestion-report.schema.json",
+  "title": "mustflow script-pack suggestion report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "analyzed_paths",
+    "suggestions",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "action": { "const": "suggest" },
+    "status": { "type": "string", "enum": ["suggested", "empty", "partial"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": { "$ref": "#/$defs/input" },
+    "analyzed_paths": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/analyzedPath" }
+    },
+    "suggestions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/suggestion" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "string",
+      "enum": ["before_change", "during_change", "after_change", "review"]
+    },
+    "surface": {
+      "type": "string",
+      "enum": [
+        "config",
+        "docs",
+        "generated",
+        "package",
+        "schema",
+        "skill",
+        "source",
+        "template",
+        "test",
+        "unknown"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phases", "skills", "paths", "changed"],
+      "properties": {
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/phase" }
+        },
+        "skills": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "changed": { "type": "boolean" }
+      }
+    },
+    "analyzedPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "surfaces"],
+      "properties": {
+        "path": { "type": "string" },
+        "surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/surface" },
+          "minItems": 1
+        }
+      }
+    },
+    "suggestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "script_ref",
+        "score",
+        "confidence",
+        "usage",
+        "phases",
+        "matched_phases",
+        "matched_skills",
+        "matched_surfaces",
+        "reasons",
+        "read_only",
+        "mutates",
+        "network",
+        "risk_level",
+        "cost",
+        "report_schema_file",
+        "run_hint"
+      ],
+      "properties": {
+        "script_ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "score": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "usage": { "type": "string" },
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/phase" },
+          "minItems": 1
+        },
+        "matched_phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/phase" }
+        },
+        "matched_skills": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "matched_surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/surface" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "read_only": { "type": "boolean" },
+        "mutates": { "type": "boolean" },
+        "network": { "type": "boolean" },
+        "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+        "cost": { "type": "string", "enum": ["low", "medium", "high"] },
+        "report_schema_file": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-z0-9-]+\\.schema\\.json$" },
+            { "type": "null" }
+          ]
+        },
+        "run_hint": { "type": "string" }
+      }
+    }
+  }
+}

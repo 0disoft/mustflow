@@ -6,6 +6,24 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+### Added
+
+- Added the built-in `repo/generated-boundary` script-pack helper so agents can check candidate
+  edit paths against generated, ignored, protected, vendor, cache, and outside-root boundaries.
+- Added `mf script-pack suggest` so agents can rank optional script-pack helpers from path,
+  changed-file, phase, and related-skill evidence without running the suggested scripts.
+
+### Changed
+
+- Added script-pack routing metadata to the catalog JSON output and exposed a read-only
+  `script_pack_list` command intent in the default template command contract so agents can
+  discover bundled scripts before selecting one.
+- Updated core workflow skills to treat `script_pack_list` as read-only script discovery and to
+  mention `repo/generated-boundary` as an optional path-safety helper without granting execution
+  authority outside the command contract.
+- Added a read-only `script_pack_suggest_changed` template command intent for changed-file-based
+  script-pack recommendations.
+
 ## 2.74.3 - 2026-06-22
 
 ### Changed

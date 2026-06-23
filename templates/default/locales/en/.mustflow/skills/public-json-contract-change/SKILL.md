@@ -2,7 +2,7 @@
 mustflow_doc: skill.public-json-contract-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: public-json-contract-change
@@ -61,6 +61,7 @@ Protect automation consumers from silent JSON, JSONL, stream, schema, fixture, a
 - The task matches the Use When conditions and does not match the Do Not Use When exclusions.
 - Existing JSON tests, schemas, docs examples, package fixtures, and compatibility fixtures have been inspected before changing the contract.
 - Command execution remains governed by `.mustflow/config/commands.toml`; this skill does not authorize raw commands.
+- If `.mustflow/config/commands.toml` exposes `script_pack_list`, it may be used only as read-only discovery for optional script-pack checks.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -87,7 +88,9 @@ Protect automation consumers from silent JSON, JSONL, stream, schema, fixture, a
 10. Use snapshot and golden-output files only as review aids. Add or preserve assertions for field presence, primitive types, enum values, null versus missing semantics, stream split, exit code, and schema validation where existing test structure supports it.
 11. Synchronize schemas, fixtures, examples, package file lists, docs, templates, and release notes when the contract changes. If a surface is intentionally stale or deferred, record why.
 12. Route version impact through the repository versioning policy when the change is breaking, deprecating, package-visible, or template-visible.
-13. Verify with the narrowest configured command intents that cover JSON contract, docs, package, and mustflow metadata changes.
+13. Before final verification, use `script_pack_list` when the command contract exposes it to discover optional JSON, schema, or repository-boundary script-pack checks relevant to the changed public contract.
+14. Run selected scripts only when both the repository command contract and the script metadata allow the action.
+15. Verify with the narrowest configured command intents that cover JSON contract, docs, package, and mustflow metadata changes.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

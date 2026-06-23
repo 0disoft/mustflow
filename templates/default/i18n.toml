@@ -691,7 +691,7 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.evidence-stall-breaker"]
@@ -709,7 +709,7 @@ translations = {}
 [documents."skill.public-json-contract-change"]
 source = "locales/en/.mustflow/skills/public-json-contract-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.provenance-license-gate"]
@@ -846,7 +846,7 @@ translations = {}
 [documents."skill.repo-improvement-loop"]
 source = "locales/en/.mustflow/skills/repo-improvement-loop/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.requirement-regression-guard"]
@@ -954,7 +954,7 @@ translations = {}
 [documents."skill.template-install-surface-sync"]
 source = "locales/en/.mustflow/skills/template-install-surface-sync/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.restricted-handoff-resume"]

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/generated-boundary-report.schema.json",
+  "title": "mustflow generated-boundary report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "targets",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "generated-boundary" },
+    "script_ref": { "const": "repo/generated-boundary" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "category": {
+      "enum": ["generated", "ignored", "protected", "vendor", "cache", "outside_root"]
+    },
+    "patternSource": {
+      "enum": ["mustflow_config", "builtin"]
+    },
+    "patternMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "pattern", "source"],
+      "properties": {
+        "category": { "$ref": "#/$defs/category" },
+        "pattern": { "type": "string" },
+        "source": { "$ref": "#/$defs/patternSource" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "config_path",
+        "config_loaded",
+        "generated_patterns",
+        "ignored_patterns",
+        "protected_patterns",
+        "builtin_generated_patterns",
+        "builtin_vendor_patterns",
+        "builtin_cache_patterns",
+        "builtin_protected_patterns"
+      ],
+      "properties": {
+        "config_path": { "const": ".mustflow/config/mustflow.toml" },
+        "config_loaded": { "type": "boolean" },
+        "generated_patterns": { "$ref": "#/$defs/stringArray" },
+        "ignored_patterns": { "$ref": "#/$defs/stringArray" },
+        "protected_patterns": { "$ref": "#/$defs/stringArray" },
+        "builtin_generated_patterns": { "$ref": "#/$defs/stringArray" },
+        "builtin_vendor_patterns": { "$ref": "#/$defs/stringArray" },
+        "builtin_cache_patterns": { "$ref": "#/$defs/stringArray" },
+        "builtin_protected_patterns": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path", "exists", "kind", "matched_boundaries", "matched_patterns"],
+      "properties": {
+        "input": { "type": "string" },
+        "path": { "type": "string" },
+        "exists": { "type": ["boolean", "null"] },
+        "kind": { "enum": ["file", "directory", "missing", "other", "unknown"] },
+        "matched_boundaries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/category" }
+        },
+        "matched_patterns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/patternMatch" }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "boundary", "pattern", "source"],
+      "properties": {
+        "code": {
+          "enum": [
+            "generated_boundary_generated_path",
+            "generated_boundary_ignored_path",
+            "generated_boundary_protected_path",
+            "generated_boundary_vendor_path",
+            "generated_boundary_cache_path",
+            "generated_boundary_path_outside_root",
+            "generated_boundary_unreadable_path"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "boundary": { "$ref": "#/$defs/category" },
+        "pattern": { "type": ["string", "null"] },
+        "source": {
+          "anyOf": [
+            { "$ref": "#/$defs/patternSource" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

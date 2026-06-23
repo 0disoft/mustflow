@@ -39,7 +39,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.74.3');
+	assert.equal(packageJson.version, '2.74.4');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -122,6 +122,22 @@ test('source repository declares bounded prompt-cache audit checks', () => {
 	assert.match(sourceCommandContract, /writes = \[\]/u);
 	assert.match(sourceCommandContract, /network = false/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
+});
+
+test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
+	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
+	assert.match(templateCommandContract, /List bundled mustflow script-pack utilities and routing metadata read-only/u);
+	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*writes = \[\]/u);
+	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*network = false/u);
+	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*destructive = false/u);
+	assert.match(
+		templateCommandContract,
+		/\[intents\.script_pack_suggest_changed\][\s\S]*"mf", "script-pack", "suggest", "--changed", "--json"/u,
+	);
+	assert.match(templateCommandContract, /Suggest bundled mustflow script-pack utilities for current changed files read-only/u);
+	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*writes = \[\]/u);
+	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*network = false/u);
+	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*destructive = false/u);
 });
 
 test('local index command contracts include bounded source-anchor indexing', () => {
@@ -280,9 +296,13 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/contract-models.js'));
 	assert.ok(files.has('dist/core/adapter-compatibility.js'));
 	assert.ok(files.has('dist/core/handoff-record.js'));
+	assert.ok(files.has('dist/core/generated-boundary.js'));
+	assert.ok(files.has('dist/core/script-pack-suggestions.js'));
 	assert.ok(files.has('dist/core/doc-review-triage.js'));
 	assert.ok(files.has('dist/core/public-json-contracts.js'));
 	assert.ok(files.has('dist/core/surface-decision-model.js'));
+	assert.ok(files.has('dist/cli/script-packs/core-text-budget.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-generated-boundary.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
 	assert.ok(files.has('templates/default/i18n.toml'));
 	assert.ok(files.has('dist/cli/lib/template-i18n.js'));
@@ -306,6 +326,8 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/handoff-validation-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/line-endings-report.schema.json'));
+	assert.ok(files.has('schemas/generated-boundary-report.schema.json'));
+	assert.ok(files.has('schemas/script-pack-suggestion-report.schema.json'));
 	assert.ok(files.has('schemas/quality-gaming-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const contract of publicJsonContracts) {
