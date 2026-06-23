@@ -11,6 +11,11 @@ import {
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+import { listScriptPackScripts } from '../lib/script-pack-registry.js';
+import {
+	createScriptPackSuggestionReport,
+	type ScriptPackSuggestionReport,
+} from '../../core/script-pack-suggestions.js';
 import { resolveSkillRoutes } from '../../core/skill-route-resolution.js';
 
 const SKILL_OPTIONS = [
@@ -30,6 +35,12 @@ interface ParsedSkillArgs {
 	readonly maxCandidates: number | undefined;
 	readonly error?: ReturnType<typeof parseCliOptions>['error'];
 }
+
+type SkillRouteReport = ReturnType<typeof resolveSkillRoutes>;
+type SkillRouteScriptPackSuggestions = Pick<
+	ScriptPackSuggestionReport,
+	'status' | 'input' | 'analyzed_paths' | 'suggestions' | 'issues'
+>;
 
 export function getSkillHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
@@ -85,7 +96,37 @@ function parseSkillArgs(args: readonly string[]): ParsedSkillArgs {
 	};
 }
 
-function renderSkillRouteReport(report: ReturnType<typeof resolveSkillRoutes>, lang: CliLang): string {
+function selectedSkillNames(report: SkillRouteReport): readonly string[] {
+	return [...new Set([
+		...(report.selected.main ? [report.selected.main.skill] : []),
+		...report.selected.adjuncts.map((candidate) => candidate.skill),
+		...report.candidates.map((candidate) => candidate.skill),
+	])];
+}
+
+function createSkillRouteScriptPackSuggestions(
+	mustflowRoot: string,
+	report: SkillRouteReport,
+	paths: readonly string[],
+): SkillRouteScriptPackSuggestions {
+	const suggestionReport = createScriptPackSuggestionReport(mustflowRoot, {
+		changed: false,
+		phases: ['before_change', 'during_change', 'review'],
+		skills: selectedSkillNames(report),
+		paths,
+		scripts: listScriptPackScripts(),
+	});
+
+	return {
+		status: suggestionReport.status,
+		input: suggestionReport.input,
+		analyzed_paths: suggestionReport.analyzed_paths,
+		suggestions: suggestionReport.suggestions,
+		issues: suggestionReport.issues,
+	};
+}
+
+function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang): string {
 	const lines = [
 		'mustflow skill route',
 		`${t(lang, 'label.mustflowRoot')}: ${resolveMustflowRoot()}`,
@@ -158,7 +199,8 @@ export function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en
 		return 1;
 	}
 
-	const report = resolveSkillRoutes(resolveMustflowRoot(), {
+	const mustflowRoot = resolveMustflowRoot();
+	const report = resolveSkillRoutes(mustflowRoot, {
 		taskText: parsed.taskText,
 		paths: parsed.paths,
 		reasons: parsed.reasons,
@@ -170,6 +212,7 @@ export function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en
 			...report,
 			command: 'skill',
 			action: 'route',
+			script_pack_suggestions: createSkillRouteScriptPackSuggestions(mustflowRoot, report, parsed.paths),
 		}, null, 2));
 		return 0;
 	}

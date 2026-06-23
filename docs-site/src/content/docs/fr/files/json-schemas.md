@@ -39,6 +39,8 @@ schémas du paquet installé ou ceux du dépôt mustflow.
 - `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `skill-route-report.schema.json`: `mf skill route --json`, including optional read-only
+  script-pack helper suggestions
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` quand `mf verify`
   écrit un pointeur vers le dernier ensemble de vérification
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, avec l'état agrégé

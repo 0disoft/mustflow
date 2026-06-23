@@ -72,8 +72,9 @@ Current schemas:
   `mf script-pack run repo/generated-boundary check <path...> --json`, containing candidate path
   classifications for generated, ignored, protected, vendor, and cache boundaries before or after edits
 - `skill-route-report.schema.json`: output of `mf skill route --json`, containing compact route
-  candidates, selected main and adjunct skills, score breakdowns, route read plans, and source
-  route shards without granting command authority or replacing selected `SKILL.md` reads
+  candidates, selected main and adjunct skills, score breakdowns, route read plans, source route
+  shards, and optional read-only script-pack helper suggestions without granting command authority
+  or replacing selected `SKILL.md` reads
 - `route-fixture.schema.json`: parsed `.mustflow/skills/route-fixtures.json`, containing strict
   skill-route golden cases with required and forbidden route expectations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a

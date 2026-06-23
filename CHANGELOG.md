@@ -12,6 +12,8 @@ This file applies to the mustflow repository itself. It is not installed into us
   edit paths against generated, ignored, protected, vendor, cache, and outside-root boundaries.
 - Added `mf script-pack suggest` so agents can rank optional script-pack helpers from path,
   changed-file, phase, and related-skill evidence without running the suggested scripts.
+- Added optional read-only script-pack helper suggestions to `mf skill route --json` so agents can
+  discover useful helper scripts while choosing the skill documents for a task.
 
 ### Changed
 

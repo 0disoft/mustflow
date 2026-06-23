@@ -15,6 +15,10 @@ JSON 출력에는 `read_plan`도 포함됩니다. 호스트 통합은 이 계획
 읽고, `.mustflow/skills/INDEX.md`는 보고서가 fallback 이유를 제시할 때만 읽는 식으로
 프롬프트를 조립할 수 있습니다.
 
+JSON 출력에는 `script_pack_suggestions`도 포함될 수 있습니다. 이 값은 route 입력과 선택된
+skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 실행하지 않고 명령 권한도 주지
+않으며, 호출자가 저장소 명령 계약 안에서 검토할 수 있는 선택적 helper만 알려줍니다.
+
 이 명령은 필수 skill-selection gate를 대체하지 않습니다. 에이전트는 여전히 일치하는 파일을
 수정하기 전에 선택된 `.mustflow/skills/<name>/SKILL.md`를 읽어야 합니다. 명령 실행 권한은
 계속 `.mustflow/config/commands.toml`에서만 옵니다.
@@ -61,6 +65,8 @@ npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts
   기본적으로 피해야 하는 파일, 선택 제한입니다.
 - `source_files` (`string[]`): resolver가 사용한 route metadata와 skill frontmatter source입니다.
 - `gap_notes` (`string[]`): 호출자가 지켜야 하는 경계입니다.
+- `script_pack_suggestions` (`object`, 선택): route 경로와 선택된 skill 후보에서 만든 읽기 전용
+  script-pack helper 추천입니다. 이 추천은 스크립트를 실행하지 않고 명령 권한도 주지 않습니다.
 
 공개 JSON Schema는 `schemas/skill-route-report.schema.json`입니다.
 

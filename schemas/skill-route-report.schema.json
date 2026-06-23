@@ -153,9 +153,147 @@
     "gap_notes": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "script_pack_suggestions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "input", "analyzed_paths", "suggestions", "issues"],
+      "properties": {
+        "status": { "type": "string", "enum": ["suggested", "empty", "partial"] },
+        "input": { "$ref": "#/$defs/scriptPackSuggestionInput" },
+        "analyzed_paths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackAnalyzedPath" }
+        },
+        "suggestions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackSuggestion" }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
     }
   },
   "$defs": {
+    "scriptPackPhase": {
+      "type": "string",
+      "enum": ["before_change", "during_change", "after_change", "review"]
+    },
+    "scriptPackSurface": {
+      "type": "string",
+      "enum": [
+        "config",
+        "docs",
+        "generated",
+        "package",
+        "schema",
+        "skill",
+        "source",
+        "template",
+        "test",
+        "unknown"
+      ]
+    },
+    "scriptPackSuggestionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phases", "skills", "paths", "changed"],
+      "properties": {
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackPhase" }
+        },
+        "skills": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "changed": { "type": "boolean" }
+      }
+    },
+    "scriptPackAnalyzedPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "surfaces"],
+      "properties": {
+        "path": { "type": "string" },
+        "surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackSurface" },
+          "minItems": 1
+        }
+      }
+    },
+    "scriptPackSuggestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "script_ref",
+        "score",
+        "confidence",
+        "usage",
+        "phases",
+        "matched_phases",
+        "matched_skills",
+        "matched_surfaces",
+        "reasons",
+        "read_only",
+        "mutates",
+        "network",
+        "risk_level",
+        "cost",
+        "report_schema_file",
+        "run_hint"
+      ],
+      "properties": {
+        "script_ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "score": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "usage": { "type": "string" },
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackPhase" },
+          "minItems": 1
+        },
+        "matched_phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackPhase" }
+        },
+        "matched_skills": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "matched_surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptPackSurface" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "read_only": { "type": "boolean" },
+        "mutates": { "type": "boolean" },
+        "network": { "type": "boolean" },
+        "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+        "cost": { "type": "string", "enum": ["low", "medium", "high"] },
+        "report_schema_file": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-z0-9-]+\\.schema\\.json$" },
+            { "type": "null" }
+          ]
+        },
+        "run_hint": { "type": "string" }
+      }
+    },
     "candidate": {
       "type": "object",
       "additionalProperties": false,

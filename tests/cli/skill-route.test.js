@@ -80,6 +80,25 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.ok(report.source_files.includes('.mustflow/skills/*/SKILL.md'));
 		assert.equal(report.source_files.includes('.mustflow/skills/INDEX.md'), false);
 		assert.match(report.gap_notes.join('\n'), /does not replace reading the selected SKILL\.md/);
+		assert.equal(report.script_pack_suggestions.status, 'suggested');
+		assert.deepEqual(report.script_pack_suggestions.input.phases, ['before_change', 'during_change', 'review']);
+		assert.equal(report.script_pack_suggestions.input.changed, false);
+		assert.ok(report.script_pack_suggestions.input.paths.includes('src/cli/commands/context.ts'));
+		assert.ok(report.script_pack_suggestions.input.paths.includes('tests/cli/context.test.js'));
+		assert.ok(report.script_pack_suggestions.input.skills.includes('typescript-code-change'));
+		assert.ok(report.script_pack_suggestions.analyzed_paths.some((entry) => entry.surfaces.includes('source')));
+		assert.ok(report.script_pack_suggestions.analyzed_paths.some((entry) => entry.surfaces.includes('test')));
+		assert.ok(report.script_pack_suggestions.suggestions.length > 0);
+		assert.ok(
+			report.script_pack_suggestions.suggestions.some(
+				(suggestion) => suggestion.script_ref === 'repo/generated-boundary',
+			),
+		);
+		assert.ok(
+			report.script_pack_suggestions.suggestions.every(
+				(suggestion) => suggestion.read_only && !suggestion.mutates && !suggestion.network,
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

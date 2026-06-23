@@ -16,6 +16,11 @@ keep `.mustflow/skills/router.toml` in the stable prefix, load selected `SKILL.m
 context, and treat `.mustflow/skills/INDEX.md` as a fallback-only file unless the report names a
 fallback reason.
 
+JSON output may also include `script_pack_suggestions`, a read-only helper list derived from the
+route input and selected skill candidates. These suggestions do not run scripts or grant command
+authority; they only name optional helpers the caller may inspect under the repository command
+contract.
+
 The command does not replace the mandatory skill-selection gate. Agents must still read the selected
 `.mustflow/skills/<name>/SKILL.md` before editing matching files. Command execution authority still
 comes only from `.mustflow/config/commands.toml`.
@@ -62,6 +67,9 @@ Machine-readable output uses these fields:
   cache-friendly prompt assembly.
 - `source_files` (`string[]`): Route metadata and skill frontmatter sources used by the resolver.
 - `gap_notes` (`string[]`): Boundaries the caller must preserve.
+- `script_pack_suggestions` (`object`, optional): Read-only script-pack helper recommendations
+  derived from route paths and selected skill candidates. These suggestions do not run scripts or
+  grant command authority.
 
 The published JSON Schema is `schemas/skill-route-report.schema.json`.
 

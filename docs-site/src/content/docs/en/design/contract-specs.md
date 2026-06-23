@@ -36,6 +36,8 @@ installed-package JSON command output.
 - `impact-report.schema.json`: `mf impact <path...> --json`
 - `line-endings-report.schema.json`: `mf line-endings check --json`
 - `quality-gaming-report.schema.json`: `mf quality check --json`
+- `skill-route-report.schema.json`: `mf skill route --json`, including optional read-only
+  script-pack helper suggestions
 - `handoff-validation-report.schema.json`: `mf handoff validate <path> --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`

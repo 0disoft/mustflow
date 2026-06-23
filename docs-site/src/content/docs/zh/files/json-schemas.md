@@ -38,6 +38,8 @@ JSON Schema 合同。
 - `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `skill-route-report.schema.json`: `mf skill route --json`, including optional read-only
+  script-pack helper suggestions
 - `latest-run-pointer.schema.json`: `mf verify` 写入最新 verify 运行包指针时的
   `.mustflow/state/runs/latest.json`
 - `verify-report.schema.json`: `mf verify --reason <event> --json`，包含执行汇总状态和

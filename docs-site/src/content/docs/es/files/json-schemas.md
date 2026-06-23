@@ -40,6 +40,8 @@ instalado o los del repositorio de mustflow.
 - `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
+- `skill-route-report.schema.json`: `mf skill route --json`, including optional read-only
+  script-pack helper suggestions
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` cuando `mf verify`
   escribe un puntero al último paquete de verificación
 - `verify-report.schema.json`: `mf verify --reason <event> --json`, con estado agregado de

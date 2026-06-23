@@ -34,6 +34,8 @@ mustflow의 버전 있는 계약 명세는 저장소의
 - `classify-report.schema.json`: `mf classify <path...> --json`
 - `impact-report.schema.json`: `mf impact <path...> --json`
 - `line-endings-report.schema.json`: `mf line-endings check --json`
+- `skill-route-report.schema.json`: `mf skill route --json`, 선택적 읽기 전용 script-pack helper
+  추천 포함
 - `version-sources-report.schema.json`: `mf version-sources --json`
 - `docs-review-list.schema.json`: `mf docs review list --json`
 - `explain-report.schema.json`: `mf explain <topic> --json`
