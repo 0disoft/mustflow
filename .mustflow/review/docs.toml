@@ -145,6 +145,14 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "README.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-23T08:37:36.956Z"
+last_touched_at = "2026-06-23T08:37:36.956Z"
+
+[[documents]]
 path = "schemas/README.md"
 status = "pending"
 origin = "llm_modified"
