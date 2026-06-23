@@ -128,10 +128,11 @@ mustflow installs and validates an agent workflow for user projects.
   evidence, and dashboard exports so agents justify new dependencies, helper-style surfaces,
   config/schema churn, and broad structural changes before treating added complexity as free.
 - Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
-  `code/outline` for TypeScript and JavaScript symbol maps, `code/symbol-read` for focused source
-  snippets, `code/route-outline` for Hono and Elysia route maps, `repo/generated-boundary` for
-  candidate path safety checks, and `core/text-budget` for exact file and JSON-field length budgets,
-  so future checks do not sprawl into top-level commands.
+  `code/outline` for source symbol maps, `code/symbol-read` for focused source snippets,
+  `code/route-outline` for Hono and Elysia route maps, `repo/config-chain` for nearby config
+  inheritance, `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
+  for exact file and JSON-field length budgets, so future checks do not sprawl into top-level
+  commands.
 - Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
@@ -289,10 +290,11 @@ mf run mustflow_update_apply
 | `mf script-pack list` | List bundled script packs, script refs, routing hints, side-effect flags, input/output labels, and JSON schema files. |
 | `mf script-pack suggest --changed --json` | Rank optional read-only helpers for current changed files without running those helpers or granting command authority. |
 | `mf script-pack suggest --path <path> --phase before_change` | Rank helpers for an explicit path and workflow phase before deciding which script to run. |
-| `mf script-pack run code/outline scan <path...> --json` | Scan supported TypeScript and JavaScript files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
+| `mf script-pack run code/outline scan <path...> --json` | Scan supported source files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
 | `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono and Elysia TypeScript or JavaScript files for route methods, paths, lifecycle chains, line ranges, and content hashes. |
+| `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
 | `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
 | `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |
@@ -326,8 +328,9 @@ For script-pack helper selection, start with `mf script-pack suggest --changed -
 explicit `--path`. The suggestion report is only a ranking aid: it does not run scripts, prove
 verification, or bypass `.mustflow/config/commands.toml`. A common source-orientation flow is
 `code/outline` first, then `code/symbol-read` for the chosen symbol line or source anchor. For
-generated or protected paths, use `repo/generated-boundary` before editing or when reviewing a
-changed-file set. See the full [`mf script-pack` documentation](https://0disoft.github.io/mustflow/commands/script-pack/).
+config-sensitive source or test work, use `repo/config-chain` before assuming effective inherited
+rules. For generated or protected paths, use `repo/generated-boundary` before editing or when
+reviewing a changed-file set. See the full [`mf script-pack` documentation](https://0disoft.github.io/mustflow/commands/script-pack/).
 
 `core/text-budget` counts `line` units by splitting text on line breaks; a trailing line break
 therefore contributes an empty final line.

@@ -34,7 +34,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-06-23T10:40:16.165Z"
+last_touched_at = "2026-06-23T11:22:18.852Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -158,7 +158,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-06-23T10:40:16.173Z"
+last_touched_at = "2026-06-23T11:22:18.864Z"
 
 [[documents]]
 path = "schemas/README.md"
@@ -166,7 +166,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "llm_modified"
 first_seen_at = "2026-06-18T06:17:56.747Z"
-last_touched_at = "2026-06-23T10:40:16.178Z"
+last_touched_at = "2026-06-23T11:22:18.872Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 

@@ -127,6 +127,7 @@ export function getScriptPackHelp(lang: CliLang = 'en'): string {
 				'mf script-pack run code/symbol-read read src/cli/index.ts --start-line 25 --json',
 				'mf script-pack run code/route-outline scan src/server.ts --json',
 				'mf script-pack run core/text-budget check README.md --max 5000',
+				'mf script-pack run repo/config-chain inspect src/cli/index.ts --json',
 				'mf script-pack run repo/generated-boundary check src/cli/index.ts --json',
 				'mf script-pack run repo/related-files map src/cli/index.ts --json',
 				'mf script-pack run core/text-budget --help',

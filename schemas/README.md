@@ -65,10 +65,10 @@ Current schemas:
 - `script-pack-suggestion-report.schema.json`: output of `mf script-pack suggest --json`, containing
   path, skill, phase, and changed-file evidence used to recommend optional script-pack helpers
 - `code-outline-report.schema.json`: output of
-  `mf script-pack run code/outline scan <path...> --json`, containing a bounded TypeScript and
-  JavaScript source outline with file hashes, symbol names, declaration kinds, line ranges,
-  signatures, export flags, source-anchor navigation metadata, static return metadata, and stable
-  input-limit finding codes
+  `mf script-pack run code/outline scan <path...> --json`, containing a bounded source outline with
+  file hashes, language metadata, symbol names, declaration kinds, line ranges, signatures, export
+  flags, source-anchor navigation metadata, static return metadata, and stable input-limit finding
+  codes
 - `code-symbol-read-report.schema.json`: output of
   `mf script-pack run code/symbol-read read <path> --start-line <line> --json`, containing a
   focused source snippet selected by source anchor, outline symbol line, or explicit line range with
@@ -78,6 +78,10 @@ Current schemas:
   `mf script-pack run code/route-outline scan <path...> --json`, containing a bounded Hono and
   Elysia route outline with file hashes, framework evidence, route methods, route paths, line ranges,
   lifecycle-chain metadata, and stable input-limit finding codes
+- `config-chain-report.schema.json`: output of
+  `mf script-pack run repo/config-chain inspect <path...> --json`, containing nearby package,
+  TypeScript, ESLint, Prettier, Vite, Vitest, Tailwind, Jest, Playwright, and mustflow config files
+  with static inheritance, reference, workspace, dynamic-config, path, and content-hash metadata
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field

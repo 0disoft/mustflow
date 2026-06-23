@@ -955,6 +955,35 @@ test('generated-boundary json output matches the published schema', () => {
 	}
 });
 
+test('config-chain json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'tsconfig.base.json'),
+			`${JSON.stringify({ compilerOptions: { strict: true } }, null, 2)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'tsconfig.json'),
+			`${JSON.stringify({ extends: './tsconfig.base.json', include: ['src'] }, null, 2)}\n`,
+		);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/config-chain',
+			'inspect',
+			'tsconfig.json',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'config-chain-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

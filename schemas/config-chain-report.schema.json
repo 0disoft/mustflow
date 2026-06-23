@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/config-chain-report.schema.json",
+  "title": "mustflow config-chain report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "targets",
+    "configs",
+    "edges",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "config-chain" },
+    "script_ref": { "const": "repo/config-chain" },
+    "action": { "const": "inspect" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target" }
+    },
+    "configs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/config" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/edge" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "nullableSha256": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_file_bytes", "max_configs", "config_names", "ignored_directories"],
+      "properties": {
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_configs": { "type": "integer", "minimum": 1 },
+        "config_names": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path", "exists", "kind"],
+      "properties": {
+        "input": { "type": "string" },
+        "path": { "type": "string" },
+        "exists": { "type": ["boolean", "null"] },
+        "kind": { "enum": ["file", "directory", "missing", "other", "unknown"] }
+      }
+    },
+    "kind": {
+      "enum": [
+        "package_json",
+        "tsconfig",
+        "eslint",
+        "prettier",
+        "vite",
+        "vitest",
+        "tailwind",
+        "jest",
+        "playwright",
+        "mustflow",
+        "other"
+      ]
+    },
+    "format": {
+      "enum": ["json", "jsonc", "javascript", "typescript", "yaml", "toml", "unknown"]
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "kind",
+        "format",
+        "source",
+        "sha256",
+        "size_bytes",
+        "parseable",
+        "dynamic",
+        "package_name",
+        "workspaces",
+        "scripts",
+        "extends",
+        "references",
+        "include",
+        "exclude",
+        "compiler_options",
+        "summary"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "kind": { "$ref": "#/$defs/kind" },
+        "format": { "$ref": "#/$defs/format" },
+        "source": { "enum": ["target", "parent", "discovered"] },
+        "sha256": { "$ref": "#/$defs/nullableSha256" },
+        "size_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "parseable": { "type": "boolean" },
+        "dynamic": { "type": "boolean" },
+        "package_name": { "type": ["string", "null"] },
+        "workspaces": { "$ref": "#/$defs/stringArray" },
+        "scripts": { "$ref": "#/$defs/stringArray" },
+        "extends": { "$ref": "#/$defs/stringArray" },
+        "references": { "$ref": "#/$defs/stringArray" },
+        "include": { "$ref": "#/$defs/stringArray" },
+        "exclude": { "$ref": "#/$defs/stringArray" },
+        "compiler_options": { "$ref": "#/$defs/stringArray" },
+        "summary": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_path", "to_path", "kind", "specifier", "resolved"],
+      "properties": {
+        "from_path": { "type": "string" },
+        "to_path": { "type": ["string", "null"] },
+        "kind": { "enum": ["parent_config", "extends", "reference", "workspace"] },
+        "specifier": { "type": "string" },
+        "resolved": { "type": "boolean" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "config_chain_path_outside_root",
+            "config_chain_unreadable_path",
+            "config_chain_parse_error",
+            "config_chain_dynamic_config",
+            "config_chain_external_reference",
+            "config_chain_missing_reference",
+            "config_chain_max_configs_exceeded"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

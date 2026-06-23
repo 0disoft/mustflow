@@ -8,6 +8,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added the built-in `repo/config-chain` script-pack helper so agents can inspect nearby package,
+  TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges
+  before assuming effective project rules.
 - Added the built-in `repo/generated-boundary` script-pack helper so agents can check candidate
   edit paths against generated, ignored, protected, vendor, cache, and outside-root boundaries.
 - Added the built-in `repo/related-files` script-pack helper so agents can map direct imports,

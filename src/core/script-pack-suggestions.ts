@@ -20,6 +20,9 @@ export type ScriptPackSurface =
 export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 
 const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read', 'code/route-outline', 'repo/related-files']);
+const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
+const CONFIG_FILE_PATTERN =
+	/(?:^|\/)(?:tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -133,7 +136,7 @@ export function classifyScriptPackPathSurface(relativePath: string): readonly Sc
 		surfaces.push('generated');
 	}
 
-	if (normalized.startsWith('.mustflow/config/') || normalized.startsWith('config/')) {
+	if (normalized.startsWith('.mustflow/config/') || normalized.startsWith('config/') || CONFIG_FILE_PATTERN.test(normalized)) {
 		surfaces.push('config');
 	}
 	if (normalized.startsWith('.mustflow/skills/') || normalized.includes('/.mustflow/skills/')) {
@@ -315,6 +318,13 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run repo/generated-boundary check', analyzedPaths.map((entry) => entry.path), script.usage);
 	}
 
+	if (script.ref === 'repo/config-chain') {
+		const configPaths = analyzedPaths
+			.filter((entry) => entry.surfaces.some((surface) => CONFIG_CHAIN_SURFACES.has(surface)))
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run repo/config-chain inspect', configPaths, script.usage);
+	}
+
 	if (script.ref === 'repo/related-files') {
 		const relatedPaths = analyzedPaths
 			.filter((entry) => entry.surfaces.some((surface) => surface === 'source' || surface === 'test'))
@@ -339,6 +349,14 @@ export function createScriptPackSuggestionReport(
 		.map((script): ScriptPackSuggestion | null => {
 			if (CODE_NAVIGATION_SCRIPT_REFS.has(script.ref) && inputPaths.length > 0 && !hasSourcePath) {
 				return null;
+			}
+			if (script.ref === 'repo/config-chain' && inputPaths.length > 0) {
+				const hasConfigChainSurface = analyzedPaths.some((entry) =>
+					entry.surfaces.some((surface) => CONFIG_CHAIN_SURFACES.has(surface)),
+				);
+				if (!hasConfigChainSurface) {
+					return null;
+				}
 			}
 
 			let score = 0;
@@ -375,6 +393,11 @@ export function createScriptPackSuggestionReport(
 			if (score > 0 && script.readOnly && !script.mutates && !script.network) {
 				score += 1;
 				reasons.push('Read-only, non-mutating, offline helper.');
+			}
+
+			if (script.ref === 'repo/generated-boundary' && requestedSurfaces.has('generated')) {
+				score += 2;
+				reasons.push('Prioritizes generated-boundary checks for generated paths.');
 			}
 
 			if (score === 0) {

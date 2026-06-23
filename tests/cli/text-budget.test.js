@@ -21,6 +21,11 @@ function runRelatedFilesJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runConfigChainJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/config-chain', 'inspect', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeOutlineJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/outline', 'scan', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -139,7 +144,22 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(textBudget.report_schema_file, 'text-budget-report.schema.json');
 
 		const repoPack = report.packs.find((pack) => pack.id === 'repo');
+		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
 		const generatedBoundary = repoPack?.scripts.find((script) => script.ref === 'repo/generated-boundary');
+
+		assert.ok(configChain, 'repo/config-chain should be listed');
+		assert.equal(configChain.read_only, true);
+		assert.equal(configChain.mutates, false);
+		assert.equal(configChain.network, false);
+		assert.deepEqual(configChain.phases, ['before_change', 'during_change', 'after_change', 'review']);
+		assert.ok(configChain.use_when.some((hint) => hint.includes('tsconfig')));
+		assert.ok(configChain.inputs.includes('max_configs'));
+		assert.ok(configChain.outputs.includes('config_chain'));
+		assert.ok(configChain.outputs.includes('config_edges'));
+		assert.ok(configChain.related_skills.includes('typescript-code-change'));
+		assert.equal(configChain.risk_level, 'low');
+		assert.equal(configChain.cost, 'low');
+		assert.equal(configChain.report_schema_file, 'config-chain-report.schema.json');
 
 		assert.ok(generatedBoundary, 'repo/generated-boundary should be listed');
 		assert.equal(generatedBoundary.read_only, true);
@@ -1568,6 +1588,100 @@ test('related-files reports scan truncation with stable finding metadata', () =>
 	}
 });
 
+test('config-chain inspects package and tsconfig inheritance without executing dynamic config', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify(
+				{
+					name: 'config-chain-fixture',
+					scripts: { test: 'node --test', build: 'tsc -p tsconfig.json' },
+					workspaces: ['packages/*'],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'tsconfig.base.json'),
+			`${JSON.stringify({ compilerOptions: { strict: true, moduleResolution: 'bundler' } }, null, 2)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'tsconfig.json'),
+			`${JSON.stringify(
+				{
+					extends: './tsconfig.base.json',
+					include: ['src'],
+					references: [{ path: './packages/app' }],
+					compilerOptions: { noEmit: true },
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(path.join(projectPath, 'vite.config.ts'), 'export default { plugins: [] };\n');
+		writeFileSync(path.join(projectPath, 'src', 'feature.ts'), 'export const feature = true;\n');
+
+		const { result, report } = runConfigChainJson(projectPath, ['src/feature.ts']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'repo');
+		assert.equal(report.script_id, 'config-chain');
+		assert.equal(report.script_ref, 'repo/config-chain');
+		assert.equal(report.action, 'inspect');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.ok(report.policy.config_names.includes('tsconfig.json'));
+		assert.equal(report.targets[0].path, 'src/feature.ts');
+
+		const configs = new Map(report.configs.map((config) => [config.path, config]));
+		assert.equal(configs.get('package.json')?.kind, 'package_json');
+		assert.equal(configs.get('package.json')?.package_name, 'config-chain-fixture');
+		assert.deepEqual(configs.get('package.json')?.scripts, ['build', 'test']);
+		assert.deepEqual(configs.get('package.json')?.workspaces, ['packages/*']);
+		assert.equal(configs.get('tsconfig.json')?.kind, 'tsconfig');
+		assert.deepEqual(configs.get('tsconfig.json')?.extends, ['./tsconfig.base.json']);
+		assert.deepEqual(configs.get('tsconfig.json')?.include, ['src']);
+		assert.deepEqual(configs.get('tsconfig.json')?.compiler_options, ['noEmit']);
+		assert.equal(configs.get('tsconfig.base.json')?.source, 'parent');
+		assert.equal(configs.get('vite.config.ts')?.dynamic, true);
+		assert.equal(configs.get('vite.config.ts')?.parseable, false);
+
+		assert.ok(
+			report.edges.some(
+				(edge) =>
+					edge.from_path === 'tsconfig.json' &&
+					edge.to_path === 'tsconfig.base.json' &&
+					edge.kind === 'extends' &&
+					edge.resolved === true,
+			),
+		);
+		assert.ok(
+			report.edges.some(
+				(edge) => edge.from_path === 'package.json' && edge.kind === 'workspace' && edge.specifier === 'packages/*',
+			),
+		);
+		assert.ok(
+			report.findings.some(
+				(finding) => finding.code === 'config_chain_dynamic_config' && finding.path === 'vite.config.ts',
+			),
+		);
+		assert.ok(
+			report.findings.some(
+				(finding) => finding.code === 'config_chain_missing_reference' && finding.path === 'tsconfig.json',
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest ranks helpers from path, skill, and phase evidence', () => {
 	const projectPath = createTempProject();
 
@@ -1686,6 +1800,46 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 				report.suggestions.findIndex((suggestion) => suggestion.script_ref === 'code/symbol-read'),
 			'code/outline should rank before code/symbol-read for initial source-path orientation',
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends config-chain for config, package, source, and test surfaces', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'session.test.ts'), 'test("session", () => {});\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'tsconfig.json',
+			'--path',
+			'package.json',
+			'--path',
+			'src/session.test.ts',
+			'--skill',
+			'typescript-code-change',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const configChain = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/config-chain');
+		assert.ok(configChain, 'repo/config-chain should be suggested for config-aware work');
+		assert.ok(configChain.matched_phases.includes('before_change'));
+		assert.ok(configChain.matched_skills.includes('typescript-code-change'));
+		assert.ok(configChain.matched_surfaces.includes('config'));
+		assert.ok(configChain.matched_surfaces.includes('package'));
+		assert.ok(configChain.matched_surfaces.includes('source'));
+		assert.equal(
+			configChain.run_hint,
+			'mf script-pack run repo/config-chain inspect package.json src/session.test.ts tsconfig.json --json',
+		);
+		assert.equal(configChain.report_schema_file, 'config-chain-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1869,6 +2023,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/server\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
+		assert.match(result.stdout, /mf script-pack run repo\/config-chain inspect src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/related-files map src\/cli\/index\.ts --json/);
 		assert.equal(result.stderr, '');

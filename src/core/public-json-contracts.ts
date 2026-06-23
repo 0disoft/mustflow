@@ -332,6 +332,23 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'config-chain-report',
+		schemaFile: 'config-chain-report.schema.json',
+		producer: 'mf script-pack run repo/config-chain inspect <path...> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: [
+			'mf',
+			'script-pack',
+			'run',
+			'repo/config-chain',
+			'inspect',
+			'node_modules/mustflow/dist/cli/index.js',
+			'--json',
+		],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'related-files-report',
 		schemaFile: 'related-files-report.schema.json',
 		producer: 'mf script-pack run repo/related-files map <path...> --json',

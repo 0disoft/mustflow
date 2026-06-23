@@ -56,8 +56,9 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				summaryKey: 'scriptPack.script.codeOutline.summary',
 				actions: ['scan'],
 				useWhen: [
-					'Scan TypeScript or JavaScript files for symbol headers and source anchors before reading large source files chunk by chunk.',
-					'Build a bounded source outline with file paths, line ranges, signatures, export flags, source-anchor metadata, and content hashes for codebase orientation.',
+					'Scan supported source files for symbol headers and source anchors before reading large files chunk by chunk.',
+					'Build a bounded source outline with file paths, language metadata, line ranges, signatures, ' +
+						'export flags, source-anchor metadata, and content hashes for codebase orientation.',
 				],
 				phases: ['before_change', 'during_change', 'review'],
 				readOnly: true,
@@ -175,6 +176,36 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 		id: 'repo',
 		summaryKey: 'scriptPack.pack.repo.summary',
 		scripts: [
+			{
+				packId: 'repo',
+				id: 'config-chain',
+				ref: scriptRef('repo', 'config-chain'),
+				usage: 'mf script-pack run repo/config-chain inspect <path...> [options]',
+				summaryKey: 'scriptPack.script.configChain.summary',
+				actions: ['inspect'],
+				useWhen: [
+					'Inspect nearby tsconfig, package, ESLint, Prettier, Vite, Vitest, Tailwind, Jest, and Playwright config files before assuming effective rules.',
+					'Build a read-only config chain with extends, references, workspaces, dynamic-config findings, and source path context.',
+				],
+				phases: ['before_change', 'during_change', 'after_change', 'review'],
+				readOnly: true,
+				mutates: false,
+				network: false,
+				inputs: ['path', 'max_configs', 'max_file_bytes'],
+				outputs: ['human_summary', 'json_report', 'config_chain', 'config_edges'],
+				relatedSkills: [
+					'bun-code-change',
+					'config-env-change',
+					'dependency-reality-check',
+					'tailwind-code-change',
+					'typescript-code-change',
+				],
+				riskLevel: 'low',
+				cost: 'low',
+				reportSchemaFile: 'config-chain-report.schema.json',
+				loadRunner: async () =>
+					(await import('../script-packs/repo-config-chain.js')).runRepoConfigChainScript,
+			},
 			{
 				packId: 'repo',
 				id: 'generated-boundary',

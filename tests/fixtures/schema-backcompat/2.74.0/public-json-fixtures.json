@@ -3372,6 +3372,191 @@
       }
     },
     {
+      "id": "config-chain-report",
+      "schema_file": "config-chain-report.schema.json",
+      "producer": "mf script-pack run repo/config-chain inspect <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "config-chain",
+        "script_ref": "repo/config-chain",
+        "action": "inspect",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 262144,
+          "max_configs": 120,
+          "config_names": [
+            "package.json",
+            "tsconfig.json",
+            "tsconfig.base.json",
+            "tsconfig.build.json",
+            "eslint.config.js",
+            "eslint.config.mjs",
+            "eslint.config.cjs",
+            "eslint.config.ts",
+            ".eslintrc",
+            ".eslintrc.json",
+            ".prettierrc",
+            ".prettierrc.json",
+            "prettier.config.js",
+            "vite.config.js",
+            "vite.config.ts",
+            "vitest.config.js",
+            "vitest.config.ts",
+            "tailwind.config.js",
+            "tailwind.config.ts",
+            "jest.config.js",
+            "jest.config.ts",
+            "playwright.config.ts",
+            "playwright.config.js",
+            "astro.config.mjs",
+            "svelte.config.js",
+            ".mustflow/config/commands.toml",
+            ".mustflow/config/mustflow.toml"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ]
+        },
+        "input_hash": "sha256:5656565656565656565656565656565656565656565656565656565656565656",
+        "targets": [
+          {
+            "input": "src/example.ts",
+            "path": "src/example.ts",
+            "exists": true,
+            "kind": "file"
+          }
+        ],
+        "configs": [
+          {
+            "path": "package.json",
+            "kind": "package_json",
+            "format": "json",
+            "source": "parent",
+            "sha256": "sha256:7878787878787878787878787878787878787878787878787878787878787878",
+            "size_bytes": 128,
+            "parseable": true,
+            "dynamic": false,
+            "package_name": "example",
+            "workspaces": [
+              "packages/*"
+            ],
+            "scripts": [
+              "build",
+              "test"
+            ],
+            "extends": [],
+            "references": [],
+            "include": [],
+            "exclude": [],
+            "compiler_options": [],
+            "summary": [
+              "script:build",
+              "script:test",
+              "workspace:packages/*"
+            ]
+          },
+          {
+            "path": "tsconfig.json",
+            "kind": "tsconfig",
+            "format": "jsonc",
+            "source": "parent",
+            "sha256": "sha256:9090909090909090909090909090909090909090909090909090909090909090",
+            "size_bytes": 96,
+            "parseable": true,
+            "dynamic": false,
+            "package_name": null,
+            "workspaces": [],
+            "scripts": [],
+            "extends": [
+              "./tsconfig.base.json"
+            ],
+            "references": [],
+            "include": [
+              "src"
+            ],
+            "exclude": [],
+            "compiler_options": [
+              "strict"
+            ],
+            "summary": [
+              "compilerOption:strict",
+              "include:src"
+            ]
+          },
+          {
+            "path": "vite.config.ts",
+            "kind": "vite",
+            "format": "typescript",
+            "source": "parent",
+            "sha256": "sha256:abababababababababababababababababababababababababababababababab",
+            "size_bytes": 32,
+            "parseable": false,
+            "dynamic": true,
+            "package_name": null,
+            "workspaces": [],
+            "scripts": [],
+            "extends": [],
+            "references": [],
+            "include": [],
+            "exclude": [],
+            "compiler_options": [],
+            "summary": []
+          }
+        ],
+        "edges": [
+          {
+            "from_path": "package.json",
+            "to_path": null,
+            "kind": "workspace",
+            "specifier": "packages/*",
+            "resolved": false
+          },
+          {
+            "from_path": "src/example.ts",
+            "to_path": "package.json",
+            "kind": "parent_config",
+            "specifier": "package.json",
+            "resolved": true
+          },
+          {
+            "from_path": "src/example.ts",
+            "to_path": "tsconfig.json",
+            "kind": "parent_config",
+            "specifier": "tsconfig.json",
+            "resolved": true
+          },
+          {
+            "from_path": "tsconfig.json",
+            "to_path": "tsconfig.base.json",
+            "kind": "extends",
+            "specifier": "./tsconfig.base.json",
+            "resolved": true
+          }
+        ],
+        "findings": [
+          {
+            "code": "config_chain_dynamic_config",
+            "severity": "low",
+            "message": "vite.config.ts is typescript; config-chain records it without executing code.",
+            "path": "vite.config.ts"
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "related-files-report",
       "schema_file": "related-files-report.schema.json",
       "producer": "mf script-pack run repo/related-files map <path...> --json",

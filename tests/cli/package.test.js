@@ -39,7 +39,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.78.0');
+	assert.equal(packageJson.version, '2.79.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -320,6 +320,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/adapter-compatibility.js'));
 	assert.ok(files.has('dist/core/handoff-record.js'));
 	assert.ok(files.has('dist/core/generated-boundary.js'));
+	assert.ok(files.has('dist/core/config-chain.js'));
 	assert.ok(files.has('dist/core/related-files.js'));
 	assert.ok(files.has('dist/core/code-outline.js'));
 	assert.ok(files.has('dist/core/route-outline.js'));
@@ -330,6 +331,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/script-packs/core-text-budget.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-outline.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-route-outline.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-config-chain.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-generated-boundary.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-related-files.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
@@ -355,6 +357,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/handoff-validation-report.schema.json'));
 	assert.ok(files.has('schemas/impact-report.schema.json'));
 	assert.ok(files.has('schemas/line-endings-report.schema.json'));
+	assert.ok(files.has('schemas/config-chain-report.schema.json'));
 	assert.ok(files.has('schemas/generated-boundary-report.schema.json'));
 	assert.ok(files.has('schemas/related-files-report.schema.json'));
 	assert.ok(files.has('schemas/script-pack-suggestion-report.schema.json'));
