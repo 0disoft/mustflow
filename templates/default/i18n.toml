@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 174
+revision = 175
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -959,6 +959,12 @@ translations = {}
 
 [documents."skill.restricted-handoff-resume"]
 source = "locales/en/.mustflow/skills/restricted-handoff-resume/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.cross-agent-session-reference"]
+source = "locales/en/.mustflow/skills/cross-agent-session-reference/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

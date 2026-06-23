@@ -90,6 +90,12 @@ route_type = "primary"
 priority = 64
 applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "workflow_change"]
 
+[routes."cross-agent-session-reference"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 66
+applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "workflow_change", "privacy_change", "security_change"]
+
 [routes."facade-pattern"]
 category = "architecture_patterns"
 route_type = "primary"

@@ -36,6 +36,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added NestJS controller and method route extraction to `code/route-outline`, including
   `@Controller`, `@Get/@Post/@Put/@Patch/@Delete/@Options/@Head/@All` method decorators, and
   `@UseGuards`, `@UseInterceptors`, `@UsePipes`, and `@UseFilters` lifecycle hooks.
+- Added the `cross-agent-session-reference` built-in skill so agents can read bounded,
+  redacted Codex or Hermes session evidence by local session ID without mutating another agent's
+  state or treating transcripts as authority.
 - Added the built-in `code/export-diff` script-pack helper so agents can compare exported
   TypeScript and JavaScript signatures, return metadata, and package surface hints against a git
   base after public-ish API edits.

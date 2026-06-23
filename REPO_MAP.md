@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 206
+anchor_count: 207
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:cc359af5c9f574e88f8eaf40c85a084cbd4cdb1e5a6831776613cf4a7119c2c1"
+source_fingerprint: "sha256:7eaa80e1d870d397d0783c134d2856c61ea2c3f066ba56da8eede5de3fd56ec9"
 ---
 
 # REPO_MAP.md
@@ -199,6 +199,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/credit-ledger-integrity-review/
 
 - `.mustflow/skills/credit-ledger-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/cross-agent-session-reference/
+
+- `.mustflow/skills/cross-agent-session-reference/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/cross-platform-filesystem-safety/
 

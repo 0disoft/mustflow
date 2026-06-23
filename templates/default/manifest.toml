@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.83.0"
+version = "2.84.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -157,6 +157,7 @@ creates = [
   ".mustflow/skills/proactive-risk-surfacing/SKILL.md",
   ".mustflow/skills/repo-improvement-loop/SKILL.md",
   ".mustflow/skills/restricted-handoff-resume/SKILL.md",
+  ".mustflow/skills/cross-agent-session-reference/SKILL.md",
   ".mustflow/skills/structure-discovery-gate/SKILL.md",
   ".mustflow/skills/readme-authoring/SKILL.md",
   ".mustflow/skills/requirement-regression-guard/SKILL.md",
@@ -324,6 +325,7 @@ minimal = [
   "proactive-risk-surfacing",
   "requirement-regression-guard",
   "restricted-handoff-resume",
+  "cross-agent-session-reference",
   "repro-first-debug",
   "security-privacy-review",
   "secret-exposure-response",
@@ -462,6 +464,7 @@ patterns = [
   "proactive-risk-surfacing",
   "repo-improvement-loop",
   "restricted-handoff-resume",
+  "cross-agent-session-reference",
   "result-option",
   "requirement-regression-guard",
   "repro-first-debug",
@@ -620,6 +623,7 @@ oss = [
   "result-option",
   "requirement-regression-guard",
   "restricted-handoff-resume",
+  "cross-agent-session-reference",
   "repro-first-debug",
   "security-privacy-review",
   "security-regression-tests",
@@ -769,6 +773,7 @@ team = [
   "result-option",
   "requirement-regression-guard",
   "restricted-handoff-resume",
+  "cross-agent-session-reference",
   "repro-first-debug",
   "security-privacy-review",
   "secret-exposure-response",
@@ -913,6 +918,7 @@ product = [
   "result-option",
   "requirement-regression-guard",
   "restricted-handoff-resume",
+  "cross-agent-session-reference",
   "repro-first-debug",
   "security-privacy-review",
   "secret-exposure-response",
@@ -1071,6 +1077,7 @@ library = [
   "result-option",
   "requirement-regression-guard",
   "restricted-handoff-resume",
+  "cross-agent-session-reference",
   "repro-first-debug",
   "security-privacy-review",
   "security-regression-tests",
