@@ -74,6 +74,7 @@ const sourceAnchorTests = [
 	'search-source-scope.test.js',
 ];
 const schemaSmokeTests = ['schema.test.js', 'schema-command-contracts.test.js', 'schema-explain-verify-output.test.js'];
+const codeOutlineContractTests = ['text-budget.test.js', ...schemaSmokeTests];
 const routerSmokeTests = ['router.test.js'];
 const verifyTests = [
 	'verify.test.js',
@@ -212,6 +213,7 @@ const relatedRules = [
 			'workspace.test.js',
 		],
 	},
+	{ match: /^src\/cli\/script-packs\/code-outline\.ts$/u, tests: codeOutlineContractTests },
 	{ match: /^src\/cli\/lib\/package-info\.ts$/u, tests: [...dashboardTests, 'router.test.js', ...runTests] },
 	{ match: /^src\/cli\/lib\/command-registry\.ts$/u, tests: [...runTests, ...dashboardTests, 'router.test.js'] },
 	{ match: /^src\/cli\/lib\/repo-map\.ts$/u, tests: ['map.test.js', 'workspace.test.js'] },
@@ -228,6 +230,7 @@ const relatedRules = [
 	{ match: /^src\/core\/command-contract-rules\.ts$/u, tests: ['check-command-contracts.test.js', ...runTests] },
 	{ match: /^src\/core\/config-loading\.ts$/u, tests: ['check-config-validation.test.js', 'doctor.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/contract-lint\.ts$/u, tests: ['contract-lint.test.js', ...schemaSmokeTests] },
+	{ match: /^src\/core\/code-outline\.ts$/u, tests: codeOutlineContractTests },
 	{ match: /^src\/core\/completion-verdict\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
 	{ match: /^src\/core\/dashboard-verification\.ts$/u, tests: ['dashboard-verification.test.js', 'verify.test.js', 'verify-completion-verdict.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/doc-review-triage\.ts$/u, tests: ['docs.test.js', ...dashboardTests, ...schemaSmokeTests] },

@@ -125,6 +125,18 @@ test('related selection covers the selector script itself', () => {
 	assert.deepEqual([...selected], ['test-selection.test.js']);
 });
 
+test('related selection maps code outline implementation changes to script-pack contract tests', () => {
+	const coreSelected = selectedFor(['src/core/code-outline.ts']);
+	const wrapperSelected = selectedFor(['src/cli/script-packs/code-outline.ts']);
+
+	for (const selected of [coreSelected, wrapperSelected]) {
+		assert.equal(selected.has('text-budget.test.js'), true);
+		assert.equal(selected.has('schema.test.js'), true);
+		assert.equal(selected.has('schema-command-contracts.test.js'), true);
+		assert.equal(selected.has('schema-explain-verify-output.test.js'), true);
+	}
+});
+
 test('test runner refuses overlapping repository build and test locks', () => {
 	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-lock-'));
 	const lockDir = path.join(tempRoot, 'lock');
