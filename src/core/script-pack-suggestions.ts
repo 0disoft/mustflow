@@ -19,7 +19,13 @@ export type ScriptPackSurface =
 
 export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 
-const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read', 'code/route-outline', 'repo/related-files']);
+const CODE_NAVIGATION_SCRIPT_REFS = new Set([
+	'code/outline',
+	'code/symbol-read',
+	'code/route-outline',
+	'code/export-diff',
+	'repo/related-files',
+]);
 const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
 const CONFIG_FILE_PATTERN =
 	/(?:^|\/)(?:tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
@@ -298,6 +304,12 @@ function createRunHint(
 	if (script.ref === 'code/route-outline') {
 		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
 		return createConcretePathHint('mf script-pack run code/route-outline scan', sourcePaths, script.usage);
+	}
+
+	if (script.ref === 'code/export-diff') {
+		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
+		const pathPart = sourcePaths.length > 0 ? ` ${sourcePaths.map(quoteCliArg).join(' ')}` : '';
+		return `mf script-pack run code/export-diff compare${pathPart} --base HEAD --json`;
 	}
 
 	if (script.ref === 'core/text-budget') {

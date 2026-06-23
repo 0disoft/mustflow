@@ -3232,6 +3232,117 @@
       }
     },
     {
+      "id": "export-diff-report",
+      "schema_file": "export-diff-report.schema.json",
+      "producer": "mf script-pack run code/export-diff compare --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "export-diff",
+        "script_ref": "code/export-diff",
+        "action": "compare",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "base_ref": "HEAD",
+          "head_ref": null,
+          "compare_worktree": true,
+          "max_files": 100,
+          "max_file_bytes": 1048576,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs"
+          ],
+          "ignored_directories": [
+            ".git",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".mustflow/cache",
+            ".mustflow/state"
+          ],
+          "path_filters": [
+            "src/api.ts"
+          ]
+        },
+        "input_hash": "sha256:1313131313131313131313131313131313131313131313131313131313131313",
+        "package_surface": {
+          "package_json_present": true,
+          "type": "module",
+          "exports": [
+            "."
+          ],
+          "bin": [
+            "mf"
+          ],
+          "types": "./dist/index.d.ts"
+        },
+        "files": [
+          {
+            "kind": "source_file",
+            "path": "src/api.ts",
+            "language": "typescript",
+            "base_sha256": "sha256:1414141414141414141414141414141414141414141414141414141414141414",
+            "head_sha256": "sha256:1515151515151515151515151515151515151515151515151515151515151515",
+            "base_exists": true,
+            "head_exists": true,
+            "exported_count_before": 1,
+            "exported_count_after": 1
+          }
+        ],
+        "exports": [
+          {
+            "id": "src/api.ts:loadApi",
+            "path": "src/api.ts",
+            "name": "loadApi",
+            "kind": "function",
+            "change": "changed",
+            "before": {
+              "path": "src/api.ts",
+              "name": "loadApi",
+              "kind": "function",
+              "language": "typescript",
+              "signature": "export function loadApi(): string {",
+              "return_type": "string",
+              "return_behavior": "value",
+              "async": false,
+              "line": 1
+            },
+            "after": {
+              "path": "src/api.ts",
+              "name": "loadApi",
+              "kind": "function",
+              "language": "typescript",
+              "signature": "export function loadApi(): Promise<string> {",
+              "return_type": "Promise<string>",
+              "return_behavior": "value",
+              "async": false,
+              "line": 1
+            },
+            "compatibility": "return_changed"
+          }
+        ],
+        "summary": {
+          "files_changed": 1,
+          "added": 0,
+          "removed": 0,
+          "changed": 1,
+          "unchanged": 0
+        },
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
       "id": "text-budget-report",
       "schema_file": "text-budget-report.schema.json",
       "producer": "mf script-pack run core/text-budget check <path...> --json",

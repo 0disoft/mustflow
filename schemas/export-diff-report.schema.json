@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/export-diff-report.schema.json",
+  "title": "mustflow export-diff report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "package_surface",
+    "files",
+    "exports",
+    "summary",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "code" },
+    "script_id": { "const": "export-diff" },
+    "script_ref": { "const": "code/export-diff" },
+    "action": { "const": "compare" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "package_surface": { "$ref": "#/$defs/packageSurface" },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "exports": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/exportEntry" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "sha256Nullable": {
+      "anyOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "language": {
+      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs", "astro", "svelte", "go", "rust", "python"]
+    },
+    "symbolKind": {
+      "enum": ["function", "class", "interface", "type", "enum", "variable"]
+    },
+    "returnBehavior": {
+      "enum": ["value", "void", "implicit_undefined", "mixed", "throws_only", "unknown"]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "compare_worktree",
+        "max_files",
+        "max_file_bytes",
+        "extensions",
+        "ignored_directories",
+        "path_filters"
+      ],
+      "properties": {
+        "base_ref": { "type": "string" },
+        "head_ref": { "type": ["string", "null"] },
+        "compare_worktree": { "type": "boolean" },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "extensions": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" },
+        "path_filters": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "packageSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_json_present", "type", "exports", "bin", "types"],
+      "properties": {
+        "package_json_present": { "type": "boolean" },
+        "type": { "type": ["string", "null"] },
+        "exports": { "$ref": "#/$defs/stringArray" },
+        "bin": { "$ref": "#/$defs/stringArray" },
+        "types": { "type": ["string", "null"] }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "language",
+        "base_sha256",
+        "head_sha256",
+        "base_exists",
+        "head_exists",
+        "exported_count_before",
+        "exported_count_after"
+      ],
+      "properties": {
+        "kind": { "const": "source_file" },
+        "path": { "type": "string" },
+        "language": { "$ref": "#/$defs/language" },
+        "base_sha256": { "$ref": "#/$defs/sha256Nullable" },
+        "head_sha256": { "$ref": "#/$defs/sha256Nullable" },
+        "base_exists": { "type": "boolean" },
+        "head_exists": { "type": "boolean" },
+        "exported_count_before": { "type": "integer", "minimum": 0 },
+        "exported_count_after": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "symbolSnapshot": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "name",
+        "kind",
+        "language",
+        "signature",
+        "return_type",
+        "return_behavior",
+        "async",
+        "line"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "$ref": "#/$defs/symbolKind" },
+        "language": { "$ref": "#/$defs/language" },
+        "signature": { "type": "string" },
+        "return_type": { "type": ["string", "null"] },
+        "return_behavior": { "$ref": "#/$defs/returnBehavior" },
+        "async": { "type": "boolean" },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "exportEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "name", "kind", "change", "before", "after", "compatibility"],
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "$ref": "#/$defs/symbolKind" },
+        "change": { "enum": ["added", "removed", "changed", "unchanged"] },
+        "before": { "$ref": "#/$defs/symbolSnapshot" },
+        "after": { "$ref": "#/$defs/symbolSnapshot" },
+        "compatibility": {
+          "enum": ["additive", "removed_export", "signature_changed", "return_changed", "unchanged", "unknown"]
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_changed", "added", "removed", "changed", "unchanged"],
+      "properties": {
+        "files_changed": { "type": "integer", "minimum": 0 },
+        "added": { "type": "integer", "minimum": 0 },
+        "removed": { "type": "integer", "minimum": 0 },
+        "changed": { "type": "integer", "minimum": 0 },
+        "unchanged": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "export_diff_git_unavailable",
+            "export_diff_invalid_ref",
+            "export_diff_unreadable_path",
+            "export_diff_file_too_large",
+            "export_diff_max_files_exceeded",
+            "export_diff_duplicate_export",
+            "export_diff_reexport_unresolved"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

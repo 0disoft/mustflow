@@ -39,7 +39,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.79.0');
+	assert.equal(packageJson.version, '2.80.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -324,11 +324,13 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/related-files.js'));
 	assert.ok(files.has('dist/core/code-outline.js'));
 	assert.ok(files.has('dist/core/route-outline.js'));
+	assert.ok(files.has('dist/core/export-diff.js'));
 	assert.ok(files.has('dist/core/script-pack-suggestions.js'));
 	assert.ok(files.has('dist/core/doc-review-triage.js'));
 	assert.ok(files.has('dist/core/public-json-contracts.js'));
 	assert.ok(files.has('dist/core/surface-decision-model.js'));
 	assert.ok(files.has('dist/cli/script-packs/core-text-budget.js'));
+	assert.ok(files.has('dist/cli/script-packs/code-export-diff.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-outline.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-route-outline.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-config-chain.js'));
@@ -365,6 +367,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/code-outline-report.schema.json'));
 	assert.ok(files.has('schemas/code-symbol-read-report.schema.json'));
 	assert.ok(files.has('schemas/route-outline-report.schema.json'));
+	assert.ok(files.has('schemas/export-diff-report.schema.json'));
 	assert.ok(files.has('schemas/verify-report.schema.json'));
 	for (const contract of publicJsonContracts) {
 		assert.ok(files.has(`schemas/${contract.schemaFile}`), `${contract.schemaFile} should be packaged`);

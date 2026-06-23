@@ -295,6 +295,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		],
 	},
 	{
+		id: 'export-diff-report',
+		schemaFile: 'export-diff-report.schema.json',
+		producer: 'mf script-pack run code/export-diff compare --json',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'text-budget-report',
 		schemaFile: 'text-budget-report.schema.json',
 		producer: 'mf script-pack run core/text-budget check <path...> --json',

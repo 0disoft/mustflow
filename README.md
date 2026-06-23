@@ -294,6 +294,7 @@ mf run mustflow_update_apply
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
 | `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono and Elysia TypeScript or JavaScript files for route methods, paths, lifecycle chains, line ranges, and content hashes. |
+| `mf script-pack run code/export-diff compare --base HEAD --json` | Compare exported TypeScript or JavaScript declarations, return metadata, and package surface hints against a git base. |
 | `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
 | `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
@@ -327,10 +328,12 @@ Automation and agents should use `--json` output or `mf api serve --stdio` JSONL
 For script-pack helper selection, start with `mf script-pack suggest --changed --json` or an
 explicit `--path`. The suggestion report is only a ranking aid: it does not run scripts, prove
 verification, or bypass `.mustflow/config/commands.toml`. A common source-orientation flow is
-`code/outline` first, then `code/symbol-read` for the chosen symbol line or source anchor. For
-config-sensitive source or test work, use `repo/config-chain` before assuming effective inherited
-rules. For generated or protected paths, use `repo/generated-boundary` before editing or when
-reviewing a changed-file set. See the full [`mf script-pack` documentation](https://0disoft.github.io/mustflow/commands/script-pack/).
+`code/outline` first, then `code/symbol-read` for the chosen symbol line or source anchor. After
+public-ish TypeScript or JavaScript changes, use `code/export-diff` to review exported signatures
+and return metadata against a git base. For config-sensitive source or test work, use
+`repo/config-chain` before assuming effective inherited rules. For generated or protected paths, use
+`repo/generated-boundary` before editing or when reviewing a changed-file set. See the full
+[`mf script-pack` documentation](https://0disoft.github.io/mustflow/commands/script-pack/).
 
 `core/text-budget` counts `line` units by splitting text on line breaks; a trailing line break
 therefore contributes an empty final line.

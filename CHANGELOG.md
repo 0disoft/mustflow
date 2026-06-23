@@ -31,6 +31,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added the built-in `code/route-outline` script-pack helper so agents can scan Hono and Elysia
   route methods, paths, lifecycle chains, line ranges, and content hashes before paging through
   large route modules.
+- Added the built-in `code/export-diff` script-pack helper so agents can compare exported
+  TypeScript and JavaScript signatures, return metadata, and package surface hints against a git
+  base after public-ish API edits.
 - Added source-anchor metadata to `code/outline` JSON reports so agents can discover `mf:anchor`
   navigation markers and their nearby target declarations without paging through whole files.
 - Added `--anchor <id>` to `code/symbol-read` so agents can read a source anchor's target symbol

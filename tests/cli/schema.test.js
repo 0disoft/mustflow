@@ -909,6 +909,47 @@ test('route-outline json output matches the published schema', () => {
 	}
 });
 
+test('export-diff json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'api.ts'), 'export function apiProbe(): string { return "ok"; }\n');
+		for (const args of [
+			['init'],
+			['config', 'user.email', 'mustflow-tests@example.invalid'],
+			['config', 'user.name', 'mustflow tests'],
+			['add', '.'],
+			['commit', '-m', 'baseline'],
+		]) {
+			const git = spawnSync('git', ['-C', projectPath, ...args], {
+				cwd: projectPath,
+				encoding: 'utf8',
+				stdio: ['ignore', 'pipe', 'pipe'],
+				windowsHide: true,
+			});
+			assert.equal(git.status, 0, git.stderr || git.stdout);
+		}
+		writeFileSync(path.join(projectPath, 'src', 'api.ts'), 'export function apiProbe(): number { return 1; }\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/export-diff',
+			'compare',
+			'src/api.ts',
+			'--base',
+			'HEAD',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'export-diff-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('text-budget json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

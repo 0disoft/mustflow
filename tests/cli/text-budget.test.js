@@ -41,6 +41,11 @@ function runCodeRouteOutlineJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeExportDiffJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/export-diff', 'compare', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -126,6 +131,23 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(codeRouteOutline.risk_level, 'low');
 		assert.equal(codeRouteOutline.cost, 'low');
 		assert.equal(codeRouteOutline.report_schema_file, 'route-outline-report.schema.json');
+
+		const codeExportDiff = codePack?.scripts.find((script) => script.ref === 'code/export-diff');
+
+		assert.ok(codeExportDiff, 'code/export-diff should be listed');
+		assert.match(codeExportDiff.usage, /compare/u);
+		assert.equal(codeExportDiff.read_only, true);
+		assert.equal(codeExportDiff.mutates, false);
+		assert.equal(codeExportDiff.network, false);
+		assert.deepEqual(codeExportDiff.phases, ['after_change', 'review']);
+		assert.ok(codeExportDiff.inputs.includes('base_ref'));
+		assert.ok(codeExportDiff.inputs.includes('head_ref'));
+		assert.ok(codeExportDiff.outputs.includes('export_diff'));
+		assert.ok(codeExportDiff.outputs.includes('return_type_changes'));
+		assert.ok(codeExportDiff.related_skills.includes('api-contract-change'));
+		assert.equal(codeExportDiff.risk_level, 'low');
+		assert.equal(codeExportDiff.cost, 'low');
+		assert.equal(codeExportDiff.report_schema_file, 'export-diff-report.schema.json');
 
 		const corePack = report.packs.find((pack) => pack.id === 'core');
 		const textBudget = corePack?.scripts.find((script) => script.ref === 'core/text-budget');
@@ -373,6 +395,91 @@ test('code-outline reports explicit return annotations and return behavior metad
 		assert.equal(failFast.return_count, 0);
 		assert.deepEqual(failFast.return_lines, []);
 		assert.equal(failFast.return_preview, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('export-diff compares exported signatures and return metadata against the working tree', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify(
+				{
+					name: 'export-diff-fixture',
+					type: 'module',
+					exports: { '.': './src/api.ts' },
+					bin: { fixture: './cli.js' },
+					types: './src/api.d.ts',
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'api.ts'),
+			[
+				'export function loadThing(id: string): string {',
+				'  return id;',
+				'}',
+				'',
+				'export function removeMe(): number {',
+				'  return 1;',
+				'}',
+				'',
+			].join('\n'),
+		);
+		commitGitBaseline(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'src', 'api.ts'),
+			[
+				'export function loadThing(id: string, fallback: string): Promise<string> {',
+				'  return Promise.resolve(id || fallback);',
+				'}',
+				'',
+				'export function addMe(): boolean {',
+				'  return true;',
+				'}',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeExportDiffJson(projectPath, ['src/api.ts', '--base', 'HEAD']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'code');
+		assert.equal(report.script_id, 'export-diff');
+		assert.equal(report.script_ref, 'code/export-diff');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.policy.base_ref, 'HEAD');
+		assert.equal(report.policy.head_ref, null);
+		assert.equal(report.policy.compare_worktree, true);
+		assert.deepEqual(report.policy.path_filters, ['src/api.ts']);
+		assert.equal(report.package_surface.type, 'module');
+		assert.deepEqual(report.package_surface.exports, ['.']);
+		assert.deepEqual(report.package_surface.bin, ['fixture']);
+		assert.equal(report.package_surface.types, './src/api.d.ts');
+		assert.equal(report.files[0].path, 'src/api.ts');
+		assert.equal(report.files[0].exported_count_before, 2);
+		assert.equal(report.files[0].exported_count_after, 2);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		const entries = new Map(report.exports.map((entry) => [entry.name, entry]));
+		assert.equal(entries.get('addMe')?.change, 'added');
+		assert.equal(entries.get('addMe')?.compatibility, 'additive');
+		assert.equal(entries.get('removeMe')?.change, 'removed');
+		assert.equal(entries.get('removeMe')?.compatibility, 'removed_export');
+		assert.equal(entries.get('loadThing')?.change, 'changed');
+		assert.equal(entries.get('loadThing')?.compatibility, 'return_changed');
+		assert.equal(entries.get('loadThing')?.before.return_type, 'string');
+		assert.equal(entries.get('loadThing')?.after.return_type, 'Promise<string>');
+		assert.deepEqual(report.summary, { files_changed: 1, added: 1, removed: 1, changed: 1, unchanged: 0 });
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -1873,6 +1980,36 @@ test('script-pack suggest recommends route outline for Hono and Elysia source wo
 		assert.ok(routeOutline.matched_skills.includes('elysia-code-change'));
 		assert.ok(routeOutline.matched_phases.includes('before_change'));
 		assert.equal(routeOutline.report_schema_file, 'route-outline-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends export diff after source changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'api.ts'), 'export function resolve(): string { return "ok"; }\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/api.ts',
+			'--skill',
+			'api-contract-change',
+			'--phase',
+			'after_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const exportDiff = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/export-diff');
+		assert.ok(exportDiff, 'code/export-diff should be suggested for API contract source changes');
+		assert.equal(exportDiff.run_hint, 'mf script-pack run code/export-diff compare src/api.ts --base HEAD --json');
+		assert.ok(exportDiff.matched_skills.includes('api-contract-change'));
+		assert.ok(exportDiff.matched_phases.includes('after_change'));
+		assert.equal(exportDiff.report_schema_file, 'export-diff-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}

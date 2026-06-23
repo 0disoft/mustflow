@@ -328,7 +328,7 @@ function languageAdapterForPath(filePath: string): CodeOutlineLanguageAdapter | 
 	return CODE_OUTLINE_LANGUAGE_ADAPTERS.find((adapter) => adapter.languageForPath(filePath) !== null) ?? null;
 }
 
-function languageForPath(filePath: string): CodeOutlineLanguage | null {
+export function languageForPath(filePath: string): CodeOutlineLanguage | null {
 	return languageAdapterForPath(filePath)?.languageForPath(filePath) ?? null;
 }
 
@@ -1188,7 +1188,7 @@ const CODE_OUTLINE_LANGUAGE_ADAPTERS: readonly CodeOutlineLanguageAdapter[] = [
 
 const CODE_FILE_EXTENSIONS = CODE_OUTLINE_LANGUAGE_ADAPTERS.flatMap((adapter) => adapter.extensions);
 
-function extractSymbols(
+export function extractSymbols(
 	relativePath: string,
 	language: CodeOutlineLanguage,
 	contentSha256: string,
