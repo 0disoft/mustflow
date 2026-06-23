@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/related-files-report.schema.json",
+  "title": "mustflow related-files report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "targets",
+    "candidates",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "related-files" },
+    "script_ref": { "const": "repo/related-files" },
+    "action": { "const": "map" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target" }
+    },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "truncated": { "type": "boolean" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "language": {
+      "enum": [
+        "typescript",
+        "tsx",
+        "javascript",
+        "jsx",
+        "javascript-module",
+        "javascript-commonjs",
+        "json",
+        "other"
+      ]
+    },
+    "relationship": {
+      "enum": [
+        "import",
+        "importer",
+        "sibling_test",
+        "sibling_docs",
+        "sibling_style",
+        "sibling_type",
+        "config_parent",
+        "package_boundary"
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_file_bytes", "max_files", "max_candidates", "extensions", "ignored_directories"],
+      "properties": {
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_candidates": { "type": "integer", "minimum": 1 },
+        "extensions": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path", "exists", "kind", "language"],
+      "properties": {
+        "input": { "type": "string" },
+        "path": { "type": "string" },
+        "exists": { "type": ["boolean", "null"] },
+        "kind": { "enum": ["file", "directory", "missing", "other", "unknown"] },
+        "language": { "$ref": "#/$defs/language" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "relationship", "confidence", "reason", "source_path", "target_path", "line"],
+      "properties": {
+        "path": { "type": "string" },
+        "relationship": { "$ref": "#/$defs/relationship" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string" },
+        "source_path": { "type": "string" },
+        "target_path": { "type": "string" },
+        "line": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "related_files_path_outside_root",
+            "related_files_unreadable_path",
+            "related_files_max_files_exceeded",
+            "related_files_max_candidates_exceeded"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

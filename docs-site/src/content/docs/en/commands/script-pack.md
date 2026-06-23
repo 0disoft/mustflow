@@ -10,7 +10,9 @@ The bundled scripts include `code/outline`, which scans TypeScript and JavaScrip
 symbol headers, line ranges, and source-anchor metadata, `code/symbol-read`, which reads a focused source snippet by
 source anchor, symbol line, or explicit line range, `core/text-budget`, which checks exact text length budgets for
 plain text files or JSON string fields, and `repo/generated-boundary`, which checks whether
-candidate paths cross generated, ignored, protected, vendor, or cache boundaries.
+candidate paths cross generated, ignored, protected, vendor, or cache boundaries. `repo/related-files`
+maps direct imports, importers, same-basename siblings, and nearby config or package boundaries for
+source-oriented navigation.
 
 ## List Scripts
 
@@ -41,7 +43,8 @@ it does not run the scripts.
 
 When enough path evidence is available, each suggestion's `run_hint` is a concrete read-only
 command for the current path, such as `code/outline`, `core/text-budget`, or
-`repo/generated-boundary` with `--json`. Helpers that need data from another helper keep that
+`repo/generated-boundary` with `--json`. `repo/related-files` is recommended for source and test
+paths when adjacent-file discovery is useful. Helpers that need data from another helper keep that
 dependency explicit; for example, `code/symbol-read` is presented as a follow-up after
 `code/outline` identifies a symbol line or source anchor.
 
@@ -111,6 +114,21 @@ npx mf script-pack run repo/generated-boundary check dist/cli/index.js .mustflow
 vendor and cache patterns. Use it before editing candidate paths or after reviewing a changed-file
 set when generated or protected-file drift would make completion evidence misleading.
 
+## Map Related Files
+
+```sh
+npx mf script-pack run repo/related-files map src/cli/index.ts --json
+npx mf script-pack run repo/related-files map src/core/code-outline.ts --max-candidates 50 --json
+```
+
+`repo/related-files` is read-only. It conservatively maps direct relative imports, files that import
+the target, same-basename test, docs, style, and type siblings, and parent config files such as
+`package.json`, `tsconfig*.json`, ESLint, Vite, Vitest, and Tailwind configs. It reports candidate
+paths with relationship, confidence, source path, target path, and line metadata when available.
+
+Use it to decide which nearby files are worth inspecting before widening context reads. Do not treat
+its output as a verification scope, dependency graph, or proof that no other files matter.
+
 ## Counting Units
 
 ```sh
@@ -148,6 +166,7 @@ npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-li
 npx mf script-pack run code/symbol-read read --anchor auth.session.resolve --json
 npx mf script-pack run core/text-budget check package.json --json-pointer /description --max 80 --json
 npx mf script-pack run repo/generated-boundary check AGENTS.md .mustflow/config/manifest.lock.toml --json
+npx mf script-pack run repo/related-files map src/cli/index.ts --json
 ```
 
 `mf script-pack list --json` is validated by `schemas/script-pack-catalog.schema.json`.
@@ -159,6 +178,7 @@ npx mf script-pack run repo/generated-boundary check AGENTS.md .mustflow/config/
 `core/text-budget` JSON reports are validated by `schemas/text-budget-report.schema.json`.
 `repo/generated-boundary` JSON reports are validated by
 `schemas/generated-boundary-report.schema.json`.
+`repo/related-files` JSON reports are validated by `schemas/related-files-report.schema.json`.
 
 The script-pack catalog includes:
 
@@ -260,6 +280,25 @@ The generated-boundary report includes:
 - `targets`: Per-path existence, kind, matched boundary categories, and matched patterns.
 - `findings`: Stable finding codes for generated, ignored, protected, vendor, cache, outside-root,
   or unreadable paths.
+- `issues`: Human-readable issue summaries.
+
+The related-files report includes:
+
+- `schema_version`: Output format version.
+- `command`: Always `script-pack`.
+- `pack_id`, `script_id`, and `script_ref`: The script identity.
+- `action`: Always `map`.
+- `status`: `passed`, `failed`, or `error`.
+- `ok`: Whether the status is `passed`.
+- `mustflow_root`: Current mustflow root.
+- `policy`: File size, scan count, candidate count, extension, and ignored-directory limits.
+- `input_hash`: Hash of the target paths, candidates, findings, policy, and bounded issues.
+- `targets`: Per-input path, existence, kind, and language metadata.
+- `candidates`: Related paths with relationship, confidence, reason, source path, target path, and
+  optional source line.
+- `truncated`: Whether scan or candidate limits were reached.
+- `findings`: Stable finding codes for outside-root paths, unreadable paths, file scan limits, and
+  candidate limits.
 - `issues`: Human-readable issue summaries.
 
 ## Exit Codes

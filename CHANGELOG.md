@@ -10,6 +10,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 - Added the built-in `repo/generated-boundary` script-pack helper so agents can check candidate
   edit paths against generated, ignored, protected, vendor, cache, and outside-root boundaries.
+- Added the built-in `repo/related-files` script-pack helper so agents can map direct imports,
+  importers, same-basename siblings, and nearby config or package boundaries without broad file
+  paging or treating the result as verification scope.
 - Added `mf script-pack suggest` so agents can rank optional script-pack helpers from path,
   changed-file, phase, and related-skill evidence without running the suggested scripts.
 - Added optional read-only script-pack helper suggestions to `mf skill route --json` so agents can

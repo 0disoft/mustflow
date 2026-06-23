@@ -292,6 +292,7 @@ mf run mustflow_update_apply
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
+| `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
 | `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |
 | `mf script-pack run core/text-budget check package.json --json-pointer /description --max <count> --json` | Check a JSON string field and print the stable report schema. |
 | `mf run <intent>` | Run an allowed one-shot command. |

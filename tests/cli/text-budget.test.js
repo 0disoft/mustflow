@@ -16,6 +16,11 @@ function runGeneratedBoundaryJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runRelatedFilesJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/related-files', 'map', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeOutlineJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/outline', 'scan', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -126,6 +131,21 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(generatedBoundary.risk_level, 'low');
 		assert.equal(generatedBoundary.cost, 'low');
 		assert.equal(generatedBoundary.report_schema_file, 'generated-boundary-report.schema.json');
+
+		const relatedFiles = repoPack?.scripts.find((script) => script.ref === 'repo/related-files');
+
+		assert.ok(relatedFiles, 'repo/related-files should be listed');
+		assert.equal(relatedFiles.read_only, true);
+		assert.equal(relatedFiles.mutates, false);
+		assert.equal(relatedFiles.network, false);
+		assert.deepEqual(relatedFiles.phases, ['before_change', 'during_change', 'after_change', 'review']);
+		assert.ok(relatedFiles.use_when.some((hint) => hint.includes('sibling tests')));
+		assert.ok(relatedFiles.inputs.includes('max_candidates'));
+		assert.ok(relatedFiles.outputs.includes('related_file_candidates'));
+		assert.ok(relatedFiles.related_skills.includes('heuristic-candidate-selection'));
+		assert.equal(relatedFiles.risk_level, 'low');
+		assert.equal(relatedFiles.cost, 'low');
+		assert.equal(relatedFiles.report_schema_file, 'related-files-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -842,6 +862,79 @@ test('generated-boundary reports vendor paths', () => {
 	}
 });
 
+test('related-files maps imports, importers, siblings, and parent config without deciding verification scope', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'feature.ts'),
+			[
+				'import { helper } from "./helper";',
+				'',
+				'export function feature() {',
+				'  return helper();',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(path.join(projectPath, 'src', 'helper.ts'), 'export function helper() { return 1; }\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer.ts'), 'import { feature } from "./feature";\n');
+		writeFileSync(path.join(projectPath, 'src', 'feature.test.ts'), 'import { feature } from "./feature";\n');
+		writeFileSync(path.join(projectPath, 'src', 'feature.css'), '.feature { display: block; }\n');
+		writeFileSync(path.join(projectPath, 'src', 'feature.md'), '# Feature\n');
+		writeFileSync(path.join(projectPath, 'package.json'), `${JSON.stringify({ type: 'module' }, null, 2)}\n`);
+
+		const { result, report } = runRelatedFilesJson(projectPath, ['src/feature.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'repo');
+		assert.equal(report.script_id, 'related-files');
+		assert.equal(report.script_ref, 'repo/related-files');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.truncated, false);
+		assert.equal(report.targets[0].path, 'src/feature.ts');
+		assert.equal(report.targets[0].language, 'typescript');
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		const candidates = new Map(report.candidates.map((candidate) => [`${candidate.relationship}:${candidate.path}`, candidate]));
+		assert.equal(candidates.get('import:src/helper.ts')?.line, 1);
+		assert.equal(candidates.get('importer:src/consumer.ts')?.line, 1);
+		assert.equal(candidates.get('sibling_test:src/feature.test.ts')?.source_path, 'src/feature.ts');
+		assert.equal(candidates.get('sibling_style:src/feature.css')?.target_path, 'src/feature.ts');
+		assert.equal(candidates.get('sibling_docs:src/feature.md')?.line, null);
+		assert.equal(candidates.get('package_boundary:package.json')?.relationship, 'package_boundary');
+		assert.deepEqual(report.findings, []);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('related-files reports scan truncation with stable finding metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'one.ts'), 'export const one = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'two.ts'), 'export const two = 2;\n');
+
+		const { result, report } = runRelatedFilesJson(projectPath, ['src/one.ts', '--max-files', '1']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.truncated, true);
+		assert.ok(report.findings.some((finding) => finding.code === 'related_files_max_files_exceeded'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest ranks helpers from path, skill, and phase evidence', () => {
 	const projectPath = createTempProject();
 
@@ -946,12 +1039,15 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 
 		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
 		const symbolRead = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/symbol-read');
+		const relatedFiles = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/related-files');
 
 		assert.ok(outline, 'code/outline should be suggested for source paths');
 		assert.ok(symbolRead, 'code/symbol-read should be suggested as a source follow-up');
+		assert.ok(relatedFiles, 'repo/related-files should be suggested for source paths');
 		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan src/session.ts --json');
 		assert.match(symbolRead.run_hint, /After code\/outline returns a symbol line or anchor/u);
 		assert.match(symbolRead.run_hint, /src\/session\.ts --start-line <line> --json/u);
+		assert.equal(relatedFiles.run_hint, 'mf script-pack run repo/related-files map src/session.ts --json');
 		assert.ok(
 			report.suggestions.findIndex((suggestion) => suggestion.script_ref === 'code/outline') <
 				report.suggestions.findIndex((suggestion) => suggestion.script_ref === 'code/symbol-read'),
@@ -1066,6 +1162,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/related-files map src\/cli\/index\.ts --json/);
 		assert.equal(result.stderr, '');
 	} finally {
 		removeTempProject(projectPath);

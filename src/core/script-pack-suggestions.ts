@@ -19,7 +19,7 @@ export type ScriptPackSurface =
 
 export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 
-const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read']);
+const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read', 'repo/related-files']);
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -308,6 +308,13 @@ function createRunHint(
 
 	if (script.ref === 'repo/generated-boundary') {
 		return createConcretePathHint('mf script-pack run repo/generated-boundary check', analyzedPaths.map((entry) => entry.path), script.usage);
+	}
+
+	if (script.ref === 'repo/related-files') {
+		const relatedPaths = analyzedPaths
+			.filter((entry) => entry.surfaces.some((surface) => surface === 'source' || surface === 'test'))
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run repo/related-files map', relatedPaths, script.usage);
 	}
 
 	return script.usage;

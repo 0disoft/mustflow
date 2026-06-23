@@ -176,6 +176,37 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				loadRunner: async () =>
 					(await import('../script-packs/repo-generated-boundary.js')).runRepoGeneratedBoundaryScript,
 			},
+			{
+				packId: 'repo',
+				id: 'related-files',
+				ref: scriptRef('repo', 'related-files'),
+				usage: 'mf script-pack run repo/related-files map <path...> [options]',
+				summaryKey: 'scriptPack.script.relatedFiles.summary',
+				actions: ['map'],
+				useWhen: [
+					'Map direct imports, importers, sibling tests, sibling docs, sibling styles, type siblings, ' +
+						'and nearby config files for a source path before widening context reads.',
+					'Review likely adjacent files after a partial implementation without treating the result as verification scope or completeness proof.',
+				],
+				phases: ['before_change', 'during_change', 'after_change', 'review'],
+				readOnly: true,
+				mutates: false,
+				network: false,
+				inputs: ['path', 'max_files', 'max_file_bytes', 'max_candidates'],
+				outputs: ['human_summary', 'json_report', 'related_file_candidates'],
+				relatedSkills: [
+					'codebase-orientation',
+					'heuristic-candidate-selection',
+					'module-boundary-review',
+					'typescript-code-change',
+					'javascript-code-change',
+				],
+				riskLevel: 'low',
+				cost: 'low',
+				reportSchemaFile: 'related-files-report.schema.json',
+				loadRunner: async () =>
+					(await import('../script-packs/repo-related-files.js')).runRepoRelatedFilesScript,
+			},
 		],
 	},
 ];

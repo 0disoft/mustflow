@@ -81,6 +81,10 @@ Current schemas:
 - `generated-boundary-report.schema.json`: output of
   `mf script-pack run repo/generated-boundary check <path...> --json`, containing candidate path
   classifications for generated, ignored, protected, vendor, and cache boundaries before or after edits
+- `related-files-report.schema.json`: output of
+  `mf script-pack run repo/related-files map <path...> --json`, containing conservative related-file
+  candidates from direct imports, importers, same-basename siblings, parent configuration files, and
+  package boundaries for source-oriented repository navigation
 - `skill-route-report.schema.json`: output of `mf skill route --json`, containing compact route
   candidates, selected main and adjunct skills, score breakdowns, route read plans, source route
   shards, and optional read-only script-pack helper suggestions without granting command authority

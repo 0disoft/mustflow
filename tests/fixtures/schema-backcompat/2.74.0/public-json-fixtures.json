@@ -3292,6 +3292,89 @@
         ],
         "issues": []
       }
+    },
+    {
+      "id": "related-files-report",
+      "schema_file": "related-files-report.schema.json",
+      "producer": "mf script-pack run repo/related-files map <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "related-files",
+        "script_ref": "repo/related-files",
+        "action": "map",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 262144,
+          "max_files": 1000,
+          "max_candidates": 200,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs",
+            ".json",
+            ".d.ts",
+            ".md",
+            ".mdx",
+            ".css",
+            ".scss",
+            ".sass",
+            ".less"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ]
+        },
+        "input_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "targets": [
+          {
+            "input": "src/example.ts",
+            "path": "src/example.ts",
+            "exists": true,
+            "kind": "file",
+            "language": "typescript"
+          }
+        ],
+        "candidates": [
+          {
+            "path": "src/example.test.ts",
+            "relationship": "sibling_test",
+            "confidence": 0.78,
+            "reason": "src/example.test.ts shares basename example with src/example.ts.",
+            "source_path": "src/example.ts",
+            "target_path": "src/example.ts",
+            "line": null
+          },
+          {
+            "path": "package.json",
+            "relationship": "package_boundary",
+            "confidence": 0.72,
+            "reason": "package.json is a parent configuration file for src/example.ts.",
+            "source_path": "src/example.ts",
+            "target_path": "src/example.ts",
+            "line": null
+          }
+        ],
+        "truncated": false,
+        "findings": [],
+        "issues": []
+      }
     }
   ]
 }

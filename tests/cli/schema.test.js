@@ -922,6 +922,30 @@ test('generated-boundary json output matches the published schema', () => {
 	}
 });
 
+test('related-files json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'schema-related.ts'), 'export const schemaRelated = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'schema-related.test.ts'), 'import "./schema-related";\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/related-files',
+			'map',
+			'src/schema-related.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'related-files-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('skill route json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
