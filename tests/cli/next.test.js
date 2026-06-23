@@ -92,6 +92,8 @@ test('next reports idle when no changed files need verification', async () => {
 		assert.equal(output.policy.writes_files, false);
 		assert.equal(output.state.changed_file_count, 0);
 		assert.equal(output.decision.kind, 'none');
+		assert.equal(output.script_pack_suggestions.status, 'empty');
+		assert.deepEqual(output.script_pack_suggestions.suggestions, []);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -117,10 +119,22 @@ test('next recommends default template verification instead of blocking on missi
 		assert.equal(output.gaps.length, 0);
 		assert.ok(output.recommended_commands.includes('mf verify --changed --json'));
 		assert.ok(!output.recommended_commands.some((command) => /npm test|bun test|node --test/u.test(command)));
+		assert.equal(output.script_pack_suggestions.status, 'suggested');
+		assert.ok(
+			output.script_pack_suggestions.suggestions.some(
+				(suggestion) => suggestion.script_ref === 'repo/generated-boundary',
+			),
+		);
+		assert.ok(
+			output.script_pack_suggestions.suggestions.every(
+				(suggestion) => suggestion.read_only && !suggestion.mutates && !suggestion.network,
+			),
+		);
 
 		const text = await runCli(projectPath, ['next']);
 		assert.equal(text.status, 0, text.stderr || text.stdout);
 		assert.match(text.stdout, /mf verify --changed --json/u);
+		assert.match(text.stdout, /repo\/generated-boundary/u);
 		assert.doesNotMatch(text.stdout, /npm test|bun test|node --test/u);
 	} finally {
 		removeTempProject(projectPath);
@@ -164,6 +178,7 @@ required_after = ["code_change"]
 		assert.ok(output.state.selected_intents.includes('code_probe'));
 		assert.ok(output.state.selected_intents.includes('test_related'));
 		assert.deepEqual(output.gaps, []);
+		assert.ok(output.script_pack_suggestions.suggestions.length > 0);
 	} finally {
 		removeTempProject(projectPath);
 	}

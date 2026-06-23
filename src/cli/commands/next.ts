@@ -10,6 +10,10 @@ import {
 	type CommandContract,
 } from '../../core/config-loading.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
+import {
+	createScriptPackSuggestionReport,
+	type ScriptPackSuggestionReport,
+} from '../../core/script-pack-suggestions.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { getAgentContext } from '../lib/agent-context.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -22,6 +26,7 @@ import {
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { createRunPlan } from '../lib/run-plan.js';
+import { listScriptPackScripts } from '../lib/script-pack-registry.js';
 import { checkMustflowProjectReport } from '../lib/validation.js';
 
 const NEXT_SCHEMA_VERSION = '1';
@@ -58,6 +63,11 @@ interface NextGap {
 	readonly detail: string;
 }
 
+type NextScriptPackSuggestions = Pick<
+	ScriptPackSuggestionReport,
+	'status' | 'input' | 'analyzed_paths' | 'suggestions' | 'issues'
+>;
+
 interface NextOutput {
 	readonly schema_version: '1';
 	readonly command: 'next';
@@ -75,6 +85,7 @@ interface NextOutput {
 	readonly blockers: readonly string[];
 	readonly warnings: readonly string[];
 	readonly gaps: readonly NextGap[];
+	readonly script_pack_suggestions: NextScriptPackSuggestions;
 	readonly verification_plan_id: string | null;
 }
 
@@ -134,6 +145,7 @@ function toOutput(input: {
 	readonly blockers?: readonly string[];
 	readonly warnings?: readonly string[];
 	readonly gaps?: readonly NextGap[];
+	readonly scriptPackSuggestions?: NextScriptPackSuggestions;
 	readonly verificationPlanId?: string | null;
 }): NextOutput {
 	return {
@@ -148,6 +160,7 @@ function toOutput(input: {
 		blockers: input.blockers ?? [],
 		warnings: input.warnings ?? [],
 		gaps: input.gaps ?? [],
+		script_pack_suggestions: input.scriptPackSuggestions ?? createEmptyScriptPackSuggestions(),
 		verification_plan_id: input.verificationPlanId ?? null,
 	};
 }
@@ -166,6 +179,46 @@ function toNextGap(gap: ChangeVerificationGap): NextGap {
 		files: gap.files,
 		surfaces: gap.surfaces,
 		detail: gap.detail,
+	};
+}
+
+function createEmptyScriptPackSuggestions(): NextScriptPackSuggestions {
+	return {
+		status: 'empty',
+		input: {
+			phases: [],
+			skills: [],
+			paths: [],
+			changed: false,
+		},
+		analyzed_paths: [],
+		suggestions: [],
+		issues: [],
+	};
+}
+
+function createNextScriptPackSuggestions(
+	mustflowRoot: string,
+	classification: ClassifyOutput,
+): NextScriptPackSuggestions {
+	if (classification.files.length === 0) {
+		return createEmptyScriptPackSuggestions();
+	}
+
+	const report = createScriptPackSuggestionReport(mustflowRoot, {
+		changed: false,
+		phases: ['after_change', 'review'],
+		skills: [],
+		paths: classification.files,
+		scripts: listScriptPackScripts(),
+	});
+
+	return {
+		status: report.status,
+		input: report.input,
+		analyzed_paths: report.analyzed_paths,
+		suggestions: report.suggestions,
+		issues: report.issues,
 	};
 }
 
@@ -195,6 +248,7 @@ function createChangedOutput(
 	const intents = selectedIntents(report);
 	const gaps = report.gaps.map(toNextGap);
 	const verificationPlanId = createVerificationPlanId(report, contract);
+	const scriptPackSuggestions = createNextScriptPackSuggestions(mustflowRoot, classification);
 	const state = createState({
 		installed: true,
 		check_ok: true,
@@ -221,6 +275,7 @@ function createChangedOutput(
 			recommendedCommands: [...fallbackCommands(mustflowRoot, contract), ...(intents.length > 0 ? ['mf verify --changed --json'] : [])],
 			blockers: gaps.map((gap) => gap.detail),
 			gaps,
+			scriptPackSuggestions,
 			verificationPlanId,
 		});
 	}
@@ -237,6 +292,7 @@ function createChangedOutput(
 				'Changed files have runnable configured verification intents. Use mustflow verification instead of direct commands.',
 			),
 			recommendedCommands: ['mf api verification-plan --changed --json', 'mf verify --changed --json'],
+			scriptPackSuggestions,
 			verificationPlanId,
 		});
 	}
@@ -247,6 +303,7 @@ function createChangedOutput(
 		state,
 		decision: action('inspect', 'mf api verification-plan --changed --json', 'Inspect verification plan', 'No runnable verification entries were selected.'),
 		recommendedCommands: ['mf api verification-plan --changed --json'],
+		scriptPackSuggestions,
 		verificationPlanId,
 	});
 }
@@ -387,6 +444,18 @@ function renderNextOutput(output: NextOutput, lang: CliLang): string {
 		lines.push('', t(lang, 'next.section.warnings'));
 		for (const warning of output.warnings) {
 			lines.push(`- ${warning}`);
+		}
+	}
+
+	if (output.script_pack_suggestions.suggestions.length > 0 || output.script_pack_suggestions.issues.length > 0) {
+		lines.push('', t(lang, 'scriptPack.suggest.label.recommendations'));
+		for (const suggestion of output.script_pack_suggestions.suggestions) {
+			lines.push(`- ${suggestion.script_ref}: ${suggestion.confidence}, score ${suggestion.score}`);
+			lines.push(`  ${t(lang, 'scriptPack.suggest.label.runHint')}: ${suggestion.run_hint}`);
+		}
+
+		for (const issue of output.script_pack_suggestions.issues) {
+			lines.push(`- ${issue}`);
 		}
 	}
 

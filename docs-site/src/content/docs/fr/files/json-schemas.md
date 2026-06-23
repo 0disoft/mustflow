@@ -28,7 +28,7 @@ schémas du paquet installé ou ceux du dépôt mustflow.
 - `context-report.schema.json`: `mf context --json`
 - `contract-lint-report.schema.json`: `mf contract-lint --json`
 - `onboard-commands-report.schema.json`: `mf onboard commands --json`
-- `next-report.schema.json`: `mf next --json`
+- `next-report.schema.json`: `mf next --json`, including optional script-pack helper suggestions
 - `evidence-report.schema.json`: `mf evidence --changed --json`
 - `api-serve-response.schema.json`: chaque réponse délimitée par ligne de
   `mf api serve --stdio`

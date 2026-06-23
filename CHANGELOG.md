@@ -23,6 +23,8 @@ This file applies to the mustflow repository itself. It is not installed into us
   authority outside the command contract.
 - Added a read-only `script_pack_suggest_changed` template command intent for changed-file-based
   script-pack recommendations.
+- Added optional read-only script-pack helper recommendations to `mf next` so agents can discover
+  relevant bundled scripts from changed-file evidence without running those scripts.
 
 ## 2.74.3 - 2026-06-22
 

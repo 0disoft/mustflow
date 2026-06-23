@@ -29,7 +29,8 @@ Current schemas:
 - `onboard-commands-report.schema.json`: output of `mf onboard commands --json`, containing
   review-only command-intent suggestions that do not grant command authority or write files
 - `next-report.schema.json`: output of `mf next --json`, containing the next safe action,
-  changed-file verification gaps, and read-only command recommendations
+  changed-file verification gaps, read-only command recommendations, and optional read-only
+  script-pack helper suggestions
 - `evidence-report.schema.json`: output of `mf evidence --changed --json`, containing verification
   requirements, risk-priced evidence assessment, latest bounded evidence, failure replay capsules,
   conflict ledgers, receipts, remaining risks, and gaps without running commands
