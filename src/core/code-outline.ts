@@ -1112,7 +1112,13 @@ function canBridgeAnchorToSymbol(lines: readonly string[], anchorEndLine: number
 
 	for (let lineNumber = anchorEndLine + 1; lineNumber < symbolStartLine; lineNumber += 1) {
 		const trimmed = (lines[lineNumber - 1] ?? '').trim();
-		if (trimmed.length === 0 || trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('@')) {
+		if (
+			trimmed.length === 0 ||
+			trimmed.startsWith('//') ||
+			trimmed.startsWith('#') ||
+			trimmed.startsWith('*') ||
+			trimmed.startsWith('@')
+		) {
 			continue;
 		}
 		return false;

@@ -48,6 +48,11 @@ This file applies to the mustflow repository itself. It is not installed into us
   commands when path evidence is available, while follow-up helpers such as `code/symbol-read`
   keep their `code/outline` dependency explicit.
 
+### Fixed
+
+- Fixed `code/symbol-read` source-anchor targeting for Python anchors that have an ordinary
+  `#` comment line between the anchor metadata and the target declaration.
+
 ## 2.74.3 - 2026-06-22
 
 ### Changed

@@ -560,6 +560,187 @@ test('code-symbol-read resolves a source anchor to its target symbol snippet', (
 	}
 });
 
+test('code-symbol-read resolves Go, Rust, and Python symbols by start line', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'service.go'),
+			[
+				'package demo',
+				'',
+				'func ResolveSession(token string) (string, error) {',
+				'  return token, nil',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'service.rs'),
+			[
+				'pub fn resolve_session(token: &str) -> Result<String, Error> {',
+				'    Ok(token.to_owned())',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'service.py'),
+			[
+				'async def resolve_session(token: str) -> str:',
+				'    return token.strip()',
+				'',
+			].join('\n'),
+		);
+
+		const cases = [
+			{
+				path: 'src/service.go',
+				startLine: '3',
+				language: 'go',
+				name: 'ResolveSession',
+				returnType: '(string, error)',
+				returnPreview: 'token, nil',
+			},
+			{
+				path: 'src/service.rs',
+				startLine: '1',
+				language: 'rust',
+				name: 'resolve_session',
+				returnType: 'Result<String, Error>',
+				returnPreview: 'Ok(token.to_owned())',
+			},
+			{
+				path: 'src/service.py',
+				startLine: '1',
+				language: 'python',
+				name: 'resolve_session',
+				returnType: 'str',
+				returnPreview: 'token.strip()',
+			},
+		];
+
+		for (const testCase of cases) {
+			const { result, report } = runCodeSymbolReadJson(projectPath, [
+				testCase.path,
+				'--start-line',
+				testCase.startLine,
+			]);
+
+			assert.equal(result.status, 0, `${testCase.path}: ${result.stderr || result.stdout}`);
+			assert.equal(report.target.language, testCase.language, testCase.path);
+			assert.equal(report.target.symbol.name, testCase.name, testCase.path);
+			assert.equal(report.target.symbol.return_type, testCase.returnType, testCase.path);
+			assert.equal(report.target.symbol.return_behavior, 'value', testCase.path);
+			assert.equal(report.target.symbol.return_preview, testCase.returnPreview, testCase.path);
+			assert.match(report.snippet.text, new RegExp(testCase.name, 'u'), testCase.path);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read resolves Go, Rust, and Python source anchors to target symbols', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'anchored.go'),
+			[
+				'package demo',
+				'',
+				'// mf:anchor service.go.resolve',
+				'// purpose: Resolve Go session.',
+				'// search: go, session',
+				'// risk: security',
+				'func ResolveSession(token string) (string, error) {',
+				'  return token, nil',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'anchored.rs'),
+			[
+				'// mf:anchor service.rust.resolve',
+				'// purpose: Resolve Rust session.',
+				'// search: rust, session',
+				'// risk: security',
+				'pub fn resolve_session(token: &str) -> Result<String, Error> {',
+				'    Ok(token.to_owned())',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'anchored.py'),
+			[
+				'# mf:anchor service.python.resolve',
+				'# purpose: Resolve Python session.',
+				'# search: python, session',
+				'# risk: security',
+				'# Keep this nearby comment bridge readable for agents.',
+				'async def resolve_session(token: str) -> str:',
+				'    return token.strip()',
+				'',
+			].join('\n'),
+		);
+
+		const cases = [
+			{
+				anchor: 'service.go.resolve',
+				path: 'src/anchored.go',
+				language: 'go',
+				name: 'ResolveSession',
+				startLine: 7,
+				returnPreview: 'token, nil',
+			},
+			{
+				anchor: 'service.rust.resolve',
+				path: 'src/anchored.rs',
+				language: 'rust',
+				name: 'resolve_session',
+				startLine: 5,
+				returnPreview: 'Ok(token.to_owned())',
+			},
+			{
+				anchor: 'service.python.resolve',
+				path: 'src/anchored.py',
+				language: 'python',
+				name: 'resolve_session',
+				startLine: 6,
+				returnPreview: 'token.strip()',
+			},
+		];
+
+		for (const testCase of cases) {
+			const { result, report } = runCodeSymbolReadJson(projectPath, [
+				'--anchor',
+				testCase.anchor,
+				'--context-lines',
+				'0',
+			]);
+
+			assert.equal(result.status, 0, `${testCase.anchor}: ${result.stderr || result.stdout}`);
+			assert.equal(report.target.path, testCase.path, testCase.anchor);
+			assert.equal(report.target.language, testCase.language, testCase.anchor);
+			assert.equal(report.target.anchor.id, testCase.anchor, testCase.anchor);
+			assert.equal(report.target.anchor.target_name, testCase.name, testCase.anchor);
+			assert.equal(report.target.resolved_start_line, testCase.startLine, testCase.anchor);
+			assert.equal(report.target.symbol.name, testCase.name, testCase.anchor);
+			assert.equal(report.target.symbol.return_behavior, 'value', testCase.anchor);
+			assert.equal(report.target.symbol.return_preview, testCase.returnPreview, testCase.anchor);
+			assert.match(report.snippet.text, new RegExp(testCase.name, 'u'), testCase.anchor);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('code-symbol-read rejects source anchors without a target symbol', () => {
 	const projectPath = createTempProject();
 
