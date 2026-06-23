@@ -296,6 +296,38 @@ network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "unknown_change"]
 
+[intents.script_pack_list]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List bundled mustflow script-pack utilities and routing metadata read-only."
+argv = ["node", "dist/cli/index.js", "script-pack", "list", "--json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_task", "docs_change", "public_api_change", "unknown_change"]
+
+[intents.script_pack_suggest_changed]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Suggest bundled mustflow script-pack utilities for current changed files read-only."
+argv = ["node", "dist/cli/index.js", "script-pack", "suggest", "--changed", "--json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_task", "docs_change", "public_api_change", "mustflow_docs_change", "unknown_change"]
+
 [intents.prompt_cache_audit]
 status = "configured"
 kind = "mustflow_builtin"

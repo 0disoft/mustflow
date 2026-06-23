@@ -126,18 +126,31 @@ test('source repository declares bounded prompt-cache audit checks', () => {
 
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);
 	assert.match(templateCommandContract, /List bundled mustflow script-pack utilities and routing metadata read-only/u);
+	assert.match(sourceCommandContract, /List bundled mustflow script-pack utilities and routing metadata read-only/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*writes = \[\]/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*writes = \[\]/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*network = false/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*network = false/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*destructive = false/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*destructive = false/u);
 	assert.match(
 		templateCommandContract,
 		/\[intents\.script_pack_suggest_changed\][\s\S]*"mf", "script-pack", "suggest", "--changed", "--json"/u,
 	);
+	assert.match(
+		sourceCommandContract,
+		/\[intents\.script_pack_suggest_changed\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "suggest", "--changed", "--json"/u,
+	);
 	assert.match(templateCommandContract, /Suggest bundled mustflow script-pack utilities for current changed files read-only/u);
+	assert.match(sourceCommandContract, /Suggest bundled mustflow script-pack utilities for current changed files read-only/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*writes = \[\]/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*writes = \[\]/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*network = false/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*network = false/u);
 	assert.match(templateCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*destructive = false/u);
+	assert.match(sourceCommandContract, /\[intents\.script_pack_suggest_changed\][\s\S]*destructive = false/u);
 });
 
 test('default template exposes changed-document review queueing as a bounded command intent', () => {
