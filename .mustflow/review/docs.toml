@@ -34,7 +34,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-06-23T10:04:07.446Z"
+last_touched_at = "2026-06-23T10:18:39.690Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"

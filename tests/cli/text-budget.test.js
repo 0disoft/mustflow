@@ -445,6 +445,99 @@ test('code-outline scans Go, Rust, and Python symbols with return metadata', () 
 	}
 });
 
+test('code-outline scans Astro frontmatter and Svelte script symbols with original line metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'Card.astro'),
+			[
+				'---',
+				'export function loadThing(id: string): string {',
+				'  return id.trim();',
+				'}',
+				'const viewModel = (name: string): string => name.toUpperCase();',
+				'---',
+				'<script>const ignoredMarkupScript = () => "markup";</script>',
+				'<h1>{viewModel("ok")}</h1>',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'Card.svelte'),
+			[
+				'<script lang="ts" context="module">',
+				'  export function makeTitle(value: string): string {',
+				'    return value.trim();',
+				'  }',
+				'</script>',
+				'',
+				'<script lang="ts">',
+				'  const localValue = (count: number): number => count + 1;',
+				'</script>',
+				'',
+				'<h1>{makeTitle("ok")}</h1>',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeOutlineJson(projectPath, ['src']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(
+			report.files.map((file) => [file.path, file.language]).sort(),
+			[
+				['src/Card.astro', 'astro'],
+				['src/Card.svelte', 'svelte'],
+			],
+		);
+		assert.ok(report.policy.extensions.includes('.astro'));
+		assert.ok(report.policy.extensions.includes('.svelte'));
+
+		const astroFunction = report.symbols.find((symbol) => symbol.path === 'src/Card.astro' && symbol.name === 'loadThing');
+		assert.ok(astroFunction, 'Astro frontmatter function should be outlined');
+		assert.equal(astroFunction.language, 'astro');
+		assert.equal(astroFunction.kind, 'function');
+		assert.equal(astroFunction.start_line, 2);
+		assert.equal(astroFunction.end_line, 4);
+		assert.equal(astroFunction.return_type, 'string');
+		assert.equal(astroFunction.return_behavior, 'value');
+		assert.deepEqual(astroFunction.return_lines, [3]);
+		assert.equal(astroFunction.return_preview, 'id.trim()');
+
+		const astroArrow = report.symbols.find((symbol) => symbol.path === 'src/Card.astro' && symbol.name === 'viewModel');
+		assert.ok(astroArrow, 'Astro frontmatter arrow function should be outlined');
+		assert.equal(astroArrow.start_line, 5);
+		assert.equal(astroArrow.return_type, 'string');
+		assert.equal(astroArrow.return_preview, 'name.toUpperCase()');
+		assert.equal(
+			report.symbols.some((symbol) => symbol.name === 'ignoredMarkupScript'),
+			false,
+			'Astro markup script tags are outside this frontmatter outline slice',
+		);
+
+		const svelteModuleFunction = report.symbols.find((symbol) => symbol.path === 'src/Card.svelte' && symbol.name === 'makeTitle');
+		assert.ok(svelteModuleFunction, 'Svelte module script function should be outlined');
+		assert.equal(svelteModuleFunction.language, 'svelte');
+		assert.equal(svelteModuleFunction.start_line, 2);
+		assert.equal(svelteModuleFunction.end_line, 4);
+		assert.equal(svelteModuleFunction.return_type, 'string');
+		assert.deepEqual(svelteModuleFunction.return_lines, [3]);
+		assert.equal(svelteModuleFunction.return_preview, 'value.trim()');
+
+		const svelteInstanceFunction = report.symbols.find((symbol) => symbol.path === 'src/Card.svelte' && symbol.name === 'localValue');
+		assert.ok(svelteInstanceFunction, 'Svelte instance script arrow function should be outlined');
+		assert.equal(svelteInstanceFunction.language, 'svelte');
+		assert.equal(svelteInstanceFunction.start_line, 8);
+		assert.equal(svelteInstanceFunction.return_type, 'number');
+		assert.equal(svelteInstanceFunction.return_preview, 'count + 1');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('code-symbol-read resolves a symbol by start line and returns only the bounded snippet', () => {
 	const projectPath = createTempProject();
 
@@ -642,6 +735,86 @@ test('code-symbol-read resolves Go, Rust, and Python symbols by start line', () 
 	}
 });
 
+test('code-symbol-read resolves Astro and Svelte embedded symbols by start line', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'Card.astro'),
+			[
+				'---',
+				'export function loadThing(id: string): string {',
+				'  return id.trim();',
+				'}',
+				'---',
+				'<h1>{loadThing("ok")}</h1>',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'Card.svelte'),
+			[
+				'<script lang="ts">',
+				'  export function makeTitle(value: string): string {',
+				'    return value.trim();',
+				'  }',
+				'</script>',
+				'',
+				'<h1>{makeTitle("ok")}</h1>',
+				'',
+			].join('\n'),
+		);
+
+		const cases = [
+			{
+				path: 'src/Card.astro',
+				startLine: '2',
+				language: 'astro',
+				name: 'loadThing',
+				returnPreview: 'id.trim()',
+				contextStartLine: 1,
+				contextEndLine: 5,
+				boundaryPattern: /^---/u,
+			},
+			{
+				path: 'src/Card.svelte',
+				startLine: '2',
+				language: 'svelte',
+				name: 'makeTitle',
+				returnPreview: 'value.trim()',
+				contextStartLine: 1,
+				contextEndLine: 5,
+				boundaryPattern: /^<script lang="ts">/u,
+			},
+		];
+
+		for (const testCase of cases) {
+			const { result, report } = runCodeSymbolReadJson(projectPath, [
+				testCase.path,
+				'--start-line',
+				testCase.startLine,
+				'--context-lines',
+				'1',
+			]);
+
+			assert.equal(result.status, 0, `${testCase.path}: ${result.stderr || result.stdout}`);
+			assert.equal(report.target.language, testCase.language, testCase.path);
+			assert.equal(report.target.symbol.name, testCase.name, testCase.path);
+			assert.equal(report.target.symbol.return_type, 'string', testCase.path);
+			assert.equal(report.target.symbol.return_behavior, 'value', testCase.path);
+			assert.equal(report.target.symbol.return_preview, testCase.returnPreview, testCase.path);
+			assert.equal(report.target.context_start_line, testCase.contextStartLine, testCase.path);
+			assert.equal(report.target.context_end_line, testCase.contextEndLine, testCase.path);
+			assert.match(report.snippet.text, testCase.boundaryPattern, testCase.path);
+			assert.match(report.snippet.text, new RegExp(testCase.name, 'u'), testCase.path);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('code-symbol-read resolves Go, Rust, and Python source anchors to target symbols', () => {
 	const projectPath = createTempProject();
 
@@ -732,6 +905,88 @@ test('code-symbol-read resolves Go, Rust, and Python source anchors to target sy
 			assert.equal(report.target.anchor.target_name, testCase.name, testCase.anchor);
 			assert.equal(report.target.resolved_start_line, testCase.startLine, testCase.anchor);
 			assert.equal(report.target.symbol.name, testCase.name, testCase.anchor);
+			assert.equal(report.target.symbol.return_behavior, 'value', testCase.anchor);
+			assert.equal(report.target.symbol.return_preview, testCase.returnPreview, testCase.anchor);
+			assert.match(report.snippet.text, new RegExp(testCase.name, 'u'), testCase.anchor);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-symbol-read resolves Astro and Svelte source anchors to embedded symbols', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'Anchored.astro'),
+			[
+				'---',
+				'// mf:anchor astro.load.thing',
+				'// purpose: Resolve Astro data.',
+				'// search: astro, load',
+				'// risk: security',
+				'export function loadThing(id: string): string {',
+				'  return id.trim();',
+				'}',
+				'---',
+				'<h1>{loadThing("ok")}</h1>',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'src', 'Anchored.svelte'),
+			[
+				'<script lang="ts">',
+				'  // mf:anchor svelte.load.thing',
+				'  // purpose: Resolve Svelte data.',
+				'  // search: svelte, load',
+				'  // risk: security',
+				'  export function loadThing(id: string): string {',
+				'    return id.trim();',
+				'  }',
+				'</script>',
+				'',
+			].join('\n'),
+		);
+
+		const cases = [
+			{
+				anchor: 'astro.load.thing',
+				path: 'src/Anchored.astro',
+				language: 'astro',
+				name: 'loadThing',
+				startLine: 6,
+				returnPreview: 'id.trim()',
+			},
+			{
+				anchor: 'svelte.load.thing',
+				path: 'src/Anchored.svelte',
+				language: 'svelte',
+				name: 'loadThing',
+				startLine: 6,
+				returnPreview: 'id.trim()',
+			},
+		];
+
+		for (const testCase of cases) {
+			const { result, report } = runCodeSymbolReadJson(projectPath, [
+				'--anchor',
+				testCase.anchor,
+				'--context-lines',
+				'0',
+			]);
+
+			assert.equal(result.status, 0, `${testCase.anchor}: ${result.stderr || result.stdout}`);
+			assert.equal(report.target.path, testCase.path, testCase.anchor);
+			assert.equal(report.target.language, testCase.language, testCase.anchor);
+			assert.equal(report.target.anchor.id, testCase.anchor, testCase.anchor);
+			assert.equal(report.target.anchor.target_name, testCase.name, testCase.anchor);
+			assert.equal(report.target.resolved_start_line, testCase.startLine, testCase.anchor);
+			assert.equal(report.target.symbol.name, testCase.name, testCase.anchor);
+			assert.equal(report.target.symbol.return_type, 'string', testCase.anchor);
 			assert.equal(report.target.symbol.return_behavior, 'value', testCase.anchor);
 			assert.equal(report.target.symbol.return_preview, testCase.returnPreview, testCase.anchor);
 			assert.match(report.snippet.text, new RegExp(testCase.name, 'u'), testCase.anchor);
@@ -1381,23 +1636,29 @@ test('script-pack suggest treats JavaScript test files as code navigation target
 	}
 });
 
-test('script-pack suggest treats Go, Rust, and Python files as code navigation targets', () => {
+test('script-pack suggest treats Astro, Svelte, Go, Rust, and Python files as code navigation targets', () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'service.astro'), '---\nexport function resolve(): string { return "ok"; }\n---\n');
 		writeFileSync(path.join(projectPath, 'src', 'service.go'), 'func Resolve() string { return "ok" }\n');
 		writeFileSync(path.join(projectPath, 'src', 'service.rs'), 'pub fn resolve() -> String { "ok".to_owned() }\n');
 		writeFileSync(path.join(projectPath, 'src', 'service.py'), 'def resolve() -> str:\n    return "ok"\n');
+		writeFileSync(path.join(projectPath, 'src', 'service.svelte'), '<script lang="ts">\nexport function resolve(): string { return "ok"; }\n</script>\n');
 
 		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/service.astro',
 			'--path',
 			'src/service.go',
 			'--path',
 			'src/service.rs',
 			'--path',
 			'src/service.py',
+			'--path',
+			'src/service.svelte',
 			'--phase',
 			'before_change',
 		]);
@@ -1406,10 +1667,10 @@ test('script-pack suggest treats Go, Rust, and Python files as code navigation t
 		assert.ok(report.analyzed_paths.every((entry) => entry.surfaces.includes('source')));
 
 		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
-		assert.ok(outline, 'code/outline should be suggested for Go, Rust, and Python paths');
+		assert.ok(outline, 'code/outline should be suggested for Astro, Svelte, Go, Rust, and Python paths');
 		assert.equal(
 			outline.run_hint,
-			'mf script-pack run code/outline scan src/service.go src/service.py src/service.rs --json',
+			'mf script-pack run code/outline scan src/service.astro src/service.go src/service.py src/service.rs src/service.svelte --json',
 		);
 	} finally {
 		removeTempProject(projectPath);

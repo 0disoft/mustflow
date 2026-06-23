@@ -3,7 +3,19 @@ import path from 'node:path';
 
 import { SECRET_LIKE_PATTERNS, textContainsSecretLike } from './secret-redaction.js';
 
-export const SOURCE_ANCHOR_EXTENSIONS = new Set(['.cjs', '.go', '.js', '.jsx', '.mjs', '.py', '.rs', '.ts', '.tsx']);
+export const SOURCE_ANCHOR_EXTENSIONS = new Set([
+	'.astro',
+	'.cjs',
+	'.go',
+	'.js',
+	'.jsx',
+	'.mjs',
+	'.py',
+	'.rs',
+	'.svelte',
+	'.ts',
+	'.tsx',
+]);
 export const SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS = new Set([
 	'.git',
 	'.mustflow',

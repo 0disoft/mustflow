@@ -167,7 +167,7 @@ export function classifyScriptPackPathSurface(relativePath: string): readonly Sc
 	}
 	if (
 		normalized.startsWith('src/') ||
-		/\.(?:cjs|go|js|jsx|mjs|py|rs|ts|tsx)$/u.test(normalized)
+		/\.(?:astro|cjs|go|js|jsx|mjs|py|rs|svelte|ts|tsx)$/u.test(normalized)
 	) {
 		surfaces.push('source');
 	}

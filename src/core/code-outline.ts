@@ -29,6 +29,8 @@ export type CodeOutlineLanguage =
 	| 'jsx'
 	| 'javascript-module'
 	| 'javascript-commonjs'
+	| 'astro'
+	| 'svelte'
 	| 'go'
 	| 'rust'
 	| 'python';
@@ -236,6 +238,8 @@ const DEFAULT_CONTEXT_LINES = 0;
 const DEFAULT_MAX_SNIPPET_LINES = 250;
 const RETURN_PREVIEW_MAX_CHARS = 120;
 const TYPESCRIPT_JAVASCRIPT_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
+const ASTRO_EXTENSIONS = ['.astro'] as const;
+const SVELTE_EXTENSIONS = ['.svelte'] as const;
 const GO_EXTENSIONS = ['.go'] as const;
 const RUST_EXTENSIONS = ['.rs'] as const;
 const PYTHON_EXTENSIONS = ['.py'] as const;
@@ -298,6 +302,14 @@ function typescriptJavascriptLanguageForPath(filePath: string): CodeOutlineLangu
 		default:
 			return null;
 	}
+}
+
+function astroLanguageForPath(filePath: string): CodeOutlineLanguage | null {
+	return path.extname(filePath).toLowerCase() === '.astro' ? 'astro' : null;
+}
+
+function svelteLanguageForPath(filePath: string): CodeOutlineLanguage | null {
+	return path.extname(filePath).toLowerCase() === '.svelte' ? 'svelte' : null;
 }
 
 function goLanguageForPath(filePath: string): CodeOutlineLanguage | null {
@@ -1019,6 +1031,75 @@ function extractTypescriptJavascriptSymbols(
 	);
 }
 
+function maskAstroFrontmatter(text: string): string {
+	const lines = text.split(/\r\n|\r|\n/u);
+	if ((lines[0] ?? '').trim() !== '---') {
+		return lines.map(() => '').join('\n');
+	}
+
+	const masked = lines.map(() => '');
+	let index = 1;
+	while (index < lines.length) {
+		const line = lines[index] ?? '';
+		if (line.trim() === '---') {
+			return masked.join('\n');
+		}
+		masked[index] = line;
+		index += 1;
+	}
+
+	return lines.map(() => '').join('\n');
+}
+
+function maskSvelteScriptBlocks(text: string): string {
+	const lines = text.split(/\r\n|\r|\n/u);
+	const masked = lines.map(() => '');
+	let insideScript = false;
+
+	for (const [index, line] of lines.entries()) {
+		let remaining = line;
+
+		if (!insideScript) {
+			const openMatch = /<script\b[^>]*>/iu.exec(remaining);
+			if (!openMatch || openMatch.index === undefined) {
+				continue;
+			}
+
+			remaining = remaining.slice(openMatch.index + openMatch[0].length);
+			insideScript = true;
+		}
+
+		const closeIndex = remaining.search(/<\/script\s*>/iu);
+		if (closeIndex >= 0) {
+			masked[index] = remaining.slice(0, closeIndex);
+			insideScript = false;
+			continue;
+		}
+
+		masked[index] = remaining;
+	}
+
+	return masked.join('\n');
+}
+
+function extractAstroSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	return extractTypescriptJavascriptSymbols(relativePath, language, contentSha256, maskAstroFrontmatter(text));
+}
+
+function extractSvelteSymbols(
+	relativePath: string,
+	language: CodeOutlineLanguage,
+	contentSha256: string,
+	text: string,
+): readonly CodeOutlineSymbol[] {
+	return extractTypescriptJavascriptSymbols(relativePath, language, contentSha256, maskSvelteScriptBlocks(text));
+}
+
 function extractGoSymbols(
 	relativePath: string,
 	language: CodeOutlineLanguage,
@@ -1061,6 +1142,20 @@ const TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
 	extractSymbols: extractTypescriptJavascriptSymbols,
 };
 
+const ASTRO_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
+	id: 'astro',
+	extensions: ASTRO_EXTENSIONS,
+	languageForPath: astroLanguageForPath,
+	extractSymbols: extractAstroSymbols,
+};
+
+const SVELTE_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
+	id: 'svelte',
+	extensions: SVELTE_EXTENSIONS,
+	languageForPath: svelteLanguageForPath,
+	extractSymbols: extractSvelteSymbols,
+};
+
 const GO_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
 	id: 'go',
 	extensions: GO_EXTENSIONS,
@@ -1084,6 +1179,8 @@ const PYTHON_LANGUAGE_ADAPTER: CodeOutlineLanguageAdapter = {
 
 const CODE_OUTLINE_LANGUAGE_ADAPTERS: readonly CodeOutlineLanguageAdapter[] = [
 	TYPESCRIPT_JAVASCRIPT_LANGUAGE_ADAPTER,
+	ASTRO_LANGUAGE_ADAPTER,
+	SVELTE_LANGUAGE_ADAPTER,
 	GO_LANGUAGE_ADAPTER,
 	RUST_LANGUAGE_ADAPTER,
 	PYTHON_LANGUAGE_ADAPTER,

@@ -61,7 +61,7 @@
       "pattern": "^sha256:[a-f0-9]{64}$"
     },
     "language": {
-      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs", "go", "rust", "python"]
+      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs", "astro", "svelte", "go", "rust", "python"]
     },
     "symbolKind": {
       "enum": ["function", "class", "interface", "type", "enum", "variable"]
