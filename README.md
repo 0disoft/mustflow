@@ -129,8 +129,9 @@ mustflow installs and validates an agent workflow for user projects.
   config/schema churn, and broad structural changes before treating added complexity as free.
 - Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
   `code/outline` for TypeScript and JavaScript symbol maps, `code/symbol-read` for focused source
-  snippets, `repo/generated-boundary` for candidate path safety checks, and `core/text-budget` for
-  exact file and JSON-field length budgets, so future checks do not sprawl into top-level commands.
+  snippets, `code/route-outline` for Hono and Elysia route maps, `repo/generated-boundary` for
+  candidate path safety checks, and `core/text-budget` for exact file and JSON-field length budgets,
+  so future checks do not sprawl into top-level commands.
 - Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
@@ -291,6 +292,7 @@ mf run mustflow_update_apply
 | `mf script-pack run code/outline scan <path...> --json` | Scan supported TypeScript and JavaScript files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
+| `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono and Elysia TypeScript or JavaScript files for route methods, paths, lifecycle chains, line ranges, and content hashes. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
 | `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
 | `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |

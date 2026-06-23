@@ -3154,6 +3154,84 @@
       }
     },
     {
+      "id": "route-outline-report",
+      "schema_file": "route-outline-report.schema.json",
+      "producer": "mf script-pack run code/route-outline scan <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "route-outline",
+        "script_ref": "code/route-outline",
+        "action": "scan",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 1048576,
+          "max_files": 200,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ]
+        },
+        "input_hash": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        "files": [
+          {
+            "kind": "source_file",
+            "path": "src/server.ts",
+            "language": "typescript",
+            "framework_evidence": [
+              "elysia"
+            ],
+            "sha256": "sha256:3434343434343434343434343434343434343434343434343434343434343434",
+            "size_bytes": 128,
+            "line_count": 4,
+            "route_count": 1
+          }
+        ],
+        "routes": [
+          {
+            "id": "src/server.ts:4:elysia:get:/users",
+            "path": "src/server.ts",
+            "language": "typescript",
+            "framework": "elysia",
+            "method": "get",
+            "route_path": "/users",
+            "line": 4,
+            "chain_start_line": 1,
+            "chain_end_line": 4,
+            "handler_line": 4,
+            "lifecycle": [
+              "guard",
+              "resolve"
+            ],
+            "signature": "export const app = new Elysia() .guard({ headers: {} }) .resolve(({ headers }) => ({ user: headers.authorization })) .get(\"/users\", ({ user }) => user);",
+            "content_sha256": "sha256:3434343434343434343434343434343434343434343434343434343434343434"
+          }
+        ],
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
       "id": "text-budget-report",
       "schema_file": "text-budget-report.schema.json",
       "producer": "mf script-pack run core/text-budget check <path...> --json",

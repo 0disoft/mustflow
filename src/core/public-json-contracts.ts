@@ -279,6 +279,22 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		],
 	},
 	{
+		id: 'route-outline-report',
+		schemaFile: 'route-outline-report.schema.json',
+		producer: 'mf script-pack run code/route-outline scan <path...> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: [
+			'mf',
+			'script-pack',
+			'run',
+			'code/route-outline',
+			'scan',
+			'node_modules/mustflow/dist/cli/index.js',
+			'--json',
+		],
+	},
+	{
 		id: 'text-budget-report',
 		schemaFile: 'text-budget-report.schema.json',
 		producer: 'mf script-pack run core/text-budget check <path...> --json',

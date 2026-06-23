@@ -31,6 +31,11 @@ function runCodeSymbolReadJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeRouteOutlineJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/route-outline', 'scan', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -99,6 +104,23 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(codeSymbolRead.risk_level, 'low');
 		assert.equal(codeSymbolRead.cost, 'low');
 		assert.equal(codeSymbolRead.report_schema_file, 'code-symbol-read-report.schema.json');
+
+		const codeRouteOutline = codePack?.scripts.find((script) => script.ref === 'code/route-outline');
+
+		assert.ok(codeRouteOutline, 'code/route-outline should be listed');
+		assert.equal(codeRouteOutline.read_only, true);
+		assert.equal(codeRouteOutline.mutates, false);
+		assert.equal(codeRouteOutline.network, false);
+		assert.deepEqual(codeRouteOutline.phases, ['before_change', 'during_change', 'after_change', 'review']);
+		assert.ok(codeRouteOutline.use_when.some((hint) => hint.includes('Hono and Elysia')));
+		assert.ok(codeRouteOutline.inputs.includes('max_files'));
+		assert.ok(codeRouteOutline.outputs.includes('route_outline'));
+		assert.ok(codeRouteOutline.outputs.includes('route_lifecycle'));
+		assert.ok(codeRouteOutline.related_skills.includes('hono-code-change'));
+		assert.ok(codeRouteOutline.related_skills.includes('elysia-code-change'));
+		assert.equal(codeRouteOutline.risk_level, 'low');
+		assert.equal(codeRouteOutline.cost, 'low');
+		assert.equal(codeRouteOutline.report_schema_file, 'route-outline-report.schema.json');
 
 		const corePack = report.packs.find((pack) => pack.id === 'core');
 		const textBudget = corePack?.scripts.find((script) => script.ref === 'core/text-budget');
@@ -1407,6 +1429,72 @@ test('generated-boundary reports vendor paths', () => {
 	}
 });
 
+test('code-route-outline scans Hono and Elysia routes with lifecycle metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'server.ts'),
+			[
+				'import { Hono } from "hono";',
+				'import { Elysia } from "elysia";',
+				'',
+				'const hono = new Hono();',
+				'hono.post("/sessions", async (c) => c.json({ ok: true }));',
+				'',
+				'export const api = new Elysia()',
+				'  .guard({ headers: {} })',
+				'  .resolve(({ headers }) => ({ user: headers.authorization }))',
+				'  .get("/users/:id", ({ user }) => user);',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeRouteOutlineJson(projectPath, ['src/server.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'code');
+		assert.equal(report.script_id, 'route-outline');
+		assert.equal(report.script_ref, 'code/route-outline');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.files[0].path, 'src/server.ts');
+		assert.equal(report.files[0].language, 'typescript');
+		assert.deepEqual(report.files[0].framework_evidence, ['elysia', 'hono']);
+		assert.equal(report.files[0].route_count, 2);
+		assert.match(report.files[0].sha256, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.ok(report.policy.extensions.includes('.ts'));
+
+		const honoRoute = report.routes.find((route) => route.framework === 'hono');
+		assert.ok(honoRoute, 'Hono route should be outlined');
+		assert.equal(honoRoute.method, 'post');
+		assert.equal(honoRoute.route_path, '/sessions');
+		assert.equal(honoRoute.line, 5);
+		assert.equal(honoRoute.chain_start_line, 5);
+		assert.equal(honoRoute.chain_end_line, 5);
+		assert.deepEqual(honoRoute.lifecycle, []);
+		assert.match(honoRoute.content_sha256, /^sha256:[a-f0-9]{64}$/u);
+
+		const elysiaRoute = report.routes.find((route) => route.framework === 'elysia');
+		assert.ok(elysiaRoute, 'Elysia route should be outlined');
+		assert.equal(elysiaRoute.method, 'get');
+		assert.equal(elysiaRoute.route_path, '/users/:id');
+		assert.equal(elysiaRoute.line, 10);
+		assert.equal(elysiaRoute.chain_start_line, 7);
+		assert.equal(elysiaRoute.chain_end_line, 10);
+		assert.deepEqual(elysiaRoute.lifecycle, ['guard', 'resolve']);
+		assert.match(elysiaRoute.signature, /new Elysia/u);
+		assert.deepEqual(report.findings, []);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files maps imports, importers, siblings, and parent config without deciding verification scope', () => {
 	const projectPath = createTempProject();
 
@@ -1603,6 +1691,39 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 	}
 });
 
+test('script-pack suggest recommends route outline for Hono and Elysia source work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'server.ts'), 'import { Hono } from "hono";\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/server.ts',
+			'--skill',
+			'hono-code-change',
+			'--skill',
+			'elysia-code-change',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const routeOutline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/route-outline');
+		assert.ok(routeOutline, 'code/route-outline should be suggested for Hono and Elysia route work');
+		assert.equal(routeOutline.run_hint, 'mf script-pack run code/route-outline scan src/server.ts --json');
+		assert.ok(routeOutline.matched_skills.includes('hono-code-change'));
+		assert.ok(routeOutline.matched_skills.includes('elysia-code-change'));
+		assert.ok(routeOutline.matched_phases.includes('before_change'));
+		assert.equal(routeOutline.report_schema_file, 'route-outline-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest treats JavaScript test files as code navigation targets', () => {
 	const projectPath = createTempProject();
 
@@ -1746,6 +1867,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack suggest --path src\/cli\/index\.ts --phase before_change/);
 		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
+		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/server\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/related-files map src\/cli\/index\.ts --json/);

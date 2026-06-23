@@ -19,7 +19,7 @@ export type ScriptPackSurface =
 
 export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 
-const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read', 'repo/related-files']);
+const CODE_NAVIGATION_SCRIPT_REFS = new Set(['code/outline', 'code/symbol-read', 'code/route-outline', 'repo/related-files']);
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -290,6 +290,11 @@ function createRunHint(
 			)} --start-line <line> --json`;
 		}
 		return 'After code/outline returns a source anchor, run: mf script-pack run code/symbol-read read --anchor <anchor-id> --json';
+	}
+
+	if (script.ref === 'code/route-outline') {
+		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
+		return createConcretePathHint('mf script-pack run code/route-outline scan', sourcePaths, script.usage);
 	}
 
 	if (script.ref === 'core/text-budget') {

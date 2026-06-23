@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/route-outline-report.schema.json",
+  "title": "mustflow route-outline report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "files",
+    "routes",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "code" },
+    "script_id": { "const": "route-outline" },
+    "script_ref": { "const": "code/route-outline" },
+    "action": { "const": "scan" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "routes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/route" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "language": {
+      "enum": ["typescript", "tsx", "javascript", "jsx", "javascript-module", "javascript-commonjs"]
+    },
+    "framework": {
+      "enum": ["hono", "elysia", "unknown"]
+    },
+    "method": {
+      "enum": ["get", "post", "put", "patch", "delete", "options", "all", "use", "route"]
+    },
+    "lifecycle": {
+      "enum": [
+        "guard",
+        "resolve",
+        "derive",
+        "use",
+        "decorate",
+        "onBeforeHandle",
+        "beforeHandle",
+        "onRequest",
+        "onAfterHandle",
+        "onError"
+      ]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_file_bytes", "max_files", "extensions", "ignored_directories"],
+      "properties": {
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "extensions": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "language",
+        "framework_evidence",
+        "sha256",
+        "size_bytes",
+        "line_count",
+        "route_count"
+      ],
+      "properties": {
+        "kind": { "const": "source_file" },
+        "path": { "type": "string" },
+        "language": { "$ref": "#/$defs/language" },
+        "framework_evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/framework" }
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size_bytes": { "type": "integer", "minimum": 0 },
+        "line_count": { "type": "integer", "minimum": 0 },
+        "route_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "language",
+        "framework",
+        "method",
+        "route_path",
+        "line",
+        "chain_start_line",
+        "chain_end_line",
+        "handler_line",
+        "lifecycle",
+        "signature",
+        "content_sha256"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "language": { "$ref": "#/$defs/language" },
+        "framework": { "$ref": "#/$defs/framework" },
+        "method": { "$ref": "#/$defs/method" },
+        "route_path": { "type": ["string", "null"] },
+        "line": { "type": "integer", "minimum": 1 },
+        "chain_start_line": { "type": "integer", "minimum": 1 },
+        "chain_end_line": { "type": "integer", "minimum": 1 },
+        "handler_line": { "type": "integer", "minimum": 1 },
+        "lifecycle": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/lifecycle" }
+        },
+        "signature": { "type": "string" },
+        "content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "code_route_outline_path_outside_root",
+            "code_route_outline_unreadable_path",
+            "code_route_outline_unsupported_file",
+            "code_route_outline_file_too_large",
+            "code_route_outline_max_files_exceeded"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

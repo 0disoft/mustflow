@@ -74,6 +74,10 @@ Current schemas:
   focused source snippet selected by source anchor, outline symbol line, or explicit line range with
   file hash, resolved line metadata, optional anchor, symbol and static return metadata, and stable
   range/read finding codes
+- `route-outline-report.schema.json`: output of
+  `mf script-pack run code/route-outline scan <path...> --json`, containing a bounded Hono and
+  Elysia route outline with file hashes, framework evidence, route methods, route paths, line ranges,
+  lifecycle-chain metadata, and stable input-limit finding codes
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field

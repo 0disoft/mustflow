@@ -876,6 +876,39 @@ test('code-symbol-read json output matches the published schema', () => {
 	}
 });
 
+test('route-outline json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'schema-routes.ts'),
+			[
+				'import { Elysia } from "elysia";',
+				'export const api = new Elysia()',
+				'  .guard({ headers: {} })',
+				'  .resolve(({ headers }) => ({ user: headers.authorization }))',
+				'  .get("/schema-route", ({ user }) => user);',
+				'',
+			].join('\n'),
+		);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/route-outline',
+			'scan',
+			'src/schema-routes.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'route-outline-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('text-budget json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
