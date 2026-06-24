@@ -1,8 +1,38 @@
 import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { test } from 'node:test';
-import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { after, before, test } from 'node:test';
+import { cloneProjectFixture, createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+
+let initializedProjectFixture;
+let indexedGraphProjectFixture;
+
+before(() => {
+	initializedProjectFixture = createTempProject('mustflow-explain-command-fixture-');
+	initProject(initializedProjectFixture);
+
+	indexedGraphProjectFixture = cloneProjectFixture(initializedProjectFixture, 'mustflow-explain-command-graph-fixture-');
+	appendCommandGraphFixture(indexedGraphProjectFixture);
+	const indexResult = runCli(indexedGraphProjectFixture, ['index', '--json']);
+	assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+});
+
+after(() => {
+	if (indexedGraphProjectFixture) {
+		removeTempProject(indexedGraphProjectFixture);
+	}
+	if (initializedProjectFixture) {
+		removeTempProject(initializedProjectFixture);
+	}
+});
+
+function createExplainProject() {
+	return cloneProjectFixture(initializedProjectFixture, 'mustflow-explain-command-');
+}
+
+function createIndexedGraphProject() {
+	return cloneProjectFixture(indexedGraphProjectFixture, 'mustflow-explain-command-');
+}
 
 function appendCommandGraphFixture(projectPath) {
 	appendFileSync(
@@ -63,11 +93,9 @@ function assertExplanationOnlyEffectGraph(effectGraph, status) {
 }
 
 test('explains configured agent-runnable command intents as json', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'command', 'mustflow_check', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -95,10 +123,9 @@ test('explains configured agent-runnable command intents as json', () => {
 });
 
 test('explains command preconditions without running the satisfy intent', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
 		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
 		writeFileSync(path.join(projectPath, 'src', 'fresh.ts'), 'source');
@@ -164,10 +191,9 @@ destructive = false
 });
 
 test('explains satisfy intents blocked by static run constraints as not runnable', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
 		appendFileSync(
 			path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
 			`
@@ -237,11 +263,9 @@ destructive = false
 });
 
 test('explains why command decisions through the why surface as json', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'why', 'command', 'mustflow_check', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -258,11 +282,9 @@ test('explains why command decisions through the why surface as json', () => {
 });
 
 test('explains why intent alias decisions through the why surface as json', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'why', 'intent', 'lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -278,11 +300,9 @@ test('explains why intent alias decisions through the why surface as json', () =
 });
 
 test('explains missing latest failure without exposing logs', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'why', 'latest-failure', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -299,10 +319,9 @@ test('explains missing latest failure without exposing logs', () => {
 });
 
 test('explains latest failure using bounded receipt metadata only', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
 		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
 		mkdirSync(runsDir, { recursive: true });
 		writeFileSync(
@@ -351,15 +370,9 @@ test('explains latest failure using bounded receipt metadata only', () => {
 });
 
 test('explains command-effect graph rows from a fresh local index', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createIndexedGraphProject();
 
 	try {
-		initProject(projectPath);
-		appendCommandGraphFixture(projectPath);
-
-		const indexResult = runCli(projectPath, ['index', '--json']);
-		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
-
 		const result = runCli(projectPath, ['explain', 'command', 'graph_writer_a', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -395,14 +408,9 @@ test('explains command-effect graph rows from a fresh local index', () => {
 });
 
 test('keeps stale command-effect graph context explanation-only', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createIndexedGraphProject();
 
 	try {
-		initProject(projectPath);
-		appendCommandGraphFixture(projectPath);
-
-		const indexResult = runCli(projectPath, ['index', '--json']);
-		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
 		appendFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), '\n# stale graph marker\n');
 
 		const result = runCli(projectPath, ['explain', 'command', 'graph_writer_a', '--json']);
@@ -420,11 +428,9 @@ test('keeps stale command-effect graph context explanation-only', () => {
 });
 
 test('explains blocked command intents without allowing guessed execution', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'command', 'lint']);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /command intent "lint" is not agent-runnable/);
@@ -437,11 +443,9 @@ test('explains blocked command intents without allowing guessed execution', () =
 });
 
 test('explains why a command is blocked with run-plan metadata and a suggested snippet', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', '--why-blocked', 'lint', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -462,11 +466,9 @@ test('explains why a command is blocked with run-plan metadata and a suggested s
 });
 
 test('explains why-blocked with global json before the pseudo-topic', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', '--json', '--why-blocked', 'lint']);
 		const report = JSON.parse(result.stdout);
 
@@ -480,11 +482,9 @@ test('explains why-blocked with global json before the pseudo-topic', () => {
 });
 
 test('rejects unsupported explain options with shared option parsing', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const booleanValue = runCli(projectPath, ['explain', 'command', 'mustflow_check', '--json=true']);
 		const verifyOnly = runCli(projectPath, ['explain', 'command', 'mustflow_check', '--reason', 'code_change']);
 		const pseudoTopicValue = runCli(projectPath, ['explain', '--why-blocked=true', 'lint']);
@@ -502,11 +502,9 @@ test('rejects unsupported explain options with shared option parsing', () => {
 });
 
 test('explains why-blocked as not blocked for runnable command intents', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', '--why-blocked', 'mustflow_check']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -520,11 +518,9 @@ test('explains why-blocked as not blocked for runnable command intents', () => {
 });
 
 test('explains undeclared command intents as unknown', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'command', 'missing_intent', '--json']);
 		const report = JSON.parse(result.stdout);
 
@@ -538,11 +534,9 @@ test('explains undeclared command intents as unknown', () => {
 });
 
 test('fails explain command when the command intent name is missing', () => {
-	const projectPath = createTempProject('mustflow-explain-command-');
+	const projectPath = createExplainProject();
 
 	try {
-		initProject(projectPath);
-
 		const result = runCli(projectPath, ['explain', 'command']);
 
 		assert.equal(result.status, 1);
