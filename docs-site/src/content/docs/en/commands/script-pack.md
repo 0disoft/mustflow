@@ -8,7 +8,8 @@ top-level command.
 
 The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
 symbol headers, line ranges, and source-anchor metadata, `code/dependency-graph`, which traces bounded
-relative import graph edges, `code/symbol-read`, which reads a focused source snippet by
+relative import graph edges, `code/change-impact`, which analyzes git-diff impact and verification
+hints, `code/symbol-read`, which reads a focused source snippet by
 source anchor, symbol line, or explicit line range, `code/route-outline`, which scans Hono,
 Elysia, and Axum route metadata, `code/export-diff`, which compares exported TypeScript and JavaScript
 signatures against a git base, `docs/reference-drift`, which checks documented references against
@@ -107,6 +108,21 @@ hints, policy limits, findings, and issues.
 
 Use it before source edits when import impact matters. It intentionally does not resolve package
 imports, tsconfig aliases, bundler aliases, or runtime side effects.
+
+## Analyze Change Impact
+
+```sh
+npx mf script-pack run code/change-impact analyze --base HEAD --json
+npx mf script-pack run code/change-impact analyze src --base main --head HEAD --json
+```
+
+`code/change-impact` is read-only. It reads `git diff --name-status`, classifies changed source,
+test, documentation, schema, package, template, workflow, and i18n surfaces, and returns bounded
+impact candidates, optional script-pack hints, and verification intent hints. For changed source
+files, it also uses the relative dependency graph to identify files that import the changed file.
+
+Use it after edits when you need a compact checklist for what to inspect or verify next. It is a
+hinting helper, not proof that a test, command, or downstream behavior is safe.
 
 ## Read Source Symbols
 
@@ -235,6 +251,7 @@ npx mf script-pack list --json
 npx mf script-pack suggest --path AGENTS.md --phase before_change --json
 npx mf script-pack run code/outline scan src --json
 npx mf script-pack run code/dependency-graph scan src/cli/index.ts --json
+npx mf script-pack run code/change-impact analyze --base HEAD --json
 npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --json
 npx mf script-pack run code/symbol-read read --anchor auth.session.resolve --json
 npx mf script-pack run code/route-outline scan src/cli/index.ts --json
@@ -252,6 +269,7 @@ npx mf script-pack run repo/related-files map src/cli/index.ts --json
 `code/outline` JSON reports are validated by `schemas/code-outline-report.schema.json`.
 `code/dependency-graph` JSON reports are validated by
 `schemas/dependency-graph-report.schema.json`.
+`code/change-impact` JSON reports are validated by `schemas/change-impact-report.schema.json`.
 `code/symbol-read` JSON reports are validated by
 `schemas/code-symbol-read-report.schema.json`.
 `code/route-outline` JSON reports are validated by `schemas/route-outline-report.schema.json`.

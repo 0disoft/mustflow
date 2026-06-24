@@ -36,6 +36,11 @@ function runCodeDependencyGraphJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeChangeImpactJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/change-impact', 'analyze', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeSymbolReadJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/symbol-read', 'read', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -125,6 +130,23 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(dependencyGraph.risk_level, 'low');
 		assert.equal(dependencyGraph.cost, 'low');
 		assert.equal(dependencyGraph.report_schema_file, 'dependency-graph-report.schema.json');
+
+		const changeImpact = codePack?.scripts.find((script) => script.ref === 'code/change-impact');
+
+		assert.ok(changeImpact, 'code/change-impact should be listed');
+		assert.equal(changeImpact.read_only, true);
+		assert.equal(changeImpact.mutates, false);
+		assert.equal(changeImpact.network, false);
+		assert.deepEqual(changeImpact.phases, ['after_change', 'review']);
+		assert.ok(changeImpact.use_when.some((hint) => hint.includes('git changes')));
+		assert.ok(changeImpact.inputs.includes('base_ref'));
+		assert.ok(changeImpact.inputs.includes('max_impacts'));
+		assert.ok(changeImpact.outputs.includes('impact_candidates'));
+		assert.ok(changeImpact.outputs.includes('verification_hints'));
+		assert.ok(changeImpact.related_skills.includes('public-json-contract-change'));
+		assert.equal(changeImpact.risk_level, 'low');
+		assert.equal(changeImpact.cost, 'low');
+		assert.equal(changeImpact.report_schema_file, 'change-impact-report.schema.json');
 
 		const codeSymbolRead = codePack?.scripts.find((script) => script.ref === 'code/symbol-read');
 
@@ -510,6 +532,55 @@ test('dependency-graph reports import cycles as hints without failing the helper
 		assert.equal(report.status, 'passed');
 		assert.equal(report.ok, true);
 		assert.ok(report.cycles.some((cycle) => cycle.includes('src/a.ts') && cycle.includes('src/b.ts')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('change-impact reports changed surfaces, importers, and verification hints', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'feature.ts'), 'export const feature = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer.ts'), 'import { feature } from "./feature";\nconsole.log(feature);\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'src', 'feature.ts'), 'export const feature = 2;\n');
+
+		const { result, report } = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'code/change-impact');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.ok(report.changed_files.some((file) => file.path === 'src/feature.ts' && file.surface === 'source'));
+		assert.ok(report.impacts.some((impact) => impact.path === 'src/consumer.ts' && impact.relationship === 'imports_changed_file'));
+		assert.ok(report.script_hints.some((hint) => hint.script_ref === 'code/dependency-graph'));
+		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_related'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('change-impact classifies schema changes with release verification hints', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		mkdirSync(path.join(projectPath, 'schemas'));
+		writeFileSync(path.join(projectPath, 'schemas', 'sample.schema.json'), '{"type":"object"}\n');
+
+		const { result, report } = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(report.changed_files.some((file) => file.path === 'schemas/sample.schema.json' && file.surface === 'schema'));
+		assert.ok(report.impacts.some((impact) => impact.path === 'tests/cli/schema.test.js'));
+		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_release'));
+		assert.ok(report.verification_hints.some((hint) => hint.intent === 'docs_validate_fast'));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -2579,6 +2650,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack suggest --path src\/cli\/index\.ts --phase before_change/);
 		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/dependency-graph scan src\/cli\/index\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run code\/change-impact analyze --base HEAD --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run docs\/reference-drift check README\.md schemas\/README\.md --json/);

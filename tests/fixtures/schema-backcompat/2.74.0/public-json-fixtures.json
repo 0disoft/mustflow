@@ -3170,6 +3170,78 @@
       }
     },
     {
+      "id": "change-impact-report",
+      "schema_file": "change-impact-report.schema.json",
+      "producer": "mf script-pack run code/change-impact analyze [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "change-impact",
+        "script_ref": "code/change-impact",
+        "action": "analyze",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "base_ref": "HEAD",
+          "head_ref": null,
+          "compare_worktree": true,
+          "max_files": 200,
+          "max_impacts": 300,
+          "max_file_bytes": 262144,
+          "path_filters": []
+        },
+        "input_hash": "sha256:3434343434343434343434343434343434343434343434343434343434343434",
+        "changed_files": [
+          {
+            "path": "src/entry.ts",
+            "previous_path": null,
+            "status": "modified",
+            "surface": "source"
+          }
+        ],
+        "impacts": [
+          {
+            "path": "src/entry.ts",
+            "exists": true,
+            "surface": "source",
+            "relationship": "changed_file",
+            "confidence": 1,
+            "reason": "Changed file should be reviewed directly.",
+            "source_path": "src/entry.ts"
+          },
+          {
+            "path": "tests/cli/entry.test.js",
+            "exists": false,
+            "surface": "test",
+            "relationship": "sibling_test",
+            "confidence": 0.65,
+            "reason": "Nearby test candidate for the changed source path.",
+            "source_path": "src/entry.ts"
+          }
+        ],
+        "script_hints": [
+          {
+            "script_ref": "code/dependency-graph",
+            "command": "mf script-pack run code/dependency-graph scan \"src/entry.ts\" --json",
+            "reason": "Trace importers and direct dependencies for changed source files.",
+            "confidence": 0.85
+          }
+        ],
+        "verification_hints": [
+          {
+            "intent": "test_related",
+            "reason": "Changed source or tests need related behavior coverage.",
+            "confidence": 0.85
+          }
+        ],
+        "truncated": false,
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
       "id": "code-symbol-read-report",
       "schema_file": "code-symbol-read-report.schema.json",
       "producer": "mf script-pack run code/symbol-read read <path> --start-line <line> --json",

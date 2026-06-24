@@ -11,6 +11,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added the built-in `code/dependency-graph` script-pack helper so agents can trace bounded
   relative TypeScript and JavaScript import, export, require, and dynamic import edges before
   changing source modules.
+- Added the built-in `code/change-impact` script-pack helper so agents can summarize git-diff
+  changed surfaces, likely related files, optional helper scripts, and verification intent hints
+  after a local change.
 - Added the built-in `repo/config-chain` script-pack helper so agents can inspect nearby package,
   TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges
   before assuming effective project rules.

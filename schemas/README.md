@@ -73,6 +73,10 @@ Current schemas:
   `mf script-pack run code/dependency-graph scan <path...> --json`, containing bounded relative
   TypeScript and JavaScript import graph nodes, edges, cycle hints, target flags, depth, importer
   counts, policy limits, and stable input-limit finding codes
+- `change-impact-report.schema.json`: output of
+  `mf script-pack run code/change-impact analyze [path...] --json`, containing git-diff changed
+  files, surface classifications, bounded impact candidates, optional script-pack hints,
+  verification intent hints, policy limits, and stable git or input-limit finding codes
 - `code-symbol-read-report.schema.json`: output of
   `mf script-pack run code/symbol-read read <path> --start-line <line> --json`, containing a
   focused source snippet selected by source anchor, outline symbol line, or explicit line range with

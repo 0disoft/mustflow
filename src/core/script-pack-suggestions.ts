@@ -307,6 +307,10 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run code/dependency-graph scan', sourcePaths, script.usage);
 	}
 
+	if (script.ref === 'code/change-impact') {
+		return 'mf script-pack run code/change-impact analyze --base HEAD --json';
+	}
+
 	if (script.ref === 'code/route-outline') {
 		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
 		return createConcretePathHint('mf script-pack run code/route-outline scan', sourcePaths, script.usage);

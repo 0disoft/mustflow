@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/change-impact-report.schema.json",
+  "title": "mustflow change-impact report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "changed_files",
+    "impacts",
+    "script_hints",
+    "verification_hints",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "code" },
+    "script_id": { "const": "change-impact" },
+    "script_ref": { "const": "code/change-impact" },
+    "action": { "const": "analyze" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "changed_files": { "type": "array", "items": { "$ref": "#/$defs/changedFile" } },
+    "impacts": { "type": "array", "items": { "$ref": "#/$defs/impact" } },
+    "script_hints": { "type": "array", "items": { "$ref": "#/$defs/scriptHint" } },
+    "verification_hints": { "type": "array", "items": { "$ref": "#/$defs/verificationHint" } },
+    "truncated": { "type": "boolean" },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "surface": {
+      "enum": ["source", "test", "docs", "schema", "config", "package", "template", "workflow", "i18n", "unknown"]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "compare_worktree",
+        "max_files",
+        "max_impacts",
+        "max_file_bytes",
+        "path_filters"
+      ],
+      "properties": {
+        "base_ref": { "type": "string" },
+        "head_ref": { "type": ["string", "null"] },
+        "compare_worktree": { "type": "boolean" },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_impacts": { "type": "integer", "minimum": 1 },
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "path_filters": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "changedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "previous_path", "status", "surface"],
+      "properties": {
+        "path": { "type": "string" },
+        "previous_path": { "type": ["string", "null"] },
+        "status": { "enum": ["added", "modified", "deleted", "renamed", "type_changed", "untracked"] },
+        "surface": { "$ref": "#/$defs/surface" }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "surface", "relationship", "confidence", "reason", "source_path"],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "surface": { "$ref": "#/$defs/surface" },
+        "relationship": {
+          "enum": [
+            "changed_file",
+            "imports_changed_file",
+            "sibling_test",
+            "sibling_source",
+            "contract_doc",
+            "contract_test",
+            "package_surface",
+            "workflow_surface"
+          ]
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string" },
+        "source_path": { "type": "string" }
+      }
+    },
+    "scriptHint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["script_ref", "command", "reason", "confidence"],
+      "properties": {
+        "script_ref": { "type": "string" },
+        "command": { "type": "string" },
+        "reason": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "verificationHint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "reason", "confidence"],
+      "properties": {
+        "intent": { "type": "string" },
+        "reason": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "change_impact_git_unavailable",
+            "change_impact_invalid_ref",
+            "change_impact_max_files_exceeded",
+            "change_impact_max_impacts_exceeded"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

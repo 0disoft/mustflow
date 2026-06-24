@@ -862,6 +862,31 @@ test('dependency-graph json output matches the published schema', () => {
 	}
 });
 
+test('change-impact json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'entry.ts'), 'export const entry = 1;\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/change-impact',
+			'analyze',
+			'--base',
+			'HEAD',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'change-impact-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('code-symbol-read json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
