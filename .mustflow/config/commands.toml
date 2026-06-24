@@ -16,7 +16,7 @@ stdin = "closed"
 max_output_bytes = 1048576
 on_timeout = "terminate_process_tree"
 kill_after_seconds = 5
-env_policy = "minimal"
+env_policy = "allowlist"
 env_allowlist = [
   "MUSTFLOW_TEST_CONCURRENCY",
   "MUSTFLOW_TEST_RELATED_CONCURRENCY",

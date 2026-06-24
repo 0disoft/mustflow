@@ -120,7 +120,10 @@ test('source repository exposes cached related tests as a read-only command inte
 
 test('source repository exposes related-test profiling as a bounded diagnostic intent', () => {
 	const profileIntent = /\[intents\.test_related_profile\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const defaults = /\[defaults\][\s\S]*?(?=\n\[)/u.exec(sourceCommandContract)?.[0] ?? '';
 
+	assert.match(defaults, /env_policy = "allowlist"/u);
+	assert.match(defaults, /"MUSTFLOW_TEST_CHANGED_FILES"/u);
 	assert.notEqual(profileIntent, '');
 	assert.match(profileIntent, /argv = \["bun", "run", "test:related:profile"\]/u);
 	assert.match(profileIntent, /writes = \["dist\/\*\*"\]/u);
