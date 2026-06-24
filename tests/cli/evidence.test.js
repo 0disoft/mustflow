@@ -1,15 +1,82 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
+import { runEvidence } from '../../dist/cli/commands/evidence.js';
 import {
-	commitGitBaseline,
 	createTempProject,
-	initProject,
 	removeTempProject,
-	runCli,
-} from './run-support.js';
+	runCliCommand,
+} from './helpers/cli-harness.js';
+
+function createEvidenceProject() {
+	const projectPath = createTempProject('mustflow-evidence-');
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'), 'version = 1\n');
+	writeFileSync(path.join(projectPath, '.gitignore'), '.mustflow/state/\n');
+	return projectPath;
+}
+
+function createEvidenceCommandProject() {
+	const projectPath = createEvidenceProject();
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+		`schema_version = "1"
+
+[intents.test_related]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run related tests."
+argv = ["node", "-e", "process.exit(0)"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["unknown_change"]
+`,
+	);
+	return projectPath;
+}
+
+function runCli(cwd, args) {
+	return runCliCommand(cwd, args, runEvidence);
+}
+
+function runGit(projectPath, args) {
+	return spawnSync('git', ['-C', projectPath, ...args], {
+		cwd: projectPath,
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'pipe'],
+		windowsHide: true,
+	});
+}
+
+function commitGitBaseline(projectPath) {
+	let result = runGit(projectPath, ['init']);
+	if (result.status !== 0) {
+		return false;
+	}
+
+	for (const args of [
+		['config', 'user.email', 'mustflow-tests@example.invalid'],
+		['config', 'user.name', 'mustflow tests'],
+		['add', '.'],
+		['commit', '-m', 'baseline'],
+	]) {
+		result = runGit(projectPath, args);
+		if (result.status !== 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
 
 function writeLatestVerifyEvidence(projectPath, planId, requirements) {
 	const latestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
@@ -79,15 +146,14 @@ function writeLatestVerifyEvidence(projectPath, planId, requirements) {
 	);
 }
 
-test('evidence changed report links verification requirements to latest evidence', () => {
-	const projectPath = createTempProject();
+test('evidence changed report links verification requirements to latest evidence', async () => {
+	const projectPath = createEvidenceCommandProject();
 
 	try {
-		initProject(projectPath);
 		const hasGitBaseline = commitGitBaseline(projectPath);
 		writeFileSync(path.join(projectPath, 'evidence-probe.js'), 'console.log("changed");\n');
 
-		const firstResult = runCli(projectPath, ['evidence', '--changed', '--json']);
+		const firstResult = await runCli(projectPath, ['evidence', '--changed', '--json']);
 		const firstOutput = JSON.parse(firstResult.stdout);
 
 		if (!hasGitBaseline) {
@@ -118,7 +184,7 @@ test('evidence changed report links verification requirements to latest evidence
 		assert.equal(firstOutput.latest.conflict_ledger, null);
 
 		writeLatestVerifyEvidence(projectPath, firstOutput.plan.verification_plan_id, firstOutput.plan.requirements);
-		const secondResult = runCli(projectPath, ['evidence', '--changed', '--json']);
+		const secondResult = await runCli(projectPath, ['evidence', '--changed', '--json']);
 		const secondOutput = JSON.parse(secondResult.stdout);
 
 		assert.equal(secondResult.status, 0, secondResult.stderr || secondResult.stdout);
@@ -133,12 +199,11 @@ test('evidence changed report links verification requirements to latest evidence
 	}
 });
 
-test('evidence latest report summarizes missing latest evidence without raw output', () => {
-	const projectPath = createTempProject();
+test('evidence latest report summarizes missing latest evidence without raw output', async () => {
+	const projectPath = createEvidenceProject();
 
 	try {
-		initProject(projectPath);
-		const result = runCli(projectPath, ['evidence', '--latest', '--json']);
+		const result = await runCli(projectPath, ['evidence', '--latest', '--json']);
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -153,12 +218,11 @@ test('evidence latest report summarizes missing latest evidence without raw outp
 	}
 });
 
-test('evidence export writes report inside the mustflow root', () => {
-	const projectPath = createTempProject();
+test('evidence export writes report inside the mustflow root', async () => {
+	const projectPath = createEvidenceProject();
 
 	try {
-		initProject(projectPath);
-		const result = runCli(projectPath, ['evidence', '--latest', '--export=.mustflow/state/evidence-report.json', '--json']);
+		const result = await runCli(projectPath, ['evidence', '--latest', '--export=.mustflow/state/evidence-report.json', '--json']);
 		const output = JSON.parse(result.stdout);
 		const exportPath = path.join(projectPath, '.mustflow', 'state', 'evidence-report.json');
 
@@ -172,14 +236,13 @@ test('evidence export writes report inside the mustflow root', () => {
 	}
 });
 
-test('evidence rejects unsupported option forms through shared option parsing', () => {
-	const projectPath = createTempProject();
+test('evidence rejects unsupported option forms through shared option parsing', async () => {
+	const projectPath = createEvidenceProject();
 
 	try {
-		initProject(projectPath);
-		const booleanValue = runCli(projectPath, ['evidence', '--latest', '--json=true']);
-		const emptyPlan = runCli(projectPath, ['evidence', '--plan=']);
-		const unexpected = runCli(projectPath, ['evidence', 'latest']);
+		const booleanValue = await runCli(projectPath, ['evidence', '--latest', '--json=true']);
+		const emptyPlan = await runCli(projectPath, ['evidence', '--plan=']);
+		const unexpected = await runCli(projectPath, ['evidence', 'latest']);
 
 		assert.equal(booleanValue.status, 1);
 		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
@@ -197,12 +260,11 @@ test('evidence rejects unsupported option forms through shared option parsing', 
 	}
 });
 
-test('evidence rejects conflicting sources', () => {
-	const projectPath = createTempProject();
+test('evidence rejects conflicting sources', async () => {
+	const projectPath = createEvidenceProject();
 
 	try {
-		initProject(projectPath);
-		const result = runCli(projectPath, ['evidence', '--changed', '--latest']);
+		const result = await runCli(projectPath, ['evidence', '--changed', '--latest']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Choose only one evidence source/u);
