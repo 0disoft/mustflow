@@ -59,7 +59,7 @@ writes = ["dist/**"]
 effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
 network = false
 destructive = false
-required_after = ["build_config_change", "public_api_change", "code_change", "package_metadata_change"]
+required_after = ["build_config_change", "public_api_change", "package_metadata_change"]
 
 [intents.lint]
 status = "configured"
@@ -133,7 +133,7 @@ network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
 preconditions = [
-  { kind = "path_exists", path = "dist/cli/index.js", satisfy_intent = "test_related" },
+  { kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "test_related" },
 ]
 
 [intents.test_related_cached.covers]
