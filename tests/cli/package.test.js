@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 const templateCommandContract = readFileSync(path.join(projectRoot, 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml'), 'utf8');
@@ -90,14 +91,57 @@ test('package exposes a real install verification script', () => {
 });
 
 test('source repository exposes cached related tests as a read-only command intent', () => {
+	const relatedIntent = /\[intents\.test_related\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const relatedCoverage = /\[intents\.test_related\.covers\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const relatedCost = /\[intents\.test_related\.cost\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 	const cachedIntent = /\[intents\.test_related_cached\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const cachedCoverage = /\[intents\.test_related_cached\.covers\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const cachedSelection = /\[intents\.test_related_cached\.selection\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const cachedCost = /\[intents\.test_related_cached\.cost\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 
+	assert.notEqual(relatedIntent, '');
+	assert.match(relatedCoverage, /contracts = \["related CLI regression coverage"\]/u);
+	assert.match(relatedCost, /expected_seconds = 180/u);
 	assert.notEqual(cachedIntent, '');
 	assert.match(cachedIntent, /argv = \["bun", "run", "test:related:cached"\]/u);
 	assert.match(cachedIntent, /writes = \[\]/u);
 	assert.match(cachedIntent, /network = false/u);
 	assert.match(cachedIntent, /destructive = false/u);
 	assert.match(cachedIntent, /required_after = \["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"\]/u);
+	assert.match(cachedIntent, /preconditions = \[/u);
+	assert.match(cachedIntent, /satisfy_intent = "test_related"/u);
+	assert.match(cachedCoverage, /contracts = \["related CLI regression coverage"\]/u);
+	assert.match(cachedSelection, /fallback_intents = \["test_related"\]/u);
+	assert.match(cachedCost, /expected_seconds = 90/u);
+});
+
+test('source repository keeps full tests for release and cross-cutting verification', () => {
+	const fullTestIntent = /\[intents\.test\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(fullTestIntent, '');
+	assert.match(fullTestIntent, /argv = \["bun", "run", "test"\]/u);
+	assert.match(fullTestIntent, /required_after = \["release_risk", "cross_cutting_code_change"\]/u);
+	assert.doesNotMatch(fullTestIntent, /"code_change"/u);
+	assert.doesNotMatch(fullTestIntent, /"behavior_change"/u);
+});
+
+test('source repository verification plan prefers cached related tests for ordinary code changes', () => {
+	const result = spawnSync(process.execPath, [cliPath, 'verify', '--reason', 'code_change', '--plan-only', '--json'], {
+		cwd: projectRoot,
+		encoding: 'utf8',
+	});
+	const report = JSON.parse(result.stdout);
+	const cached = report.candidates.find((candidate) => candidate.intent === 'test_related_cached');
+	const related = report.candidates.find((candidate) => candidate.intent === 'test_related');
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.equal(cached?.selectionState, 'selected');
+	assert.equal(related?.selectionState, 'not_selected');
+	assert.deepEqual(
+		report.schedule.entries.map((entry) => entry.intent),
+		['build', 'lint', 'quality_gaming_check', 'test_related_cached'],
+	);
+	assert.equal(report.candidates.some((candidate) => candidate.intent === 'test'), false);
 });
 
 test('npm publish workflow uses trusted publisher identity', () => {
