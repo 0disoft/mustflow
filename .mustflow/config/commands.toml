@@ -108,6 +108,16 @@ network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
 
+[intents.test_related.covers]
+reasons = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
+surfaces = ["mustflow_cli"]
+paths = ["src/**", "tests/**", ".mustflow/config/**", ".mustflow/docs/**"]
+contracts = ["related CLI regression coverage"]
+
+[intents.test_related.cost]
+expected_seconds = 180
+cost_tier = "medium"
+
 [intents.test_related_cached]
 status = "configured"
 lifecycle = "oneshot"
@@ -122,6 +132,22 @@ writes = []
 network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
+preconditions = [
+  { kind = "path_exists", path = "dist/cli/index.js", satisfy_intent = "test_related" },
+]
+
+[intents.test_related_cached.covers]
+reasons = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
+surfaces = ["mustflow_cli"]
+paths = ["src/**", "tests/**", ".mustflow/config/**", ".mustflow/docs/**"]
+contracts = ["related CLI regression coverage"]
+
+[intents.test_related_cached.selection]
+fallback_intents = ["test_related"]
+
+[intents.test_related_cached.cost]
+expected_seconds = 90
+cost_tier = "low"
 
 [intents.test]
 status = "configured"
@@ -137,7 +163,7 @@ writes = ["dist/**"]
 effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
 network = false
 destructive = false
-required_after = ["code_change", "behavior_change", "release_risk", "cross_cutting_code_change"]
+required_after = ["release_risk", "cross_cutting_code_change"]
 
 [intents.test_release]
 status = "configured"
