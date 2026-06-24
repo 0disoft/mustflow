@@ -109,10 +109,22 @@ test('source repository exposes cached related tests as a read-only command inte
 	assert.match(cachedIntent, /destructive = false/u);
 	assert.match(cachedIntent, /required_after = \["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"\]/u);
 	assert.match(cachedIntent, /preconditions = \[/u);
+	assert.match(cachedIntent, /kind = "artifact_freshness"/u);
+	assert.match(cachedIntent, /artifact = "dist\/cli\/index\.js"/u);
+	assert.match(cachedIntent, /sources = \["src\/\*\*", "tsconfig\*\.json"\]/u);
 	assert.match(cachedIntent, /satisfy_intent = "test_related"/u);
 	assert.match(cachedCoverage, /contracts = \["related CLI regression coverage"\]/u);
 	assert.match(cachedSelection, /fallback_intents = \["test_related"\]/u);
 	assert.match(cachedCost, /expected_seconds = 90/u);
+});
+
+test('source repository keeps build out of ordinary code-change verification', () => {
+	const buildIntent = /\[intents\.build\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(buildIntent, '');
+	assert.match(buildIntent, /argv = \["bun", "run", "build"\]/u);
+	assert.match(buildIntent, /required_after = \["build_config_change", "public_api_change", "package_metadata_change"\]/u);
+	assert.doesNotMatch(buildIntent, /"code_change"/u);
 });
 
 test('source repository keeps full tests for release and cross-cutting verification', () => {
@@ -139,8 +151,9 @@ test('source repository verification plan prefers cached related tests for ordin
 	assert.equal(related?.selectionState, 'not_selected');
 	assert.deepEqual(
 		report.schedule.entries.map((entry) => entry.intent),
-		['build', 'lint', 'quality_gaming_check', 'test_related_cached'],
+		['lint', 'quality_gaming_check', 'test_related_cached'],
 	);
+	assert.equal(report.candidates.some((candidate) => candidate.intent === 'build'), false);
 	assert.equal(report.candidates.some((candidate) => candidate.intent === 'test'), false);
 });
 
