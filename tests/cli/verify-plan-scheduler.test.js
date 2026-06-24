@@ -538,6 +538,93 @@ expected_seconds = 60
 	}
 });
 
+test('does not select a lower-cost equivalent intent when artifact freshness is stale', async () => {
+	const projectPath = createSchedulerProject();
+
+	try {
+		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'dist', 'out.js'), 'old artifact\n');
+		writeFileSync(path.join(projectPath, 'src', 'changed.ts'), 'new source\n');
+		utimesSync(path.join(projectPath, 'dist', 'out.js'), new Date('2020-01-01T00:00:00.000Z'), new Date('2020-01-01T00:00:00.000Z'));
+		utimesSync(path.join(projectPath, 'src', 'changed.ts'), new Date('2021-01-01T00:00:00.000Z'), new Date('2021-01-01T00:00:00.000Z'));
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_cached_equivalent]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Fast cached equivalent verification."
+argv = ['${process.execPath}', '-e', 'console.log("cached")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+preconditions = [
+  { kind = "artifact_freshness", artifact = "dist/out.js", sources = ["src/**"], satisfy_intent = "verify_rebuild_equivalent" },
+]
+network = false
+destructive = false
+required_after = ["cached_cost_verify"]
+
+[intents.verify_cached_equivalent.covers]
+reasons = ["cached_cost_verify"]
+surfaces = ["readme_page"]
+paths = ["README.md"]
+contracts = ["public documentation"]
+
+[intents.verify_cached_equivalent.cost]
+expected_seconds = 5
+
+[intents.verify_rebuild_equivalent]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Rebuild equivalent verification."
+argv = ['${process.execPath}', '-e', 'console.log("rebuild")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["cached_cost_verify"]
+
+[intents.verify_rebuild_equivalent.covers]
+contracts = ["public documentation"]
+paths = ["README.md"]
+reasons = ["cached_cost_verify"]
+surfaces = ["readme_page"]
+
+[intents.verify_rebuild_equivalent.cost]
+expected_seconds = 60
+`,
+		);
+
+		const result = await runCli(projectPath, ['verify', '--reason', 'cached_cost_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const cachedCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_cached_equivalent');
+		const rebuildCandidate = report.candidates.find((candidate) => candidate.intent === 'verify_rebuild_equivalent');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(cachedCandidate.status, 'runnable');
+		assert.equal(cachedCandidate.selectionState, 'not_selected');
+		assert.equal(rebuildCandidate.status, 'runnable');
+		assert.equal(rebuildCandidate.selectionState, 'selected');
+		assert.deepEqual(
+			report.schedule.entries.map((entry) => entry.intent),
+			['verify_rebuild_equivalent'],
+		);
+		assert.equal(report.decision_graph.summary.selected, 1);
+		assert.equal(report.decision_graph.summary.not_selected, 1);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps writes-only verification intents serial-only in the schedule model', async () => {
 	const projectPath = createSchedulerProject();
 

@@ -19,6 +19,7 @@ import {
 	type VerificationRunnableStatus,
 	type VerificationSkipReason,
 } from './verification-plan.js';
+import { evaluateCommandPreconditions } from './command-preconditions.js';
 import {
 	createVerificationDecisionGraph,
 	type VerificationDecisionGraph,
@@ -188,6 +189,34 @@ function readIntentCostExpectedSeconds(commandContract: CommandContract, intent:
 
 	const expectedSeconds = rawIntent.cost.expected_seconds;
 	return Number.isInteger(expectedSeconds) && Number(expectedSeconds) >= 0 ? Number(expectedSeconds) : null;
+}
+
+function intentHasPreconditions(commandContract: CommandContract, intent: string): boolean {
+	const rawIntent = commandContract.intents[intent];
+
+	return isRecord(rawIntent) && Array.isArray(rawIntent.preconditions) && rawIntent.preconditions.length > 0;
+}
+
+function intentPreconditionsSatisfied(
+	commandContract: CommandContract,
+	projectRoot: string,
+	intent: string,
+	cache: Map<string, boolean>,
+): boolean {
+	if (!intentHasPreconditions(commandContract, intent)) {
+		return true;
+	}
+
+	const cached = cache.get(intent);
+	if (cached !== undefined) {
+		return cached;
+	}
+
+	const satisfied = evaluateCommandPreconditions(projectRoot, commandContract, intent).every(
+		(precondition) => precondition.status === 'satisfied',
+	);
+	cache.set(intent, satisfied);
+	return satisfied;
 }
 
 function intentCoverageSignature(commandContract: CommandContract, intent: string): string | null {
@@ -364,12 +393,14 @@ function minNumber(values: readonly number[]): number | null {
 
 function selectVerificationCandidates(
 	commandContract: CommandContract,
+	projectRoot: string,
 	candidates: readonly VerificationCandidate[],
 ): readonly VerificationCandidate[] {
 	const runnableCandidates = candidates.filter(
 		(candidate) => candidate.status === 'runnable' && candidate.intent.length > 0,
 	);
 	const selectedIntents = new Set(runnableCandidates.map((candidate) => candidate.intent));
+	const preconditionCache = new Map<string, boolean>();
 
 	for (const candidate of runnableCandidates) {
 		const isSubsumed = runnableCandidates.some((other) => {
@@ -411,7 +442,20 @@ function selectVerificationCandidates(
 			continue;
 		}
 
-		const costs = group.map((candidate) => readIntentCostExpectedSeconds(commandContract, candidate.intent));
+		const preconditionSatisfiedGroup = group.filter((candidate) =>
+			intentPreconditionsSatisfied(commandContract, projectRoot, candidate.intent, preconditionCache),
+		);
+		const selectableGroup = preconditionSatisfiedGroup.length > 0 ? preconditionSatisfiedGroup : group;
+
+		if (preconditionSatisfiedGroup.length > 0 && preconditionSatisfiedGroup.length < group.length) {
+			for (const candidate of group) {
+				if (!preconditionSatisfiedGroup.some((entry) => entry.intent === candidate.intent)) {
+					selectedIntents.delete(candidate.intent);
+				}
+			}
+		}
+
+		const costs = selectableGroup.map((candidate) => readIntentCostExpectedSeconds(commandContract, candidate.intent));
 		if (costs.some((cost) => cost === null)) {
 			continue;
 		}
@@ -421,12 +465,12 @@ function selectVerificationCandidates(
 			continue;
 		}
 
-		const winners = group.filter((candidate) => readIntentCostExpectedSeconds(commandContract, candidate.intent) === minCost);
+		const winners = selectableGroup.filter((candidate) => readIntentCostExpectedSeconds(commandContract, candidate.intent) === minCost);
 		if (winners.length !== 1) {
 			continue;
 		}
 
-		for (const candidate of group) {
+		for (const candidate of selectableGroup) {
 			if (candidate.intent !== winners[0]?.intent) {
 				selectedIntents.delete(candidate.intent);
 			}
@@ -534,7 +578,7 @@ export function createChangeVerificationReport(
 	const selectedPlans = plansWithProjectTestSelection.map((plan) => ({
 		...plan,
 		selectedCandidates: uniqueVerificationCandidates([
-			...selectVerificationCandidates(commandContract, plan.candidates),
+			...selectVerificationCandidates(commandContract, projectRoot, plan.candidates),
 			...testSelectionPlan.selectedCandidates
 				.filter((candidate) => candidate.reason === plan.requirement.reason)
 				.map((candidate) => candidate.candidate),

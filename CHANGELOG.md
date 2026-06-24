@@ -60,6 +60,16 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Optimized line-ending detection and LF normalization to avoid byte-by-byte JavaScript scans
+  across large changed files while preserving the existing report and normalize semantics.
+- Narrowed related-test selection for line-ending core implementation changes so schema smoke
+  tests stay attached to CLI and public JSON contract surfaces instead of every internal hot-path edit.
+- Narrowed related-test selection for verification-planning core changes so classification,
+  public-surface explanation, and full public-schema suites no longer run for internal verify-plan edits.
+- Reduced `explain verify` stale local-index regression setup cost by building the fixture index
+  directly from a minimal workflow project while preserving CLI output coverage.
+- Changed verification planning so lower-cost cached intents are not selected over equivalent
+  rebuild-capable intents when their artifact freshness preconditions are stale.
 - Added script-pack routing metadata to the catalog JSON output and exposed a read-only
   `script_pack_list` command intent in the default template command contract so agents can
   discover bundled scripts before selecting one.

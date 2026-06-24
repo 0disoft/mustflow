@@ -83,6 +83,13 @@ const verifyTests = [
 	'verify-completion-verdict.test.js',
 	'verify-plan-scheduler.test.js',
 ];
+const verificationPlanningTests = [
+	'verify.test.js',
+	'verify-changed.test.js',
+	'verify-plan-scheduler.test.js',
+	'explain-verify.test.js',
+	'schema-explain-verify-output.test.js',
+];
 
 const fastCommandSurfaceTests = [
 	'adapters.test.js',
@@ -246,7 +253,8 @@ const relatedRules = [
 	{ match: /^src\/core\/completion-verdict\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
 	{ match: /^src\/core\/dashboard-verification\.ts$/u, tests: ['dashboard-verification.test.js', 'verify.test.js', 'verify-completion-verdict.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/doc-review-triage\.ts$/u, tests: ['docs.test.js', ...dashboardTests, ...schemaSmokeTests] },
-	{ match: /^src\/core\/change-(classification|verification)\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/change-classification\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/change-verification\.ts$/u, tests: verificationPlanningTests },
 	{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', 'schema.test.js'] },
 	{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check-command-contracts.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/(release-version-validation|version-impact|version-sources|version-sync-policy)\.ts$/u, tests: versioningTests },
@@ -263,7 +271,7 @@ const relatedRules = [
 	{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: commandContractTests },
 	{ match: /^src\/core\/repeated-failure\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
 	{ match: /^src\/core\/validation-ratchet\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
-	{ match: /^src\/core\/verification-plan\.ts$/u, tests: ['verify.test.js', 'verify-changed.test.js', 'verify-plan-scheduler.test.js', 'explain-verify.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/verification-plan\.ts$/u, tests: verificationPlanningTests },
 	{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', 'verify-completion-verdict.test.js', 'dashboard-verification.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/verification-scheduler\.ts$/u, tests: ['verify-plan-scheduler.test.js', ...runTests] },
 	{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
@@ -273,7 +281,7 @@ const relatedRules = [
 	{ match: /^src\/core\/source-anchors\.ts$/u, tests: sourceAnchorTests },
 	{ match: /^src\/core\/surface-decision-model\.ts$/u, tests: ['explain-surface.test.js', 'verify.test.js', 'verify-plan-scheduler.test.js', ...schemaSmokeTests] },
 	{ match: /^src\/core\/toml\.ts$/u, tests: ['check-config-validation.test.js', 'contract-lint.test.js', ...runTests] },
-	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js', 'schema.test.js'] },
+	{ match: /^src\/core\/line-endings\.ts$/u, tests: ['line-endings.test.js'] },
 	{ match: /^scripts\/audit-tests\.mjs$/u, tests: ['test-audit.test.js'] },
 	{ match: /^tests\/cli\/helpers\/cli-harness\.js$/u, tests: cliTests },
 	{ match: /^tests\/cli\/helpers\/local-index-fixtures\.js$/u, tests: localIndexTests },

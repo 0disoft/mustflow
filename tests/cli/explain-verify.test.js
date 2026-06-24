@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { createLocalIndexDirect, createMinimalWorkflowProject } from './index-support.js';
 
 function appendIntent(projectPath, text) {
 	appendFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), `\n${text.trim()}\n`);
@@ -327,14 +328,11 @@ test('reports invalid classification report inputs for explain verify', () => {
 	}
 });
 
-test('reports stale local-index command-effect context for explain verify', () => {
-	const projectPath = createTempProject('mustflow-explain-verify-');
+test('reports stale local-index command-effect context for explain verify', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-explain-verify-stale-');
 
 	try {
-		initProject(projectPath);
-
-		const indexResult = runCli(projectPath, ['index', '--json']);
-		assert.equal(indexResult.status, 0, indexResult.stderr || indexResult.stdout);
+		await createLocalIndexDirect(projectPath);
 
 		appendIntent(
 			projectPath,

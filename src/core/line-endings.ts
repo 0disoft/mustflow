@@ -103,10 +103,13 @@ function detectLineEnding(buffer: Buffer): LineEndingKind {
 
 	let lfCount = 0;
 	let crlfCount = 0;
+	let searchFrom = 0;
 
-	for (let index = 0; index < buffer.length; index += 1) {
-		if (buffer[index] !== 0x0a) {
-			continue;
+	while (searchFrom < buffer.length) {
+		const index = buffer.indexOf(0x0a, searchFrom);
+
+		if (index === -1) {
+			break;
 		}
 
 		lfCount += 1;
@@ -114,6 +117,8 @@ function detectLineEnding(buffer: Buffer): LineEndingKind {
 		if (index > 0 && buffer[index - 1] === 0x0d) {
 			crlfCount += 1;
 		}
+
+		searchFrom = index + 1;
 	}
 
 	if (lfCount === 0) {
@@ -128,23 +133,37 @@ function detectLineEnding(buffer: Buffer): LineEndingKind {
 }
 
 function normalizeLf(buffer: Buffer): Buffer {
+	const firstCrIndex = buffer.indexOf(0x0d);
+
+	if (firstCrIndex === -1) {
+		return buffer;
+	}
+
 	const bytes = Buffer.allocUnsafe(buffer.length);
+	let readIndex = 0;
 	let writeIndex = 0;
+	let crIndex = firstCrIndex;
 
-	for (let index = 0; index < buffer.length; index += 1) {
-		const byte = buffer[index];
-
-		if (byte === 0x0d) {
-			bytes[writeIndex] = 0x0a;
-			writeIndex += 1;
-			if (buffer[index + 1] === 0x0a) {
-				index += 1;
-			}
-			continue;
+	while (crIndex !== -1) {
+		if (crIndex > readIndex) {
+			buffer.copy(bytes, writeIndex, readIndex, crIndex);
+			writeIndex += crIndex - readIndex;
 		}
 
-		bytes[writeIndex] = byte;
+		bytes[writeIndex] = 0x0a;
 		writeIndex += 1;
+		readIndex = crIndex + 1;
+
+		if (buffer[readIndex] === 0x0a) {
+			readIndex += 1;
+		}
+
+		crIndex = buffer.indexOf(0x0d, readIndex);
+	}
+
+	if (readIndex < buffer.length) {
+		buffer.copy(bytes, writeIndex, readIndex);
+		writeIndex += buffer.length - readIndex;
 	}
 
 	return bytes.subarray(0, writeIndex);

@@ -154,6 +154,38 @@ test('related selection maps script-pack implementation changes to script-pack c
 	}
 });
 
+test('related selection keeps line-ending implementation changes out of schema smoke tests', () => {
+	const selected = selectedFor(['src/core/line-endings.ts']);
+
+	assert.deepEqual([...selected], ['line-endings.test.js']);
+});
+
+test('related selection keeps line-ending command changes schema-covered', () => {
+	const selected = selectedFor(['src/cli/commands/line-endings.ts']);
+
+	assert.equal(selected.has('line-endings.test.js'), true);
+	assert.equal(selected.has('schema.test.js'), true);
+	assert.equal(selected.has('schema-command-contracts.test.js'), true);
+	assert.equal(selected.has('schema-explain-verify-output.test.js'), true);
+});
+
+test('related selection keeps verification planning changes out of classification suites', () => {
+	const selected = selectedFor(['src/core/change-verification.ts']);
+
+	assert.deepEqual([...selected], [
+		'verify.test.js',
+		'verify-changed.test.js',
+		'verify-plan-scheduler.test.js',
+		'explain-verify.test.js',
+		'schema-explain-verify-output.test.js',
+	]);
+	assert.equal(selected.has('classify.test.js'), false);
+	assert.equal(selected.has('explain-surface.test.js'), false);
+	assert.equal(selected.has('schema.test.js'), false);
+	assert.equal(selected.has('verify-inputs.test.js'), false);
+	assert.equal(selected.has('verify-completion-verdict.test.js'), false);
+});
+
 test('test runner refuses overlapping repository build and test locks', () => {
 	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-lock-'));
 	const lockDir = path.join(tempRoot, 'lock');
