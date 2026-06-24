@@ -1,28 +1,22 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
 import { projectRoot } from './helpers/cli-harness.js';
 import {
-	LOCAL_INDEX_EXCLUDED_RAW_DATA_KINDS,
-	assertLocalIndexStorageBoundary,
-	cloneGraphIndexedProject,
 	cloneInvalidSourceAnchorProject,
 	cloneSourceAnchorIndexedProject,
 	cloneSourceIndexConfigProject,
-	cloneWorkflowIndexedProject,
 	createLocalIndexDirect,
 	createMinimalWorkflowProject,
 	getCachedIndexedProjectFixture,
 	loadSqlJsCached,
-	prepareGraphIndexedProject,
 	prepareInvalidSourceAnchorProject,
 	prepareSourceAnchorProject,
 	prepareSourceAnchorStatusProject,
 	prepareSourceIndexConfigProject,
 	queryRows,
-	readLatestLocalVerificationReadModelQueriesDirect,
 	removeTempProject,
 	runCli,
 	sourceAnchorStatusChangedSource,
@@ -324,8 +318,7 @@ ${'x'.repeat(270000)}
 `,
 		);
 
-		const result = runCli(projectPath, ['index', '--json']);
-		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const output = await createLocalIndexDirect(projectPath);
 
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJsCached();
@@ -333,6 +326,8 @@ ${'x'.repeat(270000)}
 		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
 		const [metadataLimit] = queryRows(database, 'SELECT value FROM metadata WHERE key = "source_index_max_file_bytes"');
 
+		assert.equal(output.source_index_enabled, true);
+		assert.equal(output.source_anchor_count, 1);
 		assert.deepEqual(anchorRows, [{ id: 'source.default.small', path: 'src/small.ts' }]);
 		assert.equal(metadataLimit.value, '262144');
 		database.close();
