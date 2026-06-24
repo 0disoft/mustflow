@@ -16,6 +16,8 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { runCliInProcess } from './helpers/cli-harness.js';
+
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 
@@ -27,12 +29,30 @@ function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
 
-function runInit(cwd, args = ['--yes'], options = {}) {
+function runInitSpawn(cwd, args = ['--yes'], options = {}) {
 	return spawnSync(process.execPath, [cliPath, 'init', ...args], {
 		cwd,
 		encoding: 'utf8',
 		...options,
 	});
+}
+
+async function runInit(cwd, args = ['--yes'], options = {}) {
+	if (options.input !== undefined) {
+		return runInitSpawn(cwd, args, options);
+	}
+
+	return runCliInProcess(cwd, ['init', ...args], {
+		env: envOverrides(options.env),
+	});
+}
+
+function envOverrides(env) {
+	if (!env) {
+		return undefined;
+	}
+
+	return Object.fromEntries(Object.entries(env).filter(([key, value]) => process.env[key] !== value));
 }
 
 function readText(filePath) {
@@ -69,7 +89,7 @@ function trySymlink(target, linkPath, type) {
 	}
 }
 
-test('refuses template creates outside the mustflow install surface during init', () => {
+test('refuses template creates outside the mustflow install surface during init', async () => {
 	const projectPath = createTempProject();
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
@@ -81,7 +101,7 @@ test('refuses template creates outside the mustflow install surface during init'
 			'// mf:anchor app.generated\nexport const generated = true;\n',
 		);
 
-		const result = runInit(projectPath, ['--yes'], {
+		const result = await runInit(projectPath, ['--yes'], {
 			env: { ...process.env, MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath, MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1' },
 		});
 
@@ -95,7 +115,7 @@ test('refuses template creates outside the mustflow install surface during init'
 	}
 });
 
-test('ignores development template root overrides without explicit opt-in', () => {
+test('ignores development template root overrides without explicit opt-in', async () => {
 	const projectPath = createTempProject();
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));
 
@@ -107,7 +127,7 @@ test('ignores development template root overrides without explicit opt-in', () =
 			'// mf:anchor app.generated\nexport const generated = true;\n',
 		);
 
-		const result = runInit(projectPath, ['--yes'], {
+		const result = await runInit(projectPath, ['--yes'], {
 			env: { ...process.env, MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath },
 		});
 
@@ -120,11 +140,11 @@ test('ignores development template root overrides without explicit opt-in', () =
 	}
 });
 
-test('installs Korean workflow documents with canonical English skills when requested', () => {
+test('installs Korean workflow documents with canonical English skills when requested', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--yes', '--locale', 'ko']);
+		const result = await runInit(projectPath, ['--yes', '--locale', 'ko']);
 
 		assert.equal(result.status, 0);
 
@@ -149,11 +169,11 @@ test('installs Korean workflow documents with canonical English skills when requ
 	}
 });
 
-test('applies profile locale agent language and product locale preferences', () => {
+test('applies profile locale agent language and product locale preferences', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, [
+		const result = await runInit(projectPath, [
 			'--yes',
 			'--profile',
 			'product',
@@ -218,15 +238,15 @@ test('applies profile locale agent language and product locale preferences', () 
 	}
 });
 
-test('rejects unsupported profile and locale selections', () => {
+test('rejects unsupported profile and locale selections', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const badProfile = runInit(projectPath, ['--profile', 'korean-product']);
+		const badProfile = await runInit(projectPath, ['--profile', 'korean-product']);
 		assert.equal(badProfile.status, 1);
 		assert.match(badProfile.stderr, /Unsupported profile: korean-product/);
 
-		const badLocale = runInit(projectPath, ['--locale', 'ja']);
+		const badLocale = await runInit(projectPath, ['--locale', 'ja']);
 		assert.equal(badLocale.status, 1);
 		assert.match(badLocale.stderr, /Unsupported locale: ja/);
 	} finally {
@@ -234,11 +254,11 @@ test('rejects unsupported profile and locale selections', () => {
 	}
 });
 
-test('applies safe preference overrides from repeated set options', () => {
+test('applies safe preference overrides from repeated set options', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, [
+		const result = await runInit(projectPath, [
 			'--yes',
 			'--set',
 			'git.auto_commit=true',
@@ -308,7 +328,7 @@ test('applies safe preference overrides from repeated set options', () => {
 	}
 });
 
-test('rejects unsupported init preference overrides', () => {
+test('rejects unsupported init preference overrides', async () => {
 	const invalidOverrides = [
 		['git.auto_push=true', /Invalid value for git\.auto_push: true/],
 		['git.commit_message.style=emoji', /Invalid value for git\.commit_message\.style: emoji/],
@@ -326,7 +346,7 @@ test('rejects unsupported init preference overrides', () => {
 		const projectPath = createTempProject();
 
 		try {
-			const result = runInit(projectPath, ['--yes', '--set', override]);
+			const result = await runInit(projectPath, ['--yes', '--set', override]);
 
 			assert.equal(result.status, 1);
 			assert.match(result.stderr, expectedError);
@@ -337,7 +357,7 @@ test('rejects unsupported init preference overrides', () => {
 	}
 });
 
-test('rejects unsafe init preference override keys', () => {
+test('rejects unsafe init preference override keys', async () => {
 	const unsafeOverrides = [
 		['logging.include_sensitive_data=true', /Unsupported init preference setting: logging\.include_sensitive_data/],
 		['git.commit_message.avoid_sensitive_details=false', /Unsupported init preference setting: git\.commit_message\.avoid_sensitive_details/],
@@ -347,7 +367,7 @@ test('rejects unsafe init preference override keys', () => {
 		const projectPath = createTempProject();
 
 		try {
-			const result = runInit(projectPath, ['--yes', '--set', override]);
+			const result = await runInit(projectPath, ['--yes', '--set', override]);
 
 			assert.equal(result.status, 1);
 			assert.match(result.stderr, expectedError);
@@ -358,14 +378,14 @@ test('rejects unsafe init preference override keys', () => {
 	}
 });
 
-test('git auto commit preference does not create git commits during init', () => {
+test('git auto commit preference does not create git commits during init', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		const gitInit = spawnSync('git', ['init'], { cwd: projectPath, encoding: 'utf8' });
 		assert.equal(gitInit.status, 0);
 
-		const result = runInit(projectPath, ['--yes', '--set', 'git.auto_commit=true']);
+		const result = await runInit(projectPath, ['--yes', '--set', 'git.auto_commit=true']);
 
 		assert.equal(result.status, 0);
 
@@ -377,11 +397,11 @@ test('git auto commit preference does not create git commits during init', () =>
 	}
 });
 
-test('rejects conflicting interactive and yes init modes', () => {
+test('rejects conflicting interactive and yes init modes', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--interactive', '--yes']);
+		const result = await runInit(projectPath, ['--interactive', '--yes']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Cannot combine --interactive and --yes/);
@@ -391,7 +411,7 @@ test('rejects conflicting interactive and yes init modes', () => {
 	}
 });
 
-test('rejects invalid init option shapes before writing files', () => {
+test('rejects invalid init option shapes before writing files', async () => {
 	const invalidArgs = [
 		[['--dry-run=true'], /Unexpected value for --dry-run/],
 		[['--profile'], /Missing value for --profile/],
@@ -403,7 +423,7 @@ test('rejects invalid init option shapes before writing files', () => {
 		const projectPath = createTempProject();
 
 		try {
-			const result = runInit(projectPath, args);
+			const result = await runInit(projectPath, args);
 
 			assert.equal(result.status, 1);
 			assert.match(result.stderr, expectedError);
@@ -414,11 +434,11 @@ test('rejects invalid init option shapes before writing files', () => {
 	}
 });
 
-test('init help detection uses shared option token rules', () => {
+test('init help detection uses shared option token rules', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--help=true']);
+		const result = await runInit(projectPath, ['--help=true']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Usage: mf init \[options\]/);
@@ -429,14 +449,14 @@ test('init help detection uses shared option token rules', () => {
 	}
 });
 
-test('is idempotent when installed files already match the template', () => {
+test('is idempotent when installed files already match the template', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const first = runInit(projectPath);
+		const first = await runInit(projectPath);
 		assert.equal(first.status, 0);
 
-		const result = runInit(projectPath);
+		const result = await runInit(projectPath);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Unchanged AGENTS\.md/);
@@ -448,14 +468,14 @@ test('is idempotent when installed files already match the template', () => {
 	}
 });
 
-test('aborts without writing files when a conflict is found by default', () => {
+test('aborts without writing files when a conflict is found by default', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		const existingAgents = '# Existing Agent Rules\n';
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), existingAgents);
 
-		const result = runInit(projectPath);
+		const result = await runInit(projectPath);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Conflict: AGENTS\.md already exists/);
@@ -467,11 +487,11 @@ test('aborts without writing files when a conflict is found by default', () => {
 	}
 });
 
-test('prints an init plan without writing files in dry-run mode', () => {
+test('prints an init plan without writing files in dry-run mode', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--dry-run']);
+		const result = await runInit(projectPath, ['--dry-run']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /Would create AGENTS\.md/);
@@ -486,14 +506,14 @@ test('prints an init plan without writing files in dry-run mode', () => {
 	}
 });
 
-test('merges a mustflow router block into an existing AGENTS.md', () => {
+test('merges a mustflow router block into an existing AGENTS.md', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		const existingAgents = '# Existing Agent Rules\n\nKeep this project rule.\n';
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), existingAgents);
 
-		const result = runInit(projectPath, ['--merge', '--yes']);
+		const result = await runInit(projectPath, ['--merge', '--yes']);
 		const mergedAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 
 		assert.equal(result.status, 0);
@@ -511,11 +531,11 @@ test('merges a mustflow router block into an existing AGENTS.md', () => {
 	}
 });
 
-test('interactive init applies selected locale profile and agent report language', () => {
+test('interactive init applies selected locale profile and agent report language', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--interactive'], {
+		const result = await runInit(projectPath, ['--interactive'], {
 			input: '2\n3\n1\n',
 		});
 
@@ -542,11 +562,11 @@ test('interactive init applies selected locale profile and agent report language
 	}
 });
 
-test('interactive init applies selected advanced preferences', () => {
+test('interactive init applies selected advanced preferences', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--interactive'], {
+		const result = await runInit(projectPath, ['--interactive'], {
 			input: '1\n1\n1\ny\ny\ny\n2\nn\n',
 		});
 
@@ -566,11 +586,11 @@ test('interactive init applies selected advanced preferences', () => {
 	}
 });
 
-test('interactive init rejects oversized piped prompt input before writing files', () => {
+test('interactive init rejects oversized piped prompt input before writing files', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--interactive'], {
+		const result = await runInit(projectPath, ['--interactive'], {
 			input: 'x'.repeat(16 * 1024 + 1),
 		});
 
@@ -582,11 +602,11 @@ test('interactive init rejects oversized piped prompt input before writing files
 	}
 });
 
-test('interactive init rejects too many piped prompt responses before writing files', () => {
+test('interactive init rejects too many piped prompt responses before writing files', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, ['--interactive'], {
+		const result = await runInit(projectPath, ['--interactive'], {
 			input: Array.from({ length: 65 }, () => '1').join('\n'),
 		});
 
@@ -598,11 +618,11 @@ test('interactive init rejects too many piped prompt responses before writing fi
 	}
 });
 
-test('uses defaults without prompts in non-interactive execution', () => {
+test('uses defaults without prompts in non-interactive execution', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		const result = runInit(projectPath, []);
+		const result = await runInit(projectPath, []);
 
 		assert.equal(result.status, 0);
 		assert.doesNotMatch(result.stdout, /Which language should mustflow documents use\?/);
@@ -620,7 +640,7 @@ test('uses defaults without prompts in non-interactive execution', () => {
 	}
 });
 
-test('rejects .gitignore symlinks that resolve outside the project', (t) => {
+test('rejects .gitignore symlinks that resolve outside the project', async (t) => {
 	const projectPath = createTempProject();
 	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-outside-'));
 	const outsidePath = path.join(outsideRoot, 'victim.txt');
@@ -633,7 +653,7 @@ test('rejects .gitignore symlinks that resolve outside the project', (t) => {
 			return;
 		}
 
-		const result = runInit(projectPath);
+		const result = await runInit(projectPath);
 
 		assert.equal(result.status, 1);
 		assert.match(`${result.stdout}${result.stderr}`, /symlinks/);
@@ -645,7 +665,7 @@ test('rejects .gitignore symlinks that resolve outside the project', (t) => {
 	}
 });
 
-test('rejects dangling .gitignore symlinks without creating the outside target', (t) => {
+test('rejects dangling .gitignore symlinks without creating the outside target', async (t) => {
 	const projectPath = createTempProject();
 	const outsideRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-missing-outside-'));
 	const outsidePath = path.join(outsideRoot, 'victim.txt');
@@ -656,7 +676,7 @@ test('rejects dangling .gitignore symlinks without creating the outside target',
 			return;
 		}
 
-		const result = runInit(projectPath);
+		const result = await runInit(projectPath);
 
 		assert.equal(result.status, 1);
 		assert.match(`${result.stdout}${result.stderr}`, /symlinks/);
@@ -668,14 +688,14 @@ test('rejects dangling .gitignore symlinks without creating the outside target',
 	}
 });
 
-test('merges mustflow ignore rules into an existing .gitignore without overwriting user rules', () => {
+test('merges mustflow ignore rules into an existing .gitignore without overwriting user rules', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		const existingGitignore = 'node_modules/\n.env\n';
 		writeFileSync(path.join(projectPath, '.gitignore'), existingGitignore);
 
-		const result = runInit(projectPath);
+		const result = await runInit(projectPath);
 		const mergedGitignore = readText(path.join(projectPath, '.gitignore'));
 
 		assert.equal(result.status, 0);
@@ -695,7 +715,7 @@ test('merges mustflow ignore rules into an existing .gitignore without overwriti
 	}
 });
 
-test('updates only the mustflow ignore block when .gitignore already has one', () => {
+test('updates only the mustflow ignore block when .gitignore already has one', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -713,7 +733,7 @@ test('updates only the mustflow ignore block when .gitignore already has one', (
 			].join('\n'),
 		);
 
-		const result = runInit(projectPath);
+		const result = await runInit(projectPath);
 		const mergedGitignore = readText(path.join(projectPath, '.gitignore'));
 
 		assert.equal(result.status, 0);
@@ -731,14 +751,14 @@ test('updates only the mustflow ignore block when .gitignore already has one', (
 	}
 });
 
-test('backs up conflicting files before force overwriting them', () => {
+test('backs up conflicting files before force overwriting them', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		const existingAgents = '# Existing Agent Rules\n';
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), existingAgents);
 
-		const result = runInit(projectPath, ['--force', '--yes']);
+		const result = await runInit(projectPath, ['--force', '--yes']);
 		const backupRoot = path.join(projectPath, '.mustflow', 'backups');
 		const backupDirs = readdirSync(backupRoot);
 		const backedUpAgents = readFileSync(path.join(backupRoot, backupDirs[0], 'AGENTS.md'), 'utf8');
