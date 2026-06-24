@@ -406,7 +406,7 @@ applies_to_reasons = ["code_change", "public_api_change", "test_change", "packag
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "migration_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."docker-code-change"]
 category = "general_code"
@@ -418,7 +418,7 @@ applies_to_reasons = ["code_change", "public_api_change", "test_change", "securi
 category = "general_code"
 route_type = "primary"
 priority = 82
-applies_to_reasons = ["code_change", "public_api_change", "docs_change", "test_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "docs_change", "test_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change"]
 
 [routes."backend-reliability-change"]
 category = "general_code"
@@ -436,7 +436,7 @@ applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "pe
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "package_metadata_change"]
 
 [routes."javascript-code-change"]
 category = "general_code"
@@ -652,13 +652,13 @@ applies_to_reasons = ["code_change", "security_change", "migration_change"]
 category = "data_external"
 route_type = "primary"
 priority = 55
-applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "cross_cutting_code_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "cross_cutting_code_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change"]
 
 [routes."tauri-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 90
-applies_to_reasons = ["code_change", "security_change", "public_api_change"]
+applies_to_reasons = ["code_change", "behavior_change", "ui_change", "security_change", "privacy_change", "data_change", "public_api_change", "package_metadata_change", "release_risk"]
 
 [routes."process-execution-safety"]
 category = "data_external"
@@ -880,13 +880,13 @@ applies_to_reasons = ["ui_change", "docs_change", "code_change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "public_api_change", "migration_change", "package_metadata_change"]
 
 [routes."unocss-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "migration_change", "performance_change", "package_metadata_change"]
 
 [routes."flutter-code-change"]
 category = "ui_assets"
@@ -904,7 +904,7 @@ applies_to_reasons = ["ui_change", "docs_change", "code_change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
+applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "test_change", "package_metadata_change"]
 
 [routes."pattern-scout"]
 category = "architecture_patterns"

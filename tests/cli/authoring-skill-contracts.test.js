@@ -10,6 +10,18 @@ function readText(relativePath) {
 	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
 }
 
+function routeReasons(routesText, routeName) {
+	const routePattern = new RegExp(
+		`\\[routes\\."${routeName}"\\]([\\s\\S]*?)(?=\\n\\[routes\\.|$)`,
+		'u',
+	);
+	const routeBody = routesText.match(routePattern)?.[1];
+	assert.ok(routeBody, `missing route ${routeName}`);
+	const reasonsText = routeBody.match(/applies_to_reasons = \[([^\]]*)\]/u)?.[1];
+	assert.ok(reasonsText, `missing applies_to_reasons for ${routeName}`);
+	return [...reasonsText.matchAll(/"([^"]+)"/gu)].map((match) => match[1]);
+}
+
 test('README and project context authoring routes stay separated', () => {
 	const readmeSkill = readText('.mustflow/skills/readme-authoring/SKILL.md');
 	const projectContextSkill = readText('.mustflow/skills/project-context-authoring/SKILL.md');
@@ -47,6 +59,104 @@ test('skill route selection convention treats authoring as a main route', () => 
 		routes,
 		/\[routes\."security-privacy-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "primary"/u,
 	);
+});
+
+test('skill route metadata covers declared trigger axes for integration and framework skills', () => {
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+
+	assert.equal(routes, templateRoutes);
+
+	const expectedReasons = {
+		'adapter-boundary': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'cross_cutting_code_change',
+			'data_change',
+			'migration_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'package_metadata_change',
+		],
+		'api-contract-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'docs_change',
+			'test_change',
+			'data_change',
+			'migration_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+		],
+		'bun-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'migration_change',
+			'security_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'typescript-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'data_change',
+			'migration_change',
+			'ui_change',
+			'package_metadata_change',
+		],
+		'tauri-code-change': [
+			'code_change',
+			'behavior_change',
+			'ui_change',
+			'security_change',
+			'privacy_change',
+			'data_change',
+			'public_api_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'tailwind-code-change': [
+			'ui_change',
+			'docs_change',
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'migration_change',
+			'package_metadata_change',
+		],
+		'unocss-code-change': [
+			'ui_change',
+			'docs_change',
+			'code_change',
+			'behavior_change',
+			'migration_change',
+			'performance_change',
+			'package_metadata_change',
+		],
+		'svelte-code-change': [
+			'ui_change',
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'data_change',
+			'security_change',
+			'privacy_change',
+			'test_change',
+			'package_metadata_change',
+		],
+	};
+
+	for (const [routeName, reasons] of Object.entries(expectedReasons)) {
+		assert.deepEqual(routeReasons(routes, routeName), reasons, routeName);
+	}
 });
 
 test('design implementation handoff separates public specs from private agent state', () => {
@@ -3579,7 +3689,7 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 	assert.match(skillIndex, /TypeScript RC\/nightly\/API-track confusion/u);
 	assert.match(
 		routes,
-		/\[routes\."typescript-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85\r?\napplies_to_reasons = \["code_change", "public_api_change", "test_change", "package_metadata_change"\]/u,
+		/\[routes\."typescript-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85\r?\napplies_to_reasons = \["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "package_metadata_change"\]/u,
 	);
 	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 4/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 5/u);
