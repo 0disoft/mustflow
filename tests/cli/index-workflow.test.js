@@ -23,7 +23,6 @@ import {
 	queryRows,
 	readLatestLocalVerificationReadModelQueriesDirect,
 	removeTempProject,
-	runCli,
 	sourceAnchorStatusChangedSource,
 } from './index-support.js';
 
@@ -396,8 +395,8 @@ test('bounds search n-grams for unusually long tokens', async () => {
 	try {
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), `# AGENTS.md\n\n${longTokens.join(' ')}\n`);
 
-		const result = runCli(projectPath, ['index', '--json']);
-		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const output = await createLocalIndexDirect(projectPath);
+		assert.equal(output.ok, true);
 
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 		const SQL = await loadSqlJsCached();
