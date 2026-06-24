@@ -31,6 +31,11 @@ function runEnvContractJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runSecretRiskScanJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/secret-risk-scan', 'scan', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeOutlineJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/outline', 'scan', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -240,6 +245,7 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		const repoPack = report.packs.find((pack) => pack.id === 'repo');
 		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
 		const envContract = repoPack?.scripts.find((script) => script.ref === 'repo/env-contract');
+		const secretRiskScan = repoPack?.scripts.find((script) => script.ref === 'repo/secret-risk-scan');
 		const generatedBoundary = repoPack?.scripts.find((script) => script.ref === 'repo/generated-boundary');
 
 		assert.ok(configChain, 'repo/config-chain should be listed');
@@ -270,6 +276,19 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(envContract.risk_level, 'low');
 		assert.equal(envContract.cost, 'low');
 		assert.equal(envContract.report_schema_file, 'env-contract-report.schema.json');
+
+		assert.ok(secretRiskScan, 'repo/secret-risk-scan should be listed');
+		assert.equal(secretRiskScan.read_only, true);
+		assert.equal(secretRiskScan.mutates, false);
+		assert.equal(secretRiskScan.network, false);
+		assert.deepEqual(secretRiskScan.phases, ['before_change', 'during_change', 'after_change', 'review']);
+		assert.ok(secretRiskScan.use_when.some((hint) => hint.includes('hardcoded secrets')));
+		assert.ok(secretRiskScan.inputs.includes('max_findings'));
+		assert.ok(secretRiskScan.outputs.includes('secret_risk_findings'));
+		assert.ok(secretRiskScan.related_skills.includes('security-privacy-review'));
+		assert.equal(secretRiskScan.risk_level, 'medium');
+		assert.equal(secretRiskScan.cost, 'low');
+		assert.equal(secretRiskScan.report_schema_file, 'secret-risk-scan-report.schema.json');
 
 		assert.ok(generatedBoundary, 'repo/generated-boundary should be listed');
 		assert.equal(generatedBoundary.read_only, true);
@@ -2283,6 +2302,49 @@ test('env-contract scans code, docs, CI, and env examples without reading secret
 	}
 });
 
+test('secret-risk-scan reports plausible secrets without printing secret values', () => {
+	const projectPath = createTempProject();
+	const providerToken = 'sk-test_abcdefghijklmnopqrstuvwxyz1234567890';
+	const envSecret = 'SECRET_VALUE_SHOULD_NOT_APPEAR';
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'config.ts'),
+			[
+				'export const OPENAI_API_KEY = "sk-test_abcdefghijklmnopqrstuvwxyz1234567890";',
+				'export const placeholderToken = "changeme";',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(path.join(projectPath, '.env.example'), 'API_TOKEN=changeme\nREAL_TOKEN=sk-test_abcdefghijklmnopqrstuvwxyz1234567890\n');
+		writeFileSync(path.join(projectPath, '.env'), `API_TOKEN=${envSecret}\n`);
+
+		const { result, report } = runSecretRiskScanJson(projectPath, ['src', '.env.example', '.env']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'repo');
+		assert.equal(report.script_id, 'secret-risk-scan');
+		assert.equal(report.script_ref, 'repo/secret-risk-scan');
+		assert.equal(report.action, 'scan');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.doesNotMatch(result.stdout, new RegExp(providerToken, 'u'));
+		assert.doesNotMatch(result.stdout, new RegExp(envSecret, 'u'));
+		assert.ok(report.findings.some((finding) => finding.code === 'secret_risk_provider_token'));
+		assert.ok(report.findings.some((finding) => finding.code === 'secret_risk_generic_assignment'));
+		assert.ok(report.findings.some((finding) => finding.code === 'secret_risk_realistic_env_example'));
+		assert.ok(report.findings.some((finding) => finding.code === 'secret_risk_secret_file_skipped' && finding.path === '.env'));
+		assert.ok(report.findings.every((finding) => !JSON.stringify(finding).includes(providerToken)));
+		assert.ok(report.findings.some((finding) => /^sha256:[a-f0-9]{16}$/u.test(finding.fingerprint ?? '')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('reference-drift validates documented commands, script refs, schemas, and repo paths', () => {
 	const projectPath = createTempProject();
 
@@ -2556,6 +2618,37 @@ test('script-pack suggest recommends env-contract for env examples and config-en
 		assert.ok(envContract.matched_surfaces.includes('config'));
 		assert.equal(envContract.run_hint, 'mf script-pack run repo/env-contract scan .env.example --json');
 		assert.equal(envContract.report_schema_file, 'env-contract-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends secret-risk-scan for security and privacy work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'config.ts'), 'export const API_TOKEN = "changeme";\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/config.ts',
+			'--skill',
+			'security-privacy-review',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const secretRiskScan = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/secret-risk-scan');
+		assert.ok(secretRiskScan, 'repo/secret-risk-scan should be suggested for security work');
+		assert.ok(secretRiskScan.matched_phases.includes('before_change'));
+		assert.ok(secretRiskScan.matched_skills.includes('security-privacy-review'));
+		assert.ok(secretRiskScan.matched_surfaces.includes('source'));
+		assert.equal(secretRiskScan.run_hint, 'mf script-pack run repo/secret-risk-scan scan src/config.ts --json');
+		assert.equal(secretRiskScan.report_schema_file, 'secret-risk-scan-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}

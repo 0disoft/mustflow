@@ -416,6 +416,15 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'secret-risk-scan-report',
+		schemaFile: 'secret-risk-scan-report.schema.json',
+		producer: 'mf script-pack run repo/secret-risk-scan scan [path...] --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'script-pack', 'run', 'repo/secret-risk-scan', 'scan', 'AGENTS.md', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'related-files-report',
 		schemaFile: 'related-files-report.schema.json',
 		producer: 'mf script-pack run repo/related-files map <path...> --json',

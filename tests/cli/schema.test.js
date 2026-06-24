@@ -1120,6 +1120,29 @@ test('env-contract json output matches the published schema', () => {
 	}
 });
 
+test('secret-risk-scan json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'config.ts'), 'export const schemaSecret = "sk-test_abcdefghijklmnopqrstuvwxyz1234567890";\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/secret-risk-scan',
+			'scan',
+			'src/config.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'secret-risk-scan-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

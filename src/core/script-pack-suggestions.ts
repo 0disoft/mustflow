@@ -363,6 +363,15 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run repo/env-contract scan', envPaths, script.usage);
 	}
 
+	if (script.ref === 'repo/secret-risk-scan') {
+		const secretRiskPaths = analyzedPaths
+			.filter((entry) =>
+				entry.surfaces.some((surface) => surface === 'config' || surface === 'source' || surface === 'docs' || surface === 'package' || surface === 'test'),
+			)
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run repo/secret-risk-scan scan', secretRiskPaths, script.usage);
+	}
+
 	if (script.ref === 'repo/related-files') {
 		const relatedPaths = analyzedPaths
 			.filter((entry) => entry.surfaces.some((surface) => surface === 'source' || surface === 'test'))

@@ -133,6 +133,7 @@ mustflow installs and validates an agent workflow for user projects.
   `code/route-outline` for Hono, Elysia, Axum, and NestJS route maps, `docs/reference-drift` for stale
   documentation references, `repo/config-chain` for nearby config inheritance,
   `repo/env-contract` for environment-variable contract drift,
+  `repo/secret-risk-scan` for plausible hardcoded-secret findings without printing values,
   `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
   for exact file and JSON-field length budgets, so future checks do not sprawl into top-level
   commands.
@@ -303,6 +304,7 @@ mf run mustflow_update_apply
 | `mf script-pack run docs/reference-drift check [path...] --json` | Check documentation references to `mf` commands, script-pack refs, schema files, and repository paths against current local surfaces. |
 | `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |
 | `mf script-pack run repo/env-contract scan [path...] --json` | Scan code, CI, docs, config, and env examples for environment-variable contract drift without reading or printing real secret env values. |
+| `mf script-pack run repo/secret-risk-scan scan [path...] --json` | Scan code, docs, config, CI, and examples for plausible hardcoded secrets while reporting only redacted fingerprints. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
 | `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
 | `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |
