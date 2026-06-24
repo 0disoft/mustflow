@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
@@ -7,7 +7,6 @@ import { runImpact } from '../../dist/cli/commands/impact.js';
 import {
 	cloneProjectFixture,
 	createTempProject,
-	initProject,
 	projectRoot,
 	removeTempProject,
 	runCliCommand,
@@ -17,7 +16,7 @@ let initializedProjectFixture;
 
 before(() => {
 	initializedProjectFixture = createTempProject('mustflow-impact-fixture-');
-	initProject(initializedProjectFixture);
+	createImpactFixture(initializedProjectFixture);
 });
 
 after(() => {
@@ -28,6 +27,26 @@ after(() => {
 
 function createImpactProject() {
 	return cloneProjectFixture(initializedProjectFixture, 'mustflow-impact-');
+}
+
+function createImpactFixture(projectPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Impact fixture\n');
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'), 'version = 1\n');
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'preferences.toml'),
+		[
+			'[release.versioning]',
+			'impact_check = true',
+			'suggest_bump = true',
+			'auto_bump = true',
+			'sync_template_version = true',
+			'sync_docs_examples = true',
+			'sync_tests = true',
+			'',
+		].join('\n'),
+	);
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'version = "1.0.0"\n');
 }
 
 function runCli(cwd, args) {
