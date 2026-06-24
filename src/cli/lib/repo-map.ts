@@ -323,6 +323,17 @@ interface AnchorDiscovery {
 	readonly gitLsFilesStatus: GitLsFilesStatus;
 }
 
+interface RepoMapRenderModel {
+	readonly configuredPriorityPaths: readonly string[];
+	readonly priorityPathSet: ReadonlySet<string>;
+	readonly mapConfig: MapConfig;
+	readonly nestedRepositories: readonly NestedRepository[];
+	readonly anchors: readonly AnchorFile[];
+	readonly gitLsFilesStatus: GitLsFilesStatus;
+	readonly anchorCount: number;
+	readonly sourceFingerprint: string;
+}
+
 function getStringArray(value: unknown): string[] {
 	return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
 }
@@ -908,7 +919,7 @@ function renderSourceQuality(gitLsFilesStatus: GitLsFilesStatus): string[] {
 	];
 }
 
-export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {}): string {
+function createRepoMapRenderModel(projectRoot: string, options: RepoMapOptions = {}): RepoMapRenderModel {
 	const depth = options.depth ?? DEFAULT_DEPTH;
 	const config = getRepoMapConfig(projectRoot);
 	const configuredPriorityPaths = config.priorityPaths;
@@ -922,10 +933,6 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 	const anchorDiscovery = discoverAnchors(projectRoot, depth, priorityPathSet, nestedRepositories, workspaceRootPrefixes);
 	const anchors = anchorDiscovery.anchors;
 	const gitLsFilesStatus = anchorDiscovery.gitLsFilesStatus;
-	const priorityAnchors = configuredPriorityPaths
-		.map((relativePath) => anchors.find((anchor) => anchor.relativePath === relativePath))
-		.filter((anchor): anchor is AnchorFile => Boolean(anchor));
-	const otherAnchors = anchors.filter((anchor) => !priorityPathSet.has(anchor.relativePath));
 	const anchorCount =
 		anchors.length + nestedRepositories.reduce((total, repository) => total + countNestedEntrypoints(repository), 0);
 	const sourceFingerprint = getRepoMapSourceFingerprint({
@@ -937,8 +944,36 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 		nestedRepositories,
 	});
 
+	return {
+		configuredPriorityPaths,
+		priorityPathSet,
+		mapConfig,
+		nestedRepositories,
+		anchors,
+		gitLsFilesStatus,
+		anchorCount,
+		sourceFingerprint,
+	};
+}
+
+export function getExpectedRepoMapSourceFingerprint(projectRoot: string, options: RepoMapOptions = {}): string {
+	return createRepoMapRenderModel(projectRoot, options).sourceFingerprint;
+}
+
+export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {}): string {
+	const model = createRepoMapRenderModel(projectRoot, options);
+	const configuredPriorityPaths = model.configuredPriorityPaths;
+	const priorityPathSet = model.priorityPathSet;
+	const nestedRepositories = model.nestedRepositories;
+	const anchors = model.anchors;
+	const gitLsFilesStatus = model.gitLsFilesStatus;
+	const priorityAnchors = configuredPriorityPaths
+		.map((relativePath) => anchors.find((anchor) => anchor.relativePath === relativePath))
+		.filter((anchor): anchor is AnchorFile => Boolean(anchor));
+	const otherAnchors = anchors.filter((anchor) => !priorityPathSet.has(anchor.relativePath));
+
 	return [
-		...renderRepoMapFrontmatter(anchorCount, sourceFingerprint, gitLsFilesStatus),
+		...renderRepoMapFrontmatter(model.anchorCount, model.sourceFingerprint, gitLsFilesStatus),
 		'# REPO_MAP.md',
 		'',
 		'This file is an agent navigation map for the current mustflow root. It is not a full file listing.',

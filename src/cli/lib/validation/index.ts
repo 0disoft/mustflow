@@ -34,7 +34,7 @@ import { validateSourceAnchorsInProject } from '../../../core/source-anchor-vali
 import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readGitChangedFiles } from '../git-changes.js';
 import { inspectManifestLock } from '../manifest-lock.js';
-import { generateRepoMap } from '../repo-map.js';
+import { getExpectedRepoMapSourceFingerprint } from '../repo-map.js';
 import { parseTomlText, readMustflowTomlFile } from '../toml.js';
 import { MUSTFLOW_JSON_MAX_BYTES } from '../mustflow-read.js';
 import {
@@ -2322,7 +2322,7 @@ function validateStrictRepoMap(projectRoot: string, issues: CheckIssue[]): void 
 		pushStrictIssue(issues, 'REPO_MAP.md frontmatter source_fingerprint must be sha256:<64 lowercase hex characters>');
 	} else {
 		const currentSourceFingerprint = frontmatter.source_fingerprint;
-		const expectedSourceFingerprint = parseSimpleFrontmatter(generateRepoMap(projectRoot)).source_fingerprint;
+		const expectedSourceFingerprint = getExpectedRepoMapSourceFingerprint(projectRoot);
 
 		if (expectedSourceFingerprint && currentSourceFingerprint !== expectedSourceFingerprint) {
 			pushStrictIssue(issues, 'REPO_MAP.md source_fingerprint is stale; regenerate with mf map --write');

@@ -378,6 +378,23 @@ test('keeps repo map frontmatter and source fingerprint rendering stable', async
 	]);
 });
 
+test('computes the expected repo map source fingerprint without rendering the map body', async () => {
+	const { generateRepoMap, getExpectedRepoMapSourceFingerprint } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'repo-map.js')).href
+	);
+	const projectPath = createTempProject();
+
+	try {
+		const repoMap = generateRepoMap(projectPath);
+		const match = /^source_fingerprint: "(sha256:[a-f0-9]{64})"$/mu.exec(repoMap);
+
+		assert.ok(match);
+		assert.equal(getExpectedRepoMapSourceFingerprint(projectPath), match[1]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints nested repository entrypoints when workspace map is enabled', () => {
 	const projectPath = createTempProject();
 
