@@ -118,6 +118,18 @@ test('source repository exposes cached related tests as a read-only command inte
 	assert.match(cachedCost, /expected_seconds = 90/u);
 });
 
+test('source repository exposes related-test profiling as a bounded diagnostic intent', () => {
+	const profileIntent = /\[intents\.test_related_profile\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(profileIntent, '');
+	assert.match(profileIntent, /argv = \["bun", "run", "test:related:profile"\]/u);
+	assert.match(profileIntent, /writes = \["dist\/\*\*"\]/u);
+	assert.match(profileIntent, /lock = "dist_build_output"/u);
+	assert.match(profileIntent, /network = false/u);
+	assert.match(profileIntent, /destructive = false/u);
+	assert.match(profileIntent, /required_after = \["performance_change", "verification_performance_review"\]/u);
+});
+
 test('source repository keeps build out of ordinary code-change verification', () => {
 	const buildIntent = /\[intents\.build\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 

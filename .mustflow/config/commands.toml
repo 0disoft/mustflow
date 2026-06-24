@@ -118,6 +118,22 @@ contracts = ["related CLI regression coverage"]
 expected_seconds = 180
 cost_tier = "medium"
 
+[intents.test_related_profile]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Profile mustflow CLI tests selected from changed files after rebuilding dist/."
+argv = ["bun", "run", "test:related:profile"]
+cwd = "."
+timeout_seconds = 1800
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["performance_change", "verification_performance_review"]
+
 [intents.test_related_cached]
 status = "configured"
 lifecycle = "oneshot"
