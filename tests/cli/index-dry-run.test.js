@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { createTempProject, removeTempProject, runCliInProcess } from './helpers/cli-harness.js';
+import { createMinimalWorkflowProject } from './index-support.js';
 
-test('prints a dry-run local index plan without writing sqlite', () => {
-	const projectPath = createTempProject();
+test('prints a dry-run local index plan without writing sqlite', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-dry-run-');
 
 	try {
-		initProject(projectPath);
-		const result = runCli(projectPath, ['index', '--dry-run', '--json']);
+		const result = await runCliInProcess(projectPath, ['index', '--dry-run', '--json']);
 		const output = JSON.parse(result.stdout);
 		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
 
@@ -41,10 +41,10 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		assert.ok(output.indexed_file_count >= output.document_count);
 		assert.equal(path.resolve(output.database_path), indexPath);
 		assert.ok(output.document_count >= 7);
-		assert.ok(output.skill_count >= 4);
-		assert.ok(output.skill_route_count >= 4);
-		assert.ok(output.command_intent_count >= 8);
-		assert.ok(output.command_effect_count >= 1);
+		assert.equal(output.skill_count, 1);
+		assert.equal(output.skill_route_count, 1);
+		assert.equal(output.command_intent_count, 1);
+		assert.equal(output.command_effect_count, 0);
 		assert.equal(output.verification_evidence_summary_count, 0);
 		assert.equal(output.verification_plan_count, 0);
 		assert.equal(output.acceptance_criteria_count, 0);
@@ -63,20 +63,19 @@ test('prints a dry-run local index plan without writing sqlite', () => {
 		assert.equal(output.source_anchor_risk_signal_count, 0);
 		assert.ok(output.indexed_paths.includes('.mustflow/context/INDEX.md'));
 		assert.ok(output.indexed_paths.includes('.mustflow/context/PROJECT.md'));
+		assert.ok(output.indexed_paths.includes('.mustflow/config/commands.toml'));
 		assert.equal(existsSync(indexPath), false);
 	} finally {
 		removeTempProject(projectPath);
 	}
 });
 
-test('rejects unsupported index options with usage help', () => {
+test('rejects unsupported index options with usage help', async () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
-
-		const unknownOption = runCli(projectPath, ['index', '--bad']);
-		const booleanValue = runCli(projectPath, ['index', '--json=true']);
+		const unknownOption = await runCliInProcess(projectPath, ['index', '--bad']);
+		const booleanValue = await runCliInProcess(projectPath, ['index', '--json=true']);
 
 		assert.equal(unknownOption.status, 1);
 		assert.match(unknownOption.stderr, /Unknown option: --bad/u);
