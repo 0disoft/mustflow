@@ -6,7 +6,6 @@ import { runVersionSources } from '../../dist/cli/commands/version-sources.js';
 import {
 	cloneProjectFixture,
 	createTempProject,
-	initProject,
 	removeTempProject,
 	runCliCommand,
 } from './helpers/cli-harness.js';
@@ -15,7 +14,7 @@ let initializedProjectFixture;
 
 before(() => {
 	initializedProjectFixture = createTempProject('mustflow-version-sources-fixture-');
-	initProject(initializedProjectFixture);
+	createVersionSourcesFixture(initializedProjectFixture);
 });
 
 after(() => {
@@ -26,6 +25,26 @@ after(() => {
 
 function createVersionSourcesProject() {
 	return cloneProjectFixture(initializedProjectFixture, 'mustflow-version-sources-');
+}
+
+function createVersionSourcesFixture(projectPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Version sources fixture\n');
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'), 'version = 1\n');
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'preferences.toml'),
+		[
+			'[release.versioning]',
+			'impact_check = true',
+			'suggest_bump = true',
+			'auto_bump = true',
+			'sync_template_version = true',
+			'sync_docs_examples = true',
+			'sync_tests = true',
+			'',
+		].join('\n'),
+	);
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'version = "1.0.0"\n');
 }
 
 function runCli(cwd, args) {
