@@ -9,12 +9,28 @@ first_seen_at = "2026-06-23T08:00:14.018Z"
 last_touched_at = "2026-06-23T08:00:14.018Z"
 
 [[documents]]
+path = ".mustflow/skills/architecture-deepening-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T01:09:24.010Z"
+last_touched_at = "2026-06-24T01:55:14.218Z"
+
+[[documents]]
 path = ".mustflow/skills/cross-agent-session-reference/SKILL.md"
 status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.482Z"
 last_touched_at = "2026-06-24T00:31:19.574Z"
+
+[[documents]]
+path = ".mustflow/skills/github-contribution-quality-gate/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T01:17:28.204Z"
+last_touched_at = "2026-06-24T01:55:14.233Z"
 
 [[documents]]
 path = ".mustflow/skills/INDEX.md"
@@ -42,7 +58,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-06-24T00:31:19.583Z"
+last_touched_at = "2026-06-24T01:55:14.242Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -78,7 +94,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T09:06:07.267Z"
-last_touched_at = "2026-06-23T15:05:04.827Z"
+last_touched_at = "2026-06-24T01:55:14.247Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/skill.md"
@@ -166,7 +182,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-06-23T15:05:04.832Z"
+last_touched_at = "2026-06-24T01:55:14.255Z"
 
 [[documents]]
 path = "schemas/README.md"
@@ -174,7 +190,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "llm_modified"
 first_seen_at = "2026-06-18T06:17:56.747Z"
-last_touched_at = "2026-06-23T15:05:04.835Z"
+last_touched_at = "2026-06-24T01:55:14.262Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -187,12 +203,28 @@ first_seen_at = "2026-06-23T08:00:14.035Z"
 last_touched_at = "2026-06-23T08:00:14.035Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/architecture-deepening-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T01:09:24.041Z"
+last_touched_at = "2026-06-24T01:55:14.269Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/cross-agent-session-reference/SKILL.md"
 status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.499Z"
 last_touched_at = "2026-06-24T00:31:19.591Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/github-contribution-quality-gate/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T01:17:28.221Z"
+last_touched_at = "2026-06-24T01:55:14.274Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/INDEX.md"

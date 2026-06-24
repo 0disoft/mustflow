@@ -838,6 +838,30 @@ test('code-outline json output matches the published schema', () => {
 	}
 });
 
+test('dependency-graph json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'entry.ts'), 'import { helper } from "./helper";\nexport const entry = helper;\n');
+		writeFileSync(path.join(projectPath, 'src', 'helper.ts'), 'export const helper = 1;\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/dependency-graph',
+			'scan',
+			'src/entry.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'dependency-graph-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('code-symbol-read json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

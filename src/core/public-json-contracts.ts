@@ -259,6 +259,22 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		],
 	},
 	{
+		id: 'dependency-graph-report',
+		schemaFile: 'dependency-graph-report.schema.json',
+		producer: 'mf script-pack run code/dependency-graph scan <path...> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: [
+			'mf',
+			'script-pack',
+			'run',
+			'code/dependency-graph',
+			'scan',
+			'node_modules/mustflow/dist/cli/index.js',
+			'--json',
+		],
+	},
+	{
 		id: 'code-symbol-read-report',
 		schemaFile: 'code-symbol-read-report.schema.json',
 		producer: 'mf script-pack run code/symbol-read read <path> --start-line <line> --json',

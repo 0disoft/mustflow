@@ -31,6 +31,11 @@ function runCodeOutlineJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeDependencyGraphJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/dependency-graph', 'scan', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeSymbolReadJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/symbol-read', 'read', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -103,6 +108,23 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(codeOutline.risk_level, 'low');
 		assert.equal(codeOutline.cost, 'low');
 		assert.equal(codeOutline.report_schema_file, 'code-outline-report.schema.json');
+
+		const dependencyGraph = codePack?.scripts.find((script) => script.ref === 'code/dependency-graph');
+
+		assert.ok(dependencyGraph, 'code/dependency-graph should be listed');
+		assert.equal(dependencyGraph.read_only, true);
+		assert.equal(dependencyGraph.mutates, false);
+		assert.equal(dependencyGraph.network, false);
+		assert.deepEqual(dependencyGraph.phases, ['before_change', 'during_change', 'review']);
+		assert.ok(dependencyGraph.use_when.some((hint) => hint.includes('dependency graph')));
+		assert.ok(dependencyGraph.inputs.includes('max_depth'));
+		assert.ok(dependencyGraph.inputs.includes('max_edges'));
+		assert.ok(dependencyGraph.outputs.includes('dependency_graph'));
+		assert.ok(dependencyGraph.outputs.includes('cycle_hints'));
+		assert.ok(dependencyGraph.related_skills.includes('change-blast-radius-review'));
+		assert.equal(dependencyGraph.risk_level, 'low');
+		assert.equal(dependencyGraph.cost, 'low');
+		assert.equal(dependencyGraph.report_schema_file, 'dependency-graph-report.schema.json');
 
 		const codeSymbolRead = codePack?.scripts.find((script) => script.ref === 'code/symbol-read');
 
@@ -418,6 +440,76 @@ test('code-outline reports explicit return annotations and return behavior metad
 		assert.equal(failFast.return_count, 0);
 		assert.deepEqual(failFast.return_lines, []);
 		assert.equal(failFast.return_preview, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dependency-graph scans relative imports with bounded node and edge metadata', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'feature.ts'),
+			[
+				'import { helper } from "./helper";',
+				'export { value } from "./value";',
+				'export function feature() { return helper(); }',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(path.join(projectPath, 'src', 'helper.ts'), 'const value = require("./value");\nexport function helper() { return value; }\n');
+		writeFileSync(path.join(projectPath, 'src', 'value.ts'), 'export const value = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer.ts'), 'import("./feature");\n');
+
+		const { result, report } = runCodeDependencyGraphJson(projectPath, ['src/feature.ts', '--max-depth', '2']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'code');
+		assert.equal(report.script_id, 'dependency-graph');
+		assert.equal(report.script_ref, 'code/dependency-graph');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.truncated, false);
+		assert.equal(report.targets[0].path, 'src/feature.ts');
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		const nodePaths = report.nodes.map((node) => node.path);
+		assert.ok(nodePaths.includes('src/feature.ts'));
+		assert.ok(nodePaths.includes('src/helper.ts'));
+		assert.ok(nodePaths.includes('src/value.ts'));
+		assert.ok(nodePaths.includes('src/consumer.ts'));
+
+		const edges = new Map(report.edges.map((edge) => [`${edge.kind}:${edge.source_path}->${edge.target_path}`, edge]));
+		assert.equal(edges.get('static_import:src/feature.ts->src/helper.ts')?.line, 1);
+		assert.equal(edges.get('static_export:src/feature.ts->src/value.ts')?.line, 2);
+		assert.equal(edges.get('require:src/helper.ts->src/value.ts')?.line, 1);
+		assert.equal(edges.get('dynamic_import:src/consumer.ts->src/feature.ts')?.line, 1);
+		assert.deepEqual(report.findings, []);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dependency-graph reports import cycles as hints without failing the helper', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'a.ts'), 'import { b } from "./b";\nexport const a = b;\n');
+		writeFileSync(path.join(projectPath, 'src', 'b.ts'), 'import { a } from "./a";\nexport const b = a;\n');
+
+		const { result, report } = runCodeDependencyGraphJson(projectPath, ['src/a.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.ok(report.cycles.some((cycle) => cycle.includes('src/a.ts') && cycle.includes('src/b.ts')));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -2154,13 +2246,16 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 
 		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
+		const dependencyGraph = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/dependency-graph');
 		const symbolRead = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/symbol-read');
 		const relatedFiles = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/related-files');
 
 		assert.ok(outline, 'code/outline should be suggested for source paths');
+		assert.ok(dependencyGraph, 'code/dependency-graph should be suggested for source paths');
 		assert.ok(symbolRead, 'code/symbol-read should be suggested as a source follow-up');
 		assert.ok(relatedFiles, 'repo/related-files should be suggested for source paths');
 		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan src/session.ts --json');
+		assert.equal(dependencyGraph.run_hint, 'mf script-pack run code/dependency-graph scan src/session.ts --json');
 		assert.match(symbolRead.run_hint, /After code\/outline returns a symbol line or anchor/u);
 		assert.match(symbolRead.run_hint, /src\/session\.ts --start-line <line> --json/u);
 		assert.equal(relatedFiles.run_hint, 'mf script-pack run repo/related-files map src/session.ts --json');
@@ -2483,6 +2578,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /Usage: mf script-pack/);
 		assert.match(result.stdout, /mf script-pack suggest --path src\/cli\/index\.ts --phase before_change/);
 		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
+		assert.match(result.stdout, /mf script-pack run code\/dependency-graph scan src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run docs\/reference-drift check README\.md schemas\/README\.md --json/);

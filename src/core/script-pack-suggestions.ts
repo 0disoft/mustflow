@@ -21,6 +21,7 @@ export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 
 const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 	'code/outline',
+	'code/dependency-graph',
 	'code/symbol-read',
 	'code/route-outline',
 	'code/export-diff',
@@ -299,6 +300,11 @@ function createRunHint(
 			)} --start-line <line> --json`;
 		}
 		return 'After code/outline returns a source anchor, run: mf script-pack run code/symbol-read read --anchor <anchor-id> --json';
+	}
+
+	if (script.ref === 'code/dependency-graph') {
+		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
+		return createConcretePathHint('mf script-pack run code/dependency-graph scan', sourcePaths, script.usage);
 	}
 
 	if (script.ref === 'code/route-outline') {

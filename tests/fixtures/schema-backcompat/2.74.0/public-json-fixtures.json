@@ -3085,6 +3085,91 @@
       }
     },
     {
+      "id": "dependency-graph-report",
+      "schema_file": "dependency-graph-report.schema.json",
+      "producer": "mf script-pack run code/dependency-graph scan <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "dependency-graph",
+        "script_ref": "code/dependency-graph",
+        "action": "scan",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 262144,
+          "max_files": 1000,
+          "max_depth": 2,
+          "max_nodes": 300,
+          "max_edges": 800,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ]
+        },
+        "input_hash": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        "targets": [
+          {
+            "input": "src/entry.ts",
+            "path": "src/entry.ts",
+            "exists": true,
+            "kind": "file",
+            "language": "typescript"
+          }
+        ],
+        "nodes": [
+          {
+            "path": "src/entry.ts",
+            "language": "typescript",
+            "target": true,
+            "depth": 0,
+            "import_count": 1,
+            "importer_count": 0
+          },
+          {
+            "path": "src/helper.ts",
+            "language": "typescript",
+            "target": false,
+            "depth": 1,
+            "import_count": 0,
+            "importer_count": 1
+          }
+        ],
+        "edges": [
+          {
+            "source_path": "src/entry.ts",
+            "target_path": "src/helper.ts",
+            "specifier": "./helper",
+            "line": 1,
+            "kind": "static_import"
+          }
+        ],
+        "cycles": [],
+        "truncated": false,
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
       "id": "code-symbol-read-report",
       "schema_file": "code-symbol-read-report.schema.json",
       "producer": "mf script-pack run code/symbol-read read <path> --start-line <line> --json",

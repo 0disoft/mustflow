@@ -7,7 +7,8 @@ description: Lists and runs bundled mustflow utility scripts under one command n
 top-level command.
 
 The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
-symbol headers, line ranges, and source-anchor metadata, `code/symbol-read`, which reads a focused source snippet by
+symbol headers, line ranges, and source-anchor metadata, `code/dependency-graph`, which traces bounded
+relative import graph edges, `code/symbol-read`, which reads a focused source snippet by
 source anchor, symbol line, or explicit line range, `code/route-outline`, which scans Hono,
 Elysia, and Axum route metadata, `code/export-diff`, which compares exported TypeScript and JavaScript
 signatures against a git base, `docs/reference-drift`, which checks documented references against
@@ -48,7 +49,8 @@ When enough path evidence is available, each suggestion's `run_hint` is a concre
 command for the current path, such as `code/outline`, `core/text-budget`, or
 `repo/generated-boundary` with `--json`. `docs/reference-drift` is recommended for docs, schema,
 CLI, and script-pack surface changes where stale examples or path references are likely.
-`repo/related-files` is recommended for source and test paths when adjacent-file discovery is
+`code/dependency-graph` and `repo/related-files` are recommended for source and test paths when dependency
+or adjacent-file discovery is
 useful. Helpers that need data from another helper keep that dependency explicit; for example,
 `code/symbol-read` is presented as a follow-up after `code/outline` identifies a symbol line or
 source anchor.
@@ -90,6 +92,21 @@ outline is an orientation aid, not an AST refactoring engine or runtime value tr
 Supported extensions are `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, and `.cjs`.
 Directory scans skip common generated, cache, vendor, and build directories such as `.git`,
 `.mustflow/cache`, `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.turbo`.
+
+## Trace Dependency Graphs
+
+```sh
+npx mf script-pack run code/dependency-graph scan src/cli/index.ts --json
+npx mf script-pack run code/dependency-graph scan src/core --max-depth 3 --max-nodes 120 --json
+```
+
+`code/dependency-graph` is read-only. It traces relative TypeScript and JavaScript `import`,
+`export ... from`, `require`, and dynamic `import()` edges from target files or directories. The
+report includes graph nodes, edges, target flags, bounded depth, import and importer counts, cycle
+hints, policy limits, findings, and issues.
+
+Use it before source edits when import impact matters. It intentionally does not resolve package
+imports, tsconfig aliases, bundler aliases, or runtime side effects.
 
 ## Read Source Symbols
 
@@ -217,6 +234,7 @@ as stable finding codes in JSON mode.
 npx mf script-pack list --json
 npx mf script-pack suggest --path AGENTS.md --phase before_change --json
 npx mf script-pack run code/outline scan src --json
+npx mf script-pack run code/dependency-graph scan src/cli/index.ts --json
 npx mf script-pack run code/symbol-read read src/core/code-outline.ts --start-line 320 --json
 npx mf script-pack run code/symbol-read read --anchor auth.session.resolve --json
 npx mf script-pack run code/route-outline scan src/cli/index.ts --json
@@ -232,6 +250,8 @@ npx mf script-pack run repo/related-files map src/cli/index.ts --json
 `mf script-pack suggest --json` is validated by
 `schemas/script-pack-suggestion-report.schema.json`.
 `code/outline` JSON reports are validated by `schemas/code-outline-report.schema.json`.
+`code/dependency-graph` JSON reports are validated by
+`schemas/dependency-graph-report.schema.json`.
 `code/symbol-read` JSON reports are validated by
 `schemas/code-symbol-read-report.schema.json`.
 `code/route-outline` JSON reports are validated by `schemas/route-outline-report.schema.json`.

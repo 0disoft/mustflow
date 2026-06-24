@@ -128,7 +128,8 @@ mustflow installs and validates an agent workflow for user projects.
   evidence, and dashboard exports so agents justify new dependencies, helper-style surfaces,
   config/schema churn, and broad structural changes before treating added complexity as free.
 - Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
-  `code/outline` for source symbol maps, `code/symbol-read` for focused source snippets,
+  `code/outline` for source symbol maps, `code/dependency-graph` for bounded relative import graphs,
+  `code/symbol-read` for focused source snippets,
   `code/route-outline` for Hono, Elysia, Axum, and NestJS route maps, `docs/reference-drift` for stale
   documentation references, `repo/config-chain` for nearby config inheritance,
   `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
@@ -292,6 +293,7 @@ mf run mustflow_update_apply
 | `mf script-pack suggest --changed --json` | Rank optional read-only helpers for current changed files without running those helpers or granting command authority. |
 | `mf script-pack suggest --path <path> --phase before_change` | Rank helpers for an explicit path and workflow phase before deciding which script to run. |
 | `mf script-pack run code/outline scan <path...> --json` | Scan supported source files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
+| `mf script-pack run code/dependency-graph scan <path...> --json` | Trace bounded relative import, export, require, and dynamic import edges for TypeScript and JavaScript source files. |
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
 | `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono, Elysia, Axum, and NestJS files for route methods, paths, handlers, lifecycle chains, line ranges, and content hashes. |
@@ -330,7 +332,8 @@ Automation and agents should use `--json` output or `mf api serve --stdio` JSONL
 For script-pack helper selection, start with `mf script-pack suggest --changed --json` or an
 explicit `--path`. The suggestion report is only a ranking aid: it does not run scripts, prove
 verification, or bypass `.mustflow/config/commands.toml`. A common source-orientation flow is
-`code/outline` first, then `code/symbol-read` for the chosen symbol line or source anchor. After
+`code/outline` first, `code/dependency-graph` for relative import impact, then `code/symbol-read`
+for the chosen symbol line or source anchor. After
 public-ish TypeScript or JavaScript changes, use `code/export-diff` to review exported signatures
 and return metadata against a git base. After docs, schema, CLI, or script-pack surface changes, use
 `docs/reference-drift` to catch stale references before treating docs as synchronized. For

@@ -8,6 +8,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added the built-in `code/dependency-graph` script-pack helper so agents can trace bounded
+  relative TypeScript and JavaScript import, export, require, and dynamic import edges before
+  changing source modules.
 - Added the built-in `repo/config-chain` script-pack helper so agents can inspect nearby package,
   TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges
   before assuming effective project rules.
@@ -73,6 +76,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Clarified the `cross-agent-session-reference` skill so referenced sessions remain read-only
   evidence while user-explicit cross-agent handoffs can still send bounded prompts through available
   host tools.
+- Strengthened the `architecture-deepening-review` skill so layered-architecture reviews reject
+  folder-name theater, require change-pressure and boundary-enforcement evidence, and surface
+  pass-through layer, generic CRUD, and shared-helper smells before proposing deeper structure.
+- Strengthened the `github-contribution-quality-gate` skill so GitHub issues, PR bodies, and
+  review replies check title quality, reading order, Markdown element purpose, Preview readability,
+  verification results, review focus, and risk or rollback notes before posting.
 
 ### Fixed
 

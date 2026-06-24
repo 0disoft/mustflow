@@ -69,6 +69,10 @@ Current schemas:
   file hashes, language metadata, symbol names, declaration kinds, line ranges, signatures, export
   flags, source-anchor navigation metadata, static return metadata, and stable input-limit finding
   codes
+- `dependency-graph-report.schema.json`: output of
+  `mf script-pack run code/dependency-graph scan <path...> --json`, containing bounded relative
+  TypeScript and JavaScript import graph nodes, edges, cycle hints, target flags, depth, importer
+  counts, policy limits, and stable input-limit finding codes
 - `code-symbol-read-report.schema.json`: output of
   `mf script-pack run code/symbol-read read <path> --start-line <line> --json`, containing a
   focused source snippet selected by source anchor, outline symbol line, or explicit line range with
