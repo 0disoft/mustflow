@@ -898,7 +898,7 @@ applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["ui_change", "docs_change", "code_change"]
+applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "migration_change", "package_metadata_change"]
 
 [routes."svelte-code-change"]
 category = "ui_assets"

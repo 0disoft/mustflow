@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 175
+revision = 176
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -517,7 +517,7 @@ translations = {}
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.auth-permission-change"]

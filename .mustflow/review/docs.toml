@@ -17,6 +17,14 @@ first_seen_at = "2026-06-24T01:09:24.010Z"
 last_touched_at = "2026-06-24T01:55:14.218Z"
 
 [[documents]]
+path = ".mustflow/skills/astro-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T04:11:28.499Z"
+last_touched_at = "2026-06-24T04:25:24.717Z"
+
+[[documents]]
 path = ".mustflow/skills/cross-agent-session-reference/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -46,7 +54,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-06-23T15:26:40.490Z"
+last_touched_at = "2026-06-24T04:25:24.730Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -227,6 +235,14 @@ first_seen_at = "2026-06-24T01:09:24.041Z"
 last_touched_at = "2026-06-24T01:55:14.269Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/astro-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T04:11:28.538Z"
+last_touched_at = "2026-06-24T04:25:24.754Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/cross-agent-session-reference/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -256,7 +272,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-06-23T15:26:40.505Z"
+last_touched_at = "2026-06-24T04:25:24.760Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
