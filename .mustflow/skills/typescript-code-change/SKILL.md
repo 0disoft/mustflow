@@ -2,7 +2,7 @@
 mustflow_doc: skill.typescript-code-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: typescript-code-change
@@ -91,19 +91,22 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 11. For type tests, prefer `@ts-expect-error` with a short reason. Do not use `@ts-ignore` in implementation code. Implementation `@ts-expect-error` needs an owner, removal condition, and risk report.
 12. If a public API changes, trace every consumer-visible import specifier, runtime export, type export, declaration output, docs example, type-only export, overload, generic default, interface field, enum or literal member, class member, and package entry condition.
 13. Treat `exports`, `types`, `typings`, `typesVersions`, package `type`, file extensions, path aliases, declaration import paths, and barrel exports as public API surfaces. Adding or tightening `exports` can break existing deep imports.
-14. If ESM/CJS behavior changes, verify package `type`, `main`, `module`, `browser`, `exports`, condition order, extension rules, generated JS, and generated declaration files together.
-15. Inspect generated declarations when package surfaces change. Declaration files must not leak source-only aliases, private paths, workspace-only package names, unpublished internal paths, or accidental public re-exports.
-16. For TypeScript 6 migration work, treat deprecation warnings as future TypeScript 7 removal risk. `ignoreDeprecations` is a temporary compatibility valve, not proof that the project is ready for 7.0. Prefer removing deprecated options and updating resolver or module choices to match the project runtime.
-17. Treat TypeScript 6 `--stableTypeOrdering` as a migration comparison tool for declaration and error-order differences, not as a permanent performance-neutral default. If it changes errors or declaration output, look for inference or declaration-stability issues instead of snapshotting noise.
-18. For TypeScript 7 migration work, keep the tracks separate:
+14. For TypeScript that emits code for native Node ESM, prefer `.ts` source plus package `"type": "module"` and `module`/`moduleResolution` set to `NodeNext` or the repository's fixed Node mode. Do not rename every source file to `.mts` just to mean ESM; reserve `.mts` and `.cts` for explicit per-file module overrides or mixed-package boundaries.
+15. In TypeScript source that targets native Node ESM, write relative imports using the emitted runtime specifier, usually `.js`, such as `import { createApp } from "./app.js"` from `app.ts`. Do not write extensionless relative imports or `.ts` runtime specifiers unless a declared loader, bundler, or runtime explicitly owns that behavior.
+16. Use `moduleResolution: "Bundler"` only when a bundler such as Vite, esbuild, Rollup, or a framework build system owns final module resolution. Do not use bundler resolution to model code that Node will execute directly without that bundler.
+17. If ESM/CJS behavior changes, verify package `type`, `main`, `module`, `browser`, `exports`, condition order, extension rules, generated JS, and generated declaration files together.
+18. Inspect generated declarations when package surfaces change. Declaration files must not leak source-only aliases, private paths, workspace-only package names, unpublished internal paths, or accidental public re-exports.
+19. For TypeScript 6 migration work, treat deprecation warnings as future TypeScript 7 removal risk. `ignoreDeprecations` is a temporary compatibility valve, not proof that the project is ready for 7.0. Prefer removing deprecated options and updating resolver or module choices to match the project runtime.
+20. Treat TypeScript 6 `--stableTypeOrdering` as a migration comparison tool for declaration and error-order differences, not as a permanent performance-neutral default. If it changes errors or declaration output, look for inference or declaration-stability issues instead of snapshotting noise.
+21. For TypeScript 7 migration work, keep the tracks separate:
    - TS6 stable API track: `@typescript/typescript6` and `tsc6` for compiler API, transformer, ESLint, framework wrapper, and peer-dependency compatibility.
    - TS7 RC compiler track: `typescript@rc` and `tsc` for RC compiler verification.
    - TS7 nightly track: `@typescript/native-preview` and `tsgo` for nightly diagnostics only.
    - Future TS7 stable track: stable `typescript` once upstream publishes TypeScript 7 on the normal stable path.
-19. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API track until their owners explicitly support the TS7 API surface. Treat TS7 RC `tsc` as compiler verification, not proof that JavaScript compiler API consumers can migrate.
-20. When comparing TS6 `tsc6`, TS7 RC `tsc`, and optional TS7 nightly `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
-21. Do not treat faster TS7 RC or nightly results as sufficient verification. Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline until repository policy explicitly adopts a different compiler track.
-22. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, and downstream-style consumer risk.
+22. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API track until their owners explicitly support the TS7 API surface. Treat TS7 RC `tsc` as compiler verification, not proof that JavaScript compiler API consumers can migrate.
+23. When comparing TS6 `tsc6`, TS7 RC `tsc`, and optional TS7 nightly `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
+24. Do not treat faster TS7 RC or nightly results as sufficient verification. Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline until repository policy explicitly adopts a different compiler track.
+25. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, and downstream-style consumer risk.
 
 <!-- mustflow-section: assertion-policy -->
 ## Assertion Policy

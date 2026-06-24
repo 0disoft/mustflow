@@ -2,7 +2,7 @@
 mustflow_doc: skill.node-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: node-code-change
@@ -85,19 +85,21 @@ Preserve the actual Node.js runtime, module, package manager, TypeScript executi
    - Yarn PnP, Zero-Install, and immutable installs can make `node_modules` assumptions wrong.
    - Corepack availability depends on the Node/runtime environment; do not assume it exists in every Node version, image, or CI runner.
 5. Determine Node module loading from Node rules, not preference or `tsconfig` alone. `.mjs` and `.mts` are ESM, `.cjs` and `.cts` are CommonJS, and `.js` or `.ts` follows the nearest package `type` after the project's loader/build path is considered.
-6. Treat `type`, `main`, `exports`, `imports`, file extensions, and conditional export changes as package entry contract changes. Adding `exports` can block deep imports and should be classified as compatibility-sensitive unless all previously supported paths remain exported or the release is intentionally breaking.
-7. For conditional exports, keep condition order deliberate, include a `default` fallback when multi-runtime or bundler consumers are intended, and avoid splitting `import` and `require` into separate stateful implementations unless dual package hazards are tested.
-8. For `imports`, use `#` aliases only for package-internal paths, and keep TypeScript paths, bundler aliases, test runner aliases, and declaration output aligned.
-9. For JSON imports, `require(esm)`, top-level await, `.mts`, `.cts`, `.d.mts`, and `.d.cts`, verify the minimum Node version, TypeScript module resolution, generated output, and consumer path before changing code.
-10. Do not replace an existing TypeScript pipeline with native Node TypeScript execution unless the task explicitly asks for that migration. Node native TypeScript execution is limited type stripping; it does not typecheck, read `tsconfig`, resolve path aliases, emit declarations, downlevel syntax, transform decorators or enums, or support TSX as a full build pipeline.
-11. If native Node TypeScript execution is intentionally used, keep syntax erasable-only, use `import type` for type-only imports, avoid runtime TypeScript features that require transforms, and keep the configured typecheck/build pipeline for application and library code.
-12. Detect the actual test runner from scripts, config files, dependencies, and CI. Do not migrate Jest, Vitest, Playwright, or another runner to `node:test` just because Node has a built-in runner. Watch, coverage, mock, snapshot, worker, and cleanup behavior are runner-specific.
-13. Treat watch mode and snapshot update modes as development or review actions, not final verification. Use the configured oneshot intents and report when no configured runner-specific intent exists.
-14. Before using Node APIs in deployment code, classify the target as Node server, Docker, serverless Node, edge runtime, static build, or multi-runtime package. Edge runtimes are not full Node.js runtimes.
-15. Inspect native and install-sensitive dependencies when package metadata or runtime imports touch `.node`, `binding.gyp`, `node-gyp`, `preinstall`, `install`, `postinstall`, `prepare`, optional dependencies, peer dependencies, OS, CPU, libc, or Node ABI boundaries.
-16. Treat optional dependencies and optional peers as absent until code handles absence. Do not require optional packages directly without fallback or error handling that matches the existing project pattern.
-17. Treat the Node permission model as a trusted-code seatbelt, not a sandbox for untrusted code. If permission flags are introduced or changed, map required filesystem, network, child process, worker, native addon, WASI, inspector, and temporary directory access explicitly.
-18. Choose configured verification intents that cover lint, build, tests, package metadata, release-sensitive package output, docs examples, and mustflow contract checks when available. Report missing consumer fixture, ESM, CJS, TypeScript consumer, native dependency, deployment, or permission verification.
+6. For new Node applications, servers, and private CLIs, prefer an explicit ESM-only package with `"type": "module"` and ordinary `.js` source/output files when the supported runtime allows it. Do not rename every file to `.mjs` just to mean ESM; reserve `.mjs` and `.cjs` for exceptional per-file overrides or mixed-module boundaries.
+7. In native Node ESM code, require fully specified relative and absolute import specifiers, including file extensions and directory indexes such as `./feature/index.js`. Do not carry CommonJS extensionless or directory-main assumptions into Node ESM unless a bundler or loader owns that resolution.
+8. Treat `type`, `main`, `exports`, `imports`, file extensions, and conditional export changes as package entry contract changes. Adding `exports` can block deep imports and should be classified as compatibility-sensitive unless all previously supported paths remain exported or the release is intentionally breaking.
+9. For conditional exports, keep condition order deliberate, include a `default` fallback when multi-runtime or bundler consumers are intended, and avoid splitting `import` and `require` into separate stateful implementations unless dual package hazards are tested.
+10. For `imports`, use `#` aliases only for package-internal paths, and keep TypeScript paths, bundler aliases, test runner aliases, and declaration output aligned.
+11. For JSON imports, `require(esm)`, top-level await, `.mts`, `.cts`, `.d.mts`, and `.d.cts`, verify the minimum Node version, TypeScript module resolution, generated output, and consumer path before changing code.
+12. Do not replace an existing TypeScript pipeline with native Node TypeScript execution unless the task explicitly asks for that migration. Node native TypeScript execution is limited type stripping; it does not typecheck, read `tsconfig`, resolve path aliases, emit declarations, downlevel syntax, transform decorators or enums, or support TSX as a full build pipeline.
+13. If native Node TypeScript execution is intentionally used, keep syntax erasable-only, use `import type` for type-only imports, avoid runtime TypeScript features that require transforms, and keep the configured typecheck/build pipeline for application and library code.
+14. Detect the actual test runner from scripts, config files, dependencies, and CI. Do not migrate Jest, Vitest, Playwright, or another runner to `node:test` just because Node has a built-in runner. Watch, coverage, mock, snapshot, worker, and cleanup behavior are runner-specific.
+15. Treat watch mode and snapshot update modes as development or review actions, not final verification. Use the configured oneshot intents and report when no configured runner-specific intent exists.
+16. Before using Node APIs in deployment code, classify the target as Node server, Docker, serverless Node, edge runtime, static build, or multi-runtime package. Edge runtimes are not full Node.js runtimes.
+17. Inspect native and install-sensitive dependencies when package metadata or runtime imports touch `.node`, `binding.gyp`, `node-gyp`, `preinstall`, `install`, `postinstall`, `prepare`, optional dependencies, peer dependencies, OS, CPU, libc, or Node ABI boundaries.
+18. Treat optional dependencies and optional peers as absent until code handles absence. Do not require optional packages directly without fallback or error handling that matches the existing project pattern.
+19. Treat the Node permission model as a trusted-code seatbelt, not a sandbox for untrusted code. If permission flags are introduced or changed, map required filesystem, network, child process, worker, native addon, WASI, inspector, and temporary directory access explicitly.
+20. Choose configured verification intents that cover lint, build, tests, package metadata, release-sensitive package output, docs examples, and mustflow contract checks when available. Report missing consumer fixture, ESM, CJS, TypeScript consumer, native dependency, deployment, or permission verification.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

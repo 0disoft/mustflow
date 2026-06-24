@@ -59,12 +59,36 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = ".mustflow/skills/javascript-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T07:12:23.562Z"
+last_touched_at = "2026-06-24T07:12:23.562Z"
+
+[[documents]]
+path = ".mustflow/skills/node-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T07:12:23.571Z"
+last_touched_at = "2026-06-24T07:12:23.571Z"
+
+[[documents]]
 path = ".mustflow/skills/security-privacy-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-24T02:35:52.593Z"
 last_touched_at = "2026-06-24T02:35:52.593Z"
+
+[[documents]]
+path = ".mustflow/skills/typescript-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T07:12:23.577Z"
+last_touched_at = "2026-06-24T07:12:23.577Z"
 
 [[documents]]
 path = ".mustflow/skills/ui-quality-gate/SKILL.md"
@@ -275,9 +299,33 @@ first_seen_at = "2026-06-23T15:26:40.505Z"
 last_touched_at = "2026-06-24T04:25:24.760Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T07:12:23.583Z"
+last_touched_at = "2026-06-24T07:12:23.583Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T07:12:23.589Z"
+last_touched_at = "2026-06-24T07:12:23.589Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-24T02:35:52.611Z"
 last_touched_at = "2026-06-24T02:35:52.611Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T07:12:23.593Z"
+last_touched_at = "2026-06-24T07:12:23.593Z"

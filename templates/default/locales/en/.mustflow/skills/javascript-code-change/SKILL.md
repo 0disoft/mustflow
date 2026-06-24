@@ -2,7 +2,7 @@
 mustflow_doc: skill.javascript-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: javascript-code-change
@@ -84,23 +84,25 @@ Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency
 6. Do not use runtime detection as a broad escape hatch in shared code. Prefer explicit runtime entrypoints, adapters, conditional exports, or dependency injection over a file that mixes every runtime branch.
 7. Keep environment access behind existing server/client env helpers. Do not read raw server secrets from client, shared, browser, or edge code, and do not assume `process.env` exists outside Node-oriented code.
 8. Do not mix `import`/`export` with `require`/`module.exports` outside an established interop boundary.
-9. Treat package entry metadata as public contract:
+9. For new Node-owned application, server, or private CLI JavaScript, prefer ESM-only with package `"type": "module"` and ordinary `.js` files when the supported runtime allows it. Use `.mjs` and `.cjs` as explicit override markers for mixed or exceptional files, not as a blanket naming convention.
+10. In native Node ESM, write relative and absolute imports with the runtime file extension and explicit directory entry file, such as `./server.js` or `./routes/index.js`. Extensionless imports and automatic directory `index.js` lookup are CommonJS or bundler habits unless a declared loader or bundler owns them.
+11. Treat package entry metadata as public contract:
    - `type`, file extensions, `main`, `module`, `browser`, `exports`, `types`, `typesVersions`, `files`, `bin`, `sideEffects`, and `engines` affect consumers;
    - adding `exports` can block deep imports and should be classified as public API sensitive;
    - conditional exports must keep specific conditions before generic fallbacks;
    - ESM and CJS branches should expose compatible documented shapes when both are supported;
    - TypeScript declaration output and docs examples must keep pointing at existing package entry files.
-10. For package entry changes, check source entrypoints, build output layout, docs import examples, TypeScript or declaration settings, bundler config, and consumer-style tests. Report missing Node ESM, Node CJS, browser bundle, edge, Bun, or TypeScript consumer verification when those targets are claimed but no configured intent exists.
-11. Treat build targets as syntax/output compatibility, not as permission to use a runtime API. A browser or edge build target does not make Node filesystem, process, Buffer, or native APIs safe.
-12. Treat implicit globals as failures.
-13. Do not discard Promises. Every Promise-producing call must be awaited, returned, joined, or intentionally supervised by the project's detached-task pattern.
-14. Do not leave `.map(async ...)` unjoined. Join with the established Promise aggregation or bounded-concurrency helper when parallel work is intended.
-15. Do not use unbounded parallelism for large external I/O fan-out. Use the local concurrency limit pattern when the workload touches HTTP, database, filesystem, queue, AI, or other external services.
-16. Propagate cancellation when the operation can outlive a request, job, stream, retry loop, timeout, or user action. Accept and forward `AbortSignal` or the repository's established cancellation token when available.
-17. Do not implement timeout as a caller-only race that leaves the real work running. Timeout behavior must cancel or abort the underlying operation when the API supports it.
-18. Put cleanup in a deterministic path. Timers, event listeners, stream readers, Node streams, temp files, locks, transactions, subscriptions, and shutdown drains need success, failure, timeout, and cancellation cleanup coverage when touched.
-19. Do not build package exports or dependency changes without checking consumers, tests, and docs examples.
-20. Choose configured verification intents that cover lint, build, tests, package entry, runtime behavior, async rejection handling, cancellation, and cleanup when available.
+12. For package entry changes, check source entrypoints, build output layout, docs import examples, TypeScript or declaration settings, bundler config, and consumer-style tests. Report missing Node ESM, Node CJS, browser bundle, edge, Bun, or TypeScript consumer verification when those targets are claimed but no configured intent exists.
+13. Treat build targets as syntax/output compatibility, not as permission to use a runtime API. A browser or edge build target does not make Node filesystem, process, Buffer, or native APIs safe.
+14. Treat implicit globals as failures.
+15. Do not discard Promises. Every Promise-producing call must be awaited, returned, joined, or intentionally supervised by the project's detached-task pattern.
+16. Do not leave `.map(async ...)` unjoined. Join with the established Promise aggregation or bounded-concurrency helper when parallel work is intended.
+17. Do not use unbounded parallelism for large external I/O fan-out. Use the local concurrency limit pattern when the workload touches HTTP, database, filesystem, queue, AI, or other external services.
+18. Propagate cancellation when the operation can outlive a request, job, stream, retry loop, timeout, or user action. Accept and forward `AbortSignal` or the repository's established cancellation token when available.
+19. Do not implement timeout as a caller-only race that leaves the real work running. Timeout behavior must cancel or abort the underlying operation when the API supports it.
+20. Put cleanup in a deterministic path. Timers, event listeners, stream readers, Node streams, temp files, locks, transactions, subscriptions, and shutdown drains need success, failure, timeout, and cancellation cleanup coverage when touched.
+21. Do not build package exports or dependency changes without checking consumers, tests, and docs examples.
+22. Choose configured verification intents that cover lint, build, tests, package entry, runtime behavior, async rejection handling, cancellation, and cleanup when available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

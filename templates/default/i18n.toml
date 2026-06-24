@@ -601,13 +601,13 @@ translations = {}
 [documents."skill.javascript-code-change"]
 source = "locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.node-code-change"]
 source = "locales/en/.mustflow/skills/node-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.python-code-change"]
@@ -667,7 +667,7 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.unocss-code-change"]

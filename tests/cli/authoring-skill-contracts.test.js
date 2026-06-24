@@ -3408,9 +3408,11 @@ test('cpp code change keeps target identity and compatibility risk explicit', ()
 	assert.match(manifest, /"cpp-code-change"/u);
 });
 
-test('Node, Bun, and Docker code change skills keep runtime and toolchain ownership explicit', () => {
+test('Node, Bun, Docker, and JavaScript code change skills keep runtime and toolchain ownership explicit', () => {
 	const nodeSkill = readText('.mustflow/skills/node-code-change/SKILL.md');
 	const templateNodeSkill = readText('templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md');
+	const jsSkill = readText('.mustflow/skills/javascript-code-change/SKILL.md');
+	const templateJsSkill = readText('templates/default/locales/en/.mustflow/skills/javascript-code-change/SKILL.md');
 	const bunSkill = readText('.mustflow/skills/bun-code-change/SKILL.md');
 	const templateBunSkill = readText('templates/default/locales/en/.mustflow/skills/bun-code-change/SKILL.md');
 	const dockerSkill = readText('.mustflow/skills/docker-code-change/SKILL.md');
@@ -3423,6 +3425,7 @@ test('Node, Bun, and Docker code change skills keep runtime and toolchain owners
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(nodeSkill, templateNodeSkill);
+	assert.equal(jsSkill, templateJsSkill);
 	assert.equal(bunSkill, templateBunSkill);
 	assert.equal(dockerSkill, templateDockerSkill);
 	assert.equal(skillIndex, templateSkillIndex);
@@ -3431,12 +3434,19 @@ test('Node, Bun, and Docker code change skills keep runtime and toolchain owners
 	assert.match(nodeSkill, /deployment runtime as the hard constraint/u);
 	assert.match(nodeSkill, /CI runtime as the verified constraint/u);
 	assert.match(nodeSkill, /package manager ownership/u);
+	assert.match(nodeSkill, /ESM-only package with `"type": "module"`/u);
+	assert.match(nodeSkill, /Do not rename every file to `\.mjs` just to mean ESM/u);
+	assert.match(nodeSkill, /fully specified relative and absolute import specifiers/u);
 	assert.match(nodeSkill, /Adding `exports` can block deep imports/u);
 	assert.match(nodeSkill, /dual package hazards/u);
 	assert.match(nodeSkill, /Node native TypeScript execution is limited type stripping/u);
 	assert.match(nodeSkill, /does not typecheck, read `tsconfig`, resolve path aliases, emit declarations/u);
 	assert.match(nodeSkill, /Do not migrate Jest, Vitest, Playwright, or another runner to `node:test`/u);
 	assert.match(nodeSkill, /permission model as a trusted-code seatbelt/u);
+
+	assert.match(jsSkill, /prefer ESM-only with package `"type": "module"`/u);
+	assert.match(jsSkill, /Use `\.mjs` and `\.cjs` as explicit override markers/u);
+	assert.match(jsSkill, /Extensionless imports and automatic directory `index\.js` lookup/u);
 
 	assert.match(bunSkill, /Classify every Bun signal by role/u);
 	assert.match(bunSkill, /package manager signals/u);
@@ -3474,12 +3484,15 @@ test('Node, Bun, and Docker code change skills keep runtime and toolchain owners
 	assert.match(routes, /\[routes\."bun-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(routes, /\[routes\."docker-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/node-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/javascript-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/bun-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/docker-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"node-code-change"/u);
+	assert.match(manifest, /"javascript-code-change"/u);
 	assert.match(manifest, /"bun-code-change"/u);
 	assert.match(manifest, /"docker-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.node-code-change"\]/u);
+	assert.match(i18n, /\[documents\."skill\.node-code-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.javascript-code-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.bun-code-change"\]/u);
 	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
 });
@@ -3665,6 +3678,10 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 	assert.match(tsSkill, /`typescript@rc`/u);
 	assert.match(tsSkill, /`@typescript\/native-preview`/u);
 	assert.match(tsSkill, /`tsgo`/u);
+	assert.match(tsSkill, /prefer `\.ts` source plus package `"type": "module"`/u);
+	assert.match(tsSkill, /`moduleResolution` set to `NodeNext`/u);
+	assert.match(tsSkill, /using the emitted runtime specifier, usually `\.js`/u);
+	assert.match(tsSkill, /Use `moduleResolution: "Bundler"` only when a bundler/u);
 	assert.match(tsSkill, /`ignoreDeprecations` is a temporary compatibility valve/u);
 	assert.match(tsSkill, /`--stableTypeOrdering` as a migration comparison tool/u);
 	assert.match(tsSkill, /Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline/u);
@@ -3691,7 +3708,7 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 		routes,
 		/\[routes\."typescript-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85\r?\napplies_to_reasons = \["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "package_metadata_change"\]/u,
 	);
-	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 5/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 5/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 7/u);
 });
