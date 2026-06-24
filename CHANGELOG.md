@@ -70,6 +70,8 @@ This file applies to the mustflow repository itself. It is not installed into us
   directly from a minimal workflow project while preserving CLI output coverage.
 - Changed verification planning so lower-cost cached intents are not selected over equivalent
   rebuild-capable intents when their artifact freshness preconditions are stale.
+- Kept `test_related_profile` from falling back to the fast baseline when no changed files are
+  present so clean-worktree profiling reports only explicitly related test coverage.
 - Added script-pack routing metadata to the catalog JSON output and exposed a read-only
   `script_pack_list` command intent in the default template command contract so agents can
   discover bundled scripts before selecting one.

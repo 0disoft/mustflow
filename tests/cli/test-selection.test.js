@@ -125,6 +125,15 @@ test('related selection covers the selector script itself', () => {
 	assert.deepEqual([...selected], ['test-selection.test.js']);
 });
 
+test('related profile does not fall back to the fast baseline without changed files', () => {
+	const related = listSuite('related', []);
+	const relatedProfile = listSuite('related-profile', []);
+
+	assert.equal(related.selected.includes('index-workflow.test.js'), true);
+	assert.deepEqual(relatedProfile.changed_files, []);
+	assert.deepEqual(relatedProfile.selected, []);
+});
+
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
 	const coreSelected = selectedFor(['src/core/code-outline.ts']);
 	const configChainSelected = selectedFor(['src/core/config-chain.ts']);

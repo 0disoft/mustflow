@@ -576,7 +576,8 @@ function uniqueExisting(testNames) {
 	return [...new Set(testNames)].filter((name) => commandTestNames.has(name));
 }
 
-function relatedTests() {
+function relatedTests(options = {}) {
+	const fallbackTests = options.fallbackTests ?? fastTests;
 	const tests = new Set();
 
 	for (const file of currentChangedFiles) {
@@ -595,7 +596,7 @@ function relatedTests() {
 		}
 	}
 
-	return tests.size > 0 ? [...tests] : fastTests;
+	return tests.size > 0 ? [...tests] : fallbackTests;
 }
 
 function hasRelatedReleaseChanges() {
@@ -608,7 +609,7 @@ const suites = {
 	'fast-profile': fastTests,
 	related: relatedTests(),
 	'related-cached': relatedTests(),
-	'related-profile': relatedTests(),
+	'related-profile': relatedTests({ fallbackTests: [] }),
 	cli: cliTests,
 	coverage: coverageTests,
 	release: releaseTests,

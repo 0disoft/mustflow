@@ -40,7 +40,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.85.1');
+	assert.equal(packageJson.version, '2.85.2');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -273,7 +273,7 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4'\)/u);
 	assert.match(cliTestRunner, /'related-cached': relatedTests\(\)/u);
-	assert.match(cliTestRunner, /'related-profile': relatedTests\(\)/u);
+	assert.match(cliTestRunner, /'related-profile': relatedTests\(\{ fallbackTests: \[\] \}\)/u);
 	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
 	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
 	assert.match(cliTestRunner, /function runProfiledTests\(\)/u);
