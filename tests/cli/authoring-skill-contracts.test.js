@@ -3245,6 +3245,11 @@ test('github contribution quality gate keeps maintainer-facing GitHub posts evid
 	assert.equal(localSkill, templateSkill);
 	assert.match(localSkill, /repository templates/u);
 	assert.match(localSkill, /duplicate search/u);
+	assert.match(localSkill, /readable Markdown structure/u);
+	assert.match(localSkill, /Plan the reading order before polishing prose/u);
+	assert.match(localSkill, /Use Markdown elements by job, not decoration/u);
+	assert.match(localSkill, /Apply a Preview self-check/u);
+	assert.match(localSkill, /behavior matrix/u);
 	assert.match(localSkill, /SUPPORT\.md/u);
 	assert.match(localSkill, /SECURITY\.md/u);
 	assert.match(localSkill, /AI assistance/u);
@@ -3254,6 +3259,7 @@ test('github contribution quality gate keeps maintainer-facing GitHub posts evid
 	assert.match(localSkill, /POST_AS_DRAFT/u);
 	assert.match(localSkill, /DO_NOT_POST/u);
 	assert.match(localSkill, /`same problem here`/u);
+	assert.match(localSkill, /Does the title state the observed issue result or PR outcome/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/github-contribution-quality-gate\/SKILL\.md/u);
 	assert.match(skillIndex, /maintainer-facing comment content/u);
 	assert.match(routes, /\[routes\."github-contribution-quality-gate"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"/u);
@@ -4826,6 +4832,9 @@ test('architecture deepening review stays review-first and template-synced', () 
 	assert.equal(localSkill, templateSkill);
 	assert.match(localSkill, /review-first skill/u);
 	assert.match(localSkill, /one to three candidate boundaries/u);
+	assert.match(localSkill, /Reject layer theater before proposing deeper structure/u);
+	assert.match(localSkill, /change-pressure evidence/u);
+	assert.match(localSkill, /dependency direction is enforced/u);
 	assert.match(localSkill, /Score each candidate from 1 to 9/u);
 	assert.match(localSkill, /It is not a license to create architecture because a pattern exists/u);
 	assert.match(localSkill, /If implementation proceeds, use the narrower matching skill/u);
