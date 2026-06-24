@@ -70,6 +70,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Made `script-pack suggest` run hints path-aware so agents receive concrete read-only helper
   commands when path evidence is available, while follow-up helpers such as `code/symbol-read`
   keep their `code/outline` dependency explicit.
+- Clarified the `cross-agent-session-reference` skill so referenced sessions remain read-only
+  evidence while user-explicit cross-agent handoffs can still send bounded prompts through available
+  host tools.
 
 ### Fixed
 

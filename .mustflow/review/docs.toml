@@ -14,7 +14,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.482Z"
-last_touched_at = "2026-06-23T15:26:40.482Z"
+last_touched_at = "2026-06-24T00:31:19.574Z"
 
 [[documents]]
 path = ".mustflow/skills/INDEX.md"
@@ -42,7 +42,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-06-23T15:26:40.495Z"
+last_touched_at = "2026-06-24T00:31:19.583Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -192,7 +192,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.499Z"
-last_touched_at = "2026-06-23T15:26:40.499Z"
+last_touched_at = "2026-06-24T00:31:19.591Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/INDEX.md"
