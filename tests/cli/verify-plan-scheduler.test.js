@@ -10,12 +10,19 @@ import {
 	removeTempProject,
 	runCliInProcess as runCli,
 } from './helpers/cli-harness.js';
+import { createMinimalWorkflowProject } from './index-support.js';
+
+function createSchedulerProject() {
+	return createMinimalWorkflowProject('mustflow-verify-scheduler-');
+}
 
 function appendIntent(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const commands = readFileSync(commandsPath, 'utf8');
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
-	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+	if (existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'))) {
+		refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+	}
 }
 
 function refreshManifestLockHash(projectPath, relativePath) {
@@ -26,6 +33,34 @@ function refreshManifestLockHash(projectPath, relativePath) {
 	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
 	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
+}
+
+function writeRunTrustManifestLock(projectPath) {
+	const hashProjectFile = (relativePath) =>
+		`sha256:${createHash('sha256').update(readFileSync(path.join(projectPath, ...relativePath.split('/')))).digest('hex')}`;
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'),
+		[
+			'schema_version = "1"',
+			'',
+			'[template]',
+			'id = "test-minimal"',
+			'version = "0.0.0"',
+			'profile = "test"',
+			'locale = "en"',
+			'',
+			'[files."AGENTS.md"]',
+			'source = "test_fixture"',
+			'last_action = "created"',
+			`content_hash = "${hashProjectFile('AGENTS.md')}"`,
+			'',
+			'[files.".mustflow/config/commands.toml"]',
+			'source = "test_fixture"',
+			'last_action = "created"',
+			`content_hash = "${hashProjectFile('.mustflow/config/commands.toml')}"`,
+			'',
+		].join('\n'),
+	);
 }
 
 function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
@@ -63,11 +98,10 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 }
 
 test('prints plan-only verification candidates without running commands', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 	const markerPath = path.join(projectPath, 'executed.txt');
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -212,10 +246,9 @@ escalate_to = ["test"]
 });
 
 test('artifact freshness preconditions support single-character source globs', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
 		writeFileSync(path.join(projectPath, 'dist', 'out.js'), 'old artifact\n');
@@ -262,10 +295,9 @@ required_after = ["freshness_glob"]
 });
 
 test('prints verification schedule batches from command effects', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -358,10 +390,9 @@ required_after = ["custom_verify"]
 });
 
 test('does not select a narrower runnable intent when a selected runnable intent explicitly subsumes it', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -430,10 +461,9 @@ required_after = ["docs_verify"]
 });
 
 test('selects the lowest-cost runnable intent only when coverage hints are equivalent', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -509,10 +539,9 @@ expected_seconds = 60
 });
 
 test('keeps writes-only verification intents serial-only in the schedule model', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -578,10 +607,9 @@ required_after = ["parallel_verify"]
 });
 
 test('keeps lock-only resources as first-class schedule effects', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -666,10 +694,9 @@ required_after = ["database_verify"]
 });
 
 test('removes parallel eligibility after latest receipt reports undeclared writes', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -727,10 +754,9 @@ effects = [
 });
 
 test('removes parallel eligibility from per-intent receipt referenced by verify latest pointer', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -810,11 +836,10 @@ effects = [
 });
 
 test('runs verification intents in the plan schedule order', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 	const orderPath = path.join(projectPath, 'order.txt');
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -861,6 +886,7 @@ destructive = false
 required_after = ["custom_verify"]
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 
 		const planResult = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--plan-only', '--json']);
 		const runResult = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--json', '--parallel', '2']);
@@ -883,14 +909,13 @@ required_after = ["custom_verify"]
 });
 
 test('runs non-conflicting explicit-effect verification batches in parallel when requested', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 	const startAPath = path.join(projectPath, 'parallel-a-start.txt');
 	const startBPath = path.join(projectPath, 'parallel-b-start.txt');
 	const parallelWorkDelayMs = 3000;
 	const parallelStartToleranceMs = 2000;
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -945,6 +970,7 @@ destructive = false
 required_after = ["parallel_verify"]
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 
 		const planResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
 		const runResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2'], {
@@ -991,10 +1017,9 @@ required_after = ["parallel_verify"]
 });
 
 test('attributes undeclared parallel write drift without blaming sibling intents', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1035,6 +1060,7 @@ destructive = false
 required_after = ["parallel_drift"]
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 
 		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_drift', '--json', '--parallel=2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
@@ -1059,10 +1085,9 @@ required_after = ["parallel_drift"]
 });
 
 test('keeps runner-owned state paths out of parallel write drift attribution', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1103,6 +1128,7 @@ destructive = false
 required_after = ["parallel_state"]
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 
 		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_state', '--json', '--parallel=2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
@@ -1122,11 +1148,10 @@ required_after = ["parallel_state"]
 });
 
 test('stops before the next verification batch after a batch failure', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 	const nextMarkerPath = path.join(projectPath, 'batch-next-ran.txt');
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1167,6 +1192,7 @@ destructive = false
 required_after = ["batch_failure_policy"]
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 
 		const planResult = await runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--plan-only', '--json']);
 		const runResult = await runCli(projectPath, ['verify', '--reason', 'batch_failure_policy', '--json']);
@@ -1242,10 +1268,9 @@ required_after = ["custom_partial"]
 });
 
 test('escalates to a declared fallback intent when targeted verification is unavailable', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		appendIntent(
 			projectPath,
 			`
@@ -1382,10 +1407,9 @@ destructive = false
 });
 
 test('does not use performance history or cache files as verification authority', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createSchedulerProject();
 
 	try {
-		await initProject(projectPath);
 		const perfDir = path.join(projectPath, '.mustflow', 'state', 'perf');
 		const cacheDir = path.join(projectPath, '.mustflow', 'cache');
 
