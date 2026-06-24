@@ -1,19 +1,30 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { runDocs } from '../../dist/cli/commands/docs.js';
-import { cloneProjectFixture, createTempProject, initProject, removeTempProject } from './helpers/cli-harness.js';
+import { cloneProjectFixture, createTempProject, removeTempProject } from './helpers/cli-harness.js';
 
 let initializedProjectFixture;
+let initializedGitProjectFixture;
 
 before(() => {
 	initializedProjectFixture = createTempProject('mustflow-docs-fixture-');
-	initProject(initializedProjectFixture);
+	createDocsFixture(initializedProjectFixture);
+
+	initializedGitProjectFixture = cloneProjectFixture(initializedProjectFixture, 'mustflow-docs-git-fixture-');
+	if (!commitGitBaseline(initializedGitProjectFixture)) {
+		removeTempProject(initializedGitProjectFixture);
+		initializedGitProjectFixture = undefined;
+	}
 });
 
 after(() => {
+	if (initializedGitProjectFixture) {
+		removeTempProject(initializedGitProjectFixture);
+	}
+
 	if (initializedProjectFixture) {
 		removeTempProject(initializedProjectFixture);
 	}
@@ -21,6 +32,11 @@ after(() => {
 
 function createDocsProject() {
 	return cloneProjectFixture(initializedProjectFixture, 'mustflow-docs-');
+}
+
+function createDocsFixture(projectPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'commands.toml'), 'schema_version = "1"\n');
 }
 
 function runCli(cwd, args) {
@@ -67,6 +83,11 @@ function runGit(projectPath, args) {
 }
 
 function commitGitBaseline(projectPath) {
+	if (initializedGitProjectFixture && projectPath !== initializedGitProjectFixture) {
+		cpSync(path.join(initializedGitProjectFixture, '.git'), path.join(projectPath, '.git'), { recursive: true });
+		return true;
+	}
+
 	let result = runGit(projectPath, ['init']);
 	if (result.status !== 0) {
 		return false;
