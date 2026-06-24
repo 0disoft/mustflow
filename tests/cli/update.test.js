@@ -7,6 +7,8 @@ import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { runUpdate } from '../../dist/cli/commands/update.js';
+
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
 let initializedProjectFixture;
@@ -20,11 +22,57 @@ function removeTempProject(projectPath) {
 }
 
 function runCli(cwd, args, env = {}) {
+	if (args[0] === 'update') {
+		return runUpdateInProcess(cwd, args.slice(1), env);
+	}
+
 	return spawnSync(process.execPath, [cliPath, ...args], {
 		cwd,
 		encoding: 'utf8',
 		env: { ...process.env, ...env },
 	});
+}
+
+function runUpdateInProcess(cwd, args, env = {}) {
+	const stdout = [];
+	const stderr = [];
+	const previousCwd = process.cwd;
+	const previousEnv = new Map(Object.keys(env).map((key) => [key, process.env[key]]));
+
+	try {
+		for (const [key, value] of Object.entries(env)) {
+			process.env[key] = value;
+		}
+
+		Object.defineProperty(process, 'cwd', {
+			configurable: true,
+			value: () => cwd,
+		});
+
+		const status = runUpdate(args, {
+			stdout(message) {
+				stdout.push(`${message}\n`);
+			},
+			stderr(message) {
+				stderr.push(`${message}\n`);
+			},
+		});
+
+		return { status, signal: null, stdout: stdout.join(''), stderr: stderr.join('') };
+	} finally {
+		Object.defineProperty(process, 'cwd', {
+			configurable: true,
+			value: previousCwd,
+		});
+
+		for (const [key, value] of previousEnv) {
+			if (value === undefined) {
+				delete process.env[key];
+			} else {
+				process.env[key] = value;
+			}
+		}
+	}
 }
 
 before(() => {
