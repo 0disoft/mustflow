@@ -47,6 +47,18 @@
     "resources": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/resource" }
+    },
+    "include": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^commands/(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+\\.toml$" },
+          "uniqueItems": true
+        }
+      }
     }
   },
   "$defs": {

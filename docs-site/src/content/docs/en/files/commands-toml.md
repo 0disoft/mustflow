@@ -12,6 +12,9 @@ description: Command intent contracts for tests, linting, builds, and documentat
 - Each `SKILL.md` references intent names such as `test`, `lint`, and `build` instead of raw commands.
 - Tools such as `mf check` can read this file to validate executability and missing fields.
 
+`commands.toml` remains the command-authority entrypoint even when the contract is split across
+included files.
+
 ## Shape
 
 ```toml
@@ -40,6 +43,58 @@ reason = "No test command has been declared for this repository."
 agent_action = "do_not_guess_report_missing"
 required_after = ["code_change", "behavior_change"]
 ```
+
+## Splitting Large Contracts
+
+Large workspace roots can keep child repositories clean by leaving mustflow installed only at the
+workspace root and splitting root command contracts under `.mustflow/config/commands/`.
+
+```text
+.mustflow/config/commands.toml
+.mustflow/config/commands/workduck.toml
+.mustflow/config/commands/akraz.toml
+```
+
+Declare included files from the root contract:
+
+```toml
+[include]
+files = [
+  "commands/workduck.toml",
+  "commands/akraz.toml",
+]
+```
+
+Include paths are relative to `.mustflow/config/`, must stay under `commands/`, and must end in
+`.toml`. They cannot be absolute paths, parent traversals, device names, or symlinks outside the
+mustflow root. Included files are contract fragments, not independent authority roots: they may
+define only `[intents]` and `[resources]`.
+
+```toml
+# .mustflow/config/commands/workduck.toml
+[intents.workduck_test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the Workduck test suite."
+argv = ["bun", "test"]
+cwd = "projects/hobby/opensource/workduck"
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+```
+
+Intent and resource names must be unique across the root file and every include. `[defaults]` stays
+in `.mustflow/config/commands.toml` so timeouts, environment policy, and no-guessing behavior have a
+single owner. Nested includes are not supported.
+
+If `.mustflow/config/manifest.lock.toml` is present, every included command file must also be tracked
+there before `mf run` will execute commands from the root. This keeps included files under the same
+trust boundary as `commands.toml`. `--allow-untrusted-root` can still be used for one explicitly
+reviewed execution, just like other manifest-lock failures.
 
 ## Default Fields
 

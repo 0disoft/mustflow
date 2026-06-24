@@ -27,6 +27,7 @@ import {
 	runPerformanceSamplesPath,
 	runPerformanceSummaryPath,
 	setDefaultKillAfterSeconds,
+	trackManifestLockFile,
 	trySymlink,
 	waitForClose,
 	waitForOutput,
@@ -142,6 +143,91 @@ destructive = false
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /hello from mf run/);
 		assert.match(result.stderr, /Running echo_hello \(timeout: 10s\)\.\.\./);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('runs an included command intent from a split command contract', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const includePath = path.join(projectPath, '.mustflow', 'config', 'commands', 'workspace.toml');
+		mkdirSync(path.dirname(includePath), { recursive: true });
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}\n[include]\nfiles = ["commands/workspace.toml"]\n`,
+		);
+		writeFileSync(
+			includePath,
+			`
+[intents.included_echo]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print from an included command contract."
+argv = ['${process.execPath}', '-e', 'console.log("hello from included contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		trackManifestLockFile(projectPath, '.mustflow/config/commands.toml');
+		trackManifestLockFile(projectPath, '.mustflow/config/commands/workspace.toml');
+
+		const result = runCli(projectPath, ['run', 'included_echo']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /hello from included contract/);
+		assert.match(result.stderr, /Running included_echo \(timeout: 10s\)\.\.\./);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('refuses execution when a command include is not tracked by the manifest lock', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const includePath = path.join(projectPath, '.mustflow', 'config', 'commands', 'workspace.toml');
+		mkdirSync(path.dirname(includePath), { recursive: true });
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}\n[include]\nfiles = ["commands/workspace.toml"]\n`,
+		);
+		writeFileSync(
+			includePath,
+			`
+[intents.untracked_included_echo]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print from an untracked included command contract."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		trackManifestLockFile(projectPath, '.mustflow/config/commands.toml');
+
+		const result = runCli(projectPath, ['run', 'untracked_included_echo']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Manifest lock must track \.mustflow\/config\/commands\/workspace\.toml/);
+		assert.doesNotMatch(result.stdout, /should not run/);
 	} finally {
 		removeTempProject(projectPath);
 	}

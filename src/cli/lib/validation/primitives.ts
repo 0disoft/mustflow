@@ -4,6 +4,10 @@ import path from 'node:path';
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { readMustflowTomlFile } from '../toml.js';
 import {
+	COMMANDS_CONFIG_RELATIVE_PATH,
+	readResolvedCommandContractToml,
+} from '../../../core/config-loading.js';
+import {
 	REQUIRED_FILES,
 } from './constants.js';
 import { TECHNOLOGY_CONFIG_RELATIVE_PATH } from '../../../core/technology-preferences.js';
@@ -64,7 +68,10 @@ export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedC
 		}
 
 		try {
-			const parsed = readMustflowTomlFile(projectRoot, relativePath);
+			const parsed =
+				relativePath === COMMANDS_CONFIG_RELATIVE_PATH
+					? readResolvedCommandContractToml(projectRoot)
+					: readMustflowTomlFile(projectRoot, relativePath);
 
 			if (!isRecord(parsed)) {
 				issues.push({ message: `${relativePath} must contain a TOML table` });

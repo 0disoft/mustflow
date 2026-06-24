@@ -158,6 +158,26 @@ export function refreshManifestLockHash(projectPath, relativePath) {
 	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
 }
 
+export function trackManifestLockFile(projectPath, relativePath) {
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	if (!existsSync(lockPath)) {
+		return;
+	}
+
+	const filePath = path.join(projectPath, ...relativePath.split('/'));
+	const hash = `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
+	const lock = readFileSync(lockPath, 'utf8');
+	if (lock.includes(`[files."${relativePath}"]`)) {
+		refreshManifestLockHash(projectPath, relativePath);
+		return;
+	}
+
+	writeFileSync(
+		lockPath,
+		`${lock.trimEnd()}\n[files."${relativePath}"]\nsource = "template_common"\nlast_action = "customized"\ncontent_hash = "${hash}"\n`,
+	);
+}
+
 export function createLocalBinShim(projectPath, name, marker, markerPath = null) {
 	const localBinPath = path.join(projectPath, 'node_modules', '.bin');
 	mkdirSync(localBinPath, { recursive: true });

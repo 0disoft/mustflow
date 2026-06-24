@@ -1,4 +1,5 @@
 import { MANIFEST_LOCK_RELATIVE_PATH, inspectManifestLock } from './manifest-lock.js';
+import { readCommandContractIncludePaths } from '../../core/config-loading.js';
 
 export const ALLOW_UNTRUSTED_ROOT_OPTION = '--allow-untrusted-root';
 
@@ -34,7 +35,21 @@ export function assessRunRootTrust(projectRoot: string): RunRootTrustAssessment 
 		}
 
 		const trackedPaths = new Set(readResult.lock.files.map((file) => file.relativePath));
-		const missingRequiredPath = REQUIRED_RUN_TRUST_LOCK_PATHS.find((relativePath) => !trackedPaths.has(relativePath));
+		let requiredPaths: readonly string[] = REQUIRED_RUN_TRUST_LOCK_PATHS;
+
+		try {
+			requiredPaths = [...REQUIRED_RUN_TRUST_LOCK_PATHS, ...readCommandContractIncludePaths(projectRoot)];
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			return {
+				trusted: false,
+				reason: 'manifest_lock_invalid',
+				manifestLockPath: readResult.lockPath,
+				detail: message,
+			};
+		}
+
+		const missingRequiredPath = requiredPaths.find((relativePath) => !trackedPaths.has(relativePath));
 		if (missingRequiredPath) {
 			return {
 				trusted: false,

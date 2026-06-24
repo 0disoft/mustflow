@@ -155,6 +155,14 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/files/commands-toml.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T09:08:23.019Z"
+last_touched_at = "2026-06-24T09:08:23.019Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/files/json-schemas.md"
 status = "pending"
 origin = "llm_modified"

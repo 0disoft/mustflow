@@ -243,6 +243,90 @@ test('check json includes stable command-boundary issue ids', () => {
 	}
 });
 
+test('fails unsafe split command contract include paths', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[include]
+files = ["../outside.toml"]
+`,
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'Command include path "../outside.toml" must be a relative commands/*.toml path under .mustflow/config',
+				),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails split command contract includes that duplicate intent names', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const includePath = path.join(projectPath, '.mustflow', 'config', 'commands', 'workspace.toml');
+		mkdirSync(path.dirname(includePath), { recursive: true });
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[include]
+files = ["commands/workspace.toml"]
+`,
+		);
+		writeFileSync(
+			includePath,
+			`
+[intents.test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Duplicate the template test intent."
+argv = ["node", "--version"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some((issue) =>
+				issue.includes(
+					'Duplicate command intent "test" in .mustflow/config/commands/workspace.toml; already defined in .mustflow/config/commands.toml',
+				),
+			),
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails configured intents that declare typed inputs before execution support exists', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 
