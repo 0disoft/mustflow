@@ -25,6 +25,14 @@ first_seen_at = "2026-06-23T15:26:40.482Z"
 last_touched_at = "2026-06-24T00:31:19.574Z"
 
 [[documents]]
+path = ".mustflow/skills/dependency-upgrade-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T02:35:52.583Z"
+last_touched_at = "2026-06-24T02:35:52.583Z"
+
+[[documents]]
 path = ".mustflow/skills/github-contribution-quality-gate/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -41,6 +49,14 @@ first_seen_at = "2026-06-04T05:51:15.159Z"
 last_touched_at = "2026-06-23T15:26:40.490Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
+
+[[documents]]
+path = ".mustflow/skills/security-privacy-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T02:35:52.593Z"
+last_touched_at = "2026-06-24T02:35:52.593Z"
 
 [[documents]]
 path = ".mustflow/skills/ui-quality-gate/SKILL.md"
@@ -219,6 +235,14 @@ first_seen_at = "2026-06-23T15:26:40.499Z"
 last_touched_at = "2026-06-24T00:31:19.591Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T02:35:52.606Z"
+last_touched_at = "2026-06-24T02:35:52.606Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/github-contribution-quality-gate/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -233,3 +257,11 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
 last_touched_at = "2026-06-23T15:26:40.505Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-24T02:35:52.611Z"
+last_touched_at = "2026-06-24T02:35:52.611Z"

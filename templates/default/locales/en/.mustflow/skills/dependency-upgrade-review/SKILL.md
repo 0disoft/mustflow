@@ -2,7 +2,7 @@
 mustflow_doc: skill.dependency-upgrade-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-upgrade-review
@@ -91,6 +91,8 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 6. For major upgrades, treat the change as a migration. Require migration notes, public API change classification, config schema review, CLI flag review, plugin API review, codemod or manual migration notes, full caller review, rollback plan, and broad verification.
 7. For pre-1.0 or calendar-versioned packages, do not trust SemVer labels. Classify risk by actual contract changes and release notes.
 8. For security upgrades, keep the patch narrow. Identify advisory id, affected range, fixed range, direct or transitive path, exploit-relevant code path, minimum patched version, scanner recheck, and whether stricter validation, escaping, TLS, redirect, auth, or parser behavior can break callers.
+   - For lockfile-only or transitive vulnerability alerts, do not treat the lockfile line as the root cause. Trace the vulnerable package back to the direct dependency or framework plugin that resolves it, then update the narrowest parent version, override, or package-manager resolution that satisfies the fixed range.
+   - After regenerating the lockfile, confirm the old vulnerable version is absent from the resolved graph and that any override is recorded in the manifest rather than hidden as unexplained lockfile churn.
 9. Review the lockfile as a graph, not a blob. Check direct and transitive replacements, newly introduced packages, removed packages, optional/platform packages, source URLs, integrity or checksum changes, peer resolution, engine requirements, native prebuilds, and postinstall or lifecycle scripts.
 10. Review runtime boundaries that dependency upgrades commonly break: ESM/CJS and package `type`, `exports` and conditional exports, browser/node/edge conditions, Node engine support, Python dependency markers and extras, Go module path changes, Cargo feature unification, native builds, SSR/client split, WebView/native split, and generated client or SDK types.
 11. Treat framework, plugin, code generator, formatter, linter, bundler, ORM, protobuf, OpenAPI, GraphQL, database driver, and test-runner upgrades as behavior changes when their output, config schema, plugin API, CLI flags, or generated code can change.

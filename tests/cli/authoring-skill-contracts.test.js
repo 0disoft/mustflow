@@ -3566,6 +3566,8 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 	assert.match(dependencySkill, /TS7 nightly track through `@typescript\/native-preview` and `tsgo`/u);
 	assert.match(dependencySkill, /Do not treat a nightly package as a stable replacement/u);
 	assert.match(dependencySkill, /Keep compiler API, transformer, ESLint, language-service plugin/u);
+	assert.match(dependencySkill, /lockfile-only or transitive vulnerability alerts/u);
+	assert.match(dependencySkill, /old vulnerable version is absent from the resolved graph/u);
 
 	assert.match(freshnessSkill, /TypeScript compiler-track references/u);
 	assert.match(freshnessSkill, /Do not call RC or nightly output "latest stable TypeScript"/u);
@@ -3580,7 +3582,7 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 		/\[routes\."typescript-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85\r?\napplies_to_reasons = \["code_change", "public_api_change", "test_change", "package_metadata_change"\]/u,
 	);
 	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 4/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 5/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 7/u);
 });
 
@@ -3796,7 +3798,7 @@ test('Python skills gate standard-library APIs and runtime upgrade defaults by s
 	assert.match(dependencySkill, /archive extraction, subprocess handling, async lifecycle/u);
 
 	assert.match(i18n, /\[documents\."skill\.python-code-change"\][\s\S]*?revision = 3/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 5/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 7/u);
 });
 
@@ -4793,6 +4795,10 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(securitySkill, /encodeURI` versus `encodeURIComponent/u);
 	assert.match(securitySkill, /first-occurrence `\.replace`/u);
 	assert.match(securitySkill, /dependency-reality-check/u);
+	assert.match(securitySkill, /ReDoS or inefficient-regular-expression findings/u);
+	assert.match(securitySkill, /bounded parser, token scanner, structured parser/u);
+	assert.match(securitySkill, /lockfile CVEs/u);
+	assert.match(securitySkill, /vulnerable package version no longer appears in the resolved graph/u);
 	assert.match(regressionSkill, /BOLA\/IDOR-style/u);
 	assert.match(regressionSkill, /SSRF-style private network/u);
 	assert.match(regressionSkill, /CSRF-style state change/u);

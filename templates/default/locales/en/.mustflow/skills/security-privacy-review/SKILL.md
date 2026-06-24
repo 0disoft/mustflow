@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 22
+revision: 23
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -193,9 +193,11 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 32. For filesystem changes, distinguish lexical containment from the real target. Check symlinks, generated state, package contents, and file APIs that may follow links before claiming a path stays inside the repository.
 33. For code-scanning alerts, group findings by root cause and rule. Fix the underlying pattern, not only the exact flagged line, and separate repository-setting alerts such as branch protection or maintainer activity from code changes.
     - For incomplete escaping or encoding findings, search the same sink class for adjacent ad hoc sanitizer patterns such as first-occurrence `.replace`, non-global replacement, hand-escaped slashes, quotes, backslashes, path separators, or mixed URL encoders. Replace the pattern with a domain-owned transformation and add a regression test or narrow source-pattern guard when the behavior is release-sensitive.
+    - For ReDoS or inefficient-regular-expression findings, identify whether attacker-controlled text, repository files, generated output, logs, Markdown, YAML, or source code can reach the expression. Prefer a bounded parser, token scanner, structured parser, or anchored non-overlapping expression over nested quantifiers, repeated alternatives that can match the same prefix, or optional whitespace loops. Add a long malformed input case or equivalent static guard before claiming the backtracking risk is fixed.
 34. For workflow scanner alerts, check action pinning, `persist-credentials`, job-level permissions, reusable workflow permissions, fork pull-request secret exposure, artifact upload boundaries, and privileged identity timing before treating the warning as cosmetic.
 35. For pinned action references, distinguish tag objects from the commit that implements the tag. Verify pinned SHAs against the action repository so scanner tooling does not report an imposter or non-member commit.
 36. For dependency scanner alerts, separate production dependency manifests from fixtures, examples, generated test repositories, and intentionally vulnerable samples. Narrow the scan scope before treating fixture-only alerts as product vulnerabilities.
+    - For lockfile CVEs, inspect the manifest and lockfile together. Identify the direct parent that keeps the vulnerable transitive package in the graph, update the narrowest direct dependency or override needed to reach the fixed range, and confirm the vulnerable package version no longer appears in the resolved graph before claiming the alert is fixed.
 37. For deployment settings, check debug mode, sample admin accounts, default credentials, public admin panels, open metrics endpoints, public storage, root container users, HTTPS enforcement, and exposed GraphQL or development consoles.
 38. For runtime and framework security updates, check that supported versions are documented, end-of-life versions are rejected, dependency locks exist where appropriate, security patches can be tested and deployed quickly, and rollback or redeploy can happen without manual dashboard memory. Do not treat a fashionable or high-performance runtime as safe unless the patch path is operationally credible.
 39. For transport security, check HTTPS/TLS requirements, certificate validation, insecure HTTP downgrade paths, disabled verification flags, and whether sensitive traffic can bypass the secure channel.

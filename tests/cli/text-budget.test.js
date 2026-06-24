@@ -1912,6 +1912,12 @@ test('code-route-outline scans NestJS controllers with method and lifecycle meta
 				'',
 				'  @Put()',
 				'  replace() { return {}; }',
+				'',
+				'  @Get("guarded")',
+				'  public async guarded() { return []; }',
+				'',
+				'  @Get("stream")',
+				'  public *stream() { yield "ok"; }',
 				'}',
 				'',
 			].join('\n'),
@@ -1923,7 +1929,7 @@ test('code-route-outline scans NestJS controllers with method and lifecycle meta
 		assert.equal(report.files[0].path, 'src/users.controller.ts');
 		assert.equal(report.files[0].language, 'typescript');
 		assert.deepEqual(report.files[0].framework_evidence, ['nestjs']);
-		assert.equal(report.files[0].route_count, 5);
+		assert.equal(report.files[0].route_count, 7);
 
 		const list = report.routes.find(
 			(route) => route.framework === 'nestjs' && route.method === 'get' && route.route_path === '/users',
@@ -1958,6 +1964,51 @@ test('code-route-outline scans NestJS controllers with method and lifecycle meta
 		);
 		assert.ok(replace, 'NestJS replace route should be outlined');
 		assert.equal(replace.handler_name, 'replace');
+
+		const guarded = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'get' && route.route_path === '/users/guarded',
+		);
+		assert.ok(guarded, 'NestJS public async route should be outlined');
+		assert.equal(guarded.handler_name, 'guarded');
+
+		const stream = report.routes.find(
+			(route) => route.framework === 'nestjs' && route.method === 'get' && route.route_path === '/users/stream',
+		);
+		assert.ok(stream, 'NestJS generator route should be outlined');
+		assert.equal(stream.handler_name, 'stream');
+		assert.deepEqual(report.findings, []);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('code-route-outline handles long malformed NestJS handler candidates without regex backtracking', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'users.controller.ts'),
+			[
+				'import { Controller, Get } from "@nestjs/common";',
+				'',
+				'@Controller("users")',
+				'export class UsersController {',
+				'  @Get("safe")',
+				`  ${'public '.repeat(1200)}if`,
+				'  safe() { return []; }',
+				'}',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runCodeRouteOutlineJson(projectPath, ['src/users.controller.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.files[0].route_count, 1);
+		assert.equal(report.routes[0].handler_name, 'safe');
 		assert.deepEqual(report.findings, []);
 		assert.deepEqual(report.issues, []);
 	} finally {

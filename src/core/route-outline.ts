@@ -1112,19 +1112,78 @@ function extractNestjsLifecycleDecorator(line: string): RouteOutlineLifecycle | 
 }
 
 function extractNestjsHandlerName(line: string): string | null {
-	const match = /^\s*(?:public\s+|private\s+|protected\s+|async\s+|static\s+|readonly\s+|\*?\s*)*[$A-Z_a-z][$\w]*\s*\(/u.exec(line);
-	if (!match) {
+	const signature = line.trimStart();
+	if (signature.length === 0) {
 		return null;
 	}
-	const named = /(?<name>[$A-Z_a-z][$\w]*)\s*\(/u.exec(line);
-	const name = named?.groups?.name;
-	if (!name) {
+	let offset = signature.startsWith('*') ? 1 : 0;
+	offset = skipAsciiWhitespace(signature, offset);
+	while (true) {
+		const next = readIdentifier(signature, offset);
+		if (next === null || !isNestjsHandlerModifier(next.value)) {
+			break;
+		}
+		offset = skipAsciiWhitespace(signature, next.end);
+	}
+	if (signature.charAt(offset) === '*') {
+		offset = skipAsciiWhitespace(signature, offset + 1);
+	}
+	const nameToken = readIdentifier(signature, offset);
+	if (nameToken === null) {
 		return null;
 	}
+	const callStart = skipAsciiWhitespace(signature, nameToken.end);
+	if (signature.charAt(callStart) !== '(') {
+		return null;
+	}
+	const name = nameToken.value;
 	if (/\b(?:if|for|while|switch|return|class|interface|function|new|throw|typeof|in|of)\b/u.test(name)) {
 		return null;
 	}
 	return name;
+}
+
+function skipAsciiWhitespace(text: string, offset: number): number {
+	let index = offset;
+	while (index < text.length) {
+		const code = text.charCodeAt(index);
+		if (code !== 9 && code !== 10 && code !== 11 && code !== 12 && code !== 13 && code !== 32) {
+			break;
+		}
+		index += 1;
+	}
+	return index;
+}
+
+function readIdentifier(text: string, offset: number): { readonly value: string; readonly end: number } | null {
+	const first = text.charCodeAt(offset);
+	if (!isIdentifierStart(first)) {
+		return null;
+	}
+	let end = offset + 1;
+	while (end < text.length && isIdentifierPart(text.charCodeAt(end))) {
+		end += 1;
+	}
+	return { value: text.slice(offset, end), end };
+}
+
+function isIdentifierStart(code: number): boolean {
+	return code === 36 || code === 95 || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function isIdentifierPart(code: number): boolean {
+	return isIdentifierStart(code) || (code >= 48 && code <= 57);
+}
+
+function isNestjsHandlerModifier(value: string): boolean {
+	return (
+		value === 'public' ||
+		value === 'private' ||
+		value === 'protected' ||
+		value === 'async' ||
+		value === 'static' ||
+		value === 'readonly'
+	);
 }
 
 function extractNestjsRouteEntries(
