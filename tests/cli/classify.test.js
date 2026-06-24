@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
@@ -8,20 +8,31 @@ import { parseGitStatusOutput } from '../../dist/core/change-classification.js';
 import {
 	cloneProjectFixture,
 	createTempProject,
-	initProject,
 	projectRoot,
 	removeTempProject,
 	runCliCommand,
 } from './helpers/cli-harness.js';
 
 let initializedProjectFixture;
+let initializedGitProjectFixture;
 
 before(() => {
 	initializedProjectFixture = createTempProject('mustflow-classify-fixture-');
-	initProject(initializedProjectFixture);
+	createClassifyFixture(initializedProjectFixture);
+
+	initializedGitProjectFixture = cloneProjectFixture(initializedProjectFixture, 'mustflow-classify-git-fixture-');
+	runGit(initializedGitProjectFixture, ['init']);
+	runGit(initializedGitProjectFixture, ['config', 'user.email', 'test@example.com']);
+	runGit(initializedGitProjectFixture, ['config', 'user.name', 'Test User']);
+	runGit(initializedGitProjectFixture, ['add', '.']);
+	runGit(initializedGitProjectFixture, ['commit', '-m', 'init']);
 });
 
 after(() => {
+	if (initializedGitProjectFixture) {
+		removeTempProject(initializedGitProjectFixture);
+	}
+
 	if (initializedProjectFixture) {
 		removeTempProject(initializedProjectFixture);
 	}
@@ -29,6 +40,17 @@ after(() => {
 
 function createClassifyProject() {
 	return cloneProjectFixture(initializedProjectFixture, 'mustflow-classify-');
+}
+
+function createClassifyFixture(projectPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'), 'version = 1\n');
+}
+
+function createClassifyGitProject() {
+	const projectPath = createClassifyProject();
+	cpSync(path.join(initializedGitProjectFixture, '.git'), path.join(projectPath, '.git'), { recursive: true });
+	return projectPath;
 }
 
 function runCli(cwd, args) {
@@ -169,15 +191,9 @@ test('parses nul-delimited git status without treating arrows in filenames as re
 });
 
 test('classifies changed git status paths', async () => {
-	const projectPath = createClassifyProject();
+	const projectPath = createClassifyGitProject();
 
 	try {
-		runGit(projectPath, ['init']);
-		runGit(projectPath, ['config', 'user.email', 'test@example.com']);
-		runGit(projectPath, ['config', 'user.name', 'Test User']);
-		runGit(projectPath, ['add', '.']);
-		runGit(projectPath, ['commit', '-m', 'init']);
-
 		writeFileSync(path.join(projectPath, 'README.md'), '# Changed\n');
 		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
 		writeFileSync(path.join(projectPath, 'schemas', 'example.schema.json'), '{}\n');
@@ -211,16 +227,10 @@ test('fails changed classification when git status cannot be read', async () => 
 });
 
 test('writes changed-file classification reports to repository-local paths', async () => {
-	const projectPath = createClassifyProject();
+	const projectPath = createClassifyGitProject();
 	const reportPath = path.join(projectPath, '.mustflow', 'state', 'change-classification.json');
 
 	try {
-		runGit(projectPath, ['init']);
-		runGit(projectPath, ['config', 'user.email', 'test@example.com']);
-		runGit(projectPath, ['config', 'user.name', 'Test User']);
-		runGit(projectPath, ['add', '.']);
-		runGit(projectPath, ['commit', '-m', 'init']);
-
 		writeFileSync(path.join(projectPath, 'README.md'), '# Changed\n');
 
 		const result = await runCli(projectPath, [
