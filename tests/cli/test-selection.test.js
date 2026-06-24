@@ -125,14 +125,24 @@ test('related selection covers the selector script itself', () => {
 	assert.deepEqual([...selected], ['test-selection.test.js']);
 });
 
-test('related selection maps code outline implementation changes to script-pack contract tests', () => {
+test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
 	const coreSelected = selectedFor(['src/core/code-outline.ts']);
 	const configChainSelected = selectedFor(['src/core/config-chain.ts']);
+	const envContractSelected = selectedFor(['src/core/env-contract.ts']);
 	const wrapperSelected = selectedFor(['src/cli/script-packs/code-outline.ts']);
 	const configChainWrapperSelected = selectedFor(['src/cli/script-packs/repo-config-chain.ts']);
+	const envContractWrapperSelected = selectedFor(['src/cli/script-packs/repo-env-contract.ts']);
 	const suggestionSelected = selectedFor(['src/core/script-pack-suggestions.ts']);
 
-	for (const selected of [coreSelected, configChainSelected, wrapperSelected, configChainWrapperSelected, suggestionSelected]) {
+	for (const selected of [
+		coreSelected,
+		configChainSelected,
+		envContractSelected,
+		wrapperSelected,
+		configChainWrapperSelected,
+		envContractWrapperSelected,
+		suggestionSelected,
+	]) {
 		assert.equal(selected.has('text-budget.test.js'), true);
 		assert.equal(selected.has('schema.test.js'), true);
 		assert.equal(selected.has('schema-command-contracts.test.js'), true);

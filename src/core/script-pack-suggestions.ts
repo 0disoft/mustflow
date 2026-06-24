@@ -29,7 +29,7 @@ const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 ]);
 const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
 const CONFIG_FILE_PATTERN =
-	/(?:^|\/)(?:tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
+	/(?:^|\/)(?:\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -354,6 +354,13 @@ function createRunHint(
 			.filter((entry) => entry.surfaces.some((surface) => CONFIG_CHAIN_SURFACES.has(surface)))
 			.map((entry) => entry.path);
 		return createConcretePathHint('mf script-pack run repo/config-chain inspect', configPaths, script.usage);
+	}
+
+	if (script.ref === 'repo/env-contract') {
+		const envPaths = analyzedPaths
+			.filter((entry) => entry.surfaces.some((surface) => surface === 'config' || surface === 'source' || surface === 'docs' || surface === 'package'))
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run repo/env-contract scan', envPaths, script.usage);
 	}
 
 	if (script.ref === 'repo/related-files') {

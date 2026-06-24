@@ -1095,6 +1095,31 @@ test('config-chain json output matches the published schema', () => {
 	}
 });
 
+test('env-contract json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'config.ts'), 'export const apiToken = process.env.API_TOKEN;\n');
+		writeFileSync(path.join(projectPath, 'README.md'), 'Configure `API_TOKEN` for API access.\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/env-contract',
+			'scan',
+			'src/config.ts',
+			'README.md',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'env-contract-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

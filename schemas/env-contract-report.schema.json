@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/env-contract-report.schema.json",
+  "title": "mustflow env-contract report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "targets",
+    "summary",
+    "keys",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "env-contract" },
+    "script_ref": { "const": "repo/env-contract" },
+    "action": { "const": "scan" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "keys": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/envKey" }
+    },
+    "truncated": { "type": "boolean" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_file_bytes",
+        "max_files",
+        "max_keys",
+        "extensions",
+        "env_example_names",
+        "skipped_secret_names",
+        "ignored_directories"
+      ],
+      "properties": {
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_keys": { "type": "integer", "minimum": 1 },
+        "extensions": { "$ref": "#/$defs/stringArray" },
+        "env_example_names": { "$ref": "#/$defs/stringArray" },
+        "skipped_secret_names": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path", "exists", "kind"],
+      "properties": {
+        "input": { "type": "string" },
+        "path": { "type": "string" },
+        "exists": { "type": ["boolean", "null"] },
+        "kind": { "enum": ["file", "directory", "missing", "other", "unknown"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_count",
+        "file_count",
+        "key_count",
+        "code_key_count",
+        "example_key_count",
+        "documented_key_count",
+        "ci_key_count"
+      ],
+      "properties": {
+        "target_count": { "type": "integer", "minimum": 0 },
+        "file_count": { "type": "integer", "minimum": 0 },
+        "key_count": { "type": "integer", "minimum": 0 },
+        "code_key_count": { "type": "integer", "minimum": 0 },
+        "example_key_count": { "type": "integer", "minimum": 0 },
+        "documented_key_count": { "type": "integer", "minimum": 0 },
+        "ci_key_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "surface": {
+      "enum": ["code", "config", "ci", "docs", "example"]
+    },
+    "referenceKind": {
+      "enum": [
+        "process_env_dot",
+        "process_env_bracket",
+        "process_env_destructure",
+        "bun_env_dot",
+        "import_meta_env",
+        "env_example",
+        "ci_secret",
+        "ci_var",
+        "ci_env",
+        "documented"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "path", "line", "surface", "kind"],
+      "properties": {
+        "key": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "surface": { "$ref": "#/$defs/surface" },
+        "kind": { "$ref": "#/$defs/referenceKind" }
+      }
+    },
+    "envKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "used_in_code",
+        "declared_in_example",
+        "referenced_in_ci",
+        "documented",
+        "secret_like",
+        "public_like",
+        "source_count",
+        "sources"
+      ],
+      "properties": {
+        "key": { "type": "string" },
+        "used_in_code": { "type": "boolean" },
+        "declared_in_example": { "type": "boolean" },
+        "referenced_in_ci": { "type": "boolean" },
+        "documented": { "type": "boolean" },
+        "secret_like": { "type": "boolean" },
+        "public_like": { "type": "boolean" },
+        "source_count": { "type": "integer", "minimum": 0 },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reference" }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "env_contract_path_outside_root",
+            "env_contract_unreadable_path",
+            "env_contract_secret_file_skipped",
+            "env_contract_max_files_exceeded",
+            "env_contract_max_keys_exceeded",
+            "env_contract_missing_example",
+            "env_contract_unused_example",
+            "env_contract_secret_like_public_name"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "key": { "type": "string" }
+      }
+    }
+  }
+}

@@ -99,6 +99,10 @@ Current schemas:
   `mf script-pack run repo/config-chain inspect <path...> --json`, containing nearby package,
   TypeScript, ESLint, Prettier, Vite, Vitest, Tailwind, Jest, Playwright, and mustflow config files
   with static inheritance, reference, workspace, dynamic-config, path, and content-hash metadata
+- `env-contract-report.schema.json`: output of
+  `mf script-pack run repo/env-contract scan [path...] --json`, containing code, CI, docs, config,
+  and env-example references for environment-variable contract drift without reading secret env files
+  or printing env values
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field

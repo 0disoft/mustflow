@@ -26,6 +26,11 @@ function runConfigChainJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runEnvContractJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/env-contract', 'scan', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeOutlineJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/outline', 'scan', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -234,6 +239,7 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 
 		const repoPack = report.packs.find((pack) => pack.id === 'repo');
 		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
+		const envContract = repoPack?.scripts.find((script) => script.ref === 'repo/env-contract');
 		const generatedBoundary = repoPack?.scripts.find((script) => script.ref === 'repo/generated-boundary');
 
 		assert.ok(configChain, 'repo/config-chain should be listed');
@@ -249,6 +255,21 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(configChain.risk_level, 'low');
 		assert.equal(configChain.cost, 'low');
 		assert.equal(configChain.report_schema_file, 'config-chain-report.schema.json');
+
+		assert.ok(envContract, 'repo/env-contract should be listed');
+		assert.equal(envContract.read_only, true);
+		assert.equal(envContract.mutates, false);
+		assert.equal(envContract.network, false);
+		assert.deepEqual(envContract.phases, ['before_change', 'during_change', 'after_change', 'review']);
+		assert.ok(envContract.use_when.some((hint) => hint.includes('environment variable contract drift')));
+		assert.ok(envContract.inputs.includes('max_keys'));
+		assert.ok(envContract.outputs.includes('env_keys'));
+		assert.ok(envContract.outputs.includes('env_contract_findings'));
+		assert.ok(envContract.related_skills.includes('config-env-change'));
+		assert.ok(envContract.related_skills.includes('security-privacy-review'));
+		assert.equal(envContract.risk_level, 'low');
+		assert.equal(envContract.cost, 'low');
+		assert.equal(envContract.report_schema_file, 'env-contract-report.schema.json');
 
 		assert.ok(generatedBoundary, 'repo/generated-boundary should be listed');
 		assert.equal(generatedBoundary.read_only, true);
@@ -2183,6 +2204,85 @@ test('config-chain inspects package and tsconfig inheritance without executing d
 	}
 });
 
+test('env-contract scans code, docs, CI, and env examples without reading secret env values', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		mkdirSync(path.join(projectPath, '.github', 'workflows'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'config.ts'),
+			[
+				'export function readConfig() {',
+				'  return {',
+				'    token: process.env.API_TOKEN,',
+				'    mode: Bun.env.APP_MODE,',
+				'  };',
+				'}',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(path.join(projectPath, '.env.example'), 'APP_MODE=development\n');
+		writeFileSync(path.join(projectPath, '.env'), 'API_TOKEN=SECRET_VALUE_SHOULD_NOT_APPEAR\n');
+		writeFileSync(path.join(projectPath, 'README.md'), 'Set `API_TOKEN` in CI before running release jobs.\n');
+		writeFileSync(
+			path.join(projectPath, '.github', 'workflows', 'ci.yml'),
+			[
+				'name: ci',
+				'on: [push]',
+				'jobs:',
+				'  test:',
+				'    runs-on: ubuntu-latest',
+				'    env:',
+				'      API_TOKEN: ${{ secrets.API_TOKEN }}',
+				'    steps:',
+				'      - run: node --version',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runEnvContractJson(projectPath, [
+			'src',
+			'README.md',
+			'.github/workflows/ci.yml',
+			'.env.example',
+			'.env',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'repo');
+		assert.equal(report.script_id, 'env-contract');
+		assert.equal(report.script_ref, 'repo/env-contract');
+		assert.equal(report.action, 'scan');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.doesNotMatch(result.stdout, /SECRET_VALUE_SHOULD_NOT_APPEAR/u);
+
+		const keys = new Map(report.keys.map((entry) => [entry.key, entry]));
+		const apiToken = keys.get('API_TOKEN');
+		assert.ok(apiToken);
+		assert.equal(apiToken.used_in_code, true);
+		assert.equal(apiToken.referenced_in_ci, true);
+		assert.equal(apiToken.documented, true);
+		assert.equal(apiToken.declared_in_example, false);
+		assert.ok(apiToken.sources.some((source) => source.kind === 'process_env_dot'));
+		assert.ok(apiToken.sources.some((source) => source.kind === 'ci_secret'));
+		assert.ok(apiToken.sources.some((source) => source.kind === 'documented'));
+
+		const appMode = keys.get('APP_MODE');
+		assert.ok(appMode);
+		assert.equal(appMode.used_in_code, true);
+		assert.equal(appMode.declared_in_example, true);
+		assert.ok(report.findings.some((finding) => finding.code === 'env_contract_secret_file_skipped' && finding.path === '.env'));
+		assert.equal(report.findings.some((finding) => finding.key === 'API_TOKEN' && finding.code === 'env_contract_missing_example'), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('reference-drift validates documented commands, script refs, schemas, and repo paths', () => {
 	const projectPath = createTempProject();
 
@@ -2426,6 +2526,36 @@ test('script-pack suggest recommends config-chain for config, package, source, a
 			'mf script-pack run repo/config-chain inspect package.json src/session.test.ts tsconfig.json --json',
 		);
 		assert.equal(configChain.report_schema_file, 'config-chain-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends env-contract for env examples and config-env work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.env.example'), 'API_TOKEN=\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'.env.example',
+			'--skill',
+			'config-env-change',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const envContract = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/env-contract');
+		assert.ok(envContract, 'repo/env-contract should be suggested for env contract work');
+		assert.ok(envContract.matched_phases.includes('before_change'));
+		assert.ok(envContract.matched_skills.includes('config-env-change'));
+		assert.ok(envContract.matched_surfaces.includes('config'));
+		assert.equal(envContract.run_hint, 'mf script-pack run repo/env-contract scan .env.example --json');
+		assert.equal(envContract.report_schema_file, 'env-contract-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}
