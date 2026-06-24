@@ -25,11 +25,82 @@ const dashboardTests = [
 	'dashboard-verification.test.js',
 ];
 
+const precomputedSelectionRequests = [
+	{ mode: 'related', changedFiles: ['src/cli/commands/verify.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/index.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/command-intent-eligibility.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/public-json-contracts.ts'] },
+	{ mode: 'related', changedFiles: ['.mustflow/config/commands.toml'] },
+	{ mode: 'related', changedFiles: ['src/cli/lib/package-info.ts'] },
+	{ mode: 'related', changedFiles: ['scripts/run-cli-tests.mjs'] },
+	{ mode: 'related', changedFiles: [] },
+	{ mode: 'related-profile', changedFiles: [] },
+	{ mode: 'related', changedFiles: ['src/core/code-outline.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/config-chain.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/env-contract.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/secret-risk-scan.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/script-packs/code-outline.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-config-chain.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-env-contract.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-secret-risk-scan.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/script-pack-suggestions.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/line-endings.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/commands/line-endings.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/change-verification.ts'] },
+	{ mode: 'related', changedFiles: ['tests/cli/helpers/cli-harness.js'] },
+	{ mode: 'related', changedFiles: ['templates/default/AGENTS.md'] },
+	{ mode: 'related', changedFiles: ['src/cli/commands/init.ts'] },
+	{ mode: 'related', changedFiles: ['.mustflow/skills/cpp-code-change/SKILL.md'] },
+	{ mode: 'fast', changedFiles: [] },
+	{ mode: 'full', changedFiles: [] },
+	{ mode: 'full-auto', changedFiles: [] },
+];
+
+let precomputedSelectionReports;
+
+function selectionCacheKey(mode, changedFiles) {
+	return JSON.stringify([mode, changedFiles]);
+}
+
+function loadPrecomputedSelectionReports() {
+	if (precomputedSelectionReports) {
+		return precomputedSelectionReports;
+	}
+
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-selection-'));
+	const requestPath = path.join(tempRoot, 'requests.json');
+
+	try {
+		writeFileSync(
+			requestPath,
+			`${JSON.stringify(precomputedSelectionRequests.map((request) => ({ mode: request.mode, changed_files: request.changedFiles })))}\n`,
+		);
+
+		const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', `--list-batch=${requestPath}`], {
+			cwd: projectRoot,
+			encoding: 'utf8',
+		});
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		precomputedSelectionReports = new Map(
+			JSON.parse(result.stdout).map((report) => [selectionCacheKey(report.mode, report.changed_files), report]),
+		);
+		return precomputedSelectionReports;
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+}
+
 function selectRelated(changedFiles) {
 	return listSuite('related', changedFiles);
 }
 
 function listSuite(mode, changedFiles = []) {
+	const cached = loadPrecomputedSelectionReports().get(selectionCacheKey(mode, changedFiles));
+	if (cached) {
+		return cached;
+	}
+
 	const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', mode, '--list'], {
 		cwd: projectRoot,
 		encoding: 'utf8',

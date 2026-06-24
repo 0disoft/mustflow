@@ -337,6 +337,7 @@ function parseRunnerArgs(args) {
 	const parsed = {
 		mode: 'full',
 		listOnly: false,
+		listBatchPath: undefined,
 		buildRunner: undefined,
 	};
 	let modeWasSet = false;
@@ -344,6 +345,12 @@ function parseRunnerArgs(args) {
 	for (const arg of args) {
 		if (arg === '--list') {
 			parsed.listOnly = true;
+			continue;
+		}
+
+		if (arg.startsWith('--list-batch=')) {
+			parsed.listOnly = true;
+			parsed.listBatchPath = path.resolve(repoRoot, arg.slice('--list-batch='.length));
 			continue;
 		}
 
@@ -576,11 +583,11 @@ function uniqueExisting(testNames) {
 	return [...new Set(testNames)].filter((name) => commandTestNames.has(name));
 }
 
-function relatedTests(options = {}) {
+function relatedTestsForFiles(files, options = {}) {
 	const fallbackTests = options.fallbackTests ?? fastTests;
 	const tests = new Set();
 
-	for (const file of currentChangedFiles) {
+	for (const file of files) {
 		for (const rule of relatedRules) {
 			const match = rule.match.exec(file);
 			if (!match) {
@@ -599,8 +606,35 @@ function relatedTests(options = {}) {
 	return tests.size > 0 ? [...tests] : fallbackTests;
 }
 
+function relatedTests(options = {}) {
+	return relatedTestsForFiles(currentChangedFiles, options);
+}
+
+function hasRelatedReleaseChangesForFiles(files) {
+	return files.some((file) => relatedReleaseRules.some((rule) => rule.test(file)));
+}
+
 function hasRelatedReleaseChanges() {
-	return currentChangedFiles.some((file) => relatedReleaseRules.some((rule) => rule.test(file)));
+	return hasRelatedReleaseChangesForFiles(currentChangedFiles);
+}
+
+function selectedTestsForMode(testMode, files) {
+	const modeSuites = {
+		fast: fastTests,
+		'fast-cached': fastTests,
+		'fast-profile': fastTests,
+		related: relatedTestsForFiles(files),
+		'related-cached': relatedTestsForFiles(files),
+		'related-profile': relatedTestsForFiles(files, { fallbackTests: [] }),
+		cli: cliTests,
+		coverage: coverageTests,
+		release: releaseTests,
+		full: allCliTests,
+		'full-auto': allCliTests,
+		'full-profile': allCliTests,
+	};
+
+	return modeSuites[testMode];
 }
 
 const suites = {
@@ -619,7 +653,7 @@ const suites = {
 };
 
 const runnerArgs = parseRunnerArgs(process.argv.slice(2));
-const { mode, listOnly, buildRunner } = runnerArgs;
+const { mode, listOnly, listBatchPath, buildRunner } = runnerArgs;
 const selected = suites[mode];
 
 if (!selected) {
@@ -833,7 +867,60 @@ if (releaseTestRunnerLock) {
 }
 runBuild(buildRunner);
 
+function normalizeChangedFiles(files) {
+	if (!Array.isArray(files)) {
+		console.error('List batch request changed_files must be an array.');
+		process.exit(2);
+	}
+
+	return files
+		.map((file) => String(file).trim().replaceAll('\\', '/').replace(/^\.?\//u, ''))
+		.filter(Boolean);
+}
+
+function selectionReportForMode(testMode, files) {
+	const selectedForMode = selectedTestsForMode(testMode, files);
+
+	if (!selectedForMode) {
+		console.error(`Unknown test suite "${testMode}". Expected one of: ${Object.keys(suites).join(', ')}`);
+		process.exit(2);
+	}
+
+	const baseTestMode = testMode.replace(/-(?:cached|profile|auto)$/u, '');
+	return {
+		mode: testMode,
+		changed_files: files,
+		selected: uniqueExisting(selectedForMode),
+		release_sensitive: baseTestMode === 'related' ? hasRelatedReleaseChangesForFiles(files) : false,
+	};
+}
+
+function readListBatchRequests(batchPath) {
+	let requests;
+	try {
+		requests = JSON.parse(readFileSync(batchPath, 'utf8'));
+	} catch (error) {
+		console.error(`Unable to read list batch request file: ${error.message}`);
+		process.exit(2);
+	}
+
+	if (!Array.isArray(requests)) {
+		console.error('List batch request file must contain a JSON array.');
+		process.exit(2);
+	}
+
+	return requests.map((request) => ({
+		mode: String(request?.mode ?? ''),
+		changed_files: normalizeChangedFiles(request?.changed_files ?? []),
+	}));
+}
+
 if (listOnly) {
+	if (listBatchPath) {
+		console.log(JSON.stringify(readListBatchRequests(listBatchPath).map((request) => selectionReportForMode(request.mode, request.changed_files)), null, 2));
+		process.exit(0);
+	}
+
 	console.log(
 		JSON.stringify(
 			{
