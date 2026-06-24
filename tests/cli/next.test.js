@@ -1,27 +1,33 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { test } from 'node:test';
-import { runCliInProcess } from './helpers/cli-harness.js';
+import { after, before, test } from 'node:test';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	removeTempProject,
+	runCliInProcess,
+} from './helpers/cli-harness.js';
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-next-'));
-}
+let cleanGitProjectFixture;
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
-}
+before(() => {
+	cleanGitProjectFixture = createTempProject('mustflow-next-clean-fixture-');
+	createNextProjectFixture(cleanGitProjectFixture);
+	commitGitBaseline(cleanGitProjectFixture);
+});
+
+after(() => {
+	for (const projectPath of [cleanGitProjectFixture]) {
+		if (projectPath) {
+			removeTempProject(projectPath);
+		}
+	}
+});
 
 async function runCli(cwd, args) {
 	return runCliInProcess(cwd, args);
-}
-
-async function initProject(projectPath) {
-	const result = await runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
 function runGit(projectPath, args) {
@@ -52,20 +58,128 @@ function commandsPath(projectPath) {
 	return path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 }
 
-function refreshManifestLockHash(projectPath, relativePath) {
-	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+function writeProjectFile(projectPath, relativePath, content) {
 	const filePath = path.join(projectPath, ...relativePath.split('/'));
-	const hash = `sha256:${createHash('sha256').update(readFileSync(filePath)).digest('hex')}`;
-	const lock = readFileSync(lockPath, 'utf8');
-	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
-	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
+	mkdirSync(path.dirname(filePath), { recursive: true });
+	writeFileSync(filePath, content);
+}
+
+function createNextProjectFixture(projectPath) {
+	writeProjectFile(
+		projectPath,
+		'AGENTS.md',
+		`# Test mustflow project
+
+This fixture contains only the workflow files required by mf next tests.
+`,
+	);
+	writeProjectFile(
+		projectPath,
+		'.mustflow/config/mustflow.toml',
+		`schema_version = "1"
+
+[map]
+output = "REPO_MAP.md"
+mode = "anchors_only"
+privacy = "minimal"
+include_nested = false
+`,
+	);
+	writeProjectFile(projectPath, '.mustflow/skills/router.toml', 'schema_version = "1"\n');
+	writeProjectFile(projectPath, '.mustflow/skills/routes.toml', 'schema_version = "1"\n');
+	writeProjectFile(
+		projectPath,
+		'.mustflow/skills/INDEX.md',
+		`# Skills Index
+
+No test skills are installed in this fixture.
+`,
+	);
+	writeProjectFile(projectPath, '.mustflow/config/commands.toml', commandsToml());
+}
+
+function commandsToml() {
+	return `schema_version = "1"
+
+[defaults]
+missing_behavior = "do_not_guess"
+allow_inferred_commands = false
+require_lifecycle = true
+require_timeout_for_oneshot = true
+deny_unmanaged_long_running = true
+default_cwd = "."
+default_timeout_seconds = 600
+stdin = "closed"
+max_output_bytes = 1048576
+on_timeout = "terminate_process_tree"
+kill_after_seconds = 5
+env_policy = "minimal"
+env_allowlist = []
+
+[intents.mustflow_check]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Validate the fixture workflow."
+argv = ["node", "-e", "process.exit(0)"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change"]
+
+[intents.test_related]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run related tests for changed source files."
+argv = ["node", "-e", "process.exit(0)"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["code_change", "test_change"]
+
+[intents.test_related.covers]
+reasons = ["code_change", "test_change"]
+surfaces = ["mustflow_cli"]
+paths = ["src/**", "tests/**"]
+contracts = ["related CLI regression coverage"]
+
+[intents.test_related.cost]
+expected_seconds = 1
+cost_tier = "low"
+`;
 }
 
 function appendIntent(projectPath, text) {
 	const commands = readFileSync(commandsPath(projectPath), 'utf8');
 	writeFileSync(commandsPath(projectPath), `${commands}\n${text.trim()}\n`);
-	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+}
+
+function codeProbeIntent() {
+	return `
+[intents.code_probe]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe code-change verification."
+argv = ['${process.execPath}', '-e', 'console.log("code probe")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["code_change"]
+`;
 }
 
 function writeChangedSource(projectPath) {
@@ -74,12 +188,9 @@ function writeChangedSource(projectPath) {
 }
 
 test('next reports idle when no changed files need verification', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneProjectFixture(cleanGitProjectFixture, 'mustflow-next-clean-');
 
 	try {
-		await initProject(projectPath);
-		commitGitBaseline(projectPath);
-
 		const result = await runCli(projectPath, ['next', '--json']);
 		const output = JSON.parse(result.stdout);
 
@@ -100,11 +211,9 @@ test('next reports idle when no changed files need verification', async () => {
 });
 
 test('next recommends default template verification instead of blocking on missing test commands', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneProjectFixture(cleanGitProjectFixture, 'mustflow-next-changed-');
 
 	try {
-		await initProject(projectPath);
-		commitGitBaseline(projectPath);
 		writeChangedSource(projectPath);
 
 		const result = await runCli(projectPath, ['next', '--json']);
@@ -142,33 +251,16 @@ test('next recommends default template verification instead of blocking on missi
 });
 
 test('next recommends configured verification when changed files are covered', async () => {
-	const projectPath = createTempProject();
+	const projectPath = cloneProjectFixture(cleanGitProjectFixture, 'mustflow-next-code-probe-');
 
 	try {
-		await initProject(projectPath);
-		appendIntent(
-			projectPath,
-			`
-[intents.code_probe]
-status = "configured"
-lifecycle = "oneshot"
-run_policy = "agent_allowed"
-description = "Probe code-change verification."
-argv = ['${process.execPath}', '-e', 'console.log("code probe")']
-cwd = "."
-timeout_seconds = 10
-stdin = "closed"
-success_exit_codes = [0]
-writes = []
-network = false
-destructive = false
-required_after = ["code_change"]
-`,
-		);
-		commitGitBaseline(projectPath);
+		appendIntent(projectPath, codeProbeIntent());
+		runGit(projectPath, ['add', '.mustflow/config/commands.toml']);
+		let result = runGit(projectPath, ['commit', '-m', 'add code probe intent']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
 		writeChangedSource(projectPath);
 
-		const result = await runCli(projectPath, ['next', '--json']);
+		result = await runCli(projectPath, ['next', '--json']);
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
