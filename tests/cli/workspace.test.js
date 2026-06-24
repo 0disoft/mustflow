@@ -1,16 +1,90 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import {
-	commitGitBaseline,
-	createTempProject,
-	initProject,
-	removeTempProject,
-	runCli,
-	runGit,
-} from './run-support.js';
+import { runWorkspace } from '../../dist/cli/commands/workspace.js';
+import { createTempProject, runCliCommand } from './helpers/cli-harness.js';
+
+const TEMP_REMOVE_RETRY_COUNT = 30;
+const TEMP_REMOVE_RETRY_DELAY_MS = 100;
+
+function removeTempProject(projectPath) {
+	let attempt = 0;
+	while (attempt < TEMP_REMOVE_RETRY_COUNT) {
+		try {
+			rmSync(projectPath, { recursive: true, force: true });
+			return;
+		} catch (error) {
+			if (attempt === TEMP_REMOVE_RETRY_COUNT - 1 || !['EBUSY', 'ENOTEMPTY', 'EPERM'].includes(error?.code)) {
+				throw error;
+			}
+
+			Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, TEMP_REMOVE_RETRY_DELAY_MS);
+		}
+
+		attempt += 1;
+	}
+}
+
+async function runCli(cwd, args) {
+	return runCliCommand(cwd, args, runWorkspace);
+}
+
+function initProject(projectPath) {
+	mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+	writeFileSync(path.join(projectPath, 'AGENTS.md'), '# Workspace fixture\n');
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'),
+		[
+			'version = 1',
+			'',
+			'[map]',
+			'output = "REPO_MAP.md"',
+			'mode = "anchors_only"',
+			'privacy = "minimal"',
+			'include_nested = false',
+			'',
+			'[workspace]',
+			'enabled = false',
+			'roots = []',
+			'max_depth = 4',
+			'max_repositories = 10',
+			'follow_symlinks = false',
+			'stop_at_repository_root = true',
+			'',
+			'[capabilities]',
+			'workflow = true',
+			'',
+		].join('\n'),
+	);
+}
+
+function runGit(projectPath, args) {
+	return spawnSync('git', ['-C', projectPath, ...args], {
+		cwd: projectPath,
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'pipe'],
+		windowsHide: true,
+	});
+}
+
+function commitGitBaseline(projectPath) {
+	for (const args of [
+		['config', 'user.email', 'mustflow-tests@example.invalid'],
+		['config', 'user.name', 'mustflow tests'],
+		['add', '.'],
+		['commit', '-m', 'baseline'],
+	]) {
+		const result = runGit(projectPath, args);
+		if (result.status !== 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
 
 function enableWorkspace(projectPath) {
 	const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
@@ -75,12 +149,12 @@ function createNestedRepository(projectPath) {
 	return childRoot;
 }
 
-test('workspace status reports disabled workspace without granting authority', () => {
+test('workspace status reports disabled workspace without granting authority', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
-		const result = runCli(projectPath, ['workspace', 'status', '--json']);
+		const result = await runCli(projectPath, ['workspace', 'status', '--json']);
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -102,7 +176,7 @@ test('workspace status reports disabled workspace without granting authority', (
 	}
 });
 
-test('workspace status discovers nested repositories and local command contracts', () => {
+test('workspace status discovers nested repositories and local command contracts', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -110,7 +184,7 @@ test('workspace status discovers nested repositories and local command contracts
 		enableWorkspace(projectPath);
 		createNestedRepository(projectPath);
 
-		const result = runCli(projectPath, ['workspace', 'status', '--json']);
+		const result = await runCli(projectPath, ['workspace', 'status', '--json']);
 		const output = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -132,7 +206,7 @@ test('workspace status discovers nested repositories and local command contracts
 	}
 });
 
-test('workspace command-catalog aggregates child command contracts without raw commands', () => {
+test('workspace command-catalog aggregates child command contracts without raw commands', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -140,7 +214,7 @@ test('workspace command-catalog aggregates child command contracts without raw c
 		enableWorkspace(projectPath);
 		createNestedRepository(projectPath);
 
-		const result = runCli(projectPath, ['workspace', 'command-catalog', '--json']);
+		const result = await runCli(projectPath, ['workspace', 'command-catalog', '--json']);
 		const output = JSON.parse(result.stdout);
 		const repository = output.repositories[0];
 		const childCheck = repository.intents.find((intent) => intent.name === 'child_check');
@@ -176,7 +250,7 @@ test('workspace command-catalog aggregates child command contracts without raw c
 	}
 });
 
-test('workspace verify plans changed-file verification per child repository without running commands', () => {
+test('workspace verify plans changed-file verification per child repository without running commands', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -187,7 +261,7 @@ test('workspace verify plans changed-file verification per child repository with
 		mkdirSync(path.join(childRoot, 'src'), { recursive: true });
 		writeFileSync(path.join(childRoot, 'src', 'index.ts'), 'export const child = true;\n');
 
-		const result = runCli(projectPath, ['workspace', 'verify', '--changed', '--plan-only', '--json']);
+		const result = await runCli(projectPath, ['workspace', 'verify', '--changed', '--plan-only', '--json']);
 		const output = JSON.parse(result.stdout);
 		const repository = output.repositories[0];
 
@@ -216,12 +290,12 @@ test('workspace verify plans changed-file verification per child repository with
 	}
 });
 
-test('workspace status rejects unknown options', () => {
+test('workspace status rejects unknown options', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
-		const result = runCli(projectPath, ['workspace', 'status', '--bad']);
+		const result = await runCli(projectPath, ['workspace', 'status', '--bad']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unknown option: --bad/u);
@@ -231,12 +305,12 @@ test('workspace status rejects unknown options', () => {
 	}
 });
 
-test('workspace command-catalog rejects unknown options', () => {
+test('workspace command-catalog rejects unknown options', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
-		const result = runCli(projectPath, ['workspace', 'command-catalog', '--bad']);
+		const result = await runCli(projectPath, ['workspace', 'command-catalog', '--bad']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unknown option: --bad/u);
@@ -246,14 +320,14 @@ test('workspace command-catalog rejects unknown options', () => {
 	}
 });
 
-test('workspace verify rejects unsafe option combinations', () => {
+test('workspace verify rejects unsafe option combinations', async () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
-		const missingChanged = runCli(projectPath, ['workspace', 'verify', '--plan-only']);
-		const missingPlanOnly = runCli(projectPath, ['workspace', 'verify', '--changed']);
-		const unknownOption = runCli(projectPath, ['workspace', 'verify', '--bad']);
+		const missingChanged = await runCli(projectPath, ['workspace', 'verify', '--plan-only']);
+		const missingPlanOnly = await runCli(projectPath, ['workspace', 'verify', '--changed']);
+		const unknownOption = await runCli(projectPath, ['workspace', 'verify', '--bad']);
 
 		assert.equal(missingChanged.status, 1);
 		assert.match(missingChanged.stderr, /requires --changed/u);
