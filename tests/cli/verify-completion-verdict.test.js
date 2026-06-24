@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -16,6 +16,8 @@ import {
 } from '../../dist/core/repeated-failure.js';
 import { createValidationRatchetRisks } from '../../dist/core/validation-ratchet.js';
 import { runCliInProcess } from './helpers/cli-harness.js';
+import { createLocalIndexDirect } from './helpers/local-index-fixtures.js';
+import { createMinimalWorkflowProject } from './index-support.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
@@ -40,7 +42,10 @@ function appendIntent(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const commands = readFileSync(commandsPath, 'utf8');
 	writeFileSync(commandsPath, `${commands}\n${text.trim()}\n`);
-	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	if (existsSync(lockPath)) {
+		refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+	}
 }
 
 function refreshManifestLockHash(projectPath, relativePath) {
@@ -51,6 +56,34 @@ function refreshManifestLockHash(projectPath, relativePath) {
 	const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 	const pattern = new RegExp(`(\\[files\\."${escapedPath}"\\][\\s\\S]*?content_hash = ")[^"]+(")`, 'u');
 	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
+}
+
+function writeRunTrustManifestLock(projectPath) {
+	const hashProjectFile = (relativePath) =>
+		`sha256:${createHash('sha256').update(readFileSync(path.join(projectPath, ...relativePath.split('/')))).digest('hex')}`;
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'),
+		[
+			'schema_version = "1"',
+			'',
+			'[template]',
+			'id = "test-minimal"',
+			'version = "0.0.0"',
+			'profile = "test"',
+			'locale = "en"',
+			'',
+			'[files."AGENTS.md"]',
+			'source = "test_fixture"',
+			'last_action = "created"',
+			`content_hash = "${hashProjectFile('AGENTS.md')}"`,
+			'',
+			'[files.".mustflow/config/commands.toml"]',
+			'source = "test_fixture"',
+			'last_action = "created"',
+			`content_hash = "${hashProjectFile('.mustflow/config/commands.toml')}"`,
+			'',
+		].join('\n'),
+	);
 }
 
 function runGit(cwd, args) {
@@ -214,10 +247,9 @@ test('treats critical validation ratchet risks as contradicted completion eviden
 });
 
 test('downgrades verified verdicts when high-risk source anchors need invariant review', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createMinimalWorkflowProject('mustflow-verify-source-anchor-');
 
 	try {
-		await initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
 		const sourcePath = path.join(projectPath, 'src', 'auth.ts');
 		writeFileSync(
@@ -254,8 +286,9 @@ destructive = false
 required_after = ["auth_change"]
 `,
 		);
-		const firstIndex = await runCli(projectPath, ['index', '--source', '--json']);
-		assert.equal(firstIndex.status, 0, firstIndex.stderr || firstIndex.stdout);
+		writeRunTrustManifestLock(projectPath);
+		const firstIndex = await createLocalIndexDirect(projectPath, { includeSource: true });
+		assert.equal(firstIndex.source_anchor_count, 1);
 
 		writeFileSync(
 			sourcePath,
@@ -273,8 +306,8 @@ export function canAccess(role) {
 `,
 		);
 
-		const secondIndex = await runCli(projectPath, ['index', '--source', '--json']);
-		assert.equal(secondIndex.status, 0, secondIndex.stderr || secondIndex.stdout);
+		const secondIndex = await createLocalIndexDirect(projectPath, { includeSource: true });
+		assert.equal(secondIndex.source_anchor_count, 1);
 		const plan = path.join(projectPath, 'auth-plan.json');
 		writeFileSync(plan, JSON.stringify(createClassifyPlan(projectPath, 'auth_change', 'src/auth.ts'), null, 2));
 
