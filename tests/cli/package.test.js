@@ -89,6 +89,17 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts.prepublishOnly, 'npm run release:check');
 });
 
+test('source repository exposes cached related tests as a read-only command intent', () => {
+	const cachedIntent = /\[intents\.test_related_cached\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(cachedIntent, '');
+	assert.match(cachedIntent, /argv = \["bun", "run", "test:related:cached"\]/u);
+	assert.match(cachedIntent, /writes = \[\]/u);
+	assert.match(cachedIntent, /network = false/u);
+	assert.match(cachedIntent, /destructive = false/u);
+	assert.match(cachedIntent, /required_after = \["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"\]/u);
+});
+
 test('npm publish workflow uses trusted publisher identity', () => {
 	assert.match(publishNpmWorkflow, /push:\s*\n\s+tags:\s*\n\s+- "v\*"/u);
 	assert.match(publishNpmWorkflow, /environment: npm/u);

@@ -108,6 +108,21 @@ network = false
 destructive = false
 required_after = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
 
+[intents.test_related_cached]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run mustflow CLI tests selected from changed files using an already-fresh dist/ build."
+argv = ["bun", "run", "test:related:cached"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["code_change", "behavior_change", "test_change", "mustflow_config_change", "mustflow_docs_change"]
+
 [intents.test]
 status = "configured"
 lifecycle = "oneshot"
