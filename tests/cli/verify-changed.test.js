@@ -6,11 +6,14 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import {
-	createTempProject,
-	initProjectInProcess as initProject,
 	removeTempProject,
 	runCliInProcess as runCli,
 } from './helpers/cli-harness.js';
+import { createMinimalWorkflowProject } from './index-support.js';
+
+function createChangedProject() {
+	return createMinimalWorkflowProject('mustflow-verify-changed-');
+}
 
 function runGit(cwd, args) {
 	const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -28,7 +31,9 @@ function commitProjectBaseline(projectPath) {
 function replaceCommands(projectPath, text) {
 	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	writeFileSync(commandsPath, `${text.trim()}\n`);
-	refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+	if (existsSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'))) {
+		refreshManifestLockHash(projectPath, '.mustflow/config/commands.toml');
+	}
 }
 
 function refreshManifestLockHash(projectPath, relativePath) {
@@ -41,12 +46,39 @@ function refreshManifestLockHash(projectPath, relativePath) {
 	writeFileSync(lockPath, lock.replace(pattern, `$1${hash}$2`));
 }
 
+function writeRunTrustManifestLock(projectPath) {
+	const hashProjectFile = (relativePath) =>
+		`sha256:${createHash('sha256').update(readFileSync(path.join(projectPath, ...relativePath.split('/')))).digest('hex')}`;
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'),
+		[
+			'schema_version = "1"',
+			'',
+			'[template]',
+			'id = "test-minimal"',
+			'version = "0.0.0"',
+			'profile = "test"',
+			'locale = "en"',
+			'',
+			'[files."AGENTS.md"]',
+			'source = "test_fixture"',
+			'last_action = "created"',
+			`content_hash = "${hashProjectFile('AGENTS.md')}"`,
+			'',
+			'[files.".mustflow/config/commands.toml"]',
+			'source = "test_fixture"',
+			'last_action = "created"',
+			`content_hash = "${hashProjectFile('.mustflow/config/commands.toml')}"`,
+			'',
+		].join('\n'),
+	);
+}
+
 test('plans verification from current changed files', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -113,11 +145,10 @@ required_after = ["test_change"]
 });
 
 test('reports missing project-declared test selection without inferring a subset', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-missing.txt');
 
 	try {
-		await initProject(projectPath);
 		mkdirSync(path.dirname(fixturePath), { recursive: true });
 		writeFileSync(fixturePath, 'before\n');
 		commitProjectBaseline(projectPath);
@@ -144,12 +175,11 @@ test('reports missing project-declared test selection without inferring a subset
 });
 
 test('warns when project-declared test selection rules do not match changed files', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-unmatched.txt');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		await initProject(projectPath);
 		writeFileSync(
 			selectionPath,
 			`
@@ -186,12 +216,11 @@ select = { intent = "source_related", fallback_intent = "source_fast" }
 });
 
 test('treats project-declared test selection matches as a minimum selected set', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-manifest.txt');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -309,13 +338,12 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 });
 
 test('passes only safe project-declared test targets when selected intent opts in', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-targets.txt');
 	const targetsPath = path.join(projectPath, 'targets.json');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -364,6 +392,7 @@ match = { paths = ["tests/fixtures/**"], surfaces = ["test_fixture"] }
 select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_targets = ["tests/fixtures"] }
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 		mkdirSync(path.dirname(fixturePath), { recursive: true });
 		writeFileSync(fixturePath, 'before\n');
 		commitProjectBaseline(projectPath);
@@ -389,13 +418,12 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 });
 
 test('rejects project-declared test targets that look like command options before execution', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-target-injection.txt');
 	const markerPath = path.join(projectPath, 'pwned.txt');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -463,12 +491,11 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 });
 
 test('runs verification from current changed files', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
 	const markerPath = path.join(projectPath, 'executed.txt');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -488,6 +515,7 @@ destructive = false
 required_after = ["test_change"]
 `,
 		);
+		writeRunTrustManifestLock(projectPath);
 		mkdirSync(path.dirname(fixturePath), { recursive: true });
 		writeFileSync(fixturePath, 'before\n');
 		commitProjectBaseline(projectPath);
@@ -509,11 +537,10 @@ required_after = ["test_change"]
 });
 
 test('plans verification for unclassified changed files with unknown_change', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'unmapped', 'verify-changed.custom');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
@@ -559,12 +586,11 @@ required_after = ["unknown_change"]
 });
 
 test('writes changed-file classification plan before verifying', async () => {
-	const projectPath = createTempProject();
+	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'verify-changed.txt');
 	const planPath = path.join(projectPath, '.mustflow', 'state', 'change-plan.json');
 
 	try {
-		await initProject(projectPath);
 		replaceCommands(
 			projectPath,
 			`
