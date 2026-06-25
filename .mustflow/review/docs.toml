@@ -54,7 +54,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-06-24T04:25:24.730Z"
+last_touched_at = "2026-06-25T00:41:25.029Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -81,6 +81,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-24T02:35:52.593Z"
 last_touched_at = "2026-06-24T02:35:52.593Z"
+
+[[documents]]
+path = ".mustflow/skills/test-suite-performance-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-25T00:41:25.038Z"
+last_touched_at = "2026-06-25T00:41:25.038Z"
 
 [[documents]]
 path = ".mustflow/skills/typescript-code-change/SKILL.md"
@@ -304,7 +312,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-06-24T04:25:24.760Z"
+last_touched_at = "2026-06-25T00:41:25.045Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
@@ -329,6 +337,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-24T02:35:52.611Z"
 last_touched_at = "2026-06-24T02:35:52.611Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/test-suite-performance-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-25T00:41:25.051Z"
+last_touched_at = "2026-06-25T00:41:25.051Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/typescript-code-change/SKILL.md"

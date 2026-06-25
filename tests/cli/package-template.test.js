@@ -117,6 +117,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('source-anchor-authoring'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('test-suite-performance-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
 	for (const skillName of technologySkillNames) {
 		assert.ok(template.manifest.skillProfiles.minimal.includes(skillName), `minimal should include ${skillName}`);
@@ -170,6 +171,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('agent-eval-integrity-review'),
 			`${profileName} should include agent-eval-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('test-suite-performance-review'),
+			`${profileName} should include test-suite-performance-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('desktop-memory-footprint-review'),

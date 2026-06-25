@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 207
+anchor_count: 208
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:7eaa80e1d870d397d0783c134d2856c61ea2c3f066ba56da8eede5de3fd56ec9"
+source_fingerprint: "sha256:f22bb5ea56950df04bcd95ed94dec1be4c9d441f916684c890583ff3c62b585c"
 ---
 
 # REPO_MAP.md
@@ -675,6 +675,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/test-maintenance/
 
 - `.mustflow/skills/test-maintenance/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/test-suite-performance-review/
+
+- `.mustflow/skills/test-suite-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/testability-boundary-review/
 

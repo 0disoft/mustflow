@@ -696,6 +696,12 @@ route_type = "adjunct"
 priority = 40
 applies_to_reasons = ["test_change", "behavior_change"]
 
+[routes."test-suite-performance-review"]
+category = "tests"
+route_type = "primary"
+priority = 58
+applies_to_reasons = ["performance_change", "test_change", "workflow_change", "mustflow_config_change", "package_metadata_change", "unknown_change"]
+
 [routes."test-maintenance"]
 category = "tests"
 route_type = "primary"

@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.85.2"
+version = "2.85.3"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -127,6 +127,7 @@ creates = [
   ".mustflow/skills/release-publish-change/SKILL.md",
   ".mustflow/skills/test-design-guard/SKILL.md",
   ".mustflow/skills/test-maintenance/SKILL.md",
+  ".mustflow/skills/test-suite-performance-review/SKILL.md",
   ".mustflow/skills/vertical-slice-tdd/SKILL.md",
   ".mustflow/skills/llm-service-ux-review/SKILL.md",
   ".mustflow/skills/prompt-contract-quality-review/SKILL.md",
@@ -337,6 +338,7 @@ minimal = [
   "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
+  "test-suite-performance-review",
   "vertical-slice-tdd",
 ]
 patterns = [
@@ -480,6 +482,7 @@ patterns = [
   "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
+  "test-suite-performance-review",
   "vertical-slice-tdd",
 ]
 oss = [
@@ -641,6 +644,7 @@ oss = [
   "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
+  "test-suite-performance-review",
   "vertical-slice-tdd",
 ]
 team = [
@@ -787,6 +791,7 @@ team = [
   "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
+  "test-suite-performance-review",
   "vertical-slice-tdd",
 ]
 product = [
@@ -933,6 +938,7 @@ product = [
   "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
+  "test-suite-performance-review",
   "vertical-slice-tdd",
   "ui-quality-gate",
   "visual-review-artifact",
@@ -1094,6 +1100,7 @@ library = [
   "support-surface-advisor",
   "test-design-guard",
   "test-maintenance",
+  "test-suite-performance-review",
   "vertical-slice-tdd",
 ]
 
