@@ -71,6 +71,11 @@ function runDocsReferenceDriftJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runTestPerformanceReportJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'test/performance-report', 'summarize', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -242,6 +247,23 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(referenceDrift.cost, 'low');
 		assert.equal(referenceDrift.report_schema_file, 'reference-drift-report.schema.json');
 
+		const testPack = report.packs.find((pack) => pack.id === 'test');
+		const testPerformanceReport = testPack?.scripts.find((script) => script.ref === 'test/performance-report');
+
+		assert.ok(testPerformanceReport, 'test/performance-report should be listed');
+		assert.equal(testPerformanceReport.read_only, true);
+		assert.equal(testPerformanceReport.mutates, false);
+		assert.equal(testPerformanceReport.network, false);
+		assert.deepEqual(testPerformanceReport.phases, ['after_change', 'review']);
+		assert.ok(testPerformanceReport.use_when.some((hint) => hint.includes('performance evidence')));
+		assert.ok(testPerformanceReport.inputs.includes('max_samples'));
+		assert.ok(testPerformanceReport.outputs.includes('performance_samples'));
+		assert.ok(testPerformanceReport.outputs.includes('phase_timings'));
+		assert.ok(testPerformanceReport.related_skills.includes('test-suite-performance-review'));
+		assert.equal(testPerformanceReport.risk_level, 'low');
+		assert.equal(testPerformanceReport.cost, 'low');
+		assert.equal(testPerformanceReport.report_schema_file, 'test-performance-report.schema.json');
+
 		const repoPack = report.packs.find((pack) => pack.id === 'repo');
 		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
 		const envContract = repoPack?.scripts.find((script) => script.ref === 'repo/env-contract');
@@ -317,6 +339,97 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(relatedFiles.risk_level, 'low');
 		assert.equal(relatedFiles.cost, 'low');
 		assert.equal(relatedFiles.report_schema_file, 'related-files-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-performance-report summarizes retained run performance samples', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'perf'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'perf', 'samples.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					retention: {},
+					samples: [
+						{
+							observed_day: '2026-06-24',
+							intent: 'test_related',
+							intent_fingerprint: 'sha256:1111',
+							command_fingerprint: 'sha256:2222',
+							contract_fingerprint: 'sha256:3333',
+							runner_bucket: 'local/win32/x64/node@24',
+							duration_ms: 181000,
+							timeout_ratio: 0.91,
+							status: 'passed',
+							exit_code_class: 'success',
+							timed_out: false,
+							error_kind: null,
+							stdout_bytes: 10,
+							stderr_bytes: 0,
+							phase_durations_ms: {
+								build: 42000,
+								tests: 139000,
+							},
+							selection_strategy: 'related',
+							changed_file_count: 3,
+							selected_target_count: 12,
+							fallback_used: true,
+						},
+						{
+							observed_day: '2026-06-25',
+							intent: 'test_release',
+							intent_fingerprint: 'sha256:4444',
+							command_fingerprint: 'sha256:5555',
+							contract_fingerprint: 'sha256:6666',
+							runner_bucket: 'local/win32/x64/node@24',
+							duration_ms: 45000,
+							timeout_ratio: 0.05,
+							status: 'failed',
+							exit_code_class: 'failure',
+							timed_out: false,
+							error_kind: 'exit_code',
+							stdout_bytes: 10,
+							stderr_bytes: 20,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const { result, report } = runTestPerformanceReportJson(projectPath, [
+			'--slow-ms',
+			'60000',
+			'--phase-ms',
+			'30000',
+			'--timeout-ratio',
+			'0.8',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'test');
+		assert.equal(report.script_id, 'performance-report');
+		assert.equal(report.script_ref, 'test/performance-report');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.summary.sample_count, 2);
+		assert.equal(report.summary.intent_count, 2);
+		assert.ok(report.evidence_sources.some((source) => source.path === '.mustflow/state/perf/samples.json' && source.readable));
+		assert.ok(report.intents.some((entry) => entry.intent === 'test_related' && entry.p95_duration_ms === 181000));
+		assert.ok(report.phases.some((entry) => entry.name === 'tests' && entry.p95_duration_ms === 139000));
+		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_slow_sample'));
+		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_high_timeout_ratio'));
+		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_selection_fallback'));
+		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_previous_failure'));
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -2951,6 +3064,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run code\/change-impact analyze --base HEAD --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run test\/performance-report summarize --json/);
 		assert.match(result.stdout, /mf script-pack run docs\/reference-drift check README\.md schemas\/README\.md --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/config-chain inspect src\/cli\/index\.ts --json/);
@@ -2971,6 +3085,37 @@ test('text-budget is not exposed as a top-level command', () => {
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.match(result.stderr, /Unknown command: text-budget/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends test performance report for test-suite performance review', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'tests', 'cli'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'tests', 'cli', 'slow.test.js'), 'test("slow", () => {});\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'tests/cli/slow.test.js',
+			'--skill',
+			'test-suite-performance-review',
+			'--phase',
+			'review',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const performanceReport = report.suggestions.find((suggestion) => suggestion.script_ref === 'test/performance-report');
+		assert.ok(performanceReport, 'test/performance-report should be suggested for test performance work');
+		assert.ok(performanceReport.matched_skills.includes('test-suite-performance-review'));
+		assert.ok(performanceReport.matched_phases.includes('review'));
+		assert.ok(performanceReport.matched_surfaces.includes('test'));
+		assert.equal(performanceReport.run_hint, 'mf script-pack run test/performance-report summarize --json');
+		assert.equal(performanceReport.report_schema_file, 'test-performance-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}

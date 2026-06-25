@@ -353,6 +353,15 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'test-performance-report',
+		schemaFile: 'test-performance-report.schema.json',
+		producer: 'mf script-pack run test/performance-report summarize --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'script-pack', 'run', 'test/performance-report', 'summarize', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'text-budget-report',
 		schemaFile: 'text-budget-report.schema.json',
 		producer: 'mf script-pack run core/text-budget check <path...> --json',

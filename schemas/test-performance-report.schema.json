@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/test-performance-report.schema.json",
+  "title": "mustflow test performance report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "evidence_sources",
+    "summary",
+    "intents",
+    "phases",
+    "recent_samples",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "test" },
+    "script_id": { "const": "performance-report" },
+    "script_ref": { "const": "test/performance-report" },
+    "action": { "const": "summarize" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "evidence_sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidenceSource" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "intents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/intentSummary" }
+    },
+    "phases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/phaseSummary" }
+    },
+    "recent_samples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sample" }
+    },
+    "truncated": { "type": "boolean" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_samples",
+        "max_intents",
+        "max_findings",
+        "slow_sample_threshold_ms",
+        "high_timeout_ratio",
+        "phase_bottleneck_threshold_ms"
+      ],
+      "properties": {
+        "max_samples": { "type": "integer", "minimum": 1 },
+        "max_intents": { "type": "integer", "minimum": 1 },
+        "max_findings": { "type": "integer", "minimum": 1 },
+        "slow_sample_threshold_ms": { "type": "integer", "minimum": 1 },
+        "high_timeout_ratio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "phase_bottleneck_threshold_ms": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "evidenceKind": {
+      "enum": ["latest_run_receipt", "latest_run_profile", "performance_samples", "performance_summary"]
+    },
+    "evidenceSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "exists", "readable", "issue"],
+      "properties": {
+        "path": { "type": "string" },
+        "kind": { "$ref": "#/$defs/evidenceKind" },
+        "exists": { "type": "boolean" },
+        "readable": { "type": "boolean" },
+        "issue": { "type": ["string", "null"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_source_count",
+        "sample_count",
+        "intent_count",
+        "finding_count",
+        "latest_run_intent",
+        "latest_run_status",
+        "latest_run_duration_ms",
+        "latest_profile_phase_count",
+        "retained_summary_intent_count"
+      ],
+      "properties": {
+        "evidence_source_count": { "type": "integer", "minimum": 0 },
+        "sample_count": { "type": "integer", "minimum": 0 },
+        "intent_count": { "type": "integer", "minimum": 0 },
+        "finding_count": { "type": "integer", "minimum": 0 },
+        "latest_run_intent": { "type": ["string", "null"] },
+        "latest_run_status": { "type": ["string", "null"] },
+        "latest_run_duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "latest_profile_phase_count": { "type": "integer", "minimum": 0 },
+        "retained_summary_intent_count": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "observed_day",
+        "intent",
+        "status",
+        "duration_ms",
+        "timeout_ratio",
+        "runner_bucket",
+        "phase_count",
+        "selection_strategy",
+        "changed_file_count",
+        "selected_target_count",
+        "fallback_used"
+      ],
+      "properties": {
+        "source": { "enum": ["history", "latest_run"] },
+        "observed_day": { "type": "string" },
+        "intent": { "type": "string" },
+        "status": { "enum": ["passed", "failed"] },
+        "duration_ms": { "type": "number", "minimum": 0 },
+        "timeout_ratio": { "type": "number", "minimum": 0 },
+        "runner_bucket": { "type": ["string", "null"] },
+        "phase_count": { "type": "integer", "minimum": 0 },
+        "selection_strategy": { "type": ["string", "null"] },
+        "changed_file_count": { "type": ["integer", "null"], "minimum": 0 },
+        "selected_target_count": { "type": ["integer", "null"], "minimum": 0 },
+        "fallback_used": { "type": ["boolean", "null"] }
+      }
+    },
+    "phaseSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sample_count", "total_duration_ms", "max_duration_ms", "p95_duration_ms"],
+      "properties": {
+        "name": { "type": "string" },
+        "sample_count": { "type": "integer", "minimum": 0 },
+        "total_duration_ms": { "type": "number", "minimum": 0 },
+        "max_duration_ms": { "type": "number", "minimum": 0 },
+        "p95_duration_ms": { "type": "number", "minimum": 0 }
+      }
+    },
+    "intentSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "sample_count",
+        "success_count",
+        "failure_count",
+        "fallback_count",
+        "latest_duration_ms",
+        "min_duration_ms",
+        "p50_duration_ms",
+        "p95_duration_ms",
+        "max_duration_ms",
+        "max_timeout_ratio",
+        "selected_target_count_max",
+        "slowest_phase"
+      ],
+      "properties": {
+        "intent": { "type": "string" },
+        "sample_count": { "type": "integer", "minimum": 0 },
+        "success_count": { "type": "integer", "minimum": 0 },
+        "failure_count": { "type": "integer", "minimum": 0 },
+        "fallback_count": { "type": "integer", "minimum": 0 },
+        "latest_duration_ms": { "type": "number", "minimum": 0 },
+        "min_duration_ms": { "type": "number", "minimum": 0 },
+        "p50_duration_ms": { "type": "number", "minimum": 0 },
+        "p95_duration_ms": { "type": "number", "minimum": 0 },
+        "max_duration_ms": { "type": "number", "minimum": 0 },
+        "max_timeout_ratio": { "type": "number", "minimum": 0 },
+        "selected_target_count_max": { "type": ["integer", "null"], "minimum": 0 },
+        "slowest_phase": {
+          "anyOf": [
+            { "$ref": "#/$defs/phaseSummary" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "test_performance_no_evidence",
+            "test_performance_unreadable_evidence",
+            "test_performance_previous_failure",
+            "test_performance_slow_sample",
+            "test_performance_high_timeout_ratio",
+            "test_performance_selection_fallback",
+            "test_performance_phase_bottleneck"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "intent": { "type": "string" },
+        "phase": { "type": "string" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

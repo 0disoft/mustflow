@@ -234,6 +234,7 @@ function surfacesForScript(script: ScriptPackSuggestionScript): readonly ScriptP
 	addIf('generated', /generated|protected|vendor|cache|boundary/u);
 	addIf('config', /config|command/u);
 	addIf('package', /package|release/u);
+	addIf('test', /test|suite|fixture|coverage|selection|timing|performance/u);
 	addIf('source', /code|source|symbol/u);
 
 	return uniqueSortedSurfaces(surfaces);
@@ -343,6 +344,10 @@ function createRunHint(
 			)
 			.map((entry) => entry.path);
 		return createConcretePathHint('mf script-pack run docs/reference-drift check', docsPaths, script.usage);
+	}
+
+	if (script.ref === 'test/performance-report') {
+		return 'mf script-pack run test/performance-report summarize --json';
 	}
 
 	if (script.ref === 'repo/generated-boundary') {

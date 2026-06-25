@@ -95,6 +95,10 @@ Current schemas:
   `mf script-pack run docs/reference-drift check [path...] --json`, containing checked
   documentation references to `mf` commands, script-pack refs, schema files, repository paths,
   and stable stale-reference finding codes
+- `test-performance-report.schema.json`: output of
+  `mf script-pack run test/performance-report summarize --json`, containing retained run
+  performance evidence, slow intent summaries, timeout-pressure findings, selected-test fallback
+  signals, and phase bottleneck summaries from `.mustflow/state`
 - `config-chain-report.schema.json`: output of
   `mf script-pack run repo/config-chain inspect <path...> --json`, containing nearby package,
   TypeScript, ESLint, Prettier, Vite, Vitest, Tailwind, Jest, Playwright, and mustflow config files

@@ -299,6 +299,36 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 		],
 	},
 	{
+		id: 'test',
+		summaryKey: 'scriptPack.pack.test.summary',
+		scripts: [
+			{
+				packId: 'test',
+				id: 'performance-report',
+				ref: scriptRef('test', 'performance-report'),
+				usage: 'mf script-pack run test/performance-report summarize [options]',
+				summaryKey: 'scriptPack.script.testPerformanceReport.summary',
+				actions: ['summarize'],
+				useWhen: [
+					'Summarize retained mf run performance evidence, selected-test fallbacks, slow intents, timeout pressure, and phase bottlenecks.',
+					'Review local verification-loop performance before changing test scheduling, profiling, caching, or command-contract timeout policy.',
+				],
+				phases: ['after_change', 'review'],
+				readOnly: true,
+				mutates: false,
+				network: false,
+				inputs: ['max_samples', 'max_intents', 'max_findings', 'slow_ms', 'timeout_ratio', 'phase_ms'],
+				outputs: ['human_summary', 'json_report', 'performance_samples', 'intent_timings', 'phase_timings'],
+				relatedSkills: ['test-suite-performance-review', 'test-maintenance', 'completion-evidence-gate'],
+				riskLevel: 'low',
+				cost: 'low',
+				reportSchemaFile: 'test-performance-report.schema.json',
+				loadRunner: async () =>
+					(await import('../script-packs/test-performance-report.js')).runTestPerformanceReportScript,
+			},
+		],
+	},
+	{
 		id: 'repo',
 		summaryKey: 'scriptPack.pack.repo.summary',
 		scripts: [

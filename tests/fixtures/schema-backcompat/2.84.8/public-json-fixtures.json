@@ -2539,6 +2539,84 @@
       }
     },
     {
+      "id": "test-performance-report",
+      "schema_file": "test-performance-report.schema.json",
+      "producer": "mf script-pack run test/performance-report summarize --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "test",
+        "script_id": "performance-report",
+        "script_ref": "test/performance-report",
+        "action": "summarize",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_samples": 200,
+          "max_intents": 30,
+          "max_findings": 80,
+          "slow_sample_threshold_ms": 120000,
+          "high_timeout_ratio": 0.75,
+          "phase_bottleneck_threshold_ms": 30000
+        },
+        "input_hash": "sha256:abababababababababababababababababababababababababababababababab",
+        "evidence_sources": [
+          {
+            "path": ".mustflow/state/perf/samples.json",
+            "kind": "performance_samples",
+            "exists": false,
+            "readable": false,
+            "issue": null
+          },
+          {
+            "path": ".mustflow/state/perf/summary.json",
+            "kind": "performance_summary",
+            "exists": false,
+            "readable": false,
+            "issue": null
+          },
+          {
+            "path": ".mustflow/state/runs/latest.json",
+            "kind": "latest_run_receipt",
+            "exists": false,
+            "readable": false,
+            "issue": null
+          },
+          {
+            "path": ".mustflow/state/runs/latest.profile.json",
+            "kind": "latest_run_profile",
+            "exists": false,
+            "readable": false,
+            "issue": null
+          }
+        ],
+        "summary": {
+          "evidence_source_count": 0,
+          "sample_count": 0,
+          "intent_count": 0,
+          "finding_count": 1,
+          "latest_run_intent": null,
+          "latest_run_status": null,
+          "latest_run_duration_ms": null,
+          "latest_profile_phase_count": 0,
+          "retained_summary_intent_count": null
+        },
+        "intents": [],
+        "phases": [],
+        "recent_samples": [],
+        "truncated": false,
+        "findings": [
+          {
+            "code": "test_performance_no_evidence",
+            "severity": "low",
+            "message": "No run performance evidence was found under .mustflow/state."
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "related-files-report",
       "schema_file": "related-files-report.schema.json",
       "producer": "mf script-pack run repo/related-files map <path...> --json",
