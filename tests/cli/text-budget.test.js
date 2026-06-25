@@ -429,7 +429,35 @@ test('test-performance-report summarizes retained run performance samples', () =
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_high_timeout_ratio'));
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_selection_fallback'));
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_previous_failure'));
+		assert.ok(report.next_actions.some((action) => action.code === 'investigate_previous_failure'));
+		assert.ok(report.next_actions.some((action) => action.code === 'inspect_slowest_intents'));
+		assert.ok(report.next_actions.some((action) => action.code === 'review_timeout_budget'));
+		assert.ok(report.next_actions.some((action) => action.code === 'review_selection_fallback'));
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-performance-report guides profiling when no performance evidence exists', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runTestPerformanceReportJson(projectPath, []);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.summary.sample_count, 0);
+		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_no_evidence'));
+
+		const profileAction = report.next_actions.find((action) => action.code === 'collect_profile_evidence');
+		assert.ok(profileAction, 'missing collect_profile_evidence next action');
+		assert.equal(profileAction.command_intent, 'test_related_profile');
+		assert.equal(profileAction.run_hint, 'mf run test_related_profile');
+		assert.deepEqual(profileAction.finding_codes, ['test_performance_no_evidence']);
 	} finally {
 		removeTempProject(projectPath);
 	}

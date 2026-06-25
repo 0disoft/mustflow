@@ -121,6 +121,10 @@ resources are saturated, and what evidence keeps a faster path trustworthy?"
      shard tail, and idle-worker time.
    - Report p50 and p95 per test or file when available. Average-only timing hides the last slow
      shard, and the last slow shard decides CI wall time.
+   - When the command contract exposes `test_related_profile`, run it before policy changes that
+     depend on local verification timing. Then read the retained evidence with
+     `mf script-pack run test/performance-report summarize --json` before changing scheduling,
+     caching, timeout, worker, fixture, or selected-test behavior.
 2. Classify the bottleneck.
    - Discovery bottleneck: full tree scans, broad classpath scans, fixtures and generated files in
      search paths, or missing precomputed test manifests.
@@ -281,6 +285,11 @@ Use configured oneshot command intents when available:
 Use the narrowest configured test, build, docs, release, or mustflow intent that proves the changed
 test-suite behavior. If the repository exposes a profiling or cached-test intent, use it only when
 the command contract marks it configured, oneshot, and agent-allowed.
+
+When a profiling intent has run, prefer the read-only `test/performance-report` script-pack as the
+first report surface. Its `next_actions` field should guide whether the next safe step is collecting
+profile evidence, resolving previous failures, inspecting slow intents or phases, reviewing timeout
+pressure, or investigating selected-test fallback behavior.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

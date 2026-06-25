@@ -23,6 +23,7 @@
     "recent_samples",
     "truncated",
     "findings",
+    "next_actions",
     "issues"
   ],
   "properties": {
@@ -58,6 +59,10 @@
     "findings": {
       "type": "array",
       "items": { "$ref": "#/$defs/finding" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nextAction" }
     },
     "issues": {
       "type": "array",
@@ -238,6 +243,40 @@
         "metric": { "type": ["string", "null"] },
         "actual": { "type": ["number", "null"] },
         "expected": { "type": ["number", "null"] }
+      }
+    },
+    "nextActionCode": {
+      "enum": [
+        "collect_profile_evidence",
+        "investigate_previous_failure",
+        "inspect_slowest_intents",
+        "review_timeout_budget",
+        "review_selection_fallback"
+      ]
+    },
+    "nextAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "command_intent", "run_hint", "finding_codes"],
+      "properties": {
+        "code": { "$ref": "#/$defs/nextActionCode" },
+        "message": { "type": "string" },
+        "command_intent": { "type": ["string", "null"] },
+        "run_hint": { "type": ["string", "null"] },
+        "finding_codes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "test_performance_no_evidence",
+              "test_performance_unreadable_evidence",
+              "test_performance_previous_failure",
+              "test_performance_slow_sample",
+              "test_performance_high_timeout_ratio",
+              "test_performance_selection_fallback",
+              "test_performance_phase_bottleneck"
+            ]
+          }
+        }
       }
     }
   }

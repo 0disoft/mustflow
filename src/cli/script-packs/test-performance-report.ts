@@ -207,6 +207,14 @@ function renderTestPerformanceReportSummary(report: TestPerformanceReport, lang:
 		}
 	}
 
+	if (report.next_actions.length > 0) {
+		lines.push(t(lang, 'testPerformance.label.nextActions'));
+		for (const action of report.next_actions) {
+			const runHint = action.run_hint ? ` (${action.run_hint})` : '';
+			lines.push(`- ${action.code}: ${action.message}${runHint}`);
+		}
+	}
+
 	if (report.issues.length > 0) {
 		lines.push(t(lang, 'testPerformance.label.issues'), ...report.issues.map((issue) => `- ${issue}`));
 	}

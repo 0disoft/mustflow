@@ -1119,6 +1119,7 @@ Read these files before working:
   "testPerformance.label.slowestIntents": "Slowest intents",
   "testPerformance.label.slowestPhases": "Slowest phases",
   "testPerformance.label.failures": "failures",
+  "testPerformance.label.nextActions": "Next actions",
   "testPerformance.label.issues": "Issues",
   "testPerformance.clean": "No run performance evidence was found under .mustflow/state.",
   "testPerformance.error.missingAction": "Specify a performance-report action: summarize",

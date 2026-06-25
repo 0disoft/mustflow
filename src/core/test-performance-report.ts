@@ -29,6 +29,12 @@ export type TestPerformanceFindingCode =
 	| 'test_performance_high_timeout_ratio'
 	| 'test_performance_selection_fallback'
 	| 'test_performance_phase_bottleneck';
+export type TestPerformanceNextActionCode =
+	| 'collect_profile_evidence'
+	| 'investigate_previous_failure'
+	| 'inspect_slowest_intents'
+	| 'review_timeout_budget'
+	| 'review_selection_fallback';
 
 export interface TestPerformancePolicy {
 	readonly max_samples: number;
@@ -105,6 +111,14 @@ export interface TestPerformanceFinding extends ScriptCheckFinding {
 	readonly phase?: string;
 }
 
+export interface TestPerformanceNextAction {
+	readonly code: TestPerformanceNextActionCode;
+	readonly message: string;
+	readonly command_intent: string | null;
+	readonly run_hint: string | null;
+	readonly finding_codes: readonly TestPerformanceFindingCode[];
+}
+
 export interface TestPerformanceReport {
 	readonly schema_version: '1';
 	readonly command: 'script-pack';
@@ -124,6 +138,7 @@ export interface TestPerformanceReport {
 	readonly recent_samples: readonly TestPerformanceSample[];
 	readonly truncated: boolean;
 	readonly findings: readonly TestPerformanceFinding[];
+	readonly next_actions: readonly TestPerformanceNextAction[];
 	readonly issues: readonly string[];
 }
 
@@ -585,6 +600,80 @@ function reportStatus(findings: readonly TestPerformanceFinding[]): ScriptCheckS
 	return 'passed';
 }
 
+function hasFinding(findings: readonly TestPerformanceFinding[], code: TestPerformanceFindingCode): boolean {
+	return findings.some((finding) => finding.code === code);
+}
+
+function createNextActions(
+	samples: readonly TestPerformanceSample[],
+	findings: readonly TestPerformanceFinding[],
+): readonly TestPerformanceNextAction[] {
+	const actions: TestPerformanceNextAction[] = [];
+
+	if (samples.length === 0 && hasFinding(findings, 'test_performance_no_evidence')) {
+		actions.push({
+			code: 'collect_profile_evidence',
+			message:
+				'Run a configured profiling intent before changing test scheduling, caching, timeout, or selection policy.',
+			command_intent: 'test_related_profile',
+			run_hint: 'mf run test_related_profile',
+			finding_codes: ['test_performance_no_evidence'],
+		});
+	}
+
+	if (hasFinding(findings, 'test_performance_previous_failure')) {
+		actions.push({
+			code: 'investigate_previous_failure',
+			message:
+				'Resolve or classify previous failed test runs before using timing data as optimization evidence.',
+			command_intent: null,
+			run_hint: null,
+			finding_codes: ['test_performance_previous_failure'],
+		});
+	}
+
+	const slowFindingCodes = findings
+		.filter((finding) =>
+			finding.code === 'test_performance_slow_sample' ||
+			finding.code === 'test_performance_phase_bottleneck',
+		)
+		.map((finding) => finding.code);
+	if (slowFindingCodes.length > 0) {
+		actions.push({
+			code: 'inspect_slowest_intents',
+			message:
+				'Use the slowest intent and phase rows to classify discovery, startup, fixture, scheduling, or artifact cost before optimizing.',
+			command_intent: null,
+			run_hint: null,
+			finding_codes: [...new Set(slowFindingCodes)],
+		});
+	}
+
+	if (hasFinding(findings, 'test_performance_high_timeout_ratio')) {
+		actions.push({
+			code: 'review_timeout_budget',
+			message:
+				'Review timeout pressure with fresh timing evidence before increasing command timeouts.',
+			command_intent: 'test_related_profile',
+			run_hint: 'mf run test_related_profile',
+			finding_codes: ['test_performance_high_timeout_ratio'],
+		});
+	}
+
+	if (hasFinding(findings, 'test_performance_selection_fallback')) {
+		actions.push({
+			code: 'review_selection_fallback',
+			message:
+				'Inspect selected-test fallback causes before relying on the fast related-test path for this change surface.',
+			command_intent: null,
+			run_hint: null,
+			finding_codes: ['test_performance_selection_fallback'],
+		});
+	}
+
+	return actions;
+}
+
 export function createTestPerformanceReport(
 	projectRoot: string,
 	options: CreateTestPerformanceReportOptions = {},
@@ -659,6 +748,7 @@ export function createTestPerformanceReport(
 	createFindings(recentSamples, phases, policy, visibleFindings);
 
 	const status = reportStatus(visibleFindings);
+	const nextActions = createNextActions(recentSamples, visibleFindings);
 	const summary: TestPerformanceSummary = {
 		evidence_source_count: evidenceSources.filter((source) => source.readable).length,
 		sample_count: recentSamples.length,
@@ -682,7 +772,7 @@ export function createTestPerformanceReport(
 		ok: status === 'passed',
 		mustflow_root: root,
 		policy,
-		input_hash: sha256Tagged(JSON.stringify({ policy, evidenceSources, summary, recentSamples })),
+		input_hash: sha256Tagged(JSON.stringify({ policy, evidenceSources, summary, recentSamples, nextActions })),
 		evidence_sources: evidenceSources,
 		summary,
 		intents,
@@ -693,6 +783,7 @@ export function createTestPerformanceReport(
 			new Set(allSamples.map((sample) => sample.intent)).size > intents.length ||
 			visibleFindings.length >= policy.max_findings,
 		findings: visibleFindings,
+		next_actions: nextActions,
 		issues,
 	};
 }

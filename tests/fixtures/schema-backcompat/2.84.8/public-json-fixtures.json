@@ -2613,6 +2613,17 @@
             "message": "No run performance evidence was found under .mustflow/state."
           }
         ],
+        "next_actions": [
+          {
+            "code": "collect_profile_evidence",
+            "message": "Run a configured profiling intent before changing test scheduling, caching, timeout, or selection policy.",
+            "command_intent": "test_related_profile",
+            "run_hint": "mf run test_related_profile",
+            "finding_codes": [
+              "test_performance_no_evidence"
+            ]
+          }
+        ],
         "issues": []
       }
     },
