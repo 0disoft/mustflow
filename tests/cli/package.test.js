@@ -11,6 +11,7 @@ const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json
 const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 const templateCommandContract = readFileSync(path.join(projectRoot, 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml'), 'utf8');
 const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
+const cliTestSelection = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'test-selection.mjs'), 'utf8');
 const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const releaseVersionCheckScript = readFileSync(path.join(projectRoot, 'scripts', 'check-npm-release-version.mjs'), 'utf8');
@@ -40,7 +41,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.85.11');
+	assert.equal(packageJson.version, '2.85.12');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -275,8 +276,10 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /function readFullConcurrency\(\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_COVERAGE_CONCURRENCY/u);
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4'\)/u);
-	assert.match(cliTestRunner, /'related-cached': relatedTests\(\)/u);
-	assert.match(cliTestRunner, /'related-profile': relatedTests\(\{ fallbackTests: \[\] \}\)/u);
+	assert.match(cliTestRunner, /import \{ createTestSelection \} from '\.\/lib\/test-selection\.mjs';/u);
+	assert.match(cliTestRunner, /const suites = suitesForChangedFiles\(currentChangedFiles\);/u);
+	assert.match(cliTestSelection, /'related-cached': relatedTestsForFiles\(files\)/u);
+	assert.match(cliTestSelection, /'related-profile': relatedTestsForFiles\(files, \{ fallbackTests: \[\] \}\)/u);
 	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
 	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
 	assert.match(cliTestRunner, /function runProfiledTests\(\)/u);

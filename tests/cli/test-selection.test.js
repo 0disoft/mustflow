@@ -91,6 +91,9 @@ const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['.mustflow/config/commands.toml'] },
 	{ mode: 'related', changedFiles: ['src/cli/lib/package-info.ts'] },
 	{ mode: 'related', changedFiles: ['scripts/run-cli-tests.mjs'] },
+	{ mode: 'related', changedFiles: ['scripts/lib/test-selection.mjs'] },
+	{ mode: 'related', changedFiles: ['package.json'] },
+	{ mode: 'related', changedFiles: ['misc/notes.txt'] },
 	{ mode: 'related', changedFiles: [] },
 	{ mode: 'related-profile', changedFiles: [] },
 	...scriptPackRelatedSelectionPaths.map((changedFile) => ({ mode: 'related', changedFiles: [changedFile] })),
@@ -168,6 +171,10 @@ function selectedFor(changedFiles) {
 	return new Set(selectRelated(changedFiles).selected);
 }
 
+function reasonsFor(report, reason) {
+	return report.selection_reasons.filter((entry) => entry.reason === reason);
+}
+
 test('related selection uses explicit command test contracts without router fallback', () => {
 	const selected = selectedFor(['src/cli/commands/verify.ts']);
 
@@ -241,9 +248,56 @@ test('related selection maps package metadata helper changes to command consumer
 });
 
 test('related selection covers the selector script itself', () => {
-	const selected = selectedFor(['scripts/run-cli-tests.mjs']);
+	const report = selectRelated(['scripts/run-cli-tests.mjs']);
+	const selected = new Set(report.selected);
+	const ruleReasons = reasonsFor(report, 'related_rule');
 
 	assert.deepEqual([...selected], ['test-selection.test.js']);
+	assert.equal(ruleReasons.length, 1);
+	assert.equal(ruleReasons[0].changed_file, 'scripts/run-cli-tests.mjs');
+	assert.equal(ruleReasons[0].rule, '^scripts\\/run-cli-tests\\.mjs$');
+	assert.deepEqual(ruleReasons[0].tests, ['test-selection.test.js']);
+});
+
+test('related selection covers the extracted selector module itself', () => {
+	const report = selectRelated(['scripts/lib/test-selection.mjs']);
+	const selected = new Set(report.selected);
+	const ruleReasons = reasonsFor(report, 'related_rule');
+
+	assert.deepEqual([...selected], ['test-selection.test.js']);
+	assert.equal(ruleReasons.length, 1);
+	assert.equal(ruleReasons[0].changed_file, 'scripts/lib/test-selection.mjs');
+	assert.equal(ruleReasons[0].rule, '^scripts\\/lib\\/test-selection\\.mjs$');
+	assert.deepEqual(ruleReasons[0].tests, ['test-selection.test.js']);
+});
+
+test('related selection maps package metadata changes to package and version tests', () => {
+	const report = selectRelated(['package.json']);
+	const selected = new Set(report.selected);
+	const ruleReasons = reasonsFor(report, 'related_rule');
+
+	assert.equal(report.release_sensitive, true);
+	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
+	assert.equal(ruleReasons.length, 1);
+	assert.equal(ruleReasons[0].changed_file, 'package.json');
+	assert.equal(ruleReasons[0].rule, '^package\\.json$');
+	for (const testName of ['package.test.js', 'package-template.test.js', 'check-versioning.test.js', 'version-sources.test.js']) {
+		assert.equal(selected.has(testName), true);
+		assert.equal(ruleReasons[0].tests.includes(testName), true);
+	}
+});
+
+test('related selection keeps ordinary unknown changes on the fast fallback', () => {
+	const report = selectRelated(['misc/notes.txt']);
+	const fastReport = listSuite('fast');
+	const fastFallbackReasons = reasonsFor(report, 'fallback_fast_tests');
+
+	assert.deepEqual(report.selected, fastReport.selected);
+	assert.equal(report.release_sensitive, false);
+	assert.equal(fastFallbackReasons.length, 1);
+	assert.equal(fastFallbackReasons[0].changed_file, null);
+	assert.equal(fastFallbackReasons[0].rule, 'default_fast_tests');
+	assert.deepEqual(fastFallbackReasons[0].tests, fastReport.selected);
 });
 
 test('related profile does not fall back to the fast baseline without changed files', () => {
@@ -251,8 +305,19 @@ test('related profile does not fall back to the fast baseline without changed fi
 	const relatedProfile = listSuite('related-profile', []);
 
 	assert.equal(related.selected.includes('index-workflow.test.js'), true);
+	assert.equal(reasonsFor(related, 'fallback_fast_tests').length, 1);
+	assert.equal(reasonsFor(related, 'fallback_fast_tests')[0].tests.includes('index-workflow.test.js'), true);
 	assert.deepEqual(relatedProfile.changed_files, []);
 	assert.deepEqual(relatedProfile.selected, []);
+	assert.deepEqual(reasonsFor(relatedProfile, 'no_changed_files'), [
+		{
+			changed_file: null,
+			reason: 'no_changed_files',
+			rule: null,
+			tests: [],
+			note: 'no changed files and fallback is disabled',
+		},
+	]);
 });
 
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
@@ -347,6 +412,15 @@ test('related selection reports release-sensitive template changes', () => {
 
 	assert.equal(report.release_sensitive, true);
 	assert.deepEqual(report.selected.sort(), ['docs.test.js', 'init-default-template.test.js', 'init.test.js', 'update.test.js']);
+	assert.deepEqual(reasonsFor(report, 'release_sensitive'), [
+		{
+			changed_file: 'templates/default/AGENTS.md',
+			reason: 'release_sensitive',
+			rule: '^templates\\/',
+			tests: [],
+			note: 'release-sensitive change; run test_release before publishing or committing release metadata',
+		},
+	]);
 });
 
 test('related selection maps init command changes to default template installation', () => {
