@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -24,6 +24,64 @@ const dashboardTests = [
 	'dashboard-safety.test.js',
 	'dashboard-verification.test.js',
 ];
+const scriptPackContractTests = [
+	'text-budget.test.js',
+	'schema.test.js',
+	'schema-command-contracts.test.js',
+	'schema-explain-verify-output.test.js',
+];
+
+function toPosixPath(filePath) {
+	return filePath.split(path.sep).join('/');
+}
+
+function uniqueSorted(values) {
+	return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+function readProjectFile(relativePath) {
+	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
+}
+
+function extractRegisteredScriptPackWrapperPaths() {
+	const registrySource = readProjectFile('src/cli/lib/script-pack-registry.ts');
+	const importPattern = /import\(['"]\.\.\/script-packs\/([^'"]+)\.js['"]\)/gu;
+	const wrapperPaths = [...registrySource.matchAll(importPattern)].map((match) => `src/cli/script-packs/${match[1]}.ts`);
+
+	assert.notEqual(wrapperPaths.length, 0, 'script-pack registry should expose loadRunner wrapper imports');
+	return uniqueSorted(wrapperPaths);
+}
+
+function extractCoreImplementationPathsFromWrappers(wrapperPaths) {
+	const corePaths = [];
+
+	for (const wrapperPath of wrapperPaths) {
+		const wrapperSource = readProjectFile(wrapperPath);
+		const importPattern = /from\s+['"]\.\.\/\.\.\/core\/([^'"]+)\.js['"]/gu;
+
+		for (const match of wrapperSource.matchAll(importPattern)) {
+			const corePath = `src/core/${match[1]}.ts`;
+			const absoluteCorePath = path.join(projectRoot, ...corePath.split('/'));
+			const coreSource = existsSync(absoluteCorePath) ? readFileSync(absoluteCorePath, 'utf8') : '';
+			if (/export const [A-Z_]+_SCRIPT_REF\b/u.test(coreSource)) {
+				corePaths.push(corePath);
+			}
+		}
+	}
+
+	return uniqueSorted(corePaths);
+}
+
+const scriptPackWrapperPaths = extractRegisteredScriptPackWrapperPaths();
+const scriptPackCoreImplementationPaths = extractCoreImplementationPathsFromWrappers(scriptPackWrapperPaths);
+const scriptPackRelatedSelectionPaths = uniqueSorted([
+	...scriptPackWrapperPaths,
+	...scriptPackCoreImplementationPaths,
+	'src/core/change-impact.ts',
+	'src/core/change-surface-classification.ts',
+	'src/core/script-pack-suggestions.ts',
+	'src/core/test-regression-selector.ts',
+]);
 
 const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['src/cli/commands/verify.ts'] },
@@ -35,20 +93,7 @@ const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['scripts/run-cli-tests.mjs'] },
 	{ mode: 'related', changedFiles: [] },
 	{ mode: 'related-profile', changedFiles: [] },
-	{ mode: 'related', changedFiles: ['src/core/code-outline.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/change-impact.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/test-regression-selector.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/change-surface-classification.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/config-chain.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/env-contract.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/secret-risk-scan.ts'] },
-	{ mode: 'related', changedFiles: ['src/cli/script-packs/code-outline.ts'] },
-	{ mode: 'related', changedFiles: ['src/cli/script-packs/code-change-impact.ts'] },
-	{ mode: 'related', changedFiles: ['src/cli/script-packs/test-regression-selector.ts'] },
-	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-config-chain.ts'] },
-	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-env-contract.ts'] },
-	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-secret-risk-scan.ts'] },
-	{ mode: 'related', changedFiles: ['src/core/script-pack-suggestions.ts'] },
+	...scriptPackRelatedSelectionPaths.map((changedFile) => ({ mode: 'related', changedFiles: [changedFile] })),
 	{ mode: 'related', changedFiles: ['src/core/line-endings.ts'] },
 	{ mode: 'related', changedFiles: ['src/cli/commands/line-endings.ts'] },
 	{ mode: 'related', changedFiles: ['src/core/change-verification.ts'] },
@@ -211,41 +256,14 @@ test('related profile does not fall back to the fast baseline without changed fi
 });
 
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
-	const coreSelected = selectedFor(['src/core/code-outline.ts']);
-	const changeImpactSelected = selectedFor(['src/core/change-impact.ts']);
-	const testRegressionSelectorSelected = selectedFor(['src/core/test-regression-selector.ts']);
-	const changeSurfaceClassificationSelected = selectedFor(['src/core/change-surface-classification.ts']);
-	const configChainSelected = selectedFor(['src/core/config-chain.ts']);
-	const envContractSelected = selectedFor(['src/core/env-contract.ts']);
-	const secretRiskScanSelected = selectedFor(['src/core/secret-risk-scan.ts']);
-	const wrapperSelected = selectedFor(['src/cli/script-packs/code-outline.ts']);
-	const changeImpactWrapperSelected = selectedFor(['src/cli/script-packs/code-change-impact.ts']);
-	const testRegressionSelectorWrapperSelected = selectedFor(['src/cli/script-packs/test-regression-selector.ts']);
-	const configChainWrapperSelected = selectedFor(['src/cli/script-packs/repo-config-chain.ts']);
-	const envContractWrapperSelected = selectedFor(['src/cli/script-packs/repo-env-contract.ts']);
-	const secretRiskScanWrapperSelected = selectedFor(['src/cli/script-packs/repo-secret-risk-scan.ts']);
-	const suggestionSelected = selectedFor(['src/core/script-pack-suggestions.ts']);
+	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-dependency-graph.ts'), true);
+	assert.equal(scriptPackCoreImplementationPaths.includes('src/core/dependency-graph.ts'), true);
 
-	for (const selected of [
-		coreSelected,
-		changeImpactSelected,
-		testRegressionSelectorSelected,
-		changeSurfaceClassificationSelected,
-		configChainSelected,
-		envContractSelected,
-		secretRiskScanSelected,
-		wrapperSelected,
-		changeImpactWrapperSelected,
-		testRegressionSelectorWrapperSelected,
-		configChainWrapperSelected,
-		envContractWrapperSelected,
-		secretRiskScanWrapperSelected,
-		suggestionSelected,
-	]) {
-		assert.equal(selected.has('text-budget.test.js'), true);
-		assert.equal(selected.has('schema.test.js'), true);
-		assert.equal(selected.has('schema-command-contracts.test.js'), true);
-		assert.equal(selected.has('schema-explain-verify-output.test.js'), true);
+	for (const changedFile of scriptPackRelatedSelectionPaths) {
+		const selected = selectedFor([toPosixPath(changedFile)]);
+		for (const testName of scriptPackContractTests) {
+			assert.equal(selected.has(testName), true, `${changedFile} should select ${testName}`);
+		}
 	}
 });
 
