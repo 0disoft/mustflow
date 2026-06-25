@@ -626,6 +626,30 @@ test('change-impact classifies schema changes with release verification hints', 
 	}
 });
 
+test('change-impact returns an empty report outside a git worktree', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.deepEqual(report.changed_files, []);
+		assert.deepEqual(report.impacts, []);
+		assert.ok(
+			report.findings.some(
+				(finding) => finding.code === 'change_impact_git_unavailable' && finding.severity === 'low',
+			),
+		);
+		assert.ok(report.issues.some((issue) => issue.includes('Git worktree is unavailable')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('export-diff compares exported signatures and return metadata against the working tree', () => {
 	const projectPath = createTempProject();
 

@@ -159,6 +159,11 @@ function runGit(root: string, args: readonly string[]): GitResult {
 	};
 }
 
+function isInsideGitWorktree(root: string): boolean {
+	const result = runGit(root, ['rev-parse', '--is-inside-work-tree']);
+	return result.ok && result.stdout.trim() === 'true';
+}
+
 function makeFinding(
 	code: ChangeImpactFindingCode,
 	severity: ScriptCheckFindingSeverity,
@@ -485,6 +490,13 @@ function collectChangedFiles(
 	findings: ChangeImpactFinding[],
 	issues: string[],
 ): ChangeImpactChangedFile[] {
+	if (!isInsideGitWorktree(root)) {
+		const message = 'Git worktree is unavailable; change-impact returned an empty impact set.';
+		findings.push(makeFinding('change_impact_git_unavailable', 'low', '.', message));
+		issues.push(message);
+		return [];
+	}
+
 	const diffArgs = policy.head_ref
 		? ['diff', '--name-status', '--diff-filter=ACMRTD', policy.base_ref, policy.head_ref, '--', ...policy.path_filters]
 		: ['diff', '--name-status', '--diff-filter=ACMRTD', policy.base_ref, '--', ...policy.path_filters];
