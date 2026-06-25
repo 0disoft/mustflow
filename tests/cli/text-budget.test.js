@@ -624,6 +624,89 @@ test('test-performance-report asks for file profile evidence when samples lack t
 	}
 });
 
+test('test-performance-report asks for fresh profile evidence when declared profile coverage is low', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'perf'), { recursive: true });
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'runs'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'perf', 'samples.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					retention: {},
+					samples: [
+						{
+							observed_day: '2026-06-25',
+							intent: 'test_related',
+							duration_ms: 32000,
+							timeout_ratio: 0.08,
+							status: 'passed',
+							selection_strategy: 'related',
+							changed_file_count: 2,
+							selected_target_count: 5,
+							fallback_used: false,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.profile.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					generated_at: '2999-01-01T00:00:00.000Z',
+					mode: 'related-profile',
+					intent: 'test_related_profile',
+					total_duration_ms: 3000,
+					file_count: 5,
+					test_files: [
+						{
+							path: 'tests/cli/profiled-a.test.js',
+							duration_ms: 2000,
+							status: 'passed',
+							exit_code: 0,
+						},
+						{
+							path: 'tests/cli/profiled-b.test.js',
+							duration_ms: 1000,
+							status: 'passed',
+							exit_code: 0,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const { result, report } = runTestPerformanceReportJson(projectPath, []);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.summary.sample_count, 1);
+		assert.equal(report.summary.latest_profile_test_file_count, 2);
+		assert.equal(report.summary.latest_profile_declared_test_file_count, 5);
+		assert.equal(report.summary.latest_profile_test_file_coverage_ratio, 2 / 5);
+		assert.equal(report.summary.latest_profile_test_files_truncated, true);
+
+		const profileAction = report.next_actions.find((action) =>
+			action.code === 'collect_profile_evidence' &&
+			/40\.0% of declared test files/u.test(action.message)
+		);
+		assert.ok(profileAction, 'missing low-coverage collect_profile_evidence next action');
+		assert.equal(profileAction.command_intent, 'test_related_profile');
+		assert.equal(profileAction.run_hint, 'mf run test_related_profile');
+		assert.deepEqual(profileAction.finding_codes, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('test-performance-report inspects top-heavy profiled test files below the slow threshold', () => {
 	const projectPath = createTempProject();
 

@@ -232,6 +232,7 @@ const DEFAULT_SLOW_SAMPLE_THRESHOLD_MS = 120_000;
 const DEFAULT_HIGH_TIMEOUT_RATIO = 0.75;
 const DEFAULT_PHASE_BOTTLENECK_THRESHOLD_MS = 30_000;
 const DEFAULT_STALE_PROFILE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_LOW_PROFILE_COVERAGE_RATIO = 0.8;
 const MAX_EVIDENCE_BYTES = 512 * 1024;
 const ERROR_CODES = new Set<TestPerformanceFindingCode>(['test_performance_unreadable_evidence']);
 
@@ -640,6 +641,16 @@ function latestProfileTestFileCoverageRatio(
 	return visibleTestFileCount / denominator;
 }
 
+function latestProfileActualTestFileCoverageRatio(
+	latestProfileTestFileCount: number,
+	declaredTestFileCount: number | null,
+): number | null {
+	if (declaredTestFileCount === null || declaredTestFileCount <= 0) {
+		return null;
+	}
+	return latestProfileTestFileCount / declaredTestFileCount;
+}
+
 function extractRetainedSummaryIntentCount(summary: unknown): number | null {
 	if (!isRecord(summary) || !isRecord(summary.intents)) {
 		return null;
@@ -799,6 +810,7 @@ function createNextActions(
 	testFiles: readonly TestPerformanceTestFileSummary[],
 	latestProfileTestFileCount: number,
 	latestProfileAgeMs: number | null,
+	latestProfileActualCoverageRatio: number | null,
 	policy: TestPerformancePolicy,
 ): readonly TestPerformanceNextAction[] {
 	const actions: TestPerformanceNextAction[] = [];
@@ -819,6 +831,23 @@ function createNextActions(
 			code: 'collect_profile_evidence',
 			message:
 				'Collect test-file profile evidence before changing file-level sharding, fixture reuse, or test splitting policy.',
+			command_intent: 'test_related_profile',
+			run_hint: 'mf run test_related_profile',
+			finding_codes: [],
+		});
+	}
+
+	if (
+		samples.length > 0 &&
+		latestProfileTestFileCount > 0 &&
+		latestProfileActualCoverageRatio !== null &&
+		latestProfileActualCoverageRatio < DEFAULT_LOW_PROFILE_COVERAGE_RATIO
+	) {
+		actions.push({
+			code: 'collect_profile_evidence',
+			message:
+				`Latest test profile includes only ${(latestProfileActualCoverageRatio * 100).toFixed(1)}% ` +
+				'of declared test files; collect fresh profile evidence before changing scheduling, caching, timeout, or fixture policy.',
 			command_intent: 'test_related_profile',
 			run_hint: 'mf run test_related_profile',
 			finding_codes: [],
@@ -986,6 +1015,10 @@ export function createTestPerformanceReport(
 	const allTestFiles = summarizeLatestProfileTestFiles(latestProfile, latestReceipt?.intent ?? null, Number.MAX_SAFE_INTEGER);
 	const testFiles = allTestFiles.slice(0, policy.max_test_files);
 	const latestProfileDeclaredTestFileCount = extractLatestProfileDeclaredTestFileCount(latestProfile);
+	const latestProfileActualCoverageRatio = latestProfileActualTestFileCoverageRatio(
+		allTestFiles.length,
+		latestProfileDeclaredTestFileCount,
+	);
 	const latestProfileCoverageRatio = latestProfileTestFileCoverageRatio(
 		testFiles.length,
 		allTestFiles.length,
@@ -1007,6 +1040,7 @@ export function createTestPerformanceReport(
 		testFiles,
 		allTestFiles.length,
 		latestProfileAgeMs,
+		latestProfileActualCoverageRatio,
 		policy,
 	);
 	const summary: TestPerformanceSummary = {
