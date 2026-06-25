@@ -528,6 +528,12 @@ test('test-performance-report summarizes retained run performance samples', () =
 			'2',
 		]);
 		assert.equal(humanResult.status, 0, humanResult.stderr || humanResult.stdout);
+		assert.match(humanResult.stdout, /Profile evidence/u);
+		assert.match(humanResult.stdout, /Generated at: 2026-06-25T00:00:00\.000Z/u);
+		assert.match(humanResult.stdout, /Age: /u);
+		assert.match(humanResult.stdout, /Files shown: 2\/3/u);
+		assert.match(humanResult.stdout, /Coverage: 66\.7%/u);
+		assert.match(humanResult.stdout, /Profile files truncated: yes/u);
 		assert.match(humanResult.stdout, /Slowest test files/u);
 		assert.match(humanResult.stdout, /tests\/cli\/slow\.test\.js: 122000ms, passed/u);
 	} finally {

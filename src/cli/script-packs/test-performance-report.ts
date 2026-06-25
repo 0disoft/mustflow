@@ -178,6 +178,45 @@ function parseTestPerformanceReportOptions(
 	};
 }
 
+function formatProfileAge(ageMs: number | null, lang: CliLang): string {
+	if (ageMs === null) {
+		return t(lang, 'value.none');
+	}
+	const totalMinutes = Math.floor(ageMs / 60_000);
+	if (totalMinutes < 1) {
+		return '<1m';
+	}
+	const days = Math.floor(totalMinutes / 1440);
+	const hours = Math.floor((totalMinutes % 1440) / 60);
+	const minutes = totalMinutes % 60;
+	const parts = [];
+	if (days > 0) {
+		parts.push(`${days}d`);
+	}
+	if (hours > 0) {
+		parts.push(`${hours}h`);
+	}
+	if (minutes > 0 || parts.length === 0) {
+		parts.push(`${minutes}m`);
+	}
+	return parts.join(' ');
+}
+
+function formatProfileCoverage(value: number | null, lang: CliLang): string {
+	if (value === null) {
+		return t(lang, 'value.none');
+	}
+	return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatProfileFileCoverage(report: TestPerformanceReport): string {
+	const declaredCount = report.summary.latest_profile_declared_test_file_count;
+	const denominator = Math.max(declaredCount ?? 0, report.summary.latest_profile_test_file_count);
+	return denominator > 0
+		? `${report.summary.test_file_count}/${denominator}`
+		: `${report.summary.test_file_count}/0`;
+}
+
 function renderTestPerformanceReportSummary(report: TestPerformanceReport, lang: CliLang): string {
 	const lines = [
 		t(lang, 'testPerformance.title'),
@@ -189,6 +228,17 @@ function renderTestPerformanceReportSummary(report: TestPerformanceReport, lang:
 		`${t(lang, 'testPerformance.label.findings')}: ${report.findings.length}`,
 		`${t(lang, 'testPerformance.label.truncated')}: ${report.truncated ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
 	];
+
+	lines.push(
+		t(lang, 'testPerformance.label.profileEvidence'),
+		`- ${t(lang, 'testPerformance.label.profileGeneratedAt')}: ${report.summary.latest_profile_generated_at ?? t(lang, 'value.none')}`,
+		`- ${t(lang, 'testPerformance.label.profileAge')}: ${formatProfileAge(report.summary.latest_profile_age_ms, lang)}`,
+		`- ${t(lang, 'testPerformance.label.profileFilesShown')}: ${formatProfileFileCoverage(report)}`,
+		`- ${t(lang, 'testPerformance.label.profileCoverage')}: ${formatProfileCoverage(report.summary.latest_profile_test_file_coverage_ratio, lang)}`,
+		`- ${t(lang, 'testPerformance.label.profileFilesTruncated')}: ${
+			report.summary.latest_profile_test_files_truncated ? t(lang, 'value.yes') : t(lang, 'value.no')
+		}`,
+	);
 
 	if (report.intents.length > 0) {
 		lines.push(t(lang, 'testPerformance.label.slowestIntents'));
