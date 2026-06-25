@@ -2,7 +2,7 @@
 mustflow_doc: skill.powershell-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: powershell-code-change
@@ -29,7 +29,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Preserve PowerShell parsing, quoting, native argument passing, script portability, and command-injection boundaries.
+Preserve PowerShell parsing, quoting, native argument passing, deterministic file rewrites, script portability, and command-injection boundaries.
 
 PowerShell quoting bugs usually come from parser layering, not from one wrong quote character. A command may be parsed by the host shell, PowerShell expression or argument mode, PowerShell string expansion, and then a native program parser such as `git.exe`, `cmd.exe`, `ssh`, `curl`, `python`, or `node`.
 
@@ -40,6 +40,7 @@ PowerShell quoting bugs usually come from parser layering, not from one wrong qu
 - PowerShell strings, here-strings, interpolation, splatting, parameter binding, call operator usage, `Start-Process`, `Invoke-Expression`, `--`, `--%`, `-Command`, `-File`, `-EncodedCommand`, or stdin execution changes.
 - PowerShell code calls native commands such as `git.exe`, `cmd.exe`, `.bat`, `.cmd`, `ssh`, `curl`, `python`, `node`, `npm`, `bun`, `docker`, `winget`, `msiexec`, or vendor CLIs.
 - Regex, wildcard, replacement strings, JSON, YAML, XML, SQL, paths with spaces, literal `$`, literal quotes, or shell metacharacters are passed through PowerShell.
+- PowerShell is used for mechanical repository file rewrites, text replacement, generated-file updates, or line-ending-sensitive edits.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -56,6 +57,7 @@ PowerShell quoting bugs usually come from parser layering, not from one wrong qu
 - Invocation path: direct script, module import, profile load, package script, CI step, scheduled task, `pwsh -Command`, `pwsh -File`, stdin, encoded command, or another shell invoking PowerShell.
 - Parser layers involved: host shell, PowerShell expression mode, PowerShell argument mode, expandable or verbatim strings, native command parser, regex parser, wildcard parser, replacement parser, JSON/YAML/XML/SQL parser, or remote shell.
 - Native command boundary: executable path, argument list, wrapper extension, expected argv shape, whether literal quote characters are required, and whether `$PSNativeCommandArgumentPassing` affects behavior.
+- File rewrite boundary: target file policy, expected encoding, expected newline style, replacement count, whether the file may contain mixed line endings, and whether the repository declares an EOL policy.
 - Dynamic input boundaries: user input, paths, URLs, commit messages, regex patterns, replacement strings, JSON bodies, headers, credentials, environment variables, and values that may contain spaces or metacharacters.
 - Existing test, lint, docs, package, workflow, and command-intent verification surfaces.
 
@@ -72,9 +74,11 @@ PowerShell quoting bugs usually come from parser layering, not from one wrong qu
 
 - Replace string-built command lines with arrays, hashtables, splatting, direct invocation, or repository-local helpers.
 - Convert fragile multiline commands to splatting or here-strings when behavior stays equivalent.
+- Replace lossy text rewrite pipelines with deterministic read/write APIs that preserve or intentionally normalize encoding and newlines.
 - Add focused tests or fixtures that prove argv shape, parser behavior, escaping, failure paths, or documented examples.
 - Update docs, command examples, CI snippets, or package scripts directly tied to the PowerShell behavior being changed.
 - Do not add `Invoke-Expression`, broad `cmd /c`, broad `--%`, global profile mutation, policy bypasses, or command-string reconstruction to make quoting appear to work.
+- Do not use `Get-Content` piped to `Set-Content`, `Out-File`, or shell redirection for repository-wide mechanical rewrites when line endings, encoding, or BOM behavior matters.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
@@ -106,10 +110,13 @@ PowerShell quoting bugs usually come from parser layering, not from one wrong qu
    - use single-quoted regex patterns unless PowerShell interpolation is intentional;
    - escape replacement `$` according to replacement-string rules, not only PowerShell string rules;
    - escape wildcard metacharacters for wildcard matching even inside single-quoted PowerShell strings.
-20. For cross-shell PowerShell calls, avoid complex inline `-Command` strings. Prefer `-File`, stdin, or an encoded command when the repository already uses that pattern and the encoding boundary is tested. If `-Command` is used, document the host shell and PowerShell parser layers.
-21. Keep paths as path values, not shell fragments. Prefer `-LiteralPath` when wildcard expansion is not intended, and do not compose destructive filesystem actions through a different shell.
-22. Add or reuse verification that observes behavior, not only spelling. Useful evidence includes argv echo fixtures, Pester cases, dry-run output, parser-specific tests, or configured CI/package/docs checks.
-23. Choose configured verification intents that cover the changed script, docs example, package metadata, CI wrapper, public command behavior, and mustflow contract surface.
+20. For mechanical text replacement, count expected matches before writing. If the count is not exactly the intended number, stop and report the mismatch instead of writing a broad replacement.
+21. For repository file rewrites, prefer .NET file APIs with explicit encoding over PowerShell content cmdlets when deterministic output matters. Normalize CRLF and lone CR to LF only when the repository policy expects LF, and write UTF-8 without BOM explicitly. Treat `Set-Content -Encoding utf8` as version-sensitive because Windows PowerShell 5.1 and PowerShell 6+ differ in default UTF-8 BOM behavior.
+22. If line-ending warnings appear after a PowerShell rewrite, do not assume the last read command caused them. Inspect repository EOL policy and per-file EOL evidence, then activate `line-ending-hygiene` for cause analysis or normalization decisions.
+23. For cross-shell PowerShell calls, avoid complex inline `-Command` strings. Prefer `-File`, stdin, or an encoded command when the repository already uses that pattern and the encoding boundary is tested. If `-Command` is used, document the host shell and PowerShell parser layers.
+24. Keep paths as path values, not shell fragments. Prefer `-LiteralPath` when wildcard expansion is not intended, and do not compose destructive filesystem actions through a different shell.
+25. Add or reuse verification that observes behavior, not only spelling. Useful evidence includes argv echo fixtures, Pester cases, dry-run output, parser-specific tests, deterministic encoding or line-ending checks, or configured CI/package/docs checks.
+26. Choose configured verification intents that cover the changed script, docs example, package metadata, CI wrapper, public command behavior, and mustflow contract surface.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -117,6 +124,7 @@ PowerShell quoting bugs usually come from parser layering, not from one wrong qu
 - The parser layers and target command type are explicit.
 - Literal strings, expandable strings, here-strings, regex patterns, wildcard patterns, replacement strings, paths, and native argv are not conflated.
 - Native command calls keep executable path and arguments separated unless a documented target requires otherwise.
+- Mechanical rewrites have explicit replacement counts, encoding, and newline decisions.
 - Dynamic values remain data-bound and are not reinterpreted as shell code.
 - PowerShell version, native argument passing mode, and cross-shell boundaries are verified or reported as remaining risks.
 
@@ -145,6 +153,7 @@ Report missing PowerShell-version, argv-shape, Pester, CI-shell, Windows-native-
 - If regex, wildcard, or replacement escaping breaks, test the second parser explicitly instead of only changing PowerShell string quotes.
 - If cross-shell `pwsh -Command` quoting becomes complex, move the script body to `-File`, stdin, or a tested encoded boundary rather than adding another quoting layer.
 - If untrusted input is interpolated into command text, treat it as a command-injection risk and restructure around argument binding.
+- If a rewrite must preserve or normalize LF, avoid version-sensitive content cmdlets and use an explicit writer. If line-ending policy is absent, report the missing policy instead of silently normalizing.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
@@ -152,6 +161,7 @@ Report missing PowerShell-version, argv-shape, Pester, CI-shell, Windows-native-
 - PowerShell version and invocation boundary
 - Parser ledger
 - String, here-string, regex, wildcard, replacement, and native argv decisions
+- File rewrite, encoding, and newline decisions
 - Files changed
 - Command intents run
 - Skipped checks and reasons

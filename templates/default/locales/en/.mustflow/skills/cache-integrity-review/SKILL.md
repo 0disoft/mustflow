@@ -2,11 +2,11 @@
 mustflow_doc: skill.cache-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: cache-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and cache behavior can spread stale, wrong, private, overbroad, tenant-crossing, permission-wrong, version-incompatible, or source-overloading values through cache keys, query normalization, key versions, TTL and jitter, soft and hard TTL, stale-while-revalidate, stampede protection, request coalescing, negative caching, invalidation order, list or page caches, tag invalidation, L1/L2 cache layers, Redis fallback, hit/miss observability, value size, eviction policy, TTL-less keys, KEYS/SCAN use, hot keys, Redis Cluster hash tags, HTTP Vary/no-cache/no-store semantics, permission caches, cache warming, or failure-path cache tests.
+description: Apply this skill when code is created, changed, reviewed, or reported and cache behavior can spread stale, wrong, private, overbroad, tenant-crossing, permission-wrong, version-incompatible, or source-overloading values through cache keys, query normalization, key versions, TTL and jitter, soft and hard TTL, stale-while-revalidate, stampede protection, request coalescing, negative caching, invalidation order, list or page caches, tag invalidation, L1/L2 cache layers, Redis fallback, cache-status ledgers such as hit, miss, bypass, stale, refresh, error, set-failed, evicted, or expired, origin-cost observability, value size, eviction policy, TTL-less keys, KEYS/SCAN use, hot keys, Redis Cluster hash tags, replica lag, Redis latency, HTTP Vary/no-cache/no-store semantics, permission caches, cache warming, or failure-path cache tests.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -81,9 +81,11 @@ and what happens to the source system when the cache misses or fails?"
 - Failure and concurrency contract: miss behavior, concurrent miss behavior, source timeout, Redis
   failure, source failure, negative cache policy, update race behavior, invalidation ordering, and
   stale serve policy.
-- Observability evidence: hit and miss metrics, miss cost, value size, key count, eviction, expiry,
-  tenant or endpoint breakdown, status-code breakdown, source query time, source call count, and set
-  success.
+- Observability evidence: hit, miss, bypass, stale, refresh, negative-hit, set-failed, error,
+  eviction, expiry, and fallback metrics; miss cost; hit-rate cost by endpoint or tenant; value
+  size; key count; source query time; source call count; origin saturation; Redis client wait,
+  round-trip latency, command latency, serialization cost, Slow Log limits, replica lag, shard
+  imbalance, and set success.
 - Relevant command-intent contract entries for tests, builds, docs, release checks, and mustflow
   validation.
 
@@ -180,6 +182,8 @@ and what happens to the source system when the cache misses or fails?"
       shedding, stale serve, circuit breaker, bulkhead, or another source-protection mechanism.
     - Decide whether cache failure is disposable or correctness-sensitive. Sessions, permissions,
       rate limits, inventory, idempotency, and dedupe caches are not ordinary performance caches.
+    - Compare normal cached traffic with an allowed bypass path or known miss path when evidence is
+      available. If bypass is faster, fresher, or more correct, the cache policy itself is suspect.
 13. Check Redis keyspace and memory behavior.
     - Review value size, key size, key schema, bounded key cardinality, max memory, eviction policy,
       expired keys, evicted keys, and whether TTL-less keys are turning cache into state storage.
@@ -187,43 +191,54 @@ and what happens to the source system when the cache misses or fails?"
       so TTL-less keys can crowd out real cache behavior.
     - `KEYS *` in application code is a production bomb. Use `SCAN` only from bounded admin or
       maintenance paths with explicit limits.
-14. Check hot keys and Redis Cluster distribution.
+14. Check Redis latency, replication, and distribution.
+    - Redis Slow Log does not include client round-trip time, connection wait, serialization,
+      application loop overhead, DNS, TLS, or network path time. Do not use it as the only latency
+      proof.
+    - Review replica lag, failover behavior, cold replica warmup, persistence spikes, memory
+      fragmentation, client connection pools, shard imbalance, and command mix when a cache incident
+      is operational rather than semantic.
+15. Check hot keys and Redis Cluster distribution.
     - Sharding does not save one hot key. Use replicas, local L1, request coalescing, prewarm,
       chunking, or workload-specific splitting where semantics allow it.
     - Redis Cluster hash tags are useful for intentional multi-key locality, but overusing the same
       tag can force too many keys into one slot.
-15. Check HTTP cache semantics.
+16. Check HTTP cache semantics.
     - If responses vary by `Authorization`, `Cookie`, `Accept-Language`, `Accept-Encoding`, content
       negotiation, or user context, verify `Vary` and cache-control behavior.
     - `no-cache` means revalidate before reuse. `no-store` means do not store. Do not use one when
       the other is required.
     - Check freshness, validation, private versus public cacheability, CDN behavior, browser behavior,
       and generated-client or proxy expectations.
-16. Check permission and entitlement caches as security boundaries.
+17. Check permission and entitlement caches as security boundaries.
     - A permission cache, role cache, organization-membership cache, subscription cache, admin cache,
       or entitlement cache must be invalidated by revocation, role change, organization move,
       subscription expiry, ownership change, and emergency access changes.
     - Short TTL alone is not enough for decisions that should fail closed or revoke promptly.
-17. Check cache warming and cold-start behavior.
+18. Check cache warming and cold-start behavior.
     - Deployment, autoscale, failover, and rollback can create synchronized cold caches that push
       traffic to the source.
     - Prewarm only keys with clear ownership and backpressure. Do not build an unbounded warming job
       that becomes the outage.
-18. Check observability.
-    - Hit rate alone lies. Break down hits, misses, stale serves, negative hits, refresh failures,
-      evictions, expirations, and set failures by endpoint, key-pattern, tenant, status-code, and
-      cache layer where useful.
+    - Load-test or smoke the cold, warm, failover, replica-lag, source-slow, and cache-down scenarios
+      when the repository has configured evidence. Otherwise report those as manual operational gaps.
+19. Check observability.
+    - Hit rate alone lies. Break down hits, misses, bypasses, stale serves, refreshes, negative hits,
+      refresh failures, evictions, expirations, fallback serves, Redis errors, and set failures by
+      endpoint, key-pattern, tenant, status-code, and cache layer where useful.
     - Log or measure miss cost: source query time, source call count, value size, generation time,
       and set success.
+    - Track hit-rate cost: origin load avoided, origin load caused by misses, miss amplification,
+      cache write failures, and whether a high hit rate hides a small set of expensive miss paths.
     - Keep cache metrics labels bounded; put high-cardinality keys in logs or traces only when the
       repository privacy rules allow it.
-19. Check tests beyond the happy path.
+20. Check tests beyond the happy path.
     - "Second call is faster" is not enough.
     - Cover concurrent misses, update during read, delete then recreate, source failure, Redis
       failure, synchronized TTL expiry, old-version cached value, permission change, tenant
       separation, list invalidation, negative-cache classification, deploy rollback, and cache-layer
       bypass when those risks exist.
-20. Label evidence honestly. If the repository lacks deterministic cache, Redis, CDN, HTTP, browser,
+21. Label evidence honestly. If the repository lacks deterministic cache, Redis, CDN, HTTP, browser,
     or load tests, report the missing evidence instead of claiming the cache is safe.
 
 <!-- mustflow-section: postconditions -->

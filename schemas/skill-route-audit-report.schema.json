@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/skill-route-audit-report.schema.json",
+  "title": "mustflow skill-route-audit report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "counts",
+    "inventory",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "skill-route-audit" },
+    "script_ref": { "const": "repo/skill-route-audit" },
+    "action": { "const": "audit" },
+    "status": { "enum": ["ok", "issues_found", "partial"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_skill_root", "template_skill_root", "template_manifest", "template_i18n"],
+      "properties": {
+        "source_skill_root": { "const": ".mustflow/skills" },
+        "template_skill_root": { "const": "templates/default/locales/en/.mustflow/skills" },
+        "template_manifest": { "const": "templates/default/manifest.toml" },
+        "template_i18n": { "const": "templates/default/i18n.toml" }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "counts": { "$ref": "#/$defs/counts" },
+    "inventory": { "$ref": "#/$defs/inventory" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_skills",
+        "index_routes",
+        "route_metadata",
+        "template_skills",
+        "manifest_skill_creates",
+        "manifest_profile_entries",
+        "i18n_skill_documents"
+      ],
+      "properties": {
+        "source_skills": { "type": "integer", "minimum": 0 },
+        "index_routes": { "type": "integer", "minimum": 0 },
+        "route_metadata": { "type": "integer", "minimum": 0 },
+        "template_skills": { "type": "integer", "minimum": 0 },
+        "manifest_skill_creates": { "type": "integer", "minimum": 0 },
+        "manifest_profile_entries": { "type": "integer", "minimum": 0 },
+        "i18n_skill_documents": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_skills",
+        "index_skills",
+        "route_skills",
+        "template_skills",
+        "manifest_skill_creates",
+        "manifest_profile_skills",
+        "i18n_skill_documents"
+      ],
+      "properties": {
+        "source_skills": { "$ref": "#/$defs/stringArray" },
+        "index_skills": { "$ref": "#/$defs/stringArray" },
+        "route_skills": { "$ref": "#/$defs/stringArray" },
+        "template_skills": { "$ref": "#/$defs/stringArray" },
+        "manifest_skill_creates": { "$ref": "#/$defs/stringArray" },
+        "manifest_profile_skills": { "$ref": "#/$defs/stringArray" },
+        "i18n_skill_documents": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "skill", "route"],
+      "properties": {
+        "code": {
+          "enum": [
+            "skill_without_route",
+            "route_without_skill",
+            "skill_missing_index_entry",
+            "index_without_skill",
+            "route_missing_index_entry",
+            "frontmatter_name_mismatch",
+            "template_missing_skill",
+            "template_extra_skill",
+            "template_skill_drift",
+            "template_routes_drift",
+            "i18n_missing_document",
+            "i18n_source_mismatch",
+            "i18n_revision_mismatch",
+            "manifest_missing_create",
+            "manifest_create_without_skill",
+            "manifest_profile_missing_skill",
+            "manifest_profile_unknown_skill"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "skill": { "type": ["string", "null"] },
+        "route": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
@@ -46,6 +46,11 @@ function runCodeDependencyGraphJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeImportCycleJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/import-cycle', 'check', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeChangeImpactJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/change-impact', 'analyze', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -71,6 +76,11 @@ function runDocsReferenceDriftJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runDocsLinkIntegrityJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'docs/link-integrity', 'check', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runTestPerformanceReportJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'test/performance-report', 'summarize', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -83,6 +93,26 @@ function runTestRegressionSelectorJson(projectPath, args) {
 
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runRepoApprovalGateJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/approval-gate', 'check', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runRepoMergeConflictScanJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/merge-conflict-scan', 'check', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runRepoGitIgnoreAuditJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/git-ignore-audit', 'audit', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runRepoManifestLockDriftJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/manifest-lock-drift', 'check', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
 }
 
@@ -150,6 +180,22 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(dependencyGraph.risk_level, 'low');
 		assert.equal(dependencyGraph.cost, 'low');
 		assert.equal(dependencyGraph.report_schema_file, 'dependency-graph-report.schema.json');
+
+		const importCycle = codePack?.scripts.find((script) => script.ref === 'code/import-cycle');
+
+		assert.ok(importCycle, 'code/import-cycle should be listed');
+		assert.equal(importCycle.read_only, true);
+		assert.equal(importCycle.mutates, false);
+		assert.equal(importCycle.network, false);
+		assert.deepEqual(importCycle.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(importCycle.use_when.some((hint) => hint.includes('import cycles')));
+		assert.ok(importCycle.inputs.includes('max_cycles'));
+		assert.ok(importCycle.outputs.includes('import_cycles'));
+		assert.ok(importCycle.outputs.includes('cycle_edge_evidence'));
+		assert.ok(importCycle.related_skills.includes('module-boundary-review'));
+		assert.equal(importCycle.risk_level, 'low');
+		assert.equal(importCycle.cost, 'low');
+		assert.equal(importCycle.report_schema_file, 'import-cycle-report.schema.json');
 
 		const changeImpact = codePack?.scripts.find((script) => script.ref === 'code/change-impact');
 
@@ -253,6 +299,21 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(referenceDrift.cost, 'low');
 		assert.equal(referenceDrift.report_schema_file, 'reference-drift-report.schema.json');
 
+		const linkIntegrity = docsPack?.scripts.find((script) => script.ref === 'docs/link-integrity');
+
+		assert.ok(linkIntegrity, 'docs/link-integrity should be listed');
+		assert.equal(linkIntegrity.read_only, true);
+		assert.equal(linkIntegrity.mutates, false);
+		assert.equal(linkIntegrity.network, false);
+		assert.deepEqual(linkIntegrity.phases, ['after_change', 'review']);
+		assert.ok(linkIntegrity.use_when.some((hint) => hint.includes('Markdown and MDX inline links')));
+		assert.ok(linkIntegrity.inputs.includes('max_files'));
+		assert.ok(linkIntegrity.outputs.includes('link_integrity'));
+		assert.ok(linkIntegrity.related_skills.includes('docs-update'));
+		assert.equal(linkIntegrity.risk_level, 'low');
+		assert.equal(linkIntegrity.cost, 'low');
+		assert.equal(linkIntegrity.report_schema_file, 'link-integrity-report.schema.json');
+
 		const testPack = report.packs.find((pack) => pack.id === 'test');
 		const testPerformanceReport = testPack?.scripts.find((script) => script.ref === 'test/performance-report');
 
@@ -295,6 +356,11 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		const envContract = repoPack?.scripts.find((script) => script.ref === 'repo/env-contract');
 		const secretRiskScan = repoPack?.scripts.find((script) => script.ref === 'repo/secret-risk-scan');
 		const generatedBoundary = repoPack?.scripts.find((script) => script.ref === 'repo/generated-boundary');
+		const mergeConflictScan = repoPack?.scripts.find((script) => script.ref === 'repo/merge-conflict-scan');
+		const gitIgnoreAudit = repoPack?.scripts.find((script) => script.ref === 'repo/git-ignore-audit');
+		const manifestLockDrift = repoPack?.scripts.find((script) => script.ref === 'repo/manifest-lock-drift');
+		const versionSource = repoPack?.scripts.find((script) => script.ref === 'repo/version-source');
+		const approvalGate = repoPack?.scripts.find((script) => script.ref === 'repo/approval-gate');
 
 		assert.ok(configChain, 'repo/config-chain should be listed');
 		assert.equal(configChain.read_only, true);
@@ -350,6 +416,75 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(generatedBoundary.risk_level, 'low');
 		assert.equal(generatedBoundary.cost, 'low');
 		assert.equal(generatedBoundary.report_schema_file, 'generated-boundary-report.schema.json');
+
+		assert.ok(mergeConflictScan, 'repo/merge-conflict-scan should be listed');
+		assert.equal(mergeConflictScan.read_only, true);
+		assert.equal(mergeConflictScan.mutates, false);
+		assert.equal(mergeConflictScan.network, false);
+		assert.deepEqual(mergeConflictScan.phases, ['after_change', 'review']);
+		assert.ok(mergeConflictScan.use_when.some((hint) => hint.includes('merge conflict markers')));
+		assert.ok(mergeConflictScan.inputs.includes('max_files'));
+		assert.ok(mergeConflictScan.outputs.includes('merge_conflict_markers'));
+		assert.ok(mergeConflictScan.related_skills.includes('completion-evidence-gate'));
+		assert.equal(mergeConflictScan.risk_level, 'low');
+		assert.equal(mergeConflictScan.cost, 'low');
+		assert.equal(mergeConflictScan.report_schema_file, 'repo-merge-conflict-scan-report.schema.json');
+
+		assert.ok(gitIgnoreAudit, 'repo/git-ignore-audit should be listed');
+		assert.equal(gitIgnoreAudit.read_only, true);
+		assert.equal(gitIgnoreAudit.mutates, false);
+		assert.equal(gitIgnoreAudit.network, false);
+		assert.deepEqual(gitIgnoreAudit.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(gitIgnoreAudit.use_when.some((hint) => hint.includes('.gitignore')));
+		assert.ok(gitIgnoreAudit.inputs.includes('max_paths'));
+		assert.ok(gitIgnoreAudit.outputs.includes('ignore_sources'));
+		assert.ok(gitIgnoreAudit.outputs.includes('ignored_path_evidence'));
+		assert.ok(gitIgnoreAudit.related_skills.includes('file-path-cross-platform-change'));
+		assert.equal(gitIgnoreAudit.risk_level, 'low');
+		assert.equal(gitIgnoreAudit.cost, 'low');
+		assert.equal(gitIgnoreAudit.report_schema_file, 'repo-git-ignore-audit-report.schema.json');
+
+		assert.ok(manifestLockDrift, 'repo/manifest-lock-drift should be listed');
+		assert.equal(manifestLockDrift.read_only, true);
+		assert.equal(manifestLockDrift.mutates, false);
+		assert.equal(manifestLockDrift.network, false);
+		assert.deepEqual(manifestLockDrift.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(manifestLockDrift.use_when.some((hint) => hint.includes('manifest.lock.toml')));
+		assert.ok(manifestLockDrift.inputs.includes('max_entries'));
+		assert.ok(manifestLockDrift.outputs.includes('manifest_lock_entries'));
+		assert.ok(manifestLockDrift.outputs.includes('hash_mismatch_findings'));
+		assert.ok(manifestLockDrift.related_skills.includes('template-install-surface-sync'));
+		assert.equal(manifestLockDrift.risk_level, 'low');
+		assert.equal(manifestLockDrift.cost, 'low');
+		assert.equal(manifestLockDrift.report_schema_file, 'repo-manifest-lock-drift-report.schema.json');
+
+		assert.ok(versionSource, 'repo/version-source should be listed');
+		assert.equal(versionSource.read_only, true);
+		assert.equal(versionSource.mutates, false);
+		assert.equal(versionSource.network, false);
+		assert.deepEqual(versionSource.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(versionSource.use_when.some((hint) => hint.includes('version source')));
+		assert.deepEqual(versionSource.inputs, []);
+		assert.ok(versionSource.outputs.includes('version_sources'));
+		assert.ok(versionSource.outputs.includes('versioning_findings'));
+		assert.ok(versionSource.related_skills.includes('version-freshness-check'));
+		assert.equal(versionSource.risk_level, 'low');
+		assert.equal(versionSource.cost, 'low');
+		assert.equal(versionSource.report_schema_file, 'repo-version-source-report.schema.json');
+
+		assert.ok(approvalGate, 'repo/approval-gate should be listed');
+		assert.equal(approvalGate.read_only, true);
+		assert.equal(approvalGate.mutates, false);
+		assert.equal(approvalGate.network, false);
+		assert.deepEqual(approvalGate.phases, ['before_change', 'review']);
+		assert.ok(approvalGate.use_when.some((hint) => hint.includes('approval')));
+		assert.deepEqual(approvalGate.inputs, ['action_type']);
+		assert.ok(approvalGate.outputs.includes('approval_decisions'));
+		assert.ok(approvalGate.outputs.includes('approval_findings'));
+		assert.ok(approvalGate.related_skills.includes('completion-evidence-gate'));
+		assert.equal(approvalGate.risk_level, 'low');
+		assert.equal(approvalGate.cost, 'low');
+		assert.equal(approvalGate.report_schema_file, 'repo-approval-gate-report.schema.json');
 
 		const relatedFiles = repoPack?.scripts.find((script) => script.ref === 'repo/related-files');
 
@@ -1190,6 +1325,37 @@ test('dependency-graph reports import cycles as hints without failing the helper
 		assert.equal(report.status, 'passed');
 		assert.equal(report.ok, true);
 		assert.ok(report.cycles.some((cycle) => cycle.includes('src/a.ts') && cycle.includes('src/b.ts')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('import-cycle reports cycles with line evidence', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'a.ts'), 'import { b } from "./b";\nexport const a = b;\n');
+		writeFileSync(path.join(projectPath, 'src', 'b.ts'), 'import { a } from "./a";\nexport const b = a;\n');
+
+		const { result, report } = runCodeImportCycleJson(projectPath, ['src']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.schema_version, '1');
+		assert.equal(report.script_ref, 'code/import-cycle');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.graph.script_ref, 'code/dependency-graph');
+		assert.equal(report.cycles.length, 1);
+		assert.equal(report.cycles[0].path_count, 2);
+		assert.equal(report.cycles[0].paths[0], report.cycles[0].paths.at(-1));
+		assert.deepEqual(new Set(report.cycles[0].paths), new Set(['src/a.ts', 'src/b.ts']));
+		assert.deepEqual(
+			report.cycles[0].edges.map((edge) => `${edge.source_path}:${edge.line}->${edge.target_path}`).sort(),
+			['src/a.ts:1->src/b.ts', 'src/b.ts:1->src/a.ts'],
+		);
+		assert.ok(report.findings.some((finding) => finding.code === 'import_cycle_detected'));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3078,6 +3244,84 @@ test('reference-drift defaults to README and schemas docs when no path is provid
 	}
 });
 
+test('link-integrity validates local files and markdown anchors without fetching external links', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'docs'));
+		writeFileSync(
+			path.join(projectPath, 'README.md'),
+			[
+				'# Link docs',
+				'',
+				'Use [install](docs/guide.md#install-steps), [top](#link-docs), and [external](https://example.invalid/path).',
+				'Broken links: [file](docs/missing.md), [anchor](docs/guide.md#missing-heading).',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(path.join(projectPath, 'docs', 'guide.md'), '# Guide\n\n## Install steps\n\nDone.\n');
+
+		const { result, report } = runDocsLinkIntegrityJson(projectPath, ['README.md']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'docs');
+		assert.equal(report.script_id, 'link-integrity');
+		assert.equal(report.script_ref, 'docs/link-integrity');
+		assert.equal(report.action, 'check');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.files[0].path, 'README.md');
+		assert.match(report.files[0].sha256, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.ok(report.policy.checked_link_kinds.includes('local_file'));
+		assert.ok(report.policy.checked_link_kinds.includes('local_anchor'));
+		assert.equal(report.summary.files_checked, 1);
+		assert.equal(report.summary.links_checked, 5);
+		assert.equal(report.summary.ok, 2);
+		assert.equal(report.summary.skipped, 1);
+		assert.equal(report.summary.missing, 2);
+
+		const links = new Map(report.links.map((link) => [link.target, link]));
+		assert.equal(links.get('docs/guide.md#install-steps')?.status, 'ok');
+		assert.equal(links.get('#link-docs')?.status, 'ok');
+		assert.equal(links.get('https://example.invalid/path')?.status, 'skipped');
+		assert.equal(links.get('docs/missing.md')?.status, 'missing');
+		assert.equal(links.get('docs/guide.md#missing-heading')?.status, 'missing');
+		assert.ok(report.findings.some((finding) => finding.code === 'link_integrity_missing_file'));
+		assert.ok(report.findings.some((finding) => finding.code === 'link_integrity_missing_anchor'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('link-integrity defaults to README and schemas docs when no path is provided', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'schemas'));
+		writeFileSync(path.join(projectPath, 'README.md'), 'Read [schemas](schemas/README.md).\n');
+		writeFileSync(path.join(projectPath, 'schemas', 'README.md'), '# Schemas\n\nBack to [root](../README.md).\n');
+
+		const { result, report } = runDocsLinkIntegrityJson(projectPath, []);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.deepEqual(
+			report.files.map((file) => file.path),
+			['README.md', 'schemas/README.md'],
+		);
+		assert.equal(report.summary.files_checked, 2);
+		assert.equal(report.summary.links_checked, 2);
+		assert.equal(report.findings.length, 0);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest ranks helpers from path, skill, and phase evidence', () => {
 	const projectPath = createTempProject();
 
@@ -3182,15 +3426,19 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 
 		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
 		const dependencyGraph = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/dependency-graph');
+		const importCycle = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/import-cycle');
 		const symbolRead = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/symbol-read');
 		const relatedFiles = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/related-files');
 
 		assert.ok(outline, 'code/outline should be suggested for source paths');
 		assert.ok(dependencyGraph, 'code/dependency-graph should be suggested for source paths');
+		assert.ok(importCycle, 'code/import-cycle should be suggested for source paths');
 		assert.ok(symbolRead, 'code/symbol-read should be suggested as a source follow-up');
 		assert.ok(relatedFiles, 'repo/related-files should be suggested for source paths');
 		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan src/session.ts --json');
 		assert.equal(dependencyGraph.run_hint, 'mf script-pack run code/dependency-graph scan src/session.ts --json');
+		assert.equal(importCycle.run_hint, 'mf script-pack run code/import-cycle check src/session.ts --json');
+		assert.equal(importCycle.report_schema_file, 'import-cycle-report.schema.json');
 		assert.match(symbolRead.run_hint, /After code\/outline returns a symbol line or anchor/u);
 		assert.match(symbolRead.run_hint, /src\/session\.ts --start-line <line> --json/u);
 		assert.equal(relatedFiles.run_hint, 'mf script-pack run repo/related-files map src/session.ts --json');
@@ -3269,6 +3517,154 @@ test('script-pack suggest recommends env-contract for env examples and config-en
 		assert.ok(envContract.matched_surfaces.includes('config'));
 		assert.equal(envContract.run_hint, 'mf script-pack run repo/env-contract scan .env.example --json');
 		assert.equal(envContract.report_schema_file, 'env-contract-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends version-source for package versioning work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'package.json',
+			'--skill',
+			'version-freshness-check',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const versionSource = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/version-source');
+		assert.ok(versionSource, 'repo/version-source should be suggested for versioning work');
+		assert.ok(versionSource.matched_phases.includes('before_change'));
+		assert.ok(versionSource.matched_skills.includes('version-freshness-check'));
+		assert.ok(versionSource.matched_surfaces.includes('package'));
+		assert.equal(versionSource.run_hint, 'mf script-pack run repo/version-source inspect --json');
+		assert.equal(versionSource.report_schema_file, 'repo-version-source-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends approval-gate for approval-sensitive workflow surfaces', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'.mustflow/config/mustflow.toml',
+			'--skill',
+			'completion-evidence-gate',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const approvalGate = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/approval-gate');
+		assert.ok(approvalGate, 'repo/approval-gate should be suggested for approval-sensitive workflow work');
+		assert.ok(approvalGate.matched_phases.includes('before_change'));
+		assert.ok(approvalGate.matched_skills.includes('completion-evidence-gate'));
+		assert.ok(approvalGate.matched_surfaces.includes('config'));
+		assert.equal(approvalGate.run_hint, 'mf script-pack run repo/approval-gate check --action <action_type> --json');
+		assert.equal(approvalGate.report_schema_file, 'repo-approval-gate-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends merge-conflict-scan for changed repository paths', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/cli/index.ts',
+			'--phase',
+			'review',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const mergeConflictScan = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/merge-conflict-scan');
+		assert.ok(mergeConflictScan, 'repo/merge-conflict-scan should be suggested for changed repo paths');
+		assert.ok(mergeConflictScan.matched_phases.includes('review'));
+		assert.ok(mergeConflictScan.matched_surfaces.includes('source'));
+		assert.equal(mergeConflictScan.run_hint, 'mf script-pack run repo/merge-conflict-scan check src/cli/index.ts --json');
+		assert.equal(mergeConflictScan.report_schema_file, 'repo-merge-conflict-scan-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends git-ignore-audit for ignore and visibility-sensitive paths', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'.gitignore',
+			'--path',
+			'dist/app.js',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const gitIgnoreAudit = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/git-ignore-audit');
+		assert.ok(gitIgnoreAudit, 'repo/git-ignore-audit should be suggested for ignore-sensitive paths');
+		assert.ok(gitIgnoreAudit.matched_phases.includes('before_change'));
+		assert.ok(gitIgnoreAudit.matched_surfaces.includes('config'));
+		assert.ok(gitIgnoreAudit.matched_surfaces.includes('generated'));
+		assert.equal(gitIgnoreAudit.run_hint, 'mf script-pack run repo/git-ignore-audit audit .gitignore dist/app.js --json');
+		assert.equal(gitIgnoreAudit.report_schema_file, 'repo-git-ignore-audit-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest recommends manifest-lock-drift for workflow lock surfaces', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'.mustflow/config/manifest.lock.toml',
+			'--skill',
+			'template-install-surface-sync',
+			'--phase',
+			'review',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const manifestLockDrift = report.suggestions.find(
+			(suggestion) => suggestion.script_ref === 'repo/manifest-lock-drift',
+		);
+		assert.ok(manifestLockDrift, 'repo/manifest-lock-drift should be suggested for manifest-lock surfaces');
+		assert.ok(manifestLockDrift.matched_phases.includes('review'));
+		assert.ok(manifestLockDrift.matched_skills.includes('template-install-surface-sync'));
+		assert.ok(manifestLockDrift.matched_surfaces.includes('config'));
+		assert.ok(manifestLockDrift.matched_surfaces.includes('generated'));
+		assert.equal(
+			manifestLockDrift.run_hint,
+			'mf script-pack run repo/manifest-lock-drift check .mustflow/config/manifest.lock.toml --json',
+		);
+		assert.equal(manifestLockDrift.report_schema_file, 'repo-manifest-lock-drift-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3523,6 +3919,17 @@ test('script-pack suggest recommends reference drift checks after docs or schema
 			'mf script-pack run docs/reference-drift check README.md schemas/README.md --json',
 		);
 		assert.equal(referenceDrift.report_schema_file, 'reference-drift-report.schema.json');
+		const linkIntegrity = report.suggestions.find((suggestion) => suggestion.script_ref === 'docs/link-integrity');
+		assert.ok(linkIntegrity, 'docs/link-integrity should be suggested for docs/schema links');
+		assert.ok(linkIntegrity.matched_phases.includes('after_change'));
+		assert.ok(linkIntegrity.matched_skills.includes('public-json-contract-change'));
+		assert.ok(linkIntegrity.matched_surfaces.includes('docs'));
+		assert.ok(linkIntegrity.matched_surfaces.includes('schema'));
+		assert.equal(
+			linkIntegrity.run_hint,
+			'mf script-pack run docs/link-integrity check README.md schemas/README.md --json',
+		);
+		assert.equal(linkIntegrity.report_schema_file, 'link-integrity-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3575,17 +3982,121 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack suggest --path src\/cli\/index\.ts --phase before_change/);
 		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/dependency-graph scan src\/cli\/index\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run code\/import-cycle check src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/change-impact analyze --base HEAD --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run test\/performance-report summarize --json/);
 		assert.match(result.stdout, /mf script-pack run test\/regression-selector select --base HEAD --json/);
 		assert.match(result.stdout, /mf script-pack run docs\/reference-drift check README\.md schemas\/README\.md --json/);
+		assert.match(result.stdout, /mf script-pack run docs\/link-integrity check README\.md docs-site\/src\/content\/docs --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/config-chain inspect src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/merge-conflict-scan check --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/git-ignore-audit audit \.env\.local dist\/app\.js --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/manifest-lock-drift check AGENTS\.md --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/version-source inspect --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/approval-gate check --action git_commit --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/related-files map src\/cli\/index\.ts --json/);
 		assert.equal(result.stderr, '');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('version-source reports detected repository version sources', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['script-pack', 'run', 'repo/version-source', 'inspect', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/version-source');
+		assert.equal(report.action, 'inspect');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.versioning_enabled, true);
+		assert.ok(report.sources.some((source) => source.path === '.mustflow/config/manifest.lock.toml'));
+		assert.equal(report.counts.sources, report.sources.length);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.deepEqual(report.findings, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('approval-gate reports actions that require explicit approval', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const { result, report } = runRepoApprovalGateJson(projectPath, [
+			'--action',
+			'git_commit',
+			'--action',
+			'status_check',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/approval-gate');
+		assert.equal(report.action, 'check');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.approval_required, true);
+		assert.deepEqual(report.input.action_types, ['git_commit', 'status_check']);
+		assert.ok(report.policy.required_for.includes('git_commit'));
+		assert.equal(report.decisions.find((decision) => decision.action_type === 'git_commit')?.approval_required, true);
+		assert.equal(report.decisions.find((decision) => decision.action_type === 'status_check')?.approval_required, false);
+		assert.equal(report.findings[0].code, 'approval_required_for_action');
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('merge-conflict-scan reports conflict markers without leaking file content', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'conflicted.ts'),
+			[
+				'export const value = "before";',
+				'<<<<<<< HEAD',
+				'const secret = "do-not-print";',
+				'=======',
+				'const secret = "also-do-not-print";',
+				'>>>>>>> branch',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runRepoMergeConflictScanJson(projectPath, ['src/conflicted.ts']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/merge-conflict-scan');
+		assert.equal(report.action, 'check');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.summary.files_checked, 1);
+		assert.equal(report.summary.markers_found, 3);
+		assert.equal(report.summary.files_with_markers, 1);
+		assert.deepEqual(
+			report.markers.map((marker) => `${marker.line}:${marker.marker}`),
+			['2:start', '4:separator', '6:end'],
+		);
+		assert.ok(report.findings.every((finding) => finding.code === 'merge_conflict_marker_detected'));
+		assert.doesNotMatch(result.stdout, /do-not-print/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3600,6 +4111,96 @@ test('text-budget is not exposed as a top-level command', () => {
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.match(result.stderr, /Unknown command: text-budget/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('git-ignore-audit reports ignored path evidence without reading ignored file content', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.gitignore'), 'secret.local\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'secret.local'), 'DO_NOT_LEAK_IGNORED_CONTENT\n');
+
+		const { result, report } = runRepoGitIgnoreAuditJson(projectPath, ['secret.local']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/git-ignore-audit');
+		assert.equal(report.action, 'audit');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.summary.paths_checked, 1);
+		assert.equal(report.summary.ignored_paths, 1);
+		assert.equal(report.summary.findings, 1);
+		assert.equal(report.paths[0].path, 'secret.local');
+		assert.equal(report.paths[0].status, 'ignored');
+		assert.equal(report.paths[0].ignored, true);
+		assert.equal(report.paths[0].tracked, false);
+		assert.equal(report.paths[0].source_path, '.gitignore');
+		assert.equal(report.paths[0].source_line, 1);
+		assert.equal(report.paths[0].pattern, 'secret.local');
+		assert.equal(report.findings[0].code, 'git_ignore_audit_ignored_path');
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.ok(!result.stdout.includes('DO_NOT_LEAK_IGNORED_CONTENT'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('manifest-lock-drift reports clean locked entries and hash mismatches', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const clean = runRepoManifestLockDriftJson(projectPath, ['AGENTS.md']);
+
+		assert.equal(clean.result.status, 0, clean.result.stderr || clean.result.stdout);
+		assert.equal(clean.report.command, 'script-pack');
+		assert.equal(clean.report.script_ref, 'repo/manifest-lock-drift');
+		assert.equal(clean.report.action, 'check');
+		assert.equal(clean.report.status, 'passed');
+		assert.equal(clean.report.ok, true);
+		assert.equal(clean.report.policy.lock_path, '.mustflow/config/manifest.lock.toml');
+		assert.equal(clean.report.policy.input_mode, 'explicit_paths');
+		assert.equal(clean.report.summary.entries_checked, 1);
+		assert.equal(clean.report.entries.find((entry) => entry.path === 'AGENTS.md')?.status, 'clean');
+		assert.match(clean.report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		const agentsPath = path.join(projectPath, 'AGENTS.md');
+		writeFileSync(agentsPath, `${readFileSync(agentsPath, 'utf8')}\nManifest drift fixture.\n`);
+		const drift = runRepoManifestLockDriftJson(projectPath, ['AGENTS.md']);
+
+		assert.equal(drift.result.status, 1, drift.result.stderr || drift.result.stdout);
+		assert.equal(drift.report.status, 'failed');
+		assert.equal(drift.report.ok, false);
+		assert.equal(drift.report.summary.hash_mismatches, 1);
+		assert.equal(drift.report.entries.find((entry) => entry.path === 'AGENTS.md')?.status, 'hash_mismatch');
+		assert.equal(drift.report.findings[0].code, 'manifest_lock_hash_mismatch');
+		assert.match(drift.report.findings[0].expected_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.match(drift.report.findings[0].actual_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('manifest-lock-drift reports missing locked files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		unlinkSync(path.join(projectPath, 'AGENTS.md'));
+		const { result, report } = runRepoManifestLockDriftJson(projectPath, ['AGENTS.md']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'error');
+		assert.equal(report.ok, false);
+		assert.equal(report.summary.missing_entries, 1);
+		assert.equal(report.entries.find((entry) => entry.path === 'AGENTS.md')?.status, 'missing');
+		assert.equal(report.findings[0].code, 'manifest_lock_entry_missing');
 	} finally {
 		removeTempProject(projectPath);
 	}

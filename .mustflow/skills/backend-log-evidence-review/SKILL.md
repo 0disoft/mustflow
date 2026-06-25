@@ -2,11 +2,11 @@
 mustflow_doc: skill.backend-log-evidence-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: backend-log-evidence-review
-description: Apply this skill when backend code is created, changed, reviewed, or reported and request logs, error logs, structured event names, log schema versions, trace/span/request IDs, correlation and causation IDs, outcome or reason fields, external API logs, database write logs, transaction or state-transition logs, retry or timeout logs, queue or batch logs, audit logs, auth or validation logs, cache or lock logs, release/config/feature-flag logs, log levels, duplicate logs, redaction, log-injection safety, sampling, or log searchability need review for whether an operator can reconstruct why a backend request, job, or data change reached its final state.
+description: Apply this skill when backend code is created, changed, reviewed, or reported and request logs, error logs, structured event names, log schema versions, trace/span/request IDs, correlation and causation IDs, outcome or reason fields, external API logs, database write logs, transaction or state-transition logs, retry or timeout logs, queue or batch logs, audit logs, auth or validation logs, cache or lock logs, release/config/feature-flag logs, log pipeline canaries, collector accepted/sent/stored counts, timestamp versus observed timestamp, parser or mapping failures, log levels, duplicate logs, redaction, log-injection safety, sampling, or log searchability need review for whether an operator can reconstruct why a backend request, job, or data change reached its final state and whether the evidence actually survived the logging pipeline.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -39,6 +39,7 @@ The review question is: "If this backend path fails, times out, retries, silentl
 - Backend handlers, services, repositories, adapters, workers, schedulers, webhooks, migrations, scripts, or batch jobs add, remove, review, or depend on logs.
 - A change claims that a path is logged, traceable, easy to debug, auditable, operationally safe, or diagnosable from logs.
 - Request start or finish logs, event names, schema versions, severity fields, trace or span IDs, error handling, error wrapping, external API calls, DB writes, transactions, status transitions, early returns, retries, timeouts, queues, async jobs, batches, audit events, auth, validation, cache, distributed locks, idempotency, feature flags, configuration, releases, migrations, or background promises are involved.
+- Log ingestion, parsing, buffering, shipping, storage, searchability, retention, rotation, multiline parsing, canary logs, dropped-log counters, timestamp skew, or log sink visibility affects whether backend evidence can be trusted.
 - A review needs to decide whether logs explain why the system reached a state, not only where the exception was thrown.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -60,6 +61,7 @@ The review question is: "If this backend path fails, times out, retries, silentl
 - Error evidence: thrown errors, catches, wrappers, causes, stack preservation, error categories, public versus internal messages, and log boundary ownership.
 - Decision evidence: branches, early returns, validation failures, auth decisions, feature flags, state transitions, cache paths, retry decisions, timeout classes, and fallback decisions.
 - Side-effect evidence: external API calls with dependency name, operation, timeout, latency, status class, retry count, circuit state, and provider request id; DB affected rows; transaction begin/commit/rollback evidence; queue enqueue and consume; idempotency decisions; locks; migrations; batch summaries; release/config/feature-flag events; and configuration snapshots.
+- Pipeline integrity evidence when logs leave the process: generated count, collector accepted count, exporter sent count, stored count, searchable count, canary event id, sequence gaps, duplicate rate, timestamp and observed timestamp drift, queue oldest age, DLQ oldest age, parser failures, mapping conflicts, dropped or sampled counts, rotation or restart boundary, multiline grouping, and storage retention boundary.
 - Safety constraints: secrets, tokens, cookies, auth headers, passwords, raw payloads, personal data, payment data, provider response bodies, full SQL, log injection through control characters or ANSI escapes, high-cardinality indexing cost, sampling policy, and retention policy.
 - Local conventions: logger API, structured field names, severity levels, redaction helpers, error serialization, test helpers, snapshots or fixtures, and configured command intents.
 
@@ -161,7 +163,14 @@ The review question is: "If this backend path fails, times out, retries, silentl
     - Normalize or escape user-controlled strings such as filenames, user agents, nicknames, referers, and queries so newlines, tabs, control characters, and ANSI escapes cannot forge log entries.
     - Sink-side masking is not enough when sensitive data has already crossed the process boundary.
     - Tests or static guards should cover sensitive log fields when feasible.
-18. Require evidence.
+18. Review log pipeline survival when the task depends on searchable logs.
+    - Compare generated, accepted, sent, stored, and searchable counts by service, environment, version, and event family instead of trusting one total.
+    - A synthetic canary log with a unique id and increasing sequence can expose loss, duplication, reorder, and search visibility lag.
+    - Distinguish event timestamp from observed timestamp; large drift points to clock skew, buffer delay, backpressure, or collector backlog.
+    - Queue size alone is weak. Check queue utilization, oldest queued event age, enqueue failures, exporter failures, receiver refusals, DLQ size, and DLQ oldest age.
+    - Parser failures, mapping conflicts, multiline splits, log rotation, container restart, pod deletion, disk buffer exhaustion, and retention or rollover drift can silently erase the evidence operators think they have.
+    - If pipeline checks require live collectors, sinks, dashboards, or production search, report them as manual-only instead of claiming log evidence survived.
+19. Require evidence.
     - Prefer focused tests, log fixtures, snapshot assertions, redaction tests, source-level guards, or local logger contract tests for stable event names and fields.
     - Prefer tests that pin `event_name`, schema version, required fields, redaction, bounded reason codes, and message-independent query fields rather than exact prose.
     - If logs depend on runtime middleware, production log routing, sink configuration, or manual log search outside the repository, report that evidence as manual-only.
@@ -170,7 +179,7 @@ The review question is: "If this backend path fails, times out, retries, silentl
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
-- The reviewed backend path has a reconstruction question, event contract, request lifecycle evidence, correlation and causation model, decision evidence, side-effect evidence, error and cause preservation, redaction boundary, level ownership, sampling boundary, and evidence level.
+- The reviewed backend path has a reconstruction question, event contract, request lifecycle evidence, correlation and causation model, decision evidence, side-effect evidence, error and cause preservation, pipeline survival boundary, redaction boundary, level ownership, sampling boundary, and evidence level.
 - Missing start or finish logs, message-only contracts, unstable event names, missing schema version, missing trace or span id, missing correlation or causation id, string-only errors, lost causes, missing external-call before and after logs, raw provider body logs, missing affected-row counts, invisible transaction or state transitions, silent early returns, attempt-free retries, duration-free timeouts, enqueue or consume gaps, broken async correlation, empty batch summaries, missing auth or validation reasons, ordinary logs for audit events, cache or lock blind spots, idempotency ambiguity, feature flag opacity, release or config opacity, secret-bearing config logs, migration `done` logs, swallowed async errors, all-info or all-error severity, duplicate error spam, prose-only messages, high-cardinality indexed fields, log injection exposure, unsafe sampling, and missing identifiers are fixed or reported.
 - Named review smells such as broken async request id, auth or validation failures, cache hits or misses, lock acquisition, idempotency outcomes, config startup summaries, release and migration event gaps, migration dry-run and apply logs, message-based dashboards, prose-only log, and sink-side-only masking are fixed or reported when present.
 - Log changes are backed by local logger conventions, tests, fixtures, source review evidence, or labeled as manual-only or missing.
@@ -205,7 +214,7 @@ Prefer the narrowest configured checks that cover the changed logging contract a
 ## Output Format
 
 - Backend log boundary reviewed
-- Reconstruction question, event contract, request lifecycle, correlation and causation, error and cause preservation, external API, database write, transaction, state transition, early return, retry, timeout, queue or async handoff, batch or migration, audit, auth, validation, cache, lock, idempotency, feature flag, release, config, level ownership, structure, cardinality, sampling, log-injection safety, redaction, and test evidence findings
+- Reconstruction question, event contract, request lifecycle, correlation and causation, error and cause preservation, external API, database write, transaction, state transition, early return, retry, timeout, queue or async handoff, batch or migration, audit, auth, validation, cache, lock, idempotency, feature flag, release, config, pipeline survival, level ownership, structure, cardinality, sampling, log-injection safety, redaction, and test evidence findings
 - Log fixes made or recommended
 - Evidence level: configured-test evidence, log fixture evidence, source review evidence, manual-only, missing, or not applicable
 - Command intents run

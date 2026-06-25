@@ -240,6 +240,30 @@ route_type = "adjunct"
 priority = 73
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change"]
 
+[routes."api-failure-triage"]
+category = "bug_failure"
+route_type = "primary"
+priority = 72
+applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "public_api_change", "performance_change", "data_change", "docs_change"]
+
+[routes."auth-flow-triage"]
+category = "bug_failure"
+route_type = "primary"
+priority = 74
+applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "security_change", "privacy_change", "data_change", "docs_change"]
+
+[routes."docker-runtime-triage"]
+category = "bug_failure"
+route_type = "primary"
+priority = 73
+applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "performance_change", "data_change", "docs_change"]
+
+[routes."ci-pipeline-triage"]
+category = "bug_failure"
+route_type = "primary"
+priority = 75
+applies_to_reasons = ["unknown_change", "command_failure", "workflow_change", "mustflow_config_change", "docs_change", "test_change", "package_metadata_change", "release_risk", "performance_change", "security_change"]
+
 [routes."app-startup-performance-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -528,6 +552,12 @@ route_type = "primary"
 priority = 67
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
+[routes."rag-pipeline-triage"]
+category = "general_code"
+route_type = "primary"
+priority = 72
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
 [routes."llm-token-cost-control-review"]
 category = "general_code"
 route_type = "primary"
@@ -623,6 +653,18 @@ category = "data_external"
 route_type = "primary"
 priority = 86
 applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
+
+[routes."search-index-integrity-review"]
+category = "data_external"
+route_type = "primary"
+priority = 74
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."vector-search-integrity-review"]
+category = "data_external"
+route_type = "primary"
+priority = 73
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."dependency-upgrade-review"]
 category = "data_external"

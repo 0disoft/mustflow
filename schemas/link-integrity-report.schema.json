@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/link-integrity-report.schema.json",
+  "title": "mustflow link-integrity report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "files",
+    "links",
+    "summary",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "docs" },
+    "script_id": { "const": "link-integrity" },
+    "script_ref": { "const": "docs/link-integrity" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "links": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/link" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "nullableSha256": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "linkKind": {
+      "enum": ["local_file", "local_anchor", "external_url", "email", "site_path"]
+    },
+    "linkStatus": {
+      "enum": ["ok", "missing", "skipped", "unknown"]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_files",
+        "max_file_bytes",
+        "default_paths",
+        "path_filters",
+        "checked_link_kinds"
+      ],
+      "properties": {
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "default_paths": { "$ref": "#/$defs/stringArray" },
+        "path_filters": { "$ref": "#/$defs/stringArray" },
+        "checked_link_kinds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/linkKind" }
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "sha256",
+        "size_bytes",
+        "line_count",
+        "link_count"
+      ],
+      "properties": {
+        "kind": { "const": "document" },
+        "path": { "type": "string" },
+        "sha256": { "$ref": "#/$defs/nullableSha256" },
+        "size_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "line_count": { "type": ["integer", "null"], "minimum": 0 },
+        "link_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "line",
+        "text",
+        "target",
+        "resolved_path",
+        "anchor",
+        "status",
+        "message"
+      ],
+      "properties": {
+        "kind": { "$ref": "#/$defs/linkKind" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string" },
+        "target": { "type": "string" },
+        "resolved_path": { "type": ["string", "null"] },
+        "anchor": { "type": ["string", "null"] },
+        "status": { "$ref": "#/$defs/linkStatus" },
+        "message": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_checked", "links_checked", "ok", "missing", "skipped", "unknown"],
+      "properties": {
+        "files_checked": { "type": "integer", "minimum": 0 },
+        "links_checked": { "type": "integer", "minimum": 0 },
+        "ok": { "type": "integer", "minimum": 0 },
+        "missing": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "link_integrity_path_outside_root",
+            "link_integrity_unreadable_path",
+            "link_integrity_file_too_large",
+            "link_integrity_max_files_exceeded",
+            "link_integrity_missing_file",
+            "link_integrity_missing_anchor"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

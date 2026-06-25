@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-merge-conflict-scan-report.schema.json",
+  "title": "mustflow repo merge-conflict-scan report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "policy",
+    "input_hash",
+    "summary",
+    "files",
+    "markers",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "merge-conflict-scan" },
+    "script_ref": { "const": "repo/merge-conflict-scan" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_mode", "marker_prefixes", "max_files", "max_file_bytes", "skipped_directories"],
+      "properties": {
+        "input_mode": { "enum": ["explicit_paths", "git_changed_files"] },
+        "marker_prefixes": {
+          "type": "array",
+          "items": { "enum": ["<<<<<<<", "|||||||", "=======", ">>>>>>>"] }
+        },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "skipped_directories": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_checked", "markers_found", "files_with_markers", "issues"],
+      "properties": {
+        "files_checked": { "type": "integer", "minimum": 0 },
+        "markers_found": { "type": "integer", "minimum": 0 },
+        "files_with_markers": { "type": "integer", "minimum": 0 },
+        "issues": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "markers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/marker" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "markerKind": {
+      "enum": ["start", "base", "separator", "end"]
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "markers"],
+      "properties": {
+        "path": { "type": "string" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "markers": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "marker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "column", "marker", "marker_length"],
+      "properties": {
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "marker": { "$ref": "#/$defs/markerKind" },
+        "marker_length": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "path",
+        "line",
+        "marker",
+        "json_pointer",
+        "metric",
+        "actual",
+        "expected"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "merge_conflict_marker_detected",
+            "merge_conflict_scan_git_unavailable",
+            "merge_conflict_scan_no_input_files",
+            "merge_conflict_scan_max_files_exceeded",
+            "merge_conflict_scan_file_too_large",
+            "merge_conflict_scan_unreadable_path",
+            "merge_conflict_scan_path_outside_root"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "marker": {
+          "anyOf": [
+            { "$ref": "#/$defs/markerKind" },
+            { "type": "null" }
+          ]
+        },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

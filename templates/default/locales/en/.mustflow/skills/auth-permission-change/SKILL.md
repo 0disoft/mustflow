@@ -2,11 +2,11 @@
 mustflow_doc: skill.auth-permission-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-permission-change
-description: Apply this skill when authentication, authorization, permissions, roles, tenants, sessions, JWTs, OAuth or OIDC, API keys, route guards, admin access, database policies, object-level access control, signed delivery URLs, credentialed event streams, or private cache behavior are created or changed.
+description: Apply this skill when authentication, authorization, permissions, roles, effective permissions, policy decisions, tenants, sessions, JWTs, OAuth or OIDC, API keys, route guards, admin access, database policies, object-level access control, signed delivery URLs, credentialed event streams, or private cache behavior are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -54,11 +54,20 @@ Authentication answers who the requester is. Authorization answers what that pri
 ## Required Inputs
 
 - Changed files, user goal, affected actors, protected resources, actions, tenants, roles, and status-code expectations.
+- Permission decision tuple for each changed protected action: subject, action, object, tenant or
+  organization, relationship path, request environment, policy version, data revision, token issue
+  time, and final allow or deny reason.
+- Effective-permission evidence, not only role names: computed capabilities, inherited
+  relationships, explicit denies, wildcard policies, policy-combination rules, and default-deny
+  behavior.
 - Auth middleware, framework hooks, gateway checks, session config, cookie config, JWT verifier, OAuth/OIDC callback, API key verifier, and logout or revocation code when relevant.
 - Route guards, client guards, server controllers, resolvers, command handlers, services, policy functions, role or permission tables, database queries, RLS, views, stored procedures, and ORM scopes.
 - Tenant, organization, workspace, project, membership, invite, suspension, ownership, sharing, and admin-support data models.
 - Background jobs, queue payloads, webhooks, import/export flows, search or autocomplete indexes, signed URL generation, storage keys, SSE or streaming channels, WebTransport sessions, WebSocket fallback, CDN cache, proxy cache, and permission caches when they can expose protected data.
 - Audit logs, admin action logs, impersonation records, denied-access logs, API docs, role matrix docs, migrations, and tests.
+- Revocation and cache evidence: token claim freshness, session lifetime, permission-cache key and
+  TTL, policy replication delay, search-index or export lag, stale queue payloads, and rollback or
+  shadow-evaluation behavior when policy changes.
 - Configured verification intents.
 
 <!-- mustflow-section: preconditions -->
@@ -92,31 +101,58 @@ Authentication answers who the requester is. Authorization answers what that pri
    - database queries, tenant scopes, ownership joins, soft-delete filters, RLS, views, stored procedures, and ORM helpers;
    - background jobs, queues, webhooks, import/export, file storage, signed URLs, SSE or streaming channels, WebTransport sessions, WebSocket fallback, search, autocomplete, caches, CDN or proxy cache rules, audit logs, docs, migrations, and tests.
 3. Write the permission decision inputs for each protected action: principal, tenant, resource, action, and context.
-4. Separate identity from permission:
+4. Freeze the authorization decision tuple.
+   - Record subject, action, object, tenant, environment, policy version, data revision, token issue
+     time, matched policy, inheritance path, and final allow or deny reason.
+   - A role label is not the decision. Use effective permissions and relationship paths.
+5. Separate identity from permission:
    - `req.user`, a valid session, verified email, valid JWT, OAuth scope, or API key proves identity only;
    - owner, active member, org admin, global admin, support user, service account, API client, and shared-link viewer need separate authorization rules.
-5. Prefer one central policy shape, such as a `can(principal, action, resource, context)` function, over route-local `isAdmin`, `isOwner`, or `isMember` fragments.
-6. Enforce deny by default. New roles, actions, resource types, tenant types, sharing modes, and admin paths must deny until explicitly allowed.
-7. Validate every request. Do not rely on login-time checks, client guards, disabled buttons, hidden menus, generated types, OpenAPI docs, or mobile local checks.
-8. Load resources safely before final authorization:
+6. Prefer one central policy shape, such as a `can(principal, action, resource, context)` function, over route-local `isAdmin`, `isOwner`, or `isMember` fragments.
+7. Require explainable policy decisions.
+   - A production-supportable permission engine should expose which policy matched, which condition
+     failed, which inherited relationship granted access, and whether an explicit deny won.
+   - If the implementation cannot explain allow or deny decisions, report observability risk before
+     claiming the policy is maintainable.
+8. Enforce deny by default. New roles, actions, resource types, tenant types, sharing modes, and admin paths must deny until explicitly allowed.
+9. Define policy-combination semantics. Check whether multiple policies combine by union,
+   intersection, priority, explicit deny, boundary policy, or tenant override; write tests for
+   allow-plus-deny and no-match cases.
+10. Validate every request. Do not rely on login-time checks, client guards, disabled buttons, hidden menus, generated types, OpenAPI docs, or mobile local checks.
+11. Load resources safely before final authorization:
    - include tenant, membership, owner, sharing, and soft-delete constraints in the resource lookup when possible;
    - when existence must be hidden, keep wrong-tenant and missing-resource behavior consistent with the project's 404 policy.
-9. Check multi-tenant risks:
+12. Check multi-tenant risks:
    - body, query, header, path, JWT claim, or local storage tenant ids must not become trusted tenant context;
    - tenant-scoped queries must include tenant or membership constraints;
    - pending, suspended, removed, revoked, deleted, disabled, and invited states must not be treated as active access;
    - shared links, exports, signed URLs, previews, search, cache, and CDN entries must stay inside the permission model.
    - event streams, WebTransport sessions, WebSocket fallback channels, private downloads, and reconnect URLs must not bypass tenant, resource, role, token expiry, or revocation policy.
-10. Check session, JWT, OAuth/OIDC, and API key contracts when touched:
+13. Check session, JWT, OAuth/OIDC, and API key contracts when touched:
    - sessions need expiry, refresh, rotation, logout, revocation, cookie flags, and CSRF posture;
    - JWTs need signature verification, algorithm allowlist, issuer, audience, subject, expiry, not-before, key rotation, and stale-claim handling;
    - OAuth/OIDC needs exact redirect binding, state, nonce, PKCE when relevant, provider account binding, and safe account linking;
    - API keys need hashing, prefix-only display, owner type, scope, tenant/resource constraints, expiry, rotation, revocation, last-used, rate limit, and audit.
-11. Check dependent surfaces: API routes, controllers, services, DB schema, DB queries, RLS, UI navigation, UI actions, API clients, audit logs, notifications, jobs, webhooks, search, file storage, docs, migrations, monitoring, and tests.
+14. Check permission creators more strictly than ordinary permissions.
+    - Role creation, role assignment, invitation, service-account issuance, API-key creation,
+      impersonation, support access, and token minting are privilege factories.
+    - A low-privilege actor that can attach a high privilege to itself collapses the whole model.
+15. Check revocation time.
+    - Demotion, removal, suspension, role deletion, membership expiry, subscription cancellation,
+      and ownership transfer should say how long old sessions, JWT claims, caches, search indexes,
+      queued jobs, and replicas can keep authorizing the old state.
+    - Sensitive actions need server-side recheck, short-lived tokens, revocation lists, or policy
+      version gates when stale tokens would be harmful.
+16. Check dependent surfaces: API routes, controllers, services, DB schema, DB queries, RLS, UI navigation, UI actions, API clients, audit logs, notifications, jobs, webhooks, search, file storage, docs, migrations, monitoring, and tests.
     - For credentialed delivery surfaces, check whether EventSource can supply the intended credentials, whether CORS and cookies match the policy, whether signed URLs expire and scope correctly, and whether caches vary on auth, tenant, and private response dimensions.
-12. Require denial-first tests for changed protected actions when the project has a usable test surface. Cover anonymous, expired, revoked, no role, wrong tenant, wrong owner, suspended or removed member, stale cache, shared-link, read-only API key, org admin, global admin, and impersonating admin cases as applicable.
-13. Update docs and role matrices when external behavior, status codes, role names, permission names, admin scope, or API errors change.
-14. Report the policy source of truth, server/database enforcement, client UX-only guards, test coverage, skipped checks, and remaining permission risk.
+17. Require denial-first tests for changed protected actions when the project has a usable test surface. Cover anonymous, expired, revoked, no role, wrong tenant, wrong owner, suspended or removed member, stale token, stale cache, unknown role, unknown action, wildcard policy, explicit deny, shared-link, read-only API key, org admin, global admin, and impersonating admin cases as applicable.
+18. When changing policies, consider shadow evaluation.
+    - Compute old and new decisions side by side for representative requests before flipping broad
+      policy changes when the product has the infrastructure to do so.
+    - Log policy version and data revision for both decisions without exposing secrets or sensitive
+      object contents.
+19. Update docs and role matrices when external behavior, status codes, role names, permission names, admin scope, or API errors change.
+20. Report the policy source of truth, effective-permission evidence, decision explanation, server/database enforcement, client UX-only guards, revocation window, test coverage, skipped checks, and remaining permission risk.
 
 ## Boundary Rules
 
@@ -127,6 +163,10 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Admin is scoped. Global admin, org admin, project admin, billing admin, support, and impersonating admin are different roles and need different audit and action rules.
 - Owner is not a wildcard permission. Owners may still lack delete, export, invite, transfer, billing, or admin powers.
 - API keys are principals with scopes and owners, not user sessions with unlimited power.
+- Wildcard permissions are future permissions. Adding a new action under an old wildcard should be
+  treated as a permission expansion and reviewed accordingly.
+- Unknown roles, unknown actions, malformed identifiers, and missing relationship data deny by
+  default; they are not normalized into a normal user path.
 
 ## Strongly Forbidden Patterns
 
@@ -142,6 +182,9 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Changing 403 to 404, or 404 to 403, without naming the information-disclosure policy.
 - Relaxing permissions without denial-case tests or a written migration and audit plan.
 - Letting role changes ship without permission-cache or token-staleness handling.
+- Shipping a permission engine that cannot explain why a request was allowed or denied.
+- Treating an effective-permission bug as solved because the `role` column looks correct.
+- Treating token-embedded roles as fresh after demotion, removal, or policy version changes.
 - Creating shared links, signed URLs, exports, search results, or CDN responses outside tenant and resource policy.
 - Creating credentialed event streams, WebTransport sessions, WebSocket fallback channels, signed delivery URLs, or private caches outside tenant and resource policy.
 - Logging impersonation without separate actor and subject.
@@ -153,6 +196,8 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Authentication and authorization are separated in code and report language.
 - Every changed protected action has a server-side or database-side permission boundary.
 - Tenant isolation, resource ownership, sharing, admin scope, and status-code behavior are explicit.
+- Effective permissions, policy-combination rules, decision explanation, policy version, data
+  revision, and revocation window are explicit when relevant.
 - Client guards are described as UX only.
 - Session, token, OAuth/OIDC, API key, cache, audit, docs, migration, and tests are synchronized when touched.
 - Signed URL, event-stream, WebTransport, WebSocket fallback, CORS, cookie, CDN/proxy cache, and reconnect behavior remains inside the permission model when touched.
@@ -190,6 +235,7 @@ Prefer the narrowest configured test intent that covers the changed protected ac
 - Authentication versus authorization classification
 - Principal, tenant, resource, action, and context affected
 - Policy source of truth
+- Effective permission, policy version, data revision, decision explanation, and revocation window
 - Server/database enforcement notes
 - Client guard UX-only notes
 - Tenant, ownership, sharing, admin, token/session/API-key, cache, and audit notes

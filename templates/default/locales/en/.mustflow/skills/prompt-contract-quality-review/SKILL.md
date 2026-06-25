@@ -2,7 +2,7 @@
 mustflow_doc: skill.prompt-contract-quality-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: prompt-contract-quality-review
@@ -45,6 +45,9 @@ Review prompts as product contracts, not prose polish. A production prompt shoul
 
 - The change is only LLM chat, copilot, citation, streaming, history, or prompt-composer UI; use `llm-service-ux-review`.
 - The main risk is unsupported factual output, fabricated citations, weak evidence coverage, retrieval thresholds, claim maps, or abstain behavior; use `llm-hallucination-control-review`.
+- The task is an end-to-end RAG failure and it is not yet clear whether ingestion, retrieval,
+  context assembly, prompt construction, generation, citation validation, or answerability failed;
+  use `rag-pipeline-triage` first.
 - The main risk is token spend, provider prompt-cache hit rate, chat-history bloat, RAG context size, model routing cost, reasoning budget, retry replay, or cost observability; use `llm-token-cost-control-review`.
 - The main risk is time to first token, first useful output, streaming latency, LLM round trips, tool wait, prompt-cache latency, model routing speed, realtime continuation, priority tier, predicted-output latency, or user-perceived response speed; use `llm-response-latency-review`.
 - The main risk is autonomous agent control flow, planner/executor/verifier separation, tool-call gates, approval or interrupt state, durable resume behavior, loop budgets, retry classification, handoffs, guardrails, or trace outcome evaluation; use `agent-execution-control-review`.

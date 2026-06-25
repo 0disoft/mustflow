@@ -2,11 +2,11 @@
 mustflow_doc: skill.observability-debuggability-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: observability-debuggability-review
-description: Apply this skill when code is created, changed, reviewed, or reported and logs, metrics, traces, spans, events, dashboards, alerts, runbooks, telemetry context, sampling, redaction, external dependency calls, queues, batch jobs, caches, pools, rate limits, feature flags, releases, or partial-success paths need review for whether an operator can narrow an incident quickly without high-cardinality metric explosions, missing denominators, lost trace context, or unsafe telemetry data.
+description: Apply this skill when code is created, changed, reviewed, or reported and logs, metrics, traces, spans, events, dashboards, alerts, runbooks, telemetry context, collectors, exporters, telemetry queues, canaries, sampling, redaction, external dependency calls, queues, batch jobs, caches, pools, rate limits, feature flags, releases, or partial-success paths need review for whether an operator can narrow an incident quickly without high-cardinality metric explosions, missing denominators, lost trace context, silent telemetry loss, or unsafe telemetry data.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -39,6 +39,7 @@ The review question is not "does the code emit telemetry?" It is "when this path
 - Code creates, changes, reviews, or reports logs, structured events, metrics, spans, traces, trace context, baggage, telemetry attributes, dashboards, alerts, runbooks, sampling, redaction, observability exporters, or custom collectors.
 - HTTP handlers, API clients, database calls, cache layers, queues, workers, cron jobs, batch jobs, pipelines, webhook handlers, payment or order flows, file processing, feature flags, experiments, rate limits, pools, or external dependencies need incident evidence.
 - Code claims a path is observable, debuggable, monitored, traced, metered, alerted, operationally safe, SLO-ready, dashboard-ready, or easy to troubleshoot.
+- The telemetry pipeline itself can drop, delay, sample, parse-fail, mis-route, or hide logs, metrics, traces, events, or dashboards while product systems appear healthy.
 - A change adds retries, timeouts, cancellation, queue settlement, idempotency, external side effects, partial completion, fallback behavior, cache fallback, rate limiting, or release gating where telemetry can hide or reveal the real failure.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -60,6 +61,7 @@ The review question is not "does the code emit telemetry?" It is "when this path
 - Trace and event model: span boundaries, parent-child relationships, async propagation, queue or worker propagation, external call spans, per-attempt spans, span events, feature flag attributes, release attributes, and sampling policy.
 - Log model: event names, stable error categories, reason codes, severity, structured fields, safe identifiers, redaction, public versus internal message split, and whether matching counters exist for repeated log events.
 - Operational domains: HTTP golden signals, dependency health, DB queries, transactions, queues, batch jobs, pipelines, caches, pools, rate limits, feature flags, releases, migrations, partial-success and compensation paths.
+- Telemetry pipeline evidence: generated signals, accepted signals, dropped signals, export failures, queue utilization, queue oldest age, retry backlog, scrape failures, collector restarts, ingestion canary lag, parser or mapping failures, searchable count, DLQ oldest age, sampling keeps and drops, storage retention, and dashboard read-path status.
 - Privacy and retention constraints: secrets, tokens, cookies, authorization headers, raw request bodies, personal data, payment data, prompt or document text, baggage propagation, telemetry sink boundary, and retention policy.
 - Verification evidence: existing tests, schema checks, telemetry fixtures, instrumentation tests, runbook docs, dashboard definitions, alert rules, configured command intents, and any manual-only production evidence boundary.
 
@@ -150,15 +152,21 @@ The review question is not "does the code emit telemetry?" It is "when this path
 17. Check telemetry self-observability.
     - Exporters, collectors, custom metric collectors, log sinks, trace queues, and sampling pipelines need dropped, failed, queued, scrape error, and export latency evidence when they can blind operators.
     - If telemetry failure can hide product failure, treat missing self-metrics as an operational risk.
-18. Check sampling policy.
+18. Check signal pipeline loss and read-path visibility.
+    - Compare produced, accepted, exported, stored, and query-visible signal counts when the path depends on logs, metrics, traces, or events for diagnosis.
+    - Use canary events or synthetic heartbeats when "no telemetry" could mean no traffic, collector failure, broken parser, dropped queue, retention gap, or dashboard read failure.
+    - Track event timestamp versus observed timestamp, queue oldest age, DLQ oldest age, parser or mapping failures by service and version, and duplicate or sequence-gap evidence.
+    - Separate telemetry write-path health from read-path health. A sink can store data that dashboards cannot query, and dashboards can be healthy while new signals are not arriving.
+    - If collector, sink, dashboard, or production telemetry checks are outside repository commands, report the manual-only boundary.
+19. Check sampling policy.
     - Head sampling can drop rare errors and slow traces.
     - Error, slow, retry-exhausted, high-latency, partial-success, DLQ, and compensation-failure traces often need keep rules, tail sampling, or explicit event evidence.
     - If sampling is outside the repository, report the manual-only evidence boundary instead of assuming critical traces are retained.
-19. Check privacy before telemetry leaves the process.
+20. Check privacy before telemetry leaves the process.
     - Redact or classify tokens, passwords, authorization headers, cookies, raw bodies, emails, phone numbers, payment data, personal identifiers, prompt text, confidential document text, provider payloads, and full SQL before logger, metric, trace, baggage, or exporter entry.
     - Baggage should be small, safe, low-lifetime, and intentional. Do not use it as a general request metadata bag.
     - Report sink-side masking as insufficient when sensitive data can already leave the process unredacted.
-20. Require telemetry tests or contract evidence where feasible.
+21. Require telemetry tests or contract evidence where feasible.
     - Good tests assert stable event names, bounded label values, denominator counters, trace-context propagation, redaction, sampling flags, feature flag attributes, release attributes, and failure-category mapping.
     - Source-level guards can prevent raw URL or user id metric labels when runtime telemetry tests are not available.
     - If dashboards, alerts, production traces, or load evidence are manual-only, complete available checks and report the evidence gap.
@@ -166,7 +174,7 @@ The review question is not "does the code emit telemetry?" It is "when this path
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
-- The changed path has an incident question, signal ledger, metric model, trace and log correlation model, cardinality boundary, privacy boundary, and evidence level.
+- The changed path has an incident question, signal ledger, metric model, trace and log correlation model, telemetry pipeline survival boundary, cardinality boundary, privacy boundary, and evidence level.
 - Missing denominators, average-only latency, success-only logs, uncorrelated logs, raw URL labels, raw user labels, raw SQL telemetry, lost async trace context, attempt and operation collapse, generic timeout or cancellation buckets, missing dependency names, missing queue age, missing batch last-success timestamp, missing pool saturation, missing release attribution, decorative metrics, unsafe baggage, telemetry self-blindness, and sampling that drops critical failures are fixed or reported.
 - Observability claims are backed by configured tests, schema or fixture evidence, local telemetry conventions, dashboard or alert files, static review evidence, or labeled as manual-only or missing.
 
@@ -200,7 +208,7 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 ## Output Format
 
 - Observability boundary reviewed
-- Incident question, signal ledger, metric model, trace and log correlation, cardinality, identity propagation, attempts versus operation, timeout or cancellation classification, external dependency, DB and transaction, idempotency and partial success, queue or batch, cache, pool saturation, rate limit, feature or release attribution, alert or runbook, telemetry self-observability, sampling, privacy, and test evidence findings
+- Incident question, signal ledger, metric model, trace and log correlation, cardinality, identity propagation, attempts versus operation, timeout or cancellation classification, external dependency, DB and transaction, idempotency and partial success, queue or batch, cache, pool saturation, rate limit, feature or release attribution, alert or runbook, telemetry self-observability, signal pipeline survival, sampling, privacy, and test evidence findings
 - Observability fixes made or recommended
 - Evidence level: configured-test evidence, telemetry fixture evidence, dashboard or alert file evidence, static review risk, manual-only, missing, or not applicable
 - Command intents run

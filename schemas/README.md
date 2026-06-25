@@ -73,6 +73,10 @@ Current schemas:
   `mf script-pack run code/dependency-graph scan <path...> --json`, containing bounded relative
   TypeScript and JavaScript import graph nodes, edges, cycle hints, target flags, depth, importer
   counts, policy limits, and stable input-limit finding codes
+- `import-cycle-report.schema.json`: output of
+  `mf script-pack run code/import-cycle check <path...> --json`, containing bounded relative
+  TypeScript and JavaScript import cycles with exact cycle paths, import line evidence, policy
+  limits, and stable cycle or input-limit finding codes
 - `change-impact-report.schema.json`: output of
   `mf script-pack run code/change-impact analyze [path...] --json`, containing git-diff changed
   files, surface classifications, bounded impact candidates, script-pack hints with related
@@ -96,6 +100,10 @@ Current schemas:
   `mf script-pack run docs/reference-drift check [path...] --json`, containing checked
   documentation references to `mf` commands, script-pack refs, schema files, repository paths,
   and stable stale-reference finding codes
+- `link-integrity-report.schema.json`: output of
+  `mf script-pack run docs/link-integrity check [path...] --json`, containing checked Markdown
+  and MDX inline links, local file and anchor resolution status, skipped external URL metadata,
+  and stable missing-link finding codes
 - `test-performance-report.schema.json`: output of
   `mf script-pack run test/performance-report summarize --json`, containing retained run
   performance evidence, slow intent summaries, timeout-pressure findings, selected-test fallback
@@ -123,6 +131,27 @@ Current schemas:
 - `generated-boundary-report.schema.json`: output of
   `mf script-pack run repo/generated-boundary check <path...> --json`, containing candidate path
   classifications for generated, ignored, protected, vendor, and cache boundaries before or after edits
+- `repo-merge-conflict-scan-report.schema.json`: output of
+  `mf script-pack run repo/merge-conflict-scan check [path...] --json`, containing checked files,
+  redaction-safe Git merge conflict marker locations, marker summaries, and stable conflict-marker
+  finding codes
+- `repo-git-ignore-audit-report.schema.json`: output of
+  `mf script-pack run repo/git-ignore-audit audit [path...] --json`, containing Git ignore source
+  metadata, explicit path visibility status, ignore-rule evidence, tracked-path caveats, and stable
+  ignored-path finding codes without reading ignored file content
+- `repo-manifest-lock-drift-report.schema.json`: output of
+  `mf script-pack run repo/manifest-lock-drift check [path...] --json`, containing manifest-lock
+  metadata, locked file existence, hash comparison status, and stable drift finding codes without
+  rewriting `.mustflow/config/manifest.lock.toml`
+- `skill-route-audit-report.schema.json`: output of
+  `mf script-pack run repo/skill-route-audit audit --json`, containing source skill, route metadata,
+  skill index, default template skill copy, manifest profile, and i18n metadata drift findings
+- `repo-version-source-report.schema.json`: output of
+  `mf script-pack run repo/version-source inspect --json`, containing detected version sources,
+  release-versioning preference status, source authority counts, and missing-source findings
+- `repo-approval-gate-report.schema.json`: output of
+  `mf script-pack run repo/approval-gate check --action <type> --json`, containing approval policy
+  decisions, required-action findings, and unreadable policy issues
 - `related-files-report.schema.json`: output of
   `mf script-pack run repo/related-files map <path...> --json`, containing conservative related-file
   candidates from direct imports, importers, same-basename siblings, parent configuration files, and

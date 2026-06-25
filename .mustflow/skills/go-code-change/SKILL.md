@@ -2,7 +2,7 @@
 mustflow_doc: skill.go-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: go-code-change
@@ -35,7 +35,7 @@ Preserve Go package, module, API, error, context, concurrency, runtime, HTTP, JS
 
 - `.go`, `go.mod`, `go.sum`, `go.work`, build tags, generated code, public package API, tests, benchmarks, goroutines, channels, context propagation, HTTP clients or servers, reverse proxies, JSON encoding, filesystem access, network addresses, runtime tuning, tools, or module dependencies change.
 - The task touches interfaces, error wrapping, package structure, concurrency ownership, cancellation, timeout policy, memory limits, race-sensitive code, benchmark measurement, or module dependencies.
-- Code or docs use Go-version-gated features such as expression operands to `new`, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `os.Root` or `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `go fix` modernizers, `encoding/json/v2`, experimental `GOEXPERIMENT` features, or newer runtime defaults.
+- Code or docs use Go-version-gated features such as expression operands to `new`, range-over-function iterators, generic type aliases, reflect iterators, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `T.ArtifactDir`, `B.ArtifactDir`, `F.ArtifactDir`, `testing/cryptotest.SetGlobalRandom`, `os.Root` or `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `go fix` modernizers, `encoding/json/v2`, experimental `GOEXPERIMENT` features, or newer runtime defaults.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -79,7 +79,7 @@ Preserve Go package, module, API, error, context, concurrency, runtime, HTTP, JS
 2. Classify the change as package API, internal implementation, dependency, error behavior, context flow, concurrency, HTTP or proxy behavior, JSON encoding, filesystem safety, runtime or deployment behavior, benchmark, tooling, or test-only.
 3. Check the Go version contract before using newer syntax or APIs:
    - treat the `go` directive as a language and module compatibility switch, not decoration;
-   - do not use `new(expr)`, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `os.Root`, `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `go fix` modernizers, `encoding/json/v2`, or any `GOEXPERIMENT` feature unless the repository's supported Go version and build path allow it;
+   - do not use `new(expr)`, range-over-function iterators, generic type aliases, reflect iterator methods, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `T.ArtifactDir`, `B.ArtifactDir`, `F.ArtifactDir`, `testing/cryptotest.SetGlobalRandom`, `os.Root`, `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `go fix` modernizers, `encoding/json/v2`, or any `GOEXPERIMENT` feature unless the repository's supported Go version and build path allow it;
    - distinguish stable standard-library APIs from experimental APIs that require `GOEXPERIMENT`;
    - when `go.mod` or `go.work` changes, report language-version, module-graph, toolchain, and downstream support impact.
 4. Check package boundaries before adding a package or interface:
@@ -125,36 +125,40 @@ Preserve Go package, module, API, error, context, concurrency, runtime, HTTP, JS
    - receivers do not close borrowed input channels;
    - multiple senders require a coordinator that closes only after all senders finish;
    - cancellable pipelines must avoid permanently blocking upstream goroutines when downstream stops early.
-12. Keep timeout policy at request, command, API, or operation boundaries. Do not hide arbitrary sleeps or timeouts in reusable helpers unless that helper explicitly owns the policy.
-13. Check HTTP and proxy defaults:
+12. Use iterator functions only for pull-style traversal, not hidden concurrency. Honor the `yield` return value immediately, call the `stop` function from pull iterators, keep resource ownership visible, and keep channels for actual concurrent communication or backpressure.
+13. Keep timeout policy at request, command, API, or operation boundaries. Do not hide arbitrary sleeps or timeouts in reusable helpers unless that helper explicitly owns the policy.
+14. Check HTTP and proxy defaults:
    - set deliberate `http.Client` and `http.Server` timeouts for network-facing code; zero timeout means no limit in important cases;
    - reuse clients and transports instead of creating them per request;
    - prefer reverse-proxy rewrite hooks over deprecated or unsafe director-style mutation when the supported Go version allows it;
    - keep hop-by-hop header, forwarded-host, scheme, cancellation, streaming, and error-mapping behavior explicit.
-14. Keep JSON contracts honest:
+15. Keep JSON contracts honest:
    - choose `omitempty` versus `omitzero` deliberately, especially for `time.Time`, numeric zero, boolean false, and optional fields;
    - use `SetEscapeHTML(false)` only when the JSON is not embedded into HTML and callers expect raw `<`, `>`, or `&`;
    - treat `encoding/json/v2` and `jsontext` as experimental unless the repository explicitly opts into the relevant experiment and migration tests.
-15. Check filesystem and network address helpers:
+16. Check filesystem and network address helpers:
    - use traversal-resistant root APIs when accepting user-controlled relative paths and the supported Go version provides them;
    - do not treat `filepath.Join` plus prefix checks as sufficient against symlinks and TOCTOU;
    - prefer `net/netip` for comparable IP addresses and map keys when supported;
    - use `net.JoinHostPort` instead of string formatting for host and port assembly so IPv6 works.
-16. Check runtime and deployment behavior when relevant:
+17. Check runtime and deployment behavior when relevant:
    - set `GOMEMLIMIT` or `debug.SetMemoryLimit` before tuning `GOGC` for container memory pressure, leaving headroom for non-Go memory such as cgo, mmap, and the kernel;
    - question manual `GOMAXPROCS` pins in containers on Go versions with container-aware defaults;
    - use PGO only with representative profiles and keep `default.pgo` ownership clear;
    - treat goroutine leak profiling, SIMD, JSON v2, and other experiments as opt-in evidence-gathering, not default production assumptions;
    - remember that `-race` only finds races on executed paths and carries significant overhead.
-17. Keep tests and benchmarks deterministic:
+18. Keep tests and benchmarks deterministic:
    - do not use elapsed real time to wait for goroutine progress; use explicit synchronization, owned lifecycle waits, fake time, `testing/synctest` when supported, or the repository's established concurrency test helper;
-   - prefer `testing.B.Loop` for new benchmarks when the supported Go version allows it, and keep setup, cleanup, allocation measurement, and compiler optimization boundaries honest.
-18. Keep Go tools and modernization explicit:
+   - prefer `testing.B.Loop` for new benchmarks when the supported Go version allows it, and keep setup, cleanup, allocation measurement, and compiler optimization boundaries honest;
+   - use test artifact directories for files that should survive a test run only when the supported Go version and test invocation preserve artifacts; otherwise use the repository's existing temporary-file or golden-output policy;
+   - for deterministic crypto tests, prefer the standard cryptographic test hook when the supported Go version provides it instead of overriding global readers in production code paths.
+19. Keep Go tools and modernization explicit:
    - prefer the `tool` directive over `tools.go` pinning only when the repository's supported Go version allows it;
    - use `go fix` modernizers as reviewed migrations, not silent drive-by rewrites;
+   - update code generators, schema generators, lint helpers, and reflection-heavy tooling for generic aliases, alias node behavior, and reflect iterator methods only with fixture coverage;
    - prefer standard-library helpers such as `min`, `max`, `clear`, `slices`, `maps`, and `cmp` over new local utility packages when the supported Go version allows them.
-19. If dependency metadata changes, keep module files and dependent tests synchronized. Do not raise the `go` directive, add toolchain requirements, change module path, or introduce direct dependencies unless the task requires it and the final report calls out the support impact.
-20. Choose configured verification intents that cover formatting, tests, race-sensitive behavior, lint, API drift, module drift, docs, and release metadata when available.
+20. If dependency metadata changes, keep module files and dependent tests synchronized. Do not raise the `go` directive, add toolchain requirements, change module path, or introduce direct dependencies unless the task requires it and the final report calls out the support impact.
+21. Choose configured verification intents that cover formatting, tests, race-sensitive behavior, lint, API drift, module drift, docs, and release metadata when available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -187,6 +191,7 @@ For concurrency-sensitive changes, report whether a configured race or equivalen
 - If a new package becomes a shared bucket, move behavior back to the owning package or name the concrete capability.
 - If a provider-side interface appears only for mocking, delete it or move a minimal interface to the consumer.
 - If tests need sleeps for concurrency, prefer deterministic synchronization or report the gap.
+- If an iterator function ignores `yield` returning false, a pull iterator omits `stop`, or a channel is replaced by an iterator while concurrency or backpressure remains required, restore the ownership contract before accepting the change.
 - If a goroutine has no owner, stop condition, wait path, cancellation path, or error path, do not add it.
 - If a newer Go feature is useful but the repository's `go` directive or CI matrix is lower, keep a fallback, defer the change, or report the required version bump instead of sneaking in the feature.
 - If HTTP clients, servers, or proxies have no timeout or cancellation boundary, stop and make the missing policy explicit before calling the path production-ready.

@@ -2,7 +2,7 @@
 mustflow_doc: skill.line-ending-hygiene
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: line-ending-hygiene
@@ -23,7 +23,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Detect line-ending drift without silently rewriting a repository, and normalize only when a repository policy and explicit user request make it safe.
+Detect line-ending drift without silently rewriting a repository, distinguish current working-tree drift from Git conversion warnings, and normalize only when a repository policy and explicit user request make it safe.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -32,6 +32,7 @@ Detect line-ending drift without silently rewriting a repository, and normalize 
 - A diff or formatter appears to rewrite files only because of line endings.
 - Docker, Linux, WSL, CI, or shell execution fails with `bad interpreter`, `bash\r`, `env: ...\r`, `exec format error`, or similar CRLF-related symptoms.
 - A proposal suggests creating `.gitattributes`, running renormalization, or rewriting tracked files to fix cross-platform line endings.
+- A PowerShell, formatter, scaffold, generated update, or mechanical rewrite is suspected of changing line endings.
 - A user asks why line-ending warnings appear.
 - A user asks to normalize tracked files to the repository line-ending policy.
 
@@ -47,6 +48,7 @@ Detect line-ending drift without silently rewriting a repository, and normalize 
 
 - The warning text or changed-file evidence.
 - Current `.gitattributes` or equivalent repository line-ending policy.
+- Per-file EOL evidence from Git when available, including index EOL, working-tree EOL, and attribute result.
 - Current changed-file status.
 - Whether the request is diagnosis-only, policy authoring, or explicit tracked-file normalization.
 - The configured command intents for line-ending checks and manual normalization.
@@ -66,25 +68,30 @@ Detect line-ending drift without silently rewriting a repository, and normalize 
 - Do not rewrite binary files, generated archives, dependency folders, or unrelated source files.
 - Do not change formatting, indentation, or content while handling line endings.
 - Do not create `.gitattributes`, run repository-wide renormalization, or commit line-ending changes as an automatic fallback from a build, Docker, clone, scaffold, or script failure.
+- Do not change local Git EOL configuration or run repository-wide renormalization in a dirty worktree unless the user explicitly requests that scope and reviews the resulting diff.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
 
 1. Inspect the changed-file status before deciding whether line endings are the actual issue.
-2. Use the `line_endings_check` intent when it is configured and agent-runnable.
-3. If no LF policy is declared, report the missing policy instead of normalizing files.
-4. If a runtime error mentions CRLF symptoms, classify it as a line-ending/platform issue before treating it as a missing executable, missing dependency, Docker image problem, or shell bug.
-5. If drift is found, report the affected tracked files and whether normalization was only previewed.
-6. If a policy file needs to be created or changed, keep that as an explicit policy change with reviewable scope. Do not smuggle a new repository-wide policy into an unrelated bug fix.
-7. Use normalization only after an explicit user request, and treat `line_endings_normalize` as manual-only unless the repository declares otherwise.
-8. After any normalization, re-run the line-ending check and a relevant validation intent for the touched scope.
-9. Keep the final report focused on policy, files changed, checks run, and remaining risk.
+2. Inspect the repository EOL policy before blaming a specific write command. A root `.gitattributes` rule such as `* text=auto eol=lf` is the durable source of truth; local Git settings are secondary evidence.
+3. Inspect per-file EOL evidence for any named file before assigning cause. Treat `i/lf w/lf attr/text=auto eol=lf` as currently clean. Treat `w/crlf` or mixed working-tree evidence as actual drift. Treat Git's "LF will be replaced by CRLF" wording as a future-conversion warning from configuration, not proof that the working tree is already CRLF.
+4. Use the `line_endings_check` intent when it is configured and agent-runnable.
+5. If no LF policy is declared, report the missing policy instead of normalizing files.
+6. If a runtime error mentions CRLF symptoms, classify it as a line-ending/platform issue before treating it as a missing executable, missing dependency, Docker image problem, or shell bug.
+7. If a PowerShell or formatter rewrite is involved, separate the read step from the write step. Reading a file does not prove it changed line endings; the writer API, Git checkout policy, previous edits, or generated output may be the actual source.
+8. If drift is found, report the affected tracked files and whether normalization was only previewed.
+9. If a policy file needs to be created or changed, keep that as an explicit policy change with reviewable scope. Do not smuggle a new repository-wide policy into an unrelated bug fix.
+10. Use normalization only after an explicit user request, and treat `line_endings_normalize` as manual-only unless the repository declares otherwise.
+11. After any normalization, re-run the line-ending check and a relevant validation intent for the touched scope.
+12. Keep the final report focused on policy, per-file EOL evidence, files changed, checks run, and remaining risk.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The agent has not silently rewritten the working tree.
 - The agent has not silently created or changed a repository-wide line-ending policy.
+- The agent has not attributed a line-ending warning to a specific tool without per-file EOL evidence.
 - Any normalization is tied to a declared repository policy.
 - Remaining CRLF, mixed line endings, missing policy, or manual-only command gaps are reported.
 
@@ -112,6 +119,7 @@ If normalization touched code, documentation, templates, or release surfaces, al
 ## Output Format
 
 - Line-ending policy found
+- Per-file EOL evidence inspected
 - Policy changes made or deferred
 - Files with CRLF or mixed line endings
 - Files normalized

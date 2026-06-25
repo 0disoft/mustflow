@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-version-source-report.schema.json",
+  "title": "mustflow repo version-source report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "versioning_enabled",
+    "counts",
+    "sources",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "version-source" },
+    "script_ref": { "const": "repo/version-source" },
+    "action": { "const": "inspect" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preferences_path", "declared_sources_path"],
+      "properties": {
+        "preferences_path": { "const": ".mustflow/config/preferences.toml" },
+        "declared_sources_path": { "const": ".mustflow/config/versioning.toml" }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "versioning_enabled": { "type": "boolean" },
+    "counts": { "$ref": "#/$defs/counts" },
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/versionSource" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sources",
+        "declared_sources",
+        "source_authority_sources",
+        "derived_authority_sources",
+        "unclassified_authority_sources"
+      ],
+      "properties": {
+        "sources": { "type": "integer", "minimum": 0 },
+        "declared_sources": { "type": "integer", "minimum": 0 },
+        "source_authority_sources": { "type": "integer", "minimum": 0 },
+        "derived_authority_sources": { "type": "integer", "minimum": 0 },
+        "unclassified_authority_sources": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "versionSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind"],
+      "properties": {
+        "path": { "type": "string" },
+        "kind": {
+          "enum": [
+            "template_lock",
+            "template_manifest",
+            "package_manifest"
+          ]
+        },
+        "declared": { "type": "boolean" },
+        "authority": {
+          "enum": ["source", "derived"]
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "path",
+        "json_pointer",
+        "metric",
+        "actual",
+        "expected"
+      ],
+      "properties": {
+        "code": { "const": "versioning_enabled_without_sources" },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

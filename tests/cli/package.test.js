@@ -46,7 +46,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.86.0');
+	assert.equal(packageJson.version, '2.99.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -77,6 +77,39 @@ test('default template installs the next action menu skill across profiles', () 
 			readTemplateSkillProfile(profile).includes('next-action-menu'),
 			`${profile} profile should include next-action-menu`,
 		);
+	}
+});
+
+test('default template installs the API failure triage skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/api-failure-triage/SKILL.md'));
+
+	for (const skill of ['api-failure-triage', 'ci-pipeline-triage', 'rag-pipeline-triage']) {
+		assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+		for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+			assert.ok(
+				readTemplateSkillProfile(profile).includes(skill),
+				`${profile} profile should include ${skill}`,
+			);
+		}
+	}
+});
+
+test('default template installs the auth, Docker, and search triage skills across profiles', () => {
+	for (const skill of [
+		'auth-flow-triage',
+		'docker-runtime-triage',
+		'search-index-integrity-review',
+		'vector-search-integrity-review',
+	]) {
+		assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+		for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+			assert.ok(
+				readTemplateSkillProfile(profile).includes(skill),
+				`${profile} profile should include ${skill}`,
+			);
+		}
 	}
 });
 
@@ -433,9 +466,17 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/config-chain.js'));
 	assert.ok(files.has('dist/core/env-contract.js'));
 	assert.ok(files.has('dist/core/secret-risk-scan.js'));
+	assert.ok(files.has('dist/core/docs-link-integrity.js'));
 	assert.ok(files.has('dist/core/related-files.js'));
+	assert.ok(files.has('dist/core/skill-route-audit.js'));
+	assert.ok(files.has('dist/core/repo-version-source.js'));
+	assert.ok(files.has('dist/core/repo-approval-gate.js'));
+	assert.ok(files.has('dist/core/repo-merge-conflict-scan.js'));
+	assert.ok(files.has('dist/core/repo-git-ignore-audit.js'));
+	assert.ok(files.has('dist/core/repo-manifest-lock-drift.js'));
 	assert.ok(files.has('dist/core/code-outline.js'));
 	assert.ok(files.has('dist/core/dependency-graph.js'));
+	assert.ok(files.has('dist/core/import-cycle.js'));
 	assert.ok(files.has('dist/core/change-impact.js'));
 	assert.ok(files.has('dist/core/test-performance-report.js'));
 	assert.ok(files.has('dist/core/test-regression-selector.js'));
@@ -448,6 +489,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/script-packs/core-text-budget.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-export-diff.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-dependency-graph.js'));
+	assert.ok(files.has('dist/cli/script-packs/code-import-cycle.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-change-impact.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-outline.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-route-outline.js'));
@@ -457,6 +499,13 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/script-packs/repo-env-contract.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-secret-risk-scan.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-generated-boundary.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-skill-route-audit.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-version-source.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-approval-gate.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-merge-conflict-scan.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-git-ignore-audit.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-manifest-lock-drift.js'));
+	assert.ok(files.has('dist/cli/script-packs/docs-link-integrity.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-related-files.js'));
 	assert.ok(files.has('templates/default/manifest.toml'));
 	assert.ok(files.has('templates/default/i18n.toml'));
@@ -484,12 +533,20 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/config-chain-report.schema.json'));
 	assert.ok(files.has('schemas/env-contract-report.schema.json'));
 	assert.ok(files.has('schemas/secret-risk-scan-report.schema.json'));
+	assert.ok(files.has('schemas/link-integrity-report.schema.json'));
+	assert.ok(files.has('schemas/skill-route-audit-report.schema.json'));
+	assert.ok(files.has('schemas/repo-version-source-report.schema.json'));
+	assert.ok(files.has('schemas/repo-approval-gate-report.schema.json'));
+	assert.ok(files.has('schemas/repo-merge-conflict-scan-report.schema.json'));
+	assert.ok(files.has('schemas/repo-git-ignore-audit-report.schema.json'));
+	assert.ok(files.has('schemas/repo-manifest-lock-drift-report.schema.json'));
 	assert.ok(files.has('schemas/generated-boundary-report.schema.json'));
 	assert.ok(files.has('schemas/related-files-report.schema.json'));
 	assert.ok(files.has('schemas/script-pack-suggestion-report.schema.json'));
 	assert.ok(files.has('schemas/quality-gaming-report.schema.json'));
 	assert.ok(files.has('schemas/code-outline-report.schema.json'));
 	assert.ok(files.has('schemas/dependency-graph-report.schema.json'));
+	assert.ok(files.has('schemas/import-cycle-report.schema.json'));
 	assert.ok(files.has('schemas/change-impact-report.schema.json'));
 	assert.ok(files.has('schemas/code-symbol-read-report.schema.json'));
 	assert.ok(files.has('schemas/route-outline-report.schema.json'));

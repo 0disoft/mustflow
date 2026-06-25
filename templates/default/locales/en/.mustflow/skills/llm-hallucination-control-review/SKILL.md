@@ -2,7 +2,7 @@
 mustflow_doc: skill.llm-hallucination-control-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: llm-hallucination-control-review
@@ -44,6 +44,9 @@ Keep unsupported factual claims from leaving an LLM feature by turning answerabi
 ## Do Not Use When
 
 - The task is mainly prompt wording, prompt builder structure, output schema shape, model settings, few-shot examples, or agent completion wording; use `prompt-contract-quality-review`.
+- The task is an end-to-end RAG failure and it is not yet clear whether ingestion, retrieval,
+  context assembly, prompt construction, generation, citation validation, or answerability failed;
+  use `rag-pipeline-triage` first.
 - The main risk is token spend, provider prompt-cache hit rate, chat-history bloat, RAG context size, model routing cost, reasoning budget, retry replay, or cost observability; use `llm-token-cost-control-review`.
 - The main risk is time to first token, first useful output, streaming latency, LLM round trips, tool wait, prompt-cache latency, model routing speed, realtime continuation, priority tier, predicted-output latency, or user-perceived response speed; use `llm-response-latency-review`.
 - The main risk is autonomous agent execution control, tool-call approval, durable resume behavior, planner/executor/verifier separation, handoffs, guardrail placement, loop budgets, retry classification, or trace outcome evaluation; use `agent-execution-control-review`.

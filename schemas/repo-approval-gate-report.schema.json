@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-approval-gate-report.schema.json",
+  "title": "mustflow repo approval-gate report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "approval_required",
+    "policy",
+    "decisions",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "approval-gate" },
+    "script_ref": { "const": "repo/approval-gate" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_types", "policy_path"],
+      "properties": {
+        "action_types": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "policy_path": { "const": ".mustflow/config/mustflow.toml" }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "approval_required": { "type": "boolean" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_for", "on_required"],
+      "properties": {
+        "required_for": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "on_required": { "type": ["string", "null"] }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/decision" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_type", "approval_required", "policy_source", "reason"],
+      "properties": {
+        "action_type": { "type": "string", "minLength": 1 },
+        "approval_required": { "type": "boolean" },
+        "policy_source": { "type": ["string", "null"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "path",
+        "json_pointer",
+        "metric",
+        "actual",
+        "expected"
+      ],
+      "properties": {
+        "code": { "const": "approval_required_for_action" },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "const": ".mustflow/config/mustflow.toml" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

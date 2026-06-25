@@ -1345,6 +1345,103 @@
       }
     },
     {
+      "id": "import-cycle-report",
+      "schema_file": "import-cycle-report.schema.json",
+      "producer": "mf script-pack run code/import-cycle check <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "import-cycle",
+        "script_ref": "code/import-cycle",
+        "action": "check",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 262144,
+          "max_files": 1000,
+          "max_depth": 20,
+          "max_nodes": 300,
+          "max_edges": 800,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ],
+          "max_cycles": 50
+        },
+        "input_hash": "sha256:1313131313131313131313131313131313131313131313131313131313131313",
+        "targets": [
+          {
+            "input": "src",
+            "path": "src",
+            "exists": true,
+            "kind": "directory",
+            "language": "other"
+          }
+        ],
+        "graph": {
+          "script_ref": "code/dependency-graph",
+          "status": "passed",
+          "node_count": 2,
+          "edge_count": 2,
+          "cycle_hint_count": 1,
+          "truncated": false
+        },
+        "cycles": [
+          {
+            "cycle_id": "cycle:abcdef123456",
+            "path_count": 2,
+            "paths": ["src/a.ts", "src/b.ts", "src/a.ts"],
+            "edges": [
+              {
+                "source_path": "src/a.ts",
+                "target_path": "src/b.ts",
+                "specifier": "./b",
+                "line": 1,
+                "kind": "static_import"
+              },
+              {
+                "source_path": "src/b.ts",
+                "target_path": "src/a.ts",
+                "specifier": "./a",
+                "line": 1,
+                "kind": "static_import"
+              }
+            ]
+          }
+        ],
+        "truncated": false,
+        "findings": [
+          {
+            "code": "import_cycle_detected",
+            "severity": "high",
+            "path": "src/a.ts",
+            "message": "Import cycle detected: src/a.ts -> src/b.ts -> src/a.ts",
+            "cycle_id": "cycle:abcdef123456"
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "diff-risk",
       "schema_file": "diff-risk.schema.json",
       "producer": "mf api diff-risk --changed --json",
@@ -2533,6 +2630,84 @@
           "missing": 0,
           "unknown": 0,
           "skipped": 0
+        },
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "link-integrity-report",
+      "schema_file": "link-integrity-report.schema.json",
+      "producer": "mf script-pack run docs/link-integrity check [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "docs",
+        "script_id": "link-integrity",
+        "script_ref": "docs/link-integrity",
+        "action": "check",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_files": 200,
+          "max_file_bytes": 524288,
+          "default_paths": [
+            "README.md",
+            "schemas/README.md",
+            "docs-site/src/content/docs"
+          ],
+          "path_filters": [
+            "*.md",
+            "*.mdx"
+          ],
+          "checked_link_kinds": [
+            "local_file",
+            "local_anchor"
+          ]
+        },
+        "input_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "files": [
+          {
+            "kind": "document",
+            "path": "README.md",
+            "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "size_bytes": 128,
+            "line_count": 4,
+            "link_count": 2
+          }
+        ],
+        "links": [
+          {
+            "kind": "local_file",
+            "path": "README.md",
+            "line": 2,
+            "text": "Guide",
+            "target": "docs/guide.md",
+            "resolved_path": "docs/guide.md",
+            "anchor": null,
+            "status": "ok",
+            "message": "Linked file exists: docs/guide.md"
+          },
+          {
+            "kind": "external_url",
+            "path": "README.md",
+            "line": 3,
+            "text": "Site",
+            "target": "https://example.invalid/",
+            "resolved_path": null,
+            "anchor": null,
+            "status": "skipped",
+            "message": "External URL is not fetched by this read-only offline check."
+          }
+        ],
+        "summary": {
+          "files_checked": 1,
+          "links_checked": 2,
+          "ok": 1,
+          "missing": 0,
+          "skipped": 1,
+          "unknown": 0
         },
         "findings": [],
         "issues": []
@@ -4346,6 +4521,415 @@
             ],
             "gaps": [],
             "issues": []
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "skill-route-audit-report",
+      "schema_file": "skill-route-audit-report.schema.json",
+      "producer": "mf script-pack run repo/skill-route-audit audit --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "skill-route-audit",
+        "script_ref": "repo/skill-route-audit",
+        "action": "audit",
+        "status": "ok",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "source_skill_root": ".mustflow/skills",
+          "template_skill_root": "templates/default/locales/en/.mustflow/skills",
+          "template_manifest": "templates/default/manifest.toml",
+          "template_i18n": "templates/default/i18n.toml"
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "counts": {
+          "source_skills": 1,
+          "index_routes": 1,
+          "route_metadata": 1,
+          "template_skills": 1,
+          "manifest_skill_creates": 1,
+          "manifest_profile_entries": 1,
+          "i18n_skill_documents": 1
+        },
+        "inventory": {
+          "source_skills": [
+            "typescript-code-change"
+          ],
+          "index_skills": [
+            "typescript-code-change"
+          ],
+          "route_skills": [
+            "typescript-code-change"
+          ],
+          "template_skills": [
+            "typescript-code-change"
+          ],
+          "manifest_skill_creates": [
+            "typescript-code-change"
+          ],
+          "manifest_profile_skills": [
+            "typescript-code-change"
+          ],
+          "i18n_skill_documents": [
+            "typescript-code-change"
+          ]
+        },
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-version-source-report",
+      "schema_file": "repo-version-source-report.schema.json",
+      "producer": "mf script-pack run repo/version-source inspect --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "version-source",
+        "script_ref": "repo/version-source",
+        "action": "inspect",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "preferences_path": ".mustflow/config/preferences.toml",
+          "declared_sources_path": ".mustflow/config/versioning.toml"
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "versioning_enabled": true,
+        "counts": {
+          "sources": 1,
+          "declared_sources": 0,
+          "source_authority_sources": 0,
+          "derived_authority_sources": 0,
+          "unclassified_authority_sources": 1
+        },
+        "sources": [
+          {
+            "path": "package.json",
+            "kind": "package_manifest"
+          }
+        ],
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-approval-gate-report",
+      "schema_file": "repo-approval-gate-report.schema.json",
+      "producer": "mf script-pack run repo/approval-gate check --action <type> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "approval-gate",
+        "script_ref": "repo/approval-gate",
+        "action": "check",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "action_types": [
+            "git_commit",
+            "status_check"
+          ],
+          "policy_path": ".mustflow/config/mustflow.toml"
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "approval_required": true,
+        "policy": {
+          "required_for": [
+            "git_commit",
+            "git_push"
+          ],
+          "on_required": "stop_and_request_approval"
+        },
+        "decisions": [
+          {
+            "action_type": "git_commit",
+            "approval_required": true,
+            "policy_source": ".mustflow/config/mustflow.toml#[approval].required_for",
+            "reason": "Action \"git_commit\" is listed in [approval].required_for."
+          },
+          {
+            "action_type": "status_check",
+            "approval_required": false,
+            "policy_source": null,
+            "reason": "Action \"status_check\" is not listed in [approval].required_for."
+          }
+        ],
+        "findings": [
+          {
+            "code": "approval_required_for_action",
+            "severity": "high",
+            "path": ".mustflow/config/mustflow.toml",
+            "message": "Action \"git_commit\" requires explicit approval before proceeding.",
+            "json_pointer": "/approval/required_for",
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-merge-conflict-scan-report",
+      "schema_file": "repo-merge-conflict-scan-report.schema.json",
+      "producer": "mf script-pack run repo/merge-conflict-scan check [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "merge-conflict-scan",
+        "script_ref": "repo/merge-conflict-scan",
+        "action": "check",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "paths": [
+            "src/conflicted.ts"
+          ]
+        },
+        "policy": {
+          "input_mode": "explicit_paths",
+          "marker_prefixes": [
+            "<<<<<<<",
+            "|||||||",
+            "=======",
+            ">>>>>>>"
+          ],
+          "max_files": 1000,
+          "max_file_bytes": 524288,
+          "skipped_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "build",
+            "coverage",
+            "dist",
+            "node_modules",
+            "third_party",
+            "vendor"
+          ]
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "summary": {
+          "files_checked": 1,
+          "markers_found": 3,
+          "files_with_markers": 1,
+          "issues": 0
+        },
+        "files": [
+          {
+            "path": "src/conflicted.ts",
+            "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "bytes": 64,
+            "markers": 3
+          }
+        ],
+        "markers": [
+          {
+            "path": "src/conflicted.ts",
+            "line": 2,
+            "column": 1,
+            "marker": "start",
+            "marker_length": 7
+          },
+          {
+            "path": "src/conflicted.ts",
+            "line": 4,
+            "column": 1,
+            "marker": "separator",
+            "marker_length": 7
+          },
+          {
+            "path": "src/conflicted.ts",
+            "line": 6,
+            "column": 1,
+            "marker": "end",
+            "marker_length": 7
+          }
+        ],
+        "findings": [
+          {
+            "code": "merge_conflict_marker_detected",
+            "severity": "high",
+            "path": "src/conflicted.ts",
+            "line": 2,
+            "marker": "start",
+            "message": "Merge conflict marker \"start\" detected at src/conflicted.ts:2.",
+            "json_pointer": null,
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-git-ignore-audit-report",
+      "schema_file": "repo-git-ignore-audit-report.schema.json",
+      "producer": "mf script-pack run repo/git-ignore-audit audit [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "git-ignore-audit",
+        "script_ref": "repo/git-ignore-audit",
+        "action": "audit",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "paths": [
+            "secret.local"
+          ]
+        },
+        "policy": {
+          "input_mode": "explicit_paths",
+          "max_paths": 200,
+          "source_kinds": [
+            "repo_gitignore",
+            "git_info_exclude",
+            "core_excludes_file"
+          ],
+          "tracked_paths_can_match_ignore": true
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "summary": {
+          "paths_checked": 1,
+          "ignored_paths": 1,
+          "tracked_paths": 0,
+          "untracked_paths": 0,
+          "missing_paths": 0,
+          "ignore_sources": 1,
+          "findings": 1
+        },
+        "sources": [
+          {
+            "path": ".gitignore",
+            "kind": "repo_gitignore",
+            "exists": true,
+            "scope": "repository",
+            "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "path": ".git/info/exclude",
+            "kind": "git_info_exclude",
+            "exists": false,
+            "scope": "local_git",
+            "sha256": null
+          }
+        ],
+        "paths": [
+          {
+            "path": "secret.local",
+            "status": "ignored",
+            "tracked": false,
+            "ignored": true,
+            "exists": true,
+            "source_path": ".gitignore",
+            "source_line": 1,
+            "pattern": "secret.local"
+          }
+        ],
+        "findings": [
+          {
+            "code": "git_ignore_audit_ignored_path",
+            "severity": "medium",
+            "path": "secret.local",
+            "source_path": ".gitignore",
+            "source_line": 1,
+            "pattern": "secret.local",
+            "message": "Path secret.local is ignored by .gitignore:1.",
+            "json_pointer": null,
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-manifest-lock-drift-report",
+      "schema_file": "repo-manifest-lock-drift-report.schema.json",
+      "producer": "mf script-pack run repo/manifest-lock-drift check [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "manifest-lock-drift",
+        "script_ref": "repo/manifest-lock-drift",
+        "action": "check",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "paths": [
+            "AGENTS.md"
+          ]
+        },
+        "policy": {
+          "lock_path": ".mustflow/config/manifest.lock.toml",
+          "input_mode": "explicit_paths",
+          "max_entries": 500,
+          "extra_manifest_file_detection": "not_authoritative"
+        },
+        "input_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "lock": {
+          "path": ".mustflow/config/manifest.lock.toml",
+          "exists": true,
+          "schema_version": "1",
+          "template_id": "default",
+          "template_version": "2.99.0",
+          "template_profile": "library",
+          "template_locale": "en",
+          "entries_total": 1
+        },
+        "summary": {
+          "entries_total": 1,
+          "entries_checked": 1,
+          "clean_entries": 0,
+          "missing_entries": 0,
+          "hash_mismatches": 1,
+          "unreadable_entries": 0,
+          "unsafe_entries": 0,
+          "skipped_entries": 0,
+          "findings": 1
+        },
+        "entries": [
+          {
+            "path": "AGENTS.md",
+            "source": "template_common",
+            "last_action": "created",
+            "lock_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "actual_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "exists": true,
+            "status": "hash_mismatch"
+          }
+        ],
+        "findings": [
+          {
+            "code": "manifest_lock_hash_mismatch",
+            "severity": "medium",
+            "path": "AGENTS.md",
+            "expected_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "actual_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "message": "Manifest lock content_hash differs from the current file hash for AGENTS.md.",
+            "json_pointer": null,
+            "metric": null,
+            "actual": null,
+            "expected": null
           }
         ],
         "issues": []

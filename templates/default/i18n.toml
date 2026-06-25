@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 178
+revision = 182
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -134,7 +134,7 @@ translations = {}
 [documents."skill.change-blast-radius-review"]
 source = "locales/en/.mustflow/skills/change-blast-radius-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.business-rule-leakage-review"]
@@ -146,7 +146,7 @@ translations = {}
 [documents."skill.payment-integrity-review"]
 source = "locales/en/.mustflow/skills/payment-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.credit-ledger-integrity-review"]
@@ -164,7 +164,7 @@ translations = {}
 [documents."skill.api-access-control-review"]
 source = "locales/en/.mustflow/skills/api-access-control-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.file-upload-security-review"]
@@ -199,6 +199,30 @@ translations = {}
 
 [documents."skill.api-request-performance-review"]
 source = "locales/en/.mustflow/skills/api-request-performance-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.api-failure-triage"]
+source = "locales/en/.mustflow/skills/api-failure-triage/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.ci-pipeline-triage"]
+source = "locales/en/.mustflow/skills/ci-pipeline-triage/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.auth-flow-triage"]
+source = "locales/en/.mustflow/skills/auth-flow-triage/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.docker-runtime-triage"]
+source = "locales/en/.mustflow/skills/docker-runtime-triage/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -296,7 +320,7 @@ translations = {}
 [documents."skill.cache-integrity-review"]
 source = "locales/en/.mustflow/skills/cache-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.quadratic-scan-review"]
@@ -332,13 +356,13 @@ translations = {}
 [documents."skill.backend-log-evidence-review"]
 source = "locales/en/.mustflow/skills/backend-log-evidence-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.observability-debuggability-review"]
 source = "locales/en/.mustflow/skills/observability-debuggability-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.incident-triage-review"]
@@ -460,6 +484,24 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.search-index-integrity-review"]
+source = "locales/en/.mustflow/skills/search-index-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.vector-search-integrity-review"]
+source = "locales/en/.mustflow/skills/vector-search-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.rag-pipeline-triage"]
+source = "locales/en/.mustflow/skills/rag-pipeline-triage/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.dependency-injection"]
 source = "locales/en/.mustflow/skills/dependency-injection/SKILL.md"
 source_locale = "en"
@@ -481,13 +523,13 @@ translations = {}
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
 source = "locales/en/.mustflow/skills/line-ending-hygiene/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.file-path-cross-platform-change"]
@@ -529,7 +571,7 @@ translations = {}
 [documents."skill.auth-permission-change"]
 source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.security-flow-review"]
@@ -589,7 +631,7 @@ translations = {}
 [documents."skill.go-code-change"]
 source = "locales/en/.mustflow/skills/go-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.hono-code-change"]
@@ -619,19 +661,19 @@ translations = {}
 [documents."skill.python-code-change"]
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.powershell-code-change"]
 source = "locales/en/.mustflow/skills/powershell-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.rust-code-change"]
 source = "locales/en/.mustflow/skills/rust-code-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.runtime-target-selection"]
@@ -673,7 +715,7 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.unocss-code-change"]
@@ -685,7 +727,7 @@ translations = {}
 [documents."skill.service-boundary-architecture"]
 source = "locales/en/.mustflow/skills/service-boundary-architecture/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.cli-output-contract-review"]
@@ -1014,13 +1056,13 @@ translations = {}
 [documents."skill.prompt-contract-quality-review"]
 source = "locales/en/.mustflow/skills/prompt-contract-quality-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.llm-hallucination-control-review"]
 source = "locales/en/.mustflow/skills/llm-hallucination-control-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.llm-token-cost-control-review"]

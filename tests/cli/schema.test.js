@@ -862,6 +862,30 @@ test('dependency-graph json output matches the published schema', () => {
 	}
 });
 
+test('import-cycle json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'entry.ts'), 'import { helper } from "./helper";\nexport const entry = helper;\n');
+		writeFileSync(path.join(projectPath, 'src', 'helper.ts'), 'export const helper = 1;\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/import-cycle',
+			'check',
+			'src',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'import-cycle-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('change-impact json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
@@ -1020,6 +1044,27 @@ test('reference-drift json output matches the published schema', () => {
 	}
 });
 
+test('link-integrity json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'docs/link-integrity',
+			'check',
+			'README.md',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'link-integrity-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('test-performance-report json output matches the published schema', () => {
 	const projectPath = createTempProject();
 
@@ -1106,6 +1151,138 @@ test('generated-boundary json output matches the published schema', () => {
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'generated-boundary-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('skill-route-audit json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/skill-route-audit',
+			'audit',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'skill-route-audit-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo version-source json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/version-source',
+			'inspect',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-version-source-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo approval-gate json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/approval-gate',
+			'check',
+			'--action',
+			'git_commit',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-approval-gate-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo merge-conflict-scan json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'conflicted.txt'),
+			['<<<<<<< HEAD', 'left', '=======', 'right', '>>>>>>> branch', ''].join('\n'),
+		);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/merge-conflict-scan',
+			'check',
+			'conflicted.txt',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-merge-conflict-scan-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo git-ignore-audit json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.gitignore'), 'schema-ignored.txt\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'schema-ignored.txt'), 'ignored schema probe\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/git-ignore-audit',
+			'audit',
+			'schema-ignored.txt',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-git-ignore-audit-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo manifest-lock-drift json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/manifest-lock-drift',
+			'check',
+			'AGENTS.md',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-manifest-lock-drift-report.schema.json', JSON.parse(result.stdout));
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -2,11 +2,11 @@
 mustflow_doc: skill.api-access-control-review
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: api-access-control-review
-description: Apply this skill when code is created, changed, reviewed, or reported and API security needs access-control review for BOLA or IDOR, object-level authorization, object-property authorization, function-level authorization, broken authentication, tenant isolation, role and relationship checks, mass assignment, DTO exposure, admin or internal APIs, route ordering, GraphQL resolvers, batch APIs, exports, downloads, signed URLs, cache keys, async jobs, webhooks, OAuth or OIDC, JWTs, sessions, cookies, reauthentication, reset tokens, account enumeration, automation defense, or denial-case tests.
+description: Apply this skill when code is created, changed, reviewed, or reported and API security needs access-control review for BOLA or IDOR, object-level authorization, object-property authorization, function-level authorization, payment or refund API authorization, broken authentication, tenant isolation, effective permission decisions, role and relationship checks, mass assignment, DTO exposure, admin or internal APIs, route ordering, GraphQL resolvers, batch APIs, exports, downloads, signed URLs, cache keys, async jobs, webhooks, OAuth or OIDC, JWTs, sessions, cookies, reauthentication, reset tokens, account enumeration, automation defense, or denial-case tests.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -43,6 +43,10 @@ perform this action on this object, this field, and this tenant context?"
   exports, downloads, previews, batch APIs, background jobs, webhooks, auth middleware, sessions,
   cookies, JWTs, OAuth or OIDC flows, password reset, MFA, admin APIs, internal APIs, cache keys,
   DTO mapping, tests, or API docs.
+- Payment, refund, transfer, payout, credit, entitlement, or subscription APIs need proof that the
+  requester may act on that specific object, amount-bearing operation, tenant, account, or current
+  resource state. Use `payment-integrity-review` for money-event correctness and this skill for the
+  API object, property, and function authorization proof.
 - A request, token, body, query string, path parameter, webhook payload, queue payload, or client
   state supplies `userId`, `accountId`, `tenantId`, `orgId`, `workspaceId`, `projectId`, `role`,
   `ownerId`, object id, file key, status, price, entitlement, plan, or other authority-bearing data.
@@ -73,6 +77,9 @@ perform this action on this object, this field, and this tenant context?"
 - Subject-object-action-context ledger: principal, session, token, API key, service account, tenant,
   organization, workspace, role, relationship, resource, object id, field or property, action,
   state, and request context.
+- Decision explanation ledger: effective permission, matched policy, explicit deny, inheritance
+  path, policy version, data revision, token issue time, and allow or deny reason when the product
+  has policy-engine or audit-log support.
 - Object authorization ledger: list, detail, count, search, export, download, preview, share,
   update, delete, approve, invite, refund, transfer, admin, batch, worker, and webhook paths that
   can reach the same object.
@@ -135,101 +142,111 @@ perform this action on this object, this field, and this tenant context?"
    - `role === "admin"` is usually too small.
    - Check whether the principal is admin for this organization, owner of this project, seller for
      this order, billing admin for this account, or allowed to act in this resource state.
-6. Compare list and detail scopes.
+   - Prefer effective-permission evidence and policy decision explanations over a raw role list.
+6. Check default-deny and explicit-deny behavior.
+   - No matching policy, unknown role, unknown action, malformed id, parsing failure, policy server
+     timeout, and policy-cache miss should not silently allow access.
+   - When allow and deny policies both match, the product needs a documented and tested combination
+     rule.
+7. Compare list and detail scopes.
    - If list filters by current user or tenant but detail, count, search, analytics, export, or
      download uses only object id, report the gap.
-7. Review write APIs harder than read APIs.
+8. Review write APIs harder than read APIs.
    - `PUT`, `PATCH`, `DELETE`, approve, refund, invite, transfer, publish, restore, and role-change
      operations need write-specific permission, state, amount, and audit checks.
    - Read permission is not write permission.
-8. Stop mass assignment at the boundary.
+9. Stop mass assignment at the boundary.
    - Flag request-body-to-entity binding, raw DTO persistence, GraphQL input passthrough, ORM update
      data from raw body, and blind spread or object assignment.
    - Privileged fields such as `role`, `status`, `ownerId`, `tenantId`, `isVerified`, `plan`,
      `credit`, `deletedAt`, `price`, and `quota` must be derived, guarded, or allowlisted.
-9. Check response DTOs for property-level exposure.
+10. Check response DTOs for property-level exposure.
    - Entity-to-JSON responses can leak `passwordHash`, `mfaSecret`, `internalMemo`,
      `billingCustomerId`, storage keys, provider IDs, deletion reasons, or admin-only fields later.
    - Use public response mappers and role-aware field policies when field visibility differs.
-10. Treat client-side admin UI as decoration.
+11. Treat client-side admin UI as decoration.
     - Hidden buttons, disabled controls, frontend routes, mobile checks, and generated clients are
       not access control.
     - Admin and support operations need server-side scope, reason, audit, and denial tests.
-11. Search for temporary public holes.
+12. Search for temporary public holes.
     - Inspect `permitAll`, `anonymous`, `skipAuth`, `bypassAuth`, `public`, `internalOnly`,
       `devOnly`, `TODO auth`, debug endpoints, health endpoints with extra data, and test-only
       switches that can reach real data or operations.
-12. Review router and middleware order.
+13. Review router and middleware order.
     - Dynamic routes like `/:id` can shadow `/me`, `/admin`, or `/settings`.
     - Prefix middleware can leave sibling paths, nested routers, serverless functions, or framework
       route groups unauthenticated.
-13. Review GraphQL per resolver.
+14. Review GraphQL per resolver.
     - Endpoint-level auth is not enough.
     - Check `node(id)`, nested fields, connections, edges, aggregates, mutations, and field
       resolvers for object and property authorization.
-14. Review batch APIs per item.
+15. Review batch APIs per item.
     - Bulk create, delete, export, import, and update endpoints must authorize every object.
     - Define whether one denied item fails the whole request, returns per-item results, or produces
       a retrievable failure report.
-15. Review export, download, preview, thumbnail, and share paths.
+16. Review export, download, preview, thumbnail, and share paths.
     - CRUD may be protected while file delivery, generated previews, thumbnails, CSV exports, and
       shared links bypass the same policy.
-16. Treat signed storage URLs as outputs of authorization.
+17. Treat signed storage URLs as outputs of authorization.
     - S3, GCS, R2, CDN, and private file URLs must be generated only after object authorization.
     - Check key predictability, URL lifetime, scope, content disposition, cache behavior, revocation,
       and whether direct object access bypasses policy.
-17. Enforce tenant boundaries in every query and cache.
+18. Enforce tenant boundaries in every query and cache.
     - `WHERE id = ?` is weak in multi-tenant code; include tenant, membership, owner, sharing, or
       database policy constraints.
     - Cache keys for private data need tenant and permission dimensions, not just object id.
-18. Revalidate asynchronous jobs.
+19. Revalidate asynchronous jobs.
     - Queue payloads with only `userId`, `tenantId`, or `fileId` can outlive permission changes.
     - Workers, retries, admin reruns, scheduled tasks, and webhook-triggered jobs need actor,
       tenant, resource, state, and current permission or service-principal checks at execution time.
-19. Separate webhook authenticity from authorization.
+20. Separate webhook authenticity from authorization.
     - Signature verification proves the provider sent the event.
     - Ownership mapping proves the event belongs to this tenant, account, customer, installation,
       repository, subscription, or resource.
-20. Keep OAuth and OIDC purposes distinct.
+21. Keep OAuth and OIDC purposes distinct.
     - OIDC ID tokens identify a user for login.
     - OAuth access tokens authorize delegated API access.
     - Do not use an ID token as an API permission token or an access token as a login proof without
       the appropriate validation and intent.
-21. Verify JWTs completely.
+22. Verify JWTs completely.
     - Decoding is not verification.
     - Check signature, algorithm allowlist, issuer, audience, expiry, not-before when used, key
       source, key rotation, subject, tenant binding, and stale authorization claims.
-22. Treat token claims as snapshots, not eternal truth.
+23. Treat token claims as snapshots, not eternal truth.
     - Long-lived `role`, `plan`, `tenantId`, and permission claims can survive demotion, removal,
       subscription cancellation, suspension, or revocation.
     - Important decisions should check current server-side state or use short-lived tokens with
       revocation strategy.
-23. Regenerate session identity after privilege changes.
+24. Measure revocation and stale-permission windows.
+    - User removal, role demotion, organization leave, policy-version changes, subscription state
+      changes, and ownership transfers should say how quickly sessions, JWTs, caches, search
+      indexes, queued jobs, and signed URLs stop authorizing old access.
+25. Regenerate session identity after privilege changes.
     - Login, password change, MFA changes, role changes, user-to-admin transitions, and account
       recovery should rotate session identifiers or refresh tokens according to local policy.
-24. Check authentication cookies.
+26. Check authentication cookies.
     - Cookies carrying session authority need `Secure`, `HttpOnly`, appropriate `SameSite`,
       domain, path, lifetime, rotation, logout, revocation, and CSRF posture.
     - Avoid URL-carried session identifiers.
-25. Require reauthentication for sensitive actions.
+27. Require reauthentication for sensitive actions.
     - Password change, email change, MFA disable, payment method change, organization ownership
       transfer, API-key creation, and destructive admin actions should require fresh proof.
-26. Review reset and magic-link tokens.
+28. Review reset and magic-link tokens.
     - Tokens need strong randomness, one-time use, short expiration, purpose binding, user binding,
       safe storage, link-preview protection, session invalidation where needed, and no reuse across
       unrelated flows.
-27. Compare account-enumeration responses.
+29. Compare account-enumeration responses.
     - Login, signup, password reset, magic link, invitation, and email verification should avoid
       leaking account existence through message, status, timing, or email-sending behavior unless
       product policy accepts that disclosure.
-28. Treat automation defense as part of authentication.
+30. Treat automation defense as part of authentication.
     - Login, OTP, magic link, password reset, invite acceptance, coupon application, email
       verification, and MFA attempts need rate limits, lockouts, challenge policy, IP/device/user
       dimensions, and observability.
-29. Separate internal and external identity planes.
+31. Separate internal and external identity planes.
     - Backoffice, operator, database, middleware, and support accounts should not flow through the
       same customer login path unless the product intentionally models and audits that boundary.
-30. Test the denial matrix.
+32. Test the denial matrix.
     - Success tests prove little.
     - For each protected resource, cover anonymous, normal user, other owner, same organization
       different role, other tenant, admin wrong tenant, revoked user, suspended member, stale token,
@@ -240,6 +257,8 @@ perform this action on this object, this field, and this tenant context?"
 
 - The API access-control decision names subject, object, action, field or property, tenant or owner,
   current state, and trusted context when those apply.
+- Effective permission, matched policy, explicit deny, inheritance path, policy version, data
+  revision, token issue time, and revocation window are checked or named as gaps when relevant.
 - Authentication, object authorization, property authorization, and function authorization are not
   collapsed into one route guard.
 - Client-supplied identity and authority fields are either ignored, verified against server-side
@@ -287,6 +306,8 @@ and account-enumeration response parity.
 
 - API access control reviewed
 - Subject, object, action, field, tenant or owner, state, and trusted context
+- Effective permission, decision explanation, policy version, data revision, token age, and
+  revocation-window findings
 - Object, property, and function authorization findings
 - Authentication, session, token, cookie, OAuth/OIDC, reset, reauthentication, enumeration, and
   automation findings

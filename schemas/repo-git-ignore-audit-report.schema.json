@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-git-ignore-audit-report.schema.json",
+  "title": "mustflow repo git-ignore-audit report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "policy",
+    "input_hash",
+    "summary",
+    "sources",
+    "paths",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "git-ignore-audit" },
+    "script_ref": { "const": "repo/git-ignore-audit" },
+    "action": { "const": "audit" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_mode", "max_paths", "source_kinds", "tracked_paths_can_match_ignore"],
+      "properties": {
+        "input_mode": { "enum": ["explicit_paths", "git_changed_files"] },
+        "max_paths": { "type": "integer", "minimum": 1 },
+        "source_kinds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceKind" }
+        },
+        "tracked_paths_can_match_ignore": { "type": "boolean" }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paths_checked",
+        "ignored_paths",
+        "tracked_paths",
+        "untracked_paths",
+        "missing_paths",
+        "ignore_sources",
+        "findings"
+      ],
+      "properties": {
+        "paths_checked": { "type": "integer", "minimum": 0 },
+        "ignored_paths": { "type": "integer", "minimum": 0 },
+        "tracked_paths": { "type": "integer", "minimum": 0 },
+        "untracked_paths": { "type": "integer", "minimum": 0 },
+        "missing_paths": { "type": "integer", "minimum": 0 },
+        "ignore_sources": { "type": "integer", "minimum": 0 },
+        "findings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/source" }
+    },
+    "paths": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/auditedPath" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "sourceKind": {
+      "enum": ["repo_gitignore", "git_info_exclude", "core_excludes_file"]
+    },
+    "pathStatus": {
+      "enum": ["ignored", "tracked", "untracked", "missing", "error"]
+    },
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "nullableInteger": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "exists", "scope", "sha256"],
+      "properties": {
+        "path": { "type": "string" },
+        "kind": { "$ref": "#/$defs/sourceKind" },
+        "exists": { "type": "boolean" },
+        "scope": { "enum": ["repository", "local_git", "external"] },
+        "sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "auditedPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "status",
+        "tracked",
+        "ignored",
+        "exists",
+        "source_path",
+        "source_line",
+        "pattern"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "status": { "$ref": "#/$defs/pathStatus" },
+        "tracked": { "type": "boolean" },
+        "ignored": { "type": "boolean" },
+        "exists": { "type": "boolean" },
+        "source_path": { "$ref": "#/$defs/nullableString" },
+        "source_line": { "$ref": "#/$defs/nullableInteger" },
+        "pattern": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "path",
+        "source_path",
+        "source_line",
+        "pattern",
+        "json_pointer",
+        "metric",
+        "actual",
+        "expected"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "git_ignore_audit_git_unavailable",
+            "git_ignore_audit_no_input_paths",
+            "git_ignore_audit_max_paths_exceeded",
+            "git_ignore_audit_path_outside_root",
+            "git_ignore_audit_unreadable_path",
+            "git_ignore_audit_ignored_path",
+            "git_ignore_audit_tracked_path_matches_ignore"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "source_path": { "$ref": "#/$defs/nullableString" },
+        "source_line": { "$ref": "#/$defs/nullableInteger" },
+        "pattern": { "$ref": "#/$defs/nullableString" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

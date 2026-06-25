@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-manifest-lock-drift-report.schema.json",
+  "title": "mustflow repo manifest-lock-drift report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "policy",
+    "input_hash",
+    "lock",
+    "summary",
+    "entries",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "manifest-lock-drift" },
+    "script_ref": { "const": "repo/manifest-lock-drift" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lock_path", "input_mode", "max_entries", "extra_manifest_file_detection"],
+      "properties": {
+        "lock_path": { "const": ".mustflow/config/manifest.lock.toml" },
+        "input_mode": { "enum": ["all_locked_files", "explicit_paths"] },
+        "max_entries": { "type": "integer", "minimum": 1 },
+        "extra_manifest_file_detection": { "const": "not_authoritative" }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "lock": { "$ref": "#/$defs/lockMetadata" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "nullableSha256": {
+      "anyOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "lockMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "exists",
+        "schema_version",
+        "template_id",
+        "template_version",
+        "template_profile",
+        "template_locale",
+        "entries_total"
+      ],
+      "properties": {
+        "path": { "const": ".mustflow/config/manifest.lock.toml" },
+        "exists": { "type": "boolean" },
+        "schema_version": { "$ref": "#/$defs/nullableString" },
+        "template_id": { "$ref": "#/$defs/nullableString" },
+        "template_version": { "$ref": "#/$defs/nullableString" },
+        "template_profile": { "$ref": "#/$defs/nullableString" },
+        "template_locale": { "$ref": "#/$defs/nullableString" },
+        "entries_total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entries_total",
+        "entries_checked",
+        "clean_entries",
+        "missing_entries",
+        "hash_mismatches",
+        "unreadable_entries",
+        "unsafe_entries",
+        "skipped_entries",
+        "findings"
+      ],
+      "properties": {
+        "entries_total": { "type": "integer", "minimum": 0 },
+        "entries_checked": { "type": "integer", "minimum": 0 },
+        "clean_entries": { "type": "integer", "minimum": 0 },
+        "missing_entries": { "type": "integer", "minimum": 0 },
+        "hash_mismatches": { "type": "integer", "minimum": 0 },
+        "unreadable_entries": { "type": "integer", "minimum": 0 },
+        "unsafe_entries": { "type": "integer", "minimum": 0 },
+        "skipped_entries": { "type": "integer", "minimum": 0 },
+        "findings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "source",
+        "last_action",
+        "lock_hash",
+        "actual_hash",
+        "exists",
+        "status"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "source": { "$ref": "#/$defs/nullableString" },
+        "last_action": { "$ref": "#/$defs/nullableString" },
+        "lock_hash": { "$ref": "#/$defs/nullableString" },
+        "actual_hash": { "$ref": "#/$defs/nullableSha256" },
+        "exists": { "type": "boolean" },
+        "status": {
+          "enum": ["clean", "hash_mismatch", "missing", "unreadable", "unsafe_path", "skipped"]
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "path",
+        "expected_hash",
+        "actual_hash",
+        "json_pointer",
+        "metric",
+        "actual",
+        "expected"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "manifest_lock_missing",
+            "manifest_lock_invalid",
+            "manifest_lock_max_entries_exceeded",
+            "manifest_lock_entry_path_outside_root",
+            "manifest_lock_entry_missing",
+            "manifest_lock_entry_unreadable",
+            "manifest_lock_entry_invalid_hash",
+            "manifest_lock_hash_mismatch"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "expected_hash": { "$ref": "#/$defs/nullableString" },
+        "actual_hash": { "$ref": "#/$defs/nullableSha256" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

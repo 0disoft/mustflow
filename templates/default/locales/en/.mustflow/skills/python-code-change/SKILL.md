@@ -2,7 +2,7 @@
 mustflow_doc: skill.python-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: python-code-change
@@ -94,12 +94,20 @@ Preserve Python runtime, standard-library, packaging, import, async resource, pu
    - prefer `importlib.resources` for packaged data, `tomllib` for TOML reads, and `Path.walk()` only after checking version support, pruning behavior, symlink recursion, ordering, and cycle risks;
    - use dataclass options such as `slots`, `frozen`, and `kw_only`, `StrEnum`, `TypedDict`, or `Protocol` only when they match the public shape and runtime/type-checker support;
    - treat `functools.cache`, `lru_cache`, `cached_property`, `partial`, and Python 3.14+ `Placeholder` as state, memory, concurrency, and versioned-API choices rather than harmless terseness.
-11. Keep process, archive, and concurrency safety explicit:
+11. Treat newer syntax and typing features as semantic tools, not style trophies:
+   - use template string literals only when a handler needs the static and interpolated parts separately, such as SQL builders, shell command objects, logging templates, or markup renderers; do not replace ordinary f-strings when the result is just a string;
+   - when runtime code reads annotations, use the supported annotation inspection API and choose the intended format explicitly instead of assuming `__annotations__` already contains runtime values;
+   - use sentinel values to distinguish "argument omitted" from `None`, but compare sentinels by identity and keep public signatures readable;
+   - prefer `Mapping` or narrower read-only protocols for read-only inputs so immutable mapping implementations are not rejected accidentally;
+   - use closed or extra-key `TypedDict` forms only when the supported Python and type-checker versions agree with that shape.
+12. Keep `finally` as cleanup, not outcome selection. Do not add `return`, `break`, or `continue` inside `finally` blocks because they can mask exceptions and cancellation; move result decisions outside cleanup or make suppression an explicit documented contract.
+13. Use explicit lazy imports only for startup-sensitive module-scope dependencies after checking version support and import-time side effects. Do not lazily import plugins, registries, monkey patches, model definitions, ORM mappings, or observability setup whose import side effects are part of startup correctness.
+14. Keep process, archive, and concurrency safety explicit:
    - subprocess calls use argument lists, checked failure handling, timeouts, bounded captured output, and a narrow `shell=True` exception when the project already permits it;
    - archive extraction, including `tarfile`, keeps untrusted archive inspection, extraction filters, partial-extract cleanup, and older-runtime defaults visible;
    - `asyncio.TaskGroup`, `asyncio.timeout`, and `asyncio.to_thread` are used only when their cancellation, timeout, blocking-work, and Python-version semantics fit the surrounding lifecycle.
-12. Use runtime diagnostics as evidence, not as permanent workaround code. Interpreter or library diagnostics such as import timing, `tracemalloc`, `faulthandler`, profiling, and allocation tracing should go through configured diagnostic or verification intents when available, and missing intents should be reported instead of adding ad hoc command recipes to the skill.
-13. Preserve async and resource ownership:
+15. Use runtime diagnostics as evidence, not as permanent workaround code. Interpreter or library diagnostics such as import timing, `tracemalloc`, `faulthandler`, profiling, and allocation tracing should go through configured diagnostic or verification intents when available, and missing intents should be reported instead of adding ad hoc command recipes to the skill.
+16. Preserve async and resource ownership:
    - every coroutine is awaited, returned by contract, or scheduled as an owned and tracked task;
    - raw background task creation is allowed only through the project's owner or spawn helper, a task group, or an equivalent lifecycle mechanism;
    - background tasks keep a strong reference, have a shutdown path, and retrieve failures instead of leaving never-retrieved exceptions;
@@ -108,15 +116,15 @@ Preserve Python runtime, standard-library, packaging, import, async resource, pu
    - context managers and async context managers do not suppress exceptions unless suppression is the feature;
    - context-manager helpers that catch exceptions for logging re-raise after logging;
    - early-exit async generators have an explicit close path.
-14. Preserve traceback evidence. Logging inside exception handlers should retain exception information instead of logging only the exception message.
-15. Preserve public contracts:
+17. Preserve traceback evidence. Logging inside exception handlers should retain exception information instead of logging only the exception message.
+18. Preserve public contracts:
    - treat public imports, public signatures, exceptions, return shapes, CLI behavior, entry points, config keys, environment variables, dependency metadata, extras, Python version support, and typing stubs as compatibility-sensitive;
    - do not change sync functions into async functions, accepted input shapes, nullable behavior, documented exception types, tuple/dict/dataclass return shapes, config precedence, or environment variable semantics without a compatibility review;
    - typed packages should keep runtime and typing surfaces aligned, including `py.typed` and stubs when present.
-16. Avoid mutable default arguments, broad `except Exception: pass`, broad `BaseException` catches outside process boundaries, global state hidden behind module imports, and path handling that ignores existing `pathlib` or OS conventions.
-17. Use `# type: ignore[...]` only when tightly scoped, justified, and consistent with local policy.
-18. If packaging, public API, CLI, config, or typing contracts change, synchronize README examples, entry point tests, build metadata, docs, fixtures, and downstream-style examples that describe installation or usage.
-19. Choose configured verification intents that cover formatting, lint, type checking, tests, package build, installed-package smoke checks, and CLI smoke risk when available.
+19. Avoid mutable default arguments, broad `except Exception: pass`, broad `BaseException` catches outside process boundaries, global state hidden behind module imports, `finally` masking, and path handling that ignores existing `pathlib` or OS conventions.
+20. Use `# type: ignore[...]` only when tightly scoped, justified, and consistent with local policy.
+21. If packaging, public API, CLI, config, or typing contracts change, synchronize README examples, entry point tests, build metadata, docs, fixtures, and downstream-style examples that describe installation or usage.
+22. Choose configured verification intents that cover formatting, lint, type checking, tests, package build, installed-package smoke checks, and CLI smoke risk when available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -152,6 +160,7 @@ Report missing package, type, or test intents rather than inventing raw tool com
 - If packaging correctness matters but only repository-root tests can run, report that wheel or installed-artifact verification is missing.
 - If the supported Python version blocks a syntax choice, rewrite to the supported form.
 - If the supported Python version blocks a standard-library feature, changed default, diagnostic flag, or helper API, use the supported equivalent or report the runtime-support decision instead of silently raising `requires-python`.
+- If template strings, annotation runtime access, lazy imports, sentinels, immutable mappings, or typed extra keys are useful but version-gated, keep a fallback or report the required support bump instead of smuggling the newer feature into a lower-runtime project.
 - If third-party stubs or package metadata are wrong, document the local workaround and keep it narrow.
 - If a background task lacks owner, shutdown, strong reference, or exception retrieval, do not add it.
 - If cancellation or context-manager behavior is swallowed accidentally, restore propagation or document the intentional suppression contract.

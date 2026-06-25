@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/import-cycle-report.schema.json",
+  "title": "mustflow import-cycle report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "targets",
+    "graph",
+    "cycles",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "code" },
+    "script_id": { "const": "import-cycle" },
+    "script_ref": { "const": "code/import-cycle" },
+    "action": { "const": "check" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "targets": { "type": "array", "items": { "$ref": "#/$defs/target" } },
+    "graph": { "$ref": "#/$defs/graph" },
+    "cycles": { "type": "array", "items": { "$ref": "#/$defs/cycle" } },
+    "truncated": { "type": "boolean" },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "stringArray": { "type": "array", "items": { "type": "string" } },
+    "language": {
+      "enum": [
+        "typescript",
+        "tsx",
+        "javascript",
+        "jsx",
+        "javascript-module",
+        "javascript-commonjs",
+        "json",
+        "other"
+      ]
+    },
+    "targetKind": { "enum": ["file", "directory", "missing", "other", "unknown"] },
+    "edgeKind": { "enum": ["static_import", "static_export", "dynamic_import", "require"] },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_file_bytes",
+        "max_files",
+        "max_depth",
+        "max_nodes",
+        "max_edges",
+        "extensions",
+        "ignored_directories",
+        "max_cycles"
+      ],
+      "properties": {
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_depth": { "type": "integer", "minimum": 1 },
+        "max_nodes": { "type": "integer", "minimum": 1 },
+        "max_edges": { "type": "integer", "minimum": 1 },
+        "extensions": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" },
+        "max_cycles": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path", "exists", "kind", "language"],
+      "properties": {
+        "input": { "type": "string" },
+        "path": { "type": "string" },
+        "exists": { "type": ["boolean", "null"] },
+        "kind": { "$ref": "#/$defs/targetKind" },
+        "language": { "$ref": "#/$defs/language" }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["script_ref", "status", "node_count", "edge_count", "cycle_hint_count", "truncated"],
+      "properties": {
+        "script_ref": { "const": "code/dependency-graph" },
+        "status": { "enum": ["passed", "failed", "error"] },
+        "node_count": { "type": "integer", "minimum": 0 },
+        "edge_count": { "type": "integer", "minimum": 0 },
+        "cycle_hint_count": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_path", "target_path", "specifier", "line", "kind"],
+      "properties": {
+        "source_path": { "type": "string" },
+        "target_path": { "type": "string" },
+        "specifier": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "kind": { "$ref": "#/$defs/edgeKind" }
+      }
+    },
+    "cycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cycle_id", "path_count", "paths", "edges"],
+      "properties": {
+        "cycle_id": { "type": "string", "pattern": "^cycle:[a-f0-9]{12}$" },
+        "path_count": { "type": "integer", "minimum": 0 },
+        "paths": { "$ref": "#/$defs/stringArray" },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "dependency_graph_path_outside_root",
+            "dependency_graph_unreadable_path",
+            "dependency_graph_max_files_exceeded",
+            "dependency_graph_max_nodes_exceeded",
+            "dependency_graph_max_edges_exceeded",
+            "import_cycle_detected",
+            "import_cycle_max_cycles_exceeded"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "cycle_id": { "type": "string", "pattern": "^cycle:[a-f0-9]{12}$" }
+      }
+    }
+  }
+}

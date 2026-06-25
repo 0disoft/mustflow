@@ -22,6 +22,7 @@ export type ScriptPackSuggestionStatus = 'suggested' | 'empty' | 'partial';
 const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 	'code/outline',
 	'code/dependency-graph',
+	'code/import-cycle',
 	'code/symbol-read',
 	'code/route-outline',
 	'code/export-diff',
@@ -29,7 +30,7 @@ const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 ]);
 const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
 const CONFIG_FILE_PATTERN =
-	/(?:^|\/)(?:\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
+	/(?:^|\/)(?:\.gitignore|\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -237,6 +238,12 @@ function surfacesForScript(script: ScriptPackSuggestionScript): readonly ScriptP
 	addIf('test', /test|suite|fixture|coverage|selection|timing|performance/u);
 	addIf('source', /code|source|symbol/u);
 
+	if (script.ref === 'repo/manifest-lock-drift') {
+		surfaces.add('config');
+		surfaces.add('generated');
+		surfaces.add('template');
+	}
+
 	return uniqueSortedSurfaces(surfaces);
 }
 
@@ -262,6 +269,11 @@ function hasPathWithSurface(
 	surface: ScriptPackSurface,
 ): boolean {
 	return analyzedPaths.some((entry) => entry.surfaces.includes(surface));
+}
+
+function isGitIgnoreAuditPriorityPath(relativePath: string): boolean {
+	const normalized = relativePath.replace(/\\/gu, '/').replace(/^\.\/+/u, '');
+	return normalized === '.gitignore' || normalized.endsWith('/.gitignore') || normalized === '.git/info/exclude';
 }
 
 function firstAvailablePath(
@@ -308,6 +320,11 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run code/dependency-graph scan', sourcePaths, script.usage);
 	}
 
+	if (script.ref === 'code/import-cycle') {
+		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
+		return createConcretePathHint('mf script-pack run code/import-cycle check', sourcePaths, script.usage);
+	}
+
 	if (script.ref === 'code/change-impact') {
 		return 'mf script-pack run code/change-impact analyze --base HEAD --json';
 	}
@@ -346,6 +363,13 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run docs/reference-drift check', docsPaths, script.usage);
 	}
 
+	if (script.ref === 'docs/link-integrity') {
+		const docsPaths = analyzedPaths
+			.filter((entry) => entry.surfaces.some((surface) => surface === 'docs' || surface === 'schema'))
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run docs/link-integrity check', docsPaths, script.usage);
+	}
+
 	if (script.ref === 'test/performance-report') {
 		return 'mf script-pack run test/performance-report summarize --json';
 	}
@@ -360,6 +384,47 @@ function createRunHint(
 
 	if (script.ref === 'repo/generated-boundary') {
 		return createConcretePathHint('mf script-pack run repo/generated-boundary check', analyzedPaths.map((entry) => entry.path), script.usage);
+	}
+
+	if (script.ref === 'repo/merge-conflict-scan') {
+		return createConcretePathHint(
+			'mf script-pack run repo/merge-conflict-scan check',
+			analyzedPaths.map((entry) => entry.path),
+			'mf script-pack run repo/merge-conflict-scan check --json',
+		);
+	}
+
+	if (script.ref === 'repo/git-ignore-audit') {
+		return createConcretePathHint(
+			'mf script-pack run repo/git-ignore-audit audit',
+			analyzedPaths.map((entry) => entry.path),
+			'mf script-pack run repo/git-ignore-audit audit --json',
+		);
+	}
+
+	if (script.ref === 'repo/manifest-lock-drift') {
+		const manifestPaths = analyzedPaths
+			.filter((entry) =>
+				entry.surfaces.some((surface) => surface === 'config' || surface === 'template' || surface === 'generated'),
+			)
+			.map((entry) => entry.path);
+		return createConcretePathHint(
+			'mf script-pack run repo/manifest-lock-drift check',
+			manifestPaths,
+			'mf script-pack run repo/manifest-lock-drift check --json',
+		);
+	}
+
+	if (script.ref === 'repo/skill-route-audit') {
+		return 'mf script-pack run repo/skill-route-audit audit --json';
+	}
+
+	if (script.ref === 'repo/version-source') {
+		return 'mf script-pack run repo/version-source inspect --json';
+	}
+
+	if (script.ref === 'repo/approval-gate') {
+		return 'mf script-pack run repo/approval-gate check --action <action_type> --json';
 	}
 
 	if (script.ref === 'repo/config-chain') {
@@ -458,6 +523,43 @@ export function createScriptPackSuggestionReport(
 			if (script.ref === 'repo/generated-boundary' && requestedSurfaces.has('generated')) {
 				score += 2;
 				reasons.push('Prioritizes generated-boundary checks for generated paths.');
+			}
+
+			if (script.ref === 'repo/merge-conflict-scan' && requestedSurfaces.size > 0) {
+				score += 1;
+				reasons.push('Prioritizes merge-conflict marker scans for changed repository paths.');
+			}
+
+			if (
+				script.ref === 'repo/git-ignore-audit' &&
+				analyzedPaths.some((entry) => isGitIgnoreAuditPriorityPath(entry.path))
+			) {
+				score += 1;
+				reasons.push('Prioritizes Git ignore evidence for explicit ignore-control paths.');
+			}
+
+			if (
+				script.ref === 'repo/skill-route-audit' &&
+				(requestedSurfaces.has('skill') || requestedSurfaces.has('template') || requestedSurfaces.has('config'))
+			) {
+				score += 3;
+				reasons.push('Prioritizes skill-route audits for skill, template, and workflow metadata surfaces.');
+			}
+
+			if (
+				script.ref === 'repo/version-source' &&
+				(requestedSurfaces.has('package') || requestedSurfaces.has('template') || requestedSurfaces.has('config'))
+			) {
+				score += 2;
+				reasons.push('Prioritizes version-source inspection for package, template, and versioning metadata surfaces.');
+			}
+
+			if (
+				script.ref === 'repo/approval-gate' &&
+				(requestedSurfaces.has('config') || requestedSurfaces.has('package') || requestedSurfaces.has('template'))
+			) {
+				score += 2;
+				reasons.push('Prioritizes approval-gate checks for approval-sensitive workflow and release surfaces.');
 			}
 
 			if (score === 0) {

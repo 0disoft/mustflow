@@ -2,7 +2,7 @@
 mustflow_doc: skill.rust-code-change
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: rust-code-change
@@ -101,9 +101,14 @@ instead of treated as incidental.
    - before using newer APIs, build an API-specific MSRV ledger instead of relying on a broad release bucket. Examples that need exact checking include `cfg_select!`, match `if let` guards, `core::range` items, `Vec::push_mut`, `assert_matches!`, and `debug_assert_matches!`;
    - do not use any newer API unless the declared MSRV, edition, CI matrix, docs.rs metadata, and toolchain path support that exact API;
    - keep experimental, nightly-only, target-specific, or edition-specific behavior behind explicit gates or fallbacks instead of calling it general Rust advice.
-5. Prefer flatter control flow when the MSRV supports it: use `let else` for early validation, let chains for related optional/result guards, and match `if let` guards for state-machine refinements. Remember that guard patterns do not satisfy match exhaustiveness; keep the fallback arm meaningful.
-6. In tests, prefer `assert_matches!` over `assert!(matches!(...))` when the MSRV supports it and the failed value has useful `Debug` output. Import it explicitly from `std` or `core`; do not assume it is in the prelude.
-7. Resolve ownership problems in this order: identify the real owner, shrink borrow scopes, fix function signatures to accept references or slices when ownership is unnecessary, distinguish transfer from sharing, then consider clone or shared ownership only when the semantics require it.
+5. For Rust 2024 or edition migration work, review semantics instead of treating the edition as formatting:
+   - inspect `unsafe extern` blocks, unsafe attributes such as exported symbols or custom sections, `unsafe_op_in_unsafe_fn`, and public unsafe docs together;
+   - check `if let` scrutinee temporaries and tail-expression temporaries around locks, `RefCell`, guards, files, network handles, and other `Drop` values;
+   - review macro fragment specifiers, especially expression fragments whose accepted syntax changes by edition, and use older-edition fragments only when the macro intentionally rejects newer forms;
+   - treat automatic edition rewrites as candidate diffs that still need human review of unsafe, macro, pattern, temporary lifetime, docs, and examples.
+6. Prefer flatter control flow when the MSRV supports it: use `let else` for early validation, let chains for related optional/result guards, and match `if let` guards for state-machine refinements. Remember that guard patterns do not satisfy match exhaustiveness; keep the fallback arm meaningful.
+7. In tests, prefer `assert_matches!` over `assert!(matches!(...))` when the MSRV supports it and the failed value has useful `Debug` output. Import it explicitly from `std` or `core`; do not assume it is in the prelude.
+8. Resolve ownership problems in this order: identify the real owner, shrink borrow scopes, fix function signatures to accept references or slices when ownership is unnecessary, distinguish transfer from sharing, then consider clone or shared ownership only when the semantics require it.
 8. Before adding `clone`, verify it is a cheap handle clone such as `Arc`, `Rc`, or `Bytes`, a small intentional value clone, or a true independent ownership split. Reject large collection clones, loop clones, clone-then-borrow code, and whole-state clones made only to satisfy `spawn`.
 9. Before adding `Arc<Mutex<_>>`, verify multiple owners truly need shared mutable state. For read-mostly snapshots, prefer ownership-preserving choices such as `Arc::make_mut`, immutable swaps, or explicit reload boundaries. Keep critical sections short, document lock order when relevant, and do not hold a lock guard across `.await`, I/O, callbacks, or user code.
 10. Choose initialization primitives by input and failure semantics: use `LazyLock` for no-argument static lazy values that may poison permanently on panic, and `OnceLock` when boot-time or test-time code supplies the value or panic poisoning must not become the recovery policy.
@@ -135,6 +140,7 @@ Reject or revise the patch when any of these appear without strong local justifi
 - New large `clone()` calls, clone-then-borrow code, loop clones, or state clones used only to appease ownership errors.
 - New `Arc<Mutex<AppState>>`-style shared bags, locks held across `.await`, or async I/O resources shared mainly by mutex.
 - New version-gated Rust API usage without API-specific MSRV, `rust-version`, edition, toolchain, CI, or fallback evidence.
+- Rust 2024 edition changes accepted without reviewing unsafe extern blocks, unsafe attributes, `unsafe_op_in_unsafe_fn`, temporary drop scopes, and macro fragment behavior where those surfaces exist.
 - New `LazyLock` initialization for recoverable runtime configuration where permanent panic poisoning would be the wrong failure policy.
 - New `spare_capacity_mut` plus `set_len` without a narrow, proven initialization invariant.
 - New public `impl Trait`, `Deref`, GAT, workspace resolver, feature, or `rust-version` change without public API and compatibility review.

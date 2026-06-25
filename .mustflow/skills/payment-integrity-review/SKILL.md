@@ -2,7 +2,7 @@
 mustflow_doc: skill.payment-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: payment-integrity-review
@@ -53,14 +53,23 @@ Review payment code as money-event integrity, not provider API success. The core
 ## Required Inputs
 
 - Money-event ledger: every create, authorize, capture, fulfill, refund, dispute, chargeback, settlement, adjustment, cancellation, expiration, and entitlement event that can move money or access.
-- Provider interaction ledger: payment provider calls, webhook event types, redirect handlers, polling, reconciliation jobs, SDK clients, idempotency keys, provider object IDs, and provider environment selection.
-- State-transition ledger: internal states, provider states, allowed transitions, terminal states, retry states, async states, and transition owners.
+- Provider interaction ledger: payment provider calls, webhook event types, redirect handlers,
+  polling, reconciliation jobs, SDK clients, idempotency keys, internal order IDs, internal payment
+  IDs, attempt IDs, provider object IDs, provider reference IDs, and provider environment selection.
+- State-transition ledger: internal states, provider states, allowed transitions, terminal states,
+  retry states, async states, hold states, kill-switch states, and transition owners.
+- Event log ledger: request submission, provider response, redirect, webhook receipt, webhook
+  application, state transition, queue handoff, reconciliation decision, fulfillment, refund,
+  dispute, admin override, and correction events with ordering, actor, reason, and immutable
+  evidence.
 - Idempotency and uniqueness ledger: logical operation IDs, provider idempotency keys, database uniqueness constraints, webhook event dedupe keys, fulfillment dedupe keys, and retry behavior.
 - Amount and currency ledger: product/cart snapshot, server-side calculation path, quantity, discounts, coupons, tax, shipping, minor-unit representation, currency, provider amount, internal ledger amount, receipt amount, and settlement amount.
 - Ownership ledger: user, tenant, account, order, payment session, refund, subscription, invoice, entitlement, admin actor, and provider customer ownership checks.
 - Fulfillment and entitlement ledger: when access, inventory, shipment, credits, licenses, notifications, or downstream side effects are granted or revoked.
 - Webhook and retry ledger: signature verification, raw-body handling, event storage, queue handoff, duplicate and out-of-order handling, timeout classification, backoff, and dead-letter behavior.
-- Audit and sensitive-data ledger: logs, metrics, traces, admin overrides, before/after values, reason fields, approval paths, rollback paths, and payment-sensitive data redaction.
+- Audit and sensitive-data ledger: logs, metrics, traces, segmented approval or decline metrics,
+  payment-path segments, orphan authorization monitors, admin overrides, before/after values, reason
+  fields, approval paths, rollback paths, and payment-sensitive data redaction.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -80,40 +89,55 @@ Review payment code as money-event integrity, not provider API success. The core
 ## Procedure
 
 1. Model payment as a state machine. Reject a single `paid`, `success`, or `active` boolean when the code must distinguish created, pending, authorized, captured, failed, cancelled, expired, refunded, partially refunded, disputed, unpaid, retrying, grace, or settled states.
-2. Calculate amount on the server. Treat client-supplied amount, currency, quantity, discount, coupon, tax, shipping, product ID, plan ID, or cart totals as input claims only; rebuild the payable total from trusted product, cart, account, and policy snapshots.
-3. Bind every payment object to its owner. Verify user, tenant, order, payment session, refund, subscription, invoice, provider customer, and admin actor ownership before read, write, refund, cancel, fulfillment, or entitlement changes.
-4. Compare every amount ledger. Trace order amount, provider request amount, provider response amount, internal money ledger, receipt, settlement, fee, refund, and entitlement amount. Flag any path where one amount can drift without reconciliation.
-5. Use integer minor units. Reject float, double, string-concatenated, rounded-late, locale-formatted, or JavaScript-number money math when it can cross currency or precision boundaries.
-6. Make payment creation idempotent. Use a stable key for one logical payment attempt, not a fresh UUID per retry. Include operation identity such as order or attempt ID, but do not include secrets or raw personal data.
-7. Use database uniqueness as the last gate. Add or verify unique constraints for provider payment IDs, provider session IDs, provider event IDs, provider refund IDs, internal ledger IDs, and fulfillment records where duplicates would move money or access twice.
-8. Assume webhooks are duplicated. Store event IDs or object/type pairs before applying effects, make handlers idempotent, and treat duplicate delivery as expected behavior.
-9. Assume webhooks are out of order. Do not let a late `created`, `pending`, or stale failure event overwrite a captured, refunded, disputed, or terminal internal state. Re-fetch provider state when event order is insufficient.
-10. Verify webhook signatures on the raw body. Check signatures before JSON mutation, parsing wrappers, body normalizers, or middleware that changes bytes. Do not keep a debug path that disables signature verification.
-11. Return from webhook endpoints quickly. Persist the event, enqueue durable work, and return a provider-acceptable response without doing slow fulfillment, network fan-out, file work, or long transactions in the webhook request.
-12. Never use success redirects as proof. Treat checkout success pages, return URLs, frontend callbacks, and local storage flags as user navigation only; fulfillment must depend on verified provider state or signed server-side evidence.
-13. Run fulfillment exactly once. Guard entitlement grants, shipments, credit issuance, license creation, invoice finalization, emails with money meaning, and inventory release with unique records or state transitions.
-14. Handle asynchronous payment methods. Do not fulfill on checkout completion when the provider can still move through pending, requires_action, processing, delayed success, delayed failure, or expiry states.
-15. Separate authorization from capture. Do not treat an authorization hold as captured money. Review capture windows, partial captures, expired authorizations, cancellations, and post-authorization amount changes.
-16. Review refunds as money-out events. Check partial refunds, double refunds, refund failures, refund idempotency, refund ownership, refund amount/currency, ledger reversal, entitlement revocation, and receipt updates.
-17. Handle disputes and chargebacks. Ensure dispute events affect access, account risk, support workflow, ledger entries, settlement reports, and customer-visible state without pretending the original capture still stands unchanged.
-18. Review subscriptions as state machines. Separate trialing, active, past_due, grace, unpaid, cancelled, pending cancellation, retrying, upgraded, downgraded, invoice-open, invoice-paid, and invoice-failed states.
-19. Reserve inventory before confirming it. Check that payment, inventory, cancellation, expiration, refund, and fulfillment cannot oversell, lose stock, or keep stock reserved after an abandoned payment.
-20. Reserve coupons before consuming them. Under concurrent attempts, a coupon should not be spent twice or lost forever after a failed or expired payment. Review reservation, consumption, release, and expiry paths.
-21. Treat timeouts as unknown outcomes. A provider timeout after request submission is not a failure proof. Verify by idempotency key, provider object lookup, webhook, or reconciliation before retrying or cancelling.
-22. Classify retries by failure kind. Separate retryable network failures, provider rate limits, validation failures, insufficient funds, authentication failures, duplicate operation responses, and unknown outcomes with bounded backoff.
-23. Keep an append-only money ledger. Prefer immutable entries for payment, capture, refund, fee, settlement, chargeback, adjustment, and correction. Flag mutable balance-only code with no event history.
-24. Reconcile provider and internal state. Check scheduled or manual reconciliation for missed webhooks, stale internal states, provider-side refunds, settlement fees, disputes, and permanently unknown operations.
-25. Redact payment-sensitive data. Never log card numbers, CVV, track data, PINs, raw payment credentials, webhook secrets, bearer tokens, provider secret keys, or full provider payloads containing sensitive fields.
-26. Separate test and live payment planes. Verify API keys, webhook secrets, product IDs, price IDs, environment flags, provider account IDs, and fixtures cannot cross between test and live modes.
-27. Audit manual payment operations. Require role, reason, target object, before/after values, approver or policy evidence, operator identity, timestamp, and rollback or correction path for admin overrides.
-28. Search for stale payment endpoints. Review old checkout paths, hidden callback URLs, deprecated provider versions, old mobile endpoints, webhook v1 handlers, and manual scripts that still mutate money state.
-29. Check public errors and support evidence. Payment failures must not lie about success, leak sensitive payment facts, or leave support with no safe correlation ID, provider object ID, or internal event ID.
-30. Test the nightmare paths. Include repeated pay-button clicks, replayed webhooks, out-of-order webhooks, success redirect plus database failure, database success plus provider timeout, amount or currency tampering, wrong order ID, concurrent double refund, pay then cancel, expired-session completion, subscription retry, provider missed webhook, and admin override rollback.
+2. Separate the identifiers. Do not let one `order_id` or provider session ID stand in for every
+   concept. Track order ID, payment ID, attempt ID, provider customer ID, provider payment/session
+   ID, provider refund ID, provider event ID, and internal ledger entry ID separately so retries,
+   provider redirects, webhooks, refunds, and reconciliation do not overwrite each other.
+3. Keep an immutable event trail. Store request submission, provider response, redirect, webhook,
+   state transition, queue handoff, reconciliation, fulfillment, refund, dispute, and admin override
+   events with actor, reason, timestamp, provider reference, and before/after state when relevant.
+4. Calculate amount on the server. Treat client-supplied amount, currency, quantity, discount, coupon, tax, shipping, product ID, plan ID, or cart totals as input claims only; rebuild the payable total from trusted product, cart, account, and policy snapshots.
+5. Bind every payment object to its owner. Verify user, tenant, order, payment session, refund, subscription, invoice, provider customer, and admin actor ownership before read, write, refund, cancel, fulfillment, or entitlement changes.
+6. Compare every amount ledger. Trace order amount, provider request amount, provider response amount, internal money ledger, receipt, settlement, fee, refund, and entitlement amount. Flag any path where one amount can drift without reconciliation.
+7. Use integer minor units. Reject float, double, string-concatenated, rounded-late, locale-formatted, or JavaScript-number money math when it can cross currency or precision boundaries.
+8. Make payment creation idempotent. Use a stable key for one logical payment attempt, not a fresh UUID per retry. Include operation identity such as order or attempt ID, but do not include secrets or raw personal data.
+9. Use database uniqueness as the last gate. Add or verify unique constraints for provider payment IDs, provider session IDs, provider event IDs, provider refund IDs, internal ledger IDs, and fulfillment records where duplicates would move money or access twice.
+10. Assume webhooks are duplicated. Store event IDs or object/type pairs before applying effects, make handlers idempotent, and treat duplicate delivery as expected behavior.
+11. Assume webhooks are out of order. Do not let a late `created`, `pending`, or stale failure event overwrite a captured, refunded, disputed, or terminal internal state. Re-fetch provider state when event order is insufficient.
+12. Verify webhook signatures on the raw body. Check signatures before JSON mutation, parsing wrappers, body normalizers, or middleware that changes bytes. Do not keep a debug path that disables signature verification.
+13. Return from webhook endpoints quickly. Persist the event, enqueue durable work, and return a provider-acceptable response without doing slow fulfillment, network fan-out, file work, or long transactions in the webhook request.
+14. Never use success redirects as proof. Treat checkout success pages, return URLs, frontend callbacks, and local storage flags as user navigation only; fulfillment must depend on verified provider state or signed server-side evidence.
+15. Run fulfillment exactly once. Guard entitlement grants, shipments, credit issuance, license creation, invoice finalization, emails with money meaning, and inventory release with unique records or state transitions.
+16. Handle asynchronous payment methods. Do not fulfill on checkout completion when the provider can still move through pending, requires_action, processing, delayed success, delayed failure, or expiry states.
+17. Separate authorization from capture. Do not treat an authorization hold as captured money. Review capture windows, partial captures, expired authorizations, cancellations, orphan authorized-but-not-captured operations, and post-authorization amount changes.
+18. Review refunds as money-out events. Check requested, pending, completed, failed, cancelled, and partial refund states; double refunds; refund failures; refund idempotency; refund ownership; refund amount/currency; ledger reversal; entitlement revocation; and receipt updates.
+19. Handle disputes and chargebacks. Ensure dispute events affect access, account risk, support workflow, ledger entries, settlement reports, and customer-visible state without pretending the original capture still stands unchanged.
+20. Review subscriptions as state machines. Separate trialing, active, past_due, grace, unpaid, cancelled, pending cancellation, retrying, upgraded, downgraded, invoice-open, invoice-paid, and invoice-failed states.
+21. Reserve inventory before confirming it. Check that payment, inventory, cancellation, expiration, refund, and fulfillment cannot oversell, lose stock, or keep stock reserved after an abandoned payment.
+22. Reserve coupons before consuming them. Under concurrent attempts, a coupon should not be spent twice or lost forever after a failed or expired payment. Review reservation, consumption, release, and expiry paths.
+23. Treat timeouts as unknown outcomes. A provider timeout after request submission is not a failure proof. Verify by idempotency key, provider object lookup, webhook, or reconciliation before retrying or cancelling.
+24. Classify retries by failure kind. Separate retryable network failures, provider rate limits, validation failures, authentication-required states, insufficient funds, issuer declines, suspected fraud, duplicate operation responses, and unknown outcomes with bounded backoff.
+25. Segment the payment path. When diagnosing approval rate or decline spikes, separate frontend validation, backend request creation, provider gateway, acquirer, card network, issuer, bank, 3DS or additional authentication, and settlement evidence instead of reading one blended failure count.
+26. Keep an append-only money ledger. Prefer immutable entries for payment, capture, refund, fee, settlement, chargeback, adjustment, and correction. Flag mutable balance-only code with no event history.
+27. Reconcile provider and internal state. Check scheduled or manual reconciliation for missed webhooks, stale internal states, provider-side refunds, settlement fees, disputes, orphan authorizations, and permanently unknown operations.
+28. Redact payment-sensitive data. Never log card numbers, CVV, track data, PINs, raw payment credentials, webhook secrets, bearer tokens, provider secret keys, or full provider payloads containing sensitive fields.
+29. Separate test and live payment planes. Verify API keys, webhook secrets, product IDs, price IDs, environment flags, provider account IDs, and fixtures cannot cross between test and live modes.
+30. Audit manual payment operations. Require role, reason, target object, before/after values, approver or policy evidence, operator identity, timestamp, and rollback or correction path for admin overrides.
+31. Add a payment hold or kill-switch path for unsafe flows. Risky provider migrations, webhook
+    regressions, reconciliation uncertainty, fraud spikes, or duplicate-money incidents need a way
+    to hold fulfillment, stop captures, pause refunds, or disable a provider path without corrupting
+    ledger state.
+32. Search for stale payment endpoints. Review old checkout paths, hidden callback URLs, deprecated provider versions, old mobile endpoints, webhook v1 handlers, and manual scripts that still mutate money state.
+33. Check public errors and support evidence. Payment failures must not lie about success, leak sensitive payment facts, or leave support with no safe correlation ID, provider object ID, or internal event ID.
+34. Test the nightmare paths. Include repeated pay-button clicks, replayed webhooks, out-of-order webhooks, success redirect plus database failure, database success plus provider timeout, amount or currency tampering, wrong order ID, concurrent double refund, pay then cancel, expired-session completion, subscription retry, provider missed webhook, orphan authorization cleanup, provider kill switch or hold state, and admin override rollback.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
-- The payment surface has a money-event map, provider interaction map, state-transition map, idempotency and uniqueness map, amount and currency map, ownership map, fulfillment and entitlement map, webhook/retry map, and audit/sensitive-data map.
+- The payment surface has a money-event map, provider interaction map, identifier map,
+  state-transition map, immutable event log, idempotency and uniqueness map, amount and currency map,
+  ownership map, fulfillment and entitlement map, webhook/retry map, reconciliation and hold-state
+  map, and audit/sensitive-data map.
 - Any false success, duplicate money movement, duplicate fulfillment, wrong-owner action, wrong amount, wrong currency, stale event overwrite, timeout misclassification, or missing reconciliation is fixed or reported with evidence.
 - Tests or explicit verification cover the highest-risk nightmare paths available in the current scope.
 
@@ -148,7 +172,7 @@ Prefer focused tests for duplicate operations, webhook replay, out-of-order even
 ## Output Format
 
 - Payment surface and provider boundary reviewed
-- Money-event, provider, state, idempotency, amount, ownership, fulfillment, webhook, retry, audit, and sensitive-data ledgers
+- Money-event, provider, identifier, state, event-log, idempotency, amount, ownership, fulfillment, webhook, retry, reconciliation, hold-state, audit, and sensitive-data ledgers
 - Findings or fixes for duplicate, late, out-of-order, wrong-actor, wrong-amount, wrong-currency, timeout, retry, reconciliation, and audit risks
 - Nightmare-path tests or evidence added, run, skipped, or still missing
 - Command intents run
