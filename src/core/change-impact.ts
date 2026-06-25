@@ -3,31 +3,28 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
+import {
+	classifyChangeSurface,
+	normalizeChangePath,
+	selectorFallbackReasonForChangedPath,
+	statusFromGitNameStatus,
+	type ChangedPathStatus,
+	type ChangeSurface,
+	type SelectorFallbackReason,
+} from './change-surface-classification.js';
 import { inspectDependencyGraph } from './dependency-graph.js';
 import {
 	type ScriptCheckFinding,
 	type ScriptCheckFindingSeverity,
 	type ScriptCheckStatus,
 } from './script-check-result.js';
-import type { TestRegressionSelectorReason } from './test-regression-selector.js';
 
 export const CHANGE_IMPACT_PACK_ID = 'code';
 export const CHANGE_IMPACT_SCRIPT_ID = 'change-impact';
 export const CHANGE_IMPACT_SCRIPT_REF = `${CHANGE_IMPACT_PACK_ID}/${CHANGE_IMPACT_SCRIPT_ID}`;
 
-export type ChangeImpactSurface =
-	| 'source'
-	| 'test'
-	| 'docs'
-	| 'schema'
-	| 'config'
-	| 'package'
-	| 'template'
-	| 'workflow'
-	| 'i18n'
-	| 'unknown';
-
-export type ChangeImpactFileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'type_changed' | 'untracked';
+export type ChangeImpactSurface = ChangeSurface;
+export type ChangeImpactFileStatus = ChangedPathStatus;
 export type ChangeImpactRelationship =
 	| 'changed_file'
 	| 'imports_changed_file'
@@ -77,7 +74,7 @@ export interface ChangeImpactScriptHint {
 	readonly reason: string;
 	readonly confidence: number;
 	readonly related_intents?: readonly string[];
-	readonly expected_fallback_reasons?: readonly TestRegressionSelectorReason[];
+	readonly expected_fallback_reasons?: readonly SelectorFallbackReason[];
 }
 
 export interface ChangeImpactVerificationHint {
@@ -132,15 +129,9 @@ const DEFAULT_BASE_REF = 'HEAD';
 const DEFAULT_MAX_FILES = 200;
 const DEFAULT_MAX_IMPACTS = 300;
 const DEFAULT_MAX_FILE_BYTES = 256 * 1024;
-const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
-const PACKAGE_LOCKFILES = new Set(['bun.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'deno.lock']);
-
-function toPosixPath(value: string): string {
-	return value.replace(/\\/gu, '/');
-}
 
 function normalizeRelativePath(value: string): string {
-	return toPosixPath(value).replace(/^\.\/+/u, '') || '.';
+	return normalizeChangePath(value);
 }
 
 function sha256Tagged(value: string): string {
@@ -177,148 +168,12 @@ function makeFinding(
 	return { code, severity, path: pathValue, message };
 }
 
-function surfaceForPath(relativePath: string): ChangeImpactSurface {
-	const normalized = normalizeRelativePath(relativePath);
-	const extension = path.extname(normalized).toLowerCase();
-	const basename = path.basename(normalized).toLowerCase();
-
-	if (normalized.startsWith('.github/workflows/')) {
-		return 'workflow';
-	}
-	if (normalized.startsWith('.mustflow/')) {
-		return 'workflow';
-	}
-	if (normalized.startsWith('templates/')) {
-		return 'template';
-	}
-	if (normalized.startsWith('schemas/') || basename.endsWith('.schema.json')) {
-		return 'schema';
-	}
-	if (normalized.startsWith('docs') || ['.md', '.mdx'].includes(extension)) {
-		return 'docs';
-	}
-	if (normalized.includes('/i18n/') || normalized.includes('/locales/') || basename.includes('i18n')) {
-		return 'i18n';
-	}
-	if (['package.json', 'bun.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'deno.lock'].includes(normalized)) {
-		return 'package';
-	}
-	if (/^(?:tsconfig|eslint|vite|vitest|jest|playwright|astro|svelte|tailwind)\b/u.test(basename)) {
-		return 'config';
-	}
-	if (normalized.startsWith('tests/') || /\.test\.[cm]?[jt]sx?$/u.test(normalized)) {
-		return 'test';
-	}
-	if (SOURCE_EXTENSIONS.includes(extension as (typeof SOURCE_EXTENSIONS)[number])) {
-		return 'source';
-	}
-	return 'unknown';
-}
-
-function isSharedTestFixturePath(normalized: string): boolean {
-	return (
-		normalized.startsWith('tests/fixtures/') ||
-		normalized.startsWith('test/fixtures/') ||
-		normalized.startsWith('fixtures/') ||
-		/(?:^|\/)(?:test-)?setup\.[cm]?[jt]s$/u.test(normalized) ||
-		/(?:^|\/)(?:global-)?setup\.[cm]?[jt]s$/u.test(normalized)
-	);
-}
-
-function isMigrationOrDatabasePath(normalized: string): boolean {
-	const basename = path.posix.basename(normalized).toLowerCase();
-	return (
-		normalized.includes('/migrations/') ||
-		normalized.startsWith('migrations/') ||
-		normalized.includes('/db/') ||
-		normalized.includes('/database/') ||
-		basename === 'schema.prisma' ||
-		basename.endsWith('.sql')
-	);
-}
-
-function isGeneratedContractPath(normalized: string): boolean {
-	const basename = path.posix.basename(normalized).toLowerCase();
-	return (
-		normalized.startsWith('schemas/') ||
-		basename.endsWith('.schema.json') ||
-		basename === 'openapi.json' ||
-		basename === 'openapi.yaml' ||
-		basename === 'openapi.yml' ||
-		basename === 'asyncapi.json' ||
-		basename === 'asyncapi.yaml' ||
-		basename === 'asyncapi.yml' ||
-		basename === 'schema.graphql'
-	);
-}
-
-function isCompilerOrRunnerConfigPath(normalized: string): boolean {
-	const basename = path.posix.basename(normalized).toLowerCase();
-	return /^(?:tsconfig|eslint|vite|vitest|jest|playwright|astro|svelte|tailwind|webpack|rollup|babel|nyc|c8)\b/u.test(
-		basename,
-	);
-}
-
-function selectorFallbackReasonFor(changedFile: ChangeImpactChangedFile): TestRegressionSelectorReason | null {
-	const normalized = normalizeRelativePath(changedFile.path);
-	const basename = path.posix.basename(normalized).toLowerCase();
-
-	if (changedFile.status === 'deleted') {
-		return 'fallback_deleted';
-	}
-	if (changedFile.status === 'renamed') {
-		return 'fallback_renamed';
-	}
-	if (changedFile.status === 'type_changed') {
-		return 'fallback_type_changed';
-	}
-	if (PACKAGE_LOCKFILES.has(normalized)) {
-		return 'fallback_lockfile';
-	}
-	if (basename === 'package.json') {
-		return 'fallback_package_metadata';
-	}
-	if (changedFile.surface === 'template') {
-		return 'fallback_template';
-	}
-	if (isGeneratedContractPath(normalized)) {
-		return 'fallback_generated_contract';
-	}
-	if (isSharedTestFixturePath(normalized)) {
-		return 'fallback_shared_test_fixture';
-	}
-	if (isMigrationOrDatabasePath(normalized)) {
-		return 'fallback_migration_or_database';
-	}
-	if (normalized.startsWith('.github/workflows/')) {
-		return 'fallback_ci_workflow';
-	}
-	if (normalized.startsWith('.mustflow/')) {
-		return 'fallback_mustflow_workflow';
-	}
-	if (isCompilerOrRunnerConfigPath(normalized) || changedFile.surface === 'config') {
-		return 'fallback_compiler_or_runner_config';
-	}
-	if (changedFile.surface === 'unknown') {
-		return 'fallback_unknown';
-	}
-	return null;
-}
-
 function statusFromCode(code: string): ChangeImpactFileStatus {
-	if (code.startsWith('A')) {
-		return 'added';
-	}
-	if (code.startsWith('D')) {
-		return 'deleted';
-	}
-	if (code.startsWith('R')) {
-		return 'renamed';
-	}
-	if (code.startsWith('T')) {
-		return 'type_changed';
-	}
-	return 'modified';
+	return statusFromGitNameStatus(code);
+}
+
+function surfaceForPath(relativePath: string): ChangeImpactSurface {
+	return classifyChangeSurface(relativePath);
 }
 
 function parseNameStatus(stdout: string): ChangeImpactChangedFile[] {
@@ -536,7 +391,7 @@ function createScriptHints(changedFiles: readonly ChangeImpactChangedFile[]): re
 	const hints: ChangeImpactScriptHint[] = [];
 	if (selectorRelevantFiles.length > 0) {
 		const expectedFallbackReasons = [
-			...new Set(selectorRelevantFiles.map(selectorFallbackReasonFor).filter((reason): reason is TestRegressionSelectorReason => reason !== null)),
+			...new Set(selectorRelevantFiles.map(selectorFallbackReasonForChangedPath).filter((reason): reason is SelectorFallbackReason => reason !== null)),
 		].sort();
 		const relatedIntents = createVerificationHints(changedFiles).map((hint) => hint.intent);
 		hints.push({
