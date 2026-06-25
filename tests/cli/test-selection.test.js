@@ -10,6 +10,7 @@ import {
 	profileDurationForTestPath,
 	profileOrderingSummary,
 	readProfileDurations,
+	readProfileTimingEvidence,
 } from '../../scripts/lib/test-ordering.mjs';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -339,9 +340,18 @@ test('profile timing reader ignores missing malformed and invalid timing evidenc
 		const durations = readProfileDurations(profilePath, {
 			nowMs: Date.parse('2026-06-25T12:00:00.000Z'),
 		});
+		const evidence = readProfileTimingEvidence(profilePath, {
+			nowMs: Date.parse('2026-06-25T12:00:00.000Z'),
+		});
 
 		assert.equal(profileDurationForTestPath('tests/cli/router.test.js', durations), 100);
 		assert.equal(profileDurationForTestPath('tests/cli/workflow.test.js', durations), undefined);
+		assert.equal(evidence.status, 'used');
+		assert.equal(evidence.reason, 'fresh');
+		assert.equal(evidence.generatedAt, '2026-06-25T00:00:00.000Z');
+		assert.equal(evidence.validEntries, 1);
+		assert.equal(evidence.invalidEntries, 3);
+		assert.equal(evidence.totalEntries, 4);
 		assert.deepEqual(orderTestPathsByProfile(['tests/cli/status.test.js', 'tests/cli/router.test.js'], durations), [
 			'tests/cli/router.test.js',
 			'tests/cli/status.test.js',
@@ -356,7 +366,14 @@ test('profile timing reader ignores stale missing and future generated timestamp
 	const profilePath = path.join(tempRoot, 'latest.profile.json');
 
 	try {
-		for (const generatedAt of [undefined, '2026-06-01T00:00:00.000Z', '2026-06-25T00:10:00.000Z', 'not-a-date']) {
+		const cases = [
+			{ generatedAt: undefined, reason: 'missing_timestamp' },
+			{ generatedAt: '2026-06-01T00:00:00.000Z', reason: 'stale' },
+			{ generatedAt: '2026-06-25T00:10:00.000Z', reason: 'future_timestamp' },
+			{ generatedAt: 'not-a-date', reason: 'missing_timestamp' },
+		];
+
+		for (const { generatedAt, reason } of cases) {
 			writeFileSync(
 				profilePath,
 				`${JSON.stringify({
@@ -365,11 +382,44 @@ test('profile timing reader ignores stale missing and future generated timestamp
 				})}\n`,
 			);
 
-			assert.deepEqual(
-				[...readProfileDurations(profilePath, { nowMs: Date.parse('2026-06-25T00:00:00.000Z') })],
-				[],
-			);
+			const evidence = readProfileTimingEvidence(profilePath, {
+				nowMs: Date.parse('2026-06-25T00:00:00.000Z'),
+			});
+
+			assert.equal(evidence.status, 'skipped');
+			assert.equal(evidence.reason, reason);
+			assert.deepEqual([...evidence.durations], []);
 		}
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+});
+
+test('profile timing reader reports missing malformed and empty profile reasons', () => {
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-ordering-status-'));
+	const profilePath = path.join(tempRoot, 'latest.profile.json');
+
+	try {
+		assert.equal(readProfileTimingEvidence(profilePath).reason, 'missing');
+
+		writeFileSync(profilePath, '{');
+		assert.equal(readProfileTimingEvidence(profilePath).reason, 'malformed');
+
+		writeFileSync(
+			profilePath,
+			`${JSON.stringify({
+				generated_at: '2026-06-25T00:00:00.000Z',
+				test_files: [{ path: 'tests/cli/router.test.js', duration_ms: -1 }],
+			})}\n`,
+		);
+		const evidence = readProfileTimingEvidence(profilePath, {
+			nowMs: Date.parse('2026-06-25T00:00:00.000Z'),
+		});
+
+		assert.equal(evidence.status, 'skipped');
+		assert.equal(evidence.reason, 'no_valid_entries');
+		assert.equal(evidence.invalidEntries, 1);
+		assert.equal(evidence.totalEntries, 1);
 	} finally {
 		rmSync(tempRoot, { recursive: true, force: true });
 	}

@@ -42,7 +42,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.85.16');
+	assert.equal(packageJson.version, '2.85.17');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -289,10 +289,13 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /--build-runner/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_SCHEDULER/u);
 	assert.match(cliTestRunner, /function planWaves\(/u);
-	assert.match(cliTestRunner, /readProfileDurations\(latestProfilePath\)/u);
+	assert.match(cliTestRunner, /readProfileTimingEvidence\(latestProfilePath\)/u);
 	assert.match(cliTestRunner, /orderTestPathsByProfile\(selectedTestPaths, profileDurations\)/u);
 	assert.match(cliTestRunner, /Using profile timing order from/u);
+	assert.match(cliTestRunner, /Profile timing order skipped:/u);
+	assert.match(cliTestRunner, /unknown files keep selected order/u);
 	assert.match(cliTestOrdering, /export function readProfileDurations/u);
+	assert.match(cliTestOrdering, /export function readProfileTimingEvidence/u);
 	assert.match(cliTestOrdering, /export function orderTestPathsByProfile/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_SQLITE_TOKENS/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_GIT_TOKENS/u);

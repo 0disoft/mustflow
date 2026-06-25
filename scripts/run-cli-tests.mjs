@@ -9,7 +9,7 @@ import {
 	orderTestPathsByProfile,
 	profileDurationForTestPath,
 	profileOrderingSummary,
-	readProfileDurations,
+	readProfileTimingEvidence,
 } from './lib/test-ordering.mjs';
 import { createTestSelection } from './lib/test-selection.mjs';
 
@@ -511,7 +511,8 @@ const autoSchedulerMode = mode.endsWith('-auto');
 const baseMode = mode.replace(/-(?:cached|profile|auto)$/u, '');
 const schedulerMode = autoSchedulerMode ? 'auto' : scheduler;
 const selectedTestPaths = selected.map((name) => path.join('tests', 'cli', name));
-const profileDurations = profileMode ? new Map() : readProfileDurations(latestProfilePath);
+const profileEvidence = profileMode ? undefined : readProfileTimingEvidence(latestProfilePath);
+const profileDurations = profileEvidence?.durations ?? new Map();
 const profileOrdering = profileOrderingSummary(selectedTestPaths, profileDurations);
 const testPaths =
 	profileOrdering.known > 0 && !profileMode
@@ -636,6 +637,79 @@ function assertCachedModeSafe() {
 }
 
 assertCachedModeSafe();
+
+function formatDurationMs(durationMs) {
+	if (durationMs === undefined || !Number.isFinite(durationMs)) {
+		return 'unknown';
+	}
+
+	const absoluteMs = Math.abs(durationMs);
+	const dayMs = 24 * 60 * 60 * 1000;
+	const hourMs = 60 * 60 * 1000;
+	const minuteMs = 60 * 1000;
+	const secondMs = 1000;
+	const units = [
+		['d', dayMs],
+		['h', hourMs],
+		['m', minuteMs],
+		['s', secondMs],
+	];
+	const parts = [];
+	let remaining = absoluteMs;
+
+	for (const [label, unitMs] of units) {
+		const value = Math.floor(remaining / unitMs);
+		if (value <= 0) {
+			continue;
+		}
+
+		parts.push(`${value}${label}`);
+		remaining -= value * unitMs;
+		if (parts.length === 2) {
+			break;
+		}
+	}
+
+	return parts.length > 0 ? parts.join(' ') : `${Math.round(absoluteMs)}ms`;
+}
+
+function profileEvidenceReasonText(evidence, profileRelativePath) {
+	switch (evidence.reason) {
+		case 'missing':
+			return `missing ${profileRelativePath}`;
+		case 'malformed':
+			return `malformed ${profileRelativePath}`;
+		case 'missing_timestamp':
+			return `missing generated_at in ${profileRelativePath}`;
+		case 'future_timestamp':
+			return `${profileRelativePath} generated_at is in the future (${formatDurationMs(evidence.ageMs)} ahead)`;
+		case 'stale':
+			return `${profileRelativePath} is stale (age ${formatDurationMs(evidence.ageMs)} > max ${formatDurationMs(evidence.maxAgeMs)})`;
+		case 'no_valid_entries':
+			return `${profileRelativePath} has no valid test_files durations`;
+		default:
+			return `unusable ${profileRelativePath}`;
+	}
+}
+
+function profileTimingSummaryLine() {
+	if (!profileEvidence) {
+		return undefined;
+	}
+
+	const profileRelativePath = path.relative(repoRoot, latestProfilePath).replaceAll('\\', '/');
+
+	if (profileEvidence.status === 'used') {
+		const unknown = Math.max(0, profileOrdering.total - profileOrdering.known);
+		return (
+			`Using profile timing order from ${profileRelativePath} ` +
+			`(known ${profileOrdering.known}/${profileOrdering.total}, unknown ${unknown}, age ${formatDurationMs(profileEvidence.ageMs)}; ` +
+			'unknown files keep selected order).'
+		);
+	}
+
+	return `Profile timing order skipped: ${profileEvidenceReasonText(profileEvidence, profileRelativePath)}; keeping selected order.`;
+}
 
 function writeLatestProfileEvidence(timings) {
 	const totalMs = timings.reduce((sum, timing) => sum + timing.durationMs, 0);
@@ -813,11 +887,9 @@ if (baseMode === 'related') {
 	console.log(`Selection reasons: ${summarizeRelatedSelectionReasons(selectionReportForMode(mode, currentChangedFiles).selection_reasons)}.`);
 }
 
-if (profileOrdering.known > 0) {
-	console.log(
-		`Using profile timing order from ${path.relative(repoRoot, latestProfilePath).replaceAll('\\', '/')} ` +
-			`(${profileOrdering.known}/${profileOrdering.total} files).`,
-	);
+const profileSummary = profileTimingSummaryLine();
+if (profileSummary) {
+	console.log(profileSummary);
 }
 
 if (schedulerMode === 'auto') {
