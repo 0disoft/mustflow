@@ -504,7 +504,9 @@ test('test-performance-report summarizes retained run performance samples', () =
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_previous_failure'));
 		assert.ok(report.next_actions.some((action) => action.code === 'investigate_previous_failure'));
 		assert.ok(report.next_actions.some((action) => action.code === 'inspect_slowest_intents'));
-		assert.ok(report.next_actions.some((action) => action.code === 'inspect_slowest_test_files'));
+		const slowestFilesAction = report.next_actions.find((action) => action.code === 'inspect_slowest_test_files');
+		assert.ok(slowestFilesAction);
+		assert.match(slowestFilesAction.message, /shows 2 of 3 profiled files/u);
 		assert.ok(report.next_actions.some((action) => action.code === 'review_timeout_budget'));
 		assert.ok(report.next_actions.some((action) => action.code === 'review_selection_fallback'));
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
@@ -546,6 +548,138 @@ test('test-performance-report guides profiling when no performance evidence exis
 		assert.equal(profileAction.command_intent, 'test_related_profile');
 		assert.equal(profileAction.run_hint, 'mf run test_related_profile');
 		assert.deepEqual(profileAction.finding_codes, ['test_performance_no_evidence']);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-performance-report asks for file profile evidence when samples lack test-file timings', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'perf'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'perf', 'samples.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					retention: {},
+					samples: [
+						{
+							observed_day: '2026-06-25',
+							intent: 'test_related',
+							duration_ms: 32000,
+							timeout_ratio: 0.08,
+							status: 'passed',
+							selection_strategy: 'related',
+							changed_file_count: 2,
+							selected_target_count: 5,
+							fallback_used: false,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const { result, report } = runTestPerformanceReportJson(projectPath, []);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.summary.sample_count, 1);
+		assert.equal(report.summary.latest_profile_test_file_count, 0);
+		assert.ok(!report.findings.some((finding) => finding.code === 'test_performance_no_evidence'));
+
+		const profileAction = report.next_actions.find((action) => action.code === 'collect_profile_evidence');
+		assert.ok(profileAction, 'missing collect_profile_evidence next action');
+		assert.equal(profileAction.command_intent, 'test_related_profile');
+		assert.equal(profileAction.run_hint, 'mf run test_related_profile');
+		assert.deepEqual(profileAction.finding_codes, []);
+		assert.match(profileAction.message, /test-file profile evidence/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-performance-report inspects top-heavy profiled test files below the slow threshold', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'perf'), { recursive: true });
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'runs'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'perf', 'samples.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					retention: {},
+					samples: [
+						{
+							observed_day: '2026-06-25',
+							intent: 'test_related',
+							duration_ms: 52000,
+							timeout_ratio: 0.12,
+							status: 'passed',
+							selection_strategy: 'related',
+							changed_file_count: 2,
+							selected_target_count: 5,
+							fallback_used: false,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.profile.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					generated_at: '2026-06-25T00:00:00.000Z',
+					mode: 'related-profile',
+					intent: 'test_related_profile',
+					total_duration_ms: 62000,
+					file_count: 2,
+					test_files: [
+						{
+							path: 'tests/cli/top-heavy.test.js',
+							duration_ms: 50000,
+							status: 'passed',
+							exit_code: 0,
+						},
+						{
+							path: 'tests/cli/ordinary.test.js',
+							duration_ms: 12000,
+							status: 'passed',
+							exit_code: 0,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const { result, report } = runTestPerformanceReportJson(projectPath, [
+			'--slow-ms',
+			'120000',
+			'--phase-ms',
+			'30000',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.summary.latest_profile_test_file_count, 2);
+		assert.ok(!report.findings.some((finding) => finding.code === 'test_performance_slow_test_file'));
+
+		const slowestFilesAction = report.next_actions.find((action) => action.code === 'inspect_slowest_test_files');
+		assert.ok(slowestFilesAction, 'missing inspect_slowest_test_files next action');
+		assert.equal(slowestFilesAction.command_intent, null);
+		assert.equal(slowestFilesAction.run_hint, null);
+		assert.deepEqual(slowestFilesAction.finding_codes, []);
+		assert.match(slowestFilesAction.message, /slowest profiled test-file rows/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

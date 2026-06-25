@@ -710,9 +710,51 @@ function hasFinding(findings: readonly TestPerformanceFinding[], code: TestPerfo
 	return findings.some((finding) => finding.code === code);
 }
 
+function profileTestFilesAreTruncated(
+	testFiles: readonly TestPerformanceTestFileSummary[],
+	latestProfileTestFileCount: number,
+): boolean {
+	return latestProfileTestFileCount > testFiles.length;
+}
+
+function profileTestFilesAreTopHeavy(
+	testFiles: readonly TestPerformanceTestFileSummary[],
+	policy: TestPerformancePolicy,
+): boolean {
+	if (testFiles.length < 2) {
+		return false;
+	}
+
+	const totalDurationMs = testFiles.reduce((sum, testFile) => sum + testFile.duration_ms, 0);
+	const slowestDurationMs = testFiles[0]?.duration_ms ?? 0;
+	return (
+		totalDurationMs > 0 &&
+		slowestDurationMs >= policy.phase_bottleneck_threshold_ms &&
+		slowestDurationMs / totalDurationMs >= 0.6
+	);
+}
+
+function describeSlowestTestFileAction(
+	testFiles: readonly TestPerformanceTestFileSummary[],
+	latestProfileTestFileCount: number,
+): string {
+	const baseMessage =
+		'Use the slowest profiled test-file rows to decide whether file-level sharding, fixture reuse, or test splitting is the bottleneck.';
+	if (!profileTestFilesAreTruncated(testFiles, latestProfileTestFileCount)) {
+		return baseMessage;
+	}
+	const truncationMessage =
+		`The report shows ${testFiles.length} of ${latestProfileTestFileCount} profiled files; ` +
+		'raise --max-test-files when the hidden tail matters.';
+	return `${baseMessage} ${truncationMessage}`;
+}
+
 function createNextActions(
 	samples: readonly TestPerformanceSample[],
 	findings: readonly TestPerformanceFinding[],
+	testFiles: readonly TestPerformanceTestFileSummary[],
+	latestProfileTestFileCount: number,
+	policy: TestPerformancePolicy,
 ): readonly TestPerformanceNextAction[] {
 	const actions: TestPerformanceNextAction[] = [];
 
@@ -724,6 +766,17 @@ function createNextActions(
 			command_intent: 'test_related_profile',
 			run_hint: 'mf run test_related_profile',
 			finding_codes: ['test_performance_no_evidence'],
+		});
+	}
+
+	if (samples.length > 0 && latestProfileTestFileCount === 0) {
+		actions.push({
+			code: 'collect_profile_evidence',
+			message:
+				'Collect test-file profile evidence before changing file-level sharding, fixture reuse, or test splitting policy.',
+			command_intent: 'test_related_profile',
+			run_hint: 'mf run test_related_profile',
+			finding_codes: [],
 		});
 	}
 
@@ -758,11 +811,21 @@ function createNextActions(
 	if (hasFinding(findings, 'test_performance_slow_test_file')) {
 		actions.push({
 			code: 'inspect_slowest_test_files',
-			message:
-				'Use the slowest profiled test-file rows to decide whether file-level sharding, fixture reuse, or test splitting is the bottleneck.',
+			message: describeSlowestTestFileAction(testFiles, latestProfileTestFileCount),
 			command_intent: null,
 			run_hint: null,
 			finding_codes: ['test_performance_slow_test_file'],
+		});
+	} else if (
+		profileTestFilesAreTruncated(testFiles, latestProfileTestFileCount) ||
+		profileTestFilesAreTopHeavy(testFiles, policy)
+	) {
+		actions.push({
+			code: 'inspect_slowest_test_files',
+			message: describeSlowestTestFileAction(testFiles, latestProfileTestFileCount),
+			command_intent: null,
+			run_hint: null,
+			finding_codes: [],
 		});
 	}
 
@@ -868,7 +931,7 @@ export function createTestPerformanceReport(
 	createFindings(recentSamples, phases, testFiles, policy, visibleFindings);
 
 	const status = reportStatus(visibleFindings);
-	const nextActions = createNextActions(recentSamples, visibleFindings);
+	const nextActions = createNextActions(recentSamples, visibleFindings, testFiles, allTestFiles.length, policy);
 	const summary: TestPerformanceSummary = {
 		evidence_source_count: evidenceSources.filter((source) => source.readable).length,
 		sample_count: recentSamples.length,
