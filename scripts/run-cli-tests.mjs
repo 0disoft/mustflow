@@ -10,6 +10,7 @@ import { createTestSelection } from './lib/test-selection.mjs';
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const testRunnerLockRoot = path.join(os.tmpdir(), 'mustflow-test-runner-locks');
 const testRunnerLockOwnerFile = 'owner.json';
+const latestProfilePath = path.join(repoRoot, '.mustflow', 'state', 'runs', 'latest.profile.json');
 const millisecondsPerSecond = 1000;
 const secondsPerMinute = 60;
 const minutesPerHour = 60;
@@ -615,6 +616,31 @@ function assertCachedModeSafe() {
 
 assertCachedModeSafe();
 
+function writeLatestProfileEvidence(timings) {
+	const totalMs = timings.reduce((sum, timing) => sum + timing.durationMs, 0);
+	const slowest = [...timings].sort((left, right) => right.durationMs - left.durationMs);
+	const profile = {
+		schema_version: '1',
+		generated_at: new Date().toISOString(),
+		mode,
+		intent: baseMode === 'related' ? 'test_related_profile' : `${baseMode}_profile`,
+		total_duration_ms: totalMs,
+		file_count: timings.length,
+		test_files: slowest.map((timing) => ({
+			path: timing.testPath.replaceAll('\\', '/'),
+			duration_ms: timing.durationMs,
+			status: timing.status === 0 ? 'passed' : 'failed',
+			exit_code: timing.status,
+		})),
+		selection: selectionReportForMode(mode, currentChangedFiles),
+	};
+
+	mkdirSync(path.dirname(latestProfilePath), { recursive: true });
+	writeFileSync(latestProfilePath, `${JSON.stringify(profile, null, 2)}\n`);
+
+	return { totalMs, slowest };
+}
+
 function runProfiledTests() {
 	const timings = [];
 	const profileNodeArgs = ['--test', '--test-concurrency=1'];
@@ -634,17 +660,22 @@ function runProfiledTests() {
 		}
 
 		if (result.status !== 0) {
+			const { totalMs } = writeLatestProfileEvidence(timings);
 			process.stdout.write(result.stdout);
 			process.stderr.write(result.stderr);
 			console.error(`Profiled test failed: ${testPath}`);
+			console.error(
+				`Wrote partial profile evidence to ${path.relative(repoRoot, latestProfilePath).replaceAll('\\', '/')} ` +
+					`(${timings.length} files, serial total ${totalMs} ms)`,
+			);
 			process.exit(result.status ?? 1);
 		}
 	}
 
-	const totalMs = timings.reduce((sum, timing) => sum + timing.durationMs, 0);
-	const slowest = [...timings].sort((left, right) => right.durationMs - left.durationMs);
+	const { totalMs, slowest } = writeLatestProfileEvidence(timings);
 
 	console.log(`Profiled ${mode} CLI tests (${timings.length} files, serial total ${totalMs} ms)`);
+	console.log(`Wrote profile evidence to ${path.relative(repoRoot, latestProfilePath).replaceAll('\\', '/')}`);
 	for (const timing of slowest) {
 		console.log(`${String(timing.durationMs).padStart(6, ' ')} ms  ${timing.testPath}`);
 	}

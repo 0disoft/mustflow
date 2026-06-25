@@ -263,8 +263,10 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.deepEqual(testPerformanceReport.phases, ['after_change', 'review']);
 		assert.ok(testPerformanceReport.use_when.some((hint) => hint.includes('performance evidence')));
 		assert.ok(testPerformanceReport.inputs.includes('max_samples'));
+		assert.ok(testPerformanceReport.inputs.includes('max_test_files'));
 		assert.ok(testPerformanceReport.outputs.includes('performance_samples'));
 		assert.ok(testPerformanceReport.outputs.includes('phase_timings'));
+		assert.ok(testPerformanceReport.outputs.includes('test_file_timings'));
 		assert.ok(testPerformanceReport.related_skills.includes('test-suite-performance-review'));
 		assert.equal(testPerformanceReport.risk_level, 'low');
 		assert.equal(testPerformanceReport.cost, 'low');
@@ -374,6 +376,7 @@ test('test-performance-report summarizes retained run performance samples', () =
 	try {
 		initProject(projectPath);
 		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'perf'), { recursive: true });
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'runs'), { recursive: true });
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'state', 'perf', 'samples.json'),
 			`${JSON.stringify(
@@ -427,10 +430,47 @@ test('test-performance-report summarizes retained run performance samples', () =
 				2,
 			)}\n`,
 		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.profile.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					generated_at: '2026-06-25T00:00:00.000Z',
+					mode: 'related-profile',
+					intent: 'test_related_profile',
+					total_duration_ms: 127000,
+					file_count: 3,
+					test_files: [
+						{
+							path: 'tests/cli/slow.test.js',
+							duration_ms: 122000,
+							status: 'passed',
+							exit_code: 0,
+						},
+						{
+							path: 'tests/cli/failed.test.js',
+							duration_ms: 4000,
+							status: 'failed',
+							exit_code: 1,
+						},
+						{
+							path: 'tests/cli/fast.test.js',
+							duration_ms: 1000,
+							status: 'passed',
+							exit_code: 0,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
 
 		const { result, report } = runTestPerformanceReportJson(projectPath, [
 			'--slow-ms',
 			'60000',
+			'--max-test-files',
+			'2',
 			'--phase-ms',
 			'30000',
 			'--timeout-ratio',
@@ -446,18 +486,42 @@ test('test-performance-report summarizes retained run performance samples', () =
 		assert.equal(report.ok, true);
 		assert.equal(report.summary.sample_count, 2);
 		assert.equal(report.summary.intent_count, 2);
+		assert.equal(report.summary.test_file_count, 2);
+		assert.equal(report.summary.latest_profile_test_file_count, 3);
+		assert.equal(report.truncated, true);
 		assert.ok(report.evidence_sources.some((source) => source.path === '.mustflow/state/perf/samples.json' && source.readable));
+		assert.ok(report.evidence_sources.some((source) => source.path === '.mustflow/state/runs/latest.profile.json' && source.readable));
 		assert.ok(report.intents.some((entry) => entry.intent === 'test_related' && entry.p95_duration_ms === 181000));
 		assert.ok(report.phases.some((entry) => entry.name === 'tests' && entry.p95_duration_ms === 139000));
+		assert.deepEqual(
+			report.test_files.map((testFile) => testFile.path),
+			['tests/cli/slow.test.js', 'tests/cli/failed.test.js'],
+		);
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_slow_sample'));
+		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_slow_test_file'));
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_high_timeout_ratio'));
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_selection_fallback'));
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_previous_failure'));
 		assert.ok(report.next_actions.some((action) => action.code === 'investigate_previous_failure'));
 		assert.ok(report.next_actions.some((action) => action.code === 'inspect_slowest_intents'));
+		assert.ok(report.next_actions.some((action) => action.code === 'inspect_slowest_test_files'));
 		assert.ok(report.next_actions.some((action) => action.code === 'review_timeout_budget'));
 		assert.ok(report.next_actions.some((action) => action.code === 'review_selection_fallback'));
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		const humanResult = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'test/performance-report',
+			'summarize',
+			'--slow-ms',
+			'60000',
+			'--max-test-files',
+			'2',
+		]);
+		assert.equal(humanResult.status, 0, humanResult.stderr || humanResult.stdout);
+		assert.match(humanResult.stdout, /Slowest test files/u);
+		assert.match(humanResult.stdout, /tests\/cli\/slow\.test\.js: 122000ms, passed/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

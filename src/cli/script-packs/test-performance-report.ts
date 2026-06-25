@@ -20,6 +20,7 @@ const TEST_PERFORMANCE_REPORT_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--max-samples', kind: 'string' },
 	{ name: '--max-intents', kind: 'string' },
+	{ name: '--max-test-files', kind: 'string' },
 	{ name: '--max-findings', kind: 'string' },
 	{ name: '--slow-ms', kind: 'string' },
 	{ name: '--timeout-ratio', kind: 'string' },
@@ -31,6 +32,7 @@ interface ParsedTestPerformanceReportOptions {
 	readonly json: boolean;
 	readonly maxSamples: number | null;
 	readonly maxIntents: number | null;
+	readonly maxTestFiles: number | null;
 	readonly maxFindings: number | null;
 	readonly slowMs: number | null;
 	readonly timeoutRatio: number | null;
@@ -79,6 +81,7 @@ export function getTestPerformanceReportHelp(lang: CliLang = 'en'): string {
 			options: [
 				{ label: '--max-samples <count>', description: t(lang, 'testPerformance.help.option.maxSamples') },
 				{ label: '--max-intents <count>', description: t(lang, 'testPerformance.help.option.maxIntents') },
+				{ label: '--max-test-files <count>', description: t(lang, 'testPerformance.help.option.maxTestFiles') },
 				{ label: '--max-findings <count>', description: t(lang, 'testPerformance.help.option.maxFindings') },
 				{ label: '--slow-ms <ms>', description: t(lang, 'testPerformance.help.option.slowMs') },
 				{ label: '--timeout-ratio <ratio>', description: t(lang, 'testPerformance.help.option.timeoutRatio') },
@@ -109,6 +112,7 @@ function parseTestPerformanceReportOptions(
 	const json = hasParsedCliOption(parsed, '--json');
 	const maxSamples = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-samples'), '--max-samples', lang);
 	const maxIntents = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-intents'), '--max-intents', lang);
+	const maxTestFiles = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-test-files'), '--max-test-files', lang);
 	const maxFindings = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-findings'), '--max-findings', lang);
 	const slowMs = parsePositiveInteger(getParsedCliStringOption(parsed, '--slow-ms'), '--slow-ms', lang);
 	const timeoutRatio = parsePositiveRatio(getParsedCliStringOption(parsed, '--timeout-ratio'), '--timeout-ratio', lang);
@@ -120,6 +124,7 @@ function parseTestPerformanceReportOptions(
 			json,
 			maxSamples: maxSamples.value,
 			maxIntents: maxIntents.value,
+			maxTestFiles: maxTestFiles.value,
 			maxFindings: maxFindings.value,
 			slowMs: slowMs.value,
 			timeoutRatio: timeoutRatio.value,
@@ -134,6 +139,7 @@ function parseTestPerformanceReportOptions(
 			json,
 			maxSamples: maxSamples.value,
 			maxIntents: maxIntents.value,
+			maxTestFiles: maxTestFiles.value,
 			maxFindings: maxFindings.value,
 			slowMs: slowMs.value,
 			timeoutRatio: timeoutRatio.value,
@@ -142,13 +148,14 @@ function parseTestPerformanceReportOptions(
 		};
 	}
 
-	for (const candidate of [maxSamples, maxIntents, maxFindings, slowMs, timeoutRatio, phaseMs]) {
+	for (const candidate of [maxSamples, maxIntents, maxTestFiles, maxFindings, slowMs, timeoutRatio, phaseMs]) {
 		if (candidate.error) {
 			return {
 				action,
 				json,
 				maxSamples: maxSamples.value,
 				maxIntents: maxIntents.value,
+				maxTestFiles: maxTestFiles.value,
 				maxFindings: maxFindings.value,
 				slowMs: slowMs.value,
 				timeoutRatio: timeoutRatio.value,
@@ -163,6 +170,7 @@ function parseTestPerformanceReportOptions(
 		json,
 		maxSamples: maxSamples.value,
 		maxIntents: maxIntents.value,
+		maxTestFiles: maxTestFiles.value,
 		maxFindings: maxFindings.value,
 		slowMs: slowMs.value,
 		timeoutRatio: timeoutRatio.value,
@@ -177,6 +185,7 @@ function renderTestPerformanceReportSummary(report: TestPerformanceReport, lang:
 		`${t(lang, 'label.status')}: ${report.status}`,
 		`${t(lang, 'testPerformance.label.samples')}: ${report.summary.sample_count}`,
 		`${t(lang, 'testPerformance.label.intents')}: ${report.summary.intent_count}`,
+		`${t(lang, 'testPerformance.label.testFiles')}: ${report.summary.test_file_count}`,
 		`${t(lang, 'testPerformance.label.findings')}: ${report.findings.length}`,
 		`${t(lang, 'testPerformance.label.truncated')}: ${report.truncated ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
 	];
@@ -188,6 +197,13 @@ function renderTestPerformanceReportSummary(report: TestPerformanceReport, lang:
 				`- ${entry.intent}: p95 ${entry.p95_duration_ms}ms, max ${entry.max_duration_ms}ms, ` +
 					`${t(lang, 'testPerformance.label.failures')} ${entry.failure_count}`,
 			);
+		}
+	}
+
+	if (report.test_files.length > 0) {
+		lines.push(t(lang, 'testPerformance.label.slowestTestFiles'));
+		for (const testFile of report.test_files.slice(0, 20)) {
+			lines.push(`- ${testFile.path}: ${testFile.duration_ms}ms, ${testFile.status}`);
 		}
 	}
 
@@ -247,6 +263,7 @@ export function runTestPerformanceReportScript(args: string[], reporter: Reporte
 	const report = createTestPerformanceReport(resolveMustflowRoot(), {
 		maxSamples: options.maxSamples ?? undefined,
 		maxIntents: options.maxIntents ?? undefined,
+		maxTestFiles: options.maxTestFiles ?? undefined,
 		maxFindings: options.maxFindings ?? undefined,
 		slowSampleThresholdMs: options.slowMs ?? undefined,
 		highTimeoutRatio: options.timeoutRatio ?? undefined,

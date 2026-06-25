@@ -20,6 +20,7 @@
     "summary",
     "intents",
     "phases",
+    "test_files",
     "recent_samples",
     "truncated",
     "findings",
@@ -51,6 +52,10 @@
       "type": "array",
       "items": { "$ref": "#/$defs/phaseSummary" }
     },
+    "test_files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/testFileSummary" }
+    },
     "recent_samples": {
       "type": "array",
       "items": { "$ref": "#/$defs/sample" }
@@ -80,6 +85,7 @@
       "required": [
         "max_samples",
         "max_intents",
+        "max_test_files",
         "max_findings",
         "slow_sample_threshold_ms",
         "high_timeout_ratio",
@@ -88,6 +94,7 @@
       "properties": {
         "max_samples": { "type": "integer", "minimum": 1 },
         "max_intents": { "type": "integer", "minimum": 1 },
+        "max_test_files": { "type": "integer", "minimum": 1 },
         "max_findings": { "type": "integer", "minimum": 1 },
         "slow_sample_threshold_ms": { "type": "integer", "minimum": 1 },
         "high_timeout_ratio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
@@ -116,22 +123,26 @@
         "evidence_source_count",
         "sample_count",
         "intent_count",
+        "test_file_count",
         "finding_count",
         "latest_run_intent",
         "latest_run_status",
         "latest_run_duration_ms",
         "latest_profile_phase_count",
+        "latest_profile_test_file_count",
         "retained_summary_intent_count"
       ],
       "properties": {
         "evidence_source_count": { "type": "integer", "minimum": 0 },
         "sample_count": { "type": "integer", "minimum": 0 },
         "intent_count": { "type": "integer", "minimum": 0 },
+        "test_file_count": { "type": "integer", "minimum": 0 },
         "finding_count": { "type": "integer", "minimum": 0 },
         "latest_run_intent": { "type": ["string", "null"] },
         "latest_run_status": { "type": ["string", "null"] },
         "latest_run_duration_ms": { "type": ["integer", "null"], "minimum": 0 },
         "latest_profile_phase_count": { "type": "integer", "minimum": 0 },
+        "latest_profile_test_file_count": { "type": "integer", "minimum": 0 },
         "retained_summary_intent_count": { "type": ["integer", "null"], "minimum": 0 }
       }
     },
@@ -218,6 +229,18 @@
         }
       }
     },
+    "testFileSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "intent", "status", "duration_ms", "source"],
+      "properties": {
+        "path": { "type": "string" },
+        "intent": { "type": "string" },
+        "status": { "enum": ["passed", "failed"] },
+        "duration_ms": { "type": "number", "minimum": 0 },
+        "source": { "const": "latest_profile" }
+      }
+    },
     "finding": {
       "type": "object",
       "additionalProperties": false,
@@ -229,6 +252,7 @@
             "test_performance_unreadable_evidence",
             "test_performance_previous_failure",
             "test_performance_slow_sample",
+            "test_performance_slow_test_file",
             "test_performance_high_timeout_ratio",
             "test_performance_selection_fallback",
             "test_performance_phase_bottleneck"
@@ -250,6 +274,7 @@
         "collect_profile_evidence",
         "investigate_previous_failure",
         "inspect_slowest_intents",
+        "inspect_slowest_test_files",
         "review_timeout_budget",
         "review_selection_fallback"
       ]
@@ -271,6 +296,7 @@
               "test_performance_unreadable_evidence",
               "test_performance_previous_failure",
               "test_performance_slow_sample",
+              "test_performance_slow_test_file",
               "test_performance_high_timeout_ratio",
               "test_performance_selection_fallback",
               "test_performance_phase_bottleneck"

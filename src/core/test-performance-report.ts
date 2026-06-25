@@ -26,6 +26,7 @@ export type TestPerformanceFindingCode =
 	| 'test_performance_unreadable_evidence'
 	| 'test_performance_previous_failure'
 	| 'test_performance_slow_sample'
+	| 'test_performance_slow_test_file'
 	| 'test_performance_high_timeout_ratio'
 	| 'test_performance_selection_fallback'
 	| 'test_performance_phase_bottleneck';
@@ -33,12 +34,14 @@ export type TestPerformanceNextActionCode =
 	| 'collect_profile_evidence'
 	| 'investigate_previous_failure'
 	| 'inspect_slowest_intents'
+	| 'inspect_slowest_test_files'
 	| 'review_timeout_budget'
 	| 'review_selection_fallback';
 
 export interface TestPerformancePolicy {
 	readonly max_samples: number;
 	readonly max_intents: number;
+	readonly max_test_files: number;
 	readonly max_findings: number;
 	readonly slow_sample_threshold_ms: number;
 	readonly high_timeout_ratio: number;
@@ -92,15 +95,25 @@ export interface TestPerformanceIntentSummary {
 	readonly slowest_phase: TestPerformancePhaseSummary | null;
 }
 
+export interface TestPerformanceTestFileSummary {
+	readonly path: string;
+	readonly intent: string;
+	readonly status: 'passed' | 'failed';
+	readonly duration_ms: number;
+	readonly source: 'latest_profile';
+}
+
 export interface TestPerformanceSummary {
 	readonly evidence_source_count: number;
 	readonly sample_count: number;
 	readonly intent_count: number;
+	readonly test_file_count: number;
 	readonly finding_count: number;
 	readonly latest_run_intent: string | null;
 	readonly latest_run_status: string | null;
 	readonly latest_run_duration_ms: number | null;
 	readonly latest_profile_phase_count: number;
+	readonly latest_profile_test_file_count: number;
 	readonly retained_summary_intent_count: number | null;
 }
 
@@ -135,6 +148,7 @@ export interface TestPerformanceReport {
 	readonly summary: TestPerformanceSummary;
 	readonly intents: readonly TestPerformanceIntentSummary[];
 	readonly phases: readonly TestPerformancePhaseSummary[];
+	readonly test_files: readonly TestPerformanceTestFileSummary[];
 	readonly recent_samples: readonly TestPerformanceSample[];
 	readonly truncated: boolean;
 	readonly findings: readonly TestPerformanceFinding[];
@@ -145,6 +159,7 @@ export interface TestPerformanceReport {
 export interface CreateTestPerformanceReportOptions {
 	readonly maxSamples?: number;
 	readonly maxIntents?: number;
+	readonly maxTestFiles?: number;
 	readonly maxFindings?: number;
 	readonly slowSampleThresholdMs?: number;
 	readonly highTimeoutRatio?: number;
@@ -206,6 +221,7 @@ const PERFORMANCE_SAMPLES_PATH = path.join('.mustflow', 'state', 'perf', 'sample
 const PERFORMANCE_SUMMARY_PATH = path.join('.mustflow', 'state', 'perf', 'summary.json');
 const DEFAULT_MAX_SAMPLES = 200;
 const DEFAULT_MAX_INTENTS = 30;
+const DEFAULT_MAX_TEST_FILES = 40;
 const DEFAULT_MAX_FINDINGS = 80;
 const DEFAULT_SLOW_SAMPLE_THRESHOLD_MS = 120_000;
 const DEFAULT_HIGH_TIMEOUT_RATIO = 0.75;
@@ -252,6 +268,19 @@ function isPhaseRecord(value: unknown): value is Record<string, number> {
 
 function isRunReceiptPhase(value: unknown): value is RunReceiptPerformancePhase {
 	return isRecord(value) && typeof value.name === 'string' && isNonNegativeNumber(value.duration_ms);
+}
+
+function parseProfileTestFileStatus(value: unknown): 'passed' | 'failed' | null {
+	if (value === 'passed' || value === 'ok' || value === 'success' || value === 0) {
+		return 'passed';
+	}
+	if (value === 'failed' || value === 'failure' || value === 'error') {
+		return 'failed';
+	}
+	if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+		return 'failed';
+	}
+	return null;
 }
 
 function isReportRunReceiptSelection(value: unknown): value is ReportRunReceiptSelection {
@@ -515,6 +544,58 @@ function summarizeLatestProfilePhases(profile: unknown): readonly RunReceiptPerf
 	);
 }
 
+function summarizeLatestProfileTestFiles(
+	profile: unknown,
+	intent: string | null,
+	maxTestFiles: number,
+): readonly TestPerformanceTestFileSummary[] {
+	if (!isRecord(profile)) {
+		return [];
+	}
+
+	const entries = Array.isArray(profile.test_files)
+		? profile.test_files
+		: Array.isArray(profile.files)
+			? profile.files
+			: Array.isArray(profile.timings)
+				? profile.timings
+				: [];
+
+	return entries
+		.flatMap((entry): TestPerformanceTestFileSummary[] => {
+			if (!isRecord(entry)) {
+				return [];
+			}
+			const rawPath = typeof entry.path === 'string'
+				? entry.path
+				: typeof entry.testPath === 'string'
+					? entry.testPath
+					: typeof entry.file === 'string'
+						? entry.file
+						: null;
+			const rawDuration = isNonNegativeNumber(entry.duration_ms)
+				? entry.duration_ms
+				: isNonNegativeNumber(entry.durationMs)
+					? entry.durationMs
+					: null;
+			const status = parseProfileTestFileStatus(entry.status ?? entry.exit_code ?? entry.exitCode);
+
+			if (!rawPath || rawDuration === null || !status) {
+				return [];
+			}
+
+			return [{
+				path: normalizeRelativePath(rawPath),
+				intent: typeof profile.intent === 'string' ? profile.intent : intent ?? 'latest_profile',
+				status,
+				duration_ms: rawDuration,
+				source: 'latest_profile',
+			}];
+		})
+		.sort((left, right) => right.duration_ms - left.duration_ms || left.path.localeCompare(right.path))
+		.slice(0, maxTestFiles);
+}
+
 function extractRetainedSummaryIntentCount(summary: unknown): number | null {
 	if (!isRecord(summary) || !isRecord(summary.intents)) {
 		return null;
@@ -525,6 +606,7 @@ function extractRetainedSummaryIntentCount(summary: unknown): number | null {
 function createFindings(
 	samples: readonly TestPerformanceSample[],
 	phases: readonly TestPerformancePhaseSummary[],
+	testFiles: readonly TestPerformanceTestFileSummary[],
 	policy: TestPerformancePolicy,
 	findings: TestPerformanceFinding[],
 ): void {
@@ -574,6 +656,30 @@ function createFindings(
 				severity: 'low',
 				intent: sample.intent,
 				message: `${sample.intent} used a selected-test fallback path.`,
+			}, policy.max_findings);
+		}
+	}
+
+	for (const testFile of testFiles) {
+		if (testFile.status === 'failed') {
+			pushFinding(findings, {
+				code: 'test_performance_previous_failure',
+				severity: 'medium',
+				path: testFile.path,
+				intent: testFile.intent,
+				message: `${testFile.path} failed in the latest profiled test run.`,
+			}, policy.max_findings);
+		}
+		if (testFile.duration_ms >= policy.slow_sample_threshold_ms) {
+			pushFinding(findings, {
+				code: 'test_performance_slow_test_file',
+				severity: 'medium',
+				path: testFile.path,
+				intent: testFile.intent,
+				message: `${testFile.path} took ${testFile.duration_ms}ms, above the ${policy.slow_sample_threshold_ms}ms threshold.`,
+				metric: 'duration_ms',
+				actual: testFile.duration_ms,
+				expected: policy.slow_sample_threshold_ms,
 			}, policy.max_findings);
 		}
 	}
@@ -649,6 +755,17 @@ function createNextActions(
 		});
 	}
 
+	if (hasFinding(findings, 'test_performance_slow_test_file')) {
+		actions.push({
+			code: 'inspect_slowest_test_files',
+			message:
+				'Use the slowest profiled test-file rows to decide whether file-level sharding, fixture reuse, or test splitting is the bottleneck.',
+			command_intent: null,
+			run_hint: null,
+			finding_codes: ['test_performance_slow_test_file'],
+		});
+	}
+
 	if (hasFinding(findings, 'test_performance_high_timeout_ratio')) {
 		actions.push({
 			code: 'review_timeout_budget',
@@ -682,6 +799,7 @@ export function createTestPerformanceReport(
 	const policy: TestPerformancePolicy = {
 		max_samples: options.maxSamples ?? DEFAULT_MAX_SAMPLES,
 		max_intents: options.maxIntents ?? DEFAULT_MAX_INTENTS,
+		max_test_files: options.maxTestFiles ?? DEFAULT_MAX_TEST_FILES,
 		max_findings: options.maxFindings ?? DEFAULT_MAX_FINDINGS,
 		slow_sample_threshold_ms: options.slowSampleThresholdMs ?? DEFAULT_SLOW_SAMPLE_THRESHOLD_MS,
 		high_timeout_ratio: options.highTimeoutRatio ?? DEFAULT_HIGH_TIMEOUT_RATIO,
@@ -741,11 +859,13 @@ export function createTestPerformanceReport(
 			duration_ms: phase.duration_ms,
 		})),
 	];
+	const allTestFiles = summarizeLatestProfileTestFiles(latestProfile, latestReceipt?.intent ?? null, Number.MAX_SAFE_INTEGER);
+	const testFiles = allTestFiles.slice(0, policy.max_test_files);
 	const phases = summarizePhases(phaseEntries);
 	const intents = summarizeIntents(recentSamples, phaseEntries, policy.max_intents);
 	const visibleFindings = findings;
 
-	createFindings(recentSamples, phases, policy, visibleFindings);
+	createFindings(recentSamples, phases, testFiles, policy, visibleFindings);
 
 	const status = reportStatus(visibleFindings);
 	const nextActions = createNextActions(recentSamples, visibleFindings);
@@ -753,11 +873,13 @@ export function createTestPerformanceReport(
 		evidence_source_count: evidenceSources.filter((source) => source.readable).length,
 		sample_count: recentSamples.length,
 		intent_count: new Set(recentSamples.map((sample) => sample.intent)).size,
+		test_file_count: testFiles.length,
 		finding_count: visibleFindings.length,
 		latest_run_intent: latestReceipt?.intent ?? null,
 		latest_run_status: latestReceipt?.performance.result_summary.status ?? null,
 		latest_run_duration_ms: latestReceipt?.performance.duration_ms ?? null,
 		latest_profile_phase_count: summarizeLatestProfilePhases(latestProfile).length,
+		latest_profile_test_file_count: allTestFiles.length,
 		retained_summary_intent_count: extractRetainedSummaryIntentCount(retainedSummaryIntentCount),
 	};
 
@@ -777,10 +899,12 @@ export function createTestPerformanceReport(
 		summary,
 		intents,
 		phases,
+		test_files: testFiles,
 		recent_samples: recentSamples,
 		truncated:
 			allSamples.length > recentSamples.length ||
 			new Set(allSamples.map((sample) => sample.intent)).size > intents.length ||
+			allTestFiles.length > testFiles.length ||
 			visibleFindings.length >= policy.max_findings,
 		findings: visibleFindings,
 		next_actions: nextActions,
