@@ -9,6 +9,7 @@ import {
 	type ScriptCheckFindingSeverity,
 	type ScriptCheckStatus,
 } from './script-check-result.js';
+import type { TestRegressionSelectorReason } from './test-regression-selector.js';
 
 export const CHANGE_IMPACT_PACK_ID = 'code';
 export const CHANGE_IMPACT_SCRIPT_ID = 'change-impact';
@@ -75,6 +76,8 @@ export interface ChangeImpactScriptHint {
 	readonly command: string;
 	readonly reason: string;
 	readonly confidence: number;
+	readonly related_intents?: readonly string[];
+	readonly expected_fallback_reasons?: readonly TestRegressionSelectorReason[];
 }
 
 export interface ChangeImpactVerificationHint {
@@ -130,6 +133,7 @@ const DEFAULT_MAX_FILES = 200;
 const DEFAULT_MAX_IMPACTS = 300;
 const DEFAULT_MAX_FILE_BYTES = 256 * 1024;
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
+const PACKAGE_LOCKFILES = new Set(['bun.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'deno.lock']);
 
 function toPosixPath(value: string): string {
 	return value.replace(/\\/gu, '/');
@@ -178,6 +182,9 @@ function surfaceForPath(relativePath: string): ChangeImpactSurface {
 	const extension = path.extname(normalized).toLowerCase();
 	const basename = path.basename(normalized).toLowerCase();
 
+	if (normalized.startsWith('.github/workflows/')) {
+		return 'workflow';
+	}
 	if (normalized.startsWith('.mustflow/')) {
 		return 'workflow';
 	}
@@ -193,7 +200,7 @@ function surfaceForPath(relativePath: string): ChangeImpactSurface {
 	if (normalized.includes('/i18n/') || normalized.includes('/locales/') || basename.includes('i18n')) {
 		return 'i18n';
 	}
-	if (['package.json', 'bun.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock'].includes(normalized)) {
+	if (['package.json', 'bun.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'deno.lock'].includes(normalized)) {
 		return 'package';
 	}
 	if (/^(?:tsconfig|eslint|vite|vitest|jest|playwright|astro|svelte|tailwind)\b/u.test(basename)) {
@@ -206,6 +213,96 @@ function surfaceForPath(relativePath: string): ChangeImpactSurface {
 		return 'source';
 	}
 	return 'unknown';
+}
+
+function isSharedTestFixturePath(normalized: string): boolean {
+	return (
+		normalized.startsWith('tests/fixtures/') ||
+		normalized.startsWith('test/fixtures/') ||
+		normalized.startsWith('fixtures/') ||
+		/(?:^|\/)(?:test-)?setup\.[cm]?[jt]s$/u.test(normalized) ||
+		/(?:^|\/)(?:global-)?setup\.[cm]?[jt]s$/u.test(normalized)
+	);
+}
+
+function isMigrationOrDatabasePath(normalized: string): boolean {
+	const basename = path.posix.basename(normalized).toLowerCase();
+	return (
+		normalized.includes('/migrations/') ||
+		normalized.startsWith('migrations/') ||
+		normalized.includes('/db/') ||
+		normalized.includes('/database/') ||
+		basename === 'schema.prisma' ||
+		basename.endsWith('.sql')
+	);
+}
+
+function isGeneratedContractPath(normalized: string): boolean {
+	const basename = path.posix.basename(normalized).toLowerCase();
+	return (
+		normalized.startsWith('schemas/') ||
+		basename.endsWith('.schema.json') ||
+		basename === 'openapi.json' ||
+		basename === 'openapi.yaml' ||
+		basename === 'openapi.yml' ||
+		basename === 'asyncapi.json' ||
+		basename === 'asyncapi.yaml' ||
+		basename === 'asyncapi.yml' ||
+		basename === 'schema.graphql'
+	);
+}
+
+function isCompilerOrRunnerConfigPath(normalized: string): boolean {
+	const basename = path.posix.basename(normalized).toLowerCase();
+	return /^(?:tsconfig|eslint|vite|vitest|jest|playwright|astro|svelte|tailwind|webpack|rollup|babel|nyc|c8)\b/u.test(
+		basename,
+	);
+}
+
+function selectorFallbackReasonFor(changedFile: ChangeImpactChangedFile): TestRegressionSelectorReason | null {
+	const normalized = normalizeRelativePath(changedFile.path);
+	const basename = path.posix.basename(normalized).toLowerCase();
+
+	if (changedFile.status === 'deleted') {
+		return 'fallback_deleted';
+	}
+	if (changedFile.status === 'renamed') {
+		return 'fallback_renamed';
+	}
+	if (changedFile.status === 'type_changed') {
+		return 'fallback_type_changed';
+	}
+	if (PACKAGE_LOCKFILES.has(normalized)) {
+		return 'fallback_lockfile';
+	}
+	if (basename === 'package.json') {
+		return 'fallback_package_metadata';
+	}
+	if (changedFile.surface === 'template') {
+		return 'fallback_template';
+	}
+	if (isGeneratedContractPath(normalized)) {
+		return 'fallback_generated_contract';
+	}
+	if (isSharedTestFixturePath(normalized)) {
+		return 'fallback_shared_test_fixture';
+	}
+	if (isMigrationOrDatabasePath(normalized)) {
+		return 'fallback_migration_or_database';
+	}
+	if (normalized.startsWith('.github/workflows/')) {
+		return 'fallback_ci_workflow';
+	}
+	if (normalized.startsWith('.mustflow/')) {
+		return 'fallback_mustflow_workflow';
+	}
+	if (isCompilerOrRunnerConfigPath(normalized) || changedFile.surface === 'config') {
+		return 'fallback_compiler_or_runner_config';
+	}
+	if (changedFile.surface === 'unknown') {
+		return 'fallback_unknown';
+	}
+	return null;
 }
 
 function statusFromCode(code: string): ChangeImpactFileStatus {
@@ -432,8 +529,27 @@ function addDependencyImpacts(
 
 function createScriptHints(changedFiles: readonly ChangeImpactChangedFile[]): readonly ChangeImpactScriptHint[] {
 	const sourcePaths = changedFiles.filter((file) => file.surface === 'source').map((file) => file.path);
+	const selectorRelevantFiles = changedFiles.filter((file) =>
+		['source', 'test', 'schema', 'config', 'package', 'template', 'workflow', 'unknown'].includes(file.surface),
+	);
 	const hasDocsOrSchema = changedFiles.some((file) => file.surface === 'docs' || file.surface === 'schema');
 	const hints: ChangeImpactScriptHint[] = [];
+	if (selectorRelevantFiles.length > 0) {
+		const expectedFallbackReasons = [
+			...new Set(selectorRelevantFiles.map(selectorFallbackReasonFor).filter((reason): reason is TestRegressionSelectorReason => reason !== null)),
+		].sort();
+		const relatedIntents = createVerificationHints(changedFiles).map((hint) => hint.intent);
+		hints.push({
+			script_ref: 'test/regression-selector',
+			command: 'mf script-pack run test/regression-selector select --base HEAD --json',
+			reason: expectedFallbackReasons.length > 0
+				? 'Select likely regression tests and expose explicit fallback reasons for unsafe changed surfaces.'
+				: 'Select likely regression tests for changed source and test surfaces before choosing a cached related-test shortcut.',
+			confidence: expectedFallbackReasons.length > 0 ? 0.9 : 0.8,
+			related_intents: relatedIntents,
+			expected_fallback_reasons: expectedFallbackReasons,
+		});
+	}
 	if (sourcePaths.length > 0) {
 		const pathPart = sourcePaths.map((entry) => JSON.stringify(entry)).join(' ');
 		hints.push({

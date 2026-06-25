@@ -162,6 +162,12 @@ function renderChangeImpactSummary(report: ChangeImpactReport, lang: CliLang): s
 		lines.push(t(lang, 'changeImpact.label.scriptHints'));
 		for (const hint of report.script_hints) {
 			lines.push(`- ${hint.script_ref}: ${hint.command}`);
+			if (hint.related_intents && hint.related_intents.length > 0) {
+				lines.push(`  related intents: ${hint.related_intents.join(', ')}`);
+			}
+			if (hint.expected_fallback_reasons && hint.expected_fallback_reasons.length > 0) {
+				lines.push(`  expected fallback reasons: ${hint.expected_fallback_reasons.join(', ')}`);
+			}
 		}
 	}
 	if (report.verification_hints.length > 0) {

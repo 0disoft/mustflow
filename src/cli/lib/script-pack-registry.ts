@@ -124,7 +124,7 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				mutates: false,
 				network: false,
 				inputs: ['path', 'base_ref', 'head_ref', 'max_files', 'max_impacts', 'max_file_bytes'],
-				outputs: ['human_summary', 'json_report', 'changed_files', 'impact_candidates', 'verification_hints'],
+				outputs: ['human_summary', 'json_report', 'changed_files', 'impact_candidates', 'script_hints', 'verification_hints'],
 				relatedSkills: [
 					'change-blast-radius-review',
 					'completion-evidence-gate',

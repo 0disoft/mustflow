@@ -162,6 +162,7 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.ok(changeImpact.inputs.includes('base_ref'));
 		assert.ok(changeImpact.inputs.includes('max_impacts'));
 		assert.ok(changeImpact.outputs.includes('impact_candidates'));
+		assert.ok(changeImpact.outputs.includes('script_hints'));
 		assert.ok(changeImpact.outputs.includes('verification_hints'));
 		assert.ok(changeImpact.related_skills.includes('public-json-contract-change'));
 		assert.equal(changeImpact.risk_level, 'low');
@@ -828,6 +829,11 @@ test('change-impact reports changed surfaces, importers, and verification hints'
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
 		assert.ok(report.changed_files.some((file) => file.path === 'src/feature.ts' && file.surface === 'source'));
 		assert.ok(report.impacts.some((impact) => impact.path === 'src/consumer.ts' && impact.relationship === 'imports_changed_file'));
+		const selectorHint = report.script_hints.find((hint) => hint.script_ref === 'test/regression-selector');
+		assert.ok(selectorHint, 'missing regression selector script hint');
+		assert.match(selectorHint.command, /test\/regression-selector select --base HEAD --json/u);
+		assert.ok(selectorHint.related_intents.includes('test_related'));
+		assert.deepEqual(selectorHint.expected_fallback_reasons, []);
 		assert.ok(report.script_hints.some((hint) => hint.script_ref === 'code/dependency-graph'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_related'));
 	} finally {
@@ -849,6 +855,10 @@ test('change-impact classifies schema changes with release verification hints', 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.ok(report.changed_files.some((file) => file.path === 'schemas/sample.schema.json' && file.surface === 'schema'));
 		assert.ok(report.impacts.some((impact) => impact.path === 'tests/cli/schema.test.js'));
+		const selectorHint = report.script_hints.find((hint) => hint.script_ref === 'test/regression-selector');
+		assert.ok(selectorHint, 'missing regression selector fallback hint for schema changes');
+		assert.ok(selectorHint.related_intents.includes('test_release'));
+		assert.ok(selectorHint.expected_fallback_reasons.includes('fallback_generated_contract'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_release'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'docs_validate_fast'));
 	} finally {

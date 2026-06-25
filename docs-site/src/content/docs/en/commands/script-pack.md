@@ -120,6 +120,9 @@ npx mf script-pack run code/change-impact analyze src --base main --head HEAD --
 test, documentation, schema, package, template, workflow, and i18n surfaces, and returns bounded
 impact candidates, optional script-pack hints, and verification intent hints. For changed source
 files, it also uses the relative dependency graph to identify files that import the changed file.
+When a source, test, schema, package, template, workflow, config, or unknown surface changes, its
+script hints include `test/regression-selector` so agents can ask for likely tests and explicit
+fallback reasons before trusting a cached related-test shortcut.
 
 Use it after edits when you need a compact checklist for what to inspect or verify next. It is a
 hinting helper, not proof that a test, command, or downstream behavior is safe.
