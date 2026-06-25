@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 177
+revision = 178
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -229,6 +229,12 @@ translations = {}
 
 [documents."skill.frame-render-performance-review"]
 source = "locales/en/.mustflow/skills/frame-render-performance-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.motion-system-contract-review"]
+source = "locales/en/.mustflow/skills/motion-system-contract-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

@@ -834,6 +834,12 @@ route_type = "adjunct"
 priority = 81
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"]
 
+[routes."motion-system-contract-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "test_change", "docs_change", "web_asset_change"]
+
 [routes."frontend-state-ownership-review"]
 category = "ui_assets"
 route_type = "adjunct"

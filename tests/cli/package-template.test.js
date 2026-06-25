@@ -259,6 +259,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('image-delivery-performance-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('client-bundle-pruning-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frame-render-performance-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('motion-system-contract-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-state-ownership-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-stress-layout-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-accessibility-tree-review'));
@@ -297,6 +298,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.product.includes('image-delivery-performance-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('client-bundle-pruning-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frame-render-performance-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('motion-system-contract-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-state-ownership-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-stress-layout-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-accessibility-tree-review'));
@@ -336,6 +338,13 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.library.includes('release-notes-authoring'));
 	assert.ok(template.manifest.skillProfiles.library.includes('release-publish-change'));
 	assert.ok(template.manifest.skillProfiles.library.includes('service-boundary-architecture'));
+
+	for (const profileName of template.manifest.profiles) {
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('motion-system-contract-review'),
+			`${profileName} profile should include motion-system-contract-review`,
+		);
+	}
 });
 
 test('default template locales use localized workflow docs and canonical English skills', async () => {
