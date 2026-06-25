@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -92,6 +92,7 @@ const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['src/cli/lib/package-info.ts'] },
 	{ mode: 'related', changedFiles: ['scripts/run-cli-tests.mjs'] },
 	{ mode: 'related', changedFiles: ['scripts/lib/test-selection.mjs'] },
+	{ mode: 'related-cached', changedFiles: ['src/core/line-endings.ts'] },
 	{ mode: 'related', changedFiles: ['package.json'] },
 	{ mode: 'related', changedFiles: ['misc/notes.txt'] },
 	{ mode: 'related', changedFiles: [] },
@@ -336,6 +337,51 @@ test('related selection keeps line-ending implementation changes out of schema s
 	const selected = selectedFor(['src/core/line-endings.ts']);
 
 	assert.deepEqual([...selected], ['line-endings.test.js']);
+});
+
+test('related cached list mirrors related selection without requiring a fresh dist build', () => {
+	const changedFiles = ['src/core/line-endings.ts'];
+	const related = listSuite('related', changedFiles);
+	const relatedCached = listSuite('related-cached', changedFiles);
+
+	assert.equal(relatedCached.mode, 'related-cached');
+	assert.deepEqual(relatedCached.changed_files, changedFiles);
+	assert.deepEqual(relatedCached.selected, related.selected);
+	assert.deepEqual(relatedCached.selection_reasons, related.selection_reasons);
+});
+
+test('related cached execution refuses stale dist for changed TypeScript sources', () => {
+	const changedFile = 'src/core/line-endings.ts';
+	const sourcePath = path.join(projectRoot, ...changedFile.split('/'));
+	const distEntrypoint = path.join(projectRoot, 'dist', 'cli', 'index.js');
+	const sourceStats = statSync(sourcePath);
+	const distStats = statSync(distEntrypoint);
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-related-cached-'));
+	const futureTime = new Date(distStats.mtimeMs + 60_000);
+
+	try {
+		utimesSync(sourcePath, futureTime, futureTime);
+
+		const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related-cached'], {
+			cwd: projectRoot,
+			encoding: 'utf8',
+			env: {
+				...process.env,
+				MUSTFLOW_TEST_CHANGED_FILES: JSON.stringify([changedFile]),
+				MUSTFLOW_TEST_RUNNER_LOCK_DIR: path.join(tempRoot, 'lock'),
+			},
+		});
+
+		assert.equal(result.status, 2);
+		assert.match(result.stderr, /Cached test mode precondition failed: dist\/ is older/u);
+		assert.match(result.stderr, /Cached mode does not rebuild dist\/ before running tests\./u);
+		assert.match(result.stderr, /Fallback intent: mf run test_related/u);
+		assert.match(result.stderr, /Artifact: dist\/cli\/index\.js/u);
+		assert.match(result.stderr, /Stale or deleted changed files: src\/core\/line-endings\.ts/u);
+	} finally {
+		utimesSync(sourcePath, sourceStats.atime, sourceStats.mtime);
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
 });
 
 test('related selection keeps line-ending command changes schema-covered', () => {

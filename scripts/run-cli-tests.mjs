@@ -576,7 +576,14 @@ function assertCachedModeSafe() {
 	}
 
 	if (!existsSync(distCliEntrypoint)) {
-		console.error('Cached test mode requires dist/cli/index.js. Run `mf run build` or `mf run test_related` first.');
+		console.error(
+			[
+				'Cached test mode precondition failed: dist/cli/index.js does not exist.',
+				'Cached mode does not rebuild dist/ before running tests.',
+				'Fallback intent: mf run test_related',
+				'Build-only fallback: mf run build',
+			].join('\n'),
+		);
 		process.exit(2);
 	}
 
@@ -595,8 +602,10 @@ function assertCachedModeSafe() {
 	if (staleFiles.length > 0) {
 		console.error(
 			[
-				'Cached test mode cannot be used while dist/ is older than changed TypeScript source or compiler configuration.',
-				'Run `mf run test_related` so dist/ is rebuilt before tests.',
+				'Cached test mode precondition failed: dist/ is older than changed TypeScript source or compiler configuration.',
+				'Cached mode does not rebuild dist/ before running tests.',
+				'Fallback intent: mf run test_related',
+				`Artifact: ${path.relative(repoRoot, distCliEntrypoint).replaceAll('\\', '/')}`,
 				`Stale or deleted changed files: ${staleFiles.join(', ')}`,
 			].join('\n'),
 		);
