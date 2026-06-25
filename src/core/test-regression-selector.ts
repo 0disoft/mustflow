@@ -34,6 +34,18 @@ export type TestRegressionSelectorReason =
 	| 'changed_test'
 	| 'sibling_test'
 	| 'importer_sibling_test'
+	| 'fallback_lockfile'
+	| 'fallback_package_metadata'
+	| 'fallback_template'
+	| 'fallback_compiler_or_runner_config'
+	| 'fallback_shared_test_fixture'
+	| 'fallback_migration_or_database'
+	| 'fallback_generated_contract'
+	| 'fallback_ci_workflow'
+	| 'fallback_mustflow_workflow'
+	| 'fallback_deleted'
+	| 'fallback_renamed'
+	| 'fallback_type_changed'
 	| 'fallback_package_or_template'
 	| 'fallback_schema'
 	| 'fallback_workflow_or_config'
@@ -67,7 +79,9 @@ export interface TestRegressionSelectorTestCandidate {
 	readonly path: string;
 	readonly exists: boolean;
 	readonly reason: TestRegressionSelectorReason;
+	readonly reasons: readonly TestRegressionSelectorReason[];
 	readonly source_path: string;
+	readonly source_paths: readonly string[];
 	readonly confidence: number;
 }
 
@@ -135,6 +149,7 @@ const DEFAULT_BASE_REF = 'HEAD';
 const DEFAULT_MAX_FILES = 200;
 const DEFAULT_MAX_TESTS = 100;
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
+const PACKAGE_LOCKFILES = new Set(['bun.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'deno.lock']);
 
 function toPosixPath(value: string): string {
 	return value.replace(/\\/gu, '/');
@@ -345,14 +360,28 @@ function addTestCandidate(
 ): void {
 	const normalized = normalizeRelativePath(pathValue);
 	const existing = candidates.get(normalized);
-	if (existing && existing.confidence >= confidence) {
+	if (existing) {
+		const reasons = [...new Set([...existing.reasons, reason])];
+		const sourcePaths = [...new Set([...existing.source_paths, sourcePath])];
+		const primaryReason = confidence > existing.confidence ? reason : existing.reason;
+		const primarySourcePath = confidence > existing.confidence ? sourcePath : existing.source_path;
+		candidates.set(normalized, {
+			...existing,
+			reason: primaryReason,
+			reasons,
+			source_path: primarySourcePath,
+			source_paths: sourcePaths,
+			confidence: Math.max(existing.confidence, confidence),
+		});
 		return;
 	}
 	candidates.set(normalized, {
 		path: normalized,
 		exists: existsSync(path.join(root, ...normalized.split('/'))),
 		reason,
+		reasons: [reason],
 		source_path: sourcePath,
+		source_paths: [sourcePath],
 		confidence,
 	});
 }
@@ -412,46 +441,171 @@ function addImporterCandidates(
 	}
 }
 
+function fallback(
+	reason: TestRegressionSelectorReason,
+	pathValue: string,
+	message: string,
+	recommendedIntent: string,
+): TestRegressionSelectorFallback {
+	return {
+		reason,
+		path: pathValue,
+		message,
+		recommended_intent: recommendedIntent,
+	};
+}
+
+function isSharedTestFixturePath(normalized: string): boolean {
+	return (
+		normalized.startsWith('tests/fixtures/') ||
+		normalized.startsWith('test/fixtures/') ||
+		normalized.startsWith('fixtures/') ||
+		/(?:^|\/)(?:test-)?setup\.[cm]?[jt]s$/u.test(normalized) ||
+		/(?:^|\/)(?:global-)?setup\.[cm]?[jt]s$/u.test(normalized)
+	);
+}
+
+function isMigrationOrDatabasePath(normalized: string): boolean {
+	const basename = path.posix.basename(normalized).toLowerCase();
+	return (
+		normalized.includes('/migrations/') ||
+		normalized.startsWith('migrations/') ||
+		normalized.includes('/db/') ||
+		normalized.includes('/database/') ||
+		basename === 'schema.prisma' ||
+		basename.endsWith('.sql')
+	);
+}
+
+function isGeneratedContractPath(normalized: string): boolean {
+	const basename = path.posix.basename(normalized).toLowerCase();
+	return (
+		normalized.startsWith('schemas/') ||
+		basename.endsWith('.schema.json') ||
+		basename === 'openapi.json' ||
+		basename === 'openapi.yaml' ||
+		basename === 'openapi.yml' ||
+		basename === 'asyncapi.json' ||
+		basename === 'asyncapi.yaml' ||
+		basename === 'asyncapi.yml' ||
+		basename === 'schema.graphql'
+	);
+}
+
+function isCompilerOrRunnerConfigPath(normalized: string): boolean {
+	const basename = path.posix.basename(normalized).toLowerCase();
+	return /^(?:tsconfig|eslint|vite|vitest|jest|playwright|astro|svelte|tailwind|webpack|rollup|babel|nyc|c8)\b/u.test(
+		basename,
+	);
+}
+
 function fallbackForChangedFile(changedFile: TestRegressionSelectorChangedFile): TestRegressionSelectorFallback | null {
-	if (changedFile.status === 'deleted' || changedFile.status === 'renamed' || changedFile.status === 'type_changed') {
-		return {
-			reason: 'fallback_deleted_or_renamed',
-			path: changedFile.path,
-			message: 'Deleted, renamed, or type-changed files can invalidate stale tests and static mappings.',
-			recommended_intent: 'test_related',
-		};
+	const normalized = normalizeRelativePath(changedFile.path);
+	const basename = path.posix.basename(normalized).toLowerCase();
+
+	if (changedFile.status === 'deleted') {
+		return fallback(
+			'fallback_deleted',
+			changedFile.path,
+			'Deleted files can invalidate stale tests, public exports, and static dependency mappings.',
+			'test_related',
+		);
 	}
-	if (changedFile.surface === 'package' || changedFile.surface === 'template') {
-		return {
-			reason: 'fallback_package_or_template',
-			path: changedFile.path,
-			message: 'Package, lockfile, or template changes can alter runtime, install, or release behavior.',
-			recommended_intent: 'test_release',
-		};
+	if (changedFile.status === 'renamed') {
+		return fallback(
+			'fallback_renamed',
+			changedFile.path,
+			'Renamed files can leave stale import paths, test mappings, and documentation references behind.',
+			'test_related',
+		);
 	}
-	if (changedFile.surface === 'schema') {
-		return {
-			reason: 'fallback_schema',
-			path: changedFile.path,
-			message: 'Public schema changes require schema and package contract verification.',
-			recommended_intent: 'test_release',
-		};
+	if (changedFile.status === 'type_changed') {
+		return fallback(
+			'fallback_type_changed',
+			changedFile.path,
+			'Type-changed files can change executable behavior in ways static test narrowing cannot classify.',
+			'test_related',
+		);
 	}
-	if (changedFile.surface === 'workflow' || changedFile.surface === 'config') {
-		return {
-			reason: 'fallback_workflow_or_config',
-			path: changedFile.path,
-			message: 'Workflow, compiler, runner, or mustflow config changes are unsafe for static test narrowing.',
-			recommended_intent: 'test_related',
-		};
+	if (PACKAGE_LOCKFILES.has(normalized)) {
+		return fallback(
+			'fallback_lockfile',
+			changedFile.path,
+			'Lockfile changes can alter dependency resolution, toolchain behavior, and package artifacts.',
+			'test_release',
+		);
+	}
+	if (basename === 'package.json') {
+		return fallback(
+			'fallback_package_metadata',
+			changedFile.path,
+			'Package metadata can change runtime entrypoints, scripts, dependencies, files, and release behavior.',
+			'test_release',
+		);
+	}
+	if (changedFile.surface === 'template') {
+		return fallback(
+			'fallback_template',
+			changedFile.path,
+			'Template changes can alter installed workflow contracts and downstream repository behavior.',
+			'test_release',
+		);
+	}
+	if (isGeneratedContractPath(normalized)) {
+		return fallback(
+			'fallback_generated_contract',
+			changedFile.path,
+			'Schema, OpenAPI, GraphQL, or generated-contract changes need contract and release-sensitive verification.',
+			'test_release',
+		);
+	}
+	if (isSharedTestFixturePath(normalized)) {
+		return fallback(
+			'fallback_shared_test_fixture',
+			changedFile.path,
+			'Shared test fixtures or setup files can affect many tests outside the static source map.',
+			'test_related',
+		);
+	}
+	if (isMigrationOrDatabasePath(normalized)) {
+		return fallback(
+			'fallback_migration_or_database',
+			changedFile.path,
+			'Migration, database, or SQL changes can alter shared test state and runtime contracts.',
+			'test',
+		);
+	}
+	if (normalized.startsWith('.github/workflows/')) {
+		return fallback(
+			'fallback_ci_workflow',
+			changedFile.path,
+			'CI workflow changes can alter job ordering, environment, caches, and selected-test safety.',
+			'test_related',
+		);
+	}
+	if (normalized.startsWith('.mustflow/')) {
+		return fallback(
+			'fallback_mustflow_workflow',
+			changedFile.path,
+			'Mustflow workflow changes can alter command contracts, routing, skills, or verification policy.',
+			'test_related',
+		);
+	}
+	if (isCompilerOrRunnerConfigPath(normalized) || changedFile.surface === 'config') {
+		return fallback(
+			'fallback_compiler_or_runner_config',
+			changedFile.path,
+			'Compiler, bundler, lint, or test-runner config changes are unsafe for static test narrowing.',
+			'test_related',
+		);
 	}
 	if (changedFile.surface === 'unknown') {
-		return {
-			reason: 'fallback_unknown',
-			path: changedFile.path,
-			message: 'Unknown change surfaces need the configured fallback path instead of selected-test confidence.',
-			recommended_intent: 'test',
-		};
+		return fallback(
+			'fallback_unknown',
+			changedFile.path,
+			'Unknown change surfaces need the configured fallback path instead of selected-test confidence.',
+			'test',
+		);
 	}
 	return null;
 }

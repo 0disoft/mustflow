@@ -161,14 +161,14 @@ function renderTestRegressionSelectorSummary(report: TestRegressionSelectorRepor
 	if (report.selected_tests.length > 0) {
 		lines.push(t(lang, 'testRegressionSelector.label.selectedTests'));
 		for (const testCandidate of report.selected_tests.slice(0, 40)) {
-			lines.push(`- ${testCandidate.path}: ${testCandidate.reason} (${testCandidate.source_path})`);
+			lines.push(`- ${testCandidate.path}: ${testCandidate.reasons.join(', ')} (${testCandidate.source_paths.join(', ')})`);
 		}
 	}
 
 	if (report.fallbacks.length > 0) {
 		lines.push(t(lang, 'testRegressionSelector.label.fallbacks'));
 		for (const fallback of report.fallbacks) {
-			lines.push(`- ${fallback.path}: ${fallback.reason} (${fallback.recommended_intent})`);
+			lines.push(`- ${fallback.path}: ${fallback.reason} -> ${fallback.recommended_intent}; ${fallback.message}`);
 		}
 	}
 

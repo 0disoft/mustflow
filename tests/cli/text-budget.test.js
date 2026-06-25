@@ -512,7 +512,13 @@ test('test-regression-selector selects changed tests and nearby source tests', (
 		assert.equal(report.summary.recommended_intent, 'test_related_cached');
 		assert.ok(report.changed_files.some((file) => file.path === 'src/session.ts' && file.surface === 'source'));
 		assert.ok(report.changed_files.some((file) => file.path === 'tests/cli/session.test.js' && file.surface === 'test'));
-		assert.ok(report.selected_tests.some((candidate) => candidate.path === 'tests/cli/session.test.js'));
+		const selectedSessionTest = report.selected_tests.find((candidate) => candidate.path === 'tests/cli/session.test.js');
+		assert.ok(selectedSessionTest);
+		assert.equal(selectedSessionTest.reason, 'changed_test');
+		assert.ok(selectedSessionTest.reasons.includes('changed_test'));
+		assert.ok(selectedSessionTest.reasons.includes('sibling_test'));
+		assert.ok(selectedSessionTest.source_paths.includes('tests/cli/session.test.js'));
+		assert.ok(selectedSessionTest.source_paths.includes('src/session.ts'));
 		assert.equal(report.fallbacks.length, 0);
 		assert.match(report.run_hint, /test_related_cached/u);
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
@@ -538,8 +544,8 @@ test('test-regression-selector falls back for package and workflow changes', () 
 		assert.equal(report.summary.selection_status, 'fallback');
 		assert.equal(report.summary.confidence, 'low');
 		assert.equal(report.summary.recommended_intent, 'test_release');
-		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_package_or_template'));
-		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_workflow_or_config'));
+		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_package_metadata'));
+		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_ci_workflow'));
 		assert.equal(report.run_hint, 'mf run test_release');
 	} finally {
 		removeTempProject(projectPath);
