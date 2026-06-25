@@ -4781,6 +4781,48 @@ test('agent execution control review keeps agent loops bounded and outcome-teste
 	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 1/u);
 });
 
+test('multi-agent work coordination maps shared state before parallel workers edit', () => {
+	const localSkill = readText('.mustflow/skills/multi-agent-work-coordination/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/multi-agent-work-coordination/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /revision: 2/u);
+	assert.match(localSkill, /Map Real Overlap Before Parallelizing/u);
+	assert.match(localSkill, /directory distance alone/u);
+	assert.match(localSkill, /public API, schema, event, route/u);
+	assert.match(localSkill, /generated artifacts, lockfiles, caches, snapshots/u);
+	assert.match(localSkill, /external state such as databases, ports, queues/u);
+	assert.match(localSkill, /shared invariants such as authorization, idempotency, retry/u);
+	assert.match(localSkill, /dependency graph and shared build or test outputs/u);
+	assert.match(localSkill, /runs tests, builds, installs dependencies, regenerates code/u);
+	assert.match(localSkill, /single-owner or integration-stage by default/u);
+	assert.match(localSkill, /central registration files/u);
+	assert.match(localSkill, /dependency manifests and shared lockfiles/u);
+	assert.match(localSkill, /root or workspace configuration/u);
+	assert.match(localSkill, /migrations, seed files, shared fixtures, snapshots/u);
+	assert.match(localSkill, /repository-wide formatters, import organizers, codemods/u);
+	assert.match(localSkill, /freeze the request, response, error, nullability, pagination/u);
+	assert.match(localSkill, /Worktrees isolate source checkouts, not ports, databases/u);
+	assert.match(localSkill, /Feature workers may create local descriptors or pending-registration notes/u);
+	assert.match(localSkill, /merge worker branches one at a time/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md/u);
+	assert.match(skillIndex, /same-file races, conflicting instructions, leaked credentials/u);
+	assert.match(routes, /\[routes\."multi-agent-work-coordination"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "adjunct"\r?\npriority = 90/u);
+	assert.match(manifest, /"\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md"/u);
+	assert.match(manifest, /"multi-agent-work-coordination"/u);
+	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 2/u);
+});
+
 test('agent eval integrity review grades outcomes, trajectories, and oracle layers', () => {
 	const localSkill = readText('.mustflow/skills/agent-eval-integrity-review/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/agent-eval-integrity-review/SKILL.md');
