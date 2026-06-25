@@ -148,6 +148,7 @@ export function createTestSelection(allCliTests) {
 		{ match: /^\.mustflow\/skills\/(readme-authoring|project-context-authoring)\//u, tests: ['authoring-fixtures.test.js'] },
 		{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: ['test-selection.test.js'] },
 		{ match: /^scripts\/lib\/test-selection\.mjs$/u, tests: ['test-selection.test.js'] },
+		{ match: /^scripts\/lib\/test-ordering\.mjs$/u, tests: ['test-selection.test.js'] },
 		{ match: /^src\/cli\/index\.ts$/u, tests: ['router.test.js', 'workflow.test.js'] },
 		{ match: /^src\/cli\/i18n\//u, tests: ['i18n-architecture.test.js', 'router.test.js', ...dashboardTests] },
 		{

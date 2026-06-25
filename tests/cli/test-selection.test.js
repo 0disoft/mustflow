@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import {
+	orderTestPathsByProfile,
+	profileDurationForTestPath,
+	profileOrderingSummary,
+	readProfileDurations,
+} from '../../scripts/lib/test-ordering.mjs';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const runTests = [
@@ -92,6 +98,7 @@ const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['src/cli/lib/package-info.ts'] },
 	{ mode: 'related', changedFiles: ['scripts/run-cli-tests.mjs'] },
 	{ mode: 'related', changedFiles: ['scripts/lib/test-selection.mjs'] },
+	{ mode: 'related', changedFiles: ['scripts/lib/test-ordering.mjs'] },
 	{ mode: 'related-cached', changedFiles: ['src/core/line-endings.ts'] },
 	{ mode: 'related', changedFiles: ['package.json'] },
 	{ mode: 'related', changedFiles: ['misc/notes.txt'] },
@@ -272,6 +279,75 @@ test('related selection covers the extracted selector module itself', () => {
 	assert.deepEqual(ruleReasons[0].tests, ['test-selection.test.js']);
 });
 
+test('related selection covers the profile ordering module itself', () => {
+	const report = selectRelated(['scripts/lib/test-ordering.mjs']);
+	const selected = new Set(report.selected);
+	const ruleReasons = reasonsFor(report, 'related_rule');
+
+	assert.deepEqual([...selected], ['test-selection.test.js']);
+	assert.equal(ruleReasons.length, 1);
+	assert.equal(ruleReasons[0].changed_file, 'scripts/lib/test-ordering.mjs');
+	assert.equal(ruleReasons[0].rule, '^scripts\\/lib\\/test-ordering\\.mjs$');
+	assert.deepEqual(ruleReasons[0].tests, ['test-selection.test.js']);
+});
+
+test('profile timing order runs known slow tests first and keeps unknown tests stable', () => {
+	const testPaths = [
+		'tests/cli/router.test.js',
+		'tests/cli/workflow.test.js',
+		'tests/cli/status.test.js',
+		'tests/cli/next.test.js',
+	];
+	const durations = new Map([
+		['tests/cli/workflow.test.js', 1250],
+		['tests/cli/router.test.js', 1250],
+		['tests/cli/next.test.js', 50],
+	]);
+
+	assert.deepEqual(orderTestPathsByProfile(testPaths, durations), [
+		'tests/cli/router.test.js',
+		'tests/cli/workflow.test.js',
+		'tests/cli/next.test.js',
+		'tests/cli/status.test.js',
+	]);
+	assert.deepEqual(profileOrderingSummary(testPaths, durations), { known: 3, total: 4 });
+});
+
+test('profile timing reader ignores missing malformed and invalid timing evidence', () => {
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-ordering-'));
+	const profilePath = path.join(tempRoot, 'latest.profile.json');
+
+	try {
+		assert.deepEqual([...readProfileDurations(profilePath)], []);
+
+		writeFileSync(profilePath, '{');
+		assert.deepEqual([...readProfileDurations(profilePath)], []);
+
+		writeFileSync(
+			profilePath,
+			`${JSON.stringify({
+				test_files: [
+					{ path: '.\\tests\\cli\\router.test.js', duration_ms: 100 },
+					{ path: 'tests/cli/workflow.test.js', duration_ms: -1 },
+					{ path: 'tests/cli/status.test.js', duration_ms: '12' },
+					{ path: null, duration_ms: 12 },
+				],
+			})}\n`,
+		);
+
+		const durations = readProfileDurations(profilePath);
+
+		assert.equal(profileDurationForTestPath('tests/cli/router.test.js', durations), 100);
+		assert.equal(profileDurationForTestPath('tests/cli/workflow.test.js', durations), undefined);
+		assert.deepEqual(orderTestPathsByProfile(['tests/cli/status.test.js', 'tests/cli/router.test.js'], durations), [
+			'tests/cli/router.test.js',
+			'tests/cli/status.test.js',
+		]);
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+});
+
 test('related selection maps package metadata changes to package and version tests', () => {
 	const report = selectRelated(['package.json']);
 	const selected = new Set(report.selected);
@@ -350,17 +426,14 @@ test('related cached list mirrors related selection without requiring a fresh di
 	assert.deepEqual(relatedCached.selection_reasons, related.selection_reasons);
 });
 
-test('related cached execution refuses stale dist for changed TypeScript sources', () => {
-	const changedFile = 'src/core/line-endings.ts';
-	const sourcePath = path.join(projectRoot, ...changedFile.split('/'));
-	const distEntrypoint = path.join(projectRoot, 'dist', 'cli', 'index.js');
-	const sourceStats = statSync(sourcePath);
-	const distStats = statSync(distEntrypoint);
+test('related cached execution refuses stale dist for deleted TypeScript sources', () => {
+	const changedFile = 'src/core/deleted-cached-fixture.ts';
+	const staleOutputPath = path.join(projectRoot, 'dist', 'core', 'deleted-cached-fixture.js');
 	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-related-cached-'));
-	const futureTime = new Date(distStats.mtimeMs + 60_000);
 
 	try {
-		utimesSync(sourcePath, futureTime, futureTime);
+		mkdirSync(path.dirname(staleOutputPath), { recursive: true });
+		writeFileSync(staleOutputPath, 'export {};\n');
 
 		const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related-cached'], {
 			cwd: projectRoot,
@@ -377,9 +450,9 @@ test('related cached execution refuses stale dist for changed TypeScript sources
 		assert.match(result.stderr, /Cached mode does not rebuild dist\/ before running tests\./u);
 		assert.match(result.stderr, /Fallback intent: mf run test_related/u);
 		assert.match(result.stderr, /Artifact: dist\/cli\/index\.js/u);
-		assert.match(result.stderr, /Stale or deleted changed files: src\/core\/line-endings\.ts/u);
+		assert.match(result.stderr, /Stale or deleted changed files: src\/core\/deleted-cached-fixture\.ts/u);
 	} finally {
-		utimesSync(sourcePath, sourceStats.atime, sourceStats.mtime);
+		rmSync(staleOutputPath, { force: true });
 		rmSync(tempRoot, { recursive: true, force: true });
 	}
 });

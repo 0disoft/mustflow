@@ -5,6 +5,12 @@ import os from 'node:os';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+	orderTestPathsByProfile,
+	profileDurationForTestPath,
+	profileOrderingSummary,
+	readProfileDurations,
+} from './lib/test-ordering.mjs';
 import { createTestSelection } from './lib/test-selection.mjs';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -450,13 +456,22 @@ function dominantPressure(demand) {
 	return Math.max(demand.cpu, demand.io, demand.process, demand.sqlite * 4, demand.git * 4);
 }
 
-function planWaves(paths) {
+function planWaves(paths, profileDurations = new Map()) {
 	const capacity = resourceCapacity();
 	const jobs = paths
-		.map((testPath) => ({ testPath, demand: testDemand(testPath) }))
+		.map((testPath, index) => ({
+			testPath,
+			index,
+			demand: testDemand(testPath),
+			durationMs: profileDurationForTestPath(testPath, profileDurations) ?? 0,
+		}))
 		.sort((left, right) => {
 			const pressureDiff = dominantPressure(right.demand) - dominantPressure(left.demand);
-			return pressureDiff === 0 ? right.testPath.localeCompare(left.testPath) : pressureDiff;
+			if (pressureDiff !== 0) {
+				return pressureDiff;
+			}
+
+			return right.durationMs - left.durationMs || left.index - right.index;
 		});
 	const waves = [];
 
@@ -490,12 +505,18 @@ function planWaves(paths) {
 	});
 }
 
-const testPaths = selected.map((name) => path.join('tests', 'cli', name));
 const profileMode = mode.endsWith('-profile');
 const cachedMode = mode.endsWith('-cached');
 const autoSchedulerMode = mode.endsWith('-auto');
 const baseMode = mode.replace(/-(?:cached|profile|auto)$/u, '');
 const schedulerMode = autoSchedulerMode ? 'auto' : scheduler;
+const selectedTestPaths = selected.map((name) => path.join('tests', 'cli', name));
+const profileDurations = profileMode ? new Map() : readProfileDurations(latestProfilePath);
+const profileOrdering = profileOrderingSummary(selectedTestPaths, profileDurations);
+const testPaths =
+	profileOrdering.known > 0 && !profileMode
+		? orderTestPathsByProfile(selectedTestPaths, profileDurations)
+		: selectedTestPaths;
 const concurrency =
 	mode === 'coverage'
 		? readPositiveIntegerEnv('MUSTFLOW_TEST_COVERAGE_CONCURRENCY', '4')
@@ -738,7 +759,7 @@ async function runScheduledTests() {
 		process.exit(2);
 	}
 
-	const waves = planWaves(testPaths);
+	const waves = planWaves(testPaths, profileDurations);
 	console.log(`Running ${mode} CLI tests with auto scheduler (${testPaths.length} files, ${waves.length} waves)`);
 
 	for (const [index, wave] of waves.entries()) {
@@ -790,6 +811,13 @@ if (baseMode === 'related' && hasRelatedReleaseChanges()) {
 
 if (baseMode === 'related') {
 	console.log(`Selection reasons: ${summarizeRelatedSelectionReasons(selectionReportForMode(mode, currentChangedFiles).selection_reasons)}.`);
+}
+
+if (profileOrdering.known > 0) {
+	console.log(
+		`Using profile timing order from ${path.relative(repoRoot, latestProfilePath).replaceAll('\\', '/')} ` +
+			`(${profileOrdering.known}/${profileOrdering.total} files).`,
+	);
 }
 
 if (schedulerMode === 'auto') {
