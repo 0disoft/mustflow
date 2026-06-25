@@ -37,12 +37,16 @@ function readTomlStringArrayBlock(content, key) {
 	return Array.from(match[1].matchAll(/"([^"]+)"/gu), (entry) => entry[1]);
 }
 
+function readTemplateSkillProfile(profile) {
+	return readTomlStringArrayBlock(templateManifest, profile);
+}
+
 function readProjectText(relativePath) {
 	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.85.22');
+	assert.equal(packageJson.version, '2.86.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -63,6 +67,17 @@ test('package metadata is ready for public npm publishing', () => {
 
 test('default template manifest version stays synchronized with package version', () => {
 	assert.match(templateManifest, new RegExp(`^version = "${packageJson.version}"$`, 'm'));
+});
+
+test('default template installs the next action menu skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/next-action-menu/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('next-action-menu'),
+			`${profile} profile should include next-action-menu`,
+		);
+	}
 });
 
 test('package exposes a real install verification script', () => {

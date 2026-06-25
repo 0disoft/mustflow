@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 209
+anchor_count: 210
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:c4105c4872e17cd59a8745937b3b009af607eb5a1185dbb21008d83c4d61ed47"
+source_fingerprint: "sha256:3364ed17c69a9a3cd02d410d9f4cada82f45d0ad681507418fba9e7f637fba44"
 ---
 
 # REPO_MAP.md
@@ -459,6 +459,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/multi-agent-work-coordination/
 
 - `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/next-action-menu/
+
+- `.mustflow/skills/next-action-menu/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/node-code-change/
 

@@ -78,6 +78,12 @@ route_type = "adjunct"
 priority = 85
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "release_risk"]
 
+[routes."next-action-menu"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 72
+applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change", "package_metadata_change"]
+
 [routes."proactive-risk-surfacing"]
 category = "workflow_contracts"
 route_type = "event"
