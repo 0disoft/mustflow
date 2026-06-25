@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/test-regression-selector-report.schema.json",
+  "title": "mustflow test regression selector report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "summary",
+    "changed_files",
+    "selected_tests",
+    "missing_candidates",
+    "fallbacks",
+    "run_hint",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "test" },
+    "script_id": { "const": "regression-selector" },
+    "script_ref": { "const": "test/regression-selector" },
+    "action": { "const": "select" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "changed_files": { "type": "array", "items": { "$ref": "#/$defs/changedFile" } },
+    "selected_tests": { "type": "array", "items": { "$ref": "#/$defs/testCandidate" } },
+    "missing_candidates": { "type": "array", "items": { "$ref": "#/$defs/testCandidate" } },
+    "fallbacks": { "type": "array", "items": { "$ref": "#/$defs/fallback" } },
+    "run_hint": { "type": ["string", "null"] },
+    "truncated": { "type": "boolean" },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "surface": {
+      "enum": ["source", "test", "docs", "schema", "config", "package", "template", "workflow", "i18n", "unknown"]
+    },
+    "fileStatus": {
+      "enum": ["added", "modified", "deleted", "renamed", "type_changed", "untracked"]
+    },
+    "selectorReason": {
+      "enum": [
+        "changed_test",
+        "sibling_test",
+        "importer_sibling_test",
+        "fallback_package_or_template",
+        "fallback_schema",
+        "fallback_workflow_or_config",
+        "fallback_deleted_or_renamed",
+        "fallback_unknown",
+        "fallback_truncated",
+        "no_changed_files"
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_ref", "head_ref", "compare_worktree", "max_files", "max_tests", "path_filters"],
+      "properties": {
+        "base_ref": { "type": "string" },
+        "head_ref": { "type": ["string", "null"] },
+        "compare_worktree": { "type": "boolean" },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_tests": { "type": "integer", "minimum": 1 },
+        "path_filters": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changed_file_count",
+        "selected_test_count",
+        "missing_candidate_count",
+        "fallback_count",
+        "selection_status",
+        "confidence",
+        "recommended_intent"
+      ],
+      "properties": {
+        "changed_file_count": { "type": "integer", "minimum": 0 },
+        "selected_test_count": { "type": "integer", "minimum": 0 },
+        "missing_candidate_count": { "type": "integer", "minimum": 0 },
+        "fallback_count": { "type": "integer", "minimum": 0 },
+        "selection_status": { "enum": ["selected", "fallback", "empty"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "recommended_intent": { "type": "string" }
+      }
+    },
+    "changedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "previous_path", "status", "surface"],
+      "properties": {
+        "path": { "type": "string" },
+        "previous_path": { "type": ["string", "null"] },
+        "status": { "$ref": "#/$defs/fileStatus" },
+        "surface": { "$ref": "#/$defs/surface" }
+      }
+    },
+    "testCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "reason", "source_path", "confidence"],
+      "properties": {
+        "path": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "reason": { "$ref": "#/$defs/selectorReason" },
+        "source_path": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "path", "message", "recommended_intent"],
+      "properties": {
+        "reason": { "$ref": "#/$defs/selectorReason" },
+        "path": { "type": "string" },
+        "message": { "type": "string" },
+        "recommended_intent": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "test_regression_selector_git_unavailable",
+            "test_regression_selector_invalid_ref",
+            "test_regression_selector_max_files_exceeded",
+            "test_regression_selector_max_tests_exceeded"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

@@ -76,6 +76,11 @@ function runTestPerformanceReportJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runTestRegressionSelectorJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'test/regression-selector', 'select', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runScriptPackSuggestJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'suggest', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -263,6 +268,24 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(testPerformanceReport.risk_level, 'low');
 		assert.equal(testPerformanceReport.cost, 'low');
 		assert.equal(testPerformanceReport.report_schema_file, 'test-performance-report.schema.json');
+
+		const testRegressionSelector = testPack?.scripts.find((script) => script.ref === 'test/regression-selector');
+
+		assert.ok(testRegressionSelector, 'test/regression-selector should be listed');
+		assert.equal(testRegressionSelector.read_only, true);
+		assert.equal(testRegressionSelector.mutates, false);
+		assert.equal(testRegressionSelector.network, false);
+		assert.deepEqual(testRegressionSelector.phases, ['after_change', 'review']);
+		assert.ok(testRegressionSelector.use_when.some((hint) => hint.includes('regression tests')));
+		assert.ok(testRegressionSelector.inputs.includes('base_ref'));
+		assert.ok(testRegressionSelector.inputs.includes('max_tests'));
+		assert.ok(testRegressionSelector.outputs.includes('selected_tests'));
+		assert.ok(testRegressionSelector.outputs.includes('fallbacks'));
+		assert.ok(testRegressionSelector.related_skills.includes('test-suite-performance-review'));
+		assert.ok(testRegressionSelector.related_skills.includes('test-maintenance'));
+		assert.equal(testRegressionSelector.risk_level, 'low');
+		assert.equal(testRegressionSelector.cost, 'low');
+		assert.equal(testRegressionSelector.report_schema_file, 'test-regression-selector-report.schema.json');
 
 		const repoPack = report.packs.find((pack) => pack.id === 'repo');
 		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
@@ -458,6 +481,66 @@ test('test-performance-report guides profiling when no performance evidence exis
 		assert.equal(profileAction.command_intent, 'test_related_profile');
 		assert.equal(profileAction.run_hint, 'mf run test_related_profile');
 		assert.deepEqual(profileAction.finding_codes, ['test_performance_no_evidence']);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-regression-selector selects changed tests and nearby source tests', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		mkdirSync(path.join(projectPath, 'tests', 'cli'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'session.ts'), 'export const session = 1;\n');
+		writeFileSync(path.join(projectPath, 'tests', 'cli', 'session.test.js'), 'test("session", () => {});\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'src', 'session.ts'), 'export const session = 2;\n');
+		writeFileSync(path.join(projectPath, 'tests', 'cli', 'session.test.js'), 'test("session updated", () => {});\n');
+
+		const { result, report } = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'test');
+		assert.equal(report.script_id, 'regression-selector');
+		assert.equal(report.script_ref, 'test/regression-selector');
+		assert.equal(report.action, 'select');
+		assert.equal(report.ok, true);
+		assert.equal(report.summary.selection_status, 'selected');
+		assert.equal(report.summary.recommended_intent, 'test_related_cached');
+		assert.ok(report.changed_files.some((file) => file.path === 'src/session.ts' && file.surface === 'source'));
+		assert.ok(report.changed_files.some((file) => file.path === 'tests/cli/session.test.js' && file.surface === 'test'));
+		assert.ok(report.selected_tests.some((candidate) => candidate.path === 'tests/cli/session.test.js'));
+		assert.equal(report.fallbacks.length, 0);
+		assert.match(report.run_hint, /test_related_cached/u);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-regression-selector falls back for package and workflow changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.github', 'workflows'), { recursive: true });
+		writeFileSync(path.join(projectPath, '.github', 'workflows', 'ci.yml'), 'name: ci\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'package.json'), '{"name":"example","version":"1.0.1"}\n');
+		writeFileSync(path.join(projectPath, '.github', 'workflows', 'ci.yml'), 'name: ci\non: [push]\n');
+
+		const { result, report } = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.summary.selection_status, 'fallback');
+		assert.equal(report.summary.confidence, 'low');
+		assert.equal(report.summary.recommended_intent, 'test_release');
+		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_package_or_template'));
+		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_workflow_or_config'));
+		assert.equal(report.run_hint, 'mf run test_release');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3093,6 +3176,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run test\/performance-report summarize --json/);
+		assert.match(result.stdout, /mf script-pack run test\/regression-selector select --base HEAD --json/);
 		assert.match(result.stdout, /mf script-pack run docs\/reference-drift check README\.md schemas\/README\.md --json/);
 		assert.match(result.stdout, /mf script-pack run core\/text-budget --help/);
 		assert.match(result.stdout, /mf script-pack run repo\/config-chain inspect src\/cli\/index\.ts --json/);
@@ -3144,6 +3228,17 @@ test('script-pack suggest recommends test performance report for test-suite perf
 		assert.ok(performanceReport.matched_surfaces.includes('test'));
 		assert.equal(performanceReport.run_hint, 'mf script-pack run test/performance-report summarize --json');
 		assert.equal(performanceReport.report_schema_file, 'test-performance-report.schema.json');
+
+		const regressionSelector = report.suggestions.find((suggestion) => suggestion.script_ref === 'test/regression-selector');
+		assert.ok(regressionSelector, 'test/regression-selector should be suggested for test performance work');
+		assert.ok(regressionSelector.matched_skills.includes('test-suite-performance-review'));
+		assert.ok(regressionSelector.matched_phases.includes('review'));
+		assert.ok(regressionSelector.matched_surfaces.includes('test'));
+		assert.equal(
+			regressionSelector.run_hint,
+			'mf script-pack run test/regression-selector select tests/cli/slow.test.js --base HEAD --json',
+		);
+		assert.equal(regressionSelector.report_schema_file, 'test-regression-selector-report.schema.json');
 	} finally {
 		removeTempProject(projectPath);
 	}

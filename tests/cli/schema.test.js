@@ -1040,6 +1040,31 @@ test('test-performance-report json output matches the published schema', () => {
 	}
 });
 
+test('test-regression-selector json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'selector.ts'), 'export const selector = 1;\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'test/regression-selector',
+			'select',
+			'--base',
+			'HEAD',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('text-budget json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

@@ -99,6 +99,10 @@ Current schemas:
   `mf script-pack run test/performance-report summarize --json`, containing retained run
   performance evidence, slow intent summaries, timeout-pressure findings, selected-test fallback
   signals, and phase bottleneck summaries from `.mustflow/state`
+- `test-regression-selector-report.schema.json`: output of
+  `mf script-pack run test/regression-selector select --json`, containing changed files, likely
+  regression-test candidates, conservative fallback reasons, confidence, and recommended verification
+  intent hints
 - `config-chain-report.schema.json`: output of
   `mf script-pack run repo/config-chain inspect <path...> --json`, containing nearby package,
   TypeScript, ESLint, Prettier, Vite, Vitest, Tailwind, Jest, Playwright, and mustflow config files

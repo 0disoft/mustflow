@@ -350,6 +350,14 @@ function createRunHint(
 		return 'mf script-pack run test/performance-report summarize --json';
 	}
 
+	if (script.ref === 'test/regression-selector') {
+		const testSelectionPaths = analyzedPaths
+			.filter((entry) => entry.surfaces.some((surface) => surface === 'source' || surface === 'test'))
+			.map((entry) => entry.path);
+		const pathPart = testSelectionPaths.length > 0 ? ` ${testSelectionPaths.map(quoteCliArg).join(' ')}` : '';
+		return `mf script-pack run test/regression-selector select${pathPart} --base HEAD --json`;
+	}
+
 	if (script.ref === 'repo/generated-boundary') {
 		return createConcretePathHint('mf script-pack run repo/generated-boundary check', analyzedPaths.map((entry) => entry.path), script.usage);
 	}

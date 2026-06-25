@@ -2628,6 +2628,55 @@
       }
     },
     {
+      "id": "test-regression-selector-report",
+      "schema_file": "test-regression-selector-report.schema.json",
+      "producer": "mf script-pack run test/regression-selector select --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "test",
+        "script_id": "regression-selector",
+        "script_ref": "test/regression-selector",
+        "action": "select",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "base_ref": "HEAD",
+          "head_ref": null,
+          "compare_worktree": true,
+          "max_files": 200,
+          "max_tests": 100,
+          "path_filters": []
+        },
+        "input_hash": "sha256:bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc",
+        "summary": {
+          "changed_file_count": 0,
+          "selected_test_count": 0,
+          "missing_candidate_count": 0,
+          "fallback_count": 1,
+          "selection_status": "fallback",
+          "confidence": "low",
+          "recommended_intent": "changes_status"
+        },
+        "changed_files": [],
+        "selected_tests": [],
+        "missing_candidates": [],
+        "fallbacks": [
+          {
+            "reason": "no_changed_files",
+            "path": ".",
+            "message": "No changed files were detected for regression selection.",
+            "recommended_intent": "changes_status"
+          }
+        ],
+        "run_hint": null,
+        "truncated": false,
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
       "id": "related-files-report",
       "schema_file": "related-files-report.schema.json",
       "producer": "mf script-pack run repo/related-files map <path...> --json",

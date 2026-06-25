@@ -132,6 +132,7 @@ export function getScriptPackHelp(lang: CliLang = 'en'): string {
 				'mf script-pack run core/text-budget check README.md --max 5000',
 				'mf script-pack run docs/reference-drift check README.md schemas/README.md --json',
 				'mf script-pack run test/performance-report summarize --json',
+				'mf script-pack run test/regression-selector select --base HEAD --json',
 				'mf script-pack run repo/config-chain inspect src/cli/index.ts --json',
 				'mf script-pack run repo/env-contract scan --json',
 				'mf script-pack run repo/secret-risk-scan scan src README.md --json',

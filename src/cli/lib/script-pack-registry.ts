@@ -326,6 +326,30 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				loadRunner: async () =>
 					(await import('../script-packs/test-performance-report.js')).runTestPerformanceReportScript,
 			},
+			{
+				packId: 'test',
+				id: 'regression-selector',
+				ref: scriptRef('test', 'regression-selector'),
+				usage: 'mf script-pack run test/regression-selector select [path...] [options]',
+				summaryKey: 'scriptPack.script.testRegressionSelector.summary',
+				actions: ['select'],
+				useWhen: [
+					'Select likely regression tests from changed files while reporting unsafe surfaces that require fallback verification.',
+					'Review source, test, package, schema, workflow, and config changes before relying on a related-test shortcut.',
+				],
+				phases: ['after_change', 'review'],
+				readOnly: true,
+				mutates: false,
+				network: false,
+				inputs: ['path', 'base_ref', 'head_ref', 'max_files', 'max_tests'],
+				outputs: ['human_summary', 'json_report', 'changed_files', 'selected_tests', 'fallbacks'],
+				relatedSkills: ['test-suite-performance-review', 'test-maintenance', 'change-blast-radius-review'],
+				riskLevel: 'low',
+				cost: 'low',
+				reportSchemaFile: 'test-regression-selector-report.schema.json',
+				loadRunner: async () =>
+					(await import('../script-packs/test-regression-selector.js')).runTestRegressionSelectorScript,
+			},
 		],
 	},
 	{
