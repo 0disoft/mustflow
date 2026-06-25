@@ -36,10 +36,15 @@ const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: [] },
 	{ mode: 'related-profile', changedFiles: [] },
 	{ mode: 'related', changedFiles: ['src/core/code-outline.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/change-impact.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/test-regression-selector.ts'] },
+	{ mode: 'related', changedFiles: ['src/core/change-surface-classification.ts'] },
 	{ mode: 'related', changedFiles: ['src/core/config-chain.ts'] },
 	{ mode: 'related', changedFiles: ['src/core/env-contract.ts'] },
 	{ mode: 'related', changedFiles: ['src/core/secret-risk-scan.ts'] },
 	{ mode: 'related', changedFiles: ['src/cli/script-packs/code-outline.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/script-packs/code-change-impact.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/script-packs/test-regression-selector.ts'] },
 	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-config-chain.ts'] },
 	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-env-contract.ts'] },
 	{ mode: 'related', changedFiles: ['src/cli/script-packs/repo-secret-risk-scan.ts'] },
@@ -207,10 +212,15 @@ test('related profile does not fall back to the fast baseline without changed fi
 
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
 	const coreSelected = selectedFor(['src/core/code-outline.ts']);
+	const changeImpactSelected = selectedFor(['src/core/change-impact.ts']);
+	const testRegressionSelectorSelected = selectedFor(['src/core/test-regression-selector.ts']);
+	const changeSurfaceClassificationSelected = selectedFor(['src/core/change-surface-classification.ts']);
 	const configChainSelected = selectedFor(['src/core/config-chain.ts']);
 	const envContractSelected = selectedFor(['src/core/env-contract.ts']);
 	const secretRiskScanSelected = selectedFor(['src/core/secret-risk-scan.ts']);
 	const wrapperSelected = selectedFor(['src/cli/script-packs/code-outline.ts']);
+	const changeImpactWrapperSelected = selectedFor(['src/cli/script-packs/code-change-impact.ts']);
+	const testRegressionSelectorWrapperSelected = selectedFor(['src/cli/script-packs/test-regression-selector.ts']);
 	const configChainWrapperSelected = selectedFor(['src/cli/script-packs/repo-config-chain.ts']);
 	const envContractWrapperSelected = selectedFor(['src/cli/script-packs/repo-env-contract.ts']);
 	const secretRiskScanWrapperSelected = selectedFor(['src/cli/script-packs/repo-secret-risk-scan.ts']);
@@ -218,10 +228,15 @@ test('related selection maps script-pack implementation changes to script-pack c
 
 	for (const selected of [
 		coreSelected,
+		changeImpactSelected,
+		testRegressionSelectorSelected,
+		changeSurfaceClassificationSelected,
 		configChainSelected,
 		envContractSelected,
 		secretRiskScanSelected,
 		wrapperSelected,
+		changeImpactWrapperSelected,
+		testRegressionSelectorWrapperSelected,
 		configChainWrapperSelected,
 		envContractWrapperSelected,
 		secretRiskScanWrapperSelected,
