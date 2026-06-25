@@ -624,7 +624,7 @@ test('test-performance-report asks for file profile evidence when samples lack t
 	}
 });
 
-test('test-performance-report asks for fresh profile evidence when declared profile coverage is low', () => {
+test('test-performance-report merges profile evidence actions when declared coverage is low and stale', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -660,7 +660,7 @@ test('test-performance-report asks for fresh profile evidence when declared prof
 			`${JSON.stringify(
 				{
 					schema_version: '1',
-					generated_at: '2999-01-01T00:00:00.000Z',
+					generated_at: '2000-01-01T00:00:00.000Z',
 					mode: 'related-profile',
 					intent: 'test_related_profile',
 					total_duration_ms: 3000,
@@ -691,14 +691,17 @@ test('test-performance-report asks for fresh profile evidence when declared prof
 		assert.equal(report.summary.sample_count, 1);
 		assert.equal(report.summary.latest_profile_test_file_count, 2);
 		assert.equal(report.summary.latest_profile_declared_test_file_count, 5);
+		assert.equal(report.summary.latest_profile_generated_at, '2000-01-01T00:00:00.000Z');
+		assert.equal(typeof report.summary.latest_profile_age_ms, 'number');
+		assert.ok(report.summary.latest_profile_age_ms >= 24 * 60 * 60 * 1000);
 		assert.equal(report.summary.latest_profile_test_file_coverage_ratio, 2 / 5);
 		assert.equal(report.summary.latest_profile_test_files_truncated, true);
 
-		const profileAction = report.next_actions.find((action) =>
-			action.code === 'collect_profile_evidence' &&
-			/40\.0% of declared test files/u.test(action.message)
-		);
+		const profileActions = report.next_actions.filter((action) => action.code === 'collect_profile_evidence');
+		assert.equal(profileActions.length, 1);
+		const profileAction = profileActions[0];
 		assert.ok(profileAction, 'missing low-coverage collect_profile_evidence next action');
+		assert.match(profileAction.message, /40\.0% of declared test files/u);
 		assert.equal(profileAction.command_intent, 'test_related_profile');
 		assert.equal(profileAction.run_hint, 'mf run test_related_profile');
 		assert.deepEqual(profileAction.finding_codes, []);

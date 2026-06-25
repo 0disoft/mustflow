@@ -804,6 +804,23 @@ function describeSlowestTestFileAction(
 	return `${baseMessage} ${truncationMessage}`;
 }
 
+function pushProfileEvidenceAction(
+	actions: TestPerformanceNextAction[],
+	action: TestPerformanceNextAction,
+): void {
+	const existingIndex = actions.findIndex((candidate) => candidate.code === 'collect_profile_evidence');
+	if (existingIndex < 0) {
+		actions.push(action);
+		return;
+	}
+
+	const existing = actions[existingIndex];
+	actions[existingIndex] = {
+		...existing,
+		finding_codes: [...new Set([...existing.finding_codes, ...action.finding_codes])],
+	};
+}
+
 function createNextActions(
 	samples: readonly TestPerformanceSample[],
 	findings: readonly TestPerformanceFinding[],
@@ -816,7 +833,7 @@ function createNextActions(
 	const actions: TestPerformanceNextAction[] = [];
 
 	if (samples.length === 0 && hasFinding(findings, 'test_performance_no_evidence')) {
-		actions.push({
+		pushProfileEvidenceAction(actions, {
 			code: 'collect_profile_evidence',
 			message:
 				'Run a configured profiling intent before changing test scheduling, caching, timeout, or selection policy.',
@@ -827,7 +844,7 @@ function createNextActions(
 	}
 
 	if (samples.length > 0 && latestProfileTestFileCount === 0) {
-		actions.push({
+		pushProfileEvidenceAction(actions, {
 			code: 'collect_profile_evidence',
 			message:
 				'Collect test-file profile evidence before changing file-level sharding, fixture reuse, or test splitting policy.',
@@ -843,7 +860,7 @@ function createNextActions(
 		latestProfileActualCoverageRatio !== null &&
 		latestProfileActualCoverageRatio < DEFAULT_LOW_PROFILE_COVERAGE_RATIO
 	) {
-		actions.push({
+		pushProfileEvidenceAction(actions, {
 			code: 'collect_profile_evidence',
 			message:
 				`Latest test profile includes only ${(latestProfileActualCoverageRatio * 100).toFixed(1)}% ` +
@@ -860,7 +877,7 @@ function createNextActions(
 		latestProfileAgeMs !== null &&
 		latestProfileAgeMs >= DEFAULT_STALE_PROFILE_THRESHOLD_MS
 	) {
-		actions.push({
+		pushProfileEvidenceAction(actions, {
 			code: 'collect_profile_evidence',
 			message:
 				'Latest test profile is older than 24h; collect fresh profile evidence before changing scheduling, caching, timeout, or fixture policy.',
