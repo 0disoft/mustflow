@@ -130,6 +130,11 @@
         "latest_run_duration_ms",
         "latest_profile_phase_count",
         "latest_profile_test_file_count",
+        "latest_profile_declared_test_file_count",
+        "latest_profile_generated_at",
+        "latest_profile_age_ms",
+        "latest_profile_test_file_coverage_ratio",
+        "latest_profile_test_files_truncated",
         "retained_summary_intent_count"
       ],
       "properties": {
@@ -143,6 +148,11 @@
         "latest_run_duration_ms": { "type": ["integer", "null"], "minimum": 0 },
         "latest_profile_phase_count": { "type": "integer", "minimum": 0 },
         "latest_profile_test_file_count": { "type": "integer", "minimum": 0 },
+        "latest_profile_declared_test_file_count": { "type": ["integer", "null"], "minimum": 0 },
+        "latest_profile_generated_at": { "type": ["string", "null"] },
+        "latest_profile_age_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "latest_profile_test_file_coverage_ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "latest_profile_test_files_truncated": { "type": "boolean" },
         "retained_summary_intent_count": { "type": ["integer", "null"], "minimum": 0 }
       }
     },

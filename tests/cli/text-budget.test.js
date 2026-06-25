@@ -488,6 +488,12 @@ test('test-performance-report summarizes retained run performance samples', () =
 		assert.equal(report.summary.intent_count, 2);
 		assert.equal(report.summary.test_file_count, 2);
 		assert.equal(report.summary.latest_profile_test_file_count, 3);
+		assert.equal(report.summary.latest_profile_declared_test_file_count, 3);
+		assert.equal(report.summary.latest_profile_generated_at, '2026-06-25T00:00:00.000Z');
+		assert.equal(typeof report.summary.latest_profile_age_ms, 'number');
+		assert.ok(report.summary.latest_profile_age_ms >= 0);
+		assert.equal(report.summary.latest_profile_test_file_coverage_ratio, 2 / 3);
+		assert.equal(report.summary.latest_profile_test_files_truncated, true);
 		assert.equal(report.truncated, true);
 		assert.ok(report.evidence_sources.some((source) => source.path === '.mustflow/state/perf/samples.json' && source.readable));
 		assert.ok(report.evidence_sources.some((source) => source.path === '.mustflow/state/runs/latest.profile.json' && source.readable));
@@ -541,6 +547,11 @@ test('test-performance-report guides profiling when no performance evidence exis
 		assert.equal(report.status, 'passed');
 		assert.equal(report.ok, true);
 		assert.equal(report.summary.sample_count, 0);
+		assert.equal(report.summary.latest_profile_declared_test_file_count, null);
+		assert.equal(report.summary.latest_profile_generated_at, null);
+		assert.equal(report.summary.latest_profile_age_ms, null);
+		assert.equal(report.summary.latest_profile_test_file_coverage_ratio, null);
+		assert.equal(report.summary.latest_profile_test_files_truncated, false);
 		assert.ok(report.findings.some((finding) => finding.code === 'test_performance_no_evidence'));
 
 		const profileAction = report.next_actions.find((action) => action.code === 'collect_profile_evidence');
@@ -589,6 +600,11 @@ test('test-performance-report asks for file profile evidence when samples lack t
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.summary.sample_count, 1);
 		assert.equal(report.summary.latest_profile_test_file_count, 0);
+		assert.equal(report.summary.latest_profile_declared_test_file_count, null);
+		assert.equal(report.summary.latest_profile_generated_at, null);
+		assert.equal(report.summary.latest_profile_age_ms, null);
+		assert.equal(report.summary.latest_profile_test_file_coverage_ratio, null);
+		assert.equal(report.summary.latest_profile_test_files_truncated, false);
 		assert.ok(!report.findings.some((finding) => finding.code === 'test_performance_no_evidence'));
 
 		const profileAction = report.next_actions.find((action) => action.code === 'collect_profile_evidence');
@@ -672,6 +688,12 @@ test('test-performance-report inspects top-heavy profiled test files below the s
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.summary.latest_profile_test_file_count, 2);
+		assert.equal(report.summary.latest_profile_declared_test_file_count, 2);
+		assert.equal(report.summary.latest_profile_generated_at, '2026-06-25T00:00:00.000Z');
+		assert.equal(typeof report.summary.latest_profile_age_ms, 'number');
+		assert.ok(report.summary.latest_profile_age_ms >= 0);
+		assert.equal(report.summary.latest_profile_test_file_coverage_ratio, 1);
+		assert.equal(report.summary.latest_profile_test_files_truncated, false);
 		assert.ok(!report.findings.some((finding) => finding.code === 'test_performance_slow_test_file'));
 
 		const slowestFilesAction = report.next_actions.find((action) => action.code === 'inspect_slowest_test_files');

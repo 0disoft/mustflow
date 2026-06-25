@@ -114,6 +114,11 @@ export interface TestPerformanceSummary {
 	readonly latest_run_duration_ms: number | null;
 	readonly latest_profile_phase_count: number;
 	readonly latest_profile_test_file_count: number;
+	readonly latest_profile_declared_test_file_count: number | null;
+	readonly latest_profile_generated_at: string | null;
+	readonly latest_profile_age_ms: number | null;
+	readonly latest_profile_test_file_coverage_ratio: number | null;
+	readonly latest_profile_test_files_truncated: boolean;
 	readonly retained_summary_intent_count: number | null;
 }
 
@@ -596,6 +601,44 @@ function summarizeLatestProfileTestFiles(
 		.slice(0, maxTestFiles);
 }
 
+function extractLatestProfileGeneratedAt(profile: unknown): string | null {
+	if (!isRecord(profile) || typeof profile.generated_at !== 'string') {
+		return null;
+	}
+	return profile.generated_at;
+}
+
+function extractLatestProfileAgeMs(profile: unknown, nowMs: number): number | null {
+	const generatedAt = extractLatestProfileGeneratedAt(profile);
+	if (!generatedAt) {
+		return null;
+	}
+	const generatedAtMs = Date.parse(generatedAt);
+	if (!Number.isFinite(generatedAtMs)) {
+		return null;
+	}
+	return Math.max(0, nowMs - generatedAtMs);
+}
+
+function extractLatestProfileDeclaredTestFileCount(profile: unknown): number | null {
+	if (!isRecord(profile) || !isNonNegativeNumber(profile.file_count)) {
+		return null;
+	}
+	return Math.floor(profile.file_count);
+}
+
+function latestProfileTestFileCoverageRatio(
+	visibleTestFileCount: number,
+	latestProfileTestFileCount: number,
+	declaredTestFileCount: number | null,
+): number | null {
+	const denominator = Math.max(declaredTestFileCount ?? 0, latestProfileTestFileCount);
+	if (denominator <= 0) {
+		return null;
+	}
+	return visibleTestFileCount / denominator;
+}
+
 function extractRetainedSummaryIntentCount(summary: unknown): number | null {
 	if (!isRecord(summary) || !isRecord(summary.intents)) {
 		return null;
@@ -924,6 +967,12 @@ export function createTestPerformanceReport(
 	];
 	const allTestFiles = summarizeLatestProfileTestFiles(latestProfile, latestReceipt?.intent ?? null, Number.MAX_SAFE_INTEGER);
 	const testFiles = allTestFiles.slice(0, policy.max_test_files);
+	const latestProfileDeclaredTestFileCount = extractLatestProfileDeclaredTestFileCount(latestProfile);
+	const latestProfileCoverageRatio = latestProfileTestFileCoverageRatio(
+		testFiles.length,
+		allTestFiles.length,
+		latestProfileDeclaredTestFileCount,
+	);
 	const phases = summarizePhases(phaseEntries);
 	const intents = summarizeIntents(recentSamples, phaseEntries, policy.max_intents);
 	const visibleFindings = findings;
@@ -943,7 +992,19 @@ export function createTestPerformanceReport(
 		latest_run_duration_ms: latestReceipt?.performance.duration_ms ?? null,
 		latest_profile_phase_count: summarizeLatestProfilePhases(latestProfile).length,
 		latest_profile_test_file_count: allTestFiles.length,
+		latest_profile_declared_test_file_count: latestProfileDeclaredTestFileCount,
+		latest_profile_generated_at: extractLatestProfileGeneratedAt(latestProfile),
+		latest_profile_age_ms: extractLatestProfileAgeMs(latestProfile, Date.now()),
+		latest_profile_test_file_coverage_ratio: latestProfileCoverageRatio,
+		latest_profile_test_files_truncated: latestProfileCoverageRatio === null
+			? false
+			: latestProfileCoverageRatio < 1,
 		retained_summary_intent_count: extractRetainedSummaryIntentCount(retainedSummaryIntentCount),
+	};
+
+	const hashSummary = {
+		...summary,
+		latest_profile_age_ms: null,
 	};
 
 	return {
@@ -957,7 +1018,7 @@ export function createTestPerformanceReport(
 		ok: status === 'passed',
 		mustflow_root: root,
 		policy,
-		input_hash: sha256Tagged(JSON.stringify({ policy, evidenceSources, summary, recentSamples, nextActions })),
+		input_hash: sha256Tagged(JSON.stringify({ policy, evidenceSources, summary: hashSummary, recentSamples, nextActions })),
 		evidence_sources: evidenceSources,
 		summary,
 		intents,

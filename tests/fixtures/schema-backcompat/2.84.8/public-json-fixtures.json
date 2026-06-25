@@ -2603,6 +2603,11 @@
           "latest_run_duration_ms": null,
           "latest_profile_phase_count": 0,
           "latest_profile_test_file_count": 0,
+          "latest_profile_declared_test_file_count": null,
+          "latest_profile_generated_at": null,
+          "latest_profile_age_ms": null,
+          "latest_profile_test_file_coverage_ratio": null,
+          "latest_profile_test_files_truncated": false,
           "retained_summary_intent_count": null
         },
         "intents": [],
