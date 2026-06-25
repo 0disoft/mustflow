@@ -3,11 +3,8 @@ import { mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from 'no
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { projectRoot } from './helpers/cli-harness.js';
+import { projectRoot, runCliInProcess } from './helpers/cli-harness.js';
 import {
-	cloneInvalidSourceAnchorProject,
-	cloneSourceAnchorIndexedProject,
-	cloneSourceIndexConfigProject,
 	createLocalIndexDirect,
 	createMinimalWorkflowProject,
 	getCachedIndexedProjectFixture,
@@ -18,7 +15,6 @@ import {
 	prepareSourceIndexConfigProject,
 	queryRows,
 	removeTempProject,
-	runCli,
 	sourceAnchorStatusChangedSource,
 } from './index-support.js';
 
@@ -49,67 +45,63 @@ test('does not index source anchors unless source indexing is requested', async 
 });
 
 test('indexes source anchors only when source indexing is requested', async () => {
-	const projectPath = cloneSourceAnchorIndexedProject();
 	const fixture = getCachedIndexedProjectFixture({
 		variant: 'source-anchors',
 		indexArgs: ['--source'],
 		prepare: prepareSourceAnchorProject,
 		prepareKey: 'source-anchors-v1',
 	});
+	const projectPath = fixture.projectPath;
 
-	try {
-		const output = fixture.indexOutput;
-		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJsCached();
-		const database = new SQL.Database(readFileSync(indexPath));
-		const [anchor] = queryRows(database, 'SELECT * FROM source_anchors WHERE id = "auth.session.resolve"');
-		const [fingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.resolve"');
-		const [constFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.mapper"');
-		const [classFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store"');
-		const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
-		const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
+	const output = fixture.indexOutput;
+	const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+	const SQL = await loadSqlJsCached();
+	const database = new SQL.Database(readFileSync(indexPath));
+	const [anchor] = queryRows(database, 'SELECT * FROM source_anchors WHERE id = "auth.session.resolve"');
+	const [fingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.resolve"');
+	const [constFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.mapper"');
+	const [classFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store"');
+	const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
+	const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-		assert.equal(output.schema_version, '20');
-		assert.equal(output.source_index_enabled, true);
-		assert.equal(output.source_anchor_count, 4);
-		assert.ok(output.indexed_paths.includes('src/auth.ts'));
-		assert.equal(anchor.path, 'src/auth.ts');
-		assert.equal(anchor.purpose, 'Map verified server session claims to app user context.');
-		assert.equal(anchor.search_terms, 'login, session refresh, role mapping, authorization');
-		assert.equal(anchor.risk, 'authz, pii');
-		assert.equal(anchor.navigation_only, 1);
-		assert.equal(anchor.can_instruct_agent, 0);
-		assert.match(fingerprint.anchor_metadata_hash, /^sha256:/);
-		assert.match(fingerprint.anchor_text_hash, /^sha256:/);
-		assert.match(fingerprint.context_hash, /^sha256:/);
-		assert.equal(fingerprint.symbol_kind, 'function');
-		assert.equal(fingerprint.symbol_name, 'resolveSessionUser');
-		assert.equal(fingerprint.symbol_exported, 1);
-		assert.match(fingerprint.signature_hash, /^sha256:/);
-		assert.match(fingerprint.body_hash, /^sha256:/);
-		assert.equal(fingerprint.symbol_start_line, 8);
-		assert.equal(fingerprint.symbol_end_line, 10);
-		assert.equal(constFingerprint.symbol_kind, 'const');
-		assert.equal(constFingerprint.symbol_name, 'sessionMapper');
-		assert.equal(constFingerprint.symbol_exported, 1);
-		assert.equal(classFingerprint.symbol_kind, 'class');
-		assert.equal(classFingerprint.symbol_name, 'SessionStore');
-		assert.equal(classFingerprint.symbol_exported, 0);
-		assert.equal(methodFingerprint.symbol_kind, 'method');
-		assert.equal(methodFingerprint.symbol_name, 'getUser');
-		assert.equal(methodFingerprint.symbol_exported, 1);
-		assert.equal(status.status, 'valid');
-		assert.equal(status.confidence, 1);
-		assert.equal(status.identity_signal, 'current_anchor_id_valid');
-		assert.equal(status.symbol_signal, 'current_symbol_fingerprinted');
-		assert.equal(status.body_signal, 'current_body_fingerprinted');
-		assert.equal(status.navigation_only, 1);
-		assert.equal(status.can_instruct_agent, 0);
-		assert.equal(Object.hasOwn(anchor, 'source_content'), false);
-		database.close();
-	} finally {
-		removeTempProject(projectPath);
-	}
+	assert.equal(output.schema_version, '20');
+	assert.equal(output.source_index_enabled, true);
+	assert.equal(output.source_anchor_count, 4);
+	assert.ok(output.indexed_paths.includes('src/auth.ts'));
+	assert.equal(anchor.path, 'src/auth.ts');
+	assert.equal(anchor.purpose, 'Map verified server session claims to app user context.');
+	assert.equal(anchor.search_terms, 'login, session refresh, role mapping, authorization');
+	assert.equal(anchor.risk, 'authz, pii');
+	assert.equal(anchor.navigation_only, 1);
+	assert.equal(anchor.can_instruct_agent, 0);
+	assert.match(fingerprint.anchor_metadata_hash, /^sha256:/);
+	assert.match(fingerprint.anchor_text_hash, /^sha256:/);
+	assert.match(fingerprint.context_hash, /^sha256:/);
+	assert.equal(fingerprint.symbol_kind, 'function');
+	assert.equal(fingerprint.symbol_name, 'resolveSessionUser');
+	assert.equal(fingerprint.symbol_exported, 1);
+	assert.match(fingerprint.signature_hash, /^sha256:/);
+	assert.match(fingerprint.body_hash, /^sha256:/);
+	assert.equal(fingerprint.symbol_start_line, 8);
+	assert.equal(fingerprint.symbol_end_line, 10);
+	assert.equal(constFingerprint.symbol_kind, 'const');
+	assert.equal(constFingerprint.symbol_name, 'sessionMapper');
+	assert.equal(constFingerprint.symbol_exported, 1);
+	assert.equal(classFingerprint.symbol_kind, 'class');
+	assert.equal(classFingerprint.symbol_name, 'SessionStore');
+	assert.equal(classFingerprint.symbol_exported, 0);
+	assert.equal(methodFingerprint.symbol_kind, 'method');
+	assert.equal(methodFingerprint.symbol_name, 'getUser');
+	assert.equal(methodFingerprint.symbol_exported, 1);
+	assert.equal(status.status, 'valid');
+	assert.equal(status.confidence, 1);
+	assert.equal(status.identity_signal, 'current_anchor_id_valid');
+	assert.equal(status.symbol_signal, 'current_symbol_fingerprinted');
+	assert.equal(status.body_signal, 'current_body_fingerprinted');
+	assert.equal(status.navigation_only, 1);
+	assert.equal(status.can_instruct_agent, 0);
+	assert.equal(Object.hasOwn(anchor, 'source_content'), false);
+	database.close();
 });
 
 test('source incremental index reuses unchanged candidate fingerprints before parsing anchors', async () => {
@@ -255,34 +247,30 @@ export const sameFingerprintAnchor = true;
 });
 
 test('uses index config to bound source anchor scanning', async () => {
-	const projectPath = cloneSourceIndexConfigProject();
 	const fixture = getCachedIndexedProjectFixture({
 		variant: 'source-index-config',
 		prepare: prepareSourceIndexConfigProject,
 		prepareKey: 'source-index-config-v1',
 	});
+	const projectPath = fixture.projectPath;
 
-	try {
-		const output = fixture.indexOutput;
-		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJsCached();
-		const database = new SQL.Database(readFileSync(indexPath));
-		const anchorRows = queryRows(database, 'SELECT id, path, navigation_only, can_instruct_agent FROM source_anchors ORDER BY id');
+	const output = fixture.indexOutput;
+	const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+	const SQL = await loadSqlJsCached();
+	const database = new SQL.Database(readFileSync(indexPath));
+	const anchorRows = queryRows(database, 'SELECT id, path, navigation_only, can_instruct_agent FROM source_anchors ORDER BY id');
 
-		assert.equal(output.source_index_enabled, true);
-		assert.equal(output.source_anchor_count, 1);
-		assert.deepEqual(anchorRows, [
-			{
-				id: 'source.config.kept',
-				path: 'src/kept/anchor.ts',
-				navigation_only: 1,
-				can_instruct_agent: 0,
-			},
-		]);
-		database.close();
-	} finally {
-		removeTempProject(projectPath);
-	}
+	assert.equal(output.source_index_enabled, true);
+	assert.equal(output.source_anchor_count, 1);
+	assert.deepEqual(anchorRows, [
+		{
+			id: 'source.config.kept',
+			path: 'src/kept/anchor.ts',
+			navigation_only: 1,
+			can_instruct_agent: 0,
+		},
+	]);
+	database.close();
 });
 
 test('applies the default source index file-size ceiling', async () => {
@@ -337,36 +325,32 @@ ${'x'.repeat(270000)}
 });
 
 test('does not index invalid source anchors and leaves them to strict validation', async () => {
-	const projectPath = cloneInvalidSourceAnchorProject();
 	const fixture = getCachedIndexedProjectFixture({
 		variant: 'invalid-source-anchors',
 		indexArgs: ['--source'],
 		prepare: prepareInvalidSourceAnchorProject,
 		prepareKey: 'invalid-source-anchors-v1',
 	});
+	const projectPath = fixture.projectPath;
 
-	try {
-		const output = fixture.indexOutput;
-		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
-		const SQL = await loadSqlJsCached();
-		const database = new SQL.Database(readFileSync(indexPath));
-		const [anchorCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchors');
-		const [statusCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchor_status');
-		const checkResult = runCli(projectPath, ['check', '--strict', '--json']);
-		const check = JSON.parse(checkResult.stdout);
-		const issueIds = new Set(check.issueDetails.map((issue) => issue.id));
+	const output = fixture.indexOutput;
+	const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+	const SQL = await loadSqlJsCached();
+	const database = new SQL.Database(readFileSync(indexPath));
+	const [anchorCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchors');
+	const [statusCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchor_status');
+	const checkResult = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
+	const check = JSON.parse(checkResult.stdout);
+	const issueIds = new Set(check.issueDetails.map((issue) => issue.id));
 
-		assert.equal(output.source_index_enabled, true);
-		assert.equal(output.source_anchor_count, 0);
-		assert.equal(anchorCount.count, 0);
-		assert.equal(statusCount.count, 0);
-		assert.equal(checkResult.status, 1);
-		assert.ok(issueIds.has('mustflow.source_anchor.invalid_format'));
-		assert.ok(issueIds.has('mustflow.source_anchor.secret_like'));
-		database.close();
-	} finally {
-		removeTempProject(projectPath);
-	}
+	assert.equal(output.source_index_enabled, true);
+	assert.equal(output.source_anchor_count, 0);
+	assert.equal(anchorCount.count, 0);
+	assert.equal(statusCount.count, 0);
+	assert.equal(checkResult.status, 1);
+	assert.ok(issueIds.has('mustflow.source_anchor.invalid_format'));
+	assert.ok(issueIds.has('mustflow.source_anchor.secret_like'));
+	database.close();
 });
 
 test('compares source anchor status against the previous fingerprint snapshot', async () => {
