@@ -231,6 +231,7 @@ const DEFAULT_MAX_FINDINGS = 80;
 const DEFAULT_SLOW_SAMPLE_THRESHOLD_MS = 120_000;
 const DEFAULT_HIGH_TIMEOUT_RATIO = 0.75;
 const DEFAULT_PHASE_BOTTLENECK_THRESHOLD_MS = 30_000;
+const DEFAULT_STALE_PROFILE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 const MAX_EVIDENCE_BYTES = 512 * 1024;
 const ERROR_CODES = new Set<TestPerformanceFindingCode>(['test_performance_unreadable_evidence']);
 
@@ -797,6 +798,7 @@ function createNextActions(
 	findings: readonly TestPerformanceFinding[],
 	testFiles: readonly TestPerformanceTestFileSummary[],
 	latestProfileTestFileCount: number,
+	latestProfileAgeMs: number | null,
 	policy: TestPerformancePolicy,
 ): readonly TestPerformanceNextAction[] {
 	const actions: TestPerformanceNextAction[] = [];
@@ -817,6 +819,22 @@ function createNextActions(
 			code: 'collect_profile_evidence',
 			message:
 				'Collect test-file profile evidence before changing file-level sharding, fixture reuse, or test splitting policy.',
+			command_intent: 'test_related_profile',
+			run_hint: 'mf run test_related_profile',
+			finding_codes: [],
+		});
+	}
+
+	if (
+		samples.length > 0 &&
+		latestProfileTestFileCount > 0 &&
+		latestProfileAgeMs !== null &&
+		latestProfileAgeMs >= DEFAULT_STALE_PROFILE_THRESHOLD_MS
+	) {
+		actions.push({
+			code: 'collect_profile_evidence',
+			message:
+				'Latest test profile is older than 24h; collect fresh profile evidence before changing scheduling, caching, timeout, or fixture policy.',
 			command_intent: 'test_related_profile',
 			run_hint: 'mf run test_related_profile',
 			finding_codes: [],
@@ -976,11 +994,21 @@ export function createTestPerformanceReport(
 	const phases = summarizePhases(phaseEntries);
 	const intents = summarizeIntents(recentSamples, phaseEntries, policy.max_intents);
 	const visibleFindings = findings;
+	const nowMs = Date.now();
+	const latestProfileGeneratedAt = extractLatestProfileGeneratedAt(latestProfile);
+	const latestProfileAgeMs = extractLatestProfileAgeMs(latestProfile, nowMs);
 
 	createFindings(recentSamples, phases, testFiles, policy, visibleFindings);
 
 	const status = reportStatus(visibleFindings);
-	const nextActions = createNextActions(recentSamples, visibleFindings, testFiles, allTestFiles.length, policy);
+	const nextActions = createNextActions(
+		recentSamples,
+		visibleFindings,
+		testFiles,
+		allTestFiles.length,
+		latestProfileAgeMs,
+		policy,
+	);
 	const summary: TestPerformanceSummary = {
 		evidence_source_count: evidenceSources.filter((source) => source.readable).length,
 		sample_count: recentSamples.length,
@@ -993,8 +1021,8 @@ export function createTestPerformanceReport(
 		latest_profile_phase_count: summarizeLatestProfilePhases(latestProfile).length,
 		latest_profile_test_file_count: allTestFiles.length,
 		latest_profile_declared_test_file_count: latestProfileDeclaredTestFileCount,
-		latest_profile_generated_at: extractLatestProfileGeneratedAt(latestProfile),
-		latest_profile_age_ms: extractLatestProfileAgeMs(latestProfile, Date.now()),
+		latest_profile_generated_at: latestProfileGeneratedAt,
+		latest_profile_age_ms: latestProfileAgeMs,
 		latest_profile_test_file_coverage_ratio: latestProfileCoverageRatio,
 		latest_profile_test_files_truncated: latestProfileCoverageRatio === null
 			? false

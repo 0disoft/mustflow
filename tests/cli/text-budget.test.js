@@ -713,6 +713,81 @@ test('test-performance-report inspects top-heavy profiled test files below the s
 	}
 });
 
+test('test-performance-report asks for fresh profile evidence when the latest profile is stale', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'perf'), { recursive: true });
+		mkdirSync(path.join(projectPath, '.mustflow', 'state', 'runs'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'perf', 'samples.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					retention: {},
+					samples: [
+						{
+							observed_day: '2026-06-25',
+							intent: 'test_related',
+							duration_ms: 32000,
+							timeout_ratio: 0.08,
+							status: 'passed',
+							selection_strategy: 'related',
+							changed_file_count: 2,
+							selected_target_count: 5,
+							fallback_used: false,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.profile.json'),
+			`${JSON.stringify(
+				{
+					schema_version: '1',
+					generated_at: '2000-01-01T00:00:00.000Z',
+					mode: 'related-profile',
+					intent: 'test_related_profile',
+					total_duration_ms: 1000,
+					file_count: 1,
+					test_files: [
+						{
+							path: 'tests/cli/stale.test.js',
+							duration_ms: 1000,
+							status: 'passed',
+							exit_code: 0,
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const { result, report } = runTestPerformanceReportJson(projectPath, []);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.summary.latest_profile_generated_at, '2000-01-01T00:00:00.000Z');
+		assert.equal(typeof report.summary.latest_profile_age_ms, 'number');
+		assert.ok(report.summary.latest_profile_age_ms >= 24 * 60 * 60 * 1000);
+
+		const staleProfileAction = report.next_actions.find((action) =>
+			action.code === 'collect_profile_evidence' &&
+			/fresh profile evidence/u.test(action.message)
+		);
+		assert.ok(staleProfileAction, 'missing stale profile collect_profile_evidence next action');
+		assert.equal(staleProfileAction.command_intent, 'test_related_profile');
+		assert.equal(staleProfileAction.run_hint, 'mf run test_related_profile');
+		assert.deepEqual(staleProfileAction.finding_codes, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('test-regression-selector selects changed tests and nearby source tests', () => {
 	const projectPath = createTempProject();
 
