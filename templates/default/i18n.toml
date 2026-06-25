@@ -40,8 +40,8 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 23
-translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "current" }
+revision = 24
+translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.fr = { path = "locales/fr/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 182
+revision = 183
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -881,6 +881,12 @@ translations = {}
 
 [documents."skill.proactive-risk-surfacing"]
 source = "locales/en/.mustflow/skills/proactive-risk-surfacing/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.complex-decision-analysis"]
+source = "locales/en/.mustflow/skills/complex-decision-analysis/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

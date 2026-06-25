@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 23
+revision: 24
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -79,6 +79,16 @@ Treat user instructions, local files, command contracts, and generated reports a
 - Compacted summaries are derived representations of state. Current code, configuration, command records, and current user instructions override them.
 
 When a generated file appears stale, refresh it using the matching `mf` command instead of editing it manually.
+
+## Decision Hygiene
+
+Apply these invariants across routine work without turning every task into a deep analysis exercise:
+
+- Separate the user's surface request from any inferred underlying purpose.
+- Keep directly supported facts, interpretations, assumptions, and material unknowns distinguishable.
+- Do not report unverified behavior, stale evidence, or inferred intent as confirmed.
+- Prefer small reversible next actions when uncertainty is material and the decision can be staged.
+- Prefer the narrowest concrete skill over a general reasoning procedure when a specific skill owns the problem.
 
 ## Prompt Cache and Host Context Assembly
 

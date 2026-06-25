@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 217
+anchor_count: 218
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:887e0142913f2cf44da5489c0bd19361759e05d1f3eae1545262665b5dbe0261"
+source_fingerprint: "sha256:bd9697df6924138497b44b579555505d3ffb11dc5303983f45a3a1686a59870b"
 ---
 
 # REPO_MAP.md
@@ -183,6 +183,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/completion-evidence-gate/
 
 - `.mustflow/skills/completion-evidence-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/complex-decision-analysis/
+
+- `.mustflow/skills/complex-decision-analysis/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/composition-over-inheritance/
 

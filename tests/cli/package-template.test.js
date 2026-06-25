@@ -283,6 +283,12 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.skillProfiles.product.includes('process-execution-safety'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
 	assert.equal(template.manifest.skillProfiles.product.includes('release-publish-change'), false);
+	assert.equal(template.manifest.skillProfiles.minimal.includes('complex-decision-analysis'), false);
+	assert.equal(template.manifest.skillProfiles.patterns.includes('complex-decision-analysis'), false);
+	assert.equal(template.manifest.skillProfiles.oss.includes('complex-decision-analysis'), false);
+	assert.equal(template.manifest.skillProfiles.library.includes('complex-decision-analysis'), false);
+	assert.ok(template.manifest.skillProfiles.team.includes('complex-decision-analysis'));
+	assert.ok(template.manifest.skillProfiles.product.includes('complex-decision-analysis'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-render-stability'));
 	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('prompt-contract-quality-review'));

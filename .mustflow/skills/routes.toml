@@ -150,6 +150,12 @@ route_type = "primary"
 priority = 50
 applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "workflow_change", "product_change"]
 
+[routes."complex-decision-analysis"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 45
+applies_to_reasons = ["unknown_change", "product_change", "cross_cutting_code_change"]
+
 [routes."codebase-orientation"]
 category = "general_code"
 route_type = "primary"

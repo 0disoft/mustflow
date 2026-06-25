@@ -46,7 +46,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.99.1');
+	assert.equal(packageJson.version, '2.99.2');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -111,6 +111,17 @@ test('default template installs the auth, Docker, and search triage skills acros
 			);
 		}
 	}
+});
+
+test('default template installs complex decision analysis only for team decision workflows', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/complex-decision-analysis/SKILL.md'));
+
+	assert.equal(readTemplateSkillProfile('minimal').includes('complex-decision-analysis'), false);
+	assert.equal(readTemplateSkillProfile('patterns').includes('complex-decision-analysis'), false);
+	assert.equal(readTemplateSkillProfile('oss').includes('complex-decision-analysis'), false);
+	assert.equal(readTemplateSkillProfile('library').includes('complex-decision-analysis'), false);
+	assert.ok(readTemplateSkillProfile('team').includes('complex-decision-analysis'));
+	assert.ok(readTemplateSkillProfile('product').includes('complex-decision-analysis'));
 });
 
 test('package exposes a real install verification script', () => {
