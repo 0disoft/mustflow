@@ -2,11 +2,11 @@
 mustflow_doc: skill.clarifying-question-gate
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: clarifying-question-gate
-description: Apply this skill when a coding task has missing intent, scope, domain, data, security, UX, dependency, architecture, or verification decisions that cannot be safely inferred from current repository evidence.
+description: Apply this skill when a coding task needs request-contract repair: missing intent, scope, completion evidence, domain, data, security, UX, dependency, architecture, or verification decisions cannot be safely inferred from current repository evidence. Use it to proceed with safe assumptions, ask bounded confirmation questions, or reroute conflicts without becoming a general prompt-writing skill.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -23,11 +23,16 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Ask only the questions that protect the work from expensive wrong assumptions.
+Repair an ambiguous request into an executable task contract, and ask only the questions that
+protect the work from expensive wrong assumptions.
 
 Good agent work is not maximally autonomous and not maximally interrogative. It moves forward on
 cheap, reversible, repository-evident decisions, and stops before choices that are costly to undo or
 whose correct answer belongs to the user, product owner, security owner, or operations owner.
+
+The goal is not to make the user rewrite the prompt. Normalize the request inside the current task,
+state the interpretation when it matters, and continue unless a high-cost decision still needs
+confirmation.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -44,6 +49,7 @@ whose correct answer belongs to the user, product owner, security owner, or oper
   maintenance burden.
 - You are about to add a new dependency, service, folder boundary, storage model, framework pattern,
   persistent state, or broad refactor that the current files do not already require.
+- The request can be safely clarified by a short normalized contract instead of a long back-and-forth.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -54,9 +60,21 @@ whose correct answer belongs to the user, product owner, security owner, or oper
 - A more specific skill already requires a blocking question for the same risk and covers the whole
   decision, such as `structure-discovery-gate`, `auth-permission-change`, `database-migration-change`,
   `dependency-upgrade-review`, or `release-publish-change`.
+- The request is mainly to draft a task prompt, work order, issue, PR instruction, or handoff for
+  another agent; use `task-instruction-authoring`.
+- The work is a production prompt, prompt builder, RAG prompt, structured output, eval, or model/tool
+  policy; use `prompt-contract-quality-review`.
+- Repository, host, user, nested-project, command-contract, or generated instruction sources
+  conflict; use `instruction-conflict-scope-check`.
+- Hidden structural decisions dominate the task, such as a new data model, service boundary, storage
+  strategy, provider, public URL contract, or long-lived architecture choice; use
+  `structure-discovery-gate`.
 - Asking would only delegate ordinary engineering responsibility, such as "should I add tests?",
   "should I handle errors?", "what stack is this?", or "what style should I use?" when the repository
   already answers it.
+- The only useful output would be "copy this rewritten prompt and send it again." Produce a
+  normalized contract and proceed in the current conversation unless the user explicitly requested a
+  reusable prompt artifact or the request is too broken to execute.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -68,6 +86,13 @@ whose correct answer belongs to the user, product owner, security owner, or oper
 - Reversibility classification for each decision: cheap/reversible, moderate, or expensive/hard to
   roll back.
 - A recommended option for each blocking question, with the tradeoff of at least one alternative.
+- A request-state decision: `ready`, `ready_with_assumptions`, `needs_confirmation`,
+  `blocked_by_conflict`, or `insufficient_evidence`.
+- A normalized task contract when the original request is vague enough to risk drift: goal, current
+  context, change scope, excluded scope, user-visible behavior, constraints, completion evidence,
+  verification, report format, and remaining risks.
+- Source tags for contract entries: `user_confirmed`, `repository_derived`, `safe_assumption`, or
+  `unresolved`.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -79,6 +104,8 @@ whose correct answer belongs to the user, product owner, security owner, or oper
   scope.
 - Questions are limited to decisions that block safe implementation, not curiosity, preference
   collection, or broad product discovery.
+- Product decisions are separated from engineering responsibilities. Do not ask whether to preserve
+  existing style, avoid swallowed errors, add appropriate tests, or follow command contracts.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -105,32 +132,68 @@ whose correct answer belongs to the user, product owner, security owner, or oper
      working;
    - `blocking_question`: stop before implementation because the wrong choice would be expensive,
      user-visible, security-sensitive, data-affecting, dependency-affecting, or hard to roll back.
-4. Ask about observable completion before feature shape when success is unclear:
+4. Choose exactly one request state:
+   - `ready`: no material ambiguity remains; proceed normally.
+   - `ready_with_assumptions`: only narrow reversible assumptions remain; proceed and report them.
+   - `needs_confirmation`: one or more user-owned, high-cost, or hard-to-reverse decisions must be
+     confirmed before implementation.
+   - `blocked_by_conflict`: instructions or command authority conflict; reroute to
+     `instruction-conflict-scope-check`.
+   - `insufficient_evidence`: more repository reading, reproduction, or scoped analysis is needed
+     before asking or implementing.
+5. Build a normalized task contract when the user request is underspecified but executable:
+   - goal;
+   - current context;
+   - change scope;
+   - excluded scope;
+   - user-visible behavior;
+   - constraints;
+   - completion evidence;
+   - verification;
+   - report format;
+   - remaining risks.
+   Tag each non-obvious contract entry as `user_confirmed`, `repository_derived`,
+   `safe_assumption`, or `unresolved`. Do not add new product requirements while normalizing.
+6. Ask about observable completion before feature shape when success is unclear:
    - what behavior proves the task is done;
    - which user path, command, test, screenshot, migration state, or registry/release state closes it.
-5. Ask about scope only when plausible scopes have different cost or risk:
+7. Ask about scope only when plausible scopes have different cost or risk:
    - minimal symptom fix, root-cause fix, or broader cleanup;
    - prototype, maintainable production path, or release-ready path.
-6. Ask about existing users and data before changing persistence, lifecycle, deletion, migration,
+8. Ask about existing users and data before changing persistence, lifecycle, deletion, migration,
    retention, cache, API compatibility, or old-client behavior.
-7. Ask about failure UX before implementing user-visible success flows where failure handling is a
+9. Ask about failure UX before implementing user-visible success flows where failure handling is a
    product decision: retry, queue, message, audit/log-only, rollback, partial success, or manual
    recovery.
-8. Ask about security and authorization before relying on UI hiding, client-side checks, roles,
+10. Ask about security and authorization before relying on UI hiding, client-side checks, roles,
    invites, team boundaries, file access, billing state, or admin features.
-9. Ask before adding or swapping dependencies, services, queues, databases, auth providers, design
+11. Ask before adding or swapping dependencies, services, queues, databases, auth providers, design
    systems, state managers, or major folder boundaries.
-10. Ask about verification when there is no declared command intent or when the user expects a
+12. Ask about verification when there is no declared command intent or when the user expects a
     specific proof beyond the repository's configured checks.
-11. Keep the question set short:
+13. Keep the question set short:
     - ask at most three questions at once;
+    - ask only one question when its answer may make later questions irrelevant;
     - each question must name the decision, the recommended choice, the consequence of that choice,
       and one meaningful alternative;
     - avoid open-ended prompts like "how should I implement this?" unless no responsible options can
       be framed from repository evidence.
-12. If no blocking question remains, proceed without ceremony. State only the assumptions that matter
+14. Do not ask bad engineering-delegation questions:
+    - "Should I add tests?"
+    - "Should I handle errors?"
+    - "Should I follow existing style?"
+    - "Should I check current files?"
+    - "Should I preserve existing behavior?"
+15. Use prompt rewriting only as an exception:
+    - the user explicitly asks for a prompt, issue, PR body, work order, or handoff for another
+      agent;
+    - the current request is too broken to execute and a normalized contract plus confirmation is the
+      smallest safe next step.
+    Otherwise, show the normalized contract only when it materially reduces drift, then proceed in
+    the same conversation.
+16. If no blocking question remains, proceed without ceremony. State only the assumptions that matter
     to review or rollback.
-13. If a blocking question remains unanswered, do not implement around it. Offer the smallest safe
+17. If a blocking question remains unanswered, do not implement around it. Offer the smallest safe
     non-blocked action, such as read-only analysis, a plan, a reproduction, or a narrow preparatory
     refactor when another selected skill supports it.
 
@@ -142,6 +205,9 @@ whose correct answer belongs to the user, product owner, security owner, or oper
 - Expensive, user-owned, security-sensitive, data-affecting, dependency-affecting, and public-contract
   decisions are resolved before implementation.
 - Safe assumptions are narrow, reversible, and reported.
+- Any normalized contract preserves the user's original request separately from repository-derived
+  facts and safe assumptions.
+- Prompt rewriting is not used as a substitute for proceeding in the current task.
 - The final work can be judged against observable success criteria or a reported verification gap.
 
 <!-- mustflow-section: verification -->
@@ -165,6 +231,10 @@ run the specific configured verification intents required by the selected implem
   the evidence if it affects the final report.
 - If a blocking question reveals a larger feature, switch to the relevant skill before editing that
   new scope.
+- If the issue is an instruction conflict rather than missing detail, switch to
+  `instruction-conflict-scope-check` instead of negotiating the conflict as a preference question.
+- If structural design owns the decision, switch to `structure-discovery-gate`; if a prompt artifact
+  or work order owns it, switch to `task-instruction-authoring` or `prompt-contract-quality-review`.
 - If the task becomes over-scoped, reduce the next action to the smallest safe slice with explicit
   acceptance evidence.
 - If verification intent is missing, report the missing command contract instead of inventing a raw
@@ -174,6 +244,10 @@ run the specific configured verification intents required by the selected implem
 ## Output Format
 
 - Repository evidence inspected
+- Request state: `ready`, `ready_with_assumptions`, `needs_confirmation`, `blocked_by_conflict`, or
+  `insufficient_evidence`
+- Normalized task contract, only when needed, with `user_confirmed`, `repository_derived`,
+  `safe_assumption`, and `unresolved` source tags
 - Blocking questions asked, with recommendation and tradeoff
 - Safe assumptions made
 - Decisions intentionally deferred
