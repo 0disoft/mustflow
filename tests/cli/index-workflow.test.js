@@ -14,6 +14,7 @@ import {
 	createLocalIndexDirect,
 	createMinimalWorkflowProject,
 	getCachedIndexedProjectFixture,
+	importDistModule,
 	loadSqlJsCached,
 	prepareGraphIndexedProject,
 	prepareInvalidSourceAnchorProject,
@@ -25,6 +26,15 @@ import {
 	removeTempProject,
 	sourceAnchorStatusChangedSource,
 } from './index-support.js';
+
+test('reuses loaded sql.js runtime within the current process', async () => {
+	const { loadSqlJs } = await importDistModule('cli/lib/local-index/sql.js');
+	const [firstRuntime, secondRuntime] = await Promise.all([loadSqlJs(), loadSqlJs()]);
+	const thirdRuntime = await loadSqlJs();
+
+	assert.equal(firstRuntime, secondRuntime);
+	assert.equal(secondRuntime, thirdRuntime);
+});
 
 test('writes a sqlite local index for mustflow documents and command intents', async () => {
 	const projectPath = cloneGraphIndexedProject();

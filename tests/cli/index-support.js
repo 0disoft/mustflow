@@ -6,6 +6,7 @@ import {
 	cloneCachedIndexedProjectFixture,
 	createLocalIndexDirect,
 	getCachedIndexedProjectFixture,
+	importDistModule,
 	readLatestLocalVerificationReadModelQueriesDirect,
 } from './helpers/local-index-fixtures.js';
 import { loadSqlJsCached, queryRows } from './helpers/sqlite-assertions.js';
@@ -748,6 +749,7 @@ export {
 	createLocalIndexDirect,
 	createTempProject,
 	getCachedIndexedProjectFixture,
+	importDistModule,
 	loadSqlJsCached,
 	queryRows,
 	readLatestLocalVerificationReadModelQueriesDirect,

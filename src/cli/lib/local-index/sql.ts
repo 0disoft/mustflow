@@ -20,7 +20,9 @@ interface SqlJsQueryResult {
 	readonly values: readonly (readonly SqlValue[])[];
 }
 
-export async function loadSqlJs(): Promise<SqlJsStatic> {
+let sqlJsPromise: Promise<SqlJsStatic> | null = null;
+
+async function initializeSqlJs(): Promise<SqlJsStatic> {
 	const require = createRequire(import.meta.url);
 	const wasmPath = require.resolve('sql.js/dist/sql-wasm.wasm');
 	const sqlJsModule = (await import('sql.js')) as { default?: InitSqlJs } | InitSqlJs;
@@ -35,4 +37,13 @@ export async function loadSqlJs(): Promise<SqlJsStatic> {
 			return fileName.endsWith('.wasm') ? wasmPath : fileName;
 		},
 	});
+}
+
+export async function loadSqlJs(): Promise<SqlJsStatic> {
+	sqlJsPromise ??= initializeSqlJs().catch((error: unknown) => {
+		sqlJsPromise = null;
+		throw error;
+	});
+
+	return sqlJsPromise;
 }
