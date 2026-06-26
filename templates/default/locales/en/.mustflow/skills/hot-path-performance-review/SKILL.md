@@ -2,11 +2,11 @@
 mustflow_doc: skill.hot-path-performance-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: hot-path-performance-review
-description: Apply this skill when code is created, changed, reviewed, or reported and the main performance risk is ordinary work repeated many times, such as repeated I/O, repeated scans, hidden quadratic lookup, per-item allocation, lock hold time, sequential async waits, unbounded fan-out, or missing observability for hot paths.
+description: Apply this skill when code is created, changed, reviewed, or reported and the main performance risk is ordinary work repeated many times, such as repeated I/O, repeated scans, hidden quadratic lookup, allocation or GC churn, per-item parsing or serialization, lock hold time, sequential async waits, unbounded fan-out, or missing observability for hot paths.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -54,7 +54,7 @@ The review question is not only "which line looks slow?" It is "how often does t
 
 - Hot path: the request, loop, render, job, export, import, queue consumer, sync, report, or command path under review.
 - Multipliers: requests, rows, items, files, users, tenants, retries, pages, renders, workers, queue messages, shards, or nested loops that multiply the work.
-- Per-iteration cost: external calls, queries, filesystem reads, allocations, clones, DTO conversions, JSON parse/stringify, logging, formatting, regex, sorting, hashing, image or crypto work, and lock hold time.
+- Per-iteration cost: external calls, queries, filesystem reads, temporary arrays, object spreads, array spreads, concat copies, clones, DTO conversions, JSON parse/stringify, string splitting, logging, formatting, regex, sorting, hashing, image or crypto work, and lock hold time.
 - Boundary ledger: DB, network, cache, filesystem, IPC, provider SDK, queue, logger, metrics sink, transaction, pool, mutex, thread, goroutine, task, or UI main thread crossed by the path.
 - Data-size and tail-latency evidence when available: p50, p95, p99, row count, payload size, allocation count, query count, round-trip count, queue depth, pool wait, lock wait, cache hit rate, retry count, or timeout behavior.
 - Correctness boundaries: order, duplicates, idempotency, authorization, tenant isolation, consistency, partial failure, stale data, cancellation, retry semantics, and error behavior.
@@ -100,22 +100,27 @@ The review question is not only "which line looks slow?" It is "how often does t
 10. Reuse expensive clients and sessions. Per-request or per-item HTTP clients, DB clients, ORM clients, SDK clients, connection pools, TLS handshakes, regexes, date formatters, and thread pools are performance traps unless the API requires that lifecycle.
 11. Check cache honesty. A cache needs a bounded key space, invalidation or TTL, max size, authorization dimensions, negative-cache policy, stale behavior, and cache stampede protection such as locking, singleflight, early refresh, or request coalescing.
 12. Check logging and telemetry in hot paths. Repeated debug logs, eager log-string creation, whole-object serialization, high-cardinality metrics, and JSON formatting for discarded logs can dominate CPU and I/O during incidents.
-13. Check string, JSON, DTO, and clone churn. Repeated string concatenation, `JSON.parse(JSON.stringify(...))`, `cloneDeep`, broad object spread, deep copy, repeated DTO-to-DTO conversion, and repeated serialization can move the bottleneck into "clean" mapping code.
-14. Check large value passing and materialization. In value-copy languages or APIs, large structs, arrays, buffers, spread copies, full file reads, full JSON loads, and eager `collect` calls can turn neat code into memory traffic.
-15. Check regex, parsing, formatting, and locale work. Nested or ambiguous regexes, repeated date parsing, timezone conversion, numeric or locale formatting, and per-row formatter creation should be reviewed with worst-case input in mind.
-16. Check CPU-heavy work in request or UI paths. Image resizing, compression, encryption, hashing, diffing, report generation, spreadsheet export, and search indexing may need batching, worker offload, queueing, or streaming, but only with clear backpressure and failure behavior.
-17. Check queues and workers. Moving work to a queue only moves the bottleneck unless consumers batch DB writes, bulk external calls where safe, bound retries, apply jitter, define poison-message handling, and expose backlog.
-18. Check retry and timeout multiplication. A request with several calls, long timeouts, and several retries can become a tail-latency monster. Count worst-case wait and verify idempotency before adding more attempts.
-19. Review tail behavior, not just average. p50 can look fine while p95 or p99 holds locks, connections, workers, or thread-pool slots long enough to hurt everyone else.
-20. Add observability before large optimization when evidence is missing. Prefer query count, external-call count, payload bytes, allocation count, cache hit rate, queue backlog, pool wait, lock wait, retry count, and span timing over guessing.
-21. Rank the likely payoff. Usually fix repeated external round trips, N+1 access, hidden quadratic scans, overfetching, wide transactions, lock hold time, unbounded fan-out, and missing timeouts before micro-optimizing arithmetic.
-22. Label evidence honestly. If there is no configured benchmark or production trace, report the finding as static complexity or hot-path risk, not measured speedup.
+13. Check allocation and GC churn before micro-optimizing arithmetic.
+    - `filter().map().reduce()`, `flatMap`, `Object.values`, `Object.entries`, `split().map(trim)`, `slice`, and `sort` chains can allocate large temporary arrays.
+    - Spread accumulation, `concat` in loops, repeated object spread while building indexes, and `cloneDeep` can copy growing data many times.
+    - `JSON.stringify` or `JSON.parse(JSON.stringify(...))` used for comparison, cloning, cache keys, or logging can dominate CPU and allocation while losing type semantics.
+    - Repeated `RegExp`, `Date`, `Intl`, formatter, `Set`, or `Map` construction inside hot loops should move outside the loop or become request-scoped only when ownership and memory bounds are clear.
+14. Check string, JSON, DTO, and clone churn. Repeated string concatenation, `JSON.parse(JSON.stringify(...))`, `cloneDeep`, broad object spread, deep copy, repeated DTO-to-DTO conversion, and repeated serialization can move the bottleneck into "clean" mapping code.
+15. Check large value passing and materialization. In value-copy languages or APIs, large structs, arrays, buffers, spread copies, full file reads, full JSON loads, all-pages accumulation, and eager `collect` calls can turn neat code into memory traffic.
+16. Check regex, parsing, formatting, and locale work. Nested or ambiguous regexes, repeated date parsing, timezone conversion, numeric or locale formatting, and per-row formatter creation should be reviewed with worst-case input in mind.
+17. Check CPU-heavy work in request or UI paths. Image resizing, compression, encryption, hashing, diffing, report generation, spreadsheet export, and search indexing may need batching, worker offload, queueing, or streaming, but only with clear backpressure and failure behavior.
+18. Check queues and workers. Moving work to a queue only moves the bottleneck unless consumers batch DB writes, bulk external calls where safe, bound retries, apply jitter, define poison-message handling, and expose backlog.
+19. Check retry and timeout multiplication. A request with several calls, long timeouts, and several retries can become a tail-latency monster. Count worst-case wait and verify idempotency before adding more attempts.
+20. Review tail behavior, not just average. p50 can look fine while p95 or p99 holds locks, connections, workers, or thread-pool slots long enough to hurt everyone else.
+21. Add observability before large optimization when evidence is missing. Prefer query count, external-call count, payload bytes, allocation count, heap growth, GC pause, event-loop delay, cache hit rate, queue backlog, queue wait, pool wait, lock wait, retry count, and span timing over guessing.
+22. Rank the likely payoff. Usually fix repeated external round trips, N+1 access, hidden quadratic scans, overfetching, wide transactions, lock hold time, allocation churn, unbounded fan-out, and missing timeouts before micro-optimizing arithmetic.
+23. Label evidence honestly. If there is no configured benchmark or production trace, report the finding as static complexity or hot-path risk, not measured speedup.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Hot path, cost multipliers, data size, round-trip count, wait points, and copy or allocation points are explicit.
-- N+1 queries, repeated external calls, hidden quadratic scans, unbounded materialization, sequential waits, unbounded fan-out, per-item client creation, broad logging, repeated serialization, and lock or transaction hold time are fixed or reported.
+- N+1 queries, repeated external calls, hidden quadratic scans, unbounded materialization, temporary-array chains, spread or concat copy accumulation, sequential waits, unbounded fan-out, per-item client creation, broad logging, repeated parsing or serialization, allocation churn, and lock or transaction hold time are fixed or reported.
 - Cache, queue, retry, timeout, batching, bulk-write, concurrency, pagination, projection, index-fit, and observability behavior are explicit where relevant.
 - Correctness, authorization, tenant isolation, ordering, duplicates, partial failure, cancellation, and stale-data behavior remain intact or are called out as tradeoffs.
 - Performance claims are backed by configured evidence or labeled as static review risk.
@@ -151,7 +156,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Hot path reviewed
 - Cost ledger: iteration count, data size, round trips, wait time, copy or allocation count
 - Repeated external access, N+1, hidden quadratic scans, and multi-pass collection findings
-- DB, pagination, index-fit, transaction, lock, async, client reuse, cache, queue, retry, timeout, logging, serialization, clone, regex, parsing, formatting, and CPU-heavy work checked where relevant
+- DB, pagination, index-fit, transaction, lock, async, client reuse, cache, queue, retry, timeout, logging, temporary arrays, spread or concat accumulation, serialization, clone, regex, parsing, formatting, allocation, GC, and CPU-heavy work checked where relevant
 - Optimization or review recommendation
 - Evidence level: measured, configured-test evidence, static complexity risk, manual-only, missing, or not applicable
 - Command intents run

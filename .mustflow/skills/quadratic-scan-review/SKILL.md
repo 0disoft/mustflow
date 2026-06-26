@@ -2,7 +2,7 @@
 mustflow_doc: skill.quadratic-scan-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: quadratic-scan-review
@@ -84,33 +84,35 @@ The review question is not "is there a loop inside a loop?" That catches only th
 ## Procedure
 
 1. Name the repeated path and multiply call count by inner scan length. Review the product `outer_count * inner_count`, not the apparent number of loops.
-2. Search for the obvious collection-combinator shapes: `map` plus `filter`, `map` plus `find`, `forEach` plus `includes`, `filter` plus `indexOf`, `reduce` plus spread, and chained `filter().map().sort()` inside a repeated path.
+2. Search for the obvious collection-combinator shapes: `map` plus `filter`, `map` plus `find`, `forEach` plus `includes`, `filter` plus `indexOf`, `filter` plus `findIndex`, `reduce` plus spread, and chained `filter().map().sort()` inside a repeated path.
 3. Search for membership checks over arrays. `includes`, `indexOf`, `contains`, `find`, `some`, and list membership inside a loop usually want `Set.has` or `Map.has` unless the searched list is tiny and hard-capped.
 4. Search for code joins by ID. `posts.map(post => users.find(...))`, `users.map(user => orders.filter(...))`, permission lookups, likes, bookmarks, read state, tags, and relation lists usually need a `Map` or grouped `Map` keyed by ID or composite key.
 5. Check duplicate removal. `filter((x, i) => arr.indexOf(x) === i)` is O(N^2). Prefer `Set` for scalar values and `Map` keyed by stable identity for objects.
 6. Check sorted arrays. Sorting does not make `find` fast. If code repeatedly searches a sorted array, use a prebuilt map, binary search with a proven comparator, or a single sorted merge.
 7. Check repeated sorting. Sorting inside a per-item loop is usually worse than scanning once, keeping a top candidate, using a heap, or sorting once before the loop.
-8. Check copy-accumulation patterns. `reduce` with `[...acc, item]`, repeated object spread over a growing object, repeated string `+=`, and repeated concatenation can become quadratic copy work. Prefer push, builders, buffers, or one final copy at the boundary.
-9. Check JSON and serialization comparisons. Repeated `JSON.stringify` inside search, equality, sort, dedupe, or render logic multiplies object size by item count. Use explicit keys and precomputed normalized keys.
-10. Open helper bodies called from loops or render paths. Harmless helper names can hide full-list scans, database calls, resolver calls, serialization, sorting, or permission checks.
-11. Check ORM and lazy relations. A single visible loop can become one query per entity. Replace per-entity relation access with eager loading, joins, `WHERE id IN (...)`, batch loading, or DataLoader-style batching.
-12. Check GraphQL and nested resolvers. Parent-list resolvers plus per-field DB or API calls create hidden pairwise fan-out. Batch by parent IDs and preserve field-level authorization semantics.
-13. Check render-time lookup. `rows.map(row => columns.find(...))`, `items.map(item => selectedIds.includes(item.id))`, derived data recomputed on every render, and per-row helper scans should move to memoized sets or maps when inputs are large or stable.
-14. Check all-data-in-app joins. Fetching `allUsers`, `allOrders`, or `allLogs` and joining in application arrays is often a database join without an index. Push join, filter, sort, and pagination to the data store when the data store owns the index and semantics allow it.
-15. Check tree and graph construction. `nodes.map(node => nodes.filter(child => child.parentId === node.id))` should usually become `childrenByParentId` plus one assembly pass. `visited.includes(id)` in traversal should be a `Set`.
-16. Check event-log and time-window scans. Repeatedly scanning all previous events per event should usually become grouping, sorting once, and one pointer or rolling aggregate per key.
-17. Check interval overlap. All-pairs range checks are sometimes necessary, but overlap detection often only needs sorting by start and comparing adjacent or active intervals.
-18. Check incremental updates. Adding one item should not recompute a full ranking, group map, unread count, cart total, or dashboard aggregate unless the collection is fixed and tiny.
-19. Separate index from cache. A `Map` built from current input is an index. A cache stores results across calls or time. Use an index for repeated lookup over already-owned data before introducing cache invalidation.
-20. Require a hard cap for "small list" exceptions. Countries, enum options, or fixed config lists may stay arrays if the cap is real. User data, logs, orders, comments, permissions, tags, events, and uploaded rows need scalable lookup.
-21. Preserve behavior while changing shape. Before replacing scans with indexes, state how order, duplicates, first or last match, missing references, authorization filtering, and stable keys are preserved.
-22. Add growth evidence when feasible. If configured tests or fixtures can scale input size, prefer a small growth test that compares behavior at larger counts. If benchmarking is not configured, report complexity-only evidence instead of a speedup claim.
+8. Check queue and deletion patterns. JavaScript `shift()` in a large BFS or queue loop moves the remaining array repeatedly; use a head index or real queue. `findIndex` plus `splice` while matching requests to available items can scan and move the same growing array repeatedly; bucket by key and advance a consumption pointer instead.
+9. Check copy-accumulation patterns. `reduce` with `[...acc, item]`, repeated object spread over a growing object, repeated string `+=`, repeated `concat`, and repeated array spread over a growing result can become quadratic copy work. Prefer push, builders, buffers, or one final copy at the boundary.
+10. Check JSON and serialization comparisons. Repeated `JSON.stringify` inside search, equality, sort, dedupe, or render logic multiplies object size by item count. Use explicit keys and precomputed normalized keys.
+11. Open helper bodies called from loops or render paths. Harmless helper names can hide full-list scans, database calls, resolver calls, serialization, sorting, or permission checks.
+12. Check ORM and lazy relations. A single visible loop can become one query per entity. Replace per-entity relation access with eager loading, joins, `WHERE id IN (...)`, batch loading, or DataLoader-style batching.
+13. Check GraphQL and nested resolvers. Parent-list resolvers plus per-field DB or API calls create hidden pairwise fan-out. Batch by parent IDs and preserve field-level authorization semantics.
+14. Check render-time lookup. `rows.map(row => columns.find(...))`, `items.map(item => selectedIds.includes(item.id))`, derived data recomputed on every render, and per-row helper scans should move to memoized sets or maps when inputs are large or stable.
+15. Check all-data-in-app joins. Fetching `allUsers`, `allOrders`, or `allLogs` and joining in application arrays is often a database join without an index. Push join, filter, sort, and pagination to the data store when the data store owns the index and semantics allow it.
+16. Check tree and graph construction. `nodes.map(node => nodes.filter(child => child.parentId === node.id))` should usually become `childrenByParentId` plus one assembly pass. `visited.includes(id)` in traversal should be a `Set`. Very deep trees may also need an explicit stack to avoid call-stack failure.
+17. Check event-log and time-window scans. Repeatedly scanning all previous events per event should usually become grouping, sorting once, and one pointer or rolling aggregate per key.
+18. Check interval overlap. All-pairs range checks are sometimes necessary, but overlap detection often only needs sorting by start and comparing adjacent or active intervals.
+19. Check true all-pairs similarity separately. If every item must be compared with every other item, do not promise a linear rewrite. First narrow candidates with stable keys, categories, buckets, hashes, n-grams, ranges, or database indexes, then compare only within the candidate set.
+20. Check incremental updates. Adding one item should not recompute a full ranking, group map, unread count, cart total, or dashboard aggregate unless the collection is fixed and tiny.
+21. Separate index from cache. A `Map` built from current input is an index. A cache stores results across calls or time. Use an index for repeated lookup over already-owned data before introducing cache invalidation.
+22. Require a hard cap for "small list" exceptions. Countries, enum options, or fixed config lists may stay arrays if the cap is real. User data, logs, orders, comments, permissions, tags, events, and uploaded rows need scalable lookup.
+23. Preserve behavior while changing shape. Before replacing scans with indexes, state how order, duplicates, first or last match, missing references, authorization filtering, and stable keys are preserved.
+24. Add growth evidence when feasible. If configured tests or fixtures can scale input size, prefer a small growth test that compares behavior at larger counts. If benchmarking is not configured, report complexity-only evidence instead of a speedup claim.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Each suspected O(N^2) path has an outer count, inner count, and data-growth classification.
-- Repeated membership checks, code joins, duplicate removal, tree building, resolver fan-out, render-time lookup, helper-hidden scans, repeated sort, copy accumulation, and JSON comparison are fixed or reported.
+- Repeated membership checks, code joins, duplicate removal, tree building, resolver fan-out, render-time lookup, helper-hidden scans, repeated sort, queue `shift()`, `findIndex` plus `splice`, copy accumulation, interval scans, all-pairs candidate narrowing, and JSON comparison are fixed or reported.
 - Array-to-set or array-to-map changes preserve order, duplicates, missing records, first or last winner, authorization, and stable key behavior.
 - Small-list exceptions have an explicit hard cap or are reported as residual risk.
 - Performance claims are backed by configured evidence or labeled as static complexity risk.
@@ -146,7 +148,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Repeated path reviewed
 - Outer count, inner count, and data-growth classification
 - Hidden scan patterns found or ruled out
-- Membership, join, dedupe, helper, ORM, resolver, render, tree, graph, event, interval, sort, copy, string, and JSON checks where relevant
+- Membership, join, dedupe, helper, ORM, resolver, render, tree, graph, event, interval, all-pairs, queue, deletion, sort, copy, string, and JSON checks where relevant
 - Index, grouping, sorted merge, database join, or intentional all-pairs decision
 - Semantics preserved: order, duplicates, first or last winner, missing IDs, authorization, and stable keys
 - Evidence level: configured test, static complexity risk, manual-only, missing, or not applicable

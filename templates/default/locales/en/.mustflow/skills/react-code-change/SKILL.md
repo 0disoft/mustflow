@@ -2,11 +2,11 @@
 mustflow_doc: skill.react-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: react-code-change
-description: Apply this skill when React, React DOM, React Server Components, Server Actions, React Compiler, Hooks, Suspense, Actions, forms, refs, context, concurrent rendering, SSR streaming, resource hints, package metadata, or React-related tests are created, changed, reviewed, or upgraded.
+description: Apply this skill when React, React DOM, React Server Components, Server Actions, React Compiler, Hooks, Suspense, Actions, forms, refs, context, render performance, concurrent rendering, SSR streaming, resource hints, package metadata, or React-related tests are created, changed, reviewed, or upgraded.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -75,6 +75,10 @@ expect current React guidance and small, compatible changes.
 - State and mutation evidence: local state owner, derived values, external
   stores, context providers, forms, Actions, optimistic updates, and rollback
   behavior.
+- Render performance evidence: React DevTools Profiler or `<Profiler>` data when
+  available, render count, render duration, prop identity changes, context update
+  scope, list size, DOM node count, key stability, layout effect use, first-load
+  bundle ownership, and offscreen DOM cost.
 - Configured verification intents for lint, build, tests, docs, package, and
   mustflow checks.
 
@@ -186,14 +190,49 @@ expect current React guidance and small, compatible changes.
      errors, resets, progressive enhancement, and rollback.
    - Keep explicit error handling, authorization, validation, idempotency, and
      rollback behavior. Do not hide server failures behind optimistic UI.
-10. **Respect React 19.2 rendering and performance APIs.**
+10. **Review React render hot paths with evidence.**
+    - Use React DevTools Profiler, `<Profiler>`, framework traces, or existing
+      render-count evidence before claiming a render-performance fix. If none is
+      configured, report static render risk instead of measured speedup.
+    - Check whether state is owned too high in the tree. Search inputs, tabs,
+      modal flags, hover state, and local drafts should not rerender a whole page
+      unless that page truly owns the state.
+    - Check `memo` failures from unstable props. Inline objects, arrays, functions,
+      and selector results can make `React.memo` ineffective; prefer primitive
+      props, stable callbacks, or moving object creation behind a real dependency.
+    - Move expensive render-time `filter`, `sort`, `map`, grouping, and lookup work
+      behind `useMemo`, server-side pagination, route loaders, or pre-indexed data
+      when input size can grow.
+    - Large lists need pagination, infinite query boundaries, virtualization, or a
+      documented hard cap. Do not render thousands of rows because the sample data
+      has twenty.
+    - Reject unstable keys such as array index for reorderable data and
+      `Math.random()` for any list. Use stable item identity so React preserves
+      row state and avoids forced remounts.
+    - Split oversized context values by change frequency and ownership. `memo`
+      does not stop rerenders caused by a fresh context value.
+    - Do not use `useEffect` plus `setState` for values derived from current props
+      or state. Compute during render or memoize the calculation to avoid the
+      extra render pass.
+    - For search and filtering, keep the controlled input urgent and move heavy
+      result updates behind `useDeferredValue`, `useTransition`, server filtering,
+      or pagination when the supported React version and UX allow it.
+    - Use `useLayoutEffect` only when pre-paint measurement is required. Avoid
+      DOM read/write interleaving that causes layout thrashing.
+    - Lazy-load heavy charts, editors, maps, markdown renderers, syntax
+      highlighters, and modal-only widgets when they are not needed for the first
+      interaction path.
+    - For large offscreen sections, consider `content-visibility` plus
+      `contain-intrinsic-size`, framework lazy boundaries, or route splitting when
+      browser support and layout stability are acceptable.
+11. **Respect React 19.2 rendering and performance APIs.**
     - Treat `<Activity>` as hidden UI with preserved state, unmounted effects,
       and lower-priority hidden updates, not as `display: none` or ordinary
       conditional rendering.
     - Use React Performance Tracks, React DevTools, or existing profiler evidence
       when claiming render, effect, Scheduler, transition, or component
       performance improvements.
-11. **Keep server rendering and RSC boundaries exact.**
+12. **Keep server rendering and RSC boundaries exact.**
     - Distinguish Server Components from Server Actions. `"use server"` marks
       server functions or modules for actions; it is not a Server Component tag.
     - Keep browser APIs, client state, and event handlers out of Server
@@ -206,13 +245,13 @@ expect current React guidance and small, compatible changes.
     - In Node environments, do not assume Web Streams are faster than Node
       streams; preserve the existing SSR stream API unless the task proves the
       runtime benefit and compression behavior.
-12. **Use React DOM document and resource APIs close to the owner.**
+13. **Use React DOM document and resource APIs close to the owner.**
     - Metadata, stylesheets with `precedence`, async scripts, `preinit`,
       `preload`, `preconnect`, and `prefetchDNS` may belong near the component
       that needs them when React and the framework support that behavior.
     - Avoid duplicate head managers, resource hint spam, and hints for assets
       whose timing or priority is unproven.
-13. **Verify through the repository contract.**
+14. **Verify through the repository contract.**
     - Run the smallest configured checks that cover changed React code, package
       metadata, build output, docs, and tests.
     - Report missing browser, hydration, SSR, RSC, compiler, profiler, or
@@ -225,12 +264,16 @@ expect current React guidance and small, compatible changes.
   status are known or explicitly reported as unknown.
 - Effects, state, memoization, context, refs, forms, Suspense, and async
   boundaries follow React's current model for the supported version.
+- Render performance claims are backed by profiler or render-count evidence, or
+  static risks such as state too high, unstable props, render-time transforms,
+  huge lists, unstable keys, oversized context, derived-state effects, layout
+  thrashing, eager heavy widgets, and offscreen DOM cost are reported honestly.
 - React 19 and React 19.2 APIs are not introduced into code that still promises
   older React compatibility.
 - SSR, RSC, Server Action, browser-only, and resource-hint boundaries are
   preserved.
-- Performance claims have profiler or benchmark evidence, or are reported as
-  unverified.
+- Performance claims have profiler, benchmark, render-count, or configured
+  evidence, or are reported as unverified.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -271,6 +314,9 @@ surfaces changed.
 - React surface and supported version checked
 - Compiler, lint, effect, state, memoization, context, ref, form, Suspense, SSR,
   RSC, and resource-boundary notes
+- Render performance notes: profiler evidence, state ownership, prop identity,
+  render-time work, list size, key stability, context scope, derived state,
+  layout effects, lazy loading, and offscreen DOM
 - Freshness-sensitive React claims checked or left conservative
 - Files changed
 - Command intents run

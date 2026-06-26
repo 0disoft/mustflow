@@ -9,6 +9,14 @@ first_seen_at = "2026-06-23T08:00:14.018Z"
 last_touched_at = "2026-06-25T21:37:51.852Z"
 
 [[documents]]
+path = ".mustflow/skills/ai-generated-code-hardening/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.663Z"
+last_touched_at = "2026-06-26T08:13:17.663Z"
+
+[[documents]]
 path = ".mustflow/skills/api-access-control-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -23,6 +31,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T09:35:44.982Z"
 last_touched_at = "2026-06-25T14:29:46.122Z"
+
+[[documents]]
+path = ".mustflow/skills/api-request-performance-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.676Z"
+last_touched_at = "2026-06-26T08:13:17.676Z"
 
 [[documents]]
 path = ".mustflow/skills/architecture-deepening-review/SKILL.md"
@@ -177,6 +193,14 @@ first_seen_at = "2026-06-25T09:05:11.988Z"
 last_touched_at = "2026-06-25T14:29:46.163Z"
 
 [[documents]]
+path = ".mustflow/skills/hot-path-performance-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.686Z"
+last_touched_at = "2026-06-26T08:13:17.686Z"
+
+[[documents]]
 path = ".mustflow/skills/html-code-change/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -283,6 +307,14 @@ first_seen_at = "2026-06-25T09:05:12.002Z"
 last_touched_at = "2026-06-25T14:29:46.199Z"
 
 [[documents]]
+path = ".mustflow/skills/quadratic-scan-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.700Z"
+last_touched_at = "2026-06-26T08:13:17.700Z"
+
+[[documents]]
 path = ".mustflow/skills/rag-pipeline-triage/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -296,7 +328,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T04:36:26.579Z"
-last_touched_at = "2026-06-26T06:13:42.755Z"
+last_touched_at = "2026-06-26T08:13:17.708Z"
 
 [[documents]]
 path = ".mustflow/skills/rust-code-change/SKILL.md"
@@ -547,6 +579,14 @@ first_seen_at = "2026-06-23T08:00:14.035Z"
 last_touched_at = "2026-06-25T21:37:51.879Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.720Z"
+last_touched_at = "2026-06-26T08:13:17.720Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/api-access-control-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -561,6 +601,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T09:35:45.058Z"
 last_touched_at = "2026-06-25T14:29:46.243Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/api-request-performance-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.733Z"
+last_touched_at = "2026-06-26T08:13:17.733Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/architecture-deepening-review/SKILL.md"
@@ -715,6 +763,14 @@ first_seen_at = "2026-06-25T09:05:12.032Z"
 last_touched_at = "2026-06-25T14:29:46.277Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/hot-path-performance-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.741Z"
+last_touched_at = "2026-06-26T08:13:17.741Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/html-code-change/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -819,6 +875,14 @@ first_seen_at = "2026-06-25T09:05:12.039Z"
 last_touched_at = "2026-06-25T14:29:46.309Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/quadratic-scan-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:13:17.751Z"
+last_touched_at = "2026-06-26T08:13:17.751Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/rag-pipeline-triage/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -832,7 +896,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T04:36:26.617Z"
-last_touched_at = "2026-06-26T06:13:42.852Z"
+last_touched_at = "2026-06-26T08:13:17.760Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/rust-code-change/SKILL.md"

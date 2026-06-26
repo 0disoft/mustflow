@@ -2,11 +2,11 @@
 mustflow_doc: skill.ai-generated-code-hardening
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: ai-generated-code-hardening
-description: Apply this skill when AI-generated, assistant-authored, vibe-coded, or broad code changes need evidence-backed hardening against symptom-only fixes, pinpoint hardcoding, duplicate helpers or shapes, hidden coupling, weak tests, swallowed errors, excessive complexity, and boundary drift.
+description: Apply this skill when AI-generated, assistant-authored, vibe-coded, or broad code changes need evidence-backed hardening against symptom-only fixes, pinpoint hardcoding, duplicate helpers or shapes, hidden coupling, fake small-sample performance confidence, weak tests, swallowed errors, excessive complexity, and boundary drift.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -33,8 +33,8 @@ Use this skill to turn agent-written code from "looks plausible" into maintainab
 repository code. The goal is not style cleanup. The goal is to catch the failure
 modes that appear when an agent forgets the repository between sessions: symptom-only
 patches, pinpoint hardcoding, duplicate helpers, duplicate shapes, hidden coupling,
-weak tests, swallowed errors, accidental public surfaces, and oversized functions or
-files.
+fake confidence from tiny fixtures, hidden repeated work, weak tests, swallowed errors,
+accidental public surfaces, and oversized functions or files.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -51,6 +51,9 @@ files.
   re-export drift.
 - Tests were added or changed and may only check strings, function names, snapshots,
   mocks, or implementation details instead of observable behavior.
+- The code looks clean on sample data but may hide repeated scans, repeated copying,
+  repeated I/O, unbounded fan-out, allocation churn, or response-size growth under
+  realistic data.
 - Error handling, fallback paths, defensive guards, or default values were added in
   multiple callers instead of one boundary.
 - New or changed functions/files are becoming hard to review because of excessive
@@ -189,7 +192,23 @@ files.
    - Split a god file only when the new module has a stable owner, direction, and
      verification path.
 
-8. Harden tests against fake confidence.
+8. Check small-sample performance traps.
+   - Treat fixture-sized success as weak evidence when the path handles users,
+     orders, comments, logs, rows, files, permissions, relations, or rendered list
+     items that can grow.
+   - Search AI-authored code for `map`, `filter`, `find`, `findIndex`, `includes`,
+     `indexOf`, `reduce`, `sort`, `slice`, `splice`, `shift`, spread accumulation,
+     `concat`, `cloneDeep`, `JSON.stringify`, `parse`, `validate`, `sanitize`,
+     `normalize`, and helper names such as `isAllowed`, `canAccess`, `resolve`,
+     `build`, or `format` in repeated paths.
+   - Escalate concrete hidden O(N^2), allocation churn, or request fan-out evidence
+     to `quadratic-scan-review`, `hot-path-performance-review`, or
+     `api-request-performance-review` instead of burying it as style feedback.
+   - Do not claim a performance improvement from static review alone. Mark it as
+     static complexity risk unless configured tests, query counts, traces, profiles,
+     or benchmarks support the claim.
+
+9. Harden tests against fake confidence.
    - Verify behavior and side effects, not only function names, strings, snapshots,
      or the presence of files.
    - For bug fixes, add at least one nearby negative or sibling case when feasible so
@@ -203,7 +222,7 @@ files.
    - If production code gained defensive fallback only to satisfy a brittle test,
      fix the test or move the fallback to the owning boundary.
 
-9. Use enforcement evidence without inventing enforcement.
+10. Use enforcement evidence without inventing enforcement.
    - Run existing configured lint, build, and related test intents when they cover
      the risk.
    - If the repository lacks dependency-boundary, complexity, max-depth,
@@ -212,7 +231,7 @@ files.
    - Never paste outside plugin commands, package-manager commands, or CI recipes
      into mustflow command contracts without command-contract review.
 
-10. Decide fix now, defer, or report.
+11. Decide fix now, defer, or report.
    - Fix now when the issue is in the touched code, small, directly tied to the
      current behavior, and verifiable with configured commands.
    - Defer when the issue needs broad architecture work, new dependencies, new CI
@@ -235,6 +254,8 @@ files.
   duplicated guard/fallback risk is documented.
 - Tests exercise behavior and meaningful side effects, with edge and failure paths
   covered where relevant to the change.
+- Sample-data performance confidence has been checked against realistic data-growth,
+  repeated-work, allocation, and I/O fan-out risks where relevant.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -281,5 +302,7 @@ Include:
   found or ruled out.
 - Error-handling and fallback decisions.
 - Test hardening: behavior assertions, side effects, edge cases, and mock boundary.
+- Small-sample performance traps: hidden repeated scans, copy churn, repeated I/O,
+  unbounded fan-out, or response growth fixed, escalated, or reported.
 - Configured verification intents run and their result.
 - Deferred enforcement, lint, or CI guard suggestions, clearly marked as not added.

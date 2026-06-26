@@ -379,6 +379,8 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /AI-generated/u);
 	assert.match(localSkill, /symptom-only/u);
+	assert.match(localSkill, /fake confidence from tiny fixtures/u);
+	assert.match(localSkill, /fake small-sample performance confidence/u);
 	assert.match(localSkill, /pinpoint hardcoding/u);
 	assert.match(localSkill, /same class\s+of defect/u);
 	assert.match(localSkill, /same-defect-class sibling surfaces/u);
@@ -398,6 +400,12 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.match(localSkill, /god function/u);
 	assert.match(localSkill, /god file/u);
 	assert.match(localSkill, /fan-in and fan-out/u);
+	assert.match(localSkill, /Check small-sample performance traps/u);
+	assert.match(localSkill, /`findIndex`/u);
+	assert.match(localSkill, /`shift`/u);
+	assert.match(localSkill, /spread accumulation/u);
+	assert.match(localSkill, /`cloneDeep`/u);
+	assert.match(localSkill, /static complexity risk/u);
 	assert.match(localSkill, /behavior and side effects/u);
 	assert.match(localSkill, /strings, snapshots/u);
 	assert.match(localSkill, /Mock only external boundaries/u);
@@ -414,7 +422,7 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.match(manifest, /"\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md"/u);
 	assert.match(manifest, /"ai-generated-code-hardening"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
-	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 3/u);
 });
 
 test('quality gaming guard catches metric evasions and stays template-synced', () => {
@@ -1223,6 +1231,7 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /cost ledger/u);
 	assert.match(localSkill, /iteration count, data size, round-trip count, wait time/u);
+	assert.match(localSkill, /allocation or GC churn/u);
 	assert.match(localSkill, /repeated external access/u);
 	assert.match(localSkill, /ORM relation access/u);
 	assert.match(localSkill, /multi-pass collection code/u);
@@ -1233,6 +1242,13 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.match(localSkill, /Sequential `await`/u);
 	assert.match(localSkill, /`Promise\.all` over thousands/u);
 	assert.match(localSkill, /cache stampede/u);
+	assert.match(localSkill, /Check allocation and GC churn/u);
+	assert.match(localSkill, /`filter\(\)\.map\(\)\.reduce\(\)`/u);
+	assert.match(localSkill, /`split\(\)\.map\(trim\)`/u);
+	assert.match(localSkill, /repeated object spread while building indexes/u);
+	assert.match(localSkill, /`Object\.values`/u);
+	assert.match(localSkill, /heap growth/u);
+	assert.match(localSkill, /GC pause/u);
 	assert.match(localSkill, /`JSON\.parse\(JSON\.stringify\(\.\.\.\)\)`/u);
 	assert.match(localSkill, /retry and timeout multiplication/u);
 	assert.match(localSkill, /p95 or p99/u);
@@ -1245,7 +1261,7 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.match(manifest, /"\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"hot-path-performance-review"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
-	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 2/u);
 });
 
 test('api request performance review counts per-request fan-out and latency evidence', () => {
@@ -1268,6 +1284,9 @@ test('api request performance review counts per-request fan-out and latency evid
 	assert.match(localSkill, /DB query count/u);
 	assert.match(localSkill, /Redis/u);
 	assert.match(localSkill, /external API/u);
+	assert.match(localSkill, /actual SQL/u);
+	assert.match(localSkill, /query count/u);
+	assert.match(localSkill, /repeated `SELECT \.\.\. WHERE id = \?`/u);
 	assert.match(localSkill, /ORM serializer/u);
 	assert.match(localSkill, /lazy loading/u);
 	assert.match(localSkill, /Django/u);
@@ -1282,6 +1301,12 @@ test('api request performance review counts per-request fan-out and latency evid
 	assert.match(localSkill, /EXPLAIN/u);
 	assert.match(localSkill, /estimated rows/u);
 	assert.match(localSkill, /actual rows/u);
+	assert.match(localSkill, /do not trust `include` as a performance proof/u);
+	assert.match(localSkill, /repeated `count`, `exists`, `sum`, `latest`, or `first`/u);
+	assert.match(localSkill, /composite indexes/u);
+	assert.match(localSkill, /Expression indexes/u);
+	assert.match(localSkill, /partial or filtered indexes/u);
+	assert.match(localSkill, /covering or index-only access/u);
 	assert.match(localSkill, /pool acquire/u);
 	assert.match(localSkill, /MGET/u);
 	assert.match(localSkill, /pipeline/u);
@@ -1310,7 +1335,7 @@ test('api request performance review counts per-request fan-out and latency evid
 	assert.match(manifest, /"\.mustflow\/skills\/api-request-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-request-performance-review"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
-	assert.match(i18n, /\[documents\."skill\.api-request-performance-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.api-request-performance-review"\][\s\S]*?revision = 2/u);
 });
 
 test('web render performance review protects first render and Core Web Vitals', () => {
@@ -2151,11 +2176,15 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(localSkill, /`map` plus `find`/u);
 	assert.match(localSkill, /`forEach` plus `includes`/u);
 	assert.match(localSkill, /`filter` plus `indexOf`/u);
+	assert.match(localSkill, /`filter` plus `findIndex`/u);
 	assert.match(localSkill, /`Set\.has` or `Map\.has`/u);
 	assert.match(localSkill, /code joins by ID/u);
 	assert.match(localSkill, /duplicate removal/u);
 	assert.match(localSkill, /Sorting does not make `find` fast/u);
 	assert.match(localSkill, /`reduce` with `\[\.\.\.acc, item\]`/u);
+	assert.match(localSkill, /JavaScript `shift\(\)`/u);
+	assert.match(localSkill, /`findIndex` plus `splice`/u);
+	assert.match(localSkill, /repeated `concat`/u);
 	assert.match(localSkill, /repeated string `\+=`/u);
 	assert.match(localSkill, /Repeated `JSON\.stringify`/u);
 	assert.match(localSkill, /helper bodies called from loops or render paths/u);
@@ -2165,6 +2194,8 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(localSkill, /tree and graph construction/u);
 	assert.match(localSkill, /event-log and time-window scans/u);
 	assert.match(localSkill, /interval overlap/u);
+	assert.match(localSkill, /true all-pairs similarity/u);
+	assert.match(localSkill, /n-grams/u);
 	assert.match(localSkill, /index from cache/u);
 	assert.match(localSkill, /hard cap/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md/u);
@@ -2176,7 +2207,7 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(manifest, /"\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md"/u);
 	assert.match(manifest, /"quadratic-scan-review"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
-	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 2/u);
 });
 
 test('type state modeling review makes impossible states unrepresentable', () => {
@@ -3811,6 +3842,7 @@ test('React code change skill keeps modern React contribution boundaries explici
 	assert.match(localSkill, /React 19 or React 19\.2 APIs/u);
 	assert.match(localSkill, /Do not introduce Create React App/u);
 	assert.match(localSkill, /React Compiler/u);
+	assert.match(localSkill, /Render performance evidence/u);
 	assert.match(localSkill, /compiler-powered `eslint-plugin-react-hooks`/u);
 	assert.match(localSkill, /Do not blanket-add `memo`, `useMemo`, or `useCallback`/u);
 	assert.match(localSkill, /Do not blanket-remove existing memoization/u);
@@ -3825,6 +3857,18 @@ test('React code change skill keeps modern React contribution boundaries explici
 	assert.match(localSkill, /Do not expect Suspense to catch ordinary Effect fetches/u);
 	assert.match(localSkill, /Treat `use` as render-time Promise or context reading/u);
 	assert.match(localSkill, /`useActionState`, `useFormStatus`, `useOptimistic`, `<form action>`/u);
+	assert.match(localSkill, /Review React render hot paths with evidence/u);
+	assert.match(localSkill, /React DevTools Profiler/u);
+	assert.match(localSkill, /state is owned too high/u);
+	assert.match(localSkill, /unstable props/u);
+	assert.match(localSkill, /render-time `filter`, `sort`, `map`/u);
+	assert.match(localSkill, /virtualization/u);
+	assert.match(localSkill, /`Math\.random\(\)`/u);
+	assert.match(localSkill, /oversized context/u);
+	assert.match(localSkill, /`useEffect` plus `setState`/u);
+	assert.match(localSkill, /`useDeferredValue`, `useTransition`/u);
+	assert.match(localSkill, /layout thrashing/u);
+	assert.match(localSkill, /`content-visibility`/u);
 	assert.match(localSkill, /Treat `<Activity>` as hidden UI with preserved state/u);
 	assert.match(localSkill, /React Performance Tracks/u);
 	assert.match(localSkill, /Distinguish Server Components from Server Actions/u);
@@ -3847,7 +3891,7 @@ test('React code change skill keeps modern React contribution boundaries explici
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/react-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"react-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.react-code-change"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.react-code-change"\][\s\S]*?revision = 2/u);
 });
 
 test('C code change skill keeps C23, pointer, memory, and performance contracts explicit', () => {

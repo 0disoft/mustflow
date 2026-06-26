@@ -116,7 +116,7 @@ translations = {}
 [documents."skill.ai-generated-code-hardening"]
 source = "locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.quality-gaming-guard"]
@@ -194,13 +194,13 @@ translations = {}
 [documents."skill.hot-path-performance-review"]
 source = "locales/en/.mustflow/skills/hot-path-performance-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.api-request-performance-review"]
 source = "locales/en/.mustflow/skills/api-request-performance-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.api-failure-triage"]
@@ -326,7 +326,7 @@ translations = {}
 [documents."skill.quadratic-scan-review"]
 source = "locales/en/.mustflow/skills/quadratic-scan-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.type-state-modeling-review"]
@@ -673,7 +673,7 @@ translations = {}
 [documents."skill.react-code-change"]
 source = "locales/en/.mustflow/skills/react-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.python-code-change"]

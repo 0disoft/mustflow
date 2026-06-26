@@ -2,7 +2,7 @@
 mustflow_doc: skill.api-request-performance-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: api-request-performance-review
@@ -58,8 +58,8 @@ The core question is: "For one request, how many times do we repeat the same I/O
 - Request path: endpoint, route, handler, controller, resolver, serializer, mapper, middleware, service method, response builder, and downstream calls under review.
 - Request cost ledger inputs: route span, DB query count, Redis call count, external API call count, filesystem or object-storage calls, payload size, response bytes, JSON serialization time, DTO mapping time, cache hit or miss, queue time, pool acquire wait, transaction duration, lock wait, and request-path CPU work when available.
 - Data shape: request parameters, page size, relation counts, tenant or user scope, expected result size, maximum payload, large JSON/TEXT/BLOB fields, and response projection.
-- ORM behavior: lazy loading, eager loading, generated SQL, relation access in serializers or templates, Django `select_related` and `prefetch_related`, Rails `includes`, `preload`, `eager_load`, and `strict_loading`, or equivalent framework behavior.
-- Database evidence when available: `SELECT *`, app-side filtering or sorting, deep `OFFSET`, `COUNT(*)`, index fit for `WHERE` plus `ORDER BY` plus `LIMIT`, `EXPLAIN`, estimated rows, actual rows, join cardinality, and selectivity.
+- ORM behavior: lazy loading, eager loading, generated SQL, relation access in serializers or templates, `include` versus explicit `select`, relation load strategy, Django `select_related` and `prefetch_related`, Rails `includes`, `preload`, `eager_load`, and `strict_loading`, or equivalent framework behavior.
+- Database evidence when available: actual SQL, query count, repeated `SELECT ... WHERE id = ?`, `SELECT *`, app-side filtering or sorting, deep `OFFSET`, `COUNT(*)`, index fit for `WHERE` plus `ORDER BY` plus `LIMIT`, `EXPLAIN`, scan type, sort method, estimated rows, actual rows, join cardinality, and selectivity.
 - Cache and Redis evidence: request-scope cache, key dimensions, cache miss path, `MGET`, pipeline behavior, Redis round trips, Redis Slow Log limitations, hot keys, fallback behavior, and stampede controls.
 - Correctness boundaries: authorization, tenant isolation, ordering, duplicates, pagination stability, consistency, idempotency, timeout, cancellation, partial failure, stale data, and response contract.
 - Relevant command-intent contract entries for build, tests, docs, release checks, and mustflow validation.
@@ -98,6 +98,8 @@ The core question is: "For one request, how many times do we repeat the same I/O
    - In Django, choose `select_related` for single-valued relations and `prefetch_related` for multi-valued relations when the route actually needs them.
    - In Rails, compare `includes`, `preload`, `eager_load`, and `strict_loading`; use strict loading or query-count tests where local patterns support them.
    - Treat eager loading too much as a separate bug. It can replace N+1 with row explosion, duplicate parents, memory bloat, or huge response mapping.
+   - For Prisma-style APIs, do not trust `include` as a performance proof. Compare actual SQL, query count, selected columns, relation load strategy, and response shape.
+   - Treat repeated `count`, `exists`, `sum`, `latest`, or `first` queries in list serialization as N+1 candidates; prefer grouped aggregation, batched lookup, or database-side projection when semantics match.
 5. Check query projection and response projection together.
    - Flag `SELECT *`, full entity hydration, unbounded DTOs, and list endpoints that fetch large JSON, TEXT, BLOB, image, metadata, audit, or internal columns.
    - Fetch detail fields only after narrowing the row set when the route returns a list, feed, search result, or admin table.
@@ -111,7 +113,10 @@ The core question is: "For one request, how many times do we repeat the same I/O
    - Expensive `COUNT(*)` for every request needs a product reason, approximate or cached count policy, or deferred count behavior.
 8. Match indexes to the whole request query.
    - Check `WHERE`, `ORDER BY`, and `LIMIT` together instead of asking only whether one predicate has an index.
-   - Functions around columns, implicit casts, `LOWER(email)`, `DATE(created_at)`, timezone conversion, `%keyword%`, low-selectivity predicates, and mismatched sort order can defeat useful index access.
+   - Prefer query-shaped index review over column-name index decoration: composite indexes often need equality predicates first, range or ordering columns next, and stable tie-breakers for pagination.
+   - Functions around columns, implicit casts, `LOWER(email)`, `DATE(created_at)`, timezone conversion, `%keyword%`, low-selectivity predicates, and mismatched sort order can defeat useful index access. Expression indexes, range predicates, or search-specific indexes may be needed when the database owns that capability.
+   - For soft-delete, tenant, status, or visibility predicates that appear on nearly every request, review partial or filtered indexes where the database supports them.
+   - For list projections, check whether a covering or index-only access path is possible before fetching large JSON, TEXT, BLOB, HTML, metadata, or audit columns.
    - When plan evidence exists, compare `EXPLAIN` estimated rows with actual rows, join cardinality, loops, rows examined, rows returned, buffers, temp files, sort method, and lock or pool wait.
 9. Keep external calls out of transactions.
    - Do not hold a DB transaction while waiting for an external API, file upload, object storage, Redis fallback, image processing, logging sink, or user-controlled operation.
@@ -140,13 +145,14 @@ The core question is: "For one request, how many times do we repeat the same I/O
 17. Label evidence honestly.
     - Static review can identify likely API latency risks but cannot prove speedup.
     - A trace from a tiny fixture, warm local cache, or empty database is not representative production evidence.
+    - If actual SQL, query-count, or query-plan evidence is missing, say so instead of treating tidy ORM code as proof of efficient database behavior.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The API request boundary and Request cost ledger are explicit.
 - DB query count, Redis call count, external API call count, cache hit or miss behavior, response bytes, serialization cost, transaction scope, pool acquire wait, and request-path CPU work are fixed, bounded, instrumented, or reported.
-- ORM lazy loading, eager-loading overfetch, `SELECT *`, app-side filtering or sorting, deep `OFFSET`, expensive `COUNT(*)`, index mismatch, external call inside transaction, Redis loop, and cache miss amplification are checked where relevant.
+- ORM lazy loading, eager-loading overfetch, repeated count or aggregate queries, actual SQL and query count, `SELECT *`, app-side filtering or sorting, deep `OFFSET`, expensive `COUNT(*)`, index mismatch, composite/partial/expression/covering index fit, external call inside transaction, Redis loop, and cache miss amplification are checked where relevant.
 - Correctness, authorization, tenant isolation, idempotency, ordering, pagination stability, partial failure, cancellation, timeout, and stale-data behavior remain intact or are reported as tradeoffs.
 - API performance claims are backed by configured evidence, trace evidence, plan evidence, or labeled as static review risk.
 
@@ -181,7 +187,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 
 - API request path reviewed
 - Request cost ledger: route span, DB query count, Redis count, external API calls, filesystem or object-storage calls, payload size, response bytes, JSON serialization time, DTO mapping time, cache hit or miss, queue time, pool acquire wait, transaction duration, lock wait, and request-path CPU work
-- ORM lazy loading, eager loading, projection, pagination, count, index fit, app-side filtering or sorting, transaction, pool, Redis, cache miss, serialization, response size, CPU-heavy request work, and observability findings
+- ORM lazy loading, eager loading, actual SQL, query count, projection, pagination, count, index fit, app-side filtering or sorting, transaction, pool, Redis, cache miss, serialization, response size, CPU-heavy request work, and observability findings
 - API request performance change made or recommended
 - Evidence level: measured trace, configured-test evidence, plan evidence, static review risk, manual-only, missing, or not applicable
 - Command intents run
