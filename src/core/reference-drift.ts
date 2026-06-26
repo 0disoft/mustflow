@@ -7,6 +7,7 @@ import type {
 	ScriptCheckFindingSeverity,
 	ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const REFERENCE_DRIFT_PACK_ID = 'docs';
@@ -32,6 +33,7 @@ export interface ReferenceDriftPolicy {
 	readonly max_file_bytes: number;
 	readonly default_paths: readonly string[];
 	readonly path_filters: readonly string[];
+	readonly ignored_directories: readonly string[];
 	readonly checked_reference_kinds: readonly ReferenceDriftReferenceKind[];
 }
 
@@ -121,7 +123,7 @@ const CHECKED_REFERENCE_KINDS: readonly ReferenceDriftReferenceKind[] = [
 	'schema_file',
 	'repo_path',
 ];
-const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage', '.astro']);
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const ERROR_CODES = new Set<ReferenceDriftFindingCode>([
 	'reference_drift_path_outside_root',
 	'reference_drift_unreadable_path',
@@ -196,7 +198,7 @@ function collectDocumentsFromDirectory(
 	policy: ReferenceDriftPolicy,
 ): void {
 	const relativeDirectory = normalizeRelativePath(path.relative(projectRoot, absoluteDirectory));
-	if (IGNORED_DIRECTORIES.has(path.basename(relativeDirectory)) || [...IGNORED_DIRECTORIES].some((entry) => relativeDirectory.startsWith(`${entry}/`))) {
+	if (isIgnoredDirectoryPath(relativeDirectory, IGNORED_DIRECTORIES)) {
 		return;
 	}
 
@@ -501,6 +503,7 @@ export function checkReferenceDrift(projectRoot: string, options: CheckReference
 		max_file_bytes: options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES,
 		default_paths: [...DEFAULT_PATHS],
 		path_filters: [...PATH_FILTERS],
+		ignored_directories: [...IGNORED_DIRECTORIES],
 		checked_reference_kinds: [...CHECKED_REFERENCE_KINDS],
 	};
 	const commandNames = new Set(options.commandNames);

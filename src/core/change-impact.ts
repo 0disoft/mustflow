@@ -12,7 +12,7 @@ import {
 	type ChangeSurface,
 	type SelectorFallbackReason,
 } from './change-surface-classification.js';
-import { inspectDependencyGraph } from './dependency-graph.js';
+import { inspectDependencyGraph, type DependencyGraphFinding } from './dependency-graph.js';
 import {
 	type ScriptCheckFinding,
 	type ScriptCheckFindingSeverity,
@@ -366,6 +366,13 @@ function addDependencyImpacts(
 			issues.push(`dependency-graph: ${issue}`);
 		}
 	}
+	for (const dependencyFinding of dependencyReport.findings) {
+		const mappedFinding = mapDependencyGraphTruncationFinding(dependencyFinding);
+		if (mappedFinding === null) {
+			continue;
+		}
+		findings.push(mappedFinding);
+	}
 
 	const changedPathSet = new Set(sourcePaths);
 	for (const edge of dependencyReport.edges) {
@@ -380,6 +387,26 @@ function addDependencyImpacts(
 			source_path: edge.target_path,
 		}, policy, findings, issues);
 	}
+}
+
+function mapDependencyGraphTruncationFinding(finding: DependencyGraphFinding): ChangeImpactFinding | null {
+	if (finding.code === 'dependency_graph_max_files_exceeded') {
+		return makeFinding(
+			'change_impact_max_files_exceeded',
+			'high',
+			finding.path,
+			`Dependency graph input was truncated while computing change impact: ${finding.message}`,
+		);
+	}
+	if (finding.code === 'dependency_graph_max_nodes_exceeded' || finding.code === 'dependency_graph_max_edges_exceeded') {
+		return makeFinding(
+			'change_impact_max_impacts_exceeded',
+			'high',
+			finding.path,
+			`Dependency graph impact expansion was truncated while computing change impact: ${finding.message}`,
+		);
+	}
+	return null;
 }
 
 function createScriptHints(changedFiles: readonly ChangeImpactChangedFile[]): readonly ChangeImpactScriptHint[] {

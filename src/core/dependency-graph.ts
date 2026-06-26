@@ -7,6 +7,7 @@ import {
 	type ScriptCheckFindingSeverity,
 	type ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const DEPENDENCY_GRAPH_PACK_ID = 'code';
@@ -131,17 +132,7 @@ const MAX_ISSUES = 50;
 const MAX_CYCLES = 20;
 const SOURCE_EXTENSIONS: readonly string[] = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
 const RESOLVE_EXTENSIONS: readonly string[] = [...SOURCE_EXTENSIONS, '.json'];
-const IGNORED_DIRECTORIES = [
-	'.git',
-	'.mustflow/cache',
-	'.mustflow/state',
-	'node_modules',
-	'dist',
-	'build',
-	'coverage',
-	'.next',
-	'.turbo',
-] as const;
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const ERROR_CODES = new Set<DependencyGraphFindingCode>([
 	'dependency_graph_path_outside_root',
 	'dependency_graph_unreadable_path',
@@ -187,8 +178,7 @@ function isSourceLanguage(language: DependencyGraphLanguage): boolean {
 }
 
 function isIgnoredDirectory(relativePath: string): boolean {
-	const normalized = normalizeRelativePath(relativePath);
-	return IGNORED_DIRECTORIES.some((directory) => normalized === directory || normalized.startsWith(`${directory}/`));
+	return isIgnoredDirectoryPath(normalizeRelativePath(relativePath), IGNORED_DIRECTORIES);
 }
 
 function makeFinding(

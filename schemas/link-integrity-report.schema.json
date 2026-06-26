@@ -86,6 +86,7 @@
         "max_file_bytes": { "type": "integer", "minimum": 1 },
         "default_paths": { "$ref": "#/$defs/stringArray" },
         "path_filters": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" },
         "checked_link_kinds": {
           "type": "array",
           "items": { "$ref": "#/$defs/linkKind" }

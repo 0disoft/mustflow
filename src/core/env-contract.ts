@@ -7,6 +7,7 @@ import type {
 	ScriptCheckFindingSeverity,
 	ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const ENV_CONTRACT_PACK_ID = 'repo';
@@ -155,17 +156,7 @@ const ENV_EXAMPLE_NAMES = [
 	'.dev.vars.example',
 ] as const;
 const SECRET_ENV_NAMES = ['.env', '.env.local', '.env.production', '.env.development', '.dev.vars'] as const;
-const IGNORED_DIRECTORIES = [
-	'.git',
-	'.mustflow/cache',
-	'.mustflow/state',
-	'node_modules',
-	'dist',
-	'build',
-	'coverage',
-	'.next',
-	'.turbo',
-] as const;
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const ERROR_CODES = new Set<EnvContractFindingCode>([
 	'env_contract_path_outside_root',
 	'env_contract_unreadable_path',
@@ -196,8 +187,7 @@ function pushIssue(issues: string[], issue: string): void {
 }
 
 function isIgnoredDirectory(relativePath: string): boolean {
-	const normalized = normalizeRelativePath(relativePath);
-	return IGNORED_DIRECTORIES.some((directory) => normalized === directory || normalized.startsWith(`${directory}/`));
+	return isIgnoredDirectoryPath(normalizeRelativePath(relativePath), IGNORED_DIRECTORIES);
 }
 
 function isEnvExampleFile(relativePath: string): boolean {

@@ -8,6 +8,7 @@ import {
 	type ScriptCheckFindingSeverity,
 	type ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 import {
 	listSourceAnchorFiles,
@@ -243,17 +244,7 @@ const SVELTE_EXTENSIONS = ['.svelte'] as const;
 const GO_EXTENSIONS = ['.go'] as const;
 const RUST_EXTENSIONS = ['.rs'] as const;
 const PYTHON_EXTENSIONS = ['.py'] as const;
-const IGNORED_DIRECTORIES = [
-	'.git',
-	'.mustflow/cache',
-	'.mustflow/state',
-	'node_modules',
-	'dist',
-	'build',
-	'coverage',
-	'.next',
-	'.turbo',
-] as const;
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const ERROR_OUTLINE_CODES = new Set<CodeOutlineFindingCode>([
 	'code_outline_path_outside_root',
 	'code_outline_unreadable_path',
@@ -333,8 +324,7 @@ export function languageForPath(filePath: string): CodeOutlineLanguage | null {
 }
 
 function isIgnoredDirectory(relativePath: string): boolean {
-	const normalized = normalizeRelativePath(relativePath);
-	return IGNORED_DIRECTORIES.some((directory) => normalized === directory || normalized.startsWith(`${directory}/`));
+	return isIgnoredDirectoryPath(normalizeRelativePath(relativePath), IGNORED_DIRECTORIES);
 }
 
 function makeOutlineFinding(

@@ -7,6 +7,7 @@ import {
 	type ScriptCheckFindingSeverity,
 	type ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const RELATED_FILES_PACK_ID = 'repo';
@@ -127,17 +128,7 @@ const MAX_ISSUES = 50;
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const RESOLVE_EXTENSIONS = [...SOURCE_EXTENSIONS, '.json'] as const;
 const RELATED_EXTENSIONS = [...RESOLVE_EXTENSIONS, '.d.ts', '.md', '.mdx', '.css', '.scss', '.sass', '.less'] as const;
-const IGNORED_DIRECTORIES = [
-	'.git',
-	'.mustflow/cache',
-	'.mustflow/state',
-	'node_modules',
-	'dist',
-	'build',
-	'coverage',
-	'.next',
-	'.turbo',
-] as const;
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const CONFIG_FILE_PATTERNS = [
 	/^package\.json$/u,
 	/^tsconfig(?:\.[^.]+)?\.json$/u,
@@ -192,8 +183,7 @@ function isSourceLanguage(language: RelatedFileLanguage): boolean {
 }
 
 function isIgnoredDirectory(relativePath: string): boolean {
-	const normalized = normalizeRelativePath(relativePath);
-	return IGNORED_DIRECTORIES.some((directory) => normalized === directory || normalized.startsWith(`${directory}/`));
+	return isIgnoredDirectoryPath(normalizeRelativePath(relativePath), IGNORED_DIRECTORIES);
 }
 
 function makeFinding(

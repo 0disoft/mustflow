@@ -8,6 +8,7 @@ import type {
 	ScriptCheckFindingSeverity,
 	ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInsideWithoutSymlinks, readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const REPO_MERGE_CONFLICT_SCAN_PACK_ID = 'repo';
@@ -106,15 +107,9 @@ const MARKER_PATTERNS: readonly { readonly prefix: string; readonly marker: Merg
 	{ prefix: '>>>>>>>', marker: 'end' },
 ];
 const SKIPPED_DIRECTORY_NAMES = new Set([
-	'.git',
-	'node_modules',
+	...DEFAULT_IGNORED_DIRECTORIES,
 	'vendor',
 	'third_party',
-	'dist',
-	'build',
-	'coverage',
-	'.mustflow/cache',
-	'.mustflow/state',
 ]);
 
 function normalizeRelativePath(value: string): string {
@@ -200,8 +195,7 @@ function collectGitChangedFiles(root: string, issues: string[], findings: MergeC
 
 function shouldSkipDirectory(relativePath: string): boolean {
 	const normalized = normalizeRelativePath(relativePath);
-	const firstSegment = normalized.split('/')[0] ?? normalized;
-	return SKIPPED_DIRECTORY_NAMES.has(normalized) || SKIPPED_DIRECTORY_NAMES.has(firstSegment);
+	return isIgnoredDirectoryPath(normalized, [...SKIPPED_DIRECTORY_NAMES]);
 }
 
 function isLikelyTextFile(relativePath: string): boolean {

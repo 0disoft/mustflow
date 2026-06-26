@@ -7,6 +7,7 @@ import type {
 	ScriptCheckFindingSeverity,
 	ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const LINK_INTEGRITY_PACK_ID = 'docs';
@@ -30,6 +31,7 @@ export interface LinkIntegrityPolicy {
 	readonly max_file_bytes: number;
 	readonly default_paths: readonly string[];
 	readonly path_filters: readonly string[];
+	readonly ignored_directories: readonly string[];
 	readonly checked_link_kinds: readonly LinkIntegrityLinkKind[];
 }
 
@@ -112,7 +114,7 @@ const MAX_ISSUES = 50;
 const DEFAULT_PATHS = ['README.md', 'schemas/README.md', 'docs-site/src/content/docs'] as const;
 const PATH_FILTERS = ['*.md', '*.mdx'] as const;
 const CHECKED_LINK_KINDS: readonly LinkIntegrityLinkKind[] = ['local_file', 'local_anchor'];
-const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage', '.astro']);
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const ERROR_CODES = new Set<LinkIntegrityFindingCode>([
 	'link_integrity_path_outside_root',
 	'link_integrity_unreadable_path',
@@ -187,7 +189,7 @@ function collectDocumentsFromDirectory(
 	policy: LinkIntegrityPolicy,
 ): void {
 	const relativeDirectory = normalizeRelativePath(path.relative(projectRoot, absoluteDirectory));
-	if (IGNORED_DIRECTORIES.has(path.basename(relativeDirectory)) || [...IGNORED_DIRECTORIES].some((entry) => relativeDirectory.startsWith(`${entry}/`))) {
+	if (isIgnoredDirectoryPath(relativeDirectory, IGNORED_DIRECTORIES)) {
 		return;
 	}
 
@@ -319,9 +321,29 @@ function splitTarget(target: string): { readonly pathPart: string; readonly anch
 	return { pathPart, anchor };
 }
 
+function stripHtmlTagText(value: string): string {
+	let result = '';
+	let tagDepth = 0;
+
+	for (const char of value) {
+		if (char === '<') {
+			tagDepth += 1;
+			continue;
+		}
+		if (char === '>') {
+			tagDepth = Math.max(0, tagDepth - 1);
+			continue;
+		}
+		if (tagDepth === 0) {
+			result += char;
+		}
+	}
+
+	return result;
+}
+
 function slugHeading(value: string): string {
-	return value
-		.replace(/<[^>]+>/gu, '')
+	return stripHtmlTagText(value)
 		.replace(/[`*_~]/gu, '')
 		.replace(/\[([^\]]+)\]\([^)]+\)/gu, '$1')
 		.toLocaleLowerCase()
@@ -542,6 +564,7 @@ export function checkLinkIntegrity(projectRoot: string, options: CheckLinkIntegr
 		max_file_bytes: options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES,
 		default_paths: [...DEFAULT_PATHS],
 		path_filters: [...PATH_FILTERS],
+		ignored_directories: [...IGNORED_DIRECTORIES],
 		checked_link_kinds: [...CHECKED_LINK_KINDS],
 	};
 	const findings: LinkIntegrityFinding[] = [];

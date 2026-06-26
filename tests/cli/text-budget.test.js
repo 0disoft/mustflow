@@ -1330,6 +1330,64 @@ test('dependency-graph reports import cycles as hints without failing the helper
 	}
 });
 
+test('script-pack scanners skip nested ignored directories consistently', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'packages', 'app', 'src'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'packages', 'app', 'node_modules', 'noisy'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'packages', 'app', 'dist'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'docs-site', 'src', 'content', 'docs', 'nested', 'node_modules'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'packages', 'app', 'src', 'server.ts'), 'export const app = { get() {} };\n');
+		writeFileSync(path.join(projectPath, 'packages', 'app', 'src', 'consumer.ts'), 'import { app } from "./server";\napp.get();\n');
+		writeFileSync(path.join(projectPath, 'packages', 'app', 'node_modules', 'noisy', 'ignored.ts'), 'export const ignored = true;\n');
+		writeFileSync(path.join(projectPath, 'packages', 'app', 'node_modules', 'noisy', 'package.json'), '{"name":"noisy"}\n');
+		writeFileSync(path.join(projectPath, 'packages', 'app', 'dist', 'ignored.ts'), 'export const ignoredDist = true;\n');
+		writeFileSync(path.join(projectPath, 'docs-site', 'src', 'content', 'docs', 'guide.md'), '# Guide\n\n[Guide](./guide.md)\n');
+		writeFileSync(
+			path.join(projectPath, 'docs-site', 'src', 'content', 'docs', 'nested', 'node_modules', 'ignored.md'),
+			'# Ignored\n\n`mf unknown-command`\n[Missing](./missing.md)\n',
+		);
+
+		const outline = runCodeOutlineJson(projectPath, ['packages/app']);
+		assert.equal(outline.result.status, 0, outline.result.stderr || outline.result.stdout);
+		assert.ok(outline.report.files.some((file) => file.path === 'packages/app/src/server.ts'));
+		assert.equal(outline.report.files.some((file) => file.path.includes('/node_modules/')), false);
+		assert.equal(outline.report.files.some((file) => file.path.includes('/dist/')), false);
+
+		const dependencyGraph = runCodeDependencyGraphJson(projectPath, ['packages/app']);
+		assert.equal(dependencyGraph.result.status, 0, dependencyGraph.result.stderr || dependencyGraph.result.stdout);
+		assert.ok(dependencyGraph.report.nodes.some((node) => node.path === 'packages/app/src/server.ts'));
+		assert.equal(dependencyGraph.report.nodes.some((node) => node.path.includes('/node_modules/')), false);
+		assert.equal(dependencyGraph.report.nodes.some((node) => node.path.includes('/dist/')), false);
+
+		const routeOutline = runCodeRouteOutlineJson(projectPath, ['packages/app']);
+		assert.equal(routeOutline.result.status, 0, routeOutline.result.stderr || routeOutline.result.stdout);
+		assert.equal(routeOutline.report.files.some((file) => file.path.includes('/node_modules/')), false);
+		assert.equal(routeOutline.report.files.some((file) => file.path.includes('/dist/')), false);
+
+		const configChain = runConfigChainJson(projectPath, ['packages/app']);
+		assert.equal(configChain.result.status, 0, configChain.result.stderr || configChain.result.stdout);
+		assert.equal(configChain.report.configs.some((config) => config.path.includes('/node_modules/')), false);
+		assert.equal(configChain.report.configs.some((config) => config.path.includes('/dist/')), false);
+
+		const referenceDrift = runDocsReferenceDriftJson(projectPath, ['docs-site/src/content/docs']);
+		assert.equal(referenceDrift.result.status, 0, referenceDrift.result.stderr || referenceDrift.result.stdout);
+		assert.equal(referenceDrift.report.files.some((file) => file.path.includes('/node_modules/')), false);
+		assert.equal(referenceDrift.report.findings.some((finding) => finding.message.includes('unknown-command')), false);
+		assert.ok(referenceDrift.report.policy.ignored_directories.includes('node_modules'));
+
+		const linkIntegrity = runDocsLinkIntegrityJson(projectPath, ['docs-site/src/content/docs']);
+		assert.equal(linkIntegrity.result.status, 0, linkIntegrity.result.stderr || linkIntegrity.result.stdout);
+		assert.equal(linkIntegrity.report.files.some((file) => file.path.includes('/node_modules/')), false);
+		assert.equal(linkIntegrity.report.findings.some((finding) => finding.message.includes('missing.md')), false);
+		assert.ok(linkIntegrity.report.policy.ignored_directories.includes('node_modules'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('import-cycle reports cycles with line evidence', () => {
 	const projectPath = createTempProject();
 
@@ -1389,6 +1447,37 @@ test('change-impact reports changed surfaces, importers, and verification hints'
 		assert.deepEqual(selectorHint.expected_fallback_reasons, []);
 		assert.ok(report.script_hints.some((hint) => hint.script_ref === 'code/dependency-graph'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_related'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('change-impact reports dependency-graph truncation in its own truncation flag', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'feature.ts'), 'export const feature = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer-a.ts'), 'import { feature } from "./feature";\nconsole.log(feature);\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer-b.ts'), 'import { feature } from "./feature";\nconsole.log(feature);\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'src', 'feature.ts'), 'export const feature = 2;\n');
+
+		const { result, report } = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD', '--max-files', '2']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.truncated, true);
+		assert.ok(
+			report.findings.some(
+				(finding) =>
+					finding.code === 'change_impact_max_files_exceeded' &&
+					finding.message.includes('Dependency graph input was truncated'),
+			),
+		);
+		assert.ok(report.issues.some((issue) => issue.includes('dependency-graph:')));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3296,6 +3385,43 @@ test('link-integrity validates local files and markdown anchors without fetching
 	}
 });
 
+test('link-integrity strips nested HTML tag text before deriving markdown anchors', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'README.md'),
+			[
+				'# Link docs',
+				'',
+				'## Safe <scr<script>ipt> Heading',
+				'',
+				'## Keep <em>state</em>',
+				'',
+				'Use [nested](#safe-heading) and [html](#keep-state).',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runDocsLinkIntegrityJson(projectPath, ['README.md']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.summary.links_checked, 2);
+		assert.equal(report.summary.ok, 2);
+		assert.equal(report.findings.length, 0);
+
+		const links = new Map(report.links.map((link) => [link.target, link]));
+		assert.equal(links.get('#safe-heading')?.status, 'ok');
+		assert.equal(links.get('#keep-state')?.status, 'ok');
+		assert.doesNotMatch(JSON.stringify(report.links), /script/iu);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('link-integrity defaults to README and schemas docs when no path is provided', () => {
 	const projectPath = createTempProject();
 
@@ -3884,6 +4010,27 @@ test('script-pack suggest can use current changed files without running scripts'
 		const textBudget = report.suggestions.find((suggestion) => suggestion.script_ref === 'core/text-budget');
 		assert.ok(textBudget);
 		assert.equal(textBudget.run_hint, 'mf script-pack run core/text-budget check README.md --json');
+		assert.equal(report.issues.length, 0);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack suggest reads changed paths with spaces and unicode from porcelain status', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'my component 한글.ts'), 'export const value = 1;\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, ['--changed', '--phase', 'after_change']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(report.input.paths.includes('src/my component 한글.ts'));
+		assert.equal(report.input.paths.some((entry) => entry.includes('"')), false);
+		assert.ok(report.analyzed_paths.some((entry) => entry.path === 'src/my component 한글.ts'));
 		assert.equal(report.issues.length, 0);
 	} finally {
 		removeTempProject(projectPath);

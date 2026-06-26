@@ -187,28 +187,40 @@ export function classifyScriptPackPathSurface(relativePath: string): readonly Sc
 }
 
 function readChangedPaths(mustflowRoot: string, issues: string[]): readonly string[] {
-	const result = spawnSync('git', ['status', '--short'], {
+	const result = spawnSync('git', ['status', '--porcelain=v1', '-z', '--untracked-files=all'], {
 		cwd: mustflowRoot,
 		encoding: 'utf8',
 		stdio: ['ignore', 'pipe', 'pipe'],
 		windowsHide: true,
+		maxBuffer: 16 * 1024 * 1024,
 	});
 
-	if (result.status !== 0) {
-		const detail = result.stderr.trim() || result.stdout.trim() || `git status exited with ${result.status}`;
+	if (result.error || result.status !== 0) {
+		const detail =
+			result.error?.message ?? (result.stderr.trim() || result.stdout.trim() || `git status exited with ${result.status}`);
 		issues.push(`Could not read changed paths: ${detail}`);
 		return [];
 	}
 
-	return result.stdout
-		.split(/\r?\n/u)
-		.map((line) => line.trimEnd())
-		.filter((line) => line.length > 0)
-		.map((line) => {
-			const renamed = /\s->\s(?<target>.+)$/u.exec(line);
-			return renamed?.groups?.target ?? line.slice(3).trim();
-		})
-		.filter((entry) => entry.length > 0);
+	const paths: string[] = [];
+	const records = result.stdout.split('\0');
+	let index = 0;
+	while (index < records.length) {
+		const record = records[index] ?? '';
+		index += 1;
+		if (record.length === 0) {
+			continue;
+		}
+		const status = record.slice(0, 2);
+		const relativePath = record.slice(3);
+		if (relativePath.length > 0) {
+			paths.push(relativePath);
+		}
+		if (status.includes('R') || status.includes('C')) {
+			index += 1;
+		}
+	}
+	return paths;
 }
 
 function surfacesForScript(script: ScriptPackSuggestionScript): readonly ScriptPackSurface[] {

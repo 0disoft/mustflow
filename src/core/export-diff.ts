@@ -10,6 +10,7 @@ import {
 	type ScriptCheckFindingSeverity,
 	type ScriptCheckStatus,
 } from './script-check-result.js';
+import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
 import { ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const CODE_EXPORT_DIFF_SCRIPT_ID = 'export-diff';
@@ -143,7 +144,7 @@ const DEFAULT_BASE_REF = 'HEAD';
 const DEFAULT_MAX_FILES = 100;
 const DEFAULT_MAX_FILE_BYTES = 1024 * 1024;
 const SUPPORTED_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
-const IGNORED_DIRECTORIES = ['.git', 'node_modules', 'dist', 'build', 'coverage', '.mustflow/cache', '.mustflow/state'] as const;
+const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const ERROR_CODES = new Set<ExportDiffFindingCode>([
 	'export_diff_git_unavailable',
 	'export_diff_invalid_ref',
@@ -190,8 +191,7 @@ function makeFinding(
 }
 
 function isIgnoredPath(relativePath: string): boolean {
-	const normalized = normalizeRelativePath(relativePath);
-	return IGNORED_DIRECTORIES.some((directory) => normalized === directory || normalized.startsWith(`${directory}/`));
+	return isIgnoredDirectoryPath(normalizeRelativePath(relativePath), IGNORED_DIRECTORIES);
 }
 
 function isSupportedPath(relativePath: string): boolean {
