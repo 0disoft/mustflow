@@ -30,7 +30,7 @@ const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 ]);
 const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
 const CONFIG_FILE_PATTERN =
-	/(?:^|\/)(?:\.gitignore|\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js)$/u;
+	/(?:^|\/)(?:\.gitignore|\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js|wrangler\.(?:toml|jsonc?)|vercel\.json|netlify\.toml|Dockerfile|docker-compose\.ya?ml|compose\.ya?ml)$/u;
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -246,7 +246,7 @@ function surfacesForScript(script: ScriptPackSuggestionScript): readonly ScriptP
 	addIf('skill', /skill|workflow/u);
 	addIf('generated', /generated|protected|vendor|cache|boundary/u);
 	addIf('config', /config|command/u);
-	addIf('package', /package|release/u);
+	addIf('package', /deploy|package|publish|release/u);
 	addIf('test', /test|suite|fixture|coverage|selection|timing|performance/u);
 	addIf('source', /code|source|symbol/u);
 
@@ -439,6 +439,10 @@ function createRunHint(
 		return 'mf script-pack run repo/approval-gate check --action <action_type> --json';
 	}
 
+	if (script.ref === 'repo/deploy-surface') {
+		return 'mf script-pack run repo/deploy-surface inspect --json';
+	}
+
 	if (script.ref === 'repo/config-chain') {
 		const configPaths = analyzedPaths
 			.filter((entry) => entry.surfaces.some((surface) => CONFIG_CHAIN_SURFACES.has(surface)))
@@ -572,6 +576,14 @@ export function createScriptPackSuggestionReport(
 			) {
 				score += 2;
 				reasons.push('Prioritizes approval-gate checks for approval-sensitive workflow and release surfaces.');
+			}
+
+			if (
+				script.ref === 'repo/deploy-surface' &&
+				(requestedSurfaces.has('package') || requestedSurfaces.has('config') || requestedSurfaces.has('docs'))
+			) {
+				score += 2;
+				reasons.push('Prioritizes deploy-surface inspection for push, tag, release, docs, and package publication follow-up.');
 			}
 
 			if (score === 0) {

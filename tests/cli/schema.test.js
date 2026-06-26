@@ -1218,6 +1218,31 @@ test('repo approval-gate json output matches the published schema', () => {
 	}
 });
 
+test('repo deploy-surface json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.github', 'workflows'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.github', 'workflows', 'release.yml'),
+			['name: Release', 'on:', '  push:', '    tags: ["v*"]', 'jobs:', '  publish:', '    steps:', '      - run: npm publish', ''].join('\n'),
+		);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/deploy-surface',
+			'inspect',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-deploy-surface-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('repo merge-conflict-scan json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

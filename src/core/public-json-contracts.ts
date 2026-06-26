@@ -506,6 +506,15 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'repo-deploy-surface-report',
+		schemaFile: 'repo-deploy-surface-report.schema.json',
+		producer: 'mf script-pack run repo/deploy-surface inspect --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'script-pack', 'run', 'repo/deploy-surface', 'inspect', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'config-chain-report',
 		schemaFile: 'config-chain-report.schema.json',
 		producer: 'mf script-pack run repo/config-chain inspect <path...> --json',

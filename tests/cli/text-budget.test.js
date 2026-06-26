@@ -101,6 +101,11 @@ function runRepoApprovalGateJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runRepoDeploySurfaceJson(projectPath, args = []) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/deploy-surface', 'inspect', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runRepoMergeConflictScanJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'repo/merge-conflict-scan', 'check', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -361,6 +366,7 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		const manifestLockDrift = repoPack?.scripts.find((script) => script.ref === 'repo/manifest-lock-drift');
 		const versionSource = repoPack?.scripts.find((script) => script.ref === 'repo/version-source');
 		const approvalGate = repoPack?.scripts.find((script) => script.ref === 'repo/approval-gate');
+		const deploySurface = repoPack?.scripts.find((script) => script.ref === 'repo/deploy-surface');
 
 		assert.ok(configChain, 'repo/config-chain should be listed');
 		assert.equal(configChain.read_only, true);
@@ -485,6 +491,21 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(approvalGate.risk_level, 'low');
 		assert.equal(approvalGate.cost, 'low');
 		assert.equal(approvalGate.report_schema_file, 'repo-approval-gate-report.schema.json');
+
+		assert.ok(deploySurface, 'repo/deploy-surface should be listed');
+		assert.equal(deploySurface.read_only, true);
+		assert.equal(deploySurface.mutates, false);
+		assert.equal(deploySurface.network, false);
+		assert.deepEqual(deploySurface.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(deploySurface.use_when.some((hint) => hint.includes('deploy surfaces')));
+		assert.deepEqual(deploySurface.inputs, []);
+		assert.ok(deploySurface.outputs.includes('deploy_surfaces'));
+		assert.ok(deploySurface.outputs.includes('required_verification'));
+		assert.ok(deploySurface.outputs.includes('manual_gates'));
+		assert.ok(deploySurface.related_skills.includes('deployment-rollout-safety-review'));
+		assert.equal(deploySurface.risk_level, 'low');
+		assert.equal(deploySurface.cost, 'low');
+		assert.equal(deploySurface.report_schema_file, 'repo-deploy-surface-report.schema.json');
 
 		const relatedFiles = repoPack?.scripts.find((script) => script.ref === 'repo/related-files');
 
@@ -3706,6 +3727,35 @@ test('script-pack suggest recommends approval-gate for approval-sensitive workfl
 	}
 });
 
+test('script-pack suggest recommends deploy-surface for workflow release surfaces', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'.github/workflows/release.yml',
+			'--skill',
+			'release-publish-change',
+			'--phase',
+			'after_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const deploySurface = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/deploy-surface');
+		assert.ok(deploySurface, 'repo/deploy-surface should be suggested for release workflow work');
+		assert.ok(deploySurface.matched_phases.includes('after_change'));
+		assert.ok(deploySurface.matched_skills.includes('release-publish-change'));
+		assert.ok(deploySurface.matched_surfaces.includes('package'));
+		assert.equal(deploySurface.run_hint, 'mf script-pack run repo/deploy-surface inspect --json');
+		assert.equal(deploySurface.report_schema_file, 'repo-deploy-surface-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest recommends merge-conflict-scan for changed repository paths', () => {
 	const projectPath = createTempProject();
 
@@ -4145,6 +4195,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run repo\/manifest-lock-drift check AGENTS\.md --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/version-source inspect --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/approval-gate check --action git_commit --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/deploy-surface inspect --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/related-files map src\/cli\/index\.ts --json/);
 		assert.equal(result.stderr, '');
 	} finally {
@@ -4202,6 +4253,126 @@ test('approval-gate reports actions that require explicit approval', () => {
 		assert.equal(report.findings[0].code, 'approval_required_for_action');
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
 		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('deploy-surface reports no deploy surface for a minimal repository', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const { result, report } = runRepoDeploySurfaceJson(projectPath);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/deploy-surface');
+		assert.equal(report.action, 'inspect');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.has_deploy_surface, false);
+		assert.equal(report.summary.surface_count, 0);
+		assert.deepEqual(report.surfaces, []);
+		assert.deepEqual(report.required_verification, []);
+		assert.deepEqual(report.manual_gates, []);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.deepEqual(report.issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('deploy-surface detects npm publish and GitHub Pages workflows', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.github', 'workflows'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.github', 'workflows', 'release.yml'),
+			[
+				'name: Release',
+				'on:',
+				'  push:',
+				'    tags: ["v*"]',
+				'jobs:',
+				'  publish:',
+				'    runs-on: ubuntu-latest',
+				'    environment: npm',
+				'    steps:',
+				'      - run: npm publish',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, '.github', 'workflows', 'pages.yml'),
+			[
+				'name: Pages',
+				'on:',
+				'  workflow_dispatch:',
+				'permissions:',
+				'  pages: write',
+				'jobs:',
+				'  deploy:',
+				'    runs-on: ubuntu-latest',
+				'    steps:',
+				'      - uses: actions/deploy-pages@v4',
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runRepoDeploySurfaceJson(projectPath);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.has_deploy_surface, true);
+		assert.ok(report.summary.workflow_count >= 2);
+		assert.ok(report.surfaces.some((surface) => surface.surface_type === 'npm_publish'));
+		assert.ok(report.surfaces.some((surface) => surface.surface_type === 'github_pages'));
+		assert.ok(report.required_verification.some((entry) => entry.includes('release_npm_version_available')));
+		assert.ok(report.required_verification.some((entry) => entry.includes('published Pages URL')));
+		assert.ok(report.manual_gates.some((entry) => entry.includes('npm trusted publishing')));
+		assert.ok(report.findings.every((finding) => finding.code === 'deploy_surface_detected'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('deploy-surface detects package scripts and deploy config files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify(
+				{
+					name: 'deploy-surface-probe',
+					version: '1.0.0',
+					scripts: {
+						deploy: 'wrangler deploy',
+						release: 'gh release create v1.0.0',
+					},
+					publishConfig: { access: 'public' },
+				},
+				null,
+				2,
+			)}\n`,
+		);
+		writeFileSync(path.join(projectPath, 'wrangler.toml'), 'name = "deploy-surface-probe"\n');
+
+		const { result, report } = runRepoDeploySurfaceJson(projectPath);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.has_deploy_surface, true);
+		assert.ok(report.summary.package_script_count >= 2);
+		assert.ok(report.summary.config_file_count >= 1);
+		assert.ok(report.summary.package_metadata_count >= 1);
+		assert.ok(report.surfaces.some((surface) => surface.kind === 'package_script' && surface.surface_type === 'cloudflare'));
+		assert.ok(report.surfaces.some((surface) => surface.kind === 'deploy_config' && surface.surface_type === 'cloudflare'));
+		assert.ok(report.surfaces.some((surface) => surface.kind === 'package_metadata' && surface.surface_type === 'npm_publish'));
+		assert.ok(report.required_verification.some((entry) => entry.includes('Cloudflare')));
+		assert.ok(report.required_verification.some((entry) => entry.includes('release_npm_published_verify')));
 	} finally {
 		removeTempProject(projectPath);
 	}

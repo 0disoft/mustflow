@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-deploy-surface-report.schema.json",
+  "title": "mustflow repo deploy-surface report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "has_deploy_surface",
+    "summary",
+    "surfaces",
+    "required_verification",
+    "manual_gates",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "deploy-surface" },
+    "script_ref": { "const": "repo/deploy-surface" },
+    "action": { "const": "inspect" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanned_paths", "max_file_bytes"],
+      "properties": {
+        "scanned_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "max_file_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "has_deploy_surface": { "type": "boolean" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "surfaces": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/surface" }
+    },
+    "required_verification": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "manual_gates": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "has_deploy_surface",
+        "surface_count",
+        "workflow_count",
+        "package_script_count",
+        "config_file_count",
+        "package_metadata_count",
+        "manual_gate_count",
+        "required_verification_count"
+      ],
+      "properties": {
+        "has_deploy_surface": { "type": "boolean" },
+        "surface_count": { "type": "integer", "minimum": 0 },
+        "workflow_count": { "type": "integer", "minimum": 0 },
+        "package_script_count": { "type": "integer", "minimum": 0 },
+        "config_file_count": { "type": "integer", "minimum": 0 },
+        "package_metadata_count": { "type": "integer", "minimum": 0 },
+        "manual_gate_count": { "type": "integer", "minimum": 0 },
+        "required_verification_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "surface_type",
+        "path",
+        "line",
+        "trigger",
+        "confidence",
+        "evidence",
+        "required_verification",
+        "manual_gates"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": [
+            "deploy_config",
+            "github_actions_workflow",
+            "package_metadata",
+            "package_script"
+          ]
+        },
+        "surface_type": {
+          "enum": [
+            "cloudflare",
+            "container",
+            "generic_deploy",
+            "github_pages",
+            "github_release",
+            "netlify",
+            "npm_publish",
+            "package_release",
+            "vercel"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "trigger": { "type": ["string", "null"] },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "required_verification": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "manual_gates": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "match"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "match": { "type": "string", "minLength": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "path",
+        "json_pointer",
+        "metric",
+        "actual",
+        "expected"
+      ],
+      "properties": {
+        "code": { "const": "deploy_surface_detected" },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string", "minLength": 1 },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

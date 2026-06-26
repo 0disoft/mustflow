@@ -4722,6 +4722,85 @@
       }
     },
     {
+      "id": "repo-deploy-surface-report",
+      "schema_file": "repo-deploy-surface-report.schema.json",
+      "producer": "mf script-pack run repo/deploy-surface inspect --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "deploy-surface",
+        "script_ref": "repo/deploy-surface",
+        "action": "inspect",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "scanned_paths": [
+            ".github/workflows/release.yml",
+            "package.json",
+            "wrangler.toml"
+          ],
+          "max_file_bytes": 262144
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "has_deploy_surface": true,
+        "summary": {
+          "has_deploy_surface": true,
+          "surface_count": 1,
+          "workflow_count": 1,
+          "package_script_count": 0,
+          "config_file_count": 0,
+          "package_metadata_count": 0,
+          "manual_gate_count": 1,
+          "required_verification_count": 2
+        },
+        "surfaces": [
+          {
+            "id": "github_actions_workflow:npm_publish:.github/workflows/release.yml:10:0",
+            "kind": "github_actions_workflow",
+            "surface_type": "npm_publish",
+            "path": ".github/workflows/release.yml",
+            "line": 10,
+            "trigger": "tag push (tags: [\"v*\"])",
+            "confidence": "high",
+            "evidence": {
+              "path": ".github/workflows/release.yml",
+              "line": 10,
+              "match": "npm publish"
+            },
+            "required_verification": [
+              "release_npm_published_verify after publish",
+              "release_npm_version_available before tag or publish"
+            ],
+            "manual_gates": [
+              "npm trusted publishing, token, or maintainer permission is required."
+            ]
+          }
+        ],
+        "required_verification": [
+          "release_npm_published_verify after publish",
+          "release_npm_version_available before tag or publish"
+        ],
+        "manual_gates": [
+          "npm trusted publishing, token, or maintainer permission is required."
+        ],
+        "findings": [
+          {
+            "code": "deploy_surface_detected",
+            "severity": "medium",
+            "path": ".github/workflows/release.yml",
+            "message": "Detected npm_publish deploy surface in .github/workflows/release.yml.",
+            "json_pointer": null,
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "repo-merge-conflict-scan-report",
       "schema_file": "repo-merge-conflict-scan-report.schema.json",
       "producer": "mf script-pack run repo/merge-conflict-scan check [path...] --json",

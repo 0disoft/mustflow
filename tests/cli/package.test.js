@@ -47,7 +47,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.103.10');
+	assert.equal(packageJson.version, '2.103.11');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -541,6 +541,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/skill-route-audit.js'));
 	assert.ok(files.has('dist/core/repo-version-source.js'));
 	assert.ok(files.has('dist/core/repo-approval-gate.js'));
+	assert.ok(files.has('dist/core/repo-deploy-surface.js'));
 	assert.ok(files.has('dist/core/repo-merge-conflict-scan.js'));
 	assert.ok(files.has('dist/core/repo-git-ignore-audit.js'));
 	assert.ok(files.has('dist/core/repo-manifest-lock-drift.js'));
@@ -572,6 +573,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/script-packs/repo-skill-route-audit.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-version-source.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-approval-gate.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-deploy-surface.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-merge-conflict-scan.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-git-ignore-audit.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-manifest-lock-drift.js'));
@@ -608,6 +610,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/skill-import-report.schema.json'));
 	assert.ok(files.has('schemas/repo-version-source-report.schema.json'));
 	assert.ok(files.has('schemas/repo-approval-gate-report.schema.json'));
+	assert.ok(files.has('schemas/repo-deploy-surface-report.schema.json'));
 	assert.ok(files.has('schemas/repo-merge-conflict-scan-report.schema.json'));
 	assert.ok(files.has('schemas/repo-git-ignore-audit-report.schema.json'));
 	assert.ok(files.has('schemas/repo-manifest-lock-drift-report.schema.json'));

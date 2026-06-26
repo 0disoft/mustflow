@@ -145,6 +145,7 @@ export function getScriptPackHelp(lang: CliLang = 'en'): string {
 				'mf script-pack run repo/skill-route-audit audit --json',
 				'mf script-pack run repo/version-source inspect --json',
 				'mf script-pack run repo/approval-gate check --action git_commit --json',
+				'mf script-pack run repo/deploy-surface inspect --json',
 				'mf script-pack run repo/related-files map src/cli/index.ts --json',
 				'mf script-pack run core/text-budget --help',
 			],

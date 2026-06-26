@@ -152,6 +152,9 @@ Current schemas:
 - `repo-approval-gate-report.schema.json`: output of
   `mf script-pack run repo/approval-gate check --action <type> --json`, containing approval policy
   decisions, required-action findings, and unreadable policy issues
+- `repo-deploy-surface-report.schema.json`: output of
+  `mf script-pack run repo/deploy-surface inspect --json`, containing detected local deploy and
+  release surfaces, trigger evidence, required verification, and manual gates
 - `related-files-report.schema.json`: output of
   `mf script-pack run repo/related-files map <path...> --json`, containing conservative related-file
   candidates from direct imports, importers, same-basename siblings, parent configuration files, and
