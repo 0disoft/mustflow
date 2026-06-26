@@ -113,6 +113,11 @@ const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['templates/default/AGENTS.md'] },
 	{ mode: 'related', changedFiles: ['src/cli/commands/init.ts'] },
 	{ mode: 'related', changedFiles: ['.mustflow/skills/cpp-code-change/SKILL.md'] },
+	{ mode: 'related', changedFiles: ['templates/default/locales/en/.mustflow/skills/cpp-code-change/SKILL.md'] },
+	{ mode: 'related', changedFiles: ['src/core/new-cross-cutting-module.ts'] },
+	{ mode: 'related', changedFiles: ['src/cli/lib/new-cross-cutting-helper.ts'] },
+	{ mode: 'related', changedFiles: ['tests/cli/helpers/new-shared-utils.js'] },
+	{ mode: 'related', changedFiles: ['src\\core\\line-endings.ts'] },
 	{ mode: 'fast', changedFiles: [] },
 	{ mode: 'full', changedFiles: [] },
 	{ mode: 'full-auto', changedFiles: [] },
@@ -229,6 +234,7 @@ test('related selection maps command config changes to contract surfaces', () =>
 	const selected = new Set(report.selected);
 
 	assert.equal(report.release_sensitive, true);
+	assert.equal(selected.has('check-config-validation.test.js'), true);
 	assert.equal(selected.has('check-command-contracts.test.js'), true);
 	assert.equal(selected.has('explain-command.test.js'), true);
 	assert.equal(selected.has('index-workflow.test.js'), true);
@@ -560,6 +566,14 @@ test('related selection keeps verification planning changes out of classificatio
 	assert.equal(selected.has('verify-completion-verdict.test.js'), false);
 });
 
+test('related selection normalizes Windows path separators before rule matching', () => {
+	const report = selectRelated(['src\\core\\line-endings.ts']);
+
+	assert.deepEqual(report.changed_files, ['src/core/line-endings.ts']);
+	assert.deepEqual(report.selected, ['line-endings.test.js']);
+	assert.equal(reasonsFor(report, 'fallback_fast_tests').length, 0);
+});
+
 test('test runner refuses overlapping repository build and test locks', () => {
 	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-lock-'));
 	const lockDir = path.join(tempRoot, 'lock');
@@ -607,7 +621,7 @@ test('related selection reports release-sensitive template changes', () => {
 	const report = selectRelated(['templates/default/AGENTS.md']);
 
 	assert.equal(report.release_sensitive, true);
-	assert.deepEqual(report.selected.sort(), ['docs.test.js', 'init-default-template.test.js', 'init.test.js', 'update.test.js']);
+	assert.deepEqual(report.selected.sort(), ['docs.test.js', 'init-default-template.test.js', 'init.test.js', 'package-template.test.js', 'update.test.js']);
 	assert.deepEqual(reasonsFor(report, 'release_sensitive'), [
 		{
 			changed_file: 'templates/default/AGENTS.md',
@@ -617,6 +631,33 @@ test('related selection reports release-sensitive template changes', () => {
 			note: 'release-sensitive change; run test_release before publishing or committing release metadata',
 		},
 	]);
+});
+
+test('related selection maps template skill changes to authoring contracts and template checks', () => {
+	const selected = selectedFor(['templates/default/locales/en/.mustflow/skills/cpp-code-change/SKILL.md']);
+
+	assert.equal(selected.has('authoring-skill-contracts.test.js'), true);
+	assert.equal(selected.has('package-template.test.js'), true);
+	assert.equal(selected.has('init.test.js'), true);
+	assert.equal(selected.has('update.test.js'), true);
+});
+
+test('related selection widens unmapped source and helper changes instead of using fast fallback', () => {
+	for (const changedFile of [
+		'src/core/new-cross-cutting-module.ts',
+		'src/cli/lib/new-cross-cutting-helper.ts',
+		'tests/cli/helpers/new-shared-utils.js',
+	]) {
+		const report = selectRelated([changedFile]);
+		const fullReport = listSuite('full');
+		const fallbackReasons = reasonsFor(report, 'fallback_full_tests');
+
+		assert.equal(report.selected.length, fullReport.selected.length, changedFile);
+		assert.deepEqual(report.selected, fullReport.selected, changedFile);
+		assert.equal(fallbackReasons.length, 1, changedFile);
+		assert.equal(fallbackReasons[0].changed_file, changedFile);
+		assert.equal(reasonsFor(report, 'fallback_fast_tests').length, 0, changedFile);
+	}
 });
 
 test('related selection maps init command changes to default template installation', () => {

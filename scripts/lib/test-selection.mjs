@@ -141,7 +141,8 @@ export function createTestSelection(allCliTests) {
 
 	const relatedRules = [
 		{ match: /^schemas\//u, tests: schemaSmokeTests },
-		{ match: /^templates\//u, tests: ['init.test.js', 'init-default-template.test.js', 'update.test.js'] },
+		{ match: /^templates\/default\/locales\/en\/\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
+		{ match: /^templates\//u, tests: ['init.test.js', 'init-default-template.test.js', 'update.test.js', 'package-template.test.js'] },
 		{ match: /^package\.json$/u, tests: ['package.test.js', 'package-template.test.js', ...versioningTests] },
 		{ match: /^tests\/fixtures\/authoring\//u, tests: ['authoring-fixtures.test.js'] },
 		{ match: /^\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
@@ -278,6 +279,7 @@ export function createTestSelection(allCliTests) {
 		{
 			match: /^\.mustflow\/config\/commands\.toml$/u,
 			tests: [
+				'check-config-validation.test.js',
 				'check-command-contracts.test.js',
 				'explain-command.test.js',
 				'index-workflow.test.js',
@@ -308,6 +310,18 @@ export function createTestSelection(allCliTests) {
 		{
 			match: /^tests\/fixtures\//u,
 			category: 'shared_fixture',
+		},
+		{
+			match: /^tests\/cli\/helpers\//u,
+			category: 'shared_test_helper',
+		},
+		{
+			match: /^src\/core\/[^/]+\.ts$/u,
+			category: 'unmapped_core_source',
+		},
+		{
+			match: /^src\/cli\/lib\/[^/]+\.ts$/u,
+			category: 'unmapped_cli_library_source',
 		},
 		{
 			match: /^\.github\/workflows\//u,
