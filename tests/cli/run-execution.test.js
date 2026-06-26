@@ -896,6 +896,52 @@ destructive = false
 	}
 });
 
+test('removes relative project-local PATH entries when mf run starts from a subdirectory', () => {
+	const projectPath = createTempProject();
+	const markerPath = path.join(tmpdir(), `mustflow-pwned-relative-bin-${process.pid}-${Date.now()}`);
+
+	try {
+		rmSync(markerPath, { force: true });
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'subdir'), { recursive: true });
+		createLocalBinShim(projectPath, 'evil-relative-bin', 'PWNED_RELATIVE_BIN', markerPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.relative_local_bin]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Attempt to run a repository-local shim through a relative PATH entry."
+argv = ["evil-relative-bin"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const env = { ...process.env };
+		const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+		env[pathKey] = `${path.join('node_modules', '.bin')}${path.delimiter}${env[pathKey] ?? ''}`;
+
+		const result = runCli(path.join(projectPath, 'subdir'), ['run', 'relative_local_bin', '--json'], { env });
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.equal(receipt.status, 'start_failed');
+		assert.doesNotMatch(receipt.stdout.tail, /PWNED_RELATIVE_BIN/);
+		assert.doesNotMatch(receipt.stderr.tail, /PWNED_RELATIVE_BIN/);
+		assert.equal(existsSync(markerPath), false);
+	} finally {
+		rmSync(markerPath, { force: true });
+		removeTempProject(projectPath);
+	}
+});
+
 test('reruns mustflow built-in intents through the current CLI entrypoint', () => {
 	const projectPath = createTempProject();
 

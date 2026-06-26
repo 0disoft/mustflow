@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import { readString, readStringArray, type CommandContract, type TomlTable } from './config-loading.js';
@@ -44,13 +44,38 @@ function getPathEnvKey(env: NodeJS.ProcessEnv): string {
 	return Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
 }
 
-function sameResolvedPath(left: string, right: string): boolean {
-	const resolvedLeft = path.resolve(left);
-	const resolvedRight = path.resolve(right);
+function normalizePathForComparison(value: string): string {
+	const resolved = path.resolve(value);
 
-	return process.platform === 'win32'
-		? resolvedLeft.toLowerCase() === resolvedRight.toLowerCase()
-		: resolvedLeft === resolvedRight;
+	if (!existsSync(resolved)) {
+		return resolved;
+	}
+
+	try {
+		return realpathSync.native(resolved);
+	} catch {
+		return resolved;
+	}
+}
+
+function pathsEqual(left: string, right: string): boolean {
+	return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+}
+
+function pathEntryCandidates(entry: string, projectRoot: string): string[] {
+	if (path.isAbsolute(entry)) {
+		return [entry];
+	}
+
+	return [path.resolve(projectRoot, entry), path.resolve(entry)];
+}
+
+function sameResolvedPath(left: string, right: string, projectRoot: string): boolean {
+	const resolvedRight = normalizePathForComparison(right);
+
+	return pathEntryCandidates(left, projectRoot).some((candidate) =>
+		pathsEqual(normalizePathForComparison(candidate), resolvedRight),
+	);
 }
 
 function uniqueEnvNames(values: readonly string[]): string[] {
@@ -154,7 +179,7 @@ function removeProjectLocalBinFromPath(env: NodeJS.ProcessEnv, projectRoot: stri
 		...env,
 		[pathKey]: currentPath
 			.split(path.delimiter)
-			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath))
+			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath, projectRoot))
 			.join(path.delimiter),
 	};
 }
