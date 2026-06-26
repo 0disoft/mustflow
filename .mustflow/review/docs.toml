@@ -126,7 +126,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T03:18:51.582Z"
-last_touched_at = "2026-06-26T06:13:42.690Z"
+last_touched_at = "2026-06-26T09:59:10.863Z"
 
 [[documents]]
 path = ".mustflow/skills/complex-decision-analysis/SKILL.md"
@@ -257,6 +257,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T20:47:48.264Z"
 last_touched_at = "2026-06-25T20:47:48.264Z"
+
+[[documents]]
+path = ".mustflow/skills/next-action-menu/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:28:41.795Z"
+last_touched_at = "2026-06-26T09:59:10.875Z"
 
 [[documents]]
 path = ".mustflow/skills/node-code-change/SKILL.md"
@@ -457,6 +465,14 @@ first_seen_at = "2026-06-23T08:00:14.030Z"
 last_touched_at = "2026-06-23T08:00:14.030Z"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/commands/run.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T09:11:25.916Z"
+last_touched_at = "2026-06-26T09:59:10.882Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/commands/script-pack.md"
 status = "pending"
 origin = "llm_modified"
@@ -498,7 +514,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "llm_modified"
 first_seen_at = "2026-06-18T05:54:58.611Z"
-last_touched_at = "2026-06-18T06:46:22.390Z"
+last_touched_at = "2026-06-26T09:59:10.889Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -696,7 +712,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T03:18:51.610Z"
-last_touched_at = "2026-06-26T06:13:42.810Z"
+last_touched_at = "2026-06-26T09:59:10.895Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/complex-decision-analysis/SKILL.md"
@@ -825,6 +841,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T20:47:48.274Z"
 last_touched_at = "2026-06-25T20:47:48.274Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/next-action-menu/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T08:28:41.813Z"
+last_touched_at = "2026-06-26T09:59:10.901Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md"

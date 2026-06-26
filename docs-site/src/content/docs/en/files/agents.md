@@ -9,7 +9,7 @@ description: The short root work-rule entrypoint that agents read first.
 
 `mf init` installs this file at the target repository root to ensure immediate discovery by agents.
 
-It serves as the gateway to the mustflow document flow. Detailed policies reside in `.mustflow/docs/agent-workflow.md`, executable commands are defined in `.mustflow/config/commands.toml`, repository-level preferences are managed in `.mustflow/config/preferences.toml`, task-specific project context lives in `.mustflow/context/`, and repeatable procedures are documented in `.mustflow/skills/`.
+It serves as the gateway to the mustflow document flow. Detailed policies reside in `.mustflow/docs/agent-workflow.md`, executable commands are defined in `.mustflow/config/commands.toml`, repository-level preferences are managed in `.mustflow/config/preferences.toml`, technology preferences can be recorded in `.mustflow/config/technology.toml`, task-specific project context lives in `.mustflow/context/`, and repeatable procedures are documented in `.mustflow/skills/`.
 
 ## Role and Responsibilities
 
@@ -34,6 +34,7 @@ AGENTS.md
 .mustflow/config/mustflow.toml
 .mustflow/config/commands.toml
 .mustflow/config/preferences.toml  # when present
+.mustflow/config/technology.toml  # when present
 .mustflow/skills/router.toml
 .mustflow/context/INDEX.md  # only when task-specific context is needed
 .mustflow/context/<name>.md  # only when selected by the context index
@@ -49,7 +50,7 @@ REPO_MAP.md  # only when broad navigation is needed
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 4
+revision: <number>
 ```
 
 - `mustflow_doc`: A stable, internal identifier for the document.

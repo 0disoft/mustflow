@@ -7,6 +7,10 @@ It creates `AGENTS.md` at the root and stores mustflow-managed documents and set
 
 ## Created Structure
 
+The exact skill set depends on the selected profile. This excerpt shows the stable
+shape and a representative subset of installed skill files, not a complete profile
+listing.
+
 ```text
 AGENTS.md
 .gitignore
@@ -40,7 +44,8 @@ AGENTS.md
    ├─ llm-service-ux-review/SKILL.md
    ├─ search-ad-content-authoring/SKILL.md
    ├─ visual-review-artifact/SKILL.md
-   └─ web-asset-optimization/SKILL.md
+   ├─ web-asset-optimization/SKILL.md
+   └─ ...
 ```
 
 `REPO_MAP.md` is not copied from a static template; it is generated based on the repository structure upon request.

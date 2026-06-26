@@ -38,18 +38,19 @@ With Bun, make sure Bun's global binary directory, commonly `~/.bun/bin`, is on 
 Example output:
 
 ```text
-mustflow 1.10.0
-latest 1.11.0 available
+mustflow 2.100.0
+latest 2.101.0 available
 
 Update commands:
 npm: npm install -g mustflow@latest
 bun: bun add -g mustflow@latest
 pnpm: pnpm add -g mustflow@latest
 yarn: yarn global add mustflow@latest
-deno: deno install -g -A -n mf npm:mustflow@latest
+deno: deno install -g -A -n mf npm:mustflow@latest (experimental)
 ```
 
 Bun users can install or refresh the global command with `bun add -g mustflow@latest`.
+Deno `npm:` execution is experimental until separately verified.
 
 ## Help and Exit Codes
 

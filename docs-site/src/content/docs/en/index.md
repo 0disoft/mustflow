@@ -71,9 +71,14 @@ REPO_MAP.md  # optional generated file
 3. **`.mustflow/config/mustflow.toml`**: Authoritative document paths and boundaries.
 4. **`.mustflow/config/commands.toml`**: Executable command intent contracts.
 5. **`.mustflow/config/preferences.toml`**: Repository-level defaults (if present).
-6. **`.mustflow/skills/router.toml`**: Stable compact skill-routing kernel for repeatable tasks.
-7. **`.mustflow/skills/routes.toml`**: Full route metadata, read only when detailed routing is needed.
-8. **`.mustflow/skills/INDEX.md`**: Expanded skill route table, read only when human-readable trigger evidence is needed.
-9. **`.mustflow/context/INDEX.md`**: Task-specific project context routing.
+6. **`.mustflow/config/technology.toml`**: Low-authority technology preferences (if present).
+7. **`.mustflow/skills/router.toml`**: Stable compact skill-routing kernel for repeatable tasks.
+8. **`.mustflow/context/INDEX.md`**: Task-specific project context routing, read only when the task needs it.
+9. **`.mustflow/context/<name>.md`**: Matching context files, read only when selected by the context index.
+10. **`.mustflow/skills/routes.toml`**: Full route metadata, read only when the compact router is insufficient.
+11. **`.mustflow/skills/INDEX.md`**: Expanded skill route table, read only when route metadata is insufficient or human-readable trigger evidence is needed.
+12. **`.mustflow/skills/<name>/SKILL.md`**: Matching task procedures, read before editing that scope.
+13. **`REPO_MAP.md`**: Broad repository navigation, read only when needed.
+14. **Relevant source, test, and documentation files**: Current evidence for the task.
 
 This site serves as reference documentation and is not installed into user projects via `mf init`.

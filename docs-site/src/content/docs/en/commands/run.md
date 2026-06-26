@@ -17,6 +17,11 @@ The intent must satisfy all of these conditions:
 
 If any condition is not satisfied, the command is not run and the reason is reported.
 
+If `.mustflow/config/mustflow.toml` lists `network_access` or `destructive_command` under
+`[approval].required_for`, intents with `network = true` or `destructive = true` are also blocked
+before a process starts. The blocked JSON plan uses `reason_code` values such as
+`network_requires_approval` or `destructive_requires_approval` and no run receipt is written.
+
 Before executing, `mf run` also requires a readable `.mustflow/config/manifest.lock.toml`.
 This confirms the root has been installed or updated through mustflow before repository-controlled
 commands can run. `--dry-run` and `--plan-only` still work without the lock so you can inspect a
@@ -54,11 +59,13 @@ npx mf run test --json
 Each execution writes a receipt under a unique `.mustflow/state/runs/run-*` directory and atomically updates `.mustflow/state/runs/latest.json` with the same latest receipt.
 
 With `--json`, the same receipt is printed to standard output. Automation and agents should parse this structured output instead of parsing human-readable output.
+If the intent is blocked after command-contract planning and before a process starts, standard output contains the same structured plan report as `--plan-only --json`, with `runnable: false` and a stable `reason_code`; no run receipt is written for that blocked attempt.
 
 Machine-readable output uses these fields:
 
 - `schema_version` (`string`): Run receipt format version.
 - `command` (`string`): Always `run`.
+- `correlation_id` (`string`, optional): Stable per-run correlation identifier.
 - `intent` (`string`): Command intent name.
 - `status` (`string`): Run result. One of `passed`, `failed`, `timed_out`, `start_failed`, or `output_limit_exceeded`.
 - `timed_out` (`boolean`): Whether the timeout was reached.
@@ -90,6 +97,7 @@ Machine-readable output uses these fields:
 - `write_drift` (`object`): Bounded comparison between declared write paths and files changed during the command.
 - `performance` (`object`): Safe performance summary for the latest execution.
 - `redaction` (`object`): Secret-like redaction metadata for the receipt.
+- `verification_plan_id` (`string`, optional): Hash of the verification plan associated with this run, when a higher-level verifier provided one.
 - `receipt_path` (`string`): Saved run receipt path under the unique run directory.
 
 Output summary objects use these fields:

@@ -176,8 +176,7 @@ sources = [
   ".mustflow/context/INDEX.md",
   "skill_route_candidates",
   "route_metadata_fallback",
-  "expanded_skill_index_fallback",
-  "REPO_MAP.md",
+  "repo_map_navigation",
   "matching_skill",
   "relevant_source_files",
 ]
@@ -216,10 +215,10 @@ read layer.
 would fit the configured stable, task, and volatile limits. The stable layer is measured from the
 configured file contents after deterministic UTF-8/LF canonicalization. Direct task file candidates are
 measured as selectable reference-bundle blocks with existence flags, content hashes, and largest-block
-ordering. Runtime task sources such as `skill_route_candidates`, `route_metadata_fallback`,
-`expanded_skill_index_fallback`, selected skills, relevant source files, and volatile sources remain
-placeholders until actual selected content is available to a host resolver. The audit is a static
-prompt-layout check; provider tokenizer counts, billing tokens,
+ordering. Runtime or conditional task sources such as `skill_route_candidates`,
+`route_metadata_fallback`, `repo_map_navigation`, selected skills, relevant source files, and volatile
+sources remain placeholders until actual selected content is available to a host resolver. The audit is
+a static prompt-layout check; provider tokenizer counts, billing tokens,
 TTL behavior, tool schema caching, and runtime cache hit evidence still require provider-specific
 adapters or usage telemetry.
 

@@ -18,6 +18,10 @@ mf upgrade
 
 Use the package manager that installed mustflow. `mf upgrade` prints npm, Bun, pnpm, Yarn, and Deno update commands when the installed package is behind, then stops before touching project files.
 
+Use `mf version --check` when you only want to check npm package freshness and see the package-manager update commands without running the project-file upgrade policy.
+
+Deno `npm:` execution is listed for visibility but remains experimental until separately verified.
+
 ## Safety Rules
 
 `mf upgrade` writes project files only when the bundled update plan has no blockers:
