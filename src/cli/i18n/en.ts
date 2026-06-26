@@ -1367,6 +1367,10 @@ Read these files before working:
     'Intent "{intent}" is blocked. {detail}',
   "run.error.blockedLongRunningCommandDetail":
     "Command argv must describe a finite one-shot command, not a development server, watcher, shell wrapper, interpreter loop, or background process.",
+  "run.error.approvalRequired":
+    'Intent "{intent}" requires approval. {detail}',
+  "run.error.approvalRequiredDetail":
+    "The repository approval policy requires explicit approval before this command intent can run.",
   "run.error.cwdOutsideProject":
     'Command "{intent}" has an invalid cwd: {detail}',
   "run.error.cwdOutsideProjectDetail":

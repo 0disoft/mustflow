@@ -6,6 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 
+import { assertMatchesSchema } from '../helpers/json-schema.js';
 import {
 	appendIntent,
 	cliPath,
@@ -35,6 +36,7 @@ import {
 const STREAM_STARTUP_WAIT_MS = 8_000;
 const RUN_PARENT_GUARD_TIMEOUT_MS = 15_000;
 const RUN_PARENT_GUARD_SETTLE_MS = 14_000;
+const schemaRoot = path.join(projectRoot, 'schemas');
 
 test('prints and writes a JSON run receipt', () => {
 	const projectPath = createTempProject();
@@ -742,6 +744,7 @@ destructive = false
 		assert.notEqual(receipt.status, 'start_failed');
 		assert.match(receipt.error, /maxBuffer|ENOBUFS|exceeded/i);
 		assert.deepEqual(latest, receipt);
+		assertMatchesSchema(schemaRoot, 'run-receipt.schema.json', receipt);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -841,6 +844,7 @@ destructive = false
 			cleanup_pending: false,
 		});
 		assert.deepEqual(latest, receipt);
+		assertMatchesSchema(schemaRoot, 'run-receipt.schema.json', receipt);
 	} finally {
 		removeTempProject(projectPath);
 	}

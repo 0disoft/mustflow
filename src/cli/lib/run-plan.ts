@@ -36,6 +36,7 @@ import {
 	COMMAND_OUTPUT_LIMIT_SCOPE,
 } from '../../core/command-output-limits.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
+import { checkRepoApprovalGate } from '../../core/repo-approval-gate.js';
 import { normalizeSuccessExitCodes } from '../../core/success-exit-codes.js';
 import { normalizeSafeTestTargetPath, TEST_TARGET_PATH_ERROR } from '../../core/test-target-paths.js';
 import {
@@ -57,6 +58,9 @@ export interface RunPlanOptions {
 export type RunPreviewMode = 'dry-run' | 'plan-only';
 export type RunPlanReasonCode =
 	| Exclude<CommandIntentEligibilityCode, 'ok'>
+	| 'network_requires_approval'
+	| 'destructive_requires_approval'
+	| 'approval_policy_unreadable'
 	| 'cwd_outside_project'
 	| 'invalid_test_target'
 	| 'max_output_bytes_exceeds_limit';
@@ -295,6 +299,47 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 	};
 }
 
+function createApprovalBlock(
+	projectRoot: string,
+	metadata: RunIntentMetadata,
+): { readonly reasonCode: RunPlanReasonCode; readonly detail: string } | null {
+	const actionTypes: string[] = [];
+	if (metadata.network === true) {
+		actionTypes.push('network_access');
+	}
+	if (metadata.destructive === true) {
+		actionTypes.push('destructive_command');
+	}
+
+	if (actionTypes.length === 0) {
+		return null;
+	}
+
+	const approvalReport = checkRepoApprovalGate(projectRoot, actionTypes);
+	if (approvalReport.issues.length > 0) {
+		return {
+			reasonCode: 'approval_policy_unreadable',
+			detail: `Could not evaluate ${approvalReport.input.policy_path}: ${approvalReport.issues.join(' ')}`,
+		};
+	}
+
+	const requiredActions = approvalReport.decisions
+		.filter((decision) => decision.approval_required)
+		.map((decision) => decision.action_type);
+	if (requiredActions.length === 0) {
+		return null;
+	}
+
+	const reasonCode = requiredActions.includes('destructive_command')
+		? 'destructive_requires_approval'
+		: 'network_requires_approval';
+
+	return {
+		reasonCode,
+		detail: `Action ${requiredActions.map((action) => JSON.stringify(action)).join(', ')} requires explicit approval before mf run can execute this intent.`,
+	};
+}
+
 function createBlockedRunPlan(
 	contract: CommandContract,
 	intentName: string,
@@ -367,6 +412,19 @@ export function createRunPlan(
 	}
 
 	const metadata = readRunIntentMetadata(contract, rawIntent);
+	const approvalBlock = createApprovalBlock(projectRoot, metadata);
+	if (approvalBlock) {
+		return createBlockedRunPlan(
+			contract,
+			intentName,
+			rawIntent,
+			eligibility,
+			approvalBlock.reasonCode,
+			approvalBlock.detail,
+			preconditions,
+		);
+	}
+
 	const maxOutputBytesLimitDetail = getCommandMaxOutputBytesLimitDetail(contract, rawIntent);
 	if (maxOutputBytesLimitDetail) {
 		return createBlockedRunPlan(

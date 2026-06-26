@@ -1372,6 +1372,10 @@ export const hiMessages = {
     'इंटेंट "{intent}" अवरुद्ध है। {detail}',
   "run.error.blockedLongRunningCommandDetail":
     "argv में finite one-shot command होना चाहिए, development server, watcher, shell wrapper, interpreter loop, या background process नहीं।",
+  "run.error.approvalRequired":
+    'इंटेंट "{intent}" को approval चाहिए। {detail}',
+  "run.error.approvalRequiredDetail":
+    "Repository approval policy के अनुसार इस command intent को चलाने से पहले explicit approval चाहिए।",
   "run.error.cwdOutsideProject":
     'कमांड "{intent}" का cwd अमान्य है: {detail}',
   "run.error.cwdOutsideProjectDetail":

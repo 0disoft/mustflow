@@ -125,6 +125,14 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 				detail: getRunPlanDetail(plan, lang, 'run.error.blockedLongRunningCommandDetail'),
 			});
 			break;
+		case 'network_requires_approval':
+		case 'destructive_requires_approval':
+		case 'approval_policy_unreadable':
+			message = t(lang, 'run.error.approvalRequired', {
+				intent: plan.intentName,
+				detail: getRunPlanDetail(plan, lang, 'run.error.approvalRequiredDetail'),
+			});
+			break;
 		case 'cwd_outside_project':
 			message = t(lang, 'run.error.cwdOutsideProject', {
 				intent: plan.intentName,
@@ -445,6 +453,9 @@ export async function runRun(
 	}
 
 	if (!plan.ok) {
+		if (json) {
+			reporter.stdout(JSON.stringify(createRunPreview(plan, 'plan-only'), null, 2));
+		}
 		reportRunPlanFailure(plan, reporter, lang);
 		writeLatestProfile(profiler, options, {
 			projectRoot,

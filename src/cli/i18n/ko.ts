@@ -1364,6 +1364,10 @@ export const koMessages = {
     '명령 의도 "{intent}"가 차단되었습니다. {detail}',
   "run.error.blockedLongRunningCommandDetail":
     "argv는 개발 서버, 감시 명령, 셸 래퍼, 인터프리터 반복 작업, 백그라운드 프로세스가 아니라 끝나는 단발성 명령이어야 합니다.",
+  "run.error.approvalRequired":
+    '명령 의도 "{intent}"는 승인이 필요합니다. {detail}',
+  "run.error.approvalRequiredDetail":
+    "저장소 승인 정책상 이 명령 의도를 실행하기 전에 명시적 승인이 필요합니다.",
   "run.error.cwdOutsideProject":
     '명령 "{intent}"의 실행 위치(cwd)가 올바르지 않습니다: {detail}',
   "run.error.cwdOutsideProjectDetail":

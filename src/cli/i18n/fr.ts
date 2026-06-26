@@ -1372,6 +1372,10 @@ Lisez ces fichiers avant de travailler :
     'L’intention "{intent}" est bloquée. {detail}',
   "run.error.blockedLongRunningCommandDetail":
     "argv doit décrire une commande ponctuelle finie, pas un serveur de développement, un watcher, un wrapper shell, une boucle d'interpréteur ou un processus en arrière-plan.",
+  "run.error.approvalRequired":
+    'L’intention "{intent}" nécessite une approbation. {detail}',
+  "run.error.approvalRequiredDetail":
+    "La politique d’approbation du dépôt exige une approbation explicite avant d’exécuter cette intention de commande.",
   "run.error.cwdOutsideProject":
     'La commande "{intent}" a un cwd non valide : {detail}',
   "run.error.cwdOutsideProjectDetail":

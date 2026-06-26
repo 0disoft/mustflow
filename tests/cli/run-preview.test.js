@@ -108,6 +108,80 @@ destructive = false
 	}
 });
 
+test('blocks approval-gated network and destructive command intents before execution', () => {
+	const projectPath = createTempProject();
+	const networkMarkerPath = path.join(projectPath, 'network-spawned.txt');
+	const destructiveMarkerPath = path.join(projectPath, 'destructive-spawned.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.network_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a network-marked intent."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(networkMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.destructive_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Try to run a destructive-marked intent."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(destructiveMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = true
+`,
+		);
+
+		const networkResult = runCli(projectPath, ['run', 'network_marker', '--json']);
+		const networkPreview = JSON.parse(networkResult.stdout);
+		const destructiveResult = runCli(projectPath, ['run', 'destructive_marker', '--json']);
+		const destructivePreview = JSON.parse(destructiveResult.stdout);
+
+		assert.equal(networkResult.status, 1);
+		assert.match(networkResult.stderr, /requires approval/i);
+		assert.doesNotMatch(networkResult.stderr, /development server|watcher|background process/i);
+		assert.equal(networkPreview.preview, true);
+		assert.equal(networkPreview.preview_mode, 'plan-only');
+		assert.equal(networkPreview.runnable, false);
+		assert.deepEqual(networkPreview.eligibility, { ok: true, code: 'ok', detail: null });
+		assert.equal(networkPreview.reason_code, 'network_requires_approval');
+		assert.equal(networkPreview.network, true);
+		assert.match(networkPreview.detail, /network_access/);
+		assert.equal(existsSync(networkMarkerPath), false);
+
+		assert.equal(destructiveResult.status, 1);
+		assert.match(destructiveResult.stderr, /requires approval/i);
+		assert.doesNotMatch(destructiveResult.stderr, /development server|watcher|background process/i);
+		assert.equal(destructivePreview.preview, true);
+		assert.equal(destructivePreview.preview_mode, 'plan-only');
+		assert.equal(destructivePreview.runnable, false);
+		assert.deepEqual(destructivePreview.eligibility, { ok: true, code: 'ok', detail: null });
+		assert.equal(destructivePreview.reason_code, 'destructive_requires_approval');
+		assert.equal(destructivePreview.destructive, true);
+		assert.match(destructivePreview.detail, /destructive_command/);
+		assert.equal(existsSync(destructiveMarkerPath), false);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('rejects unsupported run options before planning or execution', () => {
 	const projectPath = createTempProject();
 

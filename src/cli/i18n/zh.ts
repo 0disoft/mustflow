@@ -1362,6 +1362,10 @@ export const zhMessages = {
     '意图 "{intent}" 已被阻止。{detail}',
   "run.error.blockedLongRunningCommandDetail":
     "argv 必须描述会结束的单次命令，而不是开发服务器、监听命令、shell 包装器、解释器循环或后台进程。",
+  "run.error.approvalRequired":
+    '意图 "{intent}" 需要审批。{detail}',
+  "run.error.approvalRequiredDetail":
+    "仓库审批策略要求在运行此命令意图前获得明确审批。",
   "run.error.cwdOutsideProject":
     '命令 "{intent}" 的 cwd 无效：{detail}',
   "run.error.cwdOutsideProjectDetail":

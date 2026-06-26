@@ -1372,6 +1372,10 @@ Lee estos archivos antes de trabajar:
     'La intención "{intent}" está bloqueada. {detail}',
   "run.error.blockedLongRunningCommandDetail":
     "argv debe describir un comando finito de una sola ejecución, no un servidor de desarrollo, watcher, envoltorio de shell, bucle de intérprete o proceso en segundo plano.",
+  "run.error.approvalRequired":
+    'La intención "{intent}" requiere aprobación. {detail}',
+  "run.error.approvalRequiredDetail":
+    "La política de aprobación del repositorio requiere aprobación explícita antes de ejecutar esta intención de comando.",
   "run.error.cwdOutsideProject":
     'El comando "{intent}" tiene un cwd no válido: {detail}',
   "run.error.cwdOutsideProjectDetail":

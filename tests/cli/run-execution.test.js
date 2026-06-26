@@ -349,12 +349,123 @@ destructive = false
 
 		const preview = runCli(projectPath, ['run', 'shell_without_allow', '--plan-only', '--json']);
 		const run = runCli(projectPath, ['run', 'shell_without_allow', '--json']);
+		const runJson = JSON.parse(run.stdout);
 
 		assert.equal(preview.status, 1);
 		assert.match(preview.stdout, /agent_shell_requires_allow/);
 		assert.equal(run.status, 1);
+		assert.equal(runJson.command, 'run');
+		assert.equal(runJson.preview, true);
+		assert.equal(runJson.preview_mode, 'plan-only');
+		assert.equal(runJson.runnable, false);
+		assert.equal(runJson.reason_code, 'agent_shell_requires_allow');
 		assert.match(run.stderr, /allow_shell = true/);
 		assert.equal(existsSync(markerPath), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints structured JSON for blocked run plans in execution mode', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.manual_blocked]
+status = "manual_only"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Manual-only fixture."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.server_blocked]
+status = "configured"
+lifecycle = "server"
+run_policy = "agent_allowed"
+description = "Server lifecycle fixture."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.policy_blocked]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "requires_explicit_user_request"
+description = "Policy-blocked fixture."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.timeout_blocked]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Missing timeout fixture."
+argv = ['${process.execPath}', '-e', 'console.log("should not run")']
+cwd = "."
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.source_blocked]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Missing command source fixture."
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const cases = [
+			['manual_blocked', 'status_not_configured'],
+			['server_blocked', 'lifecycle_not_oneshot'],
+			['policy_blocked', 'run_policy_not_agent_allowed'],
+			['timeout_blocked', 'missing_timeout'],
+			['source_blocked', 'missing_command_source'],
+		];
+
+		for (const [intent, reasonCode] of cases) {
+			const result = runCli(projectPath, ['run', intent, '--json']);
+			const report = JSON.parse(result.stdout);
+
+			assert.equal(result.status, 1, intent);
+			assert.equal(report.schema_version, '1');
+			assert.equal(report.command, 'run');
+			assert.equal(report.preview, true);
+			assert.equal(report.preview_mode, 'plan-only');
+			assert.equal(report.intent, intent);
+			assert.equal(report.runnable, false);
+			assert.equal(report.reason_code, reasonCode);
+			assert.match(result.stderr, /Error:/);
+		}
 	} finally {
 		removeTempProject(projectPath);
 	}
