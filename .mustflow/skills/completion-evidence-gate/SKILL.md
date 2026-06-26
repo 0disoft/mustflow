@@ -2,7 +2,7 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
@@ -43,6 +43,8 @@ missing, blocked, failed, stale, or only partially relevant.
 
 - A task is ready for final reporting after files were created, modified, deleted, or intentionally left unchanged.
 - The user asks whether work is complete, safe to merge, ready to commit, verified, released, installed, or done.
+- A non-trivial task, commit, push, release preparation, deploy preparation, verification run, or
+  paused implementation is being reported and at least one concrete next action remains.
 - A change touched more than one surface, such as source, tests, schemas, templates, workflow files, package metadata, documentation, or generated output.
 - Verification was skipped, failed, manual-only, unavailable, or chosen from multiple plausible command intents.
 - A previous verification failure, repeated-failure warning, write-drift risk, scope-drift risk, or external evidence risk could make a completion claim misleading.
@@ -70,8 +72,9 @@ missing, blocked, failed, stale, or only partially relevant.
 - Optional script-pack discovery evidence when the command contract exposes `script_pack_list`.
 - Synchronized surfaces expected by the changed contract: source, tests, fixtures, schemas, templates, manifests, docs, release metadata, generated output, and localized copies.
 - Known remaining risks, unverified assumptions, blocked decisions, and rollback notes.
-- Concrete follow-up candidates, if any, plus whether a bounded `next-action-menu` should be
-  included or intentionally omitted.
+- Concrete follow-up candidates, including gated actions such as commit, push, release, deploy,
+  dependency upgrade, migration, or manual verification when they are plausible next steps.
+- Whether a bounded `next-action-menu` must be included or intentionally omitted.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -120,11 +123,17 @@ missing, blocked, failed, stale, or only partially relevant.
    - Use `implemented but unverified` when the files changed but no relevant configured verification was run.
    - Use `blocked` when required evidence cannot be produced without a missing decision, unavailable environment, manual-only command, failed prerequisite, or user approval.
    - Use `not complete` when a required acceptance criterion is not implemented or verification contradicts the claim.
-7. Decide whether a next-action menu is warranted.
-   - If there are concrete, evidence-backed follow-up tasks that would make the next user turn
-     cheaper, read and apply `next-action-menu` before final reporting.
+7. Decide whether a next-action menu is required.
+   - For a non-trivial final report, read and apply `next-action-menu` before final reporting when
+     at least one concrete, evidence-backed follow-up task remains.
+   - Treat changed-file work, a created commit, push or release readiness, deploy preparation,
+     completed verification, paused implementation, or unresolved manual gate as non-trivial for
+     this decision.
+   - Do not omit the menu merely because the remaining useful actions are approval-gated. Include
+     gated actions such as push, publish, deploy, dependency upgrade, migration, or manual release
+     verification as menu rows with the gate stated plainly.
    - If no useful follow-up exists, the user asked not to include recommendations, or the only next
-     actions are speculative or approval-gated, omit the menu and keep the final report concise.
+     actions are speculative, omit the menu and keep the final report concise.
    - Do not treat this gate as automatic host behavior: the menu appears only when the skill is
      selected and its use conditions are met.
 8. Write the final report from evidence, not confidence.
@@ -140,8 +149,10 @@ missing, blocked, failed, stale, or only partially relevant.
 - Every user requirement is mapped to proof, a limitation, or an explicit out-of-scope decision.
 - Skipped, missing, failed, stale, or manual-only verification is visible.
 - Contract, template, schema, docs, test, and release drift is either resolved or named as remaining risk.
-- Useful follow-up tasks either appear through `next-action-menu` or are intentionally omitted with a
-  clear reason when the menu conditions are not met.
+- For non-trivial final reports, useful follow-up tasks appear through `next-action-menu` whenever
+  at least one concrete next action remains, including approval-gated next actions.
+- Omitted menus state a clear reason grounded in no concrete next action, user opt-out, or
+  speculative-only follow-ups.
 - No unconfigured command, hidden transcript, broad log, or invented tool result is treated as proof.
 
 <!-- mustflow-section: verification -->

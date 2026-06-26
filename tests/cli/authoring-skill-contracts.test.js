@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -8,6 +8,16 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 
 function readText(relativePath) {
 	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
+}
+
+function readSkillDirectoryNames(relativePath) {
+	const root = path.join(projectRoot, ...relativePath.split('/'));
+
+	return readdirSync(root, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.filter((name) => existsSync(path.join(root, name, 'SKILL.md')))
+		.sort((left, right) => left.localeCompare(right));
 }
 
 function routeReasons(routesText, routeName) {
@@ -21,6 +31,21 @@ function routeReasons(routesText, routeName) {
 	assert.ok(reasonsText, `missing applies_to_reasons for ${routeName}`);
 	return [...reasonsText.matchAll(/"([^"]+)"/gu)].map((match) => match[1]);
 }
+
+test('canonical source skills stay synchronized with default English template skills', () => {
+	const sourceSkillNames = readSkillDirectoryNames('.mustflow/skills');
+	const templateSkillNames = readSkillDirectoryNames('templates/default/locales/en/.mustflow/skills');
+
+	assert.deepEqual(templateSkillNames, sourceSkillNames);
+
+	for (const skillName of sourceSkillNames) {
+		assert.equal(
+			readText(`.mustflow/skills/${skillName}/SKILL.md`),
+			readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`),
+			`${skillName} should stay synchronized with the canonical template skill`,
+		);
+	}
+});
 
 test('README and project context authoring routes stay separated', () => {
 	const readmeSkill = readText('.mustflow/skills/readme-authoring/SKILL.md');
@@ -164,19 +189,37 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	const templateSkill = readText(
 		'templates/default/locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md',
 	);
+	const nextActionSkill = readText('.mustflow/skills/next-action-menu/SKILL.md');
+	const templateNextActionSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/next-action-menu/SKILL.md',
+	);
 	const i18n = readText('templates/default/i18n.toml');
 	const routes = readText('.mustflow/skills/routes.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 4/u);
+	assert.equal(nextActionSkill, templateNextActionSkill);
+	assert.match(localSkill, /revision: 5/u);
+	assert.match(nextActionSkill, /revision: 3/u);
 	assert.match(localSkill, /Concrete follow-up candidates/u);
-	assert.match(localSkill, /Decide whether a next-action menu is warranted/u);
+	assert.match(localSkill, /Decide whether a next-action menu is required/u);
+	assert.match(localSkill, /For a non-trivial final report, read and apply `next-action-menu`/u);
 	assert.match(localSkill, /read and apply `next-action-menu` before final reporting/u);
-	assert.match(localSkill, /the menu appears only when the skill is\s+selected and its use conditions are met/u);
+	assert.match(localSkill, /created commit, push or release readiness, deploy preparation/u);
+	assert.match(localSkill, /Do not omit the menu merely because the remaining useful actions are approval-gated/u);
+	assert.match(localSkill, /useful follow-up tasks appear through `next-action-menu` whenever\s+at least one concrete next action remains/u);
+	assert.match(nextActionSkill, /Use especially after non-trivial completed or paused work, commits, pushes/u);
+	assert.match(nextActionSkill, /treat the menu as required when\s+any concrete next action exists/u);
+	assert.match(nextActionSkill, /번호&nbsp;&nbsp; \| 다음 작업 \| 설명 \| 추천도&nbsp;&nbsp;/u);
+	assert.match(nextActionSkill, /No\.&nbsp;&nbsp; \| Next task \| Description \| Score&nbsp;&nbsp;/u);
+	assert.match(nextActionSkill, /A gated item in the table is only a visible next-action option/u);
 	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 4/u,
+		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 5/u,
+	);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.next-action-menu"\][\s\S]*?revision = 3/u,
 	);
 	assert.match(
 		routes,
@@ -4411,6 +4454,9 @@ test('vertical slice TDD skill stays explicitly triggered and template-synced', 
 	assert.equal(localSkill, templateSkill);
 	assert.match(localSkill, /TDD is explicitly requested/u);
 	assert.match(localSkill, /one vertical behavior slice/u);
+	assert.match(localSkill, /choose the next test by risk and evidence value/u);
+	assert.match(localSkill, /what bug could still pass this test/u);
+	assert.match(localSkill, /generated code did not outrun the selected test/u);
 	assert.match(localSkill, /`behavior_red` is the only valid behavior RED/u);
 	assert.match(localSkill, /Refactor only after GREEN/u);
 	assert.match(localSkill, /Invalid RED and scaffold-only RED are not reported as behavior coverage/u);

@@ -568,6 +568,12 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.idea-triage"]
+source = "locales/en/.mustflow/skills/idea-triage/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
@@ -769,7 +775,13 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
+translations = {}
+
+[documents."skill.next-action-menu"]
+source = "locales/en/.mustflow/skills/next-action-menu/SKILL.md"
+source_locale = "en"
+revision = 3
 translations = {}
 
 [documents."skill.evidence-stall-breaker"]
@@ -1080,7 +1092,7 @@ translations = {}
 [documents."skill.vertical-slice-tdd"]
 source = "locales/en/.mustflow/skills/vertical-slice-tdd/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.llm-service-ux-review"]

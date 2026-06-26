@@ -52,6 +52,24 @@ function toPosix(relativePath) {
 	return relativePath.split(path.sep).join('/');
 }
 
+function skillNameForTemplateCreate(relativePath) {
+	const match = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u.exec(relativePath);
+
+	return match?.[1] ?? null;
+}
+
+function findTomlDocumentBlock(content, documentHeader) {
+	const start = content.indexOf(documentHeader);
+
+	if (start === -1) {
+		return null;
+	}
+
+	const next = content.indexOf('\n[documents.', start + documentHeader.length);
+
+	return next === -1 ? content.slice(start) : content.slice(start, next);
+}
+
 test('default template i18n metadata stays in sync with localized template files', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
 	const i18nModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'template-i18n.js')).href);
@@ -59,6 +77,33 @@ test('default template i18n metadata stays in sync with localized template files
 	const issues = i18nModule.validateTemplateI18n(templatesModule.getDefaultTemplate());
 
 	assert.deepEqual(issues, []);
+});
+
+test('default template i18n metadata tracks every installable skill source', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const template = templatesModule.getDefaultTemplate();
+	const i18nText = readFileSync(path.join(template.templateRoot, 'i18n.toml'), 'utf8');
+
+	for (const createPath of template.manifest.creates) {
+		const skillName = skillNameForTemplateCreate(createPath);
+
+		if (!skillName) {
+			continue;
+		}
+
+		const expectedDocumentHeader = `[documents."skill.${skillName}"]`;
+		const expectedSource = `source = "locales/en/${createPath}"`;
+		const documentBlock = findTomlDocumentBlock(i18nText, expectedDocumentHeader);
+
+		assert.ok(
+			documentBlock,
+			`i18n.toml should track ${createPath} as ${expectedDocumentHeader}`,
+		);
+		assert.ok(
+			documentBlock.includes(expectedSource),
+			`i18n.toml should map ${expectedDocumentHeader} to ${expectedSource}`,
+		);
+	}
 });
 
 test('default template source metadata uses English text', () => {

@@ -2,11 +2,11 @@
 mustflow_doc: skill.next-action-menu
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: next-action-menu
-description: Apply this skill when a final report, completion note, repository improvement loop, or follow-up workflow should offer a bounded numbered next-action menu that a user can select with a single digit in the next turn.
+description: Apply this skill when a final report, completion note, repository improvement loop, or follow-up workflow should offer a bounded numbered next-action menu that a user can select with a single digit in the next turn. Use especially after non-trivial completed or paused work, commits, pushes, release or deploy preparation, verification, or remaining approval gates when concrete follow-up actions exist.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -36,6 +36,8 @@ scope, approval, verification, command contracts, release gates, or safety rules
 
 - A final report, completion note, handoff, or repository improvement cycle has one or more useful
   follow-up tasks.
+- A non-trivial task is being reported after changed files, a created commit, completed verification,
+  push readiness, release or deploy preparation, paused work, or another concrete approval gate.
 - The user repeatedly asks for "next recommended work", "continue", "proceed", or selects follow-up
   items after previous completion reports.
 - The agent needs to present a bounded backlog that can be selected by a single digit in the next
@@ -48,9 +50,10 @@ scope, approval, verification, command contracts, release gates, or safety rules
 - The current answer is a tiny direct response with no meaningful follow-up.
 - There are no evidence-backed next actions, or all plausible next actions are speculative.
 - The user asked not to include recommendations, menus, or follow-up prompts.
-- The next action requires a blocking product, security, privacy, legal, release, migration,
-  destructive, dependency, credential, deployment, or payment decision that has not been authorized.
-  Report the decision gate instead of offering it as a one-digit action.
+- The only possible next action requires a blocking product, security, privacy, legal, release,
+  migration, destructive, dependency, credential, deployment, or payment decision that has not been
+  authorized and there is no safe bounded action to describe. Report the decision gate instead of
+  offering it as a one-digit action.
 - Another interface already owns selection state and has a stricter picker, ticket, or work-order
   contract.
 
@@ -89,8 +92,11 @@ scope, approval, verification, command contracts, release gates, or safety rules
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Decide whether a menu is useful.
-   - Include a menu only when at least one concrete follow-up task is valuable.
+1. Decide whether a menu is useful or required.
+   - Include a menu when at least one concrete follow-up task is valuable.
+   - For non-trivial completion reports, commits, completed verification, push readiness, release or
+     deploy preparation, paused work, or unresolved approval gates, treat the menu as required when
+     any concrete next action exists.
    - Do not fabricate filler items to reach a fixed row count.
 2. Build at most nine items.
    - Use digits `1` through `9`.
@@ -108,6 +114,13 @@ scope, approval, verification, command contracts, release gates, or safety rules
    the host format allows it.
    - Use four columns: number, next task title, description, and recommendation score.
    - In Korean final reports, use `추천도` for the recommendation-score column label.
+   - Use non-breaking padding in short header cells so narrow renderers do not wrap Korean headers
+     vertically. Prefer this template:
+     `| 번호&nbsp;&nbsp; | 다음 작업 | 설명 | 추천도&nbsp;&nbsp; |`
+     `|---:|---|---|:---:|`
+     For English, prefer:
+     `| No.&nbsp;&nbsp; | Next task | Description | Score&nbsp;&nbsp; |`
+     `|---:|---|---|:---:|`
    - Keep descriptions short enough to scan but specific enough to execute.
    - Localize column labels to the report language when appropriate.
 6. Mark gated items plainly.
@@ -116,6 +129,8 @@ scope, approval, verification, command contracts, release gates, or safety rules
      genuinely plausible follow-ups.
    - The description must state the gate, such as explicit user approval, configured command intent,
      owner decision, or manual verification.
+   - A gated item in the table is only a visible next-action option; it is not approval to perform
+     that action.
 7. Interpret a single-digit next user message as a menu selection only when all conditions hold:
    - the immediately relevant previous assistant final report contained a next-action menu;
    - the digit maps to an item in that menu;
