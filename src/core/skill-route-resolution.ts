@@ -11,6 +11,7 @@ const SKILL_ROUTER_PATH = '.mustflow/skills/router.toml';
 const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
 const SKILL_FRONTMATTER_SOURCE = '.mustflow/skills/*/SKILL.md';
 const EXTERNAL_SKILL_FRONTMATTER_SOURCE = '.mustflow/external-skills/*/SKILL.md';
+const EXTERNAL_SKILL_PROVENANCE_FILE = 'mustflow-skill-source.json';
 const DEFAULT_MAX_CANDIDATES = 5;
 const DEFAULT_MAX_MAIN = 1;
 const DEFAULT_MAX_ADJUNCTS = 2;
@@ -356,6 +357,36 @@ function readSkillFrontmatterRoutes(projectRoot: string): SkillIndexRoute[] {
 	return routes;
 }
 
+function hasValidExternalSkillProvenance(projectRoot: string, skillDirectory: string): boolean {
+	const provenancePath = path.join(
+		projectRoot,
+		'.mustflow',
+		'external-skills',
+		skillDirectory,
+		EXTERNAL_SKILL_PROVENANCE_FILE,
+	);
+
+	if (!existsSync(provenancePath)) {
+		return false;
+	}
+
+	try {
+		const content = readUtf8FileInsideWithoutSymlinks(projectRoot, provenancePath, {
+			maxBytes: MUSTFLOW_TEXT_MAX_BYTES,
+		});
+		const parsed: unknown = JSON.parse(content);
+
+		return (
+			isRecord(parsed) &&
+			parsed.schema_version === '1' &&
+			parsed.kind === 'external_skill_source' &&
+			isRecord(parsed.source)
+		);
+	} catch {
+		return false;
+	}
+}
+
 function readExternalSkillFrontmatterRoutes(projectRoot: string): SkillIndexRoute[] {
 	const skillRoot = path.join(projectRoot, '.mustflow', 'external-skills');
 	if (!existsSync(skillRoot)) {
@@ -371,7 +402,7 @@ function readExternalSkillFrontmatterRoutes(projectRoot: string): SkillIndexRout
 	for (const skillDirectory of skillDirectories) {
 		const skillPath = `.mustflow/external-skills/${skillDirectory}/SKILL.md`;
 		const absoluteSkillPath = path.join(projectRoot, ...skillPath.split('/'));
-		if (!existsSync(absoluteSkillPath)) {
+		if (!existsSync(absoluteSkillPath) || !hasValidExternalSkillProvenance(projectRoot, skillDirectory)) {
 			continue;
 		}
 

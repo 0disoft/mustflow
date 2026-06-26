@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, renameSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -91,6 +91,12 @@ interface LoadedExternalSkillFile {
 	readonly relativePath: string;
 	readonly kind: ExternalSkillFileKind;
 	readonly content: string;
+}
+
+interface ExternalSkillFrontmatterParts {
+	readonly name: string | null;
+	readonly description: string | null;
+	readonly body: string;
 }
 
 function normalizeRef(ref: string | null | undefined): string {
@@ -303,6 +309,60 @@ function normalizeTextContent(content: string): string {
 	return content.replace(/\r\n?/gu, '\n');
 }
 
+function readFrontmatterParts(content: string): ExternalSkillFrontmatterParts {
+	if (!content.startsWith('---')) {
+		return {
+			name: null,
+			description: null,
+			body: content,
+		};
+	}
+
+	const firstLineEnd = content.indexOf('\n');
+	const end = firstLineEnd >= 0 ? content.indexOf('\n---', firstLineEnd + 1) : -1;
+	if (firstLineEnd < 0 || end < 0) {
+		return {
+			name: null,
+			description: null,
+			body: content,
+		};
+	}
+
+	const frontmatter = content.slice(firstLineEnd + 1, end).split(/\r?\n/u);
+	const bodyStart = content.indexOf('\n', end + 1);
+
+	return {
+		name: readFrontmatterScalar(content, 'name'),
+		description: readFrontmatterScalar(content, 'description'),
+		body: bodyStart >= 0 ? content.slice(bodyStart + 1) : '',
+	};
+}
+
+function renderYamlScalar(key: string, value: string): string {
+	return `${key}: ${JSON.stringify(value)}`;
+}
+
+function sanitizeExternalSkillMarkdown(content: string): string {
+	const frontmatter = readFrontmatterParts(content);
+	const lines = [
+		'---',
+		...(frontmatter.name ? [renderYamlScalar('name', frontmatter.name)] : []),
+		...(frontmatter.description ? [renderYamlScalar('description', frontmatter.description)] : []),
+		'external_authority: untrusted',
+		'---',
+		frontmatter.body,
+	];
+
+	return lines.join('\n');
+}
+
+function normalizeImportedSkillFiles(files: readonly LoadedExternalSkillFile[]): LoadedExternalSkillFile[] {
+	return files.map((file) => ({
+		...file,
+		content: file.relativePath === 'SKILL.md' ? sanitizeExternalSkillMarkdown(file.content) : file.content,
+	}));
+}
+
 function hashContent(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
@@ -475,28 +535,44 @@ function writeImportedSkillFiles(
 	fileReport: readonly ExternalSkillImportedFile[],
 	warnings: readonly string[],
 ): void {
-	const skillPath = path.join(projectRoot, ...target.skill_dir.split('/'), 'SKILL.md');
-	if (existsSync(skillPath)) {
+	const targetPath = path.join(projectRoot, ...target.skill_dir.split('/'));
+	const skillPath = path.join(targetPath, 'SKILL.md');
+	if (existsSync(targetPath)) {
 		throw new Error(`External skill already exists: ${target.skill_dir}`);
 	}
 
 	ensureFileTargetInsideWithoutSymlinks(projectRoot, skillPath, { allowMissingLeaf: true });
+	const tempSkillDir = `${EXTERNAL_SKILL_ROOT}/.${target.skill_name}.tmp-${process.pid}-${Date.now()}`;
+	const tempTarget = {
+		...target,
+		skill_dir: tempSkillDir,
+		provenance_path: `${tempSkillDir}/${PROVENANCE_FILE}`,
+	};
+	const tempPath = path.join(projectRoot, ...tempTarget.skill_dir.split('/'));
+	const tempSkillPath = path.join(tempPath, 'SKILL.md');
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, tempSkillPath, { allowMissingLeaf: true });
 
-	for (const file of files) {
-		writeUtf8FileInsideWithoutSymlinks(
-			projectRoot,
-			path.join(projectRoot, ...target.skill_dir.split('/'), ...file.relativePath.split('/')),
-			file.content,
-		);
+	try {
+		for (const file of files) {
+			writeUtf8FileInsideWithoutSymlinks(
+				projectRoot,
+				path.join(projectRoot, ...tempTarget.skill_dir.split('/'), ...file.relativePath.split('/')),
+				file.content,
+			);
+		}
+
+		writeJsonFileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, ...tempTarget.provenance_path.split('/')), {
+			schema_version: '1',
+			kind: 'external_skill_source',
+			source,
+			files: fileReport,
+			warnings,
+		});
+		renameSync(tempPath, targetPath);
+	} catch (error) {
+		rmSync(tempPath, { recursive: true, force: true });
+		throw error;
 	}
-
-	writeJsonFileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, ...target.provenance_path.split('/')), {
-		schema_version: '1',
-		kind: 'external_skill_source',
-		source,
-		files: fileReport,
-		warnings,
-	});
 }
 
 function rejectionReport(mode: ExternalSkillImportMode, issue: string): ExternalSkillImportReport {
@@ -531,10 +607,11 @@ export async function createExternalSkillImportReport(
 			throw new Error('This runtime does not provide fetch.');
 		}
 
-		const files = await loadExternalSkillFiles(fetchImpl, parsed);
-		const skillName = targetNameForSkill(files, parsed, options.name);
+		const sourceFiles = await loadExternalSkillFiles(fetchImpl, parsed);
+		const skillName = targetNameForSkill(sourceFiles, parsed, options.name);
 		const target = createTarget(skillName);
 		const source = externalSkillSourceFromParsed(inputUrl, parsed);
+		const files = normalizeImportedSkillFiles(sourceFiles);
 		const reports = fileReports(files);
 		const warnings = [
 			...(reports.some((file) => file.kind === 'script')
