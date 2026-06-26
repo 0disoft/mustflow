@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.103.4",
+  "version": "2.103.10",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -47,7 +47,7 @@
     "check:package": "node -e \"const fs=require('fs'); JSON.parse(fs.readFileSync('package.json','utf8')); console.log('package.json ok')\"",
     "check:typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "npm run build",
-    "check:pack": "npm pack --dry-run --json",
+    "check:pack": "npm pack --dry-run --json --ignore-scripts",
     "check:install": "npm run check:pack && node --test tests/integration/*.test.js",
     "release:check": "npm run check && npm run docs:check && npm run check:install",
     "prepublishOnly": "npm run release:check",

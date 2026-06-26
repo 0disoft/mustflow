@@ -14,6 +14,7 @@ const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-te
 const cliTestOrdering = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'test-ordering.mjs'), 'utf8');
 const cliTestSelection = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'test-selection.mjs'), 'utf8');
 const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');
+const ciWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const releaseVersionCheckScript = readFileSync(path.join(projectRoot, 'scripts', 'check-npm-release-version.mjs'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
@@ -46,7 +47,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.103.4');
+	assert.equal(packageJson.version, '2.103.10');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -188,11 +189,20 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts.check, 'bun run check:package && bun run test:full');
 	assert.equal(packageJson.scripts['check:core:node'], 'node scripts/run-node-core-check.mjs');
 	assert.doesNotMatch(packageJson.scripts['check:core:node'], /\bbun\b/u);
-	assert.equal(packageJson.scripts['check:pack'], 'npm pack --dry-run --json');
+	assert.equal(packageJson.scripts['check:pack'], 'npm pack --dry-run --json --ignore-scripts');
 	assert.equal(packageJson.scripts['check:install'], 'npm run check:pack && node --test tests/integration/*.test.js');
 	assert.equal(packageJson.scripts['release:check'], 'npm run check && npm run docs:check && npm run check:install');
 	assert.equal(packageJson.scripts['docs:check:fast'], 'bun run --cwd docs-site check:fast');
 	assert.equal(packageJson.scripts.prepublishOnly, 'npm run release:check');
+});
+
+test('CI workflow exercises release-sensitive package smoke paths', () => {
+	assert.match(ciWorkflow, /run: bun run check/u);
+	assert.match(ciWorkflow, /run: npm run check:core:node/u);
+	assert.match(ciWorkflow, /run: npm run check:install/u);
+	assert.match(ciWorkflow, /run: bun run docs:check/u);
+	assert.ok(ciWorkflow.indexOf('run: npm run check:core:node') > ciWorkflow.indexOf('run: bun run check'));
+	assert.ok(ciWorkflow.indexOf('run: npm run check:install') > ciWorkflow.indexOf('run: npm run check:core:node'));
 });
 
 test('source repository exposes cached related tests as a read-only command intent', () => {
@@ -364,6 +374,10 @@ test('npm registry release check fully encodes package lookup paths', () => {
 	assert.match(releaseVersionCheckScript, /function encodeRegistryPackagePath\(packageName\)/u);
 	assert.match(releaseVersionCheckScript, /encodeURIComponent\(packageName\)/u);
 	assert.match(releaseVersionCheckScript, /encodedScopedMarker = '%40'/u);
+	assert.match(releaseVersionCheckScript, /function normalizeRegistryBaseUrl\(value\)/u);
+	assert.match(releaseVersionCheckScript, /registryUrl\.pathname\.endsWith\('\/'\)/u);
+	assert.match(releaseVersionCheckScript, /registryUrl\.pathname = `\$\{registryUrl\.pathname\}\/`;/u);
+	assert.match(releaseVersionCheckScript, /new URL\(packagePath, registryUrl\)/u);
 	assert.doesNotMatch(releaseVersionCheckScript, /packageJson\.name\.replace\(/u);
 	assert.doesNotMatch(releaseVersionCheckScript, /\.replace\(['"]\/['"],\s*['"]%2F['"]\)/u);
 });
@@ -622,6 +636,13 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('examples/nested-repos/README.md'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
+	}
+	for (const relativePath of templateCreates) {
+		assert.ok(
+			files.has(`templates/default/common/${relativePath}`) ||
+				files.has(`templates/default/locales/en/${relativePath}`),
+			`${relativePath} should be packaged from the common template root or canonical locale`,
+		);
 	}
 	for (const relativePath of templateSkillCreates) {
 		assert.ok(files.has(`templates/default/locales/en/${relativePath}`), `${relativePath} should be packaged from the canonical locale`);

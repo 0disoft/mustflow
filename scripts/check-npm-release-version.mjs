@@ -32,7 +32,15 @@ function encodeRegistryPackagePath(packageName) {
 		: encoded;
 }
 
-const registryUrl = new URL(process.env.MUSTFLOW_NPM_REGISTRY_URL || 'https://registry.npmjs.org/');
+function normalizeRegistryBaseUrl(value) {
+	const registryUrl = new URL(value);
+	if (!registryUrl.pathname.endsWith('/')) {
+		registryUrl.pathname = `${registryUrl.pathname}/`;
+	}
+	return registryUrl;
+}
+
+const registryUrl = normalizeRegistryBaseUrl(process.env.MUSTFLOW_NPM_REGISTRY_URL || 'https://registry.npmjs.org/');
 const packagePath = encodeRegistryPackagePath(packageJson.name);
 const metadataUrl = new URL(packagePath, registryUrl);
 

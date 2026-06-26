@@ -46,5 +46,11 @@ jobs:
       - name: Check CLI package
         run: bun run check
 
+      - name: Check Node-only core path
+        run: npm run check:core:node
+
+      - name: Check packed install smoke
+        run: npm run check:install
+
       - name: Check documentation site
         run: bun run docs:check
