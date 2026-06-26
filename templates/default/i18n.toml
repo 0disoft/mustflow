@@ -86,7 +86,7 @@ translations = {}
 [documents."skill.api-contract-change"]
 source = "locales/en/.mustflow/skills/api-contract-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.backend-reliability-change"]

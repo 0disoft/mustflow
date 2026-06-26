@@ -2,11 +2,11 @@
 mustflow_doc: skill.api-contract-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: api-contract-change
-description: Apply this skill when HTTP, REST, GraphQL, tRPC, Hono RPC, Elysia Eden, gRPC, protobuf, OpenAPI, API schemas, generated clients, SDKs, status codes, headers, content negotiation, cache headers, error envelopes, pagination, filtering, sorting, search, or public API examples are created or changed.
+description: Apply this skill when HTTP, REST, HTTP QUERY, Accept-Query, GraphQL, tRPC, Hono RPC, Elysia Eden, gRPC, protobuf, OpenAPI, API schemas, generated clients, SDKs, status codes, headers, content negotiation, cache headers, error envelopes, pagination, filtering, sorting, search, or public API examples are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -29,7 +29,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Treat an API change as a contract change, not as a route or controller edit. The contract includes request schema, response schema, status code, headers, content negotiation, cache semantics, error shape, auth and permission behavior, pagination, filtering, sorting, search semantics, generated clients, SDKs, mocks, fixtures, examples, and documentation.
+Treat an API change as a contract change, not as a route or controller edit. The contract includes request method semantics, request schema, response schema, status code, headers, content negotiation, cache semantics, error shape, auth and permission behavior, pagination, filtering, sorting, search semantics, generated clients, SDKs, mocks, fixtures, examples, and documentation.
 
 The goal is to keep runtime behavior, type contracts, generated artifacts, callers, tests, and docs aligned.
 
@@ -37,6 +37,7 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
 ## Use When
 
 - HTTP, REST, RPC, GraphQL, tRPC, Hono RPC, Elysia Eden, gRPC, protobuf, OpenAPI, AsyncAPI, webhook, callback, public endpoint, internal endpoint, generated client, SDK, schema, mock, fixture, or API docs behavior changes.
+- HTTP method choices change, including GET, POST, PUT, PATCH, DELETE, safe/idempotent operations, request-body semantics, HTTP QUERY, or Accept-Query support.
 - Request body, query parameters, path parameters, headers, cookies, response body, content negotiation, content coding, status codes, redirects, caching headers, rate-limit headers, error envelopes, validation errors, auth errors, or permission errors change.
 - SSE, streaming response, WebTransport handshake, WebSocket fallback, compression negotiation, or delivery headers become part of the API behavior that callers rely on.
 - Pagination, filtering, sorting, search, includes, field selection, sparse fields, expansions, cursor shape, or total-count semantics change.
@@ -54,7 +55,8 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
 ## Required Inputs
 
 - Changed route, controller, resolver, handler, schema, validator, generated client, SDK, tests, fixtures, mocks, and docs.
-- Current request and response schema, status code map, headers, content negotiation, content coding, error envelope, auth and permission behavior, rate-limit behavior, cache behavior, streaming or reconnect behavior, pagination/filter/sort/search contract, and deprecation/versioning policy.
+- Current method semantics, request and response schema, status code map, headers, content negotiation, content coding, error envelope, auth and permission behavior, rate-limit behavior, cache behavior, streaming or reconnect behavior, pagination/filter/sort/search contract, and deprecation/versioning policy.
+- For body-bearing read operations, current GET, POST, and QUERY tradeoffs; request body media type; Accept-Query or Allow discovery; cache-key construction; client, proxy, CDN, browser, and server framework support; fallback behavior; and canonical GET URI strategy when present.
 - OpenAPI, GraphQL schema, tRPC router, Hono app type, Elysia Eden type surface, protobuf files, generated clients, SDK examples, frontend callers, mobile callers, integration tests, docs examples, and mock servers when present.
 - Current public consumers, backwards-compatibility expectations, supported client versions, and migration or deprecation policy.
 - Configured verification intents.
@@ -82,13 +84,13 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
 
 1. Name the contract source of truth: OpenAPI, GraphQL schema, route validator, tRPC router, Hono `AppType`, Elysia app/Eden surface, protobuf definition, hand-written SDK type, or docs-backed public contract.
 2. Build a contract ledger for each changed endpoint or operation:
-   - method or operation name;
+   - method or operation name, including safe, idempotent, cacheable, and request-body semantics;
    - path or field name;
    - request path, query, header, cookie, and body shape;
    - auth and permission requirement;
    - response success status and body;
    - error status and body;
-   - relevant headers, content negotiation, content coding, and cache variance;
+   - relevant headers, content negotiation, content coding, cache variance, and request-content cache-key inputs;
    - pagination, filtering, sorting, and search semantics;
    - generated clients, SDK functions, mocks, fixtures, examples, and docs.
 3. Classify each change:
@@ -98,6 +100,7 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
    - response field removed, renamed, narrowed, widened, or made nullable;
    - status code changed;
    - header added, removed, or changed;
+   - method semantics changed, including safe/idempotent behavior or body-bearing read behavior;
    - content coding, compression negotiation, streaming, reconnect, or cache-variance behavior changed;
    - error code or envelope changed;
    - pagination cursor or total semantics changed;
@@ -113,6 +116,9 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
 ## API Style Policy
 
 - REST and HTTP APIs must keep method semantics, status code meanings, headers, content type, content coding, cache behavior, redirects, streaming behavior, and error envelope stable.
+- HTTP QUERY is for safe and idempotent read operations whose query input does not fit the URI cleanly. It is not a default replacement for GET or POST: keep GET for simple, shareable, bookmarkable, and widely cached URLs; avoid GET request bodies as portable API contracts; and call POST-as-search a semantic or compatibility fallback when QUERY support is unavailable.
+- A QUERY contract must define the query request media type with Content-Type, supported query formats with Accept-Query when advertised, Allow or fallback behavior for unsupported clients and intermediaries, CORS preflight expectations for browser callers, and whether Content-Location, Location, or 303 See Other lets callers repeat the operation with GET.
+- QUERY caching must include request content and relevant metadata in the cache key. Any cache-key normalization must match resource semantics; do not normalize the body only for convenience if that can merge distinct queries.
 - OpenAPI changes must include every status/body/header variant that callers rely on. A schema-only success response is not enough when errors are part of the contract.
 - GraphQL must not be forced into a REST envelope. Preserve GraphQL `data`, `errors`, `extensions`, partial response, nullability, and resolver error propagation semantics.
 - GraphQL nullable-to-non-null and non-null-to-null changes are contract changes. Nullability can change whether partial data survives an error.
@@ -131,7 +137,7 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
 - Pagination must define cursor opacity, sort stability, page size limits, `next` and `previous` meaning, empty page behavior, total-count semantics, and whether filters affect counts.
 - Filtering and sorting must define allowed fields, default sort, null ordering, case sensitivity, timezone or locale behavior, invalid filter behavior, and whether unknown fields are rejected or ignored.
 - Search must define query normalization, tokenization, ranking stability expectations, highlight fields, typo tolerance, permissions, and private-data exclusion.
-- Headers such as content-type, content-encoding, vary, cache-control, etag, location, retry-after, rate-limit, pagination links, content-disposition, and deprecation headers are contract surfaces.
+- Headers such as content-type, accept-query, content-encoding, vary, cache-control, etag, location, content-location, retry-after, rate-limit, pagination links, content-disposition, and deprecation headers are contract surfaces.
 
 ## Dependent Surface Checklist
 
@@ -147,6 +153,7 @@ Check every relevant surface before finalizing:
 - API docs, README snippets, changelog, migration notes, deprecation notices, role matrix, and status-code docs;
 - auth and permission checks;
 - rate limits, cache keys, cache headers, search indexes, pagination cursors, and background jobs;
+- QUERY support, Accept-Query discovery, request-body cache-key logic, CORS preflight behavior, unsupported-method fallback, and GET-equivalent Location or Content-Location paths when body-bearing read operations are caller-visible;
 - streaming delivery, SSE event ids, reconnect behavior, proxy or CDN delivery settings, content-coding variants, and fallback clients when they are caller-visible;
 - observability dashboards, audit logs, analytics events, and alerting that parse status or error codes.
 
@@ -157,6 +164,8 @@ Check every relevant surface before finalizing:
 - Treating TypeScript inference as proof that runtime JSON is compatible.
 - Changing status codes without updating callers, docs, tests, and audit expectations.
 - Changing content encoding, streaming flush, reconnect, cache variance, or fallback behavior without updating callers, docs, tests, and delivery verification.
+- Treating GET request bodies as portable API contracts.
+- Switching complex read-only searches to QUERY without client/server/proxy/CDN support evidence, fallback behavior, Content-Type and Accept-Query policy, and request-content cache-key rules.
 - Treating generated clients as disposable when they are the public API.
 - Mixing GraphQL partial-response semantics with REST success/error envelopes.
 - Adding required request fields in a minor-compatible change without a default or compatibility path.
@@ -171,7 +180,7 @@ Check every relevant surface before finalizing:
 ## Postconditions
 
 - The API contract source of truth is known.
-- Request, response, status, header, content negotiation, cache, error, auth, permission, pagination, filtering, sorting, and search impacts are classified.
+- Request method semantics, response, status, header, content negotiation, cache, error, auth, permission, pagination, filtering, sorting, and search impacts are classified.
 - Breaking or compatibility-sensitive changes are named.
 - Generated clients, mocks, fixtures, tests, docs, and examples are synchronized or explicitly reported as skipped.
 - Framework-specific protocol semantics are preserved.
@@ -209,7 +218,7 @@ Prefer the narrowest configured checks that exercise the changed contract from a
 - API style and contract source of truth
 - Changed operations or endpoints
 - Compatibility classification
-- Request, response, status, header, content negotiation, cache, error, auth, permission, pagination, filter, sort, and search notes
+- Request method semantics, response, status, header, content negotiation, cache, error, auth, permission, pagination, filter, sort, search, and QUERY support notes when relevant
 - Generated client, SDK, mock, fixture, docs, and caller surfaces synchronized
 - Files changed
 - Command intents run

@@ -4235,6 +4235,10 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(apiSkill, /http-delivery-streaming/u);
 	assert.match(apiSkill, /content negotiation/u);
 	assert.match(apiSkill, /streaming flush/u);
+	assert.match(apiSkill, /HTTP QUERY/u);
+	assert.match(apiSkill, /Accept-Query/u);
+	assert.match(apiSkill, /GET request bodies as portable API contracts/u);
+	assert.match(apiSkill, /request-content cache-key rules/u);
 	assert.match(performanceSkill, /false compression win/u);
 	assert.match(performanceSkill, /buffered stream latency/u);
 	assert.match(adapterSkill, /WebTransport streams, datagrams/u);
@@ -4257,7 +4261,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(manifest, /"http-delivery-streaming"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
 	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
-	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 13/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 20/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 8/u);

@@ -25,6 +25,14 @@ first_seen_at = "2026-06-25T09:35:44.966Z"
 last_touched_at = "2026-06-25T14:29:46.113Z"
 
 [[documents]]
+path = ".mustflow/skills/api-contract-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T16:05:44.909Z"
+last_touched_at = "2026-06-26T16:05:44.909Z"
+
+[[documents]]
 path = ".mustflow/skills/api-failure-triage/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -582,7 +590,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "llm_modified"
 first_seen_at = "2026-06-18T06:17:56.747Z"
-last_touched_at = "2026-06-26T14:19:14.959Z"
+last_touched_at = "2026-06-26T16:05:44.920Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -609,6 +617,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T09:35:45.052Z"
 last_touched_at = "2026-06-25T14:29:46.238Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/api-contract-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-26T16:05:44.926Z"
+last_touched_at = "2026-06-26T16:05:44.926Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/api-failure-triage/SKILL.md"
