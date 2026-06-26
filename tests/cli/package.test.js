@@ -46,7 +46,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.99.2');
+	assert.equal(packageJson.version, '2.103.3');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -110,6 +110,50 @@ test('default template installs the auth, Docker, and search triage skills acros
 				`${profile} profile should include ${skill}`,
 			);
 		}
+	}
+});
+
+test('default template installs the React code change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/react-code-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('react-code-change'),
+			`${profile} profile should include react-code-change`,
+		);
+	}
+});
+
+test('default template installs the C code change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/c-code-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('c-code-change'),
+			`${profile} profile should include c-code-change`,
+		);
+	}
+});
+
+test('default template installs the shell code change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/shell-code-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('shell-code-change'),
+			`${profile} profile should include shell-code-change`,
+		);
+	}
+});
+
+test('default template installs the structured config change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/structured-config-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('structured-config-change'),
+			`${profile} profile should include structured-config-change`,
+		);
 	}
 });
 
@@ -470,6 +514,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/commands/dashboard.js'));
 	assert.ok(files.has('dist/cli/commands/update.js'));
 	assert.ok(files.has('dist/cli/commands/verify.js'));
+	assert.ok(files.has('dist/cli/lib/external-skill-import.js'));
 	assert.ok(files.has('dist/core/contract-models.js'));
 	assert.ok(files.has('dist/core/adapter-compatibility.js'));
 	assert.ok(files.has('dist/core/handoff-record.js'));
@@ -546,6 +591,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/secret-risk-scan-report.schema.json'));
 	assert.ok(files.has('schemas/link-integrity-report.schema.json'));
 	assert.ok(files.has('schemas/skill-route-audit-report.schema.json'));
+	assert.ok(files.has('schemas/skill-import-report.schema.json'));
 	assert.ok(files.has('schemas/repo-version-source-report.schema.json'));
 	assert.ok(files.has('schemas/repo-approval-gate-report.schema.json'));
 	assert.ok(files.has('schemas/repo-merge-conflict-scan-report.schema.json'));

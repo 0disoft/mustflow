@@ -160,6 +160,9 @@ Current schemas:
   candidates, selected main and adjunct skills, score breakdowns, route read plans, source route
   shards, and optional read-only script-pack helper suggestions without granting command authority
   or replacing selected `SKILL.md` reads
+- `skill-import-report.schema.json`: output of `mf skill import <github-url> --json`, containing
+  GitHub source provenance, target `.mustflow/external-skills/<name>/` paths, imported file hashes,
+  warnings for inert external scripts, rejection issues, and whether files were written
 - `route-fixture.schema.json`: parsed `.mustflow/skills/route-fixtures.json`, containing strict
   skill-route golden cases with required and forbidden route expectations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a

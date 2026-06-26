@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 218
+anchor_count: 222
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:bd9697df6924138497b44b579555505d3ffb11dc5303983f45a3a1686a59870b"
+source_fingerprint: "sha256:6359b683477abac3eb375e1287f237d595ab246b4204c5ebf658504fc2fa8a09"
 ---
 
 # REPO_MAP.md
@@ -131,6 +131,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/business-rule-leakage-review/
 
 - `.mustflow/skills/business-rule-leakage-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/c-code-change/
+
+- `.mustflow/skills/c-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/cache-integrity-review/
 
@@ -572,6 +576,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/rate-limit-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/react-code-change/
+
+- `.mustflow/skills/react-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/readme-authoring/
 
 - `.mustflow/skills/readme-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -644,6 +652,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/service-boundary-architecture/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/shell-code-change/
+
+- `.mustflow/skills/shell-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/skill-authoring/
 
 - `.mustflow/skills/skill-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -679,6 +691,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/structure-first-engineering/
 
 - `.mustflow/skills/structure-first-engineering/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/structured-config-change/
+
+- `.mustflow/skills/structured-config-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/support-surface-advisor/
 

@@ -2,11 +2,11 @@
 mustflow_doc: skill.html-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: html-code-change
-description: Apply this skill when HTML, templates, JSX or component markup, native forms, controls, popovers, dialogs, navigation, tables, media, metadata, SEO head content, or structured data are created or changed.
+description: Apply this skill when HTML, templates, JSX or component markup, semantic document structure, native forms, controls, popovers, dialogs, navigation, tables, media, metadata, SEO head content, or structured data are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -47,6 +47,7 @@ Preserve semantic structure, native controls, keyboard access, focus behavior, f
 
 - Existing page layout, document shell, head/SEO helpers, metadata builders, canonical URL helpers, sitemap or robots config, form components, interactive control components, and tests.
 - Target framework conventions for rendering, routing, hydration, and metadata.
+- Semantic structure ledger: the intended `main`, landmark, heading, `section`, `article`, `nav`, `time`, `figure`, form group, table, media, and visible-label contracts.
 - Visible page content, H1 or primary title, main entity, locale, indexing intent, and data sources for title, description, image, author, date, price, rating, availability, and FAQ content when metadata changes.
 - Browser-native behavior expected from the markup: navigation, form submission, validation, autocomplete, input modality, popover behavior, dialog focus, inert background handling, media sizing, lazy loading, and history integration.
 - Accessibility and validation tooling declared in the command contract.
@@ -73,25 +74,37 @@ Preserve semantic structure, native controls, keyboard access, focus behavior, f
 
 1. Read the page shell, route layout, metadata helpers, component patterns, and tests before editing.
 2. Check document outline, landmarks, source order, and heading levels.
-3. Classify each interactive element by intent. Navigation to a URL uses an anchor with `href`. Commands, toggles, submit actions, open/close actions, destructive actions, copy actions, disclosure triggers, and modal triggers use buttons.
-4. Use native form controls for text entry, selection, checkbox, radio, and file input. Use grouped native radio or checkbox controls with fieldset and legend when the group label matters.
-5. Treat composite widgets such as tabs, action menus, comboboxes, listboxes, trees, grids, and custom selects as high-risk. Prefer native HTML or an existing audited component; otherwise implement the complete role, state, focus, and keyboard pattern.
-6. Reject clickable `div` or `span` controls, clickable icons without buttons, anchors without `href`, links used as buttons, nested interactive controls, positive `tabindex`, focusable `aria-hidden` content, and focus outline removal without a replacement focus style.
-7. Use ARIA only when native HTML cannot express the needed semantics. Validate the role is legal for the element, the accessible name exists, required states are present, visual and ARIA states stay synchronized, keyboard behavior matches the widget pattern, and focus behavior is explicit.
-8. For custom legacy button-like elements that cannot be replaced, require `role`, focusability, Enter activation, Space activation, Space scroll prevention, pointer activation, duplicate-event prevention, and visible focus. Use native buttons instead whenever possible.
-9. For popovers, prefer the native popover pattern for lightweight anchored disclosure, teaching UI, picker panels, or menus that do not need modal focus trapping. Verify trigger ownership, light-dismiss behavior, focus behavior, accessible name, and fallback or browser target.
-10. For dialogs, prefer native dialog when the project can support it. Otherwise implement focus entry, Tab and Shift+Tab containment, Escape behavior, inert or unreachable background content, visible close or cancel control, focus return, and an accessible name.
-11. Do not use dialog for every overlay. Use popover for non-modal transient UI, details/summary for simple disclosure, and dialog for modal tasks or interruptions that require focus containment.
-12. For tabs, use tablist, tab, and tabpanel semantics only for a real tabbed interface. Require one active tab, panel linkage, roving tabindex, arrow key movement, Home and End where expected, and Enter or Space activation when activation is manual.
-13. For menus, do not use ARIA menu roles for ordinary site navigation. Site navigation is a nav landmark with links. Use ARIA menu patterns only for application-style action menus with a button trigger, expanded state, focus strategy, Escape close behavior, and focus return.
-14. For forms, verify visible label association, help association, error association, required text, native required state, autocomplete, `inputmode`, `enterkeyhint`, validation timing, invalid state, error summary behavior, and submission behavior.
-15. Prefer native constraint validation for simple required, type, length, pattern, range, and step rules. Add custom validation only for business rules, cross-field rules, async validation, or localized error ownership the native browser cannot express.
-16. Use placeholder, title, aria-label, color, icon, or toast-only feedback only as supplementary affordances, not as the only label, required indicator, or error explanation.
-17. For metadata, read visible content and the metadata generation path first. Keep title, description, canonical, Open Graph, Twitter or X card data, robots, hreflang, and JSON-LD aligned with visible content, locale, URL, and indexing intent.
-18. Structured data must describe content visible on the same page. Do not invent ratings, reviews, FAQ items, authors, prices, availability, dates, organizations, product properties, or claims not backed by the page data source.
-19. Ensure every HTML page has a valid non-empty language and responsive viewport that does not disable zoom. Mixed-language passages should identify their language when needed.
-20. Keep inline script and style minimal; move behavior and styling to the existing project layers unless the framework requires an inline boundary.
-21. Choose configured verification intents that cover markup validity, lint, build, accessibility, route rendering, metadata, and docs when available.
+3. Treat semantic HTML as a machine-readable contract, not as styling decoration. Use `div` for pure wrappers and styling shells.
+4. Use `section` only for a thematic group that has a heading or explicit accessible label. Do not use `section` as a card, spacing, or script wrapper.
+5. Use `article` only for self-contained content that remains meaningful when syndicated, embedded, or moved out of the list, such as posts, articles, reviews, comments, or complete product entries.
+6. Use `nav` only for major navigation or table-of-contents regions. Do not label every incidental link group as navigation.
+7. Keep exactly one active visible `main` region for the page or current SPA view. Do not put repeated headers, footers, sidebars, or global navigation inside the main content unless that is the actual page task.
+8. Treat heading elements as content outline, not font-size controls. Preserve hierarchy by meaning, and use CSS for visual scale.
+9. Classify each interactive element by intent. Navigation to a URL uses an anchor with `href`. Commands, toggles, submit actions, open/close actions, destructive actions, copy actions, disclosure triggers, and modal triggers use buttons.
+10. Use native form controls for text entry, selection, checkbox, radio, and file input. Use grouped native radio or checkbox controls with fieldset and legend when the group label matters.
+11. Keep interactive elements out of labels. Do not place terms links, help buttons, or other controls inside a `label`; connect the label with `for` and `id`, then place related links or buttons outside the label.
+12. Treat composite widgets such as tabs, action menus, comboboxes, listboxes, trees, grids, and custom selects as high-risk. Prefer native HTML or an existing audited component; otherwise implement the complete role, state, focus, and keyboard pattern.
+13. Reject clickable `div` or `span` controls, clickable icons without buttons, anchors without `href`, links used as buttons, nested interactive controls, positive `tabindex`, focusable `aria-hidden` content, and focus outline removal without a replacement focus style.
+14. Use ARIA only when native HTML cannot express the needed semantics. Validate the role is legal for the element, the accessible name exists, required states are present, visual and ARIA states stay synchronized, keyboard behavior matches the widget pattern, and focus behavior is explicit.
+15. For custom legacy button-like elements that cannot be replaced, require `role`, focusability, Enter activation, Space activation, Space scroll prevention, pointer activation, duplicate-event prevention, and visible focus. Use native buttons instead whenever possible.
+16. For popovers, prefer the native popover pattern for lightweight anchored disclosure, teaching UI, picker panels, or menus that do not need modal focus trapping. Verify trigger ownership, light-dismiss behavior, focus behavior, accessible name, and fallback or browser target.
+17. For dialogs, prefer native dialog when the project can support it. Otherwise implement focus entry, Tab and Shift+Tab containment, Escape behavior, inert or unreachable background content, visible close or cancel control, focus return, and an accessible name.
+18. Do not use dialog for every overlay. Use popover for non-modal transient UI, details/summary for simple disclosure, and dialog for modal tasks or interruptions that require focus containment.
+19. For tabs, use tablist, tab, and tabpanel semantics only for a real tabbed interface. Require one active tab, panel linkage, roving tabindex, arrow key movement, Home and End where expected, and Enter or Space activation when activation is manual.
+20. For menus, do not use ARIA menu roles for ordinary site navigation. Site navigation is a nav landmark with links. Use ARIA menu patterns only for application-style action menus with a button trigger, expanded state, focus strategy, Escape close behavior, and focus return.
+21. For forms, verify visible label association, help association, error association, required text, native required state, autocomplete, `inputmode`, `enterkeyhint`, validation timing, invalid state, error summary behavior, and submission behavior.
+22. Prefer native constraint validation for simple required, type, length, pattern, range, and step rules. Add custom validation only for business rules, cross-field rules, async validation, or localized error ownership the native browser cannot express.
+23. Use placeholder, title, aria-label, color, icon, or toast-only feedback only as supplementary affordances, not as the only label, required indicator, or error explanation.
+24. Use `time` with a machine-readable `datetime` when the content represents a precise date, time, duration, or time-like value that tests, crawlers, calendars, or automation may need to parse.
+25. Use `figure` and `figcaption` only for self-contained referenced media, code, diagrams, charts, screenshots, or examples whose caption describes the figure. Do not use `figcaption` for ordinary card titles or unrelated image captions.
+26. Use real tables for tabular data. Include a useful `caption` when the table needs a name, use `th` for row and column headers, and set `scope` when it clarifies the header relationship.
+27. For meaningful media, prefer `img`, `picture`, `video`, or framework media components that preserve alt text, intrinsic dimensions, responsive candidate selection, and browser discovery. Keep decorative media out of the accessibility tree.
+28. For responsive image markup, verify `width`, `height`, `srcset`, `sizes`, `picture` art direction, and lazy or eager loading reflect the rendered slot. Route LCP, preload, priority, CDN, or byte-size claims to `image-delivery-performance-review`.
+29. For metadata, read visible content and the metadata generation path first. Keep title, description, canonical, Open Graph, Twitter or X card data, robots, hreflang, and JSON-LD aligned with visible content, locale, URL, and indexing intent.
+30. Structured data must describe content visible on the same page. Do not invent ratings, reviews, FAQ items, authors, prices, availability, dates, organizations, product properties, or claims not backed by the page data source.
+31. Ensure every HTML page has a valid non-empty language and responsive viewport that does not disable zoom. Mixed-language passages should identify their language when needed.
+32. Keep inline script and style minimal; move behavior and styling to the existing project layers unless the framework requires an inline boundary.
+33. Choose configured verification intents that cover markup validity, lint, build, accessibility, route rendering, metadata, and docs when available.
 
 <!-- mustflow-section: form-accessibility -->
 ## Form Accessibility Rules
@@ -128,16 +141,19 @@ Reject or revise the patch when any of these appear without strong justification
 
 - New `div` or `span` interaction where a native link, button, or form control would work.
 - Anchors without `href`, buttons implemented as links, links implemented as buttons, nested interactive controls, clickable icons without native controls, or site navigation using ARIA menu roles.
+- Decorative `section`, card-only `article`, incidental-link `nav`, multiple active `main` regions, headings chosen for visual size, labels containing nested interactive controls, or data tables rebuilt as non-table grids.
 - Custom controls without complete accessible name, role, state, keyboard, focus, and hidden-content behavior.
 - Popovers, dialogs, or overlays that replace native behavior without trigger, focus, light-dismiss, inert, or fallback review.
 - Positive `tabindex`, hidden content that remains tabbable, focusable `aria-hidden` content, or invisible focus.
 - Form controls without visible labels, placeholder-only labels, disconnected help or error text, color-only required or error state, premature `aria-invalid`, or autocomplete removed without reason.
+- Meaningful dates without parseable `time datetime`, figures used for ordinary card content, tables without header relationships, or meaningful media that lacks alt, intrinsic dimensions, or responsive candidate review.
 - Metadata or JSON-LD that contradicts visible content, fabricates facts, points canonical or social URL at the wrong page, disables zoom, omits page language, or accidentally noindexes a public page.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Markup communicates the intended structure without relying on visual styling alone.
+- Sections, articles, navigation, main regions, headings, forms, figures, tables, time values, and media expose truthful document semantics.
 - Keyboard and focus behavior are preserved.
 - Forms have labels and errors connected.
 - Metadata and structured data reflect visible content.

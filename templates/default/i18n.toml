@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 183
+revision = 188
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -556,6 +556,12 @@ source_locale = "en"
 revision = 4
 translations = {}
 
+[documents."skill.clarifying-question-gate"]
+source = "locales/en/.mustflow/skills/clarifying-question-gate/SKILL.md"
+source_locale = "en"
+revision = 3
+translations = {}
+
 [documents."skill.heuristic-candidate-selection"]
 source = "locales/en/.mustflow/skills/heuristic-candidate-selection/SKILL.md"
 source_locale = "en"
@@ -589,7 +595,7 @@ translations = {}
 [documents."skill.css-code-change"]
 source = "locales/en/.mustflow/skills/css-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.bun-code-change"]
@@ -600,6 +606,12 @@ translations = {}
 
 [documents."skill.cpp-code-change"]
 source = "locales/en/.mustflow/skills/cpp-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.c-code-change"]
+source = "locales/en/.mustflow/skills/c-code-change/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -643,7 +655,7 @@ translations = {}
 [documents."skill.html-code-change"]
 source = "locales/en/.mustflow/skills/html-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.javascript-code-change"]
@@ -658,6 +670,12 @@ source_locale = "en"
 revision = 2
 translations = {}
 
+[documents."skill.react-code-change"]
+source = "locales/en/.mustflow/skills/react-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.python-code-change"]
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
@@ -668,6 +686,18 @@ translations = {}
 source = "locales/en/.mustflow/skills/powershell-code-change/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.shell-code-change"]
+source = "locales/en/.mustflow/skills/shell-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.structured-config-change"]
+source = "locales/en/.mustflow/skills/structured-config-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.rust-code-change"]
@@ -739,7 +769,7 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.evidence-stall-breaker"]
@@ -811,7 +841,7 @@ translations = {}
 [documents."skill.docs-prose-review"]
 source = "locales/en/.mustflow/skills/docs-prose-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.failure-triage"]
@@ -835,7 +865,7 @@ translations = {}
 [documents."skill.github-contribution-quality-gate"]
 source = "locales/en/.mustflow/skills/github-contribution-quality-gate/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.facade-pattern"]

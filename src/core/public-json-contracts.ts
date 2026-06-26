@@ -577,6 +577,22 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		],
 	},
 	{
+		id: 'skill-import-report',
+		schemaFile: 'skill-import-report.schema.json',
+		producer: 'mf skill import <github-url> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: [
+			'mf',
+			'skill',
+			'import',
+			'https://github.com/example/agent-skills/blob/main/security-review/SKILL.md',
+			'--dry-run',
+			'--json',
+		],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'route-fixture',
 		schemaFile: 'route-fixture.schema.json',
 		producer: 'parsed .mustflow/skills/route-fixtures.json',

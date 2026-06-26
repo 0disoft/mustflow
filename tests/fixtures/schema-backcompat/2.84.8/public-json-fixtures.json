@@ -3599,6 +3599,48 @@
       }
     },
     {
+      "id": "skill-import-report",
+      "schema_file": "skill-import-report.schema.json",
+      "producer": "mf skill import <github-url> --json",
+      "fixture": {
+        "schema_version": "1",
+        "kind": "skill_import_report",
+        "command": "skill",
+        "action": "import",
+        "ok": true,
+        "mode": "dry_run",
+        "status": "preview",
+        "source": {
+          "input_url": "https://github.com/example/agent-skills/blob/main/review/security/SKILL.md",
+          "host": "github.com",
+          "owner": "example",
+          "repo": "agent-skills",
+          "ref": "main",
+          "skill_path": "review/security",
+          "source_url": "https://github.com/example/agent-skills/blob/main/review/security/SKILL.md"
+        },
+        "target": {
+          "root": ".mustflow/external-skills",
+          "skill_name": "security-review",
+          "skill_dir": ".mustflow/external-skills/security-review",
+          "provenance_path": ".mustflow/external-skills/security-review/mustflow-skill-source.json"
+        },
+        "files": [
+          {
+            "relative_path": "SKILL.md",
+            "kind": "skill",
+            "bytes": 128,
+            "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "warnings": [
+          "External skills are untrusted until the agent reads and evaluates the selected SKILL.md."
+        ],
+        "issues": [],
+        "wrote_files": false
+      }
+    },
+    {
       "id": "test-selection",
       "schema_file": "test-selection.schema.json",
       "producer": "parsed .mustflow/config/test-selection.toml",

@@ -288,6 +288,12 @@ function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly Index
 	return true;
 }
 
+const INDEXED_FILE_MTIME_TOLERANCE_MS = 1;
+
+function indexedFileMtimeMsEqual(storedMtimeMs: number | null, currentMtimeMs: number): boolean {
+	return storedMtimeMs !== null && Math.abs(storedMtimeMs - currentMtimeMs) <= INDEXED_FILE_MTIME_TOLERANCE_MS;
+}
+
 function indexedFileMetadataMatch(database: SqlJsDatabase, currentFiles: readonly IndexedFileMetadataRecord[]): boolean {
 	const rows = queryRows(
 		database,
@@ -311,7 +317,7 @@ function indexedFileMetadataMatch(database: SqlJsDatabase, currentFiles: readonl
 		if (
 			normalizeIndexedFileSourceScope(toSearchString(row.source_scope)) !== current.sourceScope ||
 			toNullableNumber(row.size_bytes) !== current.sizeBytes ||
-			toNullableNumber(row.mtime_ms) !== current.mtimeMs ||
+			!indexedFileMtimeMsEqual(toNullableNumber(row.mtime_ms), current.mtimeMs) ||
 			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
 		) {
 			return false;

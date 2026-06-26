@@ -2,7 +2,7 @@
 mustflow_doc: skill.github-contribution-quality-gate
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: github-contribution-quality-gate
@@ -55,6 +55,9 @@ The goal is not polished prose. The goal is verified, scoped, actionable informa
 - Duplicate and context search evidence: searched terms, open and closed issues, open and closed pull requests, discussions when used by the repository, documentation, changelog, and related maintainer comments.
 - User evidence: reproduction steps, minimal example, logs, screenshots, recordings, changed files, local test output, failing command, environment, version, linked issue, or maintainer question being answered.
 - Draft structure evidence: proposed title, first-screen summary, section headings, Markdown tables, task lists, code blocks, details blocks, screenshots, links, review order, and unresolved questions.
+- Pull request readiness evidence when relevant: whether the PR should be ready for review or draft,
+  whether the title follows repository style without agent/vendor prefixes, and whether any review
+  re-request is explicitly warranted.
 - Verification level: personally reproduced, partially reproduced, inferred from code, inferred from logs, not reproduced, not searched, or not verified.
 - Desired result: report a bug, propose a feature, submit a fix, ask for design approval, answer a maintainer, provide missing evidence, or close the loop.
 
@@ -97,13 +100,27 @@ The goal is not polished prose. The goal is verified, scoped, actionable informa
    - `same problem here` without new evidence is not new value.
 6. Plan the reading order before polishing prose.
    - Title should name the observed result for issues or the guaranteed behavior after a PR, not labels such as `[BUG]`, `fix`, `WIP`, or implementation chores.
+   - Do not add agent, assistant, vendor, or tool prefixes such as `[codex]`, `[AI]`, or `[bot]`
+     unless the target repository explicitly requires them. Prefer the repository's conventional
+     commit or title style so the changed behavior stays first.
    - First screen should contain conclusion, impact, and requested decision. Move long logs, full outputs, screenshots, and alternatives below or into `<details>`.
    - Headings should answer one question each. Avoid dump headings such as `Details`, `Misc`, `Notes`, or `Context` unless the repository template requires them.
    - Separate observed facts, current hypotheses, decisions, and unknowns. Use `Cause` only when the cause is confirmed.
 7. For bug issues, require actual behavior, expected behavior, exact reproduction steps, smallest reasonable reproduction, version, environment, relevant logs or screenshots, regression status, attempted workarounds, concrete impact, and completion criteria.
 8. For feature or enhancement issues, require user problem, affected users, current workflow, desired workflow, why existing behavior is insufficient, related discussions, compatibility impact, alternatives considered, and non-goals when the proposal can sprawl.
 9. For documentation issues, require exact page, section, symbol, command, or example; current wording or behavior; expected wording or explanation; and evidence that the current documentation is stale or misleading when available.
-10. For pull requests, require focused scope, linked issue or prior discussion when non-trivial, changed behavior, intentionally unchanged behavior, tests added or updated, exact verification results, compatibility notes for public surfaces, UI screenshots when relevant, and draft status when incomplete.
+10. For pull requests, require focused scope, linked issue or prior discussion when non-trivial, changed behavior, intentionally unchanged behavior, tests added or updated, exact verification results, compatibility notes for public surfaces, UI screenshots when relevant, and a readiness decision.
+    - Use ready-for-review as the default for small, independent fixes or narrow improvements when
+      the relevant checks were run, known limitations can be stated in the PR body, and no
+      maintainer design decision is needed.
+    - Use draft only when the PR is intentionally discussion-first, changes public API shape, needs
+      design direction, has blocked or intentionally incomplete verification, or is likely to
+      conflict with other active work.
+    - If a draft PR becomes ready after verification, mark that transition in the PR body or update
+      comment instead of leaving the ready state implicit.
+    - Do not re-request review merely because a draft was marked ready. Re-request only when a
+      specific reviewer was already involved, the maintainer asked for it, or repository rules say
+      to request review after the ready transition.
 11. For PR review guidance, provide a review order by reasoning path rather than dumping changed files. Name files or commits only when they help reviewers inspect behavior, generated output, tests, or mechanical-only changes in the right order.
 12. For review replies, answer the maintainer's actual question first. Provide requested logs, reproduction, design tradeoff, tests, or blocker. Do not answer a different question because it is easier.
 13. Use Markdown elements by job, not decoration.
@@ -134,7 +151,8 @@ The goal is not polished prose. The goal is verified, scoped, actionable informa
     - do not submit AI output that the human contributor has not reviewed, cannot explain, or could have tested but did not.
 18. Choose a gate decision before writing the final draft:
     - `POST` when the content follows repository rules and has enough verified value;
-    - `POST_AS_DRAFT` when a PR direction is useful but not ready for final review;
+    - `POST_AS_DRAFT` when a PR direction is useful but not ready for final review, such as
+      discussion-first work, public API shape changes, blocked verification, or design approval;
     - `ASK_IN_EXISTING_THREAD` when the evidence belongs in a related issue or PR;
     - `DO_NOT_POST` when the content lacks verified value, duplicates existing content, violates repository rules, or the human contributor cannot defend it;
     - `PRIVATE_SECURITY_REPORT` when the content should not be public.
@@ -149,6 +167,8 @@ The goal is not polished prose. The goal is verified, scoped, actionable informa
 - Duplicate search is summarized with confidence.
 - Every technical claim in the draft is tied to evidence or marked uncertain.
 - Title, first-screen summary, section order, Markdown elements, verification, and risk handling help maintainers decide what to do next.
+- PR readiness, draft state, and review-request behavior are chosen from evidence instead of using
+  draft or re-request as generic defaults.
 - Security-sensitive content is not prepared for public posting.
 - AI assistance is disclosed when required or material.
 - The draft helps maintainers act faster or the skill blocks posting.
@@ -185,10 +205,12 @@ Use `changes_status` and `changes_diff_summary` when drafting a PR description o
 - Duplicate and context check
 - Evidence checked
 - Information-structure and Markdown checks
+- PR title, readiness, and review-request decision when relevant
 - Missing evidence
 - Draft
 - Final self-check:
   - Does the title state the observed issue result or PR outcome instead of metadata?
+  - Does the PR title avoid agent, assistant, vendor, or tool prefixes unless the repository requires them?
   - Can a maintainer understand the conclusion, impact, and requested action from the first screen?
   - Do headings, tables, task lists, details blocks, code blocks, screenshots, and links each have one clear job?
   - Can a maintainer reproduce or review this without guessing?
@@ -197,6 +219,8 @@ Use `changes_status` and `changes_diff_summary` when drafting a PR description o
   - Is every technical claim backed by evidence?
   - Are facts, hypotheses, decisions, and unknowns separated?
   - Does a PR include review focus, verification results, unverified areas, and risk or rollback notes when relevant?
+  - Is a verified small PR ready for review instead of unnecessarily draft?
+  - If a draft PR became ready, is any review re-request justified by maintainer request, repository rules, or an already involved reviewer?
   - Were feasible tests or verification checks run or honestly skipped?
   - Is AI assistance disclosed when required or material?
   - Can the human contributor explain and defend the content without AI?

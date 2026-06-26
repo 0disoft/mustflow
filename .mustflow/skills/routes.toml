@@ -432,6 +432,24 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
 
+[routes."c-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "performance_change", "security_change", "package_metadata_change", "release_risk"]
+
+[routes."shell-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "workflow_change", "security_change", "package_metadata_change", "release_risk"]
+
+[routes."structured-config-change"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 84
+applies_to_reasons = ["code_change", "docs_change", "workflow_change", "mustflow_config_change", "package_metadata_change", "test_change", "security_change", "release_risk"]
+
 [routes."node-code-change"]
 category = "general_code"
 route_type = "primary"
@@ -965,6 +983,12 @@ category = "ui_assets"
 route_type = "primary"
 priority = 85
 applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "migration_change", "package_metadata_change"]
+
+[routes."react-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."svelte-code-change"]
 category = "ui_assets"

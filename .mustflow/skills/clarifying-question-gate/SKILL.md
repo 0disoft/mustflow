@@ -2,7 +2,7 @@
 mustflow_doc: skill.clarifying-question-gate
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: clarifying-question-gate
@@ -34,6 +34,12 @@ The goal is not to make the user rewrite the prompt. Normalize the request insid
 state the interpretation when it matters, and continue unless a high-cost decision still needs
 confirmation.
 
+This skill also protects the repository from vague imperative requests such as "fix the bug",
+"clean this up", "make it pretty", "speed it up", "add tests", "fix the build", "make an API",
+or "handle errors". Do not execute the literal wording as permission to patch symptoms. Convert
+the request into a reviewable contract for the target, criteria, scope, affected surfaces,
+verification, and stop-or-ask boundary.
+
 <!-- mustflow-section: use-when -->
 ## Use When
 
@@ -49,6 +55,10 @@ confirmation.
   maintenance burden.
 - You are about to add a new dependency, service, folder boundary, storage model, framework pattern,
   persistent state, or broad refactor that the current files do not already require.
+- The request is a terse command that names an activity but not its target behavior, quality
+  criteria, impacted contracts, or proof of completion, for example bug fixing, error handling,
+  refactoring, test repair, type cleanup, performance work, API work, UI polish, documentation,
+  dependency updates, CI repair, or PR preparation.
 - The request can be safely clarified by a short normalized contract instead of a long back-and-forth.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -91,6 +101,13 @@ confirmation.
 - A normalized task contract when the original request is vague enough to risk drift: goal, current
   context, change scope, excluded scope, user-visible behavior, constraints, completion evidence,
   verification, report format, and remaining risks.
+- For terse implementation commands, a normalized execution contract with:
+  - the observed target or failure source;
+  - the intended behavior or quality criterion;
+  - the changed and explicitly excluded surfaces;
+  - public contracts, data, security, UX, dependency, or generated outputs that may be affected;
+  - the verification plan and evidence that will close the task;
+  - the condition that requires stopping, asking, or handing off to a narrower skill.
 - Source tags for contract entries: `user_confirmed`, `repository_derived`, `safe_assumption`, or
   `unresolved`.
 
@@ -141,7 +158,27 @@ confirmation.
      `instruction-conflict-scope-check`.
    - `insufficient_evidence`: more repository reading, reproduction, or scoped analysis is needed
      before asking or implementing.
-5. Build a normalized task contract when the user request is underspecified but executable:
+5. Normalize terse implementation commands before editing:
+   - For bug, error, build, CI, or failing-test requests, identify the observed failure source,
+     distinguish implementation defects from test or environment defects, and define the regression
+     evidence before changing code.
+   - For refactor, cleanup, naming, comment, folder, type, or duplicate-removal requests, preserve
+     behavior as the default invariant and name the readability, responsibility, type-safety, or
+     dependency-direction criterion being improved.
+   - For performance requests, identify the suspected or measured bottleneck, baseline, workload,
+     and verification signal before optimizing.
+   - For API, response shape, auth, permission, logging, error, cache, database, migration, or
+     dependency requests, identify compatibility, data, security, lifecycle, and rollback surfaces
+     before implementation.
+   - For UI, accessibility, responsive, form, modal, routing, search, filtering, pagination, or
+     state-management requests, identify the user path, visible states, failure states, device or
+     input constraints, and verification evidence.
+   - For docs, README, env var, deploy, release, or PR requests, identify the source of truth,
+     affected install or automation surfaces, required verification, and any maintainer-facing
+     limitation text.
+   - Do not treat "minimal fix" as the default when a symptom-only patch would leave the affected
+     flow, contract, or regression coverage broken.
+6. Build a normalized task contract when the user request is underspecified but executable:
    - goal;
    - current context;
    - change scope;
@@ -154,46 +191,46 @@ confirmation.
    - remaining risks.
    Tag each non-obvious contract entry as `user_confirmed`, `repository_derived`,
    `safe_assumption`, or `unresolved`. Do not add new product requirements while normalizing.
-6. Ask about observable completion before feature shape when success is unclear:
+7. Ask about observable completion before feature shape when success is unclear:
    - what behavior proves the task is done;
    - which user path, command, test, screenshot, migration state, or registry/release state closes it.
-7. Ask about scope only when plausible scopes have different cost or risk:
+8. Ask about scope only when plausible scopes have different cost or risk:
    - minimal symptom fix, root-cause fix, or broader cleanup;
    - prototype, maintainable production path, or release-ready path.
-8. Ask about existing users and data before changing persistence, lifecycle, deletion, migration,
+9. Ask about existing users and data before changing persistence, lifecycle, deletion, migration,
    retention, cache, API compatibility, or old-client behavior.
-9. Ask about failure UX before implementing user-visible success flows where failure handling is a
+10. Ask about failure UX before implementing user-visible success flows where failure handling is a
    product decision: retry, queue, message, audit/log-only, rollback, partial success, or manual
    recovery.
-10. Ask about security and authorization before relying on UI hiding, client-side checks, roles,
+11. Ask about security and authorization before relying on UI hiding, client-side checks, roles,
    invites, team boundaries, file access, billing state, or admin features.
-11. Ask before adding or swapping dependencies, services, queues, databases, auth providers, design
+12. Ask before adding or swapping dependencies, services, queues, databases, auth providers, design
    systems, state managers, or major folder boundaries.
-12. Ask about verification when there is no declared command intent or when the user expects a
+13. Ask about verification when there is no declared command intent or when the user expects a
     specific proof beyond the repository's configured checks.
-13. Keep the question set short:
+14. Keep the question set short:
     - ask at most three questions at once;
     - ask only one question when its answer may make later questions irrelevant;
     - each question must name the decision, the recommended choice, the consequence of that choice,
       and one meaningful alternative;
     - avoid open-ended prompts like "how should I implement this?" unless no responsible options can
       be framed from repository evidence.
-14. Do not ask bad engineering-delegation questions:
+15. Do not ask bad engineering-delegation questions:
     - "Should I add tests?"
     - "Should I handle errors?"
     - "Should I follow existing style?"
     - "Should I check current files?"
     - "Should I preserve existing behavior?"
-15. Use prompt rewriting only as an exception:
+16. Use prompt rewriting only as an exception:
     - the user explicitly asks for a prompt, issue, PR body, work order, or handoff for another
       agent;
     - the current request is too broken to execute and a normalized contract plus confirmation is the
       smallest safe next step.
     Otherwise, show the normalized contract only when it materially reduces drift, then proceed in
     the same conversation.
-16. If no blocking question remains, proceed without ceremony. State only the assumptions that matter
+17. If no blocking question remains, proceed without ceremony. State only the assumptions that matter
     to review or rollback.
-17. If a blocking question remains unanswered, do not implement around it. Offer the smallest safe
+18. If a blocking question remains unanswered, do not implement around it. Offer the smallest safe
     non-blocked action, such as read-only analysis, a plan, a reproduction, or a narrow preparatory
     refactor when another selected skill supports it.
 
@@ -207,6 +244,8 @@ confirmation.
 - Safe assumptions are narrow, reversible, and reported.
 - Any normalized contract preserves the user's original request separately from repository-derived
   facts and safe assumptions.
+- Terse commands are expanded into target, criterion, scope, affected-surface, verification, and
+  stop-or-ask boundaries before implementation.
 - Prompt rewriting is not used as a substitute for proceeding in the current task.
 - The final work can be judged against observable success criteria or a reported verification gap.
 

@@ -381,6 +381,36 @@ test('reuses a fresh sqlite local index in incremental mode', async () => {
 	}
 });
 
+test('incremental preflight tolerates sub-millisecond indexed mtime drift', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-mtime-drift-');
+
+	try {
+		await createLocalIndexDirect(projectPath);
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+
+		try {
+			database.run('UPDATE indexed_files SET mtime_ms = mtime_ms + 0.5 WHERE path = ?', ['AGENTS.md']);
+			writeFileSync(indexPath, database.export());
+		} finally {
+			database.close();
+		}
+
+		const firstBytes = readFileSync(indexPath).toString('base64');
+		const secondOutput = await createLocalIndexDirect(projectPath, { incremental: true });
+		const secondBytes = readFileSync(indexPath).toString('base64');
+
+		assert.equal(secondOutput.index_mode, 'incremental');
+		assert.equal(secondOutput.reused_existing, true);
+		assert.equal(secondOutput.rebuild_reason, null);
+		assert.equal(secondOutput.wrote_files, false);
+		assert.equal(secondBytes, firstBytes);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('bounds search n-grams for unusually long tokens', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-ngram-limits-');
 	const alphabet = 'abcdefghijklmnopqrstuvwxy0123456789';

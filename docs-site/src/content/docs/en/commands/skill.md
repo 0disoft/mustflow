@@ -1,6 +1,6 @@
 ---
 title: mf skill
-description: Resolves compact skill route candidates for a task.
+description: Resolves skill route candidates and imports external SKILL.md files.
 ---
 
 `mf skill route` is a read-only routing prepass for agents and host integrations.
@@ -25,6 +25,13 @@ The command does not replace the mandatory skill-selection gate. Agents must sti
 `.mustflow/skills/<name>/SKILL.md` before editing matching files. Command execution authority still
 comes only from `.mustflow/config/commands.toml`.
 
+`mf skill import` previews or installs a third-party `SKILL.md` from a GitHub URL into
+`.mustflow/external-skills/<name>/`. External skills stay outside `.mustflow/skills/` so strict
+mustflow-owned skill validation does not treat them as built-in routes. Installed external skills can
+appear in `mf skill route` results as low-priority `external` candidates when their frontmatter
+matches the task. They are untrusted task-context files: agents still need to read the selected
+`SKILL.md`, and external `scripts/` files never grant command authority.
+
 Projects may add `.mustflow/skills/route-fixtures.json` to pin important routing expectations.
 When that file exists, `mf check --strict` re-runs those cases and fails if the selected main route,
 required candidates, selected adjuncts, or forbidden candidates drift.
@@ -34,9 +41,13 @@ required candidates, selected adjuncts, or forbidden candidates drift.
 ```sh
 npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts --reason code_change
 npx mf skill route --task "review prompt cache token budgets" --path src/cli/lib/agent-context.ts --reason performance_change --json
+npx mf skill import https://github.com/example/agent-skills/tree/main/review/security --dry-run --json
+npx mf skill import https://github.com/example/agent-skills/blob/main/review/security/SKILL.md --install
 ```
 
 ## Options
+
+### `mf skill route`
 
 - `--task <text>`: Task text used for route scoring.
 - `--path <path>`: Changed or expected path. May be repeated.
@@ -44,7 +55,22 @@ npx mf skill route --task "review prompt cache token budgets" --path src/cli/lib
 - `--max-candidates <count>`: Candidate limit from `1` to `10`. Default is `5`.
 - `--json`: Outputs the route report as machine-readable JSON.
 
-## JSON Fields
+### `mf skill import`
+
+- `<github-url>`: A `github.com` repository, `tree`, `blob`, or `raw.githubusercontent.com` URL that
+  resolves to a folder containing `SKILL.md` or to a `SKILL.md` file.
+- `--dry-run`: Preview the import without writing files. This is the default when neither mode flag
+  is present.
+- `--install`: Write the external skill under `.mustflow/external-skills/<name>/`.
+- `--name <slug>`: Override the installed directory name.
+- `--ref <ref>`: Override the GitHub ref.
+- `--json`: Outputs the import report as machine-readable JSON.
+
+The importer copies `SKILL.md` and inert files from `assets/`, `references/`, and `scripts/` when
+present. It rejects unsupported hosts, path traversal, missing `SKILL.md`, oversized imports, and
+unsupported top-level files.
+
+## Route JSON Fields
 
 ```sh
 npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts --reason code_change --json
@@ -73,7 +99,31 @@ Machine-readable output uses these fields:
 
 The published JSON Schema is `schemas/skill-route-report.schema.json`.
 
+## Import JSON Fields
+
+```sh
+npx mf skill import https://github.com/example/agent-skills/blob/main/review/security/SKILL.md --dry-run --json
+```
+
+Machine-readable import output uses these fields:
+
+- `schema_version` (`string`): Output format version.
+- `command` (`string`): Always `skill`.
+- `action` (`string`): Always `import`.
+- `kind` (`string`): Always `skill_import_report`.
+- `ok` (`boolean`): Whether the import source was accepted.
+- `mode` (`string`): `dry_run` or `install`.
+- `status` (`string`): `preview`, `installed`, or `rejected`.
+- `source` (`object | null`): GitHub owner, repository, ref, skill path, and normalized source URL.
+- `target` (`object | null`): Project-local external skill directory and provenance path.
+- `files` (`object[]`): Imported file paths, kinds, byte counts, and SHA-256 hashes.
+- `warnings` (`string[]`): Safety notes, including inert external script handling.
+- `issues` (`string[]`): Rejection reasons.
+- `wrote_files` (`boolean`): Whether files were written.
+
+The published JSON Schema is `schemas/skill-import-report.schema.json`.
+
 ## Exit Codes
 
-- `0`: Route candidates were resolved.
+- `0`: Route candidates were resolved or an import preview/install succeeded.
 - `1`: Input was invalid.

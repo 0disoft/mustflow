@@ -1413,6 +1413,26 @@ test('skill route json output matches the published schema', () => {
 	}
 });
 
+test('skill import rejected json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'skill',
+			'import',
+			'https://example.com/not-a-github-skill/SKILL.md',
+			'--dry-run',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'skill-import-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('handoff validation json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

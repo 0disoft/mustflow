@@ -17,6 +17,11 @@ import {
 	type ScriptPackSuggestionReport,
 } from '../../core/script-pack-suggestions.js';
 import { resolveSkillRoutes } from '../../core/skill-route-resolution.js';
+import {
+	createExternalSkillImportReport,
+	type ExternalSkillImportReport,
+	type ExternalSkillImportMode,
+} from '../lib/external-skill-import.js';
 
 const SKILL_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
@@ -24,15 +29,24 @@ const SKILL_OPTIONS = [
 	{ name: '--path', kind: 'string' },
 	{ name: '--reason', kind: 'string' },
 	{ name: '--max-candidates', kind: 'string' },
+	{ name: '--install', kind: 'boolean' },
+	{ name: '--dry-run', kind: 'boolean' },
+	{ name: '--name', kind: 'string' },
+	{ name: '--ref', kind: 'string' },
 ] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedSkillArgs {
 	readonly json: boolean;
 	readonly action: string | null;
+	readonly sourceUrl: string | null;
 	readonly taskText: string | null;
 	readonly paths: readonly string[];
 	readonly reasons: readonly string[];
 	readonly maxCandidates: number | undefined;
+	readonly install: boolean;
+	readonly dryRun: boolean;
+	readonly name: string | null;
+	readonly ref: string | null;
 	readonly error?: ReturnType<typeof parseCliOptions>['error'];
 }
 
@@ -48,16 +62,24 @@ export function getSkillHelp(lang: CliLang = 'en'): string {
 			usage: 'mf skill route [options]',
 			summary: t(lang, 'command.skill.summary'),
 			options: [
+				{ label: 'route', description: 'Resolve installed skill route candidates' },
+				{ label: 'import <github-url>', description: 'Preview or install an external SKILL.md under .mustflow/external-skills/' },
 				{ label: '--task <text>', description: 'Task text used for route scoring' },
 				{ label: '--path <path>', description: 'Changed or expected path; may be repeated' },
 				{ label: '--reason <reason>', description: 'Classification or verification reason; may be repeated' },
 				{ label: '--max-candidates <count>', description: 'Maximum candidates to return, from 1 to 10' },
+				{ label: '--dry-run', description: 'Preview an external skill import without writing files; default for import' },
+				{ label: '--install', description: 'Install an external skill after previewing the same source' },
+				{ label: '--name <slug>', description: 'Override the installed external skill directory name' },
+				{ label: '--ref <ref>', description: 'Override the GitHub ref used for import' },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
 				'mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts --reason code_change --json',
 				'mf skill route --reason docs_change --path docs-site/src/content/docs/en/commands/context.md',
+				'mf skill import https://github.com/example/agent-skills/tree/main/review/security --dry-run --json',
+				'mf skill import https://github.com/example/agent-skills/blob/main/review/security/SKILL.md --install',
 			],
 			exitCodes: [
 				{ label: '0', description: 'Skill route candidates were resolved' },
@@ -88,10 +110,15 @@ function parseSkillArgs(args: readonly string[]): ParsedSkillArgs {
 	return {
 		json: hasParsedCliOption(parsed, '--json'),
 		action: parsed.positionals[0] ?? null,
+		sourceUrl: parsed.positionals[1] ?? null,
 		taskText: getParsedCliStringOption(parsed, '--task'),
 		paths: getParsedCliStringOptions(parsed, '--path'),
 		reasons: getParsedCliStringOptions(parsed, '--reason'),
 		maxCandidates: parseMaxCandidates(getParsedCliStringOption(parsed, '--max-candidates')),
+		install: hasParsedCliOption(parsed, '--install'),
+		dryRun: hasParsedCliOption(parsed, '--dry-run'),
+		name: getParsedCliStringOption(parsed, '--name'),
+		ref: getParsedCliStringOption(parsed, '--ref'),
 		error: parsed.error,
 	};
 }
@@ -161,7 +188,46 @@ function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang): string
 	return lines.join('\n');
 }
 
-export function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+function renderSkillImportReport(report: ExternalSkillImportReport): string {
+	const lines = [
+		'mustflow skill import',
+		`status: ${report.status}`,
+		`mode: ${report.mode}`,
+		`source: ${report.source?.source_url ?? 'none'}`,
+		`target: ${report.target?.skill_dir ?? 'none'}`,
+		`wrote_files: ${String(report.wrote_files)}`,
+		'',
+		'Files',
+	];
+
+	if (report.files.length === 0) {
+		lines.push('- none');
+	} else {
+		for (const file of report.files) {
+			lines.push(`- ${file.relative_path} (${file.kind}, ${file.bytes} bytes, ${file.sha256})`);
+		}
+	}
+
+	if (report.warnings.length > 0) {
+		lines.push('', 'Warnings', ...report.warnings.map((warning) => `- ${warning}`));
+	}
+
+	if (report.issues.length > 0) {
+		lines.push('', 'Issues', ...report.issues.map((issue) => `- ${issue}`));
+	}
+
+	return lines.join('\n');
+}
+
+function parseImportMode(parsed: ParsedSkillArgs): ExternalSkillImportMode | null {
+	if (parsed.install && parsed.dryRun) {
+		return null;
+	}
+
+	return parsed.install ? 'install' : 'dry_run';
+}
+
+export async function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getSkillHelp(lang));
 		return 0;
@@ -174,7 +240,7 @@ export function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en
 		return 1;
 	}
 
-	if (parsed.action !== 'route') {
+	if (parsed.action !== 'route' && parsed.action !== 'import') {
 		printUsageError(
 			reporter,
 			t(lang, parsed.action ? 'cli.error.unexpectedArgument' : 'cli.error.missingValue', {
@@ -186,6 +252,45 @@ export function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en
 			lang,
 		);
 		return 1;
+	}
+
+	if (parsed.action === 'import') {
+		const mode = parseImportMode(parsed);
+		if (mode === null) {
+			printUsageError(
+				reporter,
+				t(lang, 'cli.error.unexpectedValue', { option: '--install/--dry-run' }),
+				'mf skill --help',
+				getSkillHelp(lang),
+				lang,
+			);
+			return 1;
+		}
+
+		if (!parsed.sourceUrl) {
+			printUsageError(
+				reporter,
+				t(lang, 'cli.error.missingValue', { option: 'import <github-url>' }),
+				'mf skill --help',
+				getSkillHelp(lang),
+				lang,
+			);
+			return 1;
+		}
+
+		const report = await createExternalSkillImportReport(resolveMustflowRoot(), parsed.sourceUrl, {
+			mode,
+			name: parsed.name,
+			ref: parsed.ref,
+		});
+
+		if (parsed.json) {
+			reporter.stdout(JSON.stringify(report, null, 2));
+		} else {
+			reporter.stdout(renderSkillImportReport(report));
+		}
+
+		return report.ok ? 0 : 1;
 	}
 
 	if (Number.isNaN(parsed.maxCandidates)) {

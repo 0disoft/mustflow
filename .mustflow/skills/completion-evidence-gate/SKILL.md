@@ -2,7 +2,7 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
@@ -70,6 +70,8 @@ missing, blocked, failed, stale, or only partially relevant.
 - Optional script-pack discovery evidence when the command contract exposes `script_pack_list`.
 - Synchronized surfaces expected by the changed contract: source, tests, fixtures, schemas, templates, manifests, docs, release metadata, generated output, and localized copies.
 - Known remaining risks, unverified assumptions, blocked decisions, and rollback notes.
+- Concrete follow-up candidates, if any, plus whether a bounded `next-action-menu` should be
+  included or intentionally omitted.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -118,11 +120,18 @@ missing, blocked, failed, stale, or only partially relevant.
    - Use `implemented but unverified` when the files changed but no relevant configured verification was run.
    - Use `blocked` when required evidence cannot be produced without a missing decision, unavailable environment, manual-only command, failed prerequisite, or user approval.
    - Use `not complete` when a required acceptance criterion is not implemented or verification contradicts the claim.
-7. Write the final report from evidence, not confidence.
+7. Decide whether a next-action menu is warranted.
+   - If there are concrete, evidence-backed follow-up tasks that would make the next user turn
+     cheaper, read and apply `next-action-menu` before final reporting.
+   - If no useful follow-up exists, the user asked not to include recommendations, or the only next
+     actions are speculative or approval-gated, omit the menu and keep the final report concise.
+   - Do not treat this gate as automatic host behavior: the menu appears only when the skill is
+     selected and its use conditions are met.
+8. Write the final report from evidence, not confidence.
    - Name changed files, command intents run, skipped checks with reasons, synchronized or deferred surfaces, and remaining risks.
    - Do not imply that skipped, manual-only, or missing command intents passed.
    - Do not hide lower-confidence evidence when direct shell commands were used instead of configured intents.
-8. If the gate reveals missing required work that is safe and in scope, do that work before final reporting. Otherwise report the gap plainly.
+9. If the gate reveals missing required work that is safe and in scope, do that work before final reporting. Otherwise report the gap plainly.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -131,6 +140,8 @@ missing, blocked, failed, stale, or only partially relevant.
 - Every user requirement is mapped to proof, a limitation, or an explicit out-of-scope decision.
 - Skipped, missing, failed, stale, or manual-only verification is visible.
 - Contract, template, schema, docs, test, and release drift is either resolved or named as remaining risk.
+- Useful follow-up tasks either appear through `next-action-menu` or are intentionally omitted with a
+  clear reason when the menu conditions are not met.
 - No unconfigured command, hidden transcript, broad log, or invented tool result is treated as proof.
 
 <!-- mustflow-section: verification -->
@@ -178,4 +189,5 @@ instead of replacing it with an inferred command.
 - Lower-confidence evidence, if any
 - Stalled or repeated observations, if any
 - Remaining risks
+- Next-action menu included or omitted, with reason
 - Final wording boundary

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/skill-import-report.schema.json",
+  "title": "mustflow skill import report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "command",
+    "action",
+    "ok",
+    "mode",
+    "status",
+    "source",
+    "target",
+    "files",
+    "warnings",
+    "issues",
+    "wrote_files"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "kind": { "const": "skill_import_report" },
+    "command": { "const": "skill" },
+    "action": { "const": "import" },
+    "ok": { "type": "boolean" },
+    "mode": { "type": "string", "enum": ["dry_run", "install"] },
+    "status": { "type": "string", "enum": ["preview", "installed", "rejected"] },
+    "source": {
+      "oneOf": [
+        { "$ref": "#/$defs/source" },
+        { "type": "null" }
+      ]
+    },
+    "target": {
+      "oneOf": [
+        { "$ref": "#/$defs/target" },
+        { "type": "null" }
+      ]
+    },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "wrote_files": { "type": "boolean" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_url", "host", "owner", "repo", "ref", "skill_path", "source_url"],
+      "properties": {
+        "input_url": { "type": "string" },
+        "host": { "type": "string", "enum": ["github.com", "raw.githubusercontent.com"] },
+        "owner": { "type": "string" },
+        "repo": { "type": "string" },
+        "ref": { "type": "string" },
+        "skill_path": { "type": "string" },
+        "source_url": { "type": "string" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "skill_name", "skill_dir", "provenance_path"],
+      "properties": {
+        "root": { "const": ".mustflow/external-skills" },
+        "skill_name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "skill_dir": { "type": "string", "pattern": "^\\.mustflow/external-skills/[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "provenance_path": {
+          "type": "string",
+          "pattern": "^\\.mustflow/external-skills/[a-z0-9]+(?:-[a-z0-9]+)*/mustflow-skill-source\\.json$"
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "kind", "bytes", "sha256"],
+      "properties": {
+        "relative_path": { "type": "string" },
+        "kind": { "type": "string", "enum": ["skill", "asset", "reference", "script"] },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    }
+  }
+}
