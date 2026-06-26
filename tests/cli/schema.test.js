@@ -1390,6 +1390,29 @@ test('secret-risk-scan json output matches the published schema', () => {
 	}
 });
 
+test('security-pattern-scan json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'server.ts'), 'export function proxy(req) { return fetch(req.query.url); }\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/security-pattern-scan',
+			'scan',
+			'src/server.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'security-pattern-scan-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

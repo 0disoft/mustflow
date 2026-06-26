@@ -3467,6 +3467,69 @@
       }
     },
     {
+      "id": "security-pattern-scan-report",
+      "schema_file": "security-pattern-scan-report.schema.json",
+      "producer": "mf script-pack run repo/security-pattern-scan scan [path...] --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "security-pattern-scan",
+        "script_ref": "repo/security-pattern-scan",
+        "action": "scan",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 262144,
+          "max_files": 1000,
+          "max_findings": 300,
+          "extensions": [
+            ".ts"
+          ],
+          "ignored_directories": [
+            "node_modules"
+          ],
+          "evidence_mode": "metadata_only"
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "targets": [
+          {
+            "input": "src/server.ts",
+            "path": "src/server.ts",
+            "exists": true,
+            "kind": "file"
+          }
+        ],
+        "summary": {
+          "target_count": 1,
+          "file_count": 1,
+          "finding_count": 1,
+          "high_or_critical_count": 1,
+          "category_count": 1
+        },
+        "truncated": false,
+        "findings": [
+          {
+            "code": "security_pattern_shell_true",
+            "severity": "high",
+            "message": "Process spawn options enable shell execution.",
+            "path": "src/server.ts",
+            "line": 3,
+            "detector": "shell_true",
+            "category": "command",
+            "review_focus": "Use argv arrays and a static executable map; prove user-controlled strings cannot reach shell syntax.",
+            "fingerprint": "sha256:0123456789abcdef",
+            "json_pointer": null,
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "skill-route-report",
       "schema_file": "skill-route-report.schema.json",
       "producer": "mf skill route --json",

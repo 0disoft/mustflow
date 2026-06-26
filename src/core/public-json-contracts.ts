@@ -550,6 +550,15 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'security-pattern-scan-report',
+		schemaFile: 'security-pattern-scan-report.schema.json',
+		producer: 'mf script-pack run repo/security-pattern-scan scan [path...] --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'script-pack', 'run', 'repo/security-pattern-scan', 'scan', 'AGENTS.md', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'related-files-report',
 		schemaFile: 'related-files-report.schema.json',
 		producer: 'mf script-pack run repo/related-files map <path...> --json',

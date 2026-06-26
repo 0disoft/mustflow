@@ -138,6 +138,7 @@ export function getScriptPackHelp(lang: CliLang = 'en'): string {
 				'mf script-pack run repo/config-chain inspect src/cli/index.ts --json',
 				'mf script-pack run repo/env-contract scan --json',
 				'mf script-pack run repo/secret-risk-scan scan src README.md --json',
+				'mf script-pack run repo/security-pattern-scan scan src .github/workflows --json',
 				'mf script-pack run repo/generated-boundary check src/cli/index.ts --json',
 				'mf script-pack run repo/merge-conflict-scan check --json',
 				'mf script-pack run repo/git-ignore-audit audit .env.local dist/app.js --json',

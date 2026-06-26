@@ -36,6 +36,11 @@ function runSecretRiskScanJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runSecurityPatternScanJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/security-pattern-scan', 'scan', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeOutlineJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/outline', 'scan', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -360,6 +365,7 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		const configChain = repoPack?.scripts.find((script) => script.ref === 'repo/config-chain');
 		const envContract = repoPack?.scripts.find((script) => script.ref === 'repo/env-contract');
 		const secretRiskScan = repoPack?.scripts.find((script) => script.ref === 'repo/secret-risk-scan');
+		const securityPatternScan = repoPack?.scripts.find((script) => script.ref === 'repo/security-pattern-scan');
 		const generatedBoundary = repoPack?.scripts.find((script) => script.ref === 'repo/generated-boundary');
 		const mergeConflictScan = repoPack?.scripts.find((script) => script.ref === 'repo/merge-conflict-scan');
 		const gitIgnoreAudit = repoPack?.scripts.find((script) => script.ref === 'repo/git-ignore-audit');
@@ -409,6 +415,20 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(secretRiskScan.risk_level, 'medium');
 		assert.equal(secretRiskScan.cost, 'low');
 		assert.equal(secretRiskScan.report_schema_file, 'secret-risk-scan-report.schema.json');
+
+		assert.ok(securityPatternScan, 'repo/security-pattern-scan should be listed');
+		assert.equal(securityPatternScan.read_only, true);
+		assert.equal(securityPatternScan.mutates, false);
+		assert.equal(securityPatternScan.network, false);
+		assert.deepEqual(securityPatternScan.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(securityPatternScan.use_when.some((hint) => hint.includes('security code patterns')));
+		assert.ok(securityPatternScan.inputs.includes('max_findings'));
+		assert.ok(securityPatternScan.outputs.includes('security_pattern_findings'));
+		assert.ok(securityPatternScan.outputs.includes('review_focus'));
+		assert.ok(securityPatternScan.related_skills.includes('security-flow-review'));
+		assert.equal(securityPatternScan.risk_level, 'medium');
+		assert.equal(securityPatternScan.cost, 'low');
+		assert.equal(securityPatternScan.report_schema_file, 'security-pattern-scan-report.schema.json');
 
 		assert.ok(generatedBoundary, 'repo/generated-boundary should be listed');
 		assert.equal(generatedBoundary.read_only, true);
@@ -3272,6 +3292,65 @@ test('secret-risk-scan reports plausible secrets without printing secret values'
 	}
 });
 
+test('security-pattern-scan reports security review leads without printing matched source lines', () => {
+	const projectPath = createTempProject();
+	const sensitiveMarker = 'SECRET_VALUE_SHOULD_NOT_APPEAR';
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, 'src', 'server.ts'),
+			[
+				'import { spawn } from "node:child_process";',
+				'',
+				'export function createUser(req, res, User) {',
+				'  return User.update(req.body);',
+				'}',
+				'',
+				'export function proxy(req) {',
+				'  return fetch(req.query.url);',
+				'}',
+				'',
+				'export function runInstall() {',
+				'  return spawn("npm install", { shell: true });',
+				'}',
+				'',
+				'export function setSession(res, sessionId) {',
+				'  return res.cookie("session", sessionId);',
+				'}',
+				'',
+				`export const localOnly = "${sensitiveMarker}";`,
+				'',
+			].join('\n'),
+		);
+
+		const { result, report } = runSecurityPatternScanJson(projectPath, ['src/server.ts']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.pack_id, 'repo');
+		assert.equal(report.script_id, 'security-pattern-scan');
+		assert.equal(report.script_ref, 'repo/security-pattern-scan');
+		assert.equal(report.action, 'scan');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+		assert.equal(report.policy.evidence_mode, 'metadata_only');
+		assert.doesNotMatch(result.stdout, new RegExp(sensitiveMarker, 'u'));
+
+		const detectors = new Set(report.findings.map((finding) => finding.detector));
+		assert.ok(detectors.has('mass_assignment'));
+		assert.ok(detectors.has('server_fetch_user_url'));
+		assert.ok(detectors.has('shell_true'));
+		assert.ok(detectors.has('insecure_cookie_options'));
+		assert.ok(report.findings.some((finding) => /^sha256:[a-f0-9]{16}$/u.test(finding.fingerprint ?? '')));
+		assert.ok(report.findings.every((finding) => !JSON.stringify(finding).includes(sensitiveMarker)));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('reference-drift validates documented commands, script refs, schemas, and repo paths', () => {
 	const projectPath = createTempProject();
 
@@ -3877,6 +3956,37 @@ test('script-pack suggest recommends secret-risk-scan for security and privacy w
 	}
 });
 
+test('script-pack suggest recommends security-pattern-scan for security source review', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'server.ts'), 'export function proxy(req) { return fetch(req.query.url); }\n');
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'src/server.ts',
+			'--skill',
+			'security-flow-review',
+			'--phase',
+			'review',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const securityPatternScan = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/security-pattern-scan');
+		assert.ok(securityPatternScan, 'repo/security-pattern-scan should be suggested for security source review');
+		assert.ok(securityPatternScan.matched_phases.includes('review'));
+		assert.ok(securityPatternScan.matched_skills.includes('security-flow-review'));
+		assert.ok(securityPatternScan.matched_surfaces.includes('source'));
+		assert.equal(securityPatternScan.run_hint, 'mf script-pack run repo/security-pattern-scan scan src/server.ts --json');
+		assert.equal(securityPatternScan.report_schema_file, 'security-pattern-scan-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest recommends route outline for Hono Elysia Axum and NestJS source work', () => {
 	const projectPath = createTempProject();
 
@@ -4191,6 +4301,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run repo\/config-chain inspect src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/generated-boundary check src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/merge-conflict-scan check --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/security-pattern-scan scan src \.github\/workflows --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/git-ignore-audit audit \.env\.local dist\/app\.js --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/manifest-lock-drift check AGENTS\.md --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/version-source inspect --json/);

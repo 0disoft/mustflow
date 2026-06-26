@@ -466,6 +466,15 @@ function createRunHint(
 		return createConcretePathHint('mf script-pack run repo/secret-risk-scan scan', secretRiskPaths, script.usage);
 	}
 
+	if (script.ref === 'repo/security-pattern-scan') {
+		const securityPatternPaths = analyzedPaths
+			.filter((entry) =>
+				entry.surfaces.some((surface) => surface === 'config' || surface === 'source' || surface === 'package' || surface === 'test'),
+			)
+			.map((entry) => entry.path);
+		return createConcretePathHint('mf script-pack run repo/security-pattern-scan scan', securityPatternPaths, script.usage);
+	}
+
 	if (script.ref === 'repo/related-files') {
 		const relatedPaths = analyzedPaths
 			.filter((entry) => entry.surfaces.some((surface) => surface === 'source' || surface === 'test'))
@@ -584,6 +593,24 @@ export function createScriptPackSuggestionReport(
 			) {
 				score += 2;
 				reasons.push('Prioritizes deploy-surface inspection for push, tag, release, docs, and package publication follow-up.');
+			}
+
+			if (
+				script.ref === 'repo/security-pattern-scan' &&
+				(hasSourcePath ||
+					requestedSurfaces.has('config') ||
+					options.skills.some((skill) =>
+						[
+							'api-access-control-review',
+							'file-upload-security-review',
+							'security-flow-review',
+							'security-privacy-review',
+							'security-regression-tests',
+						].includes(skill),
+					))
+			) {
+				score += 2;
+				reasons.push('Prioritizes security-pattern scans for source, config, and security-review surfaces.');
 			}
 
 			if (score === 0) {

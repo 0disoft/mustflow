@@ -124,6 +124,10 @@ Current schemas:
   `mf script-pack run repo/secret-risk-scan scan [path...] --json`, containing plausible
   hardcoded-secret findings with detector names, paths, line numbers, and redacted fingerprints
   without printing secret values
+- `security-pattern-scan-report.schema.json`: output of
+  `mf script-pack run repo/security-pattern-scan scan [path...] --json`, containing high-signal
+  security code-pattern leads with detector names, categories, paths, line numbers, review focus,
+  and redacted fingerprints without printing matched source lines or secret values
 - `text-budget-report.schema.json`: output of
   `mf script-pack run core/text-budget check <path...> --json`, containing
   exact text-budget metrics, input content hashes, policy metadata, findings, and JSON Pointer field

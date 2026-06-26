@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/security-pattern-scan-report.schema.json",
+  "title": "mustflow security-pattern-scan report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "policy",
+    "input_hash",
+    "targets",
+    "summary",
+    "truncated",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "security-pattern-scan" },
+    "script_ref": { "const": "repo/security-pattern-scan" },
+    "action": { "const": "scan" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "truncated": { "type": "boolean" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{16}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_file_bytes",
+        "max_files",
+        "max_findings",
+        "extensions",
+        "ignored_directories",
+        "evidence_mode"
+      ],
+      "properties": {
+        "max_file_bytes": { "type": "integer", "minimum": 1 },
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_findings": { "type": "integer", "minimum": 1 },
+        "extensions": { "$ref": "#/$defs/stringArray" },
+        "ignored_directories": { "$ref": "#/$defs/stringArray" },
+        "evidence_mode": { "const": "metadata_only" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path", "exists", "kind"],
+      "properties": {
+        "input": { "type": "string" },
+        "path": { "type": "string" },
+        "exists": { "type": ["boolean", "null"] },
+        "kind": { "enum": ["file", "directory", "missing", "other", "unknown"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_count",
+        "file_count",
+        "finding_count",
+        "high_or_critical_count",
+        "category_count"
+      ],
+      "properties": {
+        "target_count": { "type": "integer", "minimum": 0 },
+        "file_count": { "type": "integer", "minimum": 0 },
+        "finding_count": { "type": "integer", "minimum": 0 },
+        "high_or_critical_count": { "type": "integer", "minimum": 0 },
+        "category_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "detector": {
+      "enum": [
+        "client_controlled_authority",
+        "cors_origin_reflection_with_credentials",
+        "dynamic_regex",
+        "eval_execution",
+        "fs_call_non_literal_path",
+        "insecure_cookie_options",
+        "local_storage_token",
+        "mass_assignment",
+        "native_deserialization",
+        "path_join_user_input",
+        "postmessage_missing_origin_check",
+        "postmessage_wildcard_target",
+        "raw_sensitive_request_logging",
+        "server_fetch_user_url",
+        "shell_true",
+        "sql_template_interpolation",
+        "tls_verification_disabled",
+        "unsafe_yaml_load"
+      ]
+    },
+    "category": {
+      "enum": [
+        "access_control",
+        "browser",
+        "command",
+        "crypto_transport",
+        "filesystem",
+        "injection",
+        "logging",
+        "parser",
+        "token_session"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path"],
+      "properties": {
+        "code": {
+          "enum": [
+            "security_pattern_client_controlled_authority",
+            "security_pattern_cors_origin_reflection_with_credentials",
+            "security_pattern_dynamic_regex",
+            "security_pattern_eval_execution",
+            "security_pattern_file_too_large",
+            "security_pattern_fs_call_non_literal_path",
+            "security_pattern_insecure_cookie_options",
+            "security_pattern_local_storage_token",
+            "security_pattern_mass_assignment",
+            "security_pattern_max_files_exceeded",
+            "security_pattern_max_findings_exceeded",
+            "security_pattern_native_deserialization",
+            "security_pattern_path_join_user_input",
+            "security_pattern_path_outside_root",
+            "security_pattern_postmessage_missing_origin_check",
+            "security_pattern_postmessage_wildcard_target",
+            "security_pattern_raw_sensitive_request_logging",
+            "security_pattern_server_fetch_user_url",
+            "security_pattern_shell_true",
+            "security_pattern_sql_template_interpolation",
+            "security_pattern_tls_verification_disabled",
+            "security_pattern_unreadable_path",
+            "security_pattern_unsafe_yaml_load"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "detector": { "$ref": "#/$defs/detector" },
+        "category": { "$ref": "#/$defs/category" },
+        "review_focus": { "type": "string" },
+        "fingerprint": { "$ref": "#/$defs/fingerprint" },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

@@ -47,7 +47,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.103.11');
+	assert.equal(packageJson.version, '2.103.12');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -536,6 +536,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/config-chain.js'));
 	assert.ok(files.has('dist/core/env-contract.js'));
 	assert.ok(files.has('dist/core/secret-risk-scan.js'));
+	assert.ok(files.has('dist/core/security-pattern-scan.js'));
 	assert.ok(files.has('dist/core/docs-link-integrity.js'));
 	assert.ok(files.has('dist/core/related-files.js'));
 	assert.ok(files.has('dist/core/skill-route-audit.js'));
@@ -569,6 +570,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/script-packs/repo-config-chain.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-env-contract.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-secret-risk-scan.js'));
+	assert.ok(files.has('dist/cli/script-packs/repo-security-pattern-scan.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-generated-boundary.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-skill-route-audit.js'));
 	assert.ok(files.has('dist/cli/script-packs/repo-version-source.js'));
@@ -605,6 +607,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/config-chain-report.schema.json'));
 	assert.ok(files.has('schemas/env-contract-report.schema.json'));
 	assert.ok(files.has('schemas/secret-risk-scan-report.schema.json'));
+	assert.ok(files.has('schemas/security-pattern-scan-report.schema.json'));
 	assert.ok(files.has('schemas/link-integrity-report.schema.json'));
 	assert.ok(files.has('schemas/skill-route-audit-report.schema.json'));
 	assert.ok(files.has('schemas/skill-import-report.schema.json'));
