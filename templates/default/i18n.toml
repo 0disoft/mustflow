@@ -535,7 +535,7 @@ translations = {}
 [documents."skill.file-path-cross-platform-change"]
 source = "locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.frontend-render-stability"]
@@ -697,7 +697,7 @@ translations = {}
 [documents."skill.shell-code-change"]
 source = "locales/en/.mustflow/skills/shell-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.structured-config-change"]

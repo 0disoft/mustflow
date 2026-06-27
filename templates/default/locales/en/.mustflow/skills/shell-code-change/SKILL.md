@@ -2,7 +2,7 @@
 mustflow_doc: skill.shell-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: shell-code-change
@@ -46,6 +46,8 @@ runner shell sees it, or a pipeline treats filenames as line-delimited text.
   or changed.
 - GitHub Actions, CI, or workflow `run` blocks contain shell code, shell options, environment files,
   heredocs, matrix variables, checkout-dependent shell logic, or context interpolation.
+- GitHub Actions `run` blocks validate or consume action inputs that name generated files,
+  reports, coverage directories, package artifacts, or other repository workspace outputs.
 - Code or docs use shell quoting, parameter expansion, command substitution, globbing, word
   splitting, redirection, pipes, traps, `set` options, `test`, `case`, loops, subshells, functions,
   `eval`, `sh -c`, `bash -c`, or sourced files.
@@ -84,6 +86,9 @@ runner shell sees it, or a pipeline treats filenames as line-delimited text.
 - Dynamic input boundaries: user input, paths, URLs, branch names, pull request titles or bodies,
   commit messages, matrix values, environment variables, secrets, file contents, regex patterns, and
   replacement strings.
+- GitHub Actions path-input boundaries: `with` inputs, environment variables derived from inputs,
+  `GITHUB_OUTPUT`, artifact paths, report directories, generated output paths, and whether each path
+  must stay repository-relative.
 - File and stream boundary: whether filenames are path arguments, globs, line-delimited streams,
   NUL-delimited streams, stdin, temp files, generated files, or destructive targets.
 - Failure and cleanup expectations: required commands, exit-status meaning, pipeline status,
@@ -196,18 +201,23 @@ runner shell sees it, or a pipeline treats filenames as line-delimited text.
 27. For GitHub Actions environment and output files, account for step lifetime, multiline delimiter
     collisions, reserved variables, and echo portability. Do not assume values written for later
     steps are available in the current shell.
-28. For GitHub Actions runner behavior, check shell defaults, job containers, checkout depth, fork
+28. For GitHub Actions `run` blocks that accept paths for generated outputs, reports, coverage, or
+    artifacts, do not stop at "non-empty" validation. If the path is meant to stay in the caller
+    repository, validate it as repository-relative: reject POSIX absolute paths, Windows drive and
+    drive-relative paths, UNC roots, namespace prefixes, and `..` segments after treating `/` and
+    `\` as separators. Use `file-path-cross-platform-change` for the path contract and tests.
+29. For GitHub Actions runner behavior, check shell defaults, job containers, checkout depth, fork
     and Dependabot permissions, secrets availability, runner image drift, and platform-specific
     userland before changing shell code.
-29. Keep secrets out of trace output, logs, process arguments, environment dumps, temp files, and
+30. Keep secrets out of trace output, logs, process arguments, environment dumps, temp files, and
     diagnostic artifacts. Disable tracing around sensitive commands and redact only as a backup.
-30. Treat `eval`, dynamic `source`, dynamic `.` loading, `sh -c`, remote shell strings, and workflow
+31. Treat `eval`, dynamic `source`, dynamic `.` loading, `sh -c`, remote shell strings, and workflow
     expression injection as command-injection risks unless the command text is fully trusted and
     bounded.
-31. If the shell code becomes complex enough to need structured data parsing, concurrency,
+32. If the shell code becomes complex enough to need structured data parsing, concurrency,
     rollback, JSON mutation, long-lived state, or rich error recovery, consider moving the logic to
     a project-supported runtime and leaving shell as a thin launcher.
-32. Verify with behavior evidence, not only spelling. Useful evidence includes shell lint, format,
+33. Verify with behavior evidence, not only spelling. Useful evidence includes shell lint, format,
     cross-shell execution, Bats or similar tests, CI dry-run or provider evidence, path-shape
     fixtures, line-ending checks, docs validation, package checks, and configured release checks.
 
@@ -218,6 +228,8 @@ runner shell sees it, or a pipeline treats filenames as line-delimited text.
 - Parser and expansion boundaries are separated from downstream regex, sed, awk, find, xargs, and
   GitHub Actions expression boundaries.
 - Dynamic values remain data-bound and are not reinterpreted as shell code.
+- Repository output, report, coverage, and artifact path inputs are either explicitly external or
+  validated as repository-relative path contracts.
 - Filename handling survives spaces, newlines, leading dashes, glob characters, and empty matches or
   the unsupported cases are stated.
 - Exit-status, pipeline, cleanup, temp-file, destructive-action, logging, and secret-handling
@@ -240,8 +252,8 @@ Use configured oneshot command intents when available:
 - `line_endings_check`
 
 Report missing ShellCheck, shfmt, Bats, cross-shell, POSIX sh, Bash-version, GNU/BSD/BusyBox,
-GitHub Actions, fork-PR, checkout-depth, secret-redaction, path-shape, destructive-dry-run, or
-line-ending verification when those surfaces change.
+GitHub Actions, fork-PR, checkout-depth, secret-redaction, path-shape, action output-path,
+destructive-dry-run, or line-ending verification when those surfaces change.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

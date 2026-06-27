@@ -185,6 +185,14 @@ first_seen_at = "2026-06-26T06:13:42.715Z"
 last_touched_at = "2026-06-26T06:13:42.715Z"
 
 [[documents]]
+path = ".mustflow/skills/file-path-cross-platform-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-27T04:55:24.193Z"
+last_touched_at = "2026-06-27T04:55:24.193Z"
+
+[[documents]]
 path = ".mustflow/skills/github-contribution-quality-gate/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -384,7 +392,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T05:19:19.850Z"
-last_touched_at = "2026-06-26T06:13:42.764Z"
+last_touched_at = "2026-06-27T04:55:24.210Z"
 
 [[documents]]
 path = ".mustflow/skills/structured-config-change/SKILL.md"
@@ -779,6 +787,14 @@ first_seen_at = "2026-06-26T06:13:42.823Z"
 last_touched_at = "2026-06-26T06:13:42.823Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-27T04:55:24.220Z"
+last_touched_at = "2026-06-27T04:55:24.220Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/github-contribution-quality-gate/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -976,7 +992,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T05:19:19.933Z"
-last_touched_at = "2026-06-26T06:13:42.861Z"
+last_touched_at = "2026-06-27T04:55:24.229Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/structured-config-change/SKILL.md"

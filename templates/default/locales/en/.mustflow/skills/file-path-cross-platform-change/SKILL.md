@@ -2,11 +2,11 @@
 mustflow_doc: skill.file-path-cross-platform-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: file-path-cross-platform-change
-description: Apply this skill when file path handling, cross-platform path behavior, path helpers, safe filesystem wrappers, clone or checkout destinations, scaffold roots, temp or cache paths, atomic writes, locks, archive extraction, uploads, downloads, scanners, CLI/API/schema path contracts, snapshots, generated outputs, or package artifact paths are created, changed, reviewed, or reported.
+description: Apply this skill when file path handling, cross-platform path behavior, path helpers, safe filesystem wrappers, clone or checkout destinations, scaffold roots, temp or cache paths, atomic writes, locks, archive extraction, uploads, downloads, scanners, CLI/API/schema path contracts, snapshots, generated outputs, GitHub Actions output or report paths, or package artifact paths are created, changed, reviewed, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -35,7 +35,7 @@ Treat file paths as security boundaries and operating-system contracts, not as o
 ## Use When
 
 - Code accepts, stores, serializes, validates, normalizes, joins, resolves, compares, scans, extracts, uploads, downloads, writes, deletes, locks, packages, or reports paths.
-- Path behavior appears in CLI arguments, API request or response schemas, config files, snapshots, fixtures, generated output, package artifacts, logs, manifests, caches, temp directories, upload or download flows, archive extraction, repository clone or checkout destinations, project scaffolding, installer output, or scanner output.
+- Path behavior appears in CLI arguments, API request or response schemas, config files, snapshots, fixtures, generated output, package artifacts, GitHub Actions `output`, `report-output`, artifact, or report directory inputs, logs, manifests, caches, temp directories, upload or download flows, archive extraction, repository clone or checkout destinations, project scaffolding, installer output, or scanner output.
 - Code clones or checks out repositories, downloads and extracts templates, scaffolds projects, installs dependency trees, or cleans up partially materialized project folders after a filesystem or toolchain failure.
 - A change claims path traversal safety, base-directory containment, symlink safety, junction or reparse-point safety, archive extraction safety, atomic write behavior, durable write behavior, lock ownership, cleanup safety, deterministic scanning, or Windows/macOS/Linux compatibility.
 - A test or docs example includes paths that must behave consistently across Windows, macOS, Linux, CI, containers, archives, package artifacts, or user machines.
@@ -51,7 +51,7 @@ Treat file paths as security boundaries and operating-system contracts, not as o
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
-- Every path input and output, including user input, CLI args, API fields, config fields, archive entries, generated files, temp files, cache paths, lock files, uploaded filenames, download filenames, scanner roots, package artifact paths, and logs.
+- Every path input and output, including user input, CLI args, API fields, config fields, CI action inputs, workflow artifact outputs, archive entries, generated files, temp files, cache paths, lock files, uploaded filenames, download filenames, scanner roots, package artifact paths, and logs.
 - The path owner and trust class: user-controlled, repository-owned, generated, temp, cache, archive-contained, package artifact, external file, or unknown.
 - The base directory or allowed root, expected relative/absolute policy, symlink and reparse-point policy, case-sensitivity policy, invalid-name policy, atomic-write policy, lock policy, archive extraction policy, scanner bounds, cleanup policy, and platform expectations.
 - For clone, checkout, scaffold, extract, and install flows: requested source, destination root, final project directory, deepest expected entry when known, path-length budget, component-length budget, byte budget, preflight coverage, partial-output owner, staging directory owner, promotion policy, cleanup policy, and failure classification contract.
@@ -81,6 +81,15 @@ Treat file paths as security boundaries and operating-system contracts, not as o
 2. Classify each path by trust and owner: trusted repository path, user input, generated state, template path, package artifact, temporary file, cache file, archive-contained path, external path, uploaded name, downloaded name, scanner root, or unknown.
 3. Define the allowed root and representation. Decide whether the contract accepts relative paths, absolute paths, URLs, file URLs, archive entry names, package-relative paths, repository-relative paths, or display-only paths.
 4. Reject dangerous path text before filesystem access: null bytes, empty names where not allowed, absolute paths where relative paths are required, dot segments where not allowed, Windows device names, drive-relative paths, UNC roots, namespace prefixes, alternate data streams, trailing dots or spaces, reserved characters, and mixed separator bypasses.
+   - For repository-owned output path inputs such as GitHub Action `output`, `report-output`,
+     artifact, generated report, or coverage directory paths, default to repository-relative paths
+     unless the public contract explicitly supports external destinations.
+   - When a repository-relative output path is required, reject POSIX absolute paths, Windows drive
+     paths, Windows drive-relative paths such as `C:tmp`, UNC roots, namespace prefixes, and any
+     `..` segment after treating both `/` and `\` as separators.
+   - Validate parent traversal by path segment, not by a raw substring search. `a/../b` and
+     `a\..\b` must fail, while ordinary names containing two dots are handled by the declared
+     filename policy.
 5. Treat Windows drive-relative paths such as `C:tmp.txt` as relative to a drive current directory, not as `C:\tmp.txt`.
 6. Treat Windows reserved names as reserved even with extensions. Names such as `CON`, `PRN`, `AUX`, `NUL`, `COM1`, and `LPT1` must not become ordinary user filenames.
 7. For clone, checkout, scaffold, extract, and install flows, use an explicit `preflight -> dangerous operation -> classifier -> safe cleanup` pipeline. Preflight must estimate the effective path budget before materializing files, including the destination root, project directory, generated path segments, archive or repository entry names when known, operating-system path limits, component-name limits, byte limits, and safety headroom.
@@ -107,14 +116,14 @@ Treat file paths as security boundaries and operating-system contracts, not as o
 28. For scanners, set max depth, max file count, max file size, binary-file handling, ignored directories, hidden-file policy, permission-error behavior, symlink traversal policy, loop detection, deterministic ordering, and output path format.
 29. For temp and cache paths, keep them under an owned root, avoid global temp rename into a target location, include cleanup bounds, and avoid leaking user data through predictable names.
 30. For CLI, API, schema, snapshot, docs, and package artifact path changes, update every contract surface together. Path spelling, separators, slash policy, absolute/relative policy, escaping, sorting, and error messages are part of the contract.
-31. Add focused tests for the riskiest path shapes: traversal, absolute input, drive-relative input, UNC-like input, reserved names, trailing dots or spaces, case collision, Unicode collision, long path, overlong filename, byte-limit overflow with multibyte names, symlink escape, archive traversal, duplicate archive entries, scanner loop, large file cap, clone checkout failure classification, and cleanup boundary.
+31. Add focused tests for the riskiest path shapes: traversal, absolute input, drive-relative input, UNC-like input, reserved names, trailing dots or spaces, case collision, Unicode collision, long path, overlong filename, byte-limit overflow with multibyte names, symlink escape, archive traversal, duplicate archive entries, scanner loop, large file cap, clone checkout failure classification, and cleanup boundary. For workflow or action output paths, include representative `../x`, `a/../x`, `/tmp/x`, `C:\tmp\x`, `C:tmp\x`, and `\\server\share\x` cases.
 32. Select verification from the command contract based on risk. Public CLI/API/schema/package artifact changes need broader checks than internal helper-only changes.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Path trust classes, accepted path representation, invalid-name policy, case policy, root boundary, symlink and reparse-point policy, archive policy, upload/download policy, scanner policy, atomic-write policy, lock policy, temp/cache policy, and cleanup policy are explicit.
-- Path contracts are synchronized across helpers, schemas, CLI/API docs, snapshots, fixtures, generated outputs, package artifacts, tests, and reports.
+- Path contracts are synchronized across helpers, schemas, CLI/API docs, snapshots, fixtures, generated outputs, workflow artifact paths, package artifacts, tests, and reports.
 - Clone, checkout, scaffold, extract, and install flows have explicit preflight, staging, promotion, path-length, collision, platform-failure classification, diagnostic-preservation, and cleanup policies.
 - Any race-safety, atomicity, durability, lock, or cross-platform claim is scoped to what the current runtime and helpers can actually guarantee.
 - Platform behavior that was not tested is reported as remaining risk.

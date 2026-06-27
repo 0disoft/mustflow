@@ -4127,6 +4127,8 @@ test('shell code change skill keeps dialect, expansion, CI, and filename boundar
 	assert.match(localSkill, /Keep secrets out of trace output/u);
 	assert.match(localSkill, /`eval`, dynamic `source`/u);
 	assert.match(localSkill, /line-ending verification/u);
+	assert.match(localSkill, /do not stop at "non-empty" validation/u);
+	assert.match(localSkill, /action output-path/u);
 	assert.match(skillIndex, /Use `shell-code-change` as a primary route/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/shell-code-change\/SKILL\.md/u);
 	assert.match(
@@ -4139,7 +4141,7 @@ test('shell code change skill keeps dialect, expansion, CI, and filename boundar
 	assert.match(manifest, /"\.mustflow\/skills\/shell-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"shell-code-change"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
-	assert.match(i18n, /\[documents\."skill\.shell-code-change"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.shell-code-change"\][\s\S]*?revision = 2/u);
 });
 
 test('structured config change skill keeps YAML, TOML, workflow, and schema contracts explicit', () => {
@@ -5455,6 +5457,9 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	assert.match(filePathSkill, /fetch repository metadata into an app-owned staging area/u);
 	assert.match(filePathSkill, /Do not clone, extract, scaffold, or install directly/u);
 	assert.match(filePathSkill, /user-selected final folder/u);
+	assert.match(filePathSkill, /GitHub Action `output`, `report-output`/u);
+	assert.match(filePathSkill, /Windows drive-relative paths such as `C:tmp`/u);
+	assert.match(filePathSkill, /Validate parent traversal by path segment/u);
 	assert.match(lineEndingSkill, /Docker or shell scripts fail with CRLF interpreter errors/u);
 	assert.match(lineEndingSkill, /Do not create `\.gitattributes`/u);
 	assert.match(lineEndingSkill, /repository-wide renormalization/u);
