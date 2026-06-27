@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runCli as runCliInProcess } from '../../dist/cli/index.js';
 import { COMMAND_DEFINITIONS } from '../../dist/cli/lib/command-registry.js';
+import { getPublicJsonSchemaContracts } from '../../dist/core/public-json-contracts.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -123,6 +124,47 @@ test('command registry ids are unique and dispatchable', async () => {
 		const result = await runCli([command.id, '--help']);
 		assert.equal(result.status, 0, `${command.id} should route through the top-level dispatcher`);
 		assert.match(result.stdout, new RegExp(`mf ${command.id}`));
+	}
+});
+
+test('command registry declares output and schema contracts', () => {
+	const allowedOutputModes = new Set(['text', 'json', 'jsonl', 'file']);
+	const publicSchemaIds = new Set(getPublicJsonSchemaContracts().map((contract) => contract.id));
+
+	for (const command of COMMAND_DEFINITIONS) {
+		assert.ok(command.contract, `${command.id} should declare command contract metadata`);
+		assert.ok(command.contract.outputModes.length > 0, `${command.id} should declare at least one output mode`);
+		assert.deepEqual(
+			command.contract.outputModes,
+			[...new Set(command.contract.outputModes)],
+			`${command.id} should not duplicate output modes`,
+		);
+		assert.ok(command.contract.exitCodes.length > 0, `${command.id} should declare possible exit codes`);
+		assert.deepEqual(
+			command.contract.exitCodes,
+			[...new Set(command.contract.exitCodes)],
+			`${command.id} should not duplicate exit codes`,
+		);
+		assert.ok(command.contract.exitCodes.includes(0), `${command.id} should declare success exit code 0`);
+
+		for (const outputMode of command.contract.outputModes) {
+			assert.equal(allowedOutputModes.has(outputMode), true, `${command.id} declares unsupported output mode ${outputMode}`);
+		}
+
+		for (const exitCode of command.contract.exitCodes) {
+			assert.equal(Number.isInteger(exitCode), true, `${command.id} exit code should be an integer`);
+			assert.ok(exitCode >= 0 && exitCode <= 255, `${command.id} exit code should fit process exit-code range`);
+		}
+
+		for (const schemaId of command.contract.publicJsonSchemaIds) {
+			assert.equal(publicSchemaIds.has(schemaId), true, `${command.id} references unknown public JSON schema ${schemaId}`);
+			assert.ok(
+				command.contract.outputModes.includes('json') ||
+					command.contract.outputModes.includes('jsonl') ||
+					command.contract.outputModes.includes('file'),
+				`${command.id} references public JSON schemas but does not declare a JSON-capable output mode`,
+			);
+		}
 	}
 });
 
