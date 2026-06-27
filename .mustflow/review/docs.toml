@@ -304,7 +304,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:34:37.784Z"
-last_touched_at = "2026-06-25T14:29:46.190Z"
+last_touched_at = "2026-06-27T02:55:10.227Z"
 
 [[documents]]
 path = ".mustflow/skills/prompt-contract-quality-review/SKILL.md"
@@ -896,7 +896,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:34:37.914Z"
-last_touched_at = "2026-06-25T14:29:46.301Z"
+last_touched_at = "2026-06-27T02:55:10.246Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/prompt-contract-quality-review/SKILL.md"
