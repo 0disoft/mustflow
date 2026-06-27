@@ -2,7 +2,7 @@
 mustflow_doc: skill.module-boundary-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: module-boundary-review
@@ -76,6 +76,9 @@ who must change, who owns the data, who owns the failure, and who should not nee
   history showing files that usually move together.
 - Module graph evidence: imports, exports, public APIs, call sites, dependency direction, cycles,
   shared helpers, DTO flow, and configuration reads.
+- Configured guardrail evidence when available: `code/module-boundary` results for
+  `.mustflow/config/module-boundaries.toml` layer deny rules, public entrypoints, feature imports,
+  shared budgets, and import cycles.
 - Ownership evidence: source of truth for data, owner of policy decisions, owner of failure handling,
   owner of cache invalidation, owner of time and config interpretation, and owner of authorization.
 - Test evidence: number and kind of mocks, pure-domain tests, integration tests, worker or batch
@@ -131,6 +134,9 @@ who must change, who owns the data, who owns the failure, and who should not nee
    - If A imports B and B imports A, identify the missing concept, ownership decision, event, port, or
      data-flow direction.
    - Do not accept "they need each other" without naming the invariant that forces the cycle.
+   - When the repository declares `.mustflow/config/module-boundaries.toml`, use the read-only
+     `code/module-boundary` script-pack report as executable evidence before relying on prose-only
+     boundary claims.
 5. Trace DTO infection.
    - API response DTOs, request DTOs, ORM rows, provider payloads, and UI view models should not
      become domain, repository, batch, worker, or event models by default.
@@ -249,6 +255,11 @@ Use configured oneshot command intents when available:
 Prefer the narrowest configured test, build, docs, release, or mustflow intent that covers the changed
 module boundary. Use release or docs checks when templates, public docs, package metadata, public APIs,
 schemas, generated clients, or install surfaces change.
+
+When the command contract and script-pack metadata expose it, `code/module-boundary` may provide
+read-only evidence for configured import-boundary rules. A missing module-boundary config is
+non-blocking evidence that no executable boundary rules were enforced, not proof that the module
+design is clean.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

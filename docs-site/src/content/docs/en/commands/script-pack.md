@@ -99,6 +99,7 @@ Directory scans skip common generated, cache, vendor, and build directories such
 ```sh
 npx mf script-pack run code/dependency-graph scan src/cli/index.ts --json
 npx mf script-pack run code/dependency-graph scan src/core --max-depth 3 --max-nodes 120 --json
+npx mf script-pack run code/module-boundary check src --json
 ```
 
 `code/dependency-graph` is read-only. It traces relative TypeScript and JavaScript `import`,
@@ -108,6 +109,11 @@ hints, policy limits, findings, and issues.
 
 Use it before source edits when import impact matters. It intentionally does not resolve package
 imports, tsconfig aliases, bundler aliases, or runtime side effects.
+
+`code/module-boundary` is read-only. It uses the same relative import graph plus an optional
+`.mustflow/config/module-boundaries.toml` file to check layer deny rules, public entrypoints,
+feature-to-feature imports, shared/common budgets, and import cycles. When the config is missing,
+the report stays non-blocking and records that no boundary rules were enforced.
 
 ## Analyze Change Impact
 
@@ -272,6 +278,8 @@ npx mf script-pack run repo/related-files map src/cli/index.ts --json
 `code/outline` JSON reports are validated by `schemas/code-outline-report.schema.json`.
 `code/dependency-graph` JSON reports are validated by
 `schemas/dependency-graph-report.schema.json`.
+`code/module-boundary` JSON reports are validated by
+`schemas/module-boundary-report.schema.json`.
 `code/change-impact` JSON reports are validated by `schemas/change-impact-report.schema.json`.
 `code/symbol-read` JSON reports are validated by
 `schemas/code-symbol-read-report.schema.json`.

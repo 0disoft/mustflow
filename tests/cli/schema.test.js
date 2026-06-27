@@ -942,6 +942,29 @@ test('import-cycle json output matches the published schema', () => {
 	}
 });
 
+test('module-boundary json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'entry.ts'), 'export const entry = 1;\n');
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'code/module-boundary',
+			'check',
+			'src/entry.ts',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'module-boundary-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('change-impact json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

@@ -85,6 +85,10 @@ Current schemas:
   `mf script-pack run code/import-cycle check <path...> --json`, containing bounded relative
   TypeScript and JavaScript import cycles with exact cycle paths, import line evidence, policy
   limits, and stable cycle or input-limit finding codes
+- `module-boundary-report.schema.json`: output of
+  `mf script-pack run code/module-boundary check <path...> --json`, containing configured module
+  boundary rule findings for layer deny rules, public entrypoints, feature-to-feature imports,
+  shared/common budgets, and import cycles
 - `change-impact-report.schema.json`: output of
   `mf script-pack run code/change-impact analyze [path...] --json`, containing git-diff changed
   files, surface classifications, bounded impact candidates, script-pack hints with related

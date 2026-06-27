@@ -561,6 +561,7 @@ test('module boundary review traces change spread, ownership, and leakage', () =
 	assert.match(localSkill, /Co-change evidence/u);
 	assert.match(localSkill, /import direction/u);
 	assert.match(localSkill, /cycles/u);
+	assert.match(localSkill, /`code\/module-boundary`/u);
 	assert.match(localSkill, /DTO infection/u);
 	assert.match(localSkill, /`common`, `shared`, `utils`, and `helpers`/u);
 	assert.match(localSkill, /many mocks/u);
@@ -598,7 +599,7 @@ test('module boundary review traces change spread, ownership, and leakage', () =
 	assert.match(manifest, /"\.mustflow\/skills\/module-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"module-boundary-review"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
-	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 2/u);
 });
 
 test('change blast radius review predicts maintainability spread and deletion cost', () => {

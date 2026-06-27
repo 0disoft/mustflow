@@ -1442,6 +1442,100 @@
       }
     },
     {
+      "id": "module-boundary-report",
+      "schema_file": "module-boundary-report.schema.json",
+      "producer": "mf script-pack run code/module-boundary check <path...> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "code",
+        "script_id": "module-boundary",
+        "script_ref": "code/module-boundary",
+        "action": "check",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "policy": {
+          "max_file_bytes": 262144,
+          "max_files": 1000,
+          "max_depth": 20,
+          "max_nodes": 300,
+          "max_edges": 800,
+          "extensions": [
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".cts",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs"
+          ],
+          "ignored_directories": [
+            ".git",
+            ".mustflow/cache",
+            ".mustflow/state",
+            "node_modules",
+            "dist",
+            "build",
+            "coverage",
+            ".next",
+            ".turbo"
+          ],
+          "config_path": ".mustflow/config/module-boundaries.toml",
+          "max_cycles": 50,
+          "max_shared_files": 1000
+        },
+        "input_hash": "sha256:1414141414141414141414141414141414141414141414141414141414141414",
+        "config": {
+          "path": ".mustflow/config/module-boundaries.toml",
+          "status": "missing",
+          "layer_rule_count": 0,
+          "public_entrypoint_rule_count": 0,
+          "feature_group_rule_count": 0,
+          "shared_budget_rule_count": 0
+        },
+        "targets": [
+          {
+            "input": "src/entry.ts",
+            "path": "src/entry.ts",
+            "exists": true,
+            "kind": "file",
+            "language": "typescript"
+          }
+        ],
+        "graph": {
+          "script_ref": "code/dependency-graph",
+          "status": "passed",
+          "node_count": 1,
+          "edge_count": 0,
+          "cycle_hint_count": 0,
+          "truncated": false
+        },
+        "rules": [
+          {
+            "rule_id": "import-cycle",
+            "kind": "import_cycle",
+            "finding_count": 0
+          }
+        ],
+        "cycles": [],
+        "shared_metrics": [],
+        "truncated": false,
+        "findings": [
+          {
+            "code": "module_boundary_config_missing",
+            "severity": "low",
+            "path": ".mustflow/config/module-boundaries.toml",
+            "message": "Module boundary config not found at .mustflow/config/module-boundaries.toml; no boundary rules were enforced."
+          }
+        ],
+        "issues": [
+          "Module boundary config not found at .mustflow/config/module-boundaries.toml; no boundary rules were enforced."
+        ]
+      }
+    },
+    {
       "id": "diff-risk",
       "schema_file": "diff-risk.schema.json",
       "producer": "mf api diff-risk --changed --json",

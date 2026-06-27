@@ -325,6 +325,23 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'module-boundary-report',
+		schemaFile: 'module-boundary-report.schema.json',
+		producer: 'mf script-pack run code/module-boundary check <path...> --json',
+		packaged: true,
+		documented: true,
+		installedCommand: [
+			'mf',
+			'script-pack',
+			'run',
+			'code/module-boundary',
+			'check',
+			'node_modules/mustflow/dist/cli/index.js',
+			'--json',
+		],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'change-impact-report',
 		schemaFile: 'change-impact-report.schema.json',
 		producer: 'mf script-pack run code/change-impact analyze [path...] --json',

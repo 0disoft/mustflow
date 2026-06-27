@@ -178,6 +178,7 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 			'code-outline-report',
 			'dependency-graph-report',
 			'import-cycle-report',
+			'module-boundary-report',
 			'change-impact-report',
 			'code-symbol-read-report',
 			'route-outline-report',

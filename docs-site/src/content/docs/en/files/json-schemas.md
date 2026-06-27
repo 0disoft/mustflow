@@ -65,5 +65,6 @@ building automation around `--json` output.
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 - `test-selection.schema.json`: parsed optional `.mustflow/config/test-selection.toml`
+- `module-boundary-report.schema.json`: `mf script-pack run code/module-boundary check <path...> --json`
 
 Human-readable command output is not covered by these schemas.

@@ -482,7 +482,9 @@ test('related profile does not fall back to the fast baseline without changed fi
 
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
 	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-dependency-graph.ts'), true);
+	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-module-boundary.ts'), true);
 	assert.equal(scriptPackCoreImplementationPaths.includes('src/core/dependency-graph.ts'), true);
+	assert.equal(scriptPackCoreImplementationPaths.includes('src/core/module-boundary.ts'), true);
 
 	for (const changedFile of scriptPackRelatedSelectionPaths) {
 		const selected = selectedFor([toPosixPath(changedFile)]);

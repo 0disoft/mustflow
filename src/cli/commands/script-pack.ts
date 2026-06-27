@@ -126,6 +126,7 @@ export function getScriptPackHelp(lang: CliLang = 'en'): string {
 				'mf script-pack run code/outline scan src --json',
 				'mf script-pack run code/dependency-graph scan src/cli/index.ts --json',
 				'mf script-pack run code/import-cycle check src --json',
+				'mf script-pack run code/module-boundary check src --json',
 				'mf script-pack run code/change-impact analyze --base HEAD --json',
 				'mf script-pack run code/symbol-read read src/cli/index.ts --start-line 25 --json',
 				'mf script-pack run code/route-outline scan src/cli/index.ts --json',

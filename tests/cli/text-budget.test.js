@@ -56,6 +56,11 @@ function runCodeImportCycleJson(projectPath, args) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runCodeModuleBoundaryJson(projectPath, args) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'code/module-boundary', 'check', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runCodeChangeImpactJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'code/change-impact', 'analyze', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -206,6 +211,23 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(importCycle.risk_level, 'low');
 		assert.equal(importCycle.cost, 'low');
 		assert.equal(importCycle.report_schema_file, 'import-cycle-report.schema.json');
+
+		const moduleBoundary = codePack?.scripts.find((script) => script.ref === 'code/module-boundary');
+
+		assert.ok(moduleBoundary, 'code/module-boundary should be listed');
+		assert.equal(moduleBoundary.read_only, true);
+		assert.equal(moduleBoundary.mutates, false);
+		assert.equal(moduleBoundary.network, false);
+		assert.deepEqual(moduleBoundary.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(moduleBoundary.use_when.some((hint) => hint.includes('module boundary rules')));
+		assert.ok(moduleBoundary.inputs.includes('config_path'));
+		assert.ok(moduleBoundary.inputs.includes('max_cycles'));
+		assert.ok(moduleBoundary.outputs.includes('module_boundary_findings'));
+		assert.ok(moduleBoundary.outputs.includes('shared_budget_metrics'));
+		assert.ok(moduleBoundary.related_skills.includes('module-boundary-review'));
+		assert.equal(moduleBoundary.risk_level, 'low');
+		assert.equal(moduleBoundary.cost, 'low');
+		assert.equal(moduleBoundary.report_schema_file, 'module-boundary-report.schema.json');
 
 		const changeImpact = codePack?.scripts.find((script) => script.ref === 'code/change-impact');
 
@@ -1455,6 +1477,137 @@ test('import-cycle reports cycles with line evidence', () => {
 			['src/a.ts:1->src/b.ts', 'src/b.ts:1->src/a.ts'],
 		);
 		assert.ok(report.findings.some((finding) => finding.code === 'import_cycle_detected'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('module-boundary reports missing config as non-blocking evidence', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src', 'entry.ts'), 'export const entry = 1;\n');
+
+		const { result, report } = runCodeModuleBoundaryJson(projectPath, ['src/entry.ts']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'code/module-boundary');
+		assert.equal(report.action, 'check');
+		assert.equal(report.status, 'passed');
+		assert.equal(report.ok, true);
+		assert.equal(report.config.status, 'missing');
+		assert.equal(report.config.path, '.mustflow/config/module-boundaries.toml');
+		assert.ok(report.findings.some((finding) => finding.code === 'module_boundary_config_missing'));
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('module-boundary enforces configured layer, entrypoint, feature, and shared-budget rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'domain'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'infra'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'modules', 'payment', 'internal'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'features', 'account'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'features', 'billing'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'shared'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'module-boundaries.toml'),
+			[
+				'[[layers]]',
+				'id = "domain-no-infra"',
+				'paths = ["src/domain/**"]',
+				'deny_imports = ["src/infra/**"]',
+				'',
+				'[[public_entrypoints]]',
+				'id = "payment-public-api"',
+				'root = "src/modules/payment"',
+				'entrypoint = "src/modules/payment/index.ts"',
+				'',
+				'[[feature_groups]]',
+				'id = "feature-entrypoints-only"',
+				'root = "src/features"',
+				'',
+				'[[shared_budgets]]',
+				'id = "shared-small"',
+				'path = "src/shared"',
+				'max_files = 1',
+				'max_exports = 1',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(path.join(projectPath, 'src', 'infra', 'db.ts'), 'export const db = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'domain', 'user.ts'), 'import { db } from "../infra/db";\nexport const user = db;\n');
+		writeFileSync(path.join(projectPath, 'src', 'modules', 'payment', 'index.ts'), 'export const publicPayment = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'modules', 'payment', 'internal', 'fee.ts'), 'export const fee = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'features', 'billing', 'index.ts'), 'export const billing = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'features', 'billing', 'internal.ts'), 'export const internalBilling = 1;\n');
+		writeFileSync(
+			path.join(projectPath, 'src', 'features', 'account', 'view.ts'),
+			'import { internalBilling } from "../billing/internal";\nexport const view = internalBilling;\n',
+		);
+		writeFileSync(path.join(projectPath, 'src', 'shared', 'a.ts'), 'export const a = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'shared', 'b.ts'), 'export const b = 1;\n');
+		writeFileSync(
+			path.join(projectPath, 'src', 'app.ts'),
+			'import { fee } from "./modules/payment/internal/fee";\nexport const app = fee;\n',
+		);
+
+		const { result, report } = runCodeModuleBoundaryJson(projectPath, ['src']);
+		const findingCodes = new Set(report.findings.map((finding) => finding.code));
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.equal(report.config.status, 'found');
+		assert.equal(report.config.layer_rule_count, 1);
+		assert.equal(report.config.public_entrypoint_rule_count, 1);
+		assert.equal(report.config.feature_group_rule_count, 1);
+		assert.equal(report.config.shared_budget_rule_count, 1);
+		assert.ok(findingCodes.has('module_boundary_forbidden_import'));
+		assert.ok(findingCodes.has('module_boundary_public_entry_violation'));
+		assert.ok(findingCodes.has('module_boundary_feature_direct_import'));
+		assert.ok(findingCodes.has('module_boundary_shared_budget_exceeded'));
+		assert.ok(report.shared_metrics.some((metric) => metric.rule_id === 'shared-small' && metric.file_count === 2));
+		assert.deepEqual(
+			report.rules.map((rule) => rule.kind).sort(),
+			['feature_direct_import', 'import_cycle', 'layer_deny', 'public_entrypoint', 'shared_budget'],
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('module-boundary treats import cycles as boundary failures', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow', 'config'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'module-boundaries.toml'),
+			'[[layers]]\nid = "noop"\npaths = ["src/**"]\ndeny_imports = ["missing/**"]\n',
+		);
+		writeFileSync(path.join(projectPath, 'src', 'a.ts'), 'import { b } from "./b";\nexport const a = b;\n');
+		writeFileSync(path.join(projectPath, 'src', 'b.ts'), 'import { a } from "./a";\nexport const b = a;\n');
+
+		const { result, report } = runCodeModuleBoundaryJson(projectPath, ['src']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.ok(report.findings.some((finding) => finding.code === 'module_boundary_import_cycle_detected'));
+		assert.equal(report.cycles.length, 1);
+		assert.deepEqual(new Set(report.cycles[0].paths), new Set(['src/a.ts', 'src/b.ts']));
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3653,18 +3806,22 @@ test('script-pack suggest returns concrete code helper hints for source paths', 
 		const outline = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/outline');
 		const dependencyGraph = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/dependency-graph');
 		const importCycle = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/import-cycle');
+		const moduleBoundary = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/module-boundary');
 		const symbolRead = report.suggestions.find((suggestion) => suggestion.script_ref === 'code/symbol-read');
 		const relatedFiles = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/related-files');
 
 		assert.ok(outline, 'code/outline should be suggested for source paths');
 		assert.ok(dependencyGraph, 'code/dependency-graph should be suggested for source paths');
 		assert.ok(importCycle, 'code/import-cycle should be suggested for source paths');
+		assert.ok(moduleBoundary, 'code/module-boundary should be suggested for source paths');
 		assert.ok(symbolRead, 'code/symbol-read should be suggested as a source follow-up');
 		assert.ok(relatedFiles, 'repo/related-files should be suggested for source paths');
 		assert.equal(outline.run_hint, 'mf script-pack run code/outline scan src/session.ts --json');
 		assert.equal(dependencyGraph.run_hint, 'mf script-pack run code/dependency-graph scan src/session.ts --json');
 		assert.equal(importCycle.run_hint, 'mf script-pack run code/import-cycle check src/session.ts --json');
 		assert.equal(importCycle.report_schema_file, 'import-cycle-report.schema.json');
+		assert.equal(moduleBoundary.run_hint, 'mf script-pack run code/module-boundary check src/session.ts --json');
+		assert.equal(moduleBoundary.report_schema_file, 'module-boundary-report.schema.json');
 		assert.match(symbolRead.run_hint, /After code\/outline returns a symbol line or anchor/u);
 		assert.match(symbolRead.run_hint, /src\/session\.ts --start-line <line> --json/u);
 		assert.equal(relatedFiles.run_hint, 'mf script-pack run repo/related-files map src/session.ts --json');
@@ -4290,6 +4447,7 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run code\/outline scan src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/dependency-graph scan src\/cli\/index\.ts --json/);
 		assert.match(result.stdout, /mf script-pack run code\/import-cycle check src --json/);
+		assert.match(result.stdout, /mf script-pack run code\/module-boundary check src --json/);
 		assert.match(result.stdout, /mf script-pack run code\/change-impact analyze --base HEAD --json/);
 		assert.match(result.stdout, /mf script-pack run code\/symbol-read read src\/cli\/index\.ts --start-line 25 --json/);
 		assert.match(result.stdout, /mf script-pack run code\/route-outline scan src\/cli\/index\.ts --json/);

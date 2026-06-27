@@ -129,6 +129,7 @@ mustflow installs and validates an agent workflow for user projects.
   config/schema churn, and broad structural changes before treating added complexity as free.
 - Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
   `code/outline` for source symbol maps, `code/dependency-graph` for bounded relative import graphs,
+  `code/module-boundary` for configured import-boundary guardrails,
   `code/change-impact` for git-diff impact and verification hints, `code/symbol-read` for focused source snippets,
   `code/route-outline` for Hono, Elysia, Axum, and NestJS route maps, `docs/reference-drift` for stale
   documentation references, `repo/config-chain` for nearby config inheritance,
@@ -296,6 +297,7 @@ mf run mustflow_update_apply
 | `mf script-pack suggest --path <path> --phase before_change` | Rank helpers for an explicit path and workflow phase before deciding which script to run. |
 | `mf script-pack run code/outline scan <path...> --json` | Scan supported source files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
 | `mf script-pack run code/dependency-graph scan <path...> --json` | Trace bounded relative import, export, require, and dynamic import edges for TypeScript and JavaScript source files. |
+| `mf script-pack run code/module-boundary check <path...> --json` | Check configured module-boundary import rules, import cycles, public entrypoints, feature imports, and shared budgets. |
 | `mf script-pack run code/change-impact analyze --base HEAD --json` | Analyze changed files and return bounded impact candidates, script-pack hints, and verification intent hints. |
 | `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
 | `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |

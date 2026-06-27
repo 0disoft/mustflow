@@ -214,6 +214,7 @@ export function createTestSelection(allCliTests) {
 		{ match: /^src\/core\/code-outline\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/dependency-graph\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/import-cycle\.ts$/u, tests: codeOutlineContractTests },
+		{ match: /^src\/core\/module-boundary\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/change-impact\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/change-surface-classification\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/export-diff\.ts$/u, tests: codeOutlineContractTests },

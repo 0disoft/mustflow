@@ -23,6 +23,7 @@ const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 	'code/outline',
 	'code/dependency-graph',
 	'code/import-cycle',
+	'code/module-boundary',
 	'code/symbol-read',
 	'code/route-outline',
 	'code/export-diff',
@@ -335,6 +336,11 @@ function createRunHint(
 	if (script.ref === 'code/import-cycle') {
 		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
 		return createConcretePathHint('mf script-pack run code/import-cycle check', sourcePaths, script.usage);
+	}
+
+	if (script.ref === 'code/module-boundary') {
+		const sourcePaths = pathsWithSurface(analyzedPaths, 'source');
+		return createConcretePathHint('mf script-pack run code/module-boundary check', sourcePaths, script.usage);
 	}
 
 	if (script.ref === 'code/change-impact') {
