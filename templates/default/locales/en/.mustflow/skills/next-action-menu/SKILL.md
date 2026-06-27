@@ -2,7 +2,7 @@
 mustflow_doc: skill.next-action-menu
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: next-action-menu
@@ -116,13 +116,15 @@ scope, approval, verification, command contracts, release gates, or safety rules
 5. Render the menu as a Markdown table after the completion evidence and skill-selection note when
    the host format allows it.
    - Use four columns: number, next task title, description, and recommendation score.
-   - In Korean final reports, use `추천도` for the recommendation-score column label.
-   - Use non-breaking padding in short header cells so narrow renderers do not wrap Korean headers
-     vertically. Prefer this template:
-     `| 번호&nbsp;&nbsp; | 다음 작업 | 설명 | 추천도&nbsp;&nbsp; |`
+   - In Korean final reports, use wider short-column labels so narrow renderers do not wrap
+     two- or three-character headers vertically. Prefer `선택 번호` over `번호`, and
+     `추천 등급` over `추천도`.
+   - Use non-breaking spaces inside the short header labels so those labels stay together.
+     Prefer this template:
+     `| 선택&nbsp;번호 | 다음 작업 | 설명 | 추천&nbsp;등급 |`
      `|---:|---|---|:---:|`
      For English, prefer:
-     `| No.&nbsp;&nbsp; | Next task | Description | Score&nbsp;&nbsp; |`
+     `| Select&nbsp;No. | Next task | Description | Recommendation&nbsp;grade |`
      `|---:|---|---|:---:|`
    - Keep descriptions short enough to scan but specific enough to execute.
    - Localize column labels to the report language when appropriate.

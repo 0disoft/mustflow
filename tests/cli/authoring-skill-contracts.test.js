@@ -202,7 +202,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.equal(nextActionSkill, templateNextActionSkill);
 	assert.equal(workflow, templateWorkflow);
 	assert.match(localSkill, /revision: 6/u);
-	assert.match(nextActionSkill, /revision: 4/u);
+	assert.match(nextActionSkill, /revision: 5/u);
 	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
 	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
 	assert.match(workflow, /apply `next-action-menu` and include the bounded table/u);
@@ -217,8 +217,11 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.match(nextActionSkill, /Use especially after non-trivial code, behavior, test, docs/u);
 	assert.match(nextActionSkill, /A code, behavior, test, public API, config, workflow, docs/u);
 	assert.match(nextActionSkill, /treat the menu as required when\s+any concrete next action exists/u);
-	assert.match(nextActionSkill, /번호&nbsp;&nbsp; \| 다음 작업 \| 설명 \| 추천도&nbsp;&nbsp;/u);
-	assert.match(nextActionSkill, /No\.&nbsp;&nbsp; \| Next task \| Description \| Score&nbsp;&nbsp;/u);
+	assert.match(nextActionSkill, /선택&nbsp;번호 \| 다음 작업 \| 설명 \| 추천&nbsp;등급/u);
+	assert.match(
+		nextActionSkill,
+		/Select&nbsp;No\. \| Next task \| Description \| Recommendation&nbsp;grade/u,
+	);
 	assert.match(nextActionSkill, /A gated item in the table is only a visible next-action option/u);
 	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
 	assert.match(
@@ -231,7 +234,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.next-action-menu"\][\s\S]*?revision = 4/u,
+		/\[documents\."skill\.next-action-menu"\][\s\S]*?revision = 5/u,
 	);
 	assert.match(
 		routes,
