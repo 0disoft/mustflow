@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -355,6 +355,12 @@ When a command fails:
 Do not store raw full logs, secrets, customer data, or long transcripts in `.mustflow/`.
 
 ## Reporting
+
+Before a final report after changed files, verification, paused implementation, commit readiness,
+release readiness, deploy preparation, or any completion/readiness claim, apply
+`completion-evidence-gate` when available. If at least one concrete, evidence-backed follow-up action
+remains, apply `next-action-menu` and include the bounded table. If the menu is omitted, state the
+reason plainly: no concrete next action, user opt-out, or speculative-only follow-ups.
 
 Final reports should include:
 

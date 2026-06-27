@@ -19,7 +19,7 @@ content_hash = "sha256:10b9735114ba0c73ed5b4919d826519fe7e98405ade34d992359ff28f
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:bd34ad28380ea927386a6f231ab4949486efd3d73e9564f190f7223eda460c41"
+content_hash = "sha256:9f1a1e6a1564ee7a2e20fcde8f8022ca2d40d24f7fbcc4800b2ae0c1d004523e"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"

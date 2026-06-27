@@ -193,21 +193,29 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	const templateNextActionSkill = readText(
 		'templates/default/locales/en/.mustflow/skills/next-action-menu/SKILL.md',
 	);
+	const workflow = readText('.mustflow/docs/agent-workflow.md');
+	const templateWorkflow = readText('templates/default/locales/en/.mustflow/docs/agent-workflow.md');
 	const i18n = readText('templates/default/i18n.toml');
 	const routes = readText('.mustflow/skills/routes.toml');
 
 	assert.equal(localSkill, templateSkill);
 	assert.equal(nextActionSkill, templateNextActionSkill);
-	assert.match(localSkill, /revision: 5/u);
-	assert.match(nextActionSkill, /revision: 3/u);
+	assert.equal(workflow, templateWorkflow);
+	assert.match(localSkill, /revision: 6/u);
+	assert.match(nextActionSkill, /revision: 4/u);
+	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
+	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
+	assert.match(workflow, /apply `next-action-menu` and include the bounded table/u);
 	assert.match(localSkill, /Concrete follow-up candidates/u);
 	assert.match(localSkill, /Decide whether a next-action menu is required/u);
 	assert.match(localSkill, /For a non-trivial final report, read and apply `next-action-menu`/u);
 	assert.match(localSkill, /read and apply `next-action-menu` before final reporting/u);
 	assert.match(localSkill, /created commit, push or release readiness, deploy preparation/u);
 	assert.match(localSkill, /Do not omit the menu merely because the remaining useful actions are approval-gated/u);
+	assert.match(localSkill, /omits `next-action-menu` despite concrete\s+follow-ups as incomplete final-report routing/u);
 	assert.match(localSkill, /useful follow-up tasks appear through `next-action-menu` whenever\s+at least one concrete next action remains/u);
-	assert.match(nextActionSkill, /Use especially after non-trivial completed or paused work, commits, pushes/u);
+	assert.match(nextActionSkill, /Use especially after non-trivial code, behavior, test, docs/u);
+	assert.match(nextActionSkill, /A code, behavior, test, public API, config, workflow, docs/u);
 	assert.match(nextActionSkill, /treat the menu as required when\s+any concrete next action exists/u);
 	assert.match(nextActionSkill, /번호&nbsp;&nbsp; \| 다음 작업 \| 설명 \| 추천도&nbsp;&nbsp;/u);
 	assert.match(nextActionSkill, /No\.&nbsp;&nbsp; \| Next task \| Description \| Score&nbsp;&nbsp;/u);
@@ -215,15 +223,44 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 5/u,
+		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 25/u,
 	);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.next-action-menu"\][\s\S]*?revision = 3/u,
+		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 6/u,
+	);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.next-action-menu"\][\s\S]*?revision = 4/u,
 	);
 	assert.match(
 		routes,
-		/\[routes\."next-action-menu"\][\s\S]*?route_type = "adjunct"[\s\S]*?priority = 72/u,
+		/\[routes\."next-action-menu"\][\s\S]*?route_type = "adjunct"[\s\S]*?priority = 84/u,
+	);
+	assert.deepEqual(
+		routeReasons(routes, 'next-action-menu'),
+		[
+			'unknown_change',
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'docs_change',
+			'copy_change',
+			'i18n_change',
+			'workflow_change',
+			'mustflow_docs_change',
+			'mustflow_config_change',
+			'package_metadata_change',
+			'security_change',
+			'privacy_change',
+			'data_change',
+			'migration_change',
+			'performance_change',
+			'ui_change',
+			'release_risk',
+		],
+		'next-action-menu should route after ordinary code, behavior, and test completion reports',
 	);
 });
 
@@ -5755,7 +5792,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	}
 	assert.ok(profileBlock('team').includes('"complex-decision-analysis"'));
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
-	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 24/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 25/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 188/u);
 	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 1/u);
 });

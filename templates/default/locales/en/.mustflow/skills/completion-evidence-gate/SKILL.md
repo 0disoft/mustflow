@@ -2,11 +2,11 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
-description: Apply this skill before a final report or completion claim when changed files, verification results, skipped checks, or remaining risks must be tied to concrete repository evidence.
+description: Apply this skill before a final report or completion claim after non-trivial changed-file work, verification, commit, release readiness, paused implementation, or any report where changed files, skipped checks, concrete next actions, or remaining risks must be tied to repository evidence.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -134,8 +134,8 @@ missing, blocked, failed, stale, or only partially relevant.
      verification as menu rows with the gate stated plainly.
    - If no useful follow-up exists, the user asked not to include recommendations, or the only next
      actions are speculative, omit the menu and keep the final report concise.
-   - Do not treat this gate as automatic host behavior: the menu appears only when the skill is
-     selected and its use conditions are met.
+   - Treat route selection that reaches this gate but omits `next-action-menu` despite concrete
+     follow-ups as incomplete final-report routing, not as permission to silently drop the menu.
 8. Write the final report from evidence, not confidence.
    - Name changed files, command intents run, skipped checks with reasons, synchronized or deferred surfaces, and remaining risks.
    - Do not imply that skipped, manual-only, or missing command intents passed.

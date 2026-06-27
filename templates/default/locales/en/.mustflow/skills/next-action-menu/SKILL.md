@@ -2,11 +2,11 @@
 mustflow_doc: skill.next-action-menu
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: next-action-menu
-description: Apply this skill when a final report, completion note, repository improvement loop, or follow-up workflow should offer a bounded numbered next-action menu that a user can select with a single digit in the next turn. Use especially after non-trivial completed or paused work, commits, pushes, release or deploy preparation, verification, or remaining approval gates when concrete follow-up actions exist.
+description: Apply this skill when a final report, completion note, repository improvement loop, or follow-up workflow should offer a bounded numbered next-action menu that a user can select with a single digit in the next turn. Use especially after non-trivial code, behavior, test, docs, workflow, release, deploy, commit, push, verification, paused-work, or approval-gated work when concrete follow-up actions exist.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -38,6 +38,9 @@ scope, approval, verification, command contracts, release gates, or safety rules
   follow-up tasks.
 - A non-trivial task is being reported after changed files, a created commit, completed verification,
   push readiness, release or deploy preparation, paused work, or another concrete approval gate.
+- A code, behavior, test, public API, config, workflow, docs, package, security, data, UI, or
+  performance change has been completed or paused and the final report can name a bounded next
+  action such as verify, commit, push, release, deploy, document, or continue a related slice.
 - The user repeatedly asks for "next recommended work", "continue", "proceed", or selects follow-up
   items after previous completion reports.
 - The agent needs to present a bounded backlog that can be selected by a single digit in the next

@@ -81,8 +81,8 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "publi
 [routes."next-action-menu"]
 category = "workflow_contracts"
 route_type = "adjunct"
-priority = 72
-applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change", "package_metadata_change"]
+priority = 84
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "copy_change", "i18n_change", "workflow_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "security_change", "privacy_change", "data_change", "migration_change", "performance_change", "ui_change", "release_risk"]
 
 [routes."proactive-risk-surfacing"]
 category = "workflow_contracts"
