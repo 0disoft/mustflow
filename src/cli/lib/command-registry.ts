@@ -77,7 +77,7 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'check',
 		usage: 'mf check',
 		summaryKey: 'command.check.summary',
-		contract: commandContract(TEXT_JSON_OUTPUT),
+		contract: commandContract(TEXT_JSON_OUTPUT, ['check-report']),
 		loadRunner: async () => (await import('../commands/check.js')).runCheck,
 	},
 	{
@@ -130,7 +130,7 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'status',
 		usage: 'mf status',
 		summaryKey: 'command.status.summary',
-		contract: commandContract(TEXT_JSON_OUTPUT),
+		contract: commandContract(TEXT_JSON_OUTPUT, ['status-report']),
 		loadRunner: async () => (await import('../commands/status.js')).runStatus,
 	},
 	{
@@ -249,14 +249,14 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'index',
 		usage: 'mf index',
 		summaryKey: 'command.index.summary',
-		contract: commandContract(TEXT_JSON_OUTPUT),
+		contract: commandContract(TEXT_JSON_OUTPUT, ['index-report']),
 		loadRunner: async () => (await import('../commands/index.js')).runIndex,
 	},
 	{
 		id: 'search',
 		usage: 'mf search',
 		summaryKey: 'command.search.summary',
-		contract: commandContract(TEXT_JSON_OUTPUT),
+		contract: commandContract(TEXT_JSON_OUTPUT, ['search-report']),
 		loadRunner: async () => (await import('../commands/search.js')).runSearch,
 	},
 	{

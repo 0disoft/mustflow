@@ -6,6 +6,10 @@ mustflow files and command output.
 Current schemas:
 
 - `doctor-report.schema.json`: output of `mf doctor --json`
+- `check-report.schema.json`: output of `mf check --json`, containing base or strict validation
+  issues, warnings, stable issue details, and exit-code aligned `ok` status
+- `status-report.schema.json`: output of `mf status --json`, containing installed-entrypoint
+  status, manifest-lock status, changed and missing locked files, issues, and template identity
 - `adapter-compatibility-report.schema.json`: output of `mf adapters status --json`
 - `context-report.schema.json`: output of `mf context --json`, including context trust metadata, prompt-cache profiles, and optional cache audit data
 - `workspace-summary.schema.json`: output of `mf api workspace-summary --json`
@@ -62,6 +66,10 @@ Current schemas:
   script-pack ids, script refs, action names, usage strings, workflow phases, read-only and
   side-effect flags, input and output capability labels, related skill names, cost and risk hints,
   and associated report schemas
+- `index-report.schema.json`: output of `mf index --json`, including dry-run and write status,
+  local index counts, search backend metadata, source-index status, and indexed path summaries
+- `search-report.schema.json`: output of `mf search <query> --json`, containing bounded local
+  workflow or source search results with authority, cache-layer, navigation-only, and match metadata
 - `script-pack-suggestion-report.schema.json`: output of `mf script-pack suggest --json`, containing
   path, skill, phase, and changed-file evidence used to recommend optional script-pack helpers
 - `code-outline-report.schema.json`: output of

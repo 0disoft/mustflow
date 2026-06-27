@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/status-report.schema.json",
+  "title": "mustflow status report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "installed",
+    "manifestLock",
+    "trackedFiles",
+    "changedFiles",
+    "missingFiles",
+    "issues",
+    "template"
+  ],
+  "properties": {
+    "installed": { "type": "boolean" },
+    "manifestLock": { "enum": ["missing", "invalid", "present"] },
+    "trackedFiles": { "type": "integer", "minimum": 0 },
+    "changedFiles": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "missingFiles": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "template": {
+      "anyOf": [
+        { "$ref": "#/$defs/template" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "$defs": {
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    }
+  }
+}

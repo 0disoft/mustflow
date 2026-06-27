@@ -5118,6 +5118,128 @@
         ],
         "issues": []
       }
+    },
+    {
+      "id": "check-report",
+      "schema_file": "check-report.schema.json",
+      "producer": "mf check --json",
+      "fixture": {
+        "ok": true,
+        "strict": false,
+        "issueCount": 0,
+        "issues": [],
+        "warningCount": 0,
+        "warnings": [],
+        "issueDetails": []
+      }
+    },
+    {
+      "id": "status-report",
+      "schema_file": "status-report.schema.json",
+      "producer": "mf status --json",
+      "fixture": {
+        "installed": true,
+        "manifestLock": "present",
+        "trackedFiles": 3,
+        "changedFiles": [],
+        "missingFiles": [],
+        "issues": [],
+        "template": {
+          "id": "default",
+          "version": "2.99.0"
+        }
+      }
+    },
+    {
+      "id": "index-report",
+      "schema_file": "index-report.schema.json",
+      "producer": "mf index --dry-run --json",
+      "fixture": {
+        "schema_version": "20",
+        "command": "index",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "database_path": "C:/repo/.mustflow/cache/mustflow.sqlite",
+        "dry_run": true,
+        "wrote_files": false,
+        "index_mode": "full",
+        "reused_existing": false,
+        "rebuild_reason": null,
+        "document_count": 3,
+        "skill_count": 1,
+        "skill_route_count": 1,
+        "command_intent_count": 2,
+        "command_effect_count": 2,
+        "verification_evidence_summary_count": 0,
+        "verification_plan_count": 0,
+        "acceptance_criteria_count": 0,
+        "criterion_coverage_count": 0,
+        "verification_receipt_summary_count": 0,
+        "command_receipt_summary_count": 0,
+        "verification_coverage_state_count": 0,
+        "verification_risk_signal_count": 0,
+        "validation_ratchet_signal_count": 0,
+        "completion_verdict_summary_count": 0,
+        "repro_route_count": 0,
+        "repro_observation_count": 0,
+        "failure_fingerprint_count": 0,
+        "source_index_enabled": false,
+        "source_anchor_count": 0,
+        "source_anchor_risk_signal_count": 0,
+        "search_backend": "fts5",
+        "search_fts5_available": true,
+        "content_mode": "metadata_and_snippets",
+        "store_full_content": false,
+        "max_snippet_bytes_per_document": 2048,
+        "excluded_raw_data_kinds": [
+          "full_source_text",
+          "raw_diffs",
+          "raw_terminal_logs"
+        ],
+        "indexed_file_count": 3,
+        "indexed_paths": [
+          "AGENTS.md",
+          ".mustflow/docs/agent-workflow.md",
+          ".mustflow/skills/INDEX.md"
+        ]
+      }
+    },
+    {
+      "id": "search-report",
+      "schema_file": "search-report.schema.json",
+      "producer": "mf search <query> --json",
+      "fixture": {
+        "schema_version": "20",
+        "command": "search",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "database_path": "C:/repo/.mustflow/cache/mustflow.sqlite",
+        "query": "mustflow",
+        "limit": 10,
+        "scope": "workflow",
+        "index_fresh": false,
+        "stale_paths": [],
+        "search_backend": "table_scan",
+        "search_fts5_available": false,
+        "result_count": 1,
+        "results": [
+          {
+            "kind": "document",
+            "path": "AGENTS.md",
+            "title": "AGENTS.md",
+            "document_type": "agent_rules",
+            "cache_layer": "stable",
+            "volatile": false,
+            "authority_rank": 2,
+            "authority_label": "workflow_authority",
+            "source_scope": "workflow",
+            "navigation_only": false,
+            "can_instruct_agent": true,
+            "match": "mustflow workflow rules",
+            "score": 12
+          }
+        ]
+      }
     }
   ]
 }

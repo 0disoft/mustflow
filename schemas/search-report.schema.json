@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/search-report.schema.json",
+  "title": "mustflow local search report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "mustflow_root",
+    "database_path",
+    "query",
+    "limit",
+    "scope",
+    "index_fresh",
+    "stale_paths",
+    "search_backend",
+    "search_fts5_available",
+    "result_count",
+    "results"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^[0-9]+$" },
+    "command": { "const": "search" },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "database_path": { "type": "string" },
+    "query": { "type": "string" },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 50 },
+    "scope": { "enum": ["workflow", "source", "all"] },
+    "index_fresh": { "type": "boolean" },
+    "stale_paths": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "search_backend": { "enum": ["fts5", "table_scan"] },
+    "search_fts5_available": { "type": "boolean" },
+    "result_count": { "type": "integer", "minimum": 0 },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/searchItem" }
+    }
+  },
+  "$defs": {
+    "searchItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "cache_layer",
+        "volatile",
+        "authority_rank",
+        "authority_label",
+        "source_scope",
+        "navigation_only",
+        "can_instruct_agent",
+        "match",
+        "score"
+      ],
+      "properties": {
+        "kind": { "enum": ["document", "skill", "skill_route", "command_intent", "source_anchor"] },
+        "path": { "type": "string" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "document_type": { "type": "string" },
+        "anchor_id": { "type": "string" },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "risk": { "type": "string" },
+        "cache_layer": { "enum": ["stable", "task", "volatile"] },
+        "volatile": { "type": "boolean" },
+        "authority_rank": { "type": "integer", "minimum": 0 },
+        "authority_label": { "type": "string" },
+        "source_scope": { "enum": ["workflow", "source"] },
+        "navigation_only": { "type": "boolean" },
+        "can_instruct_agent": { "type": "boolean" },
+        "stale_status": { "type": "string" },
+        "stale_confidence": { "type": "number" },
+        "effect_locks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "effect_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "effect_modes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "route_trigger": { "type": "string" },
+        "route_risk": { "type": "string" },
+        "verification_intents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "match": { "type": "string" },
+        "score": { "type": "number" }
+      }
+    }
+  }
+}

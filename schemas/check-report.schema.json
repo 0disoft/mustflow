@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/check-report.schema.json",
+  "title": "mustflow check report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "strict",
+    "issueCount",
+    "issues",
+    "warningCount",
+    "warnings",
+    "issueDetails"
+  ],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "strict": { "type": "boolean" },
+    "issueCount": { "type": "integer", "minimum": 0 },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "warningCount": { "type": "integer", "minimum": 0 },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "issueDetails": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/issueDetail" }
+    }
+  },
+  "$defs": {
+    "issueDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "mode", "message"],
+      "properties": {
+        "id": {
+          "anyOf": [
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "severity": { "enum": ["error", "warning"] },
+        "mode": { "enum": ["base", "strict"] },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}
