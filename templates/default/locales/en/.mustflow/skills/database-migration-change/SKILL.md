@@ -2,11 +2,11 @@
 mustflow_doc: skill.database-migration-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: database-migration-change
-description: Apply this skill when database migration files, schema migration history, ORM schema migrations, generated clients, schema dumps, SQL snapshots, online DDL, large indexes, constraints, backfills, rolling deploy compatibility, expand-and-contract changes, destructive database changes, migration rollback or roll-forward claims, cut-over plans, lock or timeout policy, replication lag risk, migration observability, or production database migration procedures are created, changed, reviewed, or reported.
+description: Apply this skill when database migration files, schema migration history, ORM schema migrations, generated clients, schema dumps, SQL snapshots, online DDL, large indexes, constraints, state-dependent CHECK constraints, backfills, rolling deploy compatibility, expand-and-contract changes, destructive database changes, migration rollback or roll-forward claims, cut-over plans, lock or timeout policy, replication lag risk, migration observability, or production database migration procedures are created, changed, reviewed, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -58,6 +58,9 @@ Migration incidents usually happen in the interval where old code, new code, old
 - Deployment shape: single-step deploy, rolling deploy, blue-green, multiple app versions, background workers, read replicas, multiple services, serverless functions, mobile clients, or external integrations.
 - Database engine and operational surface: PostgreSQL, MySQL, SQLite, SQL Server, managed database, migration lock behavior, DDL transaction behavior, online DDL options, table size, write load, long-running transactions, replication or CDC topology, expected lock time, statement timeout, lock timeout, and restore capability when known.
 - Data preservation needs, compatibility window, backfill size, batch strategy, cursor or checkpoint marker, validation query, observability query, rollback or roll-forward type, cut-over control, and whether old code can run after the new schema lands.
+- State and timestamp invariant matrix when a migration introduces lifecycle statuses, terminal
+  timestamps, retry or dead-letter states, delivery states, soft-delete states, approval states, or
+  other columns whose valid nullability depends on status.
 - Relevant command-intent entries for build, generated-output checks, tests, docs, release, and mustflow validation.
 
 <!-- mustflow-section: preconditions -->
@@ -114,6 +117,14 @@ Migration incidents usually happen in the interval where old code, new code, old
 11. For constraints and foreign keys, use staged validation when the database supports it.
     - PostgreSQL `NOT VALID` constraints and later `VALIDATE CONSTRAINT` can avoid validating old rows during the first lock-sensitive change while still protecting new writes.
     - Foreign keys on large or hot tables need separate add, repair/backfill, validate, and fallback planning rather than one heroic migration.
+    - CHECK constraints must reject impossible domain states, not only prove column types. For
+      lifecycle tables, build a status matrix before writing the constraint: each status should name
+      which timestamps or reason fields are required, forbidden, or still pending. For example,
+      a delivered row should not also have a dead-letter timestamp, and a dead-lettered row should
+      not also look delivered unless the domain explicitly has a separate correction state.
+    - When existing rows may already violate the new matrix, split the change into repair, add
+      unvalidated constraint where supported, validate, and then rely on the constraint as the last
+      gate. Do not let application comments or happy-path tests stand in for the database invariant.
 12. For indexes, check table size, write load, lock behavior, concurrent or online index support, uniqueness validation, existing duplicates, and whether generated ORM queries will use the index.
     - PostgreSQL `CREATE INDEX CONCURRENTLY` avoids blocking ordinary writes but still scans more than once, waits for old transactions, consumes I/O, and cannot run inside a transaction block.
     - MySQL online DDL and `ALGORITHM=INSTANT` have version, row-format, index, row-size, and operation limits; specify `ALGORITHM=INSTANT` or `LOCK=NONE` only when unsupported fallback should fail instead of silently rebuilding a table.
@@ -170,6 +181,8 @@ Migration incidents usually happen in the interval where old code, new code, old
 - Expand, backfill, switch, and contract phases are separated or explicitly proven unnecessary.
 - Old-code/new-schema and new-code/expanded-schema compatibility is classified.
 - Backfill and validation behavior is cursor-based or otherwise bounded, restartable, idempotent, observable, and checkable where relevant.
+- State-dependent CHECK constraints, terminal timestamp exclusivity, and valid nullability matrices
+  are explicit where status columns can otherwise contradict timestamp or reason columns.
 - Lock levels, online DDL support, long-running transaction waits, replication lag, cut-over control, timeout policy, and observability queries are explicit where production data may be affected.
 - Rollback claims distinguish schema rollback, data rollback, app rollback, roll-forward, forward-fix, and restore-required cases.
 - Destructive changes and production lock risks are either deferred, measured, guarded, or reported as remaining risk.
@@ -212,6 +225,7 @@ Prefer configured migration dry-run, generated-output, schema-diff, or database 
 - Old-code/new-schema and new-code/expanded-schema compatibility
 - Expand/backfill/switch/contract plan and destructive cleanup timing
 - Backfill cursor, idempotency, throttle, pause/resume, validation, lock, timeout, replication, cut-over, and observability classification
+- Status, timestamp, CHECK constraint, and existing-row validation matrix where relevant
 - Rollback, app rollback, roll-forward, forward-fix, and restore-required classification
 - ORM/generated client/schema dump/snapshot surfaces synchronized
 - Dependent surfaces checked

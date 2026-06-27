@@ -2,11 +2,11 @@
 mustflow_doc: skill.payment-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: payment-integrity-review
-description: Apply this skill when payment, checkout, authorization, capture, refund, partial refund, subscription, invoice, trial, grace period, coupon, promotion, inventory reservation, fulfillment, entitlement, settlement, fee, chargeback, dispute, provider webhook, payment session, payment link, payment-provider integration, admin manual payment operation, payment logs, PCI-sensitive data handling, or payment-related tests need review for money-event integrity, idempotency, ordering, ownership, amount, currency, retry, reconciliation, ledger, or audit risk.
+description: Apply this skill when payment, checkout, authorization, capture, refund, partial refund, subscription, invoice, trial, grace period, coupon, promotion, inventory reservation, fulfillment, entitlement, settlement, fee, chargeback, dispute, provider webhook, payment outbox, payment session, payment link, payment-provider integration, admin manual payment operation, payment logs, PCI-sensitive data handling, or payment-related tests need review for money-event integrity, idempotency, ordering, ownership, amount, currency, retry, reconciliation, ledger, or audit risk.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -36,7 +36,7 @@ Review payment code as money-event integrity, not provider API success. The core
 ## Use When
 
 - Payment, checkout, payment-session, payment-link, authorization, capture, refund, partial refund, dispute, chargeback, settlement, fee, receipt, entitlement, fulfillment, subscription, invoice, trial, grace period, coupon, promotion, or inventory reservation logic is created, changed, reviewed, or reported.
-- Provider webhook handling, provider callback handling, payment retry handling, timeout handling, provider reconciliation, or async payment method handling can change internal money state.
+- Provider webhook handling, provider callback handling, payment outbox records, payment retry handling, timeout handling, provider reconciliation, or async payment method handling can change internal money state.
 - Client-supplied amount, currency, quantity, product, discount, shipping, tax, order, subscription, refund, or customer identifiers can influence a payment action.
 - Manual admin payment operations, payment logs, audit trails, or payment-related tests need review.
 
@@ -59,9 +59,12 @@ Review payment code as money-event integrity, not provider API success. The core
 - State-transition ledger: internal states, provider states, allowed transitions, terminal states,
   retry states, async states, hold states, kill-switch states, and transition owners.
 - Event log ledger: request submission, provider response, redirect, webhook receipt, webhook
-  application, state transition, queue handoff, reconciliation decision, fulfillment, refund,
-  dispute, admin override, and correction events with ordering, actor, reason, and immutable
-  evidence.
+  application, state transition, outbox event, queue handoff, reconciliation decision, fulfillment,
+  refund, dispute, admin override, and correction events with ordering, actor, reason, event type,
+  and immutable evidence.
+- Outbox event-type ledger: allowed internal event type vocabulary, enum or constant registry,
+  parser or validator, database constraint when available, and the rejection path for unknown,
+  stale, misspelled, or provider-shaped event types.
 - Idempotency and uniqueness ledger: logical operation IDs, provider idempotency keys, database uniqueness constraints, webhook event dedupe keys, fulfillment dedupe keys, and retry behavior.
 - Amount and currency ledger: product/cart snapshot, server-side calculation path, quantity, discounts, coupons, tax, shipping, minor-unit representation, currency, provider amount, internal ledger amount, receipt amount, and settlement amount.
 - Ownership ledger: user, tenant, account, order, payment session, refund, subscription, invoice, entitlement, admin actor, and provider customer ownership checks.
@@ -81,7 +84,7 @@ Review payment code as money-event integrity, not provider API success. The core
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
-- Tighten payment state machines, server-side amount calculation, minor-unit money handling, ownership checks, idempotency keys, provider-ID uniqueness, webhook signature verification, webhook dedupe, queue handoff, one-time fulfillment, async payment handling, authorization/capture distinction, refund/dispute/subscription transitions, inventory and coupon reservation, timeout and retry classification, append-only ledgers, secret and card-data redaction, admin audit trails, stale payment endpoint cleanup notes, focused nightmare-path tests, and directly synchronized docs or templates.
+- Tighten payment state machines, server-side amount calculation, minor-unit money handling, ownership checks, idempotency keys, provider-ID uniqueness, webhook signature verification, webhook dedupe, outbox event-type validation, queue handoff, one-time fulfillment, async payment handling, authorization/capture distinction, refund/dispute/subscription transitions, inventory and coupon reservation, timeout and retry classification, append-only ledgers, secret and card-data redaction, admin audit trails, stale payment endpoint cleanup notes, focused nightmare-path tests, and directly synchronized docs or templates.
 - Do not replace a focused payment-integrity fix with a broad payment platform rewrite unless the current code cannot preserve money correctness with a smaller boundary.
 - Do not add live payment secrets, real card data, real refunds, real charges, or live-provider side effects.
 
@@ -96,6 +99,10 @@ Review payment code as money-event integrity, not provider API success. The core
 3. Keep an immutable event trail. Store request submission, provider response, redirect, webhook,
    state transition, queue handoff, reconciliation, fulfillment, refund, dispute, and admin override
    events with actor, reason, timestamp, provider reference, and before/after state when relevant.
+   - For internal outbox rows, validate `event_type` against the owned payment event vocabulary
+     before deriving idempotency keys, publishing, or persisting follow-up work. Do not let free-form
+     strings, provider event names, stale constants, or user-controlled values become trusted outbox
+     operation types.
 4. Calculate amount on the server. Treat client-supplied amount, currency, quantity, discount, coupon, tax, shipping, product ID, plan ID, or cart totals as input claims only; rebuild the payable total from trusted product, cart, account, and policy snapshots.
 5. Bind every payment object to its owner. Verify user, tenant, order, payment session, refund, subscription, invoice, provider customer, and admin actor ownership before read, write, refund, cancel, fulfillment, or entitlement changes.
 6. Compare every amount ledger. Trace order amount, provider request amount, provider response amount, internal money ledger, receipt, settlement, fee, refund, and entitlement amount. Flag any path where one amount can drift without reconciliation.
@@ -136,8 +143,8 @@ Review payment code as money-event integrity, not provider API success. The core
 
 - The payment surface has a money-event map, provider interaction map, identifier map,
   state-transition map, immutable event log, idempotency and uniqueness map, amount and currency map,
-  ownership map, fulfillment and entitlement map, webhook/retry map, reconciliation and hold-state
-  map, and audit/sensitive-data map.
+  ownership map, fulfillment and entitlement map, webhook/retry map, outbox event-type validation
+  map, reconciliation and hold-state map, and audit/sensitive-data map.
 - Any false success, duplicate money movement, duplicate fulfillment, wrong-owner action, wrong amount, wrong currency, stale event overwrite, timeout misclassification, or missing reconciliation is fixed or reported with evidence.
 - Tests or explicit verification cover the highest-risk nightmare paths available in the current scope.
 
@@ -172,7 +179,7 @@ Prefer focused tests for duplicate operations, webhook replay, out-of-order even
 ## Output Format
 
 - Payment surface and provider boundary reviewed
-- Money-event, provider, identifier, state, event-log, idempotency, amount, ownership, fulfillment, webhook, retry, reconciliation, hold-state, audit, and sensitive-data ledgers
+- Money-event, provider, identifier, state, event-log, outbox event-type, idempotency, amount, ownership, fulfillment, webhook, retry, reconciliation, hold-state, audit, and sensitive-data ledgers
 - Findings or fixes for duplicate, late, out-of-order, wrong-actor, wrong-amount, wrong-currency, timeout, retry, reconciliation, and audit risks
 - Nightmare-path tests or evidence added, run, skipped, or still missing
 - Command intents run

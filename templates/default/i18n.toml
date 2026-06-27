@@ -146,7 +146,7 @@ translations = {}
 [documents."skill.payment-integrity-review"]
 source = "locales/en/.mustflow/skills/payment-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.credit-ledger-integrity-review"]
@@ -446,7 +446,7 @@ translations = {}
 [documents."skill.database-migration-change"]
 source = "locales/en/.mustflow/skills/database-migration-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.database-query-bottleneck-review"]
