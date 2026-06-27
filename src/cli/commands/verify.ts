@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import type { ClassifyOutput } from './classify.js';
-import { executeRunCommand } from './run.js';
+import { executeRunCommand } from './run/execution.js';
 import type { RunReceipt } from '../../core/run-receipt.js';
 import {
 	createChangeVerificationReport,
