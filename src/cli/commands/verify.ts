@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 
 import type { ClassifyOutput } from './classify.js';
-import { runRun } from './run.js';
+import { executeRunCommand } from './run.js';
+import type { RunReceipt } from '../../core/run-receipt.js';
 import {
 	createChangeVerificationReport,
 	type ChangeVerificationCandidate,
@@ -113,6 +114,17 @@ type VerificationResultStatus =
 	| 'output_limit_exceeded'
 	| 'skipped';
 
+type VerificationReceipt = Record<string, unknown> & {
+	readonly status?: RunReceipt['status'];
+	readonly write_drift?: RunReceipt['write_drift'];
+	readonly performance?: RunReceipt['performance'];
+	readonly receipt_path?: string;
+	readonly verification_plan_id?: string;
+	readonly head_tree_hash?: string;
+	readonly changed_files_hash?: string;
+	readonly current_state_hash?: string;
+};
+
 interface BufferedOutput {
 	readonly reporter: Reporter;
 	readonly stdout: () => string;
@@ -129,7 +141,7 @@ interface VerificationResult {
 	readonly verification_plan_id: string | null;
 	readonly receipt_path: string | null;
 	readonly receipt_sha256: string | null;
-	readonly receipt: Record<string, unknown> | null;
+	readonly receipt: VerificationReceipt | null;
 }
 
 interface VerificationSummary {
@@ -280,6 +292,10 @@ function createBufferedOutput(): BufferedOutput {
 	};
 }
 
+function toVerificationReceipt(receipt: RunReceipt | null): VerificationReceipt | null {
+	return receipt ? { ...receipt } : null;
+}
+
 export function getVerifyHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
@@ -415,33 +431,30 @@ async function runVerificationIntent(
 	additionalDeclaredWritePaths: readonly string[] = [],
 ): Promise<VerificationResult> {
 	const output = createBufferedOutput();
-	const exitCode = await runRun([intent, '--json'], output.reporter, lang, {
-		correlationId,
-		writeLatestReceipt: false,
-		writeLatestProfile: false,
-		recordPerformanceHistory: false,
-		testTargets,
-		additionalDeclaredWritePaths,
-	});
-	const rawStdout = output.stdout().trim();
-	let receipt: Record<string, unknown> | null = null;
+	const runResult = await executeRunCommand(
+		{
+			intentName: intent,
+			outputMode: 'silent',
+			allowUntrustedRoot: false,
+			wait: false,
+			waitTimeoutSeconds: 1,
+		},
+		output.reporter,
+		lang,
+		{
+			correlationId,
+			writeLatestReceipt: false,
+			writeLatestProfile: false,
+			recordPerformanceHistory: false,
+			testTargets,
+			additionalDeclaredWritePaths,
+		},
+	);
+	const exitCode = runResult.exitCode;
+	const receipt = toVerificationReceipt(runResult.receipt);
 	let status: VerificationResultStatus = exitCode === 0 ? 'passed' : 'failed';
-
-	try {
-		const parsed = JSON.parse(rawStdout) as Record<string, unknown>;
-		receipt = parsed;
-		const receiptStatus = parsed.status;
-		if (
-			receiptStatus === 'passed' ||
-			receiptStatus === 'failed' ||
-			receiptStatus === 'timed_out' ||
-			receiptStatus === 'start_failed' ||
-			receiptStatus === 'output_limit_exceeded'
-		) {
-			status = receiptStatus;
-		}
-	} catch {
-		status = 'failed';
+	if (runResult.receipt) {
+		status = runResult.receipt.status;
 	}
 
 	return {

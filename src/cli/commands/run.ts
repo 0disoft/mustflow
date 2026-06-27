@@ -30,6 +30,7 @@ import {
 } from '../lib/run-plan.js';
 import {
 	writeRunReceipt,
+	type RunReceipt,
 	type RunTerminationReceipt,
 } from '../../core/run-receipt.js';
 import { recordRunPerformanceHistory } from '../../core/run-performance-history.js';
@@ -47,6 +48,21 @@ export interface RunCommandOptions {
 	readonly recordPerformanceHistory?: boolean;
 	readonly testTargets?: readonly string[];
 	readonly additionalDeclaredWritePaths?: readonly string[];
+}
+
+export type RunCommandExecutionOutputMode = 'text' | 'json' | 'silent';
+
+export interface RunCommandExecutionRequest {
+	readonly intentName: string;
+	readonly outputMode: RunCommandExecutionOutputMode;
+	readonly allowUntrustedRoot: boolean;
+	readonly wait: boolean;
+	readonly waitTimeoutSeconds: number;
+}
+
+export interface RunCommandExecutionResult {
+	readonly exitCode: number;
+	readonly receipt: RunReceipt | null;
 }
 
 const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 300;
@@ -350,6 +366,223 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 	);
 }
 
+export async function executeRunCommand(
+	request: RunCommandExecutionRequest,
+	reporter: Reporter,
+	lang: CliLang = 'en',
+	options: RunCommandOptions = {},
+): Promise<RunCommandExecutionResult> {
+	const executorStartedAtMs = performance.now();
+	const profiler = new RunProfiler();
+	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
+	const rootTrust = profiler.measure('root_trust', () => assessRunRootTrust(projectRoot));
+	const jsonLikeOutput = request.outputMode !== 'text';
+
+	if (!request.allowUntrustedRoot && !rootTrust.trusted) {
+		const message =
+			rootTrust.reason === 'manifest_lock_invalid'
+				? t(lang, 'run.error.untrustedRootInvalid', { detail: rootTrust.detail ?? rootTrust.manifestLockPath })
+				: t(lang, 'run.error.untrustedRootMissing', { path: rootTrust.detail ?? rootTrust.manifestLockPath });
+		reporter.stderr(renderCliError(message, 'mf run --help', lang));
+		return { exitCode: 1, receipt: null };
+	}
+
+	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
+	const plan = profiler.measure('plan_creation', () =>
+		createRunPlan(projectRoot, contract, request.intentName, { testTargets: options.testTargets }),
+	);
+
+	if (!plan.ok) {
+		if (request.outputMode === 'json') {
+			reporter.stdout(JSON.stringify(createRunPreview(plan, 'plan-only'), null, 2));
+		}
+		reportRunPlanFailure(plan, reporter, lang);
+		writeLatestProfile(profiler, options, {
+			projectRoot,
+			intent: request.intentName,
+			status: 'blocked',
+			previewMode: null,
+		});
+		return { exitCode: 1, receipt: null };
+	}
+
+	const activeRunLock = await profiler.measureAsync('active_lock_acquire', () =>
+		acquireActiveRunLockWithOptionalWait({
+			enabled: request.wait,
+			waitTimeoutSeconds: request.waitTimeoutSeconds,
+			projectRoot,
+			contract,
+			intentName: request.intentName,
+			commandHash: createPlanCommandHash(plan),
+			json: jsonLikeOutput,
+			reporter,
+			lang,
+		}),
+	);
+
+	if (!activeRunLock.ok) {
+		reporter.stderr(renderCliError(renderActiveLockConflictMessage(request.intentName, activeRunLock.conflicts, lang), 'mf run --dry-run --json', lang));
+		writeLatestProfile(profiler, options, {
+			projectRoot,
+			intent: request.intentName,
+			status: 'blocked',
+			previewMode: null,
+		});
+		return { exitCode: 1, receipt: null };
+	}
+
+	try {
+		const runReceiptPolicy = profiler.measure('retention_policy', () =>
+			resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot)),
+		);
+		const env = profiler.measure('environment', () =>
+			createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
+		);
+		env[ACTIVE_RUN_LOCK_ID_ENV] = activeRunLock.handle.record.run_id;
+		const writeTracker = profiler.measure('write_drift_before', () =>
+			startRunWriteTracking(projectRoot, contract, request.intentName, {
+				additionalDeclaredPaths: options.additionalDeclaredWritePaths,
+				env,
+			}),
+		);
+		const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);
+		const stderrTailBytes = Math.min(runReceiptPolicy.stderrTailBytes, plan.maxOutputBytes);
+		let streamedOutput = false;
+
+		const childStartedAtMs = performance.now();
+		const startedAt = new Date();
+		const streamChildOutput = request.outputMode === 'text';
+		const stopRunProgress = createRunProgressReporter({
+			enabled: streamChildOutput && Boolean(reporter.writeStderr),
+			intentName: request.intentName,
+			timeoutSeconds: plan.timeoutSeconds,
+			reporter,
+			lang,
+		});
+		const result = await profiler.measureAsync('child_command', async () => {
+			try {
+				if (plan.commandArgv) {
+					streamedOutput = streamChildOutput;
+					return runArgvCommandStreaming(
+						plan.argvCommand,
+						plan.cwd,
+						env,
+						plan.timeoutSeconds,
+						plan.killAfterSeconds,
+						plan.maxOutputBytes,
+						stdoutTailBytes,
+						stderrTailBytes,
+						reporter,
+						streamChildOutput,
+						true,
+					);
+				}
+
+				streamedOutput = streamChildOutput;
+				return runShellCommandStreaming(
+					plan.shellCommand,
+					plan.cwd,
+					env,
+					plan.timeoutSeconds,
+					plan.killAfterSeconds,
+					plan.maxOutputBytes,
+					stdoutTailBytes,
+					stderrTailBytes,
+					reporter,
+					streamChildOutput,
+					true,
+				);
+			} finally {
+				stopRunProgress();
+			}
+		});
+		const childDurationMs = performance.now() - childStartedAtMs;
+		const finishedAt = new Date();
+		const writeDrift = profiler.measure('write_drift_after', () => finishRunWriteTracking(writeTracker));
+		const exitCode = typeof result.status === 'number' ? result.status : null;
+		const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
+		let killMethod: string | null = null;
+		let termination: RunTerminationReceipt | null = null;
+
+		if (runStatus === 'timed_out') {
+			termination = result.termination ?? createPendingTimeoutTermination(getKillMethod());
+			killMethod = termination.method;
+			if (!result.termination && result.pid) {
+				terminateProcessTree(result.pid);
+			}
+		}
+
+		const receipt = profiler.measure('receipt_create', () =>
+			assembleRunReceipt({
+				correlationId: options.correlationId ?? createCorrelationId('run'),
+				intentName: request.intentName,
+				runStatus,
+				startedAt,
+				finishedAt,
+				projectRoot,
+				plan,
+				result,
+				exitCode,
+				killMethod,
+				termination,
+				writeDrift,
+				executorOverheadMs: Math.max(0, Math.round((performance.now() - executorStartedAtMs - childDurationMs) * 1000) / 1000),
+				phaseTimings: profiler.getReceiptPhases(),
+				stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
+				stderrTailBytes: runReceiptPolicy.stderrTailBytes,
+			}),
+		);
+
+		if (options.writeLatestReceipt !== false) {
+			profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt));
+		}
+		if (options.recordPerformanceHistory !== false) {
+			profiler.measure('performance_history_write', () => recordRunPerformanceHistory(projectRoot, receipt));
+		}
+		writeLatestProfile(profiler, options, {
+			projectRoot,
+			intent: request.intentName,
+			status: runStatus,
+			previewMode: null,
+		});
+
+		const commandExitCode = runStatus === 'passed' ? 0 : 1;
+		if (request.outputMode === 'json') {
+			reporter.stdout(JSON.stringify(receipt, null, 2));
+			return { exitCode: commandExitCode, receipt };
+		}
+
+		if (request.outputMode === 'silent') {
+			return { exitCode: commandExitCode, receipt };
+		}
+
+		if (!streamedOutput) {
+			emitOutput(reporter, result.stdout, 'stdout');
+			emitOutput(reporter, result.stderr, 'stderr');
+		}
+
+		if (result.error) {
+			const errorWithCode = result.error as NodeJS.ErrnoException;
+			if (errorWithCode.code === 'ETIMEDOUT') {
+				reporter.stderr(t(lang, 'run.error.timedOut', { intent: request.intentName, seconds: plan.timeoutSeconds }));
+				return { exitCode: 1, receipt };
+			}
+
+			if (isOutputLimitExceededError(result.error)) {
+				reporter.stderr(t(lang, 'run.error.outputLimitExceeded', { intent: request.intentName, message: result.error.message }));
+				return { exitCode: 1, receipt };
+			}
+
+			reporter.stderr(t(lang, 'run.error.startFailed', { intent: request.intentName, message: result.error.message }));
+			return { exitCode: 1, receipt };
+		}
+
+		return { exitCode: commandExitCode, receipt };
+	} finally {
+		activeRunLock.handle.release();
+	}
+}
+
 /**
  * mf:anchor cli.run.intent-contract
  * purpose: Enforce command intent eligibility before executing a configured oneshot command.
@@ -363,9 +596,6 @@ export async function runRun(
 	lang: CliLang = 'en',
 	options: RunCommandOptions = {},
 ): Promise<number> {
-	const executorStartedAtMs = performance.now();
-	const profiler = new RunProfiler();
-
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getRunHelp(lang));
 		return 0;
@@ -417,223 +647,42 @@ export async function runRun(
 		return 1;
 	}
 
-	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
-	const rootTrust = profiler.measure('root_trust', () => assessRunRootTrust(projectRoot));
-
-	if (!previewMode && !allowUntrustedRoot && !rootTrust.trusted) {
-		const message =
-			rootTrust.reason === 'manifest_lock_invalid'
-				? t(lang, 'run.error.untrustedRootInvalid', { detail: rootTrust.detail ?? rootTrust.manifestLockPath })
-				: t(lang, 'run.error.untrustedRootMissing', { path: rootTrust.detail ?? rootTrust.manifestLockPath });
-		reporter.stderr(renderCliError(message, 'mf run --help', lang));
-		return 1;
+	if (!previewMode) {
+		const result = await executeRunCommand(
+			{
+				intentName,
+				outputMode: json ? 'json' : 'text',
+				allowUntrustedRoot,
+				wait: parsedArgs.wait,
+				waitTimeoutSeconds: parsedArgs.waitTimeoutSeconds,
+			},
+			reporter,
+			lang,
+			options,
+		);
+		return result.exitCode;
 	}
 
+	const profiler = new RunProfiler();
+	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
 	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
 	const plan = profiler.measure('plan_creation', () =>
 		createRunPlan(projectRoot, contract, intentName, { testTargets: options.testTargets }),
 	);
 
-	if (previewMode) {
-		profiler.measure('preview_render', () => {
-			if (json) {
-				reporter.stdout(JSON.stringify(createRunPreview(plan, previewMode), null, 2));
-			} else {
-				reporter.stdout(renderRunPreviewText(plan, previewMode, lang));
-			}
-		});
-		writeLatestProfile(profiler, options, {
-			projectRoot,
-			intent: intentName,
-			status: plan.ok ? 'previewed' : 'blocked',
-			previewMode,
-		});
-
-		return plan.ok ? 0 : 1;
-	}
-
-	if (!plan.ok) {
+	profiler.measure('preview_render', () => {
 		if (json) {
-			reporter.stdout(JSON.stringify(createRunPreview(plan, 'plan-only'), null, 2));
-		}
-		reportRunPlanFailure(plan, reporter, lang);
-		writeLatestProfile(profiler, options, {
-			projectRoot,
-			intent: intentName,
-			status: 'blocked',
-			previewMode: null,
-		});
-		return 1;
-	}
-
-	const activeRunLock = await profiler.measureAsync('active_lock_acquire', () =>
-		acquireActiveRunLockWithOptionalWait({
-			enabled: parsedArgs.wait,
-			waitTimeoutSeconds: parsedArgs.waitTimeoutSeconds,
-			projectRoot,
-			contract,
-			intentName,
-			commandHash: createPlanCommandHash(plan),
-			json,
-			reporter,
-			lang,
-		}),
-	);
-
-	if (!activeRunLock.ok) {
-		reporter.stderr(renderCliError(renderActiveLockConflictMessage(intentName, activeRunLock.conflicts, lang), 'mf run --dry-run --json', lang));
-		writeLatestProfile(profiler, options, {
-			projectRoot,
-			intent: intentName,
-			status: 'blocked',
-			previewMode: null,
-		});
-		return 1;
-	}
-
-	try {
-
-	const runReceiptPolicy = profiler.measure('retention_policy', () =>
-		resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot)),
-	);
-	const env = profiler.measure('environment', () =>
-		createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
-	);
-	env[ACTIVE_RUN_LOCK_ID_ENV] = activeRunLock.handle.record.run_id;
-	const writeTracker = profiler.measure('write_drift_before', () =>
-		startRunWriteTracking(projectRoot, contract, intentName, {
-			additionalDeclaredPaths: options.additionalDeclaredWritePaths,
-			env,
-		}),
-	);
-	const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);
-	const stderrTailBytes = Math.min(runReceiptPolicy.stderrTailBytes, plan.maxOutputBytes);
-	let streamedOutput = false;
-
-	const childStartedAtMs = performance.now();
-	const startedAt = new Date();
-	const stopRunProgress = createRunProgressReporter({
-		enabled: !json && Boolean(reporter.writeStderr),
-		intentName,
-		timeoutSeconds: plan.timeoutSeconds,
-		reporter,
-		lang,
-	});
-	const result = await profiler.measureAsync('child_command', async () => {
-		try {
-			if (plan.commandArgv) {
-				streamedOutput = !json;
-				return runArgvCommandStreaming(
-					plan.argvCommand,
-					plan.cwd,
-					env,
-					plan.timeoutSeconds,
-					plan.killAfterSeconds,
-					plan.maxOutputBytes,
-					stdoutTailBytes,
-					stderrTailBytes,
-					reporter,
-					!json,
-					true,
-				);
-			}
-
-			streamedOutput = !json;
-			return runShellCommandStreaming(
-				plan.shellCommand,
-				plan.cwd,
-				env,
-				plan.timeoutSeconds,
-				plan.killAfterSeconds,
-				plan.maxOutputBytes,
-				stdoutTailBytes,
-				stderrTailBytes,
-				reporter,
-				!json,
-				true,
-			);
-		} finally {
-			stopRunProgress();
+			reporter.stdout(JSON.stringify(createRunPreview(plan, previewMode), null, 2));
+		} else {
+			reporter.stdout(renderRunPreviewText(plan, previewMode, lang));
 		}
 	});
-	const childDurationMs = performance.now() - childStartedAtMs;
-	const finishedAt = new Date();
-	const writeDrift = profiler.measure('write_drift_after', () => finishRunWriteTracking(writeTracker));
-	const exitCode = typeof result.status === 'number' ? result.status : null;
-	const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
-	let killMethod: string | null = null;
-	let termination: RunTerminationReceipt | null = null;
-
-	if (runStatus === 'timed_out') {
-		termination = result.termination ?? createPendingTimeoutTermination(getKillMethod());
-		killMethod = termination.method;
-		if (!result.termination && result.pid) {
-			terminateProcessTree(result.pid);
-		}
-	}
-
-	const receipt = profiler.measure('receipt_create', () =>
-		assembleRunReceipt({
-			correlationId: options.correlationId ?? createCorrelationId('run'),
-			intentName,
-			runStatus,
-			startedAt,
-			finishedAt,
-			projectRoot,
-			plan,
-			result,
-			exitCode,
-			killMethod,
-			termination,
-			writeDrift,
-			executorOverheadMs: Math.max(0, Math.round((performance.now() - executorStartedAtMs - childDurationMs) * 1000) / 1000),
-			phaseTimings: profiler.getReceiptPhases(),
-			stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
-			stderrTailBytes: runReceiptPolicy.stderrTailBytes,
-		}),
-	);
-
-	if (options.writeLatestReceipt !== false) {
-		profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt));
-	}
-	if (options.recordPerformanceHistory !== false) {
-		profiler.measure('performance_history_write', () => recordRunPerformanceHistory(projectRoot, receipt));
-	}
 	writeLatestProfile(profiler, options, {
 		projectRoot,
 		intent: intentName,
-		status: runStatus,
-		previewMode: null,
+		status: plan.ok ? 'previewed' : 'blocked',
+		previewMode,
 	});
 
-	if (json) {
-		reporter.stdout(JSON.stringify(receipt, null, 2));
-		return runStatus === 'passed' ? 0 : 1;
-	}
-
-	if (!streamedOutput) {
-		emitOutput(reporter, result.stdout, 'stdout');
-		emitOutput(reporter, result.stderr, 'stderr');
-	}
-
-	if (result.error) {
-		const errorWithCode = result.error as NodeJS.ErrnoException;
-		if (errorWithCode.code === 'ETIMEDOUT') {
-			reporter.stderr(t(lang, 'run.error.timedOut', { intent: intentName, seconds: plan.timeoutSeconds }));
-			return 1;
-		}
-
-		if (isOutputLimitExceededError(result.error)) {
-			reporter.stderr(t(lang, 'run.error.outputLimitExceeded', { intent: intentName, message: result.error.message }));
-			return 1;
-		}
-
-		reporter.stderr(t(lang, 'run.error.startFailed', { intent: intentName, message: result.error.message }));
-		return 1;
-	}
-
-	return runStatus === 'passed' ? 0 : 1;
-	} finally {
-		activeRunLock.handle.release();
-	}
+	return plan.ok ? 0 : 1;
 }
