@@ -243,7 +243,7 @@ mf run mustflow_update_apply
 
 开发服务器、监听模式、浏览器界面、交互式命令和后台进程不会被直接执行。
 
-每次命令运行后，最新运行记录会写入 `.mustflow/state/runs/latest.json`，包含意图名称、工作目录、超时、退出码、是否超时，以及 stdout 和 stderr 的尾部内容。
+每次命令运行后，运行记录会写入唯一的 `.mustflow/state/runs/run-*` 目录，并把 `.mustflow/state/runs/latest.json` 更新为最新指针。保留的 `run-*` 和 `verify-*` 目录会汇总到 `.mustflow/state/runs/latest.index.json`。记录包含意图名称、工作目录、超时、退出码、是否超时，以及 stdout 和 stderr 的尾部内容。
 
 ## 语言和配置档案
 

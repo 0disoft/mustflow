@@ -27,6 +27,8 @@ Retention settings are configured in
 [.mustflow/config/mustflow.toml](../../.mustflow/config/mustflow.toml). The implementation must enforce the configured limits for:
 
 - maximum receipt size;
+- maximum retained run and verify receipt directories;
+- maximum total retained run and verify receipt directory size;
 - maximum retained output tail size;
 - generated map size;
 - cache and handoff limits when those features are enabled; and
@@ -56,7 +58,8 @@ Generated state serves only as evidence or cache. It must never override:
 
 ## Testable Outcomes
 
-- `.mustflow/state/runs/latest.json` can summarize a run but cannot alter which commands are runnable.
+- `.mustflow/state/runs/latest.json` can summarize the latest run but cannot alter which commands are runnable.
+- `.mustflow/state/runs/latest.index.json` can help find recently retained runs by intent or cwd, but it cannot make pruned receipts available or act as session-scoped proof.
 - `.mustflow/cache/mustflow.sqlite` can accelerate search but cannot replace reading current files.
 - A missing cache does not indicate a broken installation when the feature is optional.
 - Oversized generated files should trigger strict checks when they exceed configured limits.

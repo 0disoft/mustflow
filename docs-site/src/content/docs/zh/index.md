@@ -42,7 +42,7 @@ REPO_MAP.md  # 可选生成文件
 `mf init` 不会创建 `README.md`、`.github/`、根目录 `docs/`、根目录 `skills/`、源代码或包管理器配置。
 `REPO_MAP.md` 会根据仓库结构生成，而不是从模板复制。
 `manifest.lock.toml` 由 `mf init` 生成，用于记录实际安装结果。
-`.mustflow/state/runs/latest.json` 是最新运行回执；每个 `run-*` 目录保留对应执行的已保存回执。
+`.mustflow/state/runs/latest.json` 是最新运行指针；每个 `run-*` 目录保留对应执行的已保存回执，`latest.index.json` 汇总最近保留的 `run-*` 和 `verify-*` 目录。
 
 ## 阅读顺序
 

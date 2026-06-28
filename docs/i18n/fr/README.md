@@ -241,7 +241,7 @@ Le travail exécutable est déclaré dans `.mustflow/config/commands.toml` afin 
 
 Les serveurs de développement, modes de surveillance, interfaces navigateur, commandes interactives et processus d’arrière-plan ne sont pas exécutés directement.
 
-Chaque exécution de commande écrit le dernier enregistrement d’exécution dans `.mustflow/state/runs/latest.json`. Cet enregistrement inclut le nom de l’intention, le répertoire de travail, le délai d’expiration, le code de sortie, l’état de dépassement de délai ainsi que la sortie standard et d’erreur.
+Chaque exécution de commande écrit un enregistrement dans un répertoire unique `.mustflow/state/runs/run-*` et met à jour `.mustflow/state/runs/latest.json` comme pointeur le plus récent. Les répertoires `run-*` et `verify-*` conservés sont résumés dans `.mustflow/state/runs/latest.index.json`. Cet enregistrement inclut le nom de l’intention, le répertoire de travail, le délai d’expiration, le code de sortie, l’état de dépassement de délai ainsi que la sortie standard et d’erreur.
 
 ## Langues et profils
 

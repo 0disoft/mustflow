@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -19,6 +19,7 @@ import {
 	createTempProject,
 	initProject,
 	latestRunProfilePath,
+	latestRunReceiptIndexPath,
 	latestRunReceiptPath,
 	packageVersion,
 	projectRoot,
@@ -67,6 +68,7 @@ destructive = false
 		const receipt = JSON.parse(result.stdout);
 		const latestPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
 		const latest = JSON.parse(readFileSync(latestPath, 'utf8'));
+		const latestIndex = JSON.parse(readFileSync(latestRunReceiptIndexPath(projectPath), 'utf8'));
 		const performanceSamples = JSON.parse(readFileSync(runPerformanceSamplesPath(projectPath), 'utf8'));
 		const performanceSummary = JSON.parse(readFileSync(runPerformanceSummaryPath(projectPath), 'utf8'));
 		const performanceSample = performanceSamples.samples.at(-1);
@@ -139,6 +141,19 @@ destructive = false
 		assert.match(receipt.receipt_path, /^\.mustflow\/state\/runs\/run-.*\/receipt\.json$/u);
 		assert.ok(existsSync(path.join(projectPath, receipt.receipt_path)));
 		assert.deepEqual(latest, receipt);
+		assert.equal(latestIndex.schema_version, '1');
+		assert.equal(latestIndex.kind, 'run_receipt_index');
+		assert.equal(latestIndex.retention.max_items, 50);
+		assert.equal(latestIndex.retention.retained_run_dirs, 1);
+		assert.equal(latestIndex.entries.length, 1);
+		assert.equal(latestIndex.entries[0].command, 'run');
+		assert.equal(latestIndex.entries[0].intent, 'echo_json');
+		assert.equal(latestIndex.entries[0].status, 'passed');
+		assert.equal(latestIndex.entries[0].cwd, '.');
+		assert.equal(latestIndex.entries[0].correlation_id, receipt.correlation_id);
+		assert.equal(latestIndex.entries[0].receipt_path, receipt.receipt_path);
+		assert.equal(latestIndex.latest_by_intent.echo_json, receipt.receipt_path);
+		assert.equal(latestIndex.latest_by_cwd_intent['.::echo_json'], receipt.receipt_path);
 		assert.equal(performanceSamples.schema_version, '1');
 		assert.equal(performanceSamples.retention.max_age_days, 30);
 		assert.equal(performanceSamples.retention.max_total_kb, 256);
@@ -174,6 +189,60 @@ destructive = false
 		assert.equal(performanceFingerprintSummary.last_success_duration_ms, receipt.performance.duration_ms);
 		assert.doesNotMatch(JSON.stringify(performanceSamples), /hello receipt/);
 		assert.doesNotMatch(JSON.stringify(performanceSummary), /hello receipt/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('applies run receipt retention and keeps a rebuilt latest index', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readFileSync(configPath, 'utf8').replace('max_items = 50', 'max_items = 2');
+		writeFileSync(configPath, config);
+		refreshManifestLockHash(projectPath, '.mustflow/config/mustflow.toml');
+
+		for (const intent of ['first_receipt', 'second_receipt', 'third_receipt']) {
+			appendIntent(
+				projectPath,
+				`
+[intents.${intent}]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Print ${intent}."
+argv = ['${process.execPath}', '-e', 'console.log("${intent}")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+			);
+			const result = runCli(projectPath, ['run', intent, '--json']);
+			assert.equal(result.status, 0, result.stderr || result.stdout);
+		}
+
+		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
+		const runDirs = readdirSync(runsDir).filter((entry) => entry.startsWith('run-')).sort();
+		const latest = JSON.parse(readFileSync(latestRunReceiptPath(projectPath), 'utf8'));
+		const latestIndex = JSON.parse(readFileSync(latestRunReceiptIndexPath(projectPath), 'utf8'));
+
+		assert.equal(runDirs.length, 2);
+		assert.ok(existsSync(latestRunReceiptPath(projectPath)));
+		assert.ok(existsSync(latestRunReceiptIndexPath(projectPath)));
+		assert.equal(latest.intent, 'third_receipt');
+		assert.equal(latestIndex.retention.max_items, 2);
+		assert.equal(latestIndex.retention.retained_run_dirs, 2);
+		assert.deepEqual(latestIndex.entries.map((entry) => entry.intent), ['third_receipt', 'second_receipt']);
+		assert.equal(latestIndex.latest_by_intent.third_receipt, latest.receipt_path);
+		assert.equal(latestIndex.latest_by_cwd_intent['.::third_receipt'], latest.receipt_path);
+		assert.equal(latestIndex.latest_by_intent.first_receipt, undefined);
 	} finally {
 		removeTempProject(projectPath);
 	}

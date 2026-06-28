@@ -7,6 +7,8 @@ export const DEFAULT_RETENTION_LIMITS = {
 	repoMapMaxFileKb: 128,
 	repoMapFailIfLarger: true,
 	runReceiptMaxFileKb: 128,
+	runReceiptMaxItems: 50,
+	runReceiptMaxTotalMb: 10,
 	contextMaxFileKb: 8,
 	knowledgeMaxFileKb: 128,
 } as const;
@@ -103,8 +105,8 @@ export function resolveRunReceiptRetentionPolicy(mustflowToml: TomlTable | undef
 			'max_file_kb',
 			DEFAULT_RETENTION_LIMITS.runReceiptMaxFileKb,
 		),
-		maxItems: readPositiveIntegerWithDefault(runReceipts, 'max_items', 1),
-		maxTotalMb: readPositiveIntegerWithDefault(runReceipts, 'max_total_mb', 1),
+		maxItems: readPositiveIntegerWithDefault(runReceipts, 'max_items', DEFAULT_RETENTION_LIMITS.runReceiptMaxItems),
+		maxTotalMb: readPositiveIntegerWithDefault(runReceipts, 'max_total_mb', DEFAULT_RETENTION_LIMITS.runReceiptMaxTotalMb),
 		stdoutTailBytes: readPositiveIntegerWithDefault(
 			runReceipts,
 			'keep_stdout_tail_bytes',

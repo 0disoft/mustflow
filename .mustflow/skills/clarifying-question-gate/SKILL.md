@@ -2,7 +2,7 @@
 mustflow_doc: skill.clarifying-question-gate
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: clarifying-question-gate
@@ -96,6 +96,8 @@ verification, and stop-or-ask boundary.
 - Reversibility classification for each decision: cheap/reversible, moderate, or expensive/hard to
   roll back.
 - A recommended option for each blocking question, with the tradeoff of at least one alternative.
+- Host input capability when known: whether a structured user-input mechanism such as Codex
+  `request_user_input` or MCP elicitation is explicitly available in the current runtime.
 - A request-state decision: `ready`, `ready_with_assumptions`, `needs_confirmation`,
   `blocked_by_conflict`, or `insufficient_evidence`.
 - A normalized task contract when the original request is vague enough to risk drift: goal, current
@@ -123,6 +125,8 @@ verification, and stop-or-ask boundary.
   collection, or broad product discovery.
 - Product decisions are separated from engineering responsibilities. Do not ask whether to preserve
   existing style, avoid swallowed errors, add appropriate tests, or follow command contracts.
+- Structured input tools are optional host capabilities. Do not claim they exist, simulate their UI,
+  or depend on them unless the current host explicitly exposes them for this turn or tool call.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -215,22 +219,40 @@ verification, and stop-or-ask boundary.
       and one meaningful alternative;
     - avoid open-ended prompts like "how should I implement this?" unless no responsible options can
       be framed from repository evidence.
-15. Do not ask bad engineering-delegation questions:
+15. Prefer structured user input for real blocking decisions when the host exposes it:
+    - use a structured input tool such as `request_user_input` or MCP elicitation only when it is
+      explicitly listed as available in the current runtime or tool call;
+    - use it for `needs_confirmation` or for a non-blocking `ready_with_assumptions` choice whose
+      answer would materially improve the result without stopping all progress;
+    - ask at most three short questions, and prefer one question when the answer may change the next
+      question;
+    - provide two or three mutually exclusive choices, put the recommended choice first, and include
+      the concrete consequence or tradeoff for each choice;
+    - allow free-form input when the host mechanism supports it, because the listed options are a
+      steering aid rather than a closed product decision;
+    - use auto-resolution only for non-blocking choices with a narrow reversible default, and never
+      for destructive actions, publish or release decisions, credential or secret handling, data
+      deletion or migration, auth or billing policy, dependency adoption, or other explicit
+      confirmation gates;
+    - if no structured input mechanism is available, ask the same blocking decision as a concise
+      normal chat question when host policy allows it; do not invent a fake UI, long questionnaire,
+      or multiple-choice card in prose when the host explicitly forbids that fallback.
+16. Do not ask bad engineering-delegation questions:
     - "Should I add tests?"
     - "Should I handle errors?"
     - "Should I follow existing style?"
     - "Should I check current files?"
     - "Should I preserve existing behavior?"
-16. Use prompt rewriting only as an exception:
+17. Use prompt rewriting only as an exception:
     - the user explicitly asks for a prompt, issue, PR body, work order, or handoff for another
       agent;
     - the current request is too broken to execute and a normalized contract plus confirmation is the
       smallest safe next step.
     Otherwise, show the normalized contract only when it materially reduces drift, then proceed in
     the same conversation.
-17. If no blocking question remains, proceed without ceremony. State only the assumptions that matter
+18. If no blocking question remains, proceed without ceremony. State only the assumptions that matter
     to review or rollback.
-18. If a blocking question remains unanswered, do not implement around it. Offer the smallest safe
+19. If a blocking question remains unanswered, do not implement around it. Offer the smallest safe
     non-blocked action, such as read-only analysis, a plan, a reproduction, or a narrow preparatory
     refactor when another selected skill supports it.
 
@@ -241,6 +263,8 @@ verification, and stop-or-ask boundary.
 - The agent has not asked for facts it could read locally.
 - Expensive, user-owned, security-sensitive, data-affecting, dependency-affecting, and public-contract
   decisions are resolved before implementation.
+- Structured input tools are used only when available and only for bounded decisions that benefit
+  from user choice.
 - Safe assumptions are narrow, reversible, and reported.
 - Any normalized contract preserves the user's original request separately from repository-derived
   facts and safe assumptions.
@@ -288,6 +312,7 @@ run the specific configured verification intents required by the selected implem
 - Normalized task contract, only when needed, with `user_confirmed`, `repository_derived`,
   `safe_assumption`, and `unresolved` source tags
 - Blocking questions asked, with recommendation and tradeoff
+- Question delivery mode: structured host input, normal chat fallback, or not needed
 - Safe assumptions made
 - Decisions intentionally deferred
 - Implementation scope selected

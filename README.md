@@ -142,7 +142,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
 - Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
 - Stores bounded failure replay capsules for failed `mf verify` runs so future agents can reproduce the intent, receipt, command fingerprint, and changed-file state without copying raw command output.
-- Writes command receipts under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`.
+- Writes bounded command receipts under `.mustflow/state/runs/run-*`, atomically updates `.mustflow/state/runs/latest.json`, and rebuilds `.mustflow/state/runs/latest.index.json` for recent retained runs.
 - Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
 - Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, command-authority source, or source-content database.
 - Tracks agent-created or agent-modified documentation needing prose review with `mf docs review`.
@@ -373,7 +373,7 @@ Command environments remove the project-local `node_modules/.bin` path from `PAT
 
 Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, risk-priced evidence requirements, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
 
-Each executed command run writes a run record under `.mustflow/state/runs/run-*` and atomically updates `.mustflow/state/runs/latest.json`. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr. `latest.json` is a root-scoped convenience pointer, not session-scoped proof; in multi-agent or multi-terminal workflows, use the per-run `receipt_path` or `mf run <intent> --json` output as the evidence for a specific run.
+Each executed command run writes a run record under `.mustflow/state/runs/run-*`, atomically updates `.mustflow/state/runs/latest.json`, and rebuilds `.mustflow/state/runs/latest.index.json` from retained `run-*` and `verify-*` directories. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr. `latest.json` is a root-scoped convenience pointer, not session-scoped proof; in multi-agent or multi-terminal workflows, use the per-run `receipt_path`, the retained index, or `mf run <intent> --json` output as the evidence for a specific run.
 
 ## Language and profiles
 

@@ -266,7 +266,7 @@ mf run mustflow_update_apply
 
 विकास सर्वर, वॉच मोड, ब्राउज़र UI, इंटरैक्टिव कमांड और पृष्ठभूमि प्रक्रियाएँ सीधे नहीं चलाई जातीं।
 
-प्रत्येक कमांड रन नवीनतम रन रिकॉर्ड `.mustflow/state/runs/latest.json` में लिखता है। रिकॉर्ड में इरादे का नाम, कार्य डायरेक्टरी, समय सीमा, निकास कोड, टाइमआउट स्थिति, तथा stdout और stderr का अंतिम भाग शामिल होता है।
+प्रत्येक कमांड रन एक unique `.mustflow/state/runs/run-*` directory में run record लिखता है और `.mustflow/state/runs/latest.json` को latest pointer की तरह update करता है। Retained `run-*` और `verify-*` directories `.mustflow/state/runs/latest.index.json` में summarize होती हैं। रिकॉर्ड में इरादे का नाम, कार्य डायरेक्टरी, समय सीमा, निकास कोड, टाइमआउट स्थिति, तथा stdout और stderr का अंतिम भाग शामिल होता है।
 
 ## भाषाएँ और प्रोफ़ाइल
 

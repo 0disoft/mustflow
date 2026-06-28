@@ -167,6 +167,7 @@ required_after = ["custom_verify"]
 		const perIntentReceipt = JSON.parse(receiptContent);
 		const receiptSha256 = `sha256:${createHash('sha256').update(receiptContent).digest('hex')}`;
 		const latest = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8'));
+		const latestIndex = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.index.json'), 'utf8'));
 
 		assert.equal(manifest.command, 'verify');
 		assert.equal(manifest.correlation_id, report.correlation_id);
@@ -235,6 +236,20 @@ required_after = ["custom_verify"]
 		assert.deepEqual(latest.conflict_ledger, report.conflict_ledger);
 		assert.equal(latest.run_dir, report.run_dir);
 		assert.equal(latest.manifest_path, report.manifest_path);
+		assert.equal(latestIndex.kind, 'run_receipt_index');
+		assert.equal(latestIndex.retention.retained_run_dirs, 1);
+		assert.equal(latestIndex.entries[0].command, 'verify');
+		assert.equal(latestIndex.entries[0].intent, null);
+		assert.equal(latestIndex.entries[0].status, 'passed');
+		assert.equal(latestIndex.entries[0].correlation_id, report.correlation_id);
+		assert.equal(latestIndex.entries[0].verification_plan_id, report.verification_plan_id);
+		assert.equal(latestIndex.entries[0].manifest_path, report.manifest_path);
+		assert.equal(latestIndex.entries[1].command, 'verify');
+		assert.equal(latestIndex.entries[1].intent, 'verify_echo');
+		assert.equal(latestIndex.entries[1].receipt_path, manifest.receipts[0].receipt_path);
+		assert.equal(latestIndex.entries[1].manifest_path, report.manifest_path);
+		assert.equal(latestIndex.latest_by_intent.verify_echo, manifest.receipts[0].receipt_path);
+		assert.equal(latestIndex.latest_by_cwd_intent['.::verify_echo'], manifest.receipts[0].receipt_path);
 	} finally {
 		removeTempProject(projectPath);
 	}

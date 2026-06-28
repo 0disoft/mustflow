@@ -15,10 +15,16 @@ The latest receipt is written to:
 .mustflow/state/runs/latest.json
 ```
 
+Retained run and verify receipts are also summarized in:
+
+```text
+.mustflow/state/runs/latest.index.json
+```
+
 This file is repository-local generated state and should be ignored by version control.
 It is a root-scoped volatile convenience pointer to the most recently completed `mf run`.
 In multi-agent or multi-terminal workflows, use the per-run `receipt_path`, the `--json`
-stdout receipt, or the captured command result as evidence for a specific session.
+stdout receipt, the retained receipt index, or the captured command result as evidence for a specific session.
 Do not treat `latest.json` as session-scoped proof.
 
 ## Required Fields
@@ -89,3 +95,4 @@ An `mf run` receipt provides stronger verification evidence than direct shell ou
 - A timeout records `status = "timed_out"` and `timed_out = true`.
 - A start failure records `status = "start_failed"` and includes an error message.
 - `mf run <intent> --json` outputs the same receipt structure as written to `latest.json`.
+- `latest.index.json` is rebuilt from retained `run-*` and `verify-*` directories and must not list pruned receipt directories.

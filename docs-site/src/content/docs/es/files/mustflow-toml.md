@@ -420,8 +420,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 
@@ -453,8 +453,8 @@ fail_if_larger = true
 
 `raw_events.store = "none"` significa que la plantilla predeterminada no almacena registros de eventos sin procesar. Si más adelante se agrega almacenamiento en caché, debe permanecer separado de los documentos del proyecto que puedan confirmarse.
 
-`run_receipts` limita `.mustflow/state/runs/latest.json`, que escribe `mf run`.
-Un recibo de ejecución debe contener resultados estructurados pequeños y colas de salida, no el registro completo.
+`run_receipts` limita los directorios `.mustflow/state/runs/run-*` y `.mustflow/state/runs/verify-*` retenidos; `latest.json` sigue siendo solo el puntero volátil más reciente.
+Un recibo de ejecución debe contener resultados estructurados pequeños y colas de salida, no el registro completo. `latest.index.json` se reconstruye desde los directorios retenidos y también es estado generado.
 
 `knowledge.enabled = false` significa que la plantilla predeterminada no crea una base de conocimiento. Si se habilita más adelante, los archivos de conocimiento deben contener decisiones, investigaciones y resúmenes de traspaso, no registros sin procesar.
 

@@ -241,7 +241,7 @@ mf run mustflow_update_apply
 
 개발 서버, 감시 모드, 브라우저 UI, 대화형 명령, 백그라운드 프로세스는 직접 실행하지 않습니다.
 
-명령 실행 시 `.mustflow/state/runs/latest.json`에 마지막 실행 결과를 기록합니다. 실행 결과에는 명령 이름, 작업 디렉터리, 제한 시간, 종료 코드, 타임아웃 여부, 표준 출력과 표준 에러의 마지막 부분이 포함됩니다.
+명령 실행 시 고유한 `.mustflow/state/runs/run-*` 디렉터리에 실행 기록을 저장하고 `.mustflow/state/runs/latest.json`을 최신 포인터로 갱신합니다. 보존된 `run-*`와 `verify-*` 디렉터리는 `.mustflow/state/runs/latest.index.json`에 요약됩니다. 실행 기록에는 명령 이름, 작업 디렉터리, 제한 시간, 종료 코드, 타임아웃 여부, 표준 출력과 표준 에러의 마지막 부분이 포함됩니다.
 
 ## 언어와 프로필
 

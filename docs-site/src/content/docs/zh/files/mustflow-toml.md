@@ -420,8 +420,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 
@@ -453,8 +453,8 @@ fail_if_larger = true
 
 `raw_events.store = "none"` 表示默认模板不存储原始事件日志。如果以后添加缓存存储，它应与可能提交到版本控制的项目文档分开。
 
-`run_receipts` 限制由 `mf run` 写入的 `.mustflow/state/runs/latest.json`。
-运行 receipt 应包含小型结构化结果和输出尾部，而不是完整日志。
+`run_receipts` 限制保留的 `.mustflow/state/runs/run-*` 和 `.mustflow/state/runs/verify-*` 目录；`latest.json` 只是易变的最新指针。
+运行 receipt 应包含小型结构化结果和输出尾部，而不是完整日志。`latest.index.json` 会从保留目录重新生成，也属于生成状态。
 
 `knowledge.enabled = false` 表示默认模板不创建知识库。
 如果以后启用，知识文件应包含决策、调查记录和交接摘要，而不是原始日志。

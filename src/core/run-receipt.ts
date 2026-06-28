@@ -5,7 +5,8 @@ import { createStateRunId } from './atomic-state-write.js';
 import type { CommandEnvPolicy } from './command-env.js';
 import { COMMAND_OUTPUT_LIMIT_SCOPE } from './command-output-limits.js';
 import { decodeUtf8Tail, type BoundedOutputSnapshot } from './bounded-output.js';
-import { DEFAULT_RUN_RECEIPT_TAIL_BYTES } from './retention-policy.js';
+import { DEFAULT_RUN_RECEIPT_TAIL_BYTES, type RunReceiptRetentionPolicy } from './retention-policy.js';
+import { updateRunReceiptState } from './run-receipt-state.js';
 import type { RunWriteDriftReceipt } from './run-write-drift.js';
 import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { redactSecretLikeText } from './secret-redaction.js';
@@ -523,7 +524,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 	};
 }
 
-export function writeRunReceipt(projectRoot: string, receipt: RunReceipt): void {
+export function writeRunReceipt(projectRoot: string, receipt: RunReceipt, policy?: RunReceiptRetentionPolicy): void {
 	const receiptDir = path.join(projectRoot, RUN_RECEIPT_DIR);
 	const latestPath = path.join(receiptDir, LATEST_RUN_RECEIPT);
 	const receiptPath = path.resolve(projectRoot, receipt.receipt_path);
@@ -535,4 +536,8 @@ export function writeRunReceipt(projectRoot: string, receipt: RunReceipt): void 
 
 	writeJsonFileInsideWithoutSymlinks(projectRoot, receiptPath, receipt);
 	writeJsonFileInsideWithoutSymlinks(projectRoot, latestPath, receipt);
+
+	if (policy) {
+		updateRunReceiptState(projectRoot, policy);
+	}
 }

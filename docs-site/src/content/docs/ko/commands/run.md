@@ -51,9 +51,9 @@ npx mf run test --json
 
 ## JSON 필드 상세
 
-명령을 실행하면 고유한 `.mustflow/state/runs/run-*` 디렉터리에 실행 기록을 저장하고, 같은 최신 실행 기록으로 `.mustflow/state/runs/latest.json`을 원자적으로 갱신합니다.
+명령을 실행하면 고유한 `.mustflow/state/runs/run-*` 디렉터리에 실행 기록을 저장하고, 같은 최신 실행 기록으로 `.mustflow/state/runs/latest.json`을 원자적으로 갱신한 뒤, 보존 중인 `run-*`와 `verify-*` 디렉터리에서 `.mustflow/state/runs/latest.index.json`을 다시 만듭니다.
 
-`--json`을 사용하면 같은 실행 기록을 표준 출력으로도 제공합니다. 자동화 도구나 에이전트는 텍스트 메시지를 파싱하기보다 이 데이터를 쓰는 것이 좋습니다.
+`--json`을 사용하면 같은 실행 기록을 표준 출력으로도 제공합니다. 자동화 도구나 에이전트는 텍스트 메시지를 파싱하기보다 이 데이터를 쓰는 것이 좋습니다. 여러 에이전트나 여러 터미널이 동시에 작업할 때 `latest.index.json`은 최근 보존 실행을 찾는 데 도움을 주지만, 특정 세션의 증거는 개별 `receipt_path`나 현재 명령 결과를 우선해야 합니다.
 
 자동화 도구용 출력에는 다음 필드가 포함됩니다.
 

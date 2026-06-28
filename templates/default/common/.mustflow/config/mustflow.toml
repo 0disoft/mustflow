@@ -350,8 +350,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 

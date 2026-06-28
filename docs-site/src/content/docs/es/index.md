@@ -42,7 +42,7 @@ REPO_MAP.md  # archivo generado opcional
 `mf init` no crea `README.md`, `.github/`, el directorio raíz `docs/`, el directorio raíz `skills/`, código fuente ni configuración del gestor de paquetes.
 `REPO_MAP.md` se genera a partir de la estructura del repositorio en lugar de copiarse desde la plantilla.
 `manifest.lock.toml` lo genera `mf init` para registrar el resultado real de la instalación.
-`.mustflow/state/runs/latest.json` es el recibo de ejecución más reciente; cada directorio `run-*` conserva el recibo guardado de esa ejecución.
+`.mustflow/state/runs/latest.json` es el puntero a la ejecución más reciente; cada directorio `run-*` conserva el recibo guardado de esa ejecución, y `latest.index.json` resume los directorios `run-*` y `verify-*` retenidos recientemente.
 
 ## Orden de lectura
 

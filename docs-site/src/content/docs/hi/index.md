@@ -42,7 +42,7 @@ REPO_MAP.md  # वैकल्पिक रूप से जनरेट की 
 `mf init` `README.md`, `.github/`, रूट `docs/`, रूट `skills/`, स्रोत कोड या पैकेज मैनेजर कॉन्फ़िगरेशन नहीं बनाता।
 `REPO_MAP.md` टेम्पलेट से कॉपी होने के बजाय रिपॉज़िटरी संरचना से जनरेट होता है।
 `manifest.lock.toml` को `mf init` वास्तविक इंस्टॉल परिणाम दर्ज करने के लिए जनरेट करता है।
-`.mustflow/state/runs/latest.json` सबसे नया execution receipt है; हर `run-*` directory उस execution की saved receipt रखती है।
+`.mustflow/state/runs/latest.json` सबसे नए execution का pointer है; हर `run-*` directory उस execution की saved receipt रखती है, और `latest.index.json` recent retained `run-*` और `verify-*` directories को summarize करता है।
 
 ## पढ़ने का क्रम
 

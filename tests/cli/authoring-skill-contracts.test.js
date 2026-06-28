@@ -4440,6 +4440,17 @@ test('clarifying question gate keeps blocking questions evidence-based and bound
 	assert.match(localSkill, /unresolved/u);
 	assert.match(localSkill, /ask at most three questions at once/u);
 	assert.match(localSkill, /ask only one question when its answer may make later questions irrelevant/u);
+	assert.match(localSkill, /structured user-input mechanism such as Codex\s+`request_user_input` or MCP elicitation/u);
+	assert.match(localSkill, /Structured input tools are optional host capabilities/u);
+	assert.match(localSkill, /Prefer structured user input for real blocking decisions when the host exposes it/u);
+	assert.match(localSkill, /explicitly listed as available in the current runtime or tool call/u);
+	assert.match(localSkill, /provide two or three mutually exclusive choices/u);
+	assert.match(localSkill, /put the recommended choice first/u);
+	assert.match(localSkill, /allow free-form input when the host mechanism supports it/u);
+	assert.match(localSkill, /auto-resolution only for non-blocking choices with a narrow reversible default/u);
+	assert.match(localSkill, /never\s+for destructive actions, publish or release decisions/u);
+	assert.match(localSkill, /do not invent a fake UI, long questionnaire,\s+or multiple-choice card in prose/u);
+	assert.match(localSkill, /Question delivery mode: structured host input, normal chat fallback, or not needed/u);
 	assert.match(localSkill, /Do not ask the user to answer facts that the\s+codebase can answer/u);
 	assert.match(localSkill, /"should I add tests\?"/u);
 	assert.match(localSkill, /Use prompt rewriting only as an exception/u);
@@ -4454,7 +4465,7 @@ test('clarifying question gate keeps blocking questions evidence-based and bound
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/clarifying-question-gate\/SKILL\.md"/u);
 	assert.match(manifest, /"clarifying-question-gate"/u);
-	assert.match(i18n, /\[documents\."skill\.clarifying-question-gate"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.clarifying-question-gate"\][\s\S]*?revision = 4/u);
 });
 
 test('structure discovery gate keeps pre-implementation design questions bounded', () => {

@@ -241,7 +241,7 @@ El trabajo ejecutable se declara en `.mustflow/config/commands.toml` para evitar
 
 No se ejecutan directamente servidores de desarrollo, modos de observación, interfaces web, comandos interactivos ni procesos en segundo plano.
 
-Cada ejecución de comando escribe el registro más reciente en `.mustflow/state/runs/latest.json`. Este registro incluye el nombre de la intención, directorio de trabajo, límite de tiempo, código de salida, estado de tiempo agotado y salida final de stdout y stderr.
+Cada ejecución de comando guarda un registro en un directorio único `.mustflow/state/runs/run-*` y actualiza `.mustflow/state/runs/latest.json` como puntero más reciente. Los directorios `run-*` y `verify-*` retenidos se resumen en `.mustflow/state/runs/latest.index.json`. El registro incluye el nombre de la intención, directorio de trabajo, límite de tiempo, código de salida, estado de tiempo agotado y salida final de stdout y stderr.
 
 ## Idiomas y perfiles
 

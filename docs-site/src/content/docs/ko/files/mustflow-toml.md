@@ -528,8 +528,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 
@@ -563,8 +563,8 @@ fail_if_larger = true
 `raw_events.store = "none"`은 기본 템플릿이 원시 이벤트 로그를 저장하지 않는다는 뜻입니다.
 나중에 캐시 저장을 열더라도 프로젝트에 커밋될 수 있는 문서와 분리해야 합니다.
 
-`run_receipts`는 `mf run`이 쓰는 `.mustflow/state/runs/latest.json`의 상한입니다.
-실행 기록은 전체 로그가 아니라 작은 구조화 결과와 표준 출력/오류의 끝부분만 담아야 합니다.
+`run_receipts`는 보존되는 `.mustflow/state/runs/run-*`와 `.mustflow/state/runs/verify-*` 디렉터리의 상한입니다. `latest.json`은 휘발성 최신 포인터일 뿐입니다.
+실행 기록은 전체 로그가 아니라 작은 구조화 결과와 표준 출력/오류의 끝부분만 담아야 합니다. `latest.index.json`은 보존된 디렉터리에서 다시 만들어지는 생성 상태입니다.
 
 `knowledge.enabled = false`는 기본 템플릿이 지식베이스를 만들지 않는다는 뜻입니다.
 나중에 선택 기능으로 켜더라도 지식 문서는 원문 로그가 아니라 결정, 조사, 인계 요약만 담아야 합니다.

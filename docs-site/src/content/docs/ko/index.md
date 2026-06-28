@@ -53,16 +53,17 @@ REPO_MAP.md  # 선택 생성
 │  ├─ routes.toml
 │  ├─ INDEX.md
 │  └─ */SKILL.md
-└─ state/  # 사용 중 생성
-   └─ runs/
-      ├─ run-*/receipt.json
-      └─ latest.json
+   └─ state/  # 사용 중 생성
+      └─ runs/
+         ├─ run-*/receipt.json
+         ├─ latest.index.json
+         └─ latest.json
 ```
 
 `mf init`은 `README.md`, `.github/`, 루트의 일반 `docs/`, `skills/`, `src/` 같은 프로젝트 기본 디렉터리를 건드리지 않습니다.
 `REPO_MAP.md`는 정적 템플릿에서 복사하지 않고 저장소 구조를 분석해 생성합니다.
 `manifest.lock.toml`은 초기화가 성공했을 때 실제 설치 결과를 기록하기 위해 생성합니다.
-`.mustflow/state/runs/latest.json`은 최신 실행 기록이고, 각 `run-*` 디렉터리는 해당 실행의 저장된 영수증을 담습니다.
+`.mustflow/state/runs/latest.json`은 최신 실행 포인터이고, 각 `run-*` 디렉터리는 해당 실행의 저장된 기록을 담습니다. `latest.index.json`은 최근 보존된 `run-*`와 `verify-*` 디렉터리를 요약합니다.
 
 ## 필수 읽기 순서
 

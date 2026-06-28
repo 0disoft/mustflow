@@ -416,7 +416,7 @@ export async function executeRunCommand(
 		);
 
 		if (options.writeLatestReceipt !== false) {
-			profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt));
+			profiler.measure('receipt_write', () => writeRunReceipt(projectRoot, receipt, runReceiptPolicy));
 		}
 		if (options.recordPerformanceHistory !== false) {
 			profiler.measure('performance_history_write', () => recordRunPerformanceHistory(projectRoot, receipt));

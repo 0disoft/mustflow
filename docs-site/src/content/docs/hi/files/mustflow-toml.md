@@ -420,8 +420,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 
@@ -453,8 +453,8 @@ fail_if_larger = true
 
 `raw_events.store = "none"` का अर्थ है कि default template raw event logs store नहीं करता। यदि cache storage बाद में जोड़ा जाए, तो वह commit हो सकने वाले project documents से अलग रहना चाहिए।
 
-`run_receipts` `.mustflow/state/runs/latest.json` को limit करता है, जिसे `mf run` लिखता है।
-Run receipt में छोटे structured results और output tails होने चाहिए, full log नहीं।
+`run_receipts` retained `.mustflow/state/runs/run-*` और `.mustflow/state/runs/verify-*` directories को limit करता है; `latest.json` सिर्फ volatile latest pointer रहता है।
+Run receipt में छोटे structured results और output tails होने चाहिए, full log नहीं। `latest.index.json` retained directories से rebuild होता है और generated state ही रहता है।
 
 `knowledge.enabled = false` का अर्थ है कि default template knowledge base create नहीं करता।
 बाद में enable होने पर knowledge files में decisions, investigations, और handoff summaries होने चाहिए, raw logs नहीं।

@@ -550,8 +550,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 
@@ -585,8 +585,8 @@ or raw JSONL event streams inside the project.
 `raw_events.store = "none"` means the default template does not store raw event logs. If cache
 storage is added later, it should stay separate from project documents that may be committed.
 
-`run_receipts` limits `.mustflow/state/runs/latest.json`, which is written by `mf run`.
-A run receipt should contain small structured results and output tails, not the full log.
+`run_receipts` limits retained `.mustflow/state/runs/run-*` and `.mustflow/state/runs/verify-*` directories, while `latest.json` remains only the volatile latest pointer.
+A run receipt should contain small structured results and output tails, not the full log. `latest.index.json` is rebuilt from the retained directories and is also generated state.
 
 `knowledge.enabled = false` means the default template does not create a knowledge base.
 If enabled later, knowledge files should contain decisions, investigations, and handoff summaries,

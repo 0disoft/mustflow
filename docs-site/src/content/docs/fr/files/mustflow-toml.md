@@ -420,8 +420,8 @@ on_limit = "report"
 [retention.run_receipts]
 store = "repo_local_ignored"
 max_file_kb = 128
-max_items = 1
-max_total_mb = 1
+max_items = 50
+max_total_mb = 10
 keep_stdout_tail_bytes = 65536
 keep_stderr_tail_bytes = 65536
 
@@ -453,8 +453,8 @@ fail_if_larger = true
 
 `raw_events.store = "none"` signifie que le modèle par défaut ne stocke pas de journaux d’événements bruts. Si un stockage de cache est ajouté plus tard, il doit rester séparé des documents du projet qui peuvent être validés.
 
-`run_receipts` limite `.mustflow/state/runs/latest.json`, qui est écrit par `mf run`.
-Un reçu d’exécution doit contenir de petits résultats structurés et des fins de sortie, pas le journal complet.
+`run_receipts` limite les répertoires `.mustflow/state/runs/run-*` et `.mustflow/state/runs/verify-*` conservés; `latest.json` reste seulement le pointeur volatil le plus récent.
+Un reçu d’exécution doit contenir de petits résultats structurés et des fins de sortie, pas le journal complet. `latest.index.json` est reconstruit depuis les répertoires conservés et reste aussi un état généré.
 
 `knowledge.enabled = false` signifie que le modèle par défaut ne crée pas de base de connaissances.
 Si elle est activée plus tard, les fichiers de connaissances doivent contenir des décisions, investigations et résumés de passage de relais, pas des journaux bruts.

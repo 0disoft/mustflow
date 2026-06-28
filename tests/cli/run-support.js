@@ -37,6 +37,10 @@ export function latestRunReceiptPath(projectPath) {
 	return path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
 }
 
+export function latestRunReceiptIndexPath(projectPath) {
+	return path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.index.json');
+}
+
 export function latestRunProfilePath(projectPath) {
 	return path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.profile.json');
 }

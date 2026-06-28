@@ -53,16 +53,17 @@ REPO_MAP.md  # optional generated file
 │  ├─ routes.toml
 │  ├─ INDEX.md
 │  └─ */SKILL.md
-└─ state/  # generated during use
-   └─ runs/
-      ├─ run-*/receipt.json
-      └─ latest.json
+   └─ state/  # generated during use
+      └─ runs/
+         ├─ run-*/receipt.json
+         ├─ latest.index.json
+         └─ latest.json
 ```
 
 `mf init` does not modify `README.md`, `.github/`, or root-level directories such as `docs/`, `skills/`, and `src/`.
 `REPO_MAP.md` is dynamically generated from the repository structure rather than being copied from a static template.
 `manifest.lock.toml` is generated upon initialization to record the exact installation state.
-`.mustflow/state/runs/latest.json` serves as the most recent execution record, while each `run-*` directory keeps that run's saved receipt.
+`.mustflow/state/runs/latest.json` serves as the most recent execution pointer, each `run-*` directory keeps that run's saved receipt, and `latest.index.json` summarizes recent retained `run-*` and `verify-*` directories.
 
 ## Mandatory Read Sequence
 

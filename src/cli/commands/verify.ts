@@ -57,7 +57,9 @@ import {
 } from '../../core/run-write-drift.js';
 import { createCommandEnv } from '../../core/command-env.js';
 import type { VerificationCandidate } from '../../core/verification-plan.js';
-import { readCommandContract } from '../../core/config-loading.js';
+import { readCommandContract, readMustflowConfigIfExists } from '../../core/config-loading.js';
+import { resolveRunReceiptRetentionPolicy } from '../../core/retention-policy.js';
+import { updateRunReceiptState } from '../../core/run-receipt-state.js';
 import {
 	evaluateCommandPreconditions,
 	type CommandPreconditionPlan,
@@ -1247,6 +1249,7 @@ function writeVerifyRunReceipts(
 	};
 
 	writeJsonFileInsideWithoutSymlinks(projectRoot, resolveLatestVerifyRunReceiptPath(projectRoot), latest);
+	updateRunReceiptState(projectRoot, resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot)));
 	return outputWithReceiptPaths;
 }
 

@@ -8,6 +8,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added a rebuilt `.mustflow/state/runs/latest.index.json` receipt index so agents can find recent
+  retained runs by intent and cwd without overloading the root-wide `latest.json` pointer.
 - Added the built-in `code/dependency-graph` script-pack helper so agents can trace bounded
   relative TypeScript and JavaScript import, export, require, and dynamic import edges before
   changing source modules.
@@ -60,6 +62,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Clarified `clarifying-question-gate` so agents prefer host-provided structured input such as
+  `request_user_input` only for bounded blocking decisions, with a concise chat fallback when the
+  host does not expose that capability.
+- Applied `[retention.run_receipts]` limits to `run-*` and `verify-*` receipt directories and raised
+  the default retained receipt budget to 50 directories and 10 MB.
 - Optimized line-ending detection and LF normalization to avoid byte-by-byte JavaScript scans
   across large changed files while preserving the existing report and normalize semantics.
 - Narrowed related-test selection for line-ending core implementation changes so schema smoke

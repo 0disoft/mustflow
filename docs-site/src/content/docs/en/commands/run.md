@@ -56,9 +56,9 @@ npx mf run test --json
 
 ## JSON Fields
 
-Each execution writes a receipt under a unique `.mustflow/state/runs/run-*` directory and atomically updates `.mustflow/state/runs/latest.json` with the same latest receipt.
+Each execution writes a receipt under a unique `.mustflow/state/runs/run-*` directory, atomically updates `.mustflow/state/runs/latest.json` with the same latest receipt, and rebuilds `.mustflow/state/runs/latest.index.json` from retained `run-*` and `verify-*` directories.
 
-With `--json`, the same receipt is printed to standard output. Automation and agents should parse this structured output instead of parsing human-readable output.
+With `--json`, the same receipt is printed to standard output. Automation and agents should parse this structured output instead of parsing human-readable output. In multi-agent or multi-terminal workflows, `latest.index.json` is useful for finding recent retained runs, but the per-run `receipt_path` or the current command result remains the strongest evidence for a specific session.
 If the intent is blocked after command-contract planning and before a process starts, standard output contains the same structured plan report as `--plan-only --json`, with `runnable: false` and a stable `reason_code`; no run receipt is written for that blocked attempt.
 
 Machine-readable output uses these fields:
