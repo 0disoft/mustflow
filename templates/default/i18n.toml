@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 188
+revision = 189
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -87,6 +87,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/api-contract-change/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.http-api-semantics-review"]
+source = "locales/en/.mustflow/skills/http-api-semantics-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.backend-reliability-change"]

@@ -216,6 +216,12 @@ route_type = "adjunct"
 priority = 69
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change"]
 
+[routes."http-api-semantics-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
+
 [routes."error-message-integrity-review"]
 category = "general_code"
 route_type = "adjunct"

@@ -127,6 +127,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.equal(template.manifest.defaultProfile, 'minimal');
 	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('api-contract-change'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('http-api-semantics-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-reliability-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
@@ -196,6 +197,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('http-delivery-streaming'),
 			`${profileName} should include http-delivery-streaming`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('http-api-semantics-review'),
+			`${profileName} should include http-api-semantics-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('backend-reliability-change'),

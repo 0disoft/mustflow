@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.103.20"
+version = "2.103.21"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -14,6 +14,7 @@ creates = [
   ".mustflow/skills/routes.toml",
   ".mustflow/skills/adapter-boundary/SKILL.md",
   ".mustflow/skills/api-contract-change/SKILL.md",
+  ".mustflow/skills/http-api-semantics-review/SKILL.md",
   ".mustflow/skills/backend-reliability-change/SKILL.md",
   ".mustflow/skills/http-delivery-streaming/SKILL.md",
   ".mustflow/skills/artifact-integrity-check/SKILL.md",
@@ -226,6 +227,7 @@ available = ["minimal", "patterns", "oss", "team", "product", "library"]
 minimal = [
   "adapter-boundary",
   "api-contract-change",
+  "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
   "auth-permission-change",
@@ -373,6 +375,7 @@ patterns = [
   "architecture-deepening-review",
   "service-boundary-architecture",
   "api-contract-change",
+  "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
   "auth-permission-change",
@@ -528,6 +531,7 @@ patterns = [
 oss = [
   "adapter-boundary",
   "api-contract-change",
+  "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
   "artifact-integrity-check",
@@ -705,6 +709,7 @@ team = [
   "architecture-deepening-review",
   "service-boundary-architecture",
   "api-contract-change",
+  "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
   "auth-permission-change",
@@ -864,6 +869,7 @@ team = [
 product = [
   "adapter-boundary",
   "api-contract-change",
+  "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
   "service-boundary-architecture",
@@ -1028,6 +1034,7 @@ product = [
 library = [
   "adapter-boundary",
   "api-contract-change",
+  "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
   "artifact-integrity-check",
