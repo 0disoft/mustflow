@@ -5,6 +5,7 @@ import {
 	getParsedCliStringOption,
 	hasCliOptionToken,
 	hasParsedCliOption,
+	parsePositiveIntegerCliOption,
 	parseCliOptions,
 	type CliOptionSpec,
 } from '../lib/option-parser.js';
@@ -27,24 +28,6 @@ interface ParsedSecretRiskScanOptions {
 	readonly maxFileBytes: number | null;
 	readonly maxFindings: number | null;
 	readonly error?: string;
-}
-
-function parsePositiveInteger(
-	value: string | null,
-	option: string,
-	lang: CliLang,
-): { readonly value: number | null; readonly error?: string } {
-	if (value === null) {
-		return { value: null };
-	}
-	if (!/^[1-9]\d*$/u.test(value)) {
-		return { value: null, error: t(lang, 'secretRiskScan.error.invalidPositiveInteger', { option, value }) };
-	}
-	const parsed = Number(value);
-	if (!Number.isSafeInteger(parsed)) {
-		return { value: null, error: t(lang, 'secretRiskScan.error.invalidPositiveInteger', { option, value }) };
-	}
-	return { value: parsed };
 }
 
 export function getRepoSecretRiskScanHelp(lang: CliLang = 'en'): string {
@@ -77,9 +60,24 @@ function parseSecretRiskScanOptions(args: readonly string[], lang: CliLang): Par
 	const [action, ...rest] = args;
 	const parsed = parseCliOptions(rest, SECRET_RISK_SCAN_OPTIONS, { allowPositionals: true });
 	const json = hasParsedCliOption(parsed, '--json');
-	const maxFiles = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-files'), '--max-files', lang);
-	const maxFileBytes = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-file-bytes'), '--max-file-bytes', lang);
-	const maxFindings = parsePositiveInteger(getParsedCliStringOption(parsed, '--max-findings'), '--max-findings', lang);
+	const maxFiles = parsePositiveIntegerCliOption(
+		getParsedCliStringOption(parsed, '--max-files'),
+		'--max-files',
+		'secretRiskScan.error.invalidPositiveInteger',
+		lang,
+	);
+	const maxFileBytes = parsePositiveIntegerCliOption(
+		getParsedCliStringOption(parsed, '--max-file-bytes'),
+		'--max-file-bytes',
+		'secretRiskScan.error.invalidPositiveInteger',
+		lang,
+	);
+	const maxFindings = parsePositiveIntegerCliOption(
+		getParsedCliStringOption(parsed, '--max-findings'),
+		'--max-findings',
+		'secretRiskScan.error.invalidPositiveInteger',
+		lang,
+	);
 
 	if (action !== 'scan') {
 		return {

@@ -1,4 +1,4 @@
-import { t, type CliLang } from './i18n.js';
+import { t, type CliLang, type MessageKey } from './i18n.js';
 
 export type CliOptionKind = 'boolean' | 'string';
 
@@ -24,6 +24,11 @@ export interface ParsedCliOptions {
 	readonly occurrences: readonly ParsedCliOptionOccurrence[];
 	readonly positionals: readonly string[];
 	readonly error: CliOptionParseError | null;
+}
+
+export interface ParsedIntegerCliOption {
+	readonly value: number | null;
+	readonly error?: string;
 }
 
 export interface CliOptionParseConfig {
@@ -144,6 +149,50 @@ export function hasParsedCliOption(parsed: ParsedCliOptions, name: string): bool
 export function getParsedCliStringOption(parsed: ParsedCliOptions, name: string): string | null {
 	const value = parsed.values.get(name);
 	return typeof value === 'string' ? value : null;
+}
+
+export function parsePositiveIntegerCliOption(
+	value: string | null,
+	option: string,
+	invalidMessageKey: MessageKey,
+	lang: CliLang,
+): ParsedIntegerCliOption {
+	if (value === null) {
+		return { value: null };
+	}
+
+	if (!/^[1-9]\d*$/u.test(value)) {
+		return { value: null, error: t(lang, invalidMessageKey, { option, value }) };
+	}
+
+	const parsed = Number(value);
+	if (!Number.isSafeInteger(parsed)) {
+		return { value: null, error: t(lang, invalidMessageKey, { option, value }) };
+	}
+
+	return { value: parsed };
+}
+
+export function parseNonNegativeIntegerCliOption(
+	value: string | null,
+	option: string,
+	invalidMessageKey: MessageKey,
+	lang: CliLang,
+): ParsedIntegerCliOption {
+	if (value === null) {
+		return { value: null };
+	}
+
+	if (!/^(?:0|[1-9]\d*)$/u.test(value)) {
+		return { value: null, error: t(lang, invalidMessageKey, { option, value }) };
+	}
+
+	const parsed = Number(value);
+	if (!Number.isSafeInteger(parsed)) {
+		return { value: null, error: t(lang, invalidMessageKey, { option, value }) };
+	}
+
+	return { value: parsed };
 }
 
 export function formatCliOptionParseError(error: CliOptionParseError, lang: CliLang): string {
