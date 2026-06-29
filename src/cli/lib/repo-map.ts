@@ -29,6 +29,7 @@ const EXCLUDED_PREFIXES = ['.mustflow/backups/'];
 const GENERATED_FILES = new Set(['REPO_MAP.md']);
 const DEFAULT_PRIORITY_PATHS = [
 	'AGENTS.md',
+	'REPO_FLOW.md',
 	'.mustflow/docs/agent-workflow.md',
 	'.mustflow/config/mustflow.toml',
 	'.mustflow/config/commands.toml',
@@ -82,6 +83,7 @@ const MACHINE_CONTRACT_ANCHOR_FILE_SET = new Set(MACHINE_CONTRACT_ANCHOR_FILES);
 const DEFAULT_NESTED_ANCHOR_FILES = [
 	'AGENTS.md',
 	'REPO_MAP.md',
+	'REPO_FLOW.md',
 	'.gitattributes',
 	'.editorconfig',
 	'.mustflow/config/mustflow.toml',
@@ -137,6 +139,7 @@ const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
 ]);
 const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['AGENTS.md', 'Root agent operating rules. Read this before changing files.'],
+	['REPO_FLOW.md', 'Generated design-flow map. Use it to understand how work moves through the root.'],
 	['.gitattributes', 'Git text, binary, and line-ending policy. Check before normalizing files.'],
 	['.editorconfig', 'Editor formatting defaults such as indentation, charset, and final newline.'],
 	['README.md', 'Human-facing project overview. Use it as context, not as agent policy.'],

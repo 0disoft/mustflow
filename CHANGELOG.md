@@ -8,6 +8,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added `mf flow` and generated `REPO_FLOW.md` so agents can inspect the repository's design-flow
+  path from task intake through source reading, scoped editing, verification, and evidence reporting.
 - Added a rebuilt `.mustflow/state/runs/latest.index.json` receipt index so agents can find recent
   retained runs by intent and cwd without overloading the root-wide `latest.json` pointer.
 - Added the built-in `code/dependency-graph` script-pack helper so agents can trace bounded

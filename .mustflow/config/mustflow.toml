@@ -37,6 +37,7 @@ privacy = "minimal"
 include_nested = false
 anchor_files = [
   "AGENTS.md",
+  "REPO_FLOW.md",
   "REPO_MAP.md",
   ".mustflow/config/mustflow.toml",
   ".mustflow/config/commands.toml",
@@ -389,6 +390,7 @@ canonical = [
 ]
 generated = [
   "REPO_MAP.md",
+  "REPO_FLOW.md",
   ".mustflow/config/manifest.lock.toml",
   ".mustflow/cache/**",
   ".mustflow/state/**",

@@ -34,6 +34,7 @@ import { validateSourceAnchorsInProject } from '../../../core/source-anchor-vali
 import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readGitChangedFiles } from '../git-changes.js';
 import { inspectManifestLock } from '../manifest-lock.js';
+import { getExpectedRepoFlowSourceFingerprint } from '../repo-flow.js';
 import { getExpectedRepoMapSourceFingerprint } from '../repo-map.js';
 import { parseTomlText, readMustflowTomlFile } from '../toml.js';
 import { MUSTFLOW_JSON_MAX_BYTES } from '../mustflow-read.js';
@@ -80,6 +81,7 @@ import {
 	ALLOWED_PROJECT_PROFILES,
 	ALLOWED_REPO_MAP_DEGRADED_VALUES,
 	ALLOWED_REPO_MAP_GIT_LS_FILES_STATUSES,
+	ALLOWED_REPO_FLOW_DEGRADED_VALUES,
 	ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES,
 	ALLOWED_PROMPT_CACHE_STRATEGIES,
 	ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES,
@@ -120,6 +122,14 @@ import {
 	REPO_MAP_REMOTE_OR_BRANCH_PATTERNS,
 	REPO_MAP_SOURCE_FINGERPRINT_PATTERN,
 	REPO_MAP_SOURCE_POLICY,
+	REPO_FLOW_DOC_ID,
+	REPO_FLOW_GENERATOR,
+	REPO_FLOW_LIFECYCLE,
+	REPO_FLOW_PRIVACY_MODE,
+	REPO_FLOW_RELATIVE_ROOT,
+	REPO_FLOW_REMOTE_OR_BRANCH_PATTERNS,
+	REPO_FLOW_SOURCE_FINGERPRINT_PATTERN,
+	REPO_FLOW_SOURCE_POLICY,
 	REQUIRED_AGENT_LOOP_PHASES,
 	REQUIRED_FILES,
 	REQUIRED_SKILL_SCRIPT_RUN_POLICY,
@@ -139,6 +149,7 @@ import {
 	TEST_AUTHORING_BOOLEAN_FIELDS,
 	TEST_SELECTION_CONFIG_PATH,
 	VERIFICATION_SELECTION_BOOLEAN_FIELDS,
+	VOLATILE_REPO_FLOW_PATTERNS,
 	VOLATILE_REPO_MAP_PATTERNS
 } from './constants.js';
 import {
@@ -2338,6 +2349,71 @@ function validateStrictRepoMap(projectRoot: string, issues: CheckIssue[]): void 
 	}
 }
 
+function validateStrictRepoFlow(projectRoot: string, issues: CheckIssue[]): void {
+	const repoFlowPath = path.join(projectRoot, 'REPO_FLOW.md');
+
+	if (!existsSync(repoFlowPath)) {
+		return;
+	}
+
+	const content = readStrictMustflowText(projectRoot, 'REPO_FLOW.md', issues);
+	if (content === undefined) {
+		return;
+	}
+	const frontmatter = parseSimpleFrontmatter(content);
+
+	if (frontmatter.mustflow_doc !== REPO_FLOW_DOC_ID) {
+		pushStrictIssue(issues, `REPO_FLOW.md frontmatter mustflow_doc must be "${REPO_FLOW_DOC_ID}"`);
+	}
+
+	if (frontmatter.lifecycle !== REPO_FLOW_LIFECYCLE) {
+		pushStrictIssue(issues, `REPO_FLOW.md frontmatter lifecycle must be "${REPO_FLOW_LIFECYCLE}"`);
+	}
+
+	if (frontmatter.generated_by !== REPO_FLOW_GENERATOR) {
+		pushStrictIssue(issues, `REPO_FLOW.md frontmatter generated_by must be "${REPO_FLOW_GENERATOR}"`);
+	}
+
+	if (frontmatter.relative_root !== REPO_FLOW_RELATIVE_ROOT) {
+		pushStrictIssue(issues, `REPO_FLOW.md frontmatter relative_root must be "${REPO_FLOW_RELATIVE_ROOT}"`);
+	}
+
+	if (frontmatter.source_policy !== REPO_FLOW_SOURCE_POLICY) {
+		pushStrictIssue(issues, `REPO_FLOW.md frontmatter source_policy must be "${REPO_FLOW_SOURCE_POLICY}"`);
+	}
+
+	if (frontmatter.privacy_mode !== REPO_FLOW_PRIVACY_MODE) {
+		pushStrictIssue(issues, `REPO_FLOW.md frontmatter privacy_mode must be "${REPO_FLOW_PRIVACY_MODE}"`);
+	}
+
+	if (!/^[1-9]\d*$/u.test(frontmatter.flow_count ?? '')) {
+		pushStrictIssue(issues, 'REPO_FLOW.md frontmatter flow_count must be a positive integer');
+	}
+
+	if (!ALLOWED_REPO_FLOW_DEGRADED_VALUES.has(frontmatter.degraded ?? '')) {
+		pushStrictIssue(issues, 'REPO_FLOW.md frontmatter degraded must be true or false');
+	}
+
+	if (!REPO_FLOW_SOURCE_FINGERPRINT_PATTERN.test(frontmatter.source_fingerprint ?? '')) {
+		pushStrictIssue(issues, 'REPO_FLOW.md frontmatter source_fingerprint must be sha256:<64 lowercase hex characters>');
+	} else {
+		const currentSourceFingerprint = frontmatter.source_fingerprint;
+		const expectedSourceFingerprint = getExpectedRepoFlowSourceFingerprint(projectRoot);
+
+		if (expectedSourceFingerprint && currentSourceFingerprint !== expectedSourceFingerprint) {
+			pushStrictIssue(issues, 'REPO_FLOW.md source_fingerprint is stale; regenerate with mf flow --write');
+		}
+	}
+
+	if (VOLATILE_REPO_FLOW_PATTERNS.some((pattern) => pattern.test(content))) {
+		pushStrictIssue(issues, 'REPO_FLOW.md contains volatile generated metadata');
+	}
+
+	if (REPO_FLOW_REMOTE_OR_BRANCH_PATTERNS.some((pattern) => pattern.test(content))) {
+		pushStrictIssue(issues, 'REPO_FLOW.md contains remote URL or branch metadata');
+	}
+}
+
 function validateStrictContextDocuments(projectRoot: string, limits: RetentionLimits, issues: CheckIssue[]): void {
 	const contextRoot = path.join(projectRoot, '.mustflow', 'context');
 	const contextFiles = listFilesRecursive(contextRoot).filter((relativePath) => relativePath.endsWith('.md'));
@@ -2503,6 +2579,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
 	validateStrictTemplateSkillProfiles(issues);
 	validateStrictRepoMap(projectRoot, issues);
+	validateStrictRepoFlow(projectRoot, issues);
 	validateStrictContextDocuments(projectRoot, retentionLimits, issues);
 	validateStrictSourceAnchors(projectRoot, issues);
 	validateStrictRunReceipt(projectRoot, issues);

@@ -98,6 +98,7 @@ interface BoundaryPattern {
 
 const BUILTIN_GENERATED_PATTERNS = [
 	'REPO_MAP.md',
+	'REPO_FLOW.md',
 	'.mustflow/config/manifest.lock.toml',
 	'.mustflow/state/**',
 	'.mustflow/cache/**',

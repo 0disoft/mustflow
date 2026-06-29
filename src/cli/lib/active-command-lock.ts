@@ -23,6 +23,10 @@ export const REPO_MAP_WRITE_EFFECTS: readonly ActiveCommandLockEffect[] = [
 	{ type: 'write', mode: 'replace', path: 'REPO_MAP.md', concurrency: 'exclusive' },
 ];
 
+export const REPO_FLOW_WRITE_EFFECTS: readonly ActiveCommandLockEffect[] = [
+	{ type: 'write', mode: 'replace', path: 'REPO_FLOW.md', concurrency: 'exclusive' },
+];
+
 export const LOCAL_INDEX_WRITE_EFFECTS: readonly ActiveCommandLockEffect[] = [
 	{
 		type: 'write',
@@ -47,6 +51,7 @@ export const MUSTFLOW_UPDATE_APPLY_EFFECTS: readonly ActiveCommandLockEffect[] =
 
 export const GENERATED_SURFACE_READ_EFFECTS: readonly ActiveCommandLockEffect[] = [
 	{ type: 'read', mode: 'read', path: 'REPO_MAP.md', concurrency: 'shared' },
+	{ type: 'read', mode: 'read', path: 'REPO_FLOW.md', concurrency: 'shared' },
 	{ type: 'read', mode: 'read', path: '.mustflow/config/manifest.lock.toml', concurrency: 'shared' },
 	{
 		type: 'read',

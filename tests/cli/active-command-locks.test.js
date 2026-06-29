@@ -108,6 +108,28 @@ test('mf map --write conflicts with an active repo_map writer lock', async () =>
 	}
 });
 
+test('mf flow --write conflicts with an active repo_flow writer lock', async () => {
+	const projectPath = createTempProject('mustflow-active-flow-');
+	let handle;
+
+	try {
+		initProject(projectPath);
+		handle = await acquireLock(projectPath, 'repo_flow_holder', [
+			{ type: 'write', mode: 'replace', path: 'REPO_FLOW.md', concurrency: 'exclusive' },
+		]);
+
+		const result = runCli(projectPath, ['flow', '--write']);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stdout, '');
+		assert.match(result.stderr, /active run lock/u);
+		assert.equal(existsSync(path.join(projectPath, 'REPO_FLOW.md')), false);
+	} finally {
+		handle?.release();
+		removeTempProject(projectPath);
+	}
+});
+
 test('mf map --write does not ignore an active lock when the inherited run id pid does not match', () => {
 	const projectPath = createTempProject('mustflow-active-map-spoof-');
 
@@ -221,6 +243,45 @@ test('mf run repo_map does not conflict with its child mf map --write lock', () 
 		assert.equal(receipt.status, 'passed');
 		assert.equal(receipt.intent, 'repo_map');
 		assert.ok(existsSync(path.join(projectPath, 'REPO_MAP.md')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('mf run repo_flow does not conflict with its child mf flow --write lock', () => {
+	const projectPath = createTempProject('mustflow-active-run-flow-');
+
+	try {
+		initProject(projectPath);
+
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.repo_flow]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create or refresh REPO_FLOW.md."
+argv = ["node", "${path.join(projectRoot, 'dist', 'cli', 'index.js').replace(/\\/gu, '\\\\')}", "flow", "--write"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["REPO_FLOW.md"]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'repo_flow', '--json', '--allow-untrusted-root']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(receipt.status, 'passed');
+		assert.equal(receipt.intent, 'repo_flow');
+		assert.ok(existsSync(path.join(projectPath, 'REPO_FLOW.md')));
 	} finally {
 		removeTempProject(projectPath);
 	}

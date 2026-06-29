@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.103.22",
+  "version": "2.103.23",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -70,6 +70,7 @@
     "llm",
     "codex",
     "mustflow",
+    "repo-flow",
     "repo-map",
     "repository-template",
     "toml",

@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 223
+anchor_count: 224
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:cb75bdbcb551d610bf1dfdc93e97861be503977b0e041d534b17e04146d0fd06"
+source_fingerprint: "sha256:5bcfc40df503f30428ccd80a3d18fea48d6ad54a02352dbb924bacc418716ec1"
 ---
 
 # REPO_MAP.md
@@ -44,6 +44,7 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 - `CONTRIBUTING.md`: Optional contribution workflow and pull request guidance.
 - `package.json`: Node.js package manifest, binary entry points, and package scripts.
 - `README.md`: Human-facing project overview. Use it as context, not as agent policy.
+- `REPO_FLOW.md`: Generated design-flow map. Use it to understand how work moves through the root.
 - `ROADMAP.md`: Optional project planning, priority, milestone, and non-goal context.
 - `SECURITY.md`: Optional security policy, vulnerability reporting, and sensitive-change guidance.
 - `tsconfig.json`: TypeScript compiler configuration.

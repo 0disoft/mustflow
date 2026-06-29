@@ -21,6 +21,7 @@ These files can be included when discovered.
 
 ```text
 AGENTS.md
+REPO_FLOW.md
 .mustflow/config/mustflow.toml
 .mustflow/config/commands.toml
 .mustflow/config/preferences.toml

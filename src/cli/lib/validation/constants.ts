@@ -210,6 +210,14 @@ export const REPO_MAP_PRIVACY_MODE = 'minimal';
 export const REPO_MAP_SOURCE_FINGERPRINT_PATTERN = /^sha256:[a-f0-9]{64}$/u;
 export const ALLOWED_REPO_MAP_DEGRADED_VALUES = new Set(['true', 'false']);
 export const ALLOWED_REPO_MAP_GIT_LS_FILES_STATUSES = new Set(['ok', 'timeout', 'max_buffer', 'error']);
+export const REPO_FLOW_DOC_ID = 'repo-flow';
+export const REPO_FLOW_LIFECYCLE = 'generated';
+export const REPO_FLOW_GENERATOR = 'mustflow';
+export const REPO_FLOW_RELATIVE_ROOT = '.';
+export const REPO_FLOW_SOURCE_POLICY = 'flow_contract';
+export const REPO_FLOW_PRIVACY_MODE = 'minimal';
+export const REPO_FLOW_SOURCE_FINGERPRINT_PATTERN = /^sha256:[a-f0-9]{64}$/u;
+export const ALLOWED_REPO_FLOW_DEGRADED_VALUES = new Set(['true', 'false']);
 export const SKILL_RESOURCE_MANIFEST = 'resources.toml';
 export const SKILL_RESOURCE_ROOTS = new Set(['references', 'assets', 'scripts']);
 export const ALLOWED_SKILL_RESOURCE_TYPES = new Set(['reference', 'asset', 'script']);
@@ -233,6 +241,8 @@ export const REPO_MAP_REMOTE_OR_BRANCH_PATTERNS = [
 	/\bgit@/iu,
 	/^\s*(?:Remote|Branch):/imu,
 ];
+export const VOLATILE_REPO_FLOW_PATTERNS = VOLATILE_REPO_MAP_PATTERNS;
+export const REPO_FLOW_REMOTE_OR_BRANCH_PATTERNS = REPO_MAP_REMOTE_OR_BRANCH_PATTERNS;
 export const LOCAL_ABSOLUTE_PATH_PATTERNS = [
 	/\b[A-Za-z]:\\(?:Users|Documents and Settings)\\/iu,
 	/(?:^|[\s"'(])\/(?:Users|home)\/[A-Za-z0-9._-]+\/[^\s)"']*/imu,

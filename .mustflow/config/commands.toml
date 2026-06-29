@@ -495,6 +495,23 @@ network = false
 destructive = false
 required_after = ["structure_change", "directory_change"]
 
+[intents.repo_flow]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create or refresh the REPO_FLOW.md repository design-flow map."
+argv = ["node", "dist/cli/index.js", "flow", "--write"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["REPO_FLOW.md"]
+effects = [{ type = "write", mode = "replace", path = "REPO_FLOW.md", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["structure_change", "directory_change", "workflow_change", "public_api_change"]
+
 [intents.snapshot_update]
 status = "manual_only"
 description = "Update snapshot or golden test baselines."

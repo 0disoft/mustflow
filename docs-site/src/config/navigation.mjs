@@ -94,6 +94,7 @@ export const pages = {
 	}),
 	rootAgents: page({ label: 'AGENTS.md', link: '/files/agents/' }),
 	repoMap: page({ label: 'REPO_MAP.md', link: '/files/repo-map/' }),
+	repoFlow: page({ label: 'REPO_FLOW.md', link: '/files/repo-flow/' }),
 	rootDocs: page({
 		label: '루트 문서와 계약',
 		en: 'Root docs and contracts',
@@ -181,7 +182,7 @@ export const sidebarSections = [
 				es: 'Archivos raíz',
 				zh: '根文件',
 				hi: 'रूट फ़ाइलें',
-				items: [pages.rootAgents, pages.repoMap, pages.rootDocs],
+				items: [pages.rootAgents, pages.repoMap, pages.repoFlow, pages.rootDocs],
 			}),
 			group({
 				label: '패키지 파일',

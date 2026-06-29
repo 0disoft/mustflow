@@ -49,14 +49,14 @@ npx mf check --strict
 - When version-impact preferences are enabled, a declared version source or detectable package/template version source must exist.
 
 
-Strict mode is optional to ensure the normal workflow remains lightweight. It is recommended after modifying mustflow documents, skills, command contracts, or repository-map generation rules.
+Strict mode is optional to ensure the normal workflow remains lightweight. It is recommended after modifying mustflow documents, skills, command contracts, repository-map generation rules, or repository-flow generation rules.
 
 ## Error and Warning Classification
 
 `mf check` treats structural violations as blocking errors. Blocking issues exit with code `1`; warnings are reported separately and do not fail the command.
 
 - Base errors come from required files, parse failures, unsafe configuration values, command-contract violations, missing skill section identifiers, invalid context document identity, and manifest-lock drift.
-- Strict errors come from additional document identity, routing, skill metadata, prompt-cache budget, source-anchor, command-boundary, repository-map, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
+- Strict errors come from additional document identity, routing, skill metadata, prompt-cache budget, source-anchor, command-boundary, repository-map, repository-flow, retention, run-receipt, and context hygiene checks. They appear only when `--strict` is enabled.
 - Non-blocking observations may appear as `warnings` in JSON output or as warning lines in human-readable output. Use `mf doctor` diagnostics when automation needs broader informational health signals.
 
 ## Configuration Rules

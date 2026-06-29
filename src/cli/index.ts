@@ -56,6 +56,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf context --json',
 				'mf tech suggest --scope frontend',
 				'mf map --write',
+				'mf flow --write',
 				'mf search mustflow_check',
 				'mf explain authority AGENTS.md',
 				'mf explain --why-blocked test',

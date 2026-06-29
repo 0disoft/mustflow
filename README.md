@@ -143,7 +143,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
 - Stores bounded failure replay capsules for failed `mf verify` runs so future agents can reproduce the intent, receipt, command fingerprint, and changed-file state without copying raw command output.
 - Writes bounded command receipts under `.mustflow/state/runs/run-*`, atomically updates `.mustflow/state/runs/latest.json`, and rebuilds `.mustflow/state/runs/latest.index.json` for recent retained runs.
-- Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`.
+- Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`, and a design-flow map, `REPO_FLOW.md`, with `mf flow`.
 - Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, command-authority source, or source-content database.
 - Tracks agent-created or agent-modified documentation needing prose review with `mf docs review`.
 - Validates restricted work-item or handoff JSON records with `mf handoff validate` without creating backlog files, storing transcripts, or granting command authority.
@@ -199,7 +199,7 @@ The default template does not create project-owned root documents or contract fi
 
 `mf init` creates `.gitignore` if it is missing. If `.gitignore` exists, mustflow updates only its managed block and preserves user rules.
 
-`REPO_MAP.md` is not copied from the template. Generate it when needed with `mf map --write`. `.mustflow/cache/mustflow.sqlite` is also a regenerable local index created by `mf index`. `.mustflow/review/docs.toml` is not copied from the template; `mf docs review` creates it only when a document is added to the review queue.
+`REPO_MAP.md` and `REPO_FLOW.md` are not copied from the template. Generate them when needed with `mf map --write` and `mf flow --write`. `.mustflow/cache/mustflow.sqlite` is also a regenerable local index created by `mf index`. `.mustflow/review/docs.toml` is not copied from the template; `mf docs review` creates it only when a document is added to the review queue.
 
 If a project already has optional root Markdown files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, or `API.md`, the repository map can use them as navigation anchors. It can also discover purpose-specific machine-readable contracts such as `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql`, and `schema.prisma`. Generic catch-all names like `SSOT.json` are not default anchors. `mf init` does not create or overwrite those project-owned files by default.
 
@@ -290,6 +290,9 @@ mf run mustflow_update_apply
 | `mf skill route` | Resolve compact skill route candidates from task text, paths, and reasons before reading selected skill documents. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
+| `mf flow --stdout` | Print the current mustflow root design-flow map to stdout. |
+| `mf flow --write` | Create or update `REPO_FLOW.md`. |
+| `mf flow --check` | Check whether `REPO_FLOW.md` is current. |
 | `mf quality check` | Inspect changed files for quality-gaming patterns without writing files. |
 | `mf quality check --all` | Inspect every tracked text file for quality-gaming patterns. |
 | `mf script-pack list` | List bundled script packs, script refs, routing hints, side-effect flags, input/output labels, and JSON schema files. |

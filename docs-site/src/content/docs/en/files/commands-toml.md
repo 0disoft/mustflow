@@ -359,6 +359,21 @@ stdin = "closed"
 writes = ["REPO_MAP.md"]
 ```
 
+`repo_flow` generates or updates `REPO_FLOW.md`.
+
+```toml
+[intents.repo_flow]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+argv = ["mf", "flow", "--write"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+writes = ["REPO_FLOW.md"]
+```
+
 The default template also exposes `mf update` through built-in intents so agents
 can produce run receipts instead of bypassing the command contract. Use
 `mustflow_update_dry_run` to run `mf update --dry-run --json` without writes.

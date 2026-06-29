@@ -5,7 +5,7 @@ description: An anchor-based map for agents navigating the current mustflow root
 
 `REPO_MAP.md` is a generated file that provides a high-level overview of the current mustflow root.
 
-It is not intended as an exhaustive file listing. Instead, it identifies critical anchor files such as `AGENTS.md`, root Markdown docs, machine-readable contracts, `package.json`, `SKILL.md`, and configuration files to orient agents within the repository.
+It is not intended as an exhaustive file listing. Instead, it identifies critical anchor files such as `AGENTS.md`, `REPO_FLOW.md`, root Markdown docs, machine-readable contracts, `package.json`, `SKILL.md`, and configuration files to orient agents within the repository.
 
 A mustflow root may encompass multiple repositories. If the current root is a workspace containing nested independent repositories, `REPO_MAP.md` provides entry points for those repositories without detailing their internal structures.
 
@@ -18,6 +18,7 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 ## Role and Responsibilities
 
 - **Repository Orientation**: Briefly explains the purpose of significant files and directories within the root.
+- **Flow Handoff**: Points to `REPO_FLOW.md` when agents need to understand how work moves through the root after locating files.
 - **Initial Search Space Reduction**: Limits the number of initial locations an agent needs to inspect.
 - **Scope Definition**: Assists agents in determining an appropriate and safe scope for changes.
 - **Conciseness**: Maintains the brevity of mandatory entry-point documents.

@@ -155,6 +155,13 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/map.js')).runMap,
 	},
 	{
+		id: 'flow',
+		usage: 'mf flow',
+		summaryKey: 'command.flow.summary',
+		contract: commandContract(TEXT_OUTPUT),
+		loadRunner: async () => (await import('../commands/flow.js')).runFlow,
+	},
+	{
 		id: 'line-endings',
 		usage: 'mf line-endings',
 		summaryKey: 'command.lineEndings.summary',
