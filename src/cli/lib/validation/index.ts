@@ -31,6 +31,7 @@ import {
 } from '../../../core/skill-route-alignment.js';
 import { validateTemplateVersionSync } from '../../../core/release-version-validation.js';
 import { validateSourceAnchorsInProject } from '../../../core/source-anchor-validation.js';
+import { readLocalSourceAnchorCheckWarnings } from '../local-index/index.js';
 import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readGitChangedFiles } from '../git-changes.js';
 import { inspectManifestLock } from '../manifest-lock.js';
@@ -2616,6 +2617,10 @@ export interface CheckProjectReport {
 
 export function checkMustflowProjectReport(projectRoot: string, options: CheckOptions = {}): CheckProjectReport {
 	const issues = collectCheckIssues(projectRoot, options);
+	return checkProjectReportFromIssues(issues);
+}
+
+function checkProjectReportFromIssues(issues: readonly CheckIssue[]): CheckProjectReport {
 	const errorIssues = issues.filter((issue) => issue.severity !== 'warning');
 	const warningIssues = issues.filter((issue) => issue.severity === 'warning');
 	const errors = errorIssues.map((issue) => issue.message);
@@ -2627,6 +2632,24 @@ export function checkMustflowProjectReport(projectRoot: string, options: CheckOp
 		allMessages: [...errors, ...warnings],
 		issueDetails: describeCheckIssues([...errorIssues, ...warningIssues]),
 	};
+}
+
+async function collectGeneratedSourceAnchorIndexWarnings(projectRoot: string, options: CheckOptions): Promise<CheckIssue[]> {
+	if (!options.strict) {
+		return [];
+	}
+
+	const warnings = await readLocalSourceAnchorCheckWarnings(projectRoot);
+	return warnings.map((message) => ({
+		message: `Strict warning: ${message}`,
+		severity: 'warning' as const,
+	}));
+}
+
+export async function checkMustflowProjectReportWithGeneratedState(projectRoot: string, options: CheckOptions = {}): Promise<CheckProjectReport> {
+	const issues = collectCheckIssues(projectRoot, options);
+	issues.push(...(await collectGeneratedSourceAnchorIndexWarnings(projectRoot, options)));
+	return checkProjectReportFromIssues(issues);
 }
 
 export function checkMustflowProject(projectRoot: string, options: CheckOptions = {}): string[] {

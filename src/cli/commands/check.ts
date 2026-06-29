@@ -13,7 +13,7 @@ import {
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { checkMustflowProjectReport } from '../lib/validation.js';
+import { checkMustflowProjectReportWithGeneratedState } from '../lib/validation.js';
 
 const CHECK_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
@@ -49,7 +49,7 @@ export function getCheckHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
+export async function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getCheckHelp(lang));
 		return 0;
@@ -71,7 +71,7 @@ export function runCheck(args: string[], reporter: Reporter, lang: CliLang = 'en
 	}
 
 	try {
-		const report = checkMustflowProjectReport(projectRoot, { strict });
+		const report = await checkMustflowProjectReportWithGeneratedState(projectRoot, { strict });
 		const issues = report.issues;
 		const warnings = report.warnings;
 		const ok = issues.length === 0;

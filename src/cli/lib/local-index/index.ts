@@ -965,3 +965,86 @@ ORDER BY source_anchors.id
 		database.close();
 	}
 }
+
+/**
+ * mf:anchor cli.index.source-anchor-check-warnings
+ * purpose: Surface generated source-anchor registry drift through mf check without making the registry authoritative.
+ * search: mf check, source anchor index, stale anchor, generated registry
+ * invariant: Local index warnings are review hints only and never grant command or verification authority.
+ * risk: cache, config
+ */
+export async function readLocalSourceAnchorCheckWarnings(projectRoot: string): Promise<string[]> {
+	const databasePath = getLocalIndexDatabasePath(projectRoot);
+
+	if (!existsSync(databasePath)) {
+		return [];
+	}
+
+	let SQL: SqlJsStatic;
+	try {
+		SQL = await loadSqlJs();
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return [`source anchor local index could not be loaded (${message}); refresh with mf index --source`];
+	}
+
+	let database: SqlJsDatabase;
+	try {
+		database = new SQL.Database(readFileSync(databasePath));
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return [`source anchor local index could not be read (${message}); refresh with mf index --source`];
+	}
+
+	try {
+		if (readMetadataValue(database, 'source_index_enabled') !== 'true') {
+			return [];
+		}
+
+		if (!hasTable(database, 'indexed_files') || !hasTable(database, 'source_anchors') || !hasTable(database, 'source_anchor_status')) {
+			return ['source anchor local index is missing source-anchor tables; refresh with mf index --source'];
+		}
+
+		const indexedSourcePaths = new Set(
+			queryRows(database, 'SELECT path FROM indexed_files WHERE source_scope = "source_anchor"')
+				.map((row) => toSearchString(row.path))
+				.filter(Boolean),
+		);
+		const staleSourcePaths = getStalePaths(projectRoot, database, { includeState: false }).filter((stalePath) =>
+			indexedSourcePaths.has(stalePath),
+		);
+
+		if (staleSourcePaths.length > 0) {
+			return [
+				`source anchor local index is stale for source paths: ${staleSourcePaths.join(', ')}; refresh with mf index --source`,
+			];
+		}
+
+		return queryRows(
+			database,
+			`
+SELECT
+  source_anchors.id,
+  source_anchors.path,
+  source_anchors.line_start,
+  source_anchor_status.status
+FROM source_anchors
+JOIN source_anchor_status ON source_anchor_status.anchor_id = source_anchors.id
+WHERE source_anchor_status.status IN ('changed', 'review', 'stale')
+ORDER BY source_anchors.id
+`,
+		).map((row) => {
+			const anchorId = toSearchString(row.id);
+			const anchorPath = toSearchString(row.path);
+			const lineStart = toNullableNumber(row.line_start) ?? 0;
+			const status = toSearchString(row.status);
+
+			return `source anchor local index marks anchor "${anchorId}" as ${status} at ${anchorPath}:${lineStart}; review the anchor, then refresh with mf index --source if the current snapshot is accepted`;
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return [`source anchor local index could not be checked (${message}); refresh with mf index --source`];
+	} finally {
+		database.close();
+	}
+}

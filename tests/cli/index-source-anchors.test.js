@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { projectRoot, runCliInProcess } from './helpers/cli-harness.js';
+import { createTempProject, initProject, projectRoot, runCliInProcess } from './helpers/cli-harness.js';
 import {
 	createLocalIndexDirect,
 	createMinimalWorkflowProject,
@@ -354,9 +354,10 @@ test('does not index invalid source anchors and leaves them to strict validation
 });
 
 test('compares source anchor status against the previous fingerprint snapshot', async () => {
-	const projectPath = createMinimalWorkflowProject('mustflow-index-source-status-');
+	const projectPath = createTempProject('mustflow-index-source-status-');
 
 	try {
+		initProject(projectPath);
 		prepareSourceAnchorStatusProject(projectPath);
 		await createLocalIndexDirect(projectPath, { includeSource: true });
 		const sourcePath = path.join(projectPath, 'src', 'anchors.ts');
@@ -421,7 +422,43 @@ test('compares source anchor status against the previous fingerprint snapshot', 
 				},
 			],
 		);
+
+		const checkResult = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(checkResult.stdout);
+		const sourceAnchorStatusWarnings = check.issueDetails.filter((issue) => issue.id === 'mustflow.source_anchor.index_status');
+
+		assert.equal(checkResult.status, 0, checkResult.stderr || checkResult.stdout);
+		assert.equal(check.ok, true);
+		assert.ok(sourceAnchorStatusWarnings.length >= 3);
+		assert.ok(
+			sourceAnchorStatusWarnings.some((issue) =>
+				issue.message.includes('source anchor local index marks anchor "stale.target" as stale'),
+			),
+		);
 		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check warns when generated source anchor index points at deleted source files', async () => {
+	const projectPath = createTempProject('mustflow-check-source-index-stale-');
+
+	try {
+		initProject(projectPath);
+		prepareSourceAnchorProject(projectPath);
+		await createLocalIndexDirect(projectPath, { includeSource: true });
+		rmSync(path.join(projectPath, 'src', 'auth.ts'));
+
+		const checkResult = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(checkResult.stdout);
+		const staleWarning = check.issueDetails.find((issue) => issue.id === 'mustflow.source_anchor.index_stale');
+
+		assert.equal(checkResult.status, 0, checkResult.stderr || checkResult.stdout);
+		assert.equal(check.ok, true);
+		assert.ok(staleWarning);
+		assert.equal(staleWarning.severity, 'warning');
+		assert.match(staleWarning.message, /source anchor local index is stale for source paths: src\/auth\.ts/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

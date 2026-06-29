@@ -69,6 +69,8 @@ export type CheckIssueId =
 	| 'mustflow.source_anchor.too_many_search_terms'
 	| 'mustflow.source_anchor.high_density'
 	| 'mustflow.source_anchor.high_risk_review'
+	| 'mustflow.source_anchor.index_stale'
+	| 'mustflow.source_anchor.index_status'
 	| 'mustflow.run_receipt.invalid_json'
 	| 'mustflow.run_receipt.invalid_shape'
 	| 'mustflow.retention.run_receipt_size_limit'
@@ -168,6 +170,8 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.source_anchor.too_many_search_terms', /^Strict warning: source anchor [^ ]+ in .+ has too many search terms/u],
 	['mustflow.source_anchor.high_density', /^Strict warning: .+ has high source anchor density/u],
 	['mustflow.source_anchor.high_risk_review', /^Strict warning: source anchor [^ ]+ in .+ uses high-risk tags and needs review:/u],
+	['mustflow.source_anchor.index_stale', /^Strict warning: source anchor local index (?:is stale|could not be|is missing)/u],
+	['mustflow.source_anchor.index_status', /^Strict warning: source anchor local index marks anchor "[^"]+" as (?:changed|review|stale) at /u],
 	['mustflow.run_receipt.invalid_json', /^Strict: \.mustflow\/state\/runs\/latest\.json is not valid JSON:/u],
 	['mustflow.run_receipt.invalid_shape', /^Strict: \.mustflow\/state\/runs\/latest\.json must contain a JSON object$/u],
 	['mustflow.retention.run_receipt_size_limit', /^Strict: \.mustflow\/state\/runs\/latest\.json exceeds \[retention\.run_receipts\]\.max_file_kb/u],
