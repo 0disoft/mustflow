@@ -767,6 +767,7 @@ destructive = false
 		assert.equal(preview.resolved_argv.executable, process.execPath);
 		assert.deepEqual(preview.resolved_argv.args, [cliPath, '--version']);
 		assert.equal(preview.resolved_argv.shell, false);
+		assert.equal(preview.resolved_argv.windowsCommandScript, false);
 		assert.doesNotMatch(result.stdout, /PWNED_MF_SHIM/);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 	} finally {

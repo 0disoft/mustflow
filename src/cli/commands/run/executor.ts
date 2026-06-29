@@ -17,6 +17,7 @@ import {
 	writeStreamChunk,
 	writeStreamChunkPrefix,
 } from './output.js';
+import { createWindowsCommandScriptSpawn } from './windows-command-script.js';
 
 const TERMINATION_CONFIRMATION_FALLBACK_MS = 1000;
 
@@ -34,6 +35,14 @@ interface SpawnedCommandInput {
 	readonly executable: string;
 	readonly args?: readonly string[];
 	readonly shell: boolean;
+	readonly windowsCommandScript?: boolean;
+}
+
+interface NormalizedSpawnedCommandInput {
+	readonly executable: string;
+	readonly args: readonly string[];
+	readonly shell: boolean;
+	readonly windowsVerbatimArguments: boolean;
 }
 
 function createEmptyOutputSnapshot(maxBytes: number): BoundedOutputSnapshot {
@@ -42,6 +51,26 @@ function createEmptyOutputSnapshot(maxBytes: number): BoundedOutputSnapshot {
 
 function createInvalidExecutableError(): NodeJS.ErrnoException {
 	return Object.assign(new Error('Command executable must not be empty'), { code: 'EINVAL' });
+}
+
+function normalizeSpawnedCommandInput(command: SpawnedCommandInput): NormalizedSpawnedCommandInput {
+	if (process.platform === 'win32' && command.windowsCommandScript === true) {
+		const windowsCommand = createWindowsCommandScriptSpawn(command.executable, command.args ?? []);
+
+		return {
+			executable: windowsCommand.executable,
+			args: windowsCommand.args,
+			shell: windowsCommand.shell,
+			windowsVerbatimArguments: windowsCommand.windowsVerbatimArguments,
+		};
+	}
+
+	return {
+		executable: command.executable,
+		args: command.args ?? [],
+		shell: command.shell,
+		windowsVerbatimArguments: false,
+	};
 }
 
 function runSpawnedCommandStreaming(
@@ -84,12 +113,14 @@ function runSpawnedCommandStreaming(
 		let outputLimitMarkerWritten = false;
 		let termination: RunTerminationReceipt | null = null;
 
-		const child = spawn(command.executable, command.args ?? [], {
+		const spawnCommand = normalizeSpawnedCommandInput(command);
+		const child = spawn(spawnCommand.executable, spawnCommand.args, {
 			cwd,
 			env,
-			shell: command.shell,
+			shell: spawnCommand.shell,
 			stdio: ['ignore', 'pipe', 'pipe'],
 			windowsHide: true,
+			windowsVerbatimArguments: spawnCommand.windowsVerbatimArguments,
 			detached: process.platform !== 'win32',
 		});
 		childPid = child.pid;
@@ -244,7 +275,12 @@ export function runArgvCommandStreaming(
 	enforceOutputLimit: boolean,
 ): Promise<CommandResult> {
 	return runSpawnedCommandStreaming(
-		{ executable: command?.executable ?? '', args: command?.args ?? [], shell: command?.shell ?? false },
+		{
+			executable: command?.executable ?? '',
+			args: command?.args ?? [],
+			shell: command?.shell ?? false,
+			windowsCommandScript: command?.windowsCommandScript ?? false,
+		},
 		cwd,
 		env,
 		timeoutSeconds,

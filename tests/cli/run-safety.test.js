@@ -514,13 +514,137 @@ destructive = false
 		);
 
 		const result = runCli(projectPath, ['run', 'local_mf_bare', '--json'], {
-			env: createEnvWithoutPathLookup(),
+			env: {
+				...createEnvWithoutPathLookup(),
+				NODE_OPTIONS: [process.env.NODE_OPTIONS, '--pending-deprecation'].filter(Boolean).join(' '),
+			},
 		});
 		const receipt = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.doesNotMatch(result.stderr, /DEP0190/);
+		assert.doesNotMatch(receipt.stderr.tail, /DEP0190/);
 		assert.equal(receipt.status, 'passed');
 		assert.match(receipt.stdout.tail, /local-mf doctor/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('quotes Windows command script argv without shell true args', async () => {
+	if (process.platform !== 'win32') {
+		return;
+	}
+
+	const { createWindowsCommandScriptLine } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run', 'windows-command-script.js')).href
+	);
+
+	assert.equal(
+		createWindowsCommandScriptLine('C:\\Program Files\\node\\npm.cmd', ['pack dry', 'quote"ok']),
+		'call "C:\\Program Files\\node\\npm.cmd" "pack dry" "quote""ok"',
+	);
+	assert.throws(() => createWindowsCommandScriptLine('npm.cmd', ['bad\narg']), /line breaks/);
+});
+
+test('runs Windows .cmd and .bat argv intents without DEP0190', () => {
+	if (process.platform !== 'win32') {
+		return;
+	}
+
+	const projectPath = createTempProject();
+	const toolsPath = path.join(projectPath, 'tools with spaces');
+	const printerPath = path.join(toolsPath, 'print-argv.js');
+	const cmdPath = path.join(toolsPath, 'print argv.cmd');
+	const batPath = path.join(toolsPath, 'print argv.bat');
+	const pendingDeprecationEnv = {
+		...process.env,
+		NODE_OPTIONS: [process.env.NODE_OPTIONS, '--pending-deprecation'].filter(Boolean).join(' '),
+	};
+
+	try {
+		initProject(projectPath);
+		mkdirSync(toolsPath, { recursive: true });
+		writeFileSync(
+			printerPath,
+			[
+				'process.stdout.write(JSON.stringify(process.argv.slice(2)));',
+				'process.stderr.write("stderr-ok");',
+				'process.exit(0);',
+				'',
+			].join('\n'),
+		);
+		const scriptBody = [
+			'@echo off',
+			`"${process.execPath}" "${printerPath}" %*`,
+			'exit /b 7',
+			'',
+		].join('\r\n');
+		writeFileSync(cmdPath, scriptBody);
+		writeFileSync(batPath, scriptBody);
+		appendIntent(
+			projectPath,
+			`
+[intents.windows_cmd_script]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a Windows .cmd file with argv arguments."
+argv = [${JSON.stringify(cmdPath)}, "alpha beta", "x&y", "quote\\"z"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [7]
+writes = []
+network = false
+destructive = false
+
+[intents.windows_bat_script_failure]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a Windows .bat file and preserve failure exit status."
+argv = [${JSON.stringify(batPath)}, "alpha beta", "x&y"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+
+		const preview = runCli(projectPath, ['run', 'windows_cmd_script', '--plan-only', '--json'], {
+			env: pendingDeprecationEnv,
+		});
+		const previewJson = JSON.parse(preview.stdout);
+		assert.equal(preview.status, 0, preview.stderr || preview.stdout);
+		assert.equal(previewJson.resolved_argv.executable, cmdPath);
+		assert.equal(previewJson.resolved_argv.shell, false);
+		assert.equal(previewJson.resolved_argv.windowsCommandScript, true);
+
+		const passed = runCli(projectPath, ['run', 'windows_cmd_script', '--json'], {
+			env: pendingDeprecationEnv,
+		});
+		const passedReceipt = JSON.parse(passed.stdout);
+		assert.equal(passed.status, 0, passed.stderr || passed.stdout);
+		assert.doesNotMatch(passed.stderr, /DEP0190/);
+		assert.equal(passedReceipt.status, 'passed');
+		assert.equal(passedReceipt.exit_code, 7);
+		assert.deepEqual(JSON.parse(passedReceipt.stdout.tail), ['alpha beta', 'x&y', 'quote"z']);
+		assert.equal(passedReceipt.stderr.tail, 'stderr-ok');
+
+		const failed = runCli(projectPath, ['run', 'windows_bat_script_failure', '--json'], {
+			env: pendingDeprecationEnv,
+		});
+		const failedReceipt = JSON.parse(failed.stdout);
+		assert.equal(failed.status, 1);
+		assert.doesNotMatch(failed.stderr, /DEP0190/);
+		assert.equal(failedReceipt.status, 'failed');
+		assert.equal(failedReceipt.exit_code, 7);
+		assert.deepEqual(JSON.parse(failedReceipt.stdout.tail), ['alpha beta', 'x&y']);
+		assert.equal(failedReceipt.stderr.tail, 'stderr-ok');
 	} finally {
 		removeTempProject(projectPath);
 	}

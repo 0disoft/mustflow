@@ -43,12 +43,14 @@ import {
 	evaluateCommandPreconditions,
 	type CommandPreconditionPlan,
 } from '../../core/command-preconditions.js';
+import { isWindowsCommandScriptPath } from '../commands/run/windows-command-script.js';
 import { t, type CliLang } from './i18n.js';
 
 export interface ResolvedArgvCommand {
 	readonly executable: string;
 	readonly args: string[];
 	readonly shell: boolean;
+	readonly windowsCommandScript: boolean;
 }
 
 export interface RunPlanOptions {
@@ -203,8 +205,8 @@ function commandAcceptsTestTargets(intent: TomlTable): boolean {
 	return isRecord(intent.selection) && intent.selection.accepts_test_targets === true;
 }
 
-function shouldUseShellForArgvExecutable(executablePath: string): boolean {
-	return process.platform === 'win32' && executablePath.toLowerCase().endsWith('.cmd');
+function isResolvedWindowsCommandScript(executablePath: string): boolean {
+	return process.platform === 'win32' && isWindowsCommandScriptPath(executablePath);
 }
 
 export function isMustflowBuiltinIntent(intent: TomlTable): boolean {
@@ -228,6 +230,7 @@ function resolveArgvCommand(projectRoot: string, contract: CommandContract, inte
 				executable: process.execPath,
 				args: [entrypoint, ...args],
 				shell: false,
+				windowsCommandScript: false,
 			};
 		}
 	}
@@ -241,14 +244,16 @@ function resolveArgvCommand(projectRoot: string, contract: CommandContract, inte
 		return {
 			executable: localBinExecutable,
 			args,
-			shell: shouldUseShellForArgvExecutable(localBinExecutable),
+			shell: false,
+			windowsCommandScript: isResolvedWindowsCommandScript(localBinExecutable),
 		};
 	}
 
 	return {
 		executable: command,
 		args,
-		shell: shouldUseShellForArgvExecutable(command),
+		shell: false,
+		windowsCommandScript: isResolvedWindowsCommandScript(command),
 	};
 }
 

@@ -88,6 +88,7 @@ destructive = false
 		]);
 		assert.equal(preview.resolved_argv.executable, process.execPath);
 		assert.equal(preview.resolved_argv.shell, false);
+		assert.equal(preview.resolved_argv.windowsCommandScript, false);
 		assert.deepEqual(preview.writes, ['dry-run-spawned.txt']);
 		assert.equal(preview.effects[0].path, 'dry-run-spawned.txt');
 		assert.equal(preview.network, false);
