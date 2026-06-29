@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 224
+anchor_count: 228
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:5bcfc40df503f30428ccd80a3d18fea48d6ad54a02352dbb924bacc418716ec1"
+source_fingerprint: "sha256:d13514c3d8d0bc641b14d77370306bf0d0f5510c43e86dbf2ee4d9cdfe0f56a8"
 ---
 
 # REPO_MAP.md
@@ -112,6 +112,14 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/auth-permission-change/
 
 - `.mustflow/skills/auth-permission-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/axum-code-change/
+
+- `.mustflow/skills/axum-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/babylon-code-change/
+
+- `.mustflow/skills/babylon-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/backend-log-evidence-review/
 
@@ -392,6 +400,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/go-code-change/
 
 - `.mustflow/skills/go-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/godot-code-change/
+
+- `.mustflow/skills/godot-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/heuristic-candidate-selection/
 
@@ -776,6 +788,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/visual-review-artifact/
 
 - `.mustflow/skills/visual-review-artifact/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/vue-code-change/
+
+- `.mustflow/skills/vue-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/web-asset-optimization/
 

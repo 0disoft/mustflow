@@ -127,6 +127,72 @@ test('skill route metadata covers declared trigger axes for integration and fram
 			'package_metadata_change',
 			'release_risk',
 		],
+		'elysia-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'docs_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'hono-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'docs_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'axum-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'docs_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'data_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'babylon-code-change': [
+			'ui_change',
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'data_change',
+			'security_change',
+			'privacy_change',
+			'performance_change',
+			'test_change',
+			'docs_change',
+			'migration_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'godot-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'docs_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'data_change',
+			'ui_change',
+			'package_metadata_change',
+			'release_risk',
+		],
 		'typescript-code-change': [
 			'code_change',
 			'behavior_change',
@@ -174,8 +240,25 @@ test('skill route metadata covers declared trigger axes for integration and fram
 			'data_change',
 			'security_change',
 			'privacy_change',
+			'performance_change',
+			'test_change',
+			'docs_change',
+			'migration_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'vue-code-change': [
+			'ui_change',
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'data_change',
+			'security_change',
+			'privacy_change',
+			'performance_change',
 			'test_change',
 			'package_metadata_change',
+			'release_risk',
 		],
 	};
 
@@ -296,7 +379,7 @@ test('design implementation handoff separates public specs from private agent st
 	assert.match(routes, /priority = 64/u);
 	assert.match(manifest, /"\.mustflow\/skills\/design-implementation-handoff\/SKILL\.md"/u);
 	assert.match(manifest, /"design-implementation-handoff"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.design-implementation-handoff"\][\s\S]*?revision = 1/u);
 });
 
@@ -374,7 +457,7 @@ test('support surface advisor scopes product support contracts', () => {
 			new RegExp(`${profileName} = \\[[\\s\\S]*?"support-surface-advisor"`, 'u'),
 		);
 	}
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.support-surface-advisor"\][\s\S]*?revision = 1/u);
 });
 
@@ -504,7 +587,7 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md"/u);
 	assert.match(manifest, /"ai-generated-code-hardening"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 3/u);
 });
 
@@ -539,7 +622,7 @@ test('quality gaming guard catches metric evasions and stays template-synced', (
 	assert.match(routes, /priority = 76/u);
 	assert.match(manifest, /"\.mustflow\/skills\/quality-gaming-guard\/SKILL\.md"/u);
 	assert.match(manifest, /"quality-gaming-guard"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.quality-gaming-guard"\][\s\S]*?revision = 2/u);
 });
 
@@ -598,7 +681,7 @@ test('module boundary review traces change spread, ownership, and leakage', () =
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/module-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"module-boundary-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -662,7 +745,7 @@ test('change blast radius review predicts maintainability spread and deletion co
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/change-blast-radius-review\/SKILL\.md"/u);
 	assert.match(manifest, /"change-blast-radius-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.change-blast-radius-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -727,7 +810,7 @@ test('business rule leakage review follows domain rules through every entrypoint
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/business-rule-leakage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"business-rule-leakage-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.business-rule-leakage-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -794,7 +877,7 @@ test('payment integrity review keeps money events idempotent and auditable', () 
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/payment-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"payment-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.payment-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -865,7 +948,7 @@ test('credit ledger integrity review keeps balance changes atomic and reconcilab
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credit-ledger-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -929,7 +1012,7 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"error-message-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -995,7 +1078,7 @@ test('api misuse resistance review keeps caller contracts hard to misuse', () =>
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-misuse-resistance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.api-misuse-resistance-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1061,7 +1144,7 @@ test('api access control review keeps API authorization object scoped', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/api-access-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-access-control-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 3/u);
 });
 
@@ -1124,7 +1207,7 @@ test('file upload security review follows uploaded files through storage and ser
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/file-upload-security-review\/SKILL\.md"/u);
 	assert.match(manifest, /"file-upload-security-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1180,7 +1263,7 @@ test('security flow review traces source-to-sink security boundaries', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/security-flow-review\/SKILL\.md"/u);
 	assert.match(manifest, /"security-flow-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.security-flow-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1223,7 +1306,7 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md"/u);
 	assert.match(manifest, /"memory-lifetime-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1294,7 +1377,7 @@ test('desktop memory footprint review separates resident numbers from owned memo
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/desktop-memory-footprint-review\/SKILL\.md"/u);
 	assert.match(manifest, /"desktop-memory-footprint-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.desktop-memory-footprint-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1344,7 +1427,7 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"hot-path-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -1418,7 +1501,7 @@ test('api request performance review counts per-request fan-out and latency evid
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/api-request-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-request-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.api-request-performance-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -1481,7 +1564,7 @@ test('web render performance review protects first render and Core Web Vitals', 
 	assert.match(routes, /applies_to_reasons = \["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/web-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"web-render-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1531,7 +1614,7 @@ test('core web vitals field review treats CWV as real-user percentile operations
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md"/u);
 	assert.match(manifest, /"core-web-vitals-field-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.core-web-vitals-field-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1600,7 +1683,7 @@ test('image delivery performance review catches discovery, candidate, cache, and
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/image-delivery-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"image-delivery-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.image-delivery-performance-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1667,7 +1750,7 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md"/u);
 	assert.match(manifest, /"client-bundle-pruning-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1731,7 +1814,7 @@ test('frame render performance review catches layout, paint, and INP frame risks
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frame-render-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.frame-render-performance-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1775,7 +1858,7 @@ test('motion system contract review catches animation state and settlement risks
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/motion-system-contract-review\/SKILL\.md"/u);
 	assert.match(manifest, /"motion-system-contract-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.motion-system-contract-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1851,7 +1934,7 @@ test('mobile energy efficiency review catches phone wakeups and battery drains',
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/mobile-energy-efficiency-review\/SKILL\.md"/u);
 	assert.match(manifest, /"mobile-energy-efficiency-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.mobile-energy-efficiency-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -1939,7 +2022,7 @@ test('app startup performance review separates first frame from usable launch', 
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/app-startup-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"app-startup-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.app-startup-performance-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2009,7 +2092,7 @@ test('desktop background process stability review treats process death as normal
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/desktop-background-process-stability-review\/SKILL\.md"/u);
 	assert.match(manifest, /"desktop-background-process-stability-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.desktop-background-process-stability-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2065,7 +2148,7 @@ test('desktop auto update safety review treats updater feeds as remote code exec
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/desktop-auto-update-safety-review\/SKILL\.md"/u);
 	assert.match(manifest, /"desktop-auto-update-safety-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.desktop-auto-update-safety-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2150,7 +2233,7 @@ test('low-end device support review turns device constraints into budgets', () =
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/low-end-device-support-review\/SKILL\.md"/u);
 	assert.match(manifest, /"low-end-device-support-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.low-end-device-support-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2235,7 +2318,7 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/cache-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cache-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -2290,7 +2373,7 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(routes, /applies_to_reasons = \["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md"/u);
 	assert.match(manifest, /"quadratic-scan-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -2341,7 +2424,7 @@ test('type state modeling review makes impossible states unrepresentable', () =>
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/type-state-modeling-review\/SKILL\.md"/u);
 	assert.match(manifest, /"type-state-modeling-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.type-state-modeling-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2402,7 +2485,7 @@ test('race condition review traces stale shared-state interleavings', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/race-condition-review\/SKILL\.md"/u);
 	assert.match(manifest, /"race-condition-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2468,7 +2551,7 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md"/u);
 	assert.match(manifest, /"concurrency-invariant-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2535,7 +2618,7 @@ test('failure integrity review catches false-success error handling', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/failure-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"failure-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.failure-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2597,7 +2680,7 @@ test('observability debuggability review catches incident evidence gaps', () => 
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/observability-debuggability-review\/SKILL\.md"/u);
 	assert.match(manifest, /"observability-debuggability-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.observability-debuggability-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -2651,7 +2734,7 @@ test('incident triage review narrows outages by evidence elimination', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/incident-triage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"incident-triage-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.incident-triage-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2731,7 +2814,7 @@ test('deployment rollout safety review keeps deploys stoppable and observable', 
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/deployment-rollout-safety-review\/SKILL\.md"/u);
 	assert.match(manifest, /"deployment-rollout-safety-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.deployment-rollout-safety-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -2801,7 +2884,7 @@ test('cloud cost guardrail review catches hidden spend channels', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/cloud-cost-guardrail-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cloud-cost-guardrail-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.cloud-cost-guardrail-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -2872,7 +2955,7 @@ test('rate limit integrity review protects scarce resources without counter drif
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/rate-limit-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"rate-limit-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -2932,7 +3015,7 @@ test('backend log evidence review reconstructs backend request and job paths', (
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/backend-log-evidence-review\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-log-evidence-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.backend-log-evidence-review"\][\s\S]*?revision = 3/u);
 });
 
@@ -2994,7 +3077,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"idempotency-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3062,7 +3145,7 @@ test('queue processing integrity review catches message settlement traps', () =>
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/queue-processing-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"queue-processing-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.queue-processing-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3133,7 +3216,7 @@ test('retry policy integrity review catches amplification and unsafe replay', ()
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"retry-policy-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.retry-policy-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3200,7 +3283,7 @@ test('transaction boundary integrity review catches atomicity and side-effect tr
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"transaction-boundary-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.transaction-boundary-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3271,7 +3354,7 @@ test('testability boundary review exposes hidden decisions and test friction', (
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/testability-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"testability-boundary-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.testability-boundary-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3317,7 +3400,7 @@ test('database migration change review catches online rollout and DDL traps', ()
 	assert.match(routes, /applies_to_reasons = \["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/database-migration-change\/SKILL\.md"/u);
 	assert.match(manifest, /"database-migration-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.database-migration-change"\][\s\S]*?revision = 2/u);
 });
 
@@ -3377,7 +3460,7 @@ test('database query bottleneck review catches diff-visible query path risks', (
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/database-query-bottleneck-review\/SKILL\.md"/u);
 	assert.match(manifest, /"database-query-bottleneck-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.database-query-bottleneck-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -3430,7 +3513,7 @@ test('database JSON modeling review keeps flexible columns from hiding schema de
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/database-json-modeling-review\/SKILL\.md"/u);
 	assert.match(manifest, /"database-json-modeling-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.database-json-modeling-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3477,7 +3560,7 @@ test('deletion lifecycle review keeps delete, restore, purge, and retention sema
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/deletion-lifecycle-review\/SKILL\.md"/u);
 	assert.match(manifest, /"deletion-lifecycle-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.deletion-lifecycle-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3525,7 +3608,7 @@ test('database lock contention review catches hot rows and blocking paths', () =
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/database-lock-contention-review\/SKILL\.md"/u);
 	assert.match(manifest, /"database-lock-contention-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.database-lock-contention-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -3653,6 +3736,12 @@ test('Node, Bun, Docker, and JavaScript code change skills keep runtime and tool
 	assert.match(bunSkill, /Treat `trustedDependencies` as install-time code execution policy/u);
 	assert.match(bunSkill, /Do not claim Bun runs TypeScript as typecheck/u);
 	assert.match(bunSkill, /Bun build output proves bundling for the selected target and format/u);
+	assert.match(bunSkill, /Bun server changes, check idle timeout/u);
+	assert.match(bunSkill, /WebSocket changes, review `idleTimeout`, `maxPayloadLength`, `backpressureLimit`/u);
+	assert.match(bunSkill, /`SO_REUSEPORT` and same-port multi-process assumptions/u);
+	assert.match(bunSkill, /Do not assume bundling eliminates `node_modules`/u);
+	assert.match(bunSkill, /Treat minification as an observability decision/u);
+	assert.match(bunSkill, /`PORT` environment binding/u);
 	assert.match(bunSkill, /A CLI with `#!\/usr\/bin\/env node` may execute under Node/u);
 
 	assert.match(dockerSkill, /Prevent container image accidents/u);
@@ -3689,7 +3778,7 @@ test('Node, Bun, Docker, and JavaScript code change skills keep runtime and tool
 	assert.match(manifest, /"docker-code-change"/u);
 	assert.match(i18n, /\[documents\."skill\.node-code-change"\][\s\S]*?revision = 2/u);
 	assert.match(i18n, /\[documents\."skill\.javascript-code-change"\][\s\S]*?revision = 3/u);
-	assert.match(i18n, /\[documents\."skill\.bun-code-change"\]/u);
+	assert.match(i18n, /\[documents\."skill\.bun-code-change"\][\s\S]*?revision = 2/u);
 	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
 });
 
@@ -3780,7 +3869,7 @@ test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain
 	assert.match(routes, /\[routes\."go-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/go-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"go-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 4/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 8/u);
 });
@@ -3839,7 +3928,7 @@ test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-p
 	assert.match(routes, /\[routes\."rust-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/rust-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"rust-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 6/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 8/u);
 });
@@ -3978,6 +4067,368 @@ test('React code change skill keeps modern React contribution boundaries explici
 	assert.match(i18n, /\[documents\."skill\.react-code-change"\][\s\S]*?revision = 2/u);
 });
 
+test('Vue code change skill catches reactivity, component API, and hydration traps', () => {
+	const localSkill = readText('.mustflow/skills/vue-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/vue-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /Vue 3\.5\+ or Nuxt 4\.x features/u);
+	assert.match(localSkill, /Do not assume Vite type-checks Vue SFCs/u);
+	assert.match(localSkill, /Review reactivity by subscription width/u);
+	assert.match(localSkill, /large API responses, large tables, log arrays/u);
+	assert.match(localSkill, /Do not stringify, spread, or debug-print huge reactive objects/u);
+	assert.match(localSkill, /Keep raw and proxy identities from mixing/u);
+	assert.match(localSkill, /Keep computed getters pure/u);
+	assert.match(localSkill, /Avoid `deep: true` as a default/u);
+	assert.match(localSkill, /In async `watchEffect`, read dependencies before the first `await`/u);
+	assert.match(localSkill, /Add cleanup for watcher fetches/u);
+	assert.match(localSkill, /reactive props destructure/u);
+	assert.match(localSkill, /`defineModel\(\{ default \}\)`/u);
+	assert.match(localSkill, /Declare public emits/u);
+	assert.match(localSkill, /Treat `\$attrs` as public API routing/u);
+	assert.match(localSkill, /Treat slot names and slot props as public APIs/u);
+	assert.match(localSkill, /Do not combine `v-if` and `v-for`/u);
+	assert.match(localSkill, /Use `storeToRefs\(\)`/u);
+	assert.match(localSkill, /Watch specific route params, query fields, or names/u);
+	assert.match(localSkill, /Do not store request-specific state in module-scope singletons/u);
+	assert.match(localSkill, /Use `data-allow-mismatch` only for narrowly intentional mismatches/u);
+	assert.match(localSkill, /Do not use `<ClientOnly>` as a default mismatch fix/u);
+	assert.match(localSkill, /Distinguish lazy code loading from lazy hydration/u);
+	assert.match(localSkill, /Do not use `hydrate-never` on interactive components/u);
+	assert.match(localSkill, /missing Vue SFC typecheck/u);
+
+	assert.match(skillIndex, /Use `vue-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/vue-code-change\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."vue-code-change"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['ui_change', 'code_change', 'behavior_change', 'performance_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'vue-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/vue-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"vue-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.vue-code-change"\][\s\S]*?revision = 1/u);
+});
+
+test('Babylon code change skill keeps engine, asset, material, physics, and lifecycle risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/babylon-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/babylon-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /WebGPU or WebGL engine setup/u);
+	assert.match(localSkill, /Treat WebGPU initialization as asynchronous/u);
+	assert.match(localSkill, /Preserve WebGL fallback/u);
+	assert.match(localSkill, /Babylon non compatibility mode/u);
+	assert.match(localSkill, /Make render-loop registration idempotent/u);
+	assert.match(localSkill, /`mesh\.dispose\(\)` alone\s+rarely proves memory cleanup/u);
+	assert.match(localSkill, /Use `TransformNode` for non-rendering parents/u);
+	assert.match(localSkill, /clustered lighting as a way to reduce light evaluation cost/u);
+	assert.match(localSkill, /Do not use full PBR, clear coat, glass, subsurface/u);
+	assert.match(localSkill, /PNG, JPG, and WebP as transfer formats/u);
+	assert.match(localSkill, /Choose KTX2 modes by texture class/u);
+	assert.match(localSkill, /Avoid runtime material define churn/u);
+	assert.match(localSkill, /WebGPU custom shaders/u);
+	assert.match(localSkill, /Prefer `LoadAssetContainerAsync`/u);
+	assert.match(localSkill, /Do not treat `loadedMeshes\[0\]` as the first visual mesh/u);
+	assert.match(localSkill, /Draco, Meshopt, KTX2, and progressive GLB as runtime contracts/u);
+	assert.match(localSkill, /Build thin-instance buffers in bulk/u);
+	assert.match(localSkill, /Keep thin-instance roots spatially chunked/u);
+	assert.match(localSkill, /Disable pointer move picking/u);
+	assert.match(localSkill, /Use Physics V2 concepts/u);
+	assert.match(localSkill, /Reserve mesh shapes for\s+static terrain/u);
+	assert.match(localSkill, /collision callbacks lightweight and filtered/u);
+
+	assert.match(skillIndex, /Use `babylon-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/babylon-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /Babylon.js, WebGPU or WebGL engine setup/u);
+	assert.match(
+		routes,
+		/\[routes\."babylon-code-change"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['ui_change', 'code_change', 'performance_change', 'docs_change', 'migration_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'babylon-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/babylon-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"babylon-code-change"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
+	assert.match(i18n, /\[documents\."skill\.babylon-code-change"\][\s\S]*?revision = 1/u);
+});
+
+test('Svelte code change skill catches SvelteKit execution modes and runes traps', () => {
+	const localSkill = readText('.mustflow/skills/svelte-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/svelte-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /universal or server load functions, form actions, endpoints, hooks/u);
+	assert.match(localSkill, /Refresh official package or vendor sources before preserving exact "latest"/u);
+	assert.match(localSkill, /Treat `\+page\.ts` and `\+layout\.ts` as universal/u);
+	assert.match(localSkill, /server-load data is intentionally passed through the universal `load` return value/u);
+	assert.match(localSkill, /Keep `load` side-effect-free/u);
+	assert.match(localSkill, /Avoid `await parent\(\)` waterfalls/u);
+	assert.match(localSkill, /Use SvelteKit-provided `fetch` inside load/u);
+	assert.match(localSkill, /register `depends\(\.\.\.\)` keys and invalidate the exact URL/u);
+	assert.match(localSkill, /Preserve `fail\(\.\.\.\)`, `redirect\(303, \.\.\.\)`, `use:enhance`/u);
+	assert.match(localSkill, /For streaming load data, finish auth, redirects, and headers before streaming starts/u);
+	assert.match(localSkill, /Preserve hydration markers and valid HTML structure/u);
+	assert.match(localSkill, /make route-dependent values `\$derived`/u);
+	assert.match(localSkill, /Use `\$state` only for state that should update UI/u);
+	assert.match(localSkill, /large immutable payloads, table rows, CMS payloads/u);
+	assert.match(localSkill, /Do not destructure `\$state` or proxy objects when live reactivity is required/u);
+	assert.match(localSkill, /Use `SvelteMap`, `SvelteSet`, `SvelteDate`, `SvelteURL`/u);
+	assert.match(localSkill, /Keep `\$effect` dependencies narrow and synchronous/u);
+	assert.match(localSkill, /Treat props as parent-owned/u);
+	assert.match(localSkill, /Treat snippets as typed render callbacks/u);
+	assert.match(localSkill, /Do not edit generated `\.svelte-kit` files as source/u);
+
+	assert.match(skillIndex, /Use `svelte-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/svelte-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /route\/load\/action\/invalidation\/streaming/u);
+	assert.match(
+		routes,
+		/\[routes\."svelte-code-change"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['performance_change', 'docs_change', 'migration_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'svelte-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/svelte-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"svelte-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.svelte-code-change"\][\s\S]*?revision = 3/u);
+});
+
+test('Elysia code change skill keeps schema, OpenAPI, Eden, lifecycle, and runtime risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/elysia-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/elysia-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /schema-first runtime validation/u);
+	assert.match(localSkill, /Standard Schema validators/u);
+	assert.match(localSkill, /Refresh official package or vendor sources before preserving exact "latest" claims/u);
+	assert.match(localSkill, /Eden uses `typeof app`; OpenAPI SDKs use the OpenAPI document/u);
+	assert.match(localSkill, /params, query, and headers arrive as HTTP strings/u);
+	assert.match(localSkill, /lower-case header schema keys/u);
+	assert.match(localSkill, /distinguish `t\.Optional` around an input object/u);
+	assert.match(localSkill, /For file uploads, distinguish `t\.File\(\)` behavior from Standard Schema file validation/u);
+	assert.match(localSkill, /For webhook verifiers, tRPC, oRPC, proxy, or raw-body endpoints/u);
+	assert.match(localSkill, /Reject GET or HEAD bodies as portable public API contracts/u);
+	assert.match(localSkill, /Keep request-specific state out of module-level mutable globals, `\.store`, and `\.decorate`/u);
+	assert.match(localSkill, /Check lifecycle scope and registration order/u);
+	assert.match(localSkill, /Treat macros as public route-option APIs/u);
+	assert.match(localSkill, /protect or intentionally expose `\/openapi`, `\/openapi\/json`/u);
+	assert.match(localSkill, /do not treat `detail\.hide` as access control/u);
+	assert.match(localSkill, /the official Elysia OpenAPI plugin and its docs UI provider are not the same thing/u);
+	assert.match(localSkill, /`fromTypes\(\)` or type generation/u);
+	assert.match(localSkill, /`withHeader\(\)` documents response headers; it does not enforce/u);
+	assert.match(localSkill, /export `type App = typeof app`/u);
+	assert.match(localSkill, /handle Treaty `error` before assuming `data` is non-null/u);
+	assert.match(localSkill, /split public, admin, internal, WebSocket, and streaming surfaces/u);
+	assert.match(localSkill, /static, dynamic, wildcard, optional, group, guard, prefix, mount, and `all\(\)` behavior/u);
+	assert.match(localSkill, /idle timeout, WebSocket backpressure, clustering, compile targets, port binding, Docker build context, and observability/u);
+
+	assert.match(skillIndex, /Elysia routes, schemas, Standard Schema validators/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/elysia-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /OpenAPI\/Eden, runtime\/deploy impact checked/u);
+	assert.match(
+		routes,
+		/\[routes\."elysia-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['behavior_change', 'docs_change', 'performance_change', 'privacy_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'elysia-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/elysia-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"elysia-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.elysia-code-change"\][\s\S]*?revision = 3/u);
+});
+
+test('Hono code change skill keeps routing, validation, typed client, and adapter risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/hono-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/hono-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /route chains, middleware order, validators, RPC or typed clients/u);
+	assert.match(localSkill, /Refresh official package or vendor sources before preserving exact "latest"/u);
+	assert.match(localSkill, /Treat Hono route order as behavior/u);
+	assert.match(localSkill, /`route\(\)`, `basePath\(\)`, `mount`, optional params/u);
+	assert.match(localSkill, /For CORS with credentials, require an explicit origin allowlist/u);
+	assert.match(localSkill, /Separate `Bindings` from `Variables`/u);
+	assert.match(localSkill, /Avoid `ContextVariableMap` unless the value is truly available for every request path/u);
+	assert.match(localSkill, /Use `c\.req\.valid\(\.\.\.\)` output rather than rereading unvalidated request bodies/u);
+	assert.match(localSkill, /header validator keys are lowercase/u);
+	assert.match(localSkill, /`json` or `form` validators need the matching `Content-Type`/u);
+	assert.match(localSkill, /multipart uploads, large JSON, webhooks, raw-body signatures/u);
+	assert.match(localSkill, /exporting the route chain actually used by `hc<AppType>\(\)`/u);
+	assert.match(localSkill, /typed `c\.json\(payload, status\)` paths/u);
+	assert.match(localSkill, /Keep runtime validation schema, OpenAPI schema, response schema, generated SDKs, and Hono RPC types from becoming separate truths/u);
+	assert.match(localSkill, /Do not put Node-only, Bun-only, Cloudflare-only, Deno-only, Lambda-only/u);
+	assert.match(localSkill, /streaming, SSE, WebSocket, cache, ETag, static file, and SSR or JSX routes/u);
+	assert.match(localSkill, /cache key and `Vary`, repeated `Set-Cookie`, and adapter header normalization/u);
+
+	assert.match(skillIndex, /Hono apps, route chains, middleware order, validators, RPC or typed clients/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/hono-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /OpenAPI\/RPC\/SDK, streaming\/cache\/static/u);
+	assert.match(
+		routes,
+		/\[routes\."hono-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['behavior_change', 'docs_change', 'performance_change', 'privacy_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'hono-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/hono-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"hono-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.hono-code-change"\][\s\S]*?revision = 2/u);
+});
+
+test('Axum code change skill keeps route, extractor, Tower, Tokio, and SQLx risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/axum-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/axum-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /Axum routers, handlers, extractors, state/u);
+	assert.match(localSkill, /Distinguish docs\.rs for the crate version in use from GitHub `main`/u);
+	assert.match(localSkill, /Apply `rust-code-change` alongside this skill/u);
+	assert.match(localSkill, /do not use `without_v07_checks\(\)` as a migration bypass/u);
+	assert.match(localSkill, /route capture syntax such as `\/\{id\}` and `\/\{\*rest\}`/u);
+	assert.match(localSkill, /`Router::layer` and `route_layer` apply to already registered routes/u);
+	assert.match(localSkill, /URI rewrite or path normalization must happen before routing/u);
+	assert.match(localSkill, /body-consuming extractors such as `Json`, `Bytes`, `String`, `Form`/u);
+	assert.match(localSkill, /must be last and unique/u);
+	assert.match(localSkill, /auth, tenant, request id, and header\/cookie-only extractors should use `FromRequestParts`/u);
+	assert.match(localSkill, /use `State` for app-wide resources/u);
+	assert.match(localSkill, /request extensions for current user, tenant, request id/u);
+	assert.match(localSkill, /`Router<S>` means the router is still missing state `S`/u);
+	assert.match(localSkill, /handler `Err` values are usually response values/u);
+	assert.match(localSkill, /fallible Tower middleware errors with `HandleErrorLayer`/u);
+	assert.match(localSkill, /distinguish `tower::timeout` error behavior from `tower_http::timeout` response behavior/u);
+	assert.match(localSkill, /prefer `ServiceBuilder` when layer order is non-trivial/u);
+	assert.match(localSkill, /mark sensitive request headers before trace logging/u);
+	assert.match(localSkill, /do not treat CORS as authentication or authorization/u);
+	assert.match(localSkill, /signed cookies are integrity-protected, not encrypted/u);
+	assert.match(localSkill, /cookie jar changes must be returned with the response/u);
+	assert.match(localSkill, /do not log raw `Authorization`, `Cookie`, `Set-Cookie`/u);
+	assert.match(localSkill, /decide whether limits apply to wire size, decompressed size, JSON size/u);
+	assert.match(localSkill, /do not hold locks, DB connections, transactions/u);
+	assert.match(localSkill, /bound spawned work with a semaphore, bounded channel, worker queue/u);
+	assert.match(localSkill, /do not wrap `Pool`, `PgPool`, `MySqlPool`, `SqlitePool`, reqwest `Client`/u);
+	assert.match(localSkill, /release pool connections and transactions before external HTTP/u);
+
+	assert.match(skillIndex, /Use `axum-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/axum-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /Axum apps, routers, handlers, extractors, state, extensions/u);
+	assert.match(
+		routes,
+		/\[routes\."axum-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['behavior_change', 'docs_change', 'performance_change', 'privacy_change', 'data_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'axum-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/axum-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"axum-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.axum-code-change"\][\s\S]*?revision = 1/u);
+});
+
+test('Godot code change skill keeps scene, resource, save, rendering, and export risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/godot-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/godot-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /Godot projects, scenes, nodes, GDScript/u);
+	assert.match(localSkill, /Version Gate/u);
+	assert.match(localSkill, /Do not mix stable docs for one branch, latest docs for another branch/u);
+	assert.match(localSkill, /check obsolete 3\.x habits such as `yield`/u);
+	assert.match(localSkill, /Build a scene and ownership ledger/u);
+	assert.match(localSkill, /reject distant relative paths, `\/root\/Main` reach-through/u);
+	assert.match(localSkill, /do not assume a new scene is immediately ready after `change_scene_to_\*`/u);
+	assert.match(localSkill, /`queue_free\(\)` is deferred deletion, `remove_child\(\)` is detachment/u);
+	assert.match(localSkill, /use signals for events, not hidden remote commands/u);
+	assert.match(localSkill, /`call_group` and `set_group` as broad broadcasts/u);
+	assert.match(localSkill, /Keep Autoloads limited to true process-wide services/u);
+	assert.match(localSkill, /path-loaded Resources are cached shared references/u);
+	assert.match(localSkill, /never mutate authoring Resources as per-instance runtime state/u);
+	assert.match(localSkill, /avoid per-frame `find_child`, `find_children`, and `find_parent`/u);
+	assert.match(localSkill, /write user data to `user:\/\/`/u);
+	assert.match(localSkill, /avoid object deserialization from untrusted files/u);
+	assert.match(localSkill, /do not touch active SceneTree nodes directly from background threads/u);
+	assert.match(localSkill, /require profiler or frame-time evidence before accepting performance claims/u);
+	assert.match(localSkill, /export presets, export templates, platform architectures, signing/u);
+
+	assert.match(skillIndex, /Use `godot-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/godot-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /Godot projects, scenes, nodes, GDScript, C# scripts, Resources/u);
+	assert.match(
+		routes,
+		/\[routes\."godot-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['behavior_change', 'docs_change', 'performance_change', 'privacy_change', 'data_change', 'ui_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'godot-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/godot-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"godot-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.godot-code-change"\][\s\S]*?revision = 1/u);
+});
+
 test('C code change skill keeps C23, pointer, memory, and performance contracts explicit', () => {
 	const localSkill = readText('.mustflow/skills/c-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/c-code-change/SKILL.md');
@@ -4090,7 +4541,7 @@ test('PowerShell code change skill keeps quoting, parser layers, and native argv
 	assert.match(routes, /applies_to_reasons = \["code_change", "test_change", "docs_change", "package_metadata_change", "workflow_change"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/powershell-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"powershell-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.powershell-code-change"\][\s\S]*?revision = 2/u);
 });
 
@@ -4144,7 +4595,7 @@ test('shell code change skill keeps dialect, expansion, CI, and filename boundar
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/shell-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"shell-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.shell-code-change"\][\s\S]*?revision = 2/u);
 });
 
@@ -4197,7 +4648,7 @@ test('structured config change skill keeps YAML, TOML, workflow, and schema cont
 	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
 		assert.ok(profileBlock(profile).includes('"structured-config-change"'), `${profile} profile missing skill`);
 	}
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.structured-config-change"\][\s\S]*?revision = 1/u);
 });
 
@@ -4227,7 +4678,7 @@ test('docs prose review skill treats AI smell as concrete prose quality instead 
 	assert.match(localSkill, /authorship-attribution/u);
 	assert.match(skillIndex, /AI-slop signals, low-specificity boilerplate/u);
 	assert.match(skillIndex, /fake authorship attribution, invented evidence/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.docs-prose-review"\][\s\S]*?revision = 3/u);
 });
 
@@ -4302,7 +4753,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(routes, /applies_to_reasons = \["code_change", "behavior_change", "public_api_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md"/u);
 	assert.match(manifest, /"http-delivery-streaming"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
 	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 13/u);
@@ -4361,7 +4812,7 @@ test('backend reliability skill keeps retry, idempotency, health, cache, and que
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/backend-reliability-change\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-reliability-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.backend-reliability-change"\][\s\S]*?revision = 1/u);
 });
 
@@ -4555,7 +5006,7 @@ test('ui quality gate folds external UI review lessons into mustflow boundaries'
 	assert.match(localSkill, /Do not start development servers, watchers, or browser sessions directly/u);
 });
 
-test('Astro code change skill gates v7 request pipeline cache and Markdown migration risk', () => {
+test('Astro code change skill gates islands, rendering, content, and runtime risk', () => {
 	const localSkill = readText('.mustflow/skills/astro-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/astro-code-change/SKILL.md');
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
@@ -4570,29 +5021,64 @@ test('Astro code change skill gates v7 request pipeline cache and Markdown migra
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /current and target Astro major versions/u);
 	assert.match(localSkill, /official Astro upgrade guide for each crossed major/u);
+	assert.match(localSkill, /`output: "hybrid"` as stale migration input/u);
+	assert.match(localSkill, /`output: "static"` with route-level `prerender = false`/u);
 	assert.match(localSkill, /`src\/fetch\.ts` and `src\/fetch\.js` as reserved/u);
 	assert.match(localSkill, /request pipeline ledger/u);
 	assert.match(localSkill, /Do not create `src\/fetch\.ts` or `src\/fetch\.js` just because/u);
+	assert.match(localSkill, /## Server Island Policy/u);
+	assert.match(localSkill, /Pin `ASTRO_KEY`/u);
+	assert.match(localSkill, /Do not cache personalized server island HTML publicly/u);
+	assert.match(localSkill, /server island contains SEO-critical page meaning/u);
+	assert.match(localSkill, /Use `client:visible` for below-the-fold or heavy widgets/u);
+	assert.match(localSkill, /Do not pass large CMS payloads/u);
 	assert.match(localSkill, /Treat `cache` and `routeRules` changes as data-exposure risks/u);
 	assert.match(localSkill, /authenticated, personalized, locale-sensitive/u);
-	assert.match(localSkill, /Markdown processor/u);
+	assert.match(localSkill, /Cache providers, CDN cache providers, invalidation tags/u);
+	assert.match(localSkill, /Markdown, Markdoc, Shiki, And Compiler Policy/u);
 	assert.match(localSkill, /unified pipeline/u);
+	assert.match(localSkill, /MDX optimizer changes/u);
+	assert.match(localSkill, /Markdoc `allowHTML`/u);
+	assert.match(localSkill, /Do not create Shiki highlighters in hot loops/u);
 	assert.match(localSkill, /invalid HTML nesting/u);
 	assert.match(localSkill, /`compressHTML`/u);
+	assert.match(localSkill, /Do not trust `getCollection\(\)` order/u);
+	assert.match(localSkill, /Centralize published\/draft filtering/u);
+	assert.match(localSkill, /Custom loaders must validate data with the collection schema/u);
+	assert.match(localSkill, /## Adapter And Runtime Policy/u);
+	assert.match(localSkill, /edge runtimes/u);
+	assert.match(localSkill, /target adapter preview/u);
 	assert.match(localSkill, /For v6 to v7 migrations/u);
 	assert.match(localSkill, /`getContainerRenderer\(\)` imports from integration roots/u);
+	assert.match(skillIndex, /server islands/u);
+	assert.match(skillIndex, /stale `output: "hybrid"` migration/u);
 	assert.match(skillIndex, /`src\/fetch\.\*`/u);
 	assert.match(skillIndex, /route cache/u);
-	assert.match(skillIndex, /Markdown processing/u);
+	assert.match(skillIndex, /Markdoc/u);
+	assert.match(skillIndex, /Shiki/u);
 	assert.match(skillIndex, /cache data exposure/u);
-	assert.match(
-		routes,
-		/\[routes\."astro-code-change"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"\r?\npriority = 85\r?\napplies_to_reasons = \["ui_change", "docs_change", "code_change", "behavior_change", "migration_change", "package_metadata_change"\]/u,
-	);
+	assert.match(routes, /\[routes\."astro-code-change"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"\r?\npriority = 85/u);
+	for (const reason of [
+		'ui_change',
+		'docs_change',
+		'code_change',
+		'behavior_change',
+		'public_api_change',
+		'data_change',
+		'security_change',
+		'privacy_change',
+		'performance_change',
+		'test_change',
+		'migration_change',
+		'package_metadata_change',
+		'release_risk',
+	]) {
+		assert.ok(routeReasons(routes, 'astro-code-change').includes(reason), `missing route reason ${reason}`);
+	}
 	assert.match(manifest, /"\.mustflow\/skills\/astro-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"astro-code-change"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
-	assert.match(i18n, /\[documents\."skill\.astro-code-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
+	assert.match(i18n, /\[documents\."skill\.astro-code-change"\][\s\S]*?revision = 5/u);
 });
 
 test('frontend render stability keeps flicker diagnosis symptom-first and template-synced', () => {
@@ -4682,7 +5168,7 @@ test('frontend state ownership review maps source-of-truth drift', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-state-ownership-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.frontend-state-ownership-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -4736,7 +5222,7 @@ test('frontend stress layout review catches hostile content and container breaka
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-stress-layout-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.frontend-stress-layout-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -4796,7 +5282,7 @@ test('frontend accessibility tree review catches semantic, keyboard, and name dr
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-accessibility-tree-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.frontend-accessibility-tree-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -4856,7 +5342,7 @@ test('frontend localization review catches hidden strings, locale formatting, an
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-localization-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-localization-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.frontend-localization-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -5039,7 +5525,7 @@ test('prompt contract quality review treats prompts as product contracts', () =>
 	assert.match(routes, /\[routes\."prompt-contract-quality-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 66/u);
 	assert.match(manifest, /"\.mustflow\/skills\/prompt-contract-quality-review\/SKILL\.md"/u);
 	assert.match(manifest, /"prompt-contract-quality-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.prompt-contract-quality-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -5087,7 +5573,7 @@ test('LLM hallucination control review keeps factual answers evidence-gated', ()
 	assert.match(routes, /\[routes\."llm-hallucination-control-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 67/u);
 	assert.match(manifest, /"\.mustflow\/skills\/llm-hallucination-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-hallucination-control-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.llm-hallucination-control-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -5145,7 +5631,7 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(routes, /"performance_change"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-token-cost-control-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 2/u);
 });
 
@@ -5203,7 +5689,7 @@ test('LLM response latency review keeps first useful output measurable', () => {
 	assert.match(routes, /"performance_change"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/llm-response-latency-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-response-latency-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.llm-response-latency-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -5253,7 +5739,7 @@ test('agent execution control review keeps agent loops bounded and outcome-teste
 	assert.match(routes, /"performance_change"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-execution-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-execution-control-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -5348,7 +5834,7 @@ test('agent eval integrity review grades outcomes, trajectories, and oracle laye
 	assert.match(routes, /"performance_change"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-eval-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-eval-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.agent-eval-integrity-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -5709,7 +6195,7 @@ test('cross agent session reference keeps Codex and Hermes lookup read-only', ()
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md"/u);
 	assert.match(manifest, /"cross-agent-session-reference"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.cross-agent-session-reference"\][\s\S]*?revision = 2/u);
 });
 
@@ -5749,7 +6235,7 @@ test('test suite performance review keeps fast verification honest', () => {
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/test-suite-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"test-suite-performance-review"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.test-suite-performance-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -5813,7 +6299,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	assert.ok(profileBlock('team').includes('"complex-decision-analysis"'));
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
 	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 25/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 1/u);
 });
 
@@ -5934,5 +6420,5 @@ assert.match(routes, /\[routes\."api-failure-triage"\]\r?\ncategory = "bug_failu
 	assert.match(skillIndex, /rag-pipeline-triage/u);
 	assert.match(skillIndex, /knowledge-base answer, grounded chat/u);
 	assert.match(routes, /\[routes\."rag-pipeline-triage"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
-	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 189/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
 });

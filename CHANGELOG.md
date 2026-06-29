@@ -10,6 +10,19 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 - Added `mf flow` and generated `REPO_FLOW.md` so agents can inspect the repository's design-flow
   path from task intake through source reading, scoped editing, verification, and evidence reporting.
+- Added the `vue-code-change` built-in skill so agents can review Vue, Nuxt, Pinia, Vue Router,
+  Composition API, reactivity, component API, SSR, hydration, lazy hydration, and Vite/vue-tsc
+  toolchain boundaries before changing Vue projects.
+- Added the `axum-code-change` built-in skill so agents can review Axum routes, extractors,
+  `State` and request extensions, Tower/Tower-HTTP layers, CORS, cookies, headers, Tokio tasks,
+  SQLx pools, rejections, and API error envelopes before changing Rust HTTP servers.
+- Added the `godot-code-change` built-in skill so agents can review Godot scenes, nodes, GDScript
+  and C# scripts, Resources, Autoloads, signals, save/load systems, rendering, physics, UI, input,
+  exports, plugins, and version migrations before changing Godot projects.
+- Added the `babylon-code-change` built-in skill so agents can review Babylon.js WebGPU/WebGL
+  engine setup, render loops, Scene lifecycle, glTF/GLB loading, materials, textures, shaders,
+  LOD, instancing, thin instances, picking, Physics V2, Havok, disposal, and performance budgets
+  before changing web 3D projects.
 - Added a rebuilt `.mustflow/state/runs/latest.index.json` receipt index so agents can find recent
   retained runs by intent and cwd without overloading the root-wide `latest.json` pointer.
 - Added the built-in `code/dependency-graph` script-pack helper so agents can trace bounded
@@ -64,6 +77,17 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Refreshed the `elysia-code-change` and `bun-code-change` built-in skills with Elysia OpenAPI,
+  Eden Treaty, lifecycle, security, streaming, WebSocket, Bun runtime, compile, Docker, and
+  deployment-risk checks.
+- Refreshed the `hono-code-change` built-in skill with route-order, validator, RPC/OpenAPI,
+  CORS, cookie, header, streaming, WebSocket, cache, static asset, and runtime-adapter checks.
+- Refreshed the `svelte-code-change` built-in skill with SvelteKit universal/server load,
+  form action, preload, invalidation, hydration, streaming, Svelte 5 runes, adapter, Vite,
+  TypeScript, and package-output checks.
+- Refreshed the `astro-code-change` built-in skill with client island, server island, static versus
+  on-demand rendering, content and live collection, MDX, Markdoc, Shiki, route cache, adapter
+  runtime, and target-preview checks.
 - Clarified `clarifying-question-gate` so agents prefer host-provided structured input such as
   `request_user_input` only for bounded blocking decisions, with a concise chat fallback when the
   host does not expose that capability.

@@ -528,6 +528,18 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 
+[routes."axum-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
+
+[routes."godot-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "package_metadata_change", "release_risk"]
+
 [routes."dart-code-change"]
 category = "general_code"
 route_type = "primary"
@@ -538,13 +550,13 @@ applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "security_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."elysia-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "security_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."source-anchor-authoring"]
 category = "general_code"
@@ -988,9 +1000,21 @@ applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "migration_change", "package_metadata_change"]
+applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "migration_change", "package_metadata_change", "release_risk"]
+
+[routes."babylon-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."react-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "package_metadata_change", "release_risk"]
+
+[routes."vue-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
@@ -1000,7 +1024,7 @@ applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api
 category = "ui_assets"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "test_change", "package_metadata_change"]
+applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."pattern-scout"]
 category = "architecture_patterns"

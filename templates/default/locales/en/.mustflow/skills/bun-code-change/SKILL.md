@@ -2,11 +2,11 @@
 mustflow_doc: skill.bun-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: bun-code-change
-description: Apply this skill when Bun runtime code, Bun package manager behavior, bun.lock, bunfig.toml, Bun test runner behavior, Bun bundling, Bun TypeScript execution, or Bun-specific APIs are created or changed.
+description: Apply this skill when Bun runtime code, Bun.serve or Elysia-on-Bun server behavior, Bun package manager behavior, bun.lock, bunfig.toml, Bun test runner behavior, Bun bundling, Bun compile, Bun TypeScript execution, Bun-specific APIs, Docker deployment, or Bun runtime compatibility is created, changed, reviewed, or upgraded.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -29,15 +29,15 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Preserve Bun's separate roles as runtime, package manager, script runner, test runner, bundler, transpiler, and Node-compatible environment without mistaking one successful role for another.
+Preserve Bun's separate roles as runtime, package manager, script runner, test runner, bundler, transpiler, compiler, server runtime, and Node-compatible environment without mistaking one successful role for another.
 
 <!-- mustflow-section: use-when -->
 ## Use When
 
 - `bun.lock`, `bun.lockb`, `bunfig.toml`, `packageManager: "bun@..."`, Bun install settings, `trustedDependencies`, Bun workspace behavior, or Bun lockfile migration changes.
-- Bun runtime code or config changes, including `Bun.*`, `Bun.serve`, `Bun.file`, `Bun.write`, `Bun.spawn`, `Bun.$`, `bun:sqlite`, `#!/usr/bin/env bun`, Bun preload, Bun `.env` behavior, or `bun run --bun`.
+- Bun runtime code or config changes, including `Bun.*`, `Bun.serve`, Elysia-on-Bun `serve` settings, `Bun.file`, `Bun.write`, `Bun.spawn`, `Bun.$`, `bun:sqlite`, `#!/usr/bin/env bun`, Bun preload, Bun `.env` behavior, or `bun run --bun`.
 - Bun test runner behavior changes, including `bun test`, `bun:test`, `[test]` in `bunfig.toml`, snapshots, mocks, preload, isolation, coverage, sharding, or parallelism.
-- Bun bundling, compile, transpiler, build target, JSX settings, path aliases, TypeScript runtime execution, or library packaging with Bun changes.
+- Bun bundling, compile, transpiler, build target, JSX settings, path aliases, TypeScript runtime execution, single executable output, Docker images, PORT binding, observability instrumentation, or library packaging with Bun changes.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -54,6 +54,7 @@ Preserve Bun's separate roles as runtime, package manager, script runner, test r
 - Bun ownership files: `bun.lock`, `bun.lockb`, `bunfig.toml`, npm, pnpm, or Yarn lockfiles that coexist with Bun, CI install commands, Docker install and runtime commands, and `oven-sh/setup-bun` usage.
 - Bun config sections: `[install]`, `[test]`, top-level preload, env, define, loader, JSX, and run settings.
 - Runtime and compatibility surfaces: `Bun.*`, `bun:test`, `node:*`, `.node`, `node-gyp`, lifecycle scripts, Prisma, sharp, Playwright, esbuild, native binary packages, streams, workers, child processes, crypto, filesystem watch, and shebangs.
+- Server and deployment surfaces: `Bun.serve`, Elysia `serve` config, idle timeout, WebSocket config, backpressure limits, `SO_REUSEPORT`, clustering, compile target, CPU and libc assumptions, Docker base image, build context, distroless output, `PORT` env handling, OpenTelemetry or instrumentation, and reverse proxy config.
 - TypeScript and package surfaces: `tsconfig*.json`, `@types/bun`, `types: ["bun"]`, module resolution, path aliases, JSX runtime, declaration output, build targets, package exports, and command contract entries.
 
 <!-- mustflow-section: preconditions -->
@@ -63,6 +64,7 @@ Preserve Bun's separate roles as runtime, package manager, script runner, test r
 - Do not treat Bun package installation as proof that Bun runtime behavior works.
 - Do not treat Bun runtime execution, Bun transpilation, Bun tests, or Bun bundling as TypeScript typechecking or declaration generation.
 - Treat lockfile, trusted dependency, build target, and package entry changes as release-sensitive unless proven internal.
+- Treat Elysia-on-Bun deployment settings as runtime contracts, not local development conveniences.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -70,6 +72,8 @@ Preserve Bun's separate roles as runtime, package manager, script runner, test r
 - Keep Bun-specific APIs in Bun-owned runtime files, adapters, tests, or package entrypoints.
 - Keep Bun package manager changes aligned with `bun.lock`, `bunfig.toml`, CI, Docker, and workspace ownership.
 - Preserve existing Node, browser, edge, Jest, Vitest, TypeScript, and package-consumer contracts unless the task explicitly asks to migrate them.
+- Isolate Bun-only APIs behind runtime-owned adapters when Node, browser, edge, or test portability remains a project contract.
+- Keep server runtime settings explicit when long-lived requests, streaming, WebSockets, uploaded files, generated exports, or reverse proxies are involved.
 - Add focused tests or package checks only when they protect changed Bun runtime, package manager, test runner, build, or public package behavior.
 
 <!-- mustflow-section: procedure -->
@@ -92,10 +96,19 @@ Preserve Bun's separate roles as runtime, package manager, script runner, test r
 10. For Bun bundling and package output, distinguish `bun run build` from direct Bun bundler usage. Confirm script bodies before treating a build as Bun bundling. Choose target and format according to actual consumers; Bun-targeted output is not automatically Node-compatible.
 11. If Node consumers are supported, do not emit package entrypoints that rely on Bun-only APIs, Bun-only wrappers, or Bun-only module resolution unless the package clearly exposes a Bun-specific entry.
 12. Treat Bun runtime as Node-compatible, not Node itself. JavaScriptCore, Node API compatibility gaps, native addons, Node internals, worker options, child process IPC, stream/backpressure, crypto/FIPS, watch behavior, Prisma CLI, sharp, Playwright, and esbuild all need targeted evidence when touched.
-13. Check shebang and runner behavior. A CLI with `#!/usr/bin/env node` may execute under Node even when launched through Bun. Do not call a path Bun-runtime-verified unless the entrypoint actually ran under Bun.
-14. Use Bun's test runner only when the project intentionally uses it or the task targets Bun. Do not silently migrate Jest or Vitest tests to `bun:test`. Treat mocks, snapshots, preloads, globals, path aliases, coverage, isolation, and parallelism as migration-risk areas.
-15. Do not update Bun snapshots as a generic fix. Snapshot updates require intended output change, diff inspection, and a follow-up run without update mode through configured intents.
-16. Choose configured verification intents that cover typecheck, build, tests, package metadata, package artifact risk, docs examples, Bun runtime behavior, Bun test behavior, and mustflow contract checks when available. Report missing frozen install, Bun runtime, Bun test, declaration, package artifact, native dependency, Node compatibility, Docker, or CI verification.
+13. For Bun server changes, check idle timeout and long-lived request behavior. Plain `Bun.serve`, Elysia `serve.idleTimeout`, SSE, streaming AI responses, long uploads, downloads, exports, and quiet proxy connections may need explicit timeout policy.
+14. For WebSocket changes, review `idleTimeout`, `maxPayloadLength`, `backpressureLimit`, `closeOnBackpressureLimit`, compression, and slow-client behavior. A connection opening successfully does not prove memory-safe backpressure behavior.
+15. For multi-core deployment, distinguish single-process Bun behavior from clustered or multi-worker deployment. Treat `SO_REUSEPORT` and same-port multi-process assumptions as platform-sensitive, especially across Linux, macOS, Windows, containers, and hosting platforms.
+16. For `Bun.serve({ routes })`, Elysia mounts, native routes, and framework interop, benchmark or test the actual route structure instead of assuming every request uses the same optimized path.
+17. For `bun build --compile` or single executable output, check target OS, architecture, libc, executable permission, CPU requirements, dynamic files, `.d.ts` or source files used by runtime generators, native addons, and externalized packages.
+18. Do not assume bundling eliminates `node_modules`. Instrumentation, monkey-patching, native modules, dynamic loading, OpenTelemetry, database drivers, and generated clients may require explicit externals and deployed runtime dependencies.
+19. Treat minification as an observability decision. Full minify can damage function-name-based tracing, stack readability, and instrumentation. Prefer smaller minification scopes when tracing or production diagnostics depend on names.
+20. For Docker and platform deploys, verify build context, workspace package copying, final base image, runtime user, executable path, `PORT` environment binding, health checks, signal handling, and reverse proxy expectations.
+21. Treat benchmarks as workload evidence, not framework marketing. Use a load generator and scenario that are fast enough to drive Bun, and include real handler, serialization, database, TLS, proxy, streaming, or WebSocket paths when those paths changed.
+22. Check shebang and runner behavior. A CLI with `#!/usr/bin/env node` may execute under Node even when launched through Bun. Do not call a path Bun-runtime-verified unless the entrypoint actually ran under Bun.
+23. Use Bun's test runner only when the project intentionally uses it or the task targets Bun. Do not silently migrate Jest or Vitest tests to `bun:test`. Treat mocks, snapshots, preloads, globals, path aliases, coverage, isolation, and parallelism as migration-risk areas.
+24. Do not update Bun snapshots as a generic fix. Snapshot updates require intended output change, diff inspection, and a follow-up run without update mode through configured intents.
+25. Choose configured verification intents that cover typecheck, build, tests, package metadata, package artifact risk, docs examples, Bun runtime behavior, Bun test behavior, server timeout behavior, WebSocket backpressure, compile artifact behavior, Docker runtime, and mustflow contract checks when available. Report missing frozen install, Bun runtime, Bun test, declaration, package artifact, native dependency, Node compatibility, Docker, or CI verification.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -104,7 +117,7 @@ Preserve Bun's separate roles as runtime, package manager, script runner, test r
 - Bun lockfile, install, workspace, trust, and lifecycle behavior is aligned with project ownership.
 - Bun runtime, test, bundler, TypeScript, and declaration claims are not conflated.
 - Bun-only APIs do not leak into Node, browser, edge, or shared package surfaces unintentionally.
-- Native dependency, shebang, Node compatibility, and package consumer risks are handled or reported.
+- Bun server timeout, WebSocket backpressure, clustering, compile target, Docker, PORT, observability, native dependency, shebang, Node compatibility, and package consumer risks are handled or reported.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -119,7 +132,7 @@ Use configured oneshot command intents when available:
 - `test_release`
 - `mustflow_check`
 
-Report missing frozen install, Bun runtime, Bun test, declaration output, package artifact, Node compatibility, native dependency, CI, Docker, or snapshot review verification intents when those surfaces change.
+Report missing frozen install, Bun runtime, Bun server, WebSocket, compile artifact, Docker, Bun test, declaration output, package artifact, Node compatibility, native dependency, CI, observability, benchmark, or snapshot review verification intents when those surfaces change.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -128,6 +141,8 @@ Report missing frozen install, Bun runtime, Bun test, declaration output, packag
 - If lockfile ownership conflicts, do not run dependency migration or generate a new lockfile unless the task explicitly asks for migration.
 - If Bun runtime execution succeeds but typecheck or declarations are unverified, report that gap instead of claiming TypeScript correctness.
 - If a package works under Bun but claims Node support, repair the Node-compatible entry or report the compatibility risk.
+- If a server works locally but has no timeout, backpressure, port, signal, or Docker evidence, report the deployment risk instead of claiming production readiness.
+- If a single executable works on the build machine only, report target CPU, OS, libc, dynamic dependency, and instrumentation gaps.
 - If a native dependency, lifecycle script, or trusted dependency change cannot be verified, keep the change scoped and report release-sensitive risk.
 
 <!-- mustflow-section: output-format -->
@@ -136,7 +151,7 @@ Report missing frozen install, Bun runtime, Bun test, declaration output, packag
 - Bun role classification
 - Package manager, lockfile, and trust notes
 - Runtime, TypeScript, bundler, and test runner notes
-- Native, shebang, Node compatibility, or package consumer risks
+- Server timeout, WebSocket, cluster, compile, Docker, observability, benchmark, native, shebang, Node compatibility, or package consumer risks
 - Files changed
 - Command intents run
 - Skipped checks and reasons

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 189
+revision = 197
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -583,7 +583,19 @@ translations = {}
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
+translations = {}
+
+[documents."skill.axum-code-change"]
+source = "locales/en/.mustflow/skills/axum-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.babylon-code-change"]
+source = "locales/en/.mustflow/skills/babylon-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.auth-permission-change"]
@@ -613,7 +625,7 @@ translations = {}
 [documents."skill.bun-code-change"]
 source = "locales/en/.mustflow/skills/bun-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.cpp-code-change"]
@@ -643,7 +655,7 @@ translations = {}
 [documents."skill.elysia-code-change"]
 source = "locales/en/.mustflow/skills/elysia-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.flutter-code-change"]
@@ -658,10 +670,16 @@ source_locale = "en"
 revision = 4
 translations = {}
 
+[documents."skill.godot-code-change"]
+source = "locales/en/.mustflow/skills/godot-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.hono-code-change"]
 source = "locales/en/.mustflow/skills/hono-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.html-code-change"]
@@ -686,6 +704,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/react-code-change/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.vue-code-change"]
+source = "locales/en/.mustflow/skills/vue-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.python-code-change"]
@@ -739,7 +763,7 @@ translations = {}
 [documents."skill.svelte-code-change"]
 source = "locales/en/.mustflow/skills/svelte-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.tailwind-code-change"]

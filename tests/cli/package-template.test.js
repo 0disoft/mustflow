@@ -9,6 +9,8 @@ const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 const technologySkillNames = [
 	'astro-code-change',
+	'axum-code-change',
+	'babylon-code-change',
 	'bun-code-change',
 	'css-code-change',
 	'cpp-code-change',
@@ -17,6 +19,7 @@ const technologySkillNames = [
 	'elysia-code-change',
 	'flutter-code-change',
 	'go-code-change',
+	'godot-code-change',
 	'hono-code-change',
 	'html-code-change',
 	'javascript-code-change',
@@ -28,6 +31,7 @@ const technologySkillNames = [
 	'tauri-code-change',
 	'typescript-code-change',
 	'unocss-code-change',
+	'vue-code-change',
 ];
 
 function collectRelativeFiles(directory) {

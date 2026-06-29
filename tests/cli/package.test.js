@@ -47,7 +47,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.103.23');
+	assert.equal(packageJson.version, '2.103.31');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -121,6 +121,28 @@ test('default template installs the React code change skill across profiles', ()
 		assert.ok(
 			readTemplateSkillProfile(profile).includes('react-code-change'),
 			`${profile} profile should include react-code-change`,
+		);
+	}
+});
+
+test('default template installs the Vue code change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/vue-code-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('vue-code-change'),
+			`${profile} profile should include vue-code-change`,
+		);
+	}
+});
+
+test('default template installs the Babylon code change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/babylon-code-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('babylon-code-change'),
+			`${profile} profile should include babylon-code-change`,
 		);
 	}
 });
