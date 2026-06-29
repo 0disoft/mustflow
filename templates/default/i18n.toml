@@ -930,7 +930,7 @@ translations = {}
 [documents."skill.multi-agent-work-coordination"]
 source = "locales/en/.mustflow/skills/multi-agent-work-coordination/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.null-object-pattern"]
@@ -1092,7 +1092,7 @@ translations = {}
 [documents."skill.cross-agent-session-reference"]
 source = "locales/en/.mustflow/skills/cross-agent-session-reference/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.secret-exposure-response"]

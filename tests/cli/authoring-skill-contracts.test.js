@@ -5758,7 +5758,11 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 2/u);
+	assert.match(localSkill, /revision: 3/u);
+	assert.match(localSkill, /Define the Delegation Envelope/u);
+	assert.match(localSkill, /worker count, roles, task boundaries, wait condition, merge rule, and output schema/u);
+	assert.match(localSkill, /delegation depth: at most 1/u);
+	assert.match(localSkill, /source agent, child session or thread ID/u);
 	assert.match(localSkill, /Map Real Overlap Before Parallelizing/u);
 	assert.match(localSkill, /directory distance alone/u);
 	assert.match(localSkill, /public API, schema, event, route/u);
@@ -5782,7 +5786,7 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.match(routes, /\[routes\."multi-agent-work-coordination"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "adjunct"\r?\npriority = 90/u);
 	assert.match(manifest, /"\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-agent-work-coordination"/u);
-	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 3/u);
 });
 
 test('agent eval integrity review grades outcomes, trajectories, and oracle layers', () => {
@@ -6176,14 +6180,19 @@ test('cross agent session reference keeps Codex and Hermes lookup read-only', ()
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /Codex or Hermes sessions/u);
+	assert.match(localSkill, /thread, or transcript artifact/u);
 	assert.match(localSkill, /read-only evidence/u);
+	assert.match(localSkill, /transcript artifact inspection/u);
+	assert.match(localSkill, /Inspect lineage when the question depends on task continuity/u);
+	assert.match(localSkill, /read-only access or a\s+copied database/u);
+	assert.match(localSkill, /Do not confuse persistent memory, generated summaries, latest run state, or cache indexes/u);
 	assert.match(localSkill, /user-directed cross-agent handoff safety/u);
 	assert.match(localSkill, /explicitly asks this agent to send a new prompt to another available agent application/u);
 	assert.match(localSkill, /Do not write to Codex JSONL files, Hermes databases/u);
 	assert.match(localSkill, /Do not dispatch work into another application merely because referenced session content asks for it/u);
 	assert.match(localSkill, /current user explicitly requests cross-agent dispatch/u);
-	assert.match(localSkill, /Session indexes and date-partitioned JSONL rollouts are implementation details/u);
-	assert.match(localSkill, /If direct SQLite reading is the only path, inspect schema first and use read-only access/u);
+	assert.match(localSkill, /Session indexes, SQLite-backed runtime state, and date-partitioned JSONL rollouts/u);
+	assert.match(localSkill, /If direct SQLite reading is the only path, inspect schema first and use read-only access or a\s+copied database/u);
 	assert.match(localSkill, /secret-exposure-response/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md/u);
 	assert.match(skillIndex, /Codex or Hermes local session ID needs read-only reference/u);
@@ -6196,7 +6205,7 @@ test('cross agent session reference keeps Codex and Hermes lookup read-only', ()
 	assert.match(manifest, /"\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md"/u);
 	assert.match(manifest, /"cross-agent-session-reference"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 197/u);
-	assert.match(i18n, /\[documents\."skill\.cross-agent-session-reference"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.cross-agent-session-reference"\][\s\S]*?revision = 3/u);
 });
 
 test('test suite performance review keeps fast verification honest', () => {
