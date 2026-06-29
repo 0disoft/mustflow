@@ -644,7 +644,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 
 	try {
 		const cacheLayers = readCacheLayerSets(projectRoot);
-		const stalePaths = getStalePaths(projectRoot, database);
+		const stalePaths = getStalePaths(projectRoot, database, { includeState: false });
 		capabilities = readStoredSearchCapabilities(database);
 		const indexedMatches = getIndexedSearchMatches(database, normalizedQuery);
 		const querySnippetNgrams = buildSearchNgrams([normalizedQuery]);
