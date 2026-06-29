@@ -148,6 +148,70 @@ export const cachedAnchor = true;
 	}
 });
 
+test('source index skips volatile and generated source candidate directories by default', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-prune-generated-');
+
+	try {
+		const keptSource = `/**
+ * mf:anchor source.prune.kept
+ * purpose: Keep source anchors in ordinary source directories.
+ * search: source index prune kept
+ * invariant: Default source indexing keeps ordinary source files.
+ * risk: cache
+ */
+export const keptAnchor = true;
+`;
+		const skippedSource = (id, label) => `/**
+ * mf:anchor source.prune.${id}
+ * purpose: ${label} should not enter source indexing.
+ * search: source index prune skipped
+ * invariant: Generated, cache, and temporary trees stay out of source indexing.
+ * risk: cache
+ */
+export const skippedAnchor = true;
+`;
+
+		const skippedFiles = [
+			['.tmp/ohrisk-e2e/prettier/tests/format/typescript/example.ts', 'tmp-prettier', 'Temporary formatter output'],
+			['.cache/generated.ts', 'cache', 'Cache output'],
+			['.next/server/page.ts', 'next', 'Next.js build output'],
+			['.nuxt/server/page.ts', 'nuxt', 'Nuxt build output'],
+			['.svelte-kit/output/server/page.js', 'svelte-kit', 'SvelteKit build output'],
+			['.astro/types.d.ts', 'astro', 'Astro generated output'],
+			['out/server.js', 'out', 'Generic output'],
+			['target/debug/build.rs', 'target', 'Rust build output'],
+			['src/generated/client.ts', 'generated', 'Generated source output'],
+		];
+
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'kept.ts'), keptSource);
+
+		for (const [relativePath, id, label] of skippedFiles) {
+			const absolutePath = path.join(projectPath, ...relativePath.split('/'));
+			mkdirSync(path.dirname(absolutePath), { recursive: true });
+			writeFileSync(absolutePath, skippedSource(id, label));
+		}
+
+		const output = await createLocalIndexDirect(projectPath, { includeSource: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const indexedSourcePaths = queryRows(
+			database,
+			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+		).map((row) => row.path);
+		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
+
+		assert.equal(output.source_index_enabled, true);
+		assert.equal(output.source_anchor_count, 1);
+		assert.deepEqual(indexedSourcePaths, ['src/kept.ts']);
+		assert.deepEqual(anchorRows, [{ id: 'source.prune.kept', path: 'src/kept.ts' }]);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('source preflight compares metadata before hashing content', () => {
 	const localIndexSource = readFileSync(path.join(projectRoot, 'src', 'cli', 'lib', 'local-index', 'source-index.ts'), 'utf8');
 	const preflightStart = localIndexSource.indexOf('function collectFastPreflightIndexedFileMetadataRecords');

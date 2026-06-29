@@ -17,20 +17,37 @@ export const SOURCE_ANCHOR_EXTENSIONS = new Set([
 	'.tsx',
 ]);
 export const SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS = new Set([
+	'.cache',
 	'.git',
 	'.mustflow',
+	'.next',
+	'.nuxt',
+	'.parcel-cache',
+	'.svelte-kit',
+	'.tmp',
+	'.turbo',
+	'.vite',
+	'.vitest',
 	'build',
 	'coverage',
 	'dist',
 	'node_modules',
+	'temp',
 	'third_party',
+	'tmp',
 	'vendor',
 ]);
 export const SOURCE_ANCHOR_GENERATED_PATH_PARTS = new Set([
+	'.astro',
+	'.next',
+	'.nuxt',
+	'.svelte-kit',
 	'__generated__',
 	'build',
 	'dist',
 	'generated',
+	'out',
+	'target',
 	'third_party',
 	'vendor',
 ]);
@@ -295,8 +312,15 @@ function normalizeAllowedExtensions(allowedExtensions: SourceAnchorFileOptions['
 	return normalized.length > 0 ? new Set(normalized) : SOURCE_ANCHOR_EXTENSIONS;
 }
 
-function mergeIgnoredDirectoryNames(ignoredDirectoryNames: ReadonlySet<string> | undefined): ReadonlySet<string> {
-	return new Set([...(ignoredDirectoryNames ?? []), ...SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS]);
+function mergeIgnoredDirectoryNames(
+	ignoredDirectoryNames: ReadonlySet<string> | undefined,
+	excludeGeneratedOrVendor: boolean,
+): ReadonlySet<string> {
+	return new Set([
+		...(ignoredDirectoryNames ?? []),
+		...SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS,
+		...(excludeGeneratedOrVendor ? SOURCE_ANCHOR_GENERATED_PATH_PARTS : []),
+	]);
 }
 
 export function listSourceAnchorFiles(root: string, options: SourceAnchorFileOptions = {}): string[] {
@@ -304,7 +328,8 @@ export function listSourceAnchorFiles(root: string, options: SourceAnchorFileOpt
 		return [];
 	}
 
-	const ignoredDirectoryNames = mergeIgnoredDirectoryNames(options.ignoredDirectoryNames);
+	const excludeGeneratedOrVendor = options.excludeGeneratedOrVendor === true;
+	const ignoredDirectoryNames = mergeIgnoredDirectoryNames(options.ignoredDirectoryNames, excludeGeneratedOrVendor);
 	const allowedExtensions = normalizeAllowedExtensions(options.allowedExtensions);
 	const include = (options.include ?? []).map((pattern) => globToRegExp(pattern));
 	const exclude = (options.exclude ?? []).map((pattern) => globToRegExp(pattern));
@@ -315,7 +340,7 @@ export function listSourceAnchorFiles(root: string, options: SourceAnchorFileOpt
 		allowedExtensions,
 		include,
 		exclude,
-		excludeGeneratedOrVendor: options.excludeGeneratedOrVendor === true,
+		excludeGeneratedOrVendor,
 		maxFileBytes: options.maxFileBytes,
 		followSymlinks: options.followSymlinks === true,
 		rootRealPath,
