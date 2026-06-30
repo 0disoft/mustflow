@@ -46,11 +46,11 @@ remains the full documentation build, search-index, and sitemap gate for
 release-sensitive changes.
 
 For npm publication, `release_npm_version_available` checks that the current
-`package.json` version is still available on npm, `release_npm_publish` creates
-the GitHub Release/tag for that version and triggers the trusted publishing
-workflow, and `release_npm_published_verify` checks npm after the workflow
-finishes. The publish intent requires explicit release/network approval before
-execution.
+`package.json` version is still available on npm, `release_npm_publish` pushes
+the release tag for that version and triggers the trusted publishing workflow,
+and `release_npm_published_verify` checks npm after the workflow finishes. The
+publish workflow creates the GitHub Release for the pushed tag when needed. The
+publish intent requires explicit release/network approval before execution.
 
 ## Purpose
 

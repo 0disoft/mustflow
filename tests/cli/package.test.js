@@ -353,7 +353,9 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(startNpmReleaseScript, /git', \['status', '--short'\]/u);
 	assert.match(startNpmReleaseScript, /git', \['ls-remote', 'origin', 'refs\/heads\/main'\]/u);
 	assert.match(startNpmReleaseScript, /scripts\/check-npm-release-version\.mjs', '--expect-available'/u);
-	assert.match(startNpmReleaseScript, /gh', \['release', 'create'/u);
+	assert.match(startNpmReleaseScript, /git', \['tag', tagName, head\]/u);
+	assert.match(startNpmReleaseScript, /git', \['push', 'origin', `refs\/tags\/\$\{tagName\}`\]/u);
+	assert.doesNotMatch(startNpmReleaseScript, /gh', \['release', 'create'/u);
 
 	const guardedStart = spawnSync(process.execPath, ['scripts/start-npm-release.mjs'], {
 		cwd: projectRoot,

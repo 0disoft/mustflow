@@ -69,9 +69,30 @@ function requireTagAvailable(tagName) {
 		fail(`Refusing to start npm release because local tag ${tagName} already exists.`);
 	}
 
-	const remoteTag = run('git', ['ls-remote', 'origin', `refs/tags/${tagName}`, `refs/tags/${tagName}^{}`]).stdout;
-	if (remoteTag.length > 0) {
+	if (remoteTagExists(tagName)) {
 		fail(`Refusing to start npm release because remote tag ${tagName} already exists.`);
+	}
+}
+
+function remoteTagExists(tagName) {
+	return run('git', ['ls-remote', 'origin', `refs/tags/${tagName}`, `refs/tags/${tagName}^{}`]).stdout.length > 0;
+}
+
+function deleteLocalTagIfPresent(tagName) {
+	run('git', ['tag', '-d', tagName], { allowFailure: true });
+}
+
+function pushReleaseTag(tagName, head) {
+	run('git', ['tag', tagName, head]);
+
+	try {
+		run('git', ['push', 'origin', `refs/tags/${tagName}`]);
+	} catch (error) {
+		if (!remoteTagExists(tagName)) {
+			deleteLocalTagIfPresent(tagName);
+		}
+
+		throw error;
 	}
 }
 
@@ -105,8 +126,8 @@ try {
 	const head = requireMainAtOrigin();
 	requireTagAvailable(tagName);
 	run('node', ['scripts/check-npm-release-version.mjs', '--expect-available']);
-	run('gh', ['release', 'create', tagName, '--target', head, '--title', tagName, '--notes', `Release ${tagName}.`]);
-	console.log(`Created GitHub Release ${tagName} at ${head}. The publish-npm workflow should publish ${packageJson.name}@${packageJson.version}.`);
+	pushReleaseTag(tagName, head);
+	console.log(`Pushed release tag ${tagName} at ${head}. The publish-npm workflow should publish ${packageJson.name}@${packageJson.version} and create the GitHub Release.`);
 } catch (error) {
 	fail(error instanceof Error ? error.message : String(error));
 }

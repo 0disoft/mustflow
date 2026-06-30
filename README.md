@@ -485,7 +485,7 @@ Run the full release check before publishing:
 bun run release:check
 ```
 
-`release:check` validates the CLI, builds the documentation site, packs the npm tarball, installs it into a temporary project, and runs the public `mf` workflow. Maintainer npm publishing uses the `Publish npm package` GitHub Actions workflow from a published GitHub Release. The release tag must match the `package.json` version, with an optional leading `v`. Run `mf run release_npm_version_available` before creating the tag, `mf run release_npm_publish` to create the GitHub Release/tag that triggers trusted publishing, and `mf run release_npm_published_verify` after the publish workflow completes. npm Trusted Publishing must be configured for the workflow before maintainers publish through it.
+`release:check` validates the CLI, builds the documentation site, packs the npm tarball, installs it into a temporary project, and runs the public `mf` workflow. Maintainer npm publishing uses the `Publish npm package` GitHub Actions workflow from a release tag. The release tag must match the `package.json` version, with an optional leading `v`. Run `mf run release_npm_version_available` before creating the tag, `mf run release_npm_publish` to push the release tag that triggers trusted publishing and GitHub Release creation, and `mf run release_npm_published_verify` after the publish workflow completes. npm Trusted Publishing must be configured for the workflow before maintainers publish through it.
 
 ## Documentation site
 
