@@ -6,12 +6,16 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.107.2 - 2026-06-30
+
 ### Added
 
 - Added YAML and YML source-anchor scanning so machine-readable service contracts can expose
   navigation-only `mf:anchor` metadata through `mf index --source`.
 - Added `mf flow` and generated `REPO_FLOW.md` so agents can inspect the repository's design-flow
   path from task intake through source reading, scoped editing, verification, and evidence reporting.
+- Added the bounded `release_npm_publish` command intent so maintainers can create the GitHub
+  Release/tag that triggers npm trusted publishing through the repository command contract.
 - Added the `vue-code-change` built-in skill so agents can review Vue, Nuxt, Pinia, Vue Router,
   Composition API, reactivity, component API, SSR, hydration, lazy hydration, and Vite/vue-tsc
   toolchain boundaries before changing Vue projects.
