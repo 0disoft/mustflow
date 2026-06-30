@@ -14,6 +14,8 @@ The intent must satisfy all of these conditions:
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
 - `timeout_seconds` is a positive integer
+- a command is declared with `argv`, or with `mode = "shell"` and `cmd` (shell mode also requires `allow_shell = true`)
+- `cwd` resolves inside the current mustflow root
 
 If any condition is not satisfied, the command is not run and the reason is reported.
 

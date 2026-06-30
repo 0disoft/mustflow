@@ -33,11 +33,12 @@ This rule applies to:
 - `mf context`
 - `mf update`
 - `mf map`
+- `mf flow`
 - `mf help`
 - `mf run`
 
 For example, when a user runs `mf check --strict` from `src/feature/deep`, the command still validates the ancestor root that contains `.mustflow/config/mustflow.toml`.
-`mf map --write` and `mf run <intent> --json` also write `REPO_MAP.md` and `.mustflow/state/runs/latest.json` in that same root.
+`mf map --write` writes `REPO_MAP.md`, `mf flow --write` writes `REPO_FLOW.md`, and `mf run <intent>` writes `.mustflow/state/runs/latest.json` and rebuilds the retained run index `.mustflow/state/runs/latest.index.json` in that same root.
 
 ## Command Module Boundaries
 

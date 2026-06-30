@@ -72,7 +72,7 @@ Verification selection is risk-based. Agents should prefer configured related te
 builds, or docs-specific validation when those intents cover the changed surface, and report missing
 narrower intents instead of silently defaulting to slow full-suite tests.
 
-`mf run` writes the latest execution result to `.mustflow/state/runs/latest.json` as a run record.
+`mf run` writes the latest execution result to `.mustflow/state/runs/latest.json` as a run record and rebuilds the retained run index `.mustflow/state/runs/latest.index.json` from retained `run-*` and `verify-*` directories. When an intent is blocked after command-contract planning and before a process starts, no run receipt is written for that blocked attempt.
 Use `mf run <intent> --json` when automation or final reports require structured evidence.
 The record serves as evidence for a specific execution; the definition source of truth remains `commands.toml`.
 

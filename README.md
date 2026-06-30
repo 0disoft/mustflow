@@ -369,6 +369,9 @@ commands when a repository uses another runner or has a faster related-test entr
 - `lifecycle = "oneshot"`
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
+- `timeout_seconds` is a positive integer
+- a command is declared with `argv`, or with `mode = "shell"` plus `cmd` and `allow_shell = true`
+- `cwd` resolves inside the current mustflow root
 
 Development servers, watch modes, browser UIs, interactive commands, and background processes do not run directly. `mf run` also rejects obvious long-running `argv` shapes, such as shell-wrapper background payloads, interpreter loops, package-manager development scripts, watchers, and development servers declared as one-shot commands. If a bounded one-shot command has a name that matches a common long-running pattern, the intent can explicitly acknowledge that with `allow_long_running_command_patterns = true`; background shell patterns remain blocked.
 

@@ -18,7 +18,7 @@ An intent is runnable by an agent only when all of the following fields are pres
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
 - `timeout_seconds` is a positive integer
-- a command is declared with either `argv` or `mode = "shell"` plus `cmd`
+- a command is declared with either `argv` or `mode = "shell"` plus `cmd` and `allow_shell = true`
 - `cwd` resolves inside the current mustflow root
 
 If any requirement is missing or invalid, `mf run <intent>` must reject the intent.
@@ -31,10 +31,8 @@ modify. When a command has side effects that affect scheduling, declare
 
 ```toml
 [resources.dist_build_output]
-type = "path"
-paths = ["dist/**"]
-concurrency = "exclusive_writer"
 description = "Generated build output."
+concurrency = "exclusive_writer"
 
 [intents.test_release]
 status = "configured"
@@ -46,7 +44,9 @@ effects = [
 ]
 ```
 
-Effect paths are resolved relative to the intent working directory and must remain inside  
+Each `[resources.<name>]` table may declare `description`, optional `paths` as a string array, and `concurrency` from `shared_reader`, `exclusive_writer`, or `exclusive`. The default template identifies resources by name and references them as named locks from `effects`; it does not declare `type`.
+
+Effect paths are resolved relative to the intent working directory and must remain inside
 the current mustflow root. When `effects` are absent, mustflow treats each  
 `writes` entry as a conservative exclusive write lock. The `delete_recreate` mode conflicts with readers and writers of the same lock.
 

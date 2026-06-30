@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 25
+revision: 27
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -233,12 +233,12 @@ A command intent is eligible for agent use only when all of these are true:
 - `run_policy = "agent_allowed"`
 - `stdin = "closed"`
 - `timeout_seconds` is a positive integer
-- A command is declared with `argv`, or with `mode = "shell"` and `cmd`
+- A command is declared with `argv`, or with `mode = "shell"`, `cmd`, and `allow_shell = true`
 - `cwd` remains inside the current mustflow root
 
 `manual_only` is a status for new configurations. `run_policy = "manual_only"` may be read for older configs, but new templates should use `status = "manual_only"` instead.
 
-Prefer `mf run <intent>` so the project receives a concise run record in `.mustflow/state/runs/latest.json`.
+Prefer `mf run <intent>` so the project receives a concise run record in `.mustflow/state/runs/latest.json` and a retained run index in `.mustflow/state/runs/latest.index.json`.
 
 Run `mf run` command intents serially. Do not start a second `mf run` while another configured intent is still running. Intents that declare non-empty `writes` are exclusive verification phases; wait for them to finish before running any other `mf run`. This is especially important when an intent rewrites package output such as `dist/`, because the local `mf` executable may load from that output.
 
@@ -268,6 +268,7 @@ Generated files should be refreshed by tools:
 - `REPO_MAP.md` through `mf map --write`
 - `.mustflow/cache/mustflow.sqlite` through `mf index`
 - `.mustflow/state/runs/latest.json` through `mf run <intent>`
+- `.mustflow/state/runs/latest.index.json` through `mf run <intent>`
 
 ## Verification
 

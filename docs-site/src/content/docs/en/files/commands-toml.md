@@ -203,10 +203,8 @@ Use `resources` and `effects` when simple write paths are not enough to explain 
 
 ```toml
 [resources.dist_build_output]
-type = "path"
-paths = ["dist/**"]
-concurrency = "exclusive_writer"
 description = "Generated build output."
+concurrency = "exclusive_writer"
 
 [intents.test_release]
 status = "configured"
@@ -218,11 +216,13 @@ effects = [
 ]
 ```
 
+Each `[resources.<name>]` table may declare `description`, optional `paths` as a string array, and `concurrency` from `shared_reader`, `exclusive_writer`, or `exclusive`. The default template identifies resources by name and references them as named locks from `effects`; it does not declare `type`. `type` is accepted as an optional string, but it is not required by the default example.
+
 Supported effect modes are `read`, `write`, `append`, `replace`, and `delete_recreate`.
 `delete_recreate` conflicts with both readers and writers of the same lock.
 Effect paths are resolved from the intent `cwd` and must stay inside the current mustflow root.
 If `effects` are omitted, mustflow derives an exclusive lock from each `writes` path.
-This metadata explains safe ordering for verification plans; `mf run` itself still executes one command at a time and writes one latest receipt.
+This metadata explains safe ordering for verification plans; `mf run` itself still executes one command at a time and writes `.mustflow/state/runs/latest.json` plus the retained run index `.mustflow/state/runs/latest.index.json`.
 
 ## Test-Related Intents
 
@@ -307,7 +307,7 @@ related_oneshot_checks = ["test_fast"]
 ```
 
 `mf run <intent>` executes only intents where `status = "configured"`, `lifecycle = "oneshot"`, `run_policy = "agent_allowed"`, `stdin = "closed"`, `timeout_seconds` is a positive integer, a command is declared through `argv` or `mode = "shell"` plus `cmd`, shell mode also sets `allow_shell = true`, and `cwd` stays inside the current mustflow root.
-Upon completion, it logs the latest run record to `.mustflow/state/runs/latest.json`; when run with `--json`, it also outputs the same record to standard output.
+Upon completion, it logs the latest run record to `.mustflow/state/runs/latest.json` and rebuilds the retained run index `.mustflow/state/runs/latest.index.json`; when run with `--json`, it also outputs the same record to standard output.
 
 ## Built-In Intents
 
