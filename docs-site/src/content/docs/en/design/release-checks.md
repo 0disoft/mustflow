@@ -27,6 +27,9 @@ mf run test_release
 mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
+mf run release_npm_version_available
+mf run release_npm_publish
+mf run release_npm_published_verify
 ```
 
 `bun run release:check` remains the publishing gate. `test_fast` runs the fast
@@ -41,6 +44,13 @@ narrow repository-local gates. `docs_validate_fast` checks navigation and
 localized content links without a full static site build. `docs_validate`
 remains the full documentation build, search-index, and sitemap gate for
 release-sensitive changes.
+
+For npm publication, `release_npm_version_available` checks that the current
+`package.json` version is still available on npm, `release_npm_publish` creates
+the GitHub Release/tag for that version and triggers the trusted publishing
+workflow, and `release_npm_published_verify` checks npm after the workflow
+finishes. The publish intent requires explicit release/network approval before
+execution.
 
 ## Purpose
 

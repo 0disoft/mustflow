@@ -611,6 +611,14 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/design/release-checks.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-30T14:11:32.327Z"
+last_touched_at = "2026-06-30T14:11:32.327Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/files/commands-toml.md"
 status = "pending"
 origin = "llm_modified"
@@ -838,7 +846,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-06-29T02:24:49.850Z"
+last_touched_at = "2026-06-30T14:11:32.340Z"
 
 [[documents]]
 path = "schemas/README.md"

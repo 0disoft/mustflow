@@ -45,6 +45,10 @@ concurrency = "exclusive_writer"
 description = "Repository-local documentation review queue under .mustflow/review/docs.toml."
 concurrency = "exclusive_writer"
 
+[resources.npm_release_channel]
+description = "Remote GitHub Release and npm publication channel for mustflow."
+concurrency = "exclusive_writer"
+
 [intents.build]
 status = "configured"
 lifecycle = "oneshot"
@@ -568,6 +572,22 @@ writes = []
 network = true
 destructive = false
 required_after = ["release_risk", "before_publish", "package_metadata_change"]
+
+[intents.release_npm_publish]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Create the GitHub Release/tag for package.json version, triggering the trusted npm publish workflow."
+argv = ["node", "scripts/start-npm-release.mjs", "--yes"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [{ type = "write", mode = "replace", lock = "npm_release_channel", concurrency = "exclusive" }]
+network = true
+destructive = false
+required_after = ["release_risk", "before_publish"]
 
 [intents.release_npm_published_verify]
 status = "configured"

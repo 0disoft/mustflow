@@ -17,6 +17,7 @@ const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', '
 const ciWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
 const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 const releaseVersionCheckScript = readFileSync(path.join(projectRoot, 'scripts', 'check-npm-release-version.mjs'), 'utf8');
+const startNpmReleaseScript = readFileSync(path.join(projectRoot, 'scripts', 'start-npm-release.mjs'), 'utf8');
 const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 const templateCreates = readTomlStringArrayBlock(templateManifest, 'creates');
 const templateSkillCreates = templateCreates.filter((relativePath) => relativePath.startsWith('.mustflow/skills/'));
@@ -337,13 +338,29 @@ test('npm publish workflow uses trusted publisher identity', () => {
 
 test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /\[intents\.release_npm_version_available\]/u);
+	assert.match(sourceCommandContract, /\[intents\.release_npm_publish\]/u);
 	assert.match(sourceCommandContract, /\[intents\.release_npm_published_verify\]/u);
 	assert.match(sourceCommandContract, /scripts\/check-npm-release-version\.mjs/u);
+	assert.match(sourceCommandContract, /scripts\/start-npm-release\.mjs/u);
 	assert.match(sourceCommandContract, /--expect-available/u);
 	assert.match(sourceCommandContract, /--expect-published/u);
 	assert.match(sourceCommandContract, /network = true/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
+	assert.match(sourceCommandContract, /\[resources\.npm_release_channel\]/u);
+	assert.match(sourceCommandContract, /lock = "npm_release_channel"/u);
 	assert.match(sourceCommandContract, /MUSTFLOW_NPM_REGISTRY_URL/u);
+	assert.match(startNpmReleaseScript, /Refusing to start npm release without --yes/u);
+	assert.match(startNpmReleaseScript, /git', \['status', '--short'\]/u);
+	assert.match(startNpmReleaseScript, /git', \['ls-remote', 'origin', 'refs\/heads\/main'\]/u);
+	assert.match(startNpmReleaseScript, /scripts\/check-npm-release-version\.mjs', '--expect-available'/u);
+	assert.match(startNpmReleaseScript, /gh', \['release', 'create'/u);
+
+	const guardedStart = spawnSync(process.execPath, ['scripts/start-npm-release.mjs'], {
+		cwd: projectRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(guardedStart.status, 1);
+	assert.match(guardedStart.stderr, /Refusing to start npm release without --yes/u);
 });
 
 test('source repository declares bounded prompt-cache audit checks', () => {
