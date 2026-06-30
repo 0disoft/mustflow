@@ -1405,6 +1405,8 @@ Read these files before working:
   "run.help.option.json": "Print the run record or command plan as JSON",
   "run.help.option.wait": "Wait for conflicting active run locks before executing",
   "run.help.option.waitTimeout": "Maximum seconds to wait for active run locks. Default: 300",
+  "run.help.option.allowApproval":
+    "Allow this execution to satisfy one approval-gated action such as network_access",
   "run.help.option.allowUntrustedRoot":
     "Allow one execution from a root with a missing or invalid manifest lock after manual review",
   "run.help.exit.ok": "The command completed with an allowed exit code",
@@ -1459,6 +1461,8 @@ Read these files before working:
   "run.error.conflictingPreviewModes":
     "Use either --dry-run or --plan-only, not both",
   "run.error.invalidWaitTimeout": "--wait-timeout must be a positive integer",
+  "run.error.invalidApprovalAction":
+    'Unsupported approval action "{action}". Supported actions: {allowed}',
   "run.error.waitRequiresExecution": "--wait can only be used when executing a command, not with --dry-run or --plan-only",
   "run.error.untrustedRootMissing":
     "Refused to execute commands because {path} is missing. Run mf init/update to install the workflow, or pass --allow-untrusted-root after reviewing AGENTS.md and .mustflow/config/commands.toml.",

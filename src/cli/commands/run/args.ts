@@ -11,6 +11,7 @@ import {
 import { ALLOW_UNTRUSTED_ROOT_OPTION } from '../../lib/run-root-trust.js';
 
 const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 300;
+const SUPPORTED_RUN_APPROVAL_ACTIONS = new Set(['network_access', 'destructive_command']);
 const RUN_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--dry-run', kind: 'boolean' },
@@ -18,6 +19,7 @@ const RUN_OPTIONS = [
 	{ name: '--wait', kind: 'boolean' },
 	{ name: ALLOW_UNTRUSTED_ROOT_OPTION, kind: 'boolean' },
 	{ name: '--wait-timeout', kind: 'string' },
+	{ name: '--allow-approval', kind: 'string' },
 ] as const satisfies readonly CliOptionSpec[];
 
 export interface ParsedRunArguments {
@@ -25,20 +27,40 @@ export interface ParsedRunArguments {
 	readonly dryRun: boolean;
 	readonly planOnly: boolean;
 	readonly allowUntrustedRoot: boolean;
+	readonly allowApprovals: readonly string[];
 	readonly wait: boolean;
 	readonly waitTimeoutSeconds: number;
 	readonly intentName: string | null;
 	readonly extra: readonly string[];
-	readonly error: CliOptionParseError | 'invalid_wait_timeout' | null;
+	readonly invalidApprovalAction: string | null;
+	readonly error: CliOptionParseError | 'invalid_wait_timeout' | 'invalid_approval_action' | null;
 }
 
 export function hasRunHelpOption(args: readonly string[]): boolean {
 	return hasCliOptionToken(args, '--help', ['-h']);
 }
 
+export function getSupportedRunApprovalActions(): readonly string[] {
+	return [...SUPPORTED_RUN_APPROVAL_ACTIONS].sort((left, right) => left.localeCompare(right));
+}
+
+function getAllowApprovalValues(parsed: ReturnType<typeof parseCliOptions>): readonly string[] {
+	const values = parsed.occurrences
+		.filter((occurrence) => occurrence.name === '--allow-approval')
+		.map((occurrence) => occurrence.value)
+		.filter((value): value is string => typeof value === 'string');
+
+	return [...new Set(values)];
+}
+
+function findInvalidApprovalAction(values: readonly string[]): string | null {
+	return values.find((value) => !SUPPORTED_RUN_APPROVAL_ACTIONS.has(value)) ?? null;
+}
+
 export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 	const parsed = parseCliOptions(args, RUN_OPTIONS, { allowPositionals: true });
 	let waitTimeoutSeconds = DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS;
+	const allowApprovals = getAllowApprovalValues(parsed);
 
 	if (parsed.error) {
 		const [intentName, ...extra] = parsed.positionals;
@@ -48,17 +70,22 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 			dryRun: hasParsedCliOption(parsed, '--dry-run'),
 			planOnly: hasParsedCliOption(parsed, '--plan-only'),
 			allowUntrustedRoot: hasParsedCliOption(parsed, ALLOW_UNTRUSTED_ROOT_OPTION),
+			allowApprovals,
 			wait: hasParsedCliOption(parsed, '--wait'),
 			waitTimeoutSeconds,
 			intentName: intentName ?? null,
 			extra,
+			invalidApprovalAction: null,
 			error: parsed.error,
 		};
 	}
 
+	const invalidApprovalAction = findInvalidApprovalAction(allowApprovals);
 	const waitTimeoutValue = getParsedCliStringOption(parsed, '--wait-timeout');
 	let error: ParsedRunArguments['error'] = null;
-	if (waitTimeoutValue !== null) {
+	if (invalidApprovalAction) {
+		error = 'invalid_approval_action';
+	} else if (waitTimeoutValue !== null) {
 		const parsedWaitTimeout = Number(waitTimeoutValue);
 		if (!Number.isInteger(parsedWaitTimeout) || parsedWaitTimeout <= 0) {
 			error = 'invalid_wait_timeout';
@@ -73,10 +100,12 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 		dryRun: hasParsedCliOption(parsed, '--dry-run'),
 		planOnly: hasParsedCliOption(parsed, '--plan-only'),
 		allowUntrustedRoot: hasParsedCliOption(parsed, ALLOW_UNTRUSTED_ROOT_OPTION),
+		allowApprovals,
 		wait: hasParsedCliOption(parsed, '--wait'),
 		waitTimeoutSeconds,
 		intentName: intentName ?? null,
 		extra,
+		invalidApprovalAction,
 		error,
 	};
 }
@@ -92,10 +121,11 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 				{ label: '--json', description: t(lang, 'run.help.option.json') },
 				{ label: '--wait', description: t(lang, 'run.help.option.wait') },
 				{ label: '--wait-timeout <seconds>', description: t(lang, 'run.help.option.waitTimeout') },
+				{ label: '--allow-approval <action>', description: t(lang, 'run.help.option.allowApproval') },
 				{ label: ALLOW_UNTRUSTED_ROOT_OPTION, description: t(lang, 'run.help.option.allowUntrustedRoot') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf run test', 'mf run lint --json', 'mf run mustflow_check --dry-run --json'],
+			examples: ['mf run test', 'mf run lint --json', 'mf run release_npm_version_available --allow-approval network_access --json'],
 			exitCodes: [
 				{
 					label: '0',

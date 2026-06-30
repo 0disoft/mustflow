@@ -183,6 +183,79 @@ destructive = true
 	}
 });
 
+test('executes approval-gated command intents only when the matching approval action is allowed', () => {
+	const projectPath = createTempProject();
+	const networkMarkerPath = path.join(projectPath, 'network-approved.txt');
+	const destructiveMarkerPath = path.join(projectPath, 'destructive-approved.txt');
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.network_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a network-marked intent after explicit approval."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(networkMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["network-approved.txt"]
+network = true
+destructive = false
+
+[intents.destructive_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a destructive-marked intent after explicit approval."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(destructiveMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["destructive-approved.txt"]
+network = false
+destructive = true
+`,
+		);
+
+		const networkResult = runCli(projectPath, ['run', 'network_marker', '--allow-approval', 'network_access', '--json']);
+		const networkReceipt = JSON.parse(networkResult.stdout);
+		const wrongApprovalResult = runCli(projectPath, ['run', 'destructive_marker', '--allow-approval', 'network_access', '--json']);
+		const wrongApprovalPreview = JSON.parse(wrongApprovalResult.stdout);
+
+		assert.equal(networkResult.status, 0, networkResult.stderr || networkResult.stdout);
+		assert.equal(networkResult.stderr, '');
+		assert.equal(networkReceipt.intent, 'network_marker');
+		assert.equal(networkReceipt.status, 'passed');
+		assert.equal(existsSync(networkMarkerPath), true);
+
+		assert.equal(wrongApprovalResult.status, 1);
+		assert.match(wrongApprovalResult.stderr, /requires approval/i);
+		assert.equal(wrongApprovalPreview.preview, true);
+		assert.equal(wrongApprovalPreview.runnable, false);
+		assert.equal(wrongApprovalPreview.reason_code, 'destructive_requires_approval');
+		assert.match(wrongApprovalPreview.detail, /destructive_command/);
+		assert.equal(existsSync(destructiveMarkerPath), false);
+
+		const destructiveResult = runCli(projectPath, ['run', 'destructive_marker', '--allow-approval', 'destructive_command', '--json']);
+		const destructiveReceipt = JSON.parse(destructiveResult.stdout);
+
+		assert.equal(destructiveResult.status, 0, destructiveResult.stderr || destructiveResult.stdout);
+		assert.equal(destructiveResult.stderr, '');
+		assert.equal(destructiveReceipt.intent, 'destructive_marker');
+		assert.equal(destructiveReceipt.status, 'passed');
+		assert.equal(existsSync(destructiveMarkerPath), true);
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('rejects unsupported run options before planning or execution', () => {
 	const projectPath = createTempProject();
 
@@ -190,6 +263,7 @@ test('rejects unsupported run options before planning or execution', () => {
 		const booleanValue = runCli(projectPath, ['run', 'preview_marker', '--dry-run=true']);
 		const missingTimeout = runCli(projectPath, ['run', 'preview_marker', '--wait-timeout']);
 		const invalidTimeout = runCli(projectPath, ['run', 'preview_marker', '--wait-timeout=0']);
+		const invalidApproval = runCli(projectPath, ['run', 'preview_marker', '--allow-approval', 'self_destruct']);
 
 		assert.equal(booleanValue.status, 1);
 		assert.match(booleanValue.stderr, /Unknown option: --dry-run=true/u);
@@ -202,6 +276,11 @@ test('rejects unsupported run options before planning or execution', () => {
 		assert.equal(invalidTimeout.status, 1);
 		assert.match(invalidTimeout.stderr, /wait-timeout/u);
 		assert.equal(invalidTimeout.stdout, '');
+		assert.equal(invalidApproval.status, 1);
+		assert.match(invalidApproval.stderr, /Unsupported approval action "self_destruct"/u);
+		assert.match(invalidApproval.stderr, /network_access/u);
+		assert.match(invalidApproval.stderr, /destructive_command/u);
+		assert.equal(invalidApproval.stdout, '');
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 	} finally {
 		removeTempProject(projectPath);

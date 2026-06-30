@@ -1401,6 +1401,8 @@ export const koMessages = {
   "run.help.option.json": "실행 결과 또는 명령 계획을 JSON으로 출력합니다",
   "run.help.option.wait": "충돌하는 활성 실행 잠금이 풀릴 때까지 기다린 뒤 실행합니다",
   "run.help.option.waitTimeout": "활성 실행 잠금을 기다릴 최대 초입니다. 기본값: 300",
+  "run.help.option.allowApproval":
+    "이번 실행에서 network_access 같은 승인 게이트 action 하나를 허용합니다",
   "run.help.option.allowUntrustedRoot":
     "잠금 파일이 없거나 올바르지 않은 루트에서 수동 검토 후 이번 실행만 허용합니다",
   "run.help.exit.ok": "명령이 허용된 종료 코드로 완료되었습니다",
@@ -1456,6 +1458,8 @@ export const koMessages = {
   "run.error.conflictingPreviewModes":
     "--dry-run과 --plan-only 중 하나만 사용하세요",
   "run.error.invalidWaitTimeout": "--wait-timeout은 양의 정수여야 합니다",
+  "run.error.invalidApprovalAction":
+    '지원하지 않는 승인 action입니다: "{action}". 지원 action: {allowed}',
   "run.error.waitRequiresExecution": "--wait는 --dry-run 또는 --plan-only가 아닌 실제 명령 실행에만 사용할 수 있습니다",
   "run.error.untrustedRootMissing":
     "{path}이 없어 명령 실행을 거부했습니다. mf init/update로 워크플로우를 설치하거나, AGENTS.md와 .mustflow/config/commands.toml을 검토한 뒤 --allow-untrusted-root를 붙이세요.",

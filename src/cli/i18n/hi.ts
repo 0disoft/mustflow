@@ -1410,6 +1410,8 @@ export const hiMessages = {
   "run.help.option.json": "Run record या command plan को JSON के रूप में प्रिंट करें",
   "run.help.option.wait": "चलाने से पहले conflicting active run locks के लिए wait करें",
   "run.help.option.waitTimeout": "active run locks के लिए wait करने की maximum seconds. Default: 300",
+  "run.help.option.allowApproval":
+    "इस execution को network_access जैसे approval-gated action को satisfy करने दें",
   "run.help.option.allowUntrustedRoot":
     "Manual review के बाद missing या invalid manifest lock वाली root से एक execution allow करें",
   "run.help.exit.ok": "कमांड अनुमत exit code के साथ पूरी हुई",
@@ -1464,6 +1466,8 @@ export const hiMessages = {
   "run.error.conflictingPreviewModes":
     "--dry-run या --plan-only में से एक इस्तेमाल करें, दोनों नहीं",
   "run.error.invalidWaitTimeout": "--wait-timeout positive integer होना चाहिए",
+  "run.error.invalidApprovalAction":
+    'Unsupported approval action "{action}". Supported actions: {allowed}',
   "run.error.waitRequiresExecution": "--wait केवल command execute करते समय इस्तेमाल हो सकता है, --dry-run या --plan-only के साथ नहीं",
   "run.error.untrustedRootMissing":
     "{path} missing है, इसलिए commands execute करने से मना किया गया। Workflow install करने के लिए mf init/update चलाएँ, या AGENTS.md और .mustflow/config/commands.toml review करने के बाद --allow-untrusted-root पास करें।",

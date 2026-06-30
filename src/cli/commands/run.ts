@@ -2,7 +2,7 @@ import { printUsageError } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { formatCliOptionParseError } from '../lib/option-parser.js';
 import type { Reporter } from '../lib/reporter.js';
-import { getRunHelp, hasRunHelpOption, parseRunArguments } from './run/args.js';
+import { getRunHelp, getSupportedRunApprovalActions, hasRunHelpOption, parseRunArguments } from './run/args.js';
 import { executeRunCommand, type RunCommandOptions } from './run/execution.js';
 import { executeRunPreviewCommand, getRunPreviewMode } from './run/preview.js';
 
@@ -35,18 +35,32 @@ export async function runRun(
 
 	const parsedArgs = parseRunArguments(args);
 
-	if (parsedArgs.error && parsedArgs.error !== 'invalid_wait_timeout') {
+	if (parsedArgs.error === 'invalid_wait_timeout') {
+		printUsageError(reporter, t(lang, 'run.error.invalidWaitTimeout'), 'mf run --help', getRunHelp(lang), lang);
+		return 1;
+	}
+
+	if (parsedArgs.error === 'invalid_approval_action') {
+		printUsageError(
+			reporter,
+			t(lang, 'run.error.invalidApprovalAction', {
+				action: parsedArgs.invalidApprovalAction ?? 'unknown',
+				allowed: getSupportedRunApprovalActions().join(', '),
+			}),
+			'mf run --help',
+			getRunHelp(lang),
+			lang,
+		);
+		return 1;
+	}
+
+	if (parsedArgs.error) {
 		if (parsedArgs.error.kind === 'missing_value' && parsedArgs.error.option === '--wait-timeout') {
 			printUsageError(reporter, t(lang, 'run.error.invalidWaitTimeout'), 'mf run --help', getRunHelp(lang), lang);
 			return 1;
 		}
 
 		printUsageError(reporter, formatCliOptionParseError(parsedArgs.error, lang), 'mf run --help', getRunHelp(lang), lang);
-		return 1;
-	}
-
-	if (parsedArgs.error === 'invalid_wait_timeout') {
-		printUsageError(reporter, t(lang, 'run.error.invalidWaitTimeout'), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
 
@@ -85,6 +99,7 @@ export async function runRun(
 				intentName,
 				outputMode: json ? 'json' : 'text',
 				allowUntrustedRoot,
+				allowApprovals: parsedArgs.allowApprovals,
 				wait: parsedArgs.wait,
 				waitTimeoutSeconds: parsedArgs.waitTimeoutSeconds,
 			},

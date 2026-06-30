@@ -1410,6 +1410,8 @@ Lisez ces fichiers avant de travailler :
   "run.help.option.json": "Imprime l'enregistrement d'exécution ou le plan de commande en JSON",
   "run.help.option.wait": "Attend les verrous actifs en conflit avant d'exécuter",
   "run.help.option.waitTimeout": "Nombre maximal de secondes d'attente des verrous actifs. Par défaut : 300",
+  "run.help.option.allowApproval":
+    "Autorise cette exécution à satisfaire une action soumise à approbation comme network_access",
   "run.help.option.allowUntrustedRoot":
     "Autorise une seule exécution depuis une racine sans verrou de manifeste valide après revue manuelle",
   "run.help.exit.ok": "La commande s'est terminée avec un code de sortie autorisé",
@@ -1464,6 +1466,8 @@ Lisez ces fichiers avant de travailler :
   "run.error.conflictingPreviewModes":
     "Utilisez --dry-run ou --plan-only, pas les deux",
   "run.error.invalidWaitTimeout": "--wait-timeout doit être un entier positif",
+  "run.error.invalidApprovalAction":
+    'Action d’approbation non prise en charge "{action}". Actions prises en charge : {allowed}',
   "run.error.waitRequiresExecution": "--wait ne peut être utilisé que lors de l'exécution d'une commande, pas avec --dry-run ou --plan-only",
   "run.error.untrustedRootMissing":
     "Exécution refusée car {path} est absent. Lancez mf init/update pour installer le workflow, ou ajoutez --allow-untrusted-root après avoir relu AGENTS.md et .mustflow/config/commands.toml.",

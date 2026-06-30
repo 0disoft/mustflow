@@ -55,6 +55,7 @@ export interface ResolvedArgvCommand {
 
 export interface RunPlanOptions {
 	readonly testTargets?: readonly string[];
+	readonly approvedActions?: readonly string[];
 }
 
 export type RunPreviewMode = 'dry-run' | 'plan-only';
@@ -209,6 +210,10 @@ function isResolvedWindowsCommandScript(executablePath: string): boolean {
 	return process.platform === 'win32' && isWindowsCommandScriptPath(executablePath);
 }
 
+function createApprovedActionSet(actions: readonly string[] | undefined): ReadonlySet<string> {
+	return new Set((actions ?? []).map((action) => action.trim()).filter((action) => action.length > 0));
+}
+
 export function isMustflowBuiltinIntent(intent: TomlTable): boolean {
 	return readString(intent, 'kind') === 'mustflow_builtin';
 }
@@ -307,6 +312,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 function createApprovalBlock(
 	projectRoot: string,
 	metadata: RunIntentMetadata,
+	approvedActions: ReadonlySet<string>,
 ): { readonly reasonCode: RunPlanReasonCode; readonly detail: string } | null {
 	const actionTypes: string[] = [];
 	if (metadata.network === true) {
@@ -331,17 +337,18 @@ function createApprovalBlock(
 	const requiredActions = approvalReport.decisions
 		.filter((decision) => decision.approval_required)
 		.map((decision) => decision.action_type);
-	if (requiredActions.length === 0) {
+	const missingActions = requiredActions.filter((action) => !approvedActions.has(action));
+	if (missingActions.length === 0) {
 		return null;
 	}
 
-	const reasonCode = requiredActions.includes('destructive_command')
+	const reasonCode = missingActions.includes('destructive_command')
 		? 'destructive_requires_approval'
 		: 'network_requires_approval';
 
 	return {
 		reasonCode,
-		detail: `Action ${requiredActions.map((action) => JSON.stringify(action)).join(', ')} requires explicit approval before mf run can execute this intent.`,
+		detail: `Action ${missingActions.map((action) => JSON.stringify(action)).join(', ')} requires explicit approval before mf run can execute this intent.`,
 	};
 }
 
@@ -417,7 +424,7 @@ export function createRunPlan(
 	}
 
 	const metadata = readRunIntentMetadata(contract, rawIntent);
-	const approvalBlock = createApprovalBlock(projectRoot, metadata);
+	const approvalBlock = createApprovalBlock(projectRoot, metadata, createApprovedActionSet(options.approvedActions));
 	if (approvalBlock) {
 		return createBlockedRunPlan(
 			contract,

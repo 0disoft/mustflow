@@ -438,6 +438,7 @@ async function runVerificationIntent(
 			intentName: intent,
 			outputMode: 'silent',
 			allowUntrustedRoot: false,
+			allowApprovals: [],
 			wait: false,
 			waitTimeoutSeconds: 1,
 		},

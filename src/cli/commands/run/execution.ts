@@ -46,6 +46,7 @@ export interface RunCommandExecutionRequest {
 	readonly intentName: string;
 	readonly outputMode: RunCommandExecutionOutputMode;
 	readonly allowUntrustedRoot: boolean;
+	readonly allowApprovals: readonly string[];
 	readonly wait: boolean;
 	readonly waitTimeoutSeconds: number;
 }
@@ -271,7 +272,10 @@ export async function executeRunCommand(
 
 	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
 	const plan = profiler.measure('plan_creation', () =>
-		createRunPlan(projectRoot, contract, request.intentName, { testTargets: options.testTargets }),
+		createRunPlan(projectRoot, contract, request.intentName, {
+			testTargets: options.testTargets,
+			approvedActions: request.allowApprovals,
+		}),
 	);
 
 	if (!plan.ok) {

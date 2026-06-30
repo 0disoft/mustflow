@@ -1410,6 +1410,8 @@ Lee estos archivos antes de trabajar:
   "run.help.option.json": "Imprime el registro de ejecución o el plan de comando como JSON",
   "run.help.option.wait": "Espera bloqueos activos en conflicto antes de ejecutar",
   "run.help.option.waitTimeout": "Segundos máximos para esperar bloqueos activos. Predeterminado: 300",
+  "run.help.option.allowApproval":
+    "Permite que esta ejecución satisfaga una acción con aprobación como network_access",
   "run.help.option.allowUntrustedRoot":
     "Permite una ejecución desde una raíz con bloqueo de manifiesto ausente o inválido tras revisión manual",
   "run.help.exit.ok": "El comando se completo con un codigo de salida permitido",
@@ -1464,6 +1466,8 @@ Lee estos archivos antes de trabajar:
   "run.error.conflictingPreviewModes":
     "Usa --dry-run o --plan-only, no ambos",
   "run.error.invalidWaitTimeout": "--wait-timeout debe ser un entero positivo",
+  "run.error.invalidApprovalAction":
+    'Acción de aprobación no admitida "{action}". Acciones admitidas: {allowed}',
   "run.error.waitRequiresExecution": "--wait solo se puede usar al ejecutar un comando, no con --dry-run o --plan-only",
   "run.error.untrustedRootMissing":
     "Se rechazó ejecutar comandos porque falta {path}. Ejecuta mf init/update para instalar el flujo, o usa --allow-untrusted-root tras revisar AGENTS.md y .mustflow/config/commands.toml.",

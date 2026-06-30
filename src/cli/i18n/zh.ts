@@ -1400,6 +1400,8 @@ export const zhMessages = {
   "run.help.option.json": "将运行记录或命令计划输出为 JSON",
   "run.help.option.wait": "执行前等待冲突的活动运行锁释放",
   "run.help.option.waitTimeout": "等待活动运行锁的最大秒数。默认值：300",
+  "run.help.option.allowApproval":
+    "允许本次执行满足一个需要审批的动作，例如 network_access",
   "run.help.option.allowUntrustedRoot":
     "人工复核后，允许从缺失或无效清单锁的根目录执行一次命令",
   "run.help.exit.ok": "命令已以允许的退出码完成",
@@ -1454,6 +1456,8 @@ export const zhMessages = {
   "run.error.conflictingPreviewModes":
     "只能使用 --dry-run 或 --plan-only，不能同时使用",
   "run.error.invalidWaitTimeout": "--wait-timeout 必须是正整数",
+  "run.error.invalidApprovalAction":
+    '不支持的审批动作 "{action}"。支持的动作：{allowed}',
   "run.error.waitRequiresExecution": "--wait 只能用于实际执行命令，不能与 --dry-run 或 --plan-only 一起使用",
   "run.error.untrustedRootMissing":
     "已拒绝执行命令，因为缺少 {path}。请运行 mf init/update 安装工作流，或在检查 AGENTS.md 和 .mustflow/config/commands.toml 后传入 --allow-untrusted-root。",
