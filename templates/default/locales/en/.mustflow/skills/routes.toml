@@ -1032,6 +1032,12 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "package_metadata_change", "release_risk"]
 
+[routes."vite-code-change"]
+category = "ui_assets"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
+
 [routes."svelte-code-change"]
 category = "ui_assets"
 route_type = "primary"

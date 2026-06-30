@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 199
+revision = 200
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -714,6 +714,12 @@ translations = {}
 
 [documents."skill.vue-code-change"]
 source = "locales/en/.mustflow/skills/vue-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.vite-code-change"]
+source = "locales/en/.mustflow/skills/vite-code-change/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

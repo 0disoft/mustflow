@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.105.0"
+version = "2.106.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -102,6 +102,7 @@ creates = [
   ".mustflow/skills/node-code-change/SKILL.md",
   ".mustflow/skills/react-code-change/SKILL.md",
   ".mustflow/skills/vue-code-change/SKILL.md",
+  ".mustflow/skills/vite-code-change/SKILL.md",
   ".mustflow/skills/python-code-change/SKILL.md",
   ".mustflow/skills/powershell-code-change/SKILL.md",
   ".mustflow/skills/shell-code-change/SKILL.md",
@@ -317,6 +318,7 @@ minimal = [
   "node-code-change",
   "react-code-change",
   "vue-code-change",
+  "vite-code-change",
   "python-code-change",
   "powershell-code-change",
   "shell-code-change",
@@ -471,6 +473,7 @@ patterns = [
   "node-code-change",
   "react-code-change",
   "vue-code-change",
+  "vite-code-change",
   "python-code-change",
   "powershell-code-change",
   "shell-code-change",
@@ -636,6 +639,7 @@ oss = [
   "node-code-change",
   "react-code-change",
   "vue-code-change",
+  "vite-code-change",
   "python-code-change",
   "powershell-code-change",
   "shell-code-change",
@@ -817,6 +821,7 @@ team = [
   "node-code-change",
   "react-code-change",
   "vue-code-change",
+  "vite-code-change",
   "python-code-change",
   "powershell-code-change",
   "shell-code-change",
@@ -984,6 +989,7 @@ product = [
   "node-code-change",
   "react-code-change",
   "vue-code-change",
+  "vite-code-change",
   "python-code-change",
   "powershell-code-change",
   "shell-code-change",
@@ -1157,6 +1163,7 @@ library = [
   "node-code-change",
   "react-code-change",
   "vue-code-change",
+  "vite-code-change",
   "python-code-change",
   "powershell-code-change",
   "shell-code-change",

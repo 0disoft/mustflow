@@ -13,6 +13,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added the `vue-code-change` built-in skill so agents can review Vue, Nuxt, Pinia, Vue Router,
   Composition API, reactivity, component API, SSR, hydration, lazy hydration, and Vite/vue-tsc
   toolchain boundaries before changing Vue projects.
+- Added the `vite-code-change` built-in skill so agents can review Vite config, plugins,
+  Rolldown/Rollup/Oxc/CSS compatibility, dependency optimization, HMR, SSR, workers, library mode,
+  package exports, assets, sourcemaps, package-manager, CI, Docker, and preview boundaries before
+  changing Vite projects.
 - Added the `axum-code-change` built-in skill so agents can review Axum routes, extractors,
   `State` and request extensions, Tower/Tower-HTTP layers, CORS, cookies, headers, Tokio tasks,
   SQLx pools, rejections, and API error envelopes before changing Rust HTTP servers.

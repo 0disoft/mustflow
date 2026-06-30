@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 230
+anchor_count: 231
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:0129db0f84042274d32fc69fa02a6421ae8a63b1bc76fb8df0930226b026a89c"
+source_fingerprint: "sha256:4e447d0700e1aad3e2b95f80d4015177e4da9688f2c1bc6451d64f3ad2998089"
 ---
 
 # REPO_MAP.md
@@ -792,6 +792,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/visual-review-artifact/
 
 - `.mustflow/skills/visual-review-artifact/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/vite-code-change/
+
+- `.mustflow/skills/vite-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/vue-code-change/
 

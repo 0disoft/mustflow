@@ -47,7 +47,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.105.0');
+	assert.equal(packageJson.version, '2.106.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -132,6 +132,17 @@ test('default template installs the Vue code change skill across profiles', () =
 		assert.ok(
 			readTemplateSkillProfile(profile).includes('vue-code-change'),
 			`${profile} profile should include vue-code-change`,
+		);
+	}
+});
+
+test('default template installs the Vite code change skill across profiles', () => {
+	assert.ok(templateCreates.includes('.mustflow/skills/vite-code-change/SKILL.md'));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes('vite-code-change'),
+			`${profile} profile should include vite-code-change`,
 		);
 	}
 });

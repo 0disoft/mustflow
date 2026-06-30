@@ -286,7 +286,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-06-30T02:15:00.092Z"
+last_touched_at = "2026-06-30T02:36:35.076Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -509,6 +509,14 @@ first_seen_at = "2026-06-25T09:05:12.025Z"
 last_touched_at = "2026-06-25T14:29:46.229Z"
 
 [[documents]]
+path = ".mustflow/skills/vite-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-30T02:36:35.095Z"
+last_touched_at = "2026-06-30T02:36:35.095Z"
+
+[[documents]]
 path = ".mustflow/skills/vue-code-change/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -530,7 +538,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-06-30T02:15:00.105Z"
+last_touched_at = "2026-06-30T02:36:35.104Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -1128,7 +1136,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-06-30T02:15:00.128Z"
+last_touched_at = "2026-06-30T02:36:35.113Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
@@ -1337,6 +1345,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T09:05:12.057Z"
 last_touched_at = "2026-06-25T14:29:46.337Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/vite-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-06-30T02:36:35.122Z"
+last_touched_at = "2026-06-30T02:36:35.122Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/vue-code-change/SKILL.md"
