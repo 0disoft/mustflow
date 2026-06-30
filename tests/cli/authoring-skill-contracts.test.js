@@ -335,7 +335,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
 	assert.match(
 		i18n,
-		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 25/u,
+		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 27/u,
 	);
 	assert.match(
 		i18n,
@@ -6484,7 +6484,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	}
 	assert.ok(profileBlock('team').includes('"complex-decision-analysis"'));
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
-	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 25/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 27/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 200/u);
 	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 1/u);
 });

@@ -6,6 +6,13 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.107.3 - 2026-06-30
+
+### Fixed
+
+- Fixed the release-package test contract for the current `docs.agent-workflow` template revision
+  so the full publish workflow can complete.
+
 ## 2.107.2 - 2026-06-30
 
 ### Added
