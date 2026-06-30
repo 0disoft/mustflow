@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 198
+revision = 199
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -343,6 +343,12 @@ translations = {}
 
 [documents."skill.race-condition-review"]
 source = "locales/en/.mustflow/skills/race-condition-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.async-timing-boundary-review"]
+source = "locales/en/.mustflow/skills/async-timing-boundary-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

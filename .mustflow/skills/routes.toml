@@ -330,6 +330,12 @@ route_type = "adjunct"
 priority = 77
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
+[routes."async-timing-boundary-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 78
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "data_change", "migration_change", "package_metadata_change", "release_risk"]
+
 [routes."concurrency-invariant-review"]
 category = "general_code"
 route_type = "adjunct"

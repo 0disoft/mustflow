@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.104.0"
+version = "2.105.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -62,6 +62,7 @@ creates = [
   ".mustflow/skills/quadratic-scan-review/SKILL.md",
   ".mustflow/skills/type-state-modeling-review/SKILL.md",
   ".mustflow/skills/race-condition-review/SKILL.md",
+  ".mustflow/skills/async-timing-boundary-review/SKILL.md",
   ".mustflow/skills/concurrency-invariant-review/SKILL.md",
   ".mustflow/skills/failure-integrity-review/SKILL.md",
   ".mustflow/skills/backend-log-evidence-review/SKILL.md",
@@ -277,6 +278,7 @@ minimal = [
   "quadratic-scan-review",
   "type-state-modeling-review",
   "race-condition-review",
+  "async-timing-boundary-review",
   "concurrency-invariant-review",
   "failure-integrity-review",
   "backend-log-evidence-review",
@@ -430,6 +432,7 @@ patterns = [
   "quadratic-scan-review",
   "type-state-modeling-review",
   "race-condition-review",
+  "async-timing-boundary-review",
   "concurrency-invariant-review",
   "failure-integrity-review",
   "backend-log-evidence-review",
@@ -594,6 +597,7 @@ oss = [
   "quadratic-scan-review",
   "type-state-modeling-review",
   "race-condition-review",
+  "async-timing-boundary-review",
   "concurrency-invariant-review",
   "failure-integrity-review",
   "backend-log-evidence-review",
@@ -774,6 +778,7 @@ team = [
   "quadratic-scan-review",
   "type-state-modeling-review",
   "race-condition-review",
+  "async-timing-boundary-review",
   "concurrency-invariant-review",
   "failure-integrity-review",
   "backend-log-evidence-review",
@@ -940,6 +945,7 @@ product = [
   "quadratic-scan-review",
   "type-state-modeling-review",
   "race-condition-review",
+  "async-timing-boundary-review",
   "concurrency-invariant-review",
   "failure-integrity-review",
   "backend-log-evidence-review",
@@ -1112,6 +1118,7 @@ library = [
   "quadratic-scan-review",
   "type-state-modeling-review",
   "race-condition-review",
+  "async-timing-boundary-review",
   "concurrency-invariant-review",
   "failure-integrity-review",
   "backend-log-evidence-review",

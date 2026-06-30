@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 229
+anchor_count: 230
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:db81027387604af958f71f8966d982991b7c68fbcfc38721bffa3bcf18017d3d"
+source_fingerprint: "sha256:0129db0f84042274d32fc69fa02a6421ae8a63b1bc76fb8df0930226b026a89c"
 ---
 
 # REPO_MAP.md
@@ -104,6 +104,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/astro-code-change/
 
 - `.mustflow/skills/astro-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/async-timing-boundary-review/
+
+- `.mustflow/skills/async-timing-boundary-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/auth-flow-triage/
 

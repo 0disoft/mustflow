@@ -26,6 +26,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Added the `wails-code-change` built-in skill so agents can review Wails v3 app assembly, Go
   services, generated bindings, runtime calls, windows, events, menus, tray/dialog integrations,
   WebView platform behavior, and packaging boundaries before changing Wails desktop projects.
+- Added the `async-timing-boundary-review` built-in skill so agents can replace arbitrary sleeps,
+  fixed delays, event-loop yields, render-frame waits, CI waits, Promise completion assumptions, and
+  eventual-consistency waits with explicit completion signals, bounded polling, or true time
+  contracts.
 - Added a rebuilt `.mustflow/state/runs/latest.index.json` receipt index so agents can find recent
   retained runs by intent and cwd without overloading the root-wide `latest.json` pointer.
 - Added the built-in `code/dependency-graph` script-pack helper so agents can trace bounded
