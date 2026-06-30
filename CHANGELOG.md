@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+### Fixed
+
+- Made `mf index --source` tolerate source files or directories that disappear during scanning, and
+  exclude `.tmp-agent-*` scratch directories from source-anchor discovery by default.
+
 ### Added
 
 - Added YAML and YML source-anchor scanning so machine-readable service contracts can expose

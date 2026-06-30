@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import type { Dirent } from 'node:fs';
 import path from 'node:path';
 
 import { SECRET_LIKE_PATTERNS, textContainsSecretLike } from './secret-redaction.js';
@@ -39,6 +40,7 @@ export const SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS = new Set([
 	'tmp',
 	'vendor',
 ]);
+export const SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PREFIXES = ['.tmp-agent-', 'tmp-agent-'];
 export const SOURCE_ANCHOR_GENERATED_PATH_PARTS = new Set([
 	'.astro',
 	'.next',
@@ -167,6 +169,13 @@ function fileIsWithinSizeLimit(filePath: string, maxFileBytes: number | null | u
 	}
 }
 
+function sourceAnchorPathPartIsIgnored(part: string, ignoredDirectoryNames: ReadonlySet<string>): boolean {
+	return (
+		ignoredDirectoryNames.has(part) ||
+		SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PREFIXES.some((prefix) => part.startsWith(prefix))
+	);
+}
+
 function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOptions, current = root, depth = 0): string[] {
 	if (!existsSync(current)) {
 		return [];
@@ -176,7 +185,12 @@ function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOpti
 		return [];
 	}
 
-	const currentRealPath = realpathSync(current);
+	let currentRealPath: string;
+	try {
+		currentRealPath = realpathSync(current);
+	} catch {
+		return [];
+	}
 	if (!pathIsInsideRoot(options.rootRealPath, currentRealPath) || options.visitedRealDirectories.has(currentRealPath)) {
 		return [];
 	}
@@ -184,12 +198,18 @@ function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOpti
 
 	const files: string[] = [];
 
-	const entries = readdirSync(current, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
+	let entries: Dirent<string>[];
+	try {
+		entries = readdirSync(current, { withFileTypes: true });
+	} catch {
+		return [];
+	}
+	entries.sort((left, right) => left.name.localeCompare(right.name));
 
 	for (const entry of entries) {
 		const entryPath = path.join(current, entry.name);
 
-		if (options.ignoredDirectoryNames.has(entry.name)) {
+		if (sourceAnchorPathPartIsIgnored(entry.name, options.ignoredDirectoryNames)) {
 			continue;
 		}
 
@@ -397,7 +417,11 @@ export function sourceAnchorPathIsGeneratedOrVendor(relativePath: string): boole
 		return true;
 	}
 
-	return parts.some((part) => SOURCE_ANCHOR_GENERATED_PATH_PARTS.has(part));
+	return parts.some(
+		(part) =>
+			SOURCE_ANCHOR_GENERATED_PATH_PARTS.has(part) ||
+			SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PREFIXES.some((prefix) => part.startsWith(prefix)),
+	);
 }
 
 export function sourceAnchorTextContainsSecretLike(value: string): boolean {

@@ -225,6 +225,7 @@ export const skippedAnchor = true;
 
 		const skippedFiles = [
 			['.tmp/ohrisk-e2e/prettier/tests/format/typescript/example.ts', 'tmp-prettier', 'Temporary formatter output'],
+			['.tmp-agent-repair-markrail/src/transient.ts', 'tmp-agent-repair', 'Agent repair scratch output'],
 			['.cache/generated.ts', 'cache', 'Cache output'],
 			['.next/server/page.ts', 'next', 'Next.js build output'],
 			['.nuxt/server/page.ts', 'nuxt', 'Nuxt build output'],
@@ -259,6 +260,25 @@ export const skippedAnchor = true;
 		assert.deepEqual(indexedSourcePaths, ['src/kept.ts']);
 		assert.deepEqual(anchorRows, [{ id: 'source.prune.kept', path: 'src/kept.ts' }]);
 		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('source indexed file records skip disappeared source candidates', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-disappeared-candidate-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'kept.ts'), 'export const keptSource = true;\n');
+
+		const { collectIndexedFileRecords } = await import('../../dist/cli/lib/local-index/source-index.js');
+		const records = collectIndexedFileRecords(projectPath, [], [], ['src/disappeared.ts', 'src/kept.ts']);
+
+		assert.deepEqual(
+			records.map((record) => record.path),
+			['src/kept.ts'],
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

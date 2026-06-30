@@ -117,11 +117,24 @@ function hashIndexedFileMetadataRecord(projectRoot: string, metadata: IndexedFil
 	};
 }
 
+function tryHashIndexedFileMetadataRecord(
+	projectRoot: string,
+	metadata: IndexedFileMetadataRecord,
+): IndexedFileRecord | null {
+	try {
+		return hashIndexedFileMetadataRecord(projectRoot, metadata);
+	} catch {
+		return null;
+	}
+}
+
 export function hashIndexedFileMetadataRecords(
 	projectRoot: string,
 	metadataRecords: readonly IndexedFileMetadataRecord[],
 ): IndexedFileRecord[] {
-	return metadataRecords.map((metadata) => hashIndexedFileMetadataRecord(projectRoot, metadata));
+	return metadataRecords
+		.map((metadata) => tryHashIndexedFileMetadataRecord(projectRoot, metadata))
+		.filter((record): record is IndexedFileRecord => Boolean(record));
 }
 
 export function readIndexedFileMetadataRecord(
@@ -140,6 +153,19 @@ export function readIndexedFileMetadataRecord(
 	};
 }
 
+function tryReadIndexedFileRecord(
+	projectRoot: string,
+	relativePath: string,
+	sourceScope: IndexedFileRecord['sourceScope'],
+	contentHash: string | null = null,
+): IndexedFileRecord | null {
+	try {
+		return readIndexedFileRecord(projectRoot, relativePath, sourceScope, contentHash);
+	} catch {
+		return null;
+	}
+}
+
 export function collectIndexedFileRecords(
 	projectRoot: string,
 	documents: readonly IndexDocument[],
@@ -156,15 +182,20 @@ export function collectIndexedFileRecords(
 
 	for (const anchorPath of [...sourcePaths].sort((left, right) => left.localeCompare(right))) {
 		if (!records.has(anchorPath)) {
-			records.set(anchorPath, readIndexedFileRecord(projectRoot, anchorPath, 'source_anchor'));
+			const record = tryReadIndexedFileRecord(projectRoot, anchorPath, 'source_anchor');
+
+			if (record) {
+				records.set(anchorPath, record);
+			}
 		}
 	}
 
 	if (existsSync(path.join(projectRoot, ...LATEST_RUN_STATE_RELATIVE_PATH.split('/')))) {
-		records.set(
-			LATEST_RUN_STATE_RELATIVE_PATH,
-			readIndexedFileRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state'),
-		);
+		const record = tryReadIndexedFileRecord(projectRoot, LATEST_RUN_STATE_RELATIVE_PATH, 'state');
+
+		if (record) {
+			records.set(LATEST_RUN_STATE_RELATIVE_PATH, record);
+		}
 	}
 
 	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
