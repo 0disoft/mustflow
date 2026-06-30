@@ -15,6 +15,8 @@ export const SOURCE_ANCHOR_EXTENSIONS = new Set([
 	'.svelte',
 	'.ts',
 	'.tsx',
+	'.yaml',
+	'.yml',
 ]);
 export const SOURCE_ANCHOR_DEFAULT_EXCLUDED_PATH_PARTS = new Set([
 	'.cache',

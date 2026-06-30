@@ -146,6 +146,74 @@ test('source anchor parser ignores fixture text outside source comments', () => 
 	);
 });
 
+test('source anchor discovery and parser support YAML contract comments', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'contracts'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'contracts', 'service.yaml'),
+			[
+				'# mf:anchor contracts.service.yaml',
+				'# purpose: Locate machine-readable service ownership and boundary metadata.',
+				'# search: service contract, ownership, platform boundary',
+				'# invariant: YAML contract anchors remain navigation metadata only.',
+				'# risk: config',
+				'service:',
+				'  id: service-yaml',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'contracts', 'service.yml'),
+			[
+				'# mf:anchor contracts.service.yml',
+				'# purpose: Locate alternate YAML service contract metadata.',
+				'# search: service contract, yml, platform boundary',
+				'service:',
+				'  id: service-yml',
+				'',
+			].join('\n'),
+		);
+
+		assert.deepEqual(listSourceAnchorFiles(projectPath), ['contracts/service.yaml', 'contracts/service.yml']);
+
+		const anchors = parseSourceAnchorsInContent(
+			'contracts/service.yaml',
+			[
+				'# mf:anchor contracts.service.yaml',
+				'# purpose: Locate machine-readable service ownership and boundary metadata.',
+				'# search: service contract, ownership, platform boundary',
+				'# invariant: YAML contract anchors remain navigation metadata only.',
+				'# risk: config',
+				'service:',
+				'  id: service-yaml',
+				'',
+			].join('\n'),
+		);
+
+		assert.deepEqual(
+			anchors.map((anchor) => ({
+				id: anchor.rawId,
+				lineStart: anchor.lineStart,
+				purpose: anchor.fields.get('purpose'),
+				risk: anchor.fields.get('risk'),
+			})),
+			[
+				{
+					id: 'contracts.service.yaml',
+					lineStart: 1,
+					purpose: 'Locate machine-readable service ownership and boundary metadata.',
+					risk: 'config',
+				},
+			],
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check reports source anchor quality warnings without failing', () => {
 	const projectPath = createTempProject();
 

@@ -104,6 +104,58 @@ test('indexes source anchors only when source indexing is requested', async () =
 	database.close();
 });
 
+test('indexes YAML service contract source anchors', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-yaml-source-anchor-');
+
+	try {
+		writeFileSync(
+			path.join(projectPath, 'service.yaml'),
+			[
+				'# mf:anchor contracts.service.yaml',
+				'# purpose: Locate machine-readable service ownership and boundary metadata.',
+				'# search: service contract, ownership, platform boundary',
+				'# invariant: YAML contract anchors remain navigation metadata only.',
+				'# risk: config',
+				'service:',
+				'  id: service-yaml',
+				'',
+			].join('\n'),
+		);
+
+		const output = await createLocalIndexDirect(projectPath, { includeSource: true });
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const [anchor] = queryRows(database, 'SELECT * FROM source_anchors WHERE id = "contracts.service.yaml"');
+		const [fingerprint] = queryRows(
+			database,
+			'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "contracts.service.yaml"',
+		);
+		const indexedSourcePaths = queryRows(
+			database,
+			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+		).map((row) => row.path);
+
+		assert.equal(output.source_index_enabled, true);
+		assert.equal(output.source_anchor_count, 1);
+		assert.deepEqual(indexedSourcePaths, ['service.yaml']);
+		assert.equal(anchor.path, 'service.yaml');
+		assert.equal(anchor.purpose, 'Locate machine-readable service ownership and boundary metadata.');
+		assert.equal(anchor.search_terms, 'service contract, ownership, platform boundary');
+		assert.equal(anchor.risk, 'config');
+		assert.equal(anchor.navigation_only, 1);
+		assert.equal(anchor.can_instruct_agent, 0);
+		assert.equal(fingerprint.symbol_kind, 'unknown');
+		assert.equal(fingerprint.symbol_name, null);
+		assert.equal(fingerprint.symbol_exported, 0);
+		assert.equal(fingerprint.signature_hash, null);
+		assert.equal(fingerprint.body_hash, null);
+		database.close();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('source incremental index reuses unchanged candidate fingerprints before parsing anchors', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-source-preflight-');
 

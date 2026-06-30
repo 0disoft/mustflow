@@ -8,6 +8,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added YAML and YML source-anchor scanning so machine-readable service contracts can expose
+  navigation-only `mf:anchor` metadata through `mf index --source`.
 - Added `mf flow` and generated `REPO_FLOW.md` so agents can inspect the repository's design-flow
   path from task intake through source reading, scoped editing, verification, and evidence reporting.
 - Added the `vue-code-change` built-in skill so agents can review Vue, Nuxt, Pinia, Vue Router,
