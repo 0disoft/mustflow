@@ -6,11 +6,6 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
-### Fixed
-
-- Made `mf index --source` tolerate source files or directories that disappear during scanning, and
-  exclude `.tmp-agent-*` scratch directories from source-anchor discovery by default.
-
 ### Added
 
 - Added YAML and YML source-anchor scanning so machine-readable service contracts can expose
@@ -153,6 +148,13 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 - Fixed `code/symbol-read` source-anchor targeting for Python anchors that have an ordinary
   `#` comment line between the anchor metadata and the target declaration.
+
+## 2.107.1 - 2026-06-30
+
+### Fixed
+
+- Made `mf index --source` tolerate source files or directories that disappear during scanning, and
+  exclude `.tmp-agent-*` scratch directories from source-anchor discovery by default.
 
 ## 2.74.3 - 2026-06-22
 
