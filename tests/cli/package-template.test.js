@@ -29,6 +29,7 @@ const technologySkillNames = [
 	'svelte-code-change',
 	'tailwind-code-change',
 	'tauri-code-change',
+	'wails-code-change',
 	'typescript-code-change',
 	'unocss-code-change',
 	'vue-code-change',

@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 228
+anchor_count: 229
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:d13514c3d8d0bc641b14d77370306bf0d0f5510c43e86dbf2ee4d9cdfe0f56a8"
+source_fingerprint: "sha256:db81027387604af958f71f8966d982991b7c68fbcfc38721bffa3bcf18017d3d"
 ---
 
 # REPO_MAP.md
@@ -792,6 +792,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/vue-code-change/
 
 - `.mustflow/skills/vue-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/wails-code-change/
+
+- `.mustflow/skills/wails-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/web-asset-optimization/
 

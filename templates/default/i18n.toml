@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 197
+revision = 198
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -776,6 +776,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/tauri-code-change/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.wails-code-change"]
+source = "locales/en/.mustflow/skills/wails-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.typescript-code-change"]
