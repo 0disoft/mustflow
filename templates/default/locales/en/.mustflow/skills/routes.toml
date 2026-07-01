@@ -60,6 +60,12 @@ route_type = "primary"
 priority = 68
 applies_to_reasons = ["docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "security_change", "release_risk", "unknown_change"]
 
+[routes."cli-option-contract-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 66
+applies_to_reasons = ["public_api_change", "behavior_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
+
 [routes."cli-output-contract-review"]
 category = "workflow_contracts"
 route_type = "adjunct"

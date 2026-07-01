@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.107.3"
+version = "2.107.4"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -117,6 +117,7 @@ creates = [
   ".mustflow/skills/wails-code-change/SKILL.md",
   ".mustflow/skills/typescript-code-change/SKILL.md",
   ".mustflow/skills/unocss-code-change/SKILL.md",
+  ".mustflow/skills/cli-option-contract-review/SKILL.md",
   ".mustflow/skills/cli-output-contract-review/SKILL.md",
   ".mustflow/skills/command-contract-authoring/SKILL.md",
   ".mustflow/skills/config-env-change/SKILL.md",
@@ -651,6 +652,7 @@ oss = [
   "wails-code-change",
   "typescript-code-change",
   "unocss-code-change",
+  "cli-option-contract-review",
   "cli-output-contract-review",
   "command-contract-authoring",
   "command-intent-mapping-gate",
@@ -1175,6 +1177,7 @@ library = [
   "wails-code-change",
   "typescript-code-change",
   "unocss-code-change",
+  "cli-option-contract-review",
   "cli-output-contract-review",
   "command-contract-authoring",
   "command-intent-mapping-gate",
